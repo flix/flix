@@ -32,5 +32,4 @@ pub trait Collectable[t: Type] {
     /// Run an Iterator collecting the results.
     ///
     pub def collect(iter: Iterator[Collectable.Elm[t], ef, r]): t \ (ef + Collectable.Aef[t] + r)
-
 }

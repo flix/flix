@@ -15,7 +15,6 @@
  */
 
 pub mod MutMap {
-
     ///
     /// The Mutable Map type.
     ///
@@ -32,7 +31,7 @@ pub mod MutMap {
         pub def get(t: MutMap[k, v, r], i: k): v \ r + KeyNotFound = {
             match MutMap.get(i, t) {
                 case Some(v) => v
-                case None => KeyNotFound.keyNotFound("key not found")
+                case None    => KeyNotFound.keyNotFound("key not found")
             }
         }
     }
@@ -68,21 +67,22 @@ pub mod MutMap {
     ///
     /// Returns a string representation of the given MutMap `m`.
     ///
-    pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] = region rc {
-        "MutMap#{" + (MutMap.iterator(rc, m) |> Iterator.joinWith(match (k, v) -> "${k} => ${v}", ", ")) + "}"
-    }
+    pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] =
+        region rc {
+            "MutMap#{" + (MutMap.iterator(rc, m) |> Iterator.joinWith(match (k, v) -> "${ k } => ${ v }", ", ")) + "}"
+        }
 
     ///
     /// Returns a fresh empty mutable map.
     ///
     pub def empty(rc: Region[r]): MutMap[k, v, r] \ r =
-        new MutMap @ rc { rc = rc, inner = Map.empty() }
+        new MutMap @ rc {rc = rc, inner = Map.empty()}
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
     ///
     pub def singleton(rc: Region[r], k: k, v: v): MutMap[k, v, r] \ r with Order[k] =
-        new MutMap @ rc { rc = rc, inner = Map.singleton(k, v) }
+        new MutMap @ rc {rc = rc, inner = Map.singleton(k, v)}
 
     ///
     /// Returns `true` if and only if the mutable map `m` contains the key `k`.
@@ -384,7 +384,7 @@ pub mod MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     pub def mapWithKey(rc: Region[r1], f: (k, v1) -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, r, r1 } =
-        new MutMap @ rc { rc = rc, inner = Map.mapWithKey(f, m->inner) }
+        new MutMap @ rc {rc = rc, inner = Map.mapWithKey(f, m->inner)}
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -492,7 +492,7 @@ pub mod MutMap {
     /// Returns a shallow copy of the mutable map `m`.
     ///
     pub def copy(rc: Region[r1], m: MutMap[k, v, r]): MutMap[k, v, r1] \ { r, r1 } =
-        new MutMap @ rc { rc = rc, inner = m->inner }
+        new MutMap @ rc {rc = rc, inner = m->inner}
 
     ///
     /// Returns the mutable map `m` as an immutable map.
@@ -515,7 +515,7 @@ pub mod MutMap {
     ///
     /// Returns the mutable map `m` as an array of key-value pairs.
     ///
-    pub def toArray(rc1: Region[r1], m: MutMap[k, v, r]): Array[(k, v), r1] \ {r, r1} =
+    pub def toArray(rc1: Region[r1], m: MutMap[k, v, r]): Array[(k, v), r1] \ { r, r1 } =
         Map.toArray(rc1, m->inner)
 
     ///
@@ -534,10 +534,11 @@ pub mod MutMap {
     /// Apply the effectful function `f` to all the `(key, value)` pairs in the mutable map `m`
     /// along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } = region rc {
-        let ix = Ref.fresh(rc, 0);
-        forEach((k, v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) }, m)
-    }
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } =
+        region rc {
+            let ix = Ref.fresh(rc, 0);
+            forEach((k, v) -> {let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix)}, m)
+        }
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.
@@ -574,8 +575,7 @@ pub mod MutMap {
     ///
     /// Returns `true` if MutMaps `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: MutMap[k, v, r1], b: MutMap[k, v, r2]): Bool \ { r1, r2 } with Order[k], Eq[v] =
-        (MutMap.isSubmapOf(a, b) and MutMap.isSubmapOf(b, a))
+    pub def sameElements(a: MutMap[k, v, r1], b: MutMap[k, v, r2]): Bool \ { r1, r2 } with Order[k], Eq[v] = (MutMap.isSubmapOf(a, b) and MutMap.isSubmapOf(b, a))
 
     ///
     /// Returns the concatenation of the string representation of each key `k`
@@ -597,5 +597,4 @@ pub mod MutMap {
     ///
     pub def joinWith(f: (k, v) -> String \ ef, sep: String, m: MutMap[k, v, r]): String \ { ef, r } =
         Map.joinWith(f, sep, m->inner)
-
 }

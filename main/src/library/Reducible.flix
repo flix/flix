@@ -20,7 +20,6 @@
 /// `Reducible` is like a non-empty `Foldable` and may only be implemented on non-empty data structures.
 ///
 pub trait Reducible[t: Type -> Type] {
-
     ///
     /// Left-associative reduction of a structure.
     /// Applies `g` to the initial element of `t` and combines it
@@ -104,7 +103,7 @@ pub trait Reducible[t: Type -> Type] {
     ///
     pub def tail(t: t[a]): List[a] =
         Reducible.reduceLeftTo((k, a) -> ks -> k(a :: ks), _ -> identity, t)(Nil) // NB: Builds a continuation function without the first
-                                                                                   // element that is immediately invoked to avoid `foldRight`.
+        // element that is immediately invoked to avoid `foldRight`.
     ///
     /// Returns the reverse of `t` as a list.
     ///
@@ -206,26 +205,38 @@ pub trait Reducible[t: Type -> Type] {
     ///
     /// Returns `t` as a list without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
-        (Reducible.foldLeft((acc, a) -> {
-            let (c, k) = acc;
-            if (c and f(a))
-                (true, k)
-            else
-                (false, ks -> k(a :: ks))
-        }, (true, identity), t) |> snd)(Nil)
+    pub def dropWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef = (
+        Reducible.foldLeft(
+            (acc, a) -> {
+                let (c, k) = acc;
+                if (c and f(a))
+                    (true, k)
+                else
+                    (false, ks -> k(a :: ks))
+            },
+            (true, identity),
+            t
+        )
+        |> snd
+    )(Nil)
 
     ///
     /// Returns the longest prefix of `t` as a list that satisfies the predicate `f`.
     ///
-    pub def takeWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
-        (Reducible.foldLeft((acc, a) -> {
-            let (c, k) = acc;
-            if (c and f(a))
-                (true, ks -> k(a :: ks))
-            else
-                (false, k)
-        }, (true, identity), t) |> snd)(Nil)
+    pub def takeWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef = (
+        Reducible.foldLeft(
+            (acc, a) -> {
+                let (c, k) = acc;
+                if (c and f(a))
+                    (true, ks -> k(a :: ks))
+                else
+                    (false, k)
+            },
+            (true, identity),
+            t
+        )
+        |> snd
+    )(Nil)
 
     ///
     /// Returns `t` as a list with `a` inserted between every two adjacent elements.
@@ -244,11 +255,12 @@ pub trait Reducible[t: Type -> Type] {
     ///
     /// Returns `t` as a vector.
     ///
-    pub def toVector(t: t[a]): Vector[a] = region rc {
-        let l = MutList.empty(rc);
-        Reducible.foldLeft((_, a) -> MutList.push(a, l), (), t);
-        MutList.toVector(l)
-    }
+    pub def toVector(t: t[a]): Vector[a] =
+        region rc {
+            let l = MutList.empty(rc);
+            Reducible.foldLeft((_, a) -> MutList.push(a, l), (), t);
+            MutList.toVector(l)
+        }
 
     ///
     /// Returns `t` as a list.
@@ -273,14 +285,11 @@ pub trait Reducible[t: Type -> Type] {
     ///
     pub def toSet(t: t[a]): Set[a] with Order[a] =
         Reducible.foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), t)
-
 }
 
 pub mod Reducible {
-
     ///
     /// Returns the number of elements in `t`.
     ///
     pub def size(t: t[a]): Int32 with Reducible[t] = Reducible.length(t)
-
 }

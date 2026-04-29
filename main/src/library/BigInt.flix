@@ -15,7 +15,6 @@
  */
 
 pub mod BigInt {
-
     import java.math.BigDecimal
     import java.math.BigInteger
     import java.lang.NumberFormatException
@@ -39,7 +38,7 @@ pub mod BigInt {
     ///
     /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(base: {base = BigInt}, n: Int32): BigInt =
+    pub def pow(base: { base = BigInt }, n: Int32): BigInt =
         base#base.pow(n)
 
     ///
@@ -73,9 +72,12 @@ pub mod BigInt {
     /// Returns `1` if `x > y`, `-1` if `x < y`, and `0` if `x = y`.
     ///
     pub def compare(x: BigInt, y: BigInt): Int32 = {
-        if (x == y)     0
-        else if (x < y) -1
-        else            1
+        if (x == y)
+            0
+        else if (x < y)
+            -1
+        else
+            1
     }
 
     ///
@@ -162,11 +164,12 @@ pub mod BigInt {
     /// Parse the string `s` as an BigInt, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[BigInt] = try {
-        Some(new BigInteger(s.strip()))
-    } catch {
-        case _: NumberFormatException => None
-    }
+    pub def fromString(s: String): Option[BigInt] =
+        try {
+            Some(new BigInteger(s.strip()))
+        } catch {
+            case _: NumberFormatException => None
+        }
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -180,7 +183,7 @@ pub mod BigInt {
         try {
             Some(x.byteValueExact())
         } catch {
-            case _ : ArithmeticException => None
+            case _: ArithmeticException => None
         }
 
     ///
@@ -195,7 +198,7 @@ pub mod BigInt {
         try {
             Some(x.shortValueExact())
         } catch {
-            case _ : ArithmeticException => None
+            case _: ArithmeticException => None
         }
 
     ///
@@ -210,7 +213,7 @@ pub mod BigInt {
         try {
             Some(x.intValueExact())
         } catch {
-            case _ : ArithmeticException => None
+            case _: ArithmeticException => None
         }
 
     ///
@@ -225,7 +228,7 @@ pub mod BigInt {
         try {
             Some(x.longValueExact())
         } catch {
-            case _ : ArithmeticException => None
+            case _: ArithmeticException => None
         }
 
     ///
@@ -275,21 +278,20 @@ pub mod BigInt {
     ///
     /// Helper function for the `clamp` conversion functions.
     ///
-    def clamp(min: {min = BigInt}, max: {max = BigInt}, x: BigInt): BigInt =
+    def clamp(min: { min = BigInt }, max: { max = BigInt }, x: BigInt): BigInt =
         if (x < min#min)
-             min#min
+            min#min
+        else if (x > max#max)
+            max#max
         else
-            if (x > max#max)
-                max#max
-            else
-                x
+            x
 
     ///
     /// Convert `x` to an `Int8`.
     ///
     /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
-    pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: BigInt): Int8 =
+    pub def clampToInt8(min: { min = Int8 }, max: { max = Int8 }, x: BigInt): Int8 =
         let minii = Int8.toBigInt(min#min);
         let maxii = Int8.toBigInt(max#max);
         try {
@@ -297,7 +299,7 @@ pub mod BigInt {
             y.byteValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => min#min
+            case _: ArithmeticException => min#min
         }
 
     ///
@@ -305,7 +307,7 @@ pub mod BigInt {
     ///
     /// Returns `x` clamped within the Int16 range `min` to `max`.
     ///
-    pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: BigInt): Int16 =
+    pub def clampToInt16(min: { min = Int16 }, max: { max = Int16 }, x: BigInt): Int16 =
         let minii = Int16.toBigInt(min#min);
         let maxii = Int16.toBigInt(max#max);
         try {
@@ -313,7 +315,7 @@ pub mod BigInt {
             y.shortValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => min#min
+            case _: ArithmeticException => min#min
         }
 
     ///
@@ -321,7 +323,7 @@ pub mod BigInt {
     ///
     /// Returns `x` clamped within the Int32 range `min` to `max`.
     ///
-    pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, x: BigInt): Int32 =
+    pub def clampToInt32(min: { min = Int32 }, max: { max = Int32 }, x: BigInt): Int32 =
         let minii = Int32.toBigInt(min#min);
         let maxii = Int32.toBigInt(max#max);
         try {
@@ -329,7 +331,7 @@ pub mod BigInt {
             y.intValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => min#min
+            case _: ArithmeticException => min#min
         }
 
     ///
@@ -337,7 +339,7 @@ pub mod BigInt {
     ///
     /// Returns `x` clamped within the Int64 range `min` to `max`.
     ///
-    pub def clampToInt64(min: {min = Int64}, max: {max = Int64}, x: BigInt): Int64 =
+    pub def clampToInt64(min: { min = Int64 }, max: { max = Int64 }, x: BigInt): Int64 =
         let minii = Int64.toBigInt(min#min);
         let maxii = Int64.toBigInt(max#max);
         try {
@@ -345,7 +347,7 @@ pub mod BigInt {
             y.longValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => min#min
+            case _: ArithmeticException => min#min
         }
 
     ///
@@ -353,7 +355,7 @@ pub mod BigInt {
     ///
     /// Returns `x` clamped within the Float32 range `min` to `max`.
     ///
-    pub def clampToFloat32(min: {min = Float32}, max: {max = Float32}, x: BigInt): Float32 =
+    pub def clampToFloat32(min: { min = Float32 }, max: { max = Float32 }, x: BigInt): Float32 =
         let step = () -> {
             forM (
                 f32min <- Float32.tryToBigInt(min#min);
@@ -365,7 +367,7 @@ pub mod BigInt {
             }
         };
         match step() {
-            case None => Float32.nan()
+            case None    => Float32.nan()
             case Some(d) => d
         }
 
@@ -374,7 +376,7 @@ pub mod BigInt {
     ///
     /// Returns `x` clamped within the Float64 range `min` to `max`.
     ///
-    pub def clampToFloat64(min: {min = Float64}, max: {max = Float64}, x: BigInt): Float64 =
+    pub def clampToFloat64(min: { min = Float64 }, max: { max = Float64 }, x: BigInt): Float64 =
         let step = () -> {
             forM (
                 f64min <- Float64.tryToBigInt(min#min);
@@ -386,8 +388,7 @@ pub mod BigInt {
             }
         };
         match step() {
-            case None => Float64.nan()
+            case None    => Float64.nan()
             case Some(d) => d
         }
-
 }

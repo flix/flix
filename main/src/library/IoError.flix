@@ -15,7 +15,6 @@
  */
 
 pub mod IoError {
-
     ///
     /// An error that can occur when performing I/O operations involving the file system.
     ///
@@ -27,35 +26,35 @@ pub mod IoError {
     pub enum IoError(IoError.ErrorKind, String) with Eq, ToString
 
     instance Formattable[IoError] {
-        pub def format(e: IoError): RichString = match e {
-            case IoError.IoError(kind, msg) =>
-                Formattable.format(kind) + RichString.fromString(": ") + RichString.fromString(msg)
-        }
+        pub def format(e: IoError): RichString =
+            match e {
+                case IoError.IoError(kind, msg) =>
+                    Formattable.format(kind) + RichString.fromString(": ") + RichString.fromString(msg)
+            }
     }
 
     pub enum ErrorKind with Eq, ToString {
-        case AlreadyExists,
-        case ChecksumMismatch,
-        case Conflict,
-        case ConnectionFailed,
-        case Interrupted,
-        case InvalidPath,
-        case InvalidInput,
-        case InvalidData,
-        case NotFound,
-        case NotFile,
-        case NotDirectory,
-        case PermissionDenied,
-        case TransferLimitExceeded,
-        case Timeout,
-        case UnexpectedEof,
-        case Unsupported,
-        case UnknownHost,
+        case AlreadyExists
+        case ChecksumMismatch
+        case Conflict
+        case ConnectionFailed
+        case Interrupted
+        case InvalidPath
+        case InvalidInput
+        case InvalidData
+        case NotFound
+        case NotFile
+        case NotDirectory
+        case PermissionDenied
+        case TransferLimitExceeded
+        case Timeout
+        case UnexpectedEof
+        case Unsupported
+        case UnknownHost
         case Other
     }
 
     instance Formattable[ErrorKind] {
         pub def format(k: ErrorKind): RichString = RichString.fromString(ToString.toString(k))
     }
-
 }

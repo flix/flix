@@ -19,21 +19,21 @@ pub mod Fixpoint3.ReadWriteLock {
     import java.util.concurrent.locks.{StampedLock => JStampedLock}
 
     pub def mkLock(_: Region[r]): ReadWriteLock[r] \ r =
-        ReadWriteLock(unsafe IO as r { new JStampedLock().asReadWriteLock() })
+        ReadWriteLock(unsafe IO as r {new JStampedLock().asReadWriteLock()})
 
     pub def readLock(lock: ReadWriteLock[r]): Unit \ r =
         let ReadWriteLock(l) = lock;
-        unsafe IO as r { l.readLock().lock() }
+        unsafe IO as r {l.readLock().lock()}
 
     pub def writeLock(lock: ReadWriteLock[r]): Unit \ r =
         let ReadWriteLock(l) = lock;
-        unsafe IO as r { l.writeLock().lock() }
+        unsafe IO as r {l.writeLock().lock()}
 
     pub def unlockRead(lock: ReadWriteLock[r]): Unit \ r =
         let ReadWriteLock(l) = lock;
-        unsafe IO as r { l.readLock().unlock() }
+        unsafe IO as r {l.readLock().unlock()}
 
     pub def unlockWrite(lock: ReadWriteLock[r]): Unit \ r =
         let ReadWriteLock(l) = lock;
-        unsafe IO as r { l.writeLock().unlock() }
+        unsafe IO as r {l.writeLock().unlock()}
 }

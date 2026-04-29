@@ -18,16 +18,14 @@
 /// A trait for types that form a commutative semigroup.
 ///
 pub lawful trait CommutativeSemiGroup[a] with SemiGroup[a] {
-
     ///
     /// An associative & commutative binary operation on `a`.
     ///
     pub def combine(x: a, y: a): a = SemiGroup.combine(x, y)
 
-    law associative: forall(x: a, y: a, z: a) with Eq[a] CommutativeSemiGroup.combine(CommutativeSemiGroup.combine(x, y), z) == CommutativeSemiGroup.combine(x, CommutativeSemiGroup.combine(y, z))
+    law associative: forall (x: a, y: a, z: a) with Eq[a] CommutativeSemiGroup.combine(CommutativeSemiGroup.combine(x, y), z) == CommutativeSemiGroup.combine(x, CommutativeSemiGroup.combine(y, z))
 
-    law commutative: forall(x: a, y: a) with Eq[a] CommutativeSemiGroup.combine(x, y) == CommutativeSemiGroup.combine(y, x)
-
+    law commutative: forall (x: a, y: a) with Eq[a] CommutativeSemiGroup.combine(x, y) == CommutativeSemiGroup.combine(y, x)
 }
 
 ///
@@ -70,4 +68,3 @@ instance CommutativeSemiGroup[(a1, a2, a3, a4, a5, a6, a7, a8)] with Commutative
 instance CommutativeSemiGroup[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with CommutativeSemiGroup[a1], CommutativeSemiGroup[a2], CommutativeSemiGroup[a3], CommutativeSemiGroup[a4], CommutativeSemiGroup[a5], CommutativeSemiGroup[a6], CommutativeSemiGroup[a7], CommutativeSemiGroup[a8], CommutativeSemiGroup[a9]
 
 instance CommutativeSemiGroup[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with CommutativeSemiGroup[a1], CommutativeSemiGroup[a2], CommutativeSemiGroup[a3], CommutativeSemiGroup[a4], CommutativeSemiGroup[a5], CommutativeSemiGroup[a6], CommutativeSemiGroup[a7], CommutativeSemiGroup[a8], CommutativeSemiGroup[a9], CommutativeSemiGroup[a10]
-

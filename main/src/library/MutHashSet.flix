@@ -15,7 +15,6 @@
  */
 
 pub mod MutHashSet {
-
     ///
     /// Represents a mutable hash set that preserves insertion order.
     ///
@@ -49,7 +48,7 @@ pub mod MutHashSet {
     /// Returns a new empty set.
     ///
     pub def empty(rc: Region[r]): MutHashSet[t, r] \ r =
-        new MutHashSet @ rc { inner = MutHashMap.empty(rc) }
+        new MutHashSet @ rc {inner = MutHashMap.empty(rc)}
 
     ///
     /// Returns a new empty set with the given capacity.
@@ -57,13 +56,13 @@ pub mod MutHashSet {
     /// The capacity is rounded up to the minimum capacity.
     ///
     pub def emptyWithCapacity(rc: Region[r], capacity: Int32): MutHashSet[t, r] \ r =
-        new MutHashSet @ rc { inner = MutHashMap.emptyWithCapacity(rc, capacity) }
+        new MutHashSet @ rc {inner = MutHashMap.emptyWithCapacity(rc, capacity)}
 
     ///
     /// Returns a new set with the element `x`.
     ///
     pub def singleton(rc: Region[r], x: t): MutHashSet[t, r] \ r with Eq[t], Hash[t] =
-        new MutHashSet @ rc { inner = MutHashMap.singleton(rc, x, ()) }
+        new MutHashSet @ rc {inner = MutHashMap.singleton(rc, x, ())}
 
     ///
     /// Returns `true` if `s` is empty.
@@ -86,25 +85,25 @@ pub mod MutHashSet {
     ///
     /// Returns a shallow copy of the mutable set `s`.
     ///
-    pub def copy(rc: Region[r1], s: MutHashSet[t, r]): MutHashSet[t, r1] \ {r, r1} with Eq[t], Hash[t] =
-        new MutHashSet @ rc { inner = MutHashMap.copy(rc, s->inner) }
+    pub def copy(rc: Region[r1], s: MutHashSet[t, r]): MutHashSet[t, r1] \ { r, r1 } with Eq[t], Hash[t] =
+        new MutHashSet @ rc {inner = MutHashMap.copy(rc, s->inner)}
 
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r1], s: MutHashSet[t, r]): Iterator[t, r + r1, r1] \ {r, r1} =
+    pub def iterator(rc: Region[r1], s: MutHashSet[t, r]): Iterator[t, r + r1, r1] \ { r, r1 } =
         MutHashMap.iteratorKeys(rc, s->inner)
 
     ///
     /// Applies `f` to every element of the mutable hash set `s`.
     ///
-    pub def forEach(f: t -> Unit \ ef, s: MutHashSet[t, r]): Unit \ {ef, r} =
+    pub def forEach(f: t -> Unit \ ef, s: MutHashSet[t, r]): Unit \ { ef, r } =
         MutHashMap.forEach((k, _) -> f(k), s->inner)
 
     ///
     /// Applies `f` to every element of the mutable hash set `s` along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, t) -> Unit \ ef, s: MutHashSet[t, r]): Unit \ {ef, r} =
+    pub def forEachWithIndex(f: (Int32, t) -> Unit \ ef, s: MutHashSet[t, r]): Unit \ { ef, r } =
         MutHashMap.forEachWithIndex((i, k, _) -> f(i, k), s->inner)
 
     ///
@@ -178,7 +177,7 @@ pub mod MutHashSet {
     ///
     /// The mutable set `s` is unchanged if the element `src` is not in it.
     ///
-    pub def replace(src: {src = t}, dst: {dst = t}, s: MutHashSet[t, r]): Unit \ r with Eq[t], Hash[t] =
+    pub def replace(src: { src = t }, dst: { dst = t }, s: MutHashSet[t, r]): Unit \ r with Eq[t], Hash[t] =
         if (memberOf(src#src, s)) {
             remove(src#src, s);
             add(dst#dst, s)
@@ -215,7 +214,7 @@ pub mod MutHashSet {
     ///
     /// Returns `false` if `s` is the empty set.
     ///
-    pub def exists(f: t -> Bool \ ef, s: MutHashSet[t, r]): Bool \ {ef, r} =
+    pub def exists(f: t -> Bool \ ef, s: MutHashSet[t, r]): Bool \ { ef, r } =
         MutHashMap.exists((k, _) -> f(k), s->inner)
 
     ///
@@ -223,13 +222,13 @@ pub mod MutHashSet {
     ///
     /// Returns `true` if `s` is the empty set.
     ///
-    pub def forAll(f: t -> Bool \ ef, s: MutHashSet[t, r]): Bool \ {ef, r} =
+    pub def forAll(f: t -> Bool \ ef, s: MutHashSet[t, r]): Bool \ { ef, r } =
         MutHashMap.forAll((k, _) -> f(k), s->inner)
 
     ///
     /// Returns the number of elements in the mutable set `s` that satisfy the predicate function `f`.
     ///
-    pub def count(f: t -> Bool \ ef, s: MutHashSet[t, r]): Int32 \ {ef, r} =
+    pub def count(f: t -> Bool \ ef, s: MutHashSet[t, r]): Int32 \ { ef, r } =
         MutHashMap.count((k, _) -> f(k), s->inner)
 
     ///
@@ -237,7 +236,7 @@ pub mod MutHashSet {
     ///
     /// That is, the result is of the form: `f(...f(f(i, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, t) -> b \ ef, i: b, s: MutHashSet[t, r]): b \ {ef, r} =
+    pub def foldLeft(f: (b, t) -> b \ ef, i: b, s: MutHashSet[t, r]): b \ { ef, r } =
         MutHashMap.foldLeftWithKey((acc, k, _) -> f(acc, k), i, s->inner)
 
     ///
@@ -245,19 +244,19 @@ pub mod MutHashSet {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     ///
-    pub def foldRight(f: (t, b) -> b \ ef, z: b, s: MutHashSet[t, r]): b \ {ef, r} =
+    pub def foldRight(f: (t, b) -> b \ ef, z: b, s: MutHashSet[t, r]): b \ { ef, r } =
         MutHashMap.foldRightWithKey((k, _, acc) -> f(k, acc), z, s->inner)
 
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: t -> b \ ef, s: MutHashSet[t, r]): b \ {ef, r} with Monoid[b] =
+    pub def foldMap(f: t -> b \ ef, s: MutHashSet[t, r]): b \ { ef, r } with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
 
     ///
     /// Returns the mutable set `s` as an array.
     ///
-    pub def toArray(rc: Region[r1], s: MutHashSet[t, r]): Array[t, r1] \ {r, r1} =
+    pub def toArray(rc: Region[r1], s: MutHashSet[t, r]): Array[t, r1] \ { r, r1 } =
         let len = size(s);
         let arr = Array.empty(rc, len);
         forEachWithIndex((i, x) -> Array.put(x, i, arr), s);
@@ -276,9 +275,13 @@ pub mod MutHashSet {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMap(s: MutHashSet[(a, b), r]): Map[a, b] \ r with Order[a] =
-        foldLeft((acc, pair) -> match pair {
-            case (k, v) => Map.insert(k, v, acc)
-        }, Map.empty(), s)
+        foldLeft(
+            (acc, pair) -> match pair {
+                case (k, v) => Map.insert(k, v, acc)
+            },
+            Map.empty(),
+            s
+        )
 
     ///
     /// Returns the mutable set `s` as an immutable set.
@@ -289,10 +292,11 @@ pub mod MutHashSet {
     ///
     /// Returns the mutable set `s` as a vector.
     ///
-    pub def toVector(s: MutHashSet[t, r]): Vector[t] \ r = region rc {
-        let arr = toArray(rc, s);
-        Array.toVector(arr)
-    }
+    pub def toVector(s: MutHashSet[t, r]): Vector[t] \ r =
+        region rc {
+            let arr = toArray(rc, s);
+            Array.toVector(arr)
+        }
 
     ///
     /// Returns the concatenation of the string representation
@@ -305,15 +309,15 @@ pub mod MutHashSet {
     /// Returns the concatenation of the string representation
     /// of each element in `s` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: t -> String \ ef, sep: String, s: MutHashSet[t, r]): String \ {ef, r} =
+    pub def joinWith(f: t -> String \ ef, sep: String, s: MutHashSet[t, r]): String \ { ef, r } =
         let strs = foldRight((x, acc) -> f(x) :: acc, Nil, s);
         String.intercalate(sep, strs)
 
     ///
     /// Returns a string representation of the given mutable hash set `s`.
     ///
-    pub def toString(s: MutHashSet[a, r]): String \ r with ToString[a] = region rc {
-        "MutHashSet#{" + (MutHashSet.iterator(rc, s) |> Iterator.join(", ")) + "}"
-    }
-
+    pub def toString(s: MutHashSet[a, r]): String \ r with ToString[a] =
+        region rc {
+            "MutHashSet#{" + (MutHashSet.iterator(rc, s) |> Iterator.join(", ")) + "}"
+        }
 }

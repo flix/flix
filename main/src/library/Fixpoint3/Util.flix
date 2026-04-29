@@ -21,9 +21,9 @@ pub mod Fixpoint3.Util {
     ///
     /// Causes runtime hole error when `x` is `None`.
     ///
-    pub def getOrCrash(x: Option[a]): a = match x {
-        case Some(v) => v
-        case None    => bug!("Attempted unwrapping none in getOrCrash")
-    }
-
+    pub def getOrCrash(x: Option[a]): a =
+        match x {
+            case Some(v) => v
+            case None    => bug!("Attempted unwrapping none in getOrCrash")
+        }
 }

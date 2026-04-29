@@ -54,7 +54,7 @@ pub mod Fixpoint3.UniqueInts {
         let map = state->map;
         let counter = state->counter;
         match MutMap.get(val, map) {
-            case None =>
+            case None    =>
                 let id = Counter.getAndIncrement(counter);
                 MutMap.put(val, id, map);
                 id

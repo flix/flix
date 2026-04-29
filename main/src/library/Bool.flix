@@ -23,7 +23,6 @@ instance UpperBound[Bool] {
 }
 
 pub mod Bool {
-
     ///
     /// Returns `true` if `x` implies `y` logically holds.
     ///
@@ -37,6 +36,5 @@ pub mod Bool {
     ///
     /// Calls `f` if `cond` is true.
     ///
-    pub def runIf(f: Unit -> Unit \ ef, cond: Bool): Unit \ ef = if (cond) { f() }
-
+    pub def runIf(f: Unit -> Unit \ ef, cond: Bool): Unit \ ef = if (cond) {f()}
 }

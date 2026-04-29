@@ -21,7 +21,6 @@ pub mod Net.TcpAccept {
     use Net.TcpServer.TcpServer
     use Net.TcpSocket
     use Net.TcpSocket.TcpSocket
-
     import java.io.IOException
     import java.net.SocketTimeoutException
 
@@ -37,23 +36,24 @@ pub mod Net.TcpAccept {
     ///
     /// In other words, re-interprets the `TcpAccept` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - TcpAccept) + IO = x ->
-        run {
-            f(x)
-        } with handler TcpAccept {
-            def accept(server, k) = {
-                try {
-                    let TcpServer(serverSocket) = server;
-                    let socket = serverSocket.accept();
-                    let inputStream = socket.getInputStream();
-                    let outputStream = socket.getOutputStream();
-                    k(Ok(TcpSocket(socket, inputStream, outputStream)))
-                } catch {
-                    case ex: SocketTimeoutException => k(Err(IoError(ErrorKind.Timeout, ex.getMessage())))
-                    case ex: IOException            => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                }
-            }
-        }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - TcpAccept) + IO =
+        x ->
+            run {
+                f(x)
+            } with handler TcpAccept {
+                  def accept(server, k) = {
+                      try {
+                          let TcpServer(serverSocket) = server;
+                          let socket = serverSocket.accept();
+                          let inputStream = socket.getInputStream();
+                          let outputStream = socket.getOutputStream();
+                          k(Ok(TcpSocket(socket, inputStream, outputStream)))
+                      } catch {
+                          case ex: SocketTimeoutException => k(Err(IoError(ErrorKind.Timeout, ex.getMessage())))
+                          case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                      }
+                  }
+              }
 
     ///
     /// Runs the `TcpAccept` effect of the given function `f`.
@@ -61,6 +61,6 @@ pub mod Net.TcpAccept {
     /// In other words, re-interprets the `TcpAccept` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpAccept) + IO = handle(f)()
-
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpAccept) + IO =
+        handle(f)()
 }

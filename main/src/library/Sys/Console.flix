@@ -15,16 +15,13 @@
  */
 
 pub mod Sys.Console {
-
     use Sys.Console
-
     import java.lang.System
 
     ///
     /// An effect used to interact with the console.
     ///
     pub eff Console {
-
         ///
         /// Reads a single line from the console.
         ///
@@ -49,7 +46,6 @@ pub mod Sys.Console {
         /// Prints the given string `s` to the standard err followed by a new line.
         ///
         def eprintln(s: String): Unit
-
     }
 
     ///
@@ -84,7 +80,7 @@ pub mod Sys.Console {
     /// Empty input returns `default#default`. Recognizes "y", "yes", "n", "no" (case-insensitive).
     /// Any other input returns `default#default`.
     ///
-    pub def confirm(p: a, default: {default = Bool}): Bool \ Console + Formattable.Aef[a] with Formattable[a] =
+    pub def confirm(p: a, default: { default = Bool }): Bool \ Console + Formattable.Aef[a] with Formattable[a] =
         let hint = if (default#default) " [Y/n] " else " [y/N] ";
         Console.print(prompt(p) + hint);
         let input = String.toLowerCase(String.trim(Console.readln()));
@@ -104,8 +100,8 @@ pub mod Sys.Console {
     ///
     pub def pick(p: a, choices: List[b]): Option[b] \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
         Console.println(prompt(p));
-        foreach ((i, opt) <- ForEach.withIndex(choices))
-            Console.println("  ${i + 1}) ${prompt(opt)}");
+        foreach((i, opt) <- ForEach.withIndex(choices))
+            Console.println("  ${ i + 1 }) ${ prompt(opt) }");
         Console.print("> ");
         let input = String.trim(Console.readln());
         match Int32.fromString(input) {
@@ -131,16 +127,17 @@ pub mod Sys.Console {
     ///
     /// In other words, re-interprets the `Console` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Console) + IO = x ->
-        run {
-            f(x)
-        } with handler Console {
-            def readln(k)      = { k(System.console().readLine()) }
-            def print(s, k)    = { System.out.print(s); System.out.flush(); k() }
-            def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }
-            def println(s, k)  = { System.out.println(s); System.out.flush(); k() }
-            def eprintln(s, k) = { System.err.println(s); System.err.flush(); k() }
-        }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Console) + IO =
+        x ->
+            run {
+                f(x)
+            } with handler Console {
+                  def readln(k) = {k(System.console().readLine())}
+                  def print(s, k) = {System.out.print(s); System.out.flush(); k()}
+                  def eprint(s, k) = {System.err.print(s); System.err.flush(); k()}
+                  def println(s, k) = {System.out.println(s); System.out.flush(); k()}
+                  def eprintln(s, k) = {System.err.println(s); System.err.flush(); k()}
+              }
 
     ///
     /// Runs the `Console` effect of the given function `f`.
@@ -148,12 +145,12 @@ pub mod Sys.Console {
     /// In other words, re-interprets the `Console` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Console) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Console) + IO =
+        handle(f)()
 
     ///
     /// Returns the string representation of the formattable value `p`.
     ///
     def prompt(p: a): String \ Formattable.Aef[a] with Formattable[a] =
         RichString.toString(Formattable.format(p))
-
 }

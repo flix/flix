@@ -40,61 +40,73 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
     /// `{0 < 1 < 2}` does not cover `{0, 2}` as no permutation of `{0, 2}`
     /// is a prefix of `{0 < 1 < 2}`.
     ///
-    pub def minIndex(searches: List[Search]): List[Search] = match searches {
-        case Nil => Nil
-        case _ :: Nil => searches
-        case _ => minChainCover(searches)
-            |> List.map(chain -> List.zip(chain, Vector.empty() :: chain))
-            |> List.map(List.map(match (s1, s2) -> Vector.filter(x -> not Vector.memberOf(x, s2), s1)))
-            |> List.map(List.fold)
-    }
+    pub def minIndex(searches: List[Search]): List[Search] =
+        match searches {
+            case Nil      => Nil
+            case _ :: Nil => searches
+            case _        =>
+                minChainCover(searches)
+                |> List.map(chain -> List.zip(chain, Vector.empty() :: chain))
+                |> List.map(List.map(match (s1, s2) -> Vector.filter(x -> not Vector.memberOf(x, s2), s1)))
+                |> List.map(List.fold)
+        }
 
     ///
     /// Find the maximum matching in the bipartite graph `(us, vs, edges)`.
     ///
-    def maximumMatching(us: List[Vertex], vs: List[Vertex], adjList: AdjacencyList): Matching = region rc {
-        let matching = Array.repeat(rc, List.length(vs), -1);
-        let matchingRev = Array.empty(rc, List.length(us));
-        def getMatching(u: Vertex, seen: Array[Bool, rc]): Bool \ rc = {
-            let cond = v -> if (not Array.get(v, seen)) {
-                Array.put(true, v, seen);
-                if (Array.get(v, matching) < 0 or getMatching(Array.get(v, matching), seen)) {
-                    Array.put(u, v, matching);
-                    Array.put(v, u, matchingRev);
-                    true
-                } else false
-            } else false;
-            Set.exists(cond, MultiMap.get(u, adjList))
-        };
-        List.filter(u -> getMatching(u, Array.empty(rc, List.length(us))), us) |>
-            List.foldLeft(acc -> u -> Map.insert((u, Array.get(u, matchingRev)), (), acc), Map.empty())
-    }
+    def maximumMatching(us: List[Vertex], vs: List[Vertex], adjList: AdjacencyList): Matching =
+        region rc {
+            let matching = Array.repeat(rc, List.length(vs), -1);
+            let matchingRev = Array.empty(rc, List.length(us));
+            def getMatching(u: Vertex, seen: Array[Bool, rc]): Bool \ rc = {
+                let cond = v ->
+                    if (not Array.get(v, seen)) {
+                        Array.put(true, v, seen);
+                        if (Array.get(v, matching) < 0 or getMatching(Array.get(v, matching), seen)) {
+                            Array.put(u, v, matching);
+                            Array.put(v, u, matchingRev);
+                            true
+                        } else
+                            false
+                    } else
+                        false;
+                Set.exists(cond, MultiMap.get(u, adjList))
+            };
+            List.filter(u -> getMatching(u, Array.empty(rc, List.length(us))), us)
+            |> List.foldLeft(acc -> u -> Map.insert((u, Array.get(u, matchingRev)), (), acc), Map.empty())
+        }
 
     ///
     /// Find the maximal path starting from the vertex `from_` in `matching`.
     ///
-    def maximalPath(from_: Vertex, matching: Matching): List[Edge] = region rc {
-        let allPaths = MutMap.empty(rc);
-        def f(u: Vertex): Unit \ rc = match MutMap.get(u, allPaths) {
-            case None => Map.rangeQueryWith(
-                edge -> fst(edge) <=> u,
-                edge -> _ -> {
-                    let (u0, v0) = edge;
-                    f(v0); // Compute the longest path of v0 and store in allPaths
-                    let largest = l1 -> l2 -> if (List.length(l1) <= List.length(l2)) l2 else l1;
-                    MutMap.putWith(
-                        largest, u0,
-                        edge :: Option.getWithDefault(List.empty(), MutMap.get(v0, allPaths)),
-                        allPaths)
-                }, matching)
-            case _ => ()
-        };
-        f(from_);
-        match MutMap.get(from_, allPaths) {
-            case Some(x) => x
-            case None    => List.empty()
+    def maximalPath(from_: Vertex, matching: Matching): List[Edge] =
+        region rc {
+            let allPaths = MutMap.empty(rc);
+            def f(u: Vertex): Unit \ rc = match MutMap.get(u, allPaths) {
+                case None =>
+                    Map.rangeQueryWith(
+                        edge -> fst(edge) <=> u,
+                        edge -> _ -> {
+                            let (u0, v0) = edge;
+                            f(v0); // Compute the longest path of v0 and store in allPaths
+                            let largest = l1 -> l2 -> if (List.length(l1) <= List.length(l2)) l2 else l1;
+                            MutMap.putWith(
+                                largest,
+                                u0,
+                                edge :: Option.getWithDefault(List.empty(), MutMap.get(v0, allPaths)),
+                                allPaths
+                            )
+                        },
+                        matching
+                    )
+                case _    => ()
+            };
+            f(from_);
+            match MutMap.get(from_, allPaths) {
+                case Some(x) => x
+                case None    => List.empty()
+            }
         }
-    }
 
     ///
     /// Create a graph from the list of searches `searches`.
@@ -104,11 +116,12 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
         let vertices = List.range(0, List.length(searches));
         let zipped = searches |> List.map(Vector.toSet) |> List.zip(vertices);
         let adjList = zipped
-            |> List.foldMap(match (u, s) ->
-                List.filter(p -> Set.isProperSubsetOf(s, snd(p)), zipped) |>
-                    List.map(p -> (u, fst(p)))
-            )
-            |> List.foldLeft(a -> match (u, v) -> MultiMap.insert(u, v, a), MultiMap.empty());
+        |> List.foldMap(
+            match (u, s) ->
+                List.filter(p -> Set.isProperSubsetOf(s, snd(p)), zipped)
+                |> List.map(p -> (u, fst(p)))
+        )
+        |> List.foldLeft(a -> match (u, v) -> MultiMap.insert(u, v, a), MultiMap.empty());
         (vertices, adjList)
 
     ///
@@ -119,10 +132,12 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
         let searchesVec = List.toVector(searches);
         let matching = maximumMatching(vertices, vertices, adjList);
         let toSearch = i -> Vector.get(i, searchesVec);
-        List.filter(v -> not Map.exists(edge -> _ -> snd(edge) == v, matching), vertices) |>
-            List.foldLeft(acc -> u1 -> {
+        List.filter(v -> not Map.exists(edge -> _ -> snd(edge) == v, matching), vertices)
+        |> List.foldLeft(
+            acc -> u1 -> {
                 let chain = toSearch(u1) :: List.map(e -> toSearch(snd(e)), maximalPath(u1, matching));
                 chain :: acc
-            }, List.empty())
-
+            },
+            List.empty()
+        )
 }

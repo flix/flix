@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 pub mod Object {
-
     import java.util.Objects
     import java.lang.Object
 
@@ -25,7 +24,7 @@ pub mod Object {
     pub def isNull(x: a): Bool =
         match Reflect.reflectValue(x) {
             case Reflect.JvmValue.JvmObject(obj) => Objects.isNull(obj)
-            case _ => false
+            case _                               => false
         }
 
     ///
@@ -33,5 +32,4 @@ pub mod Object {
     ///
     pub def toOption(x: a): Option[a] =
         if (isNull(x)) None else Some(x)
-
 }

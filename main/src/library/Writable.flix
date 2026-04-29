@@ -15,7 +15,6 @@
  */
 use IoError.ErrorKind
 use IoError.IoError
-
 import java.io.IOException
 import java.io.OutputStream
 
@@ -23,7 +22,6 @@ import java.io.OutputStream
 /// A trait for types which are resources that can be written to.
 ///
 trait Writable[t] {
-
     ///
     /// Type of each element that can be written to the resource.
     ///
@@ -44,7 +42,6 @@ trait Writable[t] {
     /// Returns `Err(e)` if some underlying I/O error occurs.
     ///
     pub def write(buffer: Array[Writable.Elm[t], r], writer: t): Result[IoError, Int32] \ r + Writable.Aef[t]
-
 }
 
 pub mod Writable {
@@ -56,11 +53,12 @@ pub mod Writable {
     pub def writeString(string: String, writer: t): Result[IoError, Unit] \ Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
         region rc {
             let buffer = String.toArray(rc, string);
-            forM(
+            forM (
                 charsWritten <- Writable.write(buffer, writer);
                 _ <- if (charsWritten < String.length(string)) {
                     writeString(string |> String.drop(charsWritten), writer)
-                } else Ok(())
+                } else
+                    Ok(())
             ) yield ()
         }
 
@@ -79,15 +77,13 @@ pub mod Writable {
     /// The new line separator is platform dependent, and is determined by the "line.separator" system property.
     ///
     pub def writeLine(line: String, writer: t): Result[IoError, Unit] \ IO + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
-        forM(
+        forM (
             _ <- writeString(line, writer);
             _ <- writeNewLine(writer)
         ) yield ()
-
 }
 
 instance Writable[OutputStream] {
-
     type Elm = Int8
 
     type Aef = IO
@@ -99,5 +95,4 @@ instance Writable[OutputStream] {
         } catch {
             case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
-
 }

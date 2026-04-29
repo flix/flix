@@ -22,34 +22,39 @@ pub enum Down[a] {
 }
 
 instance Eq[Down[a]] with Eq[a] {
-    pub def eq(x: Down[a], y: Down[a]): Bool = match (x, y) {
-        case (Down.Down(xx), Down.Down(yy)) => xx `Eq.eq` yy
-    }
+    pub def eq(x: Down[a], y: Down[a]): Bool =
+        match (x, y) {
+            case (Down.Down(xx), Down.Down(yy)) => xx `Eq.eq` yy
+        }
 }
 
 instance Coerce[Down[a]] {
     type Out = a
-    pub def coerce(x: Down[a]): a = match x {
-        case Down.Down(xx) => xx
-    }
+    pub def coerce(x: Down[a]): a =
+        match x {
+            case Down.Down(xx) => xx
+        }
 }
 
 instance ToString[Down[a]] with ToString[a] {
-    pub def toString(x: Down[a]): String = match x {
-        case Down.Down(xx) => ToString.toString(xx)
-    }
+    pub def toString(x: Down[a]): String =
+        match x {
+            case Down.Down(xx) => ToString.toString(xx)
+        }
 }
 
 instance Add[Down[a]] with Add[a] {
-    pub def add(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
-        case (Down.Down(xx), Down.Down(yy)) => Down.Down(xx + yy) // no consideration for overflow
-    }
+    pub def add(x: Down[a], y: Down[a]): Down[a] =
+        match (x, y) {
+            case (Down.Down(xx), Down.Down(yy)) => Down.Down(xx + yy) // no consideration for overflow
+        }
 }
 
 instance PartialOrder[Down[a]] with PartialOrder[a] {
-    pub def lessEqual(x: Down[a], y: Down[a]): Bool = match (x, y) {
-        case (Down.Down(xx), Down.Down(yy)) => yy `PartialOrder.lessEqual` xx
-    }
+    pub def lessEqual(x: Down[a], y: Down[a]): Bool =
+        match (x, y) {
+            case (Down.Down(xx), Down.Down(yy)) => yy `PartialOrder.lessEqual` xx
+        }
 }
 
 instance LowerBound[Down[a]] with UpperBound[a] {
@@ -61,19 +66,22 @@ instance UpperBound[Down[a]] with LowerBound[a] {
 }
 
 instance JoinLattice[Down[a]] with MeetLattice[a] {
-    pub def leastUpperBound(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
-        case (Down.Down(xx), Down.Down(yy)) => Down.Down(xx `MeetLattice.greatestLowerBound` yy)
-    }
+    pub def leastUpperBound(x: Down[a], y: Down[a]): Down[a] =
+        match (x, y) {
+            case (Down.Down(xx), Down.Down(yy)) => Down.Down(xx `MeetLattice.greatestLowerBound` yy)
+        }
 }
 
 instance MeetLattice[Down[a]] with JoinLattice[a] {
-    pub def greatestLowerBound(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
-        case (Down.Down(xx), Down.Down(yy)) => Down.Down(xx `JoinLattice.leastUpperBound` yy)
-    }
+    pub def greatestLowerBound(x: Down[a], y: Down[a]): Down[a] =
+        match (x, y) {
+            case (Down.Down(xx), Down.Down(yy)) => Down.Down(xx `JoinLattice.leastUpperBound` yy)
+        }
 }
 
 instance Order[Down[a]] with Order[a] {
-    pub def compare(x: Down[a], y: Down[a]): Comparison = match (x, y) {
-        case (Down.Down(xx), Down.Down(yy)) => yy <=> xx
-    }
+    pub def compare(x: Down[a], y: Down[a]): Comparison =
+        match (x, y) {
+            case (Down.Down(xx), Down.Down(yy)) => yy <=> xx
+        }
 }

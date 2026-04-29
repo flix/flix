@@ -22,7 +22,6 @@
 /// Unicode characters can be represented.
 ///
 pub mod CodePoint {
-
     import java.lang.Character
     import java.lang.Exception
     import java.lang.Throwable
@@ -73,17 +72,18 @@ pub mod CodePoint {
     /// Returns `true` if the given code point `cp` represents a character in the range 0...7.
     ///
     pub def isOctDigit(cp: Int32): Bool =
-        0x0030 <= cp and cp <= 0x0037     // '0'..'7'
+        0x0030 <= cp and cp <= 0x0037 // '0'..'7'
 
     ///
     /// Returns `true` if the given code point `cp` represents a character in the range 0...F.
     ///
-    pub def isHexDigit(cp: Int32): Bool = match cp {
-        case i if 0x0030 <= i and i <= 0x0039 => true        // '0'..'9'
-        case i if 0x0041 <= i and i <= 0x0046 => true        // 'A'..'F'
-        case i if 0x0061 <= i and i <= 0x0066 => true        // 'a'..'f'
-        case _ => false
-    }
+    pub def isHexDigit(cp: Int32): Bool =
+        match cp {
+            case i if 0x0030 <= i and i <= 0x0039 => true // '0'..'9'
+            case i if 0x0041 <= i and i <= 0x0046 => true // 'A'..'F'
+            case i if 0x0061 <= i and i <= 0x0066 => true // 'a'..'f'
+            case _                                => false
+        }
 
     ///
     /// Returns `true` if the given code point `cp` represents a lowercase letter.
@@ -229,49 +229,52 @@ pub mod CodePoint {
     ///
     /// Returns 'None' if `cp` is not a valid code point.
     ///
-    pub def toChars(cp: Int32): Option[Vector[Char]] = try {
-        region rc {
-            let arr : Array[Char, rc] = Array.empty(rc, 2);
-            let size = unchecked_cast(Character.toChars(cp, arr, 0) as _ \ rc);
-            Array.toVector(arr) |> Vector.takeLeft(size) |> Some
+    pub def toChars(cp: Int32): Option[Vector[Char]] =
+        try {
+            region rc {
+                let arr: Array[Char, rc] = Array.empty(rc, 2);
+                let size = unchecked_cast(Character.toChars(cp, arr, 0) as _ \ rc);
+                Array.toVector(arr) |> Vector.takeLeft(size) |> Some
+            }
+        } catch {
+            case _: Throwable => None
         }
-    } catch {
-        case _: Throwable => None
-    }
 
     ///
     /// Optionally returns a Char represention the code point `cp` if `cp` is within
     /// Unicode's Basic Multilingual Plane.
     ///
-    pub def toBmpChar(cp: Int32): Option[Char] = try {
-        region rc {
-            let arr : Array[Char, rc] = Array.empty(rc, 2);
-            let i = Character.toChars(cp, arr, 0);
-            if (i == 1)
-                Array.nth(0, arr)
-            else
-                None
+    pub def toBmpChar(cp: Int32): Option[Char] =
+        try {
+            region rc {
+                let arr: Array[Char, rc] = Array.empty(rc, 2);
+                let i = Character.toChars(cp, arr, 0);
+                if (i == 1)
+                    Array.nth(0, arr)
+                else
+                    None
+            }
+        } catch {
+            case _: Exception => None
         }
-    } catch {
-        case _: Exception => None
-    }
 
     ///
     /// Optionally returns a pair of Chars representing the high and low surrogate characters of the
     /// code point `cp` if `cp` is a supplementary character.
     ///
-    pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
-        region rc {
-            let arr : Array[Char, rc] = Array.empty(rc, 2);
-            let i = Character.toChars(cp, arr, 0);
-            if (i == 2)
-                Some((Array.get(0, arr), Array.get(1, arr)))
-            else
-                None
+    pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] =
+        try {
+            region rc {
+                let arr: Array[Char, rc] = Array.empty(rc, 2);
+                let i = Character.toChars(cp, arr, 0);
+                if (i == 2)
+                    Some((Array.get(0, arr), Array.get(1, arr)))
+                else
+                    None
+            }
+        } catch {
+            case _: Exception => None
         }
-    } catch {
-        case _: Exception => None
-    }
 
     ///
     /// Returns a String representing the code point `cp`.
@@ -302,5 +305,4 @@ pub mod CodePoint {
             Some(Character.lowSurrogate(cp))
         else
             None
-
 }

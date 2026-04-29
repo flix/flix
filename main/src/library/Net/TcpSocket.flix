@@ -15,11 +15,9 @@
  */
 
 pub mod Net.TcpSocket {
-
     import java.io.InputStream
     import java.io.OutputStream
     import java.net.Socket
-
     use Net.TcpSocket
     use Net.TcpSocket.TcpSocket
 
@@ -49,5 +47,4 @@ pub mod Net.TcpSocket {
     pub def write(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
         let TcpSocket(_, _, outputStream) = socket;
         Writable.write(buffer, outputStream)
-
 }

@@ -15,7 +15,6 @@
  */
 use IoError.ErrorKind
 use IoError.IoError
-
 import java.io.InputStream
 import java.io.IOException
 
@@ -23,7 +22,6 @@ import java.io.IOException
 /// A trait for types which are resources that can be read from.
 ///
 trait Readable[t] {
-
     ///
     /// Type of each element that can be read from the resource.
     ///
@@ -44,11 +42,9 @@ trait Readable[t] {
     /// Returns `Err(e)` if some underlying I/O error occurs.
     ///
     pub def read(buffer: Array[Readable.Elm[t], r], reader: t): Result[IoError, Int32] \ r + Readable.Aef[t]
-
 }
 
 instance Readable[InputStream] {
-
     type Elm = Int8
 
     type Aef = IO
@@ -61,5 +57,4 @@ instance Readable[InputStream] {
         } catch {
             case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
-
 }

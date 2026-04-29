@@ -15,7 +15,6 @@
  */
 
 pub mod Fs.DeleteFile {
-
     use Fs.FileWrite
 
     ///
@@ -24,22 +23,19 @@ pub mod Fs.DeleteFile {
     /// Use the `DeleteFile.runWithFileWrite` handler.
     ///
     pub eff DeleteFile {
-
         ///
         /// Deletes the given file `f`.
         ///
         /// Fails if the file does not exist.
         ///
         def delete(f: String): Result[IoError, Unit]
-
     }
 
     ///
     /// Handles the `DeleteFile` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - DeleteFile) + FileWrite =
-        run { f() } with handler DeleteFile {
-            def delete(file, k) = k(Fs.FileWrite.delete(file))
-        }
-
+        run {f()} with handler DeleteFile {
+                      def delete(file, k) = k(Fs.FileWrite.delete(file))
+                  }
 }

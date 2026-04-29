@@ -17,7 +17,7 @@
 ///
 /// A trait for data structures that can be folded.
 ///
-pub trait Foldable[t : Type -> Type] {
+pub trait Foldable[t: Type -> Type] {
     ///
     /// The associated effect of the Foldable which represents the effect of accessing its elements.
     ///
@@ -81,10 +81,14 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def head(t: t[a]): Option[a] \ Foldable.Aef[t] =
-        Foldable.foldLeft((acc, x) -> match acc {
-            case Some(_) => acc
-            case None    => Some(x)
-        }, None, t)
+        Foldable.foldLeft(
+            (acc, x) -> match acc {
+                case Some(_) => acc
+                case None    => Some(x)
+            },
+            None,
+            t
+        )
 
     ///
     /// Optionally returns the last element of `t`.
@@ -100,10 +104,14 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def findLeft(f: a -> Bool \ ef, t: t[a]): Option[a] \ (ef + Foldable.Aef[t]) =
-        Foldable.foldLeft((acc, x) -> match acc {
-            case Some(_) => acc
-            case None    => if (f(x)) Some(x) else None
-        }, None, t)
+        Foldable.foldLeft(
+            (acc, x) -> match acc {
+                case Some(_) => acc
+                case None    => if (f(x)) Some(x) else None
+            },
+            None,
+            t
+        )
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
@@ -123,7 +131,7 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns true if and only if `t` is empty.
     ///
     pub def isEmpty(t: t[a]): Bool \ Foldable.Aef[t] =
-      Foldable.foldLeft((_, _) -> false, true, t)
+        Foldable.foldLeft((_, _) -> false, true, t)
 
     ///
     /// Returns true if and only if `t` is non-empty.
@@ -199,20 +207,22 @@ pub trait Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(rc: Region[r], t: t[a]): Array[a, r] \ (r + Foldable.Aef[t]) = region rc2 {
-        let l = MutList.empty(rc2);
-        Foldable.forEach(a -> MutList.push(a, l), t);
-        MutList.toArray(rc, l)
-    }
+    pub def toArray(rc: Region[r], t: t[a]): Array[a, r] \ (r + Foldable.Aef[t]) =
+        region rc2 {
+            let l = MutList.empty(rc2);
+            Foldable.forEach(a -> MutList.push(a, l), t);
+            MutList.toArray(rc, l)
+        }
 
     ///
     /// Returns `t` as a vector.
     ///
-    pub def toVector(t: t[a]): Vector[a] \ Foldable.Aef[t] = region rc {
-        let l = MutList.empty(rc);
-        Foldable.forEach(a -> MutList.push(a, l), t);
-        MutList.toVector(l)
-    }
+    pub def toVector(t: t[a]): Vector[a] \ Foldable.Aef[t] =
+        region rc {
+            let l = MutList.empty(rc);
+            Foldable.forEach(a -> MutList.push(a, l), t);
+            MutList.toVector(l)
+        }
 
     ///
     /// Returns `t` as a set.
@@ -250,11 +260,19 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns an immutable list.
     ///
     pub def dropWhile(f: a -> Bool, t: t[a]): List[a] \ Foldable.Aef[t] =
-        Foldable.foldLeft((acc, x) -> {
+        Foldable.foldLeft(
+            (acc, x) -> {
                 let (c, tail) = acc;
-                if (c and f(x)) (true, tail)
-                else (false, x :: tail)
-            }, (true, Nil), t) |> snd |> List.reverse
+                if (c and f(x))
+                    (true, tail)
+                else
+                    (false, x :: tail)
+            },
+            (true, Nil),
+            t
+        )
+        |> snd
+        |> List.reverse
 
     ///
     /// Returns the longest prefix of `t` that satisfies the predicate `f`.
@@ -274,13 +292,10 @@ pub trait Foldable[t : Type -> Type] {
     /// Applies `f` to each element in `t`.
     ///
     pub def forEach(f: a -> Unit \ ef, t: t[a]): Unit \ (ef + Foldable.Aef[t]) =
-        Foldable.foldLeft((_, x) -> f(x), (), t)
-
-
-    // Acknowledgement: `foldLeftM` and `foldRightM` are derived from Haskell's Data.Foldable.
-    // Because they use CPS, the implementations work for both strict and lazy languages.
-    // Counterintuitively `foldLeftM` uses a right-fold and `foldRighM` uses a left-fold
-    // but the "direction of travel" is observably correct.
+        Foldable.foldLeft((_, x) -> f(x), (), t) // Acknowledgement: `foldLeftM` and `foldRightM` are derived from Haskell's Data.Foldable.
+        // Because they use CPS, the implementations work for both strict and lazy languages.
+        // Counterintuitively `foldLeftM` uses a right-fold and `foldRighM` uses a left-fold
+        // but the "direction of travel" is observably correct.
 
     ///
     /// A monadic version of `foldLeft`.
@@ -323,18 +338,17 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns the concatenation of the string representation
     /// of each element in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, t: t[a]): String \ (ef + Foldable.Aef[t]) = region rc {
-        use StringBuilder.append;
-        let lastSep = String.length(sep);
-        let sb = StringBuilder.empty(rc);
-        t |> Foldable.forEach(x -> { append(f(x), sb); append(sep, sb) });
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    }
-
+    pub def joinWith(f: a -> String \ ef, sep: String, t: t[a]): String \ (ef + Foldable.Aef[t]) =
+        region rc {
+            use StringBuilder.append;
+            let lastSep = String.length(sep);
+            let sb = StringBuilder.empty(rc);
+            t |> Foldable.forEach(x -> {append(f(x), sb); append(sep, sb)});
+            StringBuilder.toString(sb) |> String.dropRight(lastSep)
+        }
 }
 
 pub mod Foldable {
-
     use Applicative.{*>}
 
     ///
@@ -347,5 +361,4 @@ pub mod Foldable {
     /// Returns the number of elements in `t`.
     ///
     pub def size(t: t[a]): Int32 \ Foldable.Aef[t] with Foldable[t] = Foldable.length(t)
-
 }

@@ -24,7 +24,7 @@ pub mod BPlusTree.AtomicCounter {
     /// A `LongAdder` is used as `AtomicInteger`/`AtomicLong` appeared to perform
     /// badly under high contention.
     ///
-    pub enum AtomicCounter[_: Region](JLongAdder)
+    pub enum AtomicCounter [_: Region] (JLongAdder)
 
     ///
     /// Returns a fresh counter with initialized to `initialVal`.
@@ -36,18 +36,17 @@ pub mod BPlusTree.AtomicCounter {
             AtomicCounter(adder)
         }
 
-
     ///
     /// Increments `counter` by `1`.
     ///
     pub def increment(counter: AtomicCounter[r]): Unit \ r =
         let AtomicCounter(c) = counter;
-        unsafe IO as r { c.increment() }
+        unsafe IO as r {c.increment()}
 
     ///
     /// Returns the current state of `counter`.
     ///
     pub def get(counter: AtomicCounter[r]): Int32 \ r =
         let AtomicCounter(c) = counter;
-        unsafe IO as r { c.intValue() }
+        unsafe IO as r {c.intValue()}
 }

@@ -27,7 +27,6 @@ instance ForEach[Range[t]] with Discrete[t] {
 }
 
 pub mod Range {
-
     ///
     /// Applies `f` to every element of `r`.
     ///
@@ -38,5 +37,4 @@ pub mod Range {
                 f(i); loop(Discrete.succ(i))
             };
         loop(b)
-
 }

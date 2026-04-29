@@ -6,17 +6,18 @@ pub mod Reflect {
     /// The value returned should not be depended on;
     /// it acts as a placeholder to be replaced by a proper value.
     ///
-    pub def default(): a = match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
-        case JvmType.JvmBool    => unchecked_cast(false as a)
-        case JvmType.JvmChar    => unchecked_cast('0' as a)
-        case JvmType.JvmFloat32 => unchecked_cast(0.0f32 as a)
-        case JvmType.JvmFloat64 => unchecked_cast(0.0f64 as a)
-        case JvmType.JvmInt8    => unchecked_cast(0i8 as a)
-        case JvmType.JvmInt16   => unchecked_cast(0i16 as a)
-        case JvmType.JvmInt32   => unchecked_cast(0i32 as a)
-        case JvmType.JvmInt64   => unchecked_cast(0i64 as a)
-        case JvmType.JvmObject  => unchecked_cast(null as a)
-    }
+    pub def default(): a =
+        match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
+            case JvmType.JvmBool    => unchecked_cast(false as a)
+            case JvmType.JvmChar    => unchecked_cast('0' as a)
+            case JvmType.JvmFloat32 => unchecked_cast(0.0f32 as a)
+            case JvmType.JvmFloat64 => unchecked_cast(0.0f64 as a)
+            case JvmType.JvmInt8    => unchecked_cast(0i8 as a)
+            case JvmType.JvmInt16   => unchecked_cast(0i16 as a)
+            case JvmType.JvmInt32   => unchecked_cast(0i32 as a)
+            case JvmType.JvmInt64   => unchecked_cast(0i64 as a)
+            case JvmType.JvmObject  => unchecked_cast(null as a)
+        }
 
     /// A reflected value, reflecting its erased runtime representation.
     pub enum JvmValue {
@@ -93,12 +94,12 @@ pub mod Reflect {
     ///
     /// Returns a `SourceLocation` spanning from (`line1`, `col1`) to (`line2`, `col2`) in the given source.
     ///
-    pub def mkSourceLocation(source: String, line1: Int32, col1: Int32, line2: Int32, col2: Int32) : SourceLocation =
+    pub def mkSourceLocation(source: String, line1: Int32, col1: Int32, line2: Int32, col2: Int32): SourceLocation =
         use SourceLocation.SourceLocation;
         use SourcePosition.SourcePosition;
         SourceLocation(
-                source,
-                SourcePosition(line1, col1),
-                SourcePosition(line2, col2)
+            source,
+            SourcePosition(line1, col1),
+            SourcePosition(line2, col2)
         )
 }

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 pub mod List {
     use Math.Shuffle
 
@@ -25,7 +24,7 @@ pub mod List {
     /// an element `v` followed by a list `vs` represented by `v :: vs`.
     ///
     pub enum List[t] {
-        case Nil,
+        case Nil
         case Cons(t, List[t])
     }
 
@@ -47,28 +46,28 @@ pub mod List {
 
     instance Eq[List[a]] with Eq[a] {
         @Terminates @Tailrec
-        pub def eq(l1: List[a], l2: List[a]): Bool = match (l1, l2) {
-            case (Nil, Nil) => true
-            case (x :: rs, y :: qs) => if (x != y) false else rs == qs
-            case _ => false
-        }
+        pub def eq(l1: List[a], l2: List[a]): Bool =
+            match (l1, l2) {
+                case (Nil, Nil)         => true
+                case (x :: rs, y :: qs) => if (x != y) false else rs == qs
+                case _                  => false
+            }
     }
 
     instance Order[List[a]] with Order[a] {
-
         ///
         /// Compares `l1` and `l2` lexicographically.
         ///
         @Terminates @Tailrec
-        pub def compare(l1: List[a], l2: List[a]): Comparison = match (l1, l2) {
-            case (_ :: _, Nil) => Comparison.GreaterThan
-            case (Nil, Nil) => Comparison.EqualTo
-            case (Nil, _ :: _) => Comparison.LessThan
-            case (z :: zs, w :: ws) =>
-                let cmp = z <=> w;
-                if (cmp == Comparison.EqualTo) zs <=> ws else cmp
-        }
-
+        pub def compare(l1: List[a], l2: List[a]): Comparison =
+            match (l1, l2) {
+                case (_ :: _, Nil)      => Comparison.GreaterThan
+                case (Nil, Nil)         => Comparison.EqualTo
+                case (Nil, _ :: _)      => Comparison.LessThan
+                case (z :: zs, w :: ws) =>
+                    let cmp = z <=> w;
+                    if (cmp == Comparison.EqualTo) zs <=> ws else cmp
+            }
     }
 
     instance Functor[List] {
@@ -76,12 +75,12 @@ pub mod List {
     }
 
     instance Applicative[List] {
-        pub def point(a: a) : List[a] = List.point(a)
-        pub def ap(f: List[a -> b \ ef], x: List[a]) : List[b] \ ef = List.ap(f, x)
+        pub def point(a: a): List[a] = List.point(a)
+        pub def ap(f: List[a -> b \ ef], x: List[a]): List[b] \ ef = List.ap(f, x)
     }
 
     instance Monad[List] {
-        pub def flatMap(f: a -> List[b] \ ef, x : List[a]) : List[b] \ ef = List.flatMap(f, x)
+        pub def flatMap(f: a -> List[b] \ ef, x: List[a]): List[b] \ ef = List.flatMap(f, x)
     }
 
     instance MonadZero[List] {
@@ -151,39 +150,45 @@ pub mod List {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: List[a]): String with ToString[a] = region rc {
-        List.iterator(rc, l)
+    pub def toString(l: List[a]): String with ToString[a] =
+        region rc {
+            List.iterator(rc, l)
             |> Iterator.map(ToString.toString)
-            |> xs -> Iterator.append(xs, Iterator.singleton(rc, "Nil"))
-            |> Iterator.join(" :: ")
-    }
+            |> xs ->
+                Iterator.append(xs, Iterator.singleton(rc, "Nil"))
+                |> Iterator.join(" :: ")
+        }
 
     ///
     /// Returns the empty list `Nil`.
     ///
     @Terminates
-    pub def empty(): List[a] = Nil
+    pub def empty(): List[a] =
+        Nil
 
     ///
     /// Returns true if and only if `l` is the empty list, i.e. `Nil`.
     ///
     @Terminates
-    pub def isEmpty(l: List[a]): Bool = match l {
-        case Nil => true
-        case _   => false
-    }
+    pub def isEmpty(l: List[a]): Bool =
+        match l {
+            case Nil => true
+            case _   => false
+        }
 
     ///
     /// Returns true if and only if `l` is a non-empty list.
     ///
     @Terminates
-    pub def nonEmpty(l: List[a]): Bool = not isEmpty(l)
+    pub def nonEmpty(l: List[a]): Bool =
+        not isEmpty(l)
 
     ///
     /// Returns a new list with element `x` added to the front of list `l`.
     ///
     @Terminates
-    pub def cons(x: a, l: List[a]): List[a] = Cons(x, l)
+    pub def cons(x: a, l: List[a]): List[a] =
+        Cons(x, l)
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `l`.
@@ -191,10 +196,11 @@ pub mod List {
     /// Returns `None` if `l` is empty.
     ///
     @Terminates
-    pub def head(l: List[a]): Option[a] = match l {
-        case Nil    => None
-        case x :: _ => Some(x)
-    }
+    pub def head(l: List[a]): Option[a] =
+        match l {
+            case Nil    => None
+            case x :: _ => Some(x)
+        }
 
     ///
     /// Returns `Some(x)` if `x` is the last element of `l`.
@@ -202,11 +208,12 @@ pub mod List {
     /// Returns `None` if `l` is empty.
     ///
     @Terminates @Tailrec
-    pub def last(l: List[a]): Option[a] = match l {
-        case Nil      => None
-        case x :: Nil => Some(x)
-        case _ :: rs  => last(rs)
-    }
+    pub def last(l: List[a]): Option[a] =
+        match l {
+            case Nil      => None
+            case x :: Nil => Some(x)
+            case _ :: rs  => last(rs)
+        }
 
     ///
     /// Returns the element at position `i` in the list `l`.
@@ -216,7 +223,7 @@ pub mod List {
     pub def get(i: Int32, l: List[a]): a =
         match nth(i, l) {
             case Some(x) => x
-            case None    => indexOutOfBounds!("index ${i} is out of bounds for List of length ${length(l)}")
+            case None    => indexOutOfBounds!("index ${ i } is out of bounds for List of length ${ length(l) }")
         }
 
     ///
@@ -251,7 +258,8 @@ pub mod List {
     /// Returns the number of elements in `l`.
     ///
     @Terminates
-    pub def size(l: List[a]): Int32 = length(l)
+    pub def size(l: List[a]): Int32 =
+        length(l)
 
     ///
     /// Returns `l2` appended to `l1`.
@@ -275,10 +283,11 @@ pub mod List {
     /// Returns `true` if and only if `l` contains the element `x`.
     ///
     @Terminates @Tailrec
-    pub def memberOf(a: a, l: List[a]): Bool with Eq[a] = match l {
-        case Nil     => false
-        case x :: xs => if (a == x) true else memberOf(a, xs)
-    }
+    pub def memberOf(a: a, l: List[a]): Bool with Eq[a] =
+        match l {
+            case Nil     => false
+            case x :: xs => if (a == x) true else memberOf(a, xs)
+        }
 
     ///
     /// Optionally finds the smallest element of `l` according to the `Order` on `a`.
@@ -344,16 +353,18 @@ pub mod List {
     /// Alias for `findLeft`.
     ///
     @Terminates
-    pub def find(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef = findLeft(f, l)
+    pub def find(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef =
+        findLeft(f, l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
     @Terminates @Tailrec
-    pub def findLeft(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef = match l {
-        case Nil     => None
-        case x :: xs => if (f(x)) Some(x) else findLeft(f, xs)
-    }
+    pub def findLeft(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef =
+        match l {
+            case Nil     => None
+            case x :: xs => if (f(x)) Some(x) else findLeft(f, xs)
+        }
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
@@ -393,7 +404,8 @@ pub mod List {
     /// Alias for `scanLeft`.
     ///
     @Terminates
-    pub def scan(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef = scanLeft(f, s, l)
+    pub def scan(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
+        scanLeft(f, s, l)
 
     ///
     /// Accumulates the result of applying `f` to `l` going left to right.
@@ -445,14 +457,15 @@ pub mod List {
     /// Return the singleton list with element `x`.
     ///
     @Terminates
-    pub def point(a: a) : List[a] = a :: Nil
+    pub def point(a: a): List[a] =
+        a :: Nil
 
     ///
     /// Apply every function from `f` to every argument from `x` and return a list with all results.
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: List[a -> b \ ef], x: List[a]) : List[b] \ ef =
+    pub def ap(f: List[a -> b \ ef], x: List[a]): List[b] \ ef =
         map(g -> map(g, x), f) |> flatten
 
     ///
@@ -508,15 +521,16 @@ pub mod List {
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
-    pub def flatMap(f: a -> List[b] \ ef, l: List[a]): List[b] \ ef = region rc {
-        let ml = MutList.empty(rc);
-        def loop(ll) = match ll {
-            case Nil     => ()
-            case x :: xs => MutList.pushAll(f(x), ml); loop(xs)
-        };
-        loop(l);
-        MutList.toList(ml)
-    }
+    pub def flatMap(f: a -> List[b] \ ef, l: List[a]): List[b] \ ef =
+        region rc {
+            let ml = MutList.empty(rc);
+            def loop(ll) = match ll {
+                case Nil     => ()
+                case x :: xs => MutList.pushAll(f(x), ml); loop(xs)
+            };
+            loop(l);
+            MutList.toList(ml)
+        }
 
     ///
     /// Returns the reverse of `l`.
@@ -573,7 +587,7 @@ pub mod List {
     /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
     @Terminates
-    pub def replace(src: {src = a}, dst: {dst = a}, l: List[a]): List[a] with Eq[a] =
+    pub def replace(src: { src = a }, dst: { dst = a }, l: List[a]): List[a] with Eq[a] =
         map(e -> if (e == src#src) dst#dst else e, l)
 
     ///
@@ -592,7 +606,7 @@ pub mod List {
                 else
                     loop(l1, ys, c + 1, y :: acc)
             }
-            case _ => reverseAppend(acc, ll2)
+            case _                  => reverseAppend(acc, ll2)
         };
         loop(drop(-i, l1), l2, 0, Nil)
 
@@ -601,10 +615,11 @@ pub mod List {
     ///
     /// That is, `l` is the first permutation and `reverse(l)` is the last permutation.
     ///
-    pub def permutations(l: List[a]): List[List[a]] = match l {
-        case Nil => Nil :: Nil
-        case _   => permutationHelper(0, l)
-    }
+    pub def permutations(l: List[a]): List[List[a]] =
+        match l {
+            case Nil => Nil :: Nil
+            case _   => permutationHelper(0, l)
+        }
 
     ///
     /// Helper function for `permutations`.
@@ -619,21 +634,23 @@ pub mod List {
     ///
     /// Helper function for `permutations`.
     ///
-    def at(i: Int32, l: List[a]): a = match (i, l) {
-        case (0, x :: _)  => x
-        case (p, _ :: xs) => at(p - 1, xs)
-        case _ => unreachable!()
-    }
+    def at(i: Int32, l: List[a]): a =
+        match (i, l) {
+            case (0, x :: _)  => x
+            case (p, _ :: xs) => at(p - 1, xs)
+            case _            => unreachable!()
+        }
 
     ///
     /// Helper function for `permutations`.
     ///
     @Terminates
-    def removeIndex(i: Int32, l: List[a]): List[a] = match (i, l) {
-        case (_, Nil) => l
-        case (0, _ :: xs) => xs
-        case (p, x :: xs) => x :: removeIndex(p - 1, xs)
-    }
+    def removeIndex(i: Int32, l: List[a]): List[a] =
+        match (i, l) {
+            case (_, Nil)     => l
+            case (0, _ :: xs) => xs
+            case (p, x :: xs) => x :: removeIndex(p - 1, xs)
+        }
 
     ///
     /// Returns `l` without adjacent duplicates according to their `Eq` instance.
@@ -641,7 +658,8 @@ pub mod List {
     /// The first occurrence in a chain of duplicates is kept.
     ///
     @Terminates
-    pub def removeAdjDups(l: List[a]): List[a] with Eq[a] = removeAdjDupsWith(Eq.eq, l)
+    pub def removeAdjDups(l: List[a]): List[a] with Eq[a] =
+        removeAdjDupsWith(Eq.eq, l)
 
     ///
     /// Returns `l` without adjacent duplicates according to the function `f`.
@@ -674,12 +692,13 @@ pub mod List {
     ///
     /// That is, `l` is the first subsequence and `Nil` is the last subsequence.
     ///
-    pub def subsequences(l: List[a]): List[List[a]] = match l {
-        case Nil     => Nil :: Nil
-        case x :: xs =>
-            let r = subsequences(xs);
-            applyHelper(x, r) ::: r
-    }
+    pub def subsequences(l: List[a]): List[List[a]] =
+        match l {
+            case Nil     => Nil :: Nil
+            case x :: xs =>
+                let r = subsequences(xs);
+                applyHelper(x, r) ::: r
+        }
 
     ///
     /// Helper function for `permutations` and `subsequences`.
@@ -700,9 +719,9 @@ pub mod List {
     pub def intersperse(a: a, l: List[a]): List[a] =
         @Tailrec
         def loop(ll, acc) = match ll {
-            case x1 :: Nil      => x1 :: acc
-            case x1 :: xs       => loop(xs, a :: x1 :: acc)
-            case _              => unreachable!()
+            case x1 :: Nil => x1 :: acc
+            case x1 :: xs  => loop(xs, a :: x1 :: acc)
+            case _         => unreachable!()
         };
         match l {
             case Nil => Nil
@@ -717,13 +736,13 @@ pub mod List {
     pub def intercalate(l1: List[a], l2: List[List[a]]): List[a] =
         @Tailrec
         def loop(ll, acc) = match ll {
-            case x :: Nil       => reverseAppend(x, acc)
-            case x1 :: xs       => loop(xs, reverseAppend(l1, reverseAppend(x1, acc)))
-            case _              => unreachable!()
+            case x :: Nil => reverseAppend(x, acc)
+            case x1 :: xs => loop(xs, reverseAppend(l1, reverseAppend(x1, acc)))
+            case _        => unreachable!()
         };
         match l2 {
             case Nil => Nil
-            case _ => reverse(loop(l2, Nil))
+            case _   => reverse(loop(l2, Nil))
         }
 
     ///
@@ -731,64 +750,71 @@ pub mod List {
     ///
     /// Returns `l` if the dimensions of the elements of `l` are mismatched.
     ///
-    pub def transpose(l: List[List[a]]): List[List[a]] = match l {
-        case Nil    => Nil
-        case x :: _ =>
-            let len = length(x);
-            if (not uniformHelper(l, len) or len == 0) l else transposeHelper(l, len)
-    }
+    pub def transpose(l: List[List[a]]): List[List[a]] =
+        match l {
+            case Nil    => Nil
+            case x :: _ =>
+                let len = length(x);
+                if (not uniformHelper(l, len) or len == 0) l else transposeHelper(l, len)
+        }
 
     ///
     /// Helper function for `transpose`.
     ///
     @Terminates @Tailrec
-    def uniformHelper(l: List[List[a]], len: Int32): Bool = match l {
-        case Nil     => true
-        case x :: xs => if (length(x) == len) uniformHelper(xs, len) else false
-    }
+    def uniformHelper(l: List[List[a]], len: Int32): Bool =
+        match l {
+            case Nil     => true
+            case x :: xs => if (length(x) == len) uniformHelper(xs, len) else false
+        }
 
     ///
     /// Helper function for `transpose`.
     ///
-    def transposeHelper(l: List[List[a]], len: Int32): List[List[a]] = match l {
-        case Nil     => repeat(len, Nil)
-        case x :: xs => applyListHelper(x, transposeHelper(xs, len))
-    }
+    def transposeHelper(l: List[List[a]], len: Int32): List[List[a]] =
+        match l {
+            case Nil     => repeat(len, Nil)
+            case x :: xs => applyListHelper(x, transposeHelper(xs, len))
+        }
 
     ///
     /// Helper function for `transpose`.
     ///
-    def applyListHelper(l1: List[a], l2: List[List[a]]): List[List[a]] = match (l1, l2) {
-        case (Nil, Nil)         => Nil
-        case (x :: xs, y :: ys) => (x :: y) :: applyListHelper(xs, ys)
-        case _                  => unreachable!()
-    }
+    def applyListHelper(l1: List[a], l2: List[List[a]]): List[List[a]] =
+        match (l1, l2) {
+            case (Nil, Nil)         => Nil
+            case (x :: xs, y :: ys) => (x :: y) :: applyListHelper(xs, ys)
+            case _                  => unreachable!()
+        }
 
     ///
     /// Returns `true` if and only if `l1` is a prefix of `l2`.
     ///
     @Terminates @Tailrec
-    pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
-        case (Nil, _)           => true
-        case (_, Nil)           => false
-        case (x :: xs, y :: ys) => if (x == y) isPrefixOf(xs, ys) else false
-    }
+    pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] =
+        match (l1, l2) {
+            case (Nil, _)           => true
+            case (_, Nil)           => false
+            case (x :: xs, y :: ys) => if (x == y) isPrefixOf(xs, ys) else false
+        }
 
     ///
     /// Returns `true` if and only if `l1` is an infix of `l2`.
     ///
     @Terminates @Tailrec
-    pub def isInfixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
-        case (Nil, _)     => true
-        case (_, Nil)     => false
-        case (_, _ :: ys) => if (isPrefixOf(l1, l2)) true else isInfixOf(l1, ys)
-    }
+    pub def isInfixOf(l1: List[a], l2: List[a]): Bool with Eq[a] =
+        match (l1, l2) {
+            case (Nil, _)     => true
+            case (_, Nil)     => false
+            case (_, _ :: ys) => if (isPrefixOf(l1, l2)) true else isInfixOf(l1, ys)
+        }
 
     ///
     /// Returns `true` if and only if `l1` is a suffix of `l2`.
     ///
     @Terminates
-    pub def isSuffixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = isPrefixOf(reverse(l1), reverse(l2))
+    pub def isSuffixOf(l1: List[a], l2: List[a]): Bool with Eq[a] =
+        isPrefixOf(reverse(l1), reverse(l2))
 
     ///
     /// Returns the result of applying `combine` to all the elements in `l`, using `empty` as the initial value.
@@ -801,10 +827,11 @@ pub mod List {
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     @Terminates @Tailrec
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = match l {
-        case Nil     => s
-        case x :: xs => foldLeft(f, f(s, x), xs)
-    }
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef =
+        match l {
+            case Nil     => s
+            case x :: xs => foldLeft(f, f(s, x), xs)
+        }
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
@@ -828,10 +855,11 @@ pub mod List {
     /// Returns `None` if `l` is empty.
     ///
     @Terminates
-    pub def reduceLeft(f: (a, a) -> a \ ef, l: List[a]): Option[a] \ ef = match l {
-        case Nil     => None
-        case x :: xs => Some(foldLeft(f, x, xs))
-    }
+    pub def reduceLeft(f: (a, a) -> a \ ef, l: List[a]): Option[a] \ ef =
+        match l {
+            case Nil     => None
+            case x :: xs => Some(foldLeft(f, x, xs))
+        }
 
     ///
     /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
@@ -848,7 +876,7 @@ pub mod List {
             case x :: xs => loop(xs, f(x, acc))
         };
         match reverse(l) {
-            case Nil => None
+            case Nil     => None
             case x :: xs => loop(xs, x)
         }
 
@@ -877,10 +905,11 @@ pub mod List {
     /// Returns `false` if `l` is empty.
     ///
     @Terminates @Tailrec
-    pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = match l {
-        case Nil     => false
-        case x :: xs => if (f(x)) true else exists(f, xs)
-    }
+    pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef =
+        match l {
+            case Nil     => false
+            case x :: xs => if (f(x)) true else exists(f, xs)
+        }
 
     ///
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
@@ -888,10 +917,11 @@ pub mod List {
     /// Returns `true` if `l` is empty.
     ///
     @Terminates @Tailrec
-    pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = match l {
-        case Nil     => true
-        case x :: xs => if (f(x)) forAll(f, xs) else false
-    }
+    pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef =
+        match l {
+            case Nil     => true
+            case x :: xs => if (f(x)) forAll(f, xs) else false
+        }
 
     ///
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
@@ -918,7 +948,7 @@ pub mod List {
         };
         match l {
             case Nil => None
-            case _ => Some(reverse(loop(l, Nil)))
+            case _   => Some(reverse(loop(l, Nil)))
         }
 
     ///
@@ -928,7 +958,7 @@ pub mod List {
     /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(start, end, l) = slice(max(0, start), min(length(l), end), l)).
     ///
     @Terminates
-    pub def slice(start: {start = Int32}, end: {end = Int32}, l: List[a]): List[a] =
+    pub def slice(start: { start = Int32 }, end: { end = Int32 }, l: List[a]): List[a] =
         @Tailrec
         def loop(ll, i, acc) = match ll {
             case Nil     => acc
@@ -991,20 +1021,22 @@ pub mod List {
     /// Returns `l` if `n < 0`.
     ///
     @Terminates @Tailrec
-    pub def drop(n: Int32, l: List[a]): List[a] = match l {
-        case _ if n <= 0 => l
-        case Nil         => Nil
-        case _ :: xs     => drop(n - 1, xs)
-    }
+    pub def drop(n: Int32, l: List[a]): List[a] =
+        match l {
+            case _ if n <= 0 => l
+            case Nil         => Nil
+            case _ :: xs     => drop(n - 1, xs)
+        }
 
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
     @Terminates @Tailrec
-    pub def dropWhile(f: a -> Bool \ ef, l: List[a]): List[a] \ ef = match l {
-        case Nil     => Nil
-        case x :: xs => if (f(x)) dropWhile(f, xs) else l
-    }
+    pub def dropWhile(f: a -> Bool \ ef, l: List[a]): List[a] \ ef =
+        match l {
+            case Nil     => Nil
+            case x :: xs => if (f(x)) dropWhile(f, xs) else l
+        }
 
     ///
     /// Returns the first `n` elements of `l`.
@@ -1047,8 +1079,7 @@ pub mod List {
     /// Returns `(Nil, xs)` if `n < 0`.
     ///
     @Terminates
-    pub def splitAt(n: Int32, xs: List[a]): (List[a], List[a]) =
-        (List.take(n, xs), List.drop(n, xs))
+    pub def splitAt(n: Int32, xs: List[a]): (List[a], List[a]) = (List.take(n, xs), List.drop(n, xs))
 
     ///
     /// Partitions `l` into sublists such that for any two elements `x` and `y` in a sublist, `f(x, y)` is true.
@@ -1058,10 +1089,13 @@ pub mod List {
     ///
     /// The function `f` must be pure and define an equivalence relation.
     ///
-    pub def groupWith(f: (a, a) -> Bool, l: List[a]): List[Nel[a]] =
-        (Nil, l) ||> List.foldLeft(acc -> value -> {
+    pub def groupWith(f: (a, a) -> Bool, l: List[a]): List[Nel[a]] = (Nil, l)
+    ||> List.foldLeft(
+        acc -> value -> {
             groupWithHelper(value, f, acc)
-        }) |> List.map(Nel.reverse)
+        }
+    )
+    |> List.map(Nel.reverse)
 
     ///
     /// Partitions `l` into sublists such that for any two elements `x` and `y` in a sublist,
@@ -1087,7 +1121,7 @@ pub mod List {
         // Record seen elements in reverse order in `acc`.
         @Tailrec
         def loop(cur, acc) = match cur {
-            case Nil => (Nel.singleton(value) :: acc) |> List.reverse
+            case Nil     => (Nel.singleton(value) :: acc) |> List.reverse
             case x :: xs =>
                 if (f(value, Nel.head(x))) {
                     let newNel = Nel.cons(value, x);
@@ -1126,7 +1160,7 @@ pub mod List {
             case (x :: xs, y :: ys) =>
                 let z = f(x, y);
                 loop(xs, ys, z :: acc)
-            case _ => acc
+            case _                  => acc
         };
         reverse(loop(l1, l2, Nil))
 
@@ -1195,7 +1229,7 @@ pub mod List {
             case (x :: xs, y :: ys, z :: zs) =>
                 let r = f(x, y, z);
                 loop(xs, ys, zs, r :: acc)
-            case _ => acc
+            case _                           => acc
         };
         reverse(loop(l1, l2, l3, Nil))
 
@@ -1217,17 +1251,19 @@ pub mod List {
     /// Alias for `foldLeft2`.
     ///
     @Terminates
-    pub def fold2(f: (c, a, b) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef = foldLeft2(f, c, l1, l2)
+    pub def fold2(f: (c, a, b) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef =
+        foldLeft2(f, c, l1, l2)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
     /// starting with the initial value `c` and going from left to right.
     ///
     @Terminates @Tailrec
-    pub def foldLeft2(f: (c, a, b) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef = match (l1, l2) {
-        case (x :: xs, y :: ys) => foldLeft2(f, f(c, x, y), xs, ys)
-        case _                  => c
-    }
+    pub def foldLeft2(f: (c, a, b) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef =
+        match (l1, l2) {
+            case (x :: xs, y :: ys) => foldLeft2(f, f(c, x, y), xs, ys)
+            case _                  => c
+        }
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
@@ -1257,10 +1293,11 @@ pub mod List {
         @Tailrec
         def loop(ll, acc) = match ll {
             case Nil     => acc
-            case x :: xs => match f(x) {
-                case None    => loop(xs, acc)
-                case Some(v) => loop(xs, v :: acc)
-            }
+            case x :: xs =>
+                match f(x) {
+                    case None    => loop(xs, acc)
+                    case Some(v) => loop(xs, v :: acc)
+                }
         };
         reverse(loop(l, Nil))
 
@@ -1270,13 +1307,15 @@ pub mod List {
     /// Returns `None` if every element of `l` is `None`.
     ///
     @Terminates @Tailrec
-    pub def findMap(f: a -> Option[b] \ ef, l: List[a]): Option[b] \ ef = match l {
-        case Nil     => None
-        case x :: xs => match f(x) {
-            case None    => findMap(f, xs)
-            case Some(v) => Some(v)
+    pub def findMap(f: a -> Option[b] \ ef, l: List[a]): Option[b] \ ef =
+        match l {
+            case Nil     => None
+            case x :: xs =>
+                match f(x) {
+                    case None    => findMap(f, xs)
+                    case Some(v) => Some(v)
+                }
         }
-    }
 
     ///
     /// Returns the concatenation of the string representation
@@ -1318,19 +1357,24 @@ pub mod List {
     /// If multiple mappings with the same key are produced only the last occurrence is kept.
     ///
     pub def toMapWith(f: a -> (k, v) \ ef, l: List[a]): Map[k, v] \ ef with Order[k] =
-        foldLeft((acc, x) -> {
-            let (key, val) = f(x);
-            Map.insert(key, val, acc)
-        }, Map.empty(), l)
+        foldLeft(
+            (acc, x) -> {
+                let (key, val) = f(x);
+                Map.insert(key, val, acc)
+            },
+            Map.empty(),
+            l
+        )
 
     ///
     /// Applies `f` to every element of `l`.
     ///
     @Terminates @Tailrec
-    pub def forEach(f: a -> Unit \ ef, l: List[a]): Unit \ ef = match l {
-        case Nil     => ()
-        case x :: xs => f(x); forEach(f, xs)
-    }
+    pub def forEach(f: a -> Unit \ ef, l: List[a]): Unit \ ef =
+        match l {
+            case Nil     => ()
+            case x :: xs => f(x); forEach(f, xs)
+        }
 
     ///
     /// Applies `f` to every element of `l` along with that element's index.
@@ -1340,49 +1384,53 @@ pub mod List {
         @Tailrec
         def loop(ll, i) = match ll {
             case Nil     => ()
-            case x :: xs => f(i, x); loop(xs, i+1)
+            case x :: xs => f(i, x); loop(xs, i + 1)
         };
         loop(l, 0)
 
     ///
     /// Returns the list `l` as an array.
     ///
-    pub def toArray(rc: Region[r], l: List[a]): Array[a, r] \ r = match head(l) {
-        case None    => Array#{} @ rc
-        case Some(_) =>
-            let a = Array.empty(rc, length(l));
-            forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
-            a
-    }
+    pub def toArray(rc: Region[r], l: List[a]): Array[a, r] \ r =
+        match head(l) {
+            case None    => Array#{} @ rc
+            case Some(_) =>
+                let a = Array.empty(rc, length(l));
+                forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
+                a
+        }
 
     ///
     /// Returns the list `l` as a vector.
     ///
-    pub def toVector(l: List[a]): Vector[a] = region rc {
-        let arr = Array.empty(rc, length(l));
-        forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
-        Array.toVector(arr)
-    }
+    pub def toVector(l: List[a]): Vector[a] =
+        region rc {
+            let arr = Array.empty(rc, length(l));
+            forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
+            Array.toVector(arr)
+        }
 
     ///
     /// Returns the list `l` as `Option[Nel[a]]`.
     ///
     /// If `l` is empty return `None`, otherwise return the Nel wrapped in `Some`.
     ///
-    pub def toNel(l: List[a]): Option[Nel[a]] = match l {
-        case Nil     => None
-        case x :: xs => Some(Nel.Nel(x, xs))
-    }
+    pub def toNel(l: List[a]): Option[Nel[a]] =
+        match l {
+            case Nil     => None
+            case x :: xs => Some(Nel.Nel(x, xs))
+        }
 
     ///
     /// Returns the list `l` as `Option[Nec[a]]`.
     ///
     /// If `l` is empty return `None`, otherwise return the Nec wrapped in `Some`.
     ///
-    pub def toNec(l: List[a]): Option[Nec[a]] = match l {
-        case Nil     => None
-        case x :: xs => Some(foldLeft(Nec.snoc, Nec.singleton(x), xs))
-    }
+    pub def toNec(l: List[a]): Option[Nec[a]] =
+        match l {
+            case Nil     => None
+            case x :: xs => Some(foldLeft(Nec.snoc, Nec.singleton(x), xs))
+        }
 
     ///
     /// Sort list `l` so that elements are ordered from low to high according to their `Order` instance.
@@ -1391,9 +1439,10 @@ pub mod List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: List[a]): List[a] with Order[a] = region rc {
-        toArray(rc, l) !> Array.sort |> Array.toList
-    }
+    pub def sort(l: List[a]): List[a] with Order[a] =
+        region rc {
+            toArray(rc, l) !> Array.sort |> Array.toList
+        }
 
     ///
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
@@ -1403,9 +1452,10 @@ pub mod List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region rc {
-        toArray(rc, l) !> Array.sortBy(f) |> Array.toList
-    }
+    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] =
+        region rc {
+            toArray(rc, l) !> Array.sortBy(f) |> Array.toList
+        }
 
     ///
     /// Sort list `l` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1414,9 +1464,10 @@ pub mod List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region rc {
-        toArray(rc, l) !> Array.sortWith(cmp) |> Array.toList
-    }
+    pub def sortWith(cmp: (a, a) -> Comparison, l: List[a]): List[a] =
+        region rc {
+            toArray(rc, l) !> Array.sortWith(cmp) |> Array.toList
+        }
 
     ///
     /// Build a list by applying `f` to the seed value `st`.
@@ -1467,7 +1518,7 @@ pub mod List {
             case Err(e)      => Err(e)
         };
         match loop(Nil) {
-            case Ok(l) => Ok(reverse(l))
+            case Ok(l)    => Ok(reverse(l))
             case Err(err) => Err(err)
         }
 
@@ -1595,20 +1646,23 @@ pub mod List {
         def loop(ll1, ll2, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => {
                 let cmp = x <=> y;
-                if (cmp == Comparison.LessThan or cmp == Comparison.EqualTo) loop(xs, ll2, x :: acc)
-                else                                   loop(ll1, ys, y :: acc)
+                if (cmp == Comparison.LessThan or cmp == Comparison.EqualTo)
+                    loop(xs, ll2, x :: acc)
+                else
+                    loop(ll1, ys, y :: acc)
             }
-            case (Nil    , _) => reverse(reverseAppend(ll2, acc))
-            case (_, Nil    ) => reverse(reverseAppend(ll1, acc))
+            case (Nil, _)           => reverse(reverseAppend(ll2, acc))
+            case (_, Nil)           => reverse(reverseAppend(ll1, acc))
         };
         loop(l1, l2, Nil)
 
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(l: List[a]): List[a] \ Shuffle = region rc {
-        toArray(rc, l) !> Array.shuffle |> Array.toList
-    }
+    pub def shuffle(l: List[a]): List[a] \ Shuffle =
+        region rc {
+            toArray(rc, l) !> Array.shuffle |> Array.toList
+        }
 
     ///
     /// Returns the frequency for each element in list `l`
@@ -1616,13 +1670,12 @@ pub mod List {
     pub def frequency(l: List[t]): Map[t, Int32] with Order[t] =
         @Tailrec
         def freq(ll, m) = match ll {
-            case Nil      => m
-            case x :: xs  =>
+            case Nil     => m
+            case x :: xs =>
                 match Map.get(x, m) {
                     case None    => freq(xs, Map.insert(x, 1, m))
                     case Some(_) => freq(xs, Map.update(v -> Some(v + 1), x, m))
                 }
         };
         freq(l, Map#{})
-
 }

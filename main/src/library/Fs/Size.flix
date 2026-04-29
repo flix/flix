@@ -15,7 +15,6 @@
  */
 
 pub mod Fs.Size {
-
     use Fs.SizeUnit
 
     ///
@@ -53,23 +52,23 @@ pub mod Fs.Size {
                     let tb = abs / tb1;
                     let rem = abs - (tb * tb1);
                     let gb = rem / gb1;
-                    "${sign}${tb} TB ${gb} GB"
+                    "${ sign }${ tb } TB ${ gb } GB"
                 else if (abs >= gb1)
                     let gb = abs / gb1;
                     let rem = abs - (gb * gb1);
                     let mb = rem / mb1;
-                    "${sign}${gb} GB ${mb} MB"
+                    "${ sign }${ gb } GB ${ mb } MB"
                 else if (abs >= mb1)
                     let mb = abs / mb1;
                     let rem = abs - (mb * mb1);
                     let kb = rem / kb1;
-                    "${sign}${mb} MB ${kb} KB"
+                    "${ sign }${ mb } MB ${ kb } KB"
                 else if (abs >= kb1)
                     let kb = abs / kb1;
                     let rem = abs - (kb * kb1);
-                    "${sign}${kb} KB ${rem} B"
+                    "${ sign }${ kb } KB ${ rem } B"
                 else
-                    "${sign}${abs} B"
+                    "${ sign }${ abs } B"
     }
 
     instance Formattable[Size] {
@@ -80,13 +79,14 @@ pub mod Fs.Size {
     pub def zero(): Size = Size(0i64)
 
     /// Returns a size of `n` in the given size unit `u`.
-    pub def of(n: Int32, u: SizeUnit): Size = match u {
-        case SizeUnit.Bytes     => bytes(Int32.toInt64(n)),
-        case SizeUnit.KiloBytes => kiloBytes(n),
-        case SizeUnit.MegaBytes => megaBytes(n),
-        case SizeUnit.GigaBytes => gigaBytes(n),
-        case SizeUnit.TeraBytes => teraBytes(n)
-    }
+    pub def of(n: Int32, u: SizeUnit): Size =
+        match u {
+            case SizeUnit.Bytes     => bytes(Int32.toInt64(n)),
+            case SizeUnit.KiloBytes => kiloBytes(n),
+            case SizeUnit.MegaBytes => megaBytes(n),
+            case SizeUnit.GigaBytes => gigaBytes(n),
+            case SizeUnit.TeraBytes => teraBytes(n)
+        }
 
     /// Returns a size of `n` bytes.
     pub def bytes(n: Int64): Size = Size(n)
@@ -142,5 +142,4 @@ pub mod Fs.Size {
     pub def isNegative(s: Size): Bool =
         let Size(n) = s;
         n < 0i64
-
 }

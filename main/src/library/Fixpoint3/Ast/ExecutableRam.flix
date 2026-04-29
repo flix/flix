@@ -116,15 +116,15 @@ pub mod Fixpoint3.Ast.ExecutableRam {
             let nl = String.lineSeparator();
             match stmt {
                 case RamStmt.Insert(op)             => ToString.toString(op)
-                case RamStmt.MergeInto(src, dst, _) => "Merge indexes[${src}] into indexes[${dst}]"
-                case RamStmt.Swap(lhs, rhs)         => "Swap indexes[${lhs}] and indexes[${rhs}]"
-                case RamStmt.Purge(ramSym)          => "Purge indexes[${ramSym}]"
-                case RamStmt.Seq(xs)                => Vector.join(";${nl}", xs)
+                case RamStmt.MergeInto(src, dst, _) => "Merge indexes[${ src }] into indexes[${ dst }]"
+                case RamStmt.Swap(lhs, rhs)         => "Swap indexes[${ lhs }] and indexes[${ rhs }]"
+                case RamStmt.Purge(ramSym)          => "Purge indexes[${ ramSym }]"
+                case RamStmt.Seq(xs)                => Vector.join(";${ nl }", xs)
                 case RamStmt.Until(test, body)      =>
                     let tst = test |> Vector.join(" ∧ ");
-                    "Until(${tst}) do${nl}${String.indent(4, "${body}")}end"
-                case RamStmt.Comment(comment)       => "/* ${comment} */"
-                case RamStmt.Par(xs)                => Vector.join("|${nl}", xs)
+                    "Until(${ tst }) do${ nl }${ String.indent(4, "${ body }") }end"
+                case RamStmt.Comment(comment)       => "/* ${ comment } */"
+                case RamStmt.Par(xs)                => Vector.join("|${ nl }", xs)
             }
     }
 
@@ -176,19 +176,19 @@ pub mod Fixpoint3.Ast.ExecutableRam {
             match op {
                 case RelOp.Search(var, relSym, _, _, writes, body) =>
                     let writeString = Vector.joinWith(match term -> ToString.toString(term), " ∧ ", writes);
-                    "search x${var} ∈ indexes[${relSym}] | ${writeString} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Query(var, ramSym, _, _, writes, body) =>
+                    "search x${ var } ∈ indexes[${ relSym }] | ${ writeString } do${ nl }${ String.indent(4, "${ body }") }end"
+                case RelOp.Query(var, ramSym, _, _, writes, body)  =>
                     let writeString = Vector.joinWith(match term -> ToString.toString(term), " ∧ ", writes);
-                    "query {x${var} ∈ indexes[${ramSym}] | ${writeString}} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Functional(id, _, terms, _, body, _) =>
-                    "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Project(terms, ramSym, _) =>
-                    "project (${terms |> Vector.join(", ")}) into ${ramSym}"
-                case RelOp.ProvProject(terms, ramSym, _) =>
-                    "project (${terms |> Vector.join(", ")}) into ${ramSym}"
-                case RelOp.If(test, then) =>
+                    "query {x${ var } ∈ indexes[${ ramSym }] | ${ writeString }} do${ nl }${ String.indent(4, "${ body }") }end"
+                case RelOp.Functional(id, _, terms, _, body, _)    =>
+                    "loop(x${ id } <- f(${ terms |> Vector.join(", ") })) do${ nl }${ String.indent(4, "${ body }") }end"
+                case RelOp.Project(terms, ramSym, _)               =>
+                    "project (${ terms |> Vector.join(", ") }) into ${ ramSym }"
+                case RelOp.ProvProject(terms, ramSym, _)           =>
+                    "project (${ terms |> Vector.join(", ") }) into ${ ramSym }"
+                case RelOp.If(test, $then)                         =>
                     let tst = test |> Vector.join(" ∧ ");
-                    "if (${tst}) then${nl}${String.indent(4, "${then}")}end"
+                    "if (${ tst }) then${ nl }${ String.indent(4, "${ $then }") }end"
             }
     }
 
@@ -234,16 +234,16 @@ pub mod Fixpoint3.Ast.ExecutableRam {
     instance ToString[BoolExp] {
         pub def toString(exp: BoolExp): String =
             match exp {
-                case BoolExp.Not(boolExp)                  => "not (${boolExp})"
-                case BoolExp.IsEmpty(relSym)               => "indexes[${relSym}] = ∅"
-                case BoolExp.NotMemberOf(terms, relSym, _) => "(${terms |> Vector.join(", ")}) ∉ indexes[${relSym}]"
-                case BoolExp.Eq(lhs, rhs)                  => "${lhs} = ${rhs}"
-                case BoolExp.Leq(lhs, _, rhs)              => "${lhs} ≤ (${rhs})"
-                case BoolExp.Guard1(_, v)                  => "<clo>(${v})"
-                case BoolExp.Guard2(_, v1, v2)             => "<clo>(${v1}, ${v2})"
-                case BoolExp.Guard3(_, v1, v2, v3)         => "<clo>(${v1}, ${v2}, ${v3})"
-                case BoolExp.Guard4(_, v1, v2, v3, v4)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-                case BoolExp.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+                case BoolExp.Not(boolExp)                  => "not (${ boolExp })"
+                case BoolExp.IsEmpty(relSym)               => "indexes[${ relSym }] = ∅"
+                case BoolExp.NotMemberOf(terms, relSym, _) => "(${ terms |> Vector.join(", ") }) ∉ indexes[${ relSym }]"
+                case BoolExp.Eq(lhs, rhs)                  => "${ lhs } = ${ rhs }"
+                case BoolExp.Leq(lhs, _, rhs)              => "${ lhs } ≤ (${ rhs })"
+                case BoolExp.Guard1(_, v)                  => "<clo>(${ v })"
+                case BoolExp.Guard2(_, v1, v2)             => "<clo>(${ v1 }, ${ v2 })"
+                case BoolExp.Guard3(_, v1, v2, v3)         => "<clo>(${ v1 }, ${ v2 }, ${ v3 })"
+                case BoolExp.Guard4(_, v1, v2, v3, v4)     => "<clo>(${ v1 }, ${ v2 }, ${ v3 }, ${ v4 })"
+                case BoolExp.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${ v1 }, ${ v2 }, ${ v3 }, ${ v4 }, ${ v5 })"
             }
     }
 
@@ -297,20 +297,20 @@ pub mod Fixpoint3.Ast.ExecutableRam {
     }
 
     instance ToString[RamTerm] {
-        pub def toString(term: RamTerm): String = match term {
-            case RamTerm.Lit(v, _)                                  => Debug.stringify(v)
-            case RamTerm.LoadFromTuple(tupleIndex, indexInTuple, _) => "x${tupleIndex}[${indexInTuple}]"
-            case RamTerm.LoadLatVar(i, _)                           => "LoadLatVar[${i}]"
-            case RamTerm.ProvMax(loads)                             =>
-                let loadsStr = Vector.joinWith(match (rv, i) -> "${rv}[${i}]", ", ", loads);
-                "max(${loadsStr})"
-            case RamTerm.Meet(_, lhs, rhs, _)                       => "(${lhs} ⊓ ${rhs})"
-            case RamTerm.App1(_, v, _)                              => "<clo>(${v})"
-            case RamTerm.App2(_, v1, v2, _)                         => "<clo>(${v1}, ${v2})"
-            case RamTerm.App3(_, v1, v2, v3, _)                     => "<clo>(${v1}, ${v2}, ${v3})"
-            case RamTerm.App4(_, v1, v2, v3, v4, _)                 => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-            case RamTerm.App5(_, v1, v2, v3, v4, v5, _)             => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
-        }
+        pub def toString(term: RamTerm): String =
+            match term {
+                case RamTerm.Lit(v, _)                                  => Debug.stringify(v)
+                case RamTerm.LoadFromTuple(tupleIndex, indexInTuple, _) => "x${ tupleIndex }[${ indexInTuple }]"
+                case RamTerm.LoadLatVar(i, _)                           => "LoadLatVar[${ i }]"
+                case RamTerm.ProvMax(loads)                             =>
+                    let loadsStr = Vector.joinWith(match (rv, i) -> "${ rv }[${ i }]", ", ", loads);
+                    "max(${ loadsStr })"
+                case RamTerm.Meet(_, lhs, rhs, _)                       => "(${ lhs } ⊓ ${ rhs })"
+                case RamTerm.App1(_, v, _)                              => "<clo>(${ v })"
+                case RamTerm.App2(_, v1, v2, _)                         => "<clo>(${ v1 }, ${ v2 })"
+                case RamTerm.App3(_, v1, v2, v3, _)                     => "<clo>(${ v1 }, ${ v2 }, ${ v3 })"
+                case RamTerm.App4(_, v1, v2, v3, v4, _)                 => "<clo>(${ v1 }, ${ v2 }, ${ v3 }, ${ v4 })"
+                case RamTerm.App5(_, v1, v2, v3, v4, v5, _)             => "<clo>(${ v1 }, ${ v2 }, ${ v3 }, ${ v4 }, ${ v5 })"
+            }
     }
-
 }

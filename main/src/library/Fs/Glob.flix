@@ -15,7 +15,6 @@
  */
 
 pub mod Fs.Glob {
-
     use Fs.FileSystem
     use Fs.FsLayer.{logPre, logPost}
 
@@ -23,12 +22,10 @@ pub mod Fs.Glob {
     /// An effect used to find files matching a glob pattern.
     ///
     pub eff Glob {
-
         ///
         /// Returns a list of paths under `base` that match the given glob `pattern`.
         ///
         def glob(base: String, pattern: String): Result[IoError, List[String]]
-
     }
 
     ///
@@ -36,10 +33,11 @@ pub mod Fs.Glob {
     ///
     /// In other words, re-interprets the `Glob` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Glob) + IO = x ->
-        run { f(x) } with handler Glob {
-            def glob(base, pattern, k) = k(Fs.FsLayer.glob(base, pattern))
-        }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Glob) + IO =
+        x ->
+            run {f(x)} with handler Glob {
+                           def glob(base, pattern, k) = k(Fs.FsLayer.glob(base, pattern))
+                       }
 
     ///
     /// Runs the `Glob` effect of the given function `f`.
@@ -47,15 +45,16 @@ pub mod Fs.Glob {
     /// In other words, re-interprets the `Glob` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Glob) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Glob) + IO =
+        handle(f)()
 
     ///
     /// Handles the `Glob` effect of the given function `f` using the `FileSystem` effect.
     ///
     pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - Glob) + FileSystem =
-        run { f() } with handler Glob {
-            def glob(base, pattern, k) = k(Fs.FileSystem.glob(base, pattern))
-        }
+        run {f()} with handler Glob {
+                      def glob(base, pattern, k) = k(Fs.FileSystem.glob(base, pattern))
+                  }
 
     ///
     /// Middleware that intercepts the `Glob` effect, logging each operation
@@ -63,15 +62,15 @@ pub mod Fs.Glob {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Glob) + {Glob, Logger} =
-        run { f() } with handler Glob {
-            def glob(base, pattern, k) = {
-                logPre("glob", base);
-                let result = Glob.glob(base, pattern);
-                logPost("glob", base, ls -> "${List.length(ls)} matches", result);
-                k(result)
-            }
-        }
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Glob) + { Glob, Logger } =
+        run {f()} with handler Glob {
+                      def glob(base, pattern, k) = {
+                          logPre("glob", base);
+                          let result = Glob.glob(base, pattern);
+                          logPost("glob", base, ls -> "${ List.length(ls) } matches", result);
+                          k(result)
+                      }
+                  }
 
     ///
     /// Middleware that intercepts the `Glob` effect, resolving all file paths
@@ -81,9 +80,9 @@ pub mod Fs.Glob {
     ///
     pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
         let r = p -> Fs.FsLayer.resolve(baseDir, p);
-        run { f() } with handler Glob {
-            def glob(base, pattern, k) = k(Glob.glob(r(base), pattern))
-        }
+        run {f()} with handler Glob {
+                      def glob(base, pattern, k) = k(Glob.glob(r(base), pattern))
+                  }
 
     ///
     /// Middleware that intercepts the `Glob` effect, validating that all base paths
@@ -92,9 +91,9 @@ pub mod Fs.Glob {
     ///
     pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
-        run { f() } with handler Glob {
-            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
-        }
+        run {f()} with handler Glob {
+                      def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+                  }
 
     ///
     /// Middleware that intercepts the `Glob` effect, validating that all base paths
@@ -103,9 +102,9 @@ pub mod Fs.Glob {
     ///
     pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
-        run { f() } with handler Glob {
-            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
-        }
+        run {f()} with handler Glob {
+                      def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+                  }
 
     ///
     /// Middleware that intercepts the `Glob` effect, validating that all base paths
@@ -114,9 +113,9 @@ pub mod Fs.Glob {
     ///
     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
-        run { f() } with handler Glob {
-            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
-        }
+        run {f()} with handler Glob {
+                      def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+                  }
 
     ///
     /// Middleware that intercepts the `Glob` effect, validating that all base paths
@@ -125,9 +124,9 @@ pub mod Fs.Glob {
     ///
     pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
         let c = p -> Fs.FsLayer.allowGlob(patterns, p);
-        run { f() } with handler Glob {
-            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
-        }
+        run {f()} with handler Glob {
+                      def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+                  }
 
     ///
     /// Middleware that intercepts the `Glob` effect, validating that all base paths
@@ -136,9 +135,9 @@ pub mod Fs.Glob {
     ///
     pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
-        run { f() } with handler Glob {
-            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
-        }
+        run {f()} with handler Glob {
+                      def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+                  }
 
     ///
     /// Middleware that intercepts the `Glob` effect, resolving all base paths
@@ -146,8 +145,7 @@ pub mod Fs.Glob {
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
         let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
-        run { f() } with handler Glob {
-            def glob(base, pattern, k) = k(Glob.glob(resolve(base), pattern))
-        }
-
+        run {f()} with handler Glob {
+                      def glob(base, pattern, k) = k(Glob.glob(resolve(base), pattern))
+                  }
 }

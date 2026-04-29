@@ -77,76 +77,84 @@ pub mod Fixpoint3.TypeInfo {
     /// For functional predicates the vector returned vector contains the types of the
     /// functional predicates in the same order they are met by the compiler.
     ///
-    pub def typeDatalog(d: Datalog, pseudoStratums: PseudoStrataOrder[r], predicates: Predicates, withProv: Bool): TypeInformation \ r = match d {
-        case Datalog.Datalog(_, _) => region rc {
-            let idCreator = Counter.fresh(rc);
-            // Ensure that the first index is 1.
-            let rels = allFullRelSyms(predicates);
-            let relNum = getOrCrash(Int64.tryToInt32(getMax(predicates)));
-            // The first functional will get an id 1 greater than the largest PredSym.
-            Counter.set(relNum, idCreator);
-            let typeUnifier = MutDisjointSets.empty(rc);
-            // Have to traverse in same order as `Compiler.flix`
-            foreach ((_, pseudStrat) <- pseudoStratums) {
-                MutMap.foldLeft(_ -> rules2 -> {
-                    List.forEach(match (_, rule) -> typeConstraint(rule, typeUnifier, idCreator), rules2)
-                }, (), pseudStrat)
-            };
+    pub def typeDatalog(d: Datalog, pseudoStratums: PseudoStrataOrder[r], predicates: Predicates, withProv: Bool): TypeInformation \ r =
+        match d {
+            case Datalog.Datalog(_, _) =>
+                region rc {
+                    let idCreator = Counter.fresh(rc);
+                    // Ensure that the first index is 1.
+                    let rels = allFullRelSyms(predicates);
+                    let relNum = getOrCrash(Int64.tryToInt32(getMax(predicates)));
+                    // The first functional will get an id 1 greater than the largest PredSym.
+                    Counter.set(relNum, idCreator);
+                    let typeUnifier = MutDisjointSets.empty(rc);
+                    // Have to traverse in same order as `Compiler.flix`
+                    foreach((_, pseudStrat) <- pseudoStratums) {
+                        MutMap.foldLeft(
+                            _ -> rules2 -> {
+                                List.forEach(match (_, rule) -> typeConstraint(rule, typeUnifier, idCreator), rules2)
+                            },
+                            (),
+                            pseudStrat
+                        )
+                    };
 
-            let maxId = Counter.get(idCreator);
-            let arr = Array.empty(rc, maxId);
-            // Register `RelSym`s.
-            foreach(RelSym.Symbol(PredSym(_, id), arity, _) <- rels) {
-                Array.put(Array.repeat(rc, arity, -1), toInt32(id), arr)
-            };
-            // Register functional predicates.
-            foreach (id <- Vector.range(relNum, maxId)) {
-                let arity = computeSizeOfFunctional(Int32.toInt64(id), 0, typeUnifier);
-                Array.put(Array.repeat(rc, arity, -1), id, arr)
-            };
+                    let maxId = Counter.get(idCreator);
+                    let arr = Array.empty(rc, maxId);
+                    // Register `RelSym`s.
+                    foreach(RelSym.Symbol(PredSym(_, id), arity, _) <- rels) {
+                        Array.put(Array.repeat(rc, arity, -1), toInt32(id), arr)
+                    };
+                    // Register functional predicates.
+                    foreach(id <- Vector.range(relNum, maxId)) {
+                        let arity = computeSizeOfFunctional(Int32.toInt64(id), 0, typeUnifier);
+                        Array.put(Array.repeat(rc, arity, -1), id, arr)
+                    };
 
-            let typeCreator = Counter.fresh(rc);
-            if (withProv) {
-                // Reserve position 0 for provenance values.
-                Counter.increment(typeCreator)
-            } else {
-                ()
-            };
-            foreach (id <- Vector.range(0, maxId)) {
-                let curArr = Array.get(id, arr);
-                foreach (index <- Vector.range(0, Array.length(curArr))) {
-                    match MutDisjointSets.find((Int32.toInt64(id), index), typeUnifier) {
-                        case None => Array.put(Counter.getAndIncrement(typeCreator), index, curArr)
-                        case Some((id2Int64, index2)) =>
-                            let id2 = toInt32(id2Int64);
-                            let otherArr = Array.get(id2, arr);
-                            match Array.get(index2, otherArr) {
-                                case -1 =>
-                                    let newType = Counter.getAndIncrement(typeCreator);
-                                    Array.put(newType, index2, otherArr);
-                                    Array.put(newType, index, curArr)
-                                case someType =>
-                                    Array.put(someType, index, curArr)
+                    let typeCreator = Counter.fresh(rc);
+                    if (withProv) {
+                        // Reserve position 0 for provenance values.
+                        Counter.increment(typeCreator)
+                    } else {
+                        ()
+                    };
+                    foreach(id <- Vector.range(0, maxId)) {
+                        let curArr = Array.get(id, arr);
+                        foreach(index <- Vector.range(0, Array.length(curArr))) {
+                            match MutDisjointSets.find((Int32.toInt64(id), index), typeUnifier) {
+                                case None                     => Array.put(Counter.getAndIncrement(typeCreator), index, curArr)
+                                case Some((id2Int64, index2)) =>
+                                    let id2 = toInt32(id2Int64);
+                                    let otherArr = Array.get(id2, arr);
+                                    match Array.get(index2, otherArr) {
+                                        case -1       =>
+                                            let newType = Counter.getAndIncrement(typeCreator);
+                                            Array.put(newType, index2, otherArr);
+                                            Array.put(newType, index, curArr)
+                                        case someType =>
+                                            Array.put(someType, index, curArr)
+                                    }
                             }
-                    }
+                        }
+                    };
+                    // Don't copy arrays, just cast them.
+                    unchecked_cast(arr as TypeInformation)
                 }
-            };
-            // Don't copy arrays, just cast them.
-            unchecked_cast(arr as TypeInformation)
+            case _                     => unreachable!()
         }
-        case _ => unreachable!()
-    }
 
     ///
     /// Expands `typeInfo` to include the provenance annotations types.
     ///
     pub def expandTypeInfoToProv(typeInfo: TypeInformation, predicates: Predicates): TypeInformation =
         let max = getMax(predicates);
-        Vector.mapWithIndex(i -> v -> match Int32.toInt64(i) < max {
-            case true => expandTypeToProv(v)
-            case false => v
-        }, typeInfo)
-
+        Vector.mapWithIndex(
+            i -> v -> match Int32.toInt64(i) < max {
+                case true  => expandTypeToProv(v)
+                case false => v
+            },
+            typeInfo
+        )
 
     ///
     /// Expands `relType` to include the provenance annotations types.
@@ -158,7 +166,7 @@ pub mod Fixpoint3.TypeInfo {
     ///
     def computeSizeOfFunctional(id: Int64, count: Int32, typeUnifier: TypeUnifier[r]): Int32 \ r =
         match MutDisjointSets.find((id, count), typeUnifier) {
-            case None => count
+            case None    => count
             case Some(_) => computeSizeOfFunctional(id, count + 1, typeUnifier)
         }
 
@@ -179,13 +187,15 @@ pub mod Fixpoint3.TypeInfo {
     ///
     /// Unifies the types of `rule`.
     ///
-    def typeConstraint(rule: Constraint, typeUnifier: TypeUnifier[r], counter: Counter[r]): Unit \ r = match rule {
-        case Constraint.Constraint(head, body) => region rc {
-            let varSymUnifier = MutMap.empty(rc);
-            typeHead(head, varSymUnifier, typeUnifier);
-            Vector.forEach(bodyPred -> typeBodyPred(bodyPred, varSymUnifier, typeUnifier, counter), body)
+    def typeConstraint(rule: Constraint, typeUnifier: TypeUnifier[r], counter: Counter[r]): Unit \ r =
+        match rule {
+            case Constraint.Constraint(head, body) =>
+                region rc {
+                    let varSymUnifier = MutMap.empty(rc);
+                    typeHead(head, varSymUnifier, typeUnifier);
+                    Vector.forEach(bodyPred -> typeBodyPred(bodyPred, varSymUnifier, typeUnifier, counter), body)
+                }
         }
-    }
 
     ///
     /// Unifies the types of `head`.
@@ -196,21 +206,22 @@ pub mod Fixpoint3.TypeInfo {
             match t {
                 case HeadTerm.Var(VarSym.VarSym(sym)) =>
                     typeVar(id, i, sym, varSymUnifier, typeUnifier)
-                case _ => ()
+                case _                                => ()
             }
         }
 
     ///
     /// Unifies the types of `bodyPred`.
     ///
-    def typeBodyPred(bodyPred: BodyPredicate, varSymUnifier: VarSymUnifier[r1], typeUnifier: TypeUnifier[r2], counter: Counter[r2]): Unit \ r1 + r2 = match bodyPred {
-        case BodyPredicate.BodyAtom(PredSym(_, id), _, _, _, terms) =>
-            Vector.forEachWithIndex(index -> term -> typeBodyTerm(id, index, term, varSymUnifier, typeUnifier), terms)
-        case BodyPredicate.Functional(outVars, _, _inVars) =>
-            let id = Int32.toInt64(Counter.getAndIncrement(counter));
-            Vector.forEachWithIndex(index -> match VarSym.VarSym(sym) -> typeVar(id, index, sym, varSymUnifier, typeUnifier), outVars)
-        case _ => ()
-    }
+    def typeBodyPred(bodyPred: BodyPredicate, varSymUnifier: VarSymUnifier[r1], typeUnifier: TypeUnifier[r2], counter: Counter[r2]): Unit \ r1 + r2 =
+        match bodyPred {
+            case BodyPredicate.BodyAtom(PredSym(_, id), _, _, _, terms) =>
+                Vector.forEachWithIndex(index -> term -> typeBodyTerm(id, index, term, varSymUnifier, typeUnifier), terms)
+            case BodyPredicate.Functional(outVars, _, _inVars)          =>
+                let id = Int32.toInt64(Counter.getAndIncrement(counter));
+                Vector.forEachWithIndex(index -> match VarSym.VarSym(sym) -> typeVar(id, index, sym, varSymUnifier, typeUnifier), outVars)
+            case _                                                      => ()
+        }
 
     ///
     /// Register that `(id, index) == sym`.
@@ -227,10 +238,10 @@ pub mod Fixpoint3.TypeInfo {
     ///
     /// Register that `(id, index) == term`.
     ///
-    def typeBodyTerm(id: Int64, index: Int32, term: BodyTerm, varSymUnifier: VarSymUnifier[r1], typeUnifier: TypeUnifier[r2]): Unit \ r1 + r2 = match term {
-        case BodyTerm.Wild => ()
-        case BodyTerm.Lit(_) => ()
-        case BodyTerm.Var(VarSym.VarSym(sym)) => typeVar(id, index, sym, varSymUnifier, typeUnifier)
-    }
-
+    def typeBodyTerm(id: Int64, index: Int32, term: BodyTerm, varSymUnifier: VarSymUnifier[r1], typeUnifier: TypeUnifier[r2]): Unit \ r1 + r2 =
+        match term {
+            case BodyTerm.Wild                    => ()
+            case BodyTerm.Lit(_)                  => ()
+            case BodyTerm.Var(VarSym.VarSym(sym)) => typeVar(id, index, sym, varSymUnifier, typeUnifier)
+        }
 }

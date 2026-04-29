@@ -25,18 +25,20 @@ pub trait FromString[a] {
 }
 
 instance FromString[Unit] {
-    pub def fromString(x: String): Option[Unit] = match x {
-        case "()" => Some(())
-        case _    => None
-    }
+    pub def fromString(x: String): Option[Unit] =
+        match x {
+            case "()" => Some(())
+            case _    => None
+        }
 }
 
 instance FromString[Bool] {
-    pub def fromString(x: String): Option[Bool] = match x {
-        case "true"  => Some(true)
-        case "false" => Some(false)
-        case _       => None
-    }
+    pub def fromString(x: String): Option[Bool] =
+        match x {
+            case "true"  => Some(true)
+            case "false" => Some(false)
+            case _       => None
+        }
 }
 
 instance FromString[Char] {

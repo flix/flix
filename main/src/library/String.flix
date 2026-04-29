@@ -15,14 +15,12 @@
  */
 
 pub mod String {
-
     import java.lang.System
     import java.lang.{String => JString}
     import java.nio.charset.StandardCharsets
     import java.util.regex.Pattern
     import java.util.regex.PatternSyntaxException
     import java.lang.IndexOutOfBoundsException
-
     use Regex.Flag
 
     ///
@@ -92,20 +90,20 @@ pub mod String {
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
-    pub def startsWith(prefix: {prefix = String}, s: String): Bool =
+    pub def startsWith(prefix: { prefix = String }, s: String): Bool =
         s.startsWith(prefix#prefix)
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
-    pub def endsWith(suffix: {suffix = String}, s: String): Bool =
+    pub def endsWith(suffix: { suffix = String }, s: String): Bool =
         s.endsWith(suffix#suffix)
 
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex = String}, s: String): List[String] =
-        unsafe IO { Array.toList(s.split(regex#regex)) }
+    pub def split(regex: { regex = String }, s: String): List[String] =
+        unsafe IO {Array.toList(s.split(regex#regex))}
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -146,24 +144,26 @@ pub mod String {
     ///
     /// Returns the given string `s` as a vector of characters.
     ///
-    pub def toVector(s: String): Vector[Char] = region rc {
-        let arr = toArray(rc, s);
-        Array.toVector(arr)
-    }
+    pub def toVector(s: String): Vector[Char] =
+        region rc {
+            let arr = toArray(rc, s);
+            Array.toVector(arr)
+        }
 
     ///
     /// Returns the given string `s` as a vector of UTF-8 bytes.
     ///
     pub def toBytes(s: String): Vector[Int8] =
-        unsafe IO { Array.toVector(s.getBytes(StandardCharsets.UTF_8)) }
+        unsafe IO {Array.toVector(s.getBytes(StandardCharsets.UTF_8))}
 
     ///
     /// Returns a string from the given vector of UTF-8 bytes `v`.
     ///
-    pub def fromBytes(v: Vector[Int8]): String = region rc {
-        let arr = Vector.toArray(rc, v);
-        unsafe IO { new JString(arr, StandardCharsets.UTF_8) }
-    }
+    pub def fromBytes(v: Vector[Int8]): String =
+        region rc {
+            let arr = Vector.toArray(rc, v);
+            unsafe IO {new JString(arr, StandardCharsets.UTF_8)}
+        }
 
     ///
     /// Compile the regular expression `regex` into a Regex object (internally
@@ -178,10 +178,11 @@ pub mod String {
     /// Regex literals are checked at compile time.
     ///
     pub def toRegex(regex: String): Result[String, Regex] =
-        Result.tryCatch(_ -> {
-            Pattern.compile(regex)
-        })
-
+        Result.tryCatch(
+            _ -> {
+                Pattern.compile(regex)
+            }
+        )
 
     ///
     /// Compile the regular expression `regex` into a Regex with the supplied flags.
@@ -193,10 +194,11 @@ pub mod String {
     /// `java.util.regex.Pattern` for guidance on enabling flags with embedded flag expressions.
     ///
     pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
-        Result.tryCatch(_ -> {
-            Pattern.compile(regex, Regex.sumFlags(flags))
-        })
-
+        Result.tryCatch(
+            _ -> {
+                Pattern.compile(regex, Regex.sumFlags(flags))
+            }
+        )
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
@@ -209,54 +211,59 @@ pub mod String {
     ///
     /// Assumes that `len > 0`.
     ///
-    def initHelper(f: Int32 -> Char \ ef, len: Int32): String \ ef = region rc {
-        let sb = StringBuilder.empty(rc);
-        def loop(i) = {
-            if (i >= len)
-                StringBuilder.toString(sb)
-            else {
-                let c = f(i);
-                StringBuilder.append(c, sb);
-                loop(i + 1)
-            }
-        };
-        loop(0)
-    }
+    def initHelper(f: Int32 -> Char \ ef, len: Int32): String \ ef =
+        region rc {
+            let sb = StringBuilder.empty(rc);
+            def loop(i) = {
+                if (i >= len)
+                    StringBuilder.toString(sb)
+                else {
+                    let c = f(i);
+                    StringBuilder.append(c, sb);
+                    loop(i + 1)
+                }
+            };
+            loop(0)
+        }
 
     ///
     /// Concatenate a list of strings into a single string.
     ///
-    pub def flatten(xs: List[String]): String = region rc {
-        let sb = StringBuilder.empty(rc);
-        List.forEach(x -> StringBuilder.appendString(x, sb), xs);
-        StringBuilder.toString(sb)
-    }
-
-    ///
-    /// Concatenate a list of strings into a single string, inserting the separator `sep` between
-    /// each pair of strings.
-    ///
-    pub def intercalate(sep: String, xs: List[String]): String = region rc {
-        let sb = StringBuilder.empty(rc);
-        let arr = List.toArray(rc, xs);
-        StringBuilder.intercalate(sep, arr, sb);
-        StringBuilder.toString(sb)
-    }
-
-    ///
-    /// Concatenate a list of strings into a single string, inserting the separator `sep` between
-    /// each pair of strings.
-    ///
-    pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
-        case Nil     => ""
-        case x :: rs => region rc {
+    pub def flatten(xs: List[String]): String =
+        region rc {
             let sb = StringBuilder.empty(rc);
-            StringBuilder.appendString(x, sb);
-            let appendStep = s -> { StringBuilder.append(sep, sb); StringBuilder.appendString(s, sb) };
-            List.forEach(appendStep, rs);
+            List.forEach(x -> StringBuilder.appendString(x, sb), xs);
             StringBuilder.toString(sb)
         }
-    }
+
+    ///
+    /// Concatenate a list of strings into a single string, inserting the separator `sep` between
+    /// each pair of strings.
+    ///
+    pub def intercalate(sep: String, xs: List[String]): String =
+        region rc {
+            let sb = StringBuilder.empty(rc);
+            let arr = List.toArray(rc, xs);
+            StringBuilder.intercalate(sep, arr, sb);
+            StringBuilder.toString(sb)
+        }
+
+    ///
+    /// Concatenate a list of strings into a single string, inserting the separator `sep` between
+    /// each pair of strings.
+    ///
+    pub def intercalateChar(sep: Char, xs: List[String]): String =
+        match xs {
+            case Nil     => ""
+            case x :: rs =>
+                region rc {
+                    let sb = StringBuilder.empty(rc);
+                    StringBuilder.appendString(x, sb);
+                    let appendStep = s -> {StringBuilder.append(sep, sb); StringBuilder.appendString(s, sb)};
+                    List.forEach(appendStep, rs);
+                    StringBuilder.toString(sb)
+                }
+        }
 
     ///
     /// Returns the result of applying `f` to every character in `s`.
@@ -275,7 +282,7 @@ pub mod String {
     ///
     /// Returns the reverse of `s`.
     ///
-    pub def reverse(s: String) : String =
+    pub def reverse(s: String): String =
         let start = length(s) - 1;
         init(i -> charAt(start - i, s), start + 1)
 
@@ -295,7 +302,7 @@ pub mod String {
     ///
     def rotateLeftHelper(n: Int32, s: String): String =
         let len = length(s);
-        let f = i -> { let i1 = n + i; charAt(i1 `Int32.remainder` len, s) };
+        let f = i -> {let i1 = n + i; charAt(i1 `Int32.remainder` len, s)};
         init(f, len)
 
     ///
@@ -316,7 +323,7 @@ pub mod String {
         let len = length(s);
         let n1 = n `Int32.remainder` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; charAt(i1 `Int32.remainder` len, s)};
+        let f = i -> {let i1 = start + i; charAt(i1 `Int32.remainder` len, s)};
         init(f, len)
 
     ///
@@ -324,7 +331,7 @@ pub mod String {
     ///
     /// Note - use `isSubmatch` to search for a substring.
     ///
-    pub def isMatch(regex: {regex = String}, s: String): Bool =
+    pub def isMatch(regex: { regex = String }, s: String): Bool =
         try {
             s.matches(regex#regex)
         } catch {
@@ -334,7 +341,7 @@ pub mod String {
     ///
     /// Returns `true` if the string `s` is matched by the regular expression `regex` at any point.
     ///
-    pub def isSubmatch(regex: {regex = String}, s: String): Bool =
+    pub def isSubmatch(regex: { regex = String }, s: String): Bool =
         isSubmatchHelper(regex#regex, s)
 
     ///
@@ -344,7 +351,7 @@ pub mod String {
         try {
             let p1 = Pattern.compile(pattern);
             let m1 = p1.matcher(s);
-            unsafe IO { m1.find(0) }
+            unsafe IO {m1.find(0)}
         } catch {
             case _: PatternSyntaxException => false
         }
@@ -354,33 +361,36 @@ pub mod String {
     ///
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
-    pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try {
-        s.substring(start#start, end#end)
-    } catch {
-        case _: IndexOutOfBoundsException => ""
-    }
+    pub def slice(start: { start = Int32 }, end: { end = Int32 }, s: String): String =
+        try {
+            s.substring(start#start, end#end)
+        } catch {
+            case _: IndexOutOfBoundsException => ""
+        }
 
     ///
     /// Get the substring of `s` to the left of index `end` (exclusive).
     ///
     /// `sliceLeft == slice(0 , e, s)`
     ///
-    pub def sliceLeft(end: {end = Int32}, s: String): String = match length(s) {
-        case len if end#end > len => ""
-        case _   if end#end < 0   => ""
-        case _                    => slice(start = 0, end, s)
-    }
+    pub def sliceLeft(end: { end = Int32 }, s: String): String =
+        match length(s) {
+            case len if end#end > len => ""
+            case _ if end#end < 0     => ""
+            case _                    => slice(start = 0, end, s)
+        }
 
     ///
     /// Get the substring of `s` to the right starting at index `start` (inclusive).
     ///
     /// `sliceRight == slice(start , length(s), s)`
     ///
-    pub def sliceRight(start: {start = Int32}, s: String): String = match length(s) {
-        case len if start#start >= len => ""
-        case _   if start#start < 0    => ""
-        case len                       => slice(start, end = len, s)
-    }
+    pub def sliceRight(start: { start = Int32 }, s: String): String =
+        match length(s) {
+            case len if start#start >= len => ""
+            case _ if start#start < 0      => ""
+            case len                       => slice(start, end = len, s)
+        }
 
     ///
     /// Optionally returns the position of the first character in `x` satisfying `f`.
@@ -421,33 +431,33 @@ pub mod String {
     ///
     /// Returns the positions of the all the elements in `s` satisfying `f`.
     ///
-    pub def findIndices(f: Char -> Bool \ ef, s: String): Vector[Int32] \ ef = region rc {
-        let len = length(s);
-        let l = MutList.empty(rc);
-        def loop(i) = {
-            if (i >= len)
-                ()
-            else {
-                if (f(charAt(i, s))) { MutList.push(i, l) };
-                loop(i + 1)
-            }
-        };
-        loop(0);
-        MutList.toVector(l)
-    }
+    pub def findIndices(f: Char -> Bool \ ef, s: String): Vector[Int32] \ ef =
+        region rc {
+            let len = length(s);
+            let l = MutList.empty(rc);
+            def loop(i) = {
+                if (i >= len)
+                    ()
+                else {
+                    if (f(charAt(i, s))) {MutList.push(i, l)};
+                    loop(i + 1)
+                }
+            };
+            loop(0);
+            MutList.toVector(l)
+        }
 
     ///
     /// Returns the positions of the all the occurrences of `substr` in `s`.
     ///
     /// Returns an empty vector if `substr` is the empty string.
     ///
-    pub def indicesOf(substr: {substr = String}, s: String): Vector[Int32] =
+    pub def indicesOf(substr: { substr = String }, s: String): Vector[Int32] =
         let sublen = length(substr#substr);
-        let step = ix ->
-            match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
-                case None => None
-                case Some(ix2) => Some((ix2, ix2 + sublen))
-            };
+        let step = ix -> match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
+            case None      => None
+            case Some(ix2) => Some((ix2, ix2 + sublen))
+        };
         List.unfold(step, 0) |> List.toVector
 
     ///
@@ -557,7 +567,7 @@ pub mod String {
     pub def dropWhileRight(f: Char -> Bool, s: String): String =
         match findIndexOfRight(x -> not (f(x)), s) {
             case None    => ""
-            case Some(i) => sliceLeft(end = i + 1, s)     // must include i
+            case Some(i) => sliceLeft(end = i + 1, s) // must include i
         }
 
     ///
@@ -583,11 +593,10 @@ pub mod String {
     ///
     pub def splitAt(n: Int32, s: String): (String, String) =
         match length(s) {
-            case _   if n <= 0  => ("", s)
+            case _ if n <= 0    => ("", s)
             case len if n > len => (s, "")
             case _              => (sliceLeft(end = n, s), sliceRight(start = n, s))
         }
-
 
     ///
     /// Applies `f` to a start value `x` and all elements in `s` going from left to right.
@@ -651,20 +660,21 @@ pub mod String {
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
-    pub def unfold(f: b -> Option[(Char, b)] \ ef, x: b): String \ ef = region rc {
-        let sb = StringBuilder.empty(rc);
-        def loop(a) = {
-            let a1 = f(a);
-            match a1 {
-                case None           => StringBuilder.toString(sb)
-                case Some((c, st1)) => {
-                    StringBuilder.append(c, sb);
-                    loop(st1)
+    pub def unfold(f: b -> Option[(Char, b)] \ ef, x: b): String \ ef =
+        region rc {
+            let sb = StringBuilder.empty(rc);
+            def loop(a) = {
+                let a1 = f(a);
+                match a1 {
+                    case None           => StringBuilder.toString(sb)
+                    case Some((c, st1)) => {
+                        StringBuilder.append(c, sb);
+                        loop(st1)
+                    }
                 }
-            }
-        };
-        loop(x)
-    }
+            };
+            loop(x)
+        }
 
     ///
     /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -674,39 +684,41 @@ pub mod String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit -> Option[Char] \ ef): String \ ef = region rc {
-        let sb = StringBuilder.empty(rc);
-        def loop() = {
-            match f() {
-                case None    => StringBuilder.toString(sb)
-                case Some(c) => {
-                    StringBuilder.append(c, sb);
-                    loop()
+    pub def unfoldWithIter(f: Unit -> Option[Char] \ ef): String \ ef =
+        region rc {
+            let sb = StringBuilder.empty(rc);
+            def loop() = {
+                match f() {
+                    case None    => StringBuilder.toString(sb)
+                    case Some(c) => {
+                        StringBuilder.append(c, sb);
+                        loop()
+                    }
                 }
-            }
-        };
-        loop()
-    }
+            };
+            loop()
+        }
 
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
-    pub def unfoldString(f: b -> Option[(String, b)] \ ef, x: b) : String \ ef = region rc {
-        let sb = StringBuilder.empty(rc);
-        def loop(a) = {
-            let a1 = f(a);
-            match a1 {
-                case None             => StringBuilder.toString(sb)
-                case Some(((s, st1))) => {
-                    StringBuilder.appendString(s, sb);
-                    loop(st1)
+    pub def unfoldString(f: b -> Option[(String, b)] \ ef, x: b): String \ ef =
+        region rc {
+            let sb = StringBuilder.empty(rc);
+            def loop(a) = {
+                let a1 = f(a);
+                match a1 {
+                    case None             => StringBuilder.toString(sb)
+                    case Some(((s, st1))) => {
+                        StringBuilder.appendString(s, sb);
+                        loop(st1)
+                    }
                 }
-            }
-        };
-        loop(x)
-    }
+            };
+            loop(x)
+        }
 
     ///
     /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -716,19 +728,20 @@ pub mod String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldStringWithIter(f: Unit -> Option[String] \ ef): String \ ef = region rc {
-        let sb = StringBuilder.empty(rc);
-        def loop() = {
-            match f() {
-                case None    => StringBuilder.toString(sb)
-                case Some(s) => {
-                    StringBuilder.appendString(s, sb);
-                    loop()
+    pub def unfoldStringWithIter(f: Unit -> Option[String] \ ef): String \ ef =
+        region rc {
+            let sb = StringBuilder.empty(rc);
+            def loop() = {
+                match f() {
+                    case None    => StringBuilder.toString(sb)
+                    case Some(s) => {
+                        StringBuilder.appendString(s, sb);
+                        loop()
+                    }
                 }
-            }
-        };
-        loop()
-    }
+            };
+            loop()
+        }
 
     ///
     /// Build a string by applying `f` to the initial char `x`.
@@ -737,39 +750,42 @@ pub mod String {
     ///
     /// `f` should return `None` to signal the end of building the string.
     ///
-    pub def iterate(f: Char -> Option[Char] \ ef, x: Char): String \ ef = region rc {
-        let sb = StringBuilder.empty(rc);
-        def loop(c) = {
-            match f(c) {
-                case None     => StringBuilder.toString(sb)
-                case Some(c1) => {
-                    StringBuilder.append(c1, sb);
-                    loop(c1)
+    pub def iterate(f: Char -> Option[Char] \ ef, x: Char): String \ ef =
+        region rc {
+            let sb = StringBuilder.empty(rc);
+            def loop(c) = {
+                match f(c) {
+                    case None     => StringBuilder.toString(sb)
+                    case Some(c1) => {
+                        StringBuilder.append(c1, sb);
+                        loop(c1)
+                    }
                 }
-            }
-        };
-        loop(x)
-    }
+            };
+            loop(x)
+        }
 
     ///
     /// Returns `true` if and only if at least one char in `s` satisfies the predicate `f`.
     ///
     /// Returns `false` if `s` is empty.
     ///
-    pub def exists(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(f, s) {
-        case None    => false
-        case Some(_) => true
-    }
+    pub def exists(f: Char -> Bool \ ef, s: String): Bool \ ef =
+        match findIndexOfLeft(f, s) {
+            case None    => false
+            case Some(_) => true
+        }
 
     ///
     /// Returns `true` if and only if all chars in `s` satisfy the predicate `f`.
     ///
     /// Returns `true` if `s` is empty.
     ///
-    pub def forAll(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(x -> not (f(x)), s) {
-        case None    => true
-        case Some(_) => false
-    }
+    pub def forAll(f: Char -> Bool \ ef, s: String): Bool \ ef =
+        match findIndexOfLeft(x -> not (f(x)), s) {
+            case None    => true
+            case Some(_) => false
+        }
 
     ///
     /// Returns `true` if and only if all chars in `s` are ascii characters.
@@ -836,43 +852,44 @@ pub mod String {
     /// Requiring an uneven number of spaces, the string will be left biased,
     /// e.g `String.center(4, '_', "a") -> "_a__"`.
     ///
-    pub def center(w: Int32, c: Char, s: String): String = region rc {
-        let space = w - length(s);
-        let floor = space / 2;
-        let ceil = space / 2 + Int32.remainder(space, 2);
+    pub def center(w: Int32, c: Char, s: String): String =
+        region rc {
+            let space = w - length(s);
+            let floor = space / 2;
+            let ceil = space / 2 + Int32.remainder(space, 2);
 
-        let prefix = repeat(floor, Char.toString(c));
-        let postfix = repeat(ceil, Char.toString(c));
+            let prefix = repeat(floor, Char.toString(c));
+            let postfix = repeat(ceil, Char.toString(c));
 
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString(prefix, sb);
-        StringBuilder.appendString(s, sb);
-        StringBuilder.appendString(postfix, sb);
-        StringBuilder.toString(sb)
-    }
+            let sb = StringBuilder.empty(rc);
+            StringBuilder.appendString(prefix, sb);
+            StringBuilder.appendString(s, sb);
+            StringBuilder.appendString(postfix, sb);
+            StringBuilder.toString(sb)
+        }
 
     ///
     /// Returns `s` with every match of the substring `src` replaced by the string `dst`.
     ///
-    pub def replace(src: {src = String}, dst: {dst = String}, s: String): String =
+    pub def replace(src: { src = String }, dst: { dst = String }, s: String): String =
         s.replace(src#src, dst#dst)
 
     ///
     /// Returns `s` with every match of the character `src` replaced by the character `dst`.
     ///
-    pub def replaceChar(src: {src = Char}, dst: {dst = Char}, s: String): String =
+    pub def replaceChar(src: { src = Char }, dst: { dst = Char }, s: String): String =
         s.replace(src#src, dst#dst)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
-    pub def replaceMatches(regex: {regex = String}, to: {to = String}, s: String): String =
+    pub def replaceMatches(regex: { regex = String }, to: { to = String }, s: String): String =
         s.replaceAll(regex#regex, to#to)
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
-    pub def replaceFirstMatch(regex: {regex = String}, to: {to = String}, s: String): String =
+    pub def replaceFirstMatch(regex: { regex = String }, to: { to = String }, s: String): String =
         s.replaceFirst(regex#regex, to#to)
 
     ///
@@ -896,10 +913,10 @@ pub mod String {
         let f = ix ->
             if (ix >= i and ix < i + n) {
                 let offset = ix - i;
-                if (offset < 0 or offset >= sublen) charAt(ix,s) else charAt(offset, sub)
-            } else charAt(ix, s);
+                if (offset < 0 or offset >= sublen) charAt(ix, s) else charAt(offset, sub)
+            } else
+                charAt(ix, s);
         init(f, length(s))
-
 
     ///
     /// Indent every line in string `s` by `n` spaces. `n` must be greater than `0`.
@@ -919,16 +936,17 @@ pub mod String {
     ///
     /// Helper function for `indent`.
     ///
-    def indentHelper(n: Int32, s: String): String = region rc {
-        let sb = StringBuilder.empty(rc);
-        let prefix = repeat(n, " ");
-        let step = x -> {
-            StringBuilder.appendString(prefix, sb);
-            StringBuilder.appendLine(x, sb)
-        };
-        List.forEach(step, lines(s));
-        StringBuilder.toString(sb)
-    }
+    def indentHelper(n: Int32, s: String): String =
+        region rc {
+            let sb = StringBuilder.empty(rc);
+            let prefix = repeat(n, " ");
+            let step = x -> {
+                StringBuilder.appendString(prefix, sb);
+                StringBuilder.appendLine(x, sb)
+            };
+            List.forEach(step, lines(s));
+            StringBuilder.toString(sb)
+        }
 
     ///
     /// Strip every indented line in string `s` by `n` spaces. `n` must be greater than `0`.
@@ -949,24 +967,25 @@ pub mod String {
     ///
     /// Helper function for `stripIndent`.
     ///
-    def stripIndentHelper(n: Int32, s: String): String = region rc {
-        let sb = StringBuilder.empty(rc);
-        let limit = Int32.min(n, length(s));
-        def loop(s1, ix) = {
-            if (ix >= limit)
-                sliceRight(start = ix, s1)
-            else if (not Char.isWhitespace(charAt(ix, s1)))
-                sliceRight(start = ix, s1)
-            else
-                loop(s1, ix + 1)
-        };
-        let step = s1 -> {
-            let line = loop(s1, 0);
-            StringBuilder.appendLine(line, sb)
-        };
-        List.forEach(step, lines(s));
-        StringBuilder.toString(sb)
-    }
+    def stripIndentHelper(n: Int32, s: String): String =
+        region rc {
+            let sb = StringBuilder.empty(rc);
+            let limit = Int32.min(n, length(s));
+            def loop(s1, ix) = {
+                if (ix >= limit)
+                    sliceRight(start = ix, s1)
+                else if (not Char.isWhitespace(charAt(ix, s1)))
+                    sliceRight(start = ix, s1)
+                else
+                    loop(s1, ix + 1)
+            };
+            let step = s1 -> {
+                let line = loop(s1, 0);
+                StringBuilder.appendLine(line, sb)
+            };
+            List.forEach(step, lines(s));
+            StringBuilder.toString(sb)
+        }
 
     ///
     /// Split the string `s` into an array of lines, breaking on newline.
@@ -984,40 +1003,44 @@ pub mod String {
     /// Join the list of strings `a` separating each pair of strings and
     /// ending the result string with the system dependent line separator.
     ///
-    pub def unlines(a: List[String]): String = region rc {
-        let sb = StringBuilder.empty(rc);
-        List.forEach(x -> StringBuilder.appendLine(x, sb), a);
-        StringBuilder.toString(sb)
-    }
+    pub def unlines(a: List[String]): String =
+        region rc {
+            let sb = StringBuilder.empty(rc);
+            List.forEach(x -> StringBuilder.appendLine(x, sb), a);
+            StringBuilder.toString(sb)
+        }
 
     ///
     /// Split the string `s` into an list of words, dividing on one or more white space characters.
     /// Leading and trailing spaces are trimmed.
     ///
-    pub def words(s: String): List[String] = match trim(s) {
-        case s1 if isEmpty(s1) => Nil
-        case s1                => split({regex = "\\s+"}, s1)
-    }
+    pub def words(s: String): List[String] =
+        match trim(s) {
+            case s1 if isEmpty(s1) => Nil
+            case s1                => split({regex = "\\s+"}, s1)
+        }
 
     ///
     /// Join the array of strings `l` separating each pair of strings with a
     /// single space character.
     ///
-    pub def unwords(l: List[String]): String = match l {
-        case Nil     => ""
-        case x :: xs => region rc {
-            let sb = StringBuilder.empty(rc);
-            StringBuilder.appendString(x, sb);
-            let f = s -> { StringBuilder.append(' ', sb); StringBuilder.appendString(s, sb) };
-            List.forEach(f, xs);
-            StringBuilder.toString(sb)
+    pub def unwords(l: List[String]): String =
+        match l {
+            case Nil     => ""
+            case x :: xs =>
+                region rc {
+                    let sb = StringBuilder.empty(rc);
+                    StringBuilder.appendString(x, sb);
+                    let f = s -> {StringBuilder.append(' ', sb); StringBuilder.appendString(s, sb)};
+                    List.forEach(f, xs);
+                    StringBuilder.toString(sb)
+                }
         }
-    }
 
     ///
     /// Alias for `indexOfLeft`.
     ///
-    pub def indexOf(substr: {substr = String}, s: String): Option[Int32] = indexOfLeft({substr = substr#substr}, s)
+    pub def indexOf(substr: { substr = String }, s: String): Option[Int32] = indexOfLeft({substr = substr#substr}, s)
 
     ///
     /// Return the index of the first occurrence of `substr` in `s` from the left.
@@ -1026,7 +1049,7 @@ pub mod String {
     ///
     /// If `substr` is the empty string return None.
     ///
-    pub def indexOfLeft(substr: {substr = String}, s: String): Option[Int32] =
+    pub def indexOfLeft(substr: { substr = String }, s: String): Option[Int32] =
         if (isEmpty(substr#substr))
             None
         else {
@@ -1041,7 +1064,7 @@ pub mod String {
     ///
     /// If `substr` is the empty string return None.
     ///
-    pub def indexOfRight(substr: {substr = String}, s: String): Option[Int32] =
+    pub def indexOfRight(substr: { substr = String }, s: String): Option[Int32] =
         if (isEmpty(substr#substr))
             None
         else {
@@ -1052,7 +1075,7 @@ pub mod String {
     ///
     /// Returns `true` if and only if `substr` is an infix of `s`.
     ///
-    pub def contains(substr: {substr = String}, s: String): Bool =
+    pub def contains(substr: { substr = String }, s: String): Bool =
         if (isEmpty(substr#substr))
             true
         else {
@@ -1088,23 +1111,23 @@ pub mod String {
     /// Returns the empty string if `s1` and `s2` do not share a common suffix.
     ///
     pub def commonSuffix(s1: String, s2: String): String =
-            def loop(i, j, acc) = {
-                if (i < 0)
-                    s1
-                else if (j < 0)
-                    s2
-                else {
-                    let c1 = charAt(i, s1);
-                    let c2 = charAt(j, s2);
-                    if (c1 != c2)
-                        takeRight(acc, s1)
-                    else
-                        loop(i - 1, j - 1, acc + 1)
-                }
-            };
-            let start1 = length(s1) - 1;
-            let start2 = length(s2) - 1;
-            loop(start1, start2, 0)
+        def loop(i, j, acc) = {
+            if (i < 0)
+                s1
+            else if (j < 0)
+                s2
+            else {
+                let c1 = charAt(i, s1);
+                let c2 = charAt(j, s2);
+                if (c1 != c2)
+                    takeRight(acc, s1)
+                else
+                    loop(i - 1, j - 1, acc + 1)
+            }
+        };
+        let start1 = length(s1) - 1;
+        let start2 = length(s2) - 1;
+        loop(start1, start2, 0)
 
     ///
     /// Abbreviate the string `s` if it exceeds the width `w`.
@@ -1117,7 +1140,7 @@ pub mod String {
     pub def abbreviateLeft(w: Int32, s: String): String =
         match length(s) {
             case len if len < w => s
-            case _   if w < 3   => ""
+            case _ if w < 3     => ""
             case len            => {
                 let start = len - w + 3;
                 "..." + slice(start = start, end = len, s)
@@ -1135,7 +1158,7 @@ pub mod String {
     pub def abbreviateRight(w: Int32, s: String): String =
         match length(s) {
             case len if len < w => s
-            case _   if w < 3   => ""
+            case _ if w < 3     => ""
             case _              => slice(start = 0, end = w - 3, s) + "..."
         }
 
@@ -1145,25 +1168,34 @@ pub mod String {
     /// The answer is the number deletions, insertions or substitutions needed to turn
     /// string `s` into string `t`.
     ///
-    pub def levenshteinDistance(s: String, t: String): Int32 = region rc {
-        let m = length(s);
-        let n = length(t);
-        let v0 = Array.repeat(rc, n + 1, 0);
-        let v1 = Array.repeat(rc, n + 1, 0);
-        forIndex(0, n, i -> Array.put(i, i, v0));
-        forIndex(0, m - 1, i -> {
-            Array.put(i + 1, 0, v1);
-            forIndex(0, n - 1, j -> {
-                let substitutionCost = if (charAt(i, s) == charAt(j, t)) 0 else 1;
-                let a = Array.get(j, v1) + 1;
-                let b = Array.get(j + 1, v0) + 1;
-                let c = Array.get(j, v0) + substitutionCost;
-                Array.put(Int32.min(a, Int32.min(b, c)), j + 1, v1)
-            });
-            arraySwap(v0, v1)
-        });
-        Array.get(n, v0)
-    }
+    pub def levenshteinDistance(s: String, t: String): Int32 =
+        region rc {
+            let m = length(s);
+            let n = length(t);
+            let v0 = Array.repeat(rc, n + 1, 0);
+            let v1 = Array.repeat(rc, n + 1, 0);
+            forIndex(0, n, i -> Array.put(i, i, v0));
+            forIndex(
+                0,
+                m - 1,
+                i -> {
+                    Array.put(i + 1, 0, v1);
+                    forIndex(
+                        0,
+                        n - 1,
+                        j -> {
+                            let substitutionCost = if (charAt(i, s) == charAt(j, t)) 0 else 1;
+                            let a = Array.get(j, v1) + 1;
+                            let b = Array.get(j + 1, v0) + 1;
+                            let c = Array.get(j, v0) + substitutionCost;
+                            Array.put(Int32.min(a, Int32.min(b, c)), j + 1, v1)
+                        }
+                    );
+                    arraySwap(v0, v1)
+                }
+            );
+            Array.get(n, v0)
+        }
 
     ///
     /// Helper function for `levenshteinDistance`.
@@ -1171,13 +1203,13 @@ pub mod String {
     /// This implements a forloop, the end point `e` is inclusive.
     ///
     def forIndex(b: Int32, e: Int32, f: Int32 -> Unit \ ef): Unit \ ef =
-        if (b <= e) { f(b); forIndex(b + 1, e, f) }
+        if (b <= e) {f(b); forIndex(b + 1, e, f)}
 
     ///
     /// Helper function for `levenshteinDistance`.
     ///
-    def arraySwap(a: Array[Int32, r1], b : Array[Int32, r2]): Unit \ { r2, r1 } =
-        forIndex(0, Array.length(a) - 1, {i -> Array.put(Array.get(i, b), i, a) })
+    def arraySwap(a: Array[Int32, r1], b: Array[Int32, r2]): Unit \ { r2, r1 } =
+        forIndex(0, Array.length(a) - 1, {i -> Array.put(Array.get(i, b), i, a)})
 
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
@@ -1202,7 +1234,7 @@ pub mod String {
     ///
     /// Split the string `s` on matches of `substr`.
     ///
-    pub def splitOn(substr: {substr = String}, s: String): List[String] =
+    pub def splitOn(substr: { substr = String }, s: String): List[String] =
         let maxlen = length(s);
         let sublen = length(substr#substr);
         let step = ix ->
@@ -1212,7 +1244,7 @@ pub mod String {
                 None
             else {
                 match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
-                    case None => {
+                    case None      => {
                         let s1 = sliceRight(start = ix, s);
                         Some((s1, maxlen + 1))
                     }
@@ -1229,7 +1261,7 @@ pub mod String {
     ///
     /// Returns `None` if `substr` is the empty string.
     ///
-    pub def indexOfLeftWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
+    pub def indexOfLeftWithOffset(substr: { substr = String }, offset: { offset = Int32 }, s: String): Option[Int32] =
         if (isEmpty(substr#substr))
             None
         else {
@@ -1242,7 +1274,7 @@ pub mod String {
     ///
     /// Returns `None` if `substr` is the empty string.
     ///
-    pub def indexOfRightWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
+    pub def indexOfRightWithOffset(substr: { substr = String }, offset: { offset = Int32 }, s: String): Option[Int32] =
         if (isEmpty(substr#substr))
             None
         else {
@@ -1279,7 +1311,7 @@ pub mod String {
     /// Find the first instance of `substr` in string `s`, return a pair of the
     /// prefix of string `s` up to `substr` and the rest of string `s` including `substr`.
     ///
-    pub def breakOnLeft(substr: {substr = String}, s: String): (String, String) =
+    pub def breakOnLeft(substr: { substr = String }, s: String): (String, String) =
         match indexOfLeft({substr = substr#substr}, s) {
             case None    => (s, "")
             case Some(i) => (sliceLeft(end = i, s), sliceRight(start = i, s))
@@ -1289,7 +1321,7 @@ pub mod String {
     /// Find the last instance of `substr` in string `s`, return a pair of the
     /// initial string including `substr` and suffix from `substr`.
     ///
-    pub def breakOnRight(substr: {substr = String}, s: String): (String, String) =
+    pub def breakOnRight(substr: { substr = String }, s: String): (String, String) =
         let sublen = length(substr#substr);
         match indexOfRight({substr = substr#substr}, s) {
             case None    => (s, "")
@@ -1299,7 +1331,7 @@ pub mod String {
     ///
     /// Count the occurrences of `substr` in string `s`.
     ///
-    pub def countSubstring(substr: {substr = String}, s: String): Int32 =
+    pub def countSubstring(substr: { substr = String }, s: String): Int32 =
         let sublen = length(substr#substr);
         def loop(offset, count) = match indexOfLeftWithOffset(substr = substr#substr, offset = offset, s) {
             case None    => count
@@ -1322,7 +1354,7 @@ pub mod String {
     /// blanks or control characters followed by `margin` from the line, if
     /// such a prefix exists.
     ///
-    pub def stripMarginWith(margin: {margin = String}, s: String): String =
+    pub def stripMarginWith(margin: { margin = String }, s: String): String =
         let l = linesWithNewLine(s);
         intercalate("", List.map(stripMarginWithSingleLine(margin), l))
 
@@ -1331,7 +1363,7 @@ pub mod String {
     /// From a single line, strips a leading prefix consisting of blanks or
     /// control characters followed by `margin`, if such a prefix exists.
     ///
-    def stripMarginWithSingleLine(margin: {margin = String}, s: String): String =
+    def stripMarginWithSingleLine(margin: { margin = String }, s: String): String =
         let marginLen = length(margin#margin);
         let trimmed = dropWhile(c -> c <= ' ', s);
         if (startsWith(prefix = margin#margin, trimmed))
@@ -1357,7 +1389,7 @@ pub mod String {
     ///
     /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
     ///
-    pub def stripPrefix(substr: {substr = String}, s: String): Option[String] =
+    pub def stripPrefix(substr: { substr = String }, s: String): Option[String] =
         if (not startsWith(prefix = substr#substr, s))
             None
         else
@@ -1366,7 +1398,7 @@ pub mod String {
     ///
     /// Returns `Some(prefix)` of string `s` if its suffix matches `substr`.
     ///
-    pub def stripSuffix(substr: {substr = String}, s: String): Option[String] =
+    pub def stripSuffix(substr: { substr = String }, s: String): Option[String] =
         if (not endsWith(suffix = substr#substr, s))
             None
         else
@@ -1378,7 +1410,8 @@ pub mod String {
     /// If a line contains a single word that exceeds the length of `w`, the word will be broken.
     ///
     pub def wrap(w: Int32, s: String): String =
-        if (w <= 0) ""
+        if (w <= 0)
+            ""
         else {
             let lines = List.flatMap(l -> wrapLine(w, l), lines(s));
             intercalate(lineSeparator(), lines)
@@ -1397,7 +1430,7 @@ pub mod String {
             let endOpt = Regex.indexOfLastWithBounds(regex"(?<!\\s)\\s", {start = 0}, {end = w}, s);
             let end = match endOpt {
                 case Some(end) => end
-                case None => w
+                case None      => w
             };
             sliceLeft({end = end}, s) :: wrapLine(w, trimLeft(sliceRight({start = end}, s)))
         }
@@ -1413,5 +1446,4 @@ pub mod String {
     ///
     pub def iterator(rc: Region[r], s: String): Iterator[Char, r, r] \ r =
         Iterator.range(rc, 0, length(s)) |> Iterator.map(i -> charAt(i, s))
-
 }

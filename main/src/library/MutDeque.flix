@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 pub mod MutDeque {
     use Math.Shuffle
 
@@ -85,9 +84,10 @@ pub mod MutDeque {
     ///
     /// Returns a string representation of the given MutDeque `d`.
     ///
-    pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] = region rc {
-        "MutDeque#{" + (MutDeque.iterator(rc, d) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] =
+        region rc {
+            "MutDeque#{" + (MutDeque.iterator(rc, d) |> Iterator.join(", ")) + "}"
+        }
 
     ///
     /// Returns an empty MutDeque.
@@ -119,7 +119,8 @@ pub mod MutDeque {
     /// Returns the size of a MutDeque, where `l` = array length, `f` = front index, `b` = back index.
     ///
     def computeSize(c: Int32, f: Int32, b: Int32): Int32 =
-        if (f <= b) // The elements laid out without "wrapping around" the array.
+        if (f <= b)
+            // The elements laid out without "wrapping around" the array.
             b - f
         else
             c - (f - b) // Subtract the complement of number of elements from the capacity
@@ -189,8 +190,8 @@ pub mod MutDeque {
     pub def popFront(d: MutDeque[a, r]): Option[a] \ r =
         if (isEmpty(d)) {
             None
-        }
-        else { // Get the element `x` at the front, update index, optionally compress array, return `Some(x)`.
+        } else {
+            // Get the element `x` at the front, update index, optionally compress array, return `Some(x)`.
             let x = Array.get(d->front, d->values);
             d->front = (d->front + 1) `Int32.modulo` capacity(d);
             compress(d);
@@ -203,8 +204,8 @@ pub mod MutDeque {
     pub def popBack(d: MutDeque[a, r]): Option[a] \ r =
         if (isEmpty(d)) {
             None
-        }
-        else { // Update index such that back points to a valid element `x`, get element, optionally compress array, return `Some(x)`.
+        } else {
+            // Update index such that back points to a valid element `x`, get element, optionally compress array, return `Some(x)`.
             let b1 = (d->back - 1) `Int32.modulo` capacity(d);
             let x = Array.get(b1, d->values);
             d->back = b1;
@@ -216,18 +217,18 @@ pub mod MutDeque {
     /// Pushes `x` to the front of `d`.
     ///
     pub def pushFront(x: a, d: MutDeque[a, r]): Unit \ r =
-        let f1 = (d->front - 1) `Int32.modulo` capacity(d);     // Update index such that it points to an empty index. This will never overlap with the back index.
-        Array.put(x, f1, d->values);                            // Store `x` in the array.
-        d->front = f1;                                          // Update the front index reference.
-        expand(d)                                               // Optionally expand `d`.
+        let f1 = (d->front - 1) `Int32.modulo` capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
+        Array.put(x, f1, d->values); // Store `x` in the array.
+        d->front = f1; // Update the front index reference.
+        expand(d) // Optionally expand `d`.
 
     ///
     /// Pushes `x` to the back of `d`.
     ///
     pub def pushBack(x: a, d: MutDeque[a, r]): Unit \ r =
-        Array.put(x, d->back, d->values);                           // Store `x` in the array.
-        d->back = (d->back + 1) `Int32.modulo` capacity(d);         // Update back index reference to point to next empty index.
-        expand(d)                                                   // Optionally expand `d`.
+        Array.put(x, d->back, d->values); // Store `x` in the array.
+        d->back = (d->back + 1) `Int32.modulo` capacity(d); // Update back index reference to point to next empty index.
+        expand(d) // Optionally expand `d`.
 
     ///
     /// Optionally returns the front element. Does *not* remove it.
@@ -257,7 +258,7 @@ pub mod MutDeque {
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
     def expand(d: MutDeque[a, r]): Unit \ r =
-        if (shouldExpand(d)) { grow(d) }
+        if (shouldExpand(d)) {grow(d)}
 
     ///
     /// Returns `true` if the load factor is greater than or equal to `maxLoadFactor`.
@@ -270,9 +271,9 @@ pub mod MutDeque {
     ///
     def grow(d: MutDeque[a, r]): Unit \ r =
         let c = capacity(d);
-        let arr = Array.empty(d->r, Int32.leftShift(c, 1));     // Allocate empty array `arr` with double the capacity of `a`.
-        copyElements(d->r, d->front, d->back, d->values, arr);  // Copy elements from old array `a` to empty array `arr`.
-        d->values = arr;                                        // Update references.
+        let arr = Array.empty(d->r, Int32.leftShift(c, 1)); // Allocate empty array `arr` with double the capacity of `a`.
+        copyElements(d->r, d->front, d->back, d->values, arr); // Copy elements from old array `a` to empty array `arr`.
+        d->values = arr; // Update references.
         d->back = computeSize(c, d->front, d->back);
         d->front = 0
 
@@ -280,7 +281,7 @@ pub mod MutDeque {
     /// Compresses MutDeque `d` if the load factor is less than or equal to `minLoadFactor`.
     ///
     def compress(d: MutDeque[a, r]): Unit \ r =
-        if (shouldCompress(d)) { shrink(d) }
+        if (shouldCompress(d)) {shrink(d)}
 
     ///
     /// Returns `true` if the load factor is less than or equal to 1 / 4.
@@ -294,27 +295,28 @@ pub mod MutDeque {
     def shrink(d: MutDeque[a, r]): Unit \ r =
         let mc = minCapacity();
         let c = capacity(d);
-        if (c > mc) {                                               // Prevent the backing array from shrinking below `minCapacity`.
-            let arr = Array.empty(d->r, Int32.rightShift(c, 1));    // Allocate empty array `arr` with half the capacity of `a`.
-            copyElements(d->r, d->front, d->back, d->values, arr);  // Copy elements from old array `a` to empty array `arr`.
-            d->values = arr;                                        // Update references.
+        if (c > mc) {
+            // Prevent the backing array from shrinking below `minCapacity`.
+            let arr = Array.empty(d->r, Int32.rightShift(c, 1)); // Allocate empty array `arr` with half the capacity of `a`.
+            copyElements(d->r, d->front, d->back, d->values, arr); // Copy elements from old array `a` to empty array `arr`.
+            d->values = arr; // Update references.
             d->back = computeSize(c, d->front, d->back);
             d->front = 0
         } else {
             ()
         }
 
-
     ///
     /// Copies the elements from `a` to `a1`. Mutates the array `a1`.
     ///
     def copyElements(rc2: Region[r2], f: Int32, b: Int32, a: Array[a, r1], a1: Array[a, r2]): Unit \ { r1, r2 } =
         let c = Array.length(a);
-        if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
-            Array.updateSequence(0,     Array.slice(rc2, start = f, end = b, a), a1)
+        if (f < b) {
+            // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
+            Array.updateSequence(0, Array.slice(rc2, start = f, end = b, a), a1)
         } else {
-            Array.updateSequence(0,     Array.slice(rc2, start = f, end = c, a), a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
-            Array.updateSequence(c - f, Array.slice(rc2, start = 0, end = b, a), a1)  // Copy the back  elements of `a` to a1[(c - f) .. b].
+            Array.updateSequence(0, Array.slice(rc2, start = f, end = c, a), a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
+            Array.updateSequence(c - f, Array.slice(rc2, start = 0, end = b, a), a1) // Copy the back  elements of `a` to a1[(c - f) .. b].
         }
 
     ///
@@ -332,18 +334,19 @@ pub mod MutDeque {
     ///
     /// Returns `true` if `MutDeque`s `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
-    pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ { r1, r2 } with Eq[t] = region rc3 {
-        let aSize = size(d1);
-        let bSize = size(d2);
-        if (aSize == bSize) {
-            let a1 = Array.empty(rc3, aSize);
-            let b1 = Array.empty(rc3, bSize);
-            copyElements(rc3, d1->front, d1->back, d1->values, a1);
-            copyElements(rc3, d2->front, d2->back, d2->values, b1);
-            Array.sameElements(a1, b1)
-        } else
-            false
-    }
+    pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ { r1, r2 } with Eq[t] =
+        region rc3 {
+            let aSize = size(d1);
+            let bSize = size(d2);
+            if (aSize == bSize) {
+                let a1 = Array.empty(rc3, aSize);
+                let b1 = Array.empty(rc3, bSize);
+                copyElements(rc3, d1->front, d1->back, d1->values, a1);
+                copyElements(rc3, d2->front, d2->back, d2->values, b1);
+                Array.sameElements(a1, b1)
+            } else
+                false
+        }
 
     ///
     /// Returns `d` as a `List`.
@@ -368,27 +371,30 @@ pub mod MutDeque {
     ///
     /// Returns `d` as a vector.
     ///
-    pub def toVector(d: MutDeque[a, r]): Vector[a] \ r = region rc {
-        let arr = Array.empty(rc, size(d));
-        forEachWithIndex((i, x) -> Array.put(x, i, arr), d);
-        Array.toVector(arr)
-    }
+    pub def toVector(d: MutDeque[a, r]): Vector[a] \ r =
+        region rc {
+            let arr = Array.empty(rc, size(d));
+            forEachWithIndex((i, x) -> Array.put(x, i, arr), d);
+            Array.toVector(arr)
+        }
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `d` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, d: MutDeque[a, r]): String \ r with ToString[a] = region rc {
-        MutDeque.iterator(rc, d) |> Iterator.join(sep)
-    }
+    pub def join(sep: String, d: MutDeque[a, r]): String \ r with ToString[a] =
+        region rc {
+            MutDeque.iterator(rc, d) |> Iterator.join(sep)
+        }
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `d` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, r } = region rc {
-        MutDeque.iterator(rc, d) |> Iterator.joinWith(f, sep)
-    }
+    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, r } =
+        region rc {
+            MutDeque.iterator(rc, d) |> Iterator.joinWith(f, sep)
+        }
 
     ///
     /// Returns an iterator over `d`.
@@ -431,19 +437,20 @@ pub mod MutDeque {
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`
     /// along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, r } = region rc {
-        let ix = Ref.fresh(rc, 0);
-        forEach(x -> { let i = Ref.get(ix); f(i, x); Ref.put(i + 1, ix) }, d)
-    }
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, r } =
+        region rc {
+            let ix = Ref.fresh(rc, 0);
+            forEach(x -> {let i = Ref.get(ix); f(i, x); Ref.put(i + 1, ix)}, d)
+        }
 
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rc1: Region[r1], d: MutDeque[a, r2]): MutDeque[a, r1] \ { r2, r1, Shuffle } = region rc3 {
-        let arr = toArray(rc3, d) !> Array.shuffle;
-        let result = empty(rc1);
-        Array.forEach(x -> pushBack(x, result), arr);
-        result
-    }
-
+    pub def shuffle(rc1: Region[r1], d: MutDeque[a, r2]): MutDeque[a, r1] \ { r2, r1, Shuffle } =
+        region rc3 {
+            let arr = toArray(rc3, d) !> Array.shuffle;
+            let result = empty(rc1);
+            Array.forEach(x -> pushBack(x, result), arr);
+            result
+        }
 }

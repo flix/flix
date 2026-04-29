@@ -32,11 +32,9 @@
 /// on the key if `put` does not.
 ///
 pub trait IndexableMut[t] with Indexable[t] {
-
     /// The effect of `put`.
     type Aef: Eff
 
     /// Insert the element `v` at index `i` in `t`, overriding the existing element if there is one.
     pub def put(t: t, i: Indexable.Idx[t], v: Indexable.Elm[t]): Unit \ IndexableMut.Aef[t]
-
 }

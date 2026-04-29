@@ -16,21 +16,18 @@
  */
 
 pub mod Assert {
-
     use Sys.Console
-    use RichString.{blue, red, text, yellow};
-    import java.lang.AssertionError;
+    use RichString.{blue, red, text, yellow}
+    import java.lang.AssertionError
 
     ///
     /// An effect used to perform assertions during program execution.
     ///
     pub eff Assert {
-
         ///
         /// Asserts that the given condition `cond` is `true` with a message `msg`.
         ///
         def assert(cond: Bool, msg: RichString): Unit
-
     }
 
     ///
@@ -62,15 +59,15 @@ pub mod Assert {
     ///
     /// Asserts that the given values `expected` and `actual` are equal.
     ///
-    pub def assertEq(expected: {expected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
+    pub def assertEq(expected: { expected = a }, actual: a): Unit \ Assert with Eq[a], ToString[a] =
         let c = actual == expected#expected;
-        let m = red("Assertion failed: ") + text("expected ") + blue("`${expected#expected}`") + text(", but got ") + yellow("`${actual}`");
+        let m = red("Assertion failed: ") + text("expected ") + blue("`${ expected#expected }`") + text(", but got ") + yellow("`${ actual }`");
         Assert.assert(c, m)
 
     ///
     /// Asserts that the given values `expected` and `actual` are equal with the given message `msg`.
     ///
-    pub def assertEqWithMsg(expected: {expected = a}, actual: a, msg: String): Unit \ Assert with Eq[a] =
+    pub def assertEqWithMsg(expected: { expected = a }, actual: a, msg: String): Unit \ Assert with Eq[a] =
         let c = actual == expected#expected;
         let m = text(msg);
         Assert.assert(c, m)
@@ -78,15 +75,15 @@ pub mod Assert {
     ///
     /// Asserts that the given values `unexpected` and `actual` are not equal.
     ///
-    pub def assertNeq(unexpected: {unexpected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
+    pub def assertNeq(unexpected: { unexpected = a }, actual: a): Unit \ Assert with Eq[a], ToString[a] =
         let c = actual != unexpected#unexpected;
-        let m = red("Assertion failed: ") + text("expected values to be different, but both were ") + yellow("`${actual}`");
+        let m = red("Assertion failed: ") + text("expected values to be different, but both were ") + yellow("`${ actual }`");
         Assert.assert(c, m)
 
     ///
     /// Asserts that the given values `unexpected` and `actual` are not equal with the given message `msg`.
     ///
-    pub def assertNeqWithMsg(unexpected: {unexpected = a}, actual: a, msg: String): Unit \ Assert with Eq[a] =
+    pub def assertNeqWithMsg(unexpected: { unexpected = a }, actual: a, msg: String): Unit \ Assert with Eq[a] =
         let c = actual != unexpected#unexpected;
         let m = text(msg);
         Assert.assert(c, m)
@@ -128,7 +125,7 @@ pub mod Assert {
     ///
     pub def assertEmpty(ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], ToString[m[a]] =
         let c = Foldable.isEmpty(ma);
-        let m = red("Assertion failed: ") + text("expected ") + blue("empty collection") + text(", but got ") + yellow("${ma}");
+        let m = red("Assertion failed: ") + text("expected ") + blue("empty collection") + text(", but got ") + yellow("${ ma }");
         Assert.assert(c, m)
 
     ///
@@ -136,7 +133,7 @@ pub mod Assert {
     ///
     pub def assertNonEmpty(ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], ToString[m[a]] =
         let c = Foldable.nonEmpty(ma);
-        let m = red("Assertion failed: ") + text("expected ") + blue("non-empty collection") + text(", but got ") + yellow("${ma}");
+        let m = red("Assertion failed: ") + text("expected ") + blue("non-empty collection") + text(", but got ") + yellow("${ ma }");
         Assert.assert(c, m)
 
     ///
@@ -144,7 +141,7 @@ pub mod Assert {
     ///
     pub def assertMemberOf(x: a, ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], Eq[a], ToString[a], ToString[m[a]] =
         let c = Foldable.memberOf(x, ma);
-        let m = red("Assertion failed: ") + text("expected ") + blue("`${x}`") + text(" to be a member of ") + yellow("${ma}");
+        let m = red("Assertion failed: ") + text("expected ") + blue("`${ x }`") + text(" to be a member of ") + yellow("${ ma }");
         Assert.assert(c, m)
 
     ///
@@ -164,19 +161,20 @@ pub mod Assert {
     ///
     /// In other words, re-interprets the `Assert` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) = x ->
-        run {
-            f(x)
-        } with handler Assert {
-            def assert(cond, msg, resume) = {
-                if (cond)
-                    resume()
-                else {
-                    println(RichString.toString(msg));
-                    throw new AssertionError(RichString.toString(msg))
-                }
-            }
-        }
+    pub def handle(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) =
+        x ->
+            run {
+                f(x)
+            } with handler Assert {
+                  def assert(cond, msg, resume) = {
+                      if (cond)
+                          resume()
+                      else {
+                          println(RichString.toString(msg));
+                          throw new AssertionError(RichString.toString(msg))
+                      }
+                  }
+              }
 
     ///
     /// Runs the `Assert` effect of the given function `f` by throwing exceptions on assertion failures.
@@ -184,17 +182,19 @@ pub mod Assert {
     /// In other words, re-interprets the `Assert` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Assert) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Assert) + IO =
+        handle(f)()
 
     ///
     /// Handles the `Assert` effect by ignoring all assertions (no-op).
     ///
-    pub def handleWithNoOp(f: a -> b \ ef): (a -> b \ (ef - Assert)) = x ->
-        run {
-            f(x)
-        } with handler Assert {
-            def assert(_cond, _msg, resume) = resume()
-        }
+    pub def handleWithNoOp(f: a -> b \ ef): (a -> b \ (ef - Assert)) =
+        x ->
+            run {
+                f(x)
+            } with handler Assert {
+                  def assert(_cond, _msg, resume) = resume()
+              }
 
     ///
     /// Runs the `Assert` effect of the given function `f` by ignoring all assertions (no-op).
@@ -206,19 +206,20 @@ pub mod Assert {
     ///
     /// Assertions continue execution after logging the assertion failure.
     ///
-    pub def handleWithLogger(f: a -> b \ ef): (a -> b \ (ef - Assert) + Logger) = x ->
-        run {
-            f(x)
-        } with handler Assert {
-            def assert(cond, msg, resume) = {
-                if (cond)
-                    resume()
-                else {
-                    Logger.warn(msg);
-                    resume()
-                }
-            }
-        }
+    pub def handleWithLogger(f: a -> b \ ef): (a -> b \ (ef - Assert) + Logger) =
+        x ->
+            run {
+                f(x)
+            } with handler Assert {
+                  def assert(cond, msg, resume) = {
+                      if (cond)
+                          resume()
+                      else {
+                          Logger.warn(msg);
+                          resume()
+                      }
+                  }
+              }
 
     ///
     /// Runs the `Assert` effect of the given function `f` by logging assertion failures using the `Logger` effect.
@@ -232,19 +233,20 @@ pub mod Assert {
     ///
     /// Assertions continue execution after printing the assertion failure.
     ///
-    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) = x ->
-        run {
-            f(x)
-        } with handler Assert {
-            def assert(cond, msg, resume) = {
-                if (cond)
-                    resume()
-                else {
-                    println(RichString.toString(msg));
-                    resume()
-                }
-            }
-        }
+    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) =
+        x ->
+            run {
+                f(x)
+            } with handler Assert {
+                  def assert(cond, msg, resume) = {
+                      if (cond)
+                          resume()
+                      else {
+                          println(RichString.toString(msg));
+                          resume()
+                      }
+                  }
+              }
 
     ///
     /// Runs the `Assert` effect of the given function `f` by printing assertion failures to stdout.
@@ -258,22 +260,23 @@ pub mod Assert {
     ///
     /// Assertions continue execution after printing the assertion failure.
     ///
-    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) = x ->
-        run {
-            f(x)
-        } with handler Assert {
-            def assert(cond, msg, resume) = {
-                if (cond)
-                    resume()
-                else {
-                    use Console.eprintln;
-                    run {
-                        eprintln(RichString.toString(msg))
-                    } with Console.runWithIO;
-                    resume()
-                }
-            }
-        }
+    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) =
+        x ->
+            run {
+                f(x)
+            } with handler Assert {
+                  def assert(cond, msg, resume) = {
+                      if (cond)
+                          resume()
+                      else {
+                          use Console.eprintln;
+                          run {
+                              eprintln(RichString.toString(msg))
+                          } with Console.runWithIO;
+                          resume()
+                      }
+                  }
+              }
 
     ///
     /// Runs the `Assert` effect of the given function `f` by printing assertion failures to stderr.
@@ -288,30 +291,31 @@ pub mod Assert {
     /// When an assertion fails, prints the assertion failure and asks the user if they want to continue.
     /// If the user chooses not to continue, the program throws an exception.
     ///
-    pub def handleWithPrompt(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) = x ->
-        run {
-            f(x)
-        } with handler Assert {
-            def assert(cond, msg, resume) = {
-                if (cond)
-                    resume()
-                else {
-                    use Console.{print, readln};
-                    run {
-                        println("");
-                        println(RichString.toString(msg));
-                        println("");
-                        print(RichString.toString(yellow("Continue execution? (Y/n): ")));
-                        let input = readln();
-                        let trimmed = String.trim(input);
-                        if (String.toLowerCase(trimmed) == "n" or String.toLowerCase(trimmed) == "no")
-                            throw new AssertionError("Execution aborted by user after the following assertion failure: ${RichString.toString(msg)}")
-                        else
-                            resume()
-                    } with Console.runWithIO
-                }
-            }
-        }
+    pub def handleWithPrompt(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) =
+        x ->
+            run {
+                f(x)
+            } with handler Assert {
+                  def assert(cond, msg, resume) = {
+                      if (cond)
+                          resume()
+                      else {
+                          use Console.{print, readln};
+                          run {
+                              println("");
+                              println(RichString.toString(msg));
+                              println("");
+                              print(RichString.toString(yellow("Continue execution? (Y/n): ")));
+                              let input = readln();
+                              let trimmed = String.trim(input);
+                              if (String.toLowerCase(trimmed) == "n" or String.toLowerCase(trimmed) == "no")
+                                  throw new AssertionError("Execution aborted by user after the following assertion failure: ${ RichString.toString(msg) }")
+                              else
+                                  resume()
+                          } with Console.runWithIO
+                      }
+                  }
+              }
 
     ///
     /// Runs the `Assert` effect of the given function `f` by prompting the user whether to continue execution.
@@ -320,5 +324,4 @@ pub mod Assert {
     /// If the user chooses not to continue, the program throws an exception.
     ///
     pub def runWithPrompt(f: Unit -> a \ ef): a \ (ef - Assert) + IO = handleWithPrompt(f)()
-
 }

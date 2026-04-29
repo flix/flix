@@ -15,7 +15,6 @@
  */
 
 pub mod Concurrent.Condition {
-
     import java.lang.IllegalMonitorStateException
     import java.util.concurrent.locks.{Condition => JCondition}
 

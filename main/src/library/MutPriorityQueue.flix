@@ -15,7 +15,6 @@
  */
 
 pub mod MutPriorityQueue {
-
     ///
     /// Represents a mutable priority queue.
     /// Explanation of component types (left to right):
@@ -59,9 +58,10 @@ pub mod MutPriorityQueue {
     ///
     /// Returns a String representation of the mutable priority queue `mq`.
     ///
-    pub def toString(mq: MutPriorityQueue[a, r]): String \ r with ToString[a] = region rc {
-        "MutPriorityQueue {" + (MutPriorityQueue.iterator(rc, mq) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(mq: MutPriorityQueue[a, r]): String \ r with ToString[a] =
+        region rc {
+            "MutPriorityQueue {" + (MutPriorityQueue.iterator(rc, mq) |> Iterator.join(", ")) + "}"
+        }
 
     ///
     /// Returns an empty MutPriorityQueue with a default capacity.
@@ -99,8 +99,10 @@ pub mod MutPriorityQueue {
     /// Optionally returns the top element of `mq`.
     ///
     pub def peek(mq: MutPriorityQueue[a, r]): Option[a] \ r =
-        if (mq->size == 0) None
-        else Some(Array.get(0, mq->values))
+        if (mq->size == 0)
+            None
+        else
+            Some(Array.get(0, mq->values))
 
     ///
     /// Enqueues an element `x` into a `mq`.
@@ -122,8 +124,8 @@ pub mod MutPriorityQueue {
             heapifyDown(0, mq);
             mq->size = mq->size - 1;
             top
-        }
-        else None
+        } else
+            None
 
     ///
     /// Enqueues each element in `m` into `mq`.
@@ -153,7 +155,7 @@ pub mod MutPriorityQueue {
     ///
     /// Modifying `mq` during iteration is undefined and not recommended.
     ///
-    pub def iterator(rc: Region[r1], mq: MutPriorityQueue[a, r2]): Iterator[a, r1 + r2, r1] \ {r1, r2} =
+    pub def iterator(rc: Region[r1], mq: MutPriorityQueue[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let it1 = Iterator.range(rc, 0, mq->size);
         Iterator.map(x -> Array.get(x, mq->values), it1)
 
@@ -176,7 +178,7 @@ pub mod MutPriorityQueue {
     ///
     /// Note that a MutPriorityQueue's element order depends on the order in which the elements were enqueued.
     ///
-    pub def toArray(rc: Region[r1], mq: MutPriorityQueue[a, r2]): Array[a, r1] \ {r1, r2} =
+    pub def toArray(rc: Region[r1], mq: MutPriorityQueue[a, r2]): Array[a, r1] \ { r1, r2 } =
         Array.takeLeft(rc, mq->size, mq->values)
 
     ///
@@ -184,9 +186,10 @@ pub mod MutPriorityQueue {
     ///
     /// Note that a MutPriorityQueue's element order depends on the order in which the elements were enqueued.
     ///
-    pub def toVector(mq: MutPriorityQueue[a, r]): Vector[a] \ r = region rc {
-        toArray(rc, mq) |> Array.toVector
-    }
+    pub def toVector(mq: MutPriorityQueue[a, r]): Vector[a] \ r =
+        region rc {
+            toArray(rc, mq) |> Array.toVector
+        }
 
     ///
     /// Reinforces the max heap invariant from `idx` after an element is added to `mq`.
@@ -218,8 +221,7 @@ pub mod MutPriorityQueue {
                     Array.put(child, idx, mq->values);
                     Array.put(cur, lChildIdx, mq->values)
                 }
-            }
-            else {
+            } else {
                 let lChild = Array.get(lChildIdx, mq->values);
                 let rChild = Array.get(rChildIdx, mq->values);
                 if ((lChild > cur) or (rChild > cur)) {
@@ -227,8 +229,7 @@ pub mod MutPriorityQueue {
                         Array.put(cur, lChildIdx, mq->values);
                         Array.put(lChild, idx, mq->values);
                         heapifyDown(lChildIdx, mq)
-                    }
-                    else {
+                    } else {
                         Array.put(cur, rChildIdx, mq->values);
                         Array.put(rChild, idx, mq->values);
                         heapifyDown(rChildIdx, mq)
@@ -248,5 +249,4 @@ pub mod MutPriorityQueue {
             Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), mq->values);
             mq->values = newArr
         }
-
 }

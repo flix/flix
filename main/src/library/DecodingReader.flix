@@ -35,13 +35,11 @@ struct DecodingReader[t, r] {
 }
 
 instance Readable[DecodingReader[t, rr]] with Readable[t] where Readable.Elm[t] ~ Int8 {
-
     type Elm = Char
 
     type Aef = Readable.Aef[t] + IO + rr
 
     pub def read(buffer: Array[Char, rb], reader: DecodingReader[t, rr]): Result[IoError, Int32] \ rb + rr + Readable.Aef[t] + IO = DecodingReader.read(buffer, reader)
-
 }
 
 pub mod DecodingReader {
@@ -72,7 +70,7 @@ pub mod DecodingReader {
     /// Returns `Err(e)` if some underlying error occurs.
     ///
     pub def read(dest: Array[Char, rb], reader: DecodingReader[t, rr]): Result[IoError, Int32] \ IO + rr + rb + Readable.Aef[t] with Readable[t] where Readable.Elm[t] ~ Int8 =
-        forM(
+        forM (
             (src, endOfInput) <- {
                 // At most 4 bytes per char, guarantees we can fill dest if there are enough bytes to do so
                 let totalBytesNeeded = 4 * Array.length(dest);
@@ -99,7 +97,7 @@ pub mod DecodingReader {
         let bytesToRead = numBytes - Array.length(reader->leftovers);
         if (bytesToRead > 0) {
             let src = Array.empty(reader->rc, bytesToRead);
-            forM(
+            forM (
                 bytesRead <- Readable.read(src, reader->byteReader)
             ) yield {
                 let newBytes = Array.take(reader->rc, bytesRead, src);
@@ -120,5 +118,4 @@ pub mod DecodingReader {
         reader->decoder.decode(byteBuffer, charBuffer, endOfInput);
         reader->leftovers = Array.slice(reader->rc, start = byteBuffer.position(), end = byteBuffer.limit(), byteBuffer.array());
         checked_ecast(charBuffer.position())
-
 }

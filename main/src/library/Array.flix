@@ -21,10 +21,12 @@ instance Indexable[Array[a, r]] {
     type Aef = r + OutOfBounds
 
     pub def get(t: Array[a, r], i: Int32): a \ r + OutOfBounds = {
-        if (0 <= i and i < Array.length(t)) Array.get(i, t)
-        else OutOfBounds.outOfBounds(
-            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
-        )
+        if (0 <= i and i < Array.length(t))
+            Array.get(i, t)
+        else
+            OutOfBounds.outOfBounds(
+                "index ${ i } is out of bounds for Array of length ${ Array.length(t) }"
+            )
     }
 }
 
@@ -32,10 +34,12 @@ instance IndexableMut[Array[a, r]] {
     type Aef = r + OutOfBounds
 
     pub def put(t: Array[a, r], i: Int32, v: a): Unit \ r + OutOfBounds = {
-        if (0 <= i and i < Array.length(t)) Array.put(v, i, t)
-        else OutOfBounds.outOfBounds(
-            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
-        )
+        if (0 <= i and i < Array.length(t))
+            Array.put(v, i, t)
+        else
+            OutOfBounds.outOfBounds(
+                "index ${ i } is out of bounds for Array of length ${ Array.length(t) }"
+            )
     }
 }
 
@@ -92,9 +96,10 @@ pub mod Array {
     ///
     /// Returns a string representation of the given array `a`.
     ///
-    pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc {
-        "Array#{" + (Array.iterator(rc, a) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(a: Array[a, r]): String \ r with ToString[a] =
+        region rc {
+            "Array#{" + (Array.iterator(rc, a) |> Iterator.join(", ")) + "}"
+        }
 
     ///
     /// Returns a new uninitialized array of length `l` in the region `r`.
@@ -146,7 +151,7 @@ pub mod Array {
     ///
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
     ///
-    pub def slice(rc1: Region[r1], start: {start = Int32}, end: {end = Int32}, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+    pub def slice(rc1: Region[r1], start: { start = Int32 }, end: { end = Int32 }, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         copyOfRange(rc1, start#start, end#end, a)
 
     ///
@@ -221,10 +226,11 @@ pub mod Array {
     ///
     /// Returns `a` as a Vector.
     ///
-    pub def toVector(a: Array[a, r]): Vector[a] \ r = region rc {
-        let arr1 = copyOfRange(rc, 0, length(a), a);
-        unchecked_cast(arr1 as Vector[a])
-    }
+    pub def toVector(a: Array[a, r]): Vector[a] \ r =
+        region rc {
+            let arr1 = copyOfRange(rc, 0, length(a), a);
+            unchecked_cast(arr1 as Vector[a])
+        }
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
@@ -299,7 +305,7 @@ pub mod Array {
     /// Alias for `indexOfLeft`
     ///
     pub def indexOf(x: a, a: Array[a, r]): Option[Int32] \ r with Eq[a] =
-        indexOfLeft(x,a)
+        indexOfLeft(x, a)
 
     ///
     /// Optionally returns the position of the first occurrence of `a` in `arr`
@@ -517,11 +523,10 @@ pub mod Array {
         let len = length(arr);
         if (len < 1)
             Array#{} @ rc2
+        else if (n < 0)
+            rotateRightHelper(rc2, Int32.abs(n), arr)
         else
-            if (n < 0)
-                rotateRightHelper(rc2, Int32.abs(n), arr)
-            else
-                rotateLeftHelper(rc2, n, arr)
+            rotateLeftHelper(rc2, n, arr)
 
     ///
     /// Helper function for `rotateLeft` and `rotateRight`.
@@ -532,7 +537,7 @@ pub mod Array {
     ///
     def rotateLeftHelper(rc2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         let len = length(arr);
-        let f = i -> { let i1 = n + i; get(i1 `Int32.remainder` len, arr) };
+        let f = i -> {let i1 = n + i; get(i1 `Int32.remainder` len, arr)};
         init(rc2, f, len)
 
     ///
@@ -541,11 +546,10 @@ pub mod Array {
     pub def rotateRight(rc2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         if (length(arr) < 1)
             Array#{} @ rc2
+        else if (n < 0)
+            rotateLeftHelper(rc2, Int32.abs(n), arr)
         else
-            if (n < 0)
-                rotateLeftHelper(rc2, Int32.abs(n), arr)
-            else
-                rotateRightHelper(rc2, n, arr)
+            rotateRightHelper(rc2, n, arr)
 
     ///
     /// Helper function for `rotateRight` and `rotateLeft`.
@@ -558,7 +562,7 @@ pub mod Array {
         let len = length(a);
         let n1 = n `Int32.remainder` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; get(i1 `Int32.remainder` len, a)};
+        let f = i -> {let i1 = start + i; get(i1 `Int32.remainder` len, a)};
         init(rc2, f, len)
 
     ///
@@ -574,7 +578,7 @@ pub mod Array {
     ///
     /// Replace every occurrence of `src` by `dst` in the array `a`, mutating it in place.
     ///
-    pub def replace(src: {src = a}, dst: {dst = a}, a: Array[a, r]): Unit \ r with Eq[a] =
+    pub def replace(src: { src = a }, dst: { dst = a }, a: Array[a, r]): Unit \ r with Eq[a] =
         transform(e -> if (e == src#src) dst#dst else e, a)
 
     ///
@@ -584,24 +588,25 @@ pub mod Array {
     /// If `a` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
-    pub def patch(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { r1, r2 } = region rc3 {
-        let len1 = length(a);
-        let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(rc3, 0, size, a);
-        updateSequence(i, sub, b)
-    }
+    pub def patch(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { r1, r2 } =
+        region rc3 {
+            let len1 = length(a);
+            let size = if (n > len1) len1 else n;
+            let sub = copyOfRange(rc3, 0, size, a);
+            updateSequence(i, sub, b)
+        }
 
     ///
     /// Returns `a` with `x` inserted between every two adjacent elements.
     ///
-    pub def intersperse(rc1: Region[r1], x: a, a: Array[a, r]): Array[a, r1] \ { r, r1 }=
+    pub def intersperse(rc1: Region[r1], x: a, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         let len1 = length(a);
         let len2 = len1 + len1 - 1;
         if (len2 <= 0)
             Array#{} @ rc1
         else {
             let b = repeat(rc1, len2, x);
-            let f = { (i, v) -> let j = i + i; Array.put(v, j, b) };
+            let f = {(i, v) -> let j = i + i; Array.put(v, j, b)};
             forEachWithIndex(f, a);
             b
         }
@@ -618,16 +623,18 @@ pub mod Array {
             case None    => Array#{} @ rc1
             case Some(x) =>
                 let out = repeat(rc1, len, x);
-                let overwrite = { (st, a) ->
-                    let (pos,i) = st;
-                    if (i == 0) {
-                        let pos1 = arrayWrites(0, a, out);
-                        (pos1, 1)
-                    } else {
-                        let pos1 = arrayWrites(pos, sep, out);
-                        let pos2 = arrayWrites(pos1, a, out);
-                        (pos2, i+1)
-                    }};
+                let overwrite = {
+                    (st, a) ->
+                        let (pos, i) = st;
+                        if (i == 0) {
+                            let pos1 = arrayWrites(0, a, out);
+                            (pos1, 1)
+                        } else {
+                            let pos1 = arrayWrites(pos, sep, out);
+                            let pos2 = arrayWrites(pos1, a, out);
+                            (pos2, i + 1)
+                        }
+                };
                 discard foldLeft(overwrite, (0, 0), arrs);
                 out
         }
@@ -733,9 +740,9 @@ pub mod Array {
         if (j >= len2)
             false
         else if (get(0, a1) == get(j, a2))
-            isInfixOfCheck(a1, a2, len1, len2, 1, j+1)
+            isInfixOfCheck(a1, a2, len1, len2, 1, j + 1)
         else
-            isInfixOfSearch(a1, a2, len1, len2, j+1)
+            isInfixOfSearch(a1, a2, len1, len2, j + 1)
 
     ///
     /// Helper function for `isInfixOf` - a1 has started matching, scan to see if it all matches.
@@ -748,9 +755,9 @@ pub mod Array {
             // a2 exhausted, a1 still trying to match, so failure
             false
         else if (get(i, a1) == get(j, a2))
-            isInfixOfCheck(a1, a2, len1, len2, i+1, j+1)
+            isInfixOfCheck(a1, a2, len1, len2, i + 1, j + 1)
         else
-            isInfixOfSearch(a1, a2, len1, len2, j+1)
+            isInfixOfSearch(a1, a2, len1, len2, j + 1)
 
     ///
     /// Returns `true` if and only if `a1` is a suffix of `a2`.
@@ -868,10 +875,10 @@ pub mod Array {
     ///
     /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
-    pub def flatten(rc1: Region[r1], arrs: Array[Array[a, r], r]) : Array[a, r1] \ { r, r1 } =
+    pub def flatten(rc1: Region[r1], arrs: Array[Array[a, r], r]): Array[a, r1] \ { r, r1 } =
         let len = sumLengths(arrs);
         match headArrays(arrs) {
-            case None => Array#{} @ rc1
+            case None    => Array#{} @ rc1
             case Some(x) => {
                 let out = repeat(rc1, len, x);
                 discard foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
@@ -946,9 +953,10 @@ pub mod Array {
     /// `a2` contains all elements of `a` that do not satisfy the predicate `f`.
     ///
     pub def partition(rc1: Region[r1], rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r]): (Array[a, r1], Array[a, r2]) \ { ef, r, r1, r2 } =
-        let step = { (x, acc) ->
-            let (a1, a2) = acc;
-            if (f(x)) (x :: a1, a2) else (a1, x :: a2)
+        let step = {
+            (x, acc) ->
+                let (a1, a2) = acc;
+                if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);
         (List.toArray(rc1, xs), List.toArray(rc2, ys))
@@ -1106,27 +1114,29 @@ pub mod Array {
     ///
     /// Helper function for `groupWith`.
     ///
-    def groupByHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]]): List[Array[a, r]] \ r = match xs {
-        case Nil     => List.reverse(ac)
-        case x :: rs =>
-            let (rc1, rc2) = extractHelper(rc, f, rs, Nel.singleton(x), Nil);
-            groupByHelper(rc, f, rc2, rc1 :: ac)
-    }
+    def groupByHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]]): List[Array[a, r]] \ r =
+        match xs {
+            case Nil     => List.reverse(ac)
+            case x :: rs =>
+                let (rc1, rc2) = extractHelper(rc, f, rs, Nel.singleton(x), Nil);
+                groupByHelper(rc, f, rc2, rc1 :: ac)
+        }
 
     ///
     /// Helper function for `groupWith`.
     ///
-    def extractHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Array[a, r], List[a]) \ r = match xs {
-        case Nil => {
-            let a = Nel.reverse(ps);
-            (Nel.toArray(rc, a), List.reverse(ns))
+    def extractHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Array[a, r], List[a]) \ r =
+        match xs {
+            case Nil     => {
+                let a = Nel.reverse(ps);
+                (Nel.toArray(rc, a), List.reverse(ns))
+            }
+            case x :: rs =>
+                if (f(x, Nel.head(ps)))
+                    extractHelper(rc, f, rs, Nel.cons(x, ps), ns)
+                else
+                    extractHelper(rc, f, rs, ps, x :: ns)
         }
-        case x :: rs =>
-            if (f(x, Nel.head(ps)))
-                extractHelper(rc, f, rs, Nel.cons(x, ps), ns)
-            else
-                extractHelper(rc, f, rs, ps, x :: ns)
-    }
 
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
@@ -1213,9 +1223,15 @@ pub mod Array {
     /// Collects the results of applying the partial function `f` to every element in `a`.
     ///
     pub def filterMap(rc1: Region[r1], f: a -> Option[b] \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
-        foldRight((x, xs) -> match f(x) {
-            case None    => xs
-            case Some(b) => b :: xs }, Nil, a) |> List.toArray(rc1)
+        foldRight(
+            (x, xs) -> match f(x) {
+                case None    => xs
+                case Some(b) => b :: xs
+            },
+            Nil,
+            a
+        )
+        |> List.toArray(rc1)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1255,7 +1271,7 @@ pub mod Array {
     /// Alias for `findIndexOfLeft`.
     ///
     pub def findIndexOf(f: a -> Bool \ ef, a: Array[a, r]): Option[Int32] \ { ef, r } =
-        findIndexOfLeft(f,a)
+        findIndexOfLeft(f, a)
 
     ///
     /// Optionally returns the position of the first element in `x` satisfying `f`.
@@ -1297,20 +1313,21 @@ pub mod Array {
     ///
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
-    pub def findIndices(f: a -> Bool \ ef, a: Array[a, r]): Vector[Int32] \ { ef, r } = region rc {
-        let len = length(a);
-        let l = MutList.empty(rc);
-        def loop(i) = {
-            if (i >= len)
-                ()
-            else {
-                if (f(get(i, a))) { MutList.push(i, l) };
-                loop(i + 1)
-            }
-        };
-        loop(0);
-        MutList.toVector(l)
-    }
+    pub def findIndices(f: a -> Bool \ ef, a: Array[a, r]): Vector[Int32] \ { ef, r } =
+        region rc {
+            let len = length(a);
+            let l = MutList.empty(rc);
+            def loop(i) = {
+                if (i >= len)
+                    ()
+                else {
+                    if (f(get(i, a))) {MutList.push(i, l)};
+                    loop(i + 1)
+                }
+            };
+            loop(0);
+            MutList.toVector(l)
+        }
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1394,11 +1411,12 @@ pub mod Array {
     ///
     pub def updateSequence(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Unit \ { r1, r2 } =
         let end = i + length(sub);
-        let f = { (ix, _) ->
-            if (ix >= i and ix < end)
-                Array.put(get(ix - i, sub), ix, a)
-            else
-                ()
+        let f = {
+            (ix, _) ->
+                if (ix >= i and ix < end)
+                    Array.put(get(ix - i, sub), ix, a)
+                else
+                    ()
         };
         forEachWithIndex(f, a)
 
@@ -1406,17 +1424,19 @@ pub mod Array {
     /// Returns the concatenation of the string representation
     /// of each element in `a` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, a: Array[a, r]): String \ r with ToString[a] = region rc {
-        Array.iterator(rc, a) |> Iterator.join(sep)
-    }
+    pub def join(sep: String, a: Array[a, r]): String \ r with ToString[a] =
+        region rc {
+            Array.iterator(rc, a) |> Iterator.join(sep)
+        }
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `a` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, r } = region rc {
-        Array.iterator(rc, a) |> Iterator.joinWith(f, sep)
-    }
+    pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, r } =
+        region rc {
+            Array.iterator(rc, a) |> Iterator.joinWith(f, sep)
+        }
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to their `Order` instance.
@@ -1448,7 +1468,7 @@ pub mod Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a, r]): Unit \ r =
+    pub def sortWith(cmp: (a, a) -> Comparison, a: Array[a, r]): Unit \ r =
         sortWithin(cmp, 0, length(a) - 1, a)
 
     ///
@@ -1460,7 +1480,7 @@ pub mod Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWithin(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: Array[a, r]): Unit \ r=
+    pub def sortWithin(cmp: (a, a) -> Comparison, lo: Int32, hi: Int32, a: Array[a, r]): Unit \ r =
         if (lo >= hi)
             ()
         else {
@@ -1483,15 +1503,19 @@ pub mod Array {
     ///
     /// Partition step of the Quicksort algorithm.
     ///
-    def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a, r], lo: Int32, hi: Int32): Int32 \ r =
+    def quicksortPartition(cmp: (a, a) -> Comparison, a: Array[a, r], lo: Int32, hi: Int32): Int32 \ r =
         let pivot = get(hi, a);
-        let i = forWithAccum(lo, hi - 1, lo, (j,ix) ->
-            if (cmp(get(j, a), pivot) == Comparison.LessThan) {
-                swap(ix, j, a);
-                ix+1
-            } else
-                ix
-            );
+        let i = forWithAccum(
+            lo,
+            hi - 1,
+            lo,
+            (j, ix) ->
+                if (cmp(get(j, a), pivot) == Comparison.LessThan) {
+                    swap(ix, j, a);
+                    ix + 1
+                } else
+                    ix
+        );
         swap(i, hi, a);
         i
 
@@ -1507,7 +1531,7 @@ pub mod Array {
             f(lo, ac)
         else {
             let ac1 = f(lo, ac);
-            forWithAccum(lo+1, hi, ac1, f)
+            forWithAccum(lo + 1, hi, ac1, f)
         }
 
     ///
@@ -1525,11 +1549,12 @@ pub mod Array {
             if (lo <= hi) {
                 let mid = (lo + hi) `Int32.rightShift` 1; // Shifting by 1 is slightly faster than dividing by 2.
                 match get(mid, a) <=> x {
-                    case Comparison.LessThan => f(mid + 1, hi)
+                    case Comparison.LessThan    => f(mid + 1, hi)
                     case Comparison.GreaterThan => f(lo, mid - 1)
-                    case Comparison.EqualTo => Some(mid)
+                    case Comparison.EqualTo     => Some(mid)
                 }
-            } else None
+            } else
+                None
         };
         let len = length(a);
         f(0, len - 1)
@@ -1547,7 +1572,7 @@ pub mod Array {
     pub def copyInto(srcPos: { srcPos = Int32 }, dstPos: { dstPos = Int32 }, len: { len = Int32 }, src: { src = Array[a, r1] }, dst: Array[a, r2]): Unit \ { r1, r2 } =
         let srcObj: Object = checked_cast(src#src);
         let dstObj: Object = checked_cast(dst);
-        unsafe IO as { r1, r2 } { System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) }
+        unsafe IO as { r1, r2 } {System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len)}
 
     ///
     /// Returns a shallow copy of the array `a`.
@@ -1569,22 +1594,22 @@ pub mod Array {
         // All of the below casts are required to cast the type to `Array[a, ...]`.
         match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
             // The casts here are used to both modify the java method type and to simulate GADT typing
-            case JvmType.JvmBool =>
+            case JvmType.JvmBool    =>
                 let arr = unchecked_cast(a as Array[Bool, r1]);
                 unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmChar =>
+            case JvmType.JvmChar    =>
                 let arr = unchecked_cast(a as Array[Char, r1]);
                 unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmInt8 =>
+            case JvmType.JvmInt8    =>
                 let arr = unchecked_cast(a as Array[Int8, r1]);
                 unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmInt16 =>
+            case JvmType.JvmInt16   =>
                 let arr = unchecked_cast(a as Array[Int16, r1]);
                 unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmInt32 =>
+            case JvmType.JvmInt32   =>
                 let arr = unchecked_cast(a as Array[Int32, r1]);
                 unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmInt64 =>
+            case JvmType.JvmInt64   =>
                 let arr = unchecked_cast(a as Array[Int64, r1]);
                 unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
             case JvmType.JvmFloat32 =>
@@ -1593,7 +1618,7 @@ pub mod Array {
             case JvmType.JvmFloat64 =>
                 let arr = unchecked_cast(a as Array[Float64, r1]);
                 unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmObject =>
+            case JvmType.JvmObject  =>
                 let arr = unchecked_cast(a as Array[Object, r1]);
                 unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
         }
@@ -1602,7 +1627,7 @@ pub mod Array {
     ///
     /// Shuffles `a` using a random permutation.
     ///
-    pub def shuffle(a: Array[a, r]): Unit \ {r, Shuffle} = {
+    pub def shuffle(a: Array[a, r]): Unit \ { r, Shuffle } = {
         let len = Array.length(a);
 
         // Compute a random permutation.
@@ -1614,5 +1639,4 @@ pub mod Array {
         // Write the result back into a.
         Vector.forEachWithIndex((i, v) -> Array.put(v, i, a), result)
     }
-
 }

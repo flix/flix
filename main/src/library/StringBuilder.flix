@@ -15,16 +15,14 @@
  */
 
 import java.lang.{StringBuilder => JStringBuilder}
-
 use IoError.IoError
 
 ///
 /// Represents a StringBuilder.
 ///
-enum StringBuilder[_: Region](JStringBuilder)
+enum StringBuilder [_: Region] (JStringBuilder)
 
 instance Writable[StringBuilder[r]] {
-
     type Elm = Char
 
     type Aef = r
@@ -33,17 +31,16 @@ instance Writable[StringBuilder[r]] {
         let len = Array.length(buffer);
         Array.forEach(c -> StringBuilder.append(c, sb), buffer);
         Ok(len)
-
 }
 
 pub mod StringBuilder {
-    import java.lang.{StringBuilder => JStringBuilder};
+    import java.lang.{StringBuilder => JStringBuilder}
 
     ///
     /// Returns a new mutable StringBuilder.
     ///
     pub def empty(_: Region[r]): StringBuilder[r] \ r =
-        StringBuilder(unsafe IO as r { new JStringBuilder() })
+        StringBuilder(unsafe IO as r {new JStringBuilder()})
 
     ///
     /// Append `x` to the StringBuilder `sb`.
@@ -58,14 +55,14 @@ pub mod StringBuilder {
     ///
     pub def appendString(s: String, sb: StringBuilder[r]): Unit \ r =
         let StringBuilder(msb) = sb;
-        discard unsafe IO as r { msb.append(s) }
+        discard unsafe IO as r {msb.append(s)}
 
     ///
     /// Append the code point `cp` to the StringBuilder `sb`.
     ///
     pub def appendCodePoint(cp: Int32, sb: StringBuilder[r]): Unit \ r =
         let StringBuilder(msb) = sb;
-        discard unsafe IO as r { msb.appendCodePoint(cp) }
+        discard unsafe IO as r {msb.appendCodePoint(cp)}
 
     ///
     /// Append the system line separator to the StringBuilder `sb`.
@@ -110,21 +107,21 @@ pub mod StringBuilder {
             } else {
                 appendString(s, sb)
             };
-       Array.forEachWithIndex(append1, a)
+        Array.forEachWithIndex(append1, a)
 
     ///
     /// Returns an iterator over `sb`.
     ///
     pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 + r2, r1] \ { r1, r2 } =
         let StringBuilder(msb) = sb;
-        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> unsafe IO as r2 { msb.charAt(i) })
+        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> unsafe IO as r2 {msb.charAt(i)})
 
     ///
     /// Return the number of characters in the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder[r]): Int32 \ r =
         let StringBuilder(msb) = sb;
-        unsafe IO as r { msb.length() }
+        unsafe IO as r {msb.length()}
 
     ///
     /// Return the number of characters in the StringBuilder `sb`.
@@ -136,13 +133,12 @@ pub mod StringBuilder {
     ///
     pub def setLength(newLength: Int32, sb: StringBuilder[r]): Unit \ r =
         let StringBuilder.StringBuilder(msb) = sb;
-        unsafe IO as r { msb.setLength(newLength) }
+        unsafe IO as r {msb.setLength(newLength)}
 
     ///
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder[r]): String \ r =
         let StringBuilder(msb) = sb;
-        unsafe IO as r { msb.toString() }
-
+        unsafe IO as r {msb.toString()}
 }

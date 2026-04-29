@@ -15,7 +15,6 @@
  */
 
 pub mod RedBlackTree {
-
     import java.lang.Runtime
 
     ///
@@ -35,22 +34,20 @@ pub mod RedBlackTree {
     /// number of black nodes.
     ///
     pub enum RedBlackTree[k, v] {
-
-        ///
+         ///
         /// A black leaf.
         ///
         case Leaf
 
-        ///
+         ///
         /// A double-black leaf.
         ///
         case DoubleBlackLeaf
 
-        ///
+         ///
         /// A tree node consists of a color, left subtree, key, value and right subtree.
         ///
         case Node(RedBlackTree.Color, RedBlackTree[k, v], k, v, RedBlackTree[k, v])
-
     }
 
     instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
@@ -93,7 +90,7 @@ pub mod RedBlackTree {
     instance Iterable[RedBlackTree[k, v]] {
         type Elm = (k, v)
         pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
-                RedBlackTree.iterator(rc, t)
+            RedBlackTree.iterator(rc, t)
     }
 
     instance ForEach[RedBlackTree[k, v]] {
@@ -105,15 +102,13 @@ pub mod RedBlackTree {
     /// The color of a red-black tree node.
     ///
     pub enum Color {
-
         case Red
         case Black
 
-        ///
+         ///
         /// The special color double-black is allowed temporarily during deletion.
         ///
         case DoubleBlack
-
     }
 
     ///
@@ -142,10 +137,11 @@ pub mod RedBlackTree {
     ///
     /// Returns the number of nodes in `t`.
     ///
-    pub def size(t: RedBlackTree[k, v]): Int32 = match t {
-        case Node(_, a, _, _, b) => size(a) + 1 + size(b)
-        case _                   => 0
-    }
+    pub def size(t: RedBlackTree[k, v]): Int32 =
+        match t {
+            case Node(_, a, _, _, b) => size(a) + 1 + size(b)
+            case _                   => 0
+        }
 
     ///
     /// Returns the empty tree.
@@ -155,10 +151,11 @@ pub mod RedBlackTree {
     ///
     /// Returns `true` if and only if `t` is the empty tree.
     ///
-    pub def isEmpty(t: RedBlackTree[k, v]): Bool = match t {
-        case Leaf => true
-        case _    => false
-    }
+    pub def isEmpty(t: RedBlackTree[k, v]): Bool =
+        match t {
+            case Leaf => true
+            case _    => false
+        }
 
     ///
     /// Returns `true` if and only if `t` is a non-empty tree.
@@ -173,12 +170,13 @@ pub mod RedBlackTree {
     pub def insert(k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
         def loop(tt) = match tt {
             case Leaf                  => Node(Color.Red, Leaf, k, v, Leaf)
-            case Node(c, a, k1, v1, b) => match k <=> k1 {
-                case Comparison.LessThan    => balance(Node(c, loop(a), k1, v1, b))
-                case Comparison.EqualTo     => Node(c, a, k, v, b)
-                case Comparison.GreaterThan => balance(Node(c, a, k1, v1, loop(b)))
-            }
-            case _ => unreachable!()
+            case Node(c, a, k1, v1, b) =>
+                match k <=> k1 {
+                    case Comparison.LessThan    => balance(Node(c, loop(a), k1, v1, b))
+                    case Comparison.EqualTo     => Node(c, a, k, v, b)
+                    case Comparison.GreaterThan => balance(Node(c, a, k1, v1, loop(b)))
+                }
+            case _                     => unreachable!()
         };
         blacken(loop(t))
 
@@ -190,12 +188,13 @@ pub mod RedBlackTree {
     pub def insertWith(f: (k, v, v) -> v \ ef, k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         def loop(tt) = match tt {
             case Leaf                  => Node(Color.Red, Leaf, k, v, Leaf)
-            case Node(c, a, k1, v1, b) => match k <=> k1 {
-                case Comparison.LessThan    => balance(Node(c, loop(a), k1, v1, b))
-                case Comparison.EqualTo     => Node(c, a, k, f(k, v, v1), b)
-                case Comparison.GreaterThan => balance(Node(c, a, k1, v1, loop(b)))
-            }
-            case _ => unreachable!()
+            case Node(c, a, k1, v1, b) =>
+                match k <=> k1 {
+                    case Comparison.LessThan    => balance(Node(c, loop(a), k1, v1, b))
+                    case Comparison.EqualTo     => Node(c, a, k, f(k, v, v1), b)
+                    case Comparison.GreaterThan => balance(Node(c, a, k1, v1, loop(b)))
+                }
+            case _                     => unreachable!()
         };
         blacken(loop(t))
 
@@ -207,15 +206,17 @@ pub mod RedBlackTree {
     pub def updateWith(f: (k, v) -> Option[v] \ ef, k: k, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         def loop(tt) = match tt {
             case Leaf                  => Leaf
-            case Node(c, a, k1, v1, b) => match k <=> k1 {
-                case Comparison.LessThan => balance(Node(c, loop(a), k1, v1, b))
-                case Comparison.EqualTo  => match f(k1, v1) {
-                    case None    => tt
-                    case Some(v) => Node(c, a, k, v, b)
+            case Node(c, a, k1, v1, b) =>
+                match k <=> k1 {
+                    case Comparison.LessThan    => balance(Node(c, loop(a), k1, v1, b))
+                    case Comparison.EqualTo     =>
+                        match f(k1, v1) {
+                            case None    => tt
+                            case Some(v) => Node(c, a, k, v, b)
+                        }
+                    case Comparison.GreaterThan => balance(Node(c, a, k1, v1, loop(b)))
                 }
-                case Comparison.GreaterThan => balance(Node(c, a, k1, v1, loop(b)))
-            }
-            case _ => unreachable!()
+            case _                     => unreachable!()
         };
         blacken(loop(t))
 
@@ -226,23 +227,23 @@ pub mod RedBlackTree {
     ///
     pub def remove(k: k, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
         def loop(tt) = match tt {
-            case Node(Color.Red, Leaf, k1, _, Leaf)   => if ((k <=> k1) == Comparison.EqualTo) Leaf else tt
-            case Node(Color.Black, Leaf, k1, _, Leaf) => if ((k <=> k1) == Comparison.EqualTo) DoubleBlackLeaf else tt
+            case Node(Color.Red, Leaf, k1, _, Leaf)                                   => if ((k <=> k1) == Comparison.EqualTo) Leaf else tt
+            case Node(Color.Black, Leaf, k1, _, Leaf)                                 => if ((k <=> k1) == Comparison.EqualTo) DoubleBlackLeaf else tt
             case Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
                 match k <=> k2 {
                     case Comparison.LessThan    => Node(Color.Black, loop(Node(Color.Red, Leaf, k1, v1, Leaf)), k2, v2, Leaf)
                     case Comparison.EqualTo     => Node(Color.Black, Leaf, k1, v1, Leaf)
                     case Comparison.GreaterThan => Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf)
                 }
-            case Node(c, a, k1, v1, b) =>
+            case Node(c, a, k1, v1, b)                                                =>
                 match k <=> k1 {
-                    case Comparison.LessThan => rotate(Node(c, loop(a), k1, v1, b))
-                    case Comparison.EqualTo  =>
+                    case Comparison.LessThan    => rotate(Node(c, loop(a), k1, v1, b))
+                    case Comparison.EqualTo     =>
                         let (k2, v2, e) = minDelete(b);
                         rotate(Node(c, a, k2, v2, e))
                     case Comparison.GreaterThan => rotate(Node(c, a, k1, v1, loop(b)))
                 }
-            case _ => tt
+            case _                                                                    => tt
         };
         redden(loop(t))
 
@@ -251,78 +252,88 @@ pub mod RedBlackTree {
     ///
     /// Otherwise returns `None`.
     ///
-    pub def get(k: k, t: RedBlackTree[k, v]): Option[v] with Order[k] = match t {
-        case Node(_, a, k1, v, b) => match k <=> k1 {
-            case Comparison.LessThan    => get(k, a)
-            case Comparison.EqualTo     => Some(v)
-            case Comparison.GreaterThan => get(k, b)
+    pub def get(k: k, t: RedBlackTree[k, v]): Option[v] with Order[k] =
+        match t {
+            case Node(_, a, k1, v, b) =>
+                match k <=> k1 {
+                    case Comparison.LessThan    => get(k, a)
+                    case Comparison.EqualTo     => Some(v)
+                    case Comparison.GreaterThan => get(k, b)
+                }
+            case _                    => None
         }
-        case _ => None
-    }
 
     ///
     /// Returns `true` if and only if `t` contains the key `k`.
     ///
-    pub def memberOf(k: k, t: RedBlackTree[k, v]): Bool with Order[k] = match t {
-        case Node(_, a, k1, _, b) => match k <=> k1 {
-           case Comparison.LessThan    => memberOf(k, a)
-           case Comparison.EqualTo     => true
-           case Comparison.GreaterThan => memberOf(k, b)
+    pub def memberOf(k: k, t: RedBlackTree[k, v]): Bool with Order[k] =
+        match t {
+            case Node(_, a, k1, _, b) =>
+                match k <=> k1 {
+                    case Comparison.LessThan    => memberOf(k, a)
+                    case Comparison.EqualTo     => true
+                    case Comparison.GreaterThan => memberOf(k, b)
+                }
+            case _                    => false
         }
-        case _ => false
-    }
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
-        case Leaf                => None
-        case DoubleBlackLeaf     => None
-        case Node(_, a, k, v, b) => match findLeft(f, a) {
-            case Some((ka, va)) => Some((ka, va))
-            case None           =>
-                if (f(k, v))
-                    Some((k, v))
-                else
-                    findLeft(f, b)
+    pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
+        match t {
+            case Leaf                => None
+            case DoubleBlackLeaf     => None
+            case Node(_, a, k, v, b) =>
+                match findLeft(f, a) {
+                    case Some((ka, va)) => Some((ka, va))
+                    case None           =>
+                        if (f(k, v))
+                            Some((k, v))
+                        else
+                            findLeft(f, b)
+                }
         }
-    }
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
-        case Leaf                => None
-        case DoubleBlackLeaf     => None
-        case Node(_, a, k, v, b) => match findRight(f, b) {
-            case Some((kb, vb)) => Some((kb, vb))
-            case None           =>
-                if (f(k, v))
-                    Some((k, v))
-                else
-                    findRight(f, a)
+    pub def findRight(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
+        match t {
+            case Leaf                => None
+            case DoubleBlackLeaf     => None
+            case Node(_, a, k, v, b) =>
+                match findRight(f, b) {
+                    case Some((kb, vb)) => Some((kb, vb))
+                    case None           =>
+                        if (f(k, v))
+                            Some((k, v))
+                        else
+                            findRight(f, a)
+                }
         }
-    }
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `t` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, k, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = match t {
-        case Node(_, a, k, v, b) => foldLeft(f, f(foldLeft(f, s, a), k, v), b)
-        case _                   => s
-    }
+    pub def foldLeft(f: (b, k, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef =
+        match t {
+            case Node(_, a, k, v, b) => foldLeft(f, f(foldLeft(f, s, a), k, v), b)
+            case _                   => s
+        }
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
-    pub def foldRight(f: (k, v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = match t {
-        case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
-        case _ => s
-    }
+    pub def foldRight(f: (k, v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef =
+        match t {
+            case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
+            case _                   => s
+        }
 
     ///
     /// Returns the result of mapping each key-value pair and combining the results.
@@ -338,10 +349,14 @@ pub mod RedBlackTree {
     /// Returns `None` if `t` is the empty tree.
     ///
     pub def reduceLeft(f: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
-        foldLeft((x, k1, v1) -> match x {
-            case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
-            case None           => Some((k1, v1))
-        }, None, t)
+        foldLeft(
+            (x, k1, v1) -> match x {
+                case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
+                case None           => Some((k1, v1))
+            },
+            None,
+            t
+        )
 
     ///
     /// Applies `f` to all key-value pairs in `t` going from right to left until a single pair `(k, v)` is obtained.
@@ -351,20 +366,25 @@ pub mod RedBlackTree {
     /// Returns `None` if `t` is the empty tree.
     ///
     pub def reduceRight(f: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
-        foldRight((k1, v1, acc) -> match acc {
-            case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
-            case None           => Some((k1, v1))
-        }, None, t)
+        foldRight(
+            (k1, v1, acc) -> match acc {
+                case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
+                case None           => Some((k1, v1))
+            },
+            None,
+            t
+        )
 
     ///
     /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
     ///
     /// Returns `false` if `t` is the empty tree.
     ///
-    pub def exists(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = match t {
-        case Node(_, a, k, v, b) => if (f(k, v)) true else exists(f, a) or exists(f, b)
-        case _                   => false
-    }
+    pub def exists(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef =
+        match t {
+            case Node(_, a, k, v, b) => if (f(k, v)) true else exists(f, a) or exists(f, b)
+            case _                   => false
+        }
 
     ///
     /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
@@ -386,16 +406,14 @@ pub mod RedBlackTree {
                         if (f(k, v))
                             true
                         else
-                            par (
-                                l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                                r <- visitSubtree((n - 2) / 2, b)  // We spawn two new threads leaving us with n - 2
-                            ) yield l or r                         // that we distribute over the two spanned threads.
-                    case _ => false
+                            par (l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                            r <- visitSubtree((n - 2) / 2, b) // We spawn two new threads leaving us with n - 2
+                            ) yield l or r // that we distribute over the two spanned threads.
+                    case _                   => false
                 }
         };
         visitSubtree(threads() - 1, t)
     }
-
 
     ///
     /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
@@ -407,20 +425,22 @@ pub mod RedBlackTree {
     /// Note that this is equivalent to `exists` but for performance reasons -- to avoid
     /// megamorphic calls -- we use a copy here.
     ///
-    def seqExists(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
-        case Node(_, a, k, v, b) => if (f(k, v)) true else seqExists(f, a) or seqExists(f, b)
-        case _                   => false
-    }
+    def seqExists(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
+        match t {
+            case Node(_, a, k, v, b) => if (f(k, v)) true else seqExists(f, a) or seqExists(f, b)
+            case _                   => false
+        }
 
     ///
     /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
     ///
     /// Returns `true` if `t` is the empty tree.
     ///
-    pub def forAll(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = match t {
-        case Node(_, a, k, v, b) => if (f(k, v)) forAll(f, a) and forAll(f, b) else false
-        case _                   => true
-    }
+    pub def forAll(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef =
+        match t {
+            case Node(_, a, k, v, b) => if (f(k, v)) forAll(f, a) and forAll(f, b) else false
+            case _                   => true
+        }
 
     ///
     /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
@@ -442,12 +462,11 @@ pub mod RedBlackTree {
                         if (not f(k, v))
                             false
                         else
-                            par (
-                                l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                                r <- visitSubtree((n - 2) / 2, b)  // We spawn two new threads leaving us with n - 2
-                            ) yield l and r                        // that we distribute over the two spanned threads.
-                    case _ => false
-            }
+                            par (l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                            r <- visitSubtree((n - 2) / 2, b) // We spawn two new threads leaving us with n - 2
+                            ) yield l and r // that we distribute over the two spanned threads.
+                    case _                   => false
+                }
         };
         visitSubtree(threads() - 1, t)
     }
@@ -462,44 +481,49 @@ pub mod RedBlackTree {
     /// Note that this is equivalent to `exists` but for performance reasons -- to avoid
     /// megamorphic calls -- we use a copy here.
     ///
-    def seqForAll(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
-        case Node(_, a, k, v, b) => if (f(k, v)) seqForAll(f, a) and seqForAll(f, b) else false
-        case _                   => true
-    }
+    def seqForAll(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
+        match t {
+            case Node(_, a, k, v, b) => if (f(k, v)) seqForAll(f, a) and seqForAll(f, b) else false
+            case _                   => true
+        }
 
     ///
     /// Applies `f` to every key-value pair of `t`.
     ///
-    pub def forEach(f: (k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = match t {
-        case Node(_, a, k, v, b) => forEach(f, a); f(k, v); forEach(f, b)
-        case _                   => ()
-    }
+    pub def forEach(f: (k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef =
+        match t {
+            case Node(_, a, k, v, b) => forEach(f, a); f(k, v); forEach(f, b)
+            case _                   => ()
+        }
 
     ///
     /// Applies `f` to every key-value pair of `t` along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = region rc {
-        let ix = Ref.fresh(rc, 0);
-        def loop(tt) = match tt {
-            case Node(_, a, k, v, b) =>
-                loop(a);
-                let i = Ref.get(ix); f(i, k, v);
-                Ref.put(i + 1, ix); loop(b)
-            case _                   => ()
-        };
-        loop(t)
-    }
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef =
+        region rc {
+            let ix = Ref.fresh(rc, 0);
+            def loop(tt) = match tt {
+                case Node(_, a, k, v, b) =>
+                    loop(a);
+                    let i = Ref.get(ix);
+                    f(i, k, v);
+                    Ref.put(i + 1, ix); loop(b)
+                case _                   => ()
+            };
+            loop(t)
+        }
 
     ///
     /// Helper function for `insert` and `delete`.
     ///
-    def balance(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Color.Black, left, k1, v1, right) =>
-            balanceBlack(t, left, k1, v1, right)
-        case Node(Color.DoubleBlack, left, k1, v1, right) =>
-            balanceDoubleBlack(t, left, k1, v1, right)
-        case _ => t
-    }
+    def balance(t: RedBlackTree[k, v]): RedBlackTree[k, v] =
+        match t {
+            case Node(Color.Black, left, k1, v1, right)       =>
+                balanceBlack(t, left, k1, v1, right)
+            case Node(Color.DoubleBlack, left, k1, v1, right) =>
+                balanceDoubleBlack(t, left, k1, v1, right)
+            case _                                            => t
+        }
 
     ///
     /// Helper function for `balance`. Handles the black node cases.
@@ -510,13 +534,14 @@ pub mod RedBlackTree {
                 Node(Color.Red, Node(Color.Black, a, k2, v2, b), k3, v3, Node(Color.Black, c, k1, v1, right))
             case Node(Color.Red, a, k2, v2, Node(Color.Red, b, k3, v3, c)) =>
                 Node(Color.Red, Node(Color.Black, a, k2, v2, b), k3, v3, Node(Color.Black, c, k1, v1, right))
-            case _ => match right {
-                case Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d) =>
-                    Node(Color.Red, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-                case Node(Color.Red, b, k2, v2, Node(Color.Red, c, k3, v3, d)) =>
-                    Node(Color.Red, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-                case _ => t
-            }
+            case _                                                         =>
+                match right {
+                    case Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d) =>
+                        Node(Color.Red, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+                    case Node(Color.Red, b, k2, v2, Node(Color.Red, c, k3, v3, d)) =>
+                        Node(Color.Red, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+                    case _                                                         => t
+                }
         }
 
     ///
@@ -526,58 +551,64 @@ pub mod RedBlackTree {
         match right {
             case Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d) =>
                 Node(Color.Black, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-            case _ => match left {
-                case Node(Color.Red, a, k2, v2, Node(Color.Red, b, k3, v3, c)) =>
-                    Node(Color.Black, Node(Color.Black, a, k2, v2, b), k3, v3, Node(Color.Black, c, k1, v1, right))
-                case _ => t
-            }
+            case _                                                         =>
+                match left {
+                    case Node(Color.Red, a, k2, v2, Node(Color.Red, b, k3, v3, c)) =>
+                        Node(Color.Black, Node(Color.Black, a, k2, v2, b), k3, v3, Node(Color.Black, c, k1, v1, right))
+                    case _                                                         => t
+                }
         }
 
     ///
     /// Helper function for `insert`.
     ///
-    def blacken(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Color.Red, Node(Color.Red, a, k1, v1, b), k2, v2, c) =>
-            Node(Color.Black, Node(Color.Red, a, k1, v1, b), k2, v2, c)
-        case Node(Color.Red, a, k1, v1, Node(Color.Red, b, k2, v2, c)) =>
-            Node(Color.Black, a, k1, v1, Node(Color.Red, b, k2, v2, c))
-        case _ => t
-    }
+    def blacken(t: RedBlackTree[k, v]): RedBlackTree[k, v] =
+        match t {
+            case Node(Color.Red, Node(Color.Red, a, k1, v1, b), k2, v2, c) =>
+                Node(Color.Black, Node(Color.Red, a, k1, v1, b), k2, v2, c)
+            case Node(Color.Red, a, k1, v1, Node(Color.Red, b, k2, v2, c)) =>
+                Node(Color.Black, a, k1, v1, Node(Color.Red, b, k2, v2, c))
+            case _                                                         => t
+        }
 
     ///
     /// Helper function for `delete`.
     ///
-    def rotate(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Color.Red, left, k1, v1, right) =>
-            rotateRed(t, left, k1, v1, right)
-        case Node(Color.Black, left, k1, v1, right) =>
-            rotateBlack(t, left, k1, v1, right)
-        case _ => t
-    }
+    def rotate(t: RedBlackTree[k, v]): RedBlackTree[k, v] =
+        match t {
+            case Node(Color.Red, left, k1, v1, right)   =>
+                rotateRed(t, left, k1, v1, right)
+            case Node(Color.Black, left, k1, v1, right) =>
+                rotateBlack(t, left, k1, v1, right)
+            case _                                      => t
+        }
 
     ///
     /// Helper function for `rotate`. Handles the red node cases.
     ///
     def rotateRed(t: RedBlackTree[k, v], left: RedBlackTree[k, v], k1: k, v1: v, right: RedBlackTree[k, v]): RedBlackTree[k, v] =
         match left {
-            case Node(Color.DoubleBlack, a, k2, v2, b) => match right {
-                case Node(Color.Black, c, k3, v3, d) =>
-                    balance(Node(Color.Black, Node(Color.Red, Node(Color.Black, a, k2, v2, b), k1, v1, c), k3, v3, d))
-                case _ => t
-            }
-            case DoubleBlackLeaf => match right {
-                case Node(Color.Black, c, k3, v3, d) =>
-                    balance(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, c), k3, v3, d))
-                case _ => t
-            }
-            case Node(Color.Black, a, k2, v2, b) => match right {
-                case Node(Color.DoubleBlack, c, k3, v3, d) =>
-                    balance(Node(Color.Black, a, k2, v2, Node(Color.Red, b, k1, v1, Node(Color.Black, c, k3, v3, d))))
-                case DoubleBlackLeaf =>
-                    balance(Node(Color.Black, a, k2, v2, Node(Color.Red, b, k1, v1, Leaf)))
-                case _ => t
-            }
-            case _ => t
+            case Node(Color.DoubleBlack, a, k2, v2, b) =>
+                match right {
+                    case Node(Color.Black, c, k3, v3, d) =>
+                        balance(Node(Color.Black, Node(Color.Red, Node(Color.Black, a, k2, v2, b), k1, v1, c), k3, v3, d))
+                    case _                               => t
+                }
+            case DoubleBlackLeaf                       =>
+                match right {
+                    case Node(Color.Black, c, k3, v3, d) =>
+                        balance(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, c), k3, v3, d))
+                    case _                               => t
+                }
+            case Node(Color.Black, a, k2, v2, b)       =>
+                match right {
+                    case Node(Color.DoubleBlack, c, k3, v3, d) =>
+                        balance(Node(Color.Black, a, k2, v2, Node(Color.Red, b, k1, v1, Node(Color.Black, c, k3, v3, d))))
+                    case DoubleBlackLeaf                       =>
+                        balance(Node(Color.Black, a, k2, v2, Node(Color.Red, b, k1, v1, Leaf)))
+                    case _                                     => t
+                }
+            case _                                     => t
         }
 
     ///
@@ -585,60 +616,65 @@ pub mod RedBlackTree {
     ///
     def rotateBlack(t: RedBlackTree[k, v], left: RedBlackTree[k, v], k1: k, v1: v, right: RedBlackTree[k, v]): RedBlackTree[k, v] =
         match left {
-            case Node(Color.DoubleBlack, a, k2, v2, b) => match right {
-                case Node(Color.Black, c, k3, v3, d) =>
-                    balance(Node(Color.DoubleBlack, Node(Color.Red, Node(Color.Black, a, k2, v2, b), k1, v1, c), k3, v3, d))
-                case Node(Color.Red, Node(Color.Black, c, k3, v3, d), k4, v4, e) =>
-                    Node(Color.Black, balance(Node(Color.Black, Node(Color.Red, Node(Color.Black, a, k2, v2, b), k1, v1, c), k3, v3, d)), k4, v4, e)
-                case _ => t
-            }
-            case DoubleBlackLeaf => match right {
-                case Node(Color.Black, c, k3, v3, d) =>
-                    balance(Node(Color.DoubleBlack, Node(Color.Red, Leaf, k1, v1, c), k3, v3, d))
-                case Node(Color.Red, Node(Color.Black, c, k3, v3, d), k4, v4, e) =>
-                    Node(Color.Black, balance(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, c), k3, v3, d)), k4, v4, e)
-                case _ => t
-            }
-            case Node(Color.Black, a, k2, v2, b) => match right {
-                case Node(Color.DoubleBlack, c, k3, v3, d) =>
-                    balance(Node(Color.DoubleBlack, a, k2, v2, Node(Color.Red, b, k1, v1, Node(Color.Black, c, k3, v3, d))))
-                case DoubleBlackLeaf =>
-                    balance(Node(Color.DoubleBlack, a, k2, v2, Node(Color.Red, b, k1, v1, Leaf)))
-                case _ => t
-            }
-            case Node(Color.Red, a, k2, v2, Node(Color.Black, b, k3, v3, c)) => match right {
-                case Node(Color.DoubleBlack, d, k4, v4, e) =>
-                    Node(Color.Black, a, k2, v2, balance(Node(Color.Black, b, k3, v3, Node(Color.Red, c, k1, v1, Node(Color.Black, d, k4, v4, e)))))
-                case DoubleBlackLeaf =>
-                    Node(Color.Black, a, k2, v2, balance(Node(Color.Black, b, k3, v3, Node(Color.Red, c, k1, v1, Leaf))))
-                case _ => t
-            }
-            case _ => t
+            case Node(Color.DoubleBlack, a, k2, v2, b)                       =>
+                match right {
+                    case Node(Color.Black, c, k3, v3, d)                             =>
+                        balance(Node(Color.DoubleBlack, Node(Color.Red, Node(Color.Black, a, k2, v2, b), k1, v1, c), k3, v3, d))
+                    case Node(Color.Red, Node(Color.Black, c, k3, v3, d), k4, v4, e) =>
+                        Node(Color.Black, balance(Node(Color.Black, Node(Color.Red, Node(Color.Black, a, k2, v2, b), k1, v1, c), k3, v3, d)), k4, v4, e)
+                    case _                                                           => t
+                }
+            case DoubleBlackLeaf                                             =>
+                match right {
+                    case Node(Color.Black, c, k3, v3, d)                             =>
+                        balance(Node(Color.DoubleBlack, Node(Color.Red, Leaf, k1, v1, c), k3, v3, d))
+                    case Node(Color.Red, Node(Color.Black, c, k3, v3, d), k4, v4, e) =>
+                        Node(Color.Black, balance(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, c), k3, v3, d)), k4, v4, e)
+                    case _                                                           => t
+                }
+            case Node(Color.Black, a, k2, v2, b)                             =>
+                match right {
+                    case Node(Color.DoubleBlack, c, k3, v3, d) =>
+                        balance(Node(Color.DoubleBlack, a, k2, v2, Node(Color.Red, b, k1, v1, Node(Color.Black, c, k3, v3, d))))
+                    case DoubleBlackLeaf                       =>
+                        balance(Node(Color.DoubleBlack, a, k2, v2, Node(Color.Red, b, k1, v1, Leaf)))
+                    case _                                     => t
+                }
+            case Node(Color.Red, a, k2, v2, Node(Color.Black, b, k3, v3, c)) =>
+                match right {
+                    case Node(Color.DoubleBlack, d, k4, v4, e) =>
+                        Node(Color.Black, a, k2, v2, balance(Node(Color.Black, b, k3, v3, Node(Color.Red, c, k1, v1, Node(Color.Black, d, k4, v4, e)))))
+                    case DoubleBlackLeaf                       =>
+                        Node(Color.Black, a, k2, v2, balance(Node(Color.Black, b, k3, v3, Node(Color.Red, c, k1, v1, Leaf))))
+                    case _                                     => t
+                }
+            case _                                                           => t
         }
 
     ///
     /// Helper function for `delete`.
     ///
-    def redden(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d)) =>
-            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case DoubleBlackLeaf => Leaf
-        case _ => t
-    }
+    def redden(t: RedBlackTree[k, v]): RedBlackTree[k, v] =
+        match t {
+            case Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d)) =>
+                Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+            case DoubleBlackLeaf                                                                             => Leaf
+            case _                                                                                           => t
+        }
 
     ///
     /// Helper function for `delete`.
     ///
     def minDelete(t: RedBlackTree[k, v]): (k, v, RedBlackTree[k, v]) =
         def loop(tt) = match tt {
-            case Node(Color.Red, Leaf, k1, v1, Leaf)   => (k1, v1, Leaf)
-            case Node(Color.Black, Leaf, k1, v1, Leaf) => (k1, v1, DoubleBlackLeaf)
+            case Node(Color.Red, Leaf, k1, v1, Leaf)                                  => (k1, v1, Leaf)
+            case Node(Color.Black, Leaf, k1, v1, Leaf)                                => (k1, v1, DoubleBlackLeaf)
             case Node(Color.Black, Leaf, k1, v1, Node(Color.Red, Leaf, k2, v2, Leaf)) =>
                 (k1, v1, Node(Color.Black, Leaf, k2, v2, Leaf))
-            case Node(c, a, k1, v1, b) =>
+            case Node(c, a, k1, v1, b)                                                =>
                 let (k, v, child) = loop(a);
                 (k, v, rotate(Node(c, child, k1, v1, b)))
-            case _ => unreachable!()
+            case _                                                                    => unreachable!()
         };
         loop(t)
 
@@ -647,45 +683,49 @@ pub mod RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def rangeQueryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, t: RedBlackTree[k, v]): Unit \ { ef1, ef2 } = match t {
-        case Node(_, a, k, v, b) =>
-            match p(k) {
-                case Comparison.LessThan    => rangeQueryWith(p, f, b)
-                case Comparison.EqualTo     => rangeQueryWith(p, f, a); f(k, v); rangeQueryWith(p, f, b)
-                case Comparison.GreaterThan => rangeQueryWith(p, f, a)
-            }
-        case _ => ()
-    }
+    pub def rangeQueryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, t: RedBlackTree[k, v]): Unit \ { ef1, ef2 } =
+        match t {
+            case Node(_, a, k, v, b) =>
+                match p(k) {
+                    case Comparison.LessThan    => rangeQueryWith(p, f, b)
+                    case Comparison.EqualTo     => rangeQueryWith(p, f, a); f(k, v); rangeQueryWith(p, f, b)
+                    case Comparison.GreaterThan => rangeQueryWith(p, f, a)
+                }
+            case _                   => ()
+        }
 
     ///
     /// Extracts a range of key-value pairs from `t`.
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def rangeQuery(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region rc {
-        let buffer = MutList.empty(rc);
-        let g = k -> v -> MutList.push(f(k, v), buffer);
-        rangeQueryWith(p, g, t);
-        MutList.toList(buffer)
-    }
+    pub def rangeQuery(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } =
+        region rc {
+            let buffer = MutList.empty(rc);
+            let g = k -> v -> MutList.push(f(k, v), buffer);
+            rangeQueryWith(p, g, t);
+            MutList.toList(buffer)
+        }
 
     ///
     /// Extracts `k => v` where `k` is the leftmost (i.e. smallest) key in the tree.
     ///
-    pub def minimumKey(t: RedBlackTree[k, v]): Option[(k, v)] = match t {
-        case Node(_, Leaf, k, v, _) => Some((k, v))
-        case Node(_, a, _, _, _)    => minimumKey(a)
-        case _                      => None
-    }
+    pub def minimumKey(t: RedBlackTree[k, v]): Option[(k, v)] =
+        match t {
+            case Node(_, Leaf, k, v, _) => Some((k, v))
+            case Node(_, a, _, _, _)    => minimumKey(a)
+            case _                      => None
+        }
 
     ///
     /// Extracts `k => v` where `k` is the rightmost (i.e. largest) key in the tree.
     ///
-    pub def maximumKey(t: RedBlackTree[k, v]): Option[(k, v)] = match t {
-        case Node(_, _, k, v, Leaf) => Some((k, v))
-        case Node(_, _, _, _, b)    => maximumKey(b)
-        case _                      => None
-    }
+    pub def maximumKey(t: RedBlackTree[k, v]): Option[(k, v)] =
+        match t {
+            case Node(_, _, k, v, Leaf) => Some((k, v))
+            case Node(_, _, _, _, b)    => maximumKey(b)
+            case _                      => None
+        }
 
     ///
     /// Returns the black height of `t`.
@@ -693,8 +733,8 @@ pub mod RedBlackTree {
     pub def blackHeight(t: RedBlackTree[k, v]): Int32 =
         def loop(tt, acc) = match tt {
             case Node(Color.Black, a, _, _, _) => loop(a, 1 + acc)
-            case Node(_, a, _, _, _)     => loop(a, acc)
-            case _                       => acc
+            case Node(_, a, _, _, _)           => loop(a, acc)
+            case _                             => acc
         };
         loop(t, 0)
 
@@ -706,7 +746,7 @@ pub mod RedBlackTree {
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef =
         match purityOf2(f) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(t))
                     parMapWithKey(g, t)
                 else
@@ -728,13 +768,12 @@ pub mod RedBlackTree {
                 parSeqMapWithKey(f, st)
             else
                 match st {
-                    case Leaf                   => Leaf
-                    case DoubleBlackLeaf        => DoubleBlackLeaf
-                    case Node(c, a, k, v, b)    =>
-                        par (
-                            l  <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                            r  <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
-                            v1 <- f(k, v)                           // that we distribute over the two spanned threads.
+                    case Leaf                => Leaf
+                    case DoubleBlackLeaf     => DoubleBlackLeaf
+                    case Node(c, a, k, v, b) =>
+                        par (l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                        r <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
+                        v1 <- f(k, v) // that we distribute over the two spanned threads.
                         ) yield Node(c, l, k, v1, r)
                 }
         };
@@ -747,30 +786,32 @@ pub mod RedBlackTree {
     /// Note that this is equivalent to `seqMapWithKey` but for performance reasons -- to avoid
     /// megamorphic calls -- we use a copy here.
     ///
-    def parSeqMapWithKey(f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] = match t {
-        // Note that while this is identical to `seqMapWithKey` it must still be its own function
-        // because the parallel path must not be reuse the seq. path.
-        case Leaf                   => Leaf
-        case DoubleBlackLeaf        => DoubleBlackLeaf
-        case Node(c, a, k, v, b)    =>
-            let a1 = seqMapWithKey(f, a);
-            let v1 = f(k, v);
-            let b1 = seqMapWithKey(f, b);
-            Node(c, a1, k, v1, b1)
-    }
+    def parSeqMapWithKey(f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] =
+        match t {
+            // Note that while this is identical to `seqMapWithKey` it must still be its own function
+            // because the parallel path must not be reuse the seq. path.
+            case Leaf                => Leaf
+            case DoubleBlackLeaf     => DoubleBlackLeaf
+            case Node(c, a, k, v, b) =>
+                let a1 = seqMapWithKey(f, a);
+                let v1 = f(k, v);
+                let b1 = seqMapWithKey(f, b);
+                Node(c, a1, k, v1, b1)
+        }
 
     ///
     /// Sequentially maps `f` over the tree `t`.
     ///
-    def seqMapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef = match t {
-        case Leaf                => Leaf
-        case DoubleBlackLeaf     => DoubleBlackLeaf
-        case Node(c, a, k, v, b) =>
-            let a1 = seqMapWithKey(f, a);
-            let v1 = f(k, v);
-            let b1 = seqMapWithKey(f, b);
-            Node(c, a1, k, v1, b1)
-    }
+    def seqMapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef =
+        match t {
+            case Leaf                => Leaf
+            case DoubleBlackLeaf     => DoubleBlackLeaf
+            case Node(c, a, k, v, b) =>
+                let a1 = seqMapWithKey(f, a);
+                let v1 = f(k, v);
+                let b1 = seqMapWithKey(f, b);
+                Node(c, a1, k, v1, b1)
+        }
 
     ///
     /// Applies `f` over the tree `t` in parallel and returns the number of elements
@@ -787,13 +828,12 @@ pub mod RedBlackTree {
                 seqCount(f, st)
             else
                 match st {
-                    case Leaf                   => 0
-                    case DoubleBlackLeaf        => 0
-                    case Node(_, a, k, v, b)    =>
-                        par (
-                            l  <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                            r  <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
-                            v1 <- if (f(k, v)) 1 else 0         // that we distribute over the two spanned threads.
+                    case Leaf                => 0
+                    case DoubleBlackLeaf     => 0
+                    case Node(_, a, k, v, b) =>
+                        par (l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                        r <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
+                        v1 <- if (f(k, v)) 1 else 0 // that we distribute over the two spanned threads.
                         ) yield l + v1 + r
                 }
         };
@@ -804,15 +844,16 @@ pub mod RedBlackTree {
     /// Applies `f` over the tree `t` sequentially from left to right and returns the number of elements
     /// that satisfy the predicate `f`.
     ///
-    def seqCount(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 = match t {
-        case Leaf                => 0
-        case DoubleBlackLeaf     => 0
-        case Node(_, a, k, v, b) =>
-            let a1 = seqCount(f, a);
-            let v1 = if (f(k, v)) 1 else 0;
-            let b1 = seqCount(f, b);
-            a1 + v1 + b1
-    }
+    def seqCount(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 =
+        match t {
+            case Leaf                => 0
+            case DoubleBlackLeaf     => 0
+            case Node(_, a, k, v, b) =>
+                let a1 = seqCount(f, a);
+                let v1 = if (f(k, v)) 1 else 0;
+                let b1 = seqCount(f, b);
+                a1 + v1 + b1
+        }
 
     ///
     /// Returns the sum of all keys in the tree `t`.
@@ -830,15 +871,16 @@ pub mod RedBlackTree {
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
     /// according to the function `f`.
     ///
-    pub def sumWith(f: (k, v) -> Int32 \ ef, t: RedBlackTree[k, v]): Int32 \ ef = match t {
-        case Leaf                => 0
-        case DoubleBlackLeaf     => 0
-        case Node(_, a, k, v, b) =>
-            let x = sumWith(f, a);
-            let y = f(k, v);
-            let z = sumWith(f, b);
-            x + y + z
-    }
+    pub def sumWith(f: (k, v) -> Int32 \ ef, t: RedBlackTree[k, v]): Int32 \ ef =
+        match t {
+            case Leaf                => 0
+            case DoubleBlackLeaf     => 0
+            case Node(_, a, k, v, b) =>
+                let x = sumWith(f, a);
+                let y = f(k, v);
+                let z = sumWith(f, b);
+                x + y + z
+        }
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
@@ -855,19 +897,17 @@ pub mod RedBlackTree {
                 seqSumWith(f, st)
             else
                 match st {
-                    case Leaf                   => 0
-                    case DoubleBlackLeaf        => 0
-                    case Node(_, a, k, v, b)    =>
-                        par (
-                            l  <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                            r  <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
-                            v1 <- f(k, v)                       // that we distribute over the two spanned threads.
+                    case Leaf                => 0
+                    case DoubleBlackLeaf     => 0
+                    case Node(_, a, k, v, b) =>
+                        par (l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                        r <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
+                        v1 <- f(k, v) // that we distribute over the two spanned threads.
                         ) yield l + v1 + r
                 }
         };
         visitSubtree(threads() - 1, t)
     }
-
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
@@ -876,15 +916,16 @@ pub mod RedBlackTree {
     /// Note that this is equivalent to `sumWith` but for performance reasons -- to avoid
     /// megamorphic calls -- we use a copy here.
     ///
-    def seqSumWith(f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 = match t {
-        case Leaf                => 0
-        case DoubleBlackLeaf     => 0
-        case Node(_, a, k, v, b) =>
-            let x = seqSumWith(f, a);
-            let y = f(k, v);
-            let z = seqSumWith(f, b);
-            x + y + z
-    }
+    def seqSumWith(f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 =
+        match t {
+            case Leaf                => 0
+            case DoubleBlackLeaf     => 0
+            case Node(_, a, k, v, b) =>
+                let x = seqSumWith(f, a);
+                let y = f(k, v);
+                let z = seqSumWith(f, b);
+                x + y + z
+        }
 
     ///
     /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
@@ -905,14 +946,15 @@ pub mod RedBlackTree {
     ///
     /// Returns a RedBlackTree with mappings `k => f(v)` for every `k => v` in `t`.
     ///
-    pub def mapAWithKey(f: (k, v1) -> m[v2] \ ef, t: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] \ ef with Applicative[m] = match t {
-        case Node(color, left, key, v, right) =>
-            let leftA  = mapAWithKey(f, left);
-            let ans = f(key, v);
-            let rightA = mapAWithKey(f, right);
-            nodeA(color, leftA, key, ans, rightA)
-        case _                                => Applicative.point(Leaf)
-    }
+    pub def mapAWithKey(f: (k, v1) -> m[v2] \ ef, t: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] \ ef with Applicative[m] =
+        match t {
+            case Node(color, left, key, v, right) =>
+                let leftA = mapAWithKey(f, left);
+                let ans = f(key, v);
+                let rightA = mapAWithKey(f, right);
+                nodeA(color, leftA, key, ans, rightA)
+            case _                                => Applicative.point(Leaf)
+        }
 
     ///
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest
@@ -958,10 +1000,10 @@ pub mod RedBlackTree {
                     case Leaf                => None
                     case DoubleBlackLeaf     => None
                     case Node(_, a, k, v, b) =>
-                        par (
-                            l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                            r <- visitSubtree((n - 2) / 2, b)  // We spawn two new threads leaving us with n - 2
-                        ) yield match (l, r) {                 // that we distribute over the two spanned threads.
+                        par (l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                        r <- visitSubtree((n - 2) / 2, b) // We spawn two new threads leaving us with n - 2
+                        ) yield match (l, r) {
+                            // that we distribute over the two spanned threads.
                             case (None, None)                     => Some((k, v))
                             case (None, Some((kr, vr)))           => Some(cmp(k, v, kr, vr))
                             case (Some((kl, vl)), None)           => Some(cmp(kl, vl, k, v))
@@ -978,20 +1020,21 @@ pub mod RedBlackTree {
     /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
     /// element according to `cmp`.
     ///
-    def seqLimitBy(cmp: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
-        case Node(_, a, k, v, b) =>
-            let res = match seqLimitBy(cmp, a) {
-                case None           => (k, v)
-                case Some((kl, vl)) => cmp(kl, vl, k, v)
-            };
-            match seqLimitBy(cmp, b) {
-                case None           => Some(res)
-                case Some((kr, vr)) =>
-                    let (ks, vs) = res;
-                    Some(cmp(ks, vs, kr, vr))
-            }
-        case _ => None
-    }
+    def seqLimitBy(cmp: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
+        match t {
+            case Node(_, a, k, v, b) =>
+                let res = match seqLimitBy(cmp, a) {
+                    case None           => (k, v)
+                    case Some((kl, vl)) => cmp(kl, vl, k, v)
+                };
+                match seqLimitBy(cmp, b) {
+                    case None           => Some(res)
+                    case Some((kr, vr)) =>
+                        let (ks, vs) = res;
+                        Some(cmp(ks, vs, kr, vr))
+                }
+            case _                   => None
+        }
 
     ///
     /// Returns the concatenation of the string representation of each key `k`
@@ -1011,13 +1054,14 @@ pub mod RedBlackTree {
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region rc {
-        use StringBuilder.append;
-        let lastSep = String.length(sep);
-        let sb = StringBuilder.empty(rc);
-        forEach((k, v) -> { append(f(k, v), sb); append(sep, sb) }, t);
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    }
+    pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef =
+        region rc {
+            use StringBuilder.append;
+            let lastSep = String.length(sep);
+            let sb = StringBuilder.empty(rc);
+            forEach((k, v) -> {append(f(k, v), sb); append(sep, sb)}, t);
+            StringBuilder.toString(sb) |> String.dropRight(lastSep)
+        }
 
     ///
     /// Returns a new copy of tree `t` with just the nodes that satisfy the predicate `f`.
@@ -1055,7 +1099,7 @@ pub mod RedBlackTree {
     /// This represents pending items `(key, value, right-tree)` encountered while finding the
     /// leftmost node in a tree to start iterating from.
     ///
-    type alias IterStack2[k, v] = List[(k, v, RedBlackTree[k,v])]
+    type alias IterStack2[k, v] = List[(k, v, RedBlackTree[k, v])]
 
     ///
     /// Helper function for `iterator`.
@@ -1063,10 +1107,10 @@ pub mod RedBlackTree {
     /// the tree and build a stack of pending items. As the iterator is run it will
     /// call `leftmost` on pending "right trees" in the stack.
     ///
-    def leftmost(t: RedBlackTree[k, v], es: IterStack2[k, v]): IterStack2[k, v] = match t {
-        case Leaf                        => es
-        case DoubleBlackLeaf             => es
-        case Node(_, ltree, k, v, rtree) => leftmost(ltree, (k, v, rtree) :: es)
-    }
-
+    def leftmost(t: RedBlackTree[k, v], es: IterStack2[k, v]): IterStack2[k, v] =
+        match t {
+            case Leaf                        => es
+            case DoubleBlackLeaf             => es
+            case Node(_, ltree, k, v, rtree) => leftmost(ltree, (k, v, rtree) :: es)
+        }
 }

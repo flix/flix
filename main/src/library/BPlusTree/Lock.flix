@@ -50,9 +50,7 @@ pub mod BPlusTree.Lock {
     ///
     /// For Java's memory model see: https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4
     ///
-    pub enum Lock[_: Region](JStampedLock)
-
-    // Unchecked casts are here used to remove the IO effect. It is replaced with an
+    pub enum Lock [_: Region] (JStampedLock) // Unchecked casts are here used to remove the IO effect. It is replaced with an
     // effect to a region to ensure that the code is not optimized away.
 
     ///
@@ -73,7 +71,7 @@ pub mod BPlusTree.Lock {
     ///
     pub def yieldBasedOn(lock: Lock[r]): Unit \ r =
         let Lock(l) = lock;
-        unsafe IO as r { l.unlockRead(l.readLock()) }
+        unsafe IO as r {l.unlockRead(l.readLock())}
 
     ///
     /// Returns `true` if `lock` is currently held by a thread.
@@ -82,7 +80,7 @@ pub mod BPlusTree.Lock {
     ///
     pub def isLocked(lock: Lock[r]): Bool \ r =
         let Lock(l) = lock;
-        unsafe IO as r { l.isWriteLocked() or l.isReadLocked() }
+        unsafe IO as r {l.isWriteLocked() or l.isReadLocked()}
 
     ///
     /// Executes `onValid` if `stamp` is still valid on `lock`.
@@ -119,16 +117,21 @@ pub mod BPlusTree.Lock {
         onValid: Unit -> a \ ef1,
         onInvalid: Unit -> a \ ef2
     ): a \ ef1 + ef2 + r =
-        ifValidElseNoYield(stamp, lock, onValid, () -> {
-            yieldBasedOn(lock);
-            onInvalid()
-        })
+        ifValidElseNoYield(
+            stamp,
+            lock,
+            onValid,
+            () -> {
+                yieldBasedOn(lock);
+                onInvalid()
+            }
+        )
 
     ///
     /// Returns a fresh lock.
     ///
     pub def mkLock(_: Region[r]): Lock[r] \ r =
-        Lock(unsafe IO as r { new JStampedLock() })
+        Lock(unsafe IO as r {new JStampedLock()})
 
     /// Attempt to upgrade `stamp` on `lock` to a write-lock on `lock`.
     /// The returned stamp cannot be invalidated if it was valid when issued.
@@ -137,7 +140,7 @@ pub mod BPlusTree.Lock {
     ///
     pub def tryConvertToWrite(stamp: Int64, lock: Lock[r]): Int64 \ r =
         let Lock(l) = lock;
-        unsafe IO as r { l.tryConvertToWriteLock(stamp) }
+        unsafe IO as r {l.tryConvertToWriteLock(stamp)}
 
     ///
     /// Attempts to upgrade `stamp` to a write lock and executes `onWrite`
@@ -166,7 +169,7 @@ pub mod BPlusTree.Lock {
     ///
     pub def tryReadLock(lock: Lock[r]): Int64 \ r =
         let Lock(l) = lock;
-        unsafe IO as r { l.tryOptimisticRead() }
+        unsafe IO as r {l.tryOptimisticRead()}
 
     ///
     /// Unlock `lock` with the issued write-stamp, `stamp`.
@@ -175,7 +178,7 @@ pub mod BPlusTree.Lock {
     ///
     pub def unlockWrite(stamp: Int64, lock: Lock[r]): Unit \ r =
         let Lock(l) = lock;
-        unsafe IO as r { l.unlockWrite(stamp) }
+        unsafe IO as r {l.unlockWrite(stamp)}
 
     ///
     /// Returns true if `stamp` is still valid on `lock`, meaning no thread
@@ -185,7 +188,7 @@ pub mod BPlusTree.Lock {
     ///
     pub def valid(stamp: Int64, lock: Lock[r]): Bool \ r =
         let Lock(l) = lock;
-        unsafe IO as r { l.validate(stamp) }
+        unsafe IO as r {l.validate(stamp)}
 
     ///
     /// Lock `lock` and returns the stamp.
@@ -194,5 +197,5 @@ pub mod BPlusTree.Lock {
     ///
     pub def writeLock(lock: Lock[r]): Int64 \ r =
         let Lock(l) = lock;
-        unsafe IO as r { l.writeLock() }
+        unsafe IO as r {l.writeLock()}
 }

@@ -15,7 +15,6 @@
  */
 
 pub mod Net.SocketAddrV4 {
-
     use Net.Ipv4Addr
 
     ///
@@ -28,11 +27,10 @@ pub mod Net.SocketAddrV4 {
     instance ToString[SocketAddrV4] {
         pub def toString(x: SocketAddrV4): String =
             let SocketAddrV4.SocketAddrV4(ip, port) = x;
-            "${ip}:${port}"
+            "${ ip }:${ port }"
     }
 
     instance Formattable[SocketAddrV4] {
         pub def format(x: SocketAddrV4): RichString = RichString.fromString(ToString.toString(x))
     }
-
 }

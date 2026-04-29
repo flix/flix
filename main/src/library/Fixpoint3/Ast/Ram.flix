@@ -126,15 +126,15 @@ pub mod Fixpoint3.Ast.Ram {
             let nl = String.lineSeparator();
             match stmt {
                 case RamStmt.Insert(op)          => ToString.toString(op)
-                case RamStmt.MergeInto(src, dst) => "Merge ${src} into ${dst}"
-                case RamStmt.Swap(lhs, rhs)      => "Swap ${lhs} and ${rhs}"
-                case RamStmt.Purge(relSym)       => "Purge ${relSym}"
-                case RamStmt.Seq(xs)             => Vector.join(";${nl}", xs)
-                case RamStmt.Par(xs)             => Vector.join("|${nl}", xs)
+                case RamStmt.MergeInto(src, dst) => "Merge ${ src } into ${ dst }"
+                case RamStmt.Swap(lhs, rhs)      => "Swap ${ lhs } and ${ rhs }"
+                case RamStmt.Purge(relSym)       => "Purge ${ relSym }"
+                case RamStmt.Seq(xs)             => Vector.join(";${ nl }", xs)
+                case RamStmt.Par(xs)             => Vector.join("|${ nl }", xs)
                 case RamStmt.Until(test, body)   =>
                     let tst = test |> Vector.join(" && ");
-                    "until(${tst}) do${nl}${String.indent(4, "${body}")}end"
-                case RamStmt.Comment(comment)    => "/* ${comment} */"
+                    "until(${ tst }) do${ nl }${ String.indent(4, "${ body }") }end"
+                case RamStmt.Comment(comment)    => "/* ${ comment } */"
             }
     }
 
@@ -171,20 +171,24 @@ pub mod Fixpoint3.Ast.Ram {
         pub def toString(op: RelOp): String =
             let nl = String.lineSeparator();
             match op {
-                case RelOp.Search(var, relSym, _, body) =>
-                    "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Query(var, relSym, prefixQuery, _, _, body) =>
-                    let qry = Vector.joinWith(match term -> {
-                        ToString.toString(term)
-                    }, " ∧ ", prefixQuery);
-                    "query {${var} ∈ ${relSym} | ${qry}} do${nl}${String.indent(4, "${body}")}end"
+                case RelOp.Search(var, relSym, _, body)                       =>
+                    "search ${ var } ∈ ${ relSym } do${ nl }${ String.indent(4, "${ body }") }end"
+                case RelOp.Query(var, relSym, prefixQuery, _, _, body)        =>
+                    let qry = Vector.joinWith(
+                        match term -> {
+                            ToString.toString(term)
+                        },
+                        " ∧ ",
+                        prefixQuery
+                    );
+                    "query {${ var } ∈ ${ relSym } | ${ qry }} do${ nl }${ String.indent(4, "${ body }") }end"
                 case RelOp.Functional(RowVar.Named(id), _, terms, body, _, _) =>
-                    "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Project(terms, relSym, _) =>
-                    "project (${terms |> Vector.join(", ")}) into ${relSym}"
-                case RelOp.If(test, then) =>
+                    "loop(x${ id } <- f(${ terms |> Vector.join(", ") })) do${ nl }${ String.indent(4, "${ body }") }end"
+                case RelOp.Project(terms, relSym, _)                          =>
+                    "project (${ terms |> Vector.join(", ") }) into ${ relSym }"
+                case RelOp.If(test, $then)                                    =>
                     let tst = test |> Vector.join(" ∧ ");
-                    "if (${tst}) then${nl}${String.indent(4, "${then}")}end"
+                    "if (${ tst }) then${ nl }${ String.indent(4, "${ $then }") }end"
             }
     }
 
@@ -230,17 +234,17 @@ pub mod Fixpoint3.Ast.Ram {
     instance ToString[BoolExp] {
         pub def toString(exp: BoolExp): String =
             match exp {
-                case BoolExp.Not(boolExp)                  => "not (${boolExp})"
-                case BoolExp.IsEmpty(relSym)               => "${relSym} = ∅"
-                case BoolExp.NotMemberOf(terms, relSym, _) => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
-                case BoolExp.NotBot(term, _, _)            => "(${term}) ≠ ⊥"
-                case BoolExp.Leq(elem, _, term)            => "${elem} ≤ (${term})"
-                case BoolExp.Eq(lhs, rhs)                  => "${lhs} = ${rhs}"
-                case BoolExp.Guard1(_, v)                  => "<clo>(${v})"
-                case BoolExp.Guard2(_, v1, v2)             => "<clo>(${v1}, ${v2})"
-                case BoolExp.Guard3(_, v1, v2, v3)         => "<clo>(${v1}, ${v2}, ${v3})"
-                case BoolExp.Guard4(_, v1, v2, v3, v4)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-                case BoolExp.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+                case BoolExp.Not(boolExp)                  => "not (${ boolExp })"
+                case BoolExp.IsEmpty(relSym)               => "${ relSym } = ∅"
+                case BoolExp.NotMemberOf(terms, relSym, _) => "(${ terms |> Vector.join(", ") }) ∉ ${ relSym }"
+                case BoolExp.NotBot(term, _, _)            => "(${ term }) ≠ ⊥"
+                case BoolExp.Leq(elem, _, term)            => "${ elem } ≤ (${ term })"
+                case BoolExp.Eq(lhs, rhs)                  => "${ lhs } = ${ rhs }"
+                case BoolExp.Guard1(_, v)                  => "<clo>(${ v })"
+                case BoolExp.Guard2(_, v1, v2)             => "<clo>(${ v1 }, ${ v2 })"
+                case BoolExp.Guard3(_, v1, v2, v3)         => "<clo>(${ v1 }, ${ v2 }, ${ v3 })"
+                case BoolExp.Guard4(_, v1, v2, v3, v4)     => "<clo>(${ v1 }, ${ v2 }, ${ v3 }, ${ v4 })"
+                case BoolExp.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${ v1 }, ${ v2 }, ${ v3 }, ${ v4 }, ${ v5 })"
             }
     }
 
@@ -286,19 +290,20 @@ pub mod Fixpoint3.Ast.Ram {
     }
 
     instance ToString[RamTerm] {
-        pub def toString(term: RamTerm): String = match term {
-            case RamTerm.Lit(v, _)                      => Debug.stringify(v)
-            case RamTerm.ProvMax(loads)                 =>
-                let loadsStr = Vector.joinWith(match (rv, i) -> "${rv}[${i}]", ", ", loads);
-                "max(${loadsStr})"
-            case RamTerm.RowLoad(var, index, _, _)      => "${var}[${index}]"
-            case RamTerm.Meet(_, lhs, rhs, _)           => "(${lhs} ⊓ ${rhs})"
-            case RamTerm.App1(_, v, _)                  => "<clo>(${v})"
-            case RamTerm.App2(_, v1, v2, _)             => "<clo>(${v1}, ${v2})"
-            case RamTerm.App3(_, v1, v2, v3, _)         => "<clo>(${v1}, ${v2}, ${v3})"
-            case RamTerm.App4(_, v1, v2, v3, v4, _)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-            case RamTerm.App5(_, v1, v2, v3, v4, v5, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
-        }
+        pub def toString(term: RamTerm): String =
+            match term {
+                case RamTerm.Lit(v, _)                      => Debug.stringify(v)
+                case RamTerm.ProvMax(loads)                 =>
+                    let loadsStr = Vector.joinWith(match (rv, i) -> "${ rv }[${ i }]", ", ", loads);
+                    "max(${ loadsStr })"
+                case RamTerm.RowLoad(var, index, _, _)      => "${ var }[${ index }]"
+                case RamTerm.Meet(_, lhs, rhs, _)           => "(${ lhs } ⊓ ${ rhs })"
+                case RamTerm.App1(_, v, _)                  => "<clo>(${ v })"
+                case RamTerm.App2(_, v1, v2, _)             => "<clo>(${ v1 }, ${ v2 })"
+                case RamTerm.App3(_, v1, v2, v3, _)         => "<clo>(${ v1 }, ${ v2 }, ${ v3 })"
+                case RamTerm.App4(_, v1, v2, v3, v4, _)     => "<clo>(${ v1 }, ${ v2 }, ${ v3 }, ${ v4 })"
+                case RamTerm.App5(_, v1, v2, v3, v4, v5, _) => "<clo>(${ v1 }, ${ v2 }, ${ v3 }, ${ v4 }, ${ v5 })"
+            }
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -314,35 +319,40 @@ pub mod Fixpoint3.Ast.Ram {
     }
 
     instance Eq[RelSym] {
-        pub def eq(a: RelSym, b: RelSym): Bool = match (a, b) {
-            case (RelSym.Symbol(s1, _, _), RelSym.Symbol(s2, _, _)) => s1 == s2
-        }
+        pub def eq(a: RelSym, b: RelSym): Bool =
+            match (a, b) {
+                case (RelSym.Symbol(s1, _, _), RelSym.Symbol(s2, _, _)) => s1 == s2
+            }
     }
 
     instance Order[RelSym] {
-        pub def compare(a: RelSym, b: RelSym): Comparison = match (a, b) {
-            case (RelSym.Symbol(s1, _, _), RelSym.Symbol(s2, _, _)) => s1 <=> s2
-        }
+        pub def compare(a: RelSym, b: RelSym): Comparison =
+            match (a, b) {
+                case (RelSym.Symbol(s1, _, _), RelSym.Symbol(s2, _, _)) => s1 <=> s2
+            }
     }
 
     instance PredSymsOf[RelSym] {
-        pub def predSymsOf(x: RelSym): Set[PredSym] = match x {
-            case RelSym.Symbol(predSym, _, _) => Set.singleton(predSym)
-        }
+        pub def predSymsOf(x: RelSym): Set[PredSym] =
+            match x {
+                case RelSym.Symbol(predSym, _, _) => Set.singleton(predSym)
+            }
     }
 
     instance SubstitutePredSym[RelSym] {
-        pub def substitute(x: RelSym, s: Map[PredSym, PredSym]): RelSym = match x {
-            case RelSym.Symbol(predSym, arity, den) =>
-                let newSym = Map.getWithDefault(predSym, predSym, s);
-                RelSym.Symbol(newSym, arity, den)
-        }
+        pub def substitute(x: RelSym, s: Map[PredSym, PredSym]): RelSym =
+            match x {
+                case RelSym.Symbol(predSym, arity, den) =>
+                    let newSym = Map.getWithDefault(predSym, predSym, s);
+                    RelSym.Symbol(newSym, arity, den)
+            }
     }
 
     instance ToString[RelSym] {
-        pub def toString(relSym: RelSym): String = match relSym {
-            case RelSym.Symbol(sym, _, _) => "${sym}"
-        }
+        pub def toString(relSym: RelSym): String =
+            match relSym {
+                case RelSym.Symbol(sym, _, _) => "${ sym }"
+            }
     }
 
     ///
@@ -358,37 +368,42 @@ pub mod Fixpoint3.Ast.Ram {
     ///
     /// Returns the arity of `relSym`.
     ///
-    pub def arityOf(relSym: RelSym): Int32 = match relSym {
-        case RelSym.Symbol(_, arity, _) => arity
-    }
+    pub def arityOf(relSym: RelSym): Int32 =
+        match relSym {
+            case RelSym.Symbol(_, arity, _) => arity
+        }
 
     ///
     /// Returns the arity of the non-lattice part of `relSym`.
     ///
-    pub def arityOfNonLat(relSym: RelSym): Int32 = match relSym {
-        case RelSym.Symbol(_, arity, den) => match den {
-            case Relational => arity
-            case _          => arity - 1
+    pub def arityOfNonLat(relSym: RelSym): Int32 =
+        match relSym {
+            case RelSym.Symbol(_, arity, den) =>
+                match den {
+                    case Relational => arity
+                    case _          => arity - 1
+                }
         }
-    }
 
     ///
     /// Returns the denotation of `relSym`.
     ///
-    pub def toDenotation(relSym: RelSym): Denotation = match relSym {
-        case RelSym.Symbol(_, _, den) => den
-    }
+    pub def toDenotation(relSym: RelSym): Denotation =
+        match relSym {
+            case RelSym.Symbol(_, _, den) => den
+        }
 
     ///
     /// Returns the identifier of `relSym`.
     ///
-    pub def toId(relSym: RelSym): Int64 = match relSym {
-        case RelSym.Symbol(PredSym.PredSym(_, id), _, _) => id
-    }
+    pub def toId(relSym: RelSym): Int64 =
+        match relSym {
+            case RelSym.Symbol(PredSym.PredSym(_, id), _, _) => id
+        }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // RowVar                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////
+        // RowVar                                                                  //
+        /////////////////////////////////////////////////////////////////////////////
 
     ///
     /// `Named(id)` represents the unique identifier, `id`, of some row variable
@@ -400,21 +415,21 @@ pub mod Fixpoint3.Ast.Ram {
     ///        ...
     /// `e1` and `e2` would be the identifiers. Identifiers will only be defined
     /// once in a program, but can be reffered to from elsewhere.
-
     pub enum RowVar with Eq {
         case Named(Int32)
     }
 
     instance ToString[RowVar] {
-        pub def toString(var: RowVar): String = match var {
-            case RowVar.Named(id) => "x${id}"
-        }
+        pub def toString(var: RowVar): String =
+            match var {
+                case RowVar.Named(id) => "x${ id }"
+            }
     }
 
     instance Order[RowVar] {
-        pub def compare(a: RowVar, b: RowVar): Comparison = match (a, b) {
-            case (RowVar.Named(i1), RowVar.Named(i2)) => i1 <=> i2
-        }
+        pub def compare(a: RowVar, b: RowVar): Comparison =
+            match (a, b) {
+                case (RowVar.Named(i1), RowVar.Named(i2)) => i1 <=> i2
+            }
     }
-
 }

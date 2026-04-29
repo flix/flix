@@ -23,7 +23,6 @@ instance UpperBound[Int64] {
 }
 
 pub mod Int64 {
-
     import java.lang.Long
     import java.lang.NumberFormatException
     import java.math.BigDecimal
@@ -59,9 +58,12 @@ pub mod Int64 {
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
     pub def abs(x: Int64): Int64 = {
-        if      (x >= 0i64)         x
-        else if (x == minValue())   -1i64
-        else                        -x
+        if (x >= 0i64)
+            x
+        else if (x == minValue())
+            -1i64
+        else
+            -x
     }
 
     ///
@@ -91,11 +93,16 @@ pub mod Int64 {
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int64, y: Int64): Int64 = {
-        if (x >= 0i64 and y >= 0i64)                    abs(x - y)
-        else if (x < 0i64 and y < 0i64)                 abs(x - y)
-        else if (x == minValue() or y == minValue())    -1i64
-        else if (minValue() + abs(x) + abs(y) >= 0i64)  -1i64
-        else                                            abs(x - y)
+        if (x >= 0i64 and y >= 0i64)
+            abs(x - y)
+        else if (x < 0i64 and y < 0i64)
+            abs(x - y)
+        else if (x == minValue() or y == minValue())
+            -1i64
+        else if (minValue() + abs(x) + abs(y) >= 0i64)
+            -1i64
+        else
+            abs(x - y)
     }
 
     ///
@@ -103,9 +110,12 @@ pub mod Int64 {
     /// The sign of x - y.
     ///
     pub def compare(x: Int64, y: Int64): Int32 = {
-        if (x == y)     0
-        else if (x < y) -1
-        else            1
+        if (x == y)
+            0
+        else if (x < y)
+            -1
+        else
+            1
     }
 
     ///
@@ -117,14 +127,14 @@ pub mod Int64 {
     ///
     /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(base: {base = Int64}, n: Int64): Int64 = %%INT64_EXP%%(base#base, n)
+    pub def pow(base: { base = Int64 }, n: Int64): Int64 = %%INT64_EXP%%(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
     /// Only the rightmost 6 bits of `distance` are considered (ie. `distance rem 64`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
-    pub def logicalRightShift(dist: {dist = Int32}, x: Int64): Int64 =
+    pub def logicalRightShift(dist: { dist = Int32 }, x: Int64): Int64 =
         if (x < 0i64 and Int32.remainder(dist#dist, size()) != 0)
             rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), (dist#dist - 1))
         else
@@ -135,45 +145,49 @@ pub mod Int64 {
     /// representation of `x`.
     ///
     pub def bitCount(x: Int64): Int32 = {
-        if      (x == 0i64)            0
-        else if (x `remainder` 2i64 != 0i64) bitCount(logicalRightShift(dist = 1, x)) + 1
-        else                           bitCount(logicalRightShift(dist = 1, x))
+        if (x == 0i64)
+            0
+        else if (x `remainder` 2i64 != 0i64)
+            bitCount(logicalRightShift(dist = 1, x)) + 1
+        else
+            bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
     /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
-    pub def rotateRight(dist: {dist = Int32}, x: Int64): Int64 =
+    pub def rotateRight(dist: { dist = Int32 }, x: Int64): Int64 =
         bitwiseOr(logicalRightShift(dist = dist#dist, x), leftShift(x, -dist#dist))
 
     ///
     /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
-    pub def rotateLeft(dist: {dist = Int32}, x: Int64): Int64 =
+    pub def rotateLeft(dist: { dist = Int32 }, x: Int64): Int64 =
         bitwiseOr(logicalRightShift(dist = -dist#dist, x), leftShift(x, dist#dist))
 
     ///
     /// Returns the value obtained by reversing the bits in the
     /// two's complement binary representation of `x`.
     ///
-    pub def reverse(x: Int64): Int64 = reverseHelper(x, 0, size()-1)
+    pub def reverse(x: Int64): Int64 = reverseHelper(x, 0, size() - 1)
 
     ///
     /// Helper function for `reverse`.
     ///
     def reverseHelper(x: Int64, l: Int32, r: Int32): Int64 =
-        if (l >= r) x else reverseHelper(swap(x, l, r), l+1, r-1)
+        if (l >= r) x else reverseHelper(swap(x, l, r), l + 1, r - 1)
 
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int64, l: Int32, r: Int32): Int64 = match (getBit(pos = l, x), getBit(pos = r, x)) {
-        case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
-        case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
-        case _ => x
-    }
+    def swap(x: Int64, l: Int32, r: Int32): Int64 =
+        match (getBit(pos = l, x), getBit(pos = r, x)) {
+            case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
+            case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
+            case _      => x
+        }
 
     ///
     /// Returns the position of the highest-order/leftmost one-bit in `x`.
@@ -199,11 +213,16 @@ pub mod Int64 {
     /// Otherwise recursively check the next bit in the same way.
     ///
     def oneBitPositionHelper(x: Int64, position: Int32, delta: Int32): Int32 = {
-        if (position < 0)                        -1
-        else if (position > (size() - 1))        -1
-        else if (getBit(pos = position, x) == 1) position
-        else if (delta == 0)                     -1
-        else                                     oneBitPositionHelper(x, position + delta, delta)
+        if (position < 0)
+            -1
+        else if (position > (size() - 1))
+            -1
+        else if (getBit(pos = position, x) == 1)
+            position
+        else if (delta == 0)
+            -1
+        else
+            oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -251,7 +270,7 @@ pub mod Int64 {
     /// Considers the 6 rightmost bits of `position` (`position` modulo 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
-    pub def getBit(pos: {pos = Int32}, x: Int64): Int32 =
+    pub def getBit(pos: { pos = Int32 }, x: Int64): Int32 =
         if (rightShift(x, pos#pos) `remainder` 2i64 == 0i64) 0 else 1
 
     ///
@@ -259,21 +278,21 @@ pub mod Int64 {
     /// Considers the 6 rightmost bits of `position` (`position` modulo 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseOr(x, leftShift(1i64, pos#pos))
+    pub def setBit(pos: { pos = Int32 }, x: Int64): Int64 = bitwiseOr(x, leftShift(1i64, pos#pos))
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
     /// Considers the 6 rightmost bits of `position` (`position` modulo 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseAnd(x, bitwiseNot(leftShift(1i64, pos#pos)))
+    pub def clearBit(pos: { pos = Int32 }, x: Int64): Int64 = bitwiseAnd(x, bitwiseNot(leftShift(1i64, pos#pos)))
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
     /// Considers the 6 rightmost bits of `position` (`position` modulo 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseXor(x, leftShift(1i64, pos#pos))
+    pub def flipBit(pos: { pos = Int32 }, x: Int64): Int64 = bitwiseXor(x, leftShift(1i64, pos#pos))
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -340,22 +359,24 @@ pub mod Int64 {
     /// Parse the string `s` as an Int64, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Int64] = try {
-        Some(Long.parseLong(s.strip()))
-    } catch {
-        case _: NumberFormatException => None
-    }
+    pub def fromString(s: String): Option[Int64] =
+        try {
+            Some(Long.parseLong(s.strip()))
+        } catch {
+            case _: NumberFormatException => None
+        }
 
     ///
     /// Parse the string `s` as an Int64, where the `radix` is used while parsing.
     /// Leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def parse(radix: Int32, s: String): Result[String, Int64] = try {
-        Ok(Long.parseLong(s.strip(), radix))
-    } catch {
-        case _: NumberFormatException => Err("Int64.parse")
-    }
+    pub def parse(radix: Int32, s: String): Result[String, Int64] =
+        try {
+            Ok(Long.parseLong(s.strip(), radix))
+        } catch {
+            case _: NumberFormatException => Err("Int64.parse")
+        }
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -433,21 +454,20 @@ pub mod Int64 {
     ///
     /// Helper function for the `clamp` conversion functions.
     ///
-    def clamp(min: {min = Int64}, max: {max = Int64}, x: Int64): Int64 =
+    def clamp(min: { min = Int64 }, max: { max = Int64 }, x: Int64): Int64 =
         if (x < min#min)
-             min#min
+            min#min
+        else if (x > max#max)
+            max#max
         else
-            if (x > max#max)
-                max#max
-            else
-                x
+            x
 
     ///
     /// Convert `x` to an `Int8`.
     ///
     /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
-    pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int64): Int8 =
+    pub def clampToInt8(min: { min = Int8 }, max: { max = Int8 }, x: Int64): Int8 =
         let mini64 = Int8.toInt64(min#min);
         let maxi64 = Int8.toInt64(max#max);
         Long.valueOf(clamp(min = mini64, max = maxi64, x)).byteValue()
@@ -457,18 +477,17 @@ pub mod Int64 {
     ///
     /// Returns `x` clamped within the Int16 range `min` to `max`.
     ///
-    pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: Int64): Int16 =
+    pub def clampToInt16(min: { min = Int16 }, max: { max = Int16 }, x: Int64): Int16 =
         let mini64 = Int16.toInt64(min#min);
         let maxi64 = Int16.toInt64(max#max);
         Long.valueOf(clamp(min = mini64, max = maxi64, x)).shortValue()
-
 
     ///
     /// Convert `x` to an `Int32`.
     ///
     /// Returns `x` clamped within the Int32 range `min` to `max`.
     ///
-    pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, x: Int64): Int32 =
+    pub def clampToInt32(min: { min = Int32 }, max: { max = Int32 }, x: Int64): Int32 =
         let mini64 = Int32.toInt64(min#min);
         let maxi64 = Int32.toInt64(max#max);
         Long.valueOf(clamp(min = mini64, max = maxi64, x)).intValue()
@@ -498,5 +517,4 @@ pub mod Int64 {
     ///
     pub def valueOf(i: Int64): Long =
         Long.valueOf(i)
-
 }

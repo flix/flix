@@ -14,21 +14,21 @@
  *  limitations under the License.
  */
 
-
 ///
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
-
 instance Indexable[Vector[a]] {
     type Idx = Int32
     type Elm = a
     type Aef = OutOfBounds
 
     pub def get(t: Vector[a], i: Int32): a \ OutOfBounds = {
-        if (0 <= i and i < Vector.length(t)) Vector.get(i, t)
-        else OutOfBounds.outOfBounds(
-            "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
-        )
+        if (0 <= i and i < Vector.length(t))
+            Vector.get(i, t)
+        else
+            OutOfBounds.outOfBounds(
+                "index ${ i } is out of bounds for Vector of length ${ Vector.length(t) }"
+            )
     }
 }
 
@@ -62,12 +62,12 @@ instance Functor[Vector] {
 }
 
 instance Applicative[Vector] {
-    pub def point(a: a) : Vector[a] = Vector.singleton(a)
-    pub def ap(f: Vector[a -> b \ ef], v: Vector[a]) : Vector[b] \ ef = Vector.ap(f, v)
+    pub def point(a: a): Vector[a] = Vector.singleton(a)
+    pub def ap(f: Vector[a -> b \ ef], v: Vector[a]): Vector[b] \ ef = Vector.ap(f, v)
 }
 
 instance Monad[Vector] {
-    pub def flatMap(f: a -> Vector[b] \ ef, v : Vector[a]) : Vector[b] \ ef = Vector.flatMap(f, v)
+    pub def flatMap(f: a -> Vector[b] \ ef, v: Vector[a]): Vector[b] \ ef = Vector.flatMap(f, v)
 }
 
 instance MonadZero[Vector] {
@@ -152,11 +152,12 @@ pub mod Vector {
             if (l <= r) {
                 let m = (l + r) `Int32.rightShift` 1; // Shifting by 1 is slightly faster than dividing by 2.
                 match get(m, v) <=> x {
-                    case Comparison.LessThan => f(m+1, r)
-                    case Comparison.GreaterThan => f(l, m-1)
-                    case Comparison.EqualTo => Some(m)
+                    case Comparison.LessThan    => f(m + 1, r)
+                    case Comparison.GreaterThan => f(l, m - 1)
+                    case Comparison.EqualTo     => Some(m)
                 }
-            } else None
+            } else
+                None
         };
         let len = length(v);
         f(0, len - 1)
@@ -186,9 +187,10 @@ pub mod Vector {
     ///
     /// Returns a string representation of the given vector `v`.
     ///
-    pub def toString(v: Vector[a]): String with ToString[a] = region rc {
-        "Vector#{" + (Vector.iterator(rc, v) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(v: Vector[a]): String with ToString[a] =
+        region rc {
+            "Vector#{" + (Vector.iterator(rc, v) |> Iterator.join(", ")) + "}"
+        }
 
     ///
     /// Version of `Array.updateSequence` where sub is a vector rather than an array,
@@ -201,11 +203,11 @@ pub mod Vector {
             if (wi >= end or ri >= subLen)
                 ()
             else if (wi < 0)
-                loop(ri+1, wi+1)
+                loop(ri + 1, wi + 1)
             else {
                 let x = get(ri, sub);
                 Array.put(x, wi, arr);
-                loop(ri+1, wi+1)
+                loop(ri + 1, wi + 1)
             }
         };
         loop(0, i)
@@ -213,10 +215,11 @@ pub mod Vector {
     ///
     /// Returns an empty (length zero) vector.
     ///
-    pub def empty(): Vector[a] = region rc {
-        let arr = Array#{} @ rc;
-        Array.toVector(arr)
-    }
+    pub def empty(): Vector[a] =
+        region rc {
+            let arr = Array#{} @ rc;
+            Array.toVector(arr)
+        }
 
     ///
     /// Returns a singleton vector containing `x``.
@@ -261,10 +264,11 @@ pub mod Vector {
     ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
     ///
-    pub def slice(start: {start = Int32}, end: {end = Int32}, v: Vector[a]): Vector[a] = region rc {
-        let arr = toArray(rc, v);
-        Array.slice(rc, start, end, arr) |> Array.toVector
-    }
+    pub def slice(start: { start = Int32 }, end: { end = Int32 }, v: Vector[a]): Vector[a] =
+        region rc {
+            let arr = toArray(rc, v);
+            Array.slice(rc, start, end, arr) |> Array.toVector
+        }
 
     ///
     /// Returns the vector `v` as an array.
@@ -273,7 +277,6 @@ pub mod Vector {
         let arr = Array.empty(rc, length(v));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), v);
         arr
-
 
     ///
     /// Returns the vector `v` as a list.
@@ -330,13 +333,13 @@ pub mod Vector {
     ///
     /// Return a new vector, appending the elements `v2` after elements of `v1`.
     ///
-    pub def append(v1: Vector[a], v2: Vector[a]): Vector[a] = region rc {
-        let arr = Array.empty(rc, length(v1) + length(v2));
-        arrayUpdateSeqV(0, v1, arr);
-        arrayUpdateSeqV(length(v1), v2, arr);
-        Array.toVector(arr)
-    }
-
+    pub def append(v1: Vector[a], v2: Vector[a]): Vector[a] =
+        region rc {
+            let arr = Array.empty(rc, length(v1) + length(v2));
+            arrayUpdateSeqV(0, v1, arr);
+            arrayUpdateSeqV(length(v1), v2, arr);
+            Array.toVector(arr)
+        }
 
     ///
     /// Returns `true` if and only if `v` contains the element `x`.
@@ -473,26 +476,30 @@ pub mod Vector {
     ///
     /// `f` must define an equivalence relation on the elements of the list.
     ///
-    pub def removeAdjDupsWith(f: a -> a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
-        if (Vector.length(v) == 0) {
-            v
-        } else {
-            let l = MutList.empty(rc);
-            // We handle the first element twice.
-            MutList.push(Vector.get(0, v), l);
-            discard {
-                (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
-                    if (f(head, cur)) {
-                        head
-                    } else {
-                        MutList.push(cur, l);
-                        cur
-                    }
-                })
-            };
-            MutList.toVector(l)
+    pub def removeAdjDupsWith(f: a -> a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
+        region rc {
+            if (Vector.length(v) == 0) {
+                v
+            } else {
+                let l = MutList.empty(rc);
+                // We handle the first element twice.
+                MutList.push(Vector.get(0, v), l);
+                discard {
+                    (Vector.get(0, v), v)
+                    ||> Vector.foldLeft(
+                        head -> cur -> {
+                            if (f(head, cur)) {
+                                head
+                            } else {
+                                MutList.push(cur, l);
+                                cur
+                            }
+                        }
+                    )
+                };
+                MutList.toVector(l)
+            }
         }
-    }
 
     ///
     /// Returns a vector with the element `x` repeated `n` times.
@@ -513,42 +520,44 @@ pub mod Vector {
     ///
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2), ...]`.
     ///
-    pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
-        let arr = Array.empty(rc, length(v) + 1);
-        let acc = Ref.fresh(rc, s);
-        Array.put(s, 0, arr);
-        let step = (i, x) -> {
-            let s1 = f(Ref.get(acc), x);
-            Ref.put(s1, acc);
-            Array.put(s1, i+1, arr)
-        };
-        forEachWithIndex(step, v);
-        Array.toVector(arr)
-    }
+    pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef =
+        region rc {
+            let arr = Array.empty(rc, length(v) + 1);
+            let acc = Ref.fresh(rc, s);
+            Array.put(s, 0, arr);
+            let step = (i, x) -> {
+                let s1 = f(Ref.get(acc), x);
+                Ref.put(s1, acc);
+                Array.put(s1, i + 1, arr)
+            };
+            forEachWithIndex(step, v);
+            Array.toVector(arr)
+        }
 
     ///
     /// Accumulates the result of applying `f` to `xs` going right to left.
     ///
     /// That is, the result is of the form: `[..., f(xn-1, f(xn, s)), f(xn, s), s]`.
     ///
-    pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
-        let len = length(v);
-        let arr = Array.empty(rc, len + 1);
-        let acc = Ref.fresh(rc, s);
-        Array.put(s, len, arr);
-        def loop(i) = {
-            if (i < 0)
-                ()
-            else {
-                let s1 = f(get(i, v), Ref.get(acc));
-                Ref.put(s1, acc);
-                Array.put(s1, i, arr);
-                loop(i - 1)
-            }
-        };
-        loop(len - 1);
-        Array.toVector(arr)
-    }
+    pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef =
+        region rc {
+            let len = length(v);
+            let arr = Array.empty(rc, len + 1);
+            let acc = Ref.fresh(rc, s);
+            Array.put(s, len, arr);
+            def loop(i) = {
+                if (i < 0)
+                    ()
+                else {
+                    let s1 = f(get(i, v), Ref.get(acc));
+                    Ref.put(s1, acc);
+                    Array.put(s1, i, arr);
+                    loop(i - 1)
+                }
+            };
+            loop(len - 1);
+            Array.toVector(arr)
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `v`.
@@ -570,37 +579,39 @@ pub mod Vector {
     /// Returns the result of running all the actions in the list `v` going from left
     /// to right.
     ///
-    pub def sequence(v: Vector[m[a]]): m[Vector[a]] with Applicative[m] = region rc {
-        let len = length(v);
-        let arr = Array.empty(rc, len);
-        def loop(i, k) = {
-            if (i == len)
-                k(Applicative.point(arr))
-            else {
-                let mx = get(i, v);
-                loop(i+1, karr -> k(putA(mx, i, karr)))
-            }
-        };
-        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
-    }
+    pub def sequence(v: Vector[m[a]]): m[Vector[a]] with Applicative[m] =
+        region rc {
+            let len = length(v);
+            let arr = Array.empty(rc, len);
+            def loop(i, k) = {
+                if (i == len)
+                    k(Applicative.point(arr))
+                else {
+                    let mx = get(i, v);
+                    loop(i + 1, karr -> k(putA(mx, i, karr)))
+                }
+            };
+            Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
+        }
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// vector `v` going from left to right.
     ///
-    pub def traverse(f: a -> m[b] \ ef, v: Vector[a]): m[Vector[b]] \ ef with Applicative[m] = region rc {
-        let len = length(v);
-        let arr = Array.empty(rc, len);
-        def loop(i, k) = {
-            if (i == len)
-                k(Applicative.point(arr))
-            else {
-                let x = get(i, v);
-                loop(i+1, karr -> k(putA(f(x), i, karr)))
-            }
-        };
-        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
-    }
+    pub def traverse(f: a -> m[b] \ ef, v: Vector[a]): m[Vector[b]] \ ef with Applicative[m] =
+        region rc {
+            let len = length(v);
+            let arr = Array.empty(rc, len);
+            def loop(i, k) = {
+                if (i == len)
+                    k(Applicative.point(arr))
+                else {
+                    let x = get(i, v);
+                    loop(i + 1, karr -> k(putA(f(x), i, karr)))
+                }
+            };
+            Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
+        }
 
     ///
     /// Helper for `sequence`, `traverse` and `zipWithA`.
@@ -613,27 +624,28 @@ pub mod Vector {
     ///
     /// Generalize `zipWith` to an applicative functor `f`.
     ///
-    pub def zipWithA(f: (a, b) -> m[c] \ ef, v1: Vector[a], v2: Vector[b]): m[Vector[c]] \ ef with Applicative[m] = region rc {
-        let len = Int32.min(length(v1), length(v2));
-        let arr = Array.empty(rc, len);
-        def loop(i, k) = {
-            if (i == len)
-                k(Applicative.point(arr))
-            else {
-                let x = get(i, v1);
-                let y = get(i, v2);
-                loop(i+1, karr -> k(putA(f(x, y), i, karr)))
-            }
-        };
-        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
-    }
+    pub def zipWithA(f: (a, b) -> m[c] \ ef, v1: Vector[a], v2: Vector[b]): m[Vector[c]] \ ef with Applicative[m] =
+        region rc {
+            let len = Int32.min(length(v1), length(v2));
+            let arr = Array.empty(rc, len);
+            def loop(i, k) = {
+                if (i == len)
+                    k(Applicative.point(arr))
+                else {
+                    let x = get(i, v1);
+                    let y = get(i, v2);
+                    loop(i + 1, karr -> k(putA(f(x, y), i, karr)))
+                }
+            };
+            Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
+        }
 
     ///
     /// Apply every function from `f` to every argument from `v` and return a list with all results.
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: Vector[a -> b \ ef], v: Vector[a]) : Vector[b] \ ef =
+    pub def ap(f: Vector[a -> b \ ef], v: Vector[a]): Vector[b] \ ef =
         map(g -> map(g, v), f) |> flatten
 
     ///
@@ -647,7 +659,7 @@ pub mod Vector {
     ///
     pub def reverse(v: Vector[a]): Vector[a] =
         let len = length(v);
-        init(ix -> get(len - (ix+1), v), len)
+        init(ix -> get(len - (ix + 1), v), len)
 
     ///
     /// Rotate the contents of vector `v` by `n` steps to the left.
@@ -656,11 +668,10 @@ pub mod Vector {
         let len = length(v);
         if (len < 1)
             empty()
+        else if (n < 0)
+            rotateRightHelper(Int32.abs(n), v)
         else
-            if (n < 0)
-                rotateRightHelper(Int32.abs(n), v)
-            else
-                rotateLeftHelper(n, v)
+            rotateLeftHelper(n, v)
 
     ///
     /// Helper function for `rotateLeft` and `rotateRight`.
@@ -674,18 +685,16 @@ pub mod Vector {
         let f = ix -> {let readIx = Int32.modulo(ix + n, len); get(readIx, v)};
         init(f, len)
 
-
     ///
     /// Rotate the contents of vector `v` by `n` steps to the right.
     ///
     pub def rotateRight(n: Int32, v: Vector[a]): Vector[a] =
         if (length(v) < 1)
             empty()
+        else if (n < 0)
+            rotateLeftHelper(Int32.abs(n), v)
         else
-            if (n < 0)
-                rotateLeftHelper(Int32.abs(n), v)
-            else
-                rotateRightHelper(n, v)
+            rotateRightHelper(n, v)
 
     ///
     /// Helper function for `rotateRight` and `rotateLeft`.
@@ -738,28 +747,29 @@ pub mod Vector {
     /// Returns the concatenation of the elements in `vs` with the elements
     /// of `sep` inserted between every two adjacent elements.
     ///
-    pub def intercalate(sep: Vector[a], vs: Vector[Vector[a]]): Vector[a] = region rc {
-        let count = length(vs);
-        let sepLength = length(sep);
-        let sepCount = if (count < 2) 0 else count - 1;
-        let len = sumLengths(vs) + (sepCount * sepLength);
-        let pos = Ref.fresh(rc, 0);
-        let arr = Array.empty(rc, len);
-        let f = (i, v) -> {
-            if (i == 0) {
-                arrayUpdateSeqV(0, v, arr);
-                Ref.put(length(v), pos)
-            } else {
-                let ix = Ref.get(pos);
-                arrayUpdateSeqV(ix, sep, arr);
-                let ix1 = ix + sepLength;
-                arrayUpdateSeqV(ix1, v, arr);
-                Ref.put(ix1 + length(v), pos)
-            }
-        };
-        forEachWithIndex(f, vs);
-        Array.toVector(arr)
-    }
+    pub def intercalate(sep: Vector[a], vs: Vector[Vector[a]]): Vector[a] =
+        region rc {
+            let count = length(vs);
+            let sepLength = length(sep);
+            let sepCount = if (count < 2) 0 else count - 1;
+            let len = sumLengths(vs) + (sepCount * sepLength);
+            let pos = Ref.fresh(rc, 0);
+            let arr = Array.empty(rc, len);
+            let f = (i, v) -> {
+                if (i == 0) {
+                    arrayUpdateSeqV(0, v, arr);
+                    Ref.put(length(v), pos)
+                } else {
+                    let ix = Ref.get(pos);
+                    arrayUpdateSeqV(ix, sep, arr);
+                    let ix1 = ix + sepLength;
+                    arrayUpdateSeqV(ix1, v, arr);
+                    Ref.put(ix1 + length(v), pos)
+                }
+            };
+            forEachWithIndex(f, vs);
+            Array.toVector(arr)
+        }
 
     ///
     /// Sum the lengths of a vector of vectors.
@@ -796,7 +806,7 @@ pub mod Vector {
     ///
     /// Returns a copy of `v` with every occurrence of `src` replaced by `dst`.
     ///
-    pub def replace(src: {src = a}, dst: {dst = a}, v: Vector[a]): Vector[a] with Eq[a] =
+    pub def replace(src: { src = a }, dst: { dst = a }, v: Vector[a]): Vector[a] with Eq[a] =
         map(e -> if (e == src#src) dst#dst else e, v)
 
     ///
@@ -839,9 +849,9 @@ pub mod Vector {
         if (j >= len2)
             false
         else if (get(0, a) == get(j, b))
-            isInfixOfCheck(a, b, len1, len2, 1, j+1)
+            isInfixOfCheck(a, b, len1, len2, 1, j + 1)
         else
-            isInfixOfSearch(a, b, len1, len2, j+1)
+            isInfixOfSearch(a, b, len1, len2, j + 1)
 
     ///
     /// Helper function for `isInfixOf` - `a` has started matching, scan to see if it all matches.
@@ -854,9 +864,9 @@ pub mod Vector {
             // `b` exhausted, `a` still trying to match, so failure
             false
         else if (get(i, a) == get(j, b))
-            isInfixOfCheck(a, b, len1, len2, i+1, j+1)
+            isInfixOfCheck(a, b, len1, len2, i + 1, j + 1)
         else
-            isInfixOfSearch(a, b, len1, len2, j+1)
+            isInfixOfSearch(a, b, len1, len2, j + 1)
 
     ///
     /// Returns `true` if and only if `a` is a suffix of `b`.
@@ -974,17 +984,21 @@ pub mod Vector {
     ///
     /// Returns the concatenation of all the vectors in the vector `vs`.
     ///
-    pub def flatten(vs: Vector[Vector[a]]): Vector[a] = region rc {
-        let len = sumLengths(vs);
-        let pos = Ref.fresh(rc, 0);
-        let arr = Array.empty(rc, len);
-        forEach(v -> {
-            let i = Ref.get(pos);
-            Ref.put(i + length(v), pos);
-            arrayUpdateSeqV(i, v, arr)
-        }, vs);
-        Array.toVector(arr)
-    }
+    pub def flatten(vs: Vector[Vector[a]]): Vector[a] =
+        region rc {
+            let len = sumLengths(vs);
+            let pos = Ref.fresh(rc, 0);
+            let arr = Array.empty(rc, len);
+            forEach(
+                v -> {
+                    let i = Ref.get(pos);
+                    Ref.put(i + length(v), pos);
+                    arrayUpdateSeqV(i, v, arr)
+                },
+                vs
+            );
+            Array.toVector(arr)
+        }
 
     ///
     /// Returns `true` if and only if at least one element in `v` satisfies the predicate `f`.
@@ -1023,11 +1037,12 @@ pub mod Vector {
     ///
     /// Returns a vector of every element in `v` that satisfies the predicate `f`.
     ///
-    pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
-        let m = MutList.empty(rc);
-        forEach(a -> if (f(a)) { MutList.push(a, m) }, v);
-        MutList.toVector(m)
-    }
+    pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
+        region rc {
+            let m = MutList.empty(rc);
+            forEach(a -> if (f(a)) {MutList.push(a, m)}, v);
+            MutList.toVector(m)
+        }
 
     ///
     /// Returns a pair of vectors `(v1, v2)`.
@@ -1036,9 +1051,10 @@ pub mod Vector {
     /// `v2` contains all elements of `v` that do not satisfy the predicate `f`.
     ///
     pub def partition(f: a -> Bool \ ef, v: Vector[a]): (Vector[a], Vector[a]) \ ef =
-        let step = { (x, acc) ->
-            let (a1, a2) = acc;
-            if (f(x)) (x :: a1, a2) else (a1, x :: a2)
+        let step = {
+            (x, acc) ->
+                let (a1, a2) = acc;
+                if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), v);
         (List.toVector(xs), List.toVector(ys))
@@ -1066,7 +1082,7 @@ pub mod Vector {
     ///
     /// Returns an empty vector if `n > length(v)`.
     ///
-    pub def dropLeft( n: Int32, v: Vector[a]): Vector[a] =
+    pub def dropLeft(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
         if (n > len)
             empty()
@@ -1144,7 +1160,7 @@ pub mod Vector {
         else {
             let len = length(v);
             let start = if (n > len) 0 else len - n;
-            slice( start = start, end = len, v)
+            slice(start = start, end = len, v)
         }
 
     ///
@@ -1180,8 +1196,7 @@ pub mod Vector {
     /// Returns `(v, Vector#{})` if `n > length(xs)`.
     /// Returns `(Vector#{}, v)` if `n < 0`.
     ///
-    pub def splitAt(n: Int32, v: Vector[a]): (Vector[a], Vector[a]) =
-        (Vector.take(n, v), Vector.drop(n, v))
+    pub def splitAt(n: Int32, v: Vector[a]): (Vector[a], Vector[a]) = (Vector.take(n, v), Vector.drop(n, v))
 
     ///
     /// Partitions `v` into subvectors such that for any two elements `x` and `y` in a subvector, `f(x, y)` is true.
@@ -1208,27 +1223,29 @@ pub mod Vector {
     ///
     /// Helper function for `groupWith`.
     ///
-    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Vector[a]]): List[Vector[a]] = match xs {
-        case Nil     => List.reverse(ac)
-        case x :: rs =>
-            let (r1, r2) = extractHelper(f, rs, Nel.singleton(x), Nil);
-            groupByHelper(f, r2, r1 :: ac)
-    }
+    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Vector[a]]): List[Vector[a]] =
+        match xs {
+            case Nil     => List.reverse(ac)
+            case x :: rs =>
+                let (r1, r2) = extractHelper(f, rs, Nel.singleton(x), Nil);
+                groupByHelper(f, r2, r1 :: ac)
+        }
 
     ///
     /// Helper function for `groupWith`.
     ///
-    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Vector[a], List[a]) = match xs {
-        case Nil => {
-            let a = Nel.reverse(ps);
-            (Nel.toVector(a), List.reverse(ns))
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Vector[a], List[a]) =
+        match xs {
+            case Nil     => {
+                let a = Nel.reverse(ps);
+                (Nel.toVector(a), List.reverse(ns))
+            }
+            case x :: rs =>
+                if (f(x, Nel.head(ps)))
+                    extractHelper(f, rs, Nel.cons(x, ps), ns)
+                else
+                    extractHelper(f, rs, ps, x :: ns)
         }
-        case x :: rs =>
-            if (f(x, Nel.head(ps)))
-                extractHelper(f, rs, Nel.cons(x, ps), ns)
-            else
-                extractHelper(f, rs, ps, x :: ns)
-    }
 
     ///
     /// Returns a vector where the element at index `i` is `(x, y)` where
@@ -1250,22 +1267,25 @@ pub mod Vector {
         let len = Int32.min(length(a), length(b));
         init(i -> f(get(i, a), get(i, b)), len)
 
-
     ///
     /// Returns a pair of vectors, the first containing all first components in `v`
     /// and the second containing all second components in `v`.
     ///
-    pub def unzip(v: Vector[(a, b)]): (Vector[a], Vector[b]) = region rc {
-        let len = length(v);
-        let arr = Array.empty(rc, len);
-        let brr = Array.empty(rc, len);
-        forEachWithIndex((i, x) -> {
-            let (l, r) = x;
-            Array.put(l, i, arr);
-            Array.put(r, i, brr)
-            }, v);
-        (Array.toVector(arr), Array.toVector(brr))
-    }
+    pub def unzip(v: Vector[(a, b)]): (Vector[a], Vector[b]) =
+        region rc {
+            let len = length(v);
+            let arr = Array.empty(rc, len);
+            let brr = Array.empty(rc, len);
+            forEachWithIndex(
+                (i, x) -> {
+                    let (l, r) = x;
+                    Array.put(l, i, arr);
+                    Array.put(r, i, brr)
+                },
+                v
+            );
+            (Array.toVector(arr), Array.toVector(brr))
+        }
 
     ///
     /// Alias for `foldLeft2`.
@@ -1307,9 +1327,15 @@ pub mod Vector {
     /// Collects the successful results of applying the partial function `f` to every element in `v`.
     ///
     pub def filterMap(f: a -> Option[b] \ ef, v: Vector[a]): Vector[b] \ ef =
-        foldRight((x, xs) -> match f(x) {
-            case None    => xs
-            case Some(b) => b :: xs }, Nil, v) |> List.toVector
+        foldRight(
+            (x, xs) -> match f(x) {
+                case None    => xs
+                case Some(b) => b :: xs
+            },
+            Nil,
+            v
+        )
+        |> List.toVector
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `v`.
@@ -1391,26 +1417,28 @@ pub mod Vector {
     ///
     /// Returns the positions of the all the elements in `v` satisfying `f`.
     ///
-    pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef = region rc {
-        let l = MutList.empty(rc);
-        forEachWithIndex((i, x) -> if (f(x)) { MutList.push(i, l) }, v);
-        MutList.toVector(l)
-    }
+    pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef =
+        region rc {
+            let l = MutList.empty(rc);
+            forEachWithIndex((i, x) -> if (f(x)) {MutList.push(i, l)}, v);
+            MutList.toVector(l)
+        }
 
     ///
     /// Build an vector of length `len` by applying `f` to the successive indices.
     ///
-    pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef = region rc {
-        let arr = if (len > 0) Array.empty(rc, len) else Array#{} @ rc;
-        def loop(i) = {
-            if (i < len) {
-                Array.put(f(i), i, arr);
-                loop(i + 1)
-            }
-        };
-        loop(0);
-        Array.toVector(arr)
-    }
+    pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef =
+        region rc {
+            let arr = if (len > 0) Array.empty(rc, len) else Array#{} @ rc;
+            def loop(i) = {
+                if (i < len) {
+                    Array.put(f(i), i, arr);
+                    loop(i + 1)
+                }
+            };
+            loop(0);
+            Array.toVector(arr)
+        }
 
     ///
     /// Returns `true` if vectors `a` and `b` have the same elements in the same order, i.e. are structurally equal.
@@ -1480,17 +1508,19 @@ pub mod Vector {
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, v: Vector[a]): String with ToString[a] = region rc {
-        Vector.iterator(rc, v) |> Iterator.join(sep)
-    }
+    pub def join(sep: String, v: Vector[a]): String with ToString[a] =
+        region rc {
+            Vector.iterator(rc, v) |> Iterator.join(sep)
+        }
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef = region rc {
-        Vector.iterator(rc, v) |> Iterator.joinWith(f, sep)
-    }
+    pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef =
+        region rc {
+            Vector.iterator(rc, v) |> Iterator.joinWith(f, sep)
+        }
 
     ///
     /// Returns a sorted copy of vector `v`, where the elements are ordered from low to high according to
@@ -1522,19 +1552,20 @@ pub mod Vector {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a, a) -> Comparison, v: Vector[a]): Vector[a] = region rc {
-        let arr = toArray(rc, v);
-        Array.sortWith(cmp, arr);
-        Array.toVector(arr)
-    }
+    pub def sortWith(cmp: (a, a) -> Comparison, v: Vector[a]): Vector[a] =
+        region rc {
+            let arr = toArray(rc, v);
+            Array.sortWith(cmp, arr);
+            Array.toVector(arr)
+        }
 
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(v: Vector[a]): Vector[a] \ Shuffle = region rc {
-        let arr = toArray(rc, v);
-        Array.shuffle(arr);
-        Array.toVector(arr)
-    }
-
+    pub def shuffle(v: Vector[a]): Vector[a] \ Shuffle =
+        region rc {
+            let arr = toArray(rc, v);
+            Array.shuffle(arr);
+            Array.toVector(arr)
+        }
 }

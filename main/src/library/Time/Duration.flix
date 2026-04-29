@@ -15,7 +15,6 @@
  */
 
 pub mod Time.Duration {
-
     use Time.TimeUnit
 
     ///
@@ -51,25 +50,25 @@ pub mod Time.Duration {
                     let m = rem1 / 60_000_000_000i64;
                     let rem2 = rem1 - (m * 60_000_000_000i64);
                     let s = rem2 / 1_000_000_000i64;
-                    "${sign}${h}h ${m}m ${s}s"
+                    "${ sign }${ h }h ${ m }m ${ s }s"
                 else if (abs >= 60_000_000_000i64)
                     let m = abs / 60_000_000_000i64;
                     let rem1 = abs - (m * 60_000_000_000i64);
                     let s = rem1 / 1_000_000_000i64;
-                    "${sign}${m}m ${s}s"
+                    "${ sign }${ m }m ${ s }s"
                 else if (abs >= 1_000_000_000i64)
                     let s = abs / 1_000_000_000i64;
                     let rem1 = abs - (s * 1_000_000_000i64);
                     let ms = rem1 / 1_000_000i64;
-                    "${sign}${s}s ${ms}ms"
+                    "${ sign }${ s }s ${ ms }ms"
                 else if (abs >= 1_000_000i64)
                     let ms = abs / 1_000_000i64;
-                    "${sign}${ms}ms"
+                    "${ sign }${ ms }ms"
                 else if (abs >= 1_000i64)
                     let us = abs / 1_000i64;
-                    "${sign}${us}us"
+                    "${ sign }${ us }us"
                 else
-                    "${sign}${abs}ns"
+                    "${ sign }${ abs }ns"
     }
 
     instance Formattable[Duration] {
@@ -80,15 +79,16 @@ pub mod Time.Duration {
     pub def zero(): Time.Duration = Time.Duration.Duration(0i64)
 
     /// Returns a duration of `n` in the given time unit `u`.
-    pub def of(n: Int32, u: TimeUnit): Time.Duration = match u {
-        case TimeUnit.Days         => days(n),
-        case TimeUnit.Hours        => hours(n),
-        case TimeUnit.Microseconds => microseconds(n),
-        case TimeUnit.Milliseconds => milliseconds(n),
-        case TimeUnit.Minutes      => minutes(n),
-        case TimeUnit.Nanoseconds  => nanoseconds(Int32.toInt64(n)),
-        case TimeUnit.Seconds      => seconds(n)
-    }
+    pub def of(n: Int32, u: TimeUnit): Time.Duration =
+        match u {
+            case TimeUnit.Days         => days(n),
+            case TimeUnit.Hours        => hours(n),
+            case TimeUnit.Microseconds => microseconds(n),
+            case TimeUnit.Milliseconds => milliseconds(n),
+            case TimeUnit.Minutes      => minutes(n),
+            case TimeUnit.Nanoseconds  => nanoseconds(Int32.toInt64(n)),
+            case TimeUnit.Seconds      => seconds(n)
+        }
 
     /// Returns a duration of `n` nanoseconds.
     pub def nanoseconds(n: Int64): Time.Duration = Time.Duration.Duration(n)
@@ -160,5 +160,4 @@ pub mod Time.Duration {
     pub def isNegative(d: Time.Duration): Bool =
         let Time.Duration.Duration(n) = d;
         n < 0i64
-
 }

@@ -15,7 +15,6 @@
  */
 
 pub mod Fs.WriteLines {
-
     use Fs.FileWrite
 
     ///
@@ -24,22 +23,19 @@ pub mod Fs.WriteLines {
     /// Use the `WriteLines.runWithFileWrite` handler.
     ///
     pub eff WriteLines {
-
         ///
         /// Writes `lines` to the given file `f`.
         ///
         /// Creates `f` if it does not exist. Overwrites it if it exists.
         ///
-        def writeLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
-
+        def writeLines(data: { lines = List[String] }, f: String): Result[IoError, Unit]
     }
 
     ///
     /// Handles the `WriteLines` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - WriteLines) + FileWrite =
-        run { f() } with handler WriteLines {
-            def writeLines(data, file, k) = k(Fs.FileWrite.writeLines(data, file))
-        }
-
+        run {f()} with handler WriteLines {
+                      def writeLines(data, file, k) = k(Fs.FileWrite.writeLines(data, file))
+                  }
 }

@@ -15,7 +15,6 @@
  */
 
 pub mod Net.Method {
-
     ///
     /// An enum representing an HTTP method.
     ///
@@ -28,5 +27,4 @@ pub mod Net.Method {
         case Patch
         case Delete
     }
-
 }

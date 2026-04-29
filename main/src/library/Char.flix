@@ -23,7 +23,6 @@ instance UpperBound[Char] {
 }
 
 pub mod Char {
-
     import java.lang.Character
 
     ///
@@ -61,17 +60,18 @@ pub mod Char {
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
     pub def isOctDigit(c: Char): Bool =
-        '0' <= c and c <= '7'     // '0'..'7'
+        '0' <= c and c <= '7' // '0'..'7'
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...9, A...F, or a...f.
     ///
-    pub def isHexDigit(c: Char): Bool = match c {
-        case i if '0' <= i and i <= '9' => true        // '0'..'9'
-        case i if 'A' <= i and i <= 'F' => true        // 'A'..'F'
-        case i if 'a' <= i and i <= 'f' => true        // 'a'..'f'
-        case _ => false
-    }
+    pub def isHexDigit(c: Char): Bool =
+        match c {
+            case i if '0' <= i and i <= '9' => true // '0'..'9'
+            case i if 'A' <= i and i <= 'F' => true // 'A'..'F'
+            case i if 'a' <= i and i <= 'f' => true // 'a'..'f'
+            case _                          => false
+        }
 
     ///
     /// Returns `true` if the given char `c` is lowercase.
@@ -127,7 +127,7 @@ pub mod Char {
     /// Returns `true` if the given characters `high` and `low` represent a valid
     /// Unicode surrogate pair.
     ///
-    pub def isSurrogatePair(high: {high = Char}, low: {low = Char}): Bool =
+    pub def isSurrogatePair(high: { high = Char }, low: { low = Char }): Bool =
         Character.isSurrogatePair(high#high, low#low)
 
     ///
@@ -166,7 +166,7 @@ pub mod Char {
     ///
     /// Caution - this function does no validation, use `isSurrogatePair` to check `high` and `low` are valid.
     ///
-    pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
+    pub def toSupplementaryCodePoint(high: { high = Char }, low: { low = Char }): Int32 =
         Character.toCodePoint(high#high, low#low)
 
     ///
@@ -203,7 +203,7 @@ pub mod Char {
     ///
     /// Returns `None` if `c` does not represent a number.
     ///
-    pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
+    pub def digit(radix: { radix = Int32 }, c: Char): Option[Int32] =
         match (Character.digit(c, radix#radix)) {
             case i if i < 0 => None
             case i          => Some(i)
@@ -216,7 +216,7 @@ pub mod Char {
     ///
     /// Returns `None` if `n` is not representable as single character in the radix.
     ///
-    pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] =
+    pub def forDigit(radix: { radix = Int32 }, n: Int32): Option[Char] =
         match (Character.forDigit(n, radix#radix)) {
             case c if c == '\u0000' => None
             case c                  => Some(c)
@@ -239,5 +239,4 @@ pub mod Char {
     ///
     pub def valueOf(c: Char): Character =
         Character.valueOf(c)
-
 }

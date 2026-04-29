@@ -18,7 +18,6 @@
 /// A trait for data structures that support a forEach operation.
 ///
 trait ForEach[t] {
-
     ///
     /// The type of elements in the data structure.
     ///
@@ -33,46 +32,48 @@ trait ForEach[t] {
     /// Applies `f` to each element in the data structure.
     ///
     pub def forEach(f: ForEach.Elm[t] -> Unit \ ef, t: t): Unit \ (ef + ForEach.Aef[t])
-
 }
 
 pub mod ForEach {
+    ///
+    /// A view for `ForEach` instance `t` that wraps each element with its index.
+    ///
+    pub enum WithIndex [t] (t)
 
-     ///
-     /// A view for `ForEach` instance `t` that wraps each element with its index.
-     ///
-     pub enum WithIndex[t](t)
+    instance ForEach[WithIndex[t]] with ForEach[t] {
+        type Elm = (Int32, ForEach.Elm[t])
+        type Aef = ForEach.Aef[t]
+        pub def forEach(f: ((Int32, ForEach.Elm[t])) -> Unit \ ef, t: WithIndex[t]): Unit \ ef + ForEach.Aef[t] =
+            region rc {
+                let WithIndex.WithIndex(base) = t;
+                let indexRef = Ref.fresh(rc, 0);
+                base
+                |> ForEach.forEach(
+                    elm -> {
+                        let index = indexRef |> Ref.get;
+                        f((index, elm));
+                        indexRef |> Ref.put(index + 1)
+                    }
+                )
+            }
+    }
 
-     instance ForEach[WithIndex[t]] with ForEach[t] {
-         type Elm = (Int32, ForEach.Elm[t])
-         type Aef = ForEach.Aef[t]
-         pub def forEach(f: ((Int32, ForEach.Elm[t])) -> Unit \ ef, t: WithIndex[t]): Unit \ ef + ForEach.Aef[t] = region rc {
-             let WithIndex.WithIndex(base) = t;
-             let indexRef = Ref.fresh(rc, 0);
-             base |> ForEach.forEach(elm -> {
-                 let index = indexRef |> Ref.get;
-                 f((index, elm));
-                 indexRef |> Ref.put(index + 1)
-             })
-         }
-     }
-
-     ///
-     /// Returns a view for `m` that wraps each element with its index.
-     ///
-     pub def withIndex(m: t): WithIndex[t] with ForEach[t] = WithIndex.WithIndex(m)
+    ///
+    /// Returns a view for `m` that wraps each element with its index.
+    ///
+    pub def withIndex(m: t): WithIndex[t] with ForEach[t] = WithIndex.WithIndex(m)
 
     ///
     /// A view for `ForEach` instance `t` that filters out elements that don't match the predicate.
     ///
-    pub enum WithFilter[t, a](a -> Bool, t)
+    pub enum WithFilter [t, a] (a -> Bool, t)
 
     instance ForEach[WithFilter[t, a]] with ForEach[t] where ForEach.Elm[t] ~ a {
         type Elm = a
         type Aef = ForEach.Aef[t]
         pub def forEach(f: a -> Unit \ ef, t: WithFilter[t, a]): Unit \ ef + ForEach.Aef[t] =
             let WithFilter.WithFilter(p, base) = t;
-            base |> ForEach.forEach(elm -> if (p(elm)) { f(elm) })
+            base |> ForEach.forEach(elm -> if (p(elm)) {f(elm)})
     }
 
     ///
@@ -83,7 +84,7 @@ pub mod ForEach {
     ///
     /// A view for `ForEach` instance `t` that applies a mapping function to each element.
     ///
-    pub enum WithMap[t, a, b](a -> b, t)
+    pub enum WithMap [t, a, b] (a -> b, t)
 
     instance ForEach[WithMap[t, a, b]] with ForEach[t] where ForEach.Elm[t] ~ a {
         type Elm = b
@@ -101,7 +102,7 @@ pub mod ForEach {
     ///
     /// A view for `Iterable` instances `s` and `t` that zips `s` and `t` together.
     ///
-    pub enum WithZip[s, t](s, t)
+    pub enum WithZip [s, t] (s, t)
 
     instance ForEach[WithZip[s, t]] with Iterable[s], Iterable[t] {
         type Elm = (Iterable.Elm[s], Iterable.Elm[t])
@@ -111,12 +112,10 @@ pub mod ForEach {
             region rc {
                 (Iterable.iterator(rc, xs) `Iterator.zip` Iterable.iterator(rc, ys)) |> Iterator.forEach(f)
             }
-
     }
 
     ///
     /// Returns a view that zips `left` and `right` together.
     ///
     pub def withZip(left: s, right: t): WithZip[s, t] with Iterable[s], Iterable[t] = WithZip.WithZip(left, right)
-
 }

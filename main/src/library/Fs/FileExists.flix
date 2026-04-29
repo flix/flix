@@ -15,7 +15,6 @@
  */
 
 pub mod Fs.FileExists {
-
     use Fs.FileTest
 
     ///
@@ -24,20 +23,17 @@ pub mod Fs.FileExists {
     /// Use the `FileExists.runWithFileTest` handler.
     ///
     pub eff FileExists {
-
         ///
         /// Returns `true` if the given file `f` exists.
         ///
         def exists(f: String): Result[IoError, Bool]
-
     }
 
     ///
     /// Handles the `FileExists` effect of the given function `f` using the `FileTest` effect.
     ///
     pub def runWithFileTest(f: Unit -> a \ ef): a \ (ef - FileExists) + FileTest =
-        run { f() } with handler FileExists {
-            def exists(filename, k) = k(Fs.FileTest.exists(filename))
-        }
-
+        run {f()} with handler FileExists {
+                      def exists(filename, k) = k(Fs.FileTest.exists(filename))
+                  }
 }

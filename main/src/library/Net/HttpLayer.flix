@@ -15,7 +15,6 @@
  */
 
 pub mod Net.HttpLayer {
-
     use IoError.ErrorKind
     use IoError.IoError
     use Net.Body
@@ -25,7 +24,6 @@ pub mod Net.HttpLayer {
     use Net.HttpResponse
     use Net.HttpResponse.HttpResponse
     use Time.Duration.toMillis
-
     import java.io.IOException
     import java.io.UncheckedIOException
     import java.lang.IllegalArgumentException
@@ -103,24 +101,25 @@ pub mod Net.HttpLayer {
                 case Method.Delete  => "DELETE"
             };
             let bodyPublisher = match x#body {
-               case Some(Body.Text(s))  => BodyPublishers.ofString(s)
-               case Some(Body.Bytes(v)) => BodyPublishers.ofByteArray(v)
-               case None                => BodyPublishers.noBody()
+                case Some(Body.Text(s))  => BodyPublishers.ofString(s)
+                case Some(Body.Bytes(v)) => BodyPublishers.ofByteArray(v)
+                case None                => BodyPublishers.noBody()
             };
-            let builder =
-               JHttpRequest.newBuilder(URI.create(x#url)).method(methodStr, bodyPublisher)
-                   |> b -> Map.foldLeftWithKey(
-                       (mb, key, values) -> List.foldLeft(
-                           (b1, v) -> b1.header(key, v),
-                           mb,
-                           values
-                       ),
-                       b,
-                       x#headers
-                   );
+            let builder = JHttpRequest.newBuilder(URI.create(x#url)).method(methodStr, bodyPublisher)
+            |> b ->
+                Map.foldLeftWithKey(
+                    (mb, key, values) ->
+                        List.foldLeft(
+                            (b1, v) -> b1.header(key, v),
+                            mb,
+                            values
+                        ),
+                    b,
+                    x#headers
+                );
             let jrequest = match x#requestTimeout {
-                case None       => builder.build()
-                case Some(d)    => builder.timeout(JDuration.ofMillis(toMillis(d))).build()
+                case None    => builder.build()
+                case Some(d) => builder.timeout(JDuration.ofMillis(toMillis(d))).build()
             };
             let client = {
                 let HttpRequest(x0) = req;
@@ -138,30 +137,33 @@ pub mod Net.HttpLayer {
             let responseHeadersJlist: Map[String, JList[String]] = ToFlix.toFlix(response.headers().map());
             let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
             let bytes = response.body();
-            Ok(HttpResponse({
-               url = response.uri().toString(),
-               status = response.statusCode(),
-               headers = responseHeaders,
-               body = Body.Bytes(Array.toVector(bytes))
-            }))
+            Ok(
+                HttpResponse({
+                    url = response.uri().toString(),
+                    status = response.statusCode(),
+                    headers = responseHeaders,
+                    body = Body.Bytes(Array.toVector(bytes))
+                })
+            )
         } catch {
             case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, messageOf(checked_cast(ex))))
-            case ex: HttpTimeoutException     => Err(IoError(ErrorKind.Timeout, messageOf(checked_cast(ex))))
-            case ex: ConnectException          => Err(IoError(ErrorKind.ConnectionFailed, messageOf(checked_cast(ex))))
-            case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, messageOf(checked_cast(ex))))
-            case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
-            case ex: IOException              => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
+            case ex: HttpTimeoutException => Err(IoError(ErrorKind.Timeout, messageOf(checked_cast(ex))))
+            case ex: ConnectException => Err(IoError(ErrorKind.ConnectionFailed, messageOf(checked_cast(ex))))
+            case ex: InterruptedException => Err(IoError(ErrorKind.Interrupted, messageOf(checked_cast(ex))))
+            case ex: UncheckedIOException => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
+            case ex: IOException => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
         }
 
     ///
     /// Validates then performs an HTTP request.
     ///
-    pub def execute(validate: HttpRequest -> Result[IoError, Unit],
-                    defaultClient: HttpClient,
-                    req: HttpRequest): Result[IoError, HttpResponse] \ IO =
+    pub def execute(
+        validate: HttpRequest -> Result[IoError, Unit],
+        defaultClient: HttpClient,
+        req: HttpRequest
+    ): Result[IoError, HttpResponse] \ IO =
         match validate(req) {
             case Err(e) => Err(e)
             case Ok()   => doRequest(defaultClient, req)
         }
-
 }

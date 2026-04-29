@@ -15,7 +15,6 @@
  */
 
 pub mod Net.SocketAddrV6 {
-
     use Net.Ipv6Addr
 
     ///
@@ -28,11 +27,10 @@ pub mod Net.SocketAddrV6 {
     instance ToString[SocketAddrV6] {
         pub def toString(x: SocketAddrV6): String =
             let SocketAddrV6.SocketAddrV6(ip, port) = x;
-            "[${ip}]:${port}"
+            "[${ ip }]:${ port }"
     }
 
     instance Formattable[SocketAddrV6] {
         pub def format(x: SocketAddrV6): RichString = RichString.fromString(ToString.toString(x))
     }
-
 }

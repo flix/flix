@@ -20,19 +20,16 @@ pub mod Time.Sleep {
     use Time.Duration
     use Time.Sleep
     use RichString.{text, gray}
-
     import java.lang.{Thread => JThread}
 
     ///
     /// An effect used to sleep the current thread.
     ///
     pub eff Sleep {
-
         ///
         /// Sleeps the current thread for the given duration `d`.
         ///
         def sleep(d: Duration): Unit
-
     }
 
     ///
@@ -40,15 +37,16 @@ pub mod Time.Sleep {
     ///
     /// In other words, re-interprets the `Sleep` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Sleep) + IO = x ->
-        run {
-            f(x)
-        } with handler Sleep {
-            def sleep(d, k) =
-                let millis = Duration.toMillis(d);
-                JThread.sleep(millis);
-                k()
-        }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Sleep) + IO =
+        x ->
+            run {
+                f(x)
+            } with handler Sleep {
+                  def sleep(d, k) =
+                      let millis = Duration.toMillis(d);
+                      JThread.sleep(millis);
+                      k()
+              }
 
     ///
     /// Runs the `Sleep` effect of the given function `f`.
@@ -56,7 +54,8 @@ pub mod Time.Sleep {
     /// In other words, re-interprets the `Sleep` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Sleep) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Sleep) + IO =
+        handle(f)()
 
     ///
     /// Runs the given function `f` ignoring all sleeps (no-op).
@@ -65,8 +64,8 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-            def sleep(_d, k) = k()
-        }
+              def sleep(_d, k) = k()
+          }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, replacing each sleep duration
@@ -76,11 +75,11 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-            def sleep(_d, k) = {
-                Sleep.sleep(duration);
-                k()
-            }
-        }
+              def sleep(_d, k) = {
+                  Sleep.sleep(duration);
+                  k()
+              }
+          }
 
     ///
     /// Runs the given function `f` collecting all sleep durations into a list.
@@ -91,25 +90,25 @@ pub mod Time.Sleep {
         run {
             (f(), List.empty())
         } with handler Sleep {
-            def sleep(d, k) =
-                let (r, l) = k();
-                (r, d :: l)
-        }
+              def sleep(d, k) =
+                  let (r, l) = k();
+                  (r, d :: l)
+          }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, logging each sleep duration
     /// via the `Logger` effect and re-raising the `Sleep` effect.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Sleep) + {Sleep, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Sleep) + { Sleep, Logger } =
         run {
             f()
         } with handler Sleep {
-            def sleep(d, k) = {
-                Logger.log(Severity.Debug, gray("Sleep: ") + text("${d}"));
-                Sleep.sleep(d);
-                k()
-            }
-        }
+              def sleep(d, k) = {
+                  Logger.log(Severity.Debug, gray("Sleep: ") + text("${ d }"));
+                  Sleep.sleep(d);
+                  k()
+              }
+          }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, scaling each sleep duration
@@ -119,13 +118,13 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-            def sleep(d, k) = {
-                let nanos = Int64.toFloat64(Duration.toNanos(d)) * factor;
-                let scaled = Float64.clampToInt64(min = 0i64, max = Int64.maxValue(), nanValue = 0i64, nanos);
-                Sleep.sleep(Duration.nanoseconds(scaled));
-                k()
-            }
-        }
+              def sleep(d, k) = {
+                  let nanos = Int64.toFloat64(Duration.toNanos(d)) * factor;
+                  let scaled = Float64.clampToInt64(min = 0i64, max = Int64.maxValue(), nanValue = 0i64, nanos);
+                  Sleep.sleep(Duration.nanoseconds(scaled));
+                  k()
+              }
+          }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, capping each sleep duration
@@ -135,11 +134,11 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-            def sleep(d, k) = {
-                Sleep.sleep(Order.min(d, cap));
-                k()
-            }
-        }
+              def sleep(d, k) = {
+                  Sleep.sleep(Order.min(d, cap));
+                  k()
+              }
+          }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, capping the total cumulative
@@ -152,14 +151,14 @@ pub mod Time.Sleep {
             run {
                 f()
             } with handler Sleep {
-                def sleep(d, k) = {
-                    let r = Ref.get(remaining);
-                    let actual = Order.min(d, r);
-                    Ref.put(r - actual, remaining);
-                    Sleep.sleep(actual);
-                    k()
-                }
-            }
+                  def sleep(d, k) = {
+                      let r = Ref.get(remaining);
+                      let actual = Order.min(d, r);
+                      Ref.put(r - actual, remaining);
+                      Sleep.sleep(actual);
+                      k()
+                  }
+              }
         }
 
     ///
@@ -170,29 +169,28 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-            def sleep(d, k) = {
-                Sleep.sleep(Order.max(d, floor));
-                k()
-            }
-        }
+              def sleep(d, k) = {
+                  Sleep.sleep(Order.max(d, floor));
+                  k()
+              }
+          }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, adding random jitter to each
     /// sleep duration. The `factor` controls the maximum jitter fraction, e.g. `0.2`
     /// means each sleep duration is randomly adjusted by up to ±20%.
     ///
-    pub def withJitter(factor: Float64, f: Unit -> a \ ef): a \ (ef - Sleep) + {Sleep, Random} =
+    pub def withJitter(factor: Float64, f: Unit -> a \ ef): a \ (ef - Sleep) + { Sleep, Random } =
         run {
             f()
         } with handler Sleep {
-            def sleep(d, k) = {
-                let nanos = Int64.toFloat64(Duration.toNanos(d));
-                let r = Random.randomFloat64() * 2.0f64 * factor - factor;
-                let jittered = nanos * (1.0f64 + r);
-                let clamped = Float64.clampToInt64(min = 0i64, max = Int64.maxValue(), nanValue = 0i64, jittered);
-                Sleep.sleep(Duration.nanoseconds(clamped));
-                k()
-            }
-        }
-
+              def sleep(d, k) = {
+                  let nanos = Int64.toFloat64(Duration.toNanos(d));
+                  let r = Random.randomFloat64() * 2.0f64 * factor - factor;
+                  let jittered = nanos * (1.0f64 + r);
+                  let clamped = Float64.clampToInt64(min = 0i64, max = Int64.maxValue(), nanValue = 0i64, jittered);
+                  Sleep.sleep(Duration.nanoseconds(clamped));
+                  k()
+              }
+          }
 }

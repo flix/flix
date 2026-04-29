@@ -15,12 +15,10 @@
  */
 
 pub mod Sys.ProcessHandle {
-
     import java.lang.{Process => JProcess}
 
     ///
     /// A handle for a running process.
     ///
     pub enum ProcessHandle(JProcess)
-
 }

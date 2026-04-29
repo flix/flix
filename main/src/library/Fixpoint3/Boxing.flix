@@ -66,7 +66,7 @@ pub mod Fixpoint3.Boxing {
     ///
     pub def initialize(rc: Region[r], withProv: Bool, program: RamProgram): (Boxing[r], EFacts[r]) \ r =
         let boxingInfo = initializeInternal(rc, program, withProv);
-        let facts = unsafe IO { initializeFacts(rc, program, boxingInfo) };
+        let facts = unsafe IO {initializeFacts(rc, program, boxingInfo)};
         (boxingInfo, facts)
 
     ///
@@ -78,7 +78,7 @@ pub mod Fixpoint3.Boxing {
         let RamProgram.Program(_, facts, _, (indexes, _), typeInfo) = program;
         let (f1, f2) = facts;
         let newFacts = MutMap.empty(rc1);
-        foreach ((relSym, relFacts) <- f1) {
+        foreach((relSym, relFacts) <- f1) {
             let RelSym.Symbol(PredSym.PredSym(_, id), _, _) = relSym;
             // Get some search. This means that we have to create one less index in the interpreter.
             let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
@@ -87,7 +87,7 @@ pub mod Fixpoint3.Boxing {
             mapAllFacts(relFacts, boxingInfo, TypeInfo.getTypeOf(id, typeInfo), newTree);
             MutMap.put(relSym, newTree, newFacts)
         };
-        foreach ((relSym, relFacts) <- f2) {
+        foreach((relSym, relFacts) <- f2) {
             let RelSym.Symbol(PredSym.PredSym(_, id), _, _) = relSym;
             // Get some search. This means that we have to create one less index in the interpreter.
             let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
@@ -102,21 +102,24 @@ pub mod Fixpoint3.Boxing {
         boxingInfo: Boxing[r],
         mapping: Vector[Int32],
         newTree: BPlusTree[Vector[Int64], Boxed, r]
-    ): Unit \ r + IO = unchecked_cast({
-        facts |>
-            BPlusTree.forEach(tuple -> lat -> {
-                // `facts` and `newTree` must have same the same region. Cast to achieve this.
-                unchecked_cast(({
-                    let savedVec = tuple |>
-                        Vector.mapWithIndex(index -> boxedVal ->
-                            let unifiedPos = Vector.get(index, mapping);
-                            unboxWith(boxedVal, unifiedPos, boxingInfo)
+    ): Unit \ r + IO =
+        unchecked_cast({
+            facts
+            |> BPlusTree.forEach(
+                tuple -> lat -> {
+                    // `facts` and `newTree` must have same the same region. Cast to achieve this.
+                    unchecked_cast(({
+                        let savedVec = tuple
+                        |> Vector.mapWithIndex(
+                            index -> boxedVal ->
+                                let unifiedPos = Vector.get(index, mapping);
+                                unboxWith(boxedVal, unifiedPos, boxingInfo)
                         );
-                    BPlusTree.put(savedVec, lat, newTree)
-                }: _ \ r) as _ \ IO)}
-            )
-    // This is to signal that we indeed modify the region `r`.
-    } as _ \ IO + r)
+                        BPlusTree.put(savedVec, lat, newTree)
+                    }: _\r) as _ \ IO)
+                }
+            ) // This is to signal that we indeed modify the region `r`.
+        } as _ \ IO + r)
 
     ///
     /// Construct a `Boxing` from `program`.
@@ -136,11 +139,11 @@ pub mod Fixpoint3.Boxing {
             ()
         };
         // Add bot first to make sure it corresponds to 0.
-        foreach (x <- relSyms) {
+        foreach(x <- relSyms) {
             match x {
                 case RelSym.Symbol(PredSym.PredSym(_, index), arity, Denotation.Latticenal(bot, _, _, _)) =>
                     discard unboxWith(bot, TypeInfo.getType(index, arity - 1, typeInfo), info)
-                case _ => ()
+                case _                                                                                    => ()
             }
         };
         info
@@ -171,13 +174,17 @@ pub mod Fixpoint3.Boxing {
         let objectList = Vector.get(index, objectLists);
         let objectMap = Vector.get(index, vecObjectMap);
         let lock = Vector.get(index, locks);
-        BPlusTree.computeIfAbsent(() -> {
-            ReadWriteLock.writeLock(lock);
-            let id = getNextIndex(objectList);
-            MutList.insert(box, id, objectList);
-            ReadWriteLock.unlockWrite(lock);
-            Int32.toInt64(id)
-        }, box, objectMap)
+        BPlusTree.computeIfAbsent(
+            () -> {
+                ReadWriteLock.writeLock(lock);
+                let id = getNextIndex(objectList);
+                MutList.insert(box, id, objectList);
+                ReadWriteLock.unlockWrite(lock);
+                Int32.toInt64(id)
+            },
+            box,
+            objectMap
+        )
     }
 
     ///
@@ -192,27 +199,27 @@ pub mod Fixpoint3.Boxing {
     pub def unboxWith(v: Boxed, index: UnifiedTypePos, info: Boxing[r]): Int64 \ r =
         let (_, _, symInfo, _) = info;
         match v {
-            case BoxedBool(x) =>
+            case BoxedBool(x)      =>
                 setType(Types.TyBool, index, symInfo);
                 if (x) 1i64 else 0i64
-            case BoxedChar(x) =>
+            case BoxedChar(x)      =>
                 setType(Types.TyChar, index, symInfo);
                 Int32.toInt64(Char.toBmpCodePoint(x))
-            case BoxedInt8(x) =>
+            case BoxedInt8(x)      =>
                 setType(Types.TyInt8, index, symInfo);
                 Int8.toInt64(x)
-            case BoxedInt16(x) =>
+            case BoxedInt16(x)     =>
                 setType(Types.TyInt16, index, symInfo);
                 Int16.toInt64(x)
-            case BoxedInt32(x) =>
+            case BoxedInt32(x)     =>
                 setType(Types.TyInt32, index, symInfo);
                 Int32.toInt64(x)
-            case BoxedInt64(x) =>
+            case BoxedInt64(x)     =>
                 setType(Types.TyInt64, index, symInfo);
                 x
-            case BoxedFloat32(x) =>
+            case BoxedFloat32(x)   =>
                 setType(Types.TyFloat32, index, symInfo); Int32.toInt64(Float.floatToRawIntBits(Float32.valueOf(x).floatValue()))
-            case BoxedFloat64(x) =>
+            case BoxedFloat64(x)   =>
                 setType(Types.TyFloat64, index, symInfo);
                 Double.doubleToRawLongBits(Float64.valueOf(x).doubleValue())
             case BoxedObject(_, _) =>
@@ -220,7 +227,7 @@ pub mod Fixpoint3.Boxing {
                 // We remap to low, so this only goes wrong when dealing with more
                 // than 2^32 different RelSyms
                 marshallObject(v, index, info)
-            case Boxed.NoValue => bug!("NoValue should never be in a position to be unboxed unboxed")
+            case Boxed.NoValue     => bug!("NoValue should never be in a position to be unboxed unboxed")
         }
 
     ///
@@ -230,16 +237,15 @@ pub mod Fixpoint3.Boxing {
     pub def boxWith(v: Int64, index: UnifiedTypePos, info: Boxing[r]): Boxed \ r =
         let (_, _, typeInfo, _) = info;
         match BoxingType.getType(index, typeInfo) {
-            case Types.TyBool      => Boxed.BoxedBool(not(v == 0i64))
-            case Types.TyChar      => BoxedChar(unsafe IO { Array.get(0, Character.toChars(getOrCrash(Int64.tryToInt32(v)))) })
-            case Types.TyInt8      => BoxedInt8(getOrCrash(Int64.tryToInt8(v)))
-            case Types.TyInt16     => BoxedInt16(getOrCrash(Int64.tryToInt16(v)))
-            case Types.TyInt32     => BoxedInt32(getOrCrash(Int64.tryToInt32(v)))
-            case Types.TyInt64     => BoxedInt64(v)
-            case Types.TyFloat32   => BoxedFloat32(Float.intBitsToFloat(getOrCrash(Int64.tryToInt32(v))))
-            case Types.TyFloat64   => BoxedFloat64(Double.longBitsToDouble(v))
-            case Types.TyObject    => deMarshalObject(v, index, info)
-            case Types.TyUnknown   => bug!("Unormalizing value, which has never been normalized")
+            case Types.TyBool    => Boxed.BoxedBool(not (v == 0i64))
+            case Types.TyChar    => BoxedChar(unsafe IO {Array.get(0, Character.toChars(getOrCrash(Int64.tryToInt32(v))))})
+            case Types.TyInt8    => BoxedInt8(getOrCrash(Int64.tryToInt8(v)))
+            case Types.TyInt16   => BoxedInt16(getOrCrash(Int64.tryToInt16(v)))
+            case Types.TyInt32   => BoxedInt32(getOrCrash(Int64.tryToInt32(v)))
+            case Types.TyInt64   => BoxedInt64(v)
+            case Types.TyFloat32 => BoxedFloat32(Float.intBitsToFloat(getOrCrash(Int64.tryToInt32(v))))
+            case Types.TyFloat64 => BoxedFloat64(Double.longBitsToDouble(v))
+            case Types.TyObject  => deMarshalObject(v, index, info)
+            case Types.TyUnknown => bug!("Unormalizing value, which has never been normalized")
         }
-
 }

@@ -49,29 +49,29 @@ pub mod Fixpoint3.PrecedenceGraph {
     /// they are merged into the same pseudostratum `[{1}, {4}]`. Thus, the list of
     /// pseudostrata is `[[{1}, {4}], {2, 3}]`.
     ///
-    pub def getPseudoStrata(g: MutGraph[r]): List[PseudoStratum] \ r = region rc {
-        let sorted = MutGraph.getSCCOrder(g);
-        let pseudoStratums = MutList.empty(rc);
-        def loop(s1, list) = match list {
-            case s2 :: rest =>
-                let mergeable = s1 |>
-                    List.forAll(
+    pub def getPseudoStrata(g: MutGraph[r]): List[PseudoStratum] \ r =
+        region rc {
+            let sorted = MutGraph.getSCCOrder(g);
+            let pseudoStratums = MutList.empty(rc);
+            def loop(s1, list) = match list {
+                case s2 :: rest =>
+                    let mergeable = s1
+                    |> List.forAll(
                         Set.forAll(u -> s2 |> Set.forAll(v -> not MutGraph.hasEdge(u, v, g)))
                     );
-                let next =
-                    if (mergeable) s2 :: s1
+                    let next = if (mergeable)
+                        s2 :: s1
                     else {
                         MutList.push(s1, pseudoStratums);
                         s2 :: Nil
                     };
-                loop(next, rest)
-            case Nil => MutList.push(s1, pseudoStratums)
-        };
-        match sorted {
-            case s :: rest => loop(s :: Nil, rest)
-            case Nil       => ()
-        };
-        MutList.toList(pseudoStratums)
-    }
-
+                    loop(next, rest)
+                case Nil        => MutList.push(s1, pseudoStratums)
+            };
+            match sorted {
+                case s :: rest => loop(s :: Nil, rest)
+                case Nil       => ()
+            };
+            MutList.toList(pseudoStratums)
+        }
 }

@@ -18,8 +18,7 @@
 /// A trait for data structures that can be traversed in left-to-right
 /// order with an applicative functor.
 ///
-pub trait Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
-
+pub trait Traversable[t: Type -> Type] with Functor[t], Foldable[t] {
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// data structure `t`.
@@ -36,27 +35,22 @@ pub trait Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
     /// Traversing with the identity function wrapped into an applicative preserves the container `t`
     /// where accessing elements within `t` is pure.
     ///
-    law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] where Foldable.Aef[t] ~ {} Traversable.traverse(f, t) == Applicative.point(t)
+    law identity: forall (t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] where Foldable.Aef[t] ~ {} Traversable.traverse(f, t) == Applicative.point(t)
 
     ///
     /// sequence identity.
     ///
-    law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] where Foldable.Aef[t] ~ {} Traversable.sequence(Functor.map(f, t)) == Applicative.point(t)
-
-    // Missing laws: naturality and composition.
-
+    law identity: forall (t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] where Foldable.Aef[t] ~ {} Traversable.sequence(Functor.map(f, t)) == Applicative.point(t) // Missing laws: naturality and composition.
 }
 
-
 pub mod Traversable {
-
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// data structure `t`.
     ///
     /// `for` is `traverse` with its arguments flipped.
     ///
-    pub def for(t: t[a], f: a -> m[b] \ ef): m[t[b]] \ (ef + Foldable.Aef[t]) with Applicative[m], Traversable[t] =
+    pub def $for(t: t[a], f: a -> m[b] \ ef): m[t[b]] \ (ef + Foldable.Aef[t]) with Applicative[m], Traversable[t] =
         Traversable.traverse(f, t)
 
     ///
@@ -69,14 +63,15 @@ pub mod Traversable {
     pub def mapAccumLeft(f: (acc, a) -> (acc, b) \ ef, start: acc, t: t[a]): (acc, t[b]) \ (ef + Foldable.Aef[t]) with Traversable[t] =
         region rc {
             let acc = Ref.fresh(rc, start);
-            let Identity.Identity(tb) = t |> Traversable.traverse(x -> {
-                let st = Ref.get(acc);
-                let (acc1, b) = f(st, x);
-                Ref.put(acc1, acc);
-                Identity.Identity(b)
-            });
+            let Identity.Identity(tb) = t
+            |> Traversable.traverse(
+                x -> {
+                    let st = Ref.get(acc);
+                    let (acc1, b) = f(st, x);
+                    Ref.put(acc1, acc);
+                    Identity.Identity(b)
+                }
+            );
             (Ref.get(acc), tb)
         }
-
 }
-

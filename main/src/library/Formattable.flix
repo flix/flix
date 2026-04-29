@@ -75,7 +75,7 @@ instance Formattable[BigDecimal] {
 }
 
 instance Formattable[(a1, a2)] with Formattable[a1], Formattable[a2] {
-    type Aef[(a1, a2)] = Formattable.Aef[a1] + Formattable.Aef[a2]
+    type Aef [(a1, a2)] = Formattable.Aef[a1] + Formattable.Aef[a2]
 
     pub def format(x: (a1, a2)): RichString \ Formattable.Aef[a1] + Formattable.Aef[a2] =
         let (v1, v2) = x;

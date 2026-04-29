@@ -22,16 +22,14 @@ import java.nio.charset.CharsetEncoder
 /// `byteWriter`: the underlying byte writer, an instance of `Writable` where `Writable.Elm[t] ~ Int8`.
 /// `encoder`: used to encode bytes before writing them to the `byteReader`.
 ///
-enum EncodingWriter[t]({encoder = CharsetEncoder, byteWriter = t})
+enum EncodingWriter [t] ({ encoder = CharsetEncoder, byteWriter = t })
 
 instance Writable[EncodingWriter[t]] with Writable[t] where Writable.Elm[t] ~ Int8 {
-
     type Elm = Char
 
     type Aef = Writable.Aef[t]
 
     pub def write(buffer: Array[Char, r], writer: EncodingWriter[t]): Result[IoError, Int32] \ r + Writable.Aef[t] = EncodingWriter.write(buffer, writer)
-
 }
 
 pub mod EncodingWriter {
@@ -63,7 +61,7 @@ pub mod EncodingWriter {
         let EncodingWriter.EncodingWriter({ encoder, byteWriter }) = writer;
         region rc {
             let dest = encoder |> encode(rc, src);
-            forM(
+            forM (
                 _ <- byteWriter |> writeBytes(rc, dest)
             ) yield {
                 src |> Array.length
@@ -77,7 +75,7 @@ pub mod EncodingWriter {
     ///
     def encode(rc: Region[rc], src: Array[Char, r], encoder: CharsetEncoder): Array[Int8, rc] \ rc + r =
         // Encoding is effectively a pure operation, so IO is casted away
-        def do() = {
+        def $do() = {
             let numChars = Array.length(src);
             let maxBytesPerChar = encoder.maxBytesPerChar() |> Float32.ceil |> Float32.clampToInt32(min = 1, max = Int32.maxValue(), nanValue = 4);
             let dest: Array[Int8, rc] = Array.empty(rc, numChars * maxBytesPerChar);
@@ -85,7 +83,7 @@ pub mod EncodingWriter {
             let byteBuffer = ByteBuffer.wrap(dest);
             checked_ecast(encoder |> encodeBuffered(rc, charBuffer, byteBuffer))
         };
-        checked_ecast(unsafe IO { do() })
+        checked_ecast(unsafe IO {$do()})
 
     ///
     /// Encodes the chars from `charBuffer` into `byteBuffer` using `encoder`.
@@ -94,7 +92,7 @@ pub mod EncodingWriter {
     ///
     def encodeBuffered(rc: Region[rc], charBuffer: CharBuffer, byteBuffer: ByteBuffer, encoder: CharsetEncoder): Array[Int8, rc] \ rc =
         // Encoding is effectively a pure operation, so IO is casted away
-        def do() = {
+        def $do() = {
             let result = encoder.encode(charBuffer, byteBuffer, false);
             let bytesEncoded = byteBuffer.position();
             let dest = byteBuffer.array() |> Array.take(rc, bytesEncoded);
@@ -107,7 +105,7 @@ pub mod EncodingWriter {
                 dest
             }
         };
-        checked_ecast(unsafe IO { do() })
+        checked_ecast(unsafe IO {$do()})
 
     ///
     /// Writes all bytes from `dest` into `byteWriter`.
@@ -117,12 +115,11 @@ pub mod EncodingWriter {
             if (Array.isEmpty(arr)) {
                 Ok(())
             } else {
-                forM(
+                forM (
                     bytesWritten <- Writable.write(arr, byteWriter);
                     _ <- loop(arr |> Array.drop(rc, bytesWritten))
                 ) yield ()
             }
         };
         loop(dest)
-
 }

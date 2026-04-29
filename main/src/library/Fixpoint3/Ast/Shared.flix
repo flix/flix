@@ -17,10 +17,8 @@
  * limitations under the License.
  */
 pub mod Fixpoint3.Ast.Shared {
-
     use Fixpoint3.Boxable
     use Fixpoint3.Boxed
-
 
     /////////////////////////////////////////////////////////////////////////////
     // Denotation                                                              //
@@ -48,10 +46,11 @@ pub mod Fixpoint3.Ast.Shared {
     ///
     /// Returns `true` if the given denotation is relational.
     ///
-    pub def isRelational(den: Denotation[v]): Bool = match den {
-        case Denotation.Relational => true
-        case _                     => false
-    }
+    pub def isRelational(den: Denotation[v]): Bool =
+        match den {
+            case Denotation.Relational => true
+            case _                     => false
+        }
 
     ///
     /// Returns a latticenal denotation associated with the type `t`.
@@ -69,29 +68,30 @@ pub mod Fixpoint3.Ast.Shared {
     /// Boxes the lattice components inside the given denotation `d`.
     ///
     @LoweringTarget
-    pub def box(d: Denotation[t]): Denotation[Boxed] with Order[t] = match d {
-        case Denotation.Relational                     => Denotation.Relational
-        case Denotation.Latticenal(bot, leq, lub, glb) =>
-            Denotation.Latticenal(
-                Boxable.box(bot),
-                Boxable.lift2b(leq),
-                Boxable.lift2(lub),
-                Boxable.lift2(glb)
-            )
-    }
+    pub def box(d: Denotation[t]): Denotation[Boxed] with Order[t] =
+        match d {
+            case Denotation.Relational                     => Denotation.Relational
+            case Denotation.Latticenal(bot, leq, lub, glb) =>
+                Denotation.Latticenal(
+                    Boxable.box(bot),
+                    Boxable.lift2b(leq),
+                    Boxable.lift2(lub),
+                    Boxable.lift2(glb)
+                )
+        }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // PredSym                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////
+        // PredSym                                                                 //
+        /////////////////////////////////////////////////////////////////////////////
 
     pub enum PredSym with Eq, Order {
         case PredSym(String, Int64)
     }
 
     instance ToString[PredSym] {
-        pub def toString(predSym: PredSym): String = match predSym {
-            case PredSym.PredSym(name, id) => "${name}%${id}"
-        }
+        pub def toString(predSym: PredSym): String =
+            match predSym {
+                case PredSym.PredSym(name, id) => "${ name }%${ id }"
+            }
     }
-
 }

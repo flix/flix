@@ -15,11 +15,9 @@
  */
 
 mod Fs.InMemoryFs {
-
     import java.nio.file.FileSystems
     import java.nio.file.PathMatcher
     import java.nio.file.Paths
-
     use IoError.IoError
     use IoError.ErrorKind
     use Time.Clock
@@ -33,24 +31,24 @@ mod Fs.InMemoryFs {
     pub struct InMemoryFs[r: Region] {
         mut files: Map[String, Entry],
         mut dirs: Set[String],
-        mut times: Map[String, {atime = Int64, ctime = Int64, mtime = Int64}],
+        mut times: Map[String, { atime = Int64, ctime = Int64, mtime = Int64 }],
         mut counter: Int32
     }
 
     /// The content of an in-memory entry.
     pub enum Entry with ToString {
-        case BinaryEntry(Vector[Int8]),
+        case BinaryEntry(Vector[Int8])
         case TextEntry(String)
     }
 
     /// Creates a fresh, empty in-memory filesystem in region `rc`.
     pub def fresh(rc: Region[r]): Fs.InMemoryFs[r] \ r =
-        new Fs.InMemoryFs @ rc { files = Map.empty(), dirs = Set.empty(), times = Map.empty(), counter = 0 }
+        new Fs.InMemoryFs @ rc {files = Map.empty(), dirs = Set.empty(), times = Map.empty(), counter = 0}
 
-    // ─── Path helpers (private) ───────────────────────────────────────
+        // ─── Path helpers (private) ───────────────────────────────────────
 
     def normalize(path: String): String =
-        unsafe IO { Paths.get(path).toAbsolutePath().normalize().toString() }
+        unsafe IO {Paths.get(path).toAbsolutePath().normalize().toString()}
 
     def parentDir(path: String): Option[String] =
         unsafe IO {
@@ -65,12 +63,10 @@ mod Fs.InMemoryFs {
         }
 
     def notFound(path: String): Result[IoError, a] =
-        Err(IoError(ErrorKind.NotFound, "in-memory fs: '${path}' does not exist"))
+        Err(IoError(ErrorKind.NotFound, "in-memory fs: '${ path }' does not exist"))
 
     def alreadyExists(path: String): Result[IoError, a] =
-        Err(IoError(ErrorKind.AlreadyExists, "in-memory fs: '${path}' already exists"))
-
-    // ─── Timestamp helpers (private) ─────────────────────────────────
+        Err(IoError(ErrorKind.AlreadyExists, "in-memory fs: '${ path }' already exists")) // ─── Timestamp helpers (private) ─────────────────────────────────
 
     /// Sets all three timestamps to now (for newly created entries).
     def touchNew(norm: String, o: Fs.InMemoryFs[r]): Unit \ r + Clock =
@@ -93,9 +89,7 @@ mod Fs.InMemoryFs {
             case Some(prev) => {atime = t, ctime = prev#ctime, mtime = prev#mtime}
             case None       => {atime = t, ctime = t, mtime = t}
         };
-        o->times = Map.insert(norm, ts, o->times)
-
-    // ─── Low-level state queries (private) ────────────────────────────
+        o->times = Map.insert(norm, ts, o->times) // ─── Low-level state queries (private) ────────────────────────────
 
     def hasFile(path: String, o: Fs.InMemoryFs[r]): Bool \ r =
         Map.memberOf(normalize(path), o->files)
@@ -104,9 +98,7 @@ mod Fs.InMemoryFs {
         Set.memberOf(normalize(path), o->dirs)
 
     def hasEntry(path: String, o: Fs.InMemoryFs[r]): Bool \ r =
-        hasFile(path, o) or hasDir(path, o)
-
-    // ─── Stat/test ops ───────────────────────────────────────────────
+        hasFile(path, o) or hasDir(path, o) // ─── Stat/test ops ───────────────────────────────────────────────
 
     pub def exists(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Bool] \ r =
         Ok(hasEntry(path, o))
@@ -161,7 +153,7 @@ mod Fs.InMemoryFs {
             case None                       => notFound(path)
         }
 
-    // ─── Read ops ────────────────────────────────────────────────────
+        // ─── Read ops ────────────────────────────────────────────────────
 
     pub def read(path: String, o: Fs.InMemoryFs[r]): Result[IoError, String] \ r + Clock =
         let norm = normalize(path);
@@ -185,7 +177,7 @@ mod Fs.InMemoryFs {
             case None                       => notFound(path)
         }
 
-    // ─── Write ops ───────────────────────────────────────────────────
+        // ─── Write ops ───────────────────────────────────────────────────
 
     pub def write(path: String, data: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let norm = normalize(path);
@@ -202,9 +194,7 @@ mod Fs.InMemoryFs {
         let existed = Map.memberOf(norm, o->times);
         o->files = Map.insert(norm, Entry.BinaryEntry(data), o->files);
         if (existed) touchModify(norm, o) else touchNew(norm, o);
-        Ok(())
-
-    // ─── Append ops ──────────────────────────────────────────────────
+        Ok(()) // ─── Append ops ──────────────────────────────────────────────────
 
     pub def append(path: String, data: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let norm = normalize(path);
@@ -226,13 +216,13 @@ mod Fs.InMemoryFs {
             case Some(Entry.TextEntry(s))   => String.toBytes(s)
             case None                       => Vector.empty()
         };
-        writeBytes(path, Vector.append(current, data), o)
-
-    // ─── Other write ops ─────────────────────────────────────────────
+        writeBytes(path, Vector.append(current, data), o) // ─── Other write ops ─────────────────────────────────────────────
 
     pub def truncate(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
-        if (hasFile(path, o)) write(path, "", o)
-        else notFound(path)
+        if (hasFile(path, o))
+            write(path, "", o)
+        else
+            notFound(path)
 
     pub def copy(src: String, dst: String, opts: Set[Fs.CopyOption], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let normSrc = normalize(src);
@@ -252,7 +242,7 @@ mod Fs.InMemoryFs {
                         touchNew(normDst, o);
                     Ok(())
                 }
-            case None => notFound(src)
+            case None    => notFound(src)
         }
 
     pub def move(src: String, dst: String, opts: Set[Fs.MoveOption], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
@@ -273,7 +263,7 @@ mod Fs.InMemoryFs {
                     o->times = Map.remove(normSrc, o->times);
                     Ok(())
                 }
-            case None => notFound(src)
+            case None    => notFound(src)
         }
 
     pub def delete(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
@@ -283,11 +273,13 @@ mod Fs.InMemoryFs {
             o->dirs = Set.remove(norm, o->dirs);
             o->times = Map.remove(norm, o->times);
             Ok(())
-        } else notFound(path)
+        } else
+            notFound(path)
 
     pub def mkDir(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let norm = normalize(path);
-        if (hasEntry(path, o)) alreadyExists(path)
+        if (hasEntry(path, o))
+            alreadyExists(path)
         else {
             o->dirs = Set.insert(norm, o->dirs);
             touchNew(norm, o);
@@ -302,50 +294,51 @@ mod Fs.InMemoryFs {
         match parentDir(norm) {
             case Some(parent) =>
                 if (not Set.memberOf(parent, o->dirs)) mkDirs(parent, o) else Ok(())
-            case None => Ok(())
+            case None         => Ok(())
         }
 
     pub def mkTempDir(prefix: String, o: Fs.InMemoryFs[r]): Result[IoError, String] \ r + Clock =
         let n = o->counter;
         o->counter = n + 1;
-        let name = "${prefix}inmemory-${n}";
+        let name = "${ prefix }inmemory-${ n }";
         o->dirs = Set.insert(name, o->dirs);
         touchNew(name, o);
-        Ok(name)
-
-    // ─── Listing ops ─────────────────────────────────────────────────
+        Ok(name) // ─── Listing ops ─────────────────────────────────────────────────
 
     pub def list(dir: String, o: Fs.InMemoryFs[r]): Result[IoError, List[String]] \ r =
         let norm = normalize(dir);
-        if (not hasDir(dir, o)) notFound(dir)
+        if (not hasDir(dir, o))
+            notFound(dir)
         else {
             let fileNames = Map.keysOf(o->files)
-                |> Set.filter(p -> parentDir(p) == Some(norm))
-                |> Set.map(p -> fileName(p));
+            |> Set.filter(p -> parentDir(p) == Some(norm))
+            |> Set.map(p -> fileName(p));
             let dirNames = o->dirs
-                |> Set.filter(p -> parentDir(p) == Some(norm))
-                |> Set.map(p -> fileName(p));
+            |> Set.filter(p -> parentDir(p) == Some(norm))
+            |> Set.map(p -> fileName(p));
             Ok(Set.toList(Set.union(fileNames, dirNames)))
         }
 
     pub def glob(base: String, pattern: String, o: Fs.InMemoryFs[r]): Result[IoError, List[String]] \ r =
-        if (not hasDir(base, o)) notFound(base)
-        else unsafe IO {
-            let basePath = Paths.get(normalize(base));
-            let matcher: PathMatcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
-            let matchesPattern = path -> {
-                let p = Paths.get(path);
-                let starts = p.startsWith(basePath);
-                if (starts) {
-                    let rel = basePath.relativize(p);
-                    matcher.matches(rel)
-                } else false
-            };
-            let matched = Set.union(
-                Map.keysOf(o->files) |> Set.filter(matchesPattern),
-                o->dirs              |> Set.filter(matchesPattern)
-            );
-            Ok(Set.toList(matched))
-        }
-
+        if (not hasDir(base, o))
+            notFound(base)
+        else
+            unsafe IO {
+                let basePath = Paths.get(normalize(base));
+                let matcher: PathMatcher = FileSystems.getDefault().getPathMatcher("glob:${ pattern }");
+                let matchesPattern = path -> {
+                    let p = Paths.get(path);
+                    let starts = p.startsWith(basePath);
+                    if (starts) {
+                        let rel = basePath.relativize(p);
+                        matcher.matches(rel)
+                    } else
+                        false
+                };
+                let matched = Set.union(
+                    Map.keysOf(o->files) |> Set.filter(matchesPattern),
+                    o->dirs |> Set.filter(matchesPattern)
+                );
+                Ok(Set.toList(matched))
+            }
 }

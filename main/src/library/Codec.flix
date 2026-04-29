@@ -15,7 +15,6 @@
  */
 
 pub mod Codec {
-
     import java.lang.IllegalArgumentException
     import java.util.{Base64 => JBase64}
 
@@ -56,5 +55,4 @@ pub mod Codec {
     ///
     pub def decodeBase64String(s: String): Result[String, String] =
         Result.map(String.fromBytes, decodeBase64(s))
-
 }
