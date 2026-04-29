@@ -12,7 +12,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import java.nio.file.{Files, Paths}
 import scala.jdk.CollectionConverters.*
 
-class FormatterCorrectnessTest extends AnyFunSuite {
+class FormatterTest extends AnyFunSuite {
 
   /**
     * A list of program paths to test invariants on.
@@ -331,7 +331,6 @@ class FormatterCorrectnessTest extends AnyFunSuite {
     }
   }
 
-  @inline
   private def resetSharedFlixInstance(path: String): Unit = {
     val virtualPath = Paths.get(path)
     sharedFlix.remVirtualPath(virtualPath)
