@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Source}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, ClassProvider, Source}
 
 case object ReadAst {
-  case class Root(sources: Map[Source, Unit], availableClasses: AvailableClasses)
+  case class Root(sources: Map[Source, Unit], availableClasses: AvailableClasses, classProvider: ClassProvider)
 }

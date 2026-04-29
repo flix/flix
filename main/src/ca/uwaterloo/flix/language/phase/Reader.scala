@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, ClassProvider, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, StreamOps}
@@ -36,7 +36,7 @@ object Reader {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(inputs: List[Input], availableClasses: AvailableClasses)(implicit flix: Flix): (ReadAst.Root, List[CompilationMessage]) =
+  def run(inputs: List[Input], availableClasses: AvailableClasses, classProvider: ClassProvider)(implicit flix: Flix): (ReadAst.Root, List[CompilationMessage]) =
     flix.phaseNew("Reader") {
 
       val result = mutable.Map.empty[Source, Unit]
@@ -68,7 +68,7 @@ object Reader {
       }
 
       val sources = result.toMap
-      (ReadAst.Root(sources, availableClasses), List.empty)
+      (ReadAst.Root(sources, availableClasses, classProvider), List.empty)
     }(DebugNoOp())
 
   /**

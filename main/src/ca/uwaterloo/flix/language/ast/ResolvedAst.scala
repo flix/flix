@@ -25,7 +25,7 @@ import java.lang.reflect.Field
 
 object ResolvedAst {
 
-  val empty: Root = Root(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, List.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
+  val empty: Root = Root(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, List.empty, None, Map.empty, AvailableClasses.empty, ClassProvider.empty, Map.empty)
 
   case class Root(traits: Map[Symbol.TraitSym, Declaration.Trait],
                   instances: ListMap[Symbol.TraitSym, Declaration.Instance],
@@ -40,6 +40,7 @@ object ResolvedAst {
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   availableClasses: AvailableClasses,
+                  classProvider: ClassProvider,
                   tokens: Map[Source, Array[Token]])
 
   // TODO use Law for laws

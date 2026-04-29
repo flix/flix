@@ -1,3 +1,4 @@
+//| mill-jvm-version: 25
 package build
 
 import mill.*
@@ -34,14 +35,13 @@ object flix extends ScalaModule {
   def scalacOptions = Seq(
     "-Xfatal-warnings",
     "-Ypatmat-exhaust-depth", "400",
-    "-release", "21",
     "-opt:inline:ca.uwaterloo.**",
     "-Xmixin-force-forwarders:false",
     "-Xsource:3",
     "-Ytasty-reader"
   )
 
-  def javacOptions = Seq("--release", "21")
+  def javacOptions = Seq("--release", "25")
 
   // Manifest: Main-Class is set by mainClass; add Enable-Native-Access
   def manifest = Task {
@@ -62,9 +62,8 @@ object flix extends ScalaModule {
 
     // ── Scala source files (saves ~4 MB) ────────────────────
     // The resources directive includes main/src/ for .flix library files,
-    // but also pulls in .scala compiler sources. Only ClassList.txt and
-    // .flix files are needed at runtime; the compiled .class files are
-    // already in the JAR.
+    // but also pulls in .scala compiler sources. Only .flix files are
+    // needed at runtime; the compiled .class files are already in the JAR.
     Rule.ExcludePattern("src/ca/.*\\.scala"),
 
     // ── zstd-jni native libraries (saves ~15 MB) ────────────
@@ -91,7 +90,7 @@ object flix extends ScalaModule {
     Rule.ExcludePattern("org/apache/xbean/.*")
   ) ++ super.assemblyRules
 
-  // Include .flix, .json, .zip, ClassList.txt from main/ in the JAR.
+  // Include .flix, .json, .zip from main/ in the JAR.
   // Gradle does: from('main') { include '**/*.flix' ... }
   // We add main/ as an extra resource root so these files land in the assembly.
   override def resources = Task.Sources(

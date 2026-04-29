@@ -64,7 +64,7 @@ object Namer {
       }
 
       val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
-      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
+      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.classProvider, program.tokens), errors)
     }
 
   /**

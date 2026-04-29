@@ -48,7 +48,7 @@ object AvailableClasses {
 /**
   * Represents the classes (and interfaces) available to the Flix program.
   *
-  * Available classes come from two sources: the Java JDK (i.e. from [[ClassList]]) and from the JARs loaded into the project.
+  * Available classes come from two sources: the Java JDK (i.e. from [[ClassProvider]]) and from the JARs loaded into the project.
   *
   * @param byPackage a map from a package name to a set of classes (and interfaces) in that package.
   * @param byClass a map from a class (or interface) to the packages that it occurs in.
