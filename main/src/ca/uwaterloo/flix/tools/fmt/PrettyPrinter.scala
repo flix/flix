@@ -8,8 +8,7 @@ object PrettyPrinter {
 
   def format(tree: Tree): String = {
     val result = Doc.pretty(traverse(tree))
-    val stripped = result.split("\n", -1).map(_.stripTrailing()).mkString("\n")
-    if (stripped.endsWith("\n")) stripped else stripped + "\n"
+    if (result.endsWith("\n")) result else result + "\n"
   }
   private def traverse(tree: Tree): Doc = {
     if (tree.children.isEmpty) empty else formatTree(tree)
@@ -968,7 +967,7 @@ object PrettyPrinter {
   private def prettyTypeAlias(tree: Tree): Doc = wrapWithAnn(tree, rest =>
     spaceJoin(rest,
       noSpacePairs  = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
-      noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR),
+      noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR, TokenKind.Colon),
       noSpaceAfter  = Set(TokenKind.BracketL))
   )
 

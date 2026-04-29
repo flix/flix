@@ -115,6 +115,12 @@ object Doc {
     * @param k the current indentation level
     * @param docs the list of documents to be rendered, each with its own indentation level and layout mode
     */
+  private def trimTrailing(sb: StringBuilder): Unit = {
+    var i = sb.length - 1
+    while (i >= 0 && sb.charAt(i) == ' ') i -= 1
+    sb.setLength(i + 1)
+  }
+
   @tailrec
   private def render(sb: StringBuilder, k: Int, docs: List[(Int, Layout, Doc)]): Unit = docs match {
     case Nil => ()
@@ -147,12 +153,14 @@ object Doc {
           sb.append(' ')
           render(sb, k + 1, z)
         case Layout.MultiLine =>
+          trimTrailing(sb)
           sb.append('\n')
           sb.append(" " * i)
           render(sb, i, z)
       }
 
     case (i, _, HardLine) :: z =>
+      trimTrailing(sb)
       sb.append('\n')
       sb.append(" " * i)
       render(sb, i, z)
