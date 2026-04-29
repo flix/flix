@@ -28,5 +28,4 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
-
 }
