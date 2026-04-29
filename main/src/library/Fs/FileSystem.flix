@@ -23,6 +23,176 @@ pub mod Fs.FileSystem {
     use IoError.IoError
     use IoError.ErrorKind
     use Time.Clock
+    use Fs.CopyOption
+    use Fs.MoveOption
+
+    ///
+    /// An effect used to perform all filesystem operations.
+    ///
+    pub eff FileSystem {
+
+        ///
+        /// Returns `true` if the given file `f` exists.
+        ///
+        def exists(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is a directory.
+        ///
+        def isDirectory(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is a regular file.
+        ///
+        def isRegularFile(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is a symbolic link.
+        ///
+        def isSymbolicLink(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is readable.
+        ///
+        def isReadable(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is writable.
+        ///
+        def isWritable(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is executable.
+        ///
+        def isExecutable(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns the last access time of the given file `f` in milliseconds since the epoch.
+        ///
+        def accessTime(f: String): Result[IoError, Int64]
+
+        ///
+        /// Returns the creation time of the given file `f` in milliseconds since the epoch.
+        ///
+        def creationTime(f: String): Result[IoError, Int64]
+
+        ///
+        /// Returns the last-modified timestamp of the given file `f` in milliseconds since the epoch.
+        ///
+        def modificationTime(f: String): Result[IoError, Int64]
+
+        ///
+        /// Returns the size of the given file `f`.
+        ///
+        def size(f: String): Result[IoError, Size]
+
+        ///
+        /// Returns a string of all the contents of the given file `f`.
+        ///
+        def read(f: String): Result[IoError, String]
+
+        ///
+        /// Returns a list of all lines in the given file `f`.
+        ///
+        def readLines(f: String): Result[IoError, List[String]]
+
+        ///
+        /// Returns a vector of all the bytes in the given file `f`.
+        ///
+        def readBytes(f: String): Result[IoError, Vector[Int8]]
+
+        ///
+        /// Returns a list with the names of all files and directories in the given directory `f`.
+        ///
+        def list(f: String): Result[IoError, List[String]]
+
+        ///
+        /// Returns a list of paths under `base` that match the given glob `pattern`.
+        ///
+        def glob(base: String, pattern: String): Result[IoError, List[String]]
+
+        ///
+        /// Writes `str` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def write(data: {str = String}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Writes `lines` to the given file `f`.
+        ///
+        /// Creates `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Writes `data` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `str` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def append(data: {str = String}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `lines` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def appendLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `data` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+        ///
+        /// Truncates the given file `f`.
+        ///
+        def truncate(f: String): Result[IoError, Unit]
+
+        ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
+        ///
+        /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
+        ///
+        def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
+
+        ///
+        /// Deletes the given file `f`.
+        ///
+        /// Fails if the file does not exist.
+        ///
+        def delete(f: String): Result[IoError, Unit]
+
+        ///
+        /// Creates the directory `d`.
+        ///
+        def mkDir(d: String): Result[IoError, Unit]
+
+        ///
+        /// Creates the directory `d` and all its parent directories.
+        ///
+        def mkDirs(d: String): Result[IoError, Unit]
+
+        ///
+        /// Creates a new temporary directory with the given prefix.
+        ///
+        /// Returns the path to the directory.
+        ///
+        def mkTempDir(prefix: String): Result[IoError, String]
+
+    }
 
     ///
     /// Convenience function: copies `src` to `dst` with no options.

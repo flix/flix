@@ -24,6 +24,18 @@ pub mod Time.Sleep {
     import java.lang.{Thread => JThread}
 
     ///
+    /// An effect used to sleep the current thread.
+    ///
+    pub eff Sleep {
+
+        ///
+        /// Sleeps the current thread for the given duration `d`.
+        ///
+        def sleep(d: Duration): Unit
+
+    }
+
+    ///
     /// Handles the `Sleep` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Sleep` effect using the `IO` effect.

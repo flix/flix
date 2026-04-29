@@ -731,6 +731,27 @@ pub mod String {
     }
 
     ///
+    /// Build a string by applying `f` to the initial char `x`.
+    ///
+    /// `f` should return `Some(c1)` to signal a new char `c1` (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of building the string.
+    ///
+    pub def iterate(f: Char -> Option[Char] \ ef, x: Char): String \ ef = region rc {
+        let sb = StringBuilder.empty(rc);
+        def loop(c) = {
+            match f(c) {
+                case None     => StringBuilder.toString(sb)
+                case Some(c1) => {
+                    StringBuilder.append(c1, sb);
+                    loop(c1)
+                }
+            }
+        };
+        loop(x)
+    }
+
+    ///
     /// Returns `true` if and only if at least one char in `s` satisfies the predicate `f`.
     ///
     /// Returns `false` if `s` is empty.

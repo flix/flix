@@ -23,6 +23,28 @@ pub mod Fs.FileRead {
     use Fs.Size
 
     ///
+    /// An effect used to read file contents (string, lines, bytes).
+    ///
+    pub eff FileRead {
+
+        ///
+        /// Returns a string of all the contents of the given file `f`.
+        ///
+        def read(f: String): Result[IoError, String]
+
+        ///
+        /// Returns a list of all lines in the given file `f`.
+        ///
+        def readLines(f: String): Result[IoError, List[String]]
+
+        ///
+        /// Returns a vector of all the bytes in the given file `f`.
+        ///
+        def readBytes(f: String): Result[IoError, Vector[Int8]]
+
+    }
+
+    ///
     /// Handles the `FileRead` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `FileRead` effect using the `IO` effect.

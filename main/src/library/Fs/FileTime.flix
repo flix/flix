@@ -21,6 +21,28 @@ pub mod Fs.FileTime {
     use Fs.FsLayer.{logPre, logPost}
 
     ///
+    /// An effect used to read file timestamps (access, creation, modification).
+    ///
+    pub eff FileTime {
+
+        ///
+        /// Returns the last access time of the given file `f` in milliseconds since the epoch.
+        ///
+        def accessTime(f: String): Result[IoError, Int64]
+
+        ///
+        /// Returns the creation time of the given file `f` in milliseconds since the epoch.
+        ///
+        def creationTime(f: String): Result[IoError, Int64]
+
+        ///
+        /// Returns the last-modified timestamp of the given file `f` in milliseconds since the epoch.
+        ///
+        def modificationTime(f: String): Result[IoError, Int64]
+
+    }
+
+    ///
     /// Handles the `FileTime` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `FileTime` effect using the `IO` effect.

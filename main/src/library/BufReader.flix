@@ -14,56 +14,56 @@
  *  limitations under the License.
  */
 
-///
-/// A `Readable` implementation that wraps an underlying `Readable` instance
-/// and stores the items read from the underlying instance in an internal buffer.
-///
-/// A call to `read` will read directly from the buffer if items are available, and
-/// will trigger a `read` from the underlying `reader` when the buffer is empty.
-///
-/// This has the effect of reducing the overall number of `read`s to the underlying
-/// `Readable`.
-///
-/// A call to `read` might read more than the requested number of items from the
-/// underlying reader, in order to fill the entire buffer.
-///
-/// A call to `read` might not read from the underlying `reader` at all, if there are
-/// enough items in the buffer.
-///
-/// `buffer`: the underlying buffer.
-/// `cursor`: the index in `buffer` of the first element logically considered to be in the buffer.
-/// `size`: the number of elements (starting at `cursor`) logically considered to be in the buffer.
-/// `reader`: the underlying `Readable` being read from.
-///
-pub struct BufReader[a: Type, t: Type, r: Region] {
-    buffer: Array[a, r],
-    mut cursor: Int32,
-    mut size: Int32,
-    reader: t
-}
-
-instance Readable[BufReader[a, t, rr]] with Readable[t] where Readable.Elm[t] ~ a {
-
-    type Elm = a
-
-    type Aef = rr + Readable.Aef[t]
-
-    pub def read(buffer: Array[a, rb], bufReader: BufReader[a, t, rr]): Result[IoError, Int32] \ rb + rr + Readable.Aef[t] =
-        BufReader.read(buffer, bufReader)
-
-}
-
-instance Peekable[BufReader[a, t, r]] with Readable[t] where Readable.Elm[t] ~ a {
-
-    pub def peek(bufReader: BufReader[a, t, r]): Result[IoError, Option[Readable.Elm[t]]] \ Readable.Aef[t] + r = BufReader.peek(bufReader)
-
-    pub def skip(n: Int32, bufReader: BufReader[a, t, r]): Result[IoError, Int32] \ Readable.Aef[t] + r = BufReader.skip(n, bufReader)
-
-    pub def readWhile(p: Readable.Elm[t] -> Bool, bufReader: BufReader[a, t, r]): Result[IoError, Vector[Readable.Elm[t]]] \ Readable.Aef[t] + r = BufReader.readWhile(p, bufReader)
-
-}
-
 pub mod BufReader {
+
+    ///
+    /// A `Readable` implementation that wraps an underlying `Readable` instance
+    /// and stores the items read from the underlying instance in an internal buffer.
+    ///
+    /// A call to `read` will read directly from the buffer if items are available, and
+    /// will trigger a `read` from the underlying `reader` when the buffer is empty.
+    ///
+    /// This has the effect of reducing the overall number of `read`s to the underlying
+    /// `Readable`.
+    ///
+    /// A call to `read` might read more than the requested number of items from the
+    /// underlying reader, in order to fill the entire buffer.
+    ///
+    /// A call to `read` might not read from the underlying `reader` at all, if there are
+    /// enough items in the buffer.
+    ///
+    /// `buffer`: the underlying buffer.
+    /// `cursor`: the index in `buffer` of the first element logically considered to be in the buffer.
+    /// `size`: the number of elements (starting at `cursor`) logically considered to be in the buffer.
+    /// `reader`: the underlying `Readable` being read from.
+    ///
+    pub struct BufReader[a: Type, t: Type, r: Region] {
+        buffer: Array[a, r],
+        mut cursor: Int32,
+        mut size: Int32,
+        reader: t
+    }
+
+    instance Readable[BufReader[a, t, rr]] with Readable[t] where Readable.Elm[t] ~ a {
+
+        type Elm = a
+
+        type Aef = rr + Readable.Aef[t]
+
+        pub def read(buffer: Array[a, rb], bufReader: BufReader[a, t, rr]): Result[IoError, Int32] \ rb + rr + Readable.Aef[t] =
+            BufReader.read(buffer, bufReader)
+
+    }
+
+    instance Peekable[BufReader[a, t, r]] with Readable[t] where Readable.Elm[t] ~ a {
+
+        pub def peek(bufReader: BufReader[a, t, r]): Result[IoError, Option[Readable.Elm[t]]] \ Readable.Aef[t] + r = BufReader.peek(bufReader)
+
+        pub def skip(n: Int32, bufReader: BufReader[a, t, r]): Result[IoError, Int32] \ Readable.Aef[t] + r = BufReader.skip(n, bufReader)
+
+        pub def readWhile(p: Readable.Elm[t] -> Bool, bufReader: BufReader[a, t, r]): Result[IoError, Vector[Readable.Elm[t]]] \ Readable.Aef[t] + r = BufReader.readWhile(p, bufReader)
+
+    }
 
     ///
     /// Constructs a `BufReader` wrapping `reader` with a default capacity of 4096 items.

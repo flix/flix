@@ -26,6 +26,13 @@ pub mod Net.Ping {
     import java.net.UnknownHostException
 
     ///
+    /// The effect used to determine if an address is reachable.
+    ///
+    pub eff Ping {
+        def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
+    }
+
+    ///
     /// Handles the `Ping` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Ping` effect using the `IO` effect.

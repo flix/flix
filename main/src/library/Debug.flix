@@ -106,24 +106,16 @@ pub mod Debug {
             let componentType = clazz.getComponentType();
             if (componentType.isPrimitive()) {
                 let name = componentType.getName();
-                if (name == "boolean") {
-                    Arrays.toString(unchecked_cast(obj as Array[Bool, Static]))
-                } else if (name == "char") {
-                    Arrays.toString(unchecked_cast(obj as Array[Char, Static]))
-                } else if (name == "float") {
-                    Arrays.toString(unchecked_cast(obj as Array[Float32, Static]))
-                } else if (name == "double") {
-                    Arrays.toString(unchecked_cast(obj as Array[Float64, Static]))
-                } else if (name == "byte") {
-                    Arrays.toString(unchecked_cast(obj as Array[Int8, Static]))
-                } else if (name == "short") {
-                    Arrays.toString(unchecked_cast(obj as Array[Int16, Static]))
-                } else if (name == "int") {
-                    Arrays.toString(unchecked_cast(obj as Array[Int32, Static]))
-                } else if (name == "long") {
-                    Arrays.toString(unchecked_cast(obj as Array[Int64, Static]))
-                } else {
-                    Objects.toString(obj)
+                match name {
+                    case "boolean" => Arrays.toString(unchecked_cast(obj as Array[Bool, Static]))
+                    case "char" => Arrays.toString(unchecked_cast(obj as Array[Char, Static]))
+                    case "float" => Arrays.toString(unchecked_cast(obj as Array[Float32, Static]))
+                    case "double" => Arrays.toString(unchecked_cast(obj as Array[Float64, Static]))
+                    case "byte" => Arrays.toString(unchecked_cast(obj as Array[Int8, Static]))
+                    case "short" => Arrays.toString(unchecked_cast(obj as Array[Int16, Static]))
+                    case "int" => Arrays.toString(unchecked_cast(obj as Array[Int32, Static]))
+                    case "long" => Arrays.toString(unchecked_cast(obj as Array[Int64, Static]))
+                    case _ => Objects.toString(obj)
                 }
             } else {
                 Arrays.deepToString(unchecked_cast(obj as Array[Object, Static]))

@@ -17,6 +17,21 @@
 pub mod Fs.FileSize {
 
     use Fs.FileStat
+    use Fs.Size
+
+    ///
+    /// An effect used to read the size of a file.
+    ///
+    /// Use the `FileSize.runWithFileStat` handler.
+    ///
+    pub eff FileSize {
+
+        ///
+        /// Returns the size of the given file `f`.
+        ///
+        def size(f: String): Result[IoError, Size]
+
+    }
 
     ///
     /// Handles the `FileSize` effect of the given function `f` using the `FileStat` effect.

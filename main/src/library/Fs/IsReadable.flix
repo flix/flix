@@ -19,6 +19,20 @@ pub mod Fs.IsReadable {
     use Fs.FilePermission
 
     ///
+    /// An effect used to check if a file is readable.
+    ///
+    /// Use the `IsReadable.runWithFilePermission` handler.
+    ///
+    pub eff IsReadable {
+
+        ///
+        /// Returns `true` if the given file `f` is readable.
+        ///
+        def isReadable(f: String): Result[IoError, Bool]
+
+    }
+
+    ///
     /// Handles the `IsReadable` effect of the given function `f` using the `FilePermission` effect.
     ///
     pub def runWithFilePermission(f: Unit -> a \ ef): a \ (ef - IsReadable) + FilePermission =

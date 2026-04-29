@@ -14,42 +14,42 @@
  * limitations under the License.
  */
 
-///
-/// Represents a mutable priority queue.
-/// Explanation of component types (left to right):
-/// Component 1: The region capability the queue is associated with.
-/// Component 2: A reference to the backing array.
-/// Component 3: A reference to the number of elements in the mutable priority queue.
-///
-/// The maximum element (if it exists) can always be accessed in constant time.
-///
-pub struct MutPriorityQueue[a: Type, r: Region] {
-    r: Region[r],
-    mut values: Array[a, r],
-    mut size: Int32
-}
-
-instance Iterable[MutPriorityQueue[a, r]] {
-    type Elm = a
-    type Aef = r
-    pub def iterator(rc: Region[r1], q: MutPriorityQueue[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutPriorityQueue.iterator(rc, q)
-}
-
-instance ForEach[MutPriorityQueue[a, r]] {
-    type Elm = a
-    type Aef = r
-    pub def forEach(f: a -> Unit \ ef, q: MutPriorityQueue[a, r]): Unit \ ef + r = MutPriorityQueue.forEach(f, q)
-}
-
-instance Formattable[MutPriorityQueue[a, r]] with Formattable[a], Order[a] {
-    type Aef = Formattable.Aef[a] + r
-
-    pub def format(x: MutPriorityQueue[a, r]): RichString \ (Formattable.Aef[a] + r) =
-        use RichString.{fromString, joinWith};
-        fromString("MutPriorityQueue#{") + joinWith(Formattable.format, fromString(", "), MutPriorityQueue.toList(x)) + fromString("}")
-}
-
 pub mod MutPriorityQueue {
+
+    ///
+    /// Represents a mutable priority queue.
+    /// Explanation of component types (left to right):
+    /// Component 1: The region capability the queue is associated with.
+    /// Component 2: A reference to the backing array.
+    /// Component 3: A reference to the number of elements in the mutable priority queue.
+    ///
+    /// The maximum element (if it exists) can always be accessed in constant time.
+    ///
+    pub struct MutPriorityQueue[a: Type, r: Region] {
+        r: Region[r],
+        mut values: Array[a, r],
+        mut size: Int32
+    }
+
+    instance Iterable[MutPriorityQueue[a, r]] {
+        type Elm = a
+        type Aef = r
+        pub def iterator(rc: Region[r1], q: MutPriorityQueue[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutPriorityQueue.iterator(rc, q)
+    }
+
+    instance ForEach[MutPriorityQueue[a, r]] {
+        type Elm = a
+        type Aef = r
+        pub def forEach(f: a -> Unit \ ef, q: MutPriorityQueue[a, r]): Unit \ ef + r = MutPriorityQueue.forEach(f, q)
+    }
+
+    instance Formattable[MutPriorityQueue[a, r]] with Formattable[a], Order[a] {
+        type Aef = Formattable.Aef[a] + r
+
+        pub def format(x: MutPriorityQueue[a, r]): RichString \ (Formattable.Aef[a] + r) =
+            use RichString.{fromString, joinWith};
+            fromString("MutPriorityQueue#{") + joinWith(Formattable.format, fromString(", "), MutPriorityQueue.toList(x)) + fromString("}")
+    }
 
     ///
     /// Constant which stores the minimum capacity of a MutPriorityQueue.

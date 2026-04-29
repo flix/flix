@@ -2588,4 +2588,97 @@ mod TestMutList {
         } with Shuffle.runWithIO
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // unfold                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def unfold01(): Unit \ Assert = region rc {
+        let ml = MutList.unfold(rc, s -> if (true) None else Some((s, s + 1)), 0);
+        assertEq(expected = 0, MutList.length(ml))
+    }
+
+    @Test
+    def unfold02(): Unit \ Assert = region rc {
+        let ml = MutList.unfold(rc, s -> if (s > 0) None else Some((s + 48, s + 1)), 0);
+        assertEq(expected = 48 :: Nil, MutList.toList(ml))
+    }
+
+    @Test
+    def unfold03(): Unit \ Assert = region rc {
+        let ml = MutList.unfold(rc, s -> if (s >= 3) None else Some((s + 48, s + 1)), 0);
+        assertEq(expected = 48 :: 49 :: 50 :: Nil, MutList.toList(ml))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unfoldWithIter                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def unfoldWithIter01(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (true)
+                None
+            else {
+                let c = Some(Ref.get(x) + 48);
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        let ml = MutList.unfoldWithIter(rc, step);
+        assertEq(expected = 0, MutList.length(ml))
+    }
+
+    @Test
+    def unfoldWithIter02(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) > 0)
+                None
+            else {
+                let c = Some(Ref.get(x) + 48);
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        let ml = MutList.unfoldWithIter(rc, step);
+        assertEq(expected = 48 :: Nil, MutList.toList(ml))
+    }
+
+    @Test
+    def unfoldWithIter03(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) > 2)
+                None
+            else {
+                let c = Some(Ref.get(x) + 48);
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        let ml = MutList.unfoldWithIter(rc, step);
+        assertEq(expected = 48 :: 49 :: 50 :: Nil, MutList.toList(ml))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterate                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterate01(): Unit \ Assert = region rc {
+        let ml = MutList.iterate(rc, s -> if (true) None else Some(s + 1), 0);
+        assertEq(expected = 0, MutList.length(ml))
+    }
+
+    @Test
+    def iterate02(): Unit \ Assert = region rc {
+        let ml = MutList.iterate(rc, s -> if (s >= 1) None else Some(s + 1), 0);
+        assertEq(expected = 1 :: Nil, MutList.toList(ml))
+    }
+
+    @Test
+    def iterate03(): Unit \ Assert = region rc {
+        let ml = MutList.iterate(rc, s -> if (s >= 3) None else Some(s + 1), 0);
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, MutList.toList(ml))
+    }
+
 }

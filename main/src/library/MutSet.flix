@@ -14,35 +14,35 @@
  * limitations under the License.
  */
 
-///
-/// The Mutable Set type.
-///
-pub struct MutSet[t: Type, r: Region] {
-    rc: Region[r],
-    mut inner: Set[t]
-}
-
-instance Iterable[MutSet[a, r]] {
-    type Elm = a
-    type Aef = r
-    pub def iterator(rc: Region[r1], s: MutSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutSet.iterator(rc, s)
-}
-
-instance ForEach[MutSet[a, r]] {
-    type Elm = a
-    type Aef = r
-    pub def forEach(f: a -> Unit \ ef, s: MutSet[a, r]): Unit \ ef + r = MutSet.forEach(f, s)
-}
-
-instance Formattable[MutSet[t, r]] with Formattable[t] {
-    type Aef = Formattable.Aef[t] + r
-
-    pub def format(x: MutSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
-        use RichString.{fromString, joinWith};
-        fromString("MutSet#{") + joinWith(Formattable.format, fromString(", "), MutSet.toList(x)) + fromString("}")
-}
-
 pub mod MutSet {
+
+    ///
+    /// The Mutable Set type.
+    ///
+    pub struct MutSet[t: Type, r: Region] {
+        rc: Region[r],
+        mut inner: Set[t]
+    }
+
+    instance Iterable[MutSet[a, r]] {
+        type Elm = a
+        type Aef = r
+        pub def iterator(rc: Region[r1], s: MutSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutSet.iterator(rc, s)
+    }
+
+    instance ForEach[MutSet[a, r]] {
+        type Elm = a
+        type Aef = r
+        pub def forEach(f: a -> Unit \ ef, s: MutSet[a, r]): Unit \ ef + r = MutSet.forEach(f, s)
+    }
+
+    instance Formattable[MutSet[t, r]] with Formattable[t] {
+        type Aef = Formattable.Aef[t] + r
+
+        pub def format(x: MutSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
+            use RichString.{fromString, joinWith};
+            fromString("MutSet#{") + joinWith(Formattable.format, fromString(", "), MutSet.toList(x)) + fromString("}")
+    }
 
     ///
     /// Returns a string representation of the given mutable set `s`.

@@ -14,57 +14,57 @@
  * limitations under the License.
  */
 
-///
-/// Represents a mutable list.
-///
-/// Invariant
-///   - The length is always higher than the total capacity of the array.
-///   - The capacity of the array is always 8 or more.
-///
-pub struct MutList[a: Type, r: Region] {
-    r: Region[r],
-    mut values: Array[a, r],
-    mut length: Int32
-}
-
-instance Iterable[MutList[a, r]] {
-    type Elm = a
-    type Aef = r
-    pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
-}
-
-instance ForEach[MutList[a, r]] {
-    type Elm = a
-    type Aef = r
-    pub def forEach(f: a -> Unit \ ef, l: MutList[a, r]): Unit \ ef + r = MutList.forEach(f, l)
-}
-
-instance Indexable[MutList[a, r]] {
-    type Idx = Int32
-    type Elm = a
-    type Aef = r + OutOfBounds
-    pub def get(t: MutList[a, r], i: Int32): a \ r + OutOfBounds =
-        if (0 <= i and i < MutList.length(t)) MutList.get(i, t)
-        else OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
-}
-
-instance IndexableMut[MutList[a, r]] {
-    type Aef = r + OutOfBounds
-    pub def put(t: MutList[a, r], i: Int32, v: a): Unit \ r + OutOfBounds =
-        if (0 <= i and i < MutList.length(t)) MutList.put(v, i, t)
-        else OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
-}
-
-instance Formattable[MutList[a, r]] with Formattable[a] {
-    type Aef = Formattable.Aef[a] + r
-
-    pub def format(x: MutList[a, r]): RichString \ (Formattable.Aef[a] + r) =
-        use RichString.{fromString, joinWith};
-        fromString("MutList#{") + joinWith(Formattable.format, fromString(", "), MutList.toList(x)) + fromString("}")
-}
-
 pub mod MutList {
     use Math.Shuffle
+
+    ///
+    /// Represents a mutable list.
+    ///
+    /// Invariant
+    ///   - The length is always higher than the total capacity of the array.
+    ///   - The capacity of the array is always 8 or more.
+    ///
+    pub struct MutList[a: Type, r: Region] {
+        r: Region[r],
+        mut values: Array[a, r],
+        mut length: Int32
+    }
+
+    instance Iterable[MutList[a, r]] {
+        type Elm = a
+        type Aef = r
+        pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
+    }
+
+    instance ForEach[MutList[a, r]] {
+        type Elm = a
+        type Aef = r
+        pub def forEach(f: a -> Unit \ ef, l: MutList[a, r]): Unit \ ef + r = MutList.forEach(f, l)
+    }
+
+    instance Indexable[MutList[a, r]] {
+        type Idx = Int32
+        type Elm = a
+        type Aef = r + OutOfBounds
+        pub def get(t: MutList[a, r], i: Int32): a \ r + OutOfBounds =
+            if (0 <= i and i < MutList.length(t)) MutList.get(i, t)
+            else OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
+    }
+
+    instance IndexableMut[MutList[a, r]] {
+        type Aef = r + OutOfBounds
+        pub def put(t: MutList[a, r], i: Int32, v: a): Unit \ r + OutOfBounds =
+            if (0 <= i and i < MutList.length(t)) MutList.put(v, i, t)
+            else OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
+    }
+
+    instance Formattable[MutList[a, r]] with Formattable[a] {
+        type Aef = Formattable.Aef[a] + r
+
+        pub def format(x: MutList[a, r]): RichString \ (Formattable.Aef[a] + r) =
+            use RichString.{fromString, joinWith};
+            fromString("MutList#{") + joinWith(Formattable.format, fromString(", "), MutList.toList(x)) + fromString("}")
+    }
 
     ///
     /// Constant which stores the minimum capacity of a MutList.
@@ -807,7 +807,7 @@ pub mod MutList {
                 None
             }
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Applies `f` to all the elements in `v`.
@@ -904,5 +904,51 @@ pub mod MutList {
         Array.forEach(x -> MutList.push(x, ml), a);
         ml
     }
+
+    ///
+    /// Build a mutable list by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(a, st1)` to signal a new element `a` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of building the list.
+    ///
+    pub def unfold(rc: Region[r], f: s -> Option[(a, s)] \ ef, st: s): MutList[a, r] \ { ef, r } =
+        let ml = MutList.empty(rc);
+        def loop(sst) = match f(sst) {
+            case None           => ml
+            case Some((a, st1)) => MutList.push(a, ml); loop(st1)
+        };
+        loop(st)
+
+    ///
+    /// Build a mutable list by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(a)` to signal a new element `a`.
+    ///
+    /// `next` should return `None` to signal the end of building the list.
+    ///
+    pub def unfoldWithIter(rc: Region[r], next: Unit -> Option[a] \ ef): MutList[a, r] \ { ef, r } =
+        let ml = MutList.empty(rc);
+        def loop() = match next() {
+            case None    => ml
+            case Some(x) => MutList.push(x, ml); loop()
+        };
+        loop()
+
+    ///
+    /// Build a mutable list by applying `f` to the initial value `x`.
+    ///
+    /// `f` should return `Some(a1)` to signal a new element `a1` (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of building the list.
+    ///
+    pub def iterate(rc: Region[r], f: a -> Option[a] \ ef, x: a): MutList[a, r] \ { ef, r } =
+        let ml = MutList.empty(rc);
+        def loop(st) = match f(st) {
+            case None     => ml
+            case Some(a1) => MutList.push(a1, ml); loop(a1)
+        };
+        loop(x)
 
 }

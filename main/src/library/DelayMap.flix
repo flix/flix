@@ -14,59 +14,59 @@
  * limitations under the License.
  */
 
-pub enum DelayMap[k, v] {
-    case DMap(RedBlackTree[k, Lazy[v]])
-}
-
-instance Eq[DelayMap[k, v]] with Eq[k], Eq[v] {
-    pub def eq(m1: DelayMap[k, v], m2: DelayMap[k, v]): Bool =
-        DelayMap.toList(m1) == DelayMap.toList(m2)
-}
-
-instance Order[DelayMap[k, v]] with Order[k], Order[v] {
-    pub def compare(x: DelayMap[k, v], y: DelayMap[k, v]): Comparison =
-        DelayMap.toList(x) <=> DelayMap.toList(y)
-}
-
-instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: DelayMap[k, v]): String = DelayMap.toString(m)
-}
-
-instance Indexable[DelayMap[k, v]] with Order[k] {
-    type Idx = k
-    type Elm = v
-    type Aef = KeyNotFound
-    pub def get(t: DelayMap[k, v], i: k): v \ KeyNotFound = match DelayMap.get(i, t) {
-        case Some(v) => v
-        case None    => KeyNotFound.keyNotFound("key not found")
-    }
-}
-
-instance Functor[DelayMap[k]] {
-    pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef = DelayMap.map(f, m)
-}
-
-instance Foldable[DelayMap[k]] {
-    pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
-    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
-    redef isEmpty(m: DelayMap[k, v]): Bool = DelayMap.isEmpty(m)
-
-}
-
-instance Iterable[DelayMap[k, v]] {
-    type Elm = (k, v)
-    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), r, r] \ r =
-        DelayMap.iterator(rc, m)
-}
-
-instance ForEach[DelayMap[k, v]] {
-    type Elm = (k, v)
-    pub def forEach(f: ((k, v)) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = DelayMap.forEach(k -> v -> f((k, v)), m)
-}
-
 pub mod DelayMap {
 
     import java.lang.Runtime
+
+    pub enum DelayMap[k, v] {
+        case DMap(RedBlackTree[k, Lazy[v]])
+    }
+
+    instance Eq[DelayMap[k, v]] with Eq[k], Eq[v] {
+        pub def eq(m1: DelayMap[k, v], m2: DelayMap[k, v]): Bool =
+            DelayMap.toList(m1) == DelayMap.toList(m2)
+    }
+
+    instance Order[DelayMap[k, v]] with Order[k], Order[v] {
+        pub def compare(x: DelayMap[k, v], y: DelayMap[k, v]): Comparison =
+            DelayMap.toList(x) <=> DelayMap.toList(y)
+    }
+
+    instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
+        pub def toString(m: DelayMap[k, v]): String = DelayMap.toString(m)
+    }
+
+    instance Indexable[DelayMap[k, v]] with Order[k] {
+        type Idx = k
+        type Elm = v
+        type Aef = KeyNotFound
+        pub def get(t: DelayMap[k, v], i: k): v \ KeyNotFound = match DelayMap.get(i, t) {
+            case Some(v) => v
+            case None    => KeyNotFound.keyNotFound("key not found")
+        }
+    }
+
+    instance Functor[DelayMap[k]] {
+        pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef = DelayMap.map(f, m)
+    }
+
+    instance Foldable[DelayMap[k]] {
+        pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
+        pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
+        redef isEmpty(m: DelayMap[k, v]): Bool = DelayMap.isEmpty(m)
+
+    }
+
+    instance Iterable[DelayMap[k, v]] {
+        type Elm = (k, v)
+        pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), r, r] \ r =
+            DelayMap.iterator(rc, m)
+    }
+
+    instance ForEach[DelayMap[k, v]] {
+        type Elm = (k, v)
+        pub def forEach(f: ((k, v)) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = DelayMap.forEach(k -> v -> f((k, v)), m)
+    }
 
     ///
     /// Returns a string representation of the given `DelayMap` `m`.

@@ -21,6 +21,20 @@ pub mod Fs.DirList {
     use Fs.FsLayer.{logPre, logPost}
 
     ///
+    /// An effect used to list the contents of a directory.
+    ///
+    /// Use the `DirList.runWithFileSystem` handler.
+    ///
+    pub eff DirList {
+
+        ///
+        /// Returns a list with the names of all files and directories in the given directory `f`.
+        ///
+        def list(f: String): Result[IoError, List[String]]
+
+    }
+
+    ///
     /// Handles the `DirList` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `DirList` effect using the `IO` effect.
