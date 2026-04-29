@@ -1,7 +1,7 @@
 mod TestLogger {
     use Sys.Console
     use Assert.assertEq
-    use Logger.{log, info, fatal, warn, trace, debug, runWithStdOut}
+    use Logger.{log, info, fatal, warn, trace, debug, Severity, runWithStdOut}
 
     /////////////////////////////////////////////////////////////////////////////
     // Console                                                                 //
