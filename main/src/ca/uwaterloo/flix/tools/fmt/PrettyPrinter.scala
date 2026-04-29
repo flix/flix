@@ -1261,7 +1261,7 @@ object PrettyPrinter {
 
   // This must hold all keywords.
   private val ReservedKeywords: Set[String] = Set(
-    "as", "assert", "assume", "comptime", "do", "else", "enum", "export",
+    "as", "assume", "comptime", "do", "else", "enum", "export",
     "external", "false", "fixpoint", "for", "if", "import", "instance",
     "intrinsic", "match", "new", "select", "struct", "then", "trait",
     "true", "type", "use", "with", "run", "and", "or", "not", "xor", "lazy", "unchecked_cast", "checked_cast",
