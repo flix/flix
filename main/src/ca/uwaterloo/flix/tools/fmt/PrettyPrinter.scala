@@ -672,9 +672,57 @@ object PrettyPrinter {
     * @param tree the match or select expression tree
     * @return the formatted match or select expression as Doc
     */
+  private val ArrowRuleKinds: Set[TreeKind] = Set(
+    TreeKind.Expr.MatchRuleFragment,
+    TreeKind.Expr.ExtMatchRuleFragment,
+    TreeKind.Expr.SelectRuleFragment,
+    TreeKind.Expr.SelectRuleDefaultFragment
+  )
+
   private def prettyMatch(tree: Tree): Doc =
     prettyBracket(tree, filterEmpty(tree.children),
-      headerJoin = defaultHeaderJoin)
+      headerJoin = defaultHeaderJoin,
+      formatBody = alignedMatchBody)
+
+  private def alignedMatchBody(children: Array[SyntaxTree.Child]): Doc = {
+    val filtered = filterEmpty(children)
+    val rules    = filtered.collect { case t: Tree if ArrowRuleKinds.contains(t.kind) => t }
+    val maxWidth = rules.map(arrowPatternWidth).maxOption.getOrElse(0)
+    val docs = filtered.map {
+      case t: Tree if ArrowRuleKinds.contains(t.kind) => alignedArrowRule(t, maxWidth)
+      case other                                       => prettyChild(other)
+    }
+    val pairs = filtered.zip(docs)
+    if (pairs.isEmpty) return empty
+    pairs.sliding(2).foldLeft(pairs.head._2) {
+      case (acc, Array((prev, _), (next, nextDoc))) => acc <> structuralGap(prev, next) <> nextDoc
+      case (acc, _)                                 => acc
+    }
+  }
+
+  private def arrowPatternWidth(rule: Tree): Int = {
+    val children = filterEmpty(rule.children)
+    val idx = children.indexWhere { case t: Token if t.kind == TokenKind.ArrowThickR => true; case _ => false }
+    if (idx < 0) 0
+    else pretty(Layout.SingleLine, defaultHeaderJoin(children.take(idx))).length
+  }
+
+  private def alignedArrowRule(tree: Tree, maxWidth: Int): Doc = {
+    val children = filterEmpty(tree.children)
+    val idx = children.indexWhere { case t: Token if t.kind == TokenKind.ArrowThickR => true; case _ => false }
+    if (idx < 0) return prettyFallback(tree)
+
+    val patternPart = children.take(idx)
+    val bodyPart    = children.drop(idx + 1)
+    val patternDoc  = defaultHeaderJoin(patternPart)
+    val bodyDoc     = joinWithGap(bodyPart)
+    val bodyIsBlock = bodyPart.headOption.exists(isBlockExpr)
+
+    if (!bodyIsBlock && layoutOf(tree) == Layout.MultiLine)
+      Doc.fill(maxWidth, patternDoc) <+> text("=>") <> nest(4, hardline <> bodyDoc)
+    else
+      Doc.fill(maxWidth, patternDoc) <+> text("=>") <+> bodyDoc
+  }
 
   private def prettyTry(tree: Tree): Doc =
     spaceJoin(filterEmpty(tree.children), Set.empty)

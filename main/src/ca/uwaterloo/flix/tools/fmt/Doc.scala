@@ -55,6 +55,7 @@ sealed trait Doc {
   * - `HardLine` represents a hard line break that is always rendered as a newline regardless of the layout mode.
   * - `Nest` represents a nested document that increases the indentation level for its content.
   * - `Align` represents a document that aligns its content to the current indentation level.
+  * - `Column` represents a document whose content depends on the current output column position.
   * - `LayoutChoice` represents a choice between two documents based on the layout mode.
   * - `SetLayout` represents a document that sets a specific layout mode for its content.
   */
@@ -67,6 +68,7 @@ object Doc {
   case object HardLine extends Doc
   case class Nest(level: Int, doc: Doc) extends Doc
   case class Align(doc: Doc) extends Doc
+  case class Column(f: Int => Doc) extends Doc
   case class LayoutChoice(singleLine: Doc, multiLine: Doc) extends Doc
   case class SetLayout(layout: Layout, doc: Doc) extends Doc
 
@@ -77,8 +79,24 @@ object Doc {
   def empty: Doc = Empty
   def nest(level: Int, doc: Doc): Doc = Nest(level, doc)
   def align(doc: Doc): Doc = Align(doc)
+  def column(f: Int => Doc): Doc = Column(f)
   def setLayout(layout: Layout, doc: Doc): Doc = SetLayout(layout, doc)
   def layoutChoice(singleLine: Doc, multiLine: Doc): Doc = LayoutChoice(singleLine, multiLine)
+
+  /**
+    * Renders `doc` and pads it with spaces to reach `width` characters in MultiLine mode.
+    * In SingleLine mode, it simply renders `doc` without any padding.
+    * Comes from the Leijen extension to the Wadler paper.
+    * - https://hackage.haskell.org/package/ansi-wl-pprint-0.6.9/docs/Text-PrettyPrint-ANSI-Leijen.html
+    */
+  def fill(width: Int, doc: Doc): Doc =
+    layoutChoice(
+      doc,
+      column(k1 => doc <> column(k2 => {
+        val used = k2 - k1
+        if (used >= width) empty else text(" " * (width - used))
+      }))
+    )
 
   /**
     * The `pretty` function takes a `Doc` and produces a string representation of the document using the default layout mode of `MultiLine`.
@@ -164,6 +182,9 @@ object Doc {
       sb.append('\n')
       sb.append(" " * i)
       render(sb, i, z)
+
+    case (i, l, Column(f)) :: z =>
+      render(sb, k, (i, l, f(k)) :: z)
 
     case (i, l, LayoutChoice(s, m)) :: z =>
       l match {
