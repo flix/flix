@@ -18,6 +18,7 @@ pub mod Net.Http {
 
     use IoError.ErrorKind
     use IoError.IoError
+    use Logger.Severity
     use Net.Http
     use Net.HttpLayer
     use Net.HttpRequest

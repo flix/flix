@@ -14,31 +14,31 @@
  *  limitations under the License.
  */
 
-///
-/// A trait for Monoids, objects that support an associative binary
-/// operation `combine` and neutral element `empty`.
-///
-pub lawful trait Monoid[a] with SemiGroup[a] {
-    ///
-    /// Returns a neutral element.
-    ///
-    pub def empty(): a
-
-    ///
-    /// Returns the result of combining `x` and `y` using SemiGroup's combine.
-    ///
-    pub def combine(x: a, y: a): a =
-        SemiGroup.combine(x, y)
-
-    law leftIdentity: forall(x: a) with Eq[a] Monoid.combine(Monoid.empty(), x) == x
-
-    law rightIdentity: forall(x: a) with Eq[a] Monoid.combine(x, Monoid.empty()) == x
-
-    law associative: forall(x: a, y: a, z: a) with Eq[a] Monoid.combine(Monoid.combine(x, y), z) == Monoid.combine(x, Monoid.combine(y, z))
-
-}
-
 pub mod Monoid {
+
+    ///
+    /// A trait for Monoids, objects that support an associative binary
+    /// operation `combine` and neutral element `empty`.
+    ///
+    pub lawful trait Monoid[a] with SemiGroup[a] {
+        ///
+        /// Returns a neutral element.
+        ///
+        pub def empty(): a
+
+        ///
+        /// Returns the result of combining `x` and `y` using SemiGroup's combine.
+        ///
+        pub def combine(x: a, y: a): a =
+            SemiGroup.combine(x, y)
+
+        law leftIdentity: forall(x: a) with Eq[a] Monoid.combine(Monoid.empty(), x) == x
+
+        law rightIdentity: forall(x: a) with Eq[a] Monoid.combine(x, Monoid.empty()) == x
+
+        law associative: forall(x: a, y: a, z: a) with Eq[a] Monoid.combine(Monoid.combine(x, y), z) == Monoid.combine(x, Monoid.combine(y, z))
+
+    }
 
     ///
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.

@@ -747,6 +747,7 @@ pub mod Fs.FileSystem {
     /// are passed through to the underlying `FileSystem` effect unchanged.
     ///
     pub def withDryRun(f: Unit -> a \ ef): a \ (ef - FileSystem) + {FileSystem, Logger} =
+        use Logger.Severity;
         use RichString.{text, bold, cyan, yellow, gray};
         let tag = yellow("[dry-run]");
         run { f() } with handler FileSystem {
