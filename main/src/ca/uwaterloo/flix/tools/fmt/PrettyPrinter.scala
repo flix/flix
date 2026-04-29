@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools.fmt
 
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.tools.fmt.Doc.{empty, hardStack, hardline, line, nest, pretty, space, text}
+import ca.uwaterloo.flix.tools.fmt.Doc.{align, empty, hardStack, hardline, line, nest, pretty, space, text}
 
 object PrettyPrinter {
 
@@ -247,7 +247,7 @@ object PrettyPrinter {
     val preambleDoc = spaceJoin(preamble, Set.empty)
     localLayout(tree) {
       val handlersDoc = handlers.map(prettyChild).reduceLeftOption(_ <> line <> _).getOrElse(empty)
-      preambleDoc <+> handlersDoc
+      preambleDoc <+> align(handlersDoc)
     }
   }
 
