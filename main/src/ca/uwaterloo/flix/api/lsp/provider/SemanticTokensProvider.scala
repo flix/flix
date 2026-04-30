@@ -482,7 +482,7 @@ object SemanticTokensProvider {
     case Expr.InstanceOfMatch(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, InstanceOfMatchRule(_, _, exp, _)) => acc ++ visitExp(exp)
+        case (acc, InstanceOfMatchRule(_, _, _, exp, _)) => acc ++ visitExp(exp)
       }
 
     case Expr.RestrictableChoose(_, exp1, rules, _, _, _) =>

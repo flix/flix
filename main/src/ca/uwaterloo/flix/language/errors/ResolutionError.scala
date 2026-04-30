@@ -1099,7 +1099,7 @@ object ResolutionError {
     def code: ErrorCode = ErrorCode.E3692
 
     private val expected = Grammar.n_things(expectedArity, "type argument")
-    private val example = s"${clazz.getSimpleName}[${List.fill(expectedArity)("t").mkString(", ")}]"
+    private val example = s"${clazz.getSimpleName}[${List.fill(expectedArity)("_").mkString(", ")}]"
 
     def summary: String =
       s"Missing type arguments: '${clazz.getSimpleName}' expects $expected."
@@ -1112,34 +1112,6 @@ object ResolutionError {
          |
          |${underline("Explanation:")} Java generic types cannot be used without type arguments.
          |Use '${cyan(example)}' instead of '${red(clazz.getSimpleName)}'.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that an `instanceof` rule type has the wrong number of type arguments.
-    *
-    * @param clazz         the Java class being matched against.
-    * @param expectedArity the number of type parameters declared on the Java class.
-    * @param actualArity   the number of type arguments supplied by the user.
-    * @param loc           the location where the error occurred.
-    */
-  case class IllegalInstanceOfTypeArity(clazz: java.lang.Class[?], expectedArity: Int, actualArity: Int, loc: SourceLocation) extends ResolutionError {
-    def code: ErrorCode = ErrorCode.E3953
-
-    private val expected = Grammar.n_things(expectedArity, "wildcard type argument")
-    private val example = s"${clazz.getSimpleName}[${List.fill(expectedArity)("_").mkString(", ")}]"
-
-    def summary: String =
-      s"Java class '${clazz.getSimpleName}' requires $expected in 'instanceof' patterns."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Java class '${red(clazz.getSimpleName)}' requires $expected in 'instanceof' patterns.
-         |
-         |${highlight(loc, s"expected $expected, found $actualArity", fmt)}
-         |
-         |${underline("Explanation:")} Use '${cyan(example)}' so each Java type parameter is bound to a fresh, opaque type.
          |""".stripMargin
     }
   }
@@ -1166,11 +1138,11 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that the base of an `instanceof` rule type is not a Java class.
+    * An error raised to indicate that the type of an `instanceof` rule is not a Java class.
     *
     * @param loc the location of the offending type.
     */
-  case class IllegalInstanceOfBaseType(loc: SourceLocation) extends ResolutionError {
+  case class IllegalInstanceOfType(loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3955
 
     def summary: String = "'instanceof' rule type must be a Java class."

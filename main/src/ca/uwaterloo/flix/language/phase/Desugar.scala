@@ -1418,6 +1418,11 @@ object Desugar {
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }
 
+  private def visitInstanceOfMatchRule(rule0: WeededAst.InstanceOfMatchRule)(implicit flix: Flix): DesugaredAst.InstanceOfMatchRule = rule0 match {
+    case WeededAst.InstanceOfMatchRule(ident, tpe, exp, loc) =>
+      DesugaredAst.InstanceOfMatchRule(ident, visitType(tpe), visitExp(exp), loc)
+  }
+
   /**
     * Desugars a [[WeededAst.Expr.LambdaMatch]] into a lambda with a pattern match on its argument.
     *
@@ -1437,11 +1442,6 @@ object Desugar {
     * @param exp0 the body of the lambda.
     * @param loc0 the location of the entire lambda.
     */
-  private def visitInstanceOfMatchRule(rule0: WeededAst.InstanceOfMatchRule)(implicit flix: Flix): DesugaredAst.InstanceOfMatchRule = rule0 match {
-    case WeededAst.InstanceOfMatchRule(ident, tpe, exp, loc) =>
-      DesugaredAst.InstanceOfMatchRule(ident, tpe.map(visitType), visitExp(exp), loc)
-  }
-
   private def desugarLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
     // The name of the lambda parameter.
     val ident = Name.Ident("matchVar" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)

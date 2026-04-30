@@ -1102,7 +1102,7 @@ object Namer {
   private def visitInstanceOfMatchRule(rule0: DesugaredAst.InstanceOfMatchRule)(implicit scope: RegionScope, sctx: SharedContext, flix: Flix): NamedAst.InstanceOfMatchRule = rule0 match {
     case DesugaredAst.InstanceOfMatchRule(ident, tpe, body, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.InstanceOfRule)
-      val t = tpe.map(visitType)
+      val t = visitType(tpe)
       val b = visitExp(body)
       NamedAst.InstanceOfMatchRule(sym, t, b, loc)
   }

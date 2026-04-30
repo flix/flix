@@ -434,23 +434,27 @@ object Lowering {
       }
 
     case TypedAst.Expr.InstanceOfMatch(exp, rules, tpe, eff, loc) =>
+      // Lowers `e instanceof { case x_1: T_1 => body_1; ...; case x_n: T_n => body_n }`
+      // to a let-bound scrutinee threaded through nested if-then-else branches:
+      //
+      //   let s = lower(e) in
+      //     if InstanceOf(s, T_1.class) then let x_1: T_1 = (s as T_1) in body_1
+      //     else if InstanceOf(s, T_2.class) then let x_2: T_2 = (s as T_2) in body_2
+      //     ...
+      //     else MatchError  // unreachable when Safety has verified exhaustiveness
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       val scrutSym = mkLetSym("instanceOfMatch", loc.asSynthetic)
       def scrutRef(l: SourceLocation): MonoAst.Expr = MonoAst.Expr.Var(scrutSym, e.tpe, l)
-      val (typedRules, defaultRule) = (rules.init, rules.last)
-      val defaultBody = lowerExp(defaultRule.exp)
-      val defaultBranch = MonoAst.Expr.Let(defaultRule.bnd.sym, scrutRef(defaultRule.loc), defaultBody, t, eff, Occur.Unknown, defaultRule.loc)
-      val nested = typedRules.foldRight(defaultBranch: MonoAst.Expr) {
-        case (TypedAst.InstanceOfMatchRule(bnd, Some((clazz, ruleTpe)), body, ruleLoc), acc) =>
+      val fallback: MonoAst.Expr = MonoAst.Expr.ApplyAtomic(AtomicOp.MatchError, Nil, t, eff, loc.asSynthetic)
+      val nested = rules.foldRight(fallback) {
+        case (TypedAst.InstanceOfMatchRule(bnd, clazz, ruleTpe, body, ruleLoc), acc) =>
           val b = lowerExp(body)
           val ruleT = lowerType(ruleTpe)
           val test = MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(scrutRef(ruleLoc)), Type.Bool, Type.Pure, ruleLoc)
           val cast = mkCast(scrutRef(ruleLoc), ruleT, Type.Pure, ruleLoc)
           val taken = MonoAst.Expr.Let(bnd.sym, cast, b, t, eff, Occur.Unknown, ruleLoc)
           MonoAst.Expr.IfThenElse(test, taken, acc, t, eff, ruleLoc)
-        case (TypedAst.InstanceOfMatchRule(_, None, _, ruleLoc), _) =>
-          throw InternalCompilerException("non-final 'instanceof' rule must have a type", ruleLoc)
       }
       MonoAst.Expr.Let(scrutSym, e, nested, t, eff, Occur.Unknown, loc)
 

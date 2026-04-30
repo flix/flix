@@ -1453,19 +1453,13 @@ object Weeder2 {
           val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
-        case (expr, rules) =>
-          // Every rule except the last must have a type; the last must omit its type (catch-all).
-          rules.init.foreach { rule =>
-            if (rule.tpe.isEmpty) sctx.errors.add(IllegalUntypedInstanceOfRule(rule.loc))
-          }
-          if (rules.last.tpe.isDefined) sctx.errors.add(IllegalTypedFinalInstanceOfRule(rules.last.loc))
-          Validation.Success(Expr.InstanceOfMatch(expr, rules, tree.loc))
+        case (expr, rules) => Validation.Success(Expr.InstanceOfMatch(expr, rules, tree.loc))
       }
     }
 
     private def visitInstanceOfMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[InstanceOfMatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InstanceOfMatchRuleFragment)
-      mapN(pickNameIdent(tree), Types.tryPickType(tree), pickExpr(tree)) {
+      mapN(pickNameIdent(tree), Types.pickType(tree), pickExpr(tree)) {
         case (ident, tpe, expr) => InstanceOfMatchRule(ident, tpe, expr, tree.loc)
       }
     }

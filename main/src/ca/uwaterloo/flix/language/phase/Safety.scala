@@ -152,9 +152,10 @@ object Safety {
         visitExp(rule.exp)
       }
 
-    case Expr.InstanceOfMatch(exp, rules, _, _, _) =>
+    case Expr.InstanceOfMatch(exp, rules, _, _, loc) =>
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))
+      checkInstanceOfMatchExhaustive(exp.tpe, rules, loc)
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
@@ -530,6 +531,33 @@ object Safety {
   /** Returns the monomorphic / concrete associated type of `sym0` from trait instance on `tpe0` if it exists. */
   private def tryEraseAssocType(sym0: Symbol.AssocTypeSym, tpe0: Type)(implicit root: Root): Option[Type] = {
     root.eqEnv.getAssocDef(sym0, tpe0).map(_.ret).filter(isMonomorphicType)
+  }
+
+  /**
+    * Checks that an `instanceof` match is exhaustive: at least one rule's class is a
+    * supertype of the scrutinee's static type. If not, raises `NonExhaustiveInstanceOfMatch`.
+    *
+    * If the scrutinee's static type doesn't extract to a Java reference class, raises
+    * `IllegalInstanceOfScrutinee`.
+    */
+  private def checkInstanceOfMatchExhaustive(scrutTpe: Type, rules: List[InstanceOfMatchRule], loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    javaClassOf(scrutTpe) match {
+      case None =>
+        sctx.errors.add(SafetyError.IllegalInstanceOfScrutinee(scrutTpe, loc))
+      case Some(scrutClass) =>
+        val isExhaustive = rules.exists(_.clazz.isAssignableFrom(scrutClass))
+        if (!isExhaustive) sctx.errors.add(SafetyError.NonExhaustiveInstanceOfMatch(scrutClass, loc))
+    }
+  }
+
+  /** Extracts the Java reference class corresponding to `tpe`, if any. */
+  private def javaClassOf(tpe: Type): Option[java.lang.Class[?]] = tpe.baseType match {
+    case Type.Cst(TypeConstructor.Native(c), _) => Some(c)
+    case Type.Cst(TypeConstructor.Str, _) => Some(classOf[java.lang.String])
+    case Type.Cst(TypeConstructor.BigInt, _) => Some(classOf[java.math.BigInteger])
+    case Type.Cst(TypeConstructor.BigDecimal, _) => Some(classOf[java.math.BigDecimal])
+    case Type.Cst(TypeConstructor.Regex, _) => Some(classOf[java.util.regex.Pattern])
+    case _ => None
   }
 
   /** Returns `true` iff all types in `tpe0` are monomorphic (i.e. there are no type variables). */

@@ -226,7 +226,7 @@ object TypedAstOps {
 
     case Expr.InstanceOfMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, InstanceOfMatchRule(bnd, _, body, _)) => acc ++ freeVars(body) - bnd.sym
+        case (acc, InstanceOfMatchRule(bnd, _, _, body, _)) => acc ++ freeVars(body) - bnd.sym
       }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>

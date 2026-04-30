@@ -773,7 +773,7 @@ object Visitor {
   }
 
   private def visitInstanceOfMatchRule(rule: InstanceOfMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val InstanceOfMatchRule(bnd, _, exp, loc) = rule
+    val InstanceOfMatchRule(bnd, _, _, exp, loc) = rule
     if (!a.accept(loc)) {
       return
     }

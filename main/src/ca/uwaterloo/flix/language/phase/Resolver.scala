@@ -1122,10 +1122,11 @@ object Resolver {
       val e = resolveExp(exp, scp0)
       val rs = rules.map {
         case NamedAst.InstanceOfMatchRule(sym, tpe, body, ruleLoc) =>
-          val resolvedTpe = tpe.flatMap(resolveInstanceOfMatchType(_, scp0, ns0))
+          val resolvedTpe = resolveType(tpe, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root)
+          val (clazz, ruleTpe) = checkInstanceOfRuleType(resolvedTpe)
           val scp = scp0 ++ mkVarScp(sym)
           val b = resolveExp(body, scp)
-          ResolvedAst.InstanceOfMatchRule(sym, resolvedTpe, b, ruleLoc)
+          ResolvedAst.InstanceOfMatchRule(sym, clazz, ruleTpe, b, ruleLoc)
       }
       ResolvedAst.Expr.InstanceOfMatch(e, rs, loc)
 
@@ -2723,66 +2724,57 @@ object Resolver {
   }
 
   /**
-    * Looks up the type with the given lowercase name.
-    */
-  /**
-    * Resolves the type of an `instanceof` match rule.
+    * Validates the resolved type of an `instanceof` match rule and extracts the underlying
+    * Java class.
     *
-    * The base type must be an unqualified Java class. Each type argument must be a wildcard `_`
-    * (the JVM erases generics, so we cannot test against specific instantiations). Returns the
-    * resolved Java class together with the bound variable's type, or `None` if validation fails.
+    * The type must be a `Native(c)` constructor applied to zero or more wildcard type
+    * variables (each one introduced by a `_` in the source). On failure, the relevant
+    * error is added to the shared context and `(classOf[Object], Error)` is returned to
+    * keep downstream phases happy.
     */
-  private def resolveInstanceOfMatchType(tpe: NamedAst.Type, scp0: LocalScope, ns0: Name.NName)(implicit scope: RegionScope, sctx: SharedContext, flix: Flix): Option[(java.lang.Class[?], UnkindedType)] = {
-    def extract(tpe: NamedAst.Type, args: List[NamedAst.Type]): (NamedAst.Type, List[NamedAst.Type]) = tpe match {
-      case NamedAst.Type.Apply(t1, t2, _) => extract(t1, t2 :: args)
-      case _ => (tpe, args)
+  private def checkInstanceOfRuleType(tpe: UnkindedType)(implicit sctx: SharedContext): (java.lang.Class[?], UnkindedType) = {
+    def isWildcardVar(t: UnkindedType): Boolean = t match {
+      case UnkindedType.Var(sym, _) => sym.text match {
+        case VarText.SourceText(s) => s.startsWith("_")
+        case _ => false
+      }
+      case _ => false
     }
-    val (base, args) = extract(tpe, Nil)
+
+    /** Returns the Java class corresponding to a base type constructor, if any. */
+    def javaClassOfCst(c: TypeConstructor): Option[java.lang.Class[?]] = c match {
+      case TypeConstructor.Native(cl) => Some(cl)
+      case TypeConstructor.Str => Some(classOf[java.lang.String])
+      case TypeConstructor.BigInt => Some(classOf[java.math.BigInteger])
+      case TypeConstructor.BigDecimal => Some(classOf[java.math.BigDecimal])
+      case TypeConstructor.Regex => Some(classOf[java.util.regex.Pattern])
+      case _ => None
+    }
+
+    val base = tpe.baseType
+    val args = tpe.typeArguments
     base match {
-      case NamedAst.Type.Ambiguous(qname, baseLoc) if qname.isUnqualified =>
-        scp0.get(qname.ident.name) match {
-          case List(Resolution.JavaClass(clazz)) =>
-            val expectedArity = clazz.getTypeParameters.length
-            if (args.length != expectedArity) {
-              sctx.errors.add(ResolutionError.IllegalInstanceOfTypeArity(clazz, expectedArity, args.length, tpe.loc))
-              None
-            } else {
-              val nonWild = args.find {
-                case NamedAst.Type.Var(ident, _) => !ident.isWild
-                case _ => true
-              }
-              nonWild match {
-                case Some(bad) =>
-                  sctx.errors.add(ResolutionError.IllegalInstanceOfTypeArgument(bad.loc))
-                  None
-                case None =>
-                  val vars = args.map {
-                    case NamedAst.Type.Var(ident, varLoc) =>
-                      val s = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)
-                      UnkindedType.Var(s, varLoc)
-                    case _ => throw InternalCompilerException("expected wildcard type variable", tpe.loc)
-                  }
-                  val resolved =
-                    if (vars.isEmpty)
-                      flixifyType(clazz, baseLoc) match {
-                        case UnkindedType.UnappliedNative(c, l) => UnkindedType.Cst(TypeConstructor.Native(c), l)
-                        case other => other
-                      }
-                    else
-                      UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Native(clazz), baseLoc), vars, tpe.loc)
-                  Some((clazz, resolved))
-              }
-            }
-          case _ =>
-            sctx.errors.add(ResolutionError.UndefinedJvmClass(qname.ident, AnchorPosition.mkImportOrUseAnchor(ns0), "", baseLoc))
-            None
+      case UnkindedType.Cst(c, _) if javaClassOfCst(c).isDefined =>
+        val clazz = javaClassOfCst(c).get
+        args.find(t => !isWildcardVar(t)) match {
+          case Some(bad) =>
+            sctx.errors.add(ResolutionError.IllegalInstanceOfTypeArgument(bad.loc))
+            (classOf[Object], UnkindedType.Error(tpe.loc))
+          case None =>
+            (clazz, tpe)
         }
+      case UnkindedType.Error(_) =>
+        // An error has already been reported during resolution.
+        (classOf[Object], tpe)
       case _ =>
-        sctx.errors.add(ResolutionError.IllegalInstanceOfBaseType(tpe.loc))
-        None
+        sctx.errors.add(ResolutionError.IllegalInstanceOfType(tpe.loc))
+        (classOf[Object], UnkindedType.Error(tpe.loc))
     }
   }
 
+  /**
+    * Looks up the type with the given lowercase name.
+    */
   private def lookupLowerType(ident: Name.Ident, wildness: Wildness, scp0: LocalScope)(implicit scope: RegionScope, flix: Flix): Result[LowerType, ResolutionError] = {
     if (ident.isWild) {
       wildness match {

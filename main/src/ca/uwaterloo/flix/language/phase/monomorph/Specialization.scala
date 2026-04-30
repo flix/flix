@@ -670,6 +670,17 @@ object Specialization {
       }
       Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc0)
 
+    case Expr.InstanceOfMatch(exp, rules, tpe, eff, loc0) =>
+      val e = specializeExp(exp, env0, subst)
+      val rs = rules map {
+        case TypedAst.InstanceOfMatchRule(bnd, clazz, ruleTpe, body, loc) =>
+          val freshSym = Symbol.freshVarSym(bnd.sym)
+          val env1 = env0 + (bnd.sym -> freshSym)
+          val b = specializeExp(body, env1, subst)
+          TypedAst.InstanceOfMatchRule(Binder(freshSym, subst(bnd.tpe)), clazz, subst(ruleTpe), b, loc)
+      }
+      Expr.InstanceOfMatch(e, rs, subst(tpe), subst(eff), loc0)
+
     case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules.map {

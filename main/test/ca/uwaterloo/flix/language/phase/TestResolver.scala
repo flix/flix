@@ -1213,32 +1213,32 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalRawJavaType](result)
   }
 
-  test("IllegalInstanceOfTypeArity.Bare") {
+  test("IllegalRawJavaType.InstanceOf.ArrayList") {
     val input =
       """
         |import java.util.ArrayList
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
         |    case _: ArrayList => true
-        |    case _ => false
+        |    case _: Object => false
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalInstanceOfTypeArity](result)
+    expectError[ResolutionError.IllegalRawJavaType](result)
   }
 
-  test("IllegalInstanceOfTypeArity.Map") {
+  test("IllegalRawJavaType.InstanceOf.HashMap") {
     val input =
       """
         |import java.util.HashMap
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
         |    case _: HashMap[_] => true
-        |    case _ => false
+        |    case _: Object => false
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalInstanceOfTypeArity](result)
+    expectError[ResolutionError.IllegalRawJavaType](result)
   }
 
   test("IllegalInstanceOfTypeArgument.Concrete") {
@@ -1248,7 +1248,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
         |    case _: ArrayList[String] => true
-        |    case _ => false
+        |    case _: Object => false
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -1262,24 +1262,24 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
         |    case _: HashMap[_, String] => true
-        |    case _ => false
+        |    case _: Object => false
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalInstanceOfTypeArgument](result)
   }
 
-  test("IllegalInstanceOfBaseType.Tuple") {
+  test("IllegalInstanceOfType.Tuple") {
     val input =
       """
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
         |    case _: (Int32, Int32) => true
-        |    case _ => false
+        |    case _: Object => false
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalInstanceOfBaseType](result)
+    expectError[ResolutionError.IllegalInstanceOfType](result)
   }
 
   test("UndefinedAssocType.01") {
