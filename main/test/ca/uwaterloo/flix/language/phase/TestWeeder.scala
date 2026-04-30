@@ -2023,4 +2023,32 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalConstantPattern](result)
   }
 
+  test("IllegalUntypedInstanceOfRule.01") {
+    val input =
+      """
+        |import java.lang.Object
+        |import java.lang.{String => JString}
+        |def f(o: Object): String = o instanceof {
+        |    case x => "wild-first"
+        |    case _: JString => "string"
+        |    case _ => "other"
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUntypedInstanceOfRule](result)
+  }
+
+  test("IllegalTypedFinalInstanceOfRule.01") {
+    val input =
+      """
+        |import java.lang.Object
+        |import java.lang.{String => JString}
+        |def f(o: Object): String = o instanceof {
+        |    case _: JString => "string"
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalTypedFinalInstanceOfRule](result)
+  }
+
 }

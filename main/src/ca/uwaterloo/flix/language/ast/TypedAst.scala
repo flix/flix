@@ -151,6 +151,8 @@ object TypedAst {
 
     case class Match(exp: Expr, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class InstanceOfMatch(exp: Expr, rules: List[InstanceOfMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -408,6 +410,8 @@ object TypedAst {
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
   case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
+
+  case class InstanceOfMatchRule(bnd: Binder, tpe: Option[(java.lang.Class[?], Type)], exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 

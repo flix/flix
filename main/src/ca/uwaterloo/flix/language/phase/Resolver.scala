@@ -1118,6 +1118,17 @@ object Resolver {
           ResolvedAst.Expr.Error(error)
       }
 
+    case NamedAst.Expr.InstanceOfMatch(exp, rules, loc) =>
+      val e = resolveExp(exp, scp0)
+      val rs = rules.map {
+        case NamedAst.InstanceOfMatchRule(sym, tpe, body, ruleLoc) =>
+          val resolvedTpe = tpe.flatMap(resolveInstanceOfMatchType(_, scp0, ns0))
+          val scp = scp0 ++ mkVarScp(sym)
+          val b = resolveExp(body, scp)
+          ResolvedAst.InstanceOfMatchRule(sym, resolvedTpe, b, ruleLoc)
+      }
+      ResolvedAst.Expr.InstanceOfMatch(e, rs, loc)
+
     case NamedAst.Expr.CheckedCast(c, exp, loc) =>
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.CheckedCast(c, e, loc)
@@ -2714,6 +2725,64 @@ object Resolver {
   /**
     * Looks up the type with the given lowercase name.
     */
+  /**
+    * Resolves the type of an `instanceof` match rule.
+    *
+    * The base type must be an unqualified Java class. Each type argument must be a wildcard `_`
+    * (the JVM erases generics, so we cannot test against specific instantiations). Returns the
+    * resolved Java class together with the bound variable's type, or `None` if validation fails.
+    */
+  private def resolveInstanceOfMatchType(tpe: NamedAst.Type, scp0: LocalScope, ns0: Name.NName)(implicit scope: RegionScope, sctx: SharedContext, flix: Flix): Option[(java.lang.Class[?], UnkindedType)] = {
+    def extract(tpe: NamedAst.Type, args: List[NamedAst.Type]): (NamedAst.Type, List[NamedAst.Type]) = tpe match {
+      case NamedAst.Type.Apply(t1, t2, _) => extract(t1, t2 :: args)
+      case _ => (tpe, args)
+    }
+    val (base, args) = extract(tpe, Nil)
+    base match {
+      case NamedAst.Type.Ambiguous(qname, baseLoc) if qname.isUnqualified =>
+        scp0.get(qname.ident.name) match {
+          case List(Resolution.JavaClass(clazz)) =>
+            val expectedArity = clazz.getTypeParameters.length
+            if (args.length != expectedArity) {
+              sctx.errors.add(ResolutionError.IllegalInstanceOfTypeArity(clazz, expectedArity, args.length, tpe.loc))
+              None
+            } else {
+              val nonWild = args.find {
+                case NamedAst.Type.Var(ident, _) => !ident.isWild
+                case _ => true
+              }
+              nonWild match {
+                case Some(bad) =>
+                  sctx.errors.add(ResolutionError.IllegalInstanceOfTypeArgument(bad.loc))
+                  None
+                case None =>
+                  val vars = args.map {
+                    case NamedAst.Type.Var(ident, varLoc) =>
+                      val s = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)
+                      UnkindedType.Var(s, varLoc)
+                    case _ => throw InternalCompilerException("expected wildcard type variable", tpe.loc)
+                  }
+                  val resolved =
+                    if (vars.isEmpty)
+                      flixifyType(clazz, baseLoc) match {
+                        case UnkindedType.UnappliedNative(c, l) => UnkindedType.Cst(TypeConstructor.Native(c), l)
+                        case other => other
+                      }
+                    else
+                      UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Native(clazz), baseLoc), vars, tpe.loc)
+                  Some((clazz, resolved))
+              }
+            }
+          case _ =>
+            sctx.errors.add(ResolutionError.UndefinedJvmClass(qname.ident, AnchorPosition.mkImportOrUseAnchor(ns0), "", baseLoc))
+            None
+        }
+      case _ =>
+        sctx.errors.add(ResolutionError.IllegalInstanceOfBaseType(tpe.loc))
+        None
+    }
+  }
+
   private def lookupLowerType(ident: Name.Ident, wildness: Wildness, scp0: LocalScope)(implicit scope: RegionScope, flix: Flix): Result[LowerType, ResolutionError] = {
     if (ident.isWild) {
       wildness match {

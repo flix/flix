@@ -808,6 +808,11 @@ object Namer {
       val rs = rules.map(visitMatchRule(_))
       NamedAst.Expr.Match(e, rs, loc)
 
+    case DesugaredAst.Expr.InstanceOfMatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitInstanceOfMatchRule)
+      NamedAst.Expr.InstanceOfMatch(e, rs, loc)
+
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
@@ -1089,6 +1094,17 @@ object Namer {
       val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
       val b = visitExp(body)
       NamedAst.CatchRule(sym, className, b, loc)
+  }
+
+  /**
+    * Performs naming on the given instanceof match rule `rule0`.
+    */
+  private def visitInstanceOfMatchRule(rule0: DesugaredAst.InstanceOfMatchRule)(implicit scope: RegionScope, sctx: SharedContext, flix: Flix): NamedAst.InstanceOfMatchRule = rule0 match {
+    case DesugaredAst.InstanceOfMatchRule(ident, tpe, body, loc) =>
+      val sym = Symbol.freshVarSym(ident, BoundBy.InstanceOfRule)
+      val t = tpe.map(visitType)
+      val b = visitExp(body)
+      NamedAst.InstanceOfMatchRule(sym, t, b, loc)
   }
 
   /**

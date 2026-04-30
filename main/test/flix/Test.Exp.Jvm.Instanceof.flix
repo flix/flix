@@ -221,7 +221,7 @@ mod Test.Exp.Jvm.Instanceof {
     def testInstanceofBind03(): Unit \ Assert = {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
         let s = o instanceof {
-            case e: Enum => e.name()
+            case e: Enum[_] => e.name()
             case _ => "other"
         };
         Assert.assertEq(expected = "DELETE_ON_CLOSE", s)
@@ -238,37 +238,37 @@ mod Test.Exp.Jvm.Instanceof {
         Assert.assertEq(expected = 5, n)
     }
 
-    // Parametric Java type: matching against the raw class ArrayList.
+    // Parametric Java type: matching against ArrayList with a wildcard type argument.
     @Test
     def testInstanceofParametric01(): Unit \ {Assert, IO} = {
         let l: ArrayList[String] = new ArrayList();
         let o: Object = checked_cast(l);
         let result = o instanceof {
-            case _: ArrayList => true
+            case _: ArrayList[_] => true
             case _ => false
         };
         assertTrue(result)
     }
 
-    // Parametric Java type: matching against the raw class HashMap.
+    // Parametric Java type: matching against HashMap with wildcard type arguments.
     @Test
     def testInstanceofParametric02(): Unit \ {Assert, IO} = {
         let m: HashMap[String, Int32] = new HashMap();
         let o: Object = checked_cast(m);
         let result = o instanceof {
-            case _: HashMap => true
+            case _: HashMap[_, _] => true
             case _ => false
         };
         assertTrue(result)
     }
 
-    // Parametric Java type: matching against the raw class Optional.
+    // Parametric Java type: matching against Optional with a wildcard type argument.
     @Test
     def testInstanceofParametric03(): Unit \ {Assert, IO} = {
         let opt: Optional[String] = Optional.of("hi");
         let o: Object = checked_cast(opt);
         let result = o instanceof {
-            case _: Optional => true
+            case _: Optional[_] => true
             case _ => false
         };
         assertTrue(result)
@@ -280,10 +280,23 @@ mod Test.Exp.Jvm.Instanceof {
         let m: HashMap[String, Int32] = new HashMap();
         let o: Object = checked_cast(m);
         let tag = o instanceof {
-            case _: ArrayList => "list"
-            case _: HashMap => "map"
+            case _: ArrayList[_] => "list"
+            case _: HashMap[_, _] => "map"
             case _ => "other"
         };
         Assert.assertEq(expected = "map", tag)
+    }
+
+    // Wildcard type vars are rigid: a parametric ArrayList can be bound and queried,
+    // but its element type is opaque (e.g. size() works; add(specificString) does not).
+    @Test
+    def testInstanceofParametric05(): Unit \ {Assert, IO} = {
+        let l: ArrayList[String] = new ArrayList();
+        let o: Object = checked_cast(l);
+        let n = o instanceof {
+            case xs: ArrayList[_] => xs.size()
+            case _ => -1
+        };
+        Assert.assertEq(expected = 0, n)
     }
 }

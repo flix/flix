@@ -66,6 +66,7 @@ object ResolvedAstPrinter {
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {
       case ResolvedAst.MatchRule(pat, guard, body, _) => (printPattern(pat), guard.map(print), print(body))
     })
+    case Expr.InstanceOfMatch(_, _, _) => DocAst.Expr.Unknown
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.ExtMatch(exp, rules, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
     case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))

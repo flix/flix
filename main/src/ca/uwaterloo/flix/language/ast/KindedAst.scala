@@ -115,6 +115,8 @@ object KindedAst {
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
+    case class InstanceOfMatch(exp: Expr, rules: List[InstanceOfMatchRule], tvar: Type.Var, loc: SourceLocation) extends Expr
+
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
@@ -348,6 +350,8 @@ object KindedAst {
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
+
+  case class InstanceOfMatchRule(sym: Symbol.VarSym, tpe: Option[(java.lang.Class[?], Type)], exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr, tvar: Type.Var, loc: SourceLocation)
 

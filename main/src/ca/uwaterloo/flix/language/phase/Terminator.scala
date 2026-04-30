@@ -407,6 +407,14 @@ object Terminator {
           val rs = rules0.map(visitMatchRule(contexts, exp1, _, pos))
           Expr.Match(e, rs, tpe, eff, loc)
 
+        case Expr.InstanceOfMatch(exp1, rules0, tpe, eff, loc) =>
+          val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
+          val rs = rules0.map {
+            case InstanceOfMatchRule(bnd, ruleTpe, body, ruleLoc) =>
+              InstanceOfMatchRule(bnd, ruleTpe, visitExp(contexts, body, pos), ruleLoc)
+          }
+          Expr.InstanceOfMatch(e, rs, tpe, eff, loc)
+
         // --- Let: propagate alias in all contexts ---
         case Expr.Let(bnd, exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)

@@ -1453,23 +1453,20 @@ object Weeder2 {
           val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
-        case (expr, rules) => Validation.Success(Expr.InstanceOfMatch(expr, rules, tree.loc))
+        case (expr, rules) =>
+          // Every rule except the last must have a type; the last must omit its type (catch-all).
+          rules.init.foreach { rule =>
+            if (rule.tpe.isEmpty) sctx.errors.add(IllegalUntypedInstanceOfRule(rule.loc))
+          }
+          if (rules.last.tpe.isDefined) sctx.errors.add(IllegalTypedFinalInstanceOfRule(rules.last.loc))
+          Validation.Success(Expr.InstanceOfMatch(expr, rules, tree.loc))
       }
     }
 
     private def visitInstanceOfMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[InstanceOfMatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InstanceOfMatchRuleFragment)
-      val maybeQName = tryPickQName(tree)
-      mapN(pickNameIdent(tree), pickExpr(tree)) {
-        case (ident, expr) =>
-          maybeQName match {
-            case Some(qname) if qname.isUnqualified => InstanceOfMatchRule(ident, Some(qname.ident), expr, tree.loc)
-            case Some(qname) =>
-              val error = IllegalQualifiedName(qname.loc)
-              sctx.errors.add(error)
-              InstanceOfMatchRule(ident, Some(qname.ident), expr, tree.loc)
-            case None => InstanceOfMatchRule(ident, None, expr, tree.loc)
-          }
+      mapN(pickNameIdent(tree), Types.tryPickType(tree), pickExpr(tree)) {
+        case (ident, tpe, expr) => InstanceOfMatchRule(ident, tpe, expr, tree.loc)
       }
     }
 

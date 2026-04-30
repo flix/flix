@@ -2355,7 +2355,7 @@ object Parser2 {
       expect(TokenKind.KeywordCase)
       nameUnqualified(NAME_VARIABLE)
       if (eat(TokenKind.Colon)) {
-        nameAllowQualified(NAME_JAVA, tail = Set())
+        Type.ttype()
       }
       if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))

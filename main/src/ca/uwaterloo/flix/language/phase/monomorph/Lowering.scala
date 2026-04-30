@@ -433,6 +433,27 @@ object Lowering {
         MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
       }
 
+    case TypedAst.Expr.InstanceOfMatch(exp, rules, tpe, eff, loc) =>
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      val scrutSym = mkLetSym("instanceOfMatch", loc.asSynthetic)
+      def scrutRef(l: SourceLocation): MonoAst.Expr = MonoAst.Expr.Var(scrutSym, e.tpe, l)
+      val (typedRules, defaultRule) = (rules.init, rules.last)
+      val defaultBody = lowerExp(defaultRule.exp)
+      val defaultBranch = MonoAst.Expr.Let(defaultRule.bnd.sym, scrutRef(defaultRule.loc), defaultBody, t, eff, Occur.Unknown, defaultRule.loc)
+      val nested = typedRules.foldRight(defaultBranch: MonoAst.Expr) {
+        case (TypedAst.InstanceOfMatchRule(bnd, Some((clazz, ruleTpe)), body, ruleLoc), acc) =>
+          val b = lowerExp(body)
+          val ruleT = lowerType(ruleTpe)
+          val test = MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(scrutRef(ruleLoc)), Type.Bool, Type.Pure, ruleLoc)
+          val cast = mkCast(scrutRef(ruleLoc), ruleT, Type.Pure, ruleLoc)
+          val taken = MonoAst.Expr.Let(bnd.sym, cast, b, t, eff, Occur.Unknown, ruleLoc)
+          MonoAst.Expr.IfThenElse(test, taken, acc, t, eff, ruleLoc)
+        case (TypedAst.InstanceOfMatchRule(_, None, _, ruleLoc), _) =>
+          throw InternalCompilerException("non-final 'instanceof' rule must have a type", ruleLoc)
+      }
+      MonoAst.Expr.Let(scrutSym, e, nested, t, eff, Occur.Unknown, loc)
+
     case TypedAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
       // Note: We do *NOT* erase checked (i.e. safe) casts.
       // In Java, `String` is a subtype of `Object`, but the Flix IR makes this upcast _explicit_.
