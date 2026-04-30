@@ -526,7 +526,8 @@ object PrettyPrinter {
     headerJoin: Array[SyntaxTree.Child] => Doc = defaultHeaderJoin,
     formatBody: Array[SyntaxTree.Child] => Doc = cs => joinWithGap(filterEmpty(cs)),
     formatTail: Array[SyntaxTree.Child] => Doc = cs => if (cs.isEmpty) empty else joinWithGap(cs),
-    fallback: Tree => Doc = prettyFallback
+    fallback: Tree => Doc = prettyFallback,
+    flatPad: Doc = empty
   ): Doc = splitAtBracket(children) match {
     case None        => fallback(tree)
     case Some(split) =>
@@ -552,7 +553,8 @@ object PrettyPrinter {
       }
       renderBracket(tree, split, headerJoin,
         bodyDoc = formatBody(split.body),
-        tailDoc = tailDoc)
+        tailDoc = tailDoc,
+        flatPad = flatPad)
   }
 
   /**
@@ -751,7 +753,7 @@ object PrettyPrinter {
       TokenKind.Backslash -> (space <> text("\\") <> space))
 
   private def prettyUnsafe(tree: Tree): Doc =
-    prettyBracket(tree, filterEmpty(tree.children))
+    prettyBracket(tree, filterEmpty(tree.children), flatPad = space)
 
   private def prettyTypeConcat(tree: Tree): Doc =
     filterEmpty(tree.children).map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
