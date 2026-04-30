@@ -921,9 +921,25 @@ object PrettyPrinter {
     * @param tree the module declaration tree
     * @return the formatted module declaration as Doc
     */
-  private def prettyModule(tree: Tree): Doc =
+  private def prettyModule(tree: Tree): Doc = {
+    val openToken = filterEmpty(tree.children).collectFirst {
+      case t: Token if t.kind == TokenKind.CurlyL => t
+    }
     prettyDeclBracket(tree,
-      formatBody = cs => joinWithPreservedBlanks(filterEmpty(cs), hardline))
+      formatBody = cs => {
+        val filtered = filterEmpty(cs)
+        if (filtered.isEmpty) empty
+        else {
+          val hasLeadingBlank = openToken.flatMap(open =>
+            filtered.headOption.flatMap(leftMostToken).map(first =>
+              first.start.lineOneIndexed - open.end.lineOneIndexed > 1
+            )
+          ).getOrElse(false)
+          val base = joinWithPreservedBlanks(filtered, hardline)
+          if (hasLeadingBlank) hardline <> base else base
+        }
+      })
+  }
 
   /**
     * Joins children separated by [[base]], upgrading to a blank line when
