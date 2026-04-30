@@ -1099,7 +1099,7 @@ object ResolutionError {
     def code: ErrorCode = ErrorCode.E3692
 
     private val expected = Grammar.n_things(expectedArity, "type argument")
-    private val example = s"${clazz.getSimpleName}[${List.fill(expectedArity)("_").mkString(", ")}]"
+    private val example = s"${clazz.getSimpleName}[${List.fill(expectedArity)("t").mkString(", ")}]"
 
     def summary: String =
       s"Missing type arguments: '${clazz.getSimpleName}' expects $expected."

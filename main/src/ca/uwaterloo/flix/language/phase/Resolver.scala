@@ -1123,10 +1123,10 @@ object Resolver {
       val rs = rules.map {
         case NamedAst.InstanceOfMatchRule(sym, tpe, body, ruleLoc) =>
           val resolvedTpe = resolveType(tpe, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root)
-          val (clazz, ruleTpe) = checkInstanceOfRuleType(resolvedTpe)
+          checkInstanceOfRuleType(resolvedTpe)
           val scp = scp0 ++ mkVarScp(sym)
           val b = resolveExp(body, scp)
-          ResolvedAst.InstanceOfMatchRule(sym, clazz, ruleTpe, b, ruleLoc)
+          ResolvedAst.InstanceOfMatchRule(sym, resolvedTpe, b, ruleLoc)
       }
       ResolvedAst.Expr.InstanceOfMatch(e, rs, loc)
 
@@ -2724,51 +2724,28 @@ object Resolver {
   }
 
   /**
-    * Validates the resolved type of an `instanceof` match rule and extracts the underlying
-    * Java class.
-    *
-    * The type must be a `Native(c)` constructor applied to zero or more wildcard type
-    * variables (each one introduced by a `_` in the source). On failure, the relevant
-    * error is added to the shared context and `(classOf[Object], Error)` is returned to
-    * keep downstream phases happy.
+    * Validates that the type of an `instanceof` match rule is well-formed: a Java reference
+    * type constructor applied to zero or more wildcard type variables. Reports any
+    * violations via the shared context but always returns the type unchanged so downstream
+    * phases see consistent shapes.
     */
-  private def checkInstanceOfRuleType(tpe: UnkindedType)(implicit sctx: SharedContext): (java.lang.Class[?], UnkindedType) = {
+  private def checkInstanceOfRuleType(tpe: UnkindedType)(implicit sctx: SharedContext): Unit = {
     def isWildcardVar(t: UnkindedType): Boolean = t match {
-      case UnkindedType.Var(sym, _) => sym.text match {
-        case VarText.SourceText(s) => s.startsWith("_")
-        case _ => false
-      }
+      case UnkindedType.Var(sym, _) => sym.isWild
       case _ => false
     }
-
-    /** Returns the Java class corresponding to a base type constructor, if any. */
-    def javaClassOfCst(c: TypeConstructor): Option[java.lang.Class[?]] = c match {
-      case TypeConstructor.Native(cl) => Some(cl)
-      case TypeConstructor.Str => Some(classOf[java.lang.String])
-      case TypeConstructor.BigInt => Some(classOf[java.math.BigInteger])
-      case TypeConstructor.BigDecimal => Some(classOf[java.math.BigDecimal])
-      case TypeConstructor.Regex => Some(classOf[java.util.regex.Pattern])
-      case _ => None
-    }
-
     val base = tpe.baseType
     val args = tpe.typeArguments
     base match {
-      case UnkindedType.Cst(c, _) if javaClassOfCst(c).isDefined =>
-        val clazz = javaClassOfCst(c).get
-        args.find(t => !isWildcardVar(t)) match {
-          case Some(bad) =>
-            sctx.errors.add(ResolutionError.IllegalInstanceOfTypeArgument(bad.loc))
-            (classOf[Object], UnkindedType.Error(tpe.loc))
-          case None =>
-            (clazz, tpe)
+      case UnkindedType.Cst(_, _) =>
+        args.foreach { arg =>
+          if (!isWildcardVar(arg)) sctx.errors.add(ResolutionError.IllegalInstanceOfTypeArgument(arg.loc))
         }
       case UnkindedType.Error(_) =>
         // An error has already been reported during resolution.
-        (classOf[Object], tpe)
+        ()
       case _ =>
         sctx.errors.add(ResolutionError.IllegalInstanceOfType(tpe.loc))
-        (classOf[Object], UnkindedType.Error(tpe.loc))
     }
   }
 

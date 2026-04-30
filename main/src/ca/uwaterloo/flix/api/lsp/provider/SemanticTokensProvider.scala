@@ -482,7 +482,9 @@ object SemanticTokensProvider {
     case Expr.InstanceOfMatch(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, InstanceOfMatchRule(_, _, _, exp, _)) => acc ++ visitExp(exp)
+        case (acc, InstanceOfMatchRule(bnd, tpe, exp, _)) =>
+          val t = SemanticToken(SemanticTokenType.Variable, Nil, bnd.sym.loc)
+          acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
     case Expr.RestrictableChoose(_, exp1, rules, _, _, _) =>

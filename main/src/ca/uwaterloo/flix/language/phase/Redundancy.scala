@@ -537,7 +537,7 @@ object Redundancy {
     case Expr.InstanceOfMatch(exp, rules, _, _, _) =>
       val usedScrut = visitExp(exp, env0, rc)
       val usedRules = rules.map {
-        case InstanceOfMatchRule(bnd, _, _, body, _) =>
+        case InstanceOfMatchRule(bnd, _, body, _) =>
           val extendedEnv = env0 + bnd.sym
           val usedBody = visitExp(body, extendedEnv, rc)
           val unusedVarSym = findUnusedVarSyms(Set(bnd.sym), usedBody)

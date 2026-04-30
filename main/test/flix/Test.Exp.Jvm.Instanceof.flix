@@ -1,7 +1,5 @@
 mod Test.Exp.Jvm.Instanceof {
 
-    use Assert.{assertTrue, assertFalse}
-
     import java.lang.CharSequence
     import java.lang.Enum
     import java.lang.Long
@@ -19,107 +17,107 @@ mod Test.Exp.Jvm.Instanceof {
     @Test
     def testInstanceof01(): Unit \ Assert = {
         let o: Object = checked_cast("Hello World");
-        assertTrue(o instanceof {
-            case _: JString => true
-            case _: Object => false
-        })
+        o instanceof {
+            case _: JString => ()
+            case _: Object  => Assert.fail("expected JString")
+        }
     }
 
     @Test
     def testInstanceof02(): Unit \ Assert = {
         let o: Object = checked_cast("Hello World");
-        assertTrue(o instanceof {
-            case _: CharSequence => true
-            case _: Object => false
-        })
+        o instanceof {
+            case _: CharSequence => ()
+            case _: Object       => Assert.fail("expected CharSequence")
+        }
     }
 
     @Test
     def testInstanceof03(): Unit \ Assert = {
         let o: Object = checked_cast("Hello World");
-        assertTrue(o instanceof {
-            case _: Object => true
-        })
+        o instanceof {
+            case _: Object => ()
+        }
     }
 
     @Test
     def testInstanceof04(): Unit \ Assert = {
         let o: Object = checked_cast(100ii);
-        assertTrue(o instanceof {
-            case _: BigInteger => true
-            case _: Object => false
-        })
+        o instanceof {
+            case _: BigInteger => ()
+            case _: Object     => Assert.fail("expected BigInteger")
+        }
     }
 
     @Test
     def testInstanceof05(): Unit \ Assert = {
         let o: Object = checked_cast(100ii);
-        assertTrue(o instanceof {
-            case _: Number => true
-            case _: Object => false
-        })
+        o instanceof {
+            case _: Number => ()
+            case _: Object => Assert.fail("expected Number")
+        }
     }
 
     @Test
     def testInstanceof06(): Unit \ Assert = {
         let o: Object = checked_cast(100ii);
-        assertTrue(o instanceof {
-            case _: Object => true
-        })
+        o instanceof {
+            case _: Object => ()
+        }
     }
 
     @Test
     def testInstanceof07(): Unit \ Assert = {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
-        assertTrue(o instanceof {
-            case _: StandardOpenOption => true
-            case _: Object => false
-        })
+        o instanceof {
+            case _: StandardOpenOption => ()
+            case _: Object             => Assert.fail("expected StandardOpenOption")
+        }
     }
 
     @Test
     def testInstanceof08(): Unit \ Assert = {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
-        assertTrue(o instanceof {
-            case _: OpenOption => true
-            case _: Object => false
-        })
+        o instanceof {
+            case _: OpenOption => ()
+            case _: Object     => Assert.fail("expected OpenOption")
+        }
     }
 
     @Test
     def testInstanceof10(): Unit \ Assert = {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
-        assertTrue(o instanceof {
-            case _: Object => true
-        })
+        o instanceof {
+            case _: Object => ()
+        }
     }
 
     @Test
     def testInstanceof11(): Unit \ Assert = {
         let o: Object = checked_cast(100ii);
-        assertFalse(o instanceof {
-            case _: Long => true
-            case _: Object => false
-        })
+        o instanceof {
+            case _: Long   => Assert.fail("did not expect Long")
+            case _: Object => ()
+        }
     }
 
     @Test
     def testInstanceof12(): Unit \ Assert = {
         let o: Object = checked_cast("Hello World");
-        assertFalse(o instanceof {
-            case _: StringBuilder => true
-            case _: Object => false
-        })
+        o instanceof {
+            case _: StringBuilder => Assert.fail("did not expect StringBuilder")
+            case _: Object        => ()
+        }
     }
 
     @Test
     def testInstanceof13(): Unit \ Assert + IO = {
         let arr = Array#{"hi"} @ Static;
         let o: Object = checked_cast(Array.get(0, arr));
-        assertTrue(o instanceof {
-            case _: JString => true
-            case _: Object => false
-        })
+        o instanceof {
+            case _: JString => ()
+            case _: Object  => Assert.fail("expected JString")
+        }
     }
 
     // instanceof binds the scrutinee as the typed class and lets us use it.
@@ -128,7 +126,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast("Hello");
         let len = o instanceof {
             case s: JString => String.length(s)
-            case _: Object => -1
+            case _: Object  => -1
         };
         Assert.assertEq(expected = 5, len)
     }
@@ -137,9 +135,9 @@ mod Test.Exp.Jvm.Instanceof {
     def testInstanceof15(): Unit \ Assert = {
         let o: Object = checked_cast(100ii);
         let tag = o instanceof {
-            case _: JString => "string"
+            case _: JString    => "string"
             case _: BigInteger => "bigint"
-            case _: Object => "other"
+            case _: Object     => "other"
         };
         Assert.assertEq(expected = "bigint", tag)
     }
@@ -149,10 +147,10 @@ mod Test.Exp.Jvm.Instanceof {
     def testInstanceof16(): Unit \ Assert = {
         let o: Object = checked_cast(100ii);
         let tag = o instanceof {
-            case _: JString => "string"
+            case _: JString    => "string"
             case _: BigInteger => "bigint"
-            case _: Number => "number"
-            case _: Object => "other"
+            case _: Number     => "number"
+            case _: Object     => "other"
         };
         Assert.assertEq(expected = "bigint", tag)
     }
@@ -162,9 +160,9 @@ mod Test.Exp.Jvm.Instanceof {
     def testInstanceof17(): Unit \ Assert = {
         let o: Object = checked_cast(100ii);
         let tag = o instanceof {
-            case _: Number => "number"
+            case _: Number     => "number"
             case _: BigInteger => "bigint"
-            case _: Object => "other"
+            case _: Object     => "other"
         };
         Assert.assertEq(expected = "number", tag)
     }
@@ -175,12 +173,8 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
         let tag = o instanceof {
             case _: JString => "string"
-            case _: Number => "number"
-            case x: Object =>
-                let isObj = x instanceof {
-                    case _: Object => true
-                };
-                if (isObj) "other-object" else "impossible"
+            case _: Number  => "number"
+            case _: Object  => "other-object"
         };
         Assert.assertEq(expected = "other-object", tag)
     }
@@ -190,9 +184,9 @@ mod Test.Exp.Jvm.Instanceof {
     def testInstanceof19(): Unit \ Assert = {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
         let tag = o instanceof {
-            case _: JString => "string"
+            case _: JString            => "string"
             case _: StandardOpenOption => "open-option"
-            case _: Object => "other"
+            case _: Object             => "other"
         };
         Assert.assertEq(expected = "open-option", tag)
     }
@@ -202,9 +196,9 @@ mod Test.Exp.Jvm.Instanceof {
     def testInstanceof20(): Unit \ Assert = {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
         let tag = o instanceof {
-            case _: JString => "string"
+            case _: JString    => "string"
             case _: OpenOption => "open-option-iface"
-            case _: Object => "other"
+            case _: Object     => "other"
         };
         Assert.assertEq(expected = "open-option-iface", tag)
     }
@@ -215,7 +209,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(100ii);
         let s = o instanceof {
             case b: BigInteger => b.toString()
-            case _: Object => "other"
+            case _: Object     => "other"
         };
         Assert.assertEq(expected = "100", s)
     }
@@ -237,7 +231,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
         let s = o instanceof {
             case e: Enum[_] => e.name()
-            case _: Object => "other"
+            case _: Object  => "other"
         };
         Assert.assertEq(expected = "DELETE_ON_CLOSE", s)
     }
@@ -248,7 +242,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast("hello");
         let n = o instanceof {
             case s: JString => String.length(s)
-            case _: Object => -1
+            case _: Object  => -1
         };
         Assert.assertEq(expected = 5, n)
     }
@@ -258,11 +252,10 @@ mod Test.Exp.Jvm.Instanceof {
     def testInstanceofParametric01(): Unit \ {Assert, IO} = {
         let l: ArrayList[String] = new ArrayList();
         let o: Object = checked_cast(l);
-        let result = o instanceof {
-            case _: ArrayList[_] => true
-            case _: Object => false
-        };
-        assertTrue(result)
+        o instanceof {
+            case _: ArrayList[_] => ()
+            case _: Object       => Assert.fail("expected ArrayList")
+        }
     }
 
     // Parametric Java type: matching against HashMap with wildcard type arguments.
@@ -270,11 +263,10 @@ mod Test.Exp.Jvm.Instanceof {
     def testInstanceofParametric02(): Unit \ {Assert, IO} = {
         let m: HashMap[String, Int32] = new HashMap();
         let o: Object = checked_cast(m);
-        let result = o instanceof {
-            case _: HashMap[_, _] => true
-            case _: Object => false
-        };
-        assertTrue(result)
+        o instanceof {
+            case _: HashMap[_, _] => ()
+            case _: Object        => Assert.fail("expected HashMap")
+        }
     }
 
     // Parametric Java type: matching against Optional with a wildcard type argument.
@@ -282,11 +274,10 @@ mod Test.Exp.Jvm.Instanceof {
     def testInstanceofParametric03(): Unit \ {Assert, IO} = {
         let opt: Optional[String] = Optional.of("hi");
         let o: Object = checked_cast(opt);
-        let result = o instanceof {
-            case _: Optional[_] => true
-            case _: Object => false
-        };
-        assertTrue(result)
+        o instanceof {
+            case _: Optional[_] => ()
+            case _: Object      => Assert.fail("expected Optional")
+        }
     }
 
     // Parametric Java type: dispatch between ArrayList and HashMap on a value of static type Object.
@@ -295,9 +286,9 @@ mod Test.Exp.Jvm.Instanceof {
         let m: HashMap[String, Int32] = new HashMap();
         let o: Object = checked_cast(m);
         let tag = o instanceof {
-            case _: ArrayList[_] => "list"
+            case _: ArrayList[_]  => "list"
             case _: HashMap[_, _] => "map"
-            case _: Object => "other"
+            case _: Object        => "other"
         };
         Assert.assertEq(expected = "map", tag)
     }
@@ -310,7 +301,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(l);
         let n = o instanceof {
             case xs: ArrayList[_] => xs.size()
-            case _: Object => -1
+            case _: Object        => -1
         };
         Assert.assertEq(expected = 0, n)
     }

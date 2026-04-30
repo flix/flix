@@ -256,28 +256,6 @@ object SafetyError {
     }
   }
 
-  /**
-    * An error raised to indicate that the scrutinee of an `instanceof` match is not a
-    * Java reference type.
-    *
-    * @param scrutTpe the static type of the offending scrutinee.
-    * @param loc      the location of the `instanceof` match.
-    */
-  case class IllegalInstanceOfScrutinee(scrutTpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
-    def code: ErrorCode = ErrorCode.E4100
-
-    def summary: String = s"Unexpected 'instanceof' scrutinee: '${FormatType.formatType(scrutTpe)}' is not a Java reference type."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Unexpected '${red("instanceof")}' scrutinee: '${red(FormatType.formatType(scrutTpe))}' is not a Java reference type.
-         |
-         |${highlight(loc, "unexpected scrutinee", fmt)}
-         |
-         |${underline("Explanation:")} 'instanceof' tests are only valid on Java reference types.
-         |""".stripMargin
-    }
-  }
 
   /**
     * An error raised to indicate that the object in a `throw` expression is not a Throwable.

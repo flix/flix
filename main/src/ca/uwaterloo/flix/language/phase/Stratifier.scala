@@ -189,8 +189,8 @@ object Stratifier {
     case Expr.InstanceOfMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
-        case InstanceOfMatchRule(bnd, clazz, ruleTpe, body, ruleLoc) =>
-          InstanceOfMatchRule(bnd, clazz, ruleTpe, visitExp(body), ruleLoc)
+        case InstanceOfMatchRule(bnd, ruleTpe, body, ruleLoc) =>
+          InstanceOfMatchRule(bnd, ruleTpe, visitExp(body), ruleLoc)
       }
       Expr.InstanceOfMatch(e, rs, tpe, eff, loc)
 

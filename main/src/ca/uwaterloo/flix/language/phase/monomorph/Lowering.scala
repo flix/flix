@@ -442,19 +442,30 @@ object Lowering {
       //     else if InstanceOf(s, T_2.class) then let x_2: T_2 = (s as T_2) in body_2
       //     ...
       //     else MatchError  // unreachable when Safety has verified exhaustiveness
+      //
+      // If the scrutinee's static type is not a Java reference type, all instanceof
+      // checks are statically false; we collapse to just the catch-all (the last rule).
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       val scrutSym = mkLetSym("instanceOfMatch", loc.asSynthetic)
       def scrutRef(l: SourceLocation): MonoAst.Expr = MonoAst.Expr.Var(scrutSym, e.tpe, l)
+      val effectiveRules = if (javaClassOfTpe(e.tpe).isDefined) rules else List(rules.last)
       val fallback: MonoAst.Expr = MonoAst.Expr.ApplyAtomic(AtomicOp.MatchError, Nil, t, eff, loc.asSynthetic)
-      val nested = rules.foldRight(fallback) {
-        case (TypedAst.InstanceOfMatchRule(bnd, clazz, ruleTpe, body, ruleLoc), acc) =>
+      val nested = effectiveRules.foldRight(fallback) {
+        case (TypedAst.InstanceOfMatchRule(bnd, ruleTpe, body, ruleLoc), acc) =>
           val b = lowerExp(body)
           val ruleT = lowerType(ruleTpe)
-          val test = MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(scrutRef(ruleLoc)), Type.Bool, Type.Pure, ruleLoc)
           val cast = mkCast(scrutRef(ruleLoc), ruleT, Type.Pure, ruleLoc)
           val taken = MonoAst.Expr.Let(bnd.sym, cast, b, t, eff, Occur.Unknown, ruleLoc)
-          MonoAst.Expr.IfThenElse(test, taken, acc, t, eff, ruleLoc)
+          javaClassOfTpe(ruleTpe) match {
+            case Some(clazz) =>
+              val test = MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(scrutRef(ruleLoc)), Type.Bool, Type.Pure, ruleLoc)
+              MonoAst.Expr.IfThenElse(test, taken, acc, t, eff, ruleLoc)
+            case None =>
+              // Rule type isn't a Java reference (e.g. an Error from Resolver).
+              // Fall through unconditionally to the body.
+              taken
+          }
       }
       MonoAst.Expr.Let(scrutSym, e, nested, t, eff, Occur.Unknown, loc)
 
@@ -995,6 +1006,16 @@ object Lowering {
     *
     * N.B.: `tpe` must be normalized.
     */
+  /** Extracts the Java reference class corresponding to `tpe`, if any. */
+  private def javaClassOfTpe(tpe: Type): Option[java.lang.Class[?]] = tpe.baseType match {
+    case Type.Cst(TypeConstructor.Native(c), _) => Some(c)
+    case Type.Cst(TypeConstructor.Str, _) => Some(classOf[java.lang.String])
+    case Type.Cst(TypeConstructor.BigInt, _) => Some(classOf[java.math.BigInteger])
+    case Type.Cst(TypeConstructor.BigDecimal, _) => Some(classOf[java.math.BigDecimal])
+    case Type.Cst(TypeConstructor.Regex, _) => Some(classOf[java.util.regex.Pattern])
+    case _ => None
+  }
+
   private def isPrimType(tpe: Type): Boolean = tpe match {
     case Type.Char => true
     case Type.Bool => true
