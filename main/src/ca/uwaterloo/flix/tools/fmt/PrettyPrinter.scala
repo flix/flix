@@ -61,6 +61,7 @@ object PrettyPrinter {
     case TreeKind.Expr.TryCatchRuleFragment     => prettyTryCatchRuleFragment(tree)
     case TreeKind.Expr.Ascribe                  => prettyAscribe(tree)
     case TreeKind.Expr.Throw                    => keywordSpaced(tree, TokenKind.KeywordThrow, "throw")
+    case TreeKind.Expr.StringInterpolation      => prettyStringInterpolation(tree)
     case TreeKind.Expr.Spawn                    => spaceJoin(filterEmpty(tree.children), Set.empty)
     case TreeKind.Expr.OpenVariant              => keywordSpaced(tree, TokenKind.KeywordOpenVariant, "open_variant")
     case TreeKind.Expr.OpenVariantAs            => spaceJoin(filterEmpty(tree.children), Set.empty)
@@ -598,7 +599,11 @@ object PrettyPrinter {
     }
 
     if (!hasBraces)
-      spaceJoin(filterEmpty(rest), noSpacePairs = Set((TreeKind.Ident, TreeKind.CaseBody)))
+      spaceJoin(filterEmpty(rest), noSpacePairs = Set(
+        (TreeKind.Ident, TreeKind.TypeParameterList),
+        (TreeKind.TypeParameterList, TreeKind.CaseBody),
+        (TreeKind.Ident, TreeKind.CaseBody)
+      ))
     else
       prettyBracket(tree.copy(children = rest), filterEmpty(rest),
         headerJoin = declHeaderJoin,
@@ -1054,7 +1059,7 @@ object PrettyPrinter {
         if (endsWithClose)
           parts(0) <> space <> parts(1) <> sep <> parts(2)
         else
-          parts(0) <> line <> parts(1) <> sep <> parts(2)
+          parts(0) <> nest(4, line <> parts(1) <> sep <> parts(2))
       }
     } else {
       parts.reduceLeftOption(_ <+> _).getOrElse(empty)
@@ -1278,6 +1283,9 @@ object PrettyPrinter {
         val gap = prev.fold(empty)(p => structuralGap(p, child))
         (acc <> gap <> childDoc, Some(child))
     }._1
+
+  private def prettyStringInterpolation(tree: Tree): Doc =
+    tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
 
   private def prettyOperator(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
