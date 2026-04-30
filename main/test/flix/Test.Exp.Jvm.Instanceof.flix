@@ -16,99 +16,110 @@ mod Test.Exp.Jvm.Instanceof {
     import java.util.HashMap
     import java.util.Optional
 
-    def isString(o: Object): Bool = o instanceof {
-        case _: JString => true
-        case _ => false
-    }
-
-    def isCharSequence(o: Object): Bool = o instanceof {
-        case _: CharSequence => true
-        case _ => false
-    }
-
-    def isObject(o: Object): Bool = o instanceof {
-        case _: Object => true
-        case _ => false
-    }
-
-    def isBigInteger(o: Object): Bool = o instanceof {
-        case _: BigInteger => true
-        case _ => false
-    }
-
-    def isNumber(o: Object): Bool = o instanceof {
-        case _: Number => true
-        case _ => false
-    }
-
-    def isStandardOpenOption(o: Object): Bool = o instanceof {
-        case _: StandardOpenOption => true
-        case _ => false
-    }
-
-    def isOpenOption(o: Object): Bool = o instanceof {
-        case _: OpenOption => true
-        case _ => false
-    }
-
-    def isLong(o: Object): Bool = o instanceof {
-        case _: Long => true
-        case _ => false
-    }
-
-    def isStringBuilder(o: Object): Bool = o instanceof {
-        case _: StringBuilder => true
-        case _ => false
+    @Test
+    def testInstanceof01(): Unit \ Assert = {
+        let o: Object = checked_cast("Hello World");
+        assertTrue(o instanceof {
+            case _: JString => true
+            case _: Object => false
+        })
     }
 
     @Test
-    def testInstanceof01(): Unit \ Assert =
-        assertTrue(isString(checked_cast("Hello World")))
+    def testInstanceof02(): Unit \ Assert = {
+        let o: Object = checked_cast("Hello World");
+        assertTrue(o instanceof {
+            case _: CharSequence => true
+            case _: Object => false
+        })
+    }
 
     @Test
-    def testInstanceof02(): Unit \ Assert =
-        assertTrue(isCharSequence(checked_cast("Hello World")))
+    def testInstanceof03(): Unit \ Assert = {
+        let o: Object = checked_cast("Hello World");
+        assertTrue(o instanceof {
+            case _: Object => true
+        })
+    }
 
     @Test
-    def testInstanceof03(): Unit \ Assert =
-        assertTrue(isObject(checked_cast("Hello World")))
+    def testInstanceof04(): Unit \ Assert = {
+        let o: Object = checked_cast(100ii);
+        assertTrue(o instanceof {
+            case _: BigInteger => true
+            case _: Object => false
+        })
+    }
 
     @Test
-    def testInstanceof04(): Unit \ Assert =
-        assertTrue(isBigInteger(checked_cast(100ii)))
+    def testInstanceof05(): Unit \ Assert = {
+        let o: Object = checked_cast(100ii);
+        assertTrue(o instanceof {
+            case _: Number => true
+            case _: Object => false
+        })
+    }
 
     @Test
-    def testInstanceof05(): Unit \ Assert =
-        assertTrue(isNumber(checked_cast(100ii)))
+    def testInstanceof06(): Unit \ Assert = {
+        let o: Object = checked_cast(100ii);
+        assertTrue(o instanceof {
+            case _: Object => true
+        })
+    }
 
     @Test
-    def testInstanceof06(): Unit \ Assert =
-        assertTrue(isObject(checked_cast(100ii)))
+    def testInstanceof07(): Unit \ Assert = {
+        let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
+        assertTrue(o instanceof {
+            case _: StandardOpenOption => true
+            case _: Object => false
+        })
+    }
 
     @Test
-    def testInstanceof07(): Unit \ Assert =
-        assertTrue(isStandardOpenOption(checked_cast(StandardOpenOption.DELETE_ON_CLOSE)))
+    def testInstanceof08(): Unit \ Assert = {
+        let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
+        assertTrue(o instanceof {
+            case _: OpenOption => true
+            case _: Object => false
+        })
+    }
 
     @Test
-    def testInstanceof08(): Unit \ Assert =
-        assertTrue(isOpenOption(checked_cast(StandardOpenOption.DELETE_ON_CLOSE)))
+    def testInstanceof10(): Unit \ Assert = {
+        let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
+        assertTrue(o instanceof {
+            case _: Object => true
+        })
+    }
 
     @Test
-    def testInstanceof10(): Unit \ Assert =
-        assertTrue(isObject(checked_cast(StandardOpenOption.DELETE_ON_CLOSE)))
+    def testInstanceof11(): Unit \ Assert = {
+        let o: Object = checked_cast(100ii);
+        assertFalse(o instanceof {
+            case _: Long => true
+            case _: Object => false
+        })
+    }
 
     @Test
-    def testInstanceof11(): Unit \ Assert =
-        assertFalse(isLong(checked_cast(100ii)))
-
-    @Test
-    def testInstanceof12(): Unit \ Assert =
-        assertFalse(isStringBuilder(checked_cast("Hello World")))
+    def testInstanceof12(): Unit \ Assert = {
+        let o: Object = checked_cast("Hello World");
+        assertFalse(o instanceof {
+            case _: StringBuilder => true
+            case _: Object => false
+        })
+    }
 
     @Test
     def testInstanceof13(): Unit \ Assert + IO = {
         let arr = Array#{"hi"} @ Static;
-        assertTrue(isString(checked_cast(Array.get(0, arr))))
+        let o: Object = checked_cast(Array.get(0, arr));
+        assertTrue(o instanceof {
+            case _: JString => true
+            case _: Object => false
+        })
     }
 
     // instanceof binds the scrutinee as the typed class and lets us use it.
@@ -117,7 +128,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast("Hello");
         let len = o instanceof {
             case s: JString => String.length(s)
-            case _ => -1
+            case _: Object => -1
         };
         Assert.assertEq(expected = 5, len)
     }
@@ -128,12 +139,12 @@ mod Test.Exp.Jvm.Instanceof {
         let tag = o instanceof {
             case _: JString => "string"
             case _: BigInteger => "bigint"
-            case _ => "other"
+            case _: Object => "other"
         };
         Assert.assertEq(expected = "bigint", tag)
     }
 
-    // First matching case wins: BigInteger is a Number, but the String case comes first and doesn't match.
+    // First matching case wins: BigInteger is a Number, but the BigInteger case comes first.
     @Test
     def testInstanceof16(): Unit \ Assert = {
         let o: Object = checked_cast(100ii);
@@ -141,7 +152,7 @@ mod Test.Exp.Jvm.Instanceof {
             case _: JString => "string"
             case _: BigInteger => "bigint"
             case _: Number => "number"
-            case _ => "other"
+            case _: Object => "other"
         };
         Assert.assertEq(expected = "bigint", tag)
     }
@@ -153,19 +164,23 @@ mod Test.Exp.Jvm.Instanceof {
         let tag = o instanceof {
             case _: Number => "number"
             case _: BigInteger => "bigint"
-            case _ => "other"
+            case _: Object => "other"
         };
         Assert.assertEq(expected = "number", tag)
     }
 
-    // Fallthrough wildcard binds the scrutinee.
+    // Catch-all binds the scrutinee at its static type.
     @Test
     def testInstanceof18(): Unit \ Assert = {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
         let tag = o instanceof {
             case _: JString => "string"
             case _: Number => "number"
-            case x => if (isObject(x)) "other-object" else "impossible"
+            case x: Object =>
+                let isObj = x instanceof {
+                    case _: Object => true
+                };
+                if (isObj) "other-object" else "impossible"
         };
         Assert.assertEq(expected = "other-object", tag)
     }
@@ -177,7 +192,7 @@ mod Test.Exp.Jvm.Instanceof {
         let tag = o instanceof {
             case _: JString => "string"
             case _: StandardOpenOption => "open-option"
-            case _ => "other"
+            case _: Object => "other"
         };
         Assert.assertEq(expected = "open-option", tag)
     }
@@ -189,7 +204,7 @@ mod Test.Exp.Jvm.Instanceof {
         let tag = o instanceof {
             case _: JString => "string"
             case _: OpenOption => "open-option-iface"
-            case _ => "other"
+            case _: Object => "other"
         };
         Assert.assertEq(expected = "open-option-iface", tag)
     }
@@ -200,7 +215,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(100ii);
         let s = o instanceof {
             case b: BigInteger => b.toString()
-            case _ => "other"
+            case _: Object => "other"
         };
         Assert.assertEq(expected = "100", s)
     }
@@ -211,7 +226,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(100ii);
         let n = o instanceof {
             case x: Number => x.intValue()
-            case _ => -1
+            case _: Object => -1
         };
         Assert.assertEq(expected = 100, n)
     }
@@ -222,7 +237,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
         let s = o instanceof {
             case e: Enum[_] => e.name()
-            case _ => "other"
+            case _: Object => "other"
         };
         Assert.assertEq(expected = "DELETE_ON_CLOSE", s)
     }
@@ -233,7 +248,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast("hello");
         let n = o instanceof {
             case s: JString => String.length(s)
-            case _ => -1
+            case _: Object => -1
         };
         Assert.assertEq(expected = 5, n)
     }
@@ -245,7 +260,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(l);
         let result = o instanceof {
             case _: ArrayList[_] => true
-            case _ => false
+            case _: Object => false
         };
         assertTrue(result)
     }
@@ -257,7 +272,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(m);
         let result = o instanceof {
             case _: HashMap[_, _] => true
-            case _ => false
+            case _: Object => false
         };
         assertTrue(result)
     }
@@ -269,7 +284,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(opt);
         let result = o instanceof {
             case _: Optional[_] => true
-            case _ => false
+            case _: Object => false
         };
         assertTrue(result)
     }
@@ -282,7 +297,7 @@ mod Test.Exp.Jvm.Instanceof {
         let tag = o instanceof {
             case _: ArrayList[_] => "list"
             case _: HashMap[_, _] => "map"
-            case _ => "other"
+            case _: Object => "other"
         };
         Assert.assertEq(expected = "map", tag)
     }
@@ -295,7 +310,7 @@ mod Test.Exp.Jvm.Instanceof {
         let o: Object = checked_cast(l);
         let n = o instanceof {
             case xs: ArrayList[_] => xs.size()
-            case _ => -1
+            case _: Object => -1
         };
         Assert.assertEq(expected = 0, n)
     }
