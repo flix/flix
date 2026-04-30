@@ -534,19 +534,22 @@ object Safety {
   }
 
   /**
-    * Checks that an `instanceof` match is exhaustive: at least one rule's class is a
-    * supertype of the scrutinee's static type. If not, raises `NonExhaustiveInstanceOfMatch`.
-    *
-    * If the scrutinee's static type doesn't extract to a Java reference class, raises
-    * `IllegalInstanceOfScrutinee`.
+    * Checks that an `instanceof` match is exhaustive: the last rule's class is a supertype
+    * of the scrutinee's class (or the scrutinee isn't a Java reference type, in which case
+    * Lowering will collapse straight to the catch-all). On failure, raises
+    * `NonExhaustiveInstanceOfMatch`.
     */
   private def checkInstanceOfMatchExhaustive(scrutTpe: Type, rules: List[InstanceOfMatchRule], loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    javaClassOf(scrutTpe) match {
-      case None =>
-        sctx.errors.add(SafetyError.IllegalInstanceOfScrutinee(scrutTpe, loc))
-      case Some(scrutClass) =>
-        val isExhaustive = rules.exists(_.clazz.isAssignableFrom(scrutClass))
-        if (!isExhaustive) sctx.errors.add(SafetyError.NonExhaustiveInstanceOfMatch(scrutClass, loc))
+    val scrutClassOpt = javaClassOf(scrutTpe)
+    val lastClassOpt = javaClassOf(rules.last.tpe)
+    (scrutClassOpt, lastClassOpt) match {
+      case (Some(scrutClass), Some(lastClass)) if !lastClass.isAssignableFrom(scrutClass) =>
+        sctx.errors.add(SafetyError.NonExhaustiveInstanceOfMatch(scrutClass, loc))
+      case _ =>
+        // Either the scrutinee isn't a Java reference type (Lowering handles this), or the
+        // last rule isn't a Java reference type (an earlier resolver error reported that), or
+        // the last rule covers the scrutinee — all fine here.
+        ()
     }
   }
 

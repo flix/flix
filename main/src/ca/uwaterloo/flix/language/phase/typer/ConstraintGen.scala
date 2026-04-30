@@ -1292,7 +1292,7 @@ object ConstraintGen {
     * Returns the body's type and the body's effect.
     */
   private def visitInstanceOfMatchRule(rule: KindedAst.InstanceOfMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.InstanceOfMatchRule(sym, _, tpe, exp, _) =>
+    case KindedAst.InstanceOfMatchRule(sym, tpe, exp, _) =>
       tpe.typeVars.foreach(tvar => c.rigidify(tvar.sym))
       c.unifyType(sym.tvar, tpe, sym.loc)
       visitExp(exp)
