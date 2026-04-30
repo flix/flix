@@ -983,7 +983,7 @@ object PrettyPrinter {
       .reduceLeftOption(_ <> _)
       .getOrElse(empty)
 
-    val bodyIsBlock = bodyParts.exists(isBlockExpr) ||
+    val bodyIsBlock = bodyParts.exists(isBracedExpr) ||
       bodyParts.exists(c => leftMostToken(c).exists(tok => bracketPairs.exists(_._1 == tok.kind)))
 
     val defDoc = localLayout(tree) {
