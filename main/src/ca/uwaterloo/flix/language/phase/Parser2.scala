@@ -2354,8 +2354,9 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordCase)
       nameUnqualified(NAME_VARIABLE)
-      expect(TokenKind.Colon)
-      Type.ttype()
+      if (eat(TokenKind.Colon)) {
+        Type.ttype()
+      }
       if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
       } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {

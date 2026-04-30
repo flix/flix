@@ -232,30 +232,6 @@ object SafetyError {
     }
   }
 
-  /**
-    * An error raised to indicate that an `instanceof` match is not exhaustive: no rule's
-    * type is a supertype of the scrutinee's static type, so the match could fall through
-    * with no matching case.
-    *
-    * @param scrutClass the Java class of the scrutinee's static type.
-    * @param loc        the location of the `instanceof` match.
-    */
-  case class NonExhaustiveInstanceOfMatch(scrutClass: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
-    def code: ErrorCode = ErrorCode.E4050
-
-    def summary: String = s"Non-exhaustive 'instanceof' match: missing a catch-all for '${scrutClass.getSimpleName}'."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Non-exhaustive '${red("instanceof")}' match: missing a catch-all for '${red(scrutClass.getSimpleName)}'.
-         |
-         |${highlight(loc, "match could fall through", fmt)}
-         |
-         |${underline("Explanation:")} Add a final rule whose type is a supertype of the scrutinee's static type, e.g. 'case _: ${cyan(scrutClass.getSimpleName)} => ...'.
-         |""".stripMargin
-    }
-  }
-
 
   /**
     * An error raised to indicate that the object in a `throw` expression is not a Throwable.

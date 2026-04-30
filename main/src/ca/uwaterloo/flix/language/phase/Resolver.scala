@@ -1122,8 +1122,8 @@ object Resolver {
       val e = resolveExp(exp, scp0)
       val rs = rules.map {
         case NamedAst.InstanceOfMatchRule(sym, tpe, body, ruleLoc) =>
-          val resolvedTpe = resolveType(tpe, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root)
-          checkInstanceOfRuleType(resolvedTpe)
+          val resolvedTpe = tpe.map(resolveType(_, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root))
+          resolvedTpe.foreach(checkInstanceOfRuleType)
           val scp = scp0 ++ mkVarScp(sym)
           val b = resolveExp(body, scp)
           ResolvedAst.InstanceOfMatchRule(sym, resolvedTpe, b, ruleLoc)
@@ -2737,7 +2737,7 @@ object Resolver {
     val base = tpe.baseType
     val args = tpe.typeArguments
     base match {
-      case UnkindedType.Cst(_, _) =>
+      case UnkindedType.Cst(TypeConstructor.Native(_), _) =>
         args.foreach { arg =>
           if (!isWildcardVar(arg)) sctx.errors.add(ResolutionError.IllegalInstanceOfTypeArgument(arg.loc))
         }

@@ -419,7 +419,7 @@ object DesugaredAst {
 
   case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr, loc: SourceLocation)
 
-  case class InstanceOfMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
+  case class InstanceOfMatchRule(ident: Name.Ident, tpe: Option[Type], exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 

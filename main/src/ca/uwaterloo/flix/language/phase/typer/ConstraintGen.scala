@@ -817,8 +817,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.InstanceOfMatch(exp, rules, tvar, loc) =>
-        val (_, scrutEff) = visitExp(exp)
-        val (tpes, effs) = rules.map(visitInstanceOfMatchRule).unzip
+        val (scrutTpe, scrutEff) = visitExp(exp)
+        val (tpes, effs) = rules.map(visitInstanceOfMatchRule(_, scrutTpe)).unzip
         c.unifyAllTypes(tpes, loc)
         val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
         c.unifyType(tvar, resTpe, loc)
@@ -1291,10 +1291,16 @@ object ConstraintGen {
     *
     * Returns the body's type and the body's effect.
     */
-  private def visitInstanceOfMatchRule(rule: KindedAst.InstanceOfMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
+  private def visitInstanceOfMatchRule(rule: KindedAst.InstanceOfMatchRule, scrutTpe: Type)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.InstanceOfMatchRule(sym, tpe, exp, _) =>
-      tpe.typeVars.foreach(tvar => c.rigidify(tvar.sym))
-      c.unifyType(sym.tvar, tpe, sym.loc)
+      tpe match {
+        case Some(t) =>
+          t.typeVars.foreach(tvar => c.rigidify(tvar.sym))
+          c.unifyType(sym.tvar, t, sym.loc)
+        case None =>
+          // No type ascription: bind sym to the scrutinee's type.
+          c.unifyType(sym.tvar, scrutTpe, sym.loc)
+      }
       visitExp(exp)
   }
 

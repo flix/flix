@@ -1220,7 +1220,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
         |    case _: ArrayList => true
-        |    case _: Object => false
+        |    case _ => false
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -1234,7 +1234,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
         |    case _: HashMap[_] => true
-        |    case _: Object => false
+        |    case _ => false
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -1248,7 +1248,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
         |    case _: ArrayList[String] => true
-        |    case _: Object => false
+        |    case _ => false
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -1262,7 +1262,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
         |    case _: HashMap[_, String] => true
-        |    case _: Object => false
+        |    case _ => false
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -1275,7 +1275,21 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
         |    case _: (Int32, Int32) => true
-        |    case _: Object => false
+        |    case _ => false
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalInstanceOfType](result)
+  }
+
+  test("IllegalInstanceOfType.NonNativeJavaType") {
+    val input =
+      """
+        |import java.lang.{String => JString}
+        |import java.lang.Object
+        |def f(o: Object): Bool = o instanceof {
+        |    case _: JString => true
+        |    case _ => false
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)

@@ -369,7 +369,7 @@ object TypeReconstruction {
         case KindedAst.InstanceOfMatchRule(sym, ruleTpe, body, ruleLoc) =>
           val b = visitExp(body)
           val bnd = TypedAst.Binder(sym, subst(sym.tvar))
-          TypedAst.InstanceOfMatchRule(bnd, subst(ruleTpe), b, ruleLoc)
+          TypedAst.InstanceOfMatchRule(bnd, ruleTpe.map(subst.apply), b, ruleLoc)
       }
       val tpe = subst(tvar)
       val eff = Type.mkUnion(e1.eff :: rs.map(_.exp.eff), loc)

@@ -1420,7 +1420,7 @@ object Desugar {
 
   private def visitInstanceOfMatchRule(rule0: WeededAst.InstanceOfMatchRule)(implicit flix: Flix): DesugaredAst.InstanceOfMatchRule = rule0 match {
     case WeededAst.InstanceOfMatchRule(ident, tpe, exp, loc) =>
-      DesugaredAst.InstanceOfMatchRule(ident, visitType(tpe), visitExp(exp), loc)
+      DesugaredAst.InstanceOfMatchRule(ident, tpe.map(visitType), visitExp(exp), loc)
   }
 
   /**

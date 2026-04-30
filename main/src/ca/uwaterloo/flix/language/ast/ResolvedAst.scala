@@ -368,7 +368,7 @@ object ResolvedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
 
-  case class InstanceOfMatchRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: Expr, loc: SourceLocation)
+  case class InstanceOfMatchRule(sym: Symbol.VarSym, tpe: Option[UnkindedType], exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 

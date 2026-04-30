@@ -779,7 +779,7 @@ object Visitor {
     }
 
     visitBinder(bnd)
-    visitType(tpe)
+    tpe.foreach(visitType)
     visitExpr(exp)
   }
 

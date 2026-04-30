@@ -411,7 +411,7 @@ object TypedAst {
 
   case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
 
-  case class InstanceOfMatchRule(bnd: Binder, tpe: Type, exp: Expr, loc: SourceLocation)
+  case class InstanceOfMatchRule(bnd: Binder, tpe: Option[Type], exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 

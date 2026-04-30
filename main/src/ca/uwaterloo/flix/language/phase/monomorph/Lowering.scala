@@ -434,38 +434,46 @@ object Lowering {
       }
 
     case TypedAst.Expr.InstanceOfMatch(exp, rules, tpe, eff, loc) =>
-      // Lowers `e instanceof { case x_1: T_1 => body_1; ...; case x_n: T_n => body_n }`
-      // to a let-bound scrutinee threaded through nested if-then-else branches:
+      // Lowers `e instanceof { case x_1: T_1 => body_1; ...; case x_n => body_n }` to a
+      // let-bound scrutinee threaded through nested if-then-else branches:
       //
       //   let s = lower(e) in
       //     if InstanceOf(s, T_1.class) then let x_1: T_1 = (s as T_1) in body_1
       //     else if InstanceOf(s, T_2.class) then let x_2: T_2 = (s as T_2) in body_2
       //     ...
-      //     else MatchError  // unreachable when Safety has verified exhaustiveness
+      //     else let x_n = s in body_n   // untyped rule binds x_n to the scrutinee
       //
-      // If the scrutinee's static type is not a Java reference type, all instanceof
-      // checks are statically false; we collapse to just the catch-all (the last rule).
+      // If a typed rule's scrutinee static type is not a Java reference type, the
+      // `instanceof` check is statically false. Such typed rules are dropped: the chain
+      // collapses to whichever later rule is reachable (typically the trailing wildcard).
+      // If no rule matches at runtime (and no untyped catch-all is present), control falls
+      // through to a synthetic `MatchError`.
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       val scrutSym = mkLetSym("instanceOfMatch", loc.asSynthetic)
       def scrutRef(l: SourceLocation): MonoAst.Expr = MonoAst.Expr.Var(scrutSym, e.tpe, l)
-      val effectiveRules = if (javaClassOfTpe(e.tpe).isDefined) rules else List(rules.last)
       val fallback: MonoAst.Expr = MonoAst.Expr.ApplyAtomic(AtomicOp.MatchError, Nil, t, eff, loc.asSynthetic)
-      val nested = effectiveRules.foldRight(fallback) {
-        case (TypedAst.InstanceOfMatchRule(bnd, ruleTpe, body, ruleLoc), acc) =>
+      val nested = rules.foldRight(fallback) {
+        case (TypedAst.InstanceOfMatchRule(bnd, Some(ruleTpe), body, ruleLoc), acc) =>
           val b = lowerExp(body)
           val ruleT = lowerType(ruleTpe)
           val cast = mkCast(scrutRef(ruleLoc), ruleT, Type.Pure, ruleLoc)
           val taken = MonoAst.Expr.Let(bnd.sym, cast, b, t, eff, Occur.Unknown, ruleLoc)
-          javaClassOfTpe(ruleTpe) match {
-            case Some(clazz) =>
-              val test = MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(scrutRef(ruleLoc)), Type.Bool, Type.Pure, ruleLoc)
-              MonoAst.Expr.IfThenElse(test, taken, acc, t, eff, ruleLoc)
-            case None =>
-              // Rule type isn't a Java reference (e.g. an Error from Resolver).
-              // Fall through unconditionally to the body.
-              taken
+          // The typed rule only fires when the scrutinee is a Java reference. If the
+          // scrutinee's static type isn't Java, the instanceof check can never succeed,
+          // so we drop this rule entirely and fall through to `acc`.
+          if (javaClassOfTpe(e.tpe).isEmpty) acc
+          else {
+            val clazz = javaClassOfTpe(ruleTpe).getOrElse(
+              throw InternalCompilerException(s"Unexpected non-Java rule type: $ruleTpe", ruleLoc)
+            )
+            val test = MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(scrutRef(ruleLoc)), Type.Bool, Type.Pure, ruleLoc)
+            MonoAst.Expr.IfThenElse(test, taken, acc, t, eff, ruleLoc)
           }
+        case (TypedAst.InstanceOfMatchRule(bnd, None, body, ruleLoc), _) =>
+          // Untyped rule: unconditionally bind to the scrutinee and run the body.
+          val b = lowerExp(body)
+          MonoAst.Expr.Let(bnd.sym, scrutRef(ruleLoc), b, t, eff, Occur.Unknown, ruleLoc)
       }
       MonoAst.Expr.Let(scrutSym, e, nested, t, eff, Occur.Unknown, loc)
 
@@ -1009,10 +1017,6 @@ object Lowering {
   /** Extracts the Java reference class corresponding to `tpe`, if any. */
   private def javaClassOfTpe(tpe: Type): Option[java.lang.Class[?]] = tpe.baseType match {
     case Type.Cst(TypeConstructor.Native(c), _) => Some(c)
-    case Type.Cst(TypeConstructor.Str, _) => Some(classOf[java.lang.String])
-    case Type.Cst(TypeConstructor.BigInt, _) => Some(classOf[java.math.BigInteger])
-    case Type.Cst(TypeConstructor.BigDecimal, _) => Some(classOf[java.math.BigDecimal])
-    case Type.Cst(TypeConstructor.Regex, _) => Some(classOf[java.util.regex.Pattern])
     case _ => None
   }
 

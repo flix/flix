@@ -677,7 +677,7 @@ object Specialization {
           val freshSym = Symbol.freshVarSym(bnd.sym)
           val env1 = env0 + (bnd.sym -> freshSym)
           val b = specializeExp(body, env1, subst)
-          TypedAst.InstanceOfMatchRule(Binder(freshSym, subst(bnd.tpe)), subst(ruleTpe), b, loc)
+          TypedAst.InstanceOfMatchRule(Binder(freshSym, subst(bnd.tpe)), ruleTpe.map(subst.apply), b, loc)
       }
       Expr.InstanceOfMatch(e, rs, subst(tpe), subst(eff), loc0)
 

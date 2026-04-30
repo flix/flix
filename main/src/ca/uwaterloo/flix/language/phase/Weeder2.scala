@@ -1459,7 +1459,7 @@ object Weeder2 {
 
     private def visitInstanceOfMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[InstanceOfMatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InstanceOfMatchRuleFragment)
-      mapN(pickNameIdent(tree), Types.pickType(tree), pickExpr(tree)) {
+      mapN(pickNameIdent(tree), Types.tryPickType(tree), pickExpr(tree)) {
         case (ident, tpe, expr) => InstanceOfMatchRule(ident, tpe, expr, tree.loc)
       }
     }
