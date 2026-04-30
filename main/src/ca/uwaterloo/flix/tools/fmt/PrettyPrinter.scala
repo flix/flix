@@ -1409,14 +1409,14 @@ object PrettyPrinter {
         case token: Token if replMap.contains(token.kind) =>
           val gap = if (prev.exists(endsWithComment)) hardline else empty
           val replDoc = replMap(token.kind)
-          val hasSameLineComment = token.kind == TokenKind.Semi && {
-            val nextOpt = if (i + 1 < children.length) Some(children(i + 1)) else None
+          val nextOpt = if (i + 1 < children.length) Some(children(i + 1)) else None
+          val hasSameLineComment = (token.kind == TokenKind.Semi || token.kind == TokenKind.Comma) && {
             nextOpt.flatMap(leftMostToken).exists { t =>
               isCommentKind(t.kind) && t.start.lineOneIndexed == token.end.lineOneIndexed
             }
           }
           if (hasSameLineComment) {
-            acc = acc <> gap <> text(";") <> space
+            acc = acc <> gap <> text(token.text) <> space
             prevReplEndsWithLine = false
           } else {
             acc = acc <> gap <> replDoc
