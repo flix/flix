@@ -449,7 +449,8 @@ object PrettyPrinter {
     headerJoin: Array[SyntaxTree.Child] => Doc = defaultHeaderJoin,
     bodyDoc: Doc,
     tailDoc: Doc = empty,
-    flatPad: Doc = empty
+    flatPad: Doc = empty,
+    nestLevel: Int = 4
   ): Doc = {
     val noGap = split.open == "[" || split.header.lastOption.exists {
       case token: Token => token.text.endsWith("#")
@@ -465,7 +466,7 @@ object PrettyPrinter {
     localLayout(tree) {
       bodyDoc match {
         case Doc.Empty => openDoc <> text(split.close) <> tailDoc
-        case _         => openDoc <> nest(4, pad <> bodyDoc) <> pad <> text(split.close) <> tailDoc
+        case _         => openDoc <> nest(nestLevel, pad <> bodyDoc) <> pad <> text(split.close) <> tailDoc
       }
     }
   }
@@ -503,9 +504,10 @@ object PrettyPrinter {
     tree: Tree,
     headerJoin: Array[SyntaxTree.Child] => Doc = defaultHeaderJoin,
     formatBody: Array[SyntaxTree.Child] => Doc = cs => joinWithGap(filterEmpty(cs)),
-    fallback: Tree => Doc = prettyFallback
+    fallback: Tree => Doc = prettyFallback,
+    nestLevel: Int = 4
   ): Doc = wrapWithAnn(tree, rest =>
-    prettyBracket(tree.copy(children = rest), rest, headerJoin, formatBody, fallback = fallback)
+    prettyBracket(tree.copy(children = rest), rest, headerJoin, formatBody, fallback = fallback, nestLevel = nestLevel)
   )
 
   /**
@@ -527,7 +529,8 @@ object PrettyPrinter {
     formatBody: Array[SyntaxTree.Child] => Doc = cs => joinWithGap(filterEmpty(cs)),
     formatTail: Array[SyntaxTree.Child] => Doc = cs => if (cs.isEmpty) empty else joinWithGap(cs),
     fallback: Tree => Doc = prettyFallback,
-    flatPad: Doc = empty
+    flatPad: Doc = empty,
+    nestLevel: Int = 4
   ): Doc = splitAtBracket(children) match {
     case None        => fallback(tree)
     case Some(split) =>
@@ -552,9 +555,10 @@ object PrettyPrinter {
           sep <> tailContent
       }
       renderBracket(tree, split, headerJoin,
-        bodyDoc = formatBody(split.body),
-        tailDoc = tailDoc,
-        flatPad = flatPad)
+        bodyDoc   = formatBody(split.body),
+        tailDoc   = tailDoc,
+        flatPad   = flatPad,
+        nestLevel = nestLevel)
   }
 
   /**
@@ -659,8 +663,20 @@ object PrettyPrinter {
           renderBracket(tree, split, bodyDoc = bodyDoc, tailDoc = tailDoc)
     }
 
-  private def prettyInstance(tree: Tree): Doc =
-    prettyDeclBracket(tree, headerJoin = instanceHeaderJoin)
+  private def prettyInstance(tree: Tree): Doc = {
+    val nestLevel = {
+      val children = filterEmpty(tree.children)
+      val curlLIdx = children.indexWhere { case t: Token if t.kind == TokenKind.CurlyL => true; case _ => false }
+      val header   = if (curlLIdx > 0) children.take(curlLIdx) else children
+      val first    = header.headOption.flatMap(leftMostToken)
+      val last     = header.lastOption.flatMap(rightMostToken)
+      (first, last) match {
+        case (Some(f), Some(l)) if f.start.lineOneIndexed != l.end.lineOneIndexed => 8
+        case _                                                                     => 4
+      }
+    }
+    prettyDeclBracket(tree, headerJoin = instanceHeaderJoin, nestLevel = nestLevel)
+  }
 
   private def prettyEffect(tree: Tree): Doc =
     prettyDeclBracket(tree, headerJoin = defaultHeaderJoin)
