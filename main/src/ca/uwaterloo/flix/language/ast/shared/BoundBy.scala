@@ -48,6 +48,11 @@ object BoundBy {
   case object CatchRule extends BoundBy
 
   /**
+    * Represents a variable that is bound by an instanceof rule.
+    */
+  case object InstanceOfRule extends BoundBy
+
+  /**
     * Represents a variable that is bound by a constraint.
     */
   case object Constraint extends BoundBy

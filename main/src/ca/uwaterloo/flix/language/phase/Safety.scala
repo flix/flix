@@ -152,6 +152,10 @@ object Safety {
         visitExp(rule.exp)
       }
 
+    case Expr.InstanceOfMatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach(rule => visitExp(rule.exp))
+
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))

@@ -770,6 +770,48 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a non-final `instanceof` rule omits its type.
+    *
+    * @param loc the location of the offending rule.
+    */
+  case class IllegalUntypedInstanceOfRule(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0238
+
+    def summary: String = "Non-final 'instanceof' rule must have a type."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Non-final 'instanceof' rule must have a type.
+         |
+         |${src(loc, "missing type ascription")}
+         |
+         |${underline("Explanation:")} Only the final 'instanceof' rule may omit its type to act as a catch-all.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the final `instanceof` rule has a type ascription.
+    *
+    * @param loc the location of the offending rule.
+    */
+  case class IllegalTypedFinalInstanceOfRule(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0239
+
+    def summary: String = "Final 'instanceof' rule must be a wildcard catch-all."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Final 'instanceof' rule must be a wildcard catch-all.
+         |
+         |${src(loc, "unexpected type ascription on final rule")}
+         |
+         |${underline("Explanation:")} The final rule of an 'instanceof' expression must omit its type to act as a catch-all (e.g. 'case _ => ...').
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal trait constraint parameter.
     *
     * @param loc the location where the error occurred.

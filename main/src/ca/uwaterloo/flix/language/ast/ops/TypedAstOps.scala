@@ -59,6 +59,7 @@ object TypedAstOps {
     case Expr.Stm(exps, exp, _, _, _) => exps.foldRight(sigSymsOf(exp))((e, acc) => sigSymsOf(e) ++ acc)
     case Expr.Discard(exp, _, _) => sigSymsOf(exp)
     case Expr.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
+    case Expr.InstanceOfMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.ExtMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(r => sigSymsOf(r.exp))
     case Expr.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
@@ -223,6 +224,11 @@ object TypedAstOps {
           acc ++ ((guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(body)) -- freeVars(pat).keys)
       }
 
+    case Expr.InstanceOfMatch(exp, rules, _, _, _) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, InstanceOfMatchRule(bnd, _, body, _)) => acc ++ freeVars(body) - bnd.sym
+      }
+
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       val e = freeVars(exp)
       val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
@@ -308,6 +314,8 @@ object TypedAstOps {
 
     case Expr.InstanceOf(exp, _, _) =>
       freeVars(exp)
+
+
 
     case Expr.CheckedCast(_, exp, _, _, _) =>
       freeVars(exp)

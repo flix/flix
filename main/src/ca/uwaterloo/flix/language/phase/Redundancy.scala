@@ -534,6 +534,18 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
+    case Expr.InstanceOfMatch(exp, rules, _, _, _) =>
+      val usedScrut = visitExp(exp, env0, rc)
+      val usedRules = rules.map {
+        case InstanceOfMatchRule(bnd, _, body, _) =>
+          val extendedEnv = env0 + bnd.sym
+          val usedBody = visitExp(body, extendedEnv, rc)
+          val unusedVarSym = findUnusedVarSyms(Set(bnd.sym), usedBody)
+          val shadowedVarSyms = findShadowedVarSyms(Set(bnd.sym), env0)
+          (usedBody - bnd.sym) ++ unusedVarSym ++ shadowedVarSyms
+      }
+      usedScrut ++ usedRules.reduceLeft(_ ++ _)
+
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)
