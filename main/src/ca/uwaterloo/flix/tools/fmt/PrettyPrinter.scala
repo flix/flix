@@ -671,7 +671,39 @@ object PrettyPrinter {
   private def prettyStruct(tree: Tree): Doc =
     prettyDeclBracket(tree,
       headerJoin = declHeaderJoin,
-      formatBody = commaBodyJoin)
+      formatBody = alignedStructBody)
+
+  private def structFieldPreColonWidth(field: Tree): Int = {
+    val children = filterEmpty(field.children)
+    val idx = children.indexWhere { case t: Token if t.kind == TokenKind.Colon => true; case _ => false }
+    if (idx < 0) 0
+    else pretty(Layout.SingleLine, spaceJoin(children.take(idx), noSpacePairs = Set.empty)).length
+  }
+
+  private def alignedStructField(tree: Tree, maxWidth: Int): Doc = {
+    val children = filterEmpty(tree.children)
+    val idx = children.indexWhere { case t: Token if t.kind == TokenKind.Colon => true; case _ => false }
+    if (idx < 0) return prettyFallback(tree)
+    val nameDoc = spaceJoin(children.take(idx), noSpacePairs = Set.empty)
+    val typeDoc = joinWithGap(children.drop(idx + 1))
+    Doc.fill(maxWidth + 1, nameDoc <> text(":")) <+> typeDoc
+  }
+
+  private def alignedStructBody(children: Array[SyntaxTree.Child]): Doc = {
+    val filtered = filterEmpty(children)
+    val fields   = filtered.collect { case t: Tree if t.kind == TreeKind.StructField => t }
+    val maxWidth = fields.map(structFieldPreColonWidth).maxOption.getOrElse(0)
+    val docs = filtered.map {
+      case t: Tree if t.kind == TreeKind.StructField => alignedStructField(t, maxWidth)
+      case other                                      => prettyChild(other)
+    }
+    val pairs = filtered.zip(docs)
+    if (pairs.isEmpty) return empty
+    pairs.sliding(2).foldLeft(pairs.head._2) {
+      case (acc, Array((prev, _), (next, nextDoc))) => acc <> structuralGap(prev, next) <> nextDoc
+      case (acc, _)                                 => acc
+    }
+  }
 
   /**
     * Formatting for match and select expressions.
