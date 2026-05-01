@@ -191,6 +191,7 @@ object Library {
     "Json.flix" -> LocalResource.get("/src/library/Json.flix"),
     "Json/FromJson.flix" -> LocalResource.get("/src/library/Json/FromJson.flix"),
     "Json/JsonError.flix" -> LocalResource.get("/src/library/Json/JsonError.flix"),
+    "Json/JsonPath.flix" -> LocalResource.get("/src/library/Json/JsonPath.flix"),
     "Json/ToJson.flix" -> LocalResource.get("/src/library/Json/ToJson.flix"),
     "KeyNotFound.flix" -> LocalResource.get("/src/library/KeyNotFound.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
