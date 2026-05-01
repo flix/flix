@@ -19,10 +19,14 @@ mod TestJson {
     use Assert.{assertEq, assertErr};
     use Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
     use Json.JsonError.JsonError
-    use Json.JsonError.JsonError.{MissingKey, TypeMismatch}
+    use Json.JsonError.JsonError.{Decode, Parse}
+    use Json.JsonError.DecodeErrorKind.{MissingKey, TypeMismatch}
+    use Json.JsonPath.JsonPath
+    use Json.JsonPath.JsonStep
+    use Json.JsonPath.JsonStep.{Index, Key}
     use Json.ToJson.ToJson
     use Json.FromJson.FromJson
-    use Json.FromJson.{getAtKey, getAtKeyOpt, decodeAtKey, decodeAtKeyOpt}
+    use Json.FromJson.{getAtKey, getAtKeyOpt, decodeAtKey, decodeAtIndex, decodeAtKeyOpt}
 
     def num(n: Int32): Json.Json = JNumber(Int32.toBigDecimal(n))
 
@@ -980,7 +984,7 @@ mod TestJson {
 
     @Test
     def fromJson03(): Unit \ Assert =
-        assertEq(expected = (Err(TypeMismatch("Unit")): Result[JsonError, Unit]), FromJson.fromJson(JBool(true)))
+        assertEq(expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Unit"))): Result[JsonError, Unit]), FromJson.fromJson(JBool(true)))
 
     @Test
     def fromJson04(): Unit \ Assert =
@@ -988,7 +992,7 @@ mod TestJson {
 
     @Test
     def fromJson05(): Unit \ Assert =
-        assertEq(expected = (Err(TypeMismatch("Bool")): Result[JsonError, Bool]), FromJson.fromJson(JString("yes")))
+        assertEq(expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Bool"))): Result[JsonError, Bool]), FromJson.fromJson(JString("yes")))
 
     @Test
     def fromJson06(): Unit \ Assert =
@@ -997,7 +1001,7 @@ mod TestJson {
     @Test
     def fromJson07(): Unit \ Assert =
         // Multi-char string is not a Char.
-        assertEq(expected = (Err(TypeMismatch("Char")): Result[JsonError, Char]), FromJson.fromJson(JString("ab")))
+        assertEq(expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Char"))): Result[JsonError, Char]), FromJson.fromJson(JString("ab")))
 
     @Test
     def fromJson08(): Unit \ Assert =
@@ -1026,7 +1030,7 @@ mod TestJson {
     @Test
     def fromJson13(): Unit \ Assert =
         // Out-of-range Int8.
-        assertEq(expected = (Err(TypeMismatch("Int8")): Result[JsonError, Int8]), FromJson.fromJson(num(200)))
+        assertEq(expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Int8"))): Result[JsonError, Int8]), FromJson.fromJson(num(200)))
 
     @Test
     def fromJson14(): Unit \ Assert =
@@ -1047,7 +1051,7 @@ mod TestJson {
 
     @Test
     def fromJson18(): Unit \ Assert =
-        assertEq(expected = (Err(TypeMismatch("Int32")): Result[JsonError, Int32]), FromJson.fromJson(JBool(true)))
+        assertEq(expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Int32"))): Result[JsonError, Int32]), FromJson.fromJson(JBool(true)))
 
     /////////////////////////////////////////////////////////////////////////////
     // FromJson — Option                                                       //
@@ -1064,7 +1068,7 @@ mod TestJson {
     @Test
     def fromJson21(): Unit \ Assert =
         assertEq(
-            expected = (Err(TypeMismatch("Int32")): Result[JsonError, Option[Int32]]),
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Int32"))): Result[JsonError, Option[Int32]]),
             FromJson.fromJson(JString("nope"))
         )
 
@@ -1095,9 +1099,9 @@ mod TestJson {
 
     @Test
     def fromJson25(): Unit \ Assert =
-        // First failing element propagates.
+        // First failing element propagates with its index in the path.
         assertEq(
-            expected = (Err(TypeMismatch("Int32")): Result[JsonError, Vector[Int32]]),
+            expected = (Err(Decode(JsonPath.fromList(Index(1) :: Nil), TypeMismatch("Int32"))): Result[JsonError, Vector[Int32]]),
             FromJson.fromJson(JArray(Vector#{num(1), JBool(true)}))
         )
 
@@ -1118,9 +1122,9 @@ mod TestJson {
 
     @Test
     def fromJson28(): Unit \ Assert =
-        // Map key that fails FromString errors.
+        // Map key that fails FromString errors, with the failing string key in the path.
         assertEq(
-            expected = (Err(TypeMismatch("Map key")): Result[JsonError, Map[Int32, Bool]]),
+            expected = (Err(Decode(JsonPath.fromList(Key("notANumber") :: Nil), TypeMismatch("Map key"))): Result[JsonError, Map[Int32, Bool]]),
             FromJson.fromJson(JObject(Map#{"notANumber" => JBool(true)}))
         )
 
@@ -1139,7 +1143,7 @@ mod TestJson {
     def fromJson30(): Unit \ Assert =
         // Wrong arity.
         assertEq(
-            expected = (Err(TypeMismatch("JArray of length 2")): Result[JsonError, (Int32, String)]),
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("JArray of length 2"))): Result[JsonError, (Int32, String)]),
             FromJson.fromJson(JArray(Vector#{num(1), JString("x"), JBool(true)}))
         )
 
@@ -1157,14 +1161,14 @@ mod TestJson {
     @Test
     def fromJson32(): Unit \ Assert =
         assertEq(
-            expected = Err(MissingKey("missing")),
+            expected = (Err(Decode(JsonPath.empty(), MissingKey("missing"))): Result[JsonError, Json.Json]),
             getAtKey("missing", JObject(Map#{"a" => num(1)}))
         )
 
     @Test
     def fromJson33(): Unit \ Assert =
         assertEq(
-            expected = Err(TypeMismatch("JObject")),
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("JObject"))): Result[JsonError, Json.Json]),
             getAtKey("a", num(42))
         )
 
@@ -1195,9 +1199,9 @@ mod TestJson {
 
     @Test
     def fromJson37(): Unit \ Assert =
-        // Missing key bubbles up as MissingKey.
+        // Missing key bubbles up as MissingKey, with empty path (we never descended).
         assertEq(
-            expected = (Err(MissingKey("a")): Result[JsonError, Int32]),
+            expected = (Err(Decode(JsonPath.empty(), MissingKey("a"))): Result[JsonError, Int32]),
             decodeAtKey("a", JObject(Map#{"b" => num(42)}))
         )
 
@@ -1238,6 +1242,448 @@ mod TestJson {
         assertEq(
             expected = (Ok((1i32, true)): Result[JsonError, (Int32, Bool)]),
             Result.flatMap(FromJson.fromJson, Json.parse("[1,true]"))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // JsonPath — empty / cons / snoc / steps                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def jsonPath01(): Unit \ Assert =
+        assertEq(expected = (Nil: List[JsonStep]), JsonPath.steps(JsonPath.empty()))
+
+    @Test
+    def jsonPath02(): Unit \ Assert =
+        // cons prepends — head is the outermost (root) step.
+        let p = JsonPath.empty() |> JsonPath.cons(Key("name")) |> JsonPath.cons(Key("users"));
+        assertEq(expected = Key("users") :: Key("name") :: Nil, JsonPath.steps(p))
+
+    @Test
+    def jsonPath03(): Unit \ Assert =
+        // snoc appends — tail extends towards the leaf.
+        let p = JsonPath.empty() |> p1 -> JsonPath.snoc(p1, Key("users")) |> p2 -> JsonPath.snoc(p2, Index(0));
+        assertEq(expected = Key("users") :: Index(0) :: Nil, JsonPath.steps(p))
+
+    @Test
+    def jsonPath04(): Unit \ Assert =
+        // fromList and steps round-trip.
+        let xs = Key("a") :: Index(3) :: Key("b") :: Nil;
+        assertEq(expected = xs, JsonPath.steps(JsonPath.fromList(xs)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // JsonPath — toJsonPointer                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def jsonPath05(): Unit \ Assert =
+        // RFC 6901: empty path is the empty string (root).
+        assertEq(expected = "", JsonPath.toJsonPointer(JsonPath.empty()))
+
+    @Test
+    def jsonPath06(): Unit \ Assert =
+        assertEq(
+            expected = "/users",
+            JsonPath.toJsonPointer(JsonPath.fromList(Key("users") :: Nil))
+        )
+
+    @Test
+    def jsonPath07(): Unit \ Assert =
+        assertEq(
+            expected = "/0",
+            JsonPath.toJsonPointer(JsonPath.fromList(Index(0) :: Nil))
+        )
+
+    @Test
+    def jsonPath08(): Unit \ Assert =
+        assertEq(
+            expected = "/users/3/address/zip",
+            JsonPath.toJsonPointer(
+                JsonPath.fromList(Key("users") :: Index(3) :: Key("address") :: Key("zip") :: Nil)
+            )
+        )
+
+    @Test
+    def jsonPath09(): Unit \ Assert =
+        // RFC 6901 escaping: '/' becomes '~1'.
+        assertEq(
+            expected = "/a~1b",
+            JsonPath.toJsonPointer(JsonPath.fromList(Key("a/b") :: Nil))
+        )
+
+    @Test
+    def jsonPath10(): Unit \ Assert =
+        // RFC 6901 escaping: '~' becomes '~0'.
+        assertEq(
+            expected = "/a~0b",
+            JsonPath.toJsonPointer(JsonPath.fromList(Key("a~b") :: Nil))
+        )
+
+    @Test
+    def jsonPath11(): Unit \ Assert =
+        // RFC 6901 escaping: order matters — '~' is escaped before '/'.
+        // The literal key "~/" becomes "~0~1".
+        assertEq(
+            expected = "/~0~1",
+            JsonPath.toJsonPointer(JsonPath.fromList(Key("~/") :: Nil))
+        )
+
+    @Test
+    def jsonPath12(): Unit \ Assert =
+        // The empty key is represented as a single '/' in JSON Pointer.
+        assertEq(
+            expected = "/",
+            JsonPath.toJsonPointer(JsonPath.fromList(Key("") :: Nil))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // JsonPath — fromJsonPointer                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def jsonPath13(): Unit \ Assert =
+        assertEq(
+            expected = Some(JsonPath.empty()),
+            JsonPath.fromJsonPointer("")
+        )
+
+    @Test
+    def jsonPath14(): Unit \ Assert =
+        // All-digit segments parse as Index.
+        assertEq(
+            expected = Some(JsonPath.fromList(Index(0) :: Nil)),
+            JsonPath.fromJsonPointer("/0")
+        )
+
+    @Test
+    def jsonPath15(): Unit \ Assert =
+        assertEq(
+            expected = Some(JsonPath.fromList(Key("users") :: Index(3) :: Key("name") :: Nil)),
+            JsonPath.fromJsonPointer("/users/3/name")
+        )
+
+    @Test
+    def jsonPath16(): Unit \ Assert =
+        // ~1 unescapes to '/'.
+        assertEq(
+            expected = Some(JsonPath.fromList(Key("a/b") :: Nil)),
+            JsonPath.fromJsonPointer("/a~1b")
+        )
+
+    @Test
+    def jsonPath17(): Unit \ Assert =
+        // ~0 unescapes to '~'.
+        assertEq(
+            expected = Some(JsonPath.fromList(Key("a~b") :: Nil)),
+            JsonPath.fromJsonPointer("/a~0b")
+        )
+
+    @Test
+    def jsonPath18(): Unit \ Assert =
+        // A non-empty pointer must start with '/'.
+        assertEq(
+            expected = (None: Option[JsonPath]),
+            JsonPath.fromJsonPointer("users/0")
+        )
+
+    @Test
+    def jsonPath19(): Unit \ Assert =
+        // Round-trip: toJsonPointer >> fromJsonPointer for typical paths.
+        let p = JsonPath.fromList(Key("users") :: Index(3) :: Key("name") :: Nil);
+        assertEq(expected = Some(p), JsonPath.fromJsonPointer(JsonPath.toJsonPointer(p)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // JsonPath — navigate                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def jsonPath20(): Unit \ Assert =
+        // Empty path returns the root.
+        let j = JObject(Map#{"a" => num(1)});
+        assertEq(expected = Some(j), JsonPath.navigate(JsonPath.empty(), j))
+
+    @Test
+    def jsonPath21(): Unit \ Assert =
+        let j = JObject(Map#{"a" => num(42)});
+        assertEq(
+            expected = Some(num(42)),
+            JsonPath.navigate(JsonPath.fromList(Key("a") :: Nil), j)
+        )
+
+    @Test
+    def jsonPath22(): Unit \ Assert =
+        let j = JArray(Vector#{num(10), num(20), num(30)});
+        assertEq(
+            expected = Some(num(20)),
+            JsonPath.navigate(JsonPath.fromList(Index(1) :: Nil), j)
+        )
+
+    @Test
+    def jsonPath23(): Unit \ Assert =
+        // Nested traversal.
+        let j = JObject(Map#{"users" => JArray(Vector#{
+            JObject(Map#{"name" => JString("alice")})
+        })});
+        assertEq(
+            expected = Some(JString("alice")),
+            JsonPath.navigate(JsonPath.fromList(Key("users") :: Index(0) :: Key("name") :: Nil), j)
+        )
+
+    @Test
+    def jsonPath24(): Unit \ Assert =
+        // Missing key.
+        let j = JObject(Map#{"a" => num(1)});
+        assertEq(
+            expected = (None: Option[Json.Json]),
+            JsonPath.navigate(JsonPath.fromList(Key("b") :: Nil), j)
+        )
+
+    @Test
+    def jsonPath25(): Unit \ Assert =
+        // Index out of range.
+        let j = JArray(Vector#{num(1), num(2)});
+        assertEq(
+            expected = (None: Option[Json.Json]),
+            JsonPath.navigate(JsonPath.fromList(Index(5) :: Nil), j)
+        )
+
+    @Test
+    def jsonPath26(): Unit \ Assert =
+        // Wrong shape — descending into a primitive.
+        assertEq(
+            expected = (None: Option[Json.Json]),
+            JsonPath.navigate(JsonPath.fromList(Key("a") :: Nil), num(42))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // JsonPath — ToString and Formattable                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def jsonPath27(): Unit \ Assert =
+        // ToString matches toJsonPointer.
+        let p = JsonPath.fromList(Key("users") :: Index(0) :: Nil);
+        assertEq(expected = "/users/0", ToString.toString(p))
+
+    @Test
+    def jsonPath28(): Unit \ Assert =
+        // Formattable's plain text matches toJsonPointer.
+        let p = JsonPath.fromList(Key("users") :: Index(0) :: Key("name") :: Nil);
+        assertEq(
+            expected = "/users/0/name",
+            RichString.toPlainString(Formattable.format(p))
+        )
+
+    @Test
+    def jsonPath29(): Unit \ Assert =
+        // Eq via structural equality.
+        let p1 = JsonPath.fromList(Key("a") :: Index(0) :: Nil);
+        let p2 = JsonPath.fromList(Key("a") :: Index(0) :: Nil);
+        assertEq(expected = true, p1 == p2)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Path attachment — leaf decode errors carry the empty path               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def pathError01(): Unit \ Assert =
+        // A primitive type mismatch at the root has empty path.
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Bool"))): Result[JsonError, Bool]),
+            FromJson.fromJson(JString("nope"))
+        )
+
+    @Test
+    def pathError02(): Unit \ Assert =
+        // getAtKey on a missing key has empty path; the kind names the key.
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), MissingKey("nope"))): Result[JsonError, Json.Json]),
+            getAtKey("nope", JObject(Map#{"a" => num(1)}))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Path attachment — decodeAtKey wraps with Key step                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def pathError03(): Unit \ Assert =
+        // Key present but value not decodable: path = Key(k).
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Key("a") :: Nil), TypeMismatch("Int32"))): Result[JsonError, Int32]),
+            decodeAtKey("a", JObject(Map#{"a" => JString("nope")}))
+        )
+
+    @Test
+    def pathError04(): Unit \ Assert =
+        // Outer "a" descended; inner Map fails at key "x".
+        // Path threads: Key("a") :: Key("x").
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Key("a") :: Key("x") :: Nil), TypeMismatch("Int32"))): Result[JsonError, Map[String, Int32]]),
+            decodeAtKey("a", JObject(Map#{
+                "a" => JObject(Map#{"x" => JBool(true)})
+            }))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Path attachment — decodeAtIndex wraps with Index step                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def pathError05(): Unit \ Assert =
+        // Element present but not decodable: path = Index(i).
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Index(1) :: Nil), TypeMismatch("Int32"))): Result[JsonError, Int32]),
+            decodeAtIndex(1, JArray(Vector#{num(0), JString("nope")}))
+        )
+
+    @Test
+    def pathError06(): Unit \ Assert =
+        // Out-of-range index bubbles up as MissingKey with empty path.
+        // (We surface the missing index via TypeMismatch with index info to keep
+        // DecodeErrorKind focused on Key-based MissingKey.)
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("JArray index 5"))): Result[JsonError, Int32]),
+            decodeAtIndex(5, JArray(Vector#{num(0), num(1)}))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Path attachment — Vector / List / Map / Tuple instances                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def pathError07(): Unit \ Assert =
+        // Vector element failure: path = Index(i).
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Index(1) :: Nil), TypeMismatch("Int32"))): Result[JsonError, Vector[Int32]]),
+            FromJson.fromJson(JArray(Vector#{num(1), JBool(true)}))
+        )
+
+    @Test
+    def pathError08(): Unit \ Assert =
+        // List element failure: path = Index(i).
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Index(0) :: Nil), TypeMismatch("Int32"))): Result[JsonError, List[Int32]]),
+            FromJson.fromJson(JArray(Vector#{JBool(true), num(2)}))
+        )
+
+    @Test
+    def pathError09(): Unit \ Assert =
+        // Map value failure: path = Key(k).
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Key("b") :: Nil), TypeMismatch("Int32"))): Result[JsonError, Map[String, Int32]]),
+            FromJson.fromJson(JObject(Map#{"a" => num(1), "b" => JBool(true)}))
+        )
+
+    @Test
+    def pathError10(): Unit \ Assert =
+        // Map key parse failure: path = Key(stringKey).
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Key("notANumber") :: Nil), TypeMismatch("Map key"))): Result[JsonError, Map[Int32, Bool]]),
+            FromJson.fromJson(JObject(Map#{"notANumber" => JBool(true)}))
+        )
+
+    @Test
+    def pathError11(): Unit \ Assert =
+        // Tuple element failure: path = Index(i).
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Index(1) :: Nil), TypeMismatch("String"))): Result[JsonError, (Int32, String)]),
+            FromJson.fromJson(JArray(Vector#{num(1), num(2)}))
+        )
+
+    @Test
+    def pathError12(): Unit \ Assert =
+        // Tuple wrong arity: path = empty (the array as a whole doesn't match shape).
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("JArray of length 2"))): Result[JsonError, (Int32, String)]),
+            FromJson.fromJson(JArray(Vector#{num(1)}))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Path attachment — Option pass-through and nested composition             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def pathError13(): Unit \ Assert =
+        // Option does not introduce a step; the inner decode error path is preserved.
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Int32"))): Result[JsonError, Option[Int32]]),
+            FromJson.fromJson(JString("nope"))
+        )
+
+    @Test
+    def pathError14(): Unit \ Assert =
+        // Nested: outer object → inner array → element fails.
+        // Path threads through the recursive instances: Key("xs") :: Index(2).
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Key("xs") :: Index(2) :: Nil), TypeMismatch("Int32"))): Result[JsonError, Vector[Int32]]),
+            decodeAtKey("xs", JObject(Map#{
+                "xs" => JArray(Vector#{num(1), num(2), JBool(true)})
+            }))
+        )
+
+    @Test
+    def pathError15(): Unit \ Assert =
+        // Nested: outer object → inner tuple → element fails.
+        // Path: Key("pair") :: Index(1).
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Key("pair") :: Index(1) :: Nil), TypeMismatch("String"))): Result[JsonError, (Int32, String)]),
+            decodeAtKey("pair", JObject(Map#{
+                "pair" => JArray(Vector#{num(1), num(2)})
+            }))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Parse errors are wrapped in the Parse case (no path)                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def pathError16(): Unit \ Assert =
+        // A parser failure produces a Parse(...) error, not Decode.
+        match Json.parse("{") {
+            case Err(Parse(_)) => assertEq(expected = true, true)
+            case _             => assertEq(expected = true, false)
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Json.decode — combined parse + fromJson                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def decode01(): Unit \ Assert =
+        // Successful round-trip: parse + decode in one call.
+        assertEq(
+            expected = (Ok(42i32): Result[JsonError, Int32]),
+            Json.decode("42")
+        )
+
+    @Test
+    def decode02(): Unit \ Assert =
+        assertEq(
+            expected = (Ok((1i32, true)): Result[JsonError, (Int32, Bool)]),
+            Json.decode("[1,true]")
+        )
+
+    @Test
+    def decode03(): Unit \ Assert =
+        // Parse failure surfaces as Err(Parse(...)).
+        match (Json.decode("{"): Result[JsonError, Json.Json]) {
+            case Err(Parse(_)) => assertEq(expected = true, true)
+            case _             => assertEq(expected = true, false)
+        }
+
+    @Test
+    def decode04(): Unit \ Assert =
+        // Valid JSON, wrong shape: surfaces as Err(Decode(...)) at empty path.
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Int32"))): Result[JsonError, Int32]),
+            Json.decode("\"not a number\"")
+        )
+
+    @Test
+    def decode05(): Unit \ Assert =
+        // Valid JSON; nested decode failure carries the failing element's path.
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Index(1) :: Nil), TypeMismatch("Int32"))): Result[JsonError, Vector[Int32]]),
+            Json.decode("[1,true,3]")
         )
 
 }
