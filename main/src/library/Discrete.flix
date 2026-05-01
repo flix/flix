@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-trait Discrete[t] with Order[t] {
-    ///
-    /// Returns the successor of the given `x`.
-    ///
-    pub def succ(x: t): t
+mod Discrete {
 
-    ///
-    /// Returns the predecessor of the given `x`.
-    ///
-    pub def prev(x: t): t
-}
+    trait Discrete[t] with Order[t] {
+        ///
+        /// Returns the successor of the given `x`.
+        ///
+        pub def succ(x: t): t
 
-instance Discrete[Int32] {
-    pub def succ(x: Int32): Int32 = x + 1
-    pub def prev(x: Int32): Int32 = x - 1
+        ///
+        /// Returns the predecessor of the given `x`.
+        ///
+        pub def prev(x: t): t
+    }
+
+    instance Discrete[Int32] {
+        pub def succ(x: Int32): Int32 = x + 1
+        pub def prev(x: Int32): Int32 = x - 1
+    }
+
 }
