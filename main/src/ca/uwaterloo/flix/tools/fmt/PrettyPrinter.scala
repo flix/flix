@@ -616,7 +616,8 @@ object PrettyPrinter {
     else
       prettyBracket(tree.copy(children = rest), filterEmpty(rest),
         headerJoin = declHeaderJoin,
-        formatBody = body => joinWithGap(filterEmpty(body))
+        formatBody = body => joinWithGap(filterEmpty(body)),
+        flatPad = space
       )
   })
 
