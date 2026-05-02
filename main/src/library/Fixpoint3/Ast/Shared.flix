@@ -17,8 +17,10 @@
  * limitations under the License.
  */
 pub mod Fixpoint3.Ast.Shared {
+
     use Fixpoint3.Boxable
     use Fixpoint3.Boxed
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Denotation                                                              //
@@ -91,4 +93,5 @@ pub mod Fixpoint3.Ast.Shared {
             case PredSym.PredSym(name, id) => "${name}%${id}"
         }
     }
+
 }

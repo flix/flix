@@ -15,14 +15,15 @@
  */
 
 pub mod Fs.SizeUnit {
+
     ///
     /// Represents a size unit.
     ///
     pub enum SizeUnit with Eq, ToString {
-        case Bytes
-        case KiloBytes
-        case MegaBytes
-        case GigaBytes
+        case Bytes,
+        case KiloBytes,
+        case MegaBytes,
+        case GigaBytes,
         case TeraBytes
     }
 
@@ -36,4 +37,5 @@ pub mod Fs.SizeUnit {
         case SizeUnit.GigaBytes => 1_024i64 * 1_024i64 * 1_024i64,
         case SizeUnit.TeraBytes => 1_024i64 * 1_024i64 * 1_024i64 * 1_024i64
     }
+
 }

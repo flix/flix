@@ -40,12 +40,11 @@ pub mod Fixpoint3.Phase.Stratifier {
     /// A pseudostratum is a group of mutually independent, consecutive strata. For example,
     /// `predSym -> (2, 1)` means `predSym` belongs to stratum 1 within pseudostrata 2.
     ///
-    pub def stratify(d: Datalog): Map[PredSym, (Int32, Int32)] =
-        region rc {
-            let depGraph = MutGraph.empty(rc);
-            addDepEdges(depGraph, d);
-            mkStratificationMap(rc, d, depGraph)
-        }
+    pub def stratify(d: Datalog): Map[PredSym, (Int32, Int32)] = region rc {
+        let depGraph = MutGraph.empty(rc);
+        addDepEdges(depGraph, d);
+        mkStratificationMap(rc, d, depGraph)
+    }
 
     ///
     /// Given `d` with dependency graph `graph`, constructs a map from `PredSym`s in `d`
@@ -63,6 +62,7 @@ pub mod Fixpoint3.Phase.Stratifier {
                     let predSym = PredSym.PredSym(Array.get(x, predSyms), Int32.toInt64(x));
                     MutMap.put(predSym, (pseudoStratum, stratum), result)
                 }
+
             }
         };
         MutMap.toMap(result)
@@ -99,13 +99,12 @@ pub mod Fixpoint3.Phase.Stratifier {
         case (HeadAtom(PredSym.PredSym(_, dstId), _, _), BodyAtom(PredSym.PredSym(_, srcId), _, _, _, _)) => {
             if (dstId != srcId) {
                 MutGraph.addEdge(toInt32(srcId), toInt32(dstId), graph)
-            } else
-                (
-                    // We still register the vertex, as it is needed later.
-                    MutGraph.addVertex(toInt32(dstId), graph)
-                )
+            } else (
+                // We still register the vertex, as it is needed later.
+                MutGraph.addVertex(toInt32(dstId), graph)
+            )
         }
-        case _                                                                                            => ()
+        case _ => ()
     }
 
     ///
@@ -140,7 +139,7 @@ pub mod Fixpoint3.Phase.Stratifier {
             Array.put(name, toInt32(id), predMap);
             ()
         }
-        case _                                                 => ()
+        case _ => ()
     }
 
     ///

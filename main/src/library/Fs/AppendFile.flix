@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.AppendFile {
+
     use Fs.FileWrite
 
     ///
@@ -23,12 +24,14 @@ pub mod Fs.AppendFile {
     /// Use the `AppendFile.runWithFileWrite` handler.
     ///
     pub eff AppendFile {
+
         ///
         /// Appends `str` to the given file `f`.
         ///
         /// Creates the file `f` if it does not exist.
         ///
-        def append(data: { str = String }, f: String): Result[IoError, Unit]
+        def append(data: {str = String}, f: String): Result[IoError, Unit]
+
     }
 
     ///
@@ -38,4 +41,5 @@ pub mod Fs.AppendFile {
         run { f() } with handler AppendFile {
             def append(data, file, k) = k(Fs.FileWrite.append(data, file))
         }
+
 }

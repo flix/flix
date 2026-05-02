@@ -15,23 +15,24 @@
  */
 
 pub mod MutDisjointSets {
+
     ///
     /// Represents a mutable disjoint set data structure
     /// using union-by-rank and path compression.
     ///
     pub struct MutDisjointSets[t: Type, r: Region] {
-        rc:     Region[r],
+        rc: Region[r],
         forest: MutMap[t, Node[t, r], r]
     }
 
     ///
     /// Represents an element in the disjoint set forest.
     ///
-    struct Node[t: Type, r: Region] {
-        rc:         Region[r],
-        value:      t,
+    struct Node[t: Type, r: Region]{
+        rc: Region[r],
+        value: t,
         mut parent: Option[Node[t, r]],
-        mut rank:   Int32
+        mut rank: Int32
     }
 
     mod Node {
@@ -46,7 +47,7 @@ pub mod MutDisjointSets {
     /// Returns new and empty `MutDisjointSets` in the region `rc`.
     ///
     pub def empty(rc: Region[r]): MutDisjointSets[t, r] \ r =
-        new MutDisjointSets @ rc {rc = rc, forest = MutMap.empty(rc)}
+        new MutDisjointSets @ rc { rc = rc, forest = MutMap.empty(rc) }
 
     ///
     /// Updates `s` with a new disjoint set containing `x`
@@ -54,7 +55,7 @@ pub mod MutDisjointSets {
     ///
     pub def makeSet(x: t, s: MutDisjointSets[t, r]): Unit \ r with Order[t] = {
         def singleton(rc, y) = {
-            new MutDisjointSets.Node @ rc {rc = rc, value = y, parent = None, rank = 0}
+            new MutDisjointSets.Node @ rc { rc = rc, value = y, parent = None, rank = 0 }
         };
 
         if (not memberOf(x, s)) {
@@ -67,10 +68,9 @@ pub mod MutDisjointSets {
     ///
     /// Updates `s` with the elements of the iterable `m`.
     ///
-    pub def makeSets(m: m, s: MutDisjointSets[elt, r]): Unit \ (r + Iterable.Aef[m]) with Iterable[m], Order[elt] where Iterable.Elm[m] ~ elt =
-        region rc {
-            Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
-        }
+    pub def makeSets(m: m, s: MutDisjointSets[elt, r]): Unit \ (r + Iterable.Aef[m]) with Iterable[m], Order[elt] where Iterable.Elm[m] ~ elt = region rc {
+        Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
+    }
 
     ///
     /// Returns `true` iff `x` is a member of `s`.
@@ -95,13 +95,13 @@ pub mod MutDisjointSets {
                 case Some(p) => {
                     findRoot(y :: updateAtRoot, p)
                 }
-                case None    =>
+                case None =>
                     updateAtRoot |> List.forEach(Node.setParent(Some(y)));
                     y
             }
         };
         MutMap.get(x, s->forest)
-            |> Option.map(findRoot(Nil))
+        |> Option.map(findRoot(Nil))
     }
 
     ///
@@ -131,21 +131,22 @@ pub mod MutDisjointSets {
                 } else {
                     ()
                 }
-            } else {
+            }
+            else {
                 ()
             }
         };
         match (findSet(x, s), findSet(y, s)) {
             case (Some(xn), Some(yn)) => link(xn, yn)
-            case (Some(_), None)      => {
+            case (Some(_), None) => {
                 makeSet(y, s);
                 union(x, y, s)
             }
-            case (None, Some(_))      => {
+            case (None, Some(_)) => {
                 makeSet(x, s);
                 union(x, y, s)
             }
-            case (None, None)         => {
+            case (None, None)     => {
                 makeSet(x, s);
                 makeSet(y, s);
                 union(x, y, s)
@@ -157,10 +158,11 @@ pub mod MutDisjointSets {
     /// This is equivalent to having the same representative / root.
     /// Returns false if either `x` or `y` is not in `s`.
     ///
-    pub def equivalent(x: t, y: t, s: MutDisjointSets[t, r]): Bool \ r with Order[t] = match (findSet(x, s), findSet(y, s)) {
-        case (Some(xn), Some(yn)) => equal(xn, yn)
-        case _                    => false
-    }
+    pub def equivalent(x: t, y: t, s: MutDisjointSets[t, r]): Bool \ r with Order[t] =
+        match (findSet(x, s), findSet(y, s)) {
+            case (Some(xn), Some(yn)) => equal(xn, yn)
+            case _                    => false
+        }
 
     ///
     /// Returns true if `x` and `y` have the same value.
@@ -173,4 +175,5 @@ pub mod MutDisjointSets {
     ///
     pub def size(s: MutDisjointSets[t, r]): Int32 \ r with Order[t] =
         MutMap.size(s->forest)
+
 }

@@ -15,6 +15,7 @@
  */
 
 pub mod Net.Body {
+
     ///
     /// An enum representing the body of an HTTP request or response.
     ///
@@ -22,4 +23,5 @@ pub mod Net.Body {
         case Text(String)
         case Bytes(Vector[Int8])
     }
+
 }

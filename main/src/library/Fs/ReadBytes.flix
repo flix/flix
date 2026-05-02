@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.ReadBytes {
+
     use Fs.FileRead
 
     ///
@@ -23,10 +24,12 @@ pub mod Fs.ReadBytes {
     /// Use the `ReadBytes.runWithFileRead` handler.
     ///
     pub eff ReadBytes {
+
         ///
         /// Returns a vector of all the bytes in the given file `f`.
         ///
         def readBytes(f: String): Result[IoError, Vector[Int8]]
+
     }
 
     ///
@@ -36,4 +39,5 @@ pub mod Fs.ReadBytes {
         run { f() } with handler ReadBytes {
             def readBytes(filename, k) = k(Fs.FileRead.readBytes(filename))
         }
+
 }

@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.IsRegularFile {
+
     use Fs.FileTest
 
     ///
@@ -23,10 +24,12 @@ pub mod Fs.IsRegularFile {
     /// Use the `IsRegularFile.runWithFileTest` handler.
     ///
     pub eff IsRegularFile {
+
         ///
         /// Returns `true` if the given file `f` is a regular file.
         ///
         def isRegularFile(f: String): Result[IoError, Bool]
+
     }
 
     ///
@@ -36,4 +39,5 @@ pub mod Fs.IsRegularFile {
         run { f() } with handler IsRegularFile {
             def isRegularFile(filename, k) = k(Fs.FileTest.isRegularFile(filename))
         }
+
 }

@@ -15,6 +15,7 @@
  */
 
 pub mod Abort {
+
     import java.lang.Thread
     import java.lang.StackTraceElement
     import java.lang.System
@@ -23,12 +24,14 @@ pub mod Abort {
     /// An effect used to abort computation with an error message.
     ///
     pub eff Abort {
+
         ///
         /// Immediately aborts the current computation with the given error message `m`.
         ///
         /// The computation cannot be resumed.
         ///
         def abort(m: RichString): Void
+
     }
 
     ///
@@ -75,6 +78,7 @@ pub mod Abort {
             def abort(m, _k) = Result.Err(m)
         }
 
+
     ///
     /// Runs the `Abort` effect of the given function `f`.
     ///
@@ -83,8 +87,7 @@ pub mod Abort {
     /// Note: This function can still return normally if `abort` is never called by `f`.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Abort) + IO =
-        handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Abort) + IO = handle(f)()
 
     ///
     /// Runs the `Abort` effect of the given function `f`.
@@ -102,30 +105,24 @@ pub mod Abort {
         let nl = fromString(String.lineSeparator());
         let frames = List.drop(skip, trace) |> List.zipWithIndex;
         let maxIdx = List.length(frames) - 1;
-        let width = String.length("${maxIdx}");
-        joinWith(
-            match (idx, elem) -> {
-                let className = elem.getClassName();
-                let methodName = elem.getMethodName();
-                let fileName = Object.toOption(elem.getFileName()) |> Option.getWithDefault("Unknown Source");
-                let lineNumber = elem.getLineNumber();
-                let index = cyan("#${String.padLeft(width, ' ', "${idx}")}");
-                let location = gray("(${fileName}:${lineNumber})");
-                if (isUserFrame(className))
-                    let (classPrefix, funcName) = splitClassName(className);
-                    fromString("  ") + index + fromString(" ")
-                        + fromString(classPrefix)
-                        + bold(yellow(funcName))
-                        + fromString(".${methodName}")
-                        + location
-                else
-                    fromString("  ") + index + fromString(" ")
-                        + gray("${className}.${methodName}")
-                        + location
-            },
-            nl,
-            frames
-        )
+        let width  = String.length("${maxIdx}");
+        joinWith(match (idx, elem) -> {
+            let className  = elem.getClassName();
+            let methodName = elem.getMethodName();
+            let fileName   = Object.toOption(elem.getFileName()) |> Option.getWithDefault("Unknown Source");
+            let lineNumber = elem.getLineNumber();
+            let index    = cyan("#${String.padLeft(width, ' ', "${idx}")}");
+            let location = gray("(${fileName}:${lineNumber})");
+            if (isUserFrame(className))
+                let (classPrefix, funcName) = splitClassName(className);
+                fromString("  ") + index + fromString(" ") +
+                    fromString(classPrefix) +
+                    bold(yellow(funcName)) +
+                    fromString(".${methodName}") + location
+            else
+                fromString("  ") + index + fromString(" ") +
+                    gray("${className}.${methodName}") + location
+        }, nl, frames)
 
     ///
     /// Splits a user-frame class name into the prefix (up to and including `Def$`)
@@ -146,6 +143,7 @@ pub mod Abort {
     /// Flix compiles user functions to JVM classes named `Def$functionName` or `Namespace.Def$functionName`.
     ///
     def isUserFrame(className: String): Bool =
-        String.startsWith(prefix = "Def$", className)
-            or String.contains(substr = ".Def$", className)
+        String.startsWith(prefix = "Def$", className) or
+        String.contains(substr = ".Def$", className)
+
 }

@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.CopyOption {
+
     ///
     /// Options for the `copyWith` operation.
     ///
@@ -22,4 +23,5 @@ pub mod Fs.CopyOption {
         case CopyAttributes
         case ReplaceExisting
     }
+
 }

@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.CopyFile {
+
     use Fs.FileWrite
     use Fs.CopyFile
     use Fs.CopyOption
@@ -25,16 +26,18 @@ pub mod Fs.CopyFile {
     /// Use the `CopyFile.runWithFileWrite` handler.
     ///
     pub eff CopyFile {
+
         ///
         /// Copies the file `src` to `dst` with the given `options`.
         ///
-        def copyWith(src: { src = String }, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
     }
 
     ///
     /// Convenience function: copies `src` to `dst` with no options.
     ///
-    pub def copy(src: { src = String }, dst: String): Result[IoError, Unit] \ CopyFile =
+    pub def copy(src: {src = String}, dst: String): Result[IoError, Unit] \ CopyFile =
         Fs.CopyFile.copyWith(src, dst, Set.empty())
 
     ///
@@ -44,4 +47,5 @@ pub mod Fs.CopyFile {
         run { f() } with handler CopyFile {
             def copyWith(src, dst, opts, k) = k(Fs.FileWrite.copyWith(src, dst, opts))
         }
+
 }

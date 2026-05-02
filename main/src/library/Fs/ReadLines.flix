@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.ReadLines {
+
     use Fs.FileRead
 
     ///
@@ -23,10 +24,12 @@ pub mod Fs.ReadLines {
     /// Use the `ReadLines.runWithFileRead` handler.
     ///
     pub eff ReadLines {
+
         ///
         /// Returns a list of all lines in the given file `f`.
         ///
         def readLines(f: String): Result[IoError, List[String]]
+
     }
 
     ///
@@ -36,4 +39,5 @@ pub mod Fs.ReadLines {
         run { f() } with handler ReadLines {
             def readLines(filename, k) = k(Fs.FileRead.readLines(filename))
         }
+
 }

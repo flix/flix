@@ -16,18 +16,21 @@
  */
 
 pub mod Assert {
+
     use Sys.Console
-    use RichString.{blue, red, text, yellow}
-    import java.lang.AssertionError
+    use RichString.{blue, red, text, yellow};
+    import java.lang.AssertionError;
 
     ///
     /// An effect used to perform assertions during program execution.
     ///
     pub eff Assert {
+
         ///
         /// Asserts that the given condition `cond` is `true` with a message `msg`.
         ///
         def assert(cond: Bool, msg: RichString): Unit
+
     }
 
     ///
@@ -59,7 +62,7 @@ pub mod Assert {
     ///
     /// Asserts that the given values `expected` and `actual` are equal.
     ///
-    pub def assertEq(expected: { expected = a }, actual: a): Unit \ Assert with Eq[a], ToString[a] =
+    pub def assertEq(expected: {expected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
         let c = actual == expected#expected;
         let m = red("Assertion failed: ") + text("expected ") + blue("`${expected#expected}`") + text(", but got ") + yellow("`${actual}`");
         Assert.assert(c, m)
@@ -67,7 +70,7 @@ pub mod Assert {
     ///
     /// Asserts that the given values `expected` and `actual` are equal with the given message `msg`.
     ///
-    pub def assertEqWithMsg(expected: { expected = a }, actual: a, msg: String): Unit \ Assert with Eq[a] =
+    pub def assertEqWithMsg(expected: {expected = a}, actual: a, msg: String): Unit \ Assert with Eq[a] =
         let c = actual == expected#expected;
         let m = text(msg);
         Assert.assert(c, m)
@@ -75,7 +78,7 @@ pub mod Assert {
     ///
     /// Asserts that the given values `unexpected` and `actual` are not equal.
     ///
-    pub def assertNeq(unexpected: { unexpected = a }, actual: a): Unit \ Assert with Eq[a], ToString[a] =
+    pub def assertNeq(unexpected: {unexpected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
         let c = actual != unexpected#unexpected;
         let m = red("Assertion failed: ") + text("expected values to be different, but both were ") + yellow("`${actual}`");
         Assert.assert(c, m)
@@ -83,7 +86,7 @@ pub mod Assert {
     ///
     /// Asserts that the given values `unexpected` and `actual` are not equal with the given message `msg`.
     ///
-    pub def assertNeqWithMsg(unexpected: { unexpected = a }, actual: a, msg: String): Unit \ Assert with Eq[a] =
+    pub def assertNeqWithMsg(unexpected: {unexpected = a}, actual: a, msg: String): Unit \ Assert with Eq[a] =
         let c = actual != unexpected#unexpected;
         let m = text(msg);
         Assert.assert(c, m)
@@ -181,8 +184,7 @@ pub mod Assert {
     /// In other words, re-interprets the `Assert` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Assert) + IO =
-        handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Assert) + IO = handle(f)()
 
     ///
     /// Handles the `Assert` effect by ignoring all assertions (no-op).
@@ -318,4 +320,5 @@ pub mod Assert {
     /// If the user chooses not to continue, the program throws an exception.
     ///
     pub def runWithPrompt(f: Unit -> a \ ef): a \ (ef - Assert) + IO = handleWithPrompt(f)()
+
 }

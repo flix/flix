@@ -15,6 +15,7 @@
  */
 
 pub mod Sys.StdErr {
+
     import java.io.InputStream
 
     ///
@@ -29,4 +30,5 @@ pub mod Sys.StdErr {
             let StdErr.StdErr(pr) = r;
             Readable.read(b, pr)
     }
+
 }

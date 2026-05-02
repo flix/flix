@@ -23,6 +23,7 @@ instance UpperBound[Float64] {
 }
 
 pub mod Float64 {
+
     import java.lang.Double
     import java.lang.Math
     import java.math.BigDecimal
@@ -183,12 +184,13 @@ pub mod Float64 {
     ///
     /// Returns `None` if the value of `x` is NaN or infinity.
     ///
-    pub def tryToBigInt(x: Float64): Option[BigInt] = try {
-        Some(BigDecimal.valueOf(x).toBigInteger())
-    } catch {
-        // Catch NaN, isInfinite.
-        case _: NumberFormatException => None
-    }
+    pub def tryToBigInt(x: Float64): Option[BigInt] =
+        try {
+            Some(BigDecimal.valueOf(x).toBigInteger())
+        } catch {
+            // Catch NaN, isInfinite.
+            case _: NumberFormatException => None
+        }
 
     ///
     /// Convert `x` to an `Option[Float32]`.
@@ -216,22 +218,24 @@ pub mod Float64 {
     ///
     /// If `x` is NaN or infinity return `None`.
     ///
-    pub def tryToBigDecimal(x: Float64): Option[BigDecimal] = try {
-        Some(new BigDecimal(x))
-    } catch {
-        case _: NumberFormatException => None
-    }
+    pub def tryToBigDecimal(x: Float64): Option[BigDecimal] =
+        try {
+            Some(new BigDecimal(x))
+        } catch {
+            case _: NumberFormatException => None
+        }
 
     ///
     /// Helper function for the `clamp` conversion functions.
     ///
-    def clamp(min: { min = Float64 }, max: { max = Float64 }, x: Float64): Float64 =
+    def clamp(min: {min = Float64}, max: {max = Float64}, x: Float64): Float64 =
         if (x < min#min)
-            min#min
-        else if (x > max#max)
-            max#max
+             min#min
         else
-            x
+            if (x > max#max)
+                max#max
+            else
+                x
 
     ///
     /// Convert `x` to an `Int8`.
@@ -241,7 +245,7 @@ pub mod Float64 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int8 risks masking it.
     ///
-    pub def clampToInt8(min: { min = Int8 }, max: { max = Int8 }, nanValue: { nanValue = Int8 }, x: Float64): Int8 =
+    pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, nanValue: {nanValue = Int8}, x: Float64): Int8 =
         let minf64 = Int8.toFloat64(min#min);
         let maxf64 = Int8.toFloat64(max#max);
         if (isNan(x))
@@ -257,7 +261,7 @@ pub mod Float64 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int16 risks masking it.
     ///
-    pub def clampToInt16(min: { min = Int16 }, max: { max = Int16 }, nanValue: { nanValue = Int16 }, x: Float64): Int16 =
+    pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, nanValue: {nanValue = Int16}, x: Float64): Int16 =
         let minf64 = Int16.toFloat64(min#min);
         let maxf64 = Int16.toFloat64(max#max);
         if (isNan(x))
@@ -273,7 +277,7 @@ pub mod Float64 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int32 risks masking it.
     ///
-    pub def clampToInt32(min: { min = Int32 }, max: { max = Int32 }, nanValue: { nanValue = Int32 }, x: Float64): Int32 =
+    pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, nanValue: {nanValue = Int32}, x: Float64): Int32 =
         let minf64 = Int32.toFloat64(min#min);
         let maxf64 = Int32.toFloat64(max#max);
         if (isNan(x))
@@ -289,7 +293,7 @@ pub mod Float64 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int64 risks masking it.
     ///
-    pub def clampToInt64(min: { min = Int64 }, max: { max = Int64 }, nanValue: { nanValue = Int64 }, x: Float64): Int64 =
+    pub def clampToInt64(min: {min = Int64}, max: {max = Int64}, nanValue: {nanValue = Int64}, x: Float64): Int64 =
         let minf64 = Int64.toFloat64(min#min);
         let maxf64 = Int64.toFloat64(max#max);
         if (isNan(x))
@@ -302,7 +306,7 @@ pub mod Float64 {
     ///
     /// Returns `x` clamped within the Float32 range `min` to `max`.
     ///
-    pub def clampToFloat32(min: { min = Float32 }, max: { max = Float32 }, x: Float64): Float32 =
+    pub def clampToFloat32(min: {min = Float32}, max: {max = Float32}, x: Float64): Float32 =
         let minf64 = Float32.toFloat64(min#min);
         let maxf64 = Float32.toFloat64(max#max);
         if (isNan(x))
@@ -366,7 +370,7 @@ pub mod Float64 {
     ///
     /// Returns ` base` raised to the power of `n`.
     ///
-    pub def pow(base: { base = Float64 }, n: Float64): Float64 = %%FLOAT64_EXP%%(base#base, n)
+    pub def pow(base: {base = Float64}, n: Float64): Float64 = %%FLOAT64_EXP%%(base#base, n)
 
     ///
     /// Returns the exponential of `x`.
@@ -391,4 +395,5 @@ pub mod Float64 {
     ///
     pub def valueOf(i: Float64): Double =
         Double.valueOf(i)
+
 }

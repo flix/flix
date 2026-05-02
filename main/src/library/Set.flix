@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+
 pub mod Set {
+
     ///
     /// The Set type.
     ///
@@ -32,6 +34,7 @@ pub mod Set {
     instance Order[Set[a]] with Order[a] {
         pub def compare(s1: Set[a], s2: Set[a]): Comparison =
             Set.toList(s1) <=> Set.toList(s2)
+
     }
 
     instance Hash[Set[a]] with Hash[a] {
@@ -81,12 +84,11 @@ pub mod Set {
         redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
 
         @ParallelWhenPure
-        redef count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef =
-            Set.count(f, s)
+        redef count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
     }
 
     instance SemiGroup[Set[a]] with Order[a] {
-        pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x, y)
+        pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
     }
 
     instance CommutativeSemiGroup[Set[a]] with Order[a]
@@ -115,10 +117,9 @@ pub mod Set {
     ///
     /// Returns a string representation of the given set `s`.
     ///
-    pub def toString(s: Set[a]): String with ToString[a] =
-        region rc {
-            "Set#{" + (Set.iterator(rc, s) |> Iterator.join(", ")) + "}"
-        }
+    pub def toString(s: Set[a]): String with ToString[a] = region rc {
+        "Set#{" + (Set.iterator(rc, s) |> Iterator.join(", ")) + "}"
+    }
 
     ///
     /// Determines whether to use parallel evaluation.
@@ -218,7 +219,7 @@ pub mod Set {
     pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def min() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.LessThan) x else y, s);
         match purityOf2(cmp) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
@@ -249,7 +250,7 @@ pub mod Set {
     pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def max() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.GreaterThan) x else y, s);
         match purityOf2(cmp) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
@@ -342,16 +343,17 @@ pub mod Set {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = match purityOf(f) {
-        case Purity.Pure(g)   =>
-            if (useParallelEvaluation(s))
-                let h = (k, _) -> g(k);
-                let Set(t) = s;
-                RedBlackTree.parCount(h, t)
-            else
-                foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
-        case Purity.Impure(g) => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
-    }
+    pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef =
+        match purityOf(f) {
+            case Purity.Pure(g) =>
+                if (useParallelEvaluation(s))
+                    let h = (k, _) -> g(k);
+                    let Set(t) = s;
+                    RedBlackTree.parCount(h, t)
+                else
+                    foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+            case Purity.Impure(g) => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
+        }
 
     ///
     /// Returns the union of the elements in `s`.
@@ -442,7 +444,7 @@ pub mod Set {
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
-    pub def replace(src: { src = a }, dst: { dst = a }, s: Set[a]): Set[a] with Order[a] =
+    pub def replace(src: {src = a}, dst: {dst = a}, s: Set[a]): Set[a] with Order[a] =
         if (memberOf(src#src, s)) insert(dst#dst, remove(src#src, s)) else s
 
     ///
@@ -452,16 +454,13 @@ pub mod Set {
     /// `s2` contains all elements of `s` that do not satisfy the predicate `f`.
     ///
     pub def partition(f: a -> Bool \ ef, s: Set[a]): (Set[a], Set[a]) \ ef with Order[a] =
-        foldLeft(
-            (acc, x) ->
-                let (a, b) = acc;
-                if (f(x))
-                    (insert(x, a), b)
-                else
-                    (a, insert(x, b)),
-            (empty(), empty()),
-            s
-        )
+        foldLeft((acc, x) ->
+            let (a, b) = acc;
+            if (f(x))
+                (insert(x, a), b)
+            else
+                (a, insert(x, b)), (empty(), empty()),
+            s)
 
     ///
     /// Returns the set `s` as a list.
@@ -478,17 +477,16 @@ pub mod Set {
             let a = Array.empty(rc, sz);
             Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
             a
-    }
+        }
 
     ///
     /// Returns the set `s` as a vector.
     ///
-    pub def toVector(s: Set[a]): Vector[a] =
-        region rc {
-            let arr = Array.empty(rc, size(s));
-            Iterator.forEachWithIndex((i, x) -> Array.put(x, i, arr), iterator(rc, s));
-            Array.toVector(arr)
-        }
+    pub def toVector(s: Set[a]): Vector[a] = region rc {
+        let arr = Array.empty(rc, size(s));
+        Iterator.forEachWithIndex((i, x) -> Array.put(x, i, arr), iterator(rc, s));
+        Array.toVector(arr)
+    }
 
     ///
     /// Returns the set `s` as a chain.
@@ -588,4 +586,5 @@ pub mod Set {
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, s: Set[a]): String \ ef =
         Foldable.joinWith(f, sep, s)
+
 }

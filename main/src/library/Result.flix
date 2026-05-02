@@ -15,6 +15,7 @@
  */
 
 pub mod Result {
+
     import java.lang.Exception
 
     ///
@@ -25,7 +26,7 @@ pub mod Result {
     /// whereas the constructor `Err(v)` represents the error value `v`.
     ///
     pub enum Result[e, t] with Eq, Order, ToString {
-        case Ok(t)
+        case Ok(t),
         case Err(e)
     }
 
@@ -41,12 +42,12 @@ pub mod Result {
     }
 
     instance Applicative[Result[e]] {
-        pub def point(a: a): Result[e, a] = Ok(a)
+        pub def point(a: a) : Result[e, a] = Ok(a)
         pub def ap(f: Result[e, a -> b \ ef], x: Result[e, a]): Result[e, b] \ ef = Result.ap(f, x)
     }
 
     instance Monad[Result[e]] {
-        pub def flatMap(f: a -> Result[e, b] \ ef, x: Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
+        pub def flatMap(f: a -> Result[e, b] \ ef, x : Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
     }
 
     instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
@@ -101,7 +102,7 @@ pub mod Result {
     ///
     /// Returns `Ok(v)` if `r` is `Ok(v)`. Otherwise returns `default`.
     ///
-    pub def withDefault(default: { default = Result[e2, t] }, r: Result[e1, t]): Result[e2, t] = match r {
+    pub def withDefault(default: {default = Result[e2, t]}, r: Result[e1, t]): Result[e2, t] = match r {
         case Ok(v)  => Ok(v)
         case Err(_) => default#default
     }
@@ -109,7 +110,7 @@ pub mod Result {
     ///
     /// Returns `Ok(dst)` if `r` is `Ok(src)`. Otherwise returns `r`.
     ///
-    pub def replace(src: { src = t }, dst: { dst = t }, r: Result[e, t]): Result[e, t] with Eq[t] = match r {
+    pub def replace(src: {src = t}, dst: {dst = t}, r: Result[e, t]): Result[e, t] with Eq[t] = match r {
         case Ok(v)  => Ok(if (v == src#src) dst#dst else v)
         case Err(_) => r
     }
@@ -146,6 +147,7 @@ pub mod Result {
         case Ok(v)  => Ok(v)
         case Err(w) => Err(f(w))
     }
+
 
     ///
     /// Returns `f(v)` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
@@ -228,11 +230,10 @@ pub mod Result {
     pub def traverse(f: a -> Result[e, b] \ ef, l: List[a]): Result[e, List[b]] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
-            case x :: xs =>
-                match f(x) {
-                    case Ok(y)  => loop(xs, ks -> k(y :: ks))
-                    case Err(e) => Err(e)
-                }
+            case x :: xs => match f(x) {
+                case Ok(y)  => loop(xs, ks -> k(y :: ks))
+                case Err(e) => Err(e)
+            }
         };
         loop(l, ks -> Ok(ks))
 
@@ -244,11 +245,10 @@ pub mod Result {
     ///
     pub def traverseX(f: a -> Result[e, b] \ ef, l: List[a]): Result[e, Unit] \ ef = match l {
         case Nil     => Ok()
-        case x :: xs =>
-            match f(x) {
-                case Ok(_)  => traverseX(f, xs)
-                case Err(e) => Err(e)
-            }
+        case x :: xs => match f(x) {
+            case Ok(_)  => traverseX(f, xs)
+            case Err(e) => Err(e)
+        }
     }
 
     ///
@@ -263,11 +263,10 @@ pub mod Result {
     ///
     pub def foldLeftM(f: (b, a) -> Result[e, b] \ ef, s: b, l: List[a]): Result[e, b] \ ef = match l {
         case Nil     => Ok(s)
-        case x :: xs =>
-            match f(s, x) {
-                case Ok(s1) => foldLeftM(f, s1, xs)
-                case Err(e) => Err(e)
-            }
+        case x :: xs => match f(s, x) {
+            case Ok(s1) => foldLeftM(f, s1, xs)
+            case Err(e) => Err(e)
+        }
     }
 
     ///
@@ -283,14 +282,10 @@ pub mod Result {
     pub def foldRightM(f: (a, b) -> Result[e, b] \ ef, s: b, l: List[a]): Result[e, b] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(s)
-            case x :: xs =>
-                loop(
-                    xs,
-                    s1 -> match f(x, s1) {
-                        case Ok(s2) => k(s2)
-                        case Err(e) => Err(e)
-                    }
-                )
+            case x :: xs => loop(xs, s1 -> match f(x, s1) {
+                case Ok(s2) => k(s2)
+                case Err(e) => Err(e)
+            })
         };
         loop(l, s1 -> checked_ecast(Ok(s1)))
 
@@ -337,7 +332,7 @@ pub mod Result {
     /// `Failure(Nec.singleton(t))` if `r` is `Err(t)`.
     ///
     pub def toValidation(r: Result[e, t]): Validation[e, t] = match r {
-        case Ok(v)  => Validation.Success(v)
+        case Ok(v) => Validation.Success(v)
         case Err(t) => Validation.Failure(Nec.singleton(t))
     }
 
@@ -354,11 +349,10 @@ pub mod Result {
     ///
     pub def ap(r1: Result[e, t -> u \ ef], r2: Result[e, t]): Result[e, u] \ ef = match r1 {
         case Err(e) => Err(e)
-        case Ok(f)  =>
-            match r2 {
-                case Ok(a)  => Ok(f(a))
-                case Err(e) => Err(e)
-            }
+        case Ok(f)  => match r2 {
+            case Ok(a)  => Ok(f(a))
+            case Err(e) => Err(e)
+        }
     }
 
     ///
@@ -406,7 +400,7 @@ pub mod Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r7` are `Err(e)`.
     ///
-    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7]): Result[e, u] \ ef =
+    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7]): Result[e, u] \ ef=
         ap(map6(f, r1, r2, r3, r4, r5, r6), r7)
 
     ///
@@ -447,9 +441,11 @@ pub mod Result {
     /// If `f` throws a Java `Exception`, `Err(e)` is returned
     /// where `e` is the error message.
     ///
-    pub def tryCatch(f: Unit -> a \ ef): Result[String, a] \ ef = try {
-        Ok(f())
-    } catch {
-        case e: Exception => Err(e.getMessage())
-    }
+    pub def tryCatch(f: Unit -> a \ ef): Result[String, a] \ ef =
+        try {
+            Ok(f())
+        } catch {
+            case e: Exception => Err(e.getMessage())
+        }
+
 }

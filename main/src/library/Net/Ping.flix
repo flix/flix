@@ -19,6 +19,7 @@ pub mod Net.Ping {
     use IoError.IoError
     use Net.IpAddr
     use Time.TimeUnit
+
     import java.io.IOException
     import java.lang.IllegalArgumentException
     import java.net.InetAddress
@@ -47,9 +48,9 @@ pub mod Net.Ping {
                     let addr = InetAddress.getByAddress(IpAddr.toBytes(host));
                     k(Ok(addr.isReachable(timeoutMs)))
                 } catch {
-                    case ex: UnknownHostException => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
+                    case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
                     case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
         }
@@ -60,6 +61,6 @@ pub mod Net.Ping {
     /// In other words, re-interprets the `Ping` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Ping) + IO =
-        handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Ping) + IO = handle(f)()
+
 }

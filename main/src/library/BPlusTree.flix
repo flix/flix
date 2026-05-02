@@ -186,18 +186,13 @@ pub mod BPlusTree {
         let (leaf, stamp) = findLeaf(k, t);
         match Node.get(k, stamp, leaf, t) {
             case Some(v) => v
-            case None    =>
+            case None =>
                 let lock = Node.getLock(leaf);
-                Lock.withWriteLockOrElse(
-                    stamp,
-                    lock,
-                    writeStamp -> {
-                        let v = f();
-                        fixRoot(Node.insertIntoLeaf(k, v, leaf, writeStamp, t), t);
-                        v
-                    },
-                    () -> computeIfAbsent(f, k, t)
-                )
+                Lock.withWriteLockOrElse(stamp, lock, writeStamp -> {
+                    let v = f();
+                    fixRoot(Node.insertIntoLeaf(k, v, leaf, writeStamp, t), t);
+                    v
+                }, () -> computeIfAbsent(f, k, t))
         }
     }
 
@@ -302,15 +297,14 @@ pub mod BPlusTree {
             if (index < Node.size(node)) {
                 Ref.put(index + 1, indexRef);
                 Some(Node.getKeyAndValueAt(index, node))
-            } else
-                match Node.next(node) {
-                    case None           => None
-                    case Some(nextNode) => {
-                        Ref.put(nextNode, nodeRef);
-                        Ref.put(0, indexRef);
-                        next()
-                    }
+            } else match Node.next(node) {
+                case None => None
+                case Some(nextNode) => {
+                    Ref.put(nextNode, nodeRef);
+                    Ref.put(0, indexRef);
+                    next()
                 }
+            }
         };
         Iterator.unfoldWithIter(rc1, next)
     }
@@ -320,28 +314,29 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: Builds the result by traversing the live leaf chain of `t`.
     ///
-    pub def toMap(t: BPlusTree[k, v, r]): Map[k, v] \ r with Order[k] = (Map.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Map.insert(k, v, acc))
+    pub def toMap(t: BPlusTree[k, v, r]): Map[k, v] \ r with Order[k] =
+        (Map.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Map.insert(k, v, acc))
 
     ///
     /// Returns `t` as a set of key-value pairs.
     ///
     /// Not thread-safe: Builds the result by traversing the live leaf chain of `t`.
     ///
-    pub def toSet(t: BPlusTree[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] = (Set.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Set.insert((k, v), acc))
+    pub def toSet(t: BPlusTree[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] =
+        (Set.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Set.insert((k, v), acc))
 
     ///
     /// Returns `t` as a vector of key-value pairs.
     ///
     /// Not thread-safe: Builds the result by traversing the live leaf chain of `t`.
     ///
-    pub def toVector(t: BPlusTree[k, v, r]): Vector[(k, v)] \ r =
-        region rc {
-            let mm = MutList.empty(rc);
-            foreach ((k, v) <- t) {
-                MutList.push((k, v), mm)
-            };
-            MutList.toVector(mm)
-        }
+    pub def toVector(t: BPlusTree[k, v, r]): Vector[(k, v)] \ r = region rc {
+        let mm = MutList.empty(rc);
+        foreach ((k, v) <- t) {
+            MutList.push((k, v), mm)
+        };
+        MutList.toVector(mm)
+    }
 
     ///
     /// Returns a fresh empty BPlusTree tree of standard arity.
@@ -405,7 +400,7 @@ pub mod BPlusTree {
             t->root = root;
             Lock.unlockWrite(rootStamp, t->rootLock);
             ()
-        case None                    => ()
+        case None => ()
     }
 
     ///
@@ -508,29 +503,28 @@ pub mod BPlusTree {
         Node.getWithDefault(k, stamp, d, leaf, t)
     }
 
+
     ///
     /// Returns the set of keys in `t`.
     ///
     /// Not thread-safe: Builds the result by traversing the live leaf chain of `t`.
     ///
-    pub def keysOf(t: BPlusTree[k, v, r]): Set[k] \ r with Order[k] =
-        region rc {
-            let set = MutSet.empty(rc);
-            forEach(k -> _ -> MutSet.add(k, set), t);
-            MutSet.toSet(set)
-        }
+    pub def keysOf(t: BPlusTree[k, v, r]): Set[k] \ r with Order[k] = region rc {
+        let set = MutSet.empty(rc);
+        forEach(k -> _ -> MutSet.add(k, set), t);
+        MutSet.toSet(set)
+    }
 
     ///
     /// Returns the list of values in `t`.
     ///
     /// Not thread-safe: Builds the result by traversing the live leaf chain of `t`.
     ///
-    pub def valuesOf(t: BPlusTree[k, v, r]): List[v] \ r with Order[k] =
-        region rc {
-            let list = MutList.empty(rc);
-            forEach(_ -> v -> MutList.push(v, list), t);
-            MutList.toList(list)
-        }
+    pub def valuesOf(t: BPlusTree[k, v, r]): List[v] \ r with Order[k] = region rc {
+        let list = MutList.empty(rc);
+        forEach(_ -> v -> MutList.push(v, list), t);
+        MutList.toList(list)
+    }
 
     ///
     /// Returns a string containing all values in `t`, in key order,
@@ -558,16 +552,15 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: Builds the result by traversing the live leaf chain of `t`.
     ///
-    pub def joinWith(f: k -> v -> String \ ef, sep: String, t: BPlusTree[k, v, r]): String \ r + ef =
-        region rc {
-            let sb = StringBuilder.empty(rc);
-            foreach ((k, v) <- t) {
-                StringBuilder.append(f(k, v), sb);
-                StringBuilder.append(sep, sb)
-            };
-            let str = StringBuilder.toString(sb);
-            String.dropRight(String.length(sep), str)
-        }
+    pub def joinWith(f: k -> v -> String \ ef, sep: String, t: BPlusTree[k, v, r]): String \ r + ef = region rc {
+        let sb = StringBuilder.empty(rc);
+        foreach ((k, v) <- t) {
+            StringBuilder.append(f(k, v), sb);
+            StringBuilder.append(sep, sb)
+        };
+        let str = StringBuilder.toString(sb);
+        String.dropRight(String.length(sep), str)
+    }
 
     ///
     /// Applies `f` to all mappings `k => v` in `t` in parallel.
@@ -578,32 +571,29 @@ pub mod BPlusTree {
     /// Not thread-safe: Traverses the live leaf chain of `t` in parallel.
     ///
     @Parallel
-    pub def parForEach(f: k -> v -> Unit \ r, t: BPlusTree[k, v, r]): Unit \ r =
-        region rc {
-            // `threadNum` is the number of spawned threads.
-            let threadNum = if (Node.computeHeight(t->root) >= 2) {
-                threads()
-            } else {
-                Int32.min(threads(), Node.size(t->root))
-            };
-            if (threadNum <= 1) {
-                forEach(f, t)
-            } else {
-                let minLeaf = Node.leftMostLeafUnconditional(t->root);
-                unsafe IO as r {
-                    Vector.range(0, threadNum)
-                        |> Vector.forEach(
-                            i -> {
-                                let _: Unit = spawn unsafe r as IO {
-                                    // Flix does not allow region effect in spawns. Remove the effect.
-                                    Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
-                                } @ rc;
-                                ()
-                            }
-                        )
-                }
+    pub def parForEach(f: k -> v -> Unit \ r, t: BPlusTree[k, v, r]): Unit \ r = region rc {
+        // `threadNum` is the number of spawned threads.
+        let threadNum = if (Node.computeHeight(t->root) >= 2) {
+            threads()
+        } else {
+            Int32.min(threads(), Node.size(t->root))
+        };
+        if (threadNum <= 1) {
+            forEach(f, t)
+        } else {
+            let minLeaf = Node.leftMostLeafUnconditional(t->root);
+            unsafe IO as r {
+                Vector.range(0, threadNum) |>
+                Vector.forEach(i -> {
+                    let _: Unit = spawn unsafe r as IO {
+                        // Flix does not allow region effect in spawns. Remove the effect.
+                        Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
+                    } @ rc;
+                    ()
+                })
             }
         }
+    }
 
     ///
     /// Applies `f1` to all mappings `k => v` in `t` sequentially if `t` contains strictly less than
@@ -731,32 +721,27 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: Traverses the live leaf chains of `t1` and `t2`.
     ///
-    pub def isSubmapOf(t1: BPlusTree[k, v, r1], t2: BPlusTree[k, v, r2]): Bool \ r1 + r2 with Order[k], Eq[v] =
-        region rc {
-            if (size(t1) > size(t2)) {
-                false
-            } else {
-                // Future optimization: when t1 is much smaller than t2, it might be faster to iterate
-                // over t1 and check membership in t2 instead of iterating over both trees in parallel
-                let i1 = iterator(rc, t1);
-                let i2 = iterator(rc, t2);
-                def checkRemaining(m1, m2) = match (m1, m2) {
-                    case (Some((k1, v1)), Some((k2, v2))) => {
-                        if (k1 < k2)
-                            false
-                        else if (k1 > k2)
-                            checkRemaining(m1, Iterator.next(i2))
-                        else if (v1 != v2)
-                            false
-                        else
-                            checkRemaining(Iterator.next(i1), Iterator.next(i2))
-                    }
-                    case (Some(_), None)                  => false
-                    case (None, _)                        => true
-                };
-                checkRemaining(Iterator.next(i1), Iterator.next(i2))
-            }
+    pub def isSubmapOf(t1: BPlusTree[k, v, r1], t2: BPlusTree[k, v, r2]): Bool \ r1 + r2 with Order[k], Eq[v] = region rc {
+        if (size(t1) > size(t2)) {
+            false
+        } else {
+            // Future optimization: when t1 is much smaller than t2, it might be faster to iterate
+            // over t1 and check membership in t2 instead of iterating over both trees in parallel
+            let i1 = iterator(rc, t1);
+            let i2 = iterator(rc, t2);
+            def checkRemaining(m1, m2) = match (m1, m2) {
+                case (Some((k1, v1)), Some((k2, v2))) => {
+                    if (k1 < k2) false
+                    else if (k1 > k2) checkRemaining(m1, Iterator.next(i2))
+                    else if (v1 != v2) false
+                    else checkRemaining(Iterator.next(i1), Iterator.next(i2))
+                }
+                case (Some(_), None) => false
+                case (None, _) => true
+            };
+            checkRemaining(Iterator.next(i1), Iterator.next(i2))
         }
+    }
 
     ///
     /// Returns true if `t1` is a proper submap of `t2`, i.e. `t1` is a submap of `t2` and
@@ -866,12 +851,11 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: Builds the result by traversing the live leaf chain of `t` in range order.
     ///
-    pub def rangeQuery(min: k, max: k, t: BPlusTree[k, v, r]): List[(k, v)] \ r with Order[k] =
-        region rc {
-            let l = MutList.empty(rc);
-            rangeQueryWith(k -> v -> MutList.push((k, v), l), min, max, t);
-            MutList.toList(l)
-        }
+    pub def rangeQuery(min: k, max: k, t: BPlusTree[k, v, r]): List[(k, v)] \ r with Order[k] = region rc {
+        let l = MutList.empty(rc);
+        rangeQueryWith(k -> v -> MutList.push((k, v), l), min, max, t);
+        MutList.toList(l)
+    }
 
     ///
     /// Applies `f` in ascending order to all mappings `k => v` in `t` where
@@ -923,12 +907,11 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: Builds the result by traversing the live leaf chain of `t`.
     ///
-    pub def toList(t: BPlusTree[k, v, r]): List[(k, v)] \ r =
-        region rc {
-            let list = MutList.empty(rc);
-            forEach(k -> v -> MutList.push((k, v), list), t);
-            MutList.toList(list)
-        }
+    pub def toList(t: BPlusTree[k, v, r]): List[(k, v)] \ r = region rc {
+        let list = MutList.empty(rc);
+        forEach(k -> v -> MutList.push((k, v), list), t);
+        MutList.toList(list)
+    }
 
     ///
     /// Returns a string representation of `t`.
@@ -949,4 +932,5 @@ pub mod BPlusTree {
     ///
     def unlockRootPointer(stamp: Int64, t: BPlusTree[k, v, r]): Unit \ r =
         Lock.unlockWrite(stamp, t->rootLock)
+
 }

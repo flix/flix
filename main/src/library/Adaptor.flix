@@ -15,6 +15,7 @@
  */
 
 pub mod Adaptor {
+
     import java.lang.Object
     import java.util.ArrayList
     import java.util.Collection
@@ -60,14 +61,14 @@ pub mod Adaptor {
         let v1 = e.getValue();
         (k1, v1)
 
+
     ///
     /// Returns all elements in the given Java List as a Flix List.
     ///
-    pub def fromList(l: JList[a]): List[a] =
-        region rc {
-            def iterator(x) = unsafe IO { x.iterator() };
-            iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toList
-        }
+    pub def fromList(l: JList[a]): List[a] = region rc {
+        def iterator(x) = unsafe IO { x.iterator() };
+        iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toList
+    }
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java List.
@@ -81,11 +82,10 @@ pub mod Adaptor {
     ///
     /// WARNING: The Flix Set will use the ordering defined on `a`.
     ///
-    pub def fromSet(s: JSet[a]): Set[a] with Order[a] =
-        region rc {
-            def iterator(x) = unsafe IO { x.iterator() };
-            iterator(s) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toSet
-        }
+    pub def fromSet(s: JSet[a]): Set[a] with Order[a] = region rc {
+        def iterator(x) = unsafe IO { x.iterator() };
+        iterator(s) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toSet
+    }
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java Set.
@@ -99,14 +99,13 @@ pub mod Adaptor {
     ///
     /// WARNING: The Flix Map will use the ordering defined on `k`.
     ///
-    pub def fromMap(m: JMap[k, v]): Map[k, v] with Order[k] =
-        region rc {
-            def step(acc, entry) = {
-                let (k, v) = entry;
-                Map.insert(k, v, acc)
-            };
-            fromMapToIterator(rc, m) |> Iterator.foldLeft(step, Map.empty())
-        }
+    pub def fromMap(m: JMap[k, v]): Map[k, v] with Order[k] = region rc {
+        def step(acc, entry) = {
+            let (k, v) = entry;
+            Map.insert(k, v, acc)
+        };
+        fromMapToIterator(rc, m) |> Iterator.foldLeft(step, Map.empty())
+    }
 
     ///
     /// Returns a Flix Iterator of the key-value pairs in the given Java Map.
@@ -161,10 +160,11 @@ pub mod Adaptor {
     ///
     /// Returns the `o` as a new Java `Optional`.
     ///
-    pub def toOptional(o: Option[a]): Optional[a] \ IO = match o {
-        case None    => Optional.empty()
-        case Some(a) => Optional.of(a)
-    }
+    pub def toOptional(o: Option[a]): Optional[a] \ IO =
+        match o {
+            case None    => Optional.empty()
+            case Some(a) => Optional.of(a)
+        }
 
     ///
     /// Returns the key-value pair `p` as a new Java `Map.Entry`.
@@ -226,4 +226,6 @@ pub mod Adaptor {
         let tmap: TreeMap[k, v] = new TreeMap();
         Map.forEach((k, v) -> discard tmap.put(k, v), m);
         tmap
+
+
 }

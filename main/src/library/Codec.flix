@@ -15,6 +15,7 @@
  */
 
 pub mod Codec {
+
     import java.lang.IllegalArgumentException
     import java.util.{Base64 => JBase64}
 
@@ -32,14 +33,15 @@ pub mod Codec {
     ///
     /// Returns `Err` if `s` is not valid Base64.
     ///
-    pub def decodeBase64(s: String): Result[String, Vector[Int8]] = try {
-        unsafe IO {
-            let decoder = JBase64.getDecoder();
-            Ok(Array.toVector(decoder.decode(s)))
+    pub def decodeBase64(s: String): Result[String, Vector[Int8]] =
+        try {
+            unsafe IO {
+                let decoder = JBase64.getDecoder();
+                Ok(Array.toVector(decoder.decode(s)))
+            }
+        } catch {
+            case _: IllegalArgumentException => Err("Codec.decodeBase64")
         }
-    } catch {
-        case _: IllegalArgumentException => Err("Codec.decodeBase64")
-    }
 
     ///
     /// Encodes the given string `s` (as UTF-8 bytes) as a Base64 string.
@@ -54,4 +56,5 @@ pub mod Codec {
     ///
     pub def decodeBase64String(s: String): Result[String, String] =
         Result.map(String.fromBytes, decodeBase64(s))
+
 }

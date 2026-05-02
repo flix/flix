@@ -23,6 +23,7 @@ instance UpperBound[Float32] {
 }
 
 pub mod Float32 {
+
     import java.lang.Double
     import java.lang.Float
     import java.lang.Math
@@ -109,9 +110,9 @@ pub mod Float32 {
     ///
     pub def fromString(s: String): Option[Float32] = try {
         Some(Float.parseFloat(s.strip()))
-    } catch {
-        case _: NumberFormatException => None
-    }
+     } catch {
+         case _: NumberFormatException => None
+     }
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -209,13 +210,14 @@ pub mod Float32 {
     ///
     /// Helper function for the `clamp` conversion functions.
     ///
-    def clamp(min: { min = Float32 }, max: { max = Float32 }, x: Float32): Float32 =
+    def clamp(min: {min = Float32}, max: {max = Float32}, x: Float32): Float32 =
         if (x < min#min)
-            min#min
-        else if (x > max#max)
-            max#max
+             min#min
         else
-            x
+            if (x > max#max)
+                max#max
+            else
+                x
 
     ///
     /// Convert `x` to an `Int8`.
@@ -225,7 +227,7 @@ pub mod Float32 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int8 risks masking it.
     ///
-    pub def clampToInt8(min: { min = Int8 }, max: { max = Int8 }, nanValue: { nanValue = Int8 }, x: Float32): Int8 =
+    pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, nanValue: {nanValue = Int8}, x: Float32): Int8 =
         let minf32 = Int8.toFloat32(min#min);
         let maxf32 = Int8.toFloat32(max#max);
         if (isNan(x))
@@ -241,7 +243,7 @@ pub mod Float32 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int16 risks masking it.
     ///
-    pub def clampToInt16(min: { min = Int16 }, max: { max = Int16 }, nanValue: { nanValue = Int16 }, x: Float32): Int16 =
+    pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, nanValue: {nanValue = Int16}, x: Float32): Int16 =
         let minf32 = Int16.toFloat32(min#min);
         let maxf32 = Int16.toFloat32(max#max);
         if (isNan(x))
@@ -257,7 +259,7 @@ pub mod Float32 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int32 risks masking it.
     ///
-    pub def clampToInt32(min: { min = Int32 }, max: { max = Int32 }, nanValue: { nanValue = Int32 }, x: Float32): Int32 =
+    pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, nanValue: {nanValue = Int32}, x: Float32): Int32 =
         let minf32 = Int32.toFloat32(min#min);
         let maxf32 = Int32.toFloat32(max#max);
         if (isNan(x))
@@ -273,7 +275,7 @@ pub mod Float32 {
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int64 risks masking it.
     ///
-    pub def clampToInt64(min: { min = Int64 }, max: { max = Int64 }, nanValue: { nanValue = Int64 }, x: Float32): Int64 =
+    pub def clampToInt64(min: {min = Int64}, max: {max = Int64}, nanValue: {nanValue = Int64}, x: Float32): Int64 =
         let minf32 = Int64.toFloat32(min#min);
         let maxf32 = Int64.toFloat32(max#max);
         if (isNan(x))
@@ -332,7 +334,7 @@ pub mod Float32 {
     ///
     /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(base: { base = Float32 }, n: Float32): Float32 = %%FLOAT32_EXP%%(base#base, n)
+    pub def pow(base: {base = Float32}, n: Float32): Float32 = %%FLOAT32_EXP%%(base#base, n)
 
     ///
     /// Get the primitive Float32 value from its object representation (i.e. java.lang.Float).
@@ -351,4 +353,5 @@ pub mod Float32 {
     ///
     pub def valueOf(d: Float32): Float =
         Float.valueOf(d)
+
 }

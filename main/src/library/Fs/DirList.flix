@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.DirList {
+
     use Fs.DirList
     use Fs.FileSystem
     use Fs.FsLayer.{logPre, logPost}
@@ -25,10 +26,12 @@ pub mod Fs.DirList {
     /// Use the `DirList.runWithFileSystem` handler.
     ///
     pub eff DirList {
+
         ///
         /// Returns a list with the names of all files and directories in the given directory `f`.
         ///
         def list(f: String): Result[IoError, List[String]]
+
     }
 
     ///
@@ -47,8 +50,7 @@ pub mod Fs.DirList {
     /// In other words, re-interprets the `DirList` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - DirList) + IO =
-        handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - DirList) + IO = handle(f)()
 
     ///
     /// Handles the `DirList` effect of the given function `f` using the `FileSystem` effect.
@@ -64,7 +66,7 @@ pub mod Fs.DirList {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - DirList) + { DirList, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - DirList) + {DirList, Logger} =
         run { f() } with handler DirList {
             def list(filename, k) = {
                 logPre("list", filename);
@@ -150,4 +152,5 @@ pub mod Fs.DirList {
         run { f() } with handler DirList {
             def list(filename, k) = k(DirList.list(resolve(filename)))
         }
+
 }

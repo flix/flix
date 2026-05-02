@@ -15,6 +15,7 @@
  */
 
 pub mod Sys.StdOut {
+
     import java.io.InputStream
 
     ///
@@ -29,4 +30,5 @@ pub mod Sys.StdOut {
             let StdOut.StdOut(pr) = r;
             Readable.read(b, pr)
     }
+
 }

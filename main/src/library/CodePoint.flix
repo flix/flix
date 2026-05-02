@@ -22,6 +22,7 @@
 /// Unicode characters can be represented.
 ///
 pub mod CodePoint {
+
     import java.lang.Character
     import java.lang.Exception
     import java.lang.Throwable
@@ -72,16 +73,16 @@ pub mod CodePoint {
     /// Returns `true` if the given code point `cp` represents a character in the range 0...7.
     ///
     pub def isOctDigit(cp: Int32): Bool =
-        0x0030 <= cp and cp <= 0x0037 // '0'..'7'
+        0x0030 <= cp and cp <= 0x0037     // '0'..'7'
 
     ///
     /// Returns `true` if the given code point `cp` represents a character in the range 0...F.
     ///
     pub def isHexDigit(cp: Int32): Bool = match cp {
-        case i if 0x0030 <= i and i <= 0x0039 => true // '0'..'9'
-        case i if 0x0041 <= i and i <= 0x0046 => true // 'A'..'F'
-        case i if 0x0061 <= i and i <= 0x0066 => true // 'a'..'f'
-        case _                                => false
+        case i if 0x0030 <= i and i <= 0x0039 => true        // '0'..'9'
+        case i if 0x0041 <= i and i <= 0x0046 => true        // 'A'..'F'
+        case i if 0x0061 <= i and i <= 0x0066 => true        // 'a'..'f'
+        case _ => false
     }
 
     ///
@@ -191,11 +192,12 @@ pub mod CodePoint {
     /// See the Java JDK documentation of the method `java.lang.Character.getName` for a full
     /// description of how names are derived.
     ///
-    pub def getName(cp: Int32): Option[String] = try {
-        Character.getName(cp) |> Object.toOption
-    } catch {
-        case _: Exception => None
-    }
+    pub def getName(cp: Int32): Option[String] =
+        try {
+            Character.getName(cp) |> Object.toOption
+        } catch {
+            case _: Exception => None
+        }
 
     ///
     /// Returns the integer value represented by the code point `cp` e.g. code point 0x0031
@@ -205,10 +207,11 @@ pub mod CodePoint {
     ///
     /// This function handles supplementary characters.
     ///
-    pub def getNumericValue(cp: Int32): Option[Int32] = match Character.getNumericValue(cp) {
-        case i if i < 0 => None
-        case i          => Some(i)
-    }
+    pub def getNumericValue(cp: Int32): Option[Int32] =
+        match Character.getNumericValue(cp) {
+            case i if i < 0 => None
+            case i          => Some(i)
+        }
 
     ///
     /// Returns the number of Chars needed to represent the code point `cp`.
@@ -228,7 +231,7 @@ pub mod CodePoint {
     ///
     pub def toChars(cp: Int32): Option[Vector[Char]] = try {
         region rc {
-            let arr: Array[Char, rc] = Array.empty(rc, 2);
+            let arr : Array[Char, rc] = Array.empty(rc, 2);
             let size = unchecked_cast(Character.toChars(cp, arr, 0) as _ \ rc);
             Array.toVector(arr) |> Vector.takeLeft(size) |> Some
         }
@@ -242,7 +245,7 @@ pub mod CodePoint {
     ///
     pub def toBmpChar(cp: Int32): Option[Char] = try {
         region rc {
-            let arr: Array[Char, rc] = Array.empty(rc, 2);
+            let arr : Array[Char, rc] = Array.empty(rc, 2);
             let i = Character.toChars(cp, arr, 0);
             if (i == 1)
                 Array.nth(0, arr)
@@ -259,7 +262,7 @@ pub mod CodePoint {
     ///
     pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
         region rc {
-            let arr: Array[Char, rc] = Array.empty(rc, 2);
+            let arr : Array[Char, rc] = Array.empty(rc, 2);
             let i = Character.toChars(cp, arr, 0);
             if (i == 2)
                 Some((Array.get(0, arr), Array.get(1, arr)))
@@ -273,11 +276,12 @@ pub mod CodePoint {
     ///
     /// Returns a String representing the code point `cp`.
     ///
-    pub def toString(cp: Int32): String = try {
-        Character.toString(cp)
-    } catch {
-        case _: Exception => ""
-    }
+    pub def toString(cp: Int32): String =
+        try {
+            Character.toString(cp)
+        } catch {
+            case _: Exception => ""
+        }
 
     ///
     /// Optionally returns the high surrogate character of the code point `cp`
@@ -298,4 +302,5 @@ pub mod CodePoint {
             Some(Character.lowSurrogate(cp))
         else
             None
+
 }

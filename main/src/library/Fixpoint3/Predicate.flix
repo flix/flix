@@ -60,8 +60,8 @@ pub mod Fixpoint3.Predicate {
     /// `New` relations contains, in iteration `i`, all facts computed in iteration `i` in fixpoints computations.
     ///
     pub enum PredType with Eq {
-        case Full
-        case Delta
+        case Full,
+        case Delta,
         case New
     }
 
@@ -97,11 +97,12 @@ pub mod Fixpoint3.Predicate {
     ///
     /// Returns the identifier of `wantedType` of `id` according to `predInfo`
     ///
-    def fullIdtoPredType(id: Int64, wantedType: PredType, max: Int64): Int64 = match wantedType {
-        case PredType.Full  => id
-        case PredType.Delta => id + max
-        case PredType.New   => id + max * 2i64
-    }
+    def fullIdtoPredType(id: Int64, wantedType: PredType, max: Int64): Int64 =
+        match wantedType {
+            case PredType.Full => id
+            case PredType.Delta => id + max
+            case PredType.New => id + max * 2i64
+        }
 
     ///
     /// Returns a `RelSym` of type `wantedType` given the `RelSym` `relSym`, which must be
@@ -224,17 +225,17 @@ pub mod Fixpoint3.Predicate {
             let set3 = relSymsOfDb(db);
             let set = (set1 `Set.union` set2) `Set.union` set3;
             let fullRels = Set.toList(set);
-            let optMax = fullRels
-                |> List.maximumBy(match RelSym.Symbol(PredSym.PredSym(_, id1), _, _) -> match RelSym.Symbol(PredSym.PredSym(_, id2), _, _) -> id1 <=> id2);
+            let optMax = fullRels |>
+                List.maximumBy(match RelSym.Symbol(PredSym.PredSym(_, id1), _, _) -> match RelSym.Symbol(PredSym.PredSym(_, id2), _, _) -> id1 <=> id2);
             let max = match optMax {
-                case None      => 0i64
+                case None => 0i64
                 case Some(max) => toId(max) + 1i64
             };
             let deltaRels = List.map(x -> fullRelSymToTypeInternal(x, PredType.Delta, max), fullRels);
             let newRels = List.map(x -> fullRelSymToTypeInternal(x, PredType.New, max), fullRels);
             let allRels = fullRels ::: deltaRels ::: newRels;
             (allRels, fullRels, max)
-        case _                     => bug!("Datalog Boxing bug")
+        case _ => bug!("Datalog Boxing bug")
     }
 
     ///
@@ -247,22 +248,14 @@ pub mod Fixpoint3.Predicate {
     /// Returns a set of full `RelSym` in `constraints`.
     ///
     def relSymsOf(constraints: Vector[Constraint]): Set[RelSym] =
-        Vector.foldLeft(
-            match set -> match Constraint(headAtom, body) -> {
-                let setWithHead = Set.insert(headAtomToFullRelSym(headAtom), set);
-                Vector.foldLeft(
-                    setBody -> bodyConstraint -> match bodyConstraint {
-                        case BodyAtom(_, _, _, _, _) =>
-                            Set.insert(bodyAtomToFullRelSym(bodyConstraint), setBody)
-                        case _                       => setBody
-                    },
-                    setWithHead,
-                    body
-                )
-            },
-            Set#{},
-            constraints
-        )
+        Vector.foldLeft(match set -> match Constraint(headAtom, body) -> {
+            let setWithHead = Set.insert(headAtomToFullRelSym(headAtom), set);
+            Vector.foldLeft(setBody -> bodyConstraint -> match bodyConstraint {
+                case BodyAtom(_, _, _, _, _) =>
+                    Set.insert(bodyAtomToFullRelSym(bodyConstraint), setBody)
+                case _ => setBody
+            }, setWithHead, body)
+        }, Set#{}, constraints)
 
     ///
     /// Returns the full `RelSym` associated with the `PredSym` in `head`.
@@ -278,4 +271,5 @@ pub mod Fixpoint3.Predicate {
         case BodyAtom(pred, den, _, _, terms) => RelSym.Symbol(pred, Vector.length(terms), den)
         case _                                => unreachable!()
     }
+
 }

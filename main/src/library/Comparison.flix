@@ -15,6 +15,7 @@
  */
 
 pub mod Comparison {
+
     pub enum Comparison with Eq, ToString {
         case LessThan
         case EqualTo
@@ -29,8 +30,8 @@ pub mod Comparison {
     /// `+1` if `c` is `GreaterThan`.
     ///
     pub def toInt32(c: Comparison): Int32 = match c {
-        case LessThan    => -1
-        case EqualTo     => 0
+        case LessThan => -1
+        case EqualTo => 0
         case GreaterThan => 1
     }
 
@@ -42,10 +43,8 @@ pub mod Comparison {
     /// `GreaterThan` if `i > 0`.
     ///
     pub def fromInt32(i: Int32): Comparison =
-        if (i < 0)
-            LessThan
-        else if (i == 0)
-            EqualTo
-        else
-            GreaterThan
+        if (i < 0) LessThan
+        else if (i == 0) EqualTo
+        else GreaterThan
+
 }

@@ -20,6 +20,7 @@
 /// numerical equality (are the values the same after the scales have been
 /// normalized) is provided by the function `numericEquals`.
 pub mod BigDecimal {
+
     import java.math.BigDecimal
     import java.math.RoundingMode
     import java.lang.NumberFormatException
@@ -43,7 +44,7 @@ pub mod BigDecimal {
     ///
     /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(base: { base = BigDecimal }, n: Int32): BigDecimal =
+    pub def pow(base: {base = BigDecimal}, n: Int32): BigDecimal =
         base#base.pow(n)
 
     ///
@@ -206,4 +207,7 @@ pub mod BigDecimal {
             Some(d)
         else
             None
+
+
 }
+

@@ -20,16 +20,19 @@ pub mod Time.Sleep {
     use Time.Duration
     use Time.Sleep
     use RichString.{text, gray}
+
     import java.lang.{Thread => JThread}
 
     ///
     /// An effect used to sleep the current thread.
     ///
     pub eff Sleep {
+
         ///
         /// Sleeps the current thread for the given duration `d`.
         ///
         def sleep(d: Duration): Unit
+
     }
 
     ///
@@ -53,8 +56,7 @@ pub mod Time.Sleep {
     /// In other words, re-interprets the `Sleep` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Sleep) + IO =
-        handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Sleep) + IO = handle(f)()
 
     ///
     /// Runs the given function `f` ignoring all sleeps (no-op).
@@ -98,7 +100,7 @@ pub mod Time.Sleep {
     /// Middleware that intercepts the `Sleep` effect, logging each sleep duration
     /// via the `Logger` effect and re-raising the `Sleep` effect.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Sleep) + { Sleep, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Sleep) + {Sleep, Logger} =
         run {
             f()
         } with handler Sleep {
@@ -179,7 +181,7 @@ pub mod Time.Sleep {
     /// sleep duration. The `factor` controls the maximum jitter fraction, e.g. `0.2`
     /// means each sleep duration is randomly adjusted by up to ±20%.
     ///
-    pub def withJitter(factor: Float64, f: Unit -> a \ ef): a \ (ef - Sleep) + { Sleep, Random } =
+    pub def withJitter(factor: Float64, f: Unit -> a \ ef): a \ (ef - Sleep) + {Sleep, Random} =
         run {
             f()
         } with handler Sleep {
@@ -192,4 +194,5 @@ pub mod Time.Sleep {
                 k()
             }
         }
+
 }

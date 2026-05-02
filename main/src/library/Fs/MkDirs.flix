@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.MkDirs {
+
     use Fs.FileWrite
 
     ///
@@ -23,10 +24,12 @@ pub mod Fs.MkDirs {
     /// Use the `MkDirs.runWithFileWrite` handler.
     ///
     pub eff MkDirs {
+
         ///
         /// Creates the directory `d` and all its parent directories.
         ///
         def mkDirs(d: String): Result[IoError, Unit]
+
     }
 
     ///
@@ -36,4 +39,5 @@ pub mod Fs.MkDirs {
         run { f() } with handler MkDirs {
             def mkDirs(d, k) = k(Fs.FileWrite.mkDirs(d))
         }
+
 }

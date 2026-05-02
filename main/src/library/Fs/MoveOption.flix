@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.MoveOption {
+
     ///
     /// Options for the `moveWith` operation.
     ///
@@ -22,4 +23,5 @@ pub mod Fs.MoveOption {
         case AtomicMove
         case ReplaceExisting
     }
+
 }

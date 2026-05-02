@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.AppendBytes {
+
     use Fs.FileWrite
 
     ///
@@ -23,12 +24,14 @@ pub mod Fs.AppendBytes {
     /// Use the `AppendBytes.runWithFileWrite` handler.
     ///
     pub eff AppendBytes {
+
         ///
         /// Appends `data` to the given file `f`.
         ///
         /// Creates the file `f` if it does not exist.
         ///
         def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
     }
 
     ///
@@ -38,4 +41,5 @@ pub mod Fs.AppendBytes {
         run { f() } with handler AppendBytes {
             def appendBytes(data, file, k) = k(Fs.FileWrite.appendBytes(data, file))
         }
+
 }

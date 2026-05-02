@@ -16,6 +16,7 @@
  */
 
 pub mod Fixpoint3.Counter {
+
     ///
     /// `Counter` is a wrapper around `Ref` for a simple counter.
     ///

@@ -15,6 +15,7 @@
  */
 
 pub mod Sys.StdIn {
+
     import java.io.OutputStream
 
     ///
@@ -29,4 +30,5 @@ pub mod Sys.StdIn {
             let StdIn.StdIn(pr) = r;
             Writable.write(b, pr)
     }
+
 }

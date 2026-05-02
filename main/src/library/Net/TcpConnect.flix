@@ -20,6 +20,7 @@ pub mod Net.TcpConnect {
     use Net.IpAddr
     use Net.TcpSocket
     use Net.TcpSocket.TcpSocket
+
     import java.net.InetAddress
     import java.net.Socket
     import java.io.IOException
@@ -59,6 +60,6 @@ pub mod Net.TcpConnect {
     /// In other words, re-interprets the `TcpConnect` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpConnect) + IO =
-        handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpConnect) + IO = handle(f)()
+
 }

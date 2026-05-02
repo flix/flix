@@ -15,6 +15,7 @@
  */
 
 pub mod Fs.FileTime {
+
     use Fs.FileStat
     use Fs.FileTime
     use Fs.FsLayer.{logPre, logPost}
@@ -23,6 +24,7 @@ pub mod Fs.FileTime {
     /// An effect used to read file timestamps (access, creation, modification).
     ///
     pub eff FileTime {
+
         ///
         /// Returns the last access time of the given file `f` in milliseconds since the epoch.
         ///
@@ -37,6 +39,7 @@ pub mod Fs.FileTime {
         /// Returns the last-modified timestamp of the given file `f` in milliseconds since the epoch.
         ///
         def modificationTime(f: String): Result[IoError, Int64]
+
     }
 
     ///
@@ -45,12 +48,15 @@ pub mod Fs.FileTime {
     /// In other words, re-interprets the `FileTime` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileTime) + IO = x ->
-        checked_ecast(Fs.FileSystem.handle(
-            y ->
-                checked_ecast(Fs.FileStat.runWithFileSystem(
-                    () -> runWithFileStat(() -> f(y))
-                ))
-        )(x))
+        checked_ecast(
+            Fs.FileSystem.handle(
+                y -> checked_ecast(
+                    Fs.FileStat.runWithFileSystem(
+                        () -> runWithFileStat(() -> f(y))
+                    )
+                )
+            )(x)
+        )
 
     ///
     /// Runs the `FileTime` effect of the given function `f`.
@@ -58,16 +64,15 @@ pub mod Fs.FileTime {
     /// In other words, re-interprets the `FileTime` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileTime) + IO =
-        handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileTime) + IO = handle(f)()
 
     ///
     /// Handles the `FileTime` effect of the given function `f` using the `FileStat` effect.
     ///
     pub def runWithFileStat(f: Unit -> a \ ef): a \ (ef - FileTime) + FileStat =
         run { f() } with handler FileTime {
-            def accessTime(filename, k) = k(Fs.FileStat.accessTime(filename))
-            def creationTime(filename, k) = k(Fs.FileStat.creationTime(filename))
+            def accessTime(filename, k)       = k(Fs.FileStat.accessTime(filename))
+            def creationTime(filename, k)     = k(Fs.FileStat.creationTime(filename))
             def modificationTime(filename, k) = k(Fs.FileStat.modificationTime(filename))
         }
 
@@ -77,7 +82,7 @@ pub mod Fs.FileTime {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTime) + { FileTime, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTime) + {FileTime, Logger} =
         run { f() } with handler FileTime {
             def accessTime(filename, k) = {
                 logPre("accessTime", filename);
@@ -108,8 +113,8 @@ pub mod Fs.FileTime {
     pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
         let r = p -> Fs.FsLayer.resolve(baseDir, p);
         run { f() } with handler FileTime {
-            def accessTime(filename, k) = k(FileTime.accessTime(r(filename)))
-            def creationTime(filename, k) = k(FileTime.creationTime(r(filename)))
+            def accessTime(filename, k)       = k(FileTime.accessTime(r(filename)))
+            def creationTime(filename, k)     = k(FileTime.creationTime(r(filename)))
             def modificationTime(filename, k) = k(FileTime.modificationTime(r(filename)))
         }
 
@@ -121,8 +126,8 @@ pub mod Fs.FileTime {
     pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
         run { f() } with handler FileTime {
-            def accessTime(filename, k) = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
-            def creationTime(filename, k) = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
             def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), c(filename)))
         }
 
@@ -134,8 +139,8 @@ pub mod Fs.FileTime {
     pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
         run { f() } with handler FileTime {
-            def accessTime(filename, k) = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
-            def creationTime(filename, k) = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
             def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), c(filename)))
         }
 
@@ -147,8 +152,8 @@ pub mod Fs.FileTime {
     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
         run { f() } with handler FileTime {
-            def accessTime(filename, k) = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
-            def creationTime(filename, k) = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
             def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), c(filename)))
         }
 
@@ -160,8 +165,8 @@ pub mod Fs.FileTime {
     pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
         let c = p -> Fs.FsLayer.allowGlob(patterns, p);
         run { f() } with handler FileTime {
-            def accessTime(filename, k) = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
-            def creationTime(filename, k) = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
             def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), c(filename)))
         }
 
@@ -173,8 +178,8 @@ pub mod Fs.FileTime {
     pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
         run { f() } with handler FileTime {
-            def accessTime(filename, k) = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
-            def creationTime(filename, k) = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
             def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), c(filename)))
         }
 
@@ -186,8 +191,9 @@ pub mod Fs.FileTime {
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
         run { f() } with handler FileTime {
-            def accessTime(filename, k) = k(Result.flatMap(p -> FileTime.accessTime(p), Fs.FsLayer.resolveRealPath(filename)))
-            def creationTime(filename, k) = k(Result.flatMap(p -> FileTime.creationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), Fs.FsLayer.resolveRealPath(filename)))
             def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), Fs.FsLayer.resolveRealPath(filename)))
         }
+
 }

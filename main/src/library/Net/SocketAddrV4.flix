@@ -15,6 +15,7 @@
  */
 
 pub mod Net.SocketAddrV4 {
+
     use Net.Ipv4Addr
 
     ///
@@ -33,4 +34,5 @@ pub mod Net.SocketAddrV4 {
     instance Formattable[SocketAddrV4] {
         pub def format(x: SocketAddrV4): RichString = RichString.fromString(ToString.toString(x))
     }
+
 }
