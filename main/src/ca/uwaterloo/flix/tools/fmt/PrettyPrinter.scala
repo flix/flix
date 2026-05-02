@@ -1006,10 +1006,10 @@ object PrettyPrinter {
     val bodyIsBlock = bodyParts.exists(isBracedExpr) ||
       bodyParts.exists(c => leftMostToken(c).exists(tok => bracketPairs.exists(_._1 == tok.kind)))
 
-    val defDoc = localLayout(tree) {
+    val defDoc = Doc.setLayout(layoutOfChildren(rest),
       if (bodyIsBlock) sig <+> text("=") <+> body
       else sig <+> text("=") <> nest(4, line <> body)
-    }
+    )
 
     prepend(annDoc, defDoc)
   }
@@ -1720,6 +1720,17 @@ object PrettyPrinter {
         else Layout.MultiLine
       case _ =>
         if (tree.loc.isSingleLine) Layout.SingleLine else Layout.MultiLine
+    }
+  }
+
+  private def layoutOfChildren(children: Array[SyntaxTree.Child]): Layout = {
+    val first = children.collectFirst(Function.unlift(leftMostCodeToken))
+    val last  = children.reverse.collectFirst(Function.unlift(rightMostCodeToken))
+    (first, last) match {
+      case (Some(f), Some(l)) =>
+        if (f.start.lineOneIndexed == l.end.lineOneIndexed) Layout.SingleLine
+        else Layout.MultiLine
+      case _ => Layout.MultiLine
     }
   }
 
