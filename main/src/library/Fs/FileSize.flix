@@ -34,7 +34,7 @@ pub mod Fs.FileSize {
     /// Handles the `FileSize` effect of the given function `f` using the `FileStat` effect.
     ///
     pub def runWithFileStat(f: Unit -> a \ ef): a \ (ef - FileSize) + FileStat =
-        run {f()} with handler FileSize {
-                      def size(filename, k) = k(Fs.FileStat.size(filename))
-                  }
+        run { f() } with handler FileSize {
+            def size(filename, k) = k(Fs.FileStat.size(filename))
+        }
 }

@@ -44,14 +44,13 @@ pub mod Logger {
     }
 
     instance Formattable[Severity] {
-        pub def format(s: Severity): RichString =
-            match s {
-                case Severity.Trace => RichString.gray("Trace")
-                case Severity.Debug => RichString.blue("Debug")
-                case Severity.Info  => RichString.green("Info")
-                case Severity.Warn  => RichString.yellow("Warn")
-                case Severity.Fatal => RichString.red("Fatal")
-            }
+        pub def format(s: Severity): RichString = match s {
+            case Severity.Trace => RichString.gray("Trace")
+            case Severity.Debug => RichString.blue("Debug")
+            case Severity.Info  => RichString.green("Info")
+            case Severity.Warn  => RichString.yellow("Warn")
+            case Severity.Fatal => RichString.red("Fatal")
+        }
     }
 
     ///
@@ -84,24 +83,23 @@ pub mod Logger {
     ///
     /// In other words, re-interprets the `Logger` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Logger) + IO =
-        x ->
-            run {
-                f(x)
-            } with handler Logger {
-                  def log(s, m, k) = {
-                      let prefix = match s {
-                          case Trace => gray("[Trace]")
-                          case Debug => cyan("[Debug]")
-                          case Info  => green("[Info]")
-                          case Warn  => yellow("[Warn]")
-                          case Fatal => bold(red("[Fatal]"))
-                      };
-                      let output = prefix + text(" ") + m;
-                      println(RichString.toString(output));
-                      k()
-                  }
-              }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Logger) + IO = x ->
+        run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                let prefix = match s {
+                    case Trace => gray("[Trace]")
+                    case Debug => cyan("[Debug]")
+                    case Info  => green("[Info]")
+                    case Warn  => yellow("[Warn]")
+                    case Fatal => bold(red("[Fatal]"))
+                };
+                let output = prefix + text(" ") + m;
+                println(RichString.toString(output));
+                k()
+            }
+        }
 
     ///
     /// Runs the `Logger` effect of the given function `f`.
@@ -119,24 +117,23 @@ pub mod Logger {
     ///
     /// Prints to standard out.
     ///
-    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ ef - Logger + Console) =
-        x ->
-            run {
-                f(x)
-            } with handler Logger {
-                  def log(s, m, k) = {
-                      let prefix = match s {
-                          case Severity.Debug => cyan("[Debug]")
-                          case Severity.Fatal => bold(red("[Fatal]"))
-                          case Severity.Info  => green("[Info]")
-                          case Severity.Trace => gray("[Trace]")
-                          case Severity.Warn  => yellow("[Warn]")
-                      };
-                      let output = prefix + text(" ") + m;
-                      Console.println(RichString.toString(output));
-                      k()
-                  }
-              }
+    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = x ->
+        run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                let prefix = match s {
+                    case Severity.Debug => cyan("[Debug]")
+                    case Severity.Fatal => bold(red("[Fatal]"))
+                    case Severity.Info  => green("[Info]")
+                    case Severity.Trace => gray("[Trace]")
+                    case Severity.Warn  => yellow("[Warn]")
+                };
+                let output = prefix + text(" ") + m;
+                Console.println(RichString.toString(output));
+                k()
+            }
+        }
 
     ///
     /// Runs the `Logger` effect of the given function `f`.
@@ -154,24 +151,23 @@ pub mod Logger {
     ///
     /// Prints to standard error.
     ///
-    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ ef - Logger + Console) =
-        x ->
-            run {
-                f(x)
-            } with handler Logger {
-                  def log(s, m, k) = {
-                      let prefix = match s {
-                          case Severity.Debug => cyan("[Debug]")
-                          case Severity.Fatal => bold(red("[Fatal]"))
-                          case Severity.Info  => green("[Info]")
-                          case Severity.Trace => gray("[Trace]")
-                          case Severity.Warn  => yellow("[Warn]")
-                      };
-                      let output = prefix + text(" ") + m;
-                      Console.eprintln(RichString.toString(output));
-                      k()
-                  }
-              }
+    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = x ->
+        run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                let prefix = match s {
+                    case Severity.Debug => cyan("[Debug]")
+                    case Severity.Fatal => bold(red("[Fatal]"))
+                    case Severity.Info  => green("[Info]")
+                    case Severity.Trace => gray("[Trace]")
+                    case Severity.Warn  => yellow("[Warn]")
+                };
+                let output = prefix + text(" ") + m;
+                Console.eprintln(RichString.toString(output));
+                k()
+            }
+        }
 
     ///
     /// Runs the `Logger` effect of the given function `f`.
@@ -188,21 +184,20 @@ pub mod Logger {
     /// Discards style from the logged messages.
     /// Aborts if an error is encountered while writing to file.
     ///
-    pub def handleWithFileWriteAbort(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite + Abort =
-        x ->
-            run {
-                f(x)
-            } with handler Logger {
-                  def log(s, m, k) = {
-                      let output = "[${ s }] ${ RichString.toPlainString(m) }\n";
-                      let res = Fs.FileWrite.append({str = output}, file);
-                      match res {
-                          case Err(e) => Abort.abort(RichString.text(e))
-                          case Ok()   => ()
-                      };
-                      k()
-                  }
-              }
+    pub def handleWithFileWriteAbort(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite + Abort = x ->
+        run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                let output = "[${s}] ${RichString.toPlainString(m)}\n";
+                let res = Fs.FileWrite.append({str = output}, file);
+                match res {
+                    case Err(e) => Abort.abort(RichString.text(e))
+                    case Ok()   => ()
+                };
+                k()
+            }
+        }
 
     ///
     /// Runs the `Logger` effect of the given function `f`. Appends the logged to `file`.
@@ -219,17 +214,16 @@ pub mod Logger {
     /// Discards style from the logged messages.
     /// Ignores errors encountered while writing.
     ///
-    pub def handleWithFileWrite(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite =
-        x ->
-            run {
-                f(x)
-            } with handler Logger {
-                  def log(s, m, k) = {
-                      let output = "[${ s }] ${ RichString.toPlainString(m) }\n";
-                      let _ = Fs.FileWrite.append({str = output}, file);
-                      k()
-                  }
-              }
+    pub def handleWithFileWrite(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite = x ->
+        run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                let output = "[${s}] ${RichString.toPlainString(m)}\n";
+                let _ = Fs.FileWrite.append({str = output}, file);
+                k()
+            }
+        }
 
     ///
     /// Runs the `Logger` effect of the given function `f`. Appends the logged to `file`.
@@ -244,18 +238,17 @@ pub mod Logger {
     /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.
     /// Otherwise, lets `Logger` effect propagate.
     ///
-    pub def handleWithAbort(g: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ ef1 + ef2 + Abort + Logger =
-        x ->
-            run {
-                f(x)
-            } with handler Logger {
-                  def log(s, m, k) =
-                      if (g(s, m)) {
-                          Abort.abort(m)
-                      } else {
-                          Logger.log(s, m); k()
-                      }
-              }
+    pub def handleWithAbort(g: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ ef1 + ef2 + Abort + Logger = x ->
+        run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) =
+                if (g(s, m)) {
+                    Abort.abort(m)
+                } else {
+                    Logger.log(s, m); k()
+                }
+        }
 
     ///
     /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.
@@ -269,16 +262,15 @@ pub mod Logger {
     ///
     /// In other words, returns a list of `(Severity, RichString)` that represents and is ordered by the calls to log.
     ///
-    pub def handleWithList(f: a -> b \ ef): a -> (b, List[(Severity, RichString)]) \ (ef - Logger) =
-        x ->
-            run {
-                (f(x), List.empty())
-            } with handler Logger {
-                  def log(s, m, k) = {
-                      let (r, l) = k();
-                      (r, (s, m) :: l)
-                  }
-              }
+    pub def handleWithList(f: a -> b \ ef): a -> (b, List[(Severity, RichString)]) \ (ef - Logger) = x ->
+        run {
+            (f(x), List.empty())
+        } with handler Logger {
+            def log(s, m, k) = {
+                let (r, l) = k();
+                (r, (s, m) :: l)
+            }
+        }
 
     ///
     /// Runs the `Logger` effect of the given function `f`.
@@ -292,20 +284,19 @@ pub mod Logger {
     ///
     /// Filters the logging, by the `filter` function.
     ///
-    pub def handleWithFilter(filter: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ (ef2 - Logger) + Logger + ef1 =
-        x ->
-            run {
-                f(x)
-            } with handler Logger {
-                  def log(s, m, k) = {
-                      if (filter(s, m)) {
-                          Logger.log(s, m);
-                          k()
-                      } else {
-                          k()
-                      }
-                  }
-              }
+    pub def handleWithFilter(filter: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ (ef2 - Logger) + Logger + ef1 = x ->
+        run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                if (filter(s, m)) {
+                    Logger.log(s, m);
+                    k()
+                } else {
+                    k()
+                }
+            }
+        }
 
     ///
     /// Runs the `Logger` effect of the given function `f`.

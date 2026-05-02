@@ -19,7 +19,7 @@ pub mod MutMap {
     /// The Mutable Map type.
     ///
     pub struct MutMap[k: Type, v: Type, r: Region] {
-        rc: Region[r],
+        rc:        Region[r],
         mut inner: Map[k, v]
     }
 
@@ -69,7 +69,7 @@ pub mod MutMap {
     ///
     pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] =
         region rc {
-            "MutMap#{" + (MutMap.iterator(rc, m) |> Iterator.joinWith(match (k, v) -> "${ k } => ${ v }", ", ")) + "}"
+            "MutMap#{" + (MutMap.iterator(rc, m) |> Iterator.joinWith(match (k, v) -> "${k} => ${v}", ", ")) + "}"
         }
 
     ///
@@ -272,11 +272,10 @@ pub mod MutMap {
     ///
     /// Otherwise updates the mutable map `m` with a new mapping `k -> d` and returns d.
     ///
-    pub def getOrElsePut(k: k, d: v, m: MutMap[k, v, r]): v \ r with Order[k] =
-        match Map.get(k, m->inner) {
-            case None    => m->inner = Map.insert(k, d, m->inner); d
-            case Some(v) => v
-        }
+    pub def getOrElsePut(k: k, d: v, m: MutMap[k, v, r]): v \ r with Order[k] = match Map.get(k, m->inner) {
+        case None    => m->inner = Map.insert(k, d, m->inner); d
+        case Some(v) => v
+    }
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` in a left-biased manner.
@@ -537,7 +536,7 @@ pub mod MutMap {
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } =
         region rc {
             let ix = Ref.fresh(rc, 0);
-            forEach((k, v) -> {let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix)}, m)
+            forEach((k, v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) }, m)
         }
 
     ///

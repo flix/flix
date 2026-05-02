@@ -217,7 +217,7 @@ pub trait Reducible[t: Type -> Type] {
             (true, identity),
             t
         )
-        |> snd
+            |> snd
     )(Nil)
 
     ///
@@ -235,7 +235,7 @@ pub trait Reducible[t: Type -> Type] {
             (true, identity),
             t
         )
-        |> snd
+            |> snd
     )(Nil)
 
     ///

@@ -50,6 +50,6 @@ pub mod Channel {
     pub def timeout(duration: Int32, unit: TimeUnit): Receiver[Unit] \ { Chan, IO } =
         let millis = Int32.toInt64(duration * TimeUnit.toMilliseconds(unit));
         let (tx, rx) = Channel.buffered(1);
-        spawn {JThread.sleep(millis); send((), tx)} @ Static;
+        spawn { JThread.sleep(millis); send((), tx) } @ Static;
         rx
 }

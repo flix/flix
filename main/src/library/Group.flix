@@ -109,64 +109,55 @@ instance Group[BigDecimal] {
 }
 
 instance Group[(a1, a2)] with Group[a1], Group[a2] {
-    pub def inverse(x: (a1, a2)): (a1, a2) =
-        match x {
-            case (a1, a2) => (Group.inverse(a1), Group.inverse(a2))
-        }
+    pub def inverse(x: (a1, a2)): (a1, a2) = match x {
+        case (a1, a2) => (Group.inverse(a1), Group.inverse(a2))
+    }
 }
 
 instance Group[(a1, a2, a3)] with Group[a1], Group[a2], Group[a3] {
-    pub def inverse(x: (a1, a2, a3)): (a1, a2, a3) =
-        match x {
-            case (a1, a2, a3) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3))
-        }
+    pub def inverse(x: (a1, a2, a3)): (a1, a2, a3) = match x {
+        case (a1, a2, a3) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3))
+    }
 }
 
 instance Group[(a1, a2, a3, a4)] with Group[a1], Group[a2], Group[a3], Group[a4] {
-    pub def inverse(x: (a1, a2, a3, a4)): (a1, a2, a3, a4) =
-        match x {
-            case (a1, a2, a3, a4) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4))
-        }
+    pub def inverse(x: (a1, a2, a3, a4)): (a1, a2, a3, a4) = match x {
+        case (a1, a2, a3, a4) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4))
+    }
 }
 
 instance Group[(a1, a2, a3, a4, a5)] with Group[a1], Group[a2], Group[a3], Group[a4], Group[a5] {
-    pub def inverse(x: (a1, a2, a3, a4, a5)): (a1, a2, a3, a4, a5) =
-        match x {
-            case (a1, a2, a3, a4, a5) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5))
-        }
+    pub def inverse(x: (a1, a2, a3, a4, a5)): (a1, a2, a3, a4, a5) = match x {
+        case (a1, a2, a3, a4, a5) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5))
+    }
 }
 
 instance Group[(a1, a2, a3, a4, a5, a6)] with Group[a1], Group[a2], Group[a3], Group[a4], Group[a5], Group[a6] {
-    pub def inverse(x: (a1, a2, a3, a4, a5, a6)): (a1, a2, a3, a4, a5, a6) =
-        match x {
-            case (a1, a2, a3, a4, a5, a6) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6))
-        }
+    pub def inverse(x: (a1, a2, a3, a4, a5, a6)): (a1, a2, a3, a4, a5, a6) = match x {
+        case (a1, a2, a3, a4, a5, a6) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6))
+    }
 }
 
 instance Group[(a1, a2, a3, a4, a5, a6, a7)] with Group[a1], Group[a2], Group[a3], Group[a4], Group[a5], Group[a6], Group[a7] {
-    pub def inverse(x: (a1, a2, a3, a4, a5, a6, a7)): (a1, a2, a3, a4, a5, a6, a7) =
-        match x {
-            case (a1, a2, a3, a4, a5, a6, a7) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6), Group.inverse(a7))
-        }
+    pub def inverse(x: (a1, a2, a3, a4, a5, a6, a7)): (a1, a2, a3, a4, a5, a6, a7) = match x {
+        case (a1, a2, a3, a4, a5, a6, a7) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6), Group.inverse(a7))
+    }
 }
 
 instance Group[(a1, a2, a3, a4, a5, a6, a7, a8)] with Group[a1], Group[a2], Group[a3], Group[a4], Group[a5], Group[a6], Group[a7], Group[a8] {
-    pub def inverse(x: (a1, a2, a3, a4, a5, a6, a7, a8)): (a1, a2, a3, a4, a5, a6, a7, a8) =
-        match x {
-            case (a1, a2, a3, a4, a5, a6, a7, a8) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6), Group.inverse(a7), Group.inverse(a8))
-        }
+    pub def inverse(x: (a1, a2, a3, a4, a5, a6, a7, a8)): (a1, a2, a3, a4, a5, a6, a7, a8) = match x {
+        case (a1, a2, a3, a4, a5, a6, a7, a8) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6), Group.inverse(a7), Group.inverse(a8))
+    }
 }
 
 instance Group[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Group[a1], Group[a2], Group[a3], Group[a4], Group[a5], Group[a6], Group[a7], Group[a8], Group[a9] {
-    pub def inverse(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): (a1, a2, a3, a4, a5, a6, a7, a8, a9) =
-        match x {
-            case (a1, a2, a3, a4, a5, a6, a7, a8, a9) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6), Group.inverse(a7), Group.inverse(a8), Group.inverse(a9))
-        }
+    pub def inverse(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): (a1, a2, a3, a4, a5, a6, a7, a8, a9) = match x {
+        case (a1, a2, a3, a4, a5, a6, a7, a8, a9) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6), Group.inverse(a7), Group.inverse(a8), Group.inverse(a9))
+    }
 }
 
 instance Group[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Group[a1], Group[a2], Group[a3], Group[a4], Group[a5], Group[a6], Group[a7], Group[a8], Group[a9], Group[a10] {
-    pub def inverse(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) =
-        match x {
-            case (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6), Group.inverse(a7), Group.inverse(a8), Group.inverse(a9), Group.inverse(a10))
-        }
+    pub def inverse(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = match x {
+        case (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6), Group.inverse(a7), Group.inverse(a8), Group.inverse(a9), Group.inverse(a10))
+    }
 }

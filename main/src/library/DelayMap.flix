@@ -39,11 +39,10 @@ pub mod DelayMap {
         type Idx = k
         type Elm = v
         type Aef = KeyNotFound
-        pub def get(t: DelayMap[k, v], i: k): v \ KeyNotFound =
-            match DelayMap.get(i, t) {
-                case Some(v) => v
-                case None    => KeyNotFound.keyNotFound("key not found")
-            }
+        pub def get(t: DelayMap[k, v], i: k): v \ KeyNotFound = match DelayMap.get(i, t) {
+            case Some(v) => v
+            case None    => KeyNotFound.keyNotFound("key not found")
+        }
     }
 
     instance Functor[DelayMap[k]] {
@@ -73,7 +72,7 @@ pub mod DelayMap {
     @Experimental
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] =
         region rc {
-            "DelayMap#{" + (DelayMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${ k } => ${ v }") |> Iterator.join(", ")) + "}"
+            "DelayMap#{" + (DelayMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
         }
 
     ///
@@ -374,11 +373,10 @@ pub mod DelayMap {
     /// Otherwise, updates `m` with `k => v`.
     ///
     @Experimental @LazyWhenPure
-    pub def insertWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
-        match purityOf3(f) {
-            case Purity3.Pure(g)   => insertWithKeyL(g, k, v, m)
-            case Purity3.Impure(g) => insertWithKeyE(g, k, v, m)
-        }
+    pub def insertWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] = match purityOf3(f) {
+        case Purity3.Pure(g)   => insertWithKeyL(g, k, v, m)
+        case Purity3.Impure(g) => insertWithKeyE(g, k, v, m)
+    }
 
     ///
     /// Helper function for `insertWithKey`. Applies `f` lazily.
@@ -419,11 +417,10 @@ pub mod DelayMap {
     ///  - Applies `f` lazily if `f` is pure.
     ///
     @Experimental @ParallelWhenPure @LazyWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
-        match purityOf2(f) {
-            case Purity2.Pure(g)   => mapWithKeyL(g, m)
-            case Purity2.Impure(g) => mapWithKeyE(g, m)
-        }
+    pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef = match purityOf2(f) {
+        case Purity2.Pure(g)   => mapWithKeyL(g, m)
+        case Purity2.Impure(g) => mapWithKeyE(g, m)
+    }
 
     ///
     /// Helper function for `mapWithKey`. Applies `f` lazily.
@@ -528,11 +525,10 @@ pub mod DelayMap {
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
-    pub def unionWithKey(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
-        match purityOf3(f) {
-            case Purity3.Pure(g)   => unionWithKeyL(g, m1, m2)
-            case Purity3.Impure(g) => unionWithKeyE(g, m1, m2)
-        }
+    pub def unionWithKey(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] = match purityOf3(f) {
+        case Purity3.Pure(g)   => unionWithKeyL(g, m1, m2)
+        case Purity3.Impure(g) => unionWithKeyE(g, m1, m2)
+    }
 
     ///
     /// Helper function for `unionWithKey`. Applies `f` lazily.
@@ -703,11 +699,10 @@ pub mod DelayMap {
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
-    pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
-        match purityOf2(f) {
-            case Purity2.Pure(g)   => updateWithKeyL(g, k, m)
-            case Purity2.Impure(g) => updateWithKeyE(g, k, m)
-        }
+    pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] = match purityOf2(f) {
+        case Purity2.Pure(g)   => updateWithKeyL(g, k, m)
+        case Purity2.Impure(g) => updateWithKeyE(g, k, m)
+    }
 
     ///
     /// Helper function for `updateWithKey`. Does not force the `v`.
@@ -787,7 +782,7 @@ pub mod DelayMap {
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef =
         region rc {
             let ix = Ref.fresh(rc, 0);
-            let f1 = (k, v) -> {let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix)};
+            let f1 = (k, v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
             forEach(f1, m)
         }
 

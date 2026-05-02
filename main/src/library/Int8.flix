@@ -186,12 +186,11 @@ pub mod Int8 {
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int8, l: Int32, r: Int32): Int8 =
-        match (getBit(pos = l, x), getBit(pos = r, x)) {
-            case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
-            case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
-            case _      => x
-        }
+    def swap(x: Int8, l: Int32, r: Int32): Int8 = match (getBit(pos = l, x), getBit(pos = r, x)) {
+        case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
+        case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
+        case _      => x
+    }
 
     ///
     /// Returns the position of the highest-order/leftmost one-bit in `x`.
@@ -354,12 +353,11 @@ pub mod Int8 {
     /// Parse the string `s` as an Int8, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Int8] =
-        try {
-            Some(Byte.parseByte(s.strip()))
-        } catch {
-            case _: NumberFormatException => None
-        }
+    pub def fromString(s: String): Option[Int8] = try {
+        Some(Byte.parseByte(s.strip()))
+    } catch {
+        case _: NumberFormatException => None
+    }
 
     ///
     /// Convert `x` to an Int16.

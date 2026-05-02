@@ -100,8 +100,8 @@ pub mod Sys.Console {
     ///
     pub def pick(p: a, choices: List[b]): Option[b] \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
         Console.println(prompt(p));
-        foreach((i, opt) <- ForEach.withIndex(choices))
-            Console.println("  ${ i + 1 }) ${ prompt(opt) }");
+        foreach ((i, opt) <- ForEach.withIndex(choices))
+            Console.println("  ${i + 1}) ${prompt(opt)}");
         Console.print("> ");
         let input = String.trim(Console.readln());
         match Int32.fromString(input) {
@@ -116,28 +116,26 @@ pub mod Sys.Console {
     ///
     /// Like `pick`, but re-prompts until the user makes a valid selection.
     ///
-    pub def pickWith(p: a, choices: List[b]): b \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
-        match pick(p, choices) {
-            case Some(v) => v
-            case None    => pickWith(p, choices)
-        }
+    pub def pickWith(p: a, choices: List[b]): b \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] = match pick(p, choices) {
+        case Some(v) => v
+        case None    => pickWith(p, choices)
+    }
 
     ///
     /// Handles the `Console` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Console` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Console) + IO =
-        x ->
-            run {
-                f(x)
-            } with handler Console {
-                  def readln(k) = {k(System.console().readLine())}
-                  def print(s, k) = {System.out.print(s); System.out.flush(); k()}
-                  def eprint(s, k) = {System.err.print(s); System.err.flush(); k()}
-                  def println(s, k) = {System.out.println(s); System.out.flush(); k()}
-                  def eprintln(s, k) = {System.err.println(s); System.err.flush(); k()}
-              }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Console) + IO = x ->
+        run {
+            f(x)
+        } with handler Console {
+            def readln(k) = { k(System.console().readLine()) }
+            def print(s, k) = { System.out.print(s); System.out.flush(); k() }
+            def eprint(s, k) = { System.err.print(s); System.err.flush(); k() }
+            def println(s, k) = { System.out.println(s); System.out.flush(); k() }
+            def eprintln(s, k) = { System.err.println(s); System.err.flush(); k() }
+        }
 
     ///
     /// Runs the `Console` effect of the given function `f`.

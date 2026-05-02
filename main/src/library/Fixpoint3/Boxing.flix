@@ -66,7 +66,7 @@ pub mod Fixpoint3.Boxing {
     ///
     pub def initialize(rc: Region[r], withProv: Bool, program: RamProgram): (Boxing[r], EFacts[r]) \ r =
         let boxingInfo = initializeInternal(rc, program, withProv);
-        let facts = unsafe IO {initializeFacts(rc, program, boxingInfo)};
+        let facts = unsafe IO { initializeFacts(rc, program, boxingInfo) };
         (boxingInfo, facts)
 
     ///
@@ -78,7 +78,7 @@ pub mod Fixpoint3.Boxing {
         let RamProgram.Program(_, facts, _, (indexes, _), typeInfo) = program;
         let (f1, f2) = facts;
         let newFacts = MutMap.empty(rc1);
-        foreach((relSym, relFacts) <- f1) {
+        foreach ((relSym, relFacts) <- f1) {
             let RelSym.Symbol(PredSym.PredSym(_, id), _, _) = relSym;
             // Get some search. This means that we have to create one less index in the interpreter.
             let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
@@ -87,7 +87,7 @@ pub mod Fixpoint3.Boxing {
             mapAllFacts(relFacts, boxingInfo, TypeInfo.getTypeOf(id, typeInfo), newTree);
             MutMap.put(relSym, newTree, newFacts)
         };
-        foreach((relSym, relFacts) <- f2) {
+        foreach ((relSym, relFacts) <- f2) {
             let RelSym.Symbol(PredSym.PredSym(_, id), _, _) = relSym;
             // Get some search. This means that we have to create one less index in the interpreter.
             let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
@@ -105,20 +105,20 @@ pub mod Fixpoint3.Boxing {
     ): Unit \ r + IO =
         unchecked_cast({
             facts
-            |> BPlusTree.forEach(
-                tuple -> lat -> {
-                    // `facts` and `newTree` must have same the same region. Cast to achieve this.
-                    unchecked_cast(({
-                        let savedVec = tuple
-                        |> Vector.mapWithIndex(
-                            index -> boxedVal ->
-                                let unifiedPos = Vector.get(index, mapping);
-                                unboxWith(boxedVal, unifiedPos, boxingInfo)
-                        );
-                        BPlusTree.put(savedVec, lat, newTree)
-                    }: _\r) as _ \ IO)
-                }
-            ) // This is to signal that we indeed modify the region `r`.
+                |> BPlusTree.forEach(
+                    tuple -> lat -> {
+                        // `facts` and `newTree` must have same the same region. Cast to achieve this.
+                        unchecked_cast(({
+                            let savedVec = tuple
+                                |> Vector.mapWithIndex(
+                                    index -> boxedVal ->
+                                        let unifiedPos = Vector.get(index, mapping);
+                                        unboxWith(boxedVal, unifiedPos, boxingInfo)
+                                );
+                            BPlusTree.put(savedVec, lat, newTree)
+                        }: _\r) as _ \ IO)
+                    }
+                ) // This is to signal that we indeed modify the region `r`.
         } as _ \ IO + r)
 
     ///
@@ -139,7 +139,7 @@ pub mod Fixpoint3.Boxing {
             ()
         };
         // Add bot first to make sure it corresponds to 0.
-        foreach(x <- relSyms) {
+        foreach (x <- relSyms) {
             match x {
                 case RelSym.Symbol(PredSym.PredSym(_, index), arity, Denotation.Latticenal(bot, _, _, _)) =>
                     discard unboxWith(bot, TypeInfo.getType(index, arity - 1, typeInfo), info)
@@ -238,7 +238,7 @@ pub mod Fixpoint3.Boxing {
         let (_, _, typeInfo, _) = info;
         match BoxingType.getType(index, typeInfo) {
             case Types.TyBool    => Boxed.BoxedBool(not (v == 0i64))
-            case Types.TyChar    => BoxedChar(unsafe IO {Array.get(0, Character.toChars(getOrCrash(Int64.tryToInt32(v))))})
+            case Types.TyChar    => BoxedChar(unsafe IO { Array.get(0, Character.toChars(getOrCrash(Int64.tryToInt32(v)))) })
             case Types.TyInt8    => BoxedInt8(getOrCrash(Int64.tryToInt8(v)))
             case Types.TyInt16   => BoxedInt16(getOrCrash(Int64.tryToInt16(v)))
             case Types.TyInt32   => BoxedInt32(getOrCrash(Int64.tryToInt32(v)))

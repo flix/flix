@@ -65,11 +65,10 @@ pub mod Net.Ipv6Addr {
     ///
     /// Attempt to convert `x` from Ipv6 to Ipv4.
     ///
-    pub def tryToIpv4(x: Ipv6Addr): Option[Ipv4Addr] =
-        match x {
-            case Ipv6Addr.Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, -1i8, -1i8, b1, b2, b3, b4) => Some(Ipv4Addr.Ipv4Addr(b1, b2, b3, b4))
-            case _                                                                                               => None
-        }
+    pub def tryToIpv4(x: Ipv6Addr): Option[Ipv4Addr] = match x {
+        case Ipv6Addr.Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, -1i8, -1i8, b1, b2, b3, b4) => Some(Ipv4Addr.Ipv4Addr(b1, b2, b3, b4))
+        case _                                                                                               => None
+    }
 
     ///
     /// Returns the Ipv6 localhost address.
@@ -82,38 +81,37 @@ pub mod Net.Ipv6Addr {
     ///
     /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
     ///
-    pub def fromString(s: String): Option[Ipv6Addr] =
-        match s |> cleanIpv6String |> parseIpv6List {
-            case Some(b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: Nil) =>
-                Some(
-                    Ipv6Addr.Ipv6Addr(
-                        b1,
-                        b2,
-                        b3,
-                        b4,
-                        b5,
-                        b6,
-                        b7,
-                        b8,
-                        b9,
-                        b10,
-                        b11,
-                        b12,
-                        b13,
-                        b14,
-                        b15,
-                        b16
-                    )
+    pub def fromString(s: String): Option[Ipv6Addr] = match s |> cleanIpv6String |> parseIpv6List {
+        case Some(b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: Nil) =>
+            Some(
+                Ipv6Addr.Ipv6Addr(
+                    b1,
+                    b2,
+                    b3,
+                    b4,
+                    b5,
+                    b6,
+                    b7,
+                    b8,
+                    b9,
+                    b10,
+                    b11,
+                    b12,
+                    b13,
+                    b14,
+                    b15,
+                    b16
                 )
-            case _                                                                                                                => None
-        }
+            )
+        case _                                                                                                                => None
+    }
 
     ///
     /// Returns a String representation of the given Ipv6Addr `x`.
     ///
     pub def toString(x: Ipv6Addr): String =
         let Ipv6Addr.Ipv6Addr(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16) = x;
-        "${ byteToHex(b1, b2) }:${ byteToHex(b3, b4) }:${ byteToHex(b5, b6) }:${ byteToHex(b7, b8) }:${ byteToHex(b9, b10) }:${ byteToHex(b11, b12) }:${ byteToHex(b13, b14) }:${ byteToHex(b15, b16) }"
+        "${byteToHex(b1, b2)}:${byteToHex(b3, b4)}:${byteToHex(b5, b6)}:${byteToHex(b7, b8)}:${byteToHex(b9, b10)}:${byteToHex(b11, b12)}:${byteToHex(b13, b14)}:${byteToHex(b15, b16)}"
 
     ///
     /// convert `x` from i8 to u8.
@@ -135,18 +133,17 @@ pub mod Net.Ipv6Addr {
     ///
     /// Attempts to convert a hex String `s` into Int8.
     ///
-    def byteStringToInt8(s: String): Option[Int8] =
-        try {
-            let b = Integer.parseInt(s, 16);
-            if (b > 127)
-                let bs = Int32.toString(b - 256);
-                Int8.fromString(bs)
-            else
-                let bs = Int32.toString(b);
-                Int8.fromString(bs)
-        } catch {
-            case _: NumberFormatException => None
-        }
+    def byteStringToInt8(s: String): Option[Int8] = try {
+        let b = Integer.parseInt(s, 16);
+        if (b > 127)
+            let bs = Int32.toString(b - 256);
+            Int8.fromString(bs)
+        else
+            let bs = Int32.toString(b);
+            Int8.fromString(bs)
+    } catch {
+        case _: NumberFormatException => None
+    }
 
     ///
     /// Parses an Ipv6 hostname String `s` into a List[String].
@@ -159,18 +156,18 @@ pub mod Net.Ipv6Addr {
             Nil
         else
             let groups = s
-            |> String.replace({src = "::"}, {dst = ":expa:"}) // mark for expansion
-            |> String.replace({src = ":0:0:"}, {dst = ":0000:0000:"}) // expand ":0:0:"
-            |> String.split(regex = "[:]") // split groups
-            |> List.map(
-                g -> {
-                    // add leading 0's
-                    match String.length(g) {
-                        case 4 => g
-                        case i => String.repeat(4 - i, "0") ++ g
+                |> String.replace({src = "::"}, {dst = ":expa:"}) // mark for expansion
+                |> String.replace({src = ":0:0:"}, {dst = ":0000:0000:"}) // expand ":0:0:"
+                |> String.split(regex = "[:]") // split groups
+                |> List.map(
+                    g -> {
+                        // add leading 0's
+                        match String.length(g) {
+                            case 4 => g
+                            case i => String.repeat(4 - i, "0") ++ g
+                        }
                     }
-                }
-            );
+                );
             let missing = 8 - List.length(groups);
             if (missing == 0)
                 groups
@@ -180,29 +177,28 @@ pub mod Net.Ipv6Addr {
     ///
     /// Fill in expasion gaps in Ipv6 String representation with "0000".
     ///
-    def addGroups(l: List[String], missing: Int32): List[String] =
-        match l {
-            case h :: t => {
-                if (h == "expa")
-                    List.repeat(missing + 1, "0000") ::: t
-                else
-                    h :: addGroups(t, missing)
-            }
-            case Nil    => Nil
+    def addGroups(l: List[String], missing: Int32): List[String] = match l {
+        case h :: t => {
+            if (h == "expa")
+                List.repeat(missing + 1, "0000") ::: t
+            else
+                h :: addGroups(t, missing)
         }
+        case Nil    => Nil
+    }
 
     ///
     /// Attemps to convert groups of an Ipv6 address `l` into a List[Int8].
     ///
     def parseIpv6List(l: List[String]): Option[List[Int8]] =
         l
-        |> List.map(g -> String.splitAt(2, g))
-        |> List.map(
-            b -> {
-                let (b1, b2) = b;
-                b1 :: b2 :: Nil
-            }
-        )
-        |> List.flatten
-        |> List.traverse(byteStringToInt8)
+            |> List.map(g -> String.splitAt(2, g))
+            |> List.map(
+                b -> {
+                    let (b1, b2) = b;
+                    b1 :: b2 :: Nil
+                }
+            )
+            |> List.flatten
+            |> List.traverse(byteStringToInt8)
 }

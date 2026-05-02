@@ -33,7 +33,7 @@ pub mod Fs.IsExecutable {
     /// Handles the `IsExecutable` effect of the given function `f` using the `FilePermission` effect.
     ///
     pub def runWithFilePermission(f: Unit -> a \ ef): a \ (ef - IsExecutable) + FilePermission =
-        run {f()} with handler IsExecutable {
-                      def isExecutable(filename, k) = k(Fs.FilePermission.isExecutable(filename))
-                  }
+        run { f() } with handler IsExecutable {
+            def isExecutable(filename, k) = k(Fs.FilePermission.isExecutable(filename))
+        }
 }

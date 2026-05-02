@@ -28,9 +28,9 @@ import java.nio.CharBuffer
 ///              because `DecodingReader` overestimated the number of bytes needed to fill a char buffer.
 ///
 struct DecodingReader[t, r] {
-    rc: Region[r],
-    byteReader: t,
-    decoder: CharsetDecoder,
+    rc:            Region[r],
+    byteReader:    t,
+    decoder:       CharsetDecoder,
     mut leftovers: Array[Int8, r]
 }
 

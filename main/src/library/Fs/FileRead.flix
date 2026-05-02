@@ -46,11 +46,10 @@ pub mod Fs.FileRead {
     ///
     /// In other words, re-interprets the `FileRead` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - FileRead) + IO =
-        x ->
-            checked_ecast(Fs.FileSystem.handle(
-                y -> runWithFileSystem(() -> f(y))
-            )(x))
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - FileRead) + IO = x ->
+        checked_ecast(Fs.FileSystem.handle(
+            y -> runWithFileSystem(() -> f(y))
+        )(x))
 
     ///
     /// Runs the `FileRead` effect of the given function `f`.
@@ -65,11 +64,11 @@ pub mod Fs.FileRead {
     /// Handles the `FileRead` effect of the given function `f` using the `FileSystem` effect.
     ///
     pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - FileRead) + FileSystem =
-        run {f()} with handler FileRead {
-                      def read(filename, k) = k(Fs.FileSystem.read(filename))
-                      def readLines(filename, k) = k(Fs.FileSystem.readLines(filename))
-                      def readBytes(filename, k) = k(Fs.FileSystem.readBytes(filename))
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = k(Fs.FileSystem.read(filename))
+            def readLines(filename, k) = k(Fs.FileSystem.readLines(filename))
+            def readBytes(filename, k) = k(Fs.FileSystem.readBytes(filename))
+        }
 
     ///
     /// Middleware that intercepts the `FileRead` effect, logging each operation
@@ -78,26 +77,26 @@ pub mod Fs.FileRead {
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
     pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileRead) + { FileRead, Logger } =
-        run {f()} with handler FileRead {
-                      def read(filename, k) = {
-                          logPre("read", filename);
-                          let result = FileRead.read(filename);
-                          logPost("read", filename, s -> "${ String.length(s) } chars", result);
-                          k(result)
-                      }
-                      def readLines(filename, k) = {
-                          logPre("readLines", filename);
-                          let result = FileRead.readLines(filename);
-                          logPost("readLines", filename, ls -> "${ List.length(ls) } lines", result);
-                          k(result)
-                      }
-                      def readBytes(filename, k) = {
-                          logPre("readBytes", filename);
-                          let result = FileRead.readBytes(filename);
-                          logPost("readBytes", filename, bs -> "${ Vector.length(bs) } bytes", result);
-                          k(result)
-                      }
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = {
+                logPre("read", filename);
+                let result = FileRead.read(filename);
+                logPost("read", filename, s -> "${String.length(s)} chars", result);
+                k(result)
+            }
+            def readLines(filename, k) = {
+                logPre("readLines", filename);
+                let result = FileRead.readLines(filename);
+                logPost("readLines", filename, ls -> "${List.length(ls)} lines", result);
+                k(result)
+            }
+            def readBytes(filename, k) = {
+                logPre("readBytes", filename);
+                let result = FileRead.readBytes(filename);
+                logPost("readBytes", filename, bs -> "${Vector.length(bs)} bytes", result);
+                k(result)
+            }
+        }
 
     ///
     /// Middleware that intercepts the `FileRead` effect, resolving all file paths
@@ -107,11 +106,11 @@ pub mod Fs.FileRead {
     ///
     pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let r = p -> Fs.FsLayer.resolve(baseDir, p);
-        run {f()} with handler FileRead {
-                      def read(filename, k) = k(FileRead.read(r(filename)))
-                      def readLines(filename, k) = k(FileRead.readLines(r(filename)))
-                      def readBytes(filename, k) = k(FileRead.readBytes(r(filename)))
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = k(FileRead.read(r(filename)))
+            def readLines(filename, k) = k(FileRead.readLines(r(filename)))
+            def readBytes(filename, k) = k(FileRead.readBytes(r(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `FileRead` effect, validating that all file paths
@@ -120,11 +119,11 @@ pub mod Fs.FileRead {
     ///
     pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
-        run {f()} with handler FileRead {
-                      def read(filename, k) = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
-                      def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
-                      def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `FileRead` effect, validating that all file paths
@@ -133,11 +132,11 @@ pub mod Fs.FileRead {
     ///
     pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
-        run {f()} with handler FileRead {
-                      def read(filename, k) = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
-                      def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
-                      def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `FileRead` effect, validating that all file paths
@@ -146,11 +145,11 @@ pub mod Fs.FileRead {
     ///
     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
-        run {f()} with handler FileRead {
-                      def read(filename, k) = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
-                      def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
-                      def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `FileRead` effect, validating that all file paths
@@ -159,11 +158,11 @@ pub mod Fs.FileRead {
     ///
     pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let c = p -> Fs.FsLayer.allowGlob(patterns, p);
-        run {f()} with handler FileRead {
-                      def read(filename, k) = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
-                      def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
-                      def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `FileRead` effect, validating that all file paths
@@ -172,11 +171,11 @@ pub mod Fs.FileRead {
     ///
     pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
-        run {f()} with handler FileRead {
-                      def read(filename, k) = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
-                      def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
-                      def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `FileRead` effect, resolving all file paths
@@ -186,11 +185,11 @@ pub mod Fs.FileRead {
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
-        run {f()} with handler FileRead {
-                      def read(filename, k) = k(FileRead.read(resolve(filename)))
-                      def readLines(filename, k) = k(FileRead.readLines(resolve(filename)))
-                      def readBytes(filename, k) = k(FileRead.readBytes(resolve(filename)))
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = k(FileRead.read(resolve(filename)))
+            def readLines(filename, k) = k(FileRead.readLines(resolve(filename)))
+            def readBytes(filename, k) = k(FileRead.readBytes(resolve(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `FileRead` effect, rejecting reads of files
@@ -200,11 +199,11 @@ pub mod Fs.FileRead {
     ///
     pub def withTransferLimit(maxSize: Size, f: Unit -> a \ ef): a \ (ef - FileRead) + { FileRead, FileStat } =
         let check = sz -> Fs.FsLayer.checkTransferLimit(maxSize, sz);
-        run {f()} with handler FileRead {
-                      def read(filename, k) = k(Result.flatMap(_ -> FileRead.read(filename), Result.flatMap(check, FileStat.size(filename))))
-                      def readLines(filename, k) = k(Result.flatMap(_ -> FileRead.readLines(filename), Result.flatMap(check, FileStat.size(filename))))
-                      def readBytes(filename, k) = k(Result.flatMap(_ -> FileRead.readBytes(filename), Result.flatMap(check, FileStat.size(filename))))
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = k(Result.flatMap(_ -> FileRead.read(filename), Result.flatMap(check, FileStat.size(filename))))
+            def readLines(filename, k) = k(Result.flatMap(_ -> FileRead.readLines(filename), Result.flatMap(check, FileStat.size(filename))))
+            def readBytes(filename, k) = k(Result.flatMap(_ -> FileRead.readBytes(filename), Result.flatMap(check, FileStat.size(filename))))
+        }
 
     ///
     /// Middleware that intercepts the `FileRead` effect, verifying file checksums
@@ -226,9 +225,9 @@ pub mod Fs.FileRead {
         let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
         let doReadBytes = file -> FileRead.readBytes(file);
         let doReadSidecar = file -> FileRead.read(file);
-        run {f()} with handler FileRead {
-                      def read(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileRead.read(filename), doReadBytes, doReadSidecar))
-                      def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileRead.readLines(filename), doReadBytes, doReadSidecar))
-                      def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileRead.readBytes(filename), doReadSidecar))
-                  }
+        run { f() } with handler FileRead {
+            def read(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileRead.read(filename), doReadBytes, doReadSidecar))
+            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileRead.readLines(filename), doReadBytes, doReadSidecar))
+            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileRead.readBytes(filename), doReadSidecar))
+        }
 }

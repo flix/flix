@@ -225,11 +225,10 @@ pub mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toNec(iter: Iterator[a, ef, r]): Option[Nec[a]] \ { ef, r } =
-        match next(iter) {
-            case Some(a) => foldLeft(Nec.snoc, Nec.singleton(a), iter) |> Some
-            case None    => None
-        }
+    pub def toNec(iter: Iterator[a, ef, r]): Option[Nec[a]] \ { ef, r } = match next(iter) {
+        case Some(a) => foldLeft(Nec.snoc, Nec.singleton(a), iter) |> Some
+        case None    => None
+    }
 
     ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
@@ -295,7 +294,7 @@ pub mod Iterator {
             case Skip   => Skip
             case Done   => Done
         };
-        let iterF1 = () -> {let x = iterF(); step(x)};
+        let iterF1 = () -> { let x = iterF(); step(x) };
         Iterator(rc, iterF1)
 
     ///
@@ -308,11 +307,11 @@ pub mod Iterator {
         let Iterator(rc, iterF) = iter;
         let ix = Ref.fresh(rc, 0);
         let step = x -> match x {
-            case Ans(a) => {let i = Ref.get(ix); Ref.put(i + 1, ix); Ans(f(i, a))}
+            case Ans(a) => { let i = Ref.get(ix); Ref.put(i + 1, ix); Ans(f(i, a)) }
             case Skip   => Skip
             case Done   => Done
         };
-        let iterF1 = () -> {let x = iterF(); step(x)};
+        let iterF1 = () -> { let x = iterF(); step(x) };
         Iterator(rc, iterF1)
 
     ///
@@ -389,22 +388,20 @@ pub mod Iterator {
     ///
     /// Helper function for `zipWith`.
     ///
-    def zipWithGoLeft(iter: Unit -> Step[a] \ ef1, f: a -> c \ ef2): Step[c] \ { ef1, ef2 } =
-        match iter() {
-            case Ans(a) => Ans(f(a))
-            case Skip   => zipWithGoLeft(iter, f)
-            case Done   => Done
-        }
+    def zipWithGoLeft(iter: Unit -> Step[a] \ ef1, f: a -> c \ ef2): Step[c] \ { ef1, ef2 } = match iter() {
+        case Ans(a) => Ans(f(a))
+        case Skip   => zipWithGoLeft(iter, f)
+        case Done   => Done
+    }
 
     ///
     /// Helper function for `zipWith`.
     ///
-    def zipWithGoRight(f: b -> c \ ef2, iter: Unit -> Step[b] \ ef1): Step[c] \ { ef1, ef2 } =
-        match iter() {
-            case Ans(b) => Ans(f(b))
-            case Skip   => zipWithGoRight(f, iter)
-            case Done   => Done
-        }
+    def zipWithGoRight(f: b -> c \ ef2, iter: Unit -> Step[b] \ ef1): Step[c] \ { ef1, ef2 } = match iter() {
+        case Ans(b) => Ans(f(b))
+        case Skip   => zipWithGoRight(f, iter)
+        case Done   => Done
+    }
 
     ///
     /// Returns an iterator where the element at index `i` is `(a, i)` where
@@ -417,7 +414,7 @@ pub mod Iterator {
     pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
         let Iterator(rc, _) = iter;
         let ix = Ref.fresh(rc, 0);
-        map(x -> {let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x)}, iter)
+        map(x -> { let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x) }, iter)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
@@ -466,11 +463,10 @@ pub mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def reduceLeft(f: (a, a) -> a \ ef2, iter: Iterator[a, ef1, r]): Option[a] \ { ef1, ef2, r } =
-        match next(iter) {
-            case Some(x) => foldLeft(f, x, iter) |> Some
-            case None    => None
-        }
+    pub def reduceLeft(f: (a, a) -> a \ ef2, iter: Iterator[a, ef1, r]): Option[a] \ { ef1, ef2, r } = match next(iter) {
+        case Some(x) => foldLeft(f, x, iter) |> Some
+        case None    => None
+    }
 
     ///
     /// Returns an iterator over the results of `f`.
@@ -565,7 +561,7 @@ pub mod Iterator {
         def loop() = match iterF() {
             case Ans(a) =>
                 if (Ref.get(start)) {
-                    if (f(a)) Skip else {Ref.put(false, start); Ans(a)}
+                    if (f(a)) Skip else { Ref.put(false, start); Ans(a) }
                 } else {
                     Ans(a)
                 }
@@ -702,7 +698,7 @@ pub mod Iterator {
             match next(iter) {
                 case Some(a) => {
                     StringBuilder.append(f(a), sb);
-                    forEach(x -> {StringBuilder.append(sep, sb); StringBuilder.append(f(x), sb)}, iter)
+                    forEach(x -> { StringBuilder.append(sep, sb); StringBuilder.append(f(x), sb) }, iter)
                 }
                 case None    => ()
             };

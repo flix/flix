@@ -63,14 +63,14 @@ mod BPlusTree.Node {
     ///     restarted after the wanted lock has been released by the holder.
     ///
     pub struct Node[k, v, r] {
-        keys: Array[k, r],
-        children: Array[Node[k, v, r], r],
-        values: Array[v, r],
-        lock: Lock[r],
-        mut size: Int32,
+        keys:       Array[k, r],
+        children:   Array[Node[k, v, r], r],
+        values:     Array[v, r],
+        lock:       Lock[r],
+        mut size:   Int32,
         mut parent: Option[Node[k, v, r]],
-        mut next: Option[Node[k, v, r]],
-        isLeaf: Bool
+        mut next:   Option[Node[k, v, r]],
+        isLeaf:     Bool
     }
 
     ///
@@ -97,18 +97,17 @@ mod BPlusTree.Node {
         n1: Node[k, v, r1],
         i2: Int32,
         n2: Node[k, v, r2]
-    ): Bool \ r1 + r2 with Order[k], Eq[v] =
-        match (seek(i1, n1), seek(i2, n2)) {
-            case (None, None)                     => true
-            case (Some((j1, m1)), Some((j2, m2))) =>
-                let (k1, v1) = getKeyAndValueAt(j1, m1);
-                let (k2, v2) = getKeyAndValueAt(j2, m2);
-                if (k1 == k2 and v1 == v2)
-                    sameElementsFromLeaf(j1 + 1, m1, j2 + 1, m2)
-                else
-                    false
-            case _                                => false
-        }
+    ): Bool \ r1 + r2 with Order[k], Eq[v] = match (seek(i1, n1), seek(i2, n2)) {
+        case (None, None)                     => true
+        case (Some((j1, m1)), Some((j2, m2))) =>
+            let (k1, v1) = getKeyAndValueAt(j1, m1);
+            let (k2, v2) = getKeyAndValueAt(j2, m2);
+            if (k1 == k2 and v1 == v2)
+                sameElementsFromLeaf(j1 + 1, m1, j2 + 1, m2)
+            else
+                false
+        case _                                => false
+    }
 
     ///
     /// Applies `f` to every mapping in the leaf chain that starts at `n`.
@@ -121,15 +120,14 @@ mod BPlusTree.Node {
         f: k -> v -> v \ ef,
         i: Int32,
         n: Node[k, v, r]
-    ): Unit \ r + ef with Order[k] =
-        match seek(i, n) {
-            case None                => ()
-            case Some((index, node)) => {
-                let v1 = getKeyAndValueAt(index, node) ||> f;
-                Array.put(v1, index, node->values);
-                transformWithKeyFromLeaf(f, index + 1, node)
-            }
+    ): Unit \ r + ef with Order[k] = match seek(i, n) {
+        case None                => ()
+        case Some((index, node)) => {
+            let v1 = getKeyAndValueAt(index, node) ||> f;
+            Array.put(v1, index, node->values);
+            transformWithKeyFromLeaf(f, index + 1, node)
         }
+    }
 
     ///
     /// Folds over the leaf chain that starts at `node`, from left to right.
@@ -143,14 +141,13 @@ mod BPlusTree.Node {
         acc: b,
         index: Int32,
         node: Node[k, v, r]
-    ): b \ ef + r =
-        match seek(index, node) {
-            case None         => acc
-            case Some((i, n)) => {
-                let (k, v) = getKeyAndValueAt(i, n);
-                foldLeftWithKeyFromLeaf(f, f(acc, k, v), i + 1, n)
-            }
+    ): b \ ef + r = match seek(index, node) {
+        case None         => acc
+        case Some((i, n)) => {
+            let (k, v) = getKeyAndValueAt(i, n);
+            foldLeftWithKeyFromLeaf(f, f(acc, k, v), i + 1, n)
         }
+    }
 
     ///
     /// Internal method to insert `key` and `val` in `node` at `insertionPoint`.
@@ -237,11 +234,10 @@ mod BPlusTree.Node {
     ///
     /// Unwraps `opt` if it is `Some` and crashes otherwise. Used only in testing functions.
     ///
-    def unwrapNode(opt: Option[Node[k, v, r]]): Node[k, v, r] =
-        match opt {
-            case Some(val) => val
-            case None      => bug!("")
-        }
+    def unwrapNode(opt: Option[Node[k, v, r]]): Node[k, v, r] = match opt {
+        case Some(val) => val
+        case None      => bug!("")
+    }
 
     ///
     /// Returns `true` if and only if `node` is structurally correct.
@@ -254,52 +250,51 @@ mod BPlusTree.Node {
         isRightMost: Bool,
         shouldBeBiggerThan: Option[k],
         search: Search
-    ): Bool \ r with Order[k] =
-        match node->isLeaf {
-            case false =>
-                let c = node->children;
-                let size = node->size;
-                let keys = toLength(Array.toVector(node->keys), size - 1);
-                let children = toLength(Array.toVector(c), size);
-                let keysInOrder = isSorted(keys, search);
-                let firstChildWorks = assertNodeInvariant(Vector.get(0, children), arity, false, shouldBeBiggerThan, search);
-                let lastChildWorks = assertNodeInvariant(unwrapNode(Vector.last(children)), arity, isRightMost, if (size == 0) shouldBeBiggerThan else Vector.last(keys), search);
-                let zippedWithoutFirst = Vector.filter(match (index, _) -> index != 0, Vector.mapWithIndex(i -> x -> (i, x), toLength(children, size - 1)));
-                let middleChildrenWorks = Vector.forAll(
-                    pair ->
-                        let (i, p) = pair;
-                        assertNodeInvariant(p, arity, false, Some(Vector.get(i - 1, keys)), search),
-                    zippedWithoutFirst
-                );
-                let childrenWorks = firstChildWorks and middleChildrenWorks and lastChildWorks;
-                let parentPointerCorrect = Vector.foldLeft(
-                    workingSoFar -> cur -> workingSoFar and equalByReference(node, unwrapNode(cur->parent)),
-                    true,
-                    children
-                );
-                let lastHasNoNext = not isRightMost or Option.isEmpty(unwrapNode(Vector.last(children))->next);
-                let noLeaves = Array.size(node->values) == 0;
-                let nodeIsUnlocked = not BPlusTree.Lock.isLocked(node->lock);
-                let isBiggerThanPrev = match shouldBeBiggerThan {
-                    case None    => true
-                    case Some(v) => comparison(Vector.get(0, keys), v, search) == 1
-                };
-                parentPointerCorrect
+    ): Bool \ r with Order[k] = match node->isLeaf {
+        case false =>
+            let c = node->children;
+            let size = node->size;
+            let keys = toLength(Array.toVector(node->keys), size - 1);
+            let children = toLength(Array.toVector(c), size);
+            let keysInOrder = isSorted(keys, search);
+            let firstChildWorks = assertNodeInvariant(Vector.get(0, children), arity, false, shouldBeBiggerThan, search);
+            let lastChildWorks = assertNodeInvariant(unwrapNode(Vector.last(children)), arity, isRightMost, if (size == 0) shouldBeBiggerThan else Vector.last(keys), search);
+            let zippedWithoutFirst = Vector.filter(match (index, _) -> index != 0, Vector.mapWithIndex(i -> x -> (i, x), toLength(children, size - 1)));
+            let middleChildrenWorks = Vector.forAll(
+                pair ->
+                    let (i, p) = pair;
+                    assertNodeInvariant(p, arity, false, Some(Vector.get(i - 1, keys)), search),
+                zippedWithoutFirst
+            );
+            let childrenWorks = firstChildWorks and middleChildrenWorks and lastChildWorks;
+            let parentPointerCorrect = Vector.foldLeft(
+                workingSoFar -> cur -> workingSoFar and equalByReference(node, unwrapNode(cur->parent)),
+                true,
+                children
+            );
+            let lastHasNoNext = not isRightMost or Option.isEmpty(unwrapNode(Vector.last(children))->next);
+            let noLeaves = Array.size(node->values) == 0;
+            let nodeIsUnlocked = not BPlusTree.Lock.isLocked(node->lock);
+            let isBiggerThanPrev = match shouldBeBiggerThan {
+                case None    => true
+                case Some(v) => comparison(Vector.get(0, keys), v, search) == 1
+            };
+            parentPointerCorrect
                 and lastHasNoNext
                 and noLeaves
                 and keysInOrder
                 and childrenWorks
                 and nodeIsUnlocked
                 and isBiggerThanPrev
-            case true  =>
-                let size = node->size;
-                let keys = toLength(Array.toVector(node->keys), size);
-                let keysInOrder = isSorted(toLength(keys, size), search);
-                let sizeInRange = size <= arity and 0 <= size;
-                let noChildren = Array.size(node->children) == 0;
-                let leafIsUnlocked = not BPlusTree.Lock.isLocked(node->lock);
-                sizeInRange and keysInOrder and leafIsUnlocked and noChildren
-        }
+        case true  =>
+            let size = node->size;
+            let keys = toLength(Array.toVector(node->keys), size);
+            let keysInOrder = isSorted(toLength(keys, size), search);
+            let sizeInRange = size <= arity and 0 <= size;
+            let noChildren = Array.size(node->children) == 0;
+            let leafIsUnlocked = not BPlusTree.Lock.isLocked(node->lock);
+            sizeInRange and keysInOrder and leafIsUnlocked and noChildren
+    }
 
     ///
     /// Perform a binary search and return the index of `key` in `node->keys` if it exists.
@@ -421,7 +416,7 @@ mod BPlusTree.Node {
         // The purpose is to be able to give them to a Java class which performs pointer comparison.
         let obj1 = unchecked_cast(o1 as JObject);
         let obj2 = unchecked_cast(o2 as JObject);
-        unsafe IO {JObjects.equals(obj1, obj2)}
+        unsafe IO { JObjects.equals(obj1, obj2) }
     }
 
     ///
@@ -725,12 +720,11 @@ mod BPlusTree.Node {
     ///
     /// Not thread-safe: Traverses the live tree rooted at `node`.
     ///
-    pub def leftMostLeafUnconditional(node: Node[k, v, r]): Node[k, v, r] \ r =
-        match node->isLeaf {
-            case false =>
-                leftMostLeafUnconditional(firstChild(node))
-            case true  => node
-        }
+    pub def leftMostLeafUnconditional(node: Node[k, v, r]): Node[k, v, r] \ r = match node->isLeaf {
+        case false =>
+            leftMostLeafUnconditional(firstChild(node))
+        case true  => node
+    }
 
     ///
     /// Returns the leftmost leaf of the tree rooted at `node` together with an optimistic stamp
@@ -771,36 +765,35 @@ mod BPlusTree.Node {
     /// - On return, the thread holds a write-lock on `node` and on `parent` given by
     ///   `node->Some(parent)`
     ///
-    def lockParent(node: Node[k, v, r], tree: BPlusTree[k, v, r]): Int64 \ r =
-        match node->parent {
-            case Some(parent) =>
-                let parentLock = parent->lock;
-                let writeStamp = Lock.writeLock(parentLock);
-                // If some thread had a lock on your parent and changed your parent pointer retry.
-                let possiblyNewParent = match node->parent {
-                    case Some(v) => v
-                    case None    => bug!("Cannot happen (when there are no deletions). Parent pointer replaced by None")
-                };
-                let isSame = equalByReference(possiblyNewParent, parent);
-                if (not isSame) {
-                    Lock.unlockWrite(writeStamp, parentLock);
-                    lockParent(node, tree)
-                } else
-                    writeStamp
-                    // `node` was root node. We need to lock the root instead, as it protects the parent pointer of `node`.
-            case None         =>
-                let stamp = BPlusTree.writeLockRootPointer(tree);
-                let parentHasChanged = match node->parent {
-                    case Some(_) => true
-                    case None    => false
-                };
-                if (parentHasChanged) {
-                    BPlusTree.unlockRootPointer(stamp, tree);
-                    lockParent(node, tree)
-                } else {
-                    stamp
-                }
-        }
+    def lockParent(node: Node[k, v, r], tree: BPlusTree[k, v, r]): Int64 \ r = match node->parent {
+        case Some(parent) =>
+            let parentLock = parent->lock;
+            let writeStamp = Lock.writeLock(parentLock);
+            // If some thread had a lock on your parent and changed your parent pointer retry.
+            let possiblyNewParent = match node->parent {
+                case Some(v) => v
+                case None    => bug!("Cannot happen (when there are no deletions). Parent pointer replaced by None")
+            };
+            let isSame = equalByReference(possiblyNewParent, parent);
+            if (not isSame) {
+                Lock.unlockWrite(writeStamp, parentLock);
+                lockParent(node, tree)
+            } else
+                writeStamp
+                // `node` was root node. We need to lock the root instead, as it protects the parent pointer of `node`.
+        case None         =>
+            let stamp = BPlusTree.writeLockRootPointer(tree);
+            let parentHasChanged = match node->parent {
+                case Some(_) => true
+                case None    => false
+            };
+            if (parentHasChanged) {
+                BPlusTree.unlockRootPointer(stamp, tree);
+                lockParent(node, tree)
+            } else {
+                stamp
+            }
+    }
 
     ///
     /// Create a new leaf node.
@@ -871,40 +864,39 @@ mod BPlusTree.Node {
         parentStamp: Int64,
         newKey: k,
         tree: BPlusTree[k, v, r]
-    ): Option[(Node[k, v, r], Int64)] \ r with Order[k] =
-        match parent {
-            case Some(node) => {
-                let arity = BPlusTree.arity(tree);
-                let search = BPlusTree.search(tree);
-                let children = node->children;
-                let insertionPoint = toInsertionPoint(binarySearch(newKey, search, node));
-                let size = node->size;
-                if (size < arity) {
-                    arrayInsert(newKey, insertionPoint, size - 1, node->keys);
-                    arrayInsert(rightChild, insertionPoint + 1, size, children);
-                    node->size = size + 1;
-                    Lock.unlockWrite(parentStamp, node->lock);
-                    None
-                } else {
-                    splitInternal(node, parentStamp, rightChild, insertionPoint, newKey, tree)
-                }
-            }
-            case None       => {
-                // In this case, leftChild is the root of the tree
-                // and we must construct a new root node
-                let arity = BPlusTree.arity(tree);
-                let rc = BPlusTree.rc(tree);
-                let children = Array.empty(rc, arity);
-                let keys = Array.empty(rc, arity - 1);
-                Array.put(leftChild, 0, children);
-                Array.put(rightChild, 1, children);
-                Array.put(newKey, 0, keys);
-                let newRoot = mkInternal(rc, keys, children, 2, None);
-                leftChild->parent = Some(newRoot);
-                rightChild->parent = Some(newRoot);
-                Some((newRoot, parentStamp))
+    ): Option[(Node[k, v, r], Int64)] \ r with Order[k] = match parent {
+        case Some(node) => {
+            let arity = BPlusTree.arity(tree);
+            let search = BPlusTree.search(tree);
+            let children = node->children;
+            let insertionPoint = toInsertionPoint(binarySearch(newKey, search, node));
+            let size = node->size;
+            if (size < arity) {
+                arrayInsert(newKey, insertionPoint, size - 1, node->keys);
+                arrayInsert(rightChild, insertionPoint + 1, size, children);
+                node->size = size + 1;
+                Lock.unlockWrite(parentStamp, node->lock);
+                None
+            } else {
+                splitInternal(node, parentStamp, rightChild, insertionPoint, newKey, tree)
             }
         }
+        case None       => {
+            // In this case, leftChild is the root of the tree
+            // and we must construct a new root node
+            let arity = BPlusTree.arity(tree);
+            let rc = BPlusTree.rc(tree);
+            let children = Array.empty(rc, arity);
+            let keys = Array.empty(rc, arity - 1);
+            Array.put(leftChild, 0, children);
+            Array.put(rightChild, 1, children);
+            Array.put(newKey, 0, keys);
+            let newRoot = mkInternal(rc, keys, children, 2, None);
+            leftChild->parent = Some(newRoot);
+            rightChild->parent = Some(newRoot);
+            Some((newRoot, parentStamp))
+        }
+    }
 
     ///
     /// Inserts `key => val` into `node` or updates the existing mapping selected by `onExisting`.
@@ -1235,18 +1227,18 @@ mod BPlusTree.Node {
             case false => {
                 let children = node->children;
                 let keysString = Array.copyOfRange(rc, 0, node->size - 1, node->keys)
-                |>// Array.map(rc, tupleToString) |>
-                Array.join(",");
+                    |>// Array.map(rc, tupleToString) |>
+                    Array.join(",");
                 let childrenArr = Array.copyOfRange(rc, 0, node->size, children);
-                let childrenString = Array.foldLeft(a -> x -> "${ a }${ toString(indent + 2, rc, x) }", "", childrenArr);
-                "${ indentString }Internal(${ keysString })\n${ childrenString }"
+                let childrenString = Array.foldLeft(a -> x -> "${a}${toString(indent + 2, rc, x)}", "", childrenArr);
+                "${indentString}Internal(${keysString})\n${childrenString}"
             }
             case true  => {
                 let values = Array.copyOfRange(rc, 0, node->size, node->values);
                 let keys = Array.copyOfRange(rc, 0, node->size, node->keys);
-                let keysStrings = Array.mapWithIndex(rc, i -> key -> "${ key }: ${ Array.get(i, values) }", keys);
-                let keysString = Array.join(",\n${ indentString } ", keysStrings);
-                "${ indentString }Leaf(\n${ indentString } ${ keysString }\n${ indentString })\n"
+                let keysStrings = Array.mapWithIndex(rc, i -> key -> "${key}: ${Array.get(i, values)}", keys);
+                let keysString = Array.join(",\n${indentString} ", keysStrings);
+                "${indentString}Leaf(\n${indentString} ${keysString}\n${indentString})\n"
             }
         }
     }
@@ -1271,22 +1263,21 @@ mod BPlusTree.Node {
         stamp: Int64,
         pickChild: Node[k, v, r] -> Node[k, v, r] \ r,
         restart: Unit -> (Node[k, v, r], Int64) \ r
-    ): (Node[k, v, r], Int64) \ r with Order[k] =
-        match cur->isLeaf {
-            case false => {
-                let child = pickChild(cur);
-                Lock.ifValidElse(
-                    stamp,
-                    cur->lock,
-                    () -> {
-                        let childStamp = Lock.tryReadLock(child->lock);
-                        Lock.ifValidElse(stamp, cur->lock, () -> traverseToLeaf(child, childStamp, pickChild, restart), restart)
-                    },
-                    restart
-                )
-            }
-            case true  => (cur, stamp)
+    ): (Node[k, v, r], Int64) \ r with Order[k] = match cur->isLeaf {
+        case false => {
+            let child = pickChild(cur);
+            Lock.ifValidElse(
+                stamp,
+                cur->lock,
+                () -> {
+                    let childStamp = Lock.tryReadLock(child->lock);
+                    Lock.ifValidElse(stamp, cur->lock, () -> traverseToLeaf(child, childStamp, pickChild, restart), restart)
+                },
+                restart
+            )
         }
+        case true  => (cur, stamp)
+    }
 
     ///
     /// Applies `f` to mappings `k => v` starting at `node->keys[index]` until

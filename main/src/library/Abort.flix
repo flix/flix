@@ -50,16 +50,15 @@ pub mod Abort {
     ///
     /// Note: The returned function can still return normally if `abort` is never called by `f`.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Abort) + IO =
-        x ->
-            run {
-                f(x)
-            } with handler Abort {
-                  def abort(m, _k) = {
-                      System.out.println(RichString.toString(m));
-                      unchecked_cast(System.exit(1) as b)
-                  }
-              }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Abort) + IO = x ->
+        run {
+            f(x)
+        } with handler Abort {
+            def abort(m, _k) = {
+                System.out.println(RichString.toString(m));
+                unchecked_cast(System.exit(1) as b)
+            }
+        }
 
     ///
     /// Handles the `Abort` effect of the given function `f` by converting aborts to Result values.
@@ -69,13 +68,12 @@ pub mod Abort {
     /// Returns `Ok(f())` if the computation completes successfully without aborting.
     /// Returns `Err(m)`  if the computation aborts with error message `m`.
     ///
-    pub def handleWithResult(f: a -> b \ ef): a -> Result[RichString, b] \ (ef - Abort) =
-        x ->
-            run {
-                Ok(f(x))
-            } with handler Abort {
-                  def abort(m, _k) = Result.Err(m)
-              }
+    pub def handleWithResult(f: a -> b \ ef): a -> Result[RichString, b] \ (ef - Abort) = x ->
+        run {
+            Ok(f(x))
+        } with handler Abort {
+            def abort(m, _k) = Result.Err(m)
+        }
 
     ///
     /// Runs the `Abort` effect of the given function `f`.
@@ -104,26 +102,26 @@ pub mod Abort {
         let nl = fromString(String.lineSeparator());
         let frames = List.drop(skip, trace) |> List.zipWithIndex;
         let maxIdx = List.length(frames) - 1;
-        let width = String.length("${ maxIdx }");
+        let width = String.length("${maxIdx}");
         joinWith(
             match (idx, elem) -> {
                 let className = elem.getClassName();
                 let methodName = elem.getMethodName();
                 let fileName = Object.toOption(elem.getFileName()) |> Option.getWithDefault("Unknown Source");
                 let lineNumber = elem.getLineNumber();
-                let index = cyan("#${ String.padLeft(width, ' ', "${ idx }") }");
-                let location = gray("(${ fileName }:${ lineNumber })");
+                let index = cyan("#${String.padLeft(width, ' ', "${idx}")}");
+                let location = gray("(${fileName}:${lineNumber})");
                 if (isUserFrame(className))
                     let (classPrefix, funcName) = splitClassName(className);
                     fromString("  ") + index + fromString(" ")
-                    + fromString(classPrefix)
-                    + bold(yellow(funcName))
-                    + fromString(".${ methodName }")
-                    + location
+                        + fromString(classPrefix)
+                        + bold(yellow(funcName))
+                        + fromString(".${methodName}")
+                        + location
                 else
                     fromString("  ") + index + fromString(" ")
-                    + gray("${ className }.${ methodName }")
-                    + location
+                        + gray("${className}.${methodName}")
+                        + location
             },
             nl,
             frames
@@ -149,5 +147,5 @@ pub mod Abort {
     ///
     def isUserFrame(className: String): Bool =
         String.startsWith(prefix = "Def$", className)
-        or String.contains(substr = ".Def$", className)
+            or String.contains(substr = ".Def$", className)
 }

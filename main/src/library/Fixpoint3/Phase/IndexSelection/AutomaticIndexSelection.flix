@@ -40,16 +40,15 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
     /// `{0 < 1 < 2}` does not cover `{0, 2}` as no permutation of `{0, 2}`
     /// is a prefix of `{0 < 1 < 2}`.
     ///
-    pub def minIndex(searches: List[Search]): List[Search] =
-        match searches {
-            case Nil      => Nil
-            case _ :: Nil => searches
-            case _        =>
-                minChainCover(searches)
+    pub def minIndex(searches: List[Search]): List[Search] = match searches {
+        case Nil      => Nil
+        case _ :: Nil => searches
+        case _        =>
+            minChainCover(searches)
                 |> List.map(chain -> List.zip(chain, Vector.empty() :: chain))
                 |> List.map(List.map(match (s1, s2) -> Vector.filter(x -> not Vector.memberOf(x, s2), s1)))
                 |> List.map(List.fold)
-        }
+    }
 
     ///
     /// Find the maximum matching in the bipartite graph `(us, vs, edges)`.
@@ -73,7 +72,7 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
                 Set.exists(cond, MultiMap.get(u, adjList))
             };
             List.filter(u -> getMatching(u, Array.empty(rc, List.length(us))), us)
-            |> List.foldLeft(acc -> u -> Map.insert((u, Array.get(u, matchingRev)), (), acc), Map.empty())
+                |> List.foldLeft(acc -> u -> Map.insert((u, Array.get(u, matchingRev)), (), acc), Map.empty())
         }
 
     ///
@@ -116,12 +115,12 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
         let vertices = List.range(0, List.length(searches));
         let zipped = searches |> List.map(Vector.toSet) |> List.zip(vertices);
         let adjList = zipped
-        |> List.foldMap(
-            match (u, s) ->
-                List.filter(p -> Set.isProperSubsetOf(s, snd(p)), zipped)
-                |> List.map(p -> (u, fst(p)))
-        )
-        |> List.foldLeft(a -> match (u, v) -> MultiMap.insert(u, v, a), MultiMap.empty());
+            |> List.foldMap(
+                match (u, s) ->
+                    List.filter(p -> Set.isProperSubsetOf(s, snd(p)), zipped)
+                        |> List.map(p -> (u, fst(p)))
+            )
+            |> List.foldLeft(a -> match (u, v) -> MultiMap.insert(u, v, a), MultiMap.empty());
         (vertices, adjList)
 
     ///
@@ -133,11 +132,11 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
         let matching = maximumMatching(vertices, vertices, adjList);
         let toSearch = i -> Vector.get(i, searchesVec);
         List.filter(v -> not Map.exists(edge -> _ -> snd(edge) == v, matching), vertices)
-        |> List.foldLeft(
-            acc -> u1 -> {
-                let chain = toSearch(u1) :: List.map(e -> toSearch(snd(e)), maximalPath(u1, matching));
-                chain :: acc
-            },
-            List.empty()
-        )
+            |> List.foldLeft(
+                acc -> u1 -> {
+                    let chain = toSearch(u1) :: List.map(e -> toSearch(snd(e)), maximalPath(u1, matching));
+                    chain :: acc
+                },
+                List.empty()
+            )
 }

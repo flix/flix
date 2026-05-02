@@ -82,187 +82,171 @@ mod Fs.FsLayer {
         Logger.log(
             Severity.Debug,
             gray("-->") + text(" ") + bold(op) + text(" ") + cyan(src)
-            + gray(" -> ")
-            + cyan(dst)
+                + gray(" -> ")
+                + cyan(dst)
         )
 
     ///
     /// Logs a post-operation message: `Debug` on success, `Warn` on error.
     ///
-    pub def logPost(op: String, path: String, describe: a -> String, result: Result[IoError, a]): Unit \ Logger =
-        match result {
-            case Ok(v)    =>
-                Logger.log(
-                    Severity.Debug,
-                    gray("<--") + text(" ") + green("OK") + text(" ")
+    pub def logPost(op: String, path: String, describe: a -> String, result: Result[IoError, a]): Unit \ Logger = match result {
+        case Ok(v)    =>
+            Logger.log(
+                Severity.Debug,
+                gray("<--") + text(" ") + green("OK") + text(" ")
                     + bold(op)
                     + text(" ")
                     + cyan(path)
-                    + gray(" (${ describe(v) })")
-                )
-            case Err(err) =>
-                Logger.log(
-                    Severity.Warn,
-                    gray("<--") + text(" ") + red("ERR") + text(" ")
+                    + gray(" (${describe(v)})")
+            )
+        case Err(err) =>
+            Logger.log(
+                Severity.Warn,
+                gray("<--") + text(" ") + red("ERR") + text(" ")
                     + bold(op)
                     + text(" ")
                     + cyan(path)
                     + text(" ")
-                    + red("${ err }")
-                )
-        }
+                    + red("${err}")
+            )
+    }
 
     ///
     /// Logs a post-operation message for two-path operations (copy/move).
     ///
-    pub def logPost2(op: String, src: String, dst: String, result: Result[IoError, Unit]): Unit \ Logger =
-        match result {
-            case Ok(_)    =>
-                Logger.log(
-                    Severity.Debug,
-                    gray("<--") + text(" ") + green("OK") + text(" ")
+    pub def logPost2(op: String, src: String, dst: String, result: Result[IoError, Unit]): Unit \ Logger = match result {
+        case Ok(_)    =>
+            Logger.log(
+                Severity.Debug,
+                gray("<--") + text(" ") + green("OK") + text(" ")
                     + bold(op)
                     + text(" ")
                     + cyan(src)
                     + gray(" -> ")
                     + cyan(dst)
-                )
-            case Err(err) =>
-                Logger.log(
-                    Severity.Warn,
-                    gray("<--") + text(" ") + red("ERR") + text(" ")
+            )
+        case Err(err) =>
+            Logger.log(
+                Severity.Warn,
+                gray("<--") + text(" ") + red("ERR") + text(" ")
                     + bold(op)
                     + text(" ")
                     + cyan(src)
                     + gray(" -> ")
                     + cyan(dst)
                     + text(" ")
-                    + red("${ err }")
-                )
-        }
+                    + red("${err}")
+            )
+    }
 
-        // ─── File-test operations ──────────────────────────────────────────
+    // ─── File-test operations ──────────────────────────────────────────
 
-    pub def exists(f: String): Result[IoError, Bool] \ IO =
-        try {
-            Ok(Files.exists(Paths.get(f), noFollow()))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-        }
+    pub def exists(f: String): Result[IoError, Bool] \ IO = try {
+        Ok(Files.exists(Paths.get(f), noFollow()))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+    }
 
-    pub def isDirectory(f: String): Result[IoError, Bool] \ IO =
-        try {
-            Ok(Files.isDirectory(Paths.get(f), noFollow()))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-        }
+    pub def isDirectory(f: String): Result[IoError, Bool] \ IO = try {
+        Ok(Files.isDirectory(Paths.get(f), noFollow()))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+    }
 
-    pub def isRegularFile(f: String): Result[IoError, Bool] \ IO =
-        try {
-            Ok(Files.isRegularFile(Paths.get(f), noFollow()))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-        }
+    pub def isRegularFile(f: String): Result[IoError, Bool] \ IO = try {
+        Ok(Files.isRegularFile(Paths.get(f), noFollow()))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+    }
 
-    pub def isSymbolicLink(f: String): Result[IoError, Bool] \ IO =
-        try {
-            Ok(Files.isSymbolicLink(Paths.get(f)))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-        }
+    pub def isSymbolicLink(f: String): Result[IoError, Bool] \ IO = try {
+        Ok(Files.isSymbolicLink(Paths.get(f)))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+    }
 
-    pub def isReadable(f: String): Result[IoError, Bool] \ IO =
-        try {
-            Ok(Files.isReadable(Paths.get(f)))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-        }
+    pub def isReadable(f: String): Result[IoError, Bool] \ IO = try {
+        Ok(Files.isReadable(Paths.get(f)))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+    }
 
-    pub def isWritable(f: String): Result[IoError, Bool] \ IO =
-        try {
-            Ok(Files.isWritable(Paths.get(f)))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-        }
+    pub def isWritable(f: String): Result[IoError, Bool] \ IO = try {
+        Ok(Files.isWritable(Paths.get(f)))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+    }
 
-    pub def isExecutable(f: String): Result[IoError, Bool] \ IO =
-        try {
-            Ok(Files.isExecutable(Paths.get(f)))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-        }
+    pub def isExecutable(f: String): Result[IoError, Bool] \ IO = try {
+        Ok(Files.isExecutable(Paths.get(f)))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+    }
 
-        // ─── File-time operations ──────────────────────────────────────────
+    // ─── File-time operations ──────────────────────────────────────────
 
-    pub def accessTime(f: String): Result[IoError, Int64] \ IO =
-        try {
-            Ok(fileAttributes(Paths.get(f)).lastAccessTime().toMillis())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def accessTime(f: String): Result[IoError, Int64] \ IO = try {
+        Ok(fileAttributes(Paths.get(f)).lastAccessTime().toMillis())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-    pub def creationTime(f: String): Result[IoError, Int64] \ IO =
-        try {
-            Ok(fileAttributes(Paths.get(f)).creationTime().toMillis())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def creationTime(f: String): Result[IoError, Int64] \ IO = try {
+        Ok(fileAttributes(Paths.get(f)).creationTime().toMillis())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-    pub def modificationTime(f: String): Result[IoError, Int64] \ IO =
-        try {
-            Ok(fileAttributes(Paths.get(f)).lastModifiedTime().toMillis())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def modificationTime(f: String): Result[IoError, Int64] \ IO = try {
+        Ok(fileAttributes(Paths.get(f)).lastModifiedTime().toMillis())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-        // ─── File-stat operations ──────────────────────────────────────────
+    // ─── File-stat operations ──────────────────────────────────────────
 
-    pub def size(f: String): Result[IoError, Size] \ IO =
-        try {
-            Ok(bytes(fileAttributes(Paths.get(f)).size()))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def size(f: String): Result[IoError, Size] \ IO = try {
+        Ok(bytes(fileAttributes(Paths.get(f)).size()))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-        // ─── Read operations ───────────────────────────────────────────────
+    // ─── Read operations ───────────────────────────────────────────────
 
-    pub def read(f: String): Result[IoError, String] \ IO =
-        try {
-            Ok(String.fromBytes(Array.toVector(Files.readAllBytes(Paths.get(f)))))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def read(f: String): Result[IoError, String] \ IO = try {
+        Ok(String.fromBytes(Array.toVector(Files.readAllBytes(Paths.get(f)))))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-    pub def readLines(f: String): Result[IoError, List[String]] \ IO =
-        try {
-            Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: CharacterCodingException => Err(IoError(ErrorKind.InvalidData, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def readLines(f: String): Result[IoError, List[String]] \ IO = try {
+        Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+        case ex: CharacterCodingException => Err(IoError(ErrorKind.InvalidData, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-    pub def readBytes(f: String): Result[IoError, Vector[Int8]] \ IO =
-        try {
-            Ok(Array.toVector(Files.readAllBytes(Paths.get(f))))
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def readBytes(f: String): Result[IoError, Vector[Int8]] \ IO = try {
+        Ok(Array.toVector(Files.readAllBytes(Paths.get(f))))
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-        // ─── Directory listing ─────────────────────────────────────────────
+    // ─── Directory listing ─────────────────────────────────────────────
 
     pub def list(f: String): Result[IoError, List[String]] \ IO =
         let file = new File(f);
@@ -273,247 +257,233 @@ mod Fs.FsLayer {
             else if (not file.isDirectory())
                 Err(IoError(ErrorKind.NotDirectory, f))
             else
-                Err(IoError(ErrorKind.Other, "Unable to list: ${ f }"))
+                Err(IoError(ErrorKind.Other, "Unable to list: ${f}"))
         else
             Ok(Array.toList(arr)) // ─── Glob operation ─────────────────────────────────────────────────
 
-    pub def glob(base: String, pattern: String): Result[IoError, List[String]] \ IO =
-        try {
-            let basePath = Paths.get(base);
-            let matcher = FileSystems.getDefault().getPathMatcher("glob:${ pattern }");
-            let stream = Files.walk(basePath);
-            let bs: BaseStream[Path, Stream[Path]] = checked_cast(stream);
-            let jiter = bs.iterator();
-            def loop(acc) = {
-                if (jiter.hasNext())
-                    let path = jiter.next();
-                    let rel = basePath.relativize(path);
-                    if (matcher.matches(rel))
-                        loop(path.toString() :: acc)
-                    else
-                        loop(acc)
+    pub def glob(base: String, pattern: String): Result[IoError, List[String]] \ IO = try {
+        let basePath = Paths.get(base);
+        let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+        let stream = Files.walk(basePath);
+        let bs: BaseStream[Path, Stream[Path]] = checked_cast(stream);
+        let jiter = bs.iterator();
+        def loop(acc) = {
+            if (jiter.hasNext())
+                let path = jiter.next();
+                let rel = basePath.relativize(path);
+                if (matcher.matches(rel))
+                    loop(path.toString() :: acc)
                 else
-                    acc
-            };
-            let result = List.reverse(loop(Nil));
-            bs.close();
-            Ok(result)
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-            case ex: UncheckedIOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+                    loop(acc)
+            else
+                acc
+        };
+        let result = List.reverse(loop(Nil));
+        bs.close();
+        Ok(result)
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+        case ex: UncheckedIOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-        // ─── Write operations ──────────────────────────────────────────────
+    // ─── Write operations ──────────────────────────────────────────────
 
-    pub def write(data: { str = String }, f: String): Result[IoError, Unit] \ IO =
-        try {
-            let bytes = data#str.getBytes(StandardCharsets.UTF_8);
+    pub def write(data: { str = String }, f: String): Result[IoError, Unit] \ IO = try {
+        let bytes = data#str.getBytes(StandardCharsets.UTF_8);
+        Files.write(Paths.get(f), bytes);
+        Ok(())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
+
+    pub def writeLines(data: { lines = List[String] }, f: String): Result[IoError, Unit] \ IO = try {
+        let bf = Files.newBufferedWriter(Paths.get(f));
+        List.forEach(
+            line -> {
+                bf.write(line, 0, String.length(line));
+                bf.newLine()
+            },
+            data#lines
+        );
+        bf.close();
+        Ok(())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
+
+    pub def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit] \ IO = try {
+        region rc {
+            let bytes = Vector.toArray(rc, data);
             Files.write(Paths.get(f), bytes);
             Ok(())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-    pub def writeLines(data: { lines = List[String] }, f: String): Result[IoError, Unit] \ IO =
-        try {
-            let bf = Files.newBufferedWriter(Paths.get(f));
-            List.forEach(
-                line -> {
-                    bf.write(line, 0, String.length(line));
-                    bf.newLine()
-                },
-                data#lines
-            );
-            bf.close();
-            Ok(())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    // ─── Append operations ─────────────────────────────────────────────
 
-    pub def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit] \ IO =
-        try {
-            region rc {
-                let bytes = Vector.toArray(rc, data);
-                Files.write(Paths.get(f), bytes);
-                Ok(())
-            }
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def append(data: { str = String }, f: String): Result[IoError, Unit] \ IO = try {
+        let bytes = data#str.getBytes(StandardCharsets.UTF_8);
+        let opts: Vector[OpenOption] = Vector#{
+            checked_cast(StandardOpenOption.APPEND),
+            checked_cast(StandardOpenOption.CREATE)
+        };
+        Files.write(Paths.get(f), bytes, opts);
+        Ok(())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-        // ─── Append operations ─────────────────────────────────────────────
+    pub def appendLines(data: { lines = List[String] }, f: String): Result[IoError, Unit] \ IO = try {
+        let opts: Vector[OpenOption] = Vector#{
+            checked_cast(StandardOpenOption.APPEND),
+            checked_cast(StandardOpenOption.CREATE)
+        };
+        let bf = Files.newBufferedWriter(Paths.get(f), opts);
+        List.forEach(
+            line -> {
+                bf.write(line, 0, String.length(line));
+                bf.newLine()
+            },
+            data#lines
+        );
+        bf.close();
+        Ok(())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-    pub def append(data: { str = String }, f: String): Result[IoError, Unit] \ IO =
-        try {
-            let bytes = data#str.getBytes(StandardCharsets.UTF_8);
+    pub def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit] \ IO = try {
+        region rc {
+            let bytes = Vector.toArray(rc, data);
             let opts: Vector[OpenOption] = Vector#{
                 checked_cast(StandardOpenOption.APPEND),
                 checked_cast(StandardOpenOption.CREATE)
             };
             Files.write(Paths.get(f), bytes, opts);
             Ok(())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-    pub def appendLines(data: { lines = List[String] }, f: String): Result[IoError, Unit] \ IO =
-        try {
-            let opts: Vector[OpenOption] = Vector#{
-                checked_cast(StandardOpenOption.APPEND),
-                checked_cast(StandardOpenOption.CREATE)
-            };
-            let bf = Files.newBufferedWriter(Paths.get(f), opts);
-            List.forEach(
-                line -> {
-                    bf.write(line, 0, String.length(line));
-                    bf.newLine()
-                },
-                data#lines
-            );
-            bf.close();
+    // ─── Truncate ──────────────────────────────────────────────────────
+
+    pub def truncate(f: String): Result[IoError, Unit] \ IO = try {
+        region rc {
+            let opt: OpenOption = checked_cast(StandardOpenOption.TRUNCATE_EXISTING);
+            let arr: Array[Int8, rc] = Array#{} @ rc;
+            Files.write(Paths.get(f), arr, opt);
             Ok(())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-    pub def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit] \ IO =
-        try {
-            region rc {
-                let bytes = Vector.toArray(rc, data);
-                let opts: Vector[OpenOption] = Vector#{
-                    checked_cast(StandardOpenOption.APPEND),
-                    checked_cast(StandardOpenOption.CREATE)
-                };
-                Files.write(Paths.get(f), bytes, opts);
-                Ok(())
-            }
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    // ─── Copy operation ────────────────────────────────────────────────
 
-        // ─── Truncate ──────────────────────────────────────────────────────
-
-    pub def truncate(f: String): Result[IoError, Unit] \ IO =
-        try {
-            region rc {
-                let opt: OpenOption = checked_cast(StandardOpenOption.TRUNCATE_EXISTING);
-                let arr: Array[Int8, rc] = Array#{} @ rc;
-                Files.write(Paths.get(f), arr, opt);
-                Ok(())
-            }
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
-
-        // ─── Copy operation ────────────────────────────────────────────────
-
-    pub def copyWith(src: { src = String }, dst: String, opts: Set[Fs.CopyOption]): Result[IoError, Unit] \ IO =
-        try {
-            let copyOpts: Vector[CopyOption] = Set.foldLeft(
-                (acc, opt) -> match opt {
-                    case Fs.CopyOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
-                    case Fs.CopyOption.CopyAttributes  => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.COPY_ATTRIBUTES)})
-                },
-                (Vector#{}: Vector[CopyOption]),
-                opts
-            );
-            discard Files.copy(Paths.get(src#src), Paths.get(dst), copyOpts);
-            Ok(())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-            case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def copyWith(src: { src = String }, dst: String, opts: Set[Fs.CopyOption]): Result[IoError, Unit] \ IO = try {
+        let copyOpts: Vector[CopyOption] = Set.foldLeft(
+            (acc, opt) -> match opt {
+                case Fs.CopyOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
+                case Fs.CopyOption.CopyAttributes  => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.COPY_ATTRIBUTES)})
+            },
+            (Vector#{}: Vector[CopyOption]),
+            opts
+        );
+        discard Files.copy(Paths.get(src#src), Paths.get(dst), copyOpts);
+        Ok(())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+        case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
     pub def copy(src: { src = String }, dst: String): Result[IoError, Unit] \ IO =
         copyWith(src, dst, Set.empty()) // ─── Move operation ────────────────────────────────────────────────
 
-    pub def moveWith(src: { src = String }, dst: String, opts: Set[Fs.MoveOption]): Result[IoError, Unit] \ IO =
-        try {
-            let copyOpts: Vector[CopyOption] = Set.foldLeft(
-                (acc, opt) -> match opt {
-                    case Fs.MoveOption.AtomicMove      => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.ATOMIC_MOVE)})
-                    case Fs.MoveOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
-                },
-                (Vector#{}: Vector[CopyOption]),
-                opts
-            );
-            discard Files.move(Paths.get(src#src), Paths.get(dst), copyOpts);
-            Ok(())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-            case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def moveWith(src: { src = String }, dst: String, opts: Set[Fs.MoveOption]): Result[IoError, Unit] \ IO = try {
+        let copyOpts: Vector[CopyOption] = Set.foldLeft(
+            (acc, opt) -> match opt {
+                case Fs.MoveOption.AtomicMove      => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.ATOMIC_MOVE)})
+                case Fs.MoveOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
+            },
+            (Vector#{}: Vector[CopyOption]),
+            opts
+        );
+        discard Files.move(Paths.get(src#src), Paths.get(dst), copyOpts);
+        Ok(())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+        case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
     pub def move(src: { src = String }, dst: String): Result[IoError, Unit] \ IO =
         moveWith(src, dst, Set.empty()) // ─── Delete operation ────────────────────────────────────────────────
 
-    pub def delete(f: String): Result[IoError, Unit] \ IO =
-        try {
-            Files.delete(Paths.get(f));
-            Ok(())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def delete(f: String): Result[IoError, Unit] \ IO = try {
+        Files.delete(Paths.get(f));
+        Ok(())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: NoSuchFileException => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-        // ─── Directory operations ──────────────────────────────────────────
+    // ─── Directory operations ──────────────────────────────────────────
 
-    pub def mkDir(d: String): Result[IoError, Unit] \ IO =
-        try {
-            Files.createDirectory(Paths.get(d));
-            Ok(())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def mkDir(d: String): Result[IoError, Unit] \ IO = try {
+        Files.createDirectory(Paths.get(d));
+        Ok(())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-    pub def mkDirs(d: String): Result[IoError, Unit] \ IO =
-        try {
-            Files.createDirectories(Paths.get(d));
-            Ok(())
-        } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def mkDirs(d: String): Result[IoError, Unit] \ IO = try {
+        Files.createDirectories(Paths.get(d));
+        Ok(())
+    } catch {
+        case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-    pub def mkTempDir(prefix: String): Result[IoError, String] \ IO =
-        try {
-            let path = Files.createTempDirectory(prefix);
-            Ok(path.toString())
-        } catch {
-            case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def mkTempDir(prefix: String): Result[IoError, String] \ IO = try {
+        let path = Files.createTempDirectory(prefix);
+        Ok(path.toString())
+    } catch {
+        case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+        case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 
-        // ─── Path helper ────────────────────────────────────────────────────
+    // ─── Path helper ────────────────────────────────────────────────────
 
     ///
     /// Resolves `path` against `baseDir` using Java's `Path.resolve` semantics:
@@ -522,7 +492,7 @@ mod Fs.FsLayer {
     ///   - If `path` is relative, it is joined to `baseDir`.
     ///
     pub def resolve(baseDir: String, path: String): String =
-        unsafe IO {Paths.get(baseDir).resolve(path).toString()}
+        unsafe IO { Paths.get(baseDir).resolve(path).toString() }
 
     ///
     /// Resolves `path` to its real filesystem location by following all symbolic links.
@@ -575,11 +545,10 @@ mod Fs.FsLayer {
     /// Falls back to the original `path` if resolution fails (e.g., the file does not
     /// exist yet). Useful for write/create operations where the target may not exist.
     ///
-    pub def resolveRealPathOrSelf(path: String): String =
-        match resolveRealPath(path) {
-            case Ok(p) => p
-            case _     => path
-        }
+    pub def resolveRealPathOrSelf(path: String): String = match resolveRealPath(path) {
+        case Ok(p) => p
+        case _     => path
+    }
 
     ///
     /// Resolves `path` against `chrootDir` and validates that the resolved result
@@ -600,7 +569,7 @@ mod Fs.FsLayer {
                     Err(
                         IoError(
                             ErrorKind.PermissionDenied,
-                            "Path '${ path }' escapes chroot '${ chrootDir }'"
+                            "Path '${path}' escapes chroot '${chrootDir}'"
                         )
                     )
             } catch {
@@ -632,7 +601,7 @@ mod Fs.FsLayer {
                     Err(
                         IoError(
                             ErrorKind.PermissionDenied,
-                            "Path '${ path }' is not within any allowed directory"
+                            "Path '${path}' is not within any allowed directory"
                         )
                     )
             } catch {
@@ -662,7 +631,7 @@ mod Fs.FsLayer {
                     Err(
                         IoError(
                             ErrorKind.PermissionDenied,
-                            "Path '${ path }' is within a denied directory"
+                            "Path '${path}' is within a denied directory"
                         )
                     )
                 else
@@ -685,7 +654,7 @@ mod Fs.FsLayer {
                 let resolved = resolveSymLink(path);
                 let allowed = Nel.exists(
                     pattern -> {
-                        let matcher = FileSystems.getDefault().getPathMatcher("glob:${ pattern }");
+                        let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
                         matcher.matches(resolved)
                     },
                     patterns
@@ -696,7 +665,7 @@ mod Fs.FsLayer {
                     Err(
                         IoError(
                             ErrorKind.PermissionDenied,
-                            "Path '${ path }' does not match any allowed glob pattern"
+                            "Path '${path}' does not match any allowed glob pattern"
                         )
                     )
             } catch {
@@ -716,7 +685,7 @@ mod Fs.FsLayer {
                 let resolved = resolveSymLink(path);
                 let denied = Nel.exists(
                     pattern -> {
-                        let matcher = FileSystems.getDefault().getPathMatcher("glob:${ pattern }");
+                        let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
                         matcher.matches(resolved)
                     },
                     patterns
@@ -725,7 +694,7 @@ mod Fs.FsLayer {
                     Err(
                         IoError(
                             ErrorKind.PermissionDenied,
-                            "Path '${ path }' matches a denied glob pattern"
+                            "Path '${path}' matches a denied glob pattern"
                         )
                     )
                 else
@@ -760,9 +729,9 @@ mod Fs.FsLayer {
             case Ok(_)  =>
                 match doMoveAtomic(tmp, file) {
                     case Ok(_)  => Ok(())
-                    case Err(e) => {discard doDelete(tmp); Err(e)}
+                    case Err(e) => { discard doDelete(tmp); Err(e) }
                 }
-            case Err(e) => {discard doDelete(tmp); Err(e)}
+            case Err(e) => { discard doDelete(tmp); Err(e) }
         }
 
     ///
@@ -778,7 +747,7 @@ mod Fs.FsLayer {
             let parentDir = if (Object.isNull(parent)) Paths.get(".") else parent;
             let name = path.getFileName().toString();
             let uuid = UUID.randomUUID().toString();
-            parentDir.resolve(".~atomic~${ name }.${ uuid }.tmp").toString()
+            parentDir.resolve(".~atomic~${name}.${uuid}.tmp").toString()
         }
 
         // ─── Parent directory helper ────────────────────────────────────────
@@ -805,17 +774,16 @@ mod Fs.FsLayer {
         file: String,
         doMkDirs: String -> Result[IoError, Unit] \ ef,
         doAction: Unit -> Result[IoError, a] \ ef
-    ): Result[IoError, a] \ ef =
-        match parentDir(file) {
-            case None    => doAction()
-            case Some(d) =>
-                match doMkDirs(d) {
-                    case Ok(_)  => doAction()
-                    case Err(e) => Err(e)
-                }
-        }
+    ): Result[IoError, a] \ ef = match parentDir(file) {
+        case None    => doAction()
+        case Some(d) =>
+            match doMkDirs(d) {
+                case Ok(_)  => doAction()
+                case Err(e) => Err(e)
+            }
+    }
 
-        // ─── Backup helper ───────────────────────────────────────────────
+    // ─── Backup helper ───────────────────────────────────────────────
 
     ///
     /// Performs a backup of `file` to `file + suffix` before executing `doAction`.
@@ -854,7 +822,7 @@ mod Fs.FsLayer {
             Err(
                 IoError(
                     ErrorKind.TransferLimitExceeded,
-                    "transfer limit exceeded: ${ actualSize } > ${ maxSize }"
+                    "transfer limit exceeded: ${actualSize} > ${maxSize}"
                 )
             )
 
@@ -881,11 +849,10 @@ mod Fs.FsLayer {
         file: String,
         snapshots: MutMap[String, Int64, r],
         getModTime: String -> Result[IoError, Int64] \ ef
-    ): Unit \ { ef, r } =
-        match getModTime(file) {
-            case Ok(t) => MutMap.put(file, t, snapshots)
-            case _     => ()
-        }
+    ): Unit \ { ef, r } = match getModTime(file) {
+        case Ok(t) => MutMap.put(file, t, snapshots)
+        case _     => ()
+    }
 
     ///
     /// Checks whether `file` was modified externally since last snapshot.
@@ -900,27 +867,26 @@ mod Fs.FsLayer {
         file: String,
         snapshots: MutMap[String, Int64, r],
         getModTime: String -> Result[IoError, Int64] \ ef
-    ): Result[IoError, Unit] \ { ef, r } =
-        match MutMap.get(file, snapshots) {
-            case None          => Ok(())
-            case Some(oldTime) =>
-                match getModTime(file) {
-                    case Ok(curTime)                         =>
-                        if (curTime == oldTime)
-                            Ok(())
-                        else
-                            Err(
-                                IoError(
-                                    ErrorKind.Conflict,
-                                    "Conflict on '${ file }': expected mtime ${ oldTime }, found ${ curTime }"
-                                )
+    ): Result[IoError, Unit] \ { ef, r } = match MutMap.get(file, snapshots) {
+        case None          => Ok(())
+        case Some(oldTime) =>
+            match getModTime(file) {
+                case Ok(curTime)                         =>
+                    if (curTime == oldTime)
+                        Ok(())
+                    else
+                        Err(
+                            IoError(
+                                ErrorKind.Conflict,
+                                "Conflict on '${file}': expected mtime ${oldTime}, found ${curTime}"
                             )
-                    case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
-                    case Err(e)                              => Err(e)
-                }
-        }
+                        )
+                case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
+                case Err(e)                              => Err(e)
+            }
+    }
 
-        // ─── Checksum helpers ──────────────────────────────────────────────
+    // ─── Checksum helpers ──────────────────────────────────────────────
 
     ///
     /// Converts a vector of bytes to a lowercase hex string.
@@ -928,7 +894,7 @@ mod Fs.FsLayer {
     pub def bytesToHex(v: Vector[Int8]): String =
         region rc {
             let arr = Vector.toArray(rc, v);
-            unsafe IO {HexFormat.of().formatHex(arr)}
+            unsafe IO { HexFormat.of().formatHex(arr) }
         }
 
     ///
@@ -945,21 +911,20 @@ mod Fs.FsLayer {
         sidecar: String,
         actual: String,
         doReadSidecar: String -> Result[IoError, String] \ ef
-    ): Result[IoError, Unit] \ ef =
-        match doReadSidecar(file + sidecar) {
-            case Ok(expected)                        =>
-                if (String.trim(expected) == actual)
-                    Ok(())
-                else
-                    Err(
-                        IoError(
-                            ErrorKind.ChecksumMismatch,
-                            "Checksum mismatch for '${ file }': expected ${ String.trim(expected) }, got ${ actual }"
-                        )
+    ): Result[IoError, Unit] \ ef = match doReadSidecar(file + sidecar) {
+        case Ok(expected)                        =>
+            if (String.trim(expected) == actual)
+                Ok(())
+            else
+                Err(
+                    IoError(
+                        ErrorKind.ChecksumMismatch,
+                        "Checksum mismatch for '${file}': expected ${String.trim(expected)}, got ${actual}"
                     )
-            case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
-            case Err(e)                              => Err(e)
-        }
+                )
+        case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
+        case Err(e)                              => Err(e)
+    }
 
     ///
     /// Reads the bytes of `file`, hashes them with `computeHex`, and writes
@@ -1041,11 +1006,10 @@ mod Fs.FsLayer {
         sidecar: String,
         moveResult: Result[IoError, Unit],
         doMoveSidecar: String -> String -> Result[IoError, Unit] \ ef
-    ): Result[IoError, Unit] \ ef =
-        match moveResult {
-            case Ok(_)  => {discard doMoveSidecar(src + sidecar, dst + sidecar); Ok(())}
-            case Err(e) => Err(e)
-        }
+    ): Result[IoError, Unit] \ ef = match moveResult {
+        case Ok(_)  => { discard doMoveSidecar(src + sidecar, dst + sidecar); Ok(()) }
+        case Err(e) => Err(e)
+    }
 
     ///
     /// Deletes the checksum sidecar after a successful `delete`.
@@ -1058,13 +1022,12 @@ mod Fs.FsLayer {
         sidecar: String,
         deleteResult: Result[IoError, Unit],
         doDeleteSidecar: String -> Result[IoError, Unit] \ ef
-    ): Result[IoError, Unit] \ ef =
-        match deleteResult {
-            case Ok(_)  => {discard doDeleteSidecar(file + sidecar); Ok(())}
-            case Err(e) => Err(e)
-        }
+    ): Result[IoError, Unit] \ ef = match deleteResult {
+        case Ok(_)  => { discard doDeleteSidecar(file + sidecar); Ok(()) }
+        case Err(e) => Err(e)
+    }
 
-        // ─── Size rotation helper ──────────────────────────────────────────
+    // ─── Size rotation helper ──────────────────────────────────────────
 
     ///
     /// Rotates `file` if its size meets or exceeds `maxSize`, then executes `doAction`.
@@ -1084,43 +1047,42 @@ mod Fs.FsLayer {
         doMove: String -> String -> Result[IoError, Unit] \ ef2,
         doDelete: String -> Result[IoError, Unit] \ ef2,
         doAction: Unit -> Result[IoError, a] \ ef2
-    ): Result[IoError, a] \ ef1 + ef2 =
-        match doSize(file) {
-            case Err(IoError(ErrorKind.NotFound, _)) => doAction()
-            case Err(e)                              => Err(e)
-            case Ok(sz)                              =>
-                if (toBytes(sz) < toBytes(maxSize))
-                    doAction()
-                else {
-                    // Delete the oldest rotated file (ignore NotFound)
-                    discard match doDelete("${ file }.${ maxFiles }") {
-                        case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
-                        case other                               => other
-                    };
-                    // Shift file.{i} → file.{i+1} for i from maxFiles-1 down to 1
-                    def shift(i) = {
-                        if (i < 1)
-                            Ok(())
-                        else
-                            match doMove("${ file }.${ i }", "${ file }.${ i + 1 }") {
-                                case Ok(_)                               => shift(i - 1)
-                                case Err(IoError(ErrorKind.NotFound, _)) => shift(i - 1)
-                                case Err(e)                              => Err(e)
-                            }
-                    };
-                    match shift(maxFiles - 1) {
-                        case Err(e) => Err(e)
-                        case Ok(_)  =>
-                            // Move the current file to file.1
-                            match doMove(file, "${ file }.1") {
-                                case Err(e) => Err(e)
-                                case Ok(_)  => doAction()
-                            }
-                    }
+    ): Result[IoError, a] \ ef1 + ef2 = match doSize(file) {
+        case Err(IoError(ErrorKind.NotFound, _)) => doAction()
+        case Err(e)                              => Err(e)
+        case Ok(sz)                              =>
+            if (toBytes(sz) < toBytes(maxSize))
+                doAction()
+            else {
+                // Delete the oldest rotated file (ignore NotFound)
+                discard match doDelete("${file}.${maxFiles}") {
+                    case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
+                    case other                               => other
+                };
+                // Shift file.{i} → file.{i+1} for i from maxFiles-1 down to 1
+                def shift(i) = {
+                    if (i < 1)
+                        Ok(())
+                    else
+                        match doMove("${file}.${i}", "${file}.${i + 1}") {
+                            case Ok(_)                               => shift(i - 1)
+                            case Err(IoError(ErrorKind.NotFound, _)) => shift(i - 1)
+                            case Err(e)                              => Err(e)
+                        }
+                };
+                match shift(maxFiles - 1) {
+                    case Err(e) => Err(e)
+                    case Ok(_)  =>
+                        // Move the current file to file.1
+                        match doMove(file, "${file}.1") {
+                            case Err(e) => Err(e)
+                            case Ok(_)  => doAction()
+                        }
                 }
-        }
+            }
+    }
 
-        // ─── Private helper ────────────────────────────────────────────────
+    // ─── Private helper ────────────────────────────────────────────────
 
     ///
     /// Returns the attributes of the given file `f`.

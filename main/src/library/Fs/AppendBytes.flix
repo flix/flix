@@ -35,7 +35,7 @@ pub mod Fs.AppendBytes {
     /// Handles the `AppendBytes` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - AppendBytes) + FileWrite =
-        run {f()} with handler AppendBytes {
-                      def appendBytes(data, file, k) = k(Fs.FileWrite.appendBytes(data, file))
-                  }
+        run { f() } with handler AppendBytes {
+            def appendBytes(data, file, k) = k(Fs.FileWrite.appendBytes(data, file))
+        }
 }

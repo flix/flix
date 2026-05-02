@@ -37,10 +37,10 @@ pub mod BufReader {
     /// `reader`: the underlying `Readable` being read from.
     ///
     pub struct BufReader[a: Type, t: Type, r: Region] {
-        buffer: Array[a, r],
+        buffer:     Array[a, r],
         mut cursor: Int32,
-        mut size: Int32,
-        reader: t
+        mut size:   Int32,
+        reader:     t
     }
 
     instance Readable[BufReader[a, t, rr]] with Readable[t] where Readable.Elm[t] ~ a {

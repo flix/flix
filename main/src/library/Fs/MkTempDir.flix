@@ -35,7 +35,7 @@ pub mod Fs.MkTempDir {
     /// Handles the `MkTempDir` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - MkTempDir) + FileWrite =
-        run {f()} with handler MkTempDir {
-                      def mkTempDir(prefix, k) = k(Fs.FileWrite.mkTempDir(prefix))
-                  }
+        run { f() } with handler MkTempDir {
+            def mkTempDir(prefix, k) = k(Fs.FileWrite.mkTempDir(prefix))
+        }
 }

@@ -33,7 +33,7 @@ pub mod Fs.CreationTime {
     /// Handles the `CreationTime` effect of the given function `f` using the `FileTime` effect.
     ///
     pub def runWithFileTime(f: Unit -> a \ ef): a \ (ef - CreationTime) + FileTime =
-        run {f()} with handler CreationTime {
-                      def creationTime(filename, k) = k(Fs.FileTime.creationTime(filename))
-                  }
+        run { f() } with handler CreationTime {
+            def creationTime(filename, k) = k(Fs.FileTime.creationTime(filename))
+        }
 }

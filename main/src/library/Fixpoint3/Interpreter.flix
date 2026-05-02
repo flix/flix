@@ -153,17 +153,17 @@ pub mod Fixpoint3.Interpreter {
             case Some((_, v)) => v + 1
         };
         let indexes = Array.empty(rc, indexNum);
-        foreach((relSym, searches) <- indexMap) {
+        foreach ((relSym, searches) <- indexMap) {
             // We need to ensure that we do not pass a tree with `null` as search.
             let default = match Vector.head(searches) {
                 case None          => BPlusTree.empty(rc) // The foreach will be empty.
                 case Some(search0) => BPlusTree.emptyWithArityAndSearch(rc, usedArity(), search0)
             };
             let tuples = Map.getWithDefault(relSym, default, facts);
-            foreach((num, search) <- ForEach.withIndex(searches)) {
+            foreach ((num, search) <- ForEach.withIndex(searches)) {
                 let pos = match Map.get((relSym, num), posMap) {
                     case Some(v) => v
-                    case None    => bug!("In Fixpoint.Interpreter.interpretWithInput: ${ relSym } has no index!")
+                    case None    => bug!("In Fixpoint.Interpreter.interpretWithInput: ${relSym} has no index!")
                 };
                 storeIndex(mkIndex(rc, relSym, search, tuples), pos, indexes)
             }
@@ -179,24 +179,23 @@ pub mod Fixpoint3.Interpreter {
         db: Indexes[r],
         boxing: Boxing[r],
         program: RamProgram[r]
-    ): (Database[r], Predicates) \ r =
-        match program {
-            case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), typeInfo) =>
-                let minEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.minValue()));
-                let maxEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.maxValue()));
-                foreach((id1, id2, val) <- constWrites) {
-                    Array.put(val, id2, Vector.get(id1, minEnv));
-                    Array.put(val, id2, Vector.get(id1, maxEnv))
-                };
-                let tupleEnv = Array.repeat(rc, Vector.length(arities), Vector#{});
-                let latEnv = arities |> Vector.length |> Array.empty(rc);
-                let env = (minEnv, maxEnv, tupleEnv, latEnv);
-                let ctx = (db, env, boxing);
-                evalStmt(rc, ctx, parLevel(), stmt);
-                // Remove the `IO` effect from dealing with static.
-                let boxedFacts = unsafe IO {marshallDb(rc, db, boxing, indexPos, predState, typeInfo)};
-                (boxedFacts, predState)
-        }
+    ): (Database[r], Predicates) \ r = match program {
+        case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), typeInfo) =>
+            let minEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.minValue()));
+            let maxEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.maxValue()));
+            foreach ((id1, id2, val) <- constWrites) {
+                Array.put(val, id2, Vector.get(id1, minEnv));
+                Array.put(val, id2, Vector.get(id1, maxEnv))
+            };
+            let tupleEnv = Array.repeat(rc, Vector.length(arities), Vector#{});
+            let latEnv = arities |> Vector.length |> Array.empty(rc);
+            let env = (minEnv, maxEnv, tupleEnv, latEnv);
+            let ctx = (db, env, boxing);
+            evalStmt(rc, ctx, parLevel(), stmt);
+            // Remove the `IO` effect from dealing with static.
+            let boxedFacts = unsafe IO { marshallDb(rc, db, boxing, indexPos, predState, typeInfo) };
+            (boxedFacts, predState)
+    }
 
     ///
     /// Transforms `db` into `Database`.
@@ -213,17 +212,17 @@ pub mod Fixpoint3.Interpreter {
         typeInfo: TypeInformation
     ): Database[r] \ r + IO =
         let res = MutMap.empty(rc);
-        foreach(relSym <- allFullRelSyms(predTrack)) {
+        foreach (relSym <- allFullRelSyms(predTrack)) {
             let innerMap = BPlusTree.empty(Static);
             let curBoxingInfo = getTypeOf(toId(relSym), typeInfo);
             Array.get(getOrCrash(Map.get((relSym, 0), indexPos)), db)
-            |> BPlusTree.forEach(
-                vec -> latticeElem -> {
-                    let boxedVec = vec
-                    |> Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
-                    BPlusTree.put(boxedVec, latticeElem, innerMap)
-                }
-            );
+                |> BPlusTree.forEach(
+                    vec -> latticeElem -> {
+                        let boxedVec = vec
+                            |> Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
+                        BPlusTree.put(boxedVec, latticeElem, innerMap)
+                    }
+                );
             MutMap.put(relSym, innerMap, res)
         };
         res
@@ -245,54 +244,53 @@ pub mod Fixpoint3.Interpreter {
         ctx: Context[r],
         parLevel: Int32,
         stmt: RamStmt
-    ): Unit \ r =
-        match stmt {
-            case RamStmt.Insert(relOp)                                           =>
-                evalOp(rc, ctx, parLevel, relOp)
-            case RamStmt.MergeInto(srcIndex, dstIndex, Relational)               =>
-                let (db, _, _) = ctx;
-                let src = lookupIndex(srcIndex, db);
-                let dst = lookupIndex(dstIndex, db);
-                BPlusTree.merge(src, dst)
-            case RamStmt.MergeInto(srcIndex, dstIndex, Latticenal(_, _, lub, _)) =>
-                let (db, _, _) = ctx;
-                let src = lookupIndex(srcIndex, db);
-                let dst = lookupIndex(dstIndex, db);
-                BPlusTree.mergeWith(lub, src, dst)
-            case RamStmt.Swap(lhs, rhs)                                          =>
-                let (db, _, _) = ctx;
-                let temp = lookupIndex(lhs, db);
-                storeIndex(lookupIndex(rhs, db), lhs, db);
-                storeIndex(temp, rhs, db)
-            case RamStmt.Purge(index)                                            =>
-                let (db, _, _) = ctx;
-                let oldIndex = lookupIndex(index, db);
-                let newIndex = BPlusTree.emptyWithArityAndSearch(rc, usedArity(), BPlusTree.search(oldIndex));
-                storeIndex(newIndex, index, db)
-            case RamStmt.Seq(stmts)                                              =>
-                Vector.forEach(evalStmt(rc, ctx, parLevel), stmts)
-            case RamStmt.Until(test, body)                                       =>
-                if (evalBoolExps(ctx, test)) {
-                    ()
-                } else {
-                    evalStmt(rc, ctx, parLevel, body);
-                    evalStmt(rc, ctx, parLevel, stmt)
+    ): Unit \ r = match stmt {
+        case RamStmt.Insert(relOp)                                           =>
+            evalOp(rc, ctx, parLevel, relOp)
+        case RamStmt.MergeInto(srcIndex, dstIndex, Relational)               =>
+            let (db, _, _) = ctx;
+            let src = lookupIndex(srcIndex, db);
+            let dst = lookupIndex(dstIndex, db);
+            BPlusTree.merge(src, dst)
+        case RamStmt.MergeInto(srcIndex, dstIndex, Latticenal(_, _, lub, _)) =>
+            let (db, _, _) = ctx;
+            let src = lookupIndex(srcIndex, db);
+            let dst = lookupIndex(dstIndex, db);
+            BPlusTree.mergeWith(lub, src, dst)
+        case RamStmt.Swap(lhs, rhs)                                          =>
+            let (db, _, _) = ctx;
+            let temp = lookupIndex(lhs, db);
+            storeIndex(lookupIndex(rhs, db), lhs, db);
+            storeIndex(temp, rhs, db)
+        case RamStmt.Purge(index)                                            =>
+            let (db, _, _) = ctx;
+            let oldIndex = lookupIndex(index, db);
+            let newIndex = BPlusTree.emptyWithArityAndSearch(rc, usedArity(), BPlusTree.search(oldIndex));
+            storeIndex(newIndex, index, db)
+        case RamStmt.Seq(stmts)                                              =>
+            Vector.forEach(evalStmt(rc, ctx, parLevel), stmts)
+        case RamStmt.Until(test, body)                                       =>
+            if (evalBoolExps(ctx, test)) {
+                ()
+            } else {
+                evalStmt(rc, ctx, parLevel, body);
+                evalStmt(rc, ctx, parLevel, stmt)
+            }
+        case RamStmt.Comment(_)                                              => ()
+        // Note: The region construct ensures that all threads spawned in rc2 will have completed before we leave its lexical scope.
+        case RamStmt.Par(stmts)                                              =>
+            region rc2 {
+                foreach (innerStmt <- stmts) {
+                    unchecked_cast({
+                        let _: Unit = spawn unchecked_cast({
+                            let threadCtx = copyCtx(rc, ctx);
+                            evalStmt(rc, threadCtx, parLevel, innerStmt)
+                        } as _ \ IO) @ rc2; // spawn may not take an `r` effect, so we cast it to `IO`
+                        ()
+                    } as _ \ rc2)
                 }
-            case RamStmt.Comment(_)                                              => ()
-            // Note: The region construct ensures that all threads spawned in rc2 will have completed before we leave its lexical scope.
-            case RamStmt.Par(stmts)                                              =>
-                region rc2 {
-                    foreach(innerStmt <- stmts) {
-                        unchecked_cast({
-                            let _: Unit = spawn unchecked_cast({
-                                let threadCtx = copyCtx(rc, ctx);
-                                evalStmt(rc, threadCtx, parLevel, innerStmt)
-                            } as _ \ IO) @ rc2; // spawn may not take an `r` effect, so we cast it to `IO`
-                            ()
-                        } as _ \ rc2)
-                    }
-                }
-        }
+            }
+    }
 
     ///
     /// Evaluates `op` under `ctx` with thread spawning only being allowed in the next
@@ -314,22 +312,22 @@ pub mod Fixpoint3.Interpreter {
                 if (parLevel == 0) {
                     // We have exhausted all allowed attempts to spawn threads. Recurse sequentially.
                     lookupIndex(searchIndex, db)
-                    |> BPlusTree.forEach(evalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel))
+                        |> BPlusTree.forEach(evalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel))
                 } else {
                     // We are allowed to spawn threads. Try to do so.
                     lookupIndex(searchIndex, db)
-                    |> BPlusTree.parForEach(parEvalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel - 1))
+                        |> BPlusTree.parForEach(parEvalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel - 1))
                 }
             case RelOp.Query(tuplePos, searchIndex, _, Relational, writes, body)                           =>
                 let (minEnv, maxEnv, _, _) = env;
                 lookupIndex(searchIndex, db)
-                |> BPlusTree.rangeQueryWith(
-                    evalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel),
-                    // We could here use Vector.toArray, but it would create a copy. To avoid memory
-                    // allocation we simply cast.
-                    unchecked_cast((Vector.get(tuplePos, minEnv): Array[Int64, r]) as Tuple),
-                    unchecked_cast((Vector.get(tuplePos, maxEnv): Array[Int64, r]) as Tuple)
-                )
+                    |> BPlusTree.rangeQueryWith(
+                        evalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel),
+                        // We could here use Vector.toArray, but it would create a copy. To avoid memory
+                        // allocation we simply cast.
+                        unchecked_cast((Vector.get(tuplePos, minEnv): Array[Int64, r]) as Tuple),
+                        unchecked_cast((Vector.get(tuplePos, maxEnv): Array[Int64, r]) as Tuple)
+                    )
             case RelOp.If(test, $then)                                                                     =>
                 if (evalBoolExps(ctx, test))
                     evalOp(rc, ctx, parLevel, $then)
@@ -361,22 +359,22 @@ pub mod Fixpoint3.Interpreter {
                 if (parLevel == 0) {
                     // We have exhausted all allowed attempts to spawn threads. Recurse sequentially.
                     lookupIndex(searchIndex, db)
-                    |> BPlusTree.forEach(evalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel))
+                        |> BPlusTree.forEach(evalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel))
                 } else {
                     // We are allowed to spawn threads. Try to do so.
                     lookupIndex(searchIndex, db)
-                    |> BPlusTree.parForEach(parEvalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel))
+                        |> BPlusTree.parForEach(parEvalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel))
                 }
             case RelOp.Query(tuplePos, searchIndex, meetWith, Latticenal(bot, leq, _, glb), writes, body)  =>
                 let (minEnv, maxEnv, _, _) = env;
                 lookupIndex(searchIndex, db)
-                |> BPlusTree.rangeQueryWith(
-                    evalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel),
-                    // We could here use Vector.toArray, but it would create a copy. To avoid memory
-                    // allocation we simply cast.
-                    unchecked_cast((Vector.get(tuplePos, minEnv): Array[Int64, r]) as Tuple),
-                    unchecked_cast((Vector.get(tuplePos, maxEnv): Array[Int64, r]) as Tuple)
-                )
+                    |> BPlusTree.rangeQueryWith(
+                        evalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel),
+                        // We could here use Vector.toArray, but it would create a copy. To avoid memory
+                        // allocation we simply cast.
+                        unchecked_cast((Vector.get(tuplePos, minEnv): Array[Int64, r]) as Tuple),
+                        unchecked_cast((Vector.get(tuplePos, maxEnv): Array[Int64, r]) as Tuple)
+                    )
             case RelOp.ProvProject(terms, rel, fullRel)                                                    =>
                 let relIndex = lookupIndex(rel, db);
                 let fullIndex = lookupIndex(fullRel, db);
@@ -393,12 +391,12 @@ pub mod Fixpoint3.Interpreter {
             case RelOp.Functional(tupleIndex, f, terms, writes, body, i2)                                  =>
                 let args = Vector.map(evalBoxedTerm(env, boxing), terms);
                 let result = f(args)
-                |> Vector.map(
-                    vec ->
-                        Vector.mapWithIndex(i -> x -> unboxWith(x, Vector.get(i, i2), boxing), vec)
-                );
+                    |> Vector.map(
+                        vec ->
+                            Vector.mapWithIndex(i -> x -> unboxWith(x, Vector.get(i, i2), boxing), vec)
+                    );
                 let (minEnv, maxEnv, tupleEnv, _) = env;
-                foreach(t <- result) {
+                foreach (t <- result) {
                     bindTuple(t, writes, minEnv, maxEnv, tupleIndex, tupleEnv);
                     evalOp(rc, ctx, parLevel, body)
                 }
@@ -420,7 +418,7 @@ pub mod Fixpoint3.Interpreter {
         tuplePos: Int32,
         tupleEnv: Array[Tuple, r]
     ): Unit \ r =
-        foreach((srcIndex, dst, dstIndex) <- writes) {
+        foreach ((srcIndex, dst, dstIndex) <- writes) {
             Array.put(Vector.get(srcIndex, t), dstIndex, Vector.get(dst, minEnv));
             Array.put(Vector.get(srcIndex, t), dstIndex, Vector.get(dst, maxEnv))
         };
@@ -697,9 +695,9 @@ pub mod Fixpoint3.Interpreter {
                 // and `indexInTuple` described at which of the entries in the fact is the depth.
                 let (_, _, tupleEnv, _) = env;
                 vec
-                |> Vector.map(match (tupleIndex, indexInTuple) -> 1i64 + Vector.get(indexInTuple, Array.get(tupleIndex, tupleEnv)))
-                |> Vector.maximum
-                |> Option.getWithDefault(1i64)
+                    |> Vector.map(match (tupleIndex, indexInTuple) -> 1i64 + Vector.get(indexInTuple, Array.get(tupleIndex, tupleEnv)))
+                    |> Vector.maximum
+                    |> Option.getWithDefault(1i64)
             case RamTerm.Meet(cap, lhs, rhs, i)                     =>
                 let boxed1 = evalBoxedT(lhs);
                 let boxed2 = evalBoxedT(rhs);

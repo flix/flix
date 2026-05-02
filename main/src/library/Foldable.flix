@@ -271,8 +271,8 @@ pub trait Foldable[t: Type -> Type] {
             (true, Nil),
             t
         )
-        |> snd
-        |> List.reverse
+            |> snd
+            |> List.reverse
 
     ///
     /// Returns the longest prefix of `t` that satisfies the predicate `f`.
@@ -343,7 +343,7 @@ pub trait Foldable[t: Type -> Type] {
             use StringBuilder.append;
             let lastSep = String.length(sep);
             let sb = StringBuilder.empty(rc);
-            t |> Foldable.forEach(x -> {append(f(x), sb); append(sep, sb)});
+            t |> Foldable.forEach(x -> { append(f(x), sb); append(sep, sb) });
             StringBuilder.toString(sb) |> String.dropRight(lastSep)
         }
 }

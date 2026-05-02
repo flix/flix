@@ -35,7 +35,7 @@ pub mod Fs.WriteLines {
     /// Handles the `WriteLines` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - WriteLines) + FileWrite =
-        run {f()} with handler WriteLines {
-                      def writeLines(data, file, k) = k(Fs.FileWrite.writeLines(data, file))
-                  }
+        run { f() } with handler WriteLines {
+            def writeLines(data, file, k) = k(Fs.FileWrite.writeLines(data, file))
+        }
 }

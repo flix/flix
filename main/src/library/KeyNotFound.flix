@@ -29,7 +29,7 @@ pub mod KeyNotFound {
     pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - KeyNotFound) = {
         x ->
             run Ok(f(x)) with handler KeyNotFound {
-                             def keyNotFound(msg, _) = Err(msg)
-                         }
+                def keyNotFound(msg, _) = Err(msg)
+            }
     }
 }

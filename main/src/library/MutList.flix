@@ -25,7 +25,7 @@ pub mod MutList {
     ///   - The capacity of the array is always 8 or more.
     ///
     pub struct MutList[a: Type, r: Region] {
-        r: Region[r],
+        r:          Region[r],
         mut values: Array[a, r],
         mut length: Int32
     }
@@ -50,7 +50,7 @@ pub mod MutList {
             if (0 <= i and i < MutList.length(t))
                 MutList.get(i, t)
             else
-                OutOfBounds.outOfBounds("index ${ i } is out of bounds for MutList of length ${ MutList.length(t) }")
+                OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
     }
 
     instance IndexableMut[MutList[a, r]] {
@@ -59,7 +59,7 @@ pub mod MutList {
             if (0 <= i and i < MutList.length(t))
                 MutList.put(v, i, t)
             else
-                OutOfBounds.outOfBounds("index ${ i } is out of bounds for MutList of length ${ MutList.length(t) }")
+                OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
     }
 
     instance Formattable[MutList[a, r]] with Formattable[a] {
@@ -107,7 +107,7 @@ pub mod MutList {
         let minCap = minCapacity();
         let d = e - b;
         let c = Order.max(d, minCap);
-        let f = i -> {let x = b + i; if (x < e) x else Reflect.default()};
+        let f = i -> { let x = b + i; if (x < e) x else Reflect.default() };
         new MutList @ rc {r = rc, values = Array.init(rc, f, c), length = d}
 
     ///
@@ -115,11 +115,10 @@ pub mod MutList {
     ///
     /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
     ///
-    pub def get(i: Int32, v: MutList[a, r]): a \ r =
-        match nth(i, v) {
-            case Some(x) => x
-            case None    => indexOutOfBounds!("index ${ i } is out of bounds for MutList of length ${ v->length }")
-        }
+    pub def get(i: Int32, v: MutList[a, r]): a \ r = match nth(i, v) {
+        case Some(x) => x
+        case None    => indexOutOfBounds!("index ${i} is out of bounds for MutList of length ${v->length}")
+    }
 
     ///
     /// Stores the value `x` at position `i` in the mutable list `v`.
@@ -130,7 +129,7 @@ pub mod MutList {
         if (0 <= i and i < v->length)
             Array.put(x, i, v->values)
         else
-            indexOutOfBounds!("index ${ i } is out of bounds for MutList of length ${ v->length }")
+            indexOutOfBounds!("index ${i} is out of bounds for MutList of length ${v->length}")
 
     ///
     /// Optionally returns the element at position `i` in the mutable list `v`.
@@ -423,13 +422,13 @@ pub mod MutList {
         let size = MutList.sumWith(MutList.length, v);
         let destArray = Array.empty(rc1, Int32.max(size, minCapacity()));
         v
-        |> MutList.forEach(
-            bs -> {
-                let destIndex = Ref.get(rdestIndex);
-                Array.patch(destIndex, length(bs), bs->values, destArray);
-                Ref.put(destIndex + length(bs), rdestIndex)
-            }
-        );
+            |> MutList.forEach(
+                bs -> {
+                    let destIndex = Ref.get(rdestIndex);
+                    Array.patch(destIndex, length(bs), bs->values, destArray);
+                    Ref.put(destIndex + length(bs), rdestIndex)
+                }
+            );
         new MutList @ rc1 {r = rc1, values = destArray, length = size}
 
     ///
@@ -659,7 +658,7 @@ pub mod MutList {
     ///
     pub def retain(f: a -> Bool, v: MutList[a, r]): Unit \ r =
         let l = MutList.empty(v->r);
-        forEach(e -> if (f(e)) {push(e, l)}, v);
+        forEach(e -> if (f(e)) { push(e, l) }, v);
         v->values = l->values;
         v->length = length(l);
         ()

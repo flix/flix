@@ -19,7 +19,7 @@ pub mod MutSet {
     /// The Mutable Set type.
     ///
     pub struct MutSet[t: Type, r: Region] {
-        rc: Region[r],
+        rc:        Region[r],
         mut inner: Set[t]
     }
 
@@ -297,7 +297,7 @@ pub mod MutSet {
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, r } =
         region rc {
             let ix = Ref.fresh(rc, 0);
-            forEach(x -> {let i = Ref.get(ix); f(i, x); Ref.put(i + 1, ix)}, s)
+            forEach(x -> { let i = Ref.get(ix); f(i, x); Ref.put(i + 1, ix) }, s)
         }
 
     ///

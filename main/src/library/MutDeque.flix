@@ -30,10 +30,10 @@ pub mod MutDeque {
     /// and the back index always points to the first empty index (going clockwise).
     ///
     pub struct MutDeque[a: Type, r: Region] {
-        r: Region[r],
+        r:          Region[r],
         mut values: Array[a, r],
-        mut front: Int32,
-        mut back: Int32
+        mut front:  Int32,
+        mut back:   Int32
     }
 
     instance Iterable[MutDeque[a, r]] {
@@ -258,7 +258,7 @@ pub mod MutDeque {
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
     def expand(d: MutDeque[a, r]): Unit \ r =
-        if (shouldExpand(d)) {grow(d)}
+        if (shouldExpand(d)) { grow(d) }
 
     ///
     /// Returns `true` if the load factor is greater than or equal to `maxLoadFactor`.
@@ -281,7 +281,7 @@ pub mod MutDeque {
     /// Compresses MutDeque `d` if the load factor is less than or equal to `minLoadFactor`.
     ///
     def compress(d: MutDeque[a, r]): Unit \ r =
-        if (shouldCompress(d)) {shrink(d)}
+        if (shouldCompress(d)) { shrink(d) }
 
     ///
     /// Returns `true` if the load factor is less than or equal to 1 / 4.
@@ -440,7 +440,7 @@ pub mod MutDeque {
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, r } =
         region rc {
             let ix = Ref.fresh(rc, 0);
-            forEach(x -> {let i = Ref.get(ix); f(i, x); Ref.put(i + 1, ix)}, d)
+            forEach(x -> { let i = Ref.get(ix); f(i, x); Ref.put(i + 1, ix) }, d)
         }
 
     ///

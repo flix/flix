@@ -61,8 +61,8 @@ pub mod Net.Ipv4Addr {
     ///
     pub def fromString(s: String): Option[Ipv4Addr] =
         let bytes = s
-        |> String.split({regex = "[.]"})
-        |> List.traverse(parseInt8NoLeading0);
+            |> String.split({regex = "[.]"})
+            |> List.traverse(parseInt8NoLeading0);
         match bytes {
             case Some(b1 :: b2 :: b3 :: b4 :: Nil) => {
                 Some(Ipv4Addr.Ipv4Addr(b1, b2, b3, b4))
@@ -75,7 +75,7 @@ pub mod Net.Ipv4Addr {
     ///
     pub def toString(x: Ipv4Addr): String =
         let Ipv4Addr.Ipv4Addr(b1, b2, b3, b4) = x;
-        "${ toUnsigned8(b1) }.${ toUnsigned8(b2) }.${ toUnsigned8(b3) }.${ toUnsigned8(b4) }"
+        "${toUnsigned8(b1)}.${toUnsigned8(b2)}.${toUnsigned8(b3)}.${toUnsigned8(b4)}"
 
     ///
     /// Convert `x` from i8 to u8.
@@ -94,7 +94,7 @@ pub mod Net.Ipv4Addr {
                     Int32.bitwiseAnd(bu8, 0xFF),
                     0x80
                 )
-                - 0x80
+                    - 0x80
             )
         ) yield bi8
 

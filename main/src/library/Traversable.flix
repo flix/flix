@@ -64,14 +64,14 @@ pub mod Traversable {
         region rc {
             let acc = Ref.fresh(rc, start);
             let Identity.Identity(tb) = t
-            |> Traversable.traverse(
-                x -> {
-                    let st = Ref.get(acc);
-                    let (acc1, b) = f(st, x);
-                    Ref.put(acc1, acc);
-                    Identity.Identity(b)
-                }
-            );
+                |> Traversable.traverse(
+                    x -> {
+                        let st = Ref.get(acc);
+                        let (acc1, b) = f(st, x);
+                        Ref.put(acc1, acc);
+                        Identity.Identity(b)
+                    }
+                );
             (Ref.get(acc), tb)
         }
 }

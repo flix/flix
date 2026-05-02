@@ -28,12 +28,11 @@ pub mod Comparison {
     /// `0` if `c` is `EqualTo`.
     /// `+1` if `c` is `GreaterThan`.
     ///
-    pub def toInt32(c: Comparison): Int32 =
-        match c {
-            case LessThan    => -1
-            case EqualTo     => 0
-            case GreaterThan => 1
-        }
+    pub def toInt32(c: Comparison): Int32 = match c {
+        case LessThan    => -1
+        case EqualTo     => 0
+        case GreaterThan => 1
+    }
 
     ///
     /// Converts an integer to a `Comparison` value.

@@ -25,7 +25,7 @@ instance Indexable[Array[a, r]] {
             Array.get(i, t)
         else
             OutOfBounds.outOfBounds(
-                "index ${ i } is out of bounds for Array of length ${ Array.length(t) }"
+                "index ${i} is out of bounds for Array of length ${Array.length(t)}"
             )
     }
 }
@@ -38,7 +38,7 @@ instance IndexableMut[Array[a, r]] {
             Array.put(v, i, t)
         else
             OutOfBounds.outOfBounds(
-                "index ${ i } is out of bounds for Array of length ${ Array.length(t) }"
+                "index ${i} is out of bounds for Array of length ${Array.length(t)}"
             )
     }
 }
@@ -359,20 +359,18 @@ pub mod Array {
     ///
     /// Optionally returns the first element of `a` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: a -> Bool \ ef, arr: Array[a, r]): Option[a] \ { ef, r } =
-        match findIndexOfLeft(f, arr) {
-            case None    => None
-            case Some(i) => Some(get(i, arr))
-        }
+    pub def findLeft(f: a -> Bool \ ef, arr: Array[a, r]): Option[a] \ { ef, r } = match findIndexOfLeft(f, arr) {
+        case None    => None
+        case Some(i) => Some(get(i, arr))
+    }
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: a -> Bool \ ef, arr: Array[a, r]): Option[a] \ { ef, r } =
-        match findIndexOfRight(x -> f(x), arr) {
-            case None    => None
-            case Some(i) => Some(get(i, arr))
-        }
+    pub def findRight(f: a -> Bool \ ef, arr: Array[a, r]): Option[a] \ { ef, r } = match findIndexOfRight(x -> f(x), arr) {
+        case None    => None
+        case Some(i) => Some(get(i, arr))
+    }
 
     ///
     /// Returns an array of all integers between `b` (inclusive) and `e` (exclusive).
@@ -537,7 +535,7 @@ pub mod Array {
     ///
     def rotateLeftHelper(rc2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         let len = length(arr);
-        let f = i -> {let i1 = n + i; get(i1 `Int32.remainder` len, arr)};
+        let f = i -> { let i1 = n + i; get(i1 `Int32.remainder` len, arr) };
         init(rc2, f, len)
 
     ///
@@ -562,7 +560,7 @@ pub mod Array {
         let len = length(a);
         let n1 = n `Int32.remainder` len;
         let start = len - n1;
-        let f = i -> {let i1 = start + i; get(i1 `Int32.remainder` len, a)};
+        let f = i -> { let i1 = start + i; get(i1 `Int32.remainder` len, a) };
         init(rc2, f, len)
 
     ///
@@ -606,7 +604,7 @@ pub mod Array {
             Array#{} @ rc1
         else {
             let b = repeat(rc1, len2, x);
-            let f = {(i, v) -> let j = i + i; Array.put(v, j, b)};
+            let f = { (i, v) -> let j = i + i; Array.put(v, j, b) };
             forEachWithIndex(f, a);
             b
         }
@@ -967,11 +965,10 @@ pub mod Array {
     /// `a1` is the longest prefix of `a` that satisfies the predicate `f`.
     /// `a2` is the remainder of `a`.
     ///
-    pub def span(rc1: Region[r1], rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r]): (Array[a, r1], Array[a, r2]) \ { ef, r, r1, r2 } =
-        match findIndexOfLeft(x -> not (f(x)), a) {
-            case None    => (takeLeft(rc1, length(a), a), Array#{} @ rc2)
-            case Some(i) => (takeLeft(rc1, i, a), dropLeft(rc2, i, a))
-        }
+    pub def span(rc1: Region[r1], rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r]): (Array[a, r1], Array[a, r2]) \ { ef, r, r1, r2 } = match findIndexOfLeft(x -> not (f(x)), a) {
+        case None    => (takeLeft(rc1, length(a), a), Array#{} @ rc2)
+        case Some(i) => (takeLeft(rc1, i, a), dropLeft(rc2, i, a))
+    }
 
     ///
     /// Alias for `dropLeft`.
@@ -1016,20 +1013,18 @@ pub mod Array {
     ///
     /// Returns copy of array `a` without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhileLeft(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
-        match findIndexOfLeft(x -> not (f(x)), a) {
-            case None    => Array#{} @ rc1
-            case Some(i) => dropLeft(rc1, i, a)
-        }
+    pub def dropWhileLeft(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } = match findIndexOfLeft(x -> not (f(x)), a) {
+        case None    => Array#{} @ rc1
+        case Some(i) => dropLeft(rc1, i, a)
+    }
 
     ///
     /// Returns copy of array `a` without the longest suffix that satisfies the predicate `f`.
     ///
-    pub def dropWhileRight(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
-        match findIndexOfRight(x -> not (f(x)), a) {
-            case None    => Array#{} @ rc1
-            case Some(i) => copyOfRange(rc1, 0, i + 1, a)
-        }
+    pub def dropWhileRight(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } = match findIndexOfRight(x -> not (f(x)), a) {
+        case None    => Array#{} @ rc1
+        case Some(i) => copyOfRange(rc1, 0, i + 1, a)
+    }
 
     ///
     /// Alias for `takeLeft`.
@@ -1074,20 +1069,18 @@ pub mod Array {
     ///
     /// Returns the longest prefix of `a` that satisfies the predicate `f`.
     ///
-    pub def takeWhileLeft(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
-        match findIndexOfLeft(x -> not (f(x)), a) {
-            case None    => copyOfRange(rc1, 0, length(a), a)
-            case Some(i) => takeLeft(rc1, i, a)
-        }
+    pub def takeWhileLeft(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } = match findIndexOfLeft(x -> not (f(x)), a) {
+        case None    => copyOfRange(rc1, 0, length(a), a)
+        case Some(i) => takeLeft(rc1, i, a)
+    }
 
     ///
     /// Returns the longest suffix of `a` that satisfies the predicate `f`.
     ///
-    pub def takeWhileRight(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
-        match findIndexOfRight(x -> not (f(x)), a) {
-            case None    => copyOfRange(rc1, 0, length(a), a)
-            case Some(i) => copyOfRange(rc1, i + 1, length(a), a)
-        }
+    pub def takeWhileRight(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } = match findIndexOfRight(x -> not (f(x)), a) {
+        case None    => copyOfRange(rc1, 0, length(a), a)
+        case Some(i) => copyOfRange(rc1, i + 1, length(a), a)
+    }
 
     ///
     /// Partitions `a` into subarrays such that for any two elements `x` and `y` in a subarray, `f(x, y)` is true.
@@ -1114,29 +1107,27 @@ pub mod Array {
     ///
     /// Helper function for `groupWith`.
     ///
-    def groupByHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]]): List[Array[a, r]] \ r =
-        match xs {
-            case Nil     => List.reverse(ac)
-            case x :: rs =>
-                let (rc1, rc2) = extractHelper(rc, f, rs, Nel.singleton(x), Nil);
-                groupByHelper(rc, f, rc2, rc1 :: ac)
-        }
+    def groupByHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]]): List[Array[a, r]] \ r = match xs {
+        case Nil     => List.reverse(ac)
+        case x :: rs =>
+            let (rc1, rc2) = extractHelper(rc, f, rs, Nel.singleton(x), Nil);
+            groupByHelper(rc, f, rc2, rc1 :: ac)
+    }
 
     ///
     /// Helper function for `groupWith`.
     ///
-    def extractHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Array[a, r], List[a]) \ r =
-        match xs {
-            case Nil     => {
-                let a = Nel.reverse(ps);
-                (Nel.toArray(rc, a), List.reverse(ns))
-            }
-            case x :: rs =>
-                if (f(x, Nel.head(ps)))
-                    extractHelper(rc, f, rs, Nel.cons(x, ps), ns)
-                else
-                    extractHelper(rc, f, rs, ps, x :: ns)
+    def extractHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Array[a, r], List[a]) \ r = match xs {
+        case Nil     => {
+            let a = Nel.reverse(ps);
+            (Nel.toArray(rc, a), List.reverse(ns))
         }
+        case x :: rs =>
+            if (f(x, Nel.head(ps)))
+                extractHelper(rc, f, rs, Nel.cons(x, ps), ns)
+            else
+                extractHelper(rc, f, rs, ps, x :: ns)
+    }
 
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
@@ -1231,7 +1222,7 @@ pub mod Array {
             Nil,
             a
         )
-        |> List.toArray(rc1)
+            |> List.toArray(rc1)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1321,7 +1312,7 @@ pub mod Array {
                 if (i >= len)
                     ()
                 else {
-                    if (f(get(i, a))) {MutList.push(i, l)};
+                    if (f(get(i, a))) { MutList.push(i, l) };
                     loop(i + 1)
                 }
             };
@@ -1572,7 +1563,7 @@ pub mod Array {
     pub def copyInto(srcPos: { srcPos = Int32 }, dstPos: { dstPos = Int32 }, len: { len = Int32 }, src: { src = Array[a, r1] }, dst: Array[a, r2]): Unit \ { r1, r2 } =
         let srcObj: Object = checked_cast(src#src);
         let dstObj: Object = checked_cast(dst);
-        unsafe IO as { r1, r2 } {System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len)}
+        unsafe IO as { r1, r2 } { System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) }
 
     ///
     /// Returns a shallow copy of the array `a`.

@@ -88,24 +88,23 @@ pub mod Net.HttpLayer {
     /// (`connectTimeout == None` and `followRedirects == true`).
     /// Otherwise, builds a one-off client with the request's specific settings.
     ///
-    pub def doRequest(defaultClient: HttpClient, req: HttpRequest): Result[IoError, HttpResponse] \ IO =
-        try {
-            let HttpRequest(x) = req;
-            let methodStr = match x#method {
-                case Method.Get     => "GET"
-                case Method.Head    => "HEAD"
-                case Method.Options => "OPTIONS"
-                case Method.Post    => "POST"
-                case Method.Put     => "PUT"
-                case Method.Patch   => "PATCH"
-                case Method.Delete  => "DELETE"
-            };
-            let bodyPublisher = match x#body {
-                case Some(Body.Text(s))  => BodyPublishers.ofString(s)
-                case Some(Body.Bytes(v)) => BodyPublishers.ofByteArray(v)
-                case None                => BodyPublishers.noBody()
-            };
-            let builder = JHttpRequest.newBuilder(URI.create(x#url)).method(methodStr, bodyPublisher)
+    pub def doRequest(defaultClient: HttpClient, req: HttpRequest): Result[IoError, HttpResponse] \ IO = try {
+        let HttpRequest(x) = req;
+        let methodStr = match x#method {
+            case Method.Get     => "GET"
+            case Method.Head    => "HEAD"
+            case Method.Options => "OPTIONS"
+            case Method.Post    => "POST"
+            case Method.Put     => "PUT"
+            case Method.Patch   => "PATCH"
+            case Method.Delete  => "DELETE"
+        };
+        let bodyPublisher = match x#body {
+            case Some(Body.Text(s))  => BodyPublishers.ofString(s)
+            case Some(Body.Bytes(v)) => BodyPublishers.ofByteArray(v)
+            case None                => BodyPublishers.noBody()
+        };
+        let builder = JHttpRequest.newBuilder(URI.create(x#url)).method(methodStr, bodyPublisher)
             |> b ->
                 Map.foldLeftWithKey(
                     (mb, key, values) ->
@@ -117,42 +116,42 @@ pub mod Net.HttpLayer {
                     b,
                     x#headers
                 );
-            let jrequest = match x#requestTimeout {
-                case None    => builder.build()
-                case Some(d) => builder.timeout(JDuration.ofMillis(toMillis(d))).build()
-            };
-            let client = {
-                let HttpRequest(x0) = req;
-                if (x0#connectTimeout == None and x0#followRedirects == true)
-                    defaultClient
-                else {
-                    let redirectPolicy = if (x0#followRedirects) Redirect.NORMAL else Redirect.NEVER;
-                    match x0#connectTimeout {
-                        case None    => HttpClient.newBuilder().followRedirects(redirectPolicy).build()
-                        case Some(d) => HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(toMillis(d))).build()
-                    }
+        let jrequest = match x#requestTimeout {
+            case None    => builder.build()
+            case Some(d) => builder.timeout(JDuration.ofMillis(toMillis(d))).build()
+        };
+        let client = {
+            let HttpRequest(x0) = req;
+            if (x0#connectTimeout == None and x0#followRedirects == true)
+                defaultClient
+            else {
+                let redirectPolicy = if (x0#followRedirects) Redirect.NORMAL else Redirect.NEVER;
+                match x0#connectTimeout {
+                    case None    => HttpClient.newBuilder().followRedirects(redirectPolicy).build()
+                    case Some(d) => HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(toMillis(d))).build()
                 }
-            };
-            let response = client.send(jrequest, BodyHandlers.ofByteArray());
-            let responseHeadersJlist: Map[String, JList[String]] = ToFlix.toFlix(response.headers().map());
-            let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
-            let bytes = response.body();
-            Ok(
-                HttpResponse({
-                    url = response.uri().toString(),
-                    status = response.statusCode(),
-                    headers = responseHeaders,
-                    body = Body.Bytes(Array.toVector(bytes))
-                })
-            )
-        } catch {
-            case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, messageOf(checked_cast(ex))))
-            case ex: HttpTimeoutException => Err(IoError(ErrorKind.Timeout, messageOf(checked_cast(ex))))
-            case ex: ConnectException => Err(IoError(ErrorKind.ConnectionFailed, messageOf(checked_cast(ex))))
-            case ex: InterruptedException => Err(IoError(ErrorKind.Interrupted, messageOf(checked_cast(ex))))
-            case ex: UncheckedIOException => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
-            case ex: IOException => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
-        }
+            }
+        };
+        let response = client.send(jrequest, BodyHandlers.ofByteArray());
+        let responseHeadersJlist: Map[String, JList[String]] = ToFlix.toFlix(response.headers().map());
+        let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
+        let bytes = response.body();
+        Ok(
+            HttpResponse({
+                url = response.uri().toString(),
+                status = response.statusCode(),
+                headers = responseHeaders,
+                body = Body.Bytes(Array.toVector(bytes))
+            })
+        )
+    } catch {
+        case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, messageOf(checked_cast(ex))))
+        case ex: HttpTimeoutException => Err(IoError(ErrorKind.Timeout, messageOf(checked_cast(ex))))
+        case ex: ConnectException => Err(IoError(ErrorKind.ConnectionFailed, messageOf(checked_cast(ex))))
+        case ex: InterruptedException => Err(IoError(ErrorKind.Interrupted, messageOf(checked_cast(ex))))
+        case ex: UncheckedIOException => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
+        case ex: IOException => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
+    }
 
     ///
     /// Validates then performs an HTTP request.
@@ -161,9 +160,8 @@ pub mod Net.HttpLayer {
         validate: HttpRequest -> Result[IoError, Unit],
         defaultClient: HttpClient,
         req: HttpRequest
-    ): Result[IoError, HttpResponse] \ IO =
-        match validate(req) {
-            case Err(e) => Err(e)
-            case Ok()   => doRequest(defaultClient, req)
-        }
+    ): Result[IoError, HttpResponse] \ IO = match validate(req) {
+        case Err(e) => Err(e)
+        case Ok()   => doRequest(defaultClient, req)
+    }
 }

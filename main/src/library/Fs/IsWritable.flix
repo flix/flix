@@ -33,7 +33,7 @@ pub mod Fs.IsWritable {
     /// Handles the `IsWritable` effect of the given function `f` using the `FilePermission` effect.
     ///
     pub def runWithFilePermission(f: Unit -> a \ ef): a \ (ef - IsWritable) + FilePermission =
-        run {f()} with handler IsWritable {
-                      def isWritable(filename, k) = k(Fs.FilePermission.isWritable(filename))
-                  }
+        run { f() } with handler IsWritable {
+            def isWritable(filename, k) = k(Fs.FilePermission.isWritable(filename))
+        }
 }

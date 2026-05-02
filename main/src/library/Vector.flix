@@ -18,18 +18,18 @@
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
 instance Indexable[Vector[a]] {
-    type Idx = Int32
-    type Elm = a
-    type Aef = OutOfBounds
+        type Idx = Int32
+        type Elm = a
+        type Aef = OutOfBounds
 
-    pub def get(t: Vector[a], i: Int32): a \ OutOfBounds = {
-        if (0 <= i and i < Vector.length(t))
-            Vector.get(i, t)
-        else
-            OutOfBounds.outOfBounds(
-                "index ${ i } is out of bounds for Vector of length ${ Vector.length(t) }"
-            )
-    }
+        pub def get(t: Vector[a], i: Int32): a \ OutOfBounds = {
+            if (0 <= i and i < Vector.length(t))
+                Vector.get(i, t)
+            else
+                OutOfBounds.outOfBounds(
+                    "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
+                )
+        }
 }
 
 instance ToString[Vector[a]] with ToString[a] {
@@ -437,20 +437,18 @@ pub mod Vector {
     ///
     /// Optionally returns the first element of `v` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef =
-        match findIndexOfLeft(f, v) {
-            case None    => None
-            case Some(i) => Some(get(i, v))
-        }
+    pub def findLeft(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef = match findIndexOfLeft(f, v) {
+        case None    => None
+        case Some(i) => Some(get(i, v))
+    }
 
     ///
     /// Optionally returns the first element of `v` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef =
-        match findIndexOfRight(x -> f(x), v) {
-            case None    => None
-            case Some(i) => Some(get(i, v))
-        }
+    pub def findRight(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef = match findIndexOfRight(x -> f(x), v) {
+        case None    => None
+        case Some(i) => Some(get(i, v))
+    }
 
     ///
     /// Returns a vector of all integers between `b` (inclusive) and `e` (exclusive).
@@ -486,16 +484,16 @@ pub mod Vector {
                 MutList.push(Vector.get(0, v), l);
                 discard {
                     (Vector.get(0, v), v)
-                    ||> Vector.foldLeft(
-                        head -> cur -> {
-                            if (f(head, cur)) {
-                                head
-                            } else {
-                                MutList.push(cur, l);
-                                cur
+                        ||> Vector.foldLeft(
+                            head -> cur -> {
+                                if (f(head, cur)) {
+                                    head
+                                } else {
+                                    MutList.push(cur, l);
+                                    cur
+                                }
                             }
-                        }
-                    )
+                        )
                 };
                 MutList.toVector(l)
             }
@@ -619,7 +617,7 @@ pub mod Vector {
     def putA(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ r with Applicative[m] =
         use Functor.{<$>};
         use Applicative.{<*>};
-        (((x, arr) -> {Array.put(x, i, arr); arr}) <$> mx) <*> marr
+        (((x, arr) -> { Array.put(x, i, arr); arr }) <$> mx) <*> marr
 
     ///
     /// Generalize `zipWith` to an applicative functor `f`.
@@ -682,7 +680,7 @@ pub mod Vector {
     ///
     def rotateLeftHelper(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
-        let f = ix -> {let readIx = Int32.modulo(ix + n, len); get(readIx, v)};
+        let f = ix -> { let readIx = Int32.modulo(ix + n, len); get(readIx, v) };
         init(f, len)
 
     ///
@@ -705,7 +703,7 @@ pub mod Vector {
     ///
     def rotateRightHelper(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
-        let f = ix -> {let readIx = Int32.modulo(ix - n, len); get(readIx, v)};
+        let f = ix -> { let readIx = Int32.modulo(ix - n, len); get(readIx, v) };
         init(f, len)
 
     ///
@@ -739,7 +737,7 @@ pub mod Vector {
         let f = ix -> match ix {
             case 0                               => get(0, v)
             case n if Int32.remainder(n, 2) != 0 => sep
-            case n                               => {let i = n / 2; get(i, v)}
+            case n                               => { let i = n / 2; get(i, v) }
         };
         init(f, len2)
 
@@ -1040,7 +1038,7 @@ pub mod Vector {
     pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
         region rc {
             let m = MutList.empty(rc);
-            forEach(a -> if (f(a)) {MutList.push(a, m)}, v);
+            forEach(a -> if (f(a)) { MutList.push(a, m) }, v);
             MutList.toVector(m)
         }
 
@@ -1065,11 +1063,10 @@ pub mod Vector {
     /// `v1` is the longest prefix of `v` that satisfies the predicate `f`.
     /// `v2` is the remainder of `v`.
     ///
-    pub def span(f: a -> Bool \ ef, v: Vector[a]): (Vector[a], Vector[a]) \ ef =
-        match findIndexOfLeft(x -> not (f(x)), v) {
-            case None    => (takeLeft(length(v), v), empty())
-            case Some(i) => (takeLeft(i, v), dropLeft(i, v))
-        }
+    pub def span(f: a -> Bool \ ef, v: Vector[a]): (Vector[a], Vector[a]) \ ef = match findIndexOfLeft(x -> not (f(x)), v) {
+        case None    => (takeLeft(length(v), v), empty())
+        case Some(i) => (takeLeft(i, v), dropLeft(i, v))
+    }
 
     ///
     /// Alias for `dropLeft`.
@@ -1114,20 +1111,18 @@ pub mod Vector {
     ///
     /// Returns copy of vector `v` without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhileLeft(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
-        match findIndexOfLeft(x -> not (f(x)), v) {
-            case None    => empty()
-            case Some(i) => dropLeft(i, v)
-        }
+    pub def dropWhileLeft(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = match findIndexOfLeft(x -> not (f(x)), v) {
+        case None    => empty()
+        case Some(i) => dropLeft(i, v)
+    }
 
     ///
     /// Returns copy of vector `v` without the longest suffix that satisfies the predicate `f`.
     ///
-    pub def dropWhileRight(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
-        match findIndexOfRight(x -> not (f(x)), v) {
-            case None    => empty()
-            case Some(i) => slice(start = 0, end = i + 1, v)
-        }
+    pub def dropWhileRight(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = match findIndexOfRight(x -> not (f(x)), v) {
+        case None    => empty()
+        case Some(i) => slice(start = 0, end = i + 1, v)
+    }
 
     ///
     /// Alias for `takeLeft`.
@@ -1172,20 +1167,18 @@ pub mod Vector {
     ///
     /// Returns the longest prefix of `v` that satisfies the predicate `f`.
     ///
-    pub def takeWhileLeft(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
-        match findIndexOfLeft(x -> not (f(x)), v) {
-            case None    => slice(start = 0, end = length(v), v)
-            case Some(i) => takeLeft(i, v)
-        }
+    pub def takeWhileLeft(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = match findIndexOfLeft(x -> not (f(x)), v) {
+        case None    => slice(start = 0, end = length(v), v)
+        case Some(i) => takeLeft(i, v)
+    }
 
     ///
     /// Returns the longest suffix of `v` that satisfies the predicate `f`.
     ///
-    pub def takeWhileRight(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
-        match findIndexOfRight(x -> not (f(x)), v) {
-            case None    => slice(start = 0, end = length(v), v)
-            case Some(i) => slice(start = i + 1, end = length(v), v)
-        }
+    pub def takeWhileRight(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = match findIndexOfRight(x -> not (f(x)), v) {
+        case None    => slice(start = 0, end = length(v), v)
+        case Some(i) => slice(start = i + 1, end = length(v), v)
+    }
 
     ///
     /// Split the vector `v` at the position `n` returning the left and right parts.
@@ -1223,29 +1216,27 @@ pub mod Vector {
     ///
     /// Helper function for `groupWith`.
     ///
-    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Vector[a]]): List[Vector[a]] =
-        match xs {
-            case Nil     => List.reverse(ac)
-            case x :: rs =>
-                let (r1, r2) = extractHelper(f, rs, Nel.singleton(x), Nil);
-                groupByHelper(f, r2, r1 :: ac)
-        }
+    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Vector[a]]): List[Vector[a]] = match xs {
+        case Nil     => List.reverse(ac)
+        case x :: rs =>
+            let (r1, r2) = extractHelper(f, rs, Nel.singleton(x), Nil);
+            groupByHelper(f, r2, r1 :: ac)
+    }
 
     ///
     /// Helper function for `groupWith`.
     ///
-    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Vector[a], List[a]) =
-        match xs {
-            case Nil     => {
-                let a = Nel.reverse(ps);
-                (Nel.toVector(a), List.reverse(ns))
-            }
-            case x :: rs =>
-                if (f(x, Nel.head(ps)))
-                    extractHelper(f, rs, Nel.cons(x, ps), ns)
-                else
-                    extractHelper(f, rs, ps, x :: ns)
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Vector[a], List[a]) = match xs {
+        case Nil     => {
+            let a = Nel.reverse(ps);
+            (Nel.toVector(a), List.reverse(ns))
         }
+        case x :: rs =>
+            if (f(x, Nel.head(ps)))
+                extractHelper(f, rs, Nel.cons(x, ps), ns)
+            else
+                extractHelper(f, rs, ps, x :: ns)
+    }
 
     ///
     /// Returns a vector where the element at index `i` is `(x, y)` where
@@ -1335,7 +1326,7 @@ pub mod Vector {
             Nil,
             v
         )
-        |> List.toVector
+            |> List.toVector
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `v`.
@@ -1420,7 +1411,7 @@ pub mod Vector {
     pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef =
         region rc {
             let l = MutList.empty(rc);
-            forEachWithIndex((i, x) -> if (f(x)) {MutList.push(i, l)}, v);
+            forEachWithIndex((i, x) -> if (f(x)) { MutList.push(i, l) }, v);
             MutList.toVector(l)
         }
 

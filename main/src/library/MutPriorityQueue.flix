@@ -25,9 +25,9 @@ pub mod MutPriorityQueue {
     /// The maximum element (if it exists) can always be accessed in constant time.
     ///
     pub struct MutPriorityQueue[a: Type, r: Region] {
-        r: Region[r],
+        r:          Region[r],
         mut values: Array[a, r],
-        mut size: Int32
+        mut size:   Int32
     }
 
     instance Iterable[MutPriorityQueue[a, r]] {
@@ -131,7 +131,7 @@ pub mod MutPriorityQueue {
     /// Enqueues each element in `m` into `mq`.
     ///
     pub def enqueueAll(m: m, mq: MutPriorityQueue[elt, r]): Unit \ (r + ForEach.Aef[m]) with ForEach[m], Order[elt] where ForEach.Elm[m] ~ elt =
-        foreach(x <- m) {
+        foreach (x <- m) {
             enqueue(x, mq)
         }
 

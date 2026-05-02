@@ -35,7 +35,7 @@ pub mod Fs.AppendLines {
     /// Handles the `AppendLines` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - AppendLines) + FileWrite =
-        run {f()} with handler AppendLines {
-                      def appendLines(data, file, k) = k(Fs.FileWrite.appendLines(data, file))
-                  }
+        run { f() } with handler AppendLines {
+            def appendLines(data, file, k) = k(Fs.FileWrite.appendLines(data, file))
+        }
 }

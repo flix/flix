@@ -29,9 +29,9 @@ mod Fs.InMemoryFs {
     /// - `times`:   map from normalized absolute paths to `{atime, ctime, mtime}` records (ms since epoch).
     /// - `counter`: monotonically increasing counter for generating unique temp directory names.
     pub struct InMemoryFs[r: Region] {
-        mut files: Map[String, Entry],
-        mut dirs: Set[String],
-        mut times: Map[String, { atime = Int64, ctime = Int64, mtime = Int64 }],
+        mut files:   Map[String, Entry],
+        mut dirs:    Set[String],
+        mut times:   Map[String, { atime = Int64, ctime = Int64, mtime = Int64 }],
         mut counter: Int32
     }
 
@@ -48,7 +48,7 @@ mod Fs.InMemoryFs {
         // ─── Path helpers (private) ───────────────────────────────────────
 
     def normalize(path: String): String =
-        unsafe IO {Paths.get(path).toAbsolutePath().normalize().toString()}
+        unsafe IO { Paths.get(path).toAbsolutePath().normalize().toString() }
 
     def parentDir(path: String): Option[String] =
         unsafe IO {
@@ -63,10 +63,10 @@ mod Fs.InMemoryFs {
         }
 
     def notFound(path: String): Result[IoError, a] =
-        Err(IoError(ErrorKind.NotFound, "in-memory fs: '${ path }' does not exist"))
+        Err(IoError(ErrorKind.NotFound, "in-memory fs: '${path}' does not exist"))
 
     def alreadyExists(path: String): Result[IoError, a] =
-        Err(IoError(ErrorKind.AlreadyExists, "in-memory fs: '${ path }' already exists")) // ─── Timestamp helpers (private) ─────────────────────────────────
+        Err(IoError(ErrorKind.AlreadyExists, "in-memory fs: '${path}' already exists")) // ─── Timestamp helpers (private) ─────────────────────────────────
 
     /// Sets all three timestamps to now (for newly created entries).
     def touchNew(norm: String, o: Fs.InMemoryFs[r]): Unit \ r + Clock =
@@ -163,11 +163,10 @@ mod Fs.InMemoryFs {
             case None                       => notFound(path)
         }
 
-    pub def readLines(path: String, o: Fs.InMemoryFs[r]): Result[IoError, List[String]] \ r + Clock =
-        match read(path, o) {
-            case Ok(s)  => Ok(String.lines(s))
-            case Err(e) => Err(e)
-        }
+    pub def readLines(path: String, o: Fs.InMemoryFs[r]): Result[IoError, List[String]] \ r + Clock = match read(path, o) {
+        case Ok(s)  => Ok(String.lines(s))
+        case Err(e) => Err(e)
+    }
 
     pub def readBytes(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Vector[Int8]] \ r + Clock =
         let norm = normalize(path);
@@ -300,7 +299,7 @@ mod Fs.InMemoryFs {
     pub def mkTempDir(prefix: String, o: Fs.InMemoryFs[r]): Result[IoError, String] \ r + Clock =
         let n = o->counter;
         o->counter = n + 1;
-        let name = "${ prefix }inmemory-${ n }";
+        let name = "${prefix}inmemory-${n}";
         o->dirs = Set.insert(name, o->dirs);
         touchNew(name, o);
         Ok(name) // ─── Listing ops ─────────────────────────────────────────────────
@@ -311,11 +310,11 @@ mod Fs.InMemoryFs {
             notFound(dir)
         else {
             let fileNames = Map.keysOf(o->files)
-            |> Set.filter(p -> parentDir(p) == Some(norm))
-            |> Set.map(p -> fileName(p));
+                |> Set.filter(p -> parentDir(p) == Some(norm))
+                |> Set.map(p -> fileName(p));
             let dirNames = o->dirs
-            |> Set.filter(p -> parentDir(p) == Some(norm))
-            |> Set.map(p -> fileName(p));
+                |> Set.filter(p -> parentDir(p) == Some(norm))
+                |> Set.map(p -> fileName(p));
             Ok(Set.toList(Set.union(fileNames, dirNames)))
         }
 
@@ -325,7 +324,7 @@ mod Fs.InMemoryFs {
         else
             unsafe IO {
                 let basePath = Paths.get(normalize(base));
-                let matcher: PathMatcher = FileSystems.getDefault().getPathMatcher("glob:${ pattern }");
+                let matcher: PathMatcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
                 let matchesPattern = path -> {
                     let p = Paths.get(path);
                     let starts = p.startsWith(basePath);

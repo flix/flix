@@ -88,11 +88,10 @@ instance Writable[OutputStream] {
 
     type Aef = IO
 
-    pub def write(b: Array[Int8, r], r: OutputStream): Result[IoError, Int32] \ r + IO =
-        try {
-            r.write(b);
-            checked_ecast(Ok(Array.length(b)))
-        } catch {
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def write(b: Array[Int8, r], r: OutputStream): Result[IoError, Int32] \ r + IO = try {
+        r.write(b);
+        checked_ecast(Ok(Array.length(b)))
+    } catch {
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 }

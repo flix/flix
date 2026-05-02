@@ -35,13 +35,12 @@ pub mod Sys.Exit {
     ///
     /// Note: The returned function can still return normally if `exit` is never called by `f`.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Exit) + IO =
-        x ->
-            run {
-                f(x)
-            } with handler Exit {
-                  def exit(ec, _k) = unchecked_cast(System.exit(ec) as b)
-              }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Exit) + IO = x ->
+        run {
+            f(x)
+        } with handler Exit {
+            def exit(ec, _k) = unchecked_cast(System.exit(ec) as b)
+        }
 
     ///
     /// Runs the `Exit` effect of the given function `f`.

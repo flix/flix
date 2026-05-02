@@ -182,12 +182,11 @@ pub mod Int32 {
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int32, l: Int32, r: Int32): Int32 =
-        match (getBit(pos = l, x), getBit(pos = r, x)) {
-            case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
-            case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
-            case _      => x
-        }
+    def swap(x: Int32, l: Int32, r: Int32): Int32 = match (getBit(pos = l, x), getBit(pos = r, x)) {
+        case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
+        case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
+        case _      => x
+    }
 
     ///
     /// Returns the position of the highest-order/leftmost one-bit in `x`.
@@ -359,24 +358,22 @@ pub mod Int32 {
     /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Int32] =
-        try {
-            Some(Integer.parseInt(s.strip()))
-        } catch {
-            case _: NumberFormatException => None
-        }
+    pub def fromString(s: String): Option[Int32] = try {
+        Some(Integer.parseInt(s.strip()))
+    } catch {
+        case _: NumberFormatException => None
+    }
 
     ///
     /// Parse the string `s` as an Int32, where the `radix` is used while parsing.
     /// Leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def parse(radix: Int32, s: String): Result[String, Int32] =
-        try {
-            Ok(Integer.parseInt(s.strip(), radix))
-        } catch {
-            case _: NumberFormatException => Err("Int32.parse")
-        }
+    pub def parse(radix: Int32, s: String): Result[String, Int32] = try {
+        Ok(Integer.parseInt(s.strip(), radix))
+    } catch {
+        case _: NumberFormatException => Err("Int32.parse")
+    }
 
     ///
     /// Convert `x` to an `Option[Int8]`.

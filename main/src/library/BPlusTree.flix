@@ -63,11 +63,11 @@ pub mod BPlusTree {
     ///
     pub struct BPlusTree[k, v, r] {
         mut root: BPlusTree.Node[k, v, r],
-        arity: Int32,
+        arity:    Int32,
         rootLock: BPlusTree.Lock[r],
-        rc: Region[r],
-        counter: BPlusTree.AtomicCounter[r],
-        search: BPlusTree.Search
+        rc:       Region[r],
+        counter:  BPlusTree.AtomicCounter[r],
+        search:   BPlusTree.Search
     }
 
     pub type alias Search = Vector[Int32]
@@ -266,7 +266,7 @@ pub mod BPlusTree {
     ///
     pub def mapWithKey(rc1: Region[r1], f: k -> v1 -> v2 \ ef, t: BPlusTree[k, v1, r]): BPlusTree[k, v2, r1] \ ef + r + r1 with Order[k] = {
         let t1 = BPlusTree.emptyWithArity(rc1, BPlusTree.arity(t));
-        foreach((k, v) <- t) {
+        foreach ((k, v) <- t) {
             BPlusTree.put(k, f(k, v), t1)
         };
         t1
@@ -337,7 +337,7 @@ pub mod BPlusTree {
     pub def toVector(t: BPlusTree[k, v, r]): Vector[(k, v)] \ r =
         region rc {
             let mm = MutList.empty(rc);
-            foreach((k, v) <- t) {
+            foreach ((k, v) <- t) {
                 MutList.push((k, v), mm)
             };
             MutList.toVector(mm)
@@ -400,14 +400,13 @@ pub mod BPlusTree {
     ///
     /// Updates the root of `t` if `newRoot` is `Some(...)`. Unlocks `t->rootLock` using the stamp.
     ///
-    def fixRoot(newRoot: Option[(Node[k, v, r], Int64)], t: BPlusTree[k, v, r]): Unit \ r =
-        match newRoot {
-            case Some((root, rootStamp)) =>
-                t->root = root;
-                Lock.unlockWrite(rootStamp, t->rootLock);
-                ()
-            case None                    => ()
-        }
+    def fixRoot(newRoot: Option[(Node[k, v, r], Int64)], t: BPlusTree[k, v, r]): Unit \ r = match newRoot {
+        case Some((root, rootStamp)) =>
+            t->root = root;
+            Lock.unlockWrite(rootStamp, t->rootLock);
+            ()
+        case None                    => ()
+    }
 
     ///
     /// Applies `f` to a start value `i` and all values in `t` going from left to right.
@@ -466,20 +465,18 @@ pub mod BPlusTree {
     ///
     /// Returns the first mapping in `leaf`, if any.
     ///
-    def firstEntryInLeaf(leaf: Node[k, v, r]): Option[(k, v)] \ r =
-        match Node.size(leaf) {
-            case 0 => None
-            case _ => Some(Node.getKeyAndValueAt(0, leaf))
-        }
+    def firstEntryInLeaf(leaf: Node[k, v, r]): Option[(k, v)] \ r = match Node.size(leaf) {
+        case 0 => None
+        case _ => Some(Node.getKeyAndValueAt(0, leaf))
+    }
 
     ///
     /// Returns the last mapping in `leaf`, if any.
     ///
-    def lastEntryInLeaf(leaf: Node[k, v, r]): Option[(k, v)] \ r =
-        match Node.size(leaf) {
-            case 0 => None
-            case n => Some(Node.getKeyAndValueAt(n - 1, leaf))
-        }
+    def lastEntryInLeaf(leaf: Node[k, v, r]): Option[(k, v)] \ r = match Node.size(leaf) {
+        case 0 => None
+        case n => Some(Node.getKeyAndValueAt(n - 1, leaf))
+    }
 
     ///
     /// Returns `Some(v)` if `k => v` is in `t`. Otherwise, returns `None`.
@@ -564,7 +561,7 @@ pub mod BPlusTree {
     pub def joinWith(f: k -> v -> String \ ef, sep: String, t: BPlusTree[k, v, r]): String \ r + ef =
         region rc {
             let sb = StringBuilder.empty(rc);
-            foreach((k, v) <- t) {
+            foreach ((k, v) <- t) {
                 StringBuilder.append(f(k, v), sb);
                 StringBuilder.append(sep, sb)
             };
@@ -595,15 +592,15 @@ pub mod BPlusTree {
                 let minLeaf = Node.leftMostLeafUnconditional(t->root);
                 unsafe IO as r {
                     Vector.range(0, threadNum)
-                    |> Vector.forEach(
-                        i -> {
-                            let _: Unit = spawn unsafe r as IO {
-                                // Flix does not allow region effect in spawns. Remove the effect.
-                                Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
-                            } @ rc;
-                            ()
-                        }
-                    )
+                        |> Vector.forEach(
+                            i -> {
+                                let _: Unit = spawn unsafe r as IO {
+                                    // Flix does not allow region effect in spawns. Remove the effect.
+                                    Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
+                                } @ rc;
+                                ()
+                            }
+                        )
                 }
             }
         }

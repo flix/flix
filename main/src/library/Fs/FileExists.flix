@@ -33,7 +33,7 @@ pub mod Fs.FileExists {
     /// Handles the `FileExists` effect of the given function `f` using the `FileTest` effect.
     ///
     pub def runWithFileTest(f: Unit -> a \ ef): a \ (ef - FileExists) + FileTest =
-        run {f()} with handler FileExists {
-                      def exists(filename, k) = k(Fs.FileTest.exists(filename))
-                  }
+        run { f() } with handler FileExists {
+            def exists(filename, k) = k(Fs.FileTest.exists(filename))
+        }
 }

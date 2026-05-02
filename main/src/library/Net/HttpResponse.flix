@@ -35,54 +35,49 @@ pub mod Net.HttpResponse {
     ///
     /// Returns the final URL of the response `r` (after any redirects).
     ///
-    pub def url(r: HttpResponse): String =
-        match r {
-            case HttpResponse(x) => x#url
-        }
+    pub def url(r: HttpResponse): String = match r {
+        case HttpResponse(x) => x#url
+    }
 
     ///
     /// Returns the status code of the response `r`.
     ///
-    pub def status(r: HttpResponse): Int32 =
-        match r {
-            case HttpResponse(x) => x#status
-        }
+    pub def status(r: HttpResponse): Int32 = match r {
+        case HttpResponse(x) => x#status
+    }
 
     ///
     /// Returns the headers of the response `r`.
     ///
-    pub def headers(r: HttpResponse): Map[String, List[String]] =
-        match r {
-            case HttpResponse(x) => x#headers
-        }
+    pub def headers(r: HttpResponse): Map[String, List[String]] = match r {
+        case HttpResponse(x) => x#headers
+    }
 
     ///
     /// Returns the body of the response `r` as a string.
     ///
     /// If the body is binary, it is decoded as UTF-8.
     ///
-    pub def body(r: HttpResponse): String =
-        match r {
-            case HttpResponse(x) =>
-                match x#body {
-                    case Body.Text(s)  => s
-                    case Body.Bytes(v) => HttpLayer.bytesToString(v)
-                }
-        }
+    pub def body(r: HttpResponse): String = match r {
+        case HttpResponse(x) =>
+            match x#body {
+                case Body.Text(s)  => s
+                case Body.Bytes(v) => HttpLayer.bytesToString(v)
+            }
+    }
 
     ///
     /// Returns the body of the response `r` as bytes.
     ///
     /// If the body is text, it is encoded as UTF-8.
     ///
-    pub def bodyBytes(r: HttpResponse): Vector[Int8] =
-        match r {
-            case HttpResponse(x) =>
-                match x#body {
-                    case Body.Bytes(v) => v
-                    case Body.Text(s)  => HttpLayer.stringToBytes(s)
-                }
-        }
+    pub def bodyBytes(r: HttpResponse): Vector[Int8] = match r {
+        case HttpResponse(x) =>
+            match x#body {
+                case Body.Bytes(v) => v
+                case Body.Text(s)  => HttpLayer.stringToBytes(s)
+            }
+    }
 
     ///
     /// Returns the list of values for the header with the given `name`, or `None` if not present.
@@ -93,11 +88,10 @@ pub mod Net.HttpResponse {
     ///
     /// Returns the first value of the header with the given `name`, or `None` if not present.
     ///
-    pub def headerValue(name: String, r: HttpResponse): Option[String] =
-        match header(name, r) {
-            case Some(v :: _) => Some(v)
-            case _            => None
-        }
+    pub def headerValue(name: String, r: HttpResponse): Option[String] = match header(name, r) {
+        case Some(v :: _) => Some(v)
+        case _            => None
+    }
 
     ///
     /// Returns `true` if the response status is 200 OK.
@@ -145,7 +139,7 @@ pub mod Net.HttpResponse {
         if (isSuccess(r))
             Ok(r)
         else
-            Err(IoError(ErrorKind.Other, "Unexpected HTTP status: ${ status(r) }"))
+            Err(IoError(ErrorKind.Other, "Unexpected HTTP status: ${status(r)}"))
 
     ///
     /// Returns the value of the `content-type` header, or `None` if not present.
@@ -156,9 +150,8 @@ pub mod Net.HttpResponse {
     ///
     /// Returns the value of the `content-length` header parsed as an `Int64`, or `None` if not present or not a valid number.
     ///
-    pub def contentLength(r: HttpResponse): Option[Int64] =
-        match headerValue("content-length", r) {
-            case Some(v) => Int64.fromString(v)
-            case None    => None
-        }
+    pub def contentLength(r: HttpResponse): Option[Int64] = match headerValue("content-length", r) {
+        case Some(v) => Int64.fromString(v)
+        case None    => None
+    }
 }

@@ -29,58 +29,52 @@ pub mod Order {
         ///
         /// Returns `true` if and only if `x < y`.
         ///
-        pub def less(x: a, y: a): Bool =
-            match Order.compare(x, y) {
-                case Comparison.LessThan => true
-                case _                   => false
-            }
+        pub def less(x: a, y: a): Bool = match Order.compare(x, y) {
+            case Comparison.LessThan => true
+            case _                   => false
+        }
 
         ///
         /// Returns `true` if and only if `x <= y`.
         ///
-        pub def lessEqual(x: a, y: a): Bool =
-            match Order.compare(x, y) {
-                case Comparison.LessThan => true
-                case Comparison.EqualTo  => true
-                case _                   => false
-            }
+        pub def lessEqual(x: a, y: a): Bool = match Order.compare(x, y) {
+            case Comparison.LessThan => true
+            case Comparison.EqualTo  => true
+            case _                   => false
+        }
 
         ///
         /// Returns `true` if and only if `x > y`.
         ///
-        pub def greater(x: a, y: a): Bool =
-            match Order.compare(x, y) {
-                case Comparison.GreaterThan => true
-                case _                      => false
-            }
+        pub def greater(x: a, y: a): Bool = match Order.compare(x, y) {
+            case Comparison.GreaterThan => true
+            case _                      => false
+        }
 
         ///
         /// Returns `true` if and only if `x >= y`.
         ///
-        pub def greaterEqual(x: a, y: a): Bool =
-            match Order.compare(x, y) {
-                case Comparison.GreaterThan => true
-                case Comparison.EqualTo     => true
-                case _                      => false
-            }
+        pub def greaterEqual(x: a, y: a): Bool = match Order.compare(x, y) {
+            case Comparison.GreaterThan => true
+            case Comparison.EqualTo     => true
+            case _                      => false
+        }
 
         ///
         /// Returns the minimum of `x` and `y`.
         ///
-        pub def min(x: a, y: a): a =
-            match (x <=> y) {
-                case Comparison.GreaterThan => y
-                case _                      => x
-            }
+        pub def min(x: a, y: a): a = match (x <=> y) {
+            case Comparison.GreaterThan => y
+            case _                      => x
+        }
 
         ///
         /// Returns the maximum of `x` and `y`.
         ///
-        pub def max(x: a, y: a): a =
-            match (x <=> y) {
-                case Comparison.LessThan => y
-                case _                   => x
-            }
+        pub def max(x: a, y: a): a = match (x <=> y) {
+            case Comparison.LessThan => y
+            case _                   => x
+        }
 
         ///
         /// Reflexivity: An element `x` is lower or equal to itself.
@@ -240,12 +234,11 @@ pub mod Order {
         redef greaterEqual(x: BigDecimal, y: BigDecimal): Bool =
             x.compareTo(y) >= 0
 
-        pub def compare(x: BigDecimal, y: BigDecimal): Comparison =
-            match x.compareTo(y) {
-                case 0          => Comparison.EqualTo
-                case z if z < 0 => Comparison.LessThan
-                case _          => Comparison.GreaterThan
-            }
+        pub def compare(x: BigDecimal, y: BigDecimal): Comparison = match x.compareTo(y) {
+            case 0          => Comparison.EqualTo
+            case z if z < 0 => Comparison.LessThan
+            case _          => Comparison.GreaterThan
+        }
     }
 
     instance Order[Int8] {
@@ -333,12 +326,11 @@ pub mod Order {
         redef greaterEqual(x: BigInt, y: BigInt): Bool =
             x.compareTo(y) >= 0
 
-        pub def compare(x: BigInt, y: BigInt): Comparison =
-            match x.compareTo(y) {
-                case 0          => Comparison.EqualTo
-                case z if z < 0 => Comparison.LessThan
-                case _          => Comparison.GreaterThan
-            }
+        pub def compare(x: BigInt, y: BigInt): Comparison = match x.compareTo(y) {
+            case 0          => Comparison.EqualTo
+            case z if z < 0 => Comparison.LessThan
+            case _          => Comparison.GreaterThan
+        }
     }
 
     instance Order[String] {

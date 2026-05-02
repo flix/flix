@@ -26,11 +26,10 @@ pub mod IoError {
     pub enum IoError(IoError.ErrorKind, String) with Eq, ToString
 
     instance Formattable[IoError] {
-        pub def format(e: IoError): RichString =
-            match e {
-                case IoError.IoError(kind, msg) =>
-                    Formattable.format(kind) + RichString.fromString(": ") + RichString.fromString(msg)
-            }
+        pub def format(e: IoError): RichString = match e {
+            case IoError.IoError(kind, msg) =>
+                Formattable.format(kind) + RichString.fromString(": ") + RichString.fromString(msg)
+        }
     }
 
     pub enum ErrorKind with Eq, ToString {

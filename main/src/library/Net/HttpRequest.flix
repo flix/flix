@@ -136,76 +136,68 @@ pub mod Net.HttpRequest {
     ///
     /// Returns the HTTP method of the request `r`.
     ///
-    pub def method(r: HttpRequest): Method =
-        match r {
-            case HttpRequest(x) => x#method
-        }
+    pub def method(r: HttpRequest): Method = match r {
+        case HttpRequest(x) => x#method
+    }
 
     ///
     /// Returns the URL of the request `r`.
     ///
-    pub def url(r: HttpRequest): String =
-        match r {
-            case HttpRequest(x) => x#url
-        }
+    pub def url(r: HttpRequest): String = match r {
+        case HttpRequest(x) => x#url
+    }
 
     ///
     /// Returns the headers of the request `r`.
     ///
-    pub def headers(r: HttpRequest): Map[String, List[String]] =
-        match r {
-            case HttpRequest(x) => x#headers
-        }
+    pub def headers(r: HttpRequest): Map[String, List[String]] = match r {
+        case HttpRequest(x) => x#headers
+    }
 
     ///
     /// Returns the text body of the request `r`, or `None` if absent or binary.
     ///
-    pub def body(r: HttpRequest): Option[String] =
-        match r {
-            case HttpRequest(x) =>
-                match x#body {
-                    case Some(Body.Text(s)) => Some(s)
-                    case _                  => None
-                }
-        }
+    pub def body(r: HttpRequest): Option[String] = match r {
+        case HttpRequest(x) =>
+            match x#body {
+                case Some(Body.Text(s)) => Some(s)
+                case _                  => None
+            }
+    }
 
     ///
     /// Returns the binary body of the request `r`, or `None` if absent or text.
     ///
-    pub def bodyBytes(r: HttpRequest): Option[Vector[Int8]] =
-        match r {
-            case HttpRequest(x) =>
-                match x#body {
-                    case Some(Body.Bytes(v)) => Some(v)
-                    case _                   => None
-                }
-        }
+    pub def bodyBytes(r: HttpRequest): Option[Vector[Int8]] = match r {
+        case HttpRequest(x) =>
+            match x#body {
+                case Some(Body.Bytes(v)) => Some(v)
+                case _                   => None
+            }
+    }
 
     ///
     /// Returns the request timeout of the request `r`.
     ///
-    pub def requestTimeout(r: HttpRequest): Option[Duration] =
-        match r {
-            case HttpRequest(x) => x#requestTimeout
-        }
+    pub def requestTimeout(r: HttpRequest): Option[Duration] = match r {
+        case HttpRequest(x) => x#requestTimeout
+    }
 
     ///
     /// Returns the connect timeout of the request `r`.
     ///
-    pub def connectTimeout(r: HttpRequest): Option[Duration] =
-        match r {
-            case HttpRequest(x) => x#connectTimeout
-        }
+    pub def connectTimeout(r: HttpRequest): Option[Duration] = match r {
+        case HttpRequest(x) => x#connectTimeout
+    }
 
     ///
     /// Returns `true` if the request `r` follows redirects.
     ///
-    pub def followRedirects(r: HttpRequest): Bool =
-        match r {
-            case HttpRequest(x) => x#followRedirects
-        }
+    pub def followRedirects(r: HttpRequest): Bool = match r {
+        case HttpRequest(x) => x#followRedirects
+    }
 
-        // --- Modifiers: Headers ---
+    // --- Modifiers: Headers ---
 
     ///
     /// Adds the header `name` with value `value` to the request `r`.
@@ -249,7 +241,7 @@ pub mod Net.HttpRequest {
     /// Sets the `Authorization` header to `Bearer <token>` on the request `r`.
     ///
     pub def withBearerToken(token: String, r: HttpRequest): HttpRequest =
-        setHeader("Authorization", "Bearer ${ token }", r)
+        setHeader("Authorization", "Bearer ${token}", r)
 
     ///
     /// Sets the `Content-Type` header to `contentType` on the request `r`.
@@ -287,7 +279,7 @@ pub mod Net.HttpRequest {
         let encodedName = HttpLayer.urlEncode(name);
         let encodedValue = HttpLayer.urlEncode(value);
         let separator = if (String.contains(substr = "?", x#url)) "&" else "?";
-        let newUrl = "${ x#url }${ separator }${ encodedName }=${ encodedValue }";
+        let newUrl = "${x#url}${separator}${encodedName}=${encodedValue}";
         HttpRequest({url = newUrl | x})
 
     ///

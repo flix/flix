@@ -107,12 +107,11 @@ pub mod Float64 {
     /// Parse the string `s` as a Float64, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Float64] =
-        try {
-            Some(Double.parseDouble(s.strip()))
-        } catch {
-            case _: NumberFormatException => None
-        }
+    pub def fromString(s: String): Option[Float64] = try {
+        Some(Double.parseDouble(s.strip()))
+    } catch {
+        case _: NumberFormatException => None
+    }
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -184,13 +183,12 @@ pub mod Float64 {
     ///
     /// Returns `None` if the value of `x` is NaN or infinity.
     ///
-    pub def tryToBigInt(x: Float64): Option[BigInt] =
-        try {
-            Some(BigDecimal.valueOf(x).toBigInteger())
-        } catch {
-            // Catch NaN, isInfinite.
-            case _: NumberFormatException => None
-        }
+    pub def tryToBigInt(x: Float64): Option[BigInt] = try {
+        Some(BigDecimal.valueOf(x).toBigInteger())
+    } catch {
+        // Catch NaN, isInfinite.
+        case _: NumberFormatException => None
+    }
 
     ///
     /// Convert `x` to an `Option[Float32]`.
@@ -218,12 +216,11 @@ pub mod Float64 {
     ///
     /// If `x` is NaN or infinity return `None`.
     ///
-    pub def tryToBigDecimal(x: Float64): Option[BigDecimal] =
-        try {
-            Some(new BigDecimal(x))
-        } catch {
-            case _: NumberFormatException => None
-        }
+    pub def tryToBigDecimal(x: Float64): Option[BigDecimal] = try {
+        Some(new BigDecimal(x))
+    } catch {
+        case _: NumberFormatException => None
+    }
 
     ///
     /// Helper function for the `clamp` conversion functions.

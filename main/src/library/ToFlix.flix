@@ -94,7 +94,7 @@ instance ToFlix[Chain[a]] {
     type In = JList[a]
     pub def toFlix(l: JList[a]): Chain[a] =
         region rc {
-            let it = unsafe IO {l.iterator()};
+            let it = unsafe IO { l.iterator() };
             it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
         }
 }
@@ -103,7 +103,7 @@ instance ToFlix[Vector[a]] {
     type In = JList[a]
     pub def toFlix(l: JList[a]): Vector[a] =
         region rc {
-            let iter = unsafe IO {l.iterator()};
+            let iter = unsafe IO { l.iterator() };
             iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
         }
 }

@@ -164,12 +164,11 @@ pub mod BigInt {
     /// Parse the string `s` as an BigInt, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[BigInt] =
-        try {
-            Some(new BigInteger(s.strip()))
-        } catch {
-            case _: NumberFormatException => None
-        }
+    pub def fromString(s: String): Option[BigInt] = try {
+        Some(new BigInteger(s.strip()))
+    } catch {
+        case _: NumberFormatException => None
+    }
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -179,12 +178,11 @@ pub mod BigInt {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127).
     ///
-    pub def tryToInt8(x: BigInt): Option[Int8] =
-        try {
-            Some(x.byteValueExact())
-        } catch {
-            case _: ArithmeticException => None
-        }
+    pub def tryToInt8(x: BigInt): Option[Int8] = try {
+        Some(x.byteValueExact())
+    } catch {
+        case _: ArithmeticException => None
+    }
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -194,12 +192,11 @@ pub mod BigInt {
     /// Returns `None` if the numeric value of `x` is outside the range of Int16
     /// (i.e. -32768 to 32767).
     ///
-    pub def tryToInt16(x: BigInt): Option[Int16] =
-        try {
-            Some(x.shortValueExact())
-        } catch {
-            case _: ArithmeticException => None
-        }
+    pub def tryToInt16(x: BigInt): Option[Int16] = try {
+        Some(x.shortValueExact())
+    } catch {
+        case _: ArithmeticException => None
+    }
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -209,12 +206,11 @@ pub mod BigInt {
     /// Returns `None` if the numeric value of `x` is outside the range of Int32
     /// (i.e. -2147483648 to 2147483647).
     ///
-    pub def tryToInt32(x: BigInt): Option[Int32] =
-        try {
-            Some(x.intValueExact())
-        } catch {
-            case _: ArithmeticException => None
-        }
+    pub def tryToInt32(x: BigInt): Option[Int32] = try {
+        Some(x.intValueExact())
+    } catch {
+        case _: ArithmeticException => None
+    }
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -224,12 +220,11 @@ pub mod BigInt {
     /// Returns `None` if the numeric value of `x` is outside the range of Int64
     /// (i.e. -9223372036854775808 to 9223372036854775807).
     ///
-    pub def tryToInt64(x: BigInt): Option[Int64] =
-        try {
-            Some(x.longValueExact())
-        } catch {
-            case _: ArithmeticException => None
-        }
+    pub def tryToInt64(x: BigInt): Option[Int64] = try {
+        Some(x.longValueExact())
+    } catch {
+        case _: ArithmeticException => None
+    }
 
     ///
     /// Convert `x` to an `Option[Float32]`.

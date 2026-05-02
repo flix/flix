@@ -97,7 +97,7 @@ pub mod MultiMap {
     ///
     pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] =
         region rc {
-            "MultiMap#{" + (MultiMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${ k } => ${ v }") |> Iterator.join(", ")) + "}"
+            "MultiMap#{" + (MultiMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
         }
 
     ///
@@ -175,14 +175,13 @@ pub mod MultiMap {
     ///
     /// Where `vs` is any foldable container. If `vs` is empty nothing is inserted.
     ///
-    pub def insertAll(k: k, vs: t[v], m: MultiMap[k, v]): MultiMap[k, v] \ Foldable.Aef[t] with Order[k], Order[v], Foldable[t] =
-        match Foldable.toSet(vs) {
-            case s1 if Set.isEmpty(s1) => m
-            case s1                    => {
-                let MultiMap(m1) = m;
-                MultiMap(Map.insertWith((v1, v2) -> Set.union(v1, v2), k, s1, m1))
-            }
+    pub def insertAll(k: k, vs: t[v], m: MultiMap[k, v]): MultiMap[k, v] \ Foldable.Aef[t] with Order[k], Order[v], Foldable[t] = match Foldable.toSet(vs) {
+        case s1 if Set.isEmpty(s1) => m
+        case s1                    => {
+            let MultiMap(m1) = m;
+            MultiMap(Map.insertWith((v1, v2) -> Set.union(v1, v2), k, s1, m1))
         }
+    }
 
     ///
     /// Updates `m` with `k => map(f, vs)` if `k => vs` is in `m`.
@@ -465,11 +464,10 @@ pub mod MultiMap {
     ///
     /// Note - returns `None` when the set difference is empty.
     ///
-    def setDifference1(s1: Set[v], s2: Set[v]): Option[Set[v]] with Order[v] =
-        match Set.difference(s1, s2) {
-            case s if Set.isEmpty(s) => None
-            case s                   => Some(s)
-        }
+    def setDifference1(s1: Set[v], s2: Set[v]): Option[Set[v]] with Order[v] = match Set.difference(s1, s2) {
+        case s if Set.isEmpty(s) => None
+        case s                   => Some(s)
+    }
 
     ///
     /// Returns the MultiMap `m` as a list of singleton key-value pairs.
@@ -518,7 +516,7 @@ pub mod MultiMap {
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef =
         region rc {
             let ix = Ref.fresh(rc, 0);
-            let f1 = (k, v) -> {let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix)};
+            let f1 = (k, v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
             forEach(f1, m)
         }
 

@@ -46,9 +46,9 @@ pub mod Fixpoint3.Phase.Simplifier {
                     // Compute the a set of all relations which are initialized with facts, i.e. have some EDB facts.
                     let filterOutEmpty = fact ->
                         fact
-                        |> Map.filter(x -> (not BPlusTree.isEmpty(x)))
-                        |> Map.foldRightWithKey(k -> _ -> Set.insert(k), Set#{})
-                        |> Set.map(rel -> getRelSymAsType(rel, PredType.Full, predicates));
+                            |> Map.filter(x -> (not BPlusTree.isEmpty(x)))
+                            |> Map.foldRightWithKey(k -> _ -> Set.insert(k), Set#{})
+                            |> Set.map(rel -> getRelSymAsType(rel, PredType.Full, predicates));
                     let nonEmpty = filterOutEmpty(fst(facts)) `Set.union` filterOutEmpty(snd(facts));
                     RamProgram.Program(simplifyStmt(stmt, nonEmpty, predicates), facts, predicates, index, typeInfo)
             }
@@ -83,34 +83,33 @@ pub mod Fixpoint3.Phase.Simplifier {
     ///
     /// A simplification of an `Insert` can also lead to `None`, though this is handled by `simplifyOp`.
     ///
-    def simplifyHelper(nonEmpty: Set[RelSym], predicates: Predicates, inUntil: Bool, stmt: RamStmt): Option[RamStmt] =
-        match stmt {
-            case RamStmt.Insert(op)        =>
-                simplifyOp(nonEmpty, predicates, inUntil, Set#{}, op)
+    def simplifyHelper(nonEmpty: Set[RelSym], predicates: Predicates, inUntil: Bool, stmt: RamStmt): Option[RamStmt] = match stmt {
+        case RamStmt.Insert(op)        =>
+            simplifyOp(nonEmpty, predicates, inUntil, Set#{}, op)
                 |> Option.map(RamStmt.Insert)
-            case RamStmt.MergeInto(_, _)   => Some(stmt)
-            case RamStmt.Swap(_, _)        => Some(stmt)
-            case RamStmt.Purge(_)          => Some(stmt)
-            case RamStmt.Seq(xs)           =>
-                Vector.filterMap(simplifyHelper(nonEmpty, predicates, inUntil), xs)
+        case RamStmt.MergeInto(_, _)   => Some(stmt)
+        case RamStmt.Swap(_, _)        => Some(stmt)
+        case RamStmt.Purge(_)          => Some(stmt)
+        case RamStmt.Seq(xs)           =>
+            Vector.filterMap(simplifyHelper(nonEmpty, predicates, inUntil), xs)
                 |> RamStmt.Seq
                 |> Some
-            case RamStmt.Par(xs)           =>
-                Vector.filterMap(simplifyHelper(nonEmpty, predicates, inUntil), xs)
+        case RamStmt.Par(xs)           =>
+            Vector.filterMap(simplifyHelper(nonEmpty, predicates, inUntil), xs)
                 |> RamStmt.Par
                 |> Some
-            case RamStmt.Until(test, body) =>
-                match simplifyHelper(nonEmpty, predicates, true, body) {
-                    case None                 => None
-                    case Some(simplifiedBody) =>
-                        if (isOnlyMergeSwapPurge(simplifiedBody)) {
-                            None
-                        } else {
-                            Some(RamStmt.Until(test, simplifiedBody))
-                        }
-                }
-            case RamStmt.Comment(_)        => Some(stmt)
-        }
+        case RamStmt.Until(test, body) =>
+            match simplifyHelper(nonEmpty, predicates, true, body) {
+                case None                 => None
+                case Some(simplifiedBody) =>
+                    if (isOnlyMergeSwapPurge(simplifiedBody)) {
+                        None
+                    } else {
+                        Some(RamStmt.Until(test, simplifiedBody))
+                    }
+            }
+        case RamStmt.Comment(_)        => Some(stmt)
+    }
 
     ///
     /// Simplify `op` by removing redundant code. See `simplifyStmt`.
@@ -161,19 +160,19 @@ pub mod Fixpoint3.Phase.Simplifier {
             case RelOp.If(test, $then)                              =>
                 let (memberOf, rest) = test
                 // Delete checks of the form `x[i] == x[i]`.
-                |> Vector.filter(
-                    e -> match e {
-                        case BoolExp.Eq(RowLoad(lhs1, lhs2, _, _), RowLoad(rhs1, rhs2, _, _)) =>
-                            (lhs1, lhs2) != (rhs1, rhs2)
-                        case _                                                                => true
-                    }
-                ) // Partition into membership tests and rest.
-                |> Vector.partition(
-                    e -> match e {
-                        case BoolExp.NotMemberOf(_, _, _) => true
-                        case _                            => false
-                    }
-                );
+                    |> Vector.filter(
+                        e -> match e {
+                            case BoolExp.Eq(RowLoad(lhs1, lhs2, _, _), RowLoad(rhs1, rhs2, _, _)) =>
+                                (lhs1, lhs2) != (rhs1, rhs2)
+                            case _                                                                => true
+                        }
+                    ) // Partition into membership tests and rest.
+                    |> Vector.partition(
+                        e -> match e {
+                            case BoolExp.NotMemberOf(_, _, _) => true
+                            case _                            => false
+                        }
+                    );
                 let newTest = rest ++ memberOf;
                 // Simplify `if () then body` to `body`.
                 match recurse($then) {
@@ -190,15 +189,14 @@ pub mod Fixpoint3.Phase.Simplifier {
     /// Returns true if `r` is a `Merge`, `Swap`, or `Purge` statement or contains any one
     /// of them.
     ///
-    def isOnlyMergeSwapPurge(r: RamStmt): Bool =
-        match r {
-            case RamStmt.Insert(_)       => false
-            case RamStmt.MergeInto(_, _) => true
-            case RamStmt.Swap(_, _)      => true
-            case RamStmt.Purge(_)        => true
-            case RamStmt.Seq(xs)         => Vector.forAll(isOnlyMergeSwapPurge, xs)
-            case RamStmt.Par(xs)         => Vector.forAll(isOnlyMergeSwapPurge, xs)
-            case RamStmt.Until(_, _)     => false
-            case RamStmt.Comment(_)      => true
-        }
+    def isOnlyMergeSwapPurge(r: RamStmt): Bool = match r {
+        case RamStmt.Insert(_)       => false
+        case RamStmt.MergeInto(_, _) => true
+        case RamStmt.Swap(_, _)      => true
+        case RamStmt.Purge(_)        => true
+        case RamStmt.Seq(xs)         => Vector.forAll(isOnlyMergeSwapPurge, xs)
+        case RamStmt.Par(xs)         => Vector.forAll(isOnlyMergeSwapPurge, xs)
+        case RamStmt.Until(_, _)     => false
+        case RamStmt.Comment(_)      => true
+    }
 }

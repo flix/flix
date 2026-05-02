@@ -36,11 +36,10 @@ pub mod Fs.DirList {
     ///
     /// In other words, re-interprets the `DirList` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - DirList) + IO =
-        x ->
-            run {f(x)} with handler DirList {
-                           def list(filename, k) = k(Fs.FsLayer.list(filename))
-                       }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - DirList) + IO = x ->
+        run { f(x) } with handler DirList {
+            def list(filename, k) = k(Fs.FsLayer.list(filename))
+        }
 
     ///
     /// Runs the `DirList` effect of the given function `f`.
@@ -55,9 +54,9 @@ pub mod Fs.DirList {
     /// Handles the `DirList` effect of the given function `f` using the `FileSystem` effect.
     ///
     pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - DirList) + FileSystem =
-        run {f()} with handler DirList {
-                      def list(filename, k) = k(Fs.FileSystem.list(filename))
-                  }
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Fs.FileSystem.list(filename))
+        }
 
     ///
     /// Middleware that intercepts the `DirList` effect, logging each operation
@@ -66,14 +65,14 @@ pub mod Fs.DirList {
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
     pub def withLogging(f: Unit -> a \ ef): a \ (ef - DirList) + { DirList, Logger } =
-        run {f()} with handler DirList {
-                      def list(filename, k) = {
-                          logPre("list", filename);
-                          let result = DirList.list(filename);
-                          logPost("list", filename, ls -> "${ List.length(ls) } entries", result);
-                          k(result)
-                      }
-                  }
+        run { f() } with handler DirList {
+            def list(filename, k) = {
+                logPre("list", filename);
+                let result = DirList.list(filename);
+                logPost("list", filename, ls -> "${List.length(ls)} entries", result);
+                k(result)
+            }
+        }
 
     ///
     /// Middleware that intercepts the `DirList` effect, resolving all file paths
@@ -83,9 +82,9 @@ pub mod Fs.DirList {
     ///
     pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let r = p -> Fs.FsLayer.resolve(baseDir, p);
-        run {f()} with handler DirList {
-                      def list(filename, k) = k(DirList.list(r(filename)))
-                  }
+        run { f() } with handler DirList {
+            def list(filename, k) = k(DirList.list(r(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `DirList` effect, validating that all file paths
@@ -94,9 +93,9 @@ pub mod Fs.DirList {
     ///
     pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
-        run {f()} with handler DirList {
-                      def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
-                  }
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `DirList` effect, validating that all file paths
@@ -105,9 +104,9 @@ pub mod Fs.DirList {
     ///
     pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
-        run {f()} with handler DirList {
-                      def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
-                  }
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `DirList` effect, validating that all file paths
@@ -116,9 +115,9 @@ pub mod Fs.DirList {
     ///
     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
-        run {f()} with handler DirList {
-                      def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
-                  }
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `DirList` effect, validating that all file paths
@@ -127,9 +126,9 @@ pub mod Fs.DirList {
     ///
     pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let c = p -> Fs.FsLayer.allowGlob(patterns, p);
-        run {f()} with handler DirList {
-                      def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
-                  }
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `DirList` effect, validating that all file paths
@@ -138,9 +137,9 @@ pub mod Fs.DirList {
     ///
     pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
-        run {f()} with handler DirList {
-                      def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
-                  }
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
 
     ///
     /// Middleware that intercepts the `DirList` effect, resolving all file paths
@@ -148,7 +147,7 @@ pub mod Fs.DirList {
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
-        run {f()} with handler DirList {
-                      def list(filename, k) = k(DirList.list(resolve(filename)))
-                  }
+        run { f() } with handler DirList {
+            def list(filename, k) = k(DirList.list(resolve(filename)))
+        }
 }

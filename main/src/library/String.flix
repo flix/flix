@@ -103,7 +103,7 @@ pub mod String {
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
     pub def split(regex: { regex = String }, s: String): List[String] =
-        unsafe IO {Array.toList(s.split(regex#regex))}
+        unsafe IO { Array.toList(s.split(regex#regex)) }
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -154,7 +154,7 @@ pub mod String {
     /// Returns the given string `s` as a vector of UTF-8 bytes.
     ///
     pub def toBytes(s: String): Vector[Int8] =
-        unsafe IO {Array.toVector(s.getBytes(StandardCharsets.UTF_8))}
+        unsafe IO { Array.toVector(s.getBytes(StandardCharsets.UTF_8)) }
 
     ///
     /// Returns a string from the given vector of UTF-8 bytes `v`.
@@ -162,7 +162,7 @@ pub mod String {
     pub def fromBytes(v: Vector[Int8]): String =
         region rc {
             let arr = Vector.toArray(rc, v);
-            unsafe IO {new JString(arr, StandardCharsets.UTF_8)}
+            unsafe IO { new JString(arr, StandardCharsets.UTF_8) }
         }
 
     ///
@@ -252,18 +252,17 @@ pub mod String {
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
     /// each pair of strings.
     ///
-    pub def intercalateChar(sep: Char, xs: List[String]): String =
-        match xs {
-            case Nil     => ""
-            case x :: rs =>
-                region rc {
-                    let sb = StringBuilder.empty(rc);
-                    StringBuilder.appendString(x, sb);
-                    let appendStep = s -> {StringBuilder.append(sep, sb); StringBuilder.appendString(s, sb)};
-                    List.forEach(appendStep, rs);
-                    StringBuilder.toString(sb)
-                }
-        }
+    pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
+        case Nil     => ""
+        case x :: rs =>
+            region rc {
+                let sb = StringBuilder.empty(rc);
+                StringBuilder.appendString(x, sb);
+                let appendStep = s -> { StringBuilder.append(sep, sb); StringBuilder.appendString(s, sb) };
+                List.forEach(appendStep, rs);
+                StringBuilder.toString(sb)
+            }
+    }
 
     ///
     /// Returns the result of applying `f` to every character in `s`.
@@ -302,7 +301,7 @@ pub mod String {
     ///
     def rotateLeftHelper(n: Int32, s: String): String =
         let len = length(s);
-        let f = i -> {let i1 = n + i; charAt(i1 `Int32.remainder` len, s)};
+        let f = i -> { let i1 = n + i; charAt(i1 `Int32.remainder` len, s) };
         init(f, len)
 
     ///
@@ -323,7 +322,7 @@ pub mod String {
         let len = length(s);
         let n1 = n `Int32.remainder` len;
         let start = len - n1;
-        let f = i -> {let i1 = start + i; charAt(i1 `Int32.remainder` len, s)};
+        let f = i -> { let i1 = start + i; charAt(i1 `Int32.remainder` len, s) };
         init(f, len)
 
     ///
@@ -331,12 +330,11 @@ pub mod String {
     ///
     /// Note - use `isSubmatch` to search for a substring.
     ///
-    pub def isMatch(regex: { regex = String }, s: String): Bool =
-        try {
-            s.matches(regex#regex)
-        } catch {
-            case _: PatternSyntaxException => false
-        }
+    pub def isMatch(regex: { regex = String }, s: String): Bool = try {
+        s.matches(regex#regex)
+    } catch {
+        case _: PatternSyntaxException => false
+    }
 
     ///
     /// Returns `true` if the string `s` is matched by the regular expression `regex` at any point.
@@ -347,50 +345,46 @@ pub mod String {
     ///
     /// Helper function for `isSubmatch`.
     ///
-    def isSubmatchHelper(pattern: String, s: String): Bool =
-        try {
-            let p1 = Pattern.compile(pattern);
-            let m1 = p1.matcher(s);
-            unsafe IO {m1.find(0)}
-        } catch {
-            case _: PatternSyntaxException => false
-        }
+    def isSubmatchHelper(pattern: String, s: String): Bool = try {
+        let p1 = Pattern.compile(pattern);
+        let m1 = p1.matcher(s);
+        unsafe IO { m1.find(0) }
+    } catch {
+        case _: PatternSyntaxException => false
+    }
 
     ///
     /// Returns the substring of `s` from index `b` (inclusive) to index `e` (exclusive).
     ///
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
-    pub def slice(start: { start = Int32 }, end: { end = Int32 }, s: String): String =
-        try {
-            s.substring(start#start, end#end)
-        } catch {
-            case _: IndexOutOfBoundsException => ""
-        }
+    pub def slice(start: { start = Int32 }, end: { end = Int32 }, s: String): String = try {
+        s.substring(start#start, end#end)
+    } catch {
+        case _: IndexOutOfBoundsException => ""
+    }
 
     ///
     /// Get the substring of `s` to the left of index `end` (exclusive).
     ///
     /// `sliceLeft == slice(0 , e, s)`
     ///
-    pub def sliceLeft(end: { end = Int32 }, s: String): String =
-        match length(s) {
-            case len if end#end > len => ""
-            case _ if end#end < 0     => ""
-            case _                    => slice(start = 0, end, s)
-        }
+    pub def sliceLeft(end: { end = Int32 }, s: String): String = match length(s) {
+        case len if end#end > len => ""
+        case _ if end#end < 0     => ""
+        case _                    => slice(start = 0, end, s)
+    }
 
     ///
     /// Get the substring of `s` to the right starting at index `start` (inclusive).
     ///
     /// `sliceRight == slice(start , length(s), s)`
     ///
-    pub def sliceRight(start: { start = Int32 }, s: String): String =
-        match length(s) {
-            case len if start#start >= len => ""
-            case _ if start#start < 0      => ""
-            case len                       => slice(start, end = len, s)
-        }
+    pub def sliceRight(start: { start = Int32 }, s: String): String = match length(s) {
+        case len if start#start >= len => ""
+        case _ if start#start < 0      => ""
+        case len                       => slice(start, end = len, s)
+    }
 
     ///
     /// Optionally returns the position of the first character in `x` satisfying `f`.
@@ -439,7 +433,7 @@ pub mod String {
                 if (i >= len)
                     ()
                 else {
-                    if (f(charAt(i, s))) {MutList.push(i, l)};
+                    if (f(charAt(i, s))) { MutList.push(i, l) };
                     loop(i + 1)
                 }
             };
@@ -523,11 +517,10 @@ pub mod String {
     ///
     /// The function `f` must be pure.
     ///
-    pub def takeWhileLeft(f: Char -> Bool, s: String): String =
-        match findIndexOfLeft(x -> not (f(x)), s) {
-            case None    => s
-            case Some(i) => take(i, s)
-        }
+    pub def takeWhileLeft(f: Char -> Bool, s: String): String = match findIndexOfLeft(x -> not (f(x)), s) {
+        case None    => s
+        case Some(i) => take(i, s)
+    }
 
     ///
     /// Returns the suffix of string `s` where all the characters satisfy
@@ -535,11 +528,10 @@ pub mod String {
     ///
     /// The function `f` must be pure.
     ///
-    pub def takeWhileRight(f: Char -> Bool, s: String): String =
-        match findIndexOfRight(x -> not (f(x)), s) {
-            case None    => s
-            case Some(i) => slice(start = i + 1, end = length(s), s)
-        }
+    pub def takeWhileRight(f: Char -> Bool, s: String): String = match findIndexOfRight(x -> not (f(x)), s) {
+        case None    => s
+        case Some(i) => slice(start = i + 1, end = length(s), s)
+    }
 
     ///
     /// Alias for `dropWhileLeft`.
@@ -552,11 +544,10 @@ pub mod String {
     ///
     /// The function `f` must be pure.
     ///
-    pub def dropWhileLeft(f: Char -> Bool, s: String): String =
-        match findIndexOfLeft(x -> not (f(x)), s) {
-            case None    => ""
-            case Some(i) => sliceRight(start = i, s)
-        }
+    pub def dropWhileLeft(f: Char -> Bool, s: String): String = match findIndexOfLeft(x -> not (f(x)), s) {
+        case None    => ""
+        case Some(i) => sliceRight(start = i, s)
+    }
 
     ///
     /// Returns the front of string `s` after dropping all the characters
@@ -564,11 +555,10 @@ pub mod String {
     ///
     /// The function `f` must be pure.
     ///
-    pub def dropWhileRight(f: Char -> Bool, s: String): String =
-        match findIndexOfRight(x -> not (f(x)), s) {
-            case None    => ""
-            case Some(i) => sliceLeft(end = i + 1, s) // must include i
-        }
+    pub def dropWhileRight(f: Char -> Bool, s: String): String = match findIndexOfRight(x -> not (f(x)), s) {
+        case None    => ""
+        case Some(i) => sliceLeft(end = i + 1, s) // must include i
+    }
 
     ///
     /// Returns the middle of string `s` after dropping all the characters
@@ -576,13 +566,12 @@ pub mod String {
     ///
     /// The function `f` must be pure.
     ///
-    pub def dropWhileAround(f: Char -> Bool, s: String): String =
-        match (findIndexOfLeft(x -> not (f(x)), s), findIndexOfRight(x -> not (f(x)), s)) {
-            case (None, None)       => ""
-            case (Some(l), None)    => sliceRight(start = l, s)
-            case (None, Some(r))    => sliceLeft(end = r, s)
-            case (Some(l), Some(r)) => slice(start = l, end = r + 1, s)
-        }
+    pub def dropWhileAround(f: Char -> Bool, s: String): String = match (findIndexOfLeft(x -> not (f(x)), s), findIndexOfRight(x -> not (f(x)), s)) {
+        case (None, None)       => ""
+        case (Some(l), None)    => sliceRight(start = l, s)
+        case (None, Some(r))    => sliceLeft(end = r, s)
+        case (Some(l), Some(r)) => slice(start = l, end = r + 1, s)
+    }
 
     ///
     /// Split the string `s` at the position `n` returning the left and
@@ -591,12 +580,11 @@ pub mod String {
     /// If `n` exceeds the length of string `s`, return the whole string
     /// paired with the empty string. Symmetrically for `n` less than 0.
     ///
-    pub def splitAt(n: Int32, s: String): (String, String) =
-        match length(s) {
-            case _ if n <= 0    => ("", s)
-            case len if n > len => (s, "")
-            case _              => (sliceLeft(end = n, s), sliceRight(start = n, s))
-        }
+    pub def splitAt(n: Int32, s: String): (String, String) = match length(s) {
+        case _ if n <= 0    => ("", s)
+        case len if n > len => (s, "")
+        case _              => (sliceLeft(end = n, s), sliceRight(start = n, s))
+    }
 
     ///
     /// Applies `f` to a start value `x` and all elements in `s` going from left to right.
@@ -770,22 +758,20 @@ pub mod String {
     ///
     /// Returns `false` if `s` is empty.
     ///
-    pub def exists(f: Char -> Bool \ ef, s: String): Bool \ ef =
-        match findIndexOfLeft(f, s) {
-            case None    => false
-            case Some(_) => true
-        }
+    pub def exists(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(f, s) {
+        case None    => false
+        case Some(_) => true
+    }
 
     ///
     /// Returns `true` if and only if all chars in `s` satisfy the predicate `f`.
     ///
     /// Returns `true` if `s` is empty.
     ///
-    pub def forAll(f: Char -> Bool \ ef, s: String): Bool \ ef =
-        match findIndexOfLeft(x -> not (f(x)), s) {
-            case None    => true
-            case Some(_) => false
-        }
+    pub def forAll(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(x -> not (f(x)), s) {
+        case None    => true
+        case Some(_) => false
+    }
 
     ///
     /// Returns `true` if and only if all chars in `s` are ascii characters.
@@ -1014,28 +1000,26 @@ pub mod String {
     /// Split the string `s` into an list of words, dividing on one or more white space characters.
     /// Leading and trailing spaces are trimmed.
     ///
-    pub def words(s: String): List[String] =
-        match trim(s) {
-            case s1 if isEmpty(s1) => Nil
-            case s1                => split({regex = "\\s+"}, s1)
-        }
+    pub def words(s: String): List[String] = match trim(s) {
+        case s1 if isEmpty(s1) => Nil
+        case s1                => split({regex = "\\s+"}, s1)
+    }
 
     ///
     /// Join the array of strings `l` separating each pair of strings with a
     /// single space character.
     ///
-    pub def unwords(l: List[String]): String =
-        match l {
-            case Nil     => ""
-            case x :: xs =>
-                region rc {
-                    let sb = StringBuilder.empty(rc);
-                    StringBuilder.appendString(x, sb);
-                    let f = s -> {StringBuilder.append(' ', sb); StringBuilder.appendString(s, sb)};
-                    List.forEach(f, xs);
-                    StringBuilder.toString(sb)
-                }
-        }
+    pub def unwords(l: List[String]): String = match l {
+        case Nil     => ""
+        case x :: xs =>
+            region rc {
+                let sb = StringBuilder.empty(rc);
+                StringBuilder.appendString(x, sb);
+                let f = s -> { StringBuilder.append(' ', sb); StringBuilder.appendString(s, sb) };
+                List.forEach(f, xs);
+                StringBuilder.toString(sb)
+            }
+    }
 
     ///
     /// Alias for `indexOfLeft`.
@@ -1137,15 +1121,14 @@ pub mod String {
     ///
     /// If the length of `s` exceeds `w` and `w < 3` then the empty string is returned.
     ///
-    pub def abbreviateLeft(w: Int32, s: String): String =
-        match length(s) {
-            case len if len < w => s
-            case _ if w < 3     => ""
-            case len            => {
-                let start = len - w + 3;
-                "..." + slice(start = start, end = len, s)
-            }
+    pub def abbreviateLeft(w: Int32, s: String): String = match length(s) {
+        case len if len < w => s
+        case _ if w < 3     => ""
+        case len            => {
+            let start = len - w + 3;
+            "..." + slice(start = start, end = len, s)
         }
+    }
 
     ///
     /// Abbreviate the string `s` if it exceeds the width `w`.
@@ -1155,12 +1138,11 @@ pub mod String {
     ///
     /// If the length of `s` exceeds `w` and `w < 3` then the empty string is returned.
     ///
-    pub def abbreviateRight(w: Int32, s: String): String =
-        match length(s) {
-            case len if len < w => s
-            case _ if w < 3     => ""
-            case _              => slice(start = 0, end = w - 3, s) + "..."
-        }
+    pub def abbreviateRight(w: Int32, s: String): String = match length(s) {
+        case len if len < w => s
+        case _ if w < 3     => ""
+        case _              => slice(start = 0, end = w - 3, s) + "..."
+    }
 
     ///
     /// Calculate the Levenshtein distance between the strings `s` and `t`.
@@ -1203,13 +1185,13 @@ pub mod String {
     /// This implements a forloop, the end point `e` is inclusive.
     ///
     def forIndex(b: Int32, e: Int32, f: Int32 -> Unit \ ef): Unit \ ef =
-        if (b <= e) {f(b); forIndex(b + 1, e, f)}
+        if (b <= e) { f(b); forIndex(b + 1, e, f) }
 
     ///
     /// Helper function for `levenshteinDistance`.
     ///
     def arraySwap(a: Array[Int32, r1], b: Array[Int32, r2]): Unit \ { r2, r1 } =
-        forIndex(0, Array.length(a) - 1, {i -> Array.put(Array.get(i, b), i, a)})
+        forIndex(0, Array.length(a) - 1, { i -> Array.put(Array.get(i, b), i, a) })
 
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
@@ -1311,11 +1293,10 @@ pub mod String {
     /// Find the first instance of `substr` in string `s`, return a pair of the
     /// prefix of string `s` up to `substr` and the rest of string `s` including `substr`.
     ///
-    pub def breakOnLeft(substr: { substr = String }, s: String): (String, String) =
-        match indexOfLeft({substr = substr#substr}, s) {
-            case None    => (s, "")
-            case Some(i) => (sliceLeft(end = i, s), sliceRight(start = i, s))
-        }
+    pub def breakOnLeft(substr: { substr = String }, s: String): (String, String) = match indexOfLeft({substr = substr#substr}, s) {
+        case None    => (s, "")
+        case Some(i) => (sliceLeft(end = i, s), sliceRight(start = i, s))
+    }
 
     ///
     /// Find the last instance of `substr` in string `s`, return a pair of the

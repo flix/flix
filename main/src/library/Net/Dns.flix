@@ -36,39 +36,38 @@ pub mod Net.Dns {
     ///
     /// In other words, re-interprets the `Dns` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Dns) + IO =
-        x ->
-            run {
-                f(x)
-            } with handler Dns {
-                  def lookup(host, k) = {
-                      try {
-                          let address = InetAddress.getByName(host);
-                          let addrBytes = Array.toList(address.getAddress());
-                          let ipAddr = IpAddr.fromBytes(addrBytes);
-                          k(Ok(ipAddr))
-                      } catch {
-                          case ex: UnknownHostException => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
-                          case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                          case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                      }
-                  }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Dns) + IO = x ->
+        run {
+            f(x)
+        } with handler Dns {
+            def lookup(host, k) = {
+                try {
+                    let address = InetAddress.getByName(host);
+                    let addrBytes = Array.toList(address.getAddress());
+                    let ipAddr = IpAddr.fromBytes(addrBytes);
+                    k(Ok(ipAddr))
+                } catch {
+                    case ex: UnknownHostException => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
+                    case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
+                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+            }
 
-                  def lookupAll(host, k) = {
-                      try {
-                          let addrsArr = InetAddress.getAllByName(host);
-                          let addresses = addrsArr
-                          |> Array.toList
-                          |> List.map(a -> a.getAddress() |> Array.toList)
-                          |> List.map(IpAddr.fromBytes);
-                          k(Ok(addresses))
-                      } catch {
-                          case ex: UnknownHostException => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
-                          case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                          case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                      }
-                  }
-              }
+            def lookupAll(host, k) = {
+                try {
+                    let addrsArr = InetAddress.getAllByName(host);
+                    let addresses = addrsArr
+                        |> Array.toList
+                        |> List.map(a -> a.getAddress() |> Array.toList)
+                        |> List.map(IpAddr.fromBytes);
+                    k(Ok(addresses))
+                } catch {
+                    case ex: UnknownHostException => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
+                    case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
+                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+            }
+        }
 
     ///
     /// Handles the `Dns` effect of the given function `f`.

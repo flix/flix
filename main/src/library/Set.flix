@@ -342,17 +342,16 @@ pub mod Set {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef =
-        match purityOf(f) {
-            case Purity.Pure(g)   =>
-                if (useParallelEvaluation(s))
-                    let h = (k, _) -> g(k);
-                    let Set(t) = s;
-                    RedBlackTree.parCount(h, t)
-                else
-                    foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
-            case Purity.Impure(g) => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
-        }
+    pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = match purityOf(f) {
+        case Purity.Pure(g)   =>
+            if (useParallelEvaluation(s))
+                let h = (k, _) -> g(k);
+                let Set(t) = s;
+                RedBlackTree.parCount(h, t)
+            else
+                foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+        case Purity.Impure(g) => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
+    }
 
     ///
     /// Returns the union of the elements in `s`.
@@ -473,14 +472,13 @@ pub mod Set {
     ///
     /// Returns the set `s` as an array.
     ///
-    pub def toArray(rc: Region[r], s: Set[a]): Array[a, r] \ r =
-        match size(s) {
-            case 0  => Array#{} @ rc
-            case sz =>
-                let a = Array.empty(rc, sz);
-                Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
-                a
-        }
+    pub def toArray(rc: Region[r], s: Set[a]): Array[a, r] \ r = match size(s) {
+        case 0  => Array#{} @ rc
+        case sz =>
+            let a = Array.empty(rc, sz);
+            Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
+            a
+    }
 
     ///
     /// Returns the set `s` as a vector.

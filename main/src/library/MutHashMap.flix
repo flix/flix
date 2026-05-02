@@ -22,14 +22,14 @@ pub mod MutHashMap {
     /// to maintain insertion order.
     ///
     pub struct MutHashMap[k: Type, v: Type, r: Region] {
-        rc: Region[r],
+        rc:          Region[r],
         mut buckets: Array[Option[Node[k, v, r]], r],
         // Hash table buckets
-        mut head: Option[Node[k, v, r]],
+        mut head:    Option[Node[k, v, r]],
         // First entry in insertion order
-        mut tail: Option[Node[k, v, r]],
+        mut tail:    Option[Node[k, v, r]],
         // Last entry in insertion order
-        mut size: Int32 // Number of entries
+        mut size:    Int32 // Number of entries
     }
 
     instance Iterable[MutHashMap[k, v, r]] {
@@ -95,17 +95,17 @@ pub mod MutHashMap {
     /// Each entry is part of both a hash bucket chain and the insertion order chain.
     ///
     pub struct Node[k: Type, v: Type, r: Region] {
-        key: k,
+        key:            k,
         // The key for this entry
-        hash: Int32,
+        hash:           Int32,
         // Cached hash code for the key
-        mut value: v,
+        mut value:      v,
         // The value associated with the key
         mut bucketNext: Option[Node[k, v, r]],
         // Next entry in the same bucket
-        mut orderPrev: Option[Node[k, v, r]],
+        mut orderPrev:  Option[Node[k, v, r]],
         // Previous entry in insertion order
-        mut orderNext: Option[Node[k, v, r]] // Next entry in insertion order
+        mut orderNext:  Option[Node[k, v, r]] // Next entry in insertion order
     }
 
     mod Node {
@@ -191,13 +191,12 @@ pub mod MutHashMap {
     ///
     /// If `k` does not exist, inserts `k` with value `default` and returns `default`.
     ///
-    pub def getOrElsePut(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Eq[k], Hash[k] =
-        match get(k, m) {
-            case Some(v) => v
-            case None    =>
-                put(k, default, m);
-                default
-        }
+    pub def getOrElsePut(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Eq[k], Hash[k] = match get(k, m) {
+        case Some(v) => v
+        case None    =>
+            put(k, default, m);
+            default
+    }
 
     ///
     /// Returns the value associated with key `k`, or `default` if not found.
@@ -210,11 +209,10 @@ pub mod MutHashMap {
     ///
     /// Aborts if the key is not present.
     ///
-    pub def getOrAbort(k: k, m: MutHashMap[k, v, r]): v \ (Abort + r) with Eq[k], Hash[k] =
-        match MutHashMap.get(k, m) {
-            case None    => Abort.abortWithTrace("MutHashMap.getOrAbort(): key not found")
-            case Some(v) => v
-        }
+    pub def getOrAbort(k: k, m: MutHashMap[k, v, r]): v \ (Abort + r) with Eq[k], Hash[k] = match MutHashMap.get(k, m) {
+        case None    => Abort.abortWithTrace("MutHashMap.getOrAbort(): key not found")
+        case Some(v) => v
+    }
 
     ///
     /// Converts hash code to a valid bucket index.
@@ -227,15 +225,14 @@ pub mod MutHashMap {
     ///
     /// Searches for an entry with the given key in the bucket chain.
     ///
-    def findInBucket(k: k, bucket: Option[Node[k, v, r]]): Option[Node[k, v, r]] \ r with Eq[k] =
-        match bucket {
-            case None        => None
-            case Some(entry) =>
-                if (k == Node.getKey(entry))
-                    Some(entry)
-                else
-                    findInBucket(k, Node.getBucketNext(entry))
-        }
+    def findInBucket(k: k, bucket: Option[Node[k, v, r]]): Option[Node[k, v, r]] \ r with Eq[k] = match bucket {
+        case None        => None
+        case Some(entry) =>
+            if (k == Node.getKey(entry))
+                Some(entry)
+            else
+                findInBucket(k, Node.getBucketNext(entry))
+    }
 
     ///
     /// Returns `true` if key `k` exists in `m`.
@@ -253,22 +250,20 @@ pub mod MutHashMap {
     ///
     /// Returns `None` if the map is empty.
     ///
-    pub def first(m: MutHashMap[k, v, r]): Option[(k, v)] \ r =
-        match m->head {
-            case None        => None
-            case Some(entry) => Some((Node.getKey(entry), Node.getValue(entry)))
-        }
+    pub def first(m: MutHashMap[k, v, r]): Option[(k, v)] \ r = match m->head {
+        case None        => None
+        case Some(entry) => Some((Node.getKey(entry), Node.getValue(entry)))
+    }
 
     ///
     /// Returns the last key-value pair that was inserted into the mutable map `m`.
     ///
     /// Returns `None` if the map is empty.
     ///
-    pub def last(m: MutHashMap[k, v, r]): Option[(k, v)] \ r =
-        match m->tail {
-            case None        => None
-            case Some(entry) => Some((Node.getKey(entry), Node.getValue(entry)))
-        }
+    pub def last(m: MutHashMap[k, v, r]): Option[(k, v)] \ r = match m->tail {
+        case None        => None
+        case Some(entry) => Some((Node.getKey(entry), Node.getValue(entry)))
+    }
 
     ///
     /// Returns the first key that was inserted into the mutable map `m`.
@@ -857,14 +852,14 @@ pub mod MutHashMap {
     /// Returns a string formed by joining all keys in `m` with `sep`.
     ///
     pub def joinKeys(sep: String, m: MutHashMap[k, v, r]): String \ r with ToString[k] =
-        let strs = foldRightWithKey((k, _v, acc) -> "${ k }" :: acc, Nil, m);
+        let strs = foldRightWithKey((k, _v, acc) -> "${k}" :: acc, Nil, m);
         String.intercalate(sep, strs)
 
     ///
     /// Returns a string formed by joining all values in `m` with `sep`.
     ///
     pub def joinValues(sep: String, m: MutHashMap[k, v, r]): String \ r with ToString[v] =
-        let strs = foldRight((v, acc) -> "${ v }" :: acc, Nil, m);
+        let strs = foldRight((v, acc) -> "${v}" :: acc, Nil, m);
         String.intercalate(sep, strs)
 
     ///
@@ -878,7 +873,7 @@ pub mod MutHashMap {
     /// Returns a string representation of `m`.
     ///
     pub def toString(m: MutHashMap[k, v, r]): String \ r with ToString[k], ToString[v] =
-        let kvs = foldRightWithKey((k, v, acc) -> "${ k } -> ${ v }" :: acc, Nil, m);
+        let kvs = foldRightWithKey((k, v, acc) -> "${k} -> ${v}" :: acc, Nil, m);
         let inner = String.intercalate(", ", kvs);
-        "MutHashMap#{${ inner }}"
+        "MutHashMap#{${inner}}"
 }

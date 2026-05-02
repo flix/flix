@@ -59,7 +59,7 @@ pub mod Fixpoint3.Debugging {
                     "** Datalog Input" |> psh;
                     String.repeat(80, "*") |> psh;
                     "" |> psh;
-                    String.indent(4, "${ d }") |> psh;
+                    String.indent(4, "${d}") |> psh;
                     "" |> psh;
                     flush(MutList.join("\n", strings), true);
                     d
@@ -84,7 +84,7 @@ pub mod Fixpoint3.Debugging {
                     "** Minimal Model" |> psh;
                     String.repeat(80, "*") |> psh;
                     "" |> psh;
-                    String.indent(4, "${ d }") |> psh;
+                    String.indent(4, "${d}") |> psh;
                     "" |> psh;
                     flush(MutList.join("\n", strings), false);
                     d
@@ -99,28 +99,27 @@ pub mod Fixpoint3.Debugging {
     ///
     /// Note: Returns `d` to ensure it is not erased.
     ///
-    pub def notifyPreLowering(phase: String, program: Ram.RamProgram): Ram.RamProgram =
-        match program {
-            case Ram.RamProgram.Program(stmt, _, _, _, _) =>
-                unsafe IO {
-                    if (Options.enableDebugging())
-                        region rc {
-                            let strings = MutList.empty(rc);
-                            let psh = s -> MutList.push(s, strings);
-                            String.repeat(80, "*") |> psh;
-                            "** (${ phase }) Relation Algebra Machine AST" |> psh;
-                            String.repeat(80, "*") |> psh;
-                            "" |> psh;
-                            String.indent(4, "${ stmt }") |> psh;
-                            "" |> psh;
-                            flush(MutList.join("\n", strings), false);
-                            program
-                        }
-                    else {
+    pub def notifyPreLowering(phase: String, program: Ram.RamProgram): Ram.RamProgram = match program {
+        case Ram.RamProgram.Program(stmt, _, _, _, _) =>
+            unsafe IO {
+                if (Options.enableDebugging())
+                    region rc {
+                        let strings = MutList.empty(rc);
+                        let psh = s -> MutList.push(s, strings);
+                        String.repeat(80, "*") |> psh;
+                        "** (${phase}) Relation Algebra Machine AST" |> psh;
+                        String.repeat(80, "*") |> psh;
+                        "" |> psh;
+                        String.indent(4, "${stmt}") |> psh;
+                        "" |> psh;
+                        flush(MutList.join("\n", strings), false);
                         program
                     }
+                else {
+                    program
                 }
-        }
+            }
+    }
 
     ///
     /// Invoked before the fixpoint computation.
@@ -129,38 +128,37 @@ pub mod Fixpoint3.Debugging {
     ///
     pub def notifyPreInterpret(
         input: (ExecutableRam.RamProgram[r], BoxingType.Boxing[r])
-    ): (ExecutableRam.RamProgram[r], BoxingType.Boxing[r]) =
-        match fst(input) {
-            case ExecutableRam.RamProgram.Program(stmt, _, _, (index, indexPos), _, _) =>
-                unsafe IO {
-                    if (Options.enableDebugging())
-                        region rc {
-                            let strings = MutList.empty(rc);
-                            let psh = s -> MutList.push(s, strings);
-                            String.repeat(80, "*") |> psh;
-                            "** Executable Relation Algebra Machine AST" |> psh;
-                            String.repeat(80, "*") |> psh;
-                            "" |> psh;
-                            String.indent(4, "${ stmt }") |> psh;
-                            "" |> psh;
-                            String.repeat(80, "*") |> psh;
-                            "** Index Information" |> psh;
-                            String.repeat(80, "*") |> psh;
-                            "" |> psh;
-                            String.indent(4, Map.joinWith(k -> v -> "${ k }: ${ v }", "\n", index)) |> psh;
-                            "" |> psh;
-                            String.repeat(80, "*") |> psh;
-                            "** Index Position in Database" |> psh;
-                            String.repeat(80, "*") |> psh;
-                            "" |> psh;
-                            String.indent(4, Map.joinWith(k -> v -> "${ k }: ${ v }", "\n", indexPos)) |> psh;
-                            "" |> psh;
-                            flush(MutList.join("\n", strings), false);
-                            input
-                        }
-                    else {
+    ): (ExecutableRam.RamProgram[r], BoxingType.Boxing[r]) = match fst(input) {
+        case ExecutableRam.RamProgram.Program(stmt, _, _, (index, indexPos), _, _) =>
+            unsafe IO {
+                if (Options.enableDebugging())
+                    region rc {
+                        let strings = MutList.empty(rc);
+                        let psh = s -> MutList.push(s, strings);
+                        String.repeat(80, "*") |> psh;
+                        "** Executable Relation Algebra Machine AST" |> psh;
+                        String.repeat(80, "*") |> psh;
+                        "" |> psh;
+                        String.indent(4, "${stmt}") |> psh;
+                        "" |> psh;
+                        String.repeat(80, "*") |> psh;
+                        "** Index Information" |> psh;
+                        String.repeat(80, "*") |> psh;
+                        "" |> psh;
+                        String.indent(4, Map.joinWith(k -> v -> "${k}: ${v}", "\n", index)) |> psh;
+                        "" |> psh;
+                        String.repeat(80, "*") |> psh;
+                        "** Index Position in Database" |> psh;
+                        String.repeat(80, "*") |> psh;
+                        "" |> psh;
+                        String.indent(4, Map.joinWith(k -> v -> "${k}: ${v}", "\n", indexPos)) |> psh;
+                        "" |> psh;
+                        flush(MutList.join("\n", strings), false);
                         input
                     }
+                else {
+                    input
                 }
-        }
+            }
+    }
 }

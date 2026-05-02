@@ -68,22 +68,22 @@ pub mod Fixpoint3.Solver {
             let d = Debugging.notifyPreSolve(d0);
             def compiler(cs: Datalog, db: Ram.Facts): (ExecutableRam.RamProgram[rc], Boxing[rc]) \ rc = {
                 Phase.Compiler.compile(cs, db, stf, withProv)
-                |> Debugging.notifyPreLowering("Compiler")
-                |> Phase.Simplifier.simplifyProgram
-                |> Debugging.notifyPreLowering("Simplifier")
-                |> Phase.Hoisting.hoistProgram
-                |> Debugging.notifyPreLowering("Hoisting")
-                |> Phase.IndexSelection.indexProgram
-                |> Debugging.notifyPreLowering("Index Selection")
-                |> Phase.ProvenanceAugment.augmentProgram(withProv)
-                |> Phase.Lowering.lowerProgram(rc, withProv)
+                    |> Debugging.notifyPreLowering("Compiler")
+                    |> Phase.Simplifier.simplifyProgram
+                    |> Debugging.notifyPreLowering("Simplifier")
+                    |> Phase.Hoisting.hoistProgram
+                    |> Debugging.notifyPreLowering("Hoisting")
+                    |> Phase.IndexSelection.indexProgram
+                    |> Debugging.notifyPreLowering("Index Selection")
+                    |> Phase.ProvenanceAugment.augmentProgram(withProv)
+                    |> Phase.Lowering.lowerProgram(rc, withProv)
             };
             let model = match d {
                 case Datalog(_, r)                             =>
                     compiler(d, Map.empty())
-                    |> Debugging.notifyPreInterpret
-                    |> Interpreter.interpret(rc)
-                    |> toModelOnlyFull(withProv, r)
+                        |> Debugging.notifyPreInterpret
+                        |> Interpreter.interpret(rc)
+                        |> toModelOnlyFull(withProv, r)
                 case Model(_)                                  =>
                     d
                 case Provenance(_, _)                          =>
@@ -91,17 +91,17 @@ pub mod Fixpoint3.Solver {
                 case Join(Model(m), Datalog(f, r))             =>
                     let cs = Datalog(f, r);
                     compiler(cs, m)
-                    |> Debugging.notifyPreInterpret
-                    |> Interpreter.interpret(rc)
-                    |> toModelOnlyFull(withProv, r)
+                        |> Debugging.notifyPreInterpret
+                        |> Interpreter.interpret(rc)
+                        |> toModelOnlyFull(withProv, r)
                 case Join(Provenance(_, model), Datalog(f, r)) =>
                     let cs = Datalog(f, r);
                     // Provenance is destroyed upon joining. Becomes a model.
                     let m = provenanceModeltoModel(model);
                     compiler(cs, m)
-                    |> Debugging.notifyPreInterpret
-                    |> Interpreter.interpret(rc)
-                    |> toModelOnlyFull(withProv, r)
+                        |> Debugging.notifyPreInterpret
+                        |> Interpreter.interpret(rc)
+                        |> toModelOnlyFull(withProv, r)
                 case _                                         => bug!("Datalog Boxing bug")
             };
             let m = Debugging.notifyPostSolve(model);
@@ -114,84 +114,81 @@ pub mod Fixpoint3.Solver {
     /// A fact or rule may occur twice in the Datalog program. This has no effect on its semantics.
     ///
     @LoweringTarget
-    pub def union(d1: Datalog, d2: Datalog): Datalog =
-        match (d1, d2) {
-            case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
-                Datalog(edb1 ++ edb2, idb1 ++ idb2)
-            case (Model(db1), Model(db2))                   =>
-                unsafe IO {
-                    let union = ramSym -> v1 -> v2 -> {
-                        let newTree = BPlusTree.empty(Static);
+    pub def union(d1: Datalog, d2: Datalog): Datalog = match (d1, d2) {
+        case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
+            Datalog(edb1 ++ edb2, idb1 ++ idb2)
+        case (Model(db1), Model(db2))                   =>
+            unsafe IO {
+                let union = ramSym -> v1 -> v2 -> {
+                    let newTree = BPlusTree.empty(Static);
 
-                        match toDenotation(ramSym) {
-                            case Relational               =>
-                                BPlusTree.merge(v1, newTree);
-                                BPlusTree.merge(v2, newTree)
-                            case Latticenal(_, _, lub, _) =>
-                                BPlusTree.merge(v1, newTree);
-                                BPlusTree.mergeWith(lub, v2, newTree)
-                        };
-                        newTree
+                    match toDenotation(ramSym) {
+                        case Relational               =>
+                            BPlusTree.merge(v1, newTree);
+                            BPlusTree.merge(v2, newTree)
+                        case Latticenal(_, _, lub, _) =>
+                            BPlusTree.merge(v1, newTree);
+                            BPlusTree.mergeWith(lub, v2, newTree)
                     };
-                    Model(Map.unionWithKey(union, db1, db2))
-                }
-            case (Model(_), Datalog(_, _))                  => Join(d1, d2)
-            case (Datalog(_, _), Model(_))                  => Join(d2, d1)
-            case (Join(model, datalog), Datalog(_, _))      => Join(model, union(datalog, d2))
-            case (Datalog(_, _), Join(model, datalog))      => Join(model, union(datalog, d1))
-            case (Join(model, datalog), Model(_))           => Join(union(model, d2), datalog)
-            case (Model(_), Join(model, datalog))           => Join(union(model, d1), datalog)
-            case (Join(x, y), Join(z, w))                   => Join(union(x, z), union(y, w))
-            case (Provenance(_, _), _)                      => union(provenanceToModel(d1), d2)
-            case (_, Provenance(_, _))                      => union(d1, provenanceToModel(d2))
-        }
+                    newTree
+                };
+                Model(Map.unionWithKey(union, db1, db2))
+            }
+        case (Model(_), Datalog(_, _))                  => Join(d1, d2)
+        case (Datalog(_, _), Model(_))                  => Join(d2, d1)
+        case (Join(model, datalog), Datalog(_, _))      => Join(model, union(datalog, d2))
+        case (Datalog(_, _), Join(model, datalog))      => Join(model, union(datalog, d1))
+        case (Join(model, datalog), Model(_))           => Join(union(model, d2), datalog)
+        case (Model(_), Join(model, datalog))           => Join(union(model, d1), datalog)
+        case (Join(x, y), Join(z, w))                   => Join(union(x, z), union(y, w))
+        case (Provenance(_, _), _)                      => union(provenanceToModel(d1), d2)
+        case (_, Provenance(_, _))                      => union(d1, provenanceToModel(d2))
+    }
 
     ///
     /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
     ///
     @LoweringTarget
-    pub def provenanceOf(p: PredSym, f: Vector[Boxed], withh: Vector[PredSym], mkExtVar: PredSym -> Vector[Boxed] -> t, d: Datalog): Vector[t] =
-        match d {
-            case Datalog(_, _)    => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
-            case Model(db)        =>
-                unsafe IO {
-                    // This is a dirty hack based on the implementation of Order on RelSym (it only depends on PredSym).
-                    let fakeRelSym = Ram.makeFakeRelSym(p);
-                    match Map.get(fakeRelSym, db) {
-                        case None        =>
-                            // Temporary
-                            let termsStr = Vector.join(", ", f);
-                            bug!("${ p }(${ termsStr }) is not a fact")
-                        case Some(facts) =>
-                            match BPlusTree.memberOf(f, facts) {
-                                case false =>
-                                    // Temporary
-                                    let termsStr = Vector.join(", ", f);
-                                    bug!("${ p }(${ termsStr }) is not a fact")
-                                case true  => Vector#{mkExtVar(p, f)}
-                            }
-                    }
-                }
-            case Provenance(_, _) =>
-                match Fixpoint3.ProvenanceReconstruct.provQuery(p, f, withh, d) {
-                    case None    =>
+    pub def provenanceOf(p: PredSym, f: Vector[Boxed], withh: Vector[PredSym], mkExtVar: PredSym -> Vector[Boxed] -> t, d: Datalog): Vector[t] = match d {
+        case Datalog(_, _)    => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
+        case Model(db)        =>
+            unsafe IO {
+                // This is a dirty hack based on the implementation of Order on RelSym (it only depends on PredSym).
+                let fakeRelSym = Ram.makeFakeRelSym(p);
+                match Map.get(fakeRelSym, db) {
+                    case None        =>
+                        // Temporary
                         let termsStr = Vector.join(", ", f);
-                        bug!("${ p }(${ termsStr }) is not a fact")
-                    case Some(v) => Vector.map(match (pred, fact) -> mkExtVar(pred, fact), v)
+                        bug!("${p}(${termsStr}) is not a fact")
+                    case Some(facts) =>
+                        match BPlusTree.memberOf(f, facts) {
+                            case false =>
+                                // Temporary
+                                let termsStr = Vector.join(", ", f);
+                                bug!("${p}(${termsStr}) is not a fact")
+                            case true  => Vector#{mkExtVar(p, f)}
+                        }
                 }
-            case Join(_, _)       => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
-        }
+            }
+        case Provenance(_, _) =>
+            match Fixpoint3.ProvenanceReconstruct.provQuery(p, f, withh, d) {
+                case None    =>
+                    let termsStr = Vector.join(", ", f);
+                    bug!("${p}(${termsStr}) is not a fact")
+                case Some(v) => Vector.map(match (pred, fact) -> mkExtVar(pred, fact), v)
+            }
+        case Join(_, _)       => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
+    }
 
     ///
     /// Returns the `Provenance` program `d` as a `Model`.
     ///
     /// Crashes if `d` is not a `Provenance`.
     ///
-    def provenanceToModel(d: Datalog): Datalog =
-        match d {
-            case Provenance(_, facts) => Model(provenanceModeltoModel(facts))
-            case _                    => unreachable!()
-        }
+    def provenanceToModel(d: Datalog): Datalog = match d {
+        case Provenance(_, facts) => Model(provenanceModeltoModel(facts))
+        case _                    => unreachable!()
+    }
 
     ///
     /// Returns the given provenance model `model` as a Datalog value.
@@ -199,45 +196,44 @@ pub mod Fixpoint3.Solver {
     def provenanceModeltoModel(model: Map[RelSym, BPlusTree[Vector[Boxed], (Int64, Int32), IO]]): Map[RelSym, BPlusTree[Vector[Boxed], Boxed, IO]] =
         unsafe IO {
             model
-            |> Map.map(
-                old -> {
-                    let newTree = BPlusTree.empty(Static);
-                    BPlusTree.forEach(k -> _ -> BPlusTree.put(k, Boxed.NoValue, newTree), old);
-                    newTree
-                }
-            )
+                |> Map.map(
+                    old -> {
+                        let newTree = BPlusTree.empty(Static);
+                        BPlusTree.forEach(k -> _ -> BPlusTree.put(k, Boxed.NoValue, newTree), old);
+                        newTree
+                    }
+                )
         }
 
     ///
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
     ///
     @LoweringTarget
-    pub def projectSym(p: PredSym, d: Datalog): Datalog =
-        match d {
-            case Datalog(facts, _)     =>
-                let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
-                Datalog(pFacts, Vector.empty())
-            case Model(db)             =>
-                Map.rangeQuery(
-                    ramSym -> match ramSym {
-                        case RelSym.Symbol(predSym, _, _) =>
-                            match predSym <=> p {
-                                case Comparison.EqualTo => Comparison.EqualTo
-                                case cmp                => cmp
-                            }
-                    },
-                    db
-                )
+    pub def projectSym(p: PredSym, d: Datalog): Datalog = match d {
+        case Datalog(facts, _)     =>
+            let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
+            Datalog(pFacts, Vector.empty())
+        case Model(db)             =>
+            Map.rangeQuery(
+                ramSym -> match ramSym {
+                    case RelSym.Symbol(predSym, _, _) =>
+                        match predSym <=> p {
+                            case Comparison.EqualTo => Comparison.EqualTo
+                            case cmp                => cmp
+                        }
+                },
+                db
+            )
                 |> List.toMap
                 |> Model
-            case Provenance(rules, db) =>
-                let fakeRelSym = Ram.makeFakeRelSym(p);
-                match Map.get(fakeRelSym, db) {
-                    case None    => Provenance(rules, Map#{})
-                    case Some(v) => Provenance(rules, Map#{fakeRelSym => v})
-                }
-            case Join(d1, d2)          => union(projectSym(p, d1), projectSym(p, d2))
-        }
+        case Provenance(rules, db) =>
+            let fakeRelSym = Ram.makeFakeRelSym(p);
+            match Map.get(fakeRelSym, db) {
+                case None    => Provenance(rules, Map#{})
+                case Some(v) => Provenance(rules, Map#{fakeRelSym => v})
+            }
+        case Join(d1, d2)          => union(projectSym(p, d1), projectSym(p, d2))
+    }
 
     ///
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
@@ -255,7 +251,7 @@ pub mod Fixpoint3.Solver {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let nextId = unsafe IO {Global.newId() + 1i64}; // We add one because the counter starts at zero.
+                let nextId = unsafe IO { Global.newId() + 1i64 }; // We add one because the counter starts at zero.
                 let newPredSym = PredSym(name, nextId);
                 Map.insert(predSym, newPredSym, macc)
             }
@@ -949,30 +945,29 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOfInternal(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef + IO =
-        match d {
-            case Datalog(_, cs)    =>
-                region rc {
-                    let pFacts = MutList.empty(rc);
-                    foreach(Constraint(HeadAtom(headPred, _, terms), body) <- cs) {
-                        if (headPred == p and Vector.isEmpty(body)) {
-                            let vs = Vector.map(headTermValue, terms);
-                            MutList.push(f(vs), pFacts)
+    def factsOfInternal(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef + IO = match d {
+        case Datalog(_, cs)    =>
+            region rc {
+                let pFacts = MutList.empty(rc);
+                foreach (Constraint(HeadAtom(headPred, _, terms), body) <- cs) {
+                    if (headPred == p and Vector.isEmpty(body)) {
+                        let vs = Vector.map(headTermValue, terms);
+                        MutList.push(f(vs), pFacts)
+                    }
+                };
+                MutList.toVector(pFacts)
+            }
+        case Model(db)         =>
+            region rc {
+                let pFacts = MutList.empty(rc);
+                let qquery = ramSym -> match ramSym {
+                    case RelSym.Symbol(predSym, _, _) =>
+                        match predSym <=> p {
+                            case Comparison.EqualTo => Comparison.EqualTo
+                            case cmp                => cmp
                         }
-                    };
-                    MutList.toVector(pFacts)
-                }
-            case Model(db)         =>
-                region rc {
-                    let pFacts = MutList.empty(rc);
-                    let qquery = ramSym -> match ramSym {
-                        case RelSym.Symbol(predSym, _, _) =>
-                            match predSym <=> p {
-                                case Comparison.EqualTo => Comparison.EqualTo
-                                case cmp                => cmp
-                            }
-                    };
-                    db
+                };
+                db
                     |> Map.rangeQueryWith(
                         qquery,
                         ramSym -> rel -> match toDenotation(ramSym) {
@@ -999,31 +994,30 @@ pub mod Fixpoint3.Solver {
                                 )
                         }
                     );
-                    MutList.toVector(pFacts)
-                }
-            case Join(d1, d2)      => factsOf(f, p, d1) ++ factsOf(f, p, d2)
-            case Provenance(_, db) =>
-                match Map.get(Ram.makeFakeRelSym(p), db) {
-                    case None        => Vector#{}
-                    case Some(facts) =>
-                        region rc {
-                            let acc = MutList.empty(rc);
-                            BPlusTree.forEach(k -> _ -> MutList.push(f(k), acc), facts);
-                            unchecked_cast((MutList.toArray(rc, acc): Array[t, rc]) as Vector[t])
-                        }
-                }
-        }
+                MutList.toVector(pFacts)
+            }
+        case Join(d1, d2)      => factsOf(f, p, d1) ++ factsOf(f, p, d2)
+        case Provenance(_, db) =>
+            match Map.get(Ram.makeFakeRelSym(p), db) {
+                case None        => Vector#{}
+                case Some(facts) =>
+                    region rc {
+                        let acc = MutList.empty(rc);
+                        BPlusTree.forEach(k -> _ -> MutList.push(f(k), acc), facts);
+                        unchecked_cast((MutList.toArray(rc, acc): Array[t, rc]) as Vector[t])
+                    }
+            }
+    }
 
     ///
     /// Returns the value of the given head term `v`.
     ///
     /// Note the term must have been fully evaluated to a literal value.
     ///
-    def headTermValue(t: HeadTerm): Boxed =
-        match t {
-            case HeadTerm.Lit(v) => v
-            case _               => bug!("Unexpected non-value term.")
-        }
+    def headTermValue(t: HeadTerm): Boxed = match t {
+        case HeadTerm.Lit(v) => v
+        case _               => bug!("Unexpected non-value term.")
+    }
 
     ///
     /// Returns the given database `db` as a Datalog value.
@@ -1031,11 +1025,11 @@ pub mod Fixpoint3.Solver {
     def toModelOnlyFull(withProv: Bool, rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = {
         let (db, meta) = dbMeta;
         let dbOnlyFullRels = MutMap.toMap(db)
-        |> Map.filterWithKey(
-            k -> facts -> match k {
-                case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not (unsafe IO {BPlusTree.isEmpty(facts)})
-            }
-        );
+            |> Map.filterWithKey(
+                k -> facts -> match k {
+                    case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not (unsafe IO { BPlusTree.isEmpty(facts) })
+                }
+            );
         if (withProv) {
             toProvenance(rules, dbOnlyFullRels)
         } else {
@@ -1049,18 +1043,18 @@ pub mod Fixpoint3.Solver {
     def toProvenance(rules: Vector[Constraint], db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Datalog =
         unsafe IO {
             (Map#{}, db)
-            ||> Map.foldLeftWithKey(
-                acc -> relSym -> facts -> {
-                    let len = Vector.length(fst(getOrCrash(BPlusTree.minimumKey(facts))));
-                    let newTree = BPlusTree.empty(Static);
-                    foreach((fact, _) <- facts) {
-                        let (rawFact, annotation) = Vector.splitAt(len - 2, fact);
-                        newTree |> BPlusTree.put(rawFact, (unbox(Vector.get(0, annotation)), getOrCrash(Int64.tryToInt32(unbox(Vector.get(1, annotation))))))
-                    };
-                    Map.insert(relSym, newTree, acc)
-                }
-            )
-            |> Provenance(rules)
+                ||> Map.foldLeftWithKey(
+                    acc -> relSym -> facts -> {
+                        let len = Vector.length(fst(getOrCrash(BPlusTree.minimumKey(facts))));
+                        let newTree = BPlusTree.empty(Static);
+                        foreach ((fact, _) <- facts) {
+                            let (rawFact, annotation) = Vector.splitAt(len - 2, fact);
+                            newTree |> BPlusTree.put(rawFact, (unbox(Vector.get(0, annotation)), getOrCrash(Int64.tryToInt32(unbox(Vector.get(1, annotation))))))
+                        };
+                        Map.insert(relSym, newTree, acc)
+                    }
+                )
+                |> Provenance(rules)
         }
 
     ///

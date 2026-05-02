@@ -36,19 +36,18 @@ pub mod Math.Shuffle {
     ///
     /// In other words, re-interprets the `Shuffle` effect using the `NonDet` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Shuffle) + NonDet =
-        x ->
-            run {
-                f(x)
-            } with handler Shuffle {
-                  def permutation(len, k) = {
-                      region rc {
-                          let arr = Array.range(rc, 0, len);
-                          fisherYatesShuffle(arr);
-                          k(Array.toVector(arr))
-                      }
-                  }
-              }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Shuffle) + NonDet = x ->
+        run {
+            f(x)
+        } with handler Shuffle {
+            def permutation(len, k) = {
+                region rc {
+                    let arr = Array.range(rc, 0, len);
+                    fisherYatesShuffle(arr);
+                    k(Array.toVector(arr))
+                }
+            }
+        }
 
     ///
     /// Runs the `Shuffle` effect of the given function `f`.

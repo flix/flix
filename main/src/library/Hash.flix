@@ -44,11 +44,10 @@ pub mod Hash {
     }
 
     instance Hash[Bool] {
-        pub def hash(x: Bool): Int32 =
-            match x {
-                case true  => 1231
-                case false => 1237
-            }
+        pub def hash(x: Bool): Int32 = match x {
+            case true  => 1231
+            case false => 1237
+        }
     }
 
     instance Hash[Char] {
@@ -92,94 +91,85 @@ pub mod Hash {
     }
 
     instance Hash[(a1, a2)] with Hash[a1], Hash[a2] {
-        pub def hash(t: (a1, a2)): Int32 =
-            match t {
-                case (x1, x2) => Hash.hash(x1) `Hash.combine` Hash.hash(x2)
-            }
+        pub def hash(t: (a1, a2)): Int32 = match t {
+            case (x1, x2) => Hash.hash(x1) `Hash.combine` Hash.hash(x2)
+        }
     }
 
     instance Hash[(a1, a2, a3)] with Hash[a1], Hash[a2], Hash[a3] {
-        pub def hash(t: (a1, a2, a3)): Int32 =
-            match t {
-                case (x1, x2, x3) => Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3)
-            }
+        pub def hash(t: (a1, a2, a3)): Int32 = match t {
+            case (x1, x2, x3) => Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3)
+        }
     }
 
     instance Hash[(a1, a2, a3, a4)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4] {
-        pub def hash(t: (a1, a2, a3, a4)): Int32 =
-            match t {
-                case (x1, x2, x3, x4) =>
-                    Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
-            }
+        pub def hash(t: (a1, a2, a3, a4)): Int32 = match t {
+            case (x1, x2, x3, x4) =>
+                Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
+        }
     }
 
     instance Hash[(a1, a2, a3, a4, a5)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5] {
-        pub def hash(t: (a1, a2, a3, a4, a5)): Int32 =
-            match t {
-                case (x1, x2, x3, x4, x5) =>
-                    Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
+        pub def hash(t: (a1, a2, a3, a4, a5)): Int32 = match t {
+            case (x1, x2, x3, x4, x5) =>
+                Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
                     `Hash.combine` Hash.hash(x5)
-            }
+        }
     }
 
     instance Hash[(a1, a2, a3, a4, a5, a6)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6] {
-        pub def hash(t: (a1, a2, a3, a4, a5, a6)): Int32 =
-            match t {
-                case (x1, x2, x3, x4, x5, x6) =>
-                    Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
+        pub def hash(t: (a1, a2, a3, a4, a5, a6)): Int32 = match t {
+            case (x1, x2, x3, x4, x5, x6) =>
+                Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
                     `Hash.combine` Hash.hash(x5)
                     `Hash.combine` Hash.hash(x6)
-            }
+        }
     }
 
     instance Hash[(a1, a2, a3, a4, a5, a6, a7)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7] {
-        pub def hash(t: (a1, a2, a3, a4, a5, a6, a7)): Int32 =
-            match t {
-                case (x1, x2, x3, x4, x5, x6, x7) =>
-                    Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
+        pub def hash(t: (a1, a2, a3, a4, a5, a6, a7)): Int32 = match t {
+            case (x1, x2, x3, x4, x5, x6, x7) =>
+                Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
                     `Hash.combine` Hash.hash(x5)
                     `Hash.combine` Hash.hash(x6)
                     `Hash.combine` Hash.hash(x7)
-            }
+        }
     }
 
     instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7], Hash[a8] {
-        pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8)): Int32 =
-            match t {
-                case (x1, x2, x3, x4, x5, x6, x7, x8) =>
-                    Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
+        pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8)): Int32 = match t {
+            case (x1, x2, x3, x4, x5, x6, x7, x8) =>
+                Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
                     `Hash.combine` Hash.hash(x5)
                     `Hash.combine` Hash.hash(x6)
                     `Hash.combine` Hash.hash(x7)
                     `Hash.combine` Hash.hash(x8)
-            }
+        }
     }
 
     instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7], Hash[a8], Hash[a9] {
-        pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Int32 =
-            match t {
-                case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
-                    Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
+        pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Int32 = match t {
+            case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
+                Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
                     `Hash.combine` Hash.hash(x5)
                     `Hash.combine` Hash.hash(x6)
                     `Hash.combine` Hash.hash(x7)
                     `Hash.combine` Hash.hash(x8)
                     `Hash.combine` Hash.hash(x9)
-            }
+        }
     }
 
     instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7], Hash[a8], Hash[a9], Hash[a10] {
-        pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Int32 =
-            match t {
-                case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
-                    Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
+        pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Int32 = match t {
+            case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
+                Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
                     `Hash.combine` Hash.hash(x5)
                     `Hash.combine` Hash.hash(x6)
                     `Hash.combine` Hash.hash(x7)
                     `Hash.combine` Hash.hash(x8)
                     `Hash.combine` Hash.hash(x9)
                     `Hash.combine` Hash.hash(x10)
-            }
+        }
     }
 
     ///

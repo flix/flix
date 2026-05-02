@@ -164,30 +164,29 @@ pub mod Fixpoint3.Phase.Lowering {
     ///
     /// Returns the result along with the `Boxing` used for the program
     ///
-    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram[r], Boxing[r]) \ r =
-        match program {
-            case Ram.RamProgram.Program(stmt, _, meta, indexInfo, typeInfo) =>
-                let idToIndex = UniqueInts.empty(rc);
-                let (boxing, newFacts) = Boxing.initialize(rc, withProv, program);
-                let writeTo = (MutMap.empty(rc), MutMap.empty(rc));
-                let loweredStmt = lowerStmt(rc, idToIndex, boxing, writeTo, indexInfo, meta, withProv, stmt);
+    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram[r], Boxing[r]) \ r = match program {
+        case Ram.RamProgram.Program(stmt, _, meta, indexInfo, typeInfo) =>
+            let idToIndex = UniqueInts.empty(rc);
+            let (boxing, newFacts) = Boxing.initialize(rc, withProv, program);
+            let writeTo = (MutMap.empty(rc), MutMap.empty(rc));
+            let loweredStmt = lowerStmt(rc, idToIndex, boxing, writeTo, indexInfo, meta, withProv, stmt);
 
-                let constWrites = snd(writeTo)
+            let constWrites = snd(writeTo)
                 |> MutMap.foldWithKey(
                     acc1 -> outerPos -> inner ->
                         MutMap.foldLeftWithKey(acc2 -> innerPos -> value -> (outerPos, innerPos, value) :: acc2, acc1, inner),
                     Nil
                 )
                 |> List.toVector;
-                // Compute arities
-                let arityInformation = rowVarArityOf(program);
-                let numOfArities = UniqueInts.get(idToIndex);
-                let arities = Array.empty(rc, numOfArities);
-                foreach((rv, arity) <- arityInformation) {
-                    Array.put(arity, UniqueInts.createIndex(rv, idToIndex), arities)
-                };
-                (ExecutableRam.RamProgram.Program(loweredStmt, newFacts, meta, indexInfo, (Array.toVector(arities), constWrites), typeInfo), boxing)
-        }
+            // Compute arities
+            let arityInformation = rowVarArityOf(program);
+            let numOfArities = UniqueInts.get(idToIndex);
+            let arities = Array.empty(rc, numOfArities);
+            foreach ((rv, arity) <- arityInformation) {
+                Array.put(arity, UniqueInts.createIndex(rv, idToIndex), arities)
+            };
+            (ExecutableRam.RamProgram.Program(loweredStmt, newFacts, meta, indexInfo, (Array.toVector(arities), constWrites), typeInfo), boxing)
+    }
 
     ///
     /// Lowers `stmt` from `Ram` to `ExecutableRam`.
@@ -243,9 +242,9 @@ pub mod Fixpoint3.Phase.Lowering {
                         // Purges are cheap and performed sequentially. Merges can be expensive and are performed in
                         // parallel.
                         let merges = Vector.range(1, deltaRels)
-                        |> Vector.map(index -> lowerToMerge(getOrCrash(Map.get((deltaRel, index), placements))));
+                            |> Vector.map(index -> lowerToMerge(getOrCrash(Map.get((deltaRel, index), placements))));
                         let purges = Vector.range(1, deltaRels)
-                        |> Vector.map(index -> lowerToPurge(getOrCrash(Map.get((deltaRel, index), placements))));
+                            |> Vector.map(index -> lowerToPurge(getOrCrash(Map.get((deltaRel, index), placements))));
                         if (Vector.length(merges) == 1) {
                             ExecutableRam.RamStmt.Seq(Vector#{Vector.get(0, merges), swapPart})
                         } else {
@@ -272,7 +271,7 @@ pub mod Fixpoint3.Phase.Lowering {
             case Ram.RamStmt.Par(xs)                     => ExecutableRam.RamStmt.Par(Vector.map(x -> lowerStmtRec(x), xs))
             case Ram.RamStmt.Until(test, body)           =>
                 let newTests = test
-                |> Vector.filterMap(lowerBool(idToIndex, boxing, indexInfo, (Nil, MutDisjointSets.empty(rc))));
+                    |> Vector.filterMap(lowerBool(idToIndex, boxing, indexInfo, (Nil, MutDisjointSets.empty(rc))));
                 let newBody = lowerStmtRec(body);
                 ExecutableRam.RamStmt.Until(newTests, newBody)
             case Ram.RamStmt.Comment(s)                  => ExecutableRam.RamStmt.Comment(s)
@@ -386,8 +385,8 @@ pub mod Fixpoint3.Phase.Lowering {
             case Ram.RamTerm.Lit(val, ty)                                         => ExecutableRam.RamTerm.Lit(Boxing.unboxWith(val, ty, boxing), val)
             case Ram.RamTerm.ProvMax(vec)                                         =>
                 vec
-                |> Vector.map(match (rv, i) -> (UniqueInts.createIndex(rv, idToIndex), i))
-                |> ExecutableRam.RamTerm.ProvMax
+                    |> Vector.map(match (rv, i) -> (UniqueInts.createIndex(rv, idToIndex), i))
+                    |> ExecutableRam.RamTerm.ProvMax
             case Ram.RamTerm.RowLoad(rv, index, ty, RelSym.Symbol(_, arity, den)) =>
                 match den {
                     case Denotation.Relational             => ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.createIndex(rv, idToIndex), index, ty)
@@ -417,14 +416,13 @@ pub mod Fixpoint3.Phase.Lowering {
     ///
     def getAnyMeetRowVar(
         term: Ram.RamTerm
-    ): RowVar =
-        match term {
-            case Ram.RamTerm.RowLoad(rv, _, _, _)   =>
-                rv
-            case Ram.RamTerm.Meet(_, _, (rv, _), _) =>
-                rv
-            case _                                  => unreachable!()
-        }
+    ): RowVar = match term {
+        case Ram.RamTerm.RowLoad(rv, _, _, _)   =>
+            rv
+        case Ram.RamTerm.Meet(_, _, (rv, _), _) =>
+            rv
+        case _                                  => unreachable!()
+    }
 
     ///
     /// Unify every `RowVar` met during unpacking of `term` in `meetWithMap`.
@@ -469,7 +467,7 @@ pub mod Fixpoint3.Phase.Lowering {
         match boolExp {
             case Ram.BoolExp.Not(s)                                       =>
                 lowerBool(idToIndex, boxingInfo, indexInfo, meetWithMap, s)
-                |> Option.map(ExecutableRam.BoolExp.Not)
+                    |> Option.map(ExecutableRam.BoolExp.Not)
             case Ram.BoolExp.IsEmpty(s)                                   =>
                 let (_, placements) = indexInfo;
                 let sPos = getOrCrash(Map.get((s, 0), placements));
@@ -548,11 +546,10 @@ pub mod Fixpoint3.Phase.Lowering {
         relSym: RelSym,
         idToIndex: IdToIndex[r],
         meetWithMap: MeetWithMap[r]
-    ): Int32 \ r =
-        match toDenotation(relSym) {
-            case Denotation.Relational             => -1
-            case Denotation.Latticenal(_, _, _, _) => computeLatticeMeetPos(rv, idToIndex, meetWithMap)
-        }
+    ): Int32 \ r = match toDenotation(relSym) {
+        case Denotation.Relational             => -1
+        case Denotation.Latticenal(_, _, _, _) => computeLatticeMeetPos(rv, idToIndex, meetWithMap)
+    }
 
     ///
     /// Returns the memory position of the first value equivalent to `rv`, w.r.t.
@@ -613,15 +610,15 @@ pub mod Fixpoint3.Phase.Lowering {
         let constWrite = snd(writeTo);
         let toTuplePos = lowerRowVar(toRowVar, idToIndex);
         MutMap.getOrElsePut(toTuplePos, MutMap.empty(rc), constWrite)
-        |> MutMap.putWith(
-            v1 -> v2 ->
-                if (v1 != v2)
-                    bug!("Bug in Fixpoint.Lowering: Different value for position. Should have been removed by Hoisting")
-                else
-                    v1,
-            toIndex,
-            value
-        )
+            |> MutMap.putWith(
+                v1 -> v2 ->
+                    if (v1 != v2)
+                        bug!("Bug in Fixpoint.Lowering: Different value for position. Should have been removed by Hoisting")
+                    else
+                        v1,
+                toIndex,
+                value
+            )
 
     ///
     /// Returns a list `(RowVar, arity)` in `program` in the order of the nesting.
@@ -632,35 +629,32 @@ pub mod Fixpoint3.Phase.Lowering {
     ///
     /// Returns a list of pairs `(RowVar, RelSym)` in `program` in the order of the nesting.
     ///
-    def rowVarRelSymOf(program: Ram.RamProgram): List[(RowVar, RelSym)] =
-        match program {
-            case Ram.RamProgram.Program(stmt, _, _, _, _) => rowVarRelSymOfStmt(stmt)
-        }
+    def rowVarRelSymOf(program: Ram.RamProgram): List[(RowVar, RelSym)] = match program {
+        case Ram.RamProgram.Program(stmt, _, _, _, _) => rowVarRelSymOfStmt(stmt)
+    }
 
     ///
     /// Returns a list of pairs `(RowVar, RelSym)` in `stmt`.
     ///
-    def rowVarRelSymOfStmt(stmt: Ram.RamStmt): List[(RowVar, RelSym)] \ r =
-        match stmt {
-            case Ram.RamStmt.Insert(op)      => rowVarRelSymOfOp(op)
-            case Ram.RamStmt.MergeInto(_, _) => Nil
-            case Ram.RamStmt.Swap(_, _)      => Nil
-            case Ram.RamStmt.Purge(_)        => Nil
-            case Ram.RamStmt.Seq(stmts)      => Vector.foldMap(rowVarRelSymOfStmt, stmts)
-            case Ram.RamStmt.Par(stmts)      => Vector.foldMap(rowVarRelSymOfStmt, stmts)
-            case Ram.RamStmt.Until(_, rest)  => rowVarRelSymOfStmt(rest)
-            case Ram.RamStmt.Comment(_)      => Nil
-        }
+    def rowVarRelSymOfStmt(stmt: Ram.RamStmt): List[(RowVar, RelSym)] \ r = match stmt {
+        case Ram.RamStmt.Insert(op)      => rowVarRelSymOfOp(op)
+        case Ram.RamStmt.MergeInto(_, _) => Nil
+        case Ram.RamStmt.Swap(_, _)      => Nil
+        case Ram.RamStmt.Purge(_)        => Nil
+        case Ram.RamStmt.Seq(stmts)      => Vector.foldMap(rowVarRelSymOfStmt, stmts)
+        case Ram.RamStmt.Par(stmts)      => Vector.foldMap(rowVarRelSymOfStmt, stmts)
+        case Ram.RamStmt.Until(_, rest)  => rowVarRelSymOfStmt(rest)
+        case Ram.RamStmt.Comment(_)      => Nil
+    }
 
     ///
     /// Returns a list of pairs `(RowVar, RelSym)` in `op` in the order of nesting.
     ///
-    def rowVarRelSymOfOp(op: Ram.RelOp): List[(RowVar, RelSym)] \ r =
-        match op {
-            case Ram.RelOp.Search(rv, relSym, _, rest)      => (rv, relSym) :: rowVarRelSymOfOp(rest)
-            case Ram.RelOp.Query(rv, relSym, _, _, _, rest) => (rv, relSym) :: rowVarRelSymOfOp(rest)
-            case Ram.RelOp.Functional(_, _, _, rest, _, _)  => rowVarRelSymOfOp(rest)
-            case Ram.RelOp.Project(_, _, _)                 => Nil
-            case Ram.RelOp.If(_, rest)                      => rowVarRelSymOfOp(rest)
-        }
+    def rowVarRelSymOfOp(op: Ram.RelOp): List[(RowVar, RelSym)] \ r = match op {
+        case Ram.RelOp.Search(rv, relSym, _, rest)      => (rv, relSym) :: rowVarRelSymOfOp(rest)
+        case Ram.RelOp.Query(rv, relSym, _, _, _, rest) => (rv, relSym) :: rowVarRelSymOfOp(rest)
+        case Ram.RelOp.Functional(_, _, _, rest, _, _)  => rowVarRelSymOfOp(rest)
+        case Ram.RelOp.Project(_, _, _)                 => Nil
+        case Ram.RelOp.If(_, rest)                      => rowVarRelSymOfOp(rest)
+    }
 }

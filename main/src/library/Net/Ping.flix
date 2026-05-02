@@ -36,24 +36,23 @@ pub mod Net.Ping {
     ///
     /// In other words, re-interprets the `Ping` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Ping) + IO =
-        x ->
-            run {
-                f(x)
-            } with handler Ping {
-                  def isReachable(host, timeout, u, k) = {
-                      try {
-                          let ms = TimeUnit.toMilliseconds(u);
-                          let timeoutMs = ms * timeout;
-                          let addr = InetAddress.getByAddress(IpAddr.toBytes(host));
-                          k(Ok(addr.isReachable(timeoutMs)))
-                      } catch {
-                          case ex: UnknownHostException => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
-                          case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                          case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                      }
-                  }
-              }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Ping) + IO = x ->
+        run {
+            f(x)
+        } with handler Ping {
+            def isReachable(host, timeout, u, k) = {
+                try {
+                    let ms = TimeUnit.toMilliseconds(u);
+                    let timeoutMs = ms * timeout;
+                    let addr = InetAddress.getByAddress(IpAddr.toBytes(host));
+                    k(Ok(addr.isReachable(timeoutMs)))
+                } catch {
+                    case ex: UnknownHostException => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
+                    case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
+                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+            }
+        }
 
     ///
     /// Runs the `Ping` effect of the given function `f`.

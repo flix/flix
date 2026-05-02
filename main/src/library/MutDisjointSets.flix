@@ -20,7 +20,7 @@ pub mod MutDisjointSets {
     /// using union-by-rank and path compression.
     ///
     pub struct MutDisjointSets[t: Type, r: Region] {
-        rc: Region[r],
+        rc:     Region[r],
         forest: MutMap[t, Node[t, r], r]
     }
 
@@ -28,10 +28,10 @@ pub mod MutDisjointSets {
     /// Represents an element in the disjoint set forest.
     ///
     struct Node[t: Type, r: Region] {
-        rc: Region[r],
-        value: t,
+        rc:         Region[r],
+        value:      t,
         mut parent: Option[Node[t, r]],
-        mut rank: Int32
+        mut rank:   Int32
     }
 
     mod Node {
@@ -101,7 +101,7 @@ pub mod MutDisjointSets {
             }
         };
         MutMap.get(x, s->forest)
-        |> Option.map(findRoot(Nil))
+            |> Option.map(findRoot(Nil))
     }
 
     ///
@@ -157,11 +157,10 @@ pub mod MutDisjointSets {
     /// This is equivalent to having the same representative / root.
     /// Returns false if either `x` or `y` is not in `s`.
     ///
-    pub def equivalent(x: t, y: t, s: MutDisjointSets[t, r]): Bool \ r with Order[t] =
-        match (findSet(x, s), findSet(y, s)) {
-            case (Some(xn), Some(yn)) => equal(xn, yn)
-            case _                    => false
-        }
+    pub def equivalent(x: t, y: t, s: MutDisjointSets[t, r]): Bool \ r with Order[t] = match (findSet(x, s), findSet(y, s)) {
+        case (Some(xn), Some(yn)) => equal(xn, yn)
+        case _                    => false
+    }
 
     ///
     /// Returns true if `x` and `y` have the same value.

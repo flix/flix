@@ -37,16 +37,15 @@ pub mod Time.Sleep {
     ///
     /// In other words, re-interprets the `Sleep` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Sleep) + IO =
-        x ->
-            run {
-                f(x)
-            } with handler Sleep {
-                  def sleep(d, k) =
-                      let millis = Duration.toMillis(d);
-                      JThread.sleep(millis);
-                      k()
-              }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Sleep) + IO = x ->
+        run {
+            f(x)
+        } with handler Sleep {
+            def sleep(d, k) =
+                let millis = Duration.toMillis(d);
+                JThread.sleep(millis);
+                k()
+        }
 
     ///
     /// Runs the `Sleep` effect of the given function `f`.
@@ -64,8 +63,8 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-              def sleep(_d, k) = k()
-          }
+            def sleep(_d, k) = k()
+        }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, replacing each sleep duration
@@ -75,11 +74,11 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-              def sleep(_d, k) = {
-                  Sleep.sleep(duration);
-                  k()
-              }
-          }
+            def sleep(_d, k) = {
+                Sleep.sleep(duration);
+                k()
+            }
+        }
 
     ///
     /// Runs the given function `f` collecting all sleep durations into a list.
@@ -90,10 +89,10 @@ pub mod Time.Sleep {
         run {
             (f(), List.empty())
         } with handler Sleep {
-              def sleep(d, k) =
-                  let (r, l) = k();
-                  (r, d :: l)
-          }
+            def sleep(d, k) =
+                let (r, l) = k();
+                (r, d :: l)
+        }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, logging each sleep duration
@@ -103,12 +102,12 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-              def sleep(d, k) = {
-                  Logger.log(Severity.Debug, gray("Sleep: ") + text("${ d }"));
-                  Sleep.sleep(d);
-                  k()
-              }
-          }
+            def sleep(d, k) = {
+                Logger.log(Severity.Debug, gray("Sleep: ") + text("${d}"));
+                Sleep.sleep(d);
+                k()
+            }
+        }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, scaling each sleep duration
@@ -118,13 +117,13 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-              def sleep(d, k) = {
-                  let nanos = Int64.toFloat64(Duration.toNanos(d)) * factor;
-                  let scaled = Float64.clampToInt64(min = 0i64, max = Int64.maxValue(), nanValue = 0i64, nanos);
-                  Sleep.sleep(Duration.nanoseconds(scaled));
-                  k()
-              }
-          }
+            def sleep(d, k) = {
+                let nanos = Int64.toFloat64(Duration.toNanos(d)) * factor;
+                let scaled = Float64.clampToInt64(min = 0i64, max = Int64.maxValue(), nanValue = 0i64, nanos);
+                Sleep.sleep(Duration.nanoseconds(scaled));
+                k()
+            }
+        }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, capping each sleep duration
@@ -134,11 +133,11 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-              def sleep(d, k) = {
-                  Sleep.sleep(Order.min(d, cap));
-                  k()
-              }
-          }
+            def sleep(d, k) = {
+                Sleep.sleep(Order.min(d, cap));
+                k()
+            }
+        }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, capping the total cumulative
@@ -151,14 +150,14 @@ pub mod Time.Sleep {
             run {
                 f()
             } with handler Sleep {
-                  def sleep(d, k) = {
-                      let r = Ref.get(remaining);
-                      let actual = Order.min(d, r);
-                      Ref.put(r - actual, remaining);
-                      Sleep.sleep(actual);
-                      k()
-                  }
-              }
+                def sleep(d, k) = {
+                    let r = Ref.get(remaining);
+                    let actual = Order.min(d, r);
+                    Ref.put(r - actual, remaining);
+                    Sleep.sleep(actual);
+                    k()
+                }
+            }
         }
 
     ///
@@ -169,11 +168,11 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-              def sleep(d, k) = {
-                  Sleep.sleep(Order.max(d, floor));
-                  k()
-              }
-          }
+            def sleep(d, k) = {
+                Sleep.sleep(Order.max(d, floor));
+                k()
+            }
+        }
 
     ///
     /// Middleware that intercepts the `Sleep` effect, adding random jitter to each
@@ -184,13 +183,13 @@ pub mod Time.Sleep {
         run {
             f()
         } with handler Sleep {
-              def sleep(d, k) = {
-                  let nanos = Int64.toFloat64(Duration.toNanos(d));
-                  let r = Random.randomFloat64() * 2.0f64 * factor - factor;
-                  let jittered = nanos * (1.0f64 + r);
-                  let clamped = Float64.clampToInt64(min = 0i64, max = Int64.maxValue(), nanValue = 0i64, jittered);
-                  Sleep.sleep(Duration.nanoseconds(clamped));
-                  k()
-              }
-          }
+            def sleep(d, k) = {
+                let nanos = Int64.toFloat64(Duration.toNanos(d));
+                let r = Random.randomFloat64() * 2.0f64 * factor - factor;
+                let jittered = nanos * (1.0f64 + r);
+                let clamped = Float64.clampToInt64(min = 0i64, max = Int64.maxValue(), nanValue = 0i64, jittered);
+                Sleep.sleep(Duration.nanoseconds(clamped));
+                k()
+            }
+        }
 }

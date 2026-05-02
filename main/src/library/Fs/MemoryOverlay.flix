@@ -28,10 +28,10 @@ mod Fs.MemoryOverlay {
     /// - `whiteouts`: set of normalized absolute paths deleted in the overlay (hides lower-layer entries).
     /// - `counter`:   monotonically increasing counter for generating unique temp directory names.
     pub struct MemoryOverlay[r: Region] {
-        mut files: Map[String, OverlayEntry],
-        mut dirs: Set[String],
+        mut files:     Map[String, OverlayEntry],
+        mut dirs:      Set[String],
         mut whiteouts: Set[String],
-        mut counter: Int32
+        mut counter:   Int32
     }
 
     /// The content of an overlay entry.
@@ -47,7 +47,7 @@ mod Fs.MemoryOverlay {
         // ─── Path helpers (private) ───────────────────────────────────────
 
     def normalize(path: String): String =
-        unsafe IO {Paths.get(path).toAbsolutePath().normalize().toString()}
+        unsafe IO { Paths.get(path).toAbsolutePath().normalize().toString() }
 
     def parentDir(path: String): Option[String] =
         unsafe IO {
@@ -62,7 +62,7 @@ mod Fs.MemoryOverlay {
         }
 
     def notFound(path: String): Result[IoError, a] =
-        Err(IoError(ErrorKind.NotFound, "overlay: '${ path }' does not exist")) // ─── Low-level state queries (private) ────────────────────────────
+        Err(IoError(ErrorKind.NotFound, "overlay: '${path}' does not exist")) // ─── Low-level state queries (private) ────────────────────────────
 
     def hasFile(path: String, o: Fs.MemoryOverlay[r]): Bool \ r =
         Map.memberOf(normalize(path), o->files)
@@ -180,12 +180,11 @@ mod Fs.MemoryOverlay {
         }
 
     /// Overlay-aware readLines.
-    pub def tryReadLines(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, List[String]]] \ r =
-        match tryRead(path, o) {
-            case Some(Ok(s))  => Some(Ok(String.lines(s)))
-            case Some(Err(e)) => Some(Err(e))
-            case None         => None
-        }
+    pub def tryReadLines(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, List[String]]] \ r = match tryRead(path, o) {
+        case Some(Ok(s))  => Some(Ok(String.lines(s)))
+        case Some(Err(e)) => Some(Err(e))
+        case None         => None
+    }
 
     /// Overlay-aware readBytes.
     pub def tryReadBytes(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Vector[Int8]]] \ r =
@@ -314,7 +313,7 @@ mod Fs.MemoryOverlay {
     pub def mkTempDir(prefix: String, o: Fs.MemoryOverlay[r]): Result[IoError, String] \ r =
         let n = o->counter;
         o->counter = n + 1;
-        let name = "${ prefix }overlay-${ n }";
+        let name = "${prefix}overlay-${n}";
         o->dirs = Set.insert(name, o->dirs);
         Ok(name)
 
@@ -326,14 +325,14 @@ mod Fs.MemoryOverlay {
             notFound(dir)
         else {
             let whiteoutNames = o->whiteouts
-            |> Set.filter(p -> parentDir(p) == Some(norm))
-            |> Set.map(p -> fileName(p));
+                |> Set.filter(p -> parentDir(p) == Some(norm))
+                |> Set.map(p -> fileName(p));
             let overlayFileNames = Map.keysOf(o->files)
-            |> Set.filter(p -> parentDir(p) == Some(norm))
-            |> Set.map(p -> fileName(p));
+                |> Set.filter(p -> parentDir(p) == Some(norm))
+                |> Set.map(p -> fileName(p));
             let overlayDirNames = o->dirs
-            |> Set.filter(p -> parentDir(p) == Some(norm))
-            |> Set.map(p -> fileName(p));
+                |> Set.filter(p -> parentDir(p) == Some(norm))
+                |> Set.map(p -> fileName(p));
             let overlayNames = Set.union(overlayFileNames, overlayDirNames);
             let lowerNames = match lower {
                 case Ok(names) => List.filter(n -> not Set.memberOf(n, whiteoutNames), names)
@@ -351,7 +350,7 @@ mod Fs.MemoryOverlay {
         else
             unsafe IO {
                 let basePath = Paths.get(normalize(base));
-                let matcher: PathMatcher = FileSystems.getDefault().getPathMatcher("glob:${ pattern }");
+                let matcher: PathMatcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
                 let matchesPattern = path -> {
                     let p = Paths.get(path);
                     let starts = p.startsWith(basePath);

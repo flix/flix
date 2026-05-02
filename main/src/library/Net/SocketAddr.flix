@@ -35,11 +35,10 @@ pub mod Net.SocketAddr {
     }
 
     instance ToString[SocketAddr] {
-        pub def toString(x: SocketAddr): String =
-            match x {
-                case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, port)) => "${ ip }:${ port }"
-                case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, port)) => "[${ ip }]:${ port }"
-            }
+        pub def toString(x: SocketAddr): String = match x {
+            case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, port)) => "${ip}:${port}"
+            case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, port)) => "[${ip}]:${port}"
+        }
     }
 
     instance Formattable[SocketAddr] {
@@ -51,29 +50,26 @@ pub mod Net.SocketAddr {
     ///
     /// Returns `Some(socket)` if the string was successfully parsed. Otherwise returns `None`.
     ///
-    pub def fromString(x: String): Option[SocketAddr] =
-        match String.contains(substr = "]", x) {
-            case true  => parseSocketV6(x)
-            case false => parseSocketV4(x)
-        }
+    pub def fromString(x: String): Option[SocketAddr] = match String.contains(substr = "]", x) {
+        case true  => parseSocketV6(x)
+        case false => parseSocketV4(x)
+    }
 
     ///
     /// Return the port of the SocketAddr `s`.
     ///
-    pub def port(s: SocketAddr): Int32 =
-        match s {
-            case SocketAddr.V4(SocketAddrV4.SocketAddrV4(_, p)) => p
-            case SocketAddr.V6(SocketAddrV6.SocketAddrV6(_, p)) => p
-        }
+    pub def port(s: SocketAddr): Int32 = match s {
+        case SocketAddr.V4(SocketAddrV4.SocketAddrV4(_, p)) => p
+        case SocketAddr.V6(SocketAddrV6.SocketAddrV6(_, p)) => p
+    }
 
     ///
     /// Return the IpAddr of the SocketAddr `s`.
     ///
-    pub def ip(s: SocketAddr): IpAddr =
-        match s {
-            case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, _)) => IpAddr.V4(ip)
-            case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, _)) => IpAddr.V6(ip)
-        }
+    pub def ip(s: SocketAddr): IpAddr = match s {
+        case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, _)) => IpAddr.V4(ip)
+        case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, _)) => IpAddr.V6(ip)
+    }
 
     ///
     /// Attempts to parse the given string `x` as a `SocketAddr.V4`.
@@ -110,9 +106,8 @@ pub mod Net.SocketAddr {
     ///
     /// Attempts to split the given List[String] `x` into IpAddr and port.
     ///
-    def separateIpPort(x: List[String]): Option[(String, String)] =
-        match x {
-            case ip :: port :: Nil => Some((ip, port))
-            case _                 => None
-        }
+    def separateIpPort(x: List[String]): Option[(String, String)] = match x {
+        case ip :: port :: Nil => Some((ip, port))
+        case _                 => None
+    }
 }

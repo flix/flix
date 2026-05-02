@@ -224,7 +224,7 @@ pub mod Graph {
     ///
     pub def toUndirected(g: m[(t, t)]): Set[(t, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         g |> Foldable.toSet
-        |> Set.flatMap(match (a, b) -> Set#{(a, b), (b, a)})
+            |> Set.flatMap(match (a, b) -> Set#{(a, b), (b, a)})
     }
 
     ///
@@ -233,7 +233,7 @@ pub mod Graph {
     ///
     pub def toUndirectedLabeled(g: m[(t, Int32, t)]): Set[(t, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         g |> Foldable.toSet
-        |> Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
+            |> Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
     }
 
     ///
@@ -302,8 +302,8 @@ pub mod Graph {
             let ml = MutList.empty(rc);
             // Extract nodes in fixed order.
             res
-            |> Vector.sortBy(match (x, i) -> (i, x))
-            |> Vector.forEach(match (x, _) -> MutList.push(x, ml));
+                |> Vector.sortBy(match (x, i) -> (i, x))
+                |> Vector.forEach(match (x, _) -> MutList.push(x, ml));
             MutList.toList(ml)
         }
 
@@ -347,8 +347,8 @@ pub mod Graph {
             case None    => None
         };
         res
-        |> Vector.filterMap(unwrapOption)
-        |> Vector.toMap
+            |> Vector.filterMap(unwrapOption)
+            |> Vector.toMap
     }
 
     ///
@@ -430,9 +430,9 @@ pub mod Graph {
     ///
     pub def toGraphviz(g: m[(t, t)]): String \ Foldable.Aef[m] with Foldable[m], Order[t], ToString[t] =
         "digraph {" + String.lineSeparator()
-        + Foldable.joinWith(match (x, y) -> "  ${ graphvizId(x) } -> ${ graphvizId(y) }" + String.lineSeparator(), "", g)
-        + "}"
-        + String.lineSeparator()
+            + Foldable.joinWith(match (x, y) -> "  ${graphvizId(x)} -> ${graphvizId(y)}" + String.lineSeparator(), "", g)
+            + "}"
+            + String.lineSeparator()
 
     ///
     /// Returns a Graphviz (DOT) string of the directed graph `g`.
@@ -441,18 +441,18 @@ pub mod Graph {
     ///
     pub def toGraphvizLabeled(g: m[(t, l, t)]): String \ Foldable.Aef[m] with Foldable[m], ToString[t], ToString[l] =
         "digraph {" + String.lineSeparator()
-        + Foldable.joinWith(match (x, w, y) -> "  ${ graphvizId(x) } -> ${ graphvizId(y) } [label = ${ w }]" + String.lineSeparator(), "", g)
-        + "}"
-        + String.lineSeparator() // -------------------------------------------------------------------------
-        // Private Functions -------------------------------------------------------
-        // -------------------------------------------------------------------------
+            + Foldable.joinWith(match (x, w, y) -> "  ${graphvizId(x)} -> ${graphvizId(y)} [label = ${w}]" + String.lineSeparator(), "", g)
+            + "}"
+            + String.lineSeparator() // -------------------------------------------------------------------------
+            // Private Functions -------------------------------------------------------
+            // -------------------------------------------------------------------------
 
     ///
     /// Wraps `toString(id)` with double quotes and escapes any existing quotes
     /// with backslash.
     ///
     def graphvizId(id: t): String with ToString[t] = {
-        "\"${ String.replace(src = "\"", dst = "\\\"", "${ id }") }\""
+        "\"${String.replace(src = "\"", dst = "\\\"", "${id}")}\""
     }
 
     ///

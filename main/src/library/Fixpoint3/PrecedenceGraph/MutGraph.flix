@@ -26,7 +26,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     ///
     pub struct MutGraph[r] {
         vertices: MutSet[Vertex, r],
-        adjList: MutMap[Vertex, Set[Vertex], r]
+        adjList:  MutMap[Vertex, Set[Vertex], r]
     }
 
     ///
@@ -70,11 +70,10 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     ///
     /// Returns the number of vertices in `g`. `MutGraph`s should start with vertex 0.
     ///
-    pub def numberOfVertices(g: MutGraph[r]): Int32 \ r =
-        match MutSet.maximum(g->vertices) {
-            case Some(v) => v + 1
-            case None    => 0
-        }
+    pub def numberOfVertices(g: MutGraph[r]): Int32 \ r = match MutSet.maximum(g->vertices) {
+        case Some(v) => v + 1
+        case None    => 0
+    }
 
     ///
     /// Adds the edge `(u, v)` to `g`.
@@ -101,12 +100,12 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     ///
     pub def toString(g: MutGraph[r]): String \ r =
         let edges = g->adjList
-        |> MutMap.joinWith(
-            u -> vSet ->
-                Set.joinWith(v -> "\n ${ u } -> ${ v }", ",", vSet),
-            ","
-        );
-        "MutGraph(${ edges })"
+            |> MutMap.joinWith(
+                u -> vSet ->
+                    Set.joinWith(v -> "\n ${u} -> ${v}", ",", vSet),
+                ","
+            );
+        "MutGraph(${edges})"
 
     ///
     /// Returns the strongly connected components of `g` in a topologically sorted
@@ -118,14 +117,14 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
             let condensation = empty(rc);
             let componentMap: MutMap[Vertex, Set[Vertex], rc] = MutMap.empty(rc);
             let rootMap: MutMap[Vertex, Vertex, rc] = MutMap.empty(rc);
-            foreach((i, scc) <- ForEach.withIndex(components)) {
-                foreach(partOfComp <- scc) {
+            foreach ((i, scc) <- ForEach.withIndex(components)) {
+                foreach (partOfComp <- scc) {
                     MutMap.put(partOfComp, i, rootMap);
                     MutMap.put(partOfComp, scc, componentMap)
                 }
             };
-            foreach((u, neighbors) <- g->adjList) {
-                foreach(v <- neighbors) {
+            foreach ((u, neighbors) <- g->adjList) {
+                foreach (v <- neighbors) {
                     let uSCC = getOrCrash(MutMap.get(u, rootMap));
                     let vSCC = getOrCrash(MutMap.get(v, rootMap));
                     if (uSCC != vSCC) {
@@ -134,16 +133,16 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
                 }
             };
             let inverseRootMap = MutMap.toMap(rootMap)
-            |> Map.invert
-            // We are guaranteed to have singleton sets
-            |> Map.map(Set.find(_ -> true) >> getOrCrash);
+                |> Map.invert
+                // We are guaranteed to have singleton sets
+                |> Map.map(Set.find(_ -> true) >> getOrCrash);
             topologicalSort(condensation)
-            |> List.map(
-                u ->
-                    componentMap
-                    |> MutMap.get(getOrCrash(Map.get(u, inverseRootMap)))
-                    |> getOrCrash
-            )
+                |> List.map(
+                    u ->
+                        componentMap
+                            |> MutMap.get(getOrCrash(Map.get(u, inverseRootMap)))
+                            |> getOrCrash
+                )
         }
 
     ///
@@ -155,7 +154,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
         region rc {
             let sorted = MutList.empty(rc);
             let colors = Array.repeat(rc, numberOfVertices(g), Color.White);
-            foreach(u <- getVertices(g)) {
+            foreach (u <- getVertices(g)) {
                 if (Array.get(u, colors) == Color.White) {
                     topologicalSortVisit(g, colors, sorted, u)
                 }
@@ -174,7 +173,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
         u: Vertex
     ): Unit \ r0 + r1 = {
         Array.put(Color.Gray, u, colors);
-        foreach(v <- getNeighbors(u, g)) {
+        foreach (v <- getNeighbors(u, g)) {
             if (Array.get(v, colors) == Color.White) {
                 topologicalSortVisit(g, colors, sorted, v)
             } else if (Array.get(v, colors) == Color.Gray) {
@@ -198,7 +197,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
             let components = MutList.empty(rc);
 
             let time = Counter.fresh(rc);
-            foreach(u <- getVertices(g)) {
+            foreach (u <- getVertices(g)) {
                 if (Array.get(u, disc) == -1) {
                     stronglyConnectedComponentsVisit(
                         components,
@@ -253,7 +252,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
         Array.put(true, u, onStack);
         MutList.push(u, stack);
 
-        foreach(v <- getNeighbors(u, g)) {
+        foreach (v <- getNeighbors(u, g)) {
             if (Array.get(v, disc) == -1) {
                 stronglyConnectedComponentsVisit(
                     components,
@@ -284,7 +283,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
                     };
                     Array.put(false, w, onStack);
                     MutSet.add(w, mutSet);
-                    if (u != w) {loop()}
+                    if (u != w) { loop() }
                 };
                 loop();
                 let component = MutSet.toSet(mutSet);

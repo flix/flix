@@ -109,8 +109,8 @@ pub mod Chain {
 
         pub def format(c: Chain[a]): RichString \ Formattable.Aef[a] =
             RichString.fromString("Chain#{")
-            + RichString.join(RichString.fromString(", "), c)
-            + RichString.fromString("}")
+                + RichString.join(RichString.fromString(", "), c)
+                + RichString.fromString("}")
     }
 
     instance ToString[Chain[a]] with ToString[a] {
@@ -176,11 +176,10 @@ pub mod Chain {
     ///
     /// Returns true if and only if `c` is the empty chain.
     ///
-    pub def isEmpty(c: Chain[a]): Bool =
-        match c {
-            case Empty => true
-            case _     => false
-        }
+    pub def isEmpty(c: Chain[a]): Bool = match c {
+        case Empty => true
+        case _     => false
+    }
 
     ///
     /// Returns true if and only if `c` is a non-empty chain.
@@ -190,53 +189,48 @@ pub mod Chain {
     ///
     /// Add element `x` to the left end of chain `c`.
     ///
-    pub def cons(x: a, c: Chain[a]): Chain[a] =
-        match c {
-            case Empty => One(x)
-            case _     => Chain(One(x), c)
-        }
+    pub def cons(x: a, c: Chain[a]): Chain[a] = match c {
+        case Empty => One(x)
+        case _     => Chain(One(x), c)
+    }
 
     ///
     /// Add element `x` to the right end of chain `c`.
     ///
-    pub def snoc(c: Chain[a], x: a): Chain[a] =
-        match c {
-            case Empty => One(x)
-            case _     => Chain(c, One(x))
-        }
+    pub def snoc(c: Chain[a], x: a): Chain[a] = match c {
+        case Empty => One(x)
+        case _     => Chain(c, One(x))
+    }
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `c`.
     ///
     /// Returns `None` if `c` is empty.
     ///
-    pub def head(c: Chain[a]): Option[a] =
-        match viewLeft(c) {
-            case ViewLeft.SomeLeft(x, _) => Some(x)
-            case _                       => None
-        }
+    pub def head(c: Chain[a]): Option[a] = match viewLeft(c) {
+        case ViewLeft.SomeLeft(x, _) => Some(x)
+        case _                       => None
+    }
 
     ///
     /// Returns `Some(x)` if `x` is the last element of `c`.
     ///
     /// Returns `None` if `c` is empty.
     ///
-    pub def last(c: Chain[a]): Option[a] =
-        match viewRight(c) {
-            case ViewRight.SomeRight(_, x) => Some(x)
-            case _                         => None
-        }
+    pub def last(c: Chain[a]): Option[a] = match viewRight(c) {
+        case ViewRight.SomeRight(_, x) => Some(x)
+        case _                         => None
+    }
 
     ///
     /// Returns the element at position `i` in the chain `c`.
     ///
     /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
     ///
-    pub def get(i: Int32, c: Chain[a]): a =
-        match nth(i, c) {
-            case Some(x) => x
-            case None    => indexOutOfBounds!("index ${ i } is out of bounds for Chain of length ${ length(c) }")
-        }
+    pub def get(i: Int32, c: Chain[a]): a = match nth(i, c) {
+        case Some(x) => x
+        case None    => indexOutOfBounds!("index ${i} is out of bounds for Chain of length ${length(c)}")
+    }
 
     ///
     /// Optionally returns the element at position `i` in the chain `c`.
@@ -248,11 +242,10 @@ pub mod Chain {
     /// Returns the subchain of `c` without the last element.
     /// Returns `None` if the chain `c` is empty.
     ///
-    pub def init(c: Chain[a]): Option[Chain[a]] =
-        match viewRight(c) {
-            case ViewRight.SomeRight(rs, _) => Some(rs)
-            case _                          => None
-        }
+    pub def init(c: Chain[a]): Option[Chain[a]] = match viewRight(c) {
+        case ViewRight.SomeRight(rs, _) => Some(rs)
+        case _                          => None
+    }
 
     ///
     /// Returns the number of elements in `c`.
@@ -267,12 +260,11 @@ pub mod Chain {
     ///
     /// Returns a new chain formed by appending the chains `c1` and `c2`.
     ///
-    pub def append(c1: Chain[a], c2: Chain[a]): Chain[a] =
-        match (c1, c2) {
-            case (Empty, c) => c
-            case (c, Empty) => c
-            case _          => Chain(c1, c2)
-        }
+    pub def append(c1: Chain[a], c2: Chain[a]): Chain[a] = match (c1, c2) {
+        case (Empty, c) => c
+        case (c, Empty) => c
+        case _          => Chain(c1, c2)
+    }
 
     ///
     /// Deconstruct a Chain from left-to-right.
@@ -309,12 +301,11 @@ pub mod Chain {
     ///
     /// Returns `true` if and only if `c` contains the element `a`.
     ///
-    pub def memberOf(a: a, c: Chain[a]): Bool with Eq[a] =
-        match viewLeft(c) {
-            case ViewLeft.NoneLeft                 => false
-            case ViewLeft.SomeLeft(x, _) if x == a => true
-            case ViewLeft.SomeLeft(_, xs)          => memberOf(a, xs)
-        }
+    pub def memberOf(a: a, c: Chain[a]): Bool with Eq[a] = match viewLeft(c) {
+        case ViewLeft.NoneLeft                 => false
+        case ViewLeft.SomeLeft(x, _) if x == a => true
+        case ViewLeft.SomeLeft(_, xs)          => memberOf(a, xs)
+    }
 
     ///
     /// Optionally returns the position of `a` in `c`.
@@ -353,22 +344,20 @@ pub mod Chain {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: a -> Bool, c: Chain[a]): Option[a] =
-        match viewLeft(c) {
-            case ViewLeft.NoneLeft        => None
-            case ViewLeft.SomeLeft(x, rs) => if (f(x)) Some(x) else findLeft(f, rs)
-        }
+    pub def findLeft(f: a -> Bool, c: Chain[a]): Option[a] = match viewLeft(c) {
+        case ViewLeft.NoneLeft        => None
+        case ViewLeft.SomeLeft(x, rs) => if (f(x)) Some(x) else findLeft(f, rs)
+    }
 
     ///
     /// Optionally returns the first element of `c` that satisfies the predicate `f` when searching from right to left.
     ///
     /// The function `f` must be pure.
     ///
-    pub def findRight(f: a -> Bool, c: Chain[a]): Option[a] =
-        match viewRight(c) {
-            case ViewRight.NoneRight        => None
-            case ViewRight.SomeRight(rs, x) => if (f(x)) Some(x) else findRight(f, rs)
-        }
+    pub def findRight(f: a -> Bool, c: Chain[a]): Option[a] = match viewRight(c) {
+        case ViewRight.NoneRight        => None
+        case ViewRight.SomeRight(rs, x) => if (f(x)) Some(x) else findRight(f, rs)
+    }
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -518,22 +507,20 @@ pub mod Chain {
     ///
     /// Returns `false` if `c` is empty.
     ///
-    pub def exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef =
-        match viewLeft(c) {
-            case ViewLeft.NoneLeft        => false
-            case ViewLeft.SomeLeft(x, xs) => f(x) or exists(f, xs)
-        }
+    pub def exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = match viewLeft(c) {
+        case ViewLeft.NoneLeft        => false
+        case ViewLeft.SomeLeft(x, xs) => f(x) or exists(f, xs)
+    }
 
     ///
     /// Returns `true` if and only if all elements in `c` satisfy the predicate `f`.
     ///
     /// Returns `true` if `c` is empty.
     ///
-    pub def forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef =
-        match viewLeft(c) {
-            case ViewLeft.NoneLeft        => true
-            case ViewLeft.SomeLeft(x, xs) => f(x) and forAll(f, xs)
-        }
+    pub def forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = match viewLeft(c) {
+        case ViewLeft.NoneLeft        => true
+        case ViewLeft.SomeLeft(x, xs) => f(x) and forAll(f, xs)
+    }
 
     ///
     /// Returns a chain of every element in `c` that satisfies the predicate `f`.
@@ -552,22 +539,20 @@ pub mod Chain {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef =
-        match viewLeft(c) {
-            case ViewLeft.NoneLeft        => s
-            case ViewLeft.SomeLeft(x, xs) => foldLeft(f, f(s, x), xs)
-        }
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = match viewLeft(c) {
+        case ViewLeft.NoneLeft        => s
+        case ViewLeft.SomeLeft(x, xs) => foldLeft(f, f(s, x), xs)
+    }
 
     ///
     /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef =
-        match viewRight(c) {
-            case ViewRight.NoneRight        => s
-            case ViewRight.SomeRight(xs, x) => foldRight(f, f(x, s), xs)
-        }
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = match viewRight(c) {
+        case ViewRight.NoneRight        => s
+        case ViewRight.SomeRight(xs, x) => foldRight(f, f(x, s), xs)
+    }
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -608,20 +593,18 @@ pub mod Chain {
     ///
     /// Returns `c` without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhileLeft(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef =
-        match viewLeft(c) {
-            case ViewLeft.SomeLeft(x, xs) => if (f(x)) dropWhileLeft(f, xs) else c
-            case ViewLeft.NoneLeft        => c
-        }
+    pub def dropWhileLeft(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef = match viewLeft(c) {
+        case ViewLeft.SomeLeft(x, xs) => if (f(x)) dropWhileLeft(f, xs) else c
+        case ViewLeft.NoneLeft        => c
+    }
 
     ///
     /// Returns `c` without the longest suffix that satisfies the predicate `f`.
     ///
-    pub def dropWhileRight(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef =
-        match viewRight(c) {
-            case ViewRight.SomeRight(xs, x) => if (f(x)) dropWhileRight(f, xs) else c
-            case ViewRight.NoneRight        => c
-        }
+    pub def dropWhileRight(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef = match viewRight(c) {
+        case ViewRight.SomeRight(xs, x) => if (f(x)) dropWhileRight(f, xs) else c
+        case ViewRight.NoneRight        => c
+    }
 
     ///
     /// Returns the first `n` elements of `c`.
@@ -692,15 +675,14 @@ pub mod Chain {
     ///
     /// Returns `None` if every element of `c` is `None`.
     ///
-    pub def findMap(f: a -> Option[b] \ ef, c: Chain[a]): Option[b] \ ef =
-        match viewLeft(c) {
-            case ViewLeft.NoneLeft        => None
-            case ViewLeft.SomeLeft(x, xs) =>
-                match f(x) {
-                    case None    => findMap(f, xs)
-                    case Some(v) => Some(v)
-                }
-        }
+    pub def findMap(f: a -> Option[b] \ ef, c: Chain[a]): Option[b] \ ef = match viewLeft(c) {
+        case ViewLeft.NoneLeft        => None
+        case ViewLeft.SomeLeft(x, xs) =>
+            match f(x) {
+                case None    => findMap(f, xs)
+                case Some(v) => Some(v)
+            }
+    }
 
     ///
     /// Returns a chain where the element at index `i` is `(a, b)` where
@@ -782,11 +764,10 @@ pub mod Chain {
     ///
     /// Applies `f` to every element of `c`.
     ///
-    pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef =
-        match viewLeft(c) {
-            case ViewLeft.NoneLeft        => ()
-            case ViewLeft.SomeLeft(x, xs) => f(x); forEach(f, xs)
-        }
+    pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = match viewLeft(c) {
+        case ViewLeft.NoneLeft        => ()
+        case ViewLeft.SomeLeft(x, xs) => f(x); forEach(f, xs)
+    }
 
     ///
     /// Applies `f` to every element of `c` along with that element's index.
@@ -822,14 +803,13 @@ pub mod Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(rc: Region[r], c: Chain[a]): Array[a, r] \ r =
-        match head(c) {
-            case None    => Array#{} @ rc
-            case Some(_) =>
-                let arr = Array.empty(rc, length(c));
-                forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
-                arr
-        }
+    pub def toArray(rc: Region[r], c: Chain[a]): Array[a, r] \ r = match head(c) {
+        case None    => Array#{} @ rc
+        case Some(_) =>
+            let arr = Array.empty(rc, length(c));
+            forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
+            arr
+    }
 
     ///
     /// Returns the chain `c` as a vector.
@@ -857,33 +837,30 @@ pub mod Chain {
     ///
     /// Returns the chain `c` as a Nel.
     ///
-    pub def toNel(c: Chain[a]): Option[Nel[a]] =
-        match viewLeft(c) {
-            case ViewLeft.NoneLeft        => None
-            case ViewLeft.SomeLeft(x, rs) => Nel.Nel(x, Chain.toList(rs)) |> Some
-        }
+    pub def toNel(c: Chain[a]): Option[Nel[a]] = match viewLeft(c) {
+        case ViewLeft.NoneLeft        => None
+        case ViewLeft.SomeLeft(x, rs) => Nel.Nel(x, Chain.toList(rs)) |> Some
+    }
 
     ///
     /// Returns the chain `c` as a Nec.
     ///
-    pub def toNec(c: Chain[a]): Option[Nec[a]] =
-        match viewLeft(c) {
-            case ViewLeft.NoneLeft        => None
-            case ViewLeft.SomeLeft(x, rs) => foldLeft(Nec.snoc, Nec.singleton(x), rs) |> Some
-        }
+    pub def toNec(c: Chain[a]): Option[Nec[a]] = match viewLeft(c) {
+        case ViewLeft.NoneLeft        => None
+        case ViewLeft.SomeLeft(x, rs) => foldLeft(Nec.snoc, Nec.singleton(x), rs) |> Some
+    }
 
     ///
     /// Returns `true` if and only if `c1` and `c2` and equal.
     ///
-    pub def equals(c1: Chain[a], c2: Chain[a]): Bool with Eq[a] =
-        // Note: Chains are considered equal if their (ordered) list of elements are equal.
-        // Because they may have different shapes due to construction we use a view to
-        // decide equality which imposes an order on the Chain.
-        match (viewLeft(c1), viewLeft(c2)) {
-            case (ViewLeft.NoneLeft, ViewLeft.NoneLeft)                           => true
-            case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) if (x == y) => equals(xs, ys)
-            case _                                                                => false
-        }
+    pub def equals(c1: Chain[a], c2: Chain[a]): Bool with Eq[a] = // Note: Chains are considered equal if their (ordered) list of elements are equal.
+    // Because they may have different shapes due to construction we use a view to
+    // decide equality which imposes an order on the Chain.
+    match (viewLeft(c1), viewLeft(c2)) {
+        case (ViewLeft.NoneLeft, ViewLeft.NoneLeft)                           => true
+        case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) if (x == y) => equals(xs, ys)
+        case _                                                                => false
+    }
 
     ///
     /// Compares chains `c1` and `c2` lexicographically.

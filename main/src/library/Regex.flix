@@ -30,6 +30,7 @@
 /// > String.breakOnRight ~> Regex/Text.breakOnLast
 ///
 pub mod Regex {
+
     import java.util.regex.Pattern
     import java.util.regex.{Matcher => JMatcher}
     import java.lang.Exception
@@ -69,18 +70,17 @@ pub mod Regex {
     /// Regex Pattern Flags predate `Enum` in Java so they are represented as an `Int32`
     /// and can be summed to make a bit mask.
     ///
-    def toInt(flag: Flag): Int32 =
-        match flag {
-            case CanonEq               => Pattern.CANON_EQ
-            case CaseInsenstive        => Pattern.CASE_INSENSITIVE
-            case Comments              => Pattern.COMMENTS
-            case Dotall                => Pattern.DOTALL
-            case Literal               => Pattern.LITERAL
-            case Multiline             => Pattern.MULTILINE
-            case UnicodeCase           => Pattern.UNICODE_CASE
-            case UnicodeCharacterClass => Pattern.UNICODE_CHARACTER_CLASS
-            case UnixLines             => Pattern.UNIX_LINES
-        }
+    def toInt(flag: Flag): Int32 = match flag {
+        case CanonEq               => Pattern.CANON_EQ
+        case CaseInsenstive        => Pattern.CASE_INSENSITIVE
+        case Comments              => Pattern.COMMENTS
+        case Dotall                => Pattern.DOTALL
+        case Literal               => Pattern.LITERAL
+        case Multiline             => Pattern.MULTILINE
+        case UnicodeCase           => Pattern.UNICODE_CASE
+        case UnicodeCharacterClass => Pattern.UNICODE_CHARACTER_CLASS
+        case UnixLines             => Pattern.UNIX_LINES
+    }
 
     ///
     /// Sum a list of flags to an `Int32` bit mask.
@@ -99,22 +99,21 @@ pub mod Regex {
         List.filter(
             check,
             CanonEq
-            :: CaseInsenstive
-            :: Comments
-            :: Dotall
-            :: Literal
-            :: Multiline :: UnicodeCase :: UnicodeCharacterClass :: UnixLines :: Nil
+                :: CaseInsenstive
+                    :: Comments
+                        :: Dotall
+                            :: Literal
+                                :: Multiline :: UnicodeCase :: UnicodeCharacterClass :: UnixLines :: Nil
         )
 
     ///
     /// Return the unmatchable Regex - a regular expression that will not match any input.
     ///
-    pub def unmatchable(): Regex =
-        try {
-            Pattern.compile("^\\b$")
-        } catch {
-            case _: Exception => unreachable!()
-        }
+    pub def unmatchable(): Regex = try {
+        Pattern.compile("^\\b$")
+    } catch {
+        case _: Exception => unreachable!()
+    }
 
     ///
     /// Return the regular expression string that matches the literal string `s`.
@@ -141,7 +140,7 @@ pub mod Regex {
     pub def isMatch(rgx: Regex, s: String): Bool =
         region rc {
             let Matcher(m1) = newMatcher(rc, rgx, s);
-            unsafe IO {m1.matches()}
+            unsafe IO { m1.matches() }
         }
 
     ///
@@ -219,7 +218,7 @@ pub mod Regex {
     /// Splits the string `s` around matches of the Regex `rgx`.
     ///
     pub def split(rgx: Regex, s: String): List[String] =
-        unsafe IO {Array.toList(rgx.split(s))}
+        unsafe IO { Array.toList(rgx.split(s)) }
 
     ///
     /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.
@@ -227,7 +226,7 @@ pub mod Regex {
     pub def replace(src: { src = Regex }, dst: { dst = String }, s: String): String =
         region rc {
             let Matcher(m1) = newMatcher(rc, src#src, s);
-            unsafe IO {m1.replaceAll(dst#dst)}
+            unsafe IO { m1.replaceAll(dst#dst) }
         }
 
     ///
@@ -236,7 +235,7 @@ pub mod Regex {
     pub def replaceFirst(src: { src = Regex }, dst: { dst = String }, s: String): String =
         region rc {
             let Matcher(m1) = newMatcher(rc, src#src, s);
-            unsafe IO {m1.replaceFirst(dst#dst)}
+            unsafe IO { m1.replaceFirst(dst#dst) }
         }
 
     ///
@@ -245,7 +244,7 @@ pub mod Regex {
     pub def startsWith(prefix: Regex, s: String): Bool =
         region rc {
             let Matcher(m1) = newMatcher(rc, prefix, s);
-            unsafe IO {m1.lookingAt()}
+            unsafe IO { m1.lookingAt() }
         }
 
     ///
@@ -471,7 +470,7 @@ pub mod Regex {
     pub def isMatchWithBounds(rgx: Regex, start: { start = Int32 }, end: { end = Int32 }, s: String): Bool =
         region rc {
             match newMatcherWithBounds(rc, rgx, start, end, s) {
-                case Ok(Matcher(m)) => unsafe IO {m.matches()}
+                case Ok(Matcher(m)) => unsafe IO { m.matches() }
                 case Err(_)         => false
             }
         }
@@ -611,7 +610,7 @@ pub mod Regex {
     /// of matches. The matcher is updated with the function find to move to
     /// the next match.
     ///
-    enum Matcher [_: Region] (JMatcher)
+    enum Matcher[_: Region](JMatcher)
 
     ///
     /// Create a Matcher for Regex `rgx` on the source String `input`.
@@ -639,7 +638,7 @@ pub mod Regex {
     ///
     def find(m: Matcher[r]): Bool \ r =
         let Matcher(m1) = m;
-        unsafe IO as r {m1.find()}
+        unsafe IO as r { m1.find() }
 
     ///
     /// Attempt to find the next match after the supplied position `pos`.
@@ -652,10 +651,10 @@ pub mod Regex {
         Result.tryCatch(
             _ -> {
                 let Matcher(m1) = m;
-                unsafe IO as r {m1.find(pos)}
+                unsafe IO as r { m1.find(pos) }
             }
         )
-        |> Result.getWithDefault(false)
+            |> Result.getWithDefault(false)
 
     ///
     /// Attempt to find the last match by iterating through the input string.
@@ -671,7 +670,7 @@ pub mod Regex {
     def findLast(m: Matcher[r]): Bool \ r =
         def loop(lastPos) = {
             match find(m) {
-                case true  => {let pos1 = matcherStart(m); loop(pos1)}
+                case true  => { let pos1 = matcherStart(m); loop(pos1) }
                 case false => lastPos
             }
         };
@@ -693,7 +692,7 @@ pub mod Regex {
         Result.tryCatch(
             _ -> {
                 let Matcher(m1) = m;
-                unsafe IO as r {discard m1.region(start#start, end#end)}
+                unsafe IO as r { discard m1.region(start#start, end#end) }
             }
         )
 
@@ -704,7 +703,7 @@ pub mod Regex {
         Result.tryCatch(
             _ -> {
                 let Matcher(m1) = m;
-                unsafe IO as r {m1.start()}
+                unsafe IO as r { m1.start() }
             }
         )
 
@@ -715,7 +714,7 @@ pub mod Regex {
         Result.tryCatch(
             _ -> {
                 let Matcher(m1) = m;
-                unsafe IO as r {m1.end()}
+                unsafe IO as r { m1.end() }
             }
         )
 
@@ -735,7 +734,7 @@ pub mod Regex {
         Result.tryCatch(
             _ -> {
                 let Matcher(m1) = m;
-                unsafe IO as r {m1.group()}
+                unsafe IO as r { m1.group() }
             }
         )
 
@@ -746,7 +745,7 @@ pub mod Regex {
         Result.tryCatch(
             _ -> {
                 let Matcher(m1) = m;
-                unsafe IO as r {if (not Object.isNull(m1.group(i))) m1.group(i) else ""}
+                unsafe IO as r { if (not Object.isNull(m1.group(i))) m1.group(i) else "" }
             }
         )
 
@@ -755,7 +754,7 @@ pub mod Regex {
     ///
     def groupCount(m: Matcher[r]): Int32 \ r =
         let Matcher(m1) = m;
-        unsafe IO as r {m1.groupCount()}
+        unsafe IO as r { m1.groupCount() }
 
     ///
     /// `MatchQuery` is a read query applied to a the current match of a `Matcher`.

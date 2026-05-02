@@ -107,12 +107,11 @@ pub mod Float32 {
     /// Parse the string `s` as a Float32, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Float32] =
-        try {
-            Some(Float.parseFloat(s.strip()))
-        } catch {
-            case _: NumberFormatException => None
-        }
+    pub def fromString(s: String): Option[Float32] = try {
+        Some(Float.parseFloat(s.strip()))
+    } catch {
+        case _: NumberFormatException => None
+    }
 
     ///
     /// Convert `x` to an `Option[Int8]`.

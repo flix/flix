@@ -22,7 +22,7 @@ import java.nio.charset.CharsetEncoder
 /// `byteWriter`: the underlying byte writer, an instance of `Writable` where `Writable.Elm[t] ~ Int8`.
 /// `encoder`: used to encode bytes before writing them to the `byteReader`.
 ///
-enum EncodingWriter [t] ({ encoder = CharsetEncoder, byteWriter = t })
+enum EncodingWriter[t]({ encoder = CharsetEncoder, byteWriter = t })
 
 instance Writable[EncodingWriter[t]] with Writable[t] where Writable.Elm[t] ~ Int8 {
     type Elm = Char
@@ -83,7 +83,7 @@ pub mod EncodingWriter {
             let byteBuffer = ByteBuffer.wrap(dest);
             checked_ecast(encoder |> encodeBuffered(rc, charBuffer, byteBuffer))
         };
-        checked_ecast(unsafe IO {$do()})
+        checked_ecast(unsafe IO { $do() })
 
     ///
     /// Encodes the chars from `charBuffer` into `byteBuffer` using `encoder`.
@@ -105,7 +105,7 @@ pub mod EncodingWriter {
                 dest
             }
         };
-        checked_ecast(unsafe IO {$do()})
+        checked_ecast(unsafe IO { $do() })
 
     ///
     /// Writes all bytes from `dest` into `byteWriter`.

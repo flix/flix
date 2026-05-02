@@ -108,10 +108,9 @@ pub mod RichString {
     ///
     /// Returns a `RichString` with the function `f` applied to every span.
     ///
-    pub def map(f: Span -> Span, rs: RichString): RichString =
-        match rs {
-            case RichString(spans) => RichString(Chain.map(f, spans))
-        }
+    pub def map(f: Span -> Span, rs: RichString): RichString = match rs {
+        case RichString(spans) => RichString(Chain.map(f, spans))
+    }
 
     ///
     /// Returns a `Bool` according to the equality of `rs1` and `rs2`.
@@ -322,11 +321,10 @@ pub mod RichString {
     ///
     /// The spans from `rs1` appear first, followed by the spans from `rs2`.
     ///
-    pub def combine(rs1: RichString, rs2: RichString): RichString =
-        match (rs1, rs2) {
-            case (RichString(spans1), RichString(spans2)) =>
-                RichString(Chain.append(spans1, spans2))
-        }
+    pub def combine(rs1: RichString, rs2: RichString): RichString = match (rs1, rs2) {
+        case (RichString(spans1), RichString(spans2)) =>
+            RichString(Chain.append(spans1, spans2))
+    }
 
     ///
     /// Returns a string representation of the given `rs`.
@@ -342,24 +340,22 @@ pub mod RichString {
     ///
     /// All styling and color information is discarded.
     ///
-    pub def toPlainString(rs: RichString): String =
-        match rs {
-            case RichString(spans) =>
-                Chain.joinWith(match Span.Span(r) -> r#text, "", spans)
-        }
+    pub def toPlainString(rs: RichString): String = match rs {
+        case RichString(spans) =>
+            Chain.joinWith(match Span.Span(r) -> r#text, "", spans)
+    }
 
     ///
     /// Returns the string representation of the `RichString` `rs` with ANSI escape codes.
     ///
     /// The returned string includes ANSI color and style codes for terminal display.
     ///
-    def toAnsiString(rs: RichString): String =
-        match rs {
-            case RichString(spans) =>
-                Chain.joinWith(
-                    match Span.Span(r) -> {
-                        // Collect all codes in a list
-                        let styleCodes = r#styles |> Set.toList
+    def toAnsiString(rs: RichString): String = match rs {
+        case RichString(spans) =>
+            Chain.joinWith(
+                match Span.Span(r) -> {
+                    // Collect all codes in a list
+                    let styleCodes = r#styles |> Set.toList
                         |> List.map(
                             s -> match s {
                                 case Style.Bold      => "1"
@@ -367,27 +363,27 @@ pub mod RichString {
                             }
                         );
 
-                        let fgCodes = match r#fgColor {
-                            case Color.Rgb(red, green, blue) => "38;2;${ red };${ green };${ blue }" :: Nil
-                            case Color.Default               => Nil
-                        };
+                    let fgCodes = match r#fgColor {
+                        case Color.Rgb(red, green, blue) => "38;2;${red};${green};${blue}" :: Nil
+                        case Color.Default               => Nil
+                    };
 
-                        let bgCodes = match r#bgColor {
-                            case Color.Rgb(red, green, blue) => "48;2;${ red };${ green };${ blue }" :: Nil
-                            case Color.Default               => Nil
-                        };
+                    let bgCodes = match r#bgColor {
+                        case Color.Rgb(red, green, blue) => "48;2;${red};${green};${blue}" :: Nil
+                        case Color.Default               => Nil
+                    };
 
-                        let allCodes = styleCodes ::: fgCodes ::: bgCodes;
+                    let allCodes = styleCodes ::: fgCodes ::: bgCodes;
 
-                        if (List.isEmpty(allCodes))
-                            r#text
-                        else
-                            "\u001B[${ List.join(";", allCodes) }m${ r#text }\u001B[0m"
-                    },
-                    "",
-                    spans
-                )
-        }
+                    if (List.isEmpty(allCodes))
+                        r#text
+                    else
+                        "\u001B[${List.join(";", allCodes)}m${r#text}\u001B[0m"
+                },
+                "",
+                spans
+            )
+    }
 
     ///
     /// Returns a record containing all color definitions for foreground and background colors.

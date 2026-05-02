@@ -82,7 +82,7 @@ pub mod Concurrent.Channel {
     /// non-polymorphic aspects relevant to select is split into its own
     /// structure on which select can operate.
     ///
-    pub enum Mpmc [a: Type, _r: Region] (
+    pub enum Mpmc[a: Type, _r: Region](
         MpmcAdmin,
         // admin
         MutDeque[a, Static] // elementDeque
@@ -202,7 +202,7 @@ pub mod Concurrent.Channel {
 
         // If the channel is unbuffered, wait for the element to be handed off
         // before continuing.
-        if (unBuffered) {discard awaitBarrier(rendezvous)}
+        if (unBuffered) { discard awaitBarrier(rendezvous) }
 
     ///
     /// Retrieves an element from the channel `c`. This is blocking if the
@@ -274,8 +274,8 @@ pub mod Concurrent.Channel {
 
         // Sort locks to avoid deadlocks
         let sortedLocks = channels
-        |> List.sortBy(match MpmcAdmin.MpmcAdmin(id, _, _, _, _, _, _, _) -> id)
-        |> List.map(match MpmcAdmin.MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
+            |> List.sortBy(match MpmcAdmin.MpmcAdmin(id, _, _, _, _, _, _, _) -> id)
+            |> List.map(match MpmcAdmin.MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
 
     ///
@@ -376,13 +376,13 @@ pub mod Concurrent.Channel {
                  randomized to avoid starvation scenarios).
         */
         let index = channels
-        |> List.mapWithIndex(
-            i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
-                (Ref.get(size) > 0, i)
-            }
-        )
-        |> List.findLeft(match (b, _) -> b)
-        |> Option.map(snd);
+            |> List.mapWithIndex(
+                i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
+                    (Ref.get(size) > 0, i)
+                }
+            )
+            |> List.findLeft(match (b, _) -> b)
+            |> Option.map(snd);
 
         match index {
             case Some(i) =>
@@ -411,7 +411,7 @@ pub mod Concurrent.Channel {
                     selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
                 } else {
                     (sortedLocks `List.append` (selectLock :: Nil))
-                    |> List.forEach(unlock);
+                        |> List.forEach(unlock);
                     (-1, Nil)
                 }
             }
@@ -453,7 +453,7 @@ pub mod Concurrent.Channel {
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, _, _, rendezvous, waitingPutters) = c;
 
         // In the unbuffered case, rendezvous with the putter from which we just received a value.
-        if (unBuffered) {discard awaitBarrier(rendezvous)};
+        if (unBuffered) { discard awaitBarrier(rendezvous) };
 
         // Signal waiting setters that the channel has space
         signalCondition(waitingPutters);
@@ -474,24 +474,22 @@ pub mod Concurrent.Channel {
     /// `Err` with `bug!`.
     /// The condition lock is expected to be held.
     ///
-    def signalCondition(c: Condition): Unit \ IO =
-        match Concurrent.Condition.signalAll(c) {
-            case Ok(_)  => ()
-            case Err(_) =>
-                // Error: awaiting without holding the corresponding lock
-                bug!("Implementation error: lock not held")
-        }
+    def signalCondition(c: Condition): Unit \ IO = match Concurrent.Condition.signalAll(c) {
+        case Ok(_)  => ()
+        case Err(_) =>
+            // Error: awaiting without holding the corresponding lock
+            bug!("Implementation error: lock not held")
+    }
 
     ///
     /// Unsafe wrapper for `Concurrent.ReentrantLock.unlock(l)` that handles
     /// `Err` with `bug!`.
     /// The lock is expected to be held.
     ///
-    def unlock(l: ReentrantLock): Unit \ IO =
-        match Concurrent.ReentrantLock.unlock(l) {
-            case Ok(_)  => ()
-            case Err(_) =>
-                // Error: unlock without holding the lock
-                bug!("Implementation error: lock not held")
-        }
+    def unlock(l: ReentrantLock): Unit \ IO = match Concurrent.ReentrantLock.unlock(l) {
+        case Ok(_)  => ()
+        case Err(_) =>
+            // Error: unlock without holding the lock
+            bug!("Implementation error: lock not held")
+    }
 }

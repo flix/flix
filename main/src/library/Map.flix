@@ -55,11 +55,10 @@ pub mod Map {
         type Idx = k
         type Elm = v
         type Aef = KeyNotFound
-        pub def get(t: Map[k, v], i: k): v \ KeyNotFound =
-            match Map.get(i, t) {
-                case Some(v) => v
-                case None    => KeyNotFound.keyNotFound("key not found")
-            }
+        pub def get(t: Map[k, v], i: k): v \ KeyNotFound = match Map.get(i, t) {
+            case Some(v) => v
+            case None    => KeyNotFound.keyNotFound("key not found")
+        }
     }
 
     instance Functor[Map[k]] {
@@ -136,7 +135,7 @@ pub mod Map {
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] =
         region rc {
-            "Map#{" + (Map.iterator(rc, m) |> Iterator.map(match (k, v) -> "${ k } => ${ v }") |> Iterator.join(", ")) + "}"
+            "Map#{" + (Map.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
         }
 
     ///
@@ -203,11 +202,10 @@ pub mod Map {
     ///
     /// Aborts if the key is not present.
     ///
-    pub def getOrAbort(k: k, m: Map[k, v]): v \ Abort with Order[k] =
-        match Map.get(k, m) {
-            case None    => Abort.abortWithTrace("Map.getOrAbort(): key not found")
-            case Some(v) => v
-        }
+    pub def getOrAbort(k: k, m: Map[k, v]): v \ Abort with Order[k] = match Map.get(k, m) {
+        case None    => Abort.abortWithTrace("Map.getOrAbort(): key not found")
+        case Some(v) => v
+    }
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
@@ -763,14 +761,13 @@ pub mod Map {
     ///
     /// Returns the map `m` as an array.
     ///
-    pub def toArray(rc: Region[r], m: Map[k, v]): Array[(k, v), r] \ r =
-        match size(m) {
-            case 0  => Array#{} @ rc
-            case sz =>
-                let a = Array.empty(rc, sz);
-                forEachWithIndex((i, k, v) -> Array.put((k, v), i, a), m);
-                a
-        }
+    pub def toArray(rc: Region[r], m: Map[k, v]): Array[(k, v), r] \ r = match size(m) {
+        case 0  => Array#{} @ rc
+        case sz =>
+            let a = Array.empty(rc, sz);
+            forEachWithIndex((i, k, v) -> Array.put((k, v), i, a), m);
+            a
+    }
 
     ///
     /// Returns the map `m` as a vector.

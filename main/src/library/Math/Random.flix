@@ -38,16 +38,15 @@ pub mod Math.Random {
     ///
     /// In other words, re-interprets the `Random` effect using the `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Random) + IO =
-        x -> {
-            let rnd = new JRandom(); // Reuse Random instance.
-            run {
-                f(x)
-            } with handler Random {
-                  def randomFloat64(k) = k(rnd.nextDouble())
-                  def randomInt64(k) = k(rnd.nextLong())
-              }
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Random) + IO = x -> {
+        let rnd = new JRandom(); // Reuse Random instance.
+        run {
+            f(x)
+        } with handler Random {
+            def randomFloat64(k) = k(rnd.nextDouble())
+            def randomInt64(k) = k(rnd.nextLong())
         }
+    }
 
     ///
     /// Runs the `Random` effect of the given function `f`.
@@ -63,17 +62,16 @@ pub mod Math.Random {
     ///
     /// In other words, re-interprets the `Random` effect using seeded deterministic randomness.
     ///
-    pub def handleWithSeed(seed: Int64, f: a -> b \ ef): a -> b \ ef - Random =
-        // Note: Given a *specific* seed, JRandom is fully deterministic (i.e. pure).
-        x -> {
-            let rnd = unsafe IO {new JRandom(seed)};
-            run {
-                f(x)
-            } with handler Random {
-                  def randomFloat64(k) = k(unsafe IO {rnd.nextDouble()})
-                  def randomInt64(k) = k(unsafe IO {rnd.nextLong()})
-              }
+    pub def handleWithSeed(seed: Int64, f: a -> b \ ef): a -> b \ ef - Random = // Note: Given a *specific* seed, JRandom is fully deterministic (i.e. pure).
+    x -> {
+        let rnd = unsafe IO { new JRandom(seed) };
+        run {
+            f(x)
+        } with handler Random {
+            def randomFloat64(k) = k(unsafe IO { rnd.nextDouble() })
+            def randomInt64(k) = k(unsafe IO { rnd.nextLong() })
         }
+    }
 
     ///
     /// Runs the `Random` effect of the given function `f` from an initial seed.

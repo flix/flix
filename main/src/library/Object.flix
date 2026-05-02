@@ -21,11 +21,10 @@ pub mod Object {
     /// Returns `true` if the given value `x` is `null`.
     ///
     @Inline
-    pub def isNull(x: a): Bool =
-        match Reflect.reflectValue(x) {
-            case Reflect.JvmValue.JvmObject(obj) => Objects.isNull(obj)
-            case _                               => false
-        }
+    pub def isNull(x: a): Bool = match Reflect.reflectValue(x) {
+        case Reflect.JvmValue.JvmObject(obj) => Objects.isNull(obj)
+        case _                               => false
+    }
 
     ///
     /// Returns `None` if the given value `x` is `null`, otherwise returns `Some(x)`.

@@ -41,7 +41,7 @@ pub mod Debug {
     pub def dprint(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
         let rs = Formattable.format(x);
         let s = RichString.toString(rs);
-        unsafe IO as Debug {System.out.print(s)}
+        unsafe IO as Debug { System.out.print(s) }
 
     ///
     /// Prints `x` to the standard out followed by a new line.
@@ -49,7 +49,7 @@ pub mod Debug {
     pub def dprintln(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
         let rs = Formattable.format(x);
         let s = RichString.toString(rs);
-        unsafe IO as Debug {System.out.println(s)}
+        unsafe IO as Debug { System.out.println(s) }
 
     ///
     /// Escapes the given string per Flix's escaping rules.
@@ -58,12 +58,12 @@ pub mod Debug {
         def replace(src: String, dst: String, subject: String): String = subject.replace(src, dst);
         s
         // NB: \\ must come first to avoid clobbering other cases
-        |> replace("\\", "\\\\")
-        |> replace("\n", "\\n")
-        |> replace("\r", "\\r")
-        |> replace("\"", "\\\"")
-        |> replace("\'", "\\\'")
-        |> replace("\t", "\\t")
+            |> replace("\\", "\\\\")
+            |> replace("\n", "\\n")
+            |> replace("\r", "\\r")
+            |> replace("\"", "\\\"")
+            |> replace("\'", "\\\'")
+            |> replace("\t", "\\t")
     }
 
     ///
@@ -74,7 +74,7 @@ pub mod Debug {
             use Reflect.JvmValue;
             match Reflect.reflectValue(x) {
                 case JvmValue.JvmBool(b)     => if (b) "true" else "false"
-                case JvmValue.JvmChar(c)     => "'" + escape("${(c: Char) }") + "'"
+                case JvmValue.JvmChar(c)     => "'" + escape("${(c: Char)}") + "'"
                 case JvmValue.JvmFloat32(y)  => Float.toString(y) + "f32"
                 case JvmValue.JvmFloat64(y)  => Double.toString(y)
                 case JvmValue.JvmInt8(y)     => Byte.toString(y) + "i8"

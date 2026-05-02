@@ -49,12 +49,11 @@ instance Readable[InputStream] {
 
     type Aef = IO
 
-    pub def read(b: Array[Int8, r], r: InputStream): Result[IoError, Int32] \ r + IO =
-        try {
-            let result = r.read(b);
-            let numRead = if (result == -1) 0 else result;
-            checked_ecast(Ok(numRead))
-        } catch {
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+    pub def read(b: Array[Int8, r], r: InputStream): Result[IoError, Int32] \ r + IO = try {
+        let result = r.read(b);
+        let numRead = if (result == -1) 0 else result;
+        checked_ecast(Ok(numRead))
+    } catch {
+        case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+    }
 }

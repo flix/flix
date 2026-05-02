@@ -41,7 +41,7 @@ pub mod Fs.MoveFile {
     /// Handles the `MoveFile` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - MoveFile) + FileWrite =
-        run {f()} with handler MoveFile {
-                      def moveWith(src, dst, opts, k) = k(Fs.FileWrite.moveWith(src, dst, opts))
-                  }
+        run { f() } with handler MoveFile {
+            def moveWith(src, dst, opts, k) = k(Fs.FileWrite.moveWith(src, dst, opts))
+        }
 }
