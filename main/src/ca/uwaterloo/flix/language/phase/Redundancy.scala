@@ -445,9 +445,8 @@ object Redundancy {
         (sym, innerUsed, shadowedVar)
       }
       val bodyUsed = visitExp(body, env, rc)
-      // Fold: remove each bound sym, add UnusedVarSym if dead in the subsequent expressions
-      var usedInRest = bodyUsed
-      val allUsed = bindingResults.reverseIterator.foldLeft(usedInRest) { case (acc, (sym, innerUsed, shadowedVar)) =>
+      // Fold right-to-left: remove each bound sym, add UnusedVarSym if dead in subsequent expressions
+      val allUsed = bindingResults.reverseIterator.foldLeft(bodyUsed) { case (acc, (sym, innerUsed, shadowedVar)) =>
         val combined = innerUsed ++ acc ++ shadowedVar
         if (deadVarSym(sym, acc))
           (combined - sym) + UnusedVarSym(sym)
