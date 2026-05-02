@@ -247,8 +247,11 @@ object PrettyPrinter {
     val handlers    = children.drop(withIdx)
     val preambleDoc = spaceJoin(preamble, Set.empty)
     localLayout(tree) {
-      val handlersDoc = handlers.map(prettyChild).reduceLeftOption(_ <> line <> _).getOrElse(empty)
-      preambleDoc <+> align(handlersDoc)
+      preambleDoc <+> Doc.column(col =>
+        handlers.map(prettyChild).reduceLeftOption { (acc, h) =>
+          acc <> Doc.nestAbsolute(col, line) <> h
+        }.getOrElse(empty)
+      )
     }
   }
 
@@ -1139,7 +1142,7 @@ object PrettyPrinter {
     * @return the formatted block expression as Doc
     */
   private def prettyBlock(tree: Tree): Doc =
-    prettyBracket(tree, filterEmpty(tree.children))
+    prettyBracket(tree, filterEmpty(tree.children), flatPad = space)
 
   /**
     * Formatting for statements.
@@ -1229,12 +1232,12 @@ object PrettyPrinter {
         }
         if (headerFitsOnOneLine) {
           val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
-          headerDoc <> text(open) <> bodyDoc <> text(close) <> tailSep
+          headerDoc <+> text(open) <> bodyDoc <> text(close) <> tailSep
         } else {
           val bodyDoc = joinWithGap(body)
           val closeSep = if (body.nonEmpty && endsWithComment(body.last)) hardline
                          else Doc.layoutChoice(empty, line)
-          headerDoc <> text(open) <>
+          headerDoc <+> text(open) <>
             nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <>
             closeSep <>
             text(close) <>

@@ -71,6 +71,7 @@ object Doc {
   case class Column(f: Int => Doc) extends Doc
   case class LayoutChoice(singleLine: Doc, multiLine: Doc) extends Doc
   case class SetLayout(layout: Layout, doc: Doc) extends Doc
+  case class NestAbsolute(level: Int, doc: Doc) extends Doc
 
   def text(str: String): Doc = Text(str)
   def line: Doc = Line
@@ -78,6 +79,7 @@ object Doc {
   def space: Doc = Text(" ")
   def empty: Doc = Empty
   def nest(level: Int, doc: Doc): Doc = Nest(level, doc)
+  def nestAbsolute(level: Int, doc: Doc): Doc = NestAbsolute(level, doc)
   def align(doc: Doc): Doc = Align(doc)
   def column(f: Int => Doc): Doc = Column(f)
   def setLayout(layout: Layout, doc: Doc): Doc = SetLayout(layout, doc)
@@ -194,6 +196,9 @@ object Doc {
 
     case (i, _, SetLayout(newLayout, x)) :: z =>
       render(sb, k, (i, newLayout, x) :: z)
+
+    case (_, l, NestAbsolute(j, x)) :: z =>
+      render(sb, k, (j, l, x) :: z)
   }
 
   def stack(docs: List[Doc]): Doc = folddoc(_ <|> _, docs)
