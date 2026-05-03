@@ -16,6 +16,7 @@
 
 pub mod Net.HttpRequest {
 
+    use Json.ToJson
     use Net.Body
     use Net.HttpLayer
     use Net.Method
@@ -273,6 +274,15 @@ pub mod Net.HttpRequest {
     pub def withBodyBytes(body: Vector[Int8], r: HttpRequest): HttpRequest =
         let HttpRequest(x) = r;
         HttpRequest({body = Some(Body.Bytes(body)) | x})
+
+    ///
+    /// Sets the body of the request `r` to the compact JSON encoding of `x`
+    /// and sets the `Content-Type` header to `application/json`, replacing
+    /// any existing content type and body.
+    ///
+    pub def withJson(x: a, r: HttpRequest): HttpRequest with ToJson[a] =
+        let body = Json.toCompactString(ToJson.toJson(x));
+        withContentType("application/json", withBody(body, r))
 
     // --- Modifiers: Query Parameters ---
 

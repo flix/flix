@@ -18,6 +18,8 @@ pub mod Net.HttpResponse {
 
     use IoError.ErrorKind
     use IoError.IoError
+    use Json.FromJson
+    use Json.JsonError
     use Net.Body
     use Net.HttpLayer
     use Net.HttpResponse
@@ -77,6 +79,27 @@ pub mod Net.HttpResponse {
             case Body.Text(s)  => HttpLayer.stringToBytes(s)
         }
     }
+
+    ///
+    /// Parses the body of the response `r` as a JSON value.
+    ///
+    /// Returns `Err(Parse(...))` if the body is not valid JSON.
+    /// Does not check the response status.
+    ///
+    pub def bodyJson(r: HttpResponse): Result[JsonError, Json] =
+        Json.parse(body(r))
+
+    ///
+    /// Parses the body of the response `r` as JSON and decodes it as a value
+    /// of type `a`.
+    ///
+    /// Returns `Err(Parse(...))` if the body is not valid JSON or
+    /// `Err(Decode(...))` if the JSON does not match the shape of `a`.
+    ///
+    /// Does not check the response status; see `expectJsonAs` for that.
+    ///
+    pub def bodyJsonAs(r: HttpResponse): Result[JsonError, a] with FromJson[a] =
+        Json.decode(body(r))
 
     ///
     /// Returns the list of values for the header with the given `name`, or `None` if not present.
@@ -140,6 +163,25 @@ pub mod Net.HttpResponse {
             Ok(r)
         else
             Err(IoError(ErrorKind.Other, "Unexpected HTTP status: ${status(r)}"))
+
+    ///
+    /// Returns the JSON-decoded body of `r` as `a` if the response is 2xx,
+    /// or `Err(IoError(...))` otherwise.
+    ///
+    /// Combines `expect` (status check) with `bodyJsonAs` (parse + decode)
+    /// and collapses any `JsonError` into `IoError(InvalidData, ...)`.
+    ///
+    pub def expectJsonAs(r: HttpResponse): Result[IoError, a] with FromJson[a] = forM (
+        ok <- expect(r);
+        a  <- Result.mapErr(jsonDecodeFailure, bodyJsonAs(ok))
+    ) yield a
+
+    ///
+    /// Converts a `JsonError` into an `IoError` with kind `InvalidData`.
+    /// The message uses the `Formattable` rendering, with colours stripped.
+    ///
+    def jsonDecodeFailure(e: JsonError): IoError =
+        IoError(ErrorKind.InvalidData, RichString.toPlainString(Formattable.format(e)))
 
     ///
     /// Returns the value of the `content-type` header, or `None` if not present.
