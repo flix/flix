@@ -177,16 +177,16 @@ pub mod Fixpoint3.Ast.ExecutableRam {
                 case RelOp.Search(var, relSym, _, _, writes, body) =>
                     let writeString = Vector.joinWith(match term -> ToString.toString(term), " ∧ ", writes);
                     "search x${var} ∈ indexes[${relSym}] | ${writeString} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Query(var, ramSym, _, _, writes, body) =>
+                case RelOp.Query(var, ramSym, _, _, writes, body)  =>
                     let writeString = Vector.joinWith(match term -> ToString.toString(term), " ∧ ", writes);
                     "query {x${var} ∈ indexes[${ramSym}] | ${writeString}} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Functional(id, _, terms, _, body, _) =>
+                case RelOp.Functional(id, _, terms, _, body, _)    =>
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Project(terms, ramSym, _) =>
+                case RelOp.Project(terms, ramSym, _)               =>
                     "project (${terms |> Vector.join(", ")}) into ${ramSym}"
-                case RelOp.ProvProject(terms, ramSym, _) =>
+                case RelOp.ProvProject(terms, ramSym, _)           =>
                     "project (${terms |> Vector.join(", ")}) into ${ramSym}"
-                case RelOp.If(test, then) =>
+                case RelOp.If(test, then)                          =>
                     let tst = test |> Vector.join(" ∧ ");
                     "if (${tst}) then${nl}${String.indent(4, "${then}")}end"
             }
@@ -232,19 +232,18 @@ pub mod Fixpoint3.Ast.ExecutableRam {
     }
 
     instance ToString[BoolExp] {
-        pub def toString(exp: BoolExp): String =
-            match exp {
-                case BoolExp.Not(boolExp)                  => "not (${boolExp})"
-                case BoolExp.IsEmpty(relSym)               => "indexes[${relSym}] = ∅"
-                case BoolExp.NotMemberOf(terms, relSym, _) => "(${terms |> Vector.join(", ")}) ∉ indexes[${relSym}]"
-                case BoolExp.Eq(lhs, rhs)                  => "${lhs} = ${rhs}"
-                case BoolExp.Leq(lhs, _, rhs)              => "${lhs} ≤ (${rhs})"
-                case BoolExp.Guard1(_, v)                  => "<clo>(${v})"
-                case BoolExp.Guard2(_, v1, v2)             => "<clo>(${v1}, ${v2})"
-                case BoolExp.Guard3(_, v1, v2, v3)         => "<clo>(${v1}, ${v2}, ${v3})"
-                case BoolExp.Guard4(_, v1, v2, v3, v4)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-                case BoolExp.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
-            }
+        pub def toString(exp: BoolExp): String = match exp {
+            case BoolExp.Not(boolExp)                  => "not (${boolExp})"
+            case BoolExp.IsEmpty(relSym)               => "indexes[${relSym}] = ∅"
+            case BoolExp.NotMemberOf(terms, relSym, _) => "(${terms |> Vector.join(", ")}) ∉ indexes[${relSym}]"
+            case BoolExp.Eq(lhs, rhs)                  => "${lhs} = ${rhs}"
+            case BoolExp.Leq(lhs, _, rhs)              => "${lhs} ≤ (${rhs})"
+            case BoolExp.Guard1(_, v)                  => "<clo>(${v})"
+            case BoolExp.Guard2(_, v1, v2)             => "<clo>(${v1}, ${v2})"
+            case BoolExp.Guard3(_, v1, v2, v3)         => "<clo>(${v1}, ${v2}, ${v3})"
+            case BoolExp.Guard4(_, v1, v2, v3, v4)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+            case BoolExp.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -312,5 +311,4 @@ pub mod Fixpoint3.Ast.ExecutableRam {
             case RamTerm.App5(_, v1, v2, v3, v4, v5, _)             => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
         }
     }
-
 }

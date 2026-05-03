@@ -59,5 +59,4 @@ pub mod CommutativeGroup {
     instance CommutativeGroup[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with CommutativeGroup[a1], CommutativeGroup[a2], CommutativeGroup[a3], CommutativeGroup[a4], CommutativeGroup[a5], CommutativeGroup[a6], CommutativeGroup[a7], CommutativeGroup[a8], CommutativeGroup[a9]
 
     instance CommutativeGroup[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with CommutativeGroup[a1], CommutativeGroup[a2], CommutativeGroup[a3], CommutativeGroup[a4], CommutativeGroup[a5], CommutativeGroup[a6], CommutativeGroup[a7], CommutativeGroup[a8], CommutativeGroup[a9], CommutativeGroup[a10]
-
 }

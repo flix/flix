@@ -20,7 +20,6 @@ pub mod Net.TcpConnect {
     use Net.IpAddr
     use Net.TcpSocket
     use Net.TcpSocket.TcpSocket
-
     import java.net.InetAddress
     import java.net.Socket
     import java.io.IOException
@@ -61,5 +60,4 @@ pub mod Net.TcpConnect {
     ///
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpConnect) + IO = handle(f)()
-
 }

@@ -18,8 +18,7 @@
  */
 
 pub mod Fixpoint3.Ast.Datalog {
-    use Fixpoint3.Boxed;
-
+    use Fixpoint3.Boxed
     use Fixpoint3.PredSymsOf
     use Fixpoint3.PredSymsOf.predSymsOf
     use Fixpoint3.SubstitutePredSym
@@ -54,7 +53,7 @@ pub mod Fixpoint3.Ast.Datalog {
 
     instance PredSymsOf[Datalog] {
         pub def predSymsOf(x: Datalog): Set[PredSym] = match x {
-            case Datalog.Datalog(facts, rules) =>
+            case Datalog.Datalog(facts, rules)    =>
                 let factSyms = facts |> Vector.map(predSymsOf) |> Monoid.fold;
                 let ruleSyms = rules |> Vector.map(predSymsOf) |> Monoid.fold;
                 factSyms ++ ruleSyms
@@ -69,11 +68,11 @@ pub mod Fixpoint3.Ast.Datalog {
 
     instance SubstitutePredSym[Datalog] {
         pub def substitute(x: Datalog, s: Map[PredSym, PredSym]): Datalog = match x {
-            case Datalog.Datalog(facts, rules) =>
+            case Datalog.Datalog(facts, rules)    =>
                 let newFacts = Vector.map(c -> substitute(c, s), facts);
                 let newRules = Vector.map(c -> substitute(c, s), rules);
                 Datalog.Datalog(newFacts, newRules)
-            case Datalog.Model(m) =>
+            case Datalog.Model(m)                 =>
                 def f(macc, sym, v) = {
                     let newSym = substitute(sym, s);
                     Map.insert(newSym, v, macc)
@@ -82,64 +81,66 @@ pub mod Fixpoint3.Ast.Datalog {
             case Datalog.Join(v1, v2)             => Datalog.Join(substitute(v1, s), substitute(v2, s))
             case Datalog.Provenance(rules, model) =>
                 let newRules = Vector.map(c -> substitute(c, s), rules);
-                let newModel = (Map#{}, model) ||>
-                    Map.foldLeftWithKey(acc -> pred -> facts ->
-                        Map.insert(substitute(pred, s), facts, acc)
-                    );
+                let newModel = (Map#{}, model)
+                    ||> Map.foldLeftWithKey(acc -> pred -> facts ->
+                        Map.insert(substitute(pred, s), facts, acc));
                 Datalog.Provenance(newRules, newModel)
         }
     }
 
     instance ToString[Datalog] {
         pub def toString(cs: Datalog): String = match cs {
-            case Datalog.Datalog(facts, rules) => region rc {
-                if (not Fixpoint3.Options.enableDebugPrintFacts()) {
-                    "Printing facts disabled ${String.lineSeparator()}" +
-                    Vector.iterator(rc, rules) |> Iterator.join(String.lineSeparator())
-                } else {
-                    Iterator.append(Vector.iterator(rc, facts), Vector.iterator(rc, rules))
-                        |> Iterator.join(String.lineSeparator())
-                }
-            }
-            case Datalog.Model(db) => region rc {
-                use Fixpoint3.Ast.Ram.toDenotation;
-                if (not Fixpoint3.Options.enableDebugPrintFacts()) {
-                    "Printing facts disabled."
-                } else {
-                   unsafe IO {
-                        let builder = StringBuilder.empty(rc);
-                        foreach ((relSym, innerMap) <- db) {
-                            foreach ((tuple, lat) <- innerMap) {
-                                let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
-                                match toDenotation(relSym) {
-                                    case Relational             => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
-                                    case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; ${Debug.stringify(lat)}).${String.lineSeparator()}", builder)
-                                }
-                            }
-                        };
-                        StringBuilder.toString(builder)
+            case Datalog.Datalog(facts, rules) =>
+                region rc {
+                    if (not Fixpoint3.Options.enableDebugPrintFacts()) {
+                        "Printing facts disabled ${String.lineSeparator()}"
+                            + Vector.iterator(rc, rules) |> Iterator.join(String.lineSeparator())
+                    } else {
+                        Iterator.append(Vector.iterator(rc, facts), Vector.iterator(rc, rules))
+                            |> Iterator.join(String.lineSeparator())
                     }
                 }
-            }
-            case Datalog.Join(d1, d2) => {
+            case Datalog.Model(db)             =>
+                region rc {
+                    use Fixpoint3.Ast.Ram.toDenotation;
+                    if (not Fixpoint3.Options.enableDebugPrintFacts()) {
+                        "Printing facts disabled."
+                    } else {
+                        unsafe IO {
+                            let builder = StringBuilder.empty(rc);
+                            foreach ((relSym, innerMap) <- db) {
+                                foreach ((tuple, lat) <- innerMap) {
+                                    let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
+                                    match toDenotation(relSym) {
+                                        case Relational             => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
+                                        case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; ${Debug.stringify(lat)}).${String.lineSeparator()}", builder)
+                                    }
+                                }
+                            };
+                            StringBuilder.toString(builder)
+                        }
+                    }
+                }
+            case Datalog.Join(d1, d2)          => {
                 let lineSep = String.lineSeparator();
                 "${d1}${lineSep}${d2}${lineSep}"
             }
-            case Datalog.Provenance(_, db) => region rc {
-                unsafe IO {
-                    let indent = String.repeat(4, " ");
-                    Map.joinWith(predSym -> facts -> {
-                        let builder = StringBuilder.empty(rc);
-                        foreach ((fact, annotation) <- facts) {
-                            StringBuilder.append("${indent}${fact} @ ${annotation},${String.lineSeparator()}${indent}", builder)
-                        };
-                        let textOverflow = String.length("$,${String.lineSeparator()}${indent}");
-                        let rawFactString = StringBuilder.toString(builder);
-                        let factsString = String.sliceLeft(end = String.length(rawFactString)- textOverflow, rawFactString);
-                        "${predSym}:${String.lineSeparator()}${factsString}"
-                    }, "${String.lineSeparator()}", db)
+            case Datalog.Provenance(_, db)     =>
+                region rc {
+                    unsafe IO {
+                        let indent = String.repeat(4, " ");
+                        Map.joinWith(predSym -> facts -> {
+                            let builder = StringBuilder.empty(rc);
+                            foreach ((fact, annotation) <- facts) {
+                                StringBuilder.append("${indent}${fact} @ ${annotation},${String.lineSeparator()}${indent}", builder)
+                            };
+                            let textOverflow = String.length("$,${String.lineSeparator()}${indent}");
+                            let rawFactString = StringBuilder.toString(builder);
+                            let factsString = String.sliceLeft(end = String.length(rawFactString) - textOverflow, rawFactString);
+                            "${predSym}:${String.lineSeparator()}${factsString}"
+                        }, "${String.lineSeparator()}", db)
+                    }
                 }
-            }
         }
     }
 
@@ -170,14 +171,13 @@ pub mod Fixpoint3.Ast.Datalog {
     }
 
     instance ToString[Constraint] {
-        pub def toString(c: Constraint): String =
-            match c {
-                case Constraint.Constraint(head, body) =>
-                    if (Vector.length(body) == 0)
-                        "${head}."
-                    else
-                        "${head} :- ${body |> Vector.join(", ")}."
-            }
+        pub def toString(c: Constraint): String = match c {
+            case Constraint.Constraint(head, body) =>
+                if (Vector.length(body) == 0)
+                    "${head}."
+                else
+                    "${head} :- ${body |> Vector.join(", ")}."
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -190,7 +190,7 @@ pub mod Fixpoint3.Ast.Datalog {
 
     instance PredSymsOf[HeadPredicate] {
         pub def predSymsOf(x: HeadPredicate): Set[PredSym] = match x {
-            case HeadPredicate.HeadAtom(predSym, _, _ ) => Set.singleton(predSym)
+            case HeadPredicate.HeadAtom(predSym, _, _) => Set.singleton(predSym)
         }
     }
 
@@ -203,16 +203,15 @@ pub mod Fixpoint3.Ast.Datalog {
     }
 
     instance ToString[HeadPredicate] {
-        pub def toString(head: HeadPredicate): String =
-            match head {
-                case HeadPredicate.HeadAtom(predSym, Relational, terms)             => "${predSym}(${terms |> Vector.join(", ")})"
-                case HeadPredicate.HeadAtom(predSym, Latticenal(_, _, _, _), terms) =>
-                    let (keyTerms, latticeTerms) = Vector.splitAt(Vector.length(terms)-1, terms);
-                    match Vector.head(latticeTerms) {
-                        case None    => "${predSym}(${keyTerms |> Vector.join(", ")})"
-                        case Some(l) => "${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
-                    }
-            }
+        pub def toString(head: HeadPredicate): String = match head {
+            case HeadPredicate.HeadAtom(predSym, Relational, terms)             => "${predSym}(${terms |> Vector.join(", ")})"
+            case HeadPredicate.HeadAtom(predSym, Latticenal(_, _, _, _), terms) =>
+                let (keyTerms, latticeTerms) = Vector.splitAt(Vector.length(terms) - 1, terms);
+                match Vector.head(latticeTerms) {
+                    case None    => "${predSym}(${keyTerms |> Vector.join(", ")})"
+                    case Some(l) => "${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
+                }
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -242,7 +241,7 @@ pub mod Fixpoint3.Ast.Datalog {
             case BodyPredicate.BodyAtom(predSym, den, polarity, fixity, terms) =>
                 let newSym = Map.getWithDefault(predSym, predSym, s);
                 BodyPredicate.BodyAtom(newSym, den, polarity, fixity, terms)
-            case _ => x
+            case _                                                             => x
         }
     }
 
@@ -257,22 +256,22 @@ pub mod Fixpoint3.Ast.Datalog {
                 case Fixity.Loose => ""
             };
             match body {
-                case BodyPredicate.BodyAtom(predSym, Relational, p, f, terms) =>
+                case BodyPredicate.BodyAtom(predSym, Relational, p, f, terms)             =>
                     "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> Vector.join(", ")})"
                 case BodyPredicate.BodyAtom(predSym, Latticenal(_, _, _, _), p, f, terms) =>
-                    let n = Vector.length(terms)-1;
+                    let n = Vector.length(terms) - 1;
                     let (keyTerms, latticeTerms) = (Vector.take(n, terms), Vector.drop(n, terms));
                     match Vector.head(latticeTerms) {
                         case None    => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}()"
                         case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
                     }
-                case BodyPredicate.Functional(boundVars, _, freeVars) => "<loop>(${boundVars}, ${freeVars})"
-                case BodyPredicate.Guard0(_)                          => "<clo>()"
-                case BodyPredicate.Guard1(_, v)                       => "<clo>(${v})"
-                case BodyPredicate.Guard2(_, v1, v2)                  => "<clo>(${v1}, ${v2})"
-                case BodyPredicate.Guard3(_, v1, v2, v3)              => "<clo>(${v1}, ${v2}, ${v3})"
-                case BodyPredicate.Guard4(_, v1, v2, v3, v4)          => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-                case BodyPredicate.Guard5(_, v1, v2, v3, v4, v5)      => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+                case BodyPredicate.Functional(boundVars, _, freeVars)                     => "<loop>(${boundVars}, ${freeVars})"
+                case BodyPredicate.Guard0(_)                                              => "<clo>()"
+                case BodyPredicate.Guard1(_, v)                                           => "<clo>(${v})"
+                case BodyPredicate.Guard2(_, v1, v2)                                      => "<clo>(${v1}, ${v2})"
+                case BodyPredicate.Guard3(_, v1, v2, v3)                                  => "<clo>(${v1}, ${v2}, ${v3})"
+                case BodyPredicate.Guard4(_, v1, v2, v3, v4)                              => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+                case BodyPredicate.Guard5(_, v1, v2, v3, v4, v5)                          => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
             }
     }
 
@@ -333,7 +332,7 @@ pub mod Fixpoint3.Ast.Datalog {
     /////////////////////////////////////////////////////////////////////////////
 
     pub enum Fixity {
-        case Loose,
+        case Loose
         case Fixed
     }
 
@@ -342,8 +341,7 @@ pub mod Fixpoint3.Ast.Datalog {
     /////////////////////////////////////////////////////////////////////////////
 
     pub enum Polarity {
-        case Positive,
+        case Positive
         case Negative
     }
-
 }

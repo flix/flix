@@ -30,5 +30,4 @@ pub mod Sys.StdOut {
             let StdOut.StdOut(pr) = r;
             Readable.read(b, pr)
     }
-
 }

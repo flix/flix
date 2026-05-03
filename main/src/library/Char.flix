@@ -61,16 +61,16 @@ pub mod Char {
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
     pub def isOctDigit(c: Char): Bool =
-        '0' <= c and c <= '7'     // '0'..'7'
+        '0' <= c and c <= '7' // '0'..'7'
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...9, A...F, or a...f.
     ///
     pub def isHexDigit(c: Char): Bool = match c {
-        case i if '0' <= i and i <= '9' => true        // '0'..'9'
-        case i if 'A' <= i and i <= 'F' => true        // 'A'..'F'
-        case i if 'a' <= i and i <= 'f' => true        // 'a'..'f'
-        case _ => false
+        case i if '0' <= i and i <= '9' => true // '0'..'9'
+        case i if 'A' <= i and i <= 'F' => true // 'A'..'F'
+        case i if 'a' <= i and i <= 'f' => true // 'a'..'f'
+        case _                          => false
     }
 
     ///
@@ -190,11 +190,10 @@ pub mod Char {
     ///
     /// This function cannot handle supplementary characters.
     ///
-    pub def getNumericValue(c: Char): Option[Int32] =
-        match (Character.getNumericValue(c)) {
-            case i if i < 0 => None
-            case i          => Some(i)
-        }
+    pub def getNumericValue(c: Char): Option[Int32] = match (Character.getNumericValue(c)) {
+        case i if i < 0 => None
+        case i          => Some(i)
+    }
 
     ///
     /// Returns the integer value Char `c` represents with respect to `radix`. E.g.
@@ -203,11 +202,10 @@ pub mod Char {
     ///
     /// Returns `None` if `c` does not represent a number.
     ///
-    pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
-        match (Character.digit(c, radix#radix)) {
-            case i if i < 0 => None
-            case i          => Some(i)
-        }
+    pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] = match (Character.digit(c, radix#radix)) {
+        case i if i < 0 => None
+        case i          => Some(i)
+    }
 
     ///
     /// Returns a character representation of the integer `n` with respect to `radix`. E.g.
@@ -216,11 +214,10 @@ pub mod Char {
     ///
     /// Returns `None` if `n` is not representable as single character in the radix.
     ///
-    pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] =
-        match (Character.forDigit(n, radix#radix)) {
-            case c if c == '\u0000' => None
-            case c                  => Some(c)
-        }
+    pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] = match (Character.forDigit(n, radix#radix)) {
+        case c if c == '\u0000' => None
+        case c                  => Some(c)
+    }
 
     ///
     /// Get the primitive Char value from its object representation, i.e., java.lang.Character.
@@ -239,5 +236,4 @@ pub mod Char {
     ///
     pub def valueOf(c: Char): Character =
         Character.valueOf(c)
-
 }

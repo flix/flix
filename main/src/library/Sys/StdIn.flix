@@ -30,5 +30,4 @@ pub mod Sys.StdIn {
             let StdIn.StdIn(pr) = r;
             Writable.write(b, pr)
     }
-
 }

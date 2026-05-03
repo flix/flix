@@ -68,11 +68,12 @@ pub mod BigDecimal {
     /// Parse the string `s` as an BigDecimal, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[BigDecimal] = try {
-        Some(new BigDecimal(s.strip()))
-    } catch {
-        case _: NumberFormatException => None
-    }
+    pub def fromString(s: String): Option[BigDecimal] =
+        try {
+            Some(new BigDecimal(s.strip()))
+        } catch {
+            case _: NumberFormatException => None
+        }
 
     ///
     /// Returns `x` as a "plain string" without an exponent field.
@@ -207,7 +208,4 @@ pub mod BigDecimal {
             Some(d)
         else
             None
-
-
 }
-

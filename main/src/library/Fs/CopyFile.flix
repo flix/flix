@@ -26,12 +26,10 @@ pub mod Fs.CopyFile {
     /// Use the `CopyFile.runWithFileWrite` handler.
     ///
     pub eff CopyFile {
-
         ///
         /// Copies the file `src` to `dst` with the given `options`.
         ///
         def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
-
     }
 
     ///
@@ -47,5 +45,4 @@ pub mod Fs.CopyFile {
         run { f() } with handler CopyFile {
             def copyWith(src, dst, opts, k) = k(Fs.FileWrite.copyWith(src, dst, opts))
         }
-
 }

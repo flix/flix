@@ -17,14 +17,12 @@
 pub mod Sys.Console {
 
     use Sys.Console
-
     import java.lang.System
 
     ///
     /// An effect used to interact with the console.
     ///
     pub eff Console {
-
         ///
         /// Reads a single line from the console.
         ///
@@ -49,7 +47,6 @@ pub mod Sys.Console {
         /// Prints the given string `s` to the standard err followed by a new line.
         ///
         def eprintln(s: String): Unit
-
     }
 
     ///
@@ -120,11 +117,10 @@ pub mod Sys.Console {
     ///
     /// Like `pick`, but re-prompts until the user makes a valid selection.
     ///
-    pub def pickWith(p: a, choices: List[b]): b \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
-        match pick(p, choices) {
-            case Some(v) => v
-            case None    => pickWith(p, choices)
-        }
+    pub def pickWith(p: a, choices: List[b]): b \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] = match pick(p, choices) {
+        case Some(v) => v
+        case None    => pickWith(p, choices)
+    }
 
     ///
     /// Handles the `Console` effect of the given function `f`.
@@ -135,10 +131,10 @@ pub mod Sys.Console {
         run {
             f(x)
         } with handler Console {
-            def readln(k)      = { k(System.console().readLine()) }
-            def print(s, k)    = { System.out.print(s); System.out.flush(); k() }
-            def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }
-            def println(s, k)  = { System.out.println(s); System.out.flush(); k() }
+            def readln(k) = { k(System.console().readLine()) }
+            def print(s, k) = { System.out.print(s); System.out.flush(); k() }
+            def eprint(s, k) = { System.err.print(s); System.err.flush(); k() }
+            def println(s, k) = { System.out.println(s); System.out.flush(); k() }
             def eprintln(s, k) = { System.err.println(s); System.err.flush(); k() }
         }
 
@@ -155,5 +151,4 @@ pub mod Sys.Console {
     ///
     def prompt(p: a): String \ Formattable.Aef[a] with Formattable[a] =
         RichString.toString(Formattable.format(p))
-
 }

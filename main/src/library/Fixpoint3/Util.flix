@@ -25,5 +25,4 @@ pub mod Fixpoint3.Util {
         case Some(v) => v
         case None    => bug!("Attempted unwrapping none in getOrCrash")
     }
-
 }

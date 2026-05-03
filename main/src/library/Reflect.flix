@@ -93,12 +93,12 @@ pub mod Reflect {
     ///
     /// Returns a `SourceLocation` spanning from (`line1`, `col1`) to (`line2`, `col2`) in the given source.
     ///
-    pub def mkSourceLocation(source: String, line1: Int32, col1: Int32, line2: Int32, col2: Int32) : SourceLocation =
+    pub def mkSourceLocation(source: String, line1: Int32, col1: Int32, line2: Int32, col2: Int32): SourceLocation =
         use SourceLocation.SourceLocation;
         use SourcePosition.SourcePosition;
         SourceLocation(
-                source,
-                SourcePosition(line1, col1),
-                SourcePosition(line2, col2)
+            source,
+            SourcePosition(line1, col1),
+            SourcePosition(line2, col2)
         )
 }
