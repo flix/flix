@@ -3,8 +3,7 @@ mod Test.Exp.Let.Deep.Tuple {
     /// Regression test: 100 chained complex tuple let-bindings must not cause a StackOverflowError.
     @CompileTest
     def testLetDeepTuple01(): (Int32, Int32) =
-        let (x0, y0) = (0, 1);
-        let (x1, y1) = (x0 + 1, y0 + 1);
+        let (x1, y1) = (0, 1);
         let (x2, y2) = (x1 + 1, y1 + 1);
         let (x3, y3) = (x2 + 1, y2 + 1);
         let (x4, y4) = (x3 + 1, y3 + 1);
@@ -103,7 +102,8 @@ mod Test.Exp.Let.Deep.Tuple {
         let (x97, y97) = (x96 + 1, y96 + 1);
         let (x98, y98) = (x97 + 1, y97 + 1);
         let (x99, y99) = (x98 + 1, y98 + 1);
-        (x99, y99)
+        let (x100, y100) = (x99 + 1, y99 + 1);
+        (x100, y100)
 
 }
 
