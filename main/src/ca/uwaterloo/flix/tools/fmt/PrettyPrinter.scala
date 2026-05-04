@@ -733,8 +733,15 @@ object PrettyPrinter {
     TreeKind.Expr.MatchRuleFragment,
     TreeKind.Expr.ExtMatchRuleFragment,
     TreeKind.Expr.SelectRuleFragment,
-    TreeKind.Expr.SelectRuleDefaultFragment
+    TreeKind.Expr.SelectRuleDefaultFragment,
+    TreeKind.Expr.TryCatchRuleFragment
   )
+
+  private def arrowPatternHeaderJoin(kind: TreeKind): Array[SyntaxTree.Child] => Doc =
+    if (kind == TreeKind.Expr.TryCatchRuleFragment)
+      cs => spaceJoin(cs, noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon))
+    else
+      defaultHeaderJoin
 
   private def prettyMatch(tree: Tree): Doc =
     prettyBracket(tree, filterEmpty(tree.children),
@@ -761,7 +768,7 @@ object PrettyPrinter {
     val children = filterEmpty(rule.children)
     val idx = children.indexWhere { case t: Token if t.kind == TokenKind.ArrowThickR => true; case _ => false }
     if (idx < 0) 0
-    else pretty(Layout.SingleLine, defaultHeaderJoin(children.take(idx))).length
+    else pretty(Layout.SingleLine, arrowPatternHeaderJoin(rule.kind)(children.take(idx))).length
   }
 
   private def alignedArrowRule(tree: Tree, maxWidth: Int): Doc = {
@@ -771,7 +778,7 @@ object PrettyPrinter {
 
     val patternPart = children.take(idx)
     val bodyPart    = children.drop(idx + 1)
-    val patternDoc  = defaultHeaderJoin(patternPart)
+    val patternDoc  = arrowPatternHeaderJoin(tree.kind)(patternPart)
     val bodyDoc     = joinWithGap(bodyPart)
     val bodyIsBlock = bodyPart.headOption.exists(isBlockExpr)
 
