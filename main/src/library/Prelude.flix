@@ -1,0 +1,229 @@
+import java.lang.System
+import java.lang.IndexOutOfBoundsException
+
+///
+/// Static denotes the region of global lifetime.
+///
+pub type alias Static = IO
+
+///
+/// A type alias used while we transition to a proper `Heap` effect.
+///
+type alias Heap[h: Eff] = h
+
+///
+/// An enum that holds type information where a witness is not available.
+///
+pub enum Proxy[_: Type] {
+    case Proxy
+}
+
+///
+/// An enum that holds effect information where a witness is not available.
+///
+pub enum ProxyEff[_: Eff] {
+    case Proxy
+}
+
+///
+/// An enum that holds type-level Bool information where a witness is not available.
+///
+pub enum ProxyBool[_: Bool] {
+    case Proxy
+}
+
+///
+/// The uninterpretable Chan effect.
+///
+/// The `Chan` effect represents the global region of channels.
+///
+/// The `Chan` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Chan
+
+///
+/// The uninterpretable IO effect.
+///
+/// The `IO` effect represents the actions not described by any other effect.
+///
+/// The `IO` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff IO
+
+///
+/// The uninterpretable `NonDet` effect.
+///
+/// The `NonDet` effect represents one or more non-deterministic actions.
+///
+/// The `NonDet` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff NonDet
+
+///
+/// The pure identity function.
+///
+pub def identity(x: a): a = x
+
+///
+/// The identity function, automatically casting to the required effect.
+///
+pub def eidentity(x: a): a \ ef = checked_ecast(x)
+
+///
+/// The constant function.
+///
+pub def constant(x: a): b -> a \ ef = _ -> checked_ecast(x)
+
+///
+/// Returns the function `f` with input arguments swapped.
+/// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
+///
+pub def flip(f: (a, b) -> c \ ef): (b, a) -> c \ ef = (x, y) -> f(y, x)
+
+///
+/// Partially applying this function in the form ``f `on` g`` lifts the binary function `f` to work on
+/// inputs transformed by `g`.
+///
+pub def on(f: (b, b) -> c \ ef1, g: a -> b \ ef2, x: a, y: a): c \ { ef1, ef2 } = f(g(x), g(y))
+
+///
+/// Returns the first component of `t`.
+///
+pub def fst(p: (a, b)): a =
+    let (x, _) = p;
+        x
+
+///
+/// Returns the second component of `t`.
+///
+pub def snd(p: (a, b)): b =
+    let (_, y) = p;
+        y
+
+///
+/// Returns the pair `p` with the components swapped.
+/// That is, returns `(y, x)` if `p = (x, y)`.
+///
+pub def swap(p: (a, b)): (b, a) =
+    let (x, y) = p;
+        (y, x)
+
+///
+/// Forwards function composition. Applies the function on the left first.
+///
+/// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
+///
+pub def >>(f: a -> b \ ef1, g: b -> c \ ef2): a -> c \ { ef1, ef2 } = x -> g(f(x))
+
+///
+/// Pipes the given value `x` into the function `f`.
+///
+/// Given a value `x` and a function `f` returns `f(x)`.
+///
+pub def |>(x: a, f: a -> b \ ef): b \ ef = f(x)
+
+///
+/// Pipes the given pair `x` into the function `f`.
+///
+/// Given a pair `x` and a function `f` returns `f(x)`.
+///
+pub def ||>(x: (a, b), f: a -> (b -> c \ ef)): c \ ef = f(fst(x), snd(x))
+
+///
+/// Pipes the given value `x` into the function `f`.
+///
+/// Given a value `x` and a function `f` returns `x`.
+///
+pub def !>( x: a, f: a -> Unit \ ef): a \ ef = f(x); x
+
+///
+/// Coerces the given value `x`.
+///
+pub def coerce(x: t): Coerce.Out[t] with Coerce[t] = Coerce.coerce(x)
+
+///
+/// Converts `x` to a string and prints it to standard out followed by a new line.
+///
+pub def println(x: a): Unit \ IO with ToString[a] =
+    System.out.println(x |> ToString.toString)
+
+///
+/// Touches the given region capability `rc`.
+///
+pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
+
+///
+/// Crashes the current process with the given message `m`.
+///
+pub def bug!(m: String): a = unsafe IO {
+    System.err.println("*".repeat(80));
+    System.err.println("**") ;
+    System.err.println("**  BUG: ${m}") ;
+    System.err.println("**") ;
+    System.err.println("*".repeat(80));
+    System.err.println("");
+    ?panic
+}
+
+///
+/// Asserts that this expression is unreachable. Crashes if not.
+///
+pub def unreachable!(): a = bug!("Reached unreachable expression.")
+
+///
+/// Throws an `IndexOutOfBoundsException` with the given message `m`.
+///
+pub def indexOutOfBounds!(m: String): a = unsafe IO {
+    throw new IndexOutOfBoundsException(m)
+}
+
+pub enum Purity[a: Type, b: Type, ef: Eff] {
+    case Pure(a -> b)
+    case Impure(a -> b \ ef)
+}
+
+pub enum Purity2[a: Type, b: Type, c: Type, ef: Eff] {
+    case Pure(a -> b -> c)
+    case Impure(a -> b -> c \ ef)
+}
+
+pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
+    case Pure(a -> b -> c -> d)
+    case Impure(a -> b -> c -> d \ ef)
+}
+
+///
+/// Returns `Purity.Pure(g)` if `f` has no effects.
+/// Returns `Purity.Impure(g)` otherwise.
+/// The function `g` can then be used in a context that requires
+/// it to be pure.
+///
+pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] =
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure => Purity.Pure(unchecked_cast (f as a -> b \ {}))
+        case Reflect.Purity.Impure => Purity.Impure(f)
+    }
+
+///
+/// Returns `Purity2.Pure(g)` if `f` has no effects.
+/// Returns `Purity2.Impure(g)` otherwise.
+/// The function `g` can then be used in a context that requires
+/// it to be pure.
+///
+pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] =
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity2.Pure(unchecked_cast (f as a -> b -> c \ {}))
+        case Reflect.Purity.Impure => Purity2.Impure(f)
+    }
+
+///
+/// Returns `Purity3.Pure(g)` if `f` has no effects.
+/// Returns `Purity3.Impure(g)` otherwise.
+/// The function `g` can then be used in a context that requires
+/// it to be pure.
+///
+pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] =
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity3.Pure(unchecked_cast (f as a -> b -> c -> d \ {}))
+        case Reflect.Purity.Impure => Purity3.Impure(f)
+    }
