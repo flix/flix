@@ -28,13 +28,17 @@ pub mod Json {
     /// JSON objects are stored as `Map[String, Json]`, which gives
     /// canonical (sorted) key order on output.
     ///
-    pub enum Json with Eq, ToString {
+    pub enum Json with Eq {
         case JArray(Vector[Json])
         case JBool(Bool)
         case JNull
         case JNumber(BigDecimal)
         case JObject(Map[String, Json])
         case JString(String)
+    }
+
+    instance ToString[Json] {
+        pub def toString(j: Json): String = toCompactString(j)
     }
 
     ///

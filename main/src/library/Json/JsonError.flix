@@ -28,7 +28,7 @@ pub mod Json.JsonError {
     /// `Decode` wraps a decoder failure together with the path of the failing
     /// value inside the parsed `Json` document.
     ///
-    pub enum JsonError with Eq, ToString {
+    pub enum JsonError with Eq {
         case Parse(ParseErrorKind)
         case Decode(JsonPath, DecodeErrorKind)
     }
@@ -37,7 +37,7 @@ pub mod Json.JsonError {
     /// A parser-side failure: produced by `Json.parse` while reading raw JSON
     /// text. Parser failures do not carry a `JsonPath`.
     ///
-    pub enum ParseErrorKind with Eq, ToString {
+    pub enum ParseErrorKind with Eq {
         case DuplicateKey(String)
         case InvalidEscape(String)
         case InvalidNumber(String)
@@ -50,34 +50,54 @@ pub mod Json.JsonError {
     /// A decoder-side failure: produced by `FromJson.fromJson` while turning a
     /// parsed `Json` value into a typed value.
     ///
-    pub enum DecodeErrorKind with Eq, ToString {
+    pub enum DecodeErrorKind with Eq {
         case MissingKey(String)
         case TypeMismatch(String)
     }
 
-    instance Formattable[ParseErrorKind] {
-        pub def format(k: ParseErrorKind): RichString = RichString.fromString(match k {
+    instance ToString[ParseErrorKind] {
+        pub def toString(k: ParseErrorKind): String = match k {
             case ParseErrorKind.DuplicateKey(k1)   => "duplicate key '${k1}'"
             case ParseErrorKind.InvalidEscape(s)   => "invalid escape sequence '${s}'"
             case ParseErrorKind.InvalidNumber(s)   => "invalid number '${s}'"
             case ParseErrorKind.InvalidUnicode(s)  => "invalid unicode '${s}'"
             case ParseErrorKind.UnexpectedChar(c)  => "unexpected character '${c}'"
             case ParseErrorKind.UnexpectedEof      => "unexpected end of input"
-        })
+        }
+    }
+
+    instance ToString[DecodeErrorKind] {
+        pub def toString(k: DecodeErrorKind): String = match k {
+            case DecodeErrorKind.MissingKey(k1)    => "missing key '${k1}'"
+            case DecodeErrorKind.TypeMismatch(d)   => "type mismatch: expected ${d}"
+        }
+    }
+
+    instance ToString[JsonError] {
+        pub def toString(e: JsonError): String = match e {
+            case JsonError.Parse(k)     => ToString.toString(k)
+            case JsonError.Decode(p, k) => match Json.JsonPath.steps(p) {
+                case Nil => ToString.toString(k)
+                case _   => "${ToString.toString(k)} at ${p}"
+            }
+        }
+    }
+
+    instance Formattable[ParseErrorKind] {
+        pub def format(k: ParseErrorKind): RichString = RichString.fromString(ToString.toString(k))
     }
 
     instance Formattable[DecodeErrorKind] {
-        pub def format(k: DecodeErrorKind): RichString = RichString.fromString(match k {
-            case DecodeErrorKind.MissingKey(k1)    => "missing key '${k1}'"
-            case DecodeErrorKind.TypeMismatch(d)   => "type mismatch: expected ${d}"
-        })
+        pub def format(k: DecodeErrorKind): RichString = RichString.fromString(ToString.toString(k))
     }
 
     instance Formattable[JsonError] {
         pub def format(e: JsonError): RichString = match e {
             case JsonError.Parse(k)     => Formattable.format(k)
-            case JsonError.Decode(p, k) =>
-                Formattable.format(k) + RichString.fromString(" at ") + Formattable.format(p)
+            case JsonError.Decode(p, k) => match Json.JsonPath.steps(p) {
+                case Nil => Formattable.format(k)
+                case _   => Formattable.format(k) + RichString.fromString(" at ") + Formattable.format(p)
+            }
         }
     }
 
