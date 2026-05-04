@@ -160,5 +160,4 @@ pub mod Time.Duration {
     pub def isNegative(d: Time.Duration): Bool =
         let Time.Duration.Duration(n) = d;
         n < 0i64
-
 }

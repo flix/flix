@@ -23,5 +23,4 @@ pub mod Fs.MoveOption {
         case AtomicMove
         case ReplaceExisting
     }
-
 }

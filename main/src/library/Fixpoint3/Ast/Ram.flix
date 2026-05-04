@@ -171,18 +171,18 @@ pub mod Fixpoint3.Ast.Ram {
         pub def toString(op: RelOp): String =
             let nl = String.lineSeparator();
             match op {
-                case RelOp.Search(var, relSym, _, body) =>
+                case RelOp.Search(var, relSym, _, body)                       =>
                     "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Query(var, relSym, prefixQuery, _, _, body) =>
+                case RelOp.Query(var, relSym, prefixQuery, _, _, body)        =>
                     let qry = Vector.joinWith(match term -> {
                         ToString.toString(term)
                     }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${relSym} | ${qry}} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Functional(RowVar.Named(id), _, terms, body, _, _) =>
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Project(terms, relSym, _) =>
+                case RelOp.Project(terms, relSym, _)                          =>
                     "project (${terms |> Vector.join(", ")}) into ${relSym}"
-                case RelOp.If(test, then) =>
+                case RelOp.If(test, then)                                     =>
                     let tst = test |> Vector.join(" ∧ ");
                     "if (${tst}) then${nl}${String.indent(4, "${then}")}end"
             }
@@ -228,20 +228,19 @@ pub mod Fixpoint3.Ast.Ram {
     }
 
     instance ToString[BoolExp] {
-        pub def toString(exp: BoolExp): String =
-            match exp {
-                case BoolExp.Not(boolExp)                  => "not (${boolExp})"
-                case BoolExp.IsEmpty(relSym)               => "${relSym} = ∅"
-                case BoolExp.NotMemberOf(terms, relSym, _) => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
-                case BoolExp.NotBot(term, _, _)            => "(${term}) ≠ ⊥"
-                case BoolExp.Leq(elem, _, term)            => "${elem} ≤ (${term})"
-                case BoolExp.Eq(lhs, rhs)                  => "${lhs} = ${rhs}"
-                case BoolExp.Guard1(_, v)                  => "<clo>(${v})"
-                case BoolExp.Guard2(_, v1, v2)             => "<clo>(${v1}, ${v2})"
-                case BoolExp.Guard3(_, v1, v2, v3)         => "<clo>(${v1}, ${v2}, ${v3})"
-                case BoolExp.Guard4(_, v1, v2, v3, v4)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-                case BoolExp.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
-            }
+        pub def toString(exp: BoolExp): String = match exp {
+            case BoolExp.Not(boolExp)                  => "not (${boolExp})"
+            case BoolExp.IsEmpty(relSym)               => "${relSym} = ∅"
+            case BoolExp.NotMemberOf(terms, relSym, _) => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
+            case BoolExp.NotBot(term, _, _)            => "(${term}) ≠ ⊥"
+            case BoolExp.Leq(elem, _, term)            => "${elem} ≤ (${term})"
+            case BoolExp.Eq(lhs, rhs)                  => "${lhs} = ${rhs}"
+            case BoolExp.Guard1(_, v)                  => "<clo>(${v})"
+            case BoolExp.Guard2(_, v1, v2)             => "<clo>(${v1}, ${v2})"
+            case BoolExp.Guard3(_, v1, v2, v3)         => "<clo>(${v1}, ${v2}, ${v3})"
+            case BoolExp.Guard4(_, v1, v2, v3, v4)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+            case BoolExp.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -366,10 +365,11 @@ pub mod Fixpoint3.Ast.Ram {
     /// Returns the arity of the non-lattice part of `relSym`.
     ///
     pub def arityOfNonLat(relSym: RelSym): Int32 = match relSym {
-        case RelSym.Symbol(_, arity, den) => match den {
-            case Relational => arity
-            case _          => arity - 1
-        }
+        case RelSym.Symbol(_, arity, den) =>
+            match den {
+                case Relational => arity
+                case _          => arity - 1
+            }
     }
 
     ///
@@ -400,7 +400,6 @@ pub mod Fixpoint3.Ast.Ram {
     ///        ...
     /// `e1` and `e2` would be the identifiers. Identifiers will only be defined
     /// once in a program, but can be reffered to from elsewhere.
-
     pub enum RowVar with Eq {
         case Named(Int32)
     }
@@ -416,5 +415,4 @@ pub mod Fixpoint3.Ast.Ram {
             case (RowVar.Named(i1), RowVar.Named(i2)) => i1 <=> i2
         }
     }
-
 }

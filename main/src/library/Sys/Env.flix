@@ -17,7 +17,6 @@
 pub mod Sys.Env {
 
     use Sys.Env
-
     import dev.flix.runtime.Global
     import java.lang.Exception
     import java.lang.Runtime
@@ -32,7 +31,6 @@ pub mod Sys.Env {
     /// An effect used to access the system environment.
     ///
     pub eff Env {
-
         ///
         /// Returns the arguments passed to the program via the command line.
         ///
@@ -109,7 +107,6 @@ pub mod Sys.Env {
         /// The returned value is never less than one.
         ///
         def getVirtualProcessors(): Int32
-
     }
 
     ///
@@ -176,12 +173,12 @@ pub mod Sys.Env {
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Env) + IO = handle(f)()
 
     def getPropHelper(name: String): Option[String] \ IO =
-            try {
-                let result = System.getProperty(name);
-                Object.toOption(result)
-            } catch {
-                case _: Exception => None
-            }
+        try {
+            let result = System.getProperty(name);
+            Object.toOption(result)
+        } catch {
+            case _: Exception => None
+        }
 
     def getEnvHelper(iter: JIterator[Entry[String, String]], m: Map[String, String]): Map[String, String] \ IO =
         if (iter.hasNext())
@@ -191,5 +188,4 @@ pub mod Sys.Env {
             getEnvHelper(iter, Map.insert(k, v, m))
         else
             m
-
 }

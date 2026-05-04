@@ -54,7 +54,6 @@ pub mod DelayMap {
         pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
         pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
         redef isEmpty(m: DelayMap[k, v]): Bool = DelayMap.isEmpty(m)
-
     }
 
     instance Iterable[DelayMap[k, v]] {
@@ -175,7 +174,7 @@ pub mod DelayMap {
     pub def count(f: (k, v) -> Bool \ ef, m: DelayMap[k, v]): Int32 \ ef =
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         match purityOf2(f) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
                     let DMap(t) = m;
@@ -202,7 +201,7 @@ pub mod DelayMap {
     pub def minimumKey(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
         match RedBlackTree.minimumKey(t) {
-            case None       => None
+            case None         => None
             case Some((k, v)) => Some((k, force v))
         }
 
@@ -217,13 +216,13 @@ pub mod DelayMap {
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
                     let res = RedBlackTree.parMinimumBy(h, t);
                     match res {
-                        case None       => None
+                        case None         => None
                         case Some((k, v)) => Some((k, force v))
                     }
                 else
@@ -250,13 +249,13 @@ pub mod DelayMap {
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
                     let res = RedBlackTree.parMinimumBy(h, t);
                     match res {
-                        case None       => None
+                        case None         => None
                         case Some((k, v)) => Some((k, force v))
                     }
                 else
@@ -273,7 +272,7 @@ pub mod DelayMap {
     pub def maximumKey(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
         match RedBlackTree.maximumKey(t) {
-            case None       => None
+            case None         => None
             case Some((k, v)) => Some((k, force v))
         }
 
@@ -288,13 +287,13 @@ pub mod DelayMap {
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
                     let res = RedBlackTree.parMaximumBy(h, t);
                     match res {
-                        case None       => None
+                        case None         => None
                         case Some((k, v)) => Some((k, force v))
                     }
                 else
@@ -322,13 +321,13 @@ pub mod DelayMap {
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
                     let res = RedBlackTree.parMaximumBy(h, t);
                     match res {
-                        case None       => None
+                        case None         => None
                         case Some((k, v)) => Some((k, force v))
                     }
                 else
@@ -373,11 +372,10 @@ pub mod DelayMap {
     /// Otherwise, updates `m` with `k => v`.
     ///
     @Experimental @LazyWhenPure
-    pub def insertWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
-        match purityOf3(f) {
-            case Purity3.Pure(g)   => insertWithKeyL(g, k, v, m)
-            case Purity3.Impure(g) => insertWithKeyE(g, k, v, m)
-        }
+    pub def insertWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] = match purityOf3(f) {
+        case Purity3.Pure(g)   => insertWithKeyL(g, k, v, m)
+        case Purity3.Impure(g) => insertWithKeyE(g, k, v, m)
+    }
 
     ///
     /// Helper function for `insertWithKey`. Applies `f` lazily.
@@ -394,9 +392,9 @@ pub mod DelayMap {
     def insertWithKeyE(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         let DMap(t) = m;
         let f1 = (k1, v1, v2) -> {
-                let x = f(k1, force v1, force v2);
-                lazy x
-            };
+            let x = f(k1, force v1, force v2);
+            lazy x
+        };
         DMap(RedBlackTree.insertWith(f1, k, lazy v, t))
 
     ///
@@ -418,11 +416,10 @@ pub mod DelayMap {
     ///  - Applies `f` lazily if `f` is pure.
     ///
     @Experimental @ParallelWhenPure @LazyWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
-        match purityOf2(f) {
-            case Purity2.Pure(g)   => mapWithKeyL(g, m)
-            case Purity2.Impure(g) => mapWithKeyE(g, m)
-        }
+    pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef = match purityOf2(f) {
+        case Purity2.Pure(g)   => mapWithKeyL(g, m)
+        case Purity2.Impure(g) => mapWithKeyE(g, m)
+    }
 
     ///
     /// Helper function for `mapWithKey`. Applies `f` lazily.
@@ -440,9 +437,9 @@ pub mod DelayMap {
     ///
     def mapWithKeyE(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         let g = (k, v) -> {
-                let x1 = f(k, force v);
-                lazy x1
-            };
+            let x1 = f(k, force v);
+            lazy x1
+        };
         let _ = parallelForce(m);
         let DMap(t) = m;
         DMap(RedBlackTree.mapWithKey(g, t))
@@ -468,7 +465,7 @@ pub mod DelayMap {
                 let _ = seqLoop(a);
                 let _ = force v;
                 seqLoop(b)
-            case _ => ()
+            case _                   => ()
         };
         def parLoop(n, tt) = {
             if (n <= 1)
@@ -479,9 +476,9 @@ pub mod DelayMap {
                         par (
                             _ <- parLoop((n - 2) / 2, a); // We divide the rest of the threads as follows:
                             _ <- parLoop((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
-                            _ <- force v                  // that we distribute over the two spanned threads.
+                            _ <- force v // that we distribute over the two spanned threads.
                         ) yield ()
-                    case _ => ()
+                    case _                   => ()
                 }
         };
         let DMap(t) = m;
@@ -528,11 +525,10 @@ pub mod DelayMap {
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
-    pub def unionWithKey(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
-        match purityOf3(f) {
-            case Purity3.Pure(g)   => unionWithKeyL(g, m1, m2)
-            case Purity3.Impure(g) => unionWithKeyE(g, m1, m2)
-        }
+    pub def unionWithKey(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] = match purityOf3(f) {
+        case Purity3.Pure(g)   => unionWithKeyL(g, m1, m2)
+        case Purity3.Impure(g) => unionWithKeyE(g, m1, m2)
+    }
 
     ///
     /// Helper function for `unionWithKey`. Applies `f` lazily.
@@ -556,9 +552,9 @@ pub mod DelayMap {
         let DMap(xs) = m1;
         let DMap(ys) = m2;
         let f1 = (k, v1, v2) -> {
-                let x = f(k, force v1, force v2);
-                lazy x
-            };
+            let x = f(k, force v1, force v2);
+            lazy x
+        };
         if (blackHeight(xs) < blackHeight(ys))
             let _ = parallelForce(m1);
             DMap(foldRight((k, v, acc) -> insertWith(f1, k, v, acc), ys, xs))
@@ -703,11 +699,10 @@ pub mod DelayMap {
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
-    pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
-        match purityOf2(f) {
-            case Purity2.Pure(g)   => updateWithKeyL(g, k, m)
-            case Purity2.Impure(g) => updateWithKeyE(g, k, m)
-        }
+    pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] = match purityOf2(f) {
+        case Purity2.Pure(g)   => updateWithKeyL(g, k, m)
+        case Purity2.Impure(g) => updateWithKeyE(g, k, m)
+    }
 
     ///
     /// Helper function for `updateWithKey`. Does not force the `v`.
@@ -785,9 +780,9 @@ pub mod DelayMap {
     ///
     @Experimental
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = region rc {
-       let ix = Ref.fresh(rc, 0);
-       let f1 = (k, v) -> { let i =  Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
-       forEach(f1, m)
+        let ix = Ref.fresh(rc, 0);
+        let f1 = (k, v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
+        forEach(f1, m)
     }
 
     ///
@@ -818,7 +813,7 @@ pub mod DelayMap {
             RedBlackTree.sumWith((k, v) -> f(k, force v), t)
         };
         match purityOf2(f) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
                     RedBlackTree.parSumWith(h, t)
@@ -853,5 +848,4 @@ pub mod DelayMap {
         let _ = parallelForce(m);
         let DMap(t) = m;
         RedBlackTree.joinWith((k, v) -> f(k, force v), sep, t)
-
 }

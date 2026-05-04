@@ -18,7 +18,6 @@ pub mod Time.Clock {
 
     use Time.Clock
     use Time.TimeUnit
-
     import java.lang.System
     import java.util.concurrent.{TimeUnit => JTimeUnit}
 
@@ -26,12 +25,10 @@ pub mod Time.Clock {
     /// An effect used to access the current (real-world) time.
     ///
     pub eff Clock {
-
         ///
         /// Returns a measure of time since the epoch in the given time unit `u`.
         ///
         def currentTime(u: TimeUnit): Int64
-
     }
 
     ///
@@ -54,13 +51,13 @@ pub mod Time.Clock {
                 let time = System.currentTimeMillis();
                 let ms = JTimeUnit.MILLISECONDS;
                 match u {
-                    case TimeUnit.Days          => k(ms.toDays(time))
-                    case TimeUnit.Hours         => k(ms.toHours(time))
-                    case TimeUnit.Microseconds  => k(ms.toMicros(time))
-                    case TimeUnit.Milliseconds  => k(ms.toMillis(time))
-                    case TimeUnit.Minutes       => k(ms.toMinutes(time))
-                    case TimeUnit.Nanoseconds   => k(ms.toNanos(time))
-                    case TimeUnit.Seconds       => k(ms.toSeconds(time))
+                    case TimeUnit.Days         => k(ms.toDays(time))
+                    case TimeUnit.Hours        => k(ms.toHours(time))
+                    case TimeUnit.Microseconds => k(ms.toMicros(time))
+                    case TimeUnit.Milliseconds => k(ms.toMillis(time))
+                    case TimeUnit.Minutes      => k(ms.toMinutes(time))
+                    case TimeUnit.Nanoseconds  => k(ms.toNanos(time))
+                    case TimeUnit.Seconds      => k(ms.toSeconds(time))
                 }
             }
         }
@@ -72,5 +69,4 @@ pub mod Time.Clock {
     ///
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Clock) + IO = handle(f)()
-
 }

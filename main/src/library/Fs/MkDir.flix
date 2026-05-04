@@ -24,12 +24,10 @@ pub mod Fs.MkDir {
     /// Use the `MkDir.runWithFileWrite` handler.
     ///
     pub eff MkDir {
-
         ///
         /// Creates the directory `d`.
         ///
         def mkDir(d: String): Result[IoError, Unit]
-
     }
 
     ///
@@ -39,5 +37,4 @@ pub mod Fs.MkDir {
         run { f() } with handler MkDir {
             def mkDir(d, k) = k(Fs.FileWrite.mkDir(d))
         }
-
 }

@@ -23,5 +23,4 @@ pub mod Net.Body {
         case Text(String)
         case Bytes(Vector[Int8])
     }
-
 }

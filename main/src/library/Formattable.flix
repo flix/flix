@@ -83,5 +83,4 @@ pub mod Formattable {
             let (v1, v2) = x;
             RichString.fromString("(") + Formattable.format(v1) + RichString.fromString(", ") + Formattable.format(v2) + RichString.fromString(")")
     }
-
 }

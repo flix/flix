@@ -24,12 +24,10 @@ pub mod Fs.AccessTime {
     /// Use the `AccessTime.runWithFileTime` handler.
     ///
     pub eff AccessTime {
-
         ///
         /// Returns the last access time of the given file `f` in milliseconds since the epoch.
         ///
         def accessTime(f: String): Result[IoError, Int64]
-
     }
 
     ///
@@ -39,5 +37,4 @@ pub mod Fs.AccessTime {
         run { f() } with handler AccessTime {
             def accessTime(filename, k) = k(Fs.FileTime.accessTime(filename))
         }
-
 }

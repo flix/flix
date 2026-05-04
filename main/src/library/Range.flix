@@ -38,5 +38,4 @@ pub mod Range {
                 f(i); loop(Discrete.succ(i))
             };
         loop(b)
-
 }

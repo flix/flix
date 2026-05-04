@@ -38,37 +38,33 @@ pub mod BufReader {
     /// `reader`: the underlying `Readable` being read from.
     ///
     pub struct BufReader[a: Type, t: Type, r: Region] {
-        buffer: Array[a, r],
+        buffer:     Array[a, r],
         mut cursor: Int32,
-        mut size: Int32,
-        reader: t
+        mut size:   Int32,
+        reader:     t
     }
 
     instance Readable[BufReader[a, t, rr]] with Readable[t] where Readable.Elm[t] ~ a {
-
         type Elm = a
 
         type Aef = rr + Readable.Aef[t]
 
         pub def read(buffer: Array[a, rb], bufReader: BufReader[a, t, rr]): Result[IoError, Int32] \ rb + rr + Readable.Aef[t] =
             BufReader.read(buffer, bufReader)
-
     }
 
     instance Peekable[BufReader[a, t, r]] with Readable[t] where Readable.Elm[t] ~ a {
-
         pub def peek(bufReader: BufReader[a, t, r]): Result[IoError, Option[Readable.Elm[t]]] \ Readable.Aef[t] + r = BufReader.peek(bufReader)
 
         pub def skip(n: Int32, bufReader: BufReader[a, t, r]): Result[IoError, Int32] \ Readable.Aef[t] + r = BufReader.skip(n, bufReader)
 
         pub def readWhile(p: Readable.Elm[t] -> Bool, bufReader: BufReader[a, t, r]): Result[IoError, Vector[Readable.Elm[t]]] \ Readable.Aef[t] + r = BufReader.readWhile(p, bufReader)
-
     }
 
     ///
     /// Constructs a `BufReader` wrapping `reader` with a default capacity of 4096 items.
     ///
-    pub def withDefaultCapacity(rc: Region[r], reader: t): BufReader[a,t, r] \ r with Readable[t] =
+    pub def withDefaultCapacity(rc: Region[r], reader: t): BufReader[a, t, r] \ r with Readable[t] =
         withCapacity(rc, defaultBufferCapacity(), reader)
 
     ///
@@ -76,13 +72,12 @@ pub mod BufReader {
     ///
     /// If `capacity <= 0`, the `BufReader` will delegate directly to `reader` without buffering.
     ///
-    pub def withCapacity(rc: Region[r], capacity: Int32, reader: t): BufReader[a, t, r] \ r with Readable[t] =
-        new BufReader @ rc {
-            buffer = Array.empty(rc, capacity),
-            cursor = 0,
-            size = 0,
-            reader = reader
-        }
+    pub def withCapacity(rc: Region[r], capacity: Int32, reader: t): BufReader[a, t, r] \ r with Readable[t] = new BufReader @ rc {
+        buffer = Array.empty(rc, capacity),
+        cursor = 0,
+        size = 0,
+        reader = reader
+    }
 
     ///
     /// Reads `k` items from the underlying `Readable` into `dest`, storing items read into
@@ -111,7 +106,7 @@ pub mod BufReader {
         if (bufReader->size != 0) {
             Ok(Some(Array.get(bufReader->cursor, bufReader->buffer)))
         } else {
-            forM(
+            forM (
                 itemsFilled <- fillBuffer(bufReader)
             ) yield {
                 if (itemsFilled != 0) {
@@ -140,12 +135,12 @@ pub mod BufReader {
             let itemsSkipped = skipFromBuffer(n, bufReader);
 
             // recurse into Done or Empty Buffer branch
-            forM(
+            forM (
                 rest <- skip(n - itemsSkipped, bufReader)
             ) yield itemsSkipped + rest
         } else {
             // Empty Buffer: refill it
-            forM(
+            forM (
                 itemsFilled <- fillBuffer(bufReader);
                 skipped <- if (itemsFilled == 0) {
                     // Done: Eof
@@ -182,13 +177,12 @@ pub mod BufReader {
     ///
     /// Returns `Err(err)` if there is an IO error.
     ///
-    pub def readWhile(p: a -> Bool, bufReader: BufReader[a, t, r]): Result[IoError, Vector[a]] \ Readable.Aef[t] + r with Readable[t] where Readable.Elm[t] ~ a =
-        region rc {
-            let mutList = MutList.empty(rc);
-            forM(
-                _ <- readWhileInto(rc, p, mutList, bufReader)
-            ) yield mutList |> MutList.toVector
-        }
+    pub def readWhile(p: a -> Bool, bufReader: BufReader[a, t, r]): Result[IoError, Vector[a]] \ Readable.Aef[t] + r with Readable[t] where Readable.Elm[t] ~ a = region rc {
+        let mutList = MutList.empty(rc);
+        forM (
+            _ <- readWhileInto(rc, p, mutList, bufReader)
+        ) yield mutList |> MutList.toVector
+    }
 
     ///
     /// Like `readWhile`, but appends results into `results` and returns `Ok(())` on success.
@@ -220,7 +214,7 @@ pub mod BufReader {
                 readWhileInto(rc, p, results, bufReader)
             }
         } else {
-            forM(
+            forM (
                 itemsFilled <- fillBuffer(bufReader);
                 unit <- if (itemsFilled == 0) Ok(()) else readWhileInto(rc, p, results, bufReader)
             ) yield unit
@@ -245,7 +239,7 @@ pub mod BufReader {
             let itemsCopied = copyFromBuffer(cursor, dest, bufReader);
             readFromCursor(cursor + itemsCopied, dest, bufReader)
         } else {
-            forM(
+            forM (
                 itemsFilled <- fillBuffer(bufReader);
                 newCursor <- if (itemsFilled == 0) {
                     Ok(cursor)
@@ -289,7 +283,7 @@ pub mod BufReader {
     /// Assumes that `bufReader->size == 0`.
     ///
     def fillBuffer(bufReader: BufReader[a, t, rr]): Result[IoError, Int32] \ rr + Readable.Aef[t] with Readable[t] where Readable.Elm[t] ~ a =
-        forM(
+        forM (
             itemsRead <- Readable.read(bufReader->buffer, bufReader->reader)
         ) yield {
             bufReader->cursor = 0;
@@ -298,5 +292,4 @@ pub mod BufReader {
         }
 
     def defaultBufferCapacity(): Int32 = 4096
-
 }

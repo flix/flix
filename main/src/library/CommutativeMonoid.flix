@@ -20,7 +20,6 @@ pub mod CommutativeMonoid {
     /// A trait for types that form a commutative monoid.
     ///
     pub lawful trait CommutativeMonoid[a] with Monoid[a] {
-
         ///
         /// Returns a neutral element.
         ///
@@ -32,14 +31,13 @@ pub mod CommutativeMonoid {
         pub def combine(x: a, y: a): a =
             Monoid.combine(x, y)
 
-        law leftIdentity: forall(x: a) with Eq[a] CommutativeMonoid.combine(CommutativeMonoid.empty(), x) == x
+        law leftIdentity: forall (x: a) with Eq[a] CommutativeMonoid.combine(CommutativeMonoid.empty(), x) == x
 
-        law rightIdentity: forall(x: a) with Eq[a] CommutativeMonoid.combine(x, CommutativeMonoid.empty()) == x
+        law rightIdentity: forall (x: a) with Eq[a] CommutativeMonoid.combine(x, CommutativeMonoid.empty()) == x
 
-        law associative: forall(x: a, y: a, z: a) with Eq[a] CommutativeMonoid.combine(CommutativeMonoid.combine(x, y), z) == CommutativeMonoid.combine(x, CommutativeMonoid.combine(y, z))
+        law associative: forall (x: a, y: a, z: a) with Eq[a] CommutativeMonoid.combine(CommutativeMonoid.combine(x, y), z) == CommutativeMonoid.combine(x, CommutativeMonoid.combine(y, z))
 
-        law commutative: forall(x: a, y: a) with Eq[a] CommutativeMonoid.combine(x, y) == CommutativeMonoid.combine(y, x)
-
+        law commutative: forall (x: a, y: a) with Eq[a] CommutativeMonoid.combine(x, y) == CommutativeMonoid.combine(y, x)
     }
 
     instance CommutativeMonoid[Unit]
@@ -77,5 +75,4 @@ pub mod CommutativeMonoid {
     instance CommutativeMonoid[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3], CommutativeMonoid[a4], CommutativeMonoid[a5], CommutativeMonoid[a6], CommutativeMonoid[a7], CommutativeMonoid[a8], CommutativeMonoid[a9]
 
     instance CommutativeMonoid[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3], CommutativeMonoid[a4], CommutativeMonoid[a5], CommutativeMonoid[a6], CommutativeMonoid[a7], CommutativeMonoid[a8], CommutativeMonoid[a9], CommutativeMonoid[a10]
-
 }

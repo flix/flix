@@ -34,5 +34,4 @@ pub mod Net.SocketAddrV6 {
     instance Formattable[SocketAddrV6] {
         pub def format(x: SocketAddrV6): RichString = RichString.fromString(ToString.toString(x))
     }
-
 }

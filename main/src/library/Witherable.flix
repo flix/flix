@@ -20,8 +20,7 @@ pub mod Witherable {
     /// A trait for data structures that can be traversed in left-to-right
     /// order with an applicative partial functor.
     ///
-    pub trait Witherable[t : Type -> Type] with Traversable[t], Filterable[t] {
-
+    pub trait Witherable[t: Type -> Type] with Traversable[t], Filterable[t] {
         ///
         /// Returns the result of applying the applicative partial mapping function `f` to all the elements of the
         /// data structure `t`.
@@ -36,7 +35,5 @@ pub mod Witherable {
         ///
         pub def sequenceWither(t: t[m[Option[a]]]): m[t[a]] \ Foldable.Aef[t] with Applicative[m] =
             Witherable.wither(identity, t)
-
     }
-
 }

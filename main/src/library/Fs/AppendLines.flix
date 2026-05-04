@@ -24,14 +24,12 @@ pub mod Fs.AppendLines {
     /// Use the `AppendLines.runWithFileWrite` handler.
     ///
     pub eff AppendLines {
-
         ///
         /// Appends `lines` to the given file `f`.
         ///
         /// Creates the file `f` if it does not exist.
         ///
         def appendLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
-
     }
 
     ///
@@ -41,5 +39,4 @@ pub mod Fs.AppendLines {
         run { f() } with handler AppendLines {
             def appendLines(data, file, k) = k(Fs.FileWrite.appendLines(data, file))
         }
-
 }

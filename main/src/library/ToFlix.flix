@@ -117,5 +117,4 @@ pub mod ToFlix {
         type In = JMap[k, v]
         pub def toFlix(m: JMap[k, v]): Map[k, v] = Adaptor.fromMap(m)
     }
-
 }

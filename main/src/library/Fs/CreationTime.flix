@@ -24,12 +24,10 @@ pub mod Fs.CreationTime {
     /// Use the `CreationTime.runWithFileTime` handler.
     ///
     pub eff CreationTime {
-
         ///
         /// Returns the creation time of the given file `f` in milliseconds since the epoch.
         ///
         def creationTime(f: String): Result[IoError, Int64]
-
     }
 
     ///
@@ -39,5 +37,4 @@ pub mod Fs.CreationTime {
         run { f() } with handler CreationTime {
             def creationTime(filename, k) = k(Fs.FileTime.creationTime(filename))
         }
-
 }

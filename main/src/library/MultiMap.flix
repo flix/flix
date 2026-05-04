@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 pub mod MultiMap {
 
     ///
@@ -82,11 +81,11 @@ pub mod MultiMap {
         redef forAll(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forAll(_ -> f, m)
     }
 
-    instance SemiGroup[MultiMap[k,v]] with Order[k], Order[v] {
-        pub def combine(x: MultiMap[k,v], y: MultiMap[k,v]): MultiMap[k,v] = MultiMap.union(x, y)
+    instance SemiGroup[MultiMap[k, v]] with Order[k], Order[v] {
+        pub def combine(x: MultiMap[k, v], y: MultiMap[k, v]): MultiMap[k, v] = MultiMap.union(x, y)
     }
 
-    instance CommutativeSemiGroup[MultiMap[k,v]] with Order[k], Order[v]
+    instance CommutativeSemiGroup[MultiMap[k, v]] with Order[k], Order[v]
 
     instance Monoid[MultiMap[k, v]] with Order[k], Order[v] {
         pub def empty(): MultiMap[k, v] = MultiMap.empty()
@@ -176,14 +175,13 @@ pub mod MultiMap {
     ///
     /// Where `vs` is any foldable container. If `vs` is empty nothing is inserted.
     ///
-    pub def insertAll(k: k, vs: t[v], m: MultiMap[k, v]): MultiMap[k, v] \ Foldable.Aef[t] with Order[k], Order[v], Foldable[t] =
-        match Foldable.toSet(vs) {
-            case s1 if Set.isEmpty(s1) => m
-            case s1                    => {
-                let MultiMap(m1) = m;
-                MultiMap(Map.insertWith((v1, v2) -> Set.union(v1, v2), k, s1, m1))
-            }
+    pub def insertAll(k: k, vs: t[v], m: MultiMap[k, v]): MultiMap[k, v] \ Foldable.Aef[t] with Order[k], Order[v], Foldable[t] = match Foldable.toSet(vs) {
+        case s1 if Set.isEmpty(s1) => m
+        case s1                    => {
+            let MultiMap(m1) = m;
+            MultiMap(Map.insertWith((v1, v2) -> Set.union(v1, v2), k, s1, m1))
         }
+    }
 
     ///
     /// Updates `m` with `k => map(f, vs)` if `k => vs` is in `m`.
@@ -226,10 +224,10 @@ pub mod MultiMap {
     pub def removeWithValue(k: k, v: v, m: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         let MultiMap(m1) = m;
         match Map.get(k, m1) {
-            case None                               => m
-            case Some(s) if not Set.memberOf(v, s)  => m
-            case Some(s) if s == Set#{v}            => remove(k, m)
-            case Some(_)                            => MultiMap(Map.adjust(s1 -> Set.remove(v, s1), k, m1))
+            case None                              => m
+            case Some(s) if not Set.memberOf(v, s) => m
+            case Some(s) if s == Set#{v}           => remove(k, m)
+            case Some(_)                           => MultiMap(Map.adjust(s1 -> Set.remove(v, s1), k, m1))
         }
 
     ///
@@ -444,11 +442,12 @@ pub mod MultiMap {
         let MultiMap(mm1) = m1;
         let MultiMap(mm2) = m2;
         let step = (acc, k, s) -> match Map.get(k, mm2) {
-            case None => acc
-            case Some(s1) => match Set.intersection(s, s1) {
-                case s2 if Set.isEmpty(s2) => acc
-                case s2                    => Map.insert(k, s2, acc)
-            }
+            case None     => acc
+            case Some(s1) =>
+                match Set.intersection(s, s1) {
+                    case s2 if Set.isEmpty(s2) => acc
+                    case s2                    => Map.insert(k, s2, acc)
+                }
         };
         MultiMap(Map.foldLeftWithKey(step, Map.empty(), mm1))
 
@@ -465,11 +464,10 @@ pub mod MultiMap {
     ///
     /// Note - returns `None` when the set difference is empty.
     ///
-    def setDifference1(s1: Set[v], s2: Set[v]): Option[Set[v]] with Order[v] =
-        match Set.difference(s1, s2) {
-            case s if Set.isEmpty(s) => None
-            case s                   => Some(s)
-        }
+    def setDifference1(s1: Set[v], s2: Set[v]): Option[Set[v]] with Order[v] = match Set.difference(s1, s2) {
+        case s if Set.isEmpty(s) => None
+        case s                   => Some(s)
+    }
 
     ///
     /// Returns the MultiMap `m` as a list of singleton key-value pairs.
@@ -502,7 +500,7 @@ pub mod MultiMap {
         let MultiMap(m1) = m;
         m1
 
-    // No traversable functions due to Order constraint that is outside the `Traversable` trait.
+        // No traversable functions due to Order constraint that is outside the `Traversable` trait.
 
     ///
     /// Applies `f` to every `(key, value)` of MultiMap `m`.
@@ -517,7 +515,7 @@ pub mod MultiMap {
     ///
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef = region rc {
         let ix = Ref.fresh(rc, 0);
-        let f1 = (k , v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
+        let f1 = (k, v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
         forEach(f1, m)
     }
 
@@ -527,5 +525,4 @@ pub mod MultiMap {
     pub def iterator(rc: Region[r], m: MultiMap[k, v]): Iterator[(k, Set[v]), r, r] \ r =
         let MultiMap(m1) = m;
         Map.iterator(rc, m1)
-
 }

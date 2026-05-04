@@ -32,5 +32,4 @@ pub mod Coerce {
         ///
         pub def coerce(x: t): Coerce.Out[t]
     }
-
 }

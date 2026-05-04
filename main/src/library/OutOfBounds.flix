@@ -19,10 +19,8 @@
 /// Useful for instances of `Index` or `IndexMut`.
 ///
 eff OutOfBounds {
-
     /// Stops execution with an error message.
     def outOfBounds(msg: String): Void
-
 }
 
 pub mod OutOfBounds {
@@ -34,5 +32,4 @@ pub mod OutOfBounds {
             def outOfBounds(msg, _) = Err(msg)
         }
     }
-
 }

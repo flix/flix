@@ -61,5 +61,4 @@ pub mod Add {
     instance Add[String] {
         pub def add(x: String, y: String): String = x.concat(y)
     }
-
 }
