@@ -290,8 +290,8 @@ object PrettyPrinter {
         val thenPart = if (thenIsBlock) condPart <+> thenBody else condPart <> nest(4, line <> thenBody)
         val thenEndsWithComment = thenChildren.lastOption.exists(endsWithComment)
         val elseConnector = if (thenEndsWithComment) hardline
-                            else if (thenIsBlock)    space
-                            else                     line
+        else if (thenIsBlock)    space
+        else                     line
 
         localLayout(tree) {
           if (elseChildren.isEmpty) {
@@ -782,7 +782,7 @@ object PrettyPrinter {
     val bodyDoc     = joinWithGap(bodyPart)
     val bodyIsBlock = bodyPart.headOption.exists(isBlockExpr)
 
-    if (!bodyIsBlock && layoutOf(tree) == Layout.MultiLine)
+    if (!bodyIsBlock && effectiveLayoutOf(tree) == Layout.MultiLine)
       Doc.fill(maxWidth, patternDoc) <+> text("=>") <> nest(4, hardline <> bodyDoc)
     else
       Doc.fill(maxWidth, patternDoc) <+> text("=>") <+> bodyDoc
@@ -1151,7 +1151,7 @@ object PrettyPrinter {
     if (parts.length == 3) {
       val opKind = leftMostToken(tree.children(1)).map(_.kind)
       if (opKind.exists(RightAssocBinaryKinds.contains) &&
-          hasMatchingChainedRhs(tree.children(2), opKind.get))
+        hasMatchingChainedRhs(tree.children(2), opKind.get))
         return prettyRightAssocChain(tree, opKind.get)
 
       val endsWithClose = rightMostToken(tree.children(0)).exists(t =>
@@ -1345,7 +1345,7 @@ object PrettyPrinter {
         } else {
           val bodyDoc = joinWithGap(body)
           val closeSep = if (body.nonEmpty && endsWithComment(body.last)) hardline
-                         else Doc.layoutChoice(empty, line)
+          else Doc.layoutChoice(empty, line)
           headerDoc <+> text(open) <>
             nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <>
             closeSep <>
@@ -1380,19 +1380,10 @@ object PrettyPrinter {
     val bodyOpensWithBracket = body.headOption.exists(isBracedExpr) ||
       body.headOption.exists(c => leftMostToken(c).exists(tok => bracketPairs.exists(_._1 == tok.kind)))
 
-    val arrowTok = children(arrowIndex) match {
-      case t: Token => Some(t)
-      case _        => None
-    }
-    val bodyTok = body.headOption.flatMap(leftMostToken)
-    val bodyInline = (bodyTok, arrowTok) match {
-      case (Some(b), Some(a)) => b.start.lineOneIndexed == a.end.lineOneIndexed
-      case _                  => true
-    }
-    Doc.setLayout(if (bodyInline) Layout.SingleLine else Layout.MultiLine,
+    localLayout(tree) {
       if (bodyOpensWithBracket) headerDoc <+> text("->") <+> bodyDoc
       else headerDoc <+> text("->") <> nest(4, line <> bodyDoc)
-    )
+    }
   }
 
   /**
@@ -1546,19 +1537,12 @@ object PrettyPrinter {
         val singleBlockArg = args.length == 1 &&
           filterEmpty(args(0).children).headOption.exists(c =>
             leftMostToken(c).exists(tok => tok.kind == TokenKind.CurlyL || tok.kind == TokenKind.HashCurlyL))
-
-        val openTok = tree.children.collectFirst { case t: Token if t.kind == TokenKind.ParenL => t }
-        val firstArgTok = body.headOption.flatMap(leftMostToken)
-        val argsInline = (firstArgTok, openTok) match {
-          case (Some(a), Some(o)) => a.start.lineOneIndexed == o.end.lineOneIndexed
-          case _                  => true
-        }
-        Doc.setLayout(if (argsInline) Layout.SingleLine else Layout.MultiLine,
+        localLayout(tree) {
           if (singleBlockArg)
             openDoc <> bodyDoc <> text(close) <> tailDoc
           else
             openDoc <> nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <> Doc.layoutChoice(empty, line) <> text(close) <> tailDoc
-        )
+        }
     }
   }
 
@@ -1762,11 +1746,11 @@ object PrettyPrinter {
         }
         val g = if (endsWithComment(prev))
           if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
-                else if (nextStartsWithComment && !sameLine)
-                  if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
-                else if (sameLine) space
-                else if (hadBlankLineBetween(prev, next)) gap <> Doc.layoutChoice(empty, hardline)
-                else gap
+        else if (nextStartsWithComment && !sameLine)
+          if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
+        else if (sameLine) space
+        else if (hadBlankLineBetween(prev, next)) gap <> Doc.layoutChoice(empty, hardline)
+        else gap
         acc <> g <> prettyChild(next)
       case (acc, _) => acc
     }
@@ -1853,6 +1837,7 @@ object PrettyPrinter {
   }
 
   private def layoutOfChildren(children: Array[SyntaxTree.Child]): Layout = {
+    if (children.exists(containsForcedMultiLine)) return Layout.MultiLine
     val first = children.collectFirst(Function.unlift(leftMostCodeToken))
     val last  = children.reverse.collectFirst(Function.unlift(rightMostCodeToken))
     (first, last) match {
@@ -1897,6 +1882,33 @@ object PrettyPrinter {
     TreeKind.Expr.Region
   )
 
+  /**
+    * Tree kinds whose pretty-printer unconditionally forces [[Layout.MultiLine]].
+    * Currently `ForMonadic`, `ForApplicative`, and `ParYield` (see
+    * [[prettyFor]] and [[prettyParYield]]).
+    *
+    * If any of these appear inside a container (e.g. an `ArgumentList`), the
+    * container's own layout decision can no longer be `SingleLine` even when
+    * the source happened to fit on one line — once the inner construct expands,
+    * the surrounding output is multi-line. Forcing the container to MultiLine
+    * up-front is necessary for idempotency: otherwise pass 1 chooses
+    * SingleLine (because the source was one line), produces multi-line output
+    * (because of the forced inner), and pass 2 reads the multi-line output and
+    * chooses MultiLine — flipping the decision.
+    */
+  private val ForcedMultiLineKinds: Set[TreeKind] = Set(
+    TreeKind.Expr.ForMonadic,
+    TreeKind.Expr.ForApplicative,
+    TreeKind.Expr.ParYield
+  )
+
+  private def containsForcedMultiLine(child: SyntaxTree.Child): Boolean = child match {
+    case t: Tree =>
+      ForcedMultiLineKinds.contains(t.kind) ||
+        t.children.exists(containsForcedMultiLine)
+    case _ => false
+  }
+
   private def isBlockExpr(child: SyntaxTree.Child): Boolean =
     exprMatches(child, _.kind == TreeKind.Expr.Block)
 
@@ -1914,5 +1926,10 @@ object PrettyPrinter {
     * @return the document with the layout set according to the tree's layout
     */
   private def localLayout(tree: Tree)(doc: Doc): Doc =
-    Doc.setLayout(layoutOf(tree), doc)
+    Doc.setLayout(effectiveLayoutOf(tree), doc)
+
+  // Small helper to determine the layout of a tree that may contain inner constructs that force MultiLine.
+  private def effectiveLayoutOf(tree: Tree): Layout =
+    if (tree.children.exists(containsForcedMultiLine)) Layout.MultiLine
+    else layoutOf(tree)
 }
