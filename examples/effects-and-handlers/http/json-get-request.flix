@@ -13,15 +13,19 @@ instance FromJson[Uuid] {
 }
 
 /// Sends a GET request to a JSON API and decodes the response into a typed value.
-/// Uses `HttpResponse.expectJsonAs` to combine the 2xx status check with
-/// parse + decode in a single call. The decoder dispatches via `FromJson[Uuid]`.
+/// Composes the 2xx status check (`HttpResponse.expect`) with JSON parse + decode
+/// (`HttpResponse.bodyJsonAs`) — each step keeps its own typed error so the caller
+/// can distinguish HTTP failures from JSON failures. The decoder dispatches via
+/// `FromJson[Uuid]`.
 def main(): Unit \ { Http, IO } =
     match Http.get("https://httpbin.org/uuid") {
-        case Ok(resp) =>
-            match HttpResponse.expectJsonAs(resp) {
+        case Ok(resp) => match HttpResponse.expect(resp) {
+            case Ok(ok) => match HttpResponse.bodyJsonAs(ok) {
                 case Ok(Uuid.Uuid(x)) => println("UUID: ${x#uuid}")
-                case Err(e)           => println("Error: ${e}")
+                case Err(e)           => println("Decode error: ${e}")
             }
+            case Err(e) => println("HTTP error: ${e}")
+        }
         case Err(err) =>
             println("Error: ${err}")
     }

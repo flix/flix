@@ -86,7 +86,8 @@ pub mod Net.HttpResponse {
     /// Returns `Err(Parse(...))` if the body is not valid JSON or
     /// `Err(Decode(...))` if the JSON does not match the shape of `a`.
     ///
-    /// Does not check the response status; see `expectJsonAs` for that.
+    /// Does not check the response status; compose with `expect` if you also
+    /// need a 2xx guarantee.
     ///
     pub def bodyJsonAs(r: HttpResponse): Result[JsonError, a] with FromJson[a] =
         Json.decode(body(r))
@@ -151,25 +152,6 @@ pub mod Net.HttpResponse {
     pub def expect(r: HttpResponse): Result[IoError, HttpResponse] =
         if (isSuccess(r)) Ok(r)
         else Err(IoError(ErrorKind.Other, "Unexpected HTTP status: ${status(r)}"))
-
-    ///
-    /// Returns the JSON-decoded body of `r` as `a` if the response is 2xx,
-    /// or `Err(IoError(...))` otherwise.
-    ///
-    /// Combines `expect` (status check) with `bodyJsonAs` (parse + decode)
-    /// and collapses any `JsonError` into `IoError(InvalidData, ...)`.
-    ///
-    pub def expectJsonAs(r: HttpResponse): Result[IoError, a] with FromJson[a] = forM (
-        ok <- expect(r);
-        a  <- Result.mapErr(jsonDecodeFailure, bodyJsonAs(ok))
-    ) yield a
-
-    ///
-    /// Converts a `JsonError` into an `IoError` with kind `InvalidData`.
-    /// The message uses the `Formattable` rendering, with colours stripped.
-    ///
-    def jsonDecodeFailure(e: JsonError): IoError =
-        IoError(ErrorKind.InvalidData, RichString.toPlainString(Formattable.format(e)))
 
     ///
     /// Returns the value of the `content-type` header, or `None` if not present.
