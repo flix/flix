@@ -1705,4 +1705,32 @@ mod TestJson {
         // Nested in object: scale differences inside values don't break equality.
         assertEq(expected = Json.parse("{\"a\": 1, \"b\": 2}"), Json.parse("{\"a\": 1.0, \"b\": 2.00}"))
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Number rendering uses plain decimal, never scientific notation          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def plainNumber01(): Unit \ Assert =
+        // Adjusted exponent < -6 would flip Java's BigDecimal.toString to "1E-7".
+        assertEq(
+            expected = Ok("0.0000001"),
+            Result.map(Json.toCompactString, Json.parse("0.0000001"))
+        )
+
+    @Test
+    def plainNumber02(): Unit \ Assert =
+        // Negative scale (literal with exponent) would flip to "1E+5".
+        assertEq(
+            expected = Ok("100000"),
+            Result.map(Json.toCompactString, Json.parse("1e5"))
+        )
+
+    @Test
+    def plainNumber03(): Unit \ Assert =
+        // Pretty-printer takes the same path; non-trivial mantissa + exponent.
+        assertEq(
+            expected = Ok("15000000000"),
+            Result.map(j -> Json.toPrettyString(2, j), Json.parse("1.5e10"))
+        )
+
 }
