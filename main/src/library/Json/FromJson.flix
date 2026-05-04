@@ -146,12 +146,8 @@ pub mod Json.FromJson {
         }
     }
 
-    instance FromJson[Char] {
-        pub def fromJson(j: Json): Result[JsonError, Char] = match j {
-            case JString(s) if String.length(s) == 1 => Ok(String.charAt(0, s))
-            case _                                   => Err(Decode(Json.JsonPath.empty(), TypeMismatch("Char")))
-        }
-    }
+    // No `FromJson[Char]`: `Char` is a single UTF-16 code unit (BMP only), but JSON
+    // strings carry full Unicode. Use `String` for JSON-bound character data.
 
     instance FromJson[String] {
         pub def fromJson(j: Json): Result[JsonError, String] = match j {
