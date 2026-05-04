@@ -21,7 +21,7 @@ pub mod Foldable {
     ///
     /// A trait for data structures that can be folded.
     ///
-    pub trait Foldable[t : Type -> Type] {
+    pub trait Foldable[t: Type -> Type] {
         ///
         /// The associated effect of the Foldable which represents the effect of accessing its elements.
         ///
@@ -85,10 +85,14 @@ pub mod Foldable {
         /// Returns `None` if `t` is empty.
         ///
         pub def head(t: t[a]): Option[a] \ Foldable.Aef[t] =
-            Foldable.foldLeft((acc, x) -> match acc {
-                case Some(_) => acc
-                case None    => Some(x)
-            }, None, t)
+            Foldable.foldLeft(
+                (acc, x) -> match acc {
+                    case Some(_) => acc
+                    case None    => Some(x)
+                },
+                None,
+                t
+            )
 
         ///
         /// Optionally returns the last element of `t`.
@@ -104,10 +108,14 @@ pub mod Foldable {
         /// Returns `None` if `t` is empty.
         ///
         pub def findLeft(f: a -> Bool \ ef, t: t[a]): Option[a] \ (ef + Foldable.Aef[t]) =
-            Foldable.foldLeft((acc, x) -> match acc {
-                case Some(_) => acc
-                case None    => if (f(x)) Some(x) else None
-            }, None, t)
+            Foldable.foldLeft(
+                (acc, x) -> match acc {
+                    case Some(_) => acc
+                    case None    => if (f(x)) Some(x) else None
+                },
+                None,
+                t
+            )
 
         ///
         /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
@@ -127,7 +135,7 @@ pub mod Foldable {
         /// Returns true if and only if `t` is empty.
         ///
         pub def isEmpty(t: t[a]): Bool \ Foldable.Aef[t] =
-          Foldable.foldLeft((_, _) -> false, true, t)
+            Foldable.foldLeft((_, _) -> false, true, t)
 
         ///
         /// Returns true if and only if `t` is non-empty.
@@ -254,11 +262,19 @@ pub mod Foldable {
         /// Returns an immutable list.
         ///
         pub def dropWhile(f: a -> Bool, t: t[a]): List[a] \ Foldable.Aef[t] =
-            Foldable.foldLeft((acc, x) -> {
+            Foldable.foldLeft(
+                (acc, x) -> {
                     let (c, tail) = acc;
-                    if (c and f(x)) (true, tail)
-                    else (false, x :: tail)
-                }, (true, Nil), t) |> snd |> List.reverse
+                    if (c and f(x))
+                        (true, tail)
+                    else
+                        (false, x :: tail)
+                },
+                (true, Nil),
+                t
+            )
+                |> snd
+                |> List.reverse
 
         ///
         /// Returns the longest prefix of `t` that satisfies the predicate `f`.
@@ -279,7 +295,6 @@ pub mod Foldable {
         ///
         pub def forEach(f: a -> Unit \ ef, t: t[a]): Unit \ (ef + Foldable.Aef[t]) =
             Foldable.foldLeft((_, x) -> f(x), (), t)
-
 
         // Acknowledgement: `foldLeftM` and `foldRightM` are derived from Haskell's Data.Foldable.
         // Because they use CPS, the implementations work for both strict and lazy languages.
@@ -334,7 +349,6 @@ pub mod Foldable {
             t |> Foldable.forEach(x -> { append(f(x), sb); append(sep, sb) });
             StringBuilder.toString(sb) |> String.dropRight(lastSep)
         }
-
     }
 
     ///
@@ -347,5 +361,4 @@ pub mod Foldable {
     /// Returns the number of elements in `t`.
     ///
     pub def size(t: t[a]): Int32 \ Foldable.Aef[t] with Foldable[t] = Foldable.length(t)
-
 }

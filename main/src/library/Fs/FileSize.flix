@@ -25,12 +25,10 @@ pub mod Fs.FileSize {
     /// Use the `FileSize.runWithFileStat` handler.
     ///
     pub eff FileSize {
-
         ///
         /// Returns the size of the given file `f`.
         ///
         def size(f: String): Result[IoError, Size]
-
     }
 
     ///
@@ -40,5 +38,4 @@ pub mod Fs.FileSize {
         run { f() } with handler FileSize {
             def size(filename, k) = k(Fs.FileStat.size(filename))
         }
-
 }

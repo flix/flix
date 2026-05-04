@@ -22,7 +22,6 @@ pub mod Group {
     /// The default instances for numbers define the additive inverse in the real numbers.
     ///
     pub trait Group[a] with Monoid[a] {
-
         ///
         /// Returns the neutral element.
         ///
@@ -55,7 +54,7 @@ pub mod Group {
         /// identity (neutral element) then
         /// `combine(x, y) == combine(y, x) == e`
         ///
-        law leftInvertible: forall(x: a) with Eq[a] Group.combine(Group.inverse(x), x) == Group.empty()
+        law leftInvertible: forall (x: a) with Eq[a] Group.combine(Group.inverse(x), x) == Group.empty()
 
         ///
         /// Combining the inverse of `x` with `x` yields the neutral element in the group.
@@ -64,8 +63,7 @@ pub mod Group {
         /// identity (neutral element) then
         /// `combine(x, y) == combine(y, x) == e`
         ///
-        law rightInvertible: forall(x: a) with Eq[a] Group.combine(x, Group.inverse(x)) == Group.empty()
-
+        law rightInvertible: forall (x: a) with Eq[a] Group.combine(x, Group.inverse(x)) == Group.empty()
     }
 
     instance Group[Unit] {
@@ -165,5 +163,4 @@ pub mod Group {
             case (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) => (Group.inverse(a1), Group.inverse(a2), Group.inverse(a3), Group.inverse(a4), Group.inverse(a5), Group.inverse(a6), Group.inverse(a7), Group.inverse(a8), Group.inverse(a9), Group.inverse(a10))
         }
     }
-
 }

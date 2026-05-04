@@ -65,5 +65,4 @@ pub mod LowerBound {
     instance LowerBound[Unit] {
         pub def minValue(): Unit = ()
     }
-
 }

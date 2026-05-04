@@ -18,7 +18,6 @@ pub mod Net.Dns {
     use IoError.ErrorKind
     use IoError.IoError
     use Net.IpAddr
-
     import java.io.IOException
     import java.lang.IllegalArgumentException
     import java.net.InetAddress
@@ -68,7 +67,6 @@ pub mod Net.Dns {
                     case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
-
         }
 
     ///
@@ -78,5 +76,4 @@ pub mod Net.Dns {
     ///
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ ef - Dns + IO = handle(f)()
-
 }

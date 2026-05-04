@@ -17,19 +17,16 @@
 pub mod Sys.Exit {
 
     use Sys.Exit
-
     import java.lang.System
 
     ///
     /// An effect used to exit the JVM.
     ///
     pub eff Exit {
-
         ///
         /// Immediately exits the JVM with the specified `exitCode`.
         ///
         def exit(exitCode: Int32): Void
-
     }
 
     ///
@@ -55,5 +52,4 @@ pub mod Sys.Exit {
     ///
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Exit) + IO = handle(f)()
-
 }

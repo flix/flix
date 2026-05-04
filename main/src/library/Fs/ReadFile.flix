@@ -24,12 +24,10 @@ pub mod Fs.ReadFile {
     /// Use the `ReadFile.runWithFileRead` handler.
     ///
     pub eff ReadFile {
-
         ///
         /// Returns a string of all the contents of the given file `f`.
         ///
         def read(f: String): Result[IoError, String]
-
     }
 
     ///
@@ -39,5 +37,4 @@ pub mod Fs.ReadFile {
         run { f() } with handler ReadFile {
             def read(filename, k) = k(Fs.FileRead.read(filename))
         }
-
 }

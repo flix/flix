@@ -30,5 +30,4 @@ pub mod Sys.StdErr {
             let StdErr.StdErr(pr) = r;
             Readable.read(b, pr)
     }
-
 }

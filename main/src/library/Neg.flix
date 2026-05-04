@@ -57,5 +57,4 @@ pub mod Neg {
     instance Neg[BigInt] {
         pub def neg(x: BigInt): BigInt = x.negate()
     }
-
 }

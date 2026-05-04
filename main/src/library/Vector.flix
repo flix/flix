@@ -14,22 +14,22 @@
  *  limitations under the License.
  */
 
-
 ///
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
-
 instance Indexable[Vector[a]] {
-    type Idx = Int32
-    type Elm = a
-    type Aef = OutOfBounds
+        type Idx = Int32
+        type Elm = a
+        type Aef = OutOfBounds
 
-    pub def get(t: Vector[a], i: Int32): a \ OutOfBounds = {
-        if (0 <= i and i < Vector.length(t)) Vector.get(i, t)
-        else OutOfBounds.outOfBounds(
-            "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
-        )
-    }
+        pub def get(t: Vector[a], i: Int32): a \ OutOfBounds = {
+            if (0 <= i and i < Vector.length(t))
+                Vector.get(i, t)
+            else
+                OutOfBounds.outOfBounds(
+                    "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
+                )
+        }
 }
 
 instance ToString[Vector[a]] with ToString[a] {
@@ -62,12 +62,12 @@ instance Functor[Vector] {
 }
 
 instance Applicative[Vector] {
-    pub def point(a: a) : Vector[a] = Vector.singleton(a)
-    pub def ap(f: Vector[a -> b \ ef], v: Vector[a]) : Vector[b] \ ef = Vector.ap(f, v)
+    pub def point(a: a): Vector[a] = Vector.singleton(a)
+    pub def ap(f: Vector[a -> b \ ef], v: Vector[a]): Vector[b] \ ef = Vector.ap(f, v)
 }
 
 instance Monad[Vector] {
-    pub def flatMap(f: a -> Vector[b] \ ef, v : Vector[a]) : Vector[b] \ ef = Vector.flatMap(f, v)
+    pub def flatMap(f: a -> Vector[b] \ ef, v: Vector[a]): Vector[b] \ ef = Vector.flatMap(f, v)
 }
 
 instance MonadZero[Vector] {
@@ -152,11 +152,12 @@ pub mod Vector {
             if (l <= r) {
                 let m = (l + r) `Int32.rightShift` 1; // Shifting by 1 is slightly faster than dividing by 2.
                 match get(m, v) <=> x {
-                    case Comparison.LessThan => f(m+1, r)
-                    case Comparison.GreaterThan => f(l, m-1)
-                    case Comparison.EqualTo => Some(m)
+                    case Comparison.LessThan    => f(m + 1, r)
+                    case Comparison.GreaterThan => f(l, m - 1)
+                    case Comparison.EqualTo     => Some(m)
                 }
-            } else None
+            } else
+                None
         };
         let len = length(v);
         f(0, len - 1)
@@ -201,11 +202,11 @@ pub mod Vector {
             if (wi >= end or ri >= subLen)
                 ()
             else if (wi < 0)
-                loop(ri+1, wi+1)
+                loop(ri + 1, wi + 1)
             else {
                 let x = get(ri, sub);
                 Array.put(x, wi, arr);
-                loop(ri+1, wi+1)
+                loop(ri + 1, wi + 1)
             }
         };
         loop(0, i)
@@ -274,7 +275,6 @@ pub mod Vector {
         forEachWithIndex((i, x) -> Array.put(x, i, arr), v);
         arr
 
-
     ///
     /// Returns the vector `v` as a list.
     ///
@@ -336,7 +336,6 @@ pub mod Vector {
         arrayUpdateSeqV(length(v1), v2, arr);
         Array.toVector(arr)
     }
-
 
     ///
     /// Returns `true` if and only if `v` contains the element `x`.
@@ -434,20 +433,18 @@ pub mod Vector {
     ///
     /// Optionally returns the first element of `v` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef =
-        match findIndexOfLeft(f, v) {
-            case None    => None
-            case Some(i) => Some(get(i, v))
-        }
+    pub def findLeft(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef = match findIndexOfLeft(f, v) {
+        case None    => None
+        case Some(i) => Some(get(i, v))
+    }
 
     ///
     /// Optionally returns the first element of `v` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef =
-        match findIndexOfRight(x -> f(x), v) {
-            case None    => None
-            case Some(i) => Some(get(i, v))
-        }
+    pub def findRight(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef = match findIndexOfRight(x -> f(x), v) {
+        case None    => None
+        case Some(i) => Some(get(i, v))
+    }
 
     ///
     /// Returns a vector of all integers between `b` (inclusive) and `e` (exclusive).
@@ -481,14 +478,17 @@ pub mod Vector {
             // We handle the first element twice.
             MutList.push(Vector.get(0, v), l);
             discard {
-                (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
-                    if (f(head, cur)) {
-                        head
-                    } else {
-                        MutList.push(cur, l);
-                        cur
-                    }
-                })
+                (Vector.get(0, v), v)
+                    ||> Vector.foldLeft(
+                        head -> cur -> {
+                            if (f(head, cur)) {
+                                head
+                            } else {
+                                MutList.push(cur, l);
+                                cur
+                            }
+                        }
+                    )
             };
             MutList.toVector(l)
         }
@@ -520,7 +520,7 @@ pub mod Vector {
         let step = (i, x) -> {
             let s1 = f(Ref.get(acc), x);
             Ref.put(s1, acc);
-            Array.put(s1, i+1, arr)
+            Array.put(s1, i + 1, arr)
         };
         forEachWithIndex(step, v);
         Array.toVector(arr)
@@ -578,7 +578,7 @@ pub mod Vector {
                 k(Applicative.point(arr))
             else {
                 let mx = get(i, v);
-                loop(i+1, karr -> k(putA(mx, i, karr)))
+                loop(i + 1, karr -> k(putA(mx, i, karr)))
             }
         };
         Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
@@ -596,7 +596,7 @@ pub mod Vector {
                 k(Applicative.point(arr))
             else {
                 let x = get(i, v);
-                loop(i+1, karr -> k(putA(f(x), i, karr)))
+                loop(i + 1, karr -> k(putA(f(x), i, karr)))
             }
         };
         Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
@@ -608,7 +608,7 @@ pub mod Vector {
     def putA(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ r with Applicative[m] =
         use Functor.{<$>};
         use Applicative.{<*>};
-        (((x, arr) -> {Array.put(x, i, arr); arr}) <$> mx) <*> marr
+        (((x, arr) -> { Array.put(x, i, arr); arr }) <$> mx) <*> marr
 
     ///
     /// Generalize `zipWith` to an applicative functor `f`.
@@ -622,7 +622,7 @@ pub mod Vector {
             else {
                 let x = get(i, v1);
                 let y = get(i, v2);
-                loop(i+1, karr -> k(putA(f(x, y), i, karr)))
+                loop(i + 1, karr -> k(putA(f(x, y), i, karr)))
             }
         };
         Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
@@ -633,7 +633,7 @@ pub mod Vector {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: Vector[a -> b \ ef], v: Vector[a]) : Vector[b] \ ef =
+    pub def ap(f: Vector[a -> b \ ef], v: Vector[a]): Vector[b] \ ef =
         map(g -> map(g, v), f) |> flatten
 
     ///
@@ -647,7 +647,7 @@ pub mod Vector {
     ///
     pub def reverse(v: Vector[a]): Vector[a] =
         let len = length(v);
-        init(ix -> get(len - (ix+1), v), len)
+        init(ix -> get(len - (ix + 1), v), len)
 
     ///
     /// Rotate the contents of vector `v` by `n` steps to the left.
@@ -656,11 +656,10 @@ pub mod Vector {
         let len = length(v);
         if (len < 1)
             empty()
+        else if (n < 0)
+            rotateRightHelper(Int32.abs(n), v)
         else
-            if (n < 0)
-                rotateRightHelper(Int32.abs(n), v)
-            else
-                rotateLeftHelper(n, v)
+            rotateLeftHelper(n, v)
 
     ///
     /// Helper function for `rotateLeft` and `rotateRight`.
@@ -671,9 +670,8 @@ pub mod Vector {
     ///
     def rotateLeftHelper(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
-        let f = ix -> {let readIx = Int32.modulo(ix + n, len); get(readIx, v)};
+        let f = ix -> { let readIx = Int32.modulo(ix + n, len); get(readIx, v) };
         init(f, len)
-
 
     ///
     /// Rotate the contents of vector `v` by `n` steps to the right.
@@ -681,11 +679,10 @@ pub mod Vector {
     pub def rotateRight(n: Int32, v: Vector[a]): Vector[a] =
         if (length(v) < 1)
             empty()
+        else if (n < 0)
+            rotateLeftHelper(Int32.abs(n), v)
         else
-            if (n < 0)
-                rotateLeftHelper(Int32.abs(n), v)
-            else
-                rotateRightHelper(n, v)
+            rotateRightHelper(n, v)
 
     ///
     /// Helper function for `rotateRight` and `rotateLeft`.
@@ -696,7 +693,7 @@ pub mod Vector {
     ///
     def rotateRightHelper(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
-        let f = ix -> {let readIx = Int32.modulo(ix - n, len); get(readIx, v)};
+        let f = ix -> { let readIx = Int32.modulo(ix - n, len); get(readIx, v) };
         init(f, len)
 
     ///
@@ -730,7 +727,7 @@ pub mod Vector {
         let f = ix -> match ix {
             case 0                               => get(0, v)
             case n if Int32.remainder(n, 2) != 0 => sep
-            case n                               => {let i = n / 2; get(i, v)}
+            case n                               => { let i = n / 2; get(i, v) }
         };
         init(f, len2)
 
@@ -839,9 +836,9 @@ pub mod Vector {
         if (j >= len2)
             false
         else if (get(0, a) == get(j, b))
-            isInfixOfCheck(a, b, len1, len2, 1, j+1)
+            isInfixOfCheck(a, b, len1, len2, 1, j + 1)
         else
-            isInfixOfSearch(a, b, len1, len2, j+1)
+            isInfixOfSearch(a, b, len1, len2, j + 1)
 
     ///
     /// Helper function for `isInfixOf` - `a` has started matching, scan to see if it all matches.
@@ -854,9 +851,9 @@ pub mod Vector {
             // `b` exhausted, `a` still trying to match, so failure
             false
         else if (get(i, a) == get(j, b))
-            isInfixOfCheck(a, b, len1, len2, i+1, j+1)
+            isInfixOfCheck(a, b, len1, len2, i + 1, j + 1)
         else
-            isInfixOfSearch(a, b, len1, len2, j+1)
+            isInfixOfSearch(a, b, len1, len2, j + 1)
 
     ///
     /// Returns `true` if and only if `a` is a suffix of `b`.
@@ -978,11 +975,14 @@ pub mod Vector {
         let len = sumLengths(vs);
         let pos = Ref.fresh(rc, 0);
         let arr = Array.empty(rc, len);
-        forEach(v -> {
-            let i = Ref.get(pos);
-            Ref.put(i + length(v), pos);
-            arrayUpdateSeqV(i, v, arr)
-        }, vs);
+        forEach(
+            v -> {
+                let i = Ref.get(pos);
+                Ref.put(i + length(v), pos);
+                arrayUpdateSeqV(i, v, arr)
+            },
+            vs
+        );
         Array.toVector(arr)
     }
 
@@ -1036,9 +1036,10 @@ pub mod Vector {
     /// `v2` contains all elements of `v` that do not satisfy the predicate `f`.
     ///
     pub def partition(f: a -> Bool \ ef, v: Vector[a]): (Vector[a], Vector[a]) \ ef =
-        let step = { (x, acc) ->
-            let (a1, a2) = acc;
-            if (f(x)) (x :: a1, a2) else (a1, x :: a2)
+        let step = {
+            (x, acc) ->
+                let (a1, a2) = acc;
+                if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), v);
         (List.toVector(xs), List.toVector(ys))
@@ -1049,11 +1050,10 @@ pub mod Vector {
     /// `v1` is the longest prefix of `v` that satisfies the predicate `f`.
     /// `v2` is the remainder of `v`.
     ///
-    pub def span(f: a -> Bool \ ef, v: Vector[a]): (Vector[a], Vector[a]) \ ef =
-        match findIndexOfLeft(x -> not (f(x)), v) {
-            case None    => (takeLeft(length(v), v), empty())
-            case Some(i) => (takeLeft(i, v), dropLeft(i, v))
-        }
+    pub def span(f: a -> Bool \ ef, v: Vector[a]): (Vector[a], Vector[a]) \ ef = match findIndexOfLeft(x -> not (f(x)), v) {
+        case None    => (takeLeft(length(v), v), empty())
+        case Some(i) => (takeLeft(i, v), dropLeft(i, v))
+    }
 
     ///
     /// Alias for `dropLeft`.
@@ -1066,7 +1066,7 @@ pub mod Vector {
     ///
     /// Returns an empty vector if `n > length(v)`.
     ///
-    pub def dropLeft( n: Int32, v: Vector[a]): Vector[a] =
+    pub def dropLeft(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
         if (n > len)
             empty()
@@ -1098,20 +1098,18 @@ pub mod Vector {
     ///
     /// Returns copy of vector `v` without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhileLeft(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
-        match findIndexOfLeft(x -> not (f(x)), v) {
-            case None    => empty()
-            case Some(i) => dropLeft(i, v)
-        }
+    pub def dropWhileLeft(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = match findIndexOfLeft(x -> not (f(x)), v) {
+        case None    => empty()
+        case Some(i) => dropLeft(i, v)
+    }
 
     ///
     /// Returns copy of vector `v` without the longest suffix that satisfies the predicate `f`.
     ///
-    pub def dropWhileRight(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
-        match findIndexOfRight(x -> not (f(x)), v) {
-            case None    => empty()
-            case Some(i) => slice(start = 0, end = i + 1, v)
-        }
+    pub def dropWhileRight(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = match findIndexOfRight(x -> not (f(x)), v) {
+        case None    => empty()
+        case Some(i) => slice(start = 0, end = i + 1, v)
+    }
 
     ///
     /// Alias for `takeLeft`.
@@ -1144,7 +1142,7 @@ pub mod Vector {
         else {
             let len = length(v);
             let start = if (n > len) 0 else len - n;
-            slice( start = start, end = len, v)
+            slice(start = start, end = len, v)
         }
 
     ///
@@ -1156,20 +1154,18 @@ pub mod Vector {
     ///
     /// Returns the longest prefix of `v` that satisfies the predicate `f`.
     ///
-    pub def takeWhileLeft(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
-        match findIndexOfLeft(x -> not (f(x)), v) {
-            case None    => slice(start = 0, end = length(v), v)
-            case Some(i) => takeLeft(i, v)
-        }
+    pub def takeWhileLeft(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = match findIndexOfLeft(x -> not (f(x)), v) {
+        case None    => slice(start = 0, end = length(v), v)
+        case Some(i) => takeLeft(i, v)
+    }
 
     ///
     /// Returns the longest suffix of `v` that satisfies the predicate `f`.
     ///
-    pub def takeWhileRight(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
-        match findIndexOfRight(x -> not (f(x)), v) {
-            case None    => slice(start = 0, end = length(v), v)
-            case Some(i) => slice(start = i + 1, end = length(v), v)
-        }
+    pub def takeWhileRight(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = match findIndexOfRight(x -> not (f(x)), v) {
+        case None    => slice(start = 0, end = length(v), v)
+        case Some(i) => slice(start = i + 1, end = length(v), v)
+    }
 
     ///
     /// Split the vector `v` at the position `n` returning the left and right parts.
@@ -1219,7 +1215,7 @@ pub mod Vector {
     /// Helper function for `groupWith`.
     ///
     def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Vector[a], List[a]) = match xs {
-        case Nil => {
+        case Nil     => {
             let a = Nel.reverse(ps);
             (Nel.toVector(a), List.reverse(ns))
         }
@@ -1250,7 +1246,6 @@ pub mod Vector {
         let len = Int32.min(length(a), length(b));
         init(i -> f(get(i, a), get(i, b)), len)
 
-
     ///
     /// Returns a pair of vectors, the first containing all first components in `v`
     /// and the second containing all second components in `v`.
@@ -1259,11 +1254,14 @@ pub mod Vector {
         let len = length(v);
         let arr = Array.empty(rc, len);
         let brr = Array.empty(rc, len);
-        forEachWithIndex((i, x) -> {
-            let (l, r) = x;
-            Array.put(l, i, arr);
-            Array.put(r, i, brr)
-            }, v);
+        forEachWithIndex(
+            (i, x) -> {
+                let (l, r) = x;
+                Array.put(l, i, arr);
+                Array.put(r, i, brr)
+            },
+            v
+        );
         (Array.toVector(arr), Array.toVector(brr))
     }
 
@@ -1307,9 +1305,15 @@ pub mod Vector {
     /// Collects the successful results of applying the partial function `f` to every element in `v`.
     ///
     pub def filterMap(f: a -> Option[b] \ ef, v: Vector[a]): Vector[b] \ ef =
-        foldRight((x, xs) -> match f(x) {
-            case None    => xs
-            case Some(b) => b :: xs }, Nil, v) |> List.toVector
+        foldRight(
+            (x, xs) -> match f(x) {
+                case None    => xs
+                case Some(b) => b :: xs
+            },
+            Nil,
+            v
+        )
+            |> List.toVector
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `v`.
@@ -1536,5 +1540,4 @@ pub mod Vector {
         Array.shuffle(arr);
         Array.toVector(arr)
     }
-
 }

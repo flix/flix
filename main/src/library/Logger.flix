@@ -14,23 +14,20 @@
  *  limitations under the License.
  */
 
-
 ///
 /// An effect used to log messages.
 ///
 pub eff Logger {
-
     ///
     /// Logs the given message `m` at the given severity `s`.
     ///
     def log(s: Logger.Severity, m: RichString): Unit
-
 }
 
 pub mod Logger {
 
     use Sys.Console
-    use RichString.{gray, cyan, green, yellow, red, bold, text};
+    use RichString.{gray, cyan, green, yellow, red, bold, text}
     use Severity.{Trace, Debug, Info, Warn, Fatal}
 
     ///
@@ -115,13 +112,13 @@ pub mod Logger {
 
     ///
     /// Handles the `Logger` effect of the given function `f`.
-    /// 
+    ///
     /// In other words, re-interprets the `Logger` effect using the `Console` effect.
     ///
     /// Prints to standard out.
     ///
-    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = 
-        x -> run {
+    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = x ->
+        run {
             f(x)
         } with handler Logger {
             def log(s, m, k) = {
@@ -137,7 +134,7 @@ pub mod Logger {
                 k()
             }
         }
-    
+
     ///
     /// Runs the `Logger` effect of the given function `f`.
     ///
@@ -149,13 +146,13 @@ pub mod Logger {
 
     ///
     /// Handles the `Logger` effect of the given function `f`.
-    /// 
+    ///
     /// In other words, re-interprets the `Logger` effect using the `Console` effect.
     ///
     /// Prints to standard error.
     ///
-    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = 
-        x -> run {
+    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = x ->
+        run {
             f(x)
         } with handler Logger {
             def log(s, m, k) = {
@@ -184,11 +181,11 @@ pub mod Logger {
     ///
     /// Handles the `Logger` effect of the given function `f`. Appends the logged to `file`.
     ///
-    /// Discards style from the logged messages. 
+    /// Discards style from the logged messages.
     /// Aborts if an error is encountered while writing to file.
     ///
-    pub def handleWithFileWriteAbort(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite + Abort = 
-        x -> run {
+    pub def handleWithFileWriteAbort(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite + Abort = x ->
+        run {
             f(x)
         } with handler Logger {
             def log(s, m, k) = {
@@ -196,7 +193,7 @@ pub mod Logger {
                 let res = Fs.FileWrite.append({str = output}, file);
                 match res {
                     case Err(e) => Abort.abort(RichString.text(e))
-                    case Ok() => ()
+                    case Ok()   => ()
                 };
                 k()
             }
@@ -205,7 +202,7 @@ pub mod Logger {
     ///
     /// Runs the `Logger` effect of the given function `f`. Appends the logged to `file`.
     ///
-    /// Discards style from the logged messages. 
+    /// Discards style from the logged messages.
     /// Aborts if an error is encountered while writing to file.
     ///
     pub def runWithFileWriteAbort(file: String, f: Unit -> a \ ef): a \ (ef - Logger) + Fs.FileWrite + Abort =
@@ -214,11 +211,11 @@ pub mod Logger {
     ///
     /// Handles the `Logger` effect of the given function `f`. Appends the logged to `file`.
     ///
-    /// Discards style from the logged messages. 
+    /// Discards style from the logged messages.
     /// Ignores errors encountered while writing.
     ///
-    pub def handleWithFileWrite(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite = 
-        x -> run {
+    pub def handleWithFileWrite(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite = x ->
+        run {
             f(x)
         } with handler Logger {
             def log(s, m, k) = {
@@ -231,18 +228,18 @@ pub mod Logger {
     ///
     /// Runs the `Logger` effect of the given function `f`. Appends the logged to `file`.
     ///
-    /// Discards style from the logged messages. 
+    /// Discards style from the logged messages.
     /// Ignores errors encountered while writing.
     ///
-    pub def runWithFileWrite(file: String, f: Unit -> a \ ef): a \ (ef - Logger) + Fs.FileWrite = 
+    pub def runWithFileWrite(file: String, f: Unit -> a \ ef): a \ (ef - Logger) + Fs.FileWrite =
         handleWithFileWrite(file, f)()
 
     ///
     /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.
     /// Otherwise, lets `Logger` effect propagate.
     ///
-    pub def handleWithAbort(g: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ ef1 + ef2 + Abort + Logger = 
-        x -> run {
+    pub def handleWithAbort(g: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ ef1 + ef2 + Abort + Logger = x ->
+        run {
             f(x)
         } with handler Logger {
             def log(s, m, k) =
@@ -251,22 +248,22 @@ pub mod Logger {
                 } else {
                     Logger.log(s, m); k()
                 }
-            }
+        }
 
     ///
     /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.
     /// Otherwise, lets `Logger` effect propagate.
     ///
-    pub def runWithAbort(g: (Severity, RichString) -> Bool \ ef1, f: Unit -> a \ ef2): a \ ef1 + ef2 + Abort + Logger = 
-        handleWithAbort(g, f)() 
+    pub def runWithAbort(g: (Severity, RichString) -> Bool \ ef1, f: Unit -> a \ ef2): a \ ef1 + ef2 + Abort + Logger =
+        handleWithAbort(g, f)()
 
     ///
     /// Handles the `Logger` effect of the given function `f`.
     ///
     /// In other words, returns a list of `(Severity, RichString)` that represents and is ordered by the calls to log.
     ///
-    pub def handleWithList(f: a -> b \ ef): a -> (b, List[(Severity, RichString)]) \ (ef - Logger) =
-        x -> run {
+    pub def handleWithList(f: a -> b \ ef): a -> (b, List[(Severity, RichString)]) \ (ef - Logger) = x ->
+        run {
             (f(x), List.empty())
         } with handler Logger {
             def log(s, m, k) = {
@@ -287,8 +284,8 @@ pub mod Logger {
     ///
     /// Filters the logging, by the `filter` function.
     ///
-    pub def handleWithFilter(filter: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ (ef2 - Logger) + Logger + ef1 = 
-        x -> run {
+    pub def handleWithFilter(filter: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ (ef2 - Logger) + Logger + ef1 = x ->
+        run {
             f(x)
         } with handler Logger {
             def log(s, m, k) = {
@@ -307,7 +304,7 @@ pub mod Logger {
     /// Filters the logging, by the `filter` function.
     ///
     pub def runWithFilter(filter: (Severity, RichString) -> Bool \ ef1, f: Unit -> b \ ef2): b \ (ef2 - Logger) + Logger + ef1 = handleWithFilter(filter, f)()
-    
+
     ///
     /// Filters logs with greater or equal severity level
     ///
@@ -315,5 +312,4 @@ pub mod Logger {
         run {
             f()
         } with runWithFilter((sev, _) -> Order.greaterEqual(sev, s))
-
 }

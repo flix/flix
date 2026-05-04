@@ -28,5 +28,4 @@ pub mod Net.Method {
         case Patch
         case Delete
     }
-
 }

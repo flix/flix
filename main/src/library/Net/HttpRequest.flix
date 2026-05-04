@@ -27,65 +27,112 @@ pub mod Net.HttpRequest {
     /// An HTTP request with method, URL, multi-valued headers, and optional body.
     ///
     pub enum HttpRequest({
-        method          = Method,
-        url             = String,
-        headers         = Map[String, List[String]],
-        body            = Option[Body],
-        requestTimeout  = Option[Duration],
-        connectTimeout  = Option[Duration],
+        method = Method,
+        url = String,
+        headers = Map[String, List[String]],
+        body = Option[Body],
+        requestTimeout = Option[Duration],
+        connectTimeout = Option[Duration],
         followRedirects = Bool
-    })
-
-    // --- Constructors ---
+    }) // --- Constructors ---
 
     ///
     /// Creates a GET request to the given `url`.
     ///
     pub def get(url: String): HttpRequest =
-        HttpRequest({method = Method.Get, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = None, connectTimeout = None, followRedirects = true})
+        HttpRequest({
+            method = Method.Get,
+            url = url,
+            headers = Map.empty(),
+            body = None,
+            requestTimeout = None,
+            connectTimeout = None,
+            followRedirects = true
+        })
 
     ///
     /// Creates a HEAD request to the given `url`.
     ///
     pub def head(url: String): HttpRequest =
-        HttpRequest({method = Method.Head, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = None, connectTimeout = None, followRedirects = true})
+        HttpRequest({
+            method = Method.Head,
+            url = url,
+            headers = Map.empty(),
+            body = None,
+            requestTimeout = None,
+            connectTimeout = None,
+            followRedirects = true
+        })
 
     ///
     /// Creates an OPTIONS request to the given `url`.
     ///
     pub def options(url: String): HttpRequest =
-        HttpRequest({method = Method.Options, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = None, connectTimeout = None, followRedirects = true})
+        HttpRequest({
+            method = Method.Options,
+            url = url,
+            headers = Map.empty(),
+            body = None,
+            requestTimeout = None,
+            connectTimeout = None,
+            followRedirects = true
+        })
 
     ///
     /// Creates a POST request to the given `url` with the given `body`.
     ///
     pub def post(url: String, body: String): HttpRequest =
-        HttpRequest({method = Method.Post, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                 requestTimeout = None, connectTimeout = None, followRedirects = true})
+        HttpRequest({
+            method = Method.Post,
+            url = url,
+            headers = Map.empty(),
+            body = Some(Body.Text(body)),
+            requestTimeout = None,
+            connectTimeout = None,
+            followRedirects = true
+        })
 
     ///
     /// Creates a PUT request to the given `url` with the given `body`.
     ///
     pub def put(url: String, body: String): HttpRequest =
-        HttpRequest({method = Method.Put, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                 requestTimeout = None, connectTimeout = None, followRedirects = true})
+        HttpRequest({
+            method = Method.Put,
+            url = url,
+            headers = Map.empty(),
+            body = Some(Body.Text(body)),
+            requestTimeout = None,
+            connectTimeout = None,
+            followRedirects = true
+        })
 
     ///
     /// Creates a PATCH request to the given `url` with the given `body`.
     ///
     pub def patch(url: String, body: String): HttpRequest =
-        HttpRequest({method = Method.Patch, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                 requestTimeout = None, connectTimeout = None, followRedirects = true})
+        HttpRequest({
+            method = Method.Patch,
+            url = url,
+            headers = Map.empty(),
+            body = Some(Body.Text(body)),
+            requestTimeout = None,
+            connectTimeout = None,
+            followRedirects = true
+        })
 
     ///
     /// Creates a DELETE request to the given `url`.
     ///
     pub def delete(url: String): HttpRequest =
-        HttpRequest({method = Method.Delete, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = None, connectTimeout = None, followRedirects = true})
+        HttpRequest({
+            method = Method.Delete,
+            url = url,
+            headers = Map.empty(),
+            body = None,
+            requestTimeout = None,
+            connectTimeout = None,
+            followRedirects = true
+        })
 
     // --- Getters ---
 
@@ -114,20 +161,22 @@ pub mod Net.HttpRequest {
     /// Returns the text body of the request `r`, or `None` if absent or binary.
     ///
     pub def body(r: HttpRequest): Option[String] = match r {
-        case HttpRequest(x) => match x#body {
-            case Some(Body.Text(s)) => Some(s)
-            case _                  => None
-        }
+        case HttpRequest(x) =>
+            match x#body {
+                case Some(Body.Text(s)) => Some(s)
+                case _                  => None
+            }
     }
 
     ///
     /// Returns the binary body of the request `r`, or `None` if absent or text.
     ///
     pub def bodyBytes(r: HttpRequest): Option[Vector[Int8]] = match r {
-        case HttpRequest(x) => match x#body {
-            case Some(Body.Bytes(v)) => Some(v)
-            case _                   => None
-        }
+        case HttpRequest(x) =>
+            match x#body {
+                case Some(Body.Bytes(v)) => Some(v)
+                case _                   => None
+            }
     }
 
     ///
@@ -181,10 +230,14 @@ pub mod Net.HttpRequest {
     ///
     pub def withHeaders(h: Map[String, List[String]], r: HttpRequest): HttpRequest =
         let HttpRequest(x) = r;
-        let merged = Map.foldLeftWithKey((acc, name, newValues) -> {
-            let existing = Map.getWithDefault(name, Nil, acc);
-            Map.insert(name, List.append(existing, newValues), acc)
-        }, x#headers, h);
+        let merged = Map.foldLeftWithKey(
+            (acc, name, newValues) -> {
+                let existing = Map.getWithDefault(name, Nil, acc);
+                Map.insert(name, List.append(existing, newValues), acc)
+            },
+            x#headers,
+            h
+        );
         HttpRequest({headers = merged | x})
 
     ///
@@ -266,5 +319,4 @@ pub mod Net.HttpRequest {
     pub def withFollowRedirects(follow: Bool, r: HttpRequest): HttpRequest =
         let HttpRequest(x) = r;
         HttpRequest({followRedirects = follow | x})
-
 }

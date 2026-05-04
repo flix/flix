@@ -84,5 +84,4 @@ pub mod FromString {
     instance FromString[String] {
         pub def fromString(x: String): Option[String] = Some(x)
     }
-
 }

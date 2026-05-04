@@ -22,5 +22,4 @@ pub mod Sys.ProcessHandle {
     /// A handle for a running process.
     ///
     pub enum ProcessHandle(JProcess)
-
 }

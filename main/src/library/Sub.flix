@@ -57,5 +57,4 @@ pub mod Sub {
     instance Sub[BigInt] {
         pub def sub(x: BigInt, y: BigInt): BigInt = x.subtract(y)
     }
-
 }

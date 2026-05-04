@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 pub mod List {
     use Math.Shuffle
 
@@ -25,7 +24,7 @@ pub mod List {
     /// an element `v` followed by a list `vs` represented by `v :: vs`.
     ///
     pub enum List[t] {
-        case Nil,
+        case Nil
         case Cons(t, List[t])
     }
 
@@ -48,27 +47,25 @@ pub mod List {
     instance Eq[List[a]] with Eq[a] {
         @Terminates @Tailrec
         pub def eq(l1: List[a], l2: List[a]): Bool = match (l1, l2) {
-            case (Nil, Nil) => true
+            case (Nil, Nil)         => true
             case (x :: rs, y :: qs) => if (x != y) false else rs == qs
-            case _ => false
+            case _                  => false
         }
     }
 
     instance Order[List[a]] with Order[a] {
-
         ///
         /// Compares `l1` and `l2` lexicographically.
         ///
         @Terminates @Tailrec
         pub def compare(l1: List[a], l2: List[a]): Comparison = match (l1, l2) {
-            case (_ :: _, Nil) => Comparison.GreaterThan
-            case (Nil, Nil) => Comparison.EqualTo
-            case (Nil, _ :: _) => Comparison.LessThan
+            case (_ :: _, Nil)      => Comparison.GreaterThan
+            case (Nil, Nil)         => Comparison.EqualTo
+            case (Nil, _ :: _)      => Comparison.LessThan
             case (z :: zs, w :: ws) =>
                 let cmp = z <=> w;
                 if (cmp == Comparison.EqualTo) zs <=> ws else cmp
         }
-
     }
 
     instance Functor[List] {
@@ -76,12 +73,12 @@ pub mod List {
     }
 
     instance Applicative[List] {
-        pub def point(a: a) : List[a] = List.point(a)
-        pub def ap(f: List[a -> b \ ef], x: List[a]) : List[b] \ ef = List.ap(f, x)
+        pub def point(a: a): List[a] = List.point(a)
+        pub def ap(f: List[a -> b \ ef], x: List[a]): List[b] \ ef = List.ap(f, x)
     }
 
     instance Monad[List] {
-        pub def flatMap(f: a -> List[b] \ ef, x : List[a]) : List[b] \ ef = List.flatMap(f, x)
+        pub def flatMap(f: a -> List[b] \ ef, x: List[a]): List[b] \ ef = List.flatMap(f, x)
     }
 
     instance MonadZero[List] {
@@ -154,8 +151,9 @@ pub mod List {
     pub def toString(l: List[a]): String with ToString[a] = region rc {
         List.iterator(rc, l)
             |> Iterator.map(ToString.toString)
-            |> xs -> Iterator.append(xs, Iterator.singleton(rc, "Nil"))
-            |> Iterator.join(" :: ")
+            |> xs ->
+                Iterator.append(xs, Iterator.singleton(rc, "Nil"))
+                    |> Iterator.join(" :: ")
     }
 
     ///
@@ -213,11 +211,10 @@ pub mod List {
     ///
     /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
     ///
-    pub def get(i: Int32, l: List[a]): a =
-        match nth(i, l) {
-            case Some(x) => x
-            case None    => indexOutOfBounds!("index ${i} is out of bounds for List of length ${length(l)}")
-        }
+    pub def get(i: Int32, l: List[a]): a = match nth(i, l) {
+        case Some(x) => x
+        case None    => indexOutOfBounds!("index ${i} is out of bounds for List of length ${length(l)}")
+    }
 
     ///
     /// Optionally returns the element at position `i` in the list `l`.
@@ -445,14 +442,14 @@ pub mod List {
     /// Return the singleton list with element `x`.
     ///
     @Terminates
-    pub def point(a: a) : List[a] = a :: Nil
+    pub def point(a: a): List[a] = a :: Nil
 
     ///
     /// Apply every function from `f` to every argument from `x` and return a list with all results.
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: List[a -> b \ ef], x: List[a]) : List[b] \ ef =
+    pub def ap(f: List[a -> b \ ef], x: List[a]): List[b] \ ef =
         map(g -> map(g, x), f) |> flatten
 
     ///
@@ -592,7 +589,7 @@ pub mod List {
                 else
                     loop(l1, ys, c + 1, y :: acc)
             }
-            case _ => reverseAppend(acc, ll2)
+            case _                  => reverseAppend(acc, ll2)
         };
         loop(drop(-i, l1), l2, 0, Nil)
 
@@ -622,7 +619,7 @@ pub mod List {
     def at(i: Int32, l: List[a]): a = match (i, l) {
         case (0, x :: _)  => x
         case (p, _ :: xs) => at(p - 1, xs)
-        case _ => unreachable!()
+        case _            => unreachable!()
     }
 
     ///
@@ -630,7 +627,7 @@ pub mod List {
     ///
     @Terminates
     def removeIndex(i: Int32, l: List[a]): List[a] = match (i, l) {
-        case (_, Nil) => l
+        case (_, Nil)     => l
         case (0, _ :: xs) => xs
         case (p, x :: xs) => x :: removeIndex(p - 1, xs)
     }
@@ -700,9 +697,9 @@ pub mod List {
     pub def intersperse(a: a, l: List[a]): List[a] =
         @Tailrec
         def loop(ll, acc) = match ll {
-            case x1 :: Nil      => x1 :: acc
-            case x1 :: xs       => loop(xs, a :: x1 :: acc)
-            case _              => unreachable!()
+            case x1 :: Nil => x1 :: acc
+            case x1 :: xs  => loop(xs, a :: x1 :: acc)
+            case _         => unreachable!()
         };
         match l {
             case Nil => Nil
@@ -717,13 +714,13 @@ pub mod List {
     pub def intercalate(l1: List[a], l2: List[List[a]]): List[a] =
         @Tailrec
         def loop(ll, acc) = match ll {
-            case x :: Nil       => reverseAppend(x, acc)
-            case x1 :: xs       => loop(xs, reverseAppend(l1, reverseAppend(x1, acc)))
-            case _              => unreachable!()
+            case x :: Nil => reverseAppend(x, acc)
+            case x1 :: xs => loop(xs, reverseAppend(l1, reverseAppend(x1, acc)))
+            case _        => unreachable!()
         };
         match l2 {
             case Nil => Nil
-            case _ => reverse(loop(l2, Nil))
+            case _   => reverse(loop(l2, Nil))
         }
 
     ///
@@ -848,7 +845,7 @@ pub mod List {
             case x :: xs => loop(xs, f(x, acc))
         };
         match reverse(l) {
-            case Nil => None
+            case Nil     => None
             case x :: xs => loop(xs, x)
         }
 
@@ -918,7 +915,7 @@ pub mod List {
         };
         match l {
             case Nil => None
-            case _ => Some(reverse(loop(l, Nil)))
+            case _   => Some(reverse(loop(l, Nil)))
         }
 
     ///
@@ -1059,9 +1056,13 @@ pub mod List {
     /// The function `f` must be pure and define an equivalence relation.
     ///
     pub def groupWith(f: (a, a) -> Bool, l: List[a]): List[Nel[a]] =
-        (Nil, l) ||> List.foldLeft(acc -> value -> {
-            groupWithHelper(value, f, acc)
-        }) |> List.map(Nel.reverse)
+        (Nil, l)
+            ||> List.foldLeft(
+                acc -> value -> {
+                    groupWithHelper(value, f, acc)
+                }
+            )
+            |> List.map(Nel.reverse)
 
     ///
     /// Partitions `l` into sublists such that for any two elements `x` and `y` in a sublist,
@@ -1087,7 +1088,7 @@ pub mod List {
         // Record seen elements in reverse order in `acc`.
         @Tailrec
         def loop(cur, acc) = match cur {
-            case Nil => (Nel.singleton(value) :: acc) |> List.reverse
+            case Nil     => (Nel.singleton(value) :: acc) |> List.reverse
             case x :: xs =>
                 if (f(value, Nel.head(x))) {
                     let newNel = Nel.cons(value, x);
@@ -1126,7 +1127,7 @@ pub mod List {
             case (x :: xs, y :: ys) =>
                 let z = f(x, y);
                 loop(xs, ys, z :: acc)
-            case _ => acc
+            case _                  => acc
         };
         reverse(loop(l1, l2, Nil))
 
@@ -1195,7 +1196,7 @@ pub mod List {
             case (x :: xs, y :: ys, z :: zs) =>
                 let r = f(x, y, z);
                 loop(xs, ys, zs, r :: acc)
-            case _ => acc
+            case _                           => acc
         };
         reverse(loop(l1, l2, l3, Nil))
 
@@ -1257,10 +1258,11 @@ pub mod List {
         @Tailrec
         def loop(ll, acc) = match ll {
             case Nil     => acc
-            case x :: xs => match f(x) {
-                case None    => loop(xs, acc)
-                case Some(v) => loop(xs, v :: acc)
-            }
+            case x :: xs =>
+                match f(x) {
+                    case None    => loop(xs, acc)
+                    case Some(v) => loop(xs, v :: acc)
+                }
         };
         reverse(loop(l, Nil))
 
@@ -1272,10 +1274,11 @@ pub mod List {
     @Terminates @Tailrec
     pub def findMap(f: a -> Option[b] \ ef, l: List[a]): Option[b] \ ef = match l {
         case Nil     => None
-        case x :: xs => match f(x) {
-            case None    => findMap(f, xs)
-            case Some(v) => Some(v)
-        }
+        case x :: xs =>
+            match f(x) {
+                case None    => findMap(f, xs)
+                case Some(v) => Some(v)
+            }
     }
 
     ///
@@ -1318,10 +1321,14 @@ pub mod List {
     /// If multiple mappings with the same key are produced only the last occurrence is kept.
     ///
     pub def toMapWith(f: a -> (k, v) \ ef, l: List[a]): Map[k, v] \ ef with Order[k] =
-        foldLeft((acc, x) -> {
-            let (key, val) = f(x);
-            Map.insert(key, val, acc)
-        }, Map.empty(), l)
+        foldLeft(
+            (acc, x) -> {
+                let (key, val) = f(x);
+                Map.insert(key, val, acc)
+            },
+            Map.empty(),
+            l
+        )
 
     ///
     /// Applies `f` to every element of `l`.
@@ -1340,7 +1347,7 @@ pub mod List {
         @Tailrec
         def loop(ll, i) = match ll {
             case Nil     => ()
-            case x :: xs => f(i, x); loop(xs, i+1)
+            case x :: xs => f(i, x); loop(xs, i + 1)
         };
         loop(l, 0)
 
@@ -1414,7 +1421,7 @@ pub mod List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region rc {
+    pub def sortWith(cmp: (a, a) -> Comparison, l: List[a]): List[a] = region rc {
         toArray(rc, l) !> Array.sortWith(cmp) |> Array.toList
     }
 
@@ -1467,7 +1474,7 @@ pub mod List {
             case Err(e)      => Err(e)
         };
         match loop(Nil) {
-            case Ok(l) => Ok(reverse(l))
+            case Ok(l)    => Ok(reverse(l))
             case Err(err) => Err(err)
         }
 
@@ -1581,7 +1588,7 @@ pub mod List {
         @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(Applicative.point(Nil))
-            case x :: xs => {let ans = f(x); loop(xs, ks -> k(consA(ans, ks)))}
+            case x :: xs => { let ans = f(x); loop(xs, ks -> k(consA(ans, ks))) }
         };
         loop(l, identity)
 
@@ -1595,11 +1602,13 @@ pub mod List {
         def loop(ll1, ll2, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => {
                 let cmp = x <=> y;
-                if (cmp == Comparison.LessThan or cmp == Comparison.EqualTo) loop(xs, ll2, x :: acc)
-                else                                   loop(ll1, ys, y :: acc)
+                if (cmp == Comparison.LessThan or cmp == Comparison.EqualTo)
+                    loop(xs, ll2, x :: acc)
+                else
+                    loop(ll1, ys, y :: acc)
             }
-            case (Nil    , _) => reverse(reverseAppend(ll2, acc))
-            case (_, Nil    ) => reverse(reverseAppend(ll1, acc))
+            case (Nil, _)           => reverse(reverseAppend(ll2, acc))
+            case (_, Nil)           => reverse(reverseAppend(ll1, acc))
         };
         loop(l1, l2, Nil)
 
@@ -1616,13 +1625,12 @@ pub mod List {
     pub def frequency(l: List[t]): Map[t, Int32] with Order[t] =
         @Tailrec
         def freq(ll, m) = match ll {
-            case Nil      => m
-            case x :: xs  =>
+            case Nil     => m
+            case x :: xs =>
                 match Map.get(x, m) {
                     case None    => freq(xs, Map.insert(x, 1, m))
                     case Some(_) => freq(xs, Map.update(v -> Some(v + 1), x, m))
                 }
         };
         freq(l, Map#{})
-
 }

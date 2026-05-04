@@ -128,5 +128,4 @@ pub mod Identity {
     instance Neg[Identity[a]] with Neg[a] {
         pub def neg(x: Identity[a]): Identity[a] = Functor.map(Neg.neg, x)
     }
-
 }

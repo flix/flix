@@ -25,7 +25,7 @@ pub mod MutList {
     ///   - The capacity of the array is always 8 or more.
     ///
     pub struct MutList[a: Type, r: Region] {
-        r: Region[r],
+        r:          Region[r],
         mut values: Array[a, r],
         mut length: Int32
     }
@@ -47,15 +47,19 @@ pub mod MutList {
         type Elm = a
         type Aef = r + OutOfBounds
         pub def get(t: MutList[a, r], i: Int32): a \ r + OutOfBounds =
-            if (0 <= i and i < MutList.length(t)) MutList.get(i, t)
-            else OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
+            if (0 <= i and i < MutList.length(t))
+                MutList.get(i, t)
+            else
+                OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
     }
 
     instance IndexableMut[MutList[a, r]] {
         type Aef = r + OutOfBounds
         pub def put(t: MutList[a, r], i: Int32, v: a): Unit \ r + OutOfBounds =
-            if (0 <= i and i < MutList.length(t)) MutList.put(v, i, t)
-            else OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
+            if (0 <= i and i < MutList.length(t))
+                MutList.put(v, i, t)
+            else
+                OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
     }
 
     instance Formattable[MutList[a, r]] with Formattable[a] {
@@ -110,11 +114,10 @@ pub mod MutList {
     ///
     /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
     ///
-    pub def get(i: Int32, v: MutList[a, r]): a \ r =
-        match nth(i, v) {
-            case Some(x) => x
-            case None    => indexOutOfBounds!("index ${i} is out of bounds for MutList of length ${v->length}")
-        }
+    pub def get(i: Int32, v: MutList[a, r]): a \ r = match nth(i, v) {
+        case Some(x) => x
+        case None    => indexOutOfBounds!("index ${i} is out of bounds for MutList of length ${v->length}")
+    }
 
     ///
     /// Stores the value `x` at position `i` in the mutable list `v`.
@@ -225,8 +228,7 @@ pub mod MutList {
         def loop(i) = {
             if (i >= v->length)
                 false
-            else
-                if (f(Array.get(i, v->values))) true else loop(i + 1)
+            else if (f(Array.get(i, v->values))) true else loop(i + 1)
         };
         loop(0)
 
@@ -239,8 +241,7 @@ pub mod MutList {
         def loop(i) = {
             if (i >= v->length)
                 true
-            else
-                if (f(Array.get(i, v->values))) loop(i + 1) else false
+            else if (f(Array.get(i, v->values))) loop(i + 1) else false
         };
         loop(0)
 
@@ -277,8 +278,7 @@ pub mod MutList {
         def loop(i) = {
             if (i >= v->length)
                 None
-            else
-                if (x == Array.get(i, v->values)) Some(i) else loop(i + 1)
+            else if (x == Array.get(i, v->values)) Some(i) else loop(i + 1)
         };
         loop(0)
 
@@ -290,8 +290,7 @@ pub mod MutList {
         def loop(i) = {
             if (i < 0)
                 None
-            else
-                if (x == Array.get(i, v->values)) Some(i) else loop(i - 1)
+            else if (x == Array.get(i, v->values)) Some(i) else loop(i - 1)
         };
         loop(v->length - 1)
 
@@ -302,8 +301,7 @@ pub mod MutList {
         def loop(i, indices) = {
             if (i >= v->length)
                 indices
-            else
-                if (x == Array.get(i, v->values)) loop(i + 1, i :: indices) else loop(i + 1, indices)
+            else if (x == Array.get(i, v->values)) loop(i + 1, i :: indices) else loop(i + 1, indices)
         };
         loop(0, Nil) |> List.reverse |> List.toVector
 
@@ -418,17 +416,19 @@ pub mod MutList {
     ///
     /// Concatenates all the contained MutLists.
     ///
-    pub def flatten(rc1: Region[r1], v: MutList[MutList[a, r], r]): MutList[a, r1] \ {r, r1}=
+    pub def flatten(rc1: Region[r1], v: MutList[MutList[a, r], r]): MutList[a, r1] \ { r, r1 } =
         let rdestIndex = Ref.fresh(rc1, 0);
         let size = MutList.sumWith(MutList.length, v);
         let destArray = Array.empty(rc1, Int32.max(size, minCapacity()));
-        v |> MutList.forEach(bs -> {
-            let destIndex = Ref.get(rdestIndex);
-            Array.patch(destIndex, length(bs), bs->values, destArray);
-            Ref.put(destIndex + length(bs), rdestIndex)
-        });
+        v
+            |> MutList.forEach(
+                bs -> {
+                    let destIndex = Ref.get(rdestIndex);
+                    Array.patch(destIndex, length(bs), bs->values, destArray);
+                    Ref.put(destIndex + length(bs), rdestIndex)
+                }
+            );
         new MutList @ rc1 {r = rc1, values = destArray, length = size}
-
 
     ///
     /// Apply `f` to every element in `v` and concatenate the results.
@@ -524,7 +524,7 @@ pub mod MutList {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b \ ef, v: MutList[a, r]): b \ {ef, r} with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, v: MutList[a, r]): b \ { ef, r } with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), v)
 
     ///
@@ -533,10 +533,14 @@ pub mod MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def reduceLeft(f: (a, a) -> a \ ef, v: MutList[a, r]): Option[a] \ { ef, r } =
-        foldLeft((acc, x) -> match acc {
-            case Some(y) => Some(f(y, x))
-            case None => Some(x)
-        }, None, v)
+        foldLeft(
+            (acc, x) -> match acc {
+                case Some(y) => Some(f(y, x))
+                case None    => Some(x)
+            },
+            None,
+            v
+        )
 
     ///
     /// Applies `f` to all elements in `v` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
@@ -544,10 +548,14 @@ pub mod MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def reduceRight(f: (a, a) -> a \ ef, v: MutList[a, r]): Option[a] \ { ef, r } =
-        foldRight((x, acc) -> match acc {
-            case Some(y) => Some(f(x, y))
-            case None => Some(x)
-        }, None, v)
+        foldRight(
+            (x, acc) -> match acc {
+                case Some(y) => Some(f(x, y))
+                case None    => Some(x)
+            },
+            None,
+            v
+        )
 
     ///
     /// Removes all elements from the given mutable list `v`.
@@ -620,19 +628,16 @@ pub mod MutList {
             if (i1 < n) {
                 Array.put(Array.get(i1 + 1, v->values), i1, v->values);
                 loop(i1 + 1)
-            }
-            else if (i1 == n) {
+            } else if (i1 == n) {
                 Array.put(Reflect.default(), i1, v->values)
-            }
-            else
+            } else
                 ()
         };
         if (i < v->length) {
             loop(i);
             v->length = n;
             compress(v)
-        }
-        else
+        } else
             ()
 
     ///
@@ -693,8 +698,7 @@ pub mod MutList {
             let newCap = Order.max(n, minCap);
             v->values = Array.copyOfRange(v->r, 0, newCap, v->values);
             v->length = Order.min(v->length, newCap)
-        }
-        else
+        } else
             ()
 
     ///
@@ -718,8 +722,7 @@ pub mod MutList {
             let c = Order.max(l, minCap);
             v->length = l;
             Array.updateSequence(0, v->values, Array.empty(v->r, c))
-        }
-        else
+        } else
             ()
 
     ///
@@ -846,13 +849,12 @@ pub mod MutList {
         let c = capacity(v);
         let len = v->length;
         let loadFactor = Int32.toFloat32(len) / Int32.toFloat32(c);
-        if (loadFactor < 1.0f32/4.0f32 and len > 0) {
+        if (loadFactor < 1.0f32 / 4.0f32 and len > 0) {
             if (len == 1)
                 shrinkTo(1, v)
             else
                 shrinkTo(c / 2, v)
-        }
-        else
+        } else
             ()
 
     ///
@@ -891,7 +893,7 @@ pub mod MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, v: MutList[a, r]): Unit \ r =
+    pub def sortWith(cmp: (a, a) -> Comparison, v: MutList[a, r]): Unit \ r =
         Array.sortWithin(cmp, 0, v->length - 1, v->values)
 
     ///
@@ -950,5 +952,4 @@ pub mod MutList {
             case Some(a1) => MutList.push(a1, ml); loop(a1)
         };
         loop(x)
-
 }
