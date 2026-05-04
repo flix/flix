@@ -18,8 +18,9 @@ pub mod Net.HttpResponse {
 
     use IoError.ErrorKind
     use IoError.IoError
-    use Json.FromJson
-    use Json.JsonError
+    use Util.Json
+    use Util.Json.FromJson
+    use Util.Json.JsonError
     use Net.Body
     use Net.HttpLayer
     use Net.HttpResponse
@@ -86,7 +87,7 @@ pub mod Net.HttpResponse {
     /// Returns `Err(Parse(...))` if the body is not valid JSON.
     /// Does not check the response status.
     ///
-    pub def bodyJson(r: HttpResponse): Result[JsonError, Json] =
+    pub def bodyJson(r: HttpResponse): Result[JsonError, Json.Json] =
         Json.parse(body(r))
 
     ///

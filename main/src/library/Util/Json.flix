@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-pub mod Json {
+pub mod Util.Json {
 
-    use Json.JsonError.JsonError
-    use Json.JsonError.JsonError.Parse
-    use Json.JsonError.ParseErrorKind.{UnexpectedChar, UnexpectedEof, InvalidNumber, InvalidEscape, InvalidUnicode, DuplicateKey}
-    use Json.FromJson.FromJson
+    use Util.Json.JsonError.JsonError
+    use Util.Json.JsonError.JsonError.Parse
+    use Util.Json.JsonError.ParseErrorKind.{UnexpectedChar, UnexpectedEof, InvalidNumber, InvalidEscape, InvalidUnicode, DuplicateKey}
+    use Util.Json.FromJson.FromJson
 
     ///
     /// Represents a JSON value.

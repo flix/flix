@@ -16,7 +16,8 @@
 
 pub mod Net.HttpRequest {
 
-    use Json.ToJson
+    use Util.Json
+    use Util.Json.ToJson
     use Net.Body
     use Net.HttpLayer
     use Net.Method

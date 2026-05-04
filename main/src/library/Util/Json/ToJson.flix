@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-pub mod Json.ToJson {
+pub mod Util.Json.ToJson {
 
-    use Json.Json
-    use Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
+    use Util.Json.Json
+    use Util.Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
 
     ///
     /// A trait for types that can be encoded as a `Json` value.

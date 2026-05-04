@@ -1,8 +1,8 @@
 use Net.Http
 use Net.HttpResponse
-use Json.Json
-use Json.JsonError
-use Json.FromJson
+use Util.Json.Json
+use Util.Json.JsonError
+use Util.Json.FromJson
 
 pub enum Uuid({uuid = String})
 

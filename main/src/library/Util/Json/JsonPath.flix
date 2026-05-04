@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-pub mod Json.JsonPath {
+pub mod Util.Json.JsonPath {
 
-    use Json.Json
-    use Json.Json.{JArray, JObject}
+    use Util.Json.Json
+    use Util.Json.Json.{JArray, JObject}
 
     ///
     /// A path locating a value inside a `Json` document, as a sequence of
