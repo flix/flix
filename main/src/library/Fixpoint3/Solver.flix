@@ -192,11 +192,13 @@ pub mod Fixpoint3.Solver {
     def provenanceModeltoModel(model: Map[RelSym, BPlusTree[Vector[Boxed], (Int64, Int32), IO]]): Map[RelSym, BPlusTree[Vector[Boxed], Boxed, IO]] =
         unsafe IO {
             model
-                |> Map.map(old -> {
-                    let newTree = BPlusTree.empty(Static);
-                    BPlusTree.forEach(k -> _ -> BPlusTree.put(k, Boxed.NoValue, newTree), old);
-                    newTree
-                })
+                |> Map.map(
+                    old -> {
+                        let newTree = BPlusTree.empty(Static);
+                        BPlusTree.forEach(k -> _ -> BPlusTree.put(k, Boxed.NoValue, newTree), old);
+                        newTree
+                    }
+                )
         }
 
     ///
@@ -208,13 +210,16 @@ pub mod Fixpoint3.Solver {
             let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
             Datalog(pFacts, Vector.empty())
         case Model(db)             =>
-            Map.rangeQuery(ramSym -> match ramSym {
-                case RelSym.Symbol(predSym, _, _) =>
-                    match predSym <=> p {
-                        case Comparison.EqualTo => Comparison.EqualTo
-                        case cmp                => cmp
-                    }
-            }, db)
+            Map.rangeQuery(
+                ramSym -> match ramSym {
+                    case RelSym.Symbol(predSym, _, _) =>
+                        match predSym <=> p {
+                            case Comparison.EqualTo => Comparison.EqualTo
+                            case cmp                => cmp
+                        }
+                },
+                db
+            )
                 |> List.toMap
                 |> Model
         case Provenance(rules, db) =>
@@ -261,9 +266,14 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto1(p: PredSym, ts: f[t1]): Datalog \ Foldable.Aef[f] with Order[t1], Foldable[f] =
-        injectIntoX(match (v1) -> Vector#{
-            box(v1)
-        }, p, ts)
+        injectIntoX(
+            match (v1) ->
+                Vector#{
+                    box(v1)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -273,10 +283,15 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto2(p: PredSym, ts: f[(t1, t2)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Foldable[f] =
-        injectIntoX(match (v1, v2) -> Vector#{
-            box(v1),
-            box(v2)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2) ->
+                Vector#{
+                    box(v1),
+                    box(v2)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -286,11 +301,16 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto3(p: PredSym, ts: f[(t1, t2, t3)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Foldable[f] =
-        injectIntoX(match (v1, v2, v3) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -301,12 +321,17 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto4(p: PredSym, ts: f[(t1, t2, t3, t4)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -317,13 +342,18 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto5(p: PredSym, ts: f[(t1, t2, t3, t4, t5)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -334,14 +364,19 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto6(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5, v6) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5),
-            box(v6)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5, v6) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5),
+                    box(v6)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -352,15 +387,20 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto7(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5),
-            box(v6),
-            box(v7)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5, v6, v7) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5),
+                    box(v6),
+                    box(v7)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -372,16 +412,21 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto8(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5),
-            box(v6),
-            box(v7),
-            box(v8)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5, v6, v7, v8) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5),
+                    box(v6),
+                    box(v7),
+                    box(v8)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -393,17 +438,22 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto9(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5),
-            box(v6),
-            box(v7),
-            box(v8),
-            box(v9)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5),
+                    box(v6),
+                    box(v7),
+                    box(v8),
+                    box(v9)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -417,18 +467,23 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto10(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5),
-            box(v6),
-            box(v7),
-            box(v8),
-            box(v9),
-            box(v10)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5),
+                    box(v6),
+                    box(v7),
+                    box(v8),
+                    box(v9),
+                    box(v10)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -442,19 +497,24 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto11(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5),
-            box(v6),
-            box(v7),
-            box(v8),
-            box(v9),
-            box(v10),
-            box(v11)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5),
+                    box(v6),
+                    box(v7),
+                    box(v8),
+                    box(v9),
+                    box(v10),
+                    box(v11)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -468,20 +528,25 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto12(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5),
-            box(v6),
-            box(v7),
-            box(v8),
-            box(v9),
-            box(v10),
-            box(v11),
-            box(v12)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5),
+                    box(v6),
+                    box(v7),
+                    box(v8),
+                    box(v9),
+                    box(v10),
+                    box(v11),
+                    box(v12)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -495,21 +560,26 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto13(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5),
-            box(v6),
-            box(v7),
-            box(v8),
-            box(v9),
-            box(v10),
-            box(v11),
-            box(v12),
-            box(v13)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5),
+                    box(v6),
+                    box(v7),
+                    box(v8),
+                    box(v9),
+                    box(v10),
+                    box(v11),
+                    box(v12),
+                    box(v13)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -523,22 +593,27 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto14(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5),
-            box(v6),
-            box(v7),
-            box(v8),
-            box(v9),
-            box(v10),
-            box(v11),
-            box(v12),
-            box(v13),
-            box(v14)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5),
+                    box(v6),
+                    box(v7),
+                    box(v8),
+                    box(v9),
+                    box(v10),
+                    box(v11),
+                    box(v12),
+                    box(v13),
+                    box(v14)
+                },
+            p,
+            ts
+        )
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -552,35 +627,44 @@ pub mod Fixpoint3.Solver {
     ///
     @LoweringTarget
     pub def injectInto15(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15], Foldable[f] =
-        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) -> Vector#{
-            box(v1),
-            box(v2),
-            box(v3),
-            box(v4),
-            box(v5),
-            box(v6),
-            box(v7),
-            box(v8),
-            box(v9),
-            box(v10),
-            box(v11),
-            box(v12),
-            box(v13),
-            box(v14),
-            box(v15)
-        }, p, ts)
+        injectIntoX(
+            match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
+                Vector#{
+                    box(v1),
+                    box(v2),
+                    box(v3),
+                    box(v4),
+                    box(v5),
+                    box(v6),
+                    box(v7),
+                    box(v8),
+                    box(v9),
+                    box(v10),
+                    box(v11),
+                    box(v12),
+                    box(v13),
+                    box(v14),
+                    box(v15)
+                },
+            p,
+            ts
+        )
 
     def injectIntoX(f: t -> Vector[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog \ (ef + Foldable.Aef[f]) with Foldable[f] =
         unchecked_cast(({
             region rc {
                 let db = MutMap.empty(rc);
-                Foldable.foldLeft(() -> t -> {
-                    let vs = f(t);
-                    let arity = Vector.length(vs);
-                    let ramSym = RelSym.Symbol(p, arity, Relational);
-                    let rel = MutMap.getOrElsePut(ramSym, BPlusTree.empty(Static), db);
-                    BPlusTree.put(vs, Boxed.NoValue, rel)
-                }, (), ts);
+                Foldable.foldLeft(
+                    () -> t -> {
+                        let vs = f(t);
+                        let arity = Vector.length(vs);
+                        let ramSym = RelSym.Symbol(p, arity, Relational);
+                        let rel = MutMap.getOrElsePut(ramSym, BPlusTree.empty(Static), db);
+                        BPlusTree.put(vs, Boxed.NoValue, rel)
+                    },
+                    (),
+                    ts
+                );
                 toModel(db) // Remove the `IO` effect from dealing with `Static`.
             }
         }: _\IO + ef + Foldable.Aef[f]) as _ \ ef + Foldable.Aef[f])
@@ -880,23 +964,32 @@ pub mod Fixpoint3.Solver {
                         }
                 };
                 db
-                    |> Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
-                        case Relational                 =>
-                            BPlusTree.forEach(tuple -> _ -> MutList.push(f(tuple), pFacts), rel)
-                        case Latticenal(bot, leq, _, _) =>
-                            BPlusTree.forEach(tuple -> lat -> {
-                                if (not leq(lat, bot)) {
-                                    let arity = Vector.length(tuple);
-                                    let vs = Vector.init(i -> {
-                                        if (i < arity)
-                                            Vector.get(i, tuple)
-                                        else
-                                            lat
-                                    }, arity + 1);
-                                    MutList.push(f(vs), pFacts)
-                                }
-                            }, rel)
-                    });
+                    |> Map.rangeQueryWith(
+                        qquery,
+                        ramSym -> rel -> match toDenotation(ramSym) {
+                            case Relational                 =>
+                                BPlusTree.forEach(tuple -> _ -> MutList.push(f(tuple), pFacts), rel)
+                            case Latticenal(bot, leq, _, _) =>
+                                BPlusTree.forEach(
+                                    tuple -> lat -> {
+                                        if (not leq(lat, bot)) {
+                                            let arity = Vector.length(tuple);
+                                            let vs = Vector.init(
+                                                i -> {
+                                                    if (i < arity)
+                                                        Vector.get(i, tuple)
+                                                    else
+                                                        lat
+                                                },
+                                                arity + 1
+                                            );
+                                            MutList.push(f(vs), pFacts)
+                                        }
+                                    },
+                                    rel
+                                )
+                        }
+                    );
                 MutList.toVector(pFacts)
             }
         case Join(d1, d2)      => factsOf(f, p, d1) ++ factsOf(f, p, d2)
@@ -928,9 +1021,11 @@ pub mod Fixpoint3.Solver {
     def toModelOnlyFull(withProv: Bool, rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = {
         let (db, meta) = dbMeta;
         let dbOnlyFullRels = MutMap.toMap(db)
-            |> Map.filterWithKey(k -> facts -> match k {
-                case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not (unsafe IO { BPlusTree.isEmpty(facts) })
-            });
+            |> Map.filterWithKey(
+                k -> facts -> match k {
+                    case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not (unsafe IO { BPlusTree.isEmpty(facts) })
+                }
+            );
         if (withProv) {
             toProvenance(rules, dbOnlyFullRels)
         } else {
@@ -944,15 +1039,17 @@ pub mod Fixpoint3.Solver {
     def toProvenance(rules: Vector[Constraint], db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Datalog =
         unsafe IO {
             (Map#{}, db)
-                ||> Map.foldLeftWithKey(acc -> relSym -> facts -> {
-                    let len = Vector.length(fst(getOrCrash(BPlusTree.minimumKey(facts))));
-                    let newTree = BPlusTree.empty(Static);
-                    foreach ((fact, _) <- facts) {
-                        let (rawFact, annotation) = Vector.splitAt(len - 2, fact);
-                        newTree |> BPlusTree.put(rawFact, (unbox(Vector.get(0, annotation)), getOrCrash(Int64.tryToInt32(unbox(Vector.get(1, annotation))))))
-                    };
-                    Map.insert(relSym, newTree, acc)
-                })
+                ||> Map.foldLeftWithKey(
+                    acc -> relSym -> facts -> {
+                        let len = Vector.length(fst(getOrCrash(BPlusTree.minimumKey(facts))));
+                        let newTree = BPlusTree.empty(Static);
+                        foreach ((fact, _) <- facts) {
+                            let (rawFact, annotation) = Vector.splitAt(len - 2, fact);
+                            newTree |> BPlusTree.put(rawFact, (unbox(Vector.get(0, annotation)), getOrCrash(Int64.tryToInt32(unbox(Vector.get(1, annotation))))))
+                        };
+                        Map.insert(relSym, newTree, acc)
+                    }
+                )
                 |> Provenance(rules)
         }
 

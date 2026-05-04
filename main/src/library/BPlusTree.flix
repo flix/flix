@@ -188,11 +188,16 @@ pub mod BPlusTree {
             case Some(v) => v
             case None    =>
                 let lock = Node.getLock(leaf);
-                Lock.withWriteLockOrElse(stamp, lock, writeStamp -> {
-                    let v = f();
-                    fixRoot(Node.insertIntoLeaf(k, v, leaf, writeStamp, t), t);
-                    v
-                }, () -> computeIfAbsent(f, k, t))
+                Lock.withWriteLockOrElse(
+                    stamp,
+                    lock,
+                    writeStamp -> {
+                        let v = f();
+                        fixRoot(Node.insertIntoLeaf(k, v, leaf, writeStamp, t), t);
+                        v
+                    },
+                    () -> computeIfAbsent(f, k, t)
+                )
         }
     }
 
@@ -584,13 +589,15 @@ pub mod BPlusTree {
             let minLeaf = Node.leftMostLeafUnconditional(t->root);
             unsafe IO as r {
                 Vector.range(0, threadNum)
-                    |> Vector.forEach(i -> {
-                        let _: Unit = spawn unsafe r as IO {
-                            // Flix does not allow region effect in spawns. Remove the effect.
-                            Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
-                        } @ rc;
-                        ()
-                    })
+                    |> Vector.forEach(
+                        i -> {
+                            let _: Unit = spawn unsafe r as IO {
+                                // Flix does not allow region effect in spawns. Remove the effect.
+                                Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
+                            } @ rc;
+                            ()
+                        }
+                    )
             }
         }
     }

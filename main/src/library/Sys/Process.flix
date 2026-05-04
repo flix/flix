@@ -135,7 +135,7 @@ pub mod Sys.Process {
                     Ok(ProcessHandle(process))
                 } catch {
                     case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 };
                 k(res)
             }
@@ -146,7 +146,7 @@ pub mod Sys.Process {
                     k(Ok(p.exitValue()))
                 } catch {
                     case ex: IllegalThreadStateException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException                 => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def isAlive(ph, k) =
@@ -164,7 +164,7 @@ pub mod Sys.Process {
                     k(Ok(pid))
                 } catch {
                     case ex: UnsupportedOperationException => k(Err(IoError(ErrorKind.Unsupported, ex.getMessage())))
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException                   => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def stdin(ph, k) =
@@ -206,7 +206,7 @@ pub mod Sys.Process {
                     k(Ok(exitVal))
                 } catch {
                     case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException          => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def waitForTimeout(ph, time, unit, k) =
@@ -217,7 +217,7 @@ pub mod Sys.Process {
                     k(Ok(exitVal))
                 } catch {
                     case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException          => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
         }
 

@@ -80,9 +80,12 @@ pub mod Fixpoint3.Phase.ProvenanceAugment {
     ///
     def augmentFacts(oldTree: BPlusTree[Vector[Boxed], Boxed, Static]): BPlusTree[Vector[Boxed], Boxed, Static] \ IO = {
         let newTree = BPlusTree.emptyWithArity(Static, usedArity());
-        BPlusTree.forEach(tuple -> v ->
-            let annotatedVector = tuple ++ Vector#{BoxedInt64(0i64), BoxedInt64(-1i64)};
-            BPlusTree.put(annotatedVector, v, newTree), oldTree);
+        BPlusTree.forEach(
+            tuple -> v ->
+                let annotatedVector = tuple ++ Vector#{BoxedInt64(0i64), BoxedInt64(-1i64)};
+                BPlusTree.put(annotatedVector, v, newTree),
+            oldTree
+        );
         newTree
     }
 

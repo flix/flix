@@ -105,16 +105,20 @@ pub mod Fixpoint3.Boxing {
     ): Unit \ r + IO =
         unchecked_cast({
             facts
-                |> BPlusTree.forEach(tuple -> lat -> {
-                    // `facts` and `newTree` must have same the same region. Cast to achieve this.
-                    unchecked_cast(({
-                        let savedVec = tuple
-                            |> Vector.mapWithIndex(index -> boxedVal ->
-                                let unifiedPos = Vector.get(index, mapping);
-                                unboxWith(boxedVal, unifiedPos, boxingInfo));
-                        BPlusTree.put(savedVec, lat, newTree)
-                    }: _\r) as _ \ IO)
-                }) // This is to signal that we indeed modify the region `r`.
+                |> BPlusTree.forEach(
+                    tuple -> lat -> {
+                        // `facts` and `newTree` must have same the same region. Cast to achieve this.
+                        unchecked_cast(({
+                            let savedVec = tuple
+                                |> Vector.mapWithIndex(
+                                    index -> boxedVal ->
+                                        let unifiedPos = Vector.get(index, mapping);
+                                        unboxWith(boxedVal, unifiedPos, boxingInfo)
+                                );
+                            BPlusTree.put(savedVec, lat, newTree)
+                        }: _\r) as _ \ IO)
+                    }
+                ) // This is to signal that we indeed modify the region `r`.
         } as _ \ IO + r)
 
     ///
@@ -170,13 +174,17 @@ pub mod Fixpoint3.Boxing {
         let objectList = Vector.get(index, objectLists);
         let objectMap = Vector.get(index, vecObjectMap);
         let lock = Vector.get(index, locks);
-        BPlusTree.computeIfAbsent(() -> {
-            ReadWriteLock.writeLock(lock);
-            let id = getNextIndex(objectList);
-            MutList.insert(box, id, objectList);
-            ReadWriteLock.unlockWrite(lock);
-            Int32.toInt64(id)
-        }, box, objectMap)
+        BPlusTree.computeIfAbsent(
+            () -> {
+                ReadWriteLock.writeLock(lock);
+                let id = getNextIndex(objectList);
+                MutList.insert(box, id, objectList);
+                ReadWriteLock.unlockWrite(lock);
+                Int32.toInt64(id)
+            },
+            box,
+            objectMap
+        )
     }
 
     ///

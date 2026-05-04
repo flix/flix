@@ -460,34 +460,37 @@ pub mod Graph {
     /// given a set of `Edge` and `Node` facts. Nodes can always reach
     /// themselves.
     ///
-    def reachability(): #{Edge(t, t), Reachable(t, t), Node(t) | r} with Order[t] = #{
-        // All nodes can reach themselves.
-        Reachable(n, n) :- Node(n). // If `n1` can reach `m` and there is an edge from `m` to `n2` then `n1`
-        // can also reach `n2`. This adds all node pairs to the relational that
-        // are reachable using any number of nodes.
-        Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
-    }
+    def reachability(): #{Edge(t, t), Reachable(t, t), Node(t) | r} with Order[t] =
+        #{
+            // All nodes can reach themselves.
+            Reachable(n, n) :- Node(n). // If `n1` can reach `m` and there is an edge from `m` to `n2` then `n1`
+            // can also reach `n2`. This adds all node pairs to the relational that
+            // are reachable using any number of nodes.
+            Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
+        }
 
     ///
     /// Returns a Datalog program that, when given a set of `Edge` facts,
     /// computes the nodes.
     ///
-    def nodes(): #{Edge(t, t), Node(t) | r} with Order[t] = #{
-        Node(x) :- Edge(x, _).
-        Node(x) :- Edge(_, x).
-    }
+    def nodes(): #{Edge(t, t), Node(t) | r} with Order[t] =
+        #{
+            Node(x) :- Edge(x, _).
+            Node(x) :- Edge(_, x).
+        }
 
     ///
     /// Returns a Datalog program which computes the reachable nodes from `src`
     /// when given a set of `Edge` facts.
     ///
-    def reachabilityFromSrc(src: t): #{Edge(t, t), Reachable(t) | r} with Order[t] = #{
-        // A node can reach itself.
-        Reachable(src). // If `src` can reach `m` and there is an edge from `m` to `n` then
-        // `src` can also reach `n`. This adds all node pairs to the relational
-        // that are reachable using any number of nodes.
-        Reachable(n) :- Reachable(m), Edge(m, n).
-    }
+    def reachabilityFromSrc(src: t): #{Edge(t, t), Reachable(t) | r} with Order[t] =
+        #{
+            // A node can reach itself.
+            Reachable(src). // If `src` can reach `m` and there is an edge from `m` to `n` then
+            // `src` can also reach `n`. This adds all node pairs to the relational
+            // that are reachable using any number of nodes.
+            Reachable(n) :- Reachable(m), Edge(m, n).
+        }
 
     ///
     /// Returns the value inside the `d` value.

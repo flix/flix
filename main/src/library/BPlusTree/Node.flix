@@ -183,11 +183,16 @@ mod BPlusTree.Node {
     pub def adjustWithKey(f: k -> v -> v \ ef, key: k, stamp: Int64, t: BPlusTree[k, v, r], node: Node[k, v, r]): Unit \ ef + r with Order[k] = {
         let index = binarySearch(key, BPlusTree.search(t), node);
         if (index >= 0) {
-            Lock.withWriteLockOrElse(stamp, node->lock, writeStamp -> {
-                let val = Array.get(index, node->values);
-                Array.put(f(key, val), index, node->values);
-                Lock.unlockWrite(writeStamp, node->lock)
-            }, () -> BPlusTree.adjustWithKey(f, key, t))
+            Lock.withWriteLockOrElse(
+                stamp,
+                node->lock,
+                writeStamp -> {
+                    let val = Array.get(index, node->values);
+                    Array.put(f(key, val), index, node->values);
+                    Lock.unlockWrite(writeStamp, node->lock)
+                },
+                () -> BPlusTree.adjustWithKey(f, key, t)
+            )
         } else {
             Lock.ifValidElseNoYield(stamp, node->lock, () -> (), () -> BPlusTree.adjustWithKey(f, key, t))
         }
@@ -200,10 +205,13 @@ mod BPlusTree.Node {
     ///
     def applyPredicate(v: Vector[k], f: k -> k -> Bool \ r): Bool \ r = {
         let zipped = Vector.map(x -> (x, true), v);
-        let reduced = Vector.reduceLeft(old -> cur ->
-            let (oldNum, oldBool) = old;
-            let (curNum, _) = cur;
-            (curNum, oldBool and f(oldNum, curNum)), zipped);
+        let reduced = Vector.reduceLeft(
+            old -> cur ->
+                let (oldNum, oldBool) = old;
+                let (curNum, _) = cur;
+                (curNum, oldBool and f(oldNum, curNum)),
+            zipped
+        );
         match reduced {
             case None            => true
             case Some((_, bool)) => bool
@@ -252,9 +260,12 @@ mod BPlusTree.Node {
             let firstChildWorks = assertNodeInvariant(Vector.get(0, children), arity, false, shouldBeBiggerThan, search);
             let lastChildWorks = assertNodeInvariant(unwrapNode(Vector.last(children)), arity, isRightMost, if (size == 0) shouldBeBiggerThan else Vector.last(keys), search);
             let zippedWithoutFirst = Vector.filter(match (index, _) -> index != 0, Vector.mapWithIndex(i -> x -> (i, x), toLength(children, size - 1)));
-            let middleChildrenWorks = Vector.forAll(pair ->
-                let (i, p) = pair;
-                assertNodeInvariant(p, arity, false, Some(Vector.get(i - 1, keys)), search), zippedWithoutFirst);
+            let middleChildrenWorks = Vector.forAll(
+                pair ->
+                    let (i, p) = pair;
+                    assertNodeInvariant(p, arity, false, Some(Vector.get(i - 1, keys)), search),
+                zippedWithoutFirst
+            );
             let childrenWorks = firstChildWorks and middleChildrenWorks and lastChildWorks;
             let parentPointerCorrect = Vector.foldLeft(
                 workingSoFar -> cur -> workingSoFar and equalByReference(node, unwrapNode(cur->parent)),
@@ -558,14 +569,19 @@ mod BPlusTree.Node {
         } else {
             let oldKey = Array.get(index, node->keys);
             let oldVal = Array.get(index, node->values);
-            Lock.ifValidElse(stamp, node->lock, () ->
-                if (decider(key, val, oldKey, oldVal)) {
-                    insertIntoLeafForceIf(decider, key, val, node, stamp, index, tree)
-                } else {
-                    // At some point `oldKey => oldVal` was in the tree. We observed it and
-                    // decided to not insert `key => val`, by `decider`.
-                    None
-                }, () -> BPlusTree.putIfInternal(decider, key, val, tree))
+            Lock.ifValidElse(
+                stamp,
+                node->lock,
+                () ->
+                    if (decider(key, val, oldKey, oldVal)) {
+                        insertIntoLeafForceIf(decider, key, val, node, stamp, index, tree)
+                    } else {
+                        // At some point `oldKey => oldVal` was in the tree. We observed it and
+                        // decided to not insert `key => val`, by `decider`.
+                        None
+                    },
+                () -> BPlusTree.putIfInternal(decider, key, val, tree)
+            )
         }
     }
 
@@ -789,16 +805,17 @@ mod BPlusTree.Node {
         size: Int32,
         parent: Option[Node[k, v, r]],
         next: Option[Node[k, v, r]]
-    ): Node[k, v, r] \ r = new Node @ rc {
-        keys = keys,
-        children = Array.empty(rc, 0),
-        values = values,
-        lock = Lock.mkLock(rc),
-        size = size,
-        parent = parent,
-        next = next,
-        isLeaf = true
-    }
+    ): Node[k, v, r] \ r =
+        new Node @ rc {
+            keys = keys,
+            children = Array.empty(rc, 0),
+            values = values,
+            lock = Lock.mkLock(rc),
+            size = size,
+            parent = parent,
+            next = next,
+            isLeaf = true
+        }
 
     ///
     /// Create a new internal node.
@@ -809,16 +826,17 @@ mod BPlusTree.Node {
         children: Array[Node[k, v, r], r],
         size: Int32,
         parent: Option[Node[k, v, r]]
-    ): Node[k, v, r] \ r = new Node @ rc {
-        keys = keys,
-        children = children,
-        values = Array.empty(rc, 0),
-        lock = Lock.mkLock(rc),
-        size = size,
-        parent = parent,
-        next = None,
-        isLeaf = false
-    }
+    ): Node[k, v, r] \ r =
+        new Node @ rc {
+            keys = keys,
+            children = children,
+            values = Array.empty(rc, 0),
+            lock = Lock.mkLock(rc),
+            size = size,
+            parent = parent,
+            next = None,
+            isLeaf = false
+        }
 
     ///
     /// Provides access to the `parent` field of `node`.
@@ -892,14 +910,19 @@ mod BPlusTree.Node {
         onExisting: Int32 -> Int64 -> Option[(Node[k, v, r], Int64)] \ ef + r,
         restart: Unit -> Option[(Node[k, v, r], Int64)] \ ef + r
     ): Option[(Node[k, v, r], Int64)] \ ef + r with Order[k] =
-        Lock.withWriteLockOrElse(stamp, node->lock, writeStamp -> {
-            let index = binarySearch(key, BPlusTree.search(tree), node);
-            if (index < 0) {
-                insertIntoLeafPropagate(key, val, index, node, writeStamp, tree)
-            } else {
-                onExisting(index, writeStamp)
-            }
-        }, restart)
+        Lock.withWriteLockOrElse(
+            stamp,
+            node->lock,
+            writeStamp -> {
+                let index = binarySearch(key, BPlusTree.search(tree), node);
+                if (index < 0) {
+                    insertIntoLeafPropagate(key, val, index, node, writeStamp, tree)
+                } else {
+                    onExisting(index, writeStamp)
+                }
+            },
+            restart
+        )
 
     ///
     /// Inserts the mapping `key => f(val, val1)` if `key => val1` is in `node`.
@@ -917,12 +940,20 @@ mod BPlusTree.Node {
         node: Node[k, v, r],
         stamp: Int64
     ): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k] =
-        putOrUpdateLeaf(key, val, tree, node, stamp, index -> writeStamp -> {
-            let v1 = Array.get(index, node->values);
-            Array.put(f(val, v1), index, node->values);
-            Lock.unlockWrite(writeStamp, node->lock);
-            None
-        }, () -> BPlusTree.putWithInternal(f, key, val, tree))
+        putOrUpdateLeaf(
+            key,
+            val,
+            tree,
+            node,
+            stamp,
+            index -> writeStamp -> {
+                let v1 = Array.get(index, node->values);
+                Array.put(f(val, v1), index, node->values);
+                Lock.unlockWrite(writeStamp, node->lock);
+                None
+            },
+            () -> BPlusTree.putWithInternal(f, key, val, tree)
+        )
 
     ///
     /// Inserts the mapping `key => f(key, val, val1)` if `key => val1` is in `node`.
@@ -940,12 +971,20 @@ mod BPlusTree.Node {
         stamp: Int64,
         node: Node[k, v, r]
     ): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k] =
-        putOrUpdateLeaf(key, val, tree, node, stamp, index -> writeStamp -> {
-            let v1 = Array.get(index, node->values);
-            Array.put(f(key, val, v1), index, node->values);
-            Lock.unlockWrite(writeStamp, node->lock);
-            None
-        }, () -> BPlusTree.putWithKeyInternal(f, key, val, tree))
+        putOrUpdateLeaf(
+            key,
+            val,
+            tree,
+            node,
+            stamp,
+            index -> writeStamp -> {
+                let v1 = Array.get(index, node->values);
+                Array.put(f(key, val, v1), index, node->values);
+                Lock.unlockWrite(writeStamp, node->lock);
+                None
+            },
+            () -> BPlusTree.putWithKeyInternal(f, key, val, tree)
+        )
 
     ///
     /// Applies `f` in ascending order to all mappings `k => v` in the tree
@@ -1063,10 +1102,13 @@ mod BPlusTree.Node {
         let rightNodeStamp = Lock.writeLock(rightNode->lock);
         let parentStamp = lockParent(leftNode, tree);
         rightNode->parent = leftNode->parent;
-        Array.forEachWithIndex(i -> child ->
-            if (i < rightSize) {
-                child->parent = Some(rightNode)
-            }, rightChildren);
+        Array.forEachWithIndex(
+            i -> child ->
+                if (i < rightSize) {
+                    child->parent = Some(rightNode)
+                },
+            rightChildren
+        );
         Lock.unlockWrite(leftNodeStamp, leftNode->lock);
         Lock.unlockWrite(rightNodeStamp, rightNode->lock);
         pushKeyToParent(leftNode->parent, leftNode, rightNode, parentStamp, keyOfRight, tree)
@@ -1224,10 +1266,15 @@ mod BPlusTree.Node {
     ): (Node[k, v, r], Int64) \ r with Order[k] = match cur->isLeaf {
         case false => {
             let child = pickChild(cur);
-            Lock.ifValidElse(stamp, cur->lock, () -> {
-                let childStamp = Lock.tryReadLock(child->lock);
-                Lock.ifValidElse(stamp, cur->lock, () -> traverseToLeaf(child, childStamp, pickChild, restart), restart)
-            }, restart)
+            Lock.ifValidElse(
+                stamp,
+                cur->lock,
+                () -> {
+                    let childStamp = Lock.tryReadLock(child->lock);
+                    Lock.ifValidElse(stamp, cur->lock, () -> traverseToLeaf(child, childStamp, pickChild, restart), restart)
+                },
+                restart
+            )
         }
         case true  => (cur, stamp)
     }

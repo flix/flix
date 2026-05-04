@@ -342,10 +342,14 @@ pub mod RedBlackTree {
     /// Returns `None` if `t` is the empty tree.
     ///
     pub def reduceLeft(f: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
-        foldLeft((x, k1, v1) -> match x {
-            case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
-            case None           => Some((k1, v1))
-        }, None, t)
+        foldLeft(
+            (x, k1, v1) -> match x {
+                case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
+                case None           => Some((k1, v1))
+            },
+            None,
+            t
+        )
 
     ///
     /// Applies `f` to all key-value pairs in `t` going from right to left until a single pair `(k, v)` is obtained.
@@ -355,10 +359,14 @@ pub mod RedBlackTree {
     /// Returns `None` if `t` is the empty tree.
     ///
     pub def reduceRight(f: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
-        foldRight((k1, v1, acc) -> match acc {
-            case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
-            case None           => Some((k1, v1))
-        }, None, t)
+        foldRight(
+            (k1, v1, acc) -> match acc {
+                case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
+                case None           => Some((k1, v1))
+            },
+            None,
+            t
+        )
 
     ///
     /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.

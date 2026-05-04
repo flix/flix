@@ -107,15 +107,17 @@ pub mod Net.HttpLayer {
                 case None                => BodyPublishers.noBody()
             };
             let builder = JHttpRequest.newBuilder(URI.create(x#url)).method(methodStr, bodyPublisher)
-                |> b -> Map.foldLeftWithKey(
-                    (mb, key, values) -> List.foldLeft(
-                        (b1, v) -> b1.header(key, v),
-                        mb,
-                        values
-                    ),
-                    b,
-                    x#headers
-                );
+                |> b ->
+                    Map.foldLeftWithKey(
+                        (mb, key, values) ->
+                            List.foldLeft(
+                                (b1, v) -> b1.header(key, v),
+                                mb,
+                                values
+                            ),
+                        b,
+                        x#headers
+                    );
             let jrequest = match x#requestTimeout {
                 case None    => builder.build()
                 case Some(d) => builder.timeout(JDuration.ofMillis(toMillis(d))).build()
@@ -136,19 +138,21 @@ pub mod Net.HttpLayer {
             let responseHeadersJlist: Map[String, JList[String]] = ToFlix.toFlix(response.headers().map());
             let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
             let bytes = response.body();
-            Ok(HttpResponse({
-                url = response.uri().toString(),
-                status = response.statusCode(),
-                headers = responseHeaders,
-                body = Body.Bytes(Array.toVector(bytes))
-            }))
+            Ok(
+                HttpResponse({
+                    url = response.uri().toString(),
+                    status = response.statusCode(),
+                    headers = responseHeaders,
+                    body = Body.Bytes(Array.toVector(bytes))
+                })
+            )
         } catch {
             case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, messageOf(checked_cast(ex))))
-            case ex: HttpTimeoutException => Err(IoError(ErrorKind.Timeout, messageOf(checked_cast(ex))))
-            case ex: ConnectException => Err(IoError(ErrorKind.ConnectionFailed, messageOf(checked_cast(ex))))
-            case ex: InterruptedException => Err(IoError(ErrorKind.Interrupted, messageOf(checked_cast(ex))))
-            case ex: UncheckedIOException => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
-            case ex: IOException => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
+            case ex: HttpTimeoutException     => Err(IoError(ErrorKind.Timeout, messageOf(checked_cast(ex))))
+            case ex: ConnectException         => Err(IoError(ErrorKind.ConnectionFailed, messageOf(checked_cast(ex))))
+            case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, messageOf(checked_cast(ex))))
+            case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
+            case ex: IOException              => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
         }
 
     ///

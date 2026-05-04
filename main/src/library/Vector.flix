@@ -479,14 +479,16 @@ pub mod Vector {
             MutList.push(Vector.get(0, v), l);
             discard {
                 (Vector.get(0, v), v)
-                    ||> Vector.foldLeft(head -> cur -> {
-                        if (f(head, cur)) {
-                            head
-                        } else {
-                            MutList.push(cur, l);
-                            cur
+                    ||> Vector.foldLeft(
+                        head -> cur -> {
+                            if (f(head, cur)) {
+                                head
+                            } else {
+                                MutList.push(cur, l);
+                                cur
+                            }
                         }
-                    })
+                    )
             };
             MutList.toVector(l)
         }
@@ -973,11 +975,14 @@ pub mod Vector {
         let len = sumLengths(vs);
         let pos = Ref.fresh(rc, 0);
         let arr = Array.empty(rc, len);
-        forEach(v -> {
-            let i = Ref.get(pos);
-            Ref.put(i + length(v), pos);
-            arrayUpdateSeqV(i, v, arr)
-        }, vs);
+        forEach(
+            v -> {
+                let i = Ref.get(pos);
+                Ref.put(i + length(v), pos);
+                arrayUpdateSeqV(i, v, arr)
+            },
+            vs
+        );
         Array.toVector(arr)
     }
 
@@ -1248,11 +1253,14 @@ pub mod Vector {
         let len = length(v);
         let arr = Array.empty(rc, len);
         let brr = Array.empty(rc, len);
-        forEachWithIndex((i, x) -> {
-            let (l, r) = x;
-            Array.put(l, i, arr);
-            Array.put(r, i, brr)
-        }, v);
+        forEachWithIndex(
+            (i, x) -> {
+                let (l, r) = x;
+                Array.put(l, i, arr);
+                Array.put(r, i, brr)
+            },
+            v
+        );
         (Array.toVector(arr), Array.toVector(brr))
     }
 
@@ -1296,10 +1304,14 @@ pub mod Vector {
     /// Collects the successful results of applying the partial function `f` to every element in `v`.
     ///
     pub def filterMap(f: a -> Option[b] \ ef, v: Vector[a]): Vector[b] \ ef =
-        foldRight((x, xs) -> match f(x) {
-            case None    => xs
-            case Some(b) => b :: xs
-        }, Nil, v)
+        foldRight(
+            (x, xs) -> match f(x) {
+                case None    => xs
+                case Some(b) => b :: xs
+            },
+            Nil,
+            v
+        )
             |> List.toVector
 
     ///

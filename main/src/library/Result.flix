@@ -285,10 +285,13 @@ pub mod Result {
         def loop(ll, k) = match ll {
             case Nil     => k(s)
             case x :: xs =>
-                loop(xs, s1 -> match f(x, s1) {
-                    case Ok(s2) => k(s2)
-                    case Err(e) => Err(e)
-                })
+                loop(
+                    xs,
+                    s1 -> match f(x, s1) {
+                        case Ok(s2) => k(s2)
+                        case Err(e) => Err(e)
+                    }
+                )
         };
         loop(l, s1 -> checked_ecast(Ok(s1)))
 

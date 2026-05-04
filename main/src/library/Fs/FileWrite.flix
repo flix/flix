@@ -130,9 +130,11 @@ pub mod Fs.FileWrite {
     /// In other words, re-interprets the `FileWrite` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileWrite) + IO = x ->
-        checked_ecast(Fs.FileSystem.handle(
-            y -> runWithFileSystem(() -> f(y))
-        )(x))
+        checked_ecast(
+            Fs.FileSystem.handle(
+                y -> runWithFileSystem(() -> f(y))
+            )(x)
+        )
 
     ///
     /// Runs the `FileWrite` effect of the given function `f`.

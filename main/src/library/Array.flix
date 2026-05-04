@@ -1211,10 +1211,14 @@ pub mod Array {
     /// Collects the results of applying the partial function `f` to every element in `a`.
     ///
     pub def filterMap(rc1: Region[r1], f: a -> Option[b] \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
-        foldRight((x, xs) -> match f(x) {
-            case None    => xs
-            case Some(b) => b :: xs
-        }, Nil, a)
+        foldRight(
+            (x, xs) -> match f(x) {
+                case None    => xs
+                case Some(b) => b :: xs
+            },
+            Nil,
+            a
+        )
             |> List.toArray(rc1)
 
     ///
@@ -1486,12 +1490,17 @@ pub mod Array {
     ///
     def quicksortPartition(cmp: (a, a) -> Comparison, a: Array[a, r], lo: Int32, hi: Int32): Int32 \ r =
         let pivot = get(hi, a);
-        let i = forWithAccum(lo, hi - 1, lo, (j, ix) ->
-            if (cmp(get(j, a), pivot) == Comparison.LessThan) {
-                swap(ix, j, a);
-                ix + 1
-            } else
-                ix);
+        let i = forWithAccum(
+            lo,
+            hi - 1,
+            lo,
+            (j, ix) ->
+                if (cmp(get(j, a), pivot) == Comparison.LessThan) {
+                    swap(ix, j, a);
+                    ix + 1
+                } else
+                    ix
+        );
         swap(i, hi, a);
         i
 

@@ -151,8 +151,9 @@ pub mod List {
     pub def toString(l: List[a]): String with ToString[a] = region rc {
         List.iterator(rc, l)
             |> Iterator.map(ToString.toString)
-            |> xs -> Iterator.append(xs, Iterator.singleton(rc, "Nil"))
-                |> Iterator.join(" :: ")
+            |> xs ->
+                Iterator.append(xs, Iterator.singleton(rc, "Nil"))
+                    |> Iterator.join(" :: ")
     }
 
     ///
@@ -1055,9 +1056,11 @@ pub mod List {
     ///
     pub def groupWith(f: (a, a) -> Bool, l: List[a]): List[Nel[a]] =
         (Nil, l)
-            ||> List.foldLeft(acc -> value -> {
-                groupWithHelper(value, f, acc)
-            })
+            ||> List.foldLeft(
+                acc -> value -> {
+                    groupWithHelper(value, f, acc)
+                }
+            )
             |> List.map(Nel.reverse)
 
     ///
@@ -1317,10 +1320,14 @@ pub mod List {
     /// If multiple mappings with the same key are produced only the last occurrence is kept.
     ///
     pub def toMapWith(f: a -> (k, v) \ ef, l: List[a]): Map[k, v] \ ef with Order[k] =
-        foldLeft((acc, x) -> {
-            let (key, val) = f(x);
-            Map.insert(key, val, acc)
-        }, Map.empty(), l)
+        foldLeft(
+            (acc, x) -> {
+                let (key, val) = f(x);
+                Map.insert(key, val, acc)
+            },
+            Map.empty(),
+            l
+        )
 
     ///
     /// Applies `f` to every element of `l`.

@@ -53,11 +53,16 @@ pub mod Fs.FileTest {
     /// In other words, re-interprets the `FileTest` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileTest) + IO = x ->
-        checked_ecast(Fs.FileSystem.handle(
-            y -> checked_ecast(Fs.FileStat.runWithFileSystem(
-                () -> runWithFileStat(() -> f(y))
-            ))
-        )(x))
+        checked_ecast(
+            Fs.FileSystem.handle(
+                y ->
+                    checked_ecast(
+                        Fs.FileStat.runWithFileSystem(
+                            () -> runWithFileStat(() -> f(y))
+                        )
+                    )
+            )(x)
+        )
 
     ///
     /// Runs the `FileTest` effect of the given function `f`.

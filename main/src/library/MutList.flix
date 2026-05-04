@@ -421,11 +421,13 @@ pub mod MutList {
         let size = MutList.sumWith(MutList.length, v);
         let destArray = Array.empty(rc1, Int32.max(size, minCapacity()));
         v
-            |> MutList.forEach(bs -> {
-                let destIndex = Ref.get(rdestIndex);
-                Array.patch(destIndex, length(bs), bs->values, destArray);
-                Ref.put(destIndex + length(bs), rdestIndex)
-            });
+            |> MutList.forEach(
+                bs -> {
+                    let destIndex = Ref.get(rdestIndex);
+                    Array.patch(destIndex, length(bs), bs->values, destArray);
+                    Ref.put(destIndex + length(bs), rdestIndex)
+                }
+            );
         new MutList @ rc1 {r = rc1, values = destArray, length = size}
 
     ///
@@ -531,10 +533,14 @@ pub mod MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def reduceLeft(f: (a, a) -> a \ ef, v: MutList[a, r]): Option[a] \ { ef, r } =
-        foldLeft((acc, x) -> match acc {
-            case Some(y) => Some(f(y, x))
-            case None    => Some(x)
-        }, None, v)
+        foldLeft(
+            (acc, x) -> match acc {
+                case Some(y) => Some(f(y, x))
+                case None    => Some(x)
+            },
+            None,
+            v
+        )
 
     ///
     /// Applies `f` to all elements in `v` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
@@ -542,10 +548,14 @@ pub mod MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def reduceRight(f: (a, a) -> a \ ef, v: MutList[a, r]): Option[a] \ { ef, r } =
-        foldRight((x, acc) -> match acc {
-            case Some(y) => Some(f(x, y))
-            case None    => Some(x)
-        }, None, v)
+        foldRight(
+            (x, acc) -> match acc {
+                case Some(y) => Some(f(x, y))
+                case None    => Some(x)
+            },
+            None,
+            v
+        )
 
     ///
     /// Removes all elements from the given mutable list `v`.

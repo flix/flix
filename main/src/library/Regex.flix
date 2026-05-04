@@ -96,16 +96,19 @@ pub mod Regex {
             let y1 = toInt(y);
             Int32.bitwiseAnd(x, y1) == y1
         };
-        List.filter(check, CanonEq
-            :: CaseInsenstive
-            :: Comments
-            :: Dotall
-            :: Literal
-            :: Multiline
-            :: UnicodeCase
-            :: UnicodeCharacterClass
-            :: UnixLines
-            :: Nil)
+        List.filter(
+            check,
+            CanonEq
+                :: CaseInsenstive
+                :: Comments
+                :: Dotall
+                :: Literal
+                :: Multiline
+                :: UnicodeCase
+                :: UnicodeCharacterClass
+                :: UnixLines
+                :: Nil
+        )
 
     ///
     /// Return the unmatchable Regex - a regular expression that will not match any input.
@@ -188,10 +191,15 @@ pub mod Regex {
         let m = newMatcher(rc, rgx, s);
         if (find(m))
             let cnt = groupCount(m);
-            match List.foldRight((a, x) -> forM (
-                x2 <- x;
-                a2 <- a
-            ) yield a2 :: x2, Ok(Nil), List.map(matcherGroup(m), List.range(1, cnt + 1))) {
+            match List.foldRight(
+                (a, x) ->
+                    forM (
+                        x2 <- x;
+                        a2 <- a
+                    ) yield a2 :: x2,
+                Ok(Nil),
+                List.map(matcherGroup(m), List.range(1, cnt + 1))
+            ) {
                 case Ok(l)  => l
                 case Err(_) => Nil
             }
@@ -615,10 +623,12 @@ pub mod Regex {
     /// The internal state of the matcher is updated.
     ///
     def findFrom(pos: Int32, m: Matcher[r]): Bool \ r =
-        Result.tryCatch(_ -> {
-            let Matcher(m1) = m;
-            unsafe IO as r { m1.find(pos) }
-        })
+        Result.tryCatch(
+            _ -> {
+                let Matcher(m1) = m;
+                unsafe IO as r { m1.find(pos) }
+            }
+        )
             |> Result.getWithDefault(false)
 
     ///
@@ -654,28 +664,34 @@ pub mod Regex {
     /// Set the bounds of the matcher's region.
     ///
     def setBounds(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
-        Result.tryCatch(_ -> {
-            let Matcher(m1) = m;
-            unsafe IO as r { discard m1.$region(start#start, end#end) }
-        })
+        Result.tryCatch(
+            _ -> {
+                let Matcher(m1) = m;
+                unsafe IO as r { discard m1.$region(start#start, end#end) }
+            }
+        )
 
     ///
     /// Return the start position of the current match of Matcher `m`.
     ///
     def matcherStart(m: Matcher[r]): Result[String, Int32] \ r =
-        Result.tryCatch(_ -> {
-            let Matcher(m1) = m;
-            unsafe IO as r { m1.start() }
-        })
+        Result.tryCatch(
+            _ -> {
+                let Matcher(m1) = m;
+                unsafe IO as r { m1.start() }
+            }
+        )
 
     ///
     /// Return the end position of the current match of Matcher `m`.
     ///
     def matcherEnd(m: Matcher[r]): Result[String, Int32] \ r =
-        Result.tryCatch(_ -> {
-            let Matcher(m1) = m;
-            unsafe IO as r { m1.end() }
-        })
+        Result.tryCatch(
+            _ -> {
+                let Matcher(m1) = m;
+                unsafe IO as r { m1.end() }
+            }
+        )
 
     ///
     /// Return the start and end positions of the matcher `m`.
@@ -690,19 +706,23 @@ pub mod Regex {
     /// Return the text content of the current match of matcher `m`.
     ///
     def matcherContent(m: Matcher[r]): Result[String, String] \ r =
-        Result.tryCatch(_ -> {
-            let Matcher(m1) = m;
-            unsafe IO as r { m1.group() }
-        })
+        Result.tryCatch(
+            _ -> {
+                let Matcher(m1) = m;
+                unsafe IO as r { m1.group() }
+            }
+        )
 
     ///
     /// Return the text content of the current groups in matcher `m`.
     ///
     def matcherGroup(m: Matcher[r], i: Int32): Result[String, String] \ r =
-        Result.tryCatch(_ -> {
-            let Matcher(m1) = m;
-            unsafe IO as r { if (not Object.isNull(m1.group(i))) m1.group(i) else "" }
-        })
+        Result.tryCatch(
+            _ -> {
+                let Matcher(m1) = m;
+                unsafe IO as r { if (not Object.isNull(m1.group(i))) m1.group(i) else "" }
+            }
+        )
 
     ///
     /// Return the number of groups in matcher `m`.

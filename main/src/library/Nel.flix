@@ -316,8 +316,12 @@ pub mod Nel {
             case Nil      => k(map(f1, l))
             case f2 :: rs =>
                 let ks1 = map(f1, l);
-                loop(f2, rs, ks2 ->
-                    k(append(ks1, ks2)))
+                loop(
+                    f2,
+                    rs,
+                    ks2 ->
+                        k(append(ks1, ks2))
+                )
         };
         match f {
             case Nel(f1, Nil) => map(f1, l)

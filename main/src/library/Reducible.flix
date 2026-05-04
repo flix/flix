@@ -209,13 +209,17 @@ pub mod Reducible {
         ///
         pub def dropWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
             (
-                Reducible.foldLeft((acc, a) -> {
-                    let (c, k) = acc;
-                    if (c and f(a))
-                        (true, k)
-                    else
-                        (false, ks -> k(a :: ks))
-                }, (true, identity), t)
+                Reducible.foldLeft(
+                    (acc, a) -> {
+                        let (c, k) = acc;
+                        if (c and f(a))
+                            (true, k)
+                        else
+                            (false, ks -> k(a :: ks))
+                    },
+                    (true, identity),
+                    t
+                )
                     |> snd
             )(Nil)
 
@@ -224,13 +228,17 @@ pub mod Reducible {
         ///
         pub def takeWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
             (
-                Reducible.foldLeft((acc, a) -> {
-                    let (c, k) = acc;
-                    if (c and f(a))
-                        (true, ks -> k(a :: ks))
-                    else
-                        (false, k)
-                }, (true, identity), t)
+                Reducible.foldLeft(
+                    (acc, a) -> {
+                        let (c, k) = acc;
+                        if (c and f(a))
+                            (true, ks -> k(a :: ks))
+                        else
+                            (false, k)
+                    },
+                    (true, identity),
+                    t
+                )
                     |> snd
             )(Nil)
 

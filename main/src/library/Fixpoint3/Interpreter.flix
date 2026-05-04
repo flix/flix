@@ -126,14 +126,17 @@ pub mod Fixpoint3.Interpreter {
             if (BPlusTree.isEmpty(tuples))
                 index
             else {
-                BPlusTree.forEach(nonLat -> lat -> {
-                    match toDenotation(relSym) {
-                        case Relational               =>
-                            BPlusTree.put(nonLat, lat, index)
-                        case Latticenal(_, _, lub, _) =>
-                            BPlusTree.putWith(lub, nonLat, lat, index)
-                    }
-                }, tuples);
+                BPlusTree.forEach(
+                    nonLat -> lat -> {
+                        match toDenotation(relSym) {
+                            case Relational               =>
+                                BPlusTree.put(nonLat, lat, index)
+                            case Latticenal(_, _, lub, _) =>
+                                BPlusTree.putWith(lub, nonLat, lat, index)
+                        }
+                    },
+                    tuples
+                );
                 index
             }
         }
@@ -213,11 +216,13 @@ pub mod Fixpoint3.Interpreter {
             let innerMap = BPlusTree.empty(Static);
             let curBoxingInfo = getTypeOf(toId(relSym), typeInfo);
             Array.get(getOrCrash(Map.get((relSym, 0), indexPos)), db)
-                |> BPlusTree.forEach(vec -> latticeElem -> {
-                    let boxedVec = vec
-                        |> Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
-                    BPlusTree.put(boxedVec, latticeElem, innerMap)
-                });
+                |> BPlusTree.forEach(
+                    vec -> latticeElem -> {
+                        let boxedVec = vec
+                            |> Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
+                        BPlusTree.put(boxedVec, latticeElem, innerMap)
+                    }
+                );
             MutMap.put(relSym, innerMap, res)
         };
         res
@@ -386,8 +391,10 @@ pub mod Fixpoint3.Interpreter {
             case RelOp.Functional(tupleIndex, f, terms, writes, body, i2)                                  =>
                 let args = Vector.map(evalBoxedTerm(env, boxing), terms);
                 let result = f(args)
-                    |> Vector.map(vec ->
-                        Vector.mapWithIndex(i -> x -> unboxWith(x, Vector.get(i, i2), boxing), vec));
+                    |> Vector.map(
+                        vec ->
+                            Vector.mapWithIndex(i -> x -> unboxWith(x, Vector.get(i, i2), boxing), vec)
+                    );
                 let (minEnv, maxEnv, tupleEnv, _) = env;
                 foreach (t <- result) {
                     bindTuple(t, writes, minEnv, maxEnv, tupleIndex, tupleEnv);

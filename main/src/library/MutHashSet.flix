@@ -272,9 +272,13 @@ pub mod MutHashSet {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMap(s: MutHashSet[(a, b), r]): Map[a, b] \ r with Order[a] =
-        foldLeft((acc, pair) -> match pair {
-            case (k, v) => Map.insert(k, v, acc)
-        }, Map.empty(), s)
+        foldLeft(
+            (acc, pair) -> match pair {
+                case (k, v) => Map.insert(k, v, acc)
+            },
+            Map.empty(),
+            s
+        )
 
     ///
     /// Returns the mutable set `s` as an immutable set.

@@ -72,12 +72,13 @@ pub mod BufReader {
     ///
     /// If `capacity <= 0`, the `BufReader` will delegate directly to `reader` without buffering.
     ///
-    pub def withCapacity(rc: Region[r], capacity: Int32, reader: t): BufReader[a, t, r] \ r with Readable[t] = new BufReader @ rc {
-        buffer = Array.empty(rc, capacity),
-        cursor = 0,
-        size = 0,
-        reader = reader
-    }
+    pub def withCapacity(rc: Region[r], capacity: Int32, reader: t): BufReader[a, t, r] \ r with Readable[t] =
+        new BufReader @ rc {
+            buffer = Array.empty(rc, capacity),
+            cursor = 0,
+            size = 0,
+            reader = reader
+        }
 
     ///
     /// Reads `k` items from the underlying `Readable` into `dest`, storing items read into

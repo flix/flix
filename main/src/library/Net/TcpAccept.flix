@@ -49,7 +49,7 @@ pub mod Net.TcpAccept {
                     k(Ok(TcpSocket(socket, inputStream, outputStream)))
                 } catch {
                     case ex: SocketTimeoutException => k(Err(IoError(ErrorKind.Timeout, ex.getMessage())))
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException            => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
         }

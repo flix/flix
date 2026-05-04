@@ -177,9 +177,11 @@ pub mod String {
     /// Regex literals are checked at compile time.
     ///
     pub def toRegex(regex: String): Result[String, Regex] =
-        Result.tryCatch(_ -> {
-            Pattern.compile(regex)
-        })
+        Result.tryCatch(
+            _ -> {
+                Pattern.compile(regex)
+            }
+        )
 
     ///
     /// Compile the regular expression `regex` into a Regex with the supplied flags.
@@ -191,9 +193,11 @@ pub mod String {
     /// `java.util.regex.Pattern` for guidance on enabling flags with embedded flag expressions.
     ///
     pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
-        Result.tryCatch(_ -> {
-            Pattern.compile(regex, Regex.sumFlags(flags))
-        })
+        Result.tryCatch(
+            _ -> {
+                Pattern.compile(regex, Regex.sumFlags(flags))
+            }
+        )
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
@@ -1141,17 +1145,25 @@ pub mod String {
         let v0 = Array.repeat(rc, n + 1, 0);
         let v1 = Array.repeat(rc, n + 1, 0);
         forIndex(0, n, i -> Array.put(i, i, v0));
-        forIndex(0, m - 1, i -> {
-            Array.put(i + 1, 0, v1);
-            forIndex(0, n - 1, j -> {
-                let substitutionCost = if (charAt(i, s) == charAt(j, t)) 0 else 1;
-                let a = Array.get(j, v1) + 1;
-                let b = Array.get(j + 1, v0) + 1;
-                let c = Array.get(j, v0) + substitutionCost;
-                Array.put(Int32.min(a, Int32.min(b, c)), j + 1, v1)
-            });
-            arraySwap(v0, v1)
-        });
+        forIndex(
+            0,
+            m - 1,
+            i -> {
+                Array.put(i + 1, 0, v1);
+                forIndex(
+                    0,
+                    n - 1,
+                    j -> {
+                        let substitutionCost = if (charAt(i, s) == charAt(j, t)) 0 else 1;
+                        let a = Array.get(j, v1) + 1;
+                        let b = Array.get(j + 1, v0) + 1;
+                        let c = Array.get(j, v0) + substitutionCost;
+                        Array.put(Int32.min(a, Int32.min(b, c)), j + 1, v1)
+                    }
+                );
+                arraySwap(v0, v1)
+            }
+        );
         Array.get(n, v0)
     }
 

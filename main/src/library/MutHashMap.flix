@@ -552,11 +552,14 @@ pub mod MutHashMap {
     ///
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutHashMap[k, v, r]): Unit \ { ef, r } = region rc {
         let ix = Ref.fresh(rc, 0);
-        forEach((k, v) -> {
-            let i = Ref.get(ix);
-            f(i, k, v);
-            Ref.put(i + 1, ix)
-        }, m)
+        forEach(
+            (k, v) -> {
+                let i = Ref.get(ix);
+                f(i, k, v);
+                Ref.put(i + 1, ix)
+            },
+            m
+        )
     }
 
     ///

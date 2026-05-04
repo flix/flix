@@ -172,8 +172,11 @@ pub mod Fixpoint3.Phase.Lowering {
             let loweredStmt = lowerStmt(rc, idToIndex, boxing, writeTo, indexInfo, meta, withProv, stmt);
 
             let constWrites = snd(writeTo)
-                |> MutMap.foldWithKey(acc1 -> outerPos -> inner ->
-                    MutMap.foldLeftWithKey(acc2 -> innerPos -> value -> (outerPos, innerPos, value) :: acc2, acc1, inner), Nil)
+                |> MutMap.foldWithKey(
+                    acc1 -> outerPos -> inner ->
+                        MutMap.foldLeftWithKey(acc2 -> innerPos -> value -> (outerPos, innerPos, value) :: acc2, acc1, inner),
+                    Nil
+                )
                 |> List.toVector;
             // Compute arities
             let arityInformation = rowVarArityOf(program);
@@ -245,11 +248,13 @@ pub mod Fixpoint3.Phase.Lowering {
                         if (Vector.length(merges) == 1) {
                             ExecutableRam.RamStmt.Seq(Vector#{Vector.get(0, merges), swapPart})
                         } else {
-                            ExecutableRam.RamStmt.Seq(Vector#{
-                                ExecutableRam.RamStmt.Seq(purges),
-                                ExecutableRam.RamStmt.Par(merges),
-                                swapPart
-                            })
+                            ExecutableRam.RamStmt.Seq(
+                                Vector#{
+                                    ExecutableRam.RamStmt.Seq(purges),
+                                    ExecutableRam.RamStmt.Par(merges),
+                                    swapPart
+                                }
+                            )
                         }
                 }
             case Ram.RamStmt.Purge(rel)                  =>
@@ -304,23 +309,26 @@ pub mod Fixpoint3.Phase.Lowering {
                 let loweredBody = lowerOpRecNewRowVar(rv, body);
                 let oldPos = computeMeetWithPos(rv, relSym, idToIndex, meetWithMap);
                 let thisWriteTo = getWriteTo(rv, writeTo);
-                let otherBools = Vector.filterMap(x -> match x {
-                    case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv1, i1, _, _), Ram.RamTerm.RowLoad(rv2, i2, _, _)) if rv == rv1 =>
-                        addWriteTo(rv2, i2, rv1, i1, idToIndex, writeTo);
-                        None
-                    case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv2, i2, _, _), Ram.RamTerm.RowLoad(rv1, i1, _, _)) if rv == rv1 =>
-                        addWriteTo(rv2, i2, rv1, i1, idToIndex, writeTo);
-                        None
-                    case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv1, i, _, _), Ram.RamTerm.Lit(val, ty)) if rv == rv1            =>
-                        let unboxed = Boxing.unboxWith(val, ty, boxing);
-                        addConstWriteTo(unboxed, rv, i, idToIndex, writeTo, rc);
-                        None
-                    case Ram.BoolExp.Eq(Ram.RamTerm.Lit(val, ty), Ram.RamTerm.RowLoad(rv1, i, _, _)) if rv == rv1            =>
-                        let unboxed = Boxing.unboxWith(val, ty, boxing);
-                        addConstWriteTo(unboxed, rv, i, idToIndex, writeTo, rc);
-                        None
-                    case _                                                                                                   => Some(x)
-                }, tests);
+                let otherBools = Vector.filterMap(
+                    x -> match x {
+                        case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv1, i1, _, _), Ram.RamTerm.RowLoad(rv2, i2, _, _)) if rv == rv1 =>
+                            addWriteTo(rv2, i2, rv1, i1, idToIndex, writeTo);
+                            None
+                        case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv2, i2, _, _), Ram.RamTerm.RowLoad(rv1, i1, _, _)) if rv == rv1 =>
+                            addWriteTo(rv2, i2, rv1, i1, idToIndex, writeTo);
+                            None
+                        case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv1, i, _, _), Ram.RamTerm.Lit(val, ty)) if rv == rv1            =>
+                            let unboxed = Boxing.unboxWith(val, ty, boxing);
+                            addConstWriteTo(unboxed, rv, i, idToIndex, writeTo, rc);
+                            None
+                        case Ram.BoolExp.Eq(Ram.RamTerm.Lit(val, ty), Ram.RamTerm.RowLoad(rv1, i, _, _)) if rv == rv1            =>
+                            let unboxed = Boxing.unboxWith(val, ty, boxing);
+                            addConstWriteTo(unboxed, rv, i, idToIndex, writeTo, rc);
+                            None
+                        case _                                                                                                   => Some(x)
+                    },
+                    tests
+                );
                 if (Vector.length(otherBools) != 0) {
                     unchecked_cast(bug!("Bug in Fixpoint.Lowering: Bools except equality in query") as _ \ r)
                 };
@@ -602,11 +610,15 @@ pub mod Fixpoint3.Phase.Lowering {
         let constWrite = snd(writeTo);
         let toTuplePos = lowerRowVar(toRowVar, idToIndex);
         MutMap.getOrElsePut(toTuplePos, MutMap.empty(rc), constWrite)
-            |> MutMap.putWith(v1 -> v2 ->
-                if (v1 != v2)
-                    bug!("Bug in Fixpoint.Lowering: Different value for position. Should have been removed by Hoisting")
-                else
-                    v1, toIndex, value)
+            |> MutMap.putWith(
+                v1 -> v2 ->
+                    if (v1 != v2)
+                        bug!("Bug in Fixpoint.Lowering: Different value for position. Should have been removed by Hoisting")
+                    else
+                        v1,
+                toIndex,
+                value
+            )
 
     ///
     /// Returns a list `(RowVar, arity)` in `program` in the order of the nesting.

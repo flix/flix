@@ -47,9 +47,9 @@ pub mod Net.Dns {
                     let ipAddr = IpAddr.fromBytes(addrBytes);
                     k(Ok(ipAddr))
                 } catch {
-                    case ex: UnknownHostException => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
+                    case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
                     case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
 
@@ -62,9 +62,9 @@ pub mod Net.Dns {
                         |> List.map(IpAddr.fromBytes);
                     k(Ok(addresses))
                 } catch {
-                    case ex: UnknownHostException => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
+                    case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
                     case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
         }

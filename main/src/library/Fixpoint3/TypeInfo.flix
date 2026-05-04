@@ -89,9 +89,13 @@ pub mod Fixpoint3.TypeInfo {
                 let typeUnifier = MutDisjointSets.empty(rc);
                 // Have to traverse in same order as `Compiler.flix`
                 foreach ((_, pseudStrat) <- pseudoStratums) {
-                    MutMap.foldLeft(_ -> rules2 -> {
-                        List.forEach(match (_, rule) -> typeConstraint(rule, typeUnifier, idCreator), rules2)
-                    }, (), pseudStrat)
+                    MutMap.foldLeft(
+                        _ -> rules2 -> {
+                            List.forEach(match (_, rule) -> typeConstraint(rule, typeUnifier, idCreator), rules2)
+                        },
+                        (),
+                        pseudStrat
+                    )
                 };
 
                 let maxId = Counter.get(idCreator);
@@ -143,10 +147,13 @@ pub mod Fixpoint3.TypeInfo {
     ///
     pub def expandTypeInfoToProv(typeInfo: TypeInformation, predicates: Predicates): TypeInformation =
         let max = getMax(predicates);
-        Vector.mapWithIndex(i -> v -> match Int32.toInt64(i) < max {
-            case true  => expandTypeToProv(v)
-            case false => v
-        }, typeInfo)
+        Vector.mapWithIndex(
+            i -> v -> match Int32.toInt64(i) < max {
+                case true  => expandTypeToProv(v)
+                case false => v
+            },
+            typeInfo
+        )
 
     ///
     /// Expands `relType` to include the provenance annotations types.

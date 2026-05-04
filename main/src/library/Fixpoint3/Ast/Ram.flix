@@ -174,9 +174,13 @@ pub mod Fixpoint3.Ast.Ram {
                 case RelOp.Search(var, relSym, _, body)                       =>
                     "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Query(var, relSym, prefixQuery, _, _, body)        =>
-                    let qry = Vector.joinWith(match term -> {
-                        ToString.toString(term)
-                    }, " ∧ ", prefixQuery);
+                    let qry = Vector.joinWith(
+                        match term -> {
+                            ToString.toString(term)
+                        },
+                        " ∧ ",
+                        prefixQuery
+                    );
                     "query {${var} ∈ ${relSym} | ${qry}} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Functional(RowVar.Named(id), _, terms, body, _, _) =>
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"

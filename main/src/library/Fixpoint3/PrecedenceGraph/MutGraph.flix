@@ -44,10 +44,11 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     ///
     /// Returns an empty graph with no vertices or edges.
     ///
-    pub def empty(rc: Region[r]): MutGraph[r] \ r = new MutGraph @ rc {
-        vertices = MutSet.empty(rc),
-        adjList = MutMap.empty(rc)
-    }
+    pub def empty(rc: Region[r]): MutGraph[r] \ r =
+        new MutGraph @ rc {
+            vertices = MutSet.empty(rc),
+            adjList = MutMap.empty(rc)
+        }
 
     ///
     /// Returns `true` if `g` contains the edge `(u, v)`.
@@ -99,8 +100,11 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     ///
     pub def toString(g: MutGraph[r]): String \ r =
         let edges = g->adjList
-            |> MutMap.joinWith(u -> vSet ->
-                Set.joinWith(v -> "\n ${u} -> ${v}", ",", vSet), ",");
+            |> MutMap.joinWith(
+                u -> vSet ->
+                    Set.joinWith(v -> "\n ${u} -> ${v}", ",", vSet),
+                ","
+            );
         "MutGraph(${edges})"
 
     ///
@@ -132,10 +136,12 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
             // We are guaranteed to have singleton sets
             |> Map.map(Set.find(_ -> true) >> getOrCrash);
         topologicalSort(condensation)
-            |> List.map(u ->
-                componentMap
-                    |> MutMap.get(getOrCrash(Map.get(u, inverseRootMap)))
-                    |> getOrCrash)
+            |> List.map(
+                u ->
+                    componentMap
+                        |> MutMap.get(getOrCrash(Map.get(u, inverseRootMap)))
+                        |> getOrCrash
+            )
     }
 
     ///

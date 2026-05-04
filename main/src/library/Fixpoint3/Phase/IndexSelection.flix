@@ -90,27 +90,35 @@ pub mod Fixpoint3.Phase.IndexSelection {
             };
             // Expand the searches to full arity
             let indexesFull = newIndexes
-                |> Map.mapWithKey(relSym -> searches ->
-                    Vector.map(search -> {
-                        let unusedIndexes = Vector.range(0, arityOfNonLat(relSym))
-                            |> Vector.filter(x -> not Vector.memberOf(x, search));
-                        search ++ unusedIndexes
-                    }, searches));
+                |> Map.mapWithKey(
+                    relSym -> searches ->
+                        Vector.map(
+                            search -> {
+                                let unusedIndexes = Vector.range(0, arityOfNonLat(relSym))
+                                    |> Vector.filter(x -> not Vector.memberOf(x, search));
+                                search ++ unusedIndexes
+                            },
+                            searches
+                        )
+                );
             // Account for relations that have no body atoms with bound variables
             let indexesMissing = relSymsOfProgram(program)
                 |> List.filter(relSym -> not Map.memberOf(relSym, indexesFull))
-                |> List.foldLeft(acc -> relSym -> {
-                    let deltaRelSym = relSymFromPredType(relSym, PredType.Delta, meta);
-                    let search = match relSymToPredType(relSym, meta) {
-                        case PredType.New =>
-                            match Map.get(deltaRelSym, indexesFull) {
-                                case Some(v) => Vector.get(0, v)
-                                case None    => Vector.range(0, arityOfNonLat(deltaRelSym))
-                            }
-                        case _            => Vector.range(0, arityOfNonLat(relSym))
-                    };
-                    Map.insert(relSym, Vector#{search}, acc)
-                }, Map#{});
+                |> List.foldLeft(
+                    acc -> relSym -> {
+                        let deltaRelSym = relSymFromPredType(relSym, PredType.Delta, meta);
+                        let search = match relSymToPredType(relSym, meta) {
+                            case PredType.New =>
+                                match Map.get(deltaRelSym, indexesFull) {
+                                    case Some(v) => Vector.get(0, v)
+                                    case None    => Vector.range(0, arityOfNonLat(deltaRelSym))
+                                }
+                            case _            => Vector.range(0, arityOfNonLat(relSym))
+                        };
+                        Map.insert(relSym, Vector#{search}, acc)
+                    },
+                    Map#{}
+                );
             let indexes = Map.union(indexesFull, indexesMissing);
             let (indexedStmt, indexPlacement) = region rc2 {
                 let indexState = UniqueInts.empty(rc2);
@@ -163,10 +171,12 @@ pub mod Fixpoint3.Phase.IndexSelection {
             // In other words some permutation of `search` must be a prefix of
             // index for the index to be usable.
             let indexOf = indexes
-                |> Vector.findIndexOf(index -> {
-                    let cutOfIndex = Vector.slice(start = 0, end = Vector.length(search), index);
-                    Vector.forAll(x -> Vector.memberOf(x, cutOfIndex), search)
-                });
+                |> Vector.findIndexOf(
+                    index -> {
+                        let cutOfIndex = Vector.slice(start = 0, end = Vector.length(search), index);
+                        Vector.forAll(x -> Vector.memberOf(x, cutOfIndex), search)
+                    }
+                );
             match indexOf {
                 case Some(v) => v
                 case None    =>
@@ -187,13 +197,15 @@ pub mod Fixpoint3.Phase.IndexSelection {
             RelOp.Search(rowVar, relSym, t, indexOp(body, constructedIndexes, indexState))
         case RelOp.Query(rowVar, relSym, boolExps, _, t, body)     =>
             let search = (List.empty(), boolExps)
-                ||> Vector.foldLeft(acc -> exp -> match exp {
-                    case BoolExp.Eq(RamTerm.RowLoad(_, i, _, _), _) => i :: acc
-                    case BoolExp.Eq(_, RamTerm.RowLoad(_, i, _, _)) => i :: acc
-                    case _                                          =>
-                        // This is only a bug when the only index type available is `BPlusTree`
-                        bug!("In Fixpoint.Phase.IndexSelection.indexOp: Found non-equality BoolExp in indexOp!")
-                })
+                ||> Vector.foldLeft(
+                    acc -> exp -> match exp {
+                        case BoolExp.Eq(RamTerm.RowLoad(_, i, _, _), _) => i :: acc
+                        case BoolExp.Eq(_, RamTerm.RowLoad(_, i, _, _)) => i :: acc
+                        case _                                          =>
+                            // This is only a bug when the only index type available is `BPlusTree`
+                            bug!("In Fixpoint.Phase.IndexSelection.indexOp: Found non-equality BoolExp in indexOp!")
+                    }
+                )
                 |> List.toVector;
             let index = lookupIndex(relSym, search, constructedIndexes);
             let absoluteIndex = UniqueInts.createIndex((relSym, index), indexState);
@@ -247,19 +259,22 @@ pub mod Fixpoint3.Phase.IndexSelection {
                 let otherBoolExpList = MutList.empty(rc);
                 let equalExpList = MutList.empty(rc);
                 let search = boolExps
-                    |> Vector.foldLeft(acc -> exp -> match exp {
-                        case BoolExp.Eq(RamTerm.RowLoad(rv1, i, _, _), t2) if rv1 == rowVar =>
-                            if (isTermGround(t2, seenTuples)) {
-                                MutList.push(exp, equalExpList);
-                                i :: acc
-                            } else {
+                    |> Vector.foldLeft(
+                        acc -> exp -> match exp {
+                            case BoolExp.Eq(RamTerm.RowLoad(rv1, i, _, _), t2) if rv1 == rowVar =>
+                                if (isTermGround(t2, seenTuples)) {
+                                    MutList.push(exp, equalExpList);
+                                    i :: acc
+                                } else {
+                                    MutList.push(exp, otherBoolExpList);
+                                    acc
+                                }
+                            case _                                                              =>
                                 MutList.push(exp, otherBoolExpList);
                                 acc
-                            }
-                        case _                                                              =>
-                            MutList.push(exp, otherBoolExpList);
-                            acc
-                    }, List.empty())
+                        },
+                        List.empty()
+                    )
                     |> List.reverse
                     |> List.toVector;
                 let extendedSeenTuples = Set.insert(rowVar, seenTuples);

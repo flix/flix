@@ -85,10 +85,14 @@ pub mod Foldable {
         /// Returns `None` if `t` is empty.
         ///
         pub def head(t: t[a]): Option[a] \ Foldable.Aef[t] =
-            Foldable.foldLeft((acc, x) -> match acc {
-                case Some(_) => acc
-                case None    => Some(x)
-            }, None, t)
+            Foldable.foldLeft(
+                (acc, x) -> match acc {
+                    case Some(_) => acc
+                    case None    => Some(x)
+                },
+                None,
+                t
+            )
 
         ///
         /// Optionally returns the last element of `t`.
@@ -104,10 +108,14 @@ pub mod Foldable {
         /// Returns `None` if `t` is empty.
         ///
         pub def findLeft(f: a -> Bool \ ef, t: t[a]): Option[a] \ (ef + Foldable.Aef[t]) =
-            Foldable.foldLeft((acc, x) -> match acc {
-                case Some(_) => acc
-                case None    => if (f(x)) Some(x) else None
-            }, None, t)
+            Foldable.foldLeft(
+                (acc, x) -> match acc {
+                    case Some(_) => acc
+                    case None    => if (f(x)) Some(x) else None
+                },
+                None,
+                t
+            )
 
         ///
         /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
@@ -254,13 +262,17 @@ pub mod Foldable {
         /// Returns an immutable list.
         ///
         pub def dropWhile(f: a -> Bool, t: t[a]): List[a] \ Foldable.Aef[t] =
-            Foldable.foldLeft((acc, x) -> {
-                let (c, tail) = acc;
-                if (c and f(x))
-                    (true, tail)
-                else
-                    (false, x :: tail)
-            }, (true, Nil), t)
+            Foldable.foldLeft(
+                (acc, x) -> {
+                    let (c, tail) = acc;
+                    if (c and f(x))
+                        (true, tail)
+                    else
+                        (false, x :: tail)
+                },
+                (true, Nil),
+                t
+            )
                 |> snd
                 |> List.reverse
 

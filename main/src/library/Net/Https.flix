@@ -367,12 +367,18 @@ pub mod Net.Https {
                         else
                             yellow("${status}");
                         let size = Vector.length(HttpResponse.bodyBytes(resp));
-                        Logger.log(Severity.Debug, gray("<--") + text(" ") + color + text(" ") + cyan(url)
-                            + gray(" (${size} bytes)"))
+                        Logger.log(
+                            Severity.Debug,
+                            gray("<--") + text(" ") + color + text(" ") + cyan(url)
+                                + gray(" (${size} bytes)")
+                        )
                     case Err(err) =>
-                        Logger.log(Severity.Debug, gray("<--") + text(" ") + red("ERR") + text(" ") + cyan(url)
-                            + text(" ")
-                            + red("${err}"))
+                        Logger.log(
+                            Severity.Debug,
+                            gray("<--") + text(" ") + red("ERR") + text(" ") + cyan(url)
+                                + text(" ")
+                                + red("${err}")
+                        )
                 };
                 k(result)
         }

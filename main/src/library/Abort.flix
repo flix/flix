@@ -103,25 +103,29 @@ pub mod Abort {
         let frames = List.drop(skip, trace) |> List.zipWithIndex;
         let maxIdx = List.length(frames) - 1;
         let width = String.length("${maxIdx}");
-        joinWith(match (idx, elem) -> {
-            let className = elem.getClassName();
-            let methodName = elem.getMethodName();
-            let fileName = Object.toOption(elem.getFileName()) |> Option.getWithDefault("Unknown Source");
-            let lineNumber = elem.getLineNumber();
-            let index = cyan("#${String.padLeft(width, ' ', "${idx}")}");
-            let location = gray("(${fileName}:${lineNumber})");
-            if (isUserFrame(className))
-                let (classPrefix, funcName) = splitClassName(className);
-                fromString("  ") + index + fromString(" ")
-                    + fromString(classPrefix)
-                    + bold(yellow(funcName))
-                    + fromString(".${methodName}")
-                    + location
-            else
-                fromString("  ") + index + fromString(" ")
-                    + gray("${className}.${methodName}")
-                    + location
-        }, nl, frames)
+        joinWith(
+            match (idx, elem) -> {
+                let className = elem.getClassName();
+                let methodName = elem.getMethodName();
+                let fileName = Object.toOption(elem.getFileName()) |> Option.getWithDefault("Unknown Source");
+                let lineNumber = elem.getLineNumber();
+                let index = cyan("#${String.padLeft(width, ' ', "${idx}")}");
+                let location = gray("(${fileName}:${lineNumber})");
+                if (isUserFrame(className))
+                    let (classPrefix, funcName) = splitClassName(className);
+                    fromString("  ") + index + fromString(" ")
+                        + fromString(classPrefix)
+                        + bold(yellow(funcName))
+                        + fromString(".${methodName}")
+                        + location
+                else
+                    fromString("  ") + index + fromString(" ")
+                        + gray("${className}.${methodName}")
+                        + location
+            },
+            nl,
+            frames
+        )
 
     ///
     /// Splits a user-frame class name into the prefix (up to and including `Def$`)

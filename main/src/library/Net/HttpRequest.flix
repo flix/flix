@@ -228,10 +228,14 @@ pub mod Net.HttpRequest {
     ///
     pub def withHeaders(h: Map[String, List[String]], r: HttpRequest): HttpRequest =
         let HttpRequest(x) = r;
-        let merged = Map.foldLeftWithKey((acc, name, newValues) -> {
-            let existing = Map.getWithDefault(name, Nil, acc);
-            Map.insert(name, List.append(existing, newValues), acc)
-        }, x#headers, h);
+        let merged = Map.foldLeftWithKey(
+            (acc, name, newValues) -> {
+                let existing = Map.getWithDefault(name, Nil, acc);
+                Map.insert(name, List.append(existing, newValues), acc)
+            },
+            x#headers,
+            h
+        );
         HttpRequest({headers = merged | x})
 
     ///

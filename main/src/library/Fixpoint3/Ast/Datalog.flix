@@ -82,8 +82,10 @@ pub mod Fixpoint3.Ast.Datalog {
             case Datalog.Provenance(rules, model) =>
                 let newRules = Vector.map(c -> substitute(c, s), rules);
                 let newModel = (Map#{}, model)
-                    ||> Map.foldLeftWithKey(acc -> pred -> facts ->
-                        Map.insert(substitute(pred, s), facts, acc));
+                    ||> Map.foldLeftWithKey(
+                        acc -> pred -> facts ->
+                            Map.insert(substitute(pred, s), facts, acc)
+                    );
                 Datalog.Provenance(newRules, newModel)
         }
     }
@@ -129,16 +131,20 @@ pub mod Fixpoint3.Ast.Datalog {
                 region rc {
                     unsafe IO {
                         let indent = String.repeat(4, " ");
-                        Map.joinWith(predSym -> facts -> {
-                            let builder = StringBuilder.empty(rc);
-                            foreach ((fact, annotation) <- facts) {
-                                StringBuilder.append("${indent}${fact} @ ${annotation},${String.lineSeparator()}${indent}", builder)
-                            };
-                            let textOverflow = String.length("$,${String.lineSeparator()}${indent}");
-                            let rawFactString = StringBuilder.toString(builder);
-                            let factsString = String.sliceLeft(end = String.length(rawFactString) - textOverflow, rawFactString);
-                            "${predSym}:${String.lineSeparator()}${factsString}"
-                        }, "${String.lineSeparator()}", db)
+                        Map.joinWith(
+                            predSym -> facts -> {
+                                let builder = StringBuilder.empty(rc);
+                                foreach ((fact, annotation) <- facts) {
+                                    StringBuilder.append("${indent}${fact} @ ${annotation},${String.lineSeparator()}${indent}", builder)
+                                };
+                                let textOverflow = String.length("$,${String.lineSeparator()}${indent}");
+                                let rawFactString = StringBuilder.toString(builder);
+                                let factsString = String.sliceLeft(end = String.length(rawFactString) - textOverflow, rawFactString);
+                                "${predSym}:${String.lineSeparator()}${factsString}"
+                            },
+                            "${String.lineSeparator()}",
+                            db
+                        )
                     }
                 }
         }

@@ -240,10 +240,12 @@ pub mod Fixpoint3.ProvenanceReconstruct {
                         let bodyAtoms = getMatchingBody(fact, depth, rc, provIdb, lookupStruct, rule);
                         let Constraint.Constraint(_, bodyPreds) = rule;
                         let relevantPreds = bodyPreds
-                            |> Vector.filterMap(bodyAtom -> match bodyAtom {
-                                case BodyPredicate.BodyAtom(pred, _, _, _, _) => Some(pred)
-                                case _                                        => None
-                            });
+                            |> Vector.filterMap(
+                                bodyAtom -> match bodyAtom {
+                                    case BodyPredicate.BodyAtom(pred, _, _, _, _) => Some(pred)
+                                    case _                                        => None
+                                }
+                            );
                         let ref = Ref.fresh(rc, tail);
                         let childProofs = Array.empty(rc, Array.length(bodyAtoms));
                         foreach ((i, atom) <- ForEach.withIndex(relevantPreds)) {
@@ -281,24 +283,28 @@ pub mod Fixpoint3.ProvenanceReconstruct {
         // `None` at position `i` will be mean that `rule[i]` was not a body atom.
         let bodyValues: Array[Option[(Vector[Boxed], Int64, Int32)], r] = Array.repeat(rc, Vector.length(bodyPreds), None);
         let headApps = Vector.zip(headTerms, fact)
-            |> Vector.filter(match (h, _) -> match h {
-                case (HeadTerm.App1(_, _))             => true
-                case (HeadTerm.App2(_, _, _))          => true
-                case (HeadTerm.App3(_, _, _, _))       => true
-                case (HeadTerm.App4(_, _, _, _, _))    => true
-                case (HeadTerm.App5(_, _, _, _, _, _)) => true
-                case _                                 => false
-            });
+            |> Vector.filter(
+                match (h, _) -> match h {
+                    case (HeadTerm.App1(_, _))             => true
+                    case (HeadTerm.App2(_, _, _))          => true
+                    case (HeadTerm.App3(_, _, _, _))       => true
+                    case (HeadTerm.App4(_, _, _, _, _))    => true
+                    case (HeadTerm.App5(_, _, _, _, _, _)) => true
+                    case _                                 => false
+                }
+            );
         let guards = bodyPreds
-            |> Vector.filter(bodyAtom -> match bodyAtom {
-                case BodyPredicate.Guard1(_, _)             => true
-                case BodyPredicate.Guard2(_, _, _)          => true
-                case BodyPredicate.Guard3(_, _, _, _)       => true
-                case BodyPredicate.Guard4(_, _, _, _, _)    => true
-                case BodyPredicate.Guard5(_, _, _, _, _, _) => true
-                // Filter out Guard0. They must be true.
-                case _                                      => false
-            });
+            |> Vector.filter(
+                bodyAtom -> match bodyAtom {
+                    case BodyPredicate.Guard1(_, _)             => true
+                    case BodyPredicate.Guard2(_, _, _)          => true
+                    case BodyPredicate.Guard3(_, _, _, _)       => true
+                    case BodyPredicate.Guard4(_, _, _, _, _)    => true
+                    case BodyPredicate.Guard5(_, _, _, _, _, _) => true
+                    // Filter out Guard0. They must be true.
+                    case _                                      => false
+                }
+            );
 
         ///
         /// This is a top down evaluation of `rule`.
@@ -333,18 +339,20 @@ pub mod Fixpoint3.ProvenanceReconstruct {
                                 // the fact we are trying to prove.
                                 // For the kept facts check whether they satisfy the whole rule and if not discard them.
                                 facts
-                                    |> List.exists(match (bodyFact, bodyDepth, bodyRule) -> {
-                                        if (bodyDepth >= depth) {
-                                            // The depth of the body fact is higher than the depth of the head.
-                                            // Reject this to avoid infinite loops.
-                                            false
-                                        } else {
-                                            // This combination could be delayed until we knew we had a satisfying assignment.
-                                            Array.put(Some((combineToFact(filterAsList, bodyFact), bodyDepth, bodyRule)), index, bodyValues);
-                                            let newMap = registerVars(freeVars, bodyFact, varSymToVal);
-                                            loop(index + 1, newMap)
+                                    |> List.exists(
+                                        match (bodyFact, bodyDepth, bodyRule) -> {
+                                            if (bodyDepth >= depth) {
+                                                // The depth of the body fact is higher than the depth of the head.
+                                                // Reject this to avoid infinite loops.
+                                                false
+                                            } else {
+                                                // This combination could be delayed until we knew we had a satisfying assignment.
+                                                Array.put(Some((combineToFact(filterAsList, bodyFact), bodyDepth, bodyRule)), index, bodyValues);
+                                                let newMap = registerVars(freeVars, bodyFact, varSymToVal);
+                                                loop(index + 1, newMap)
+                                            }
                                         }
-                                    })
+                                    )
                             }
                         }
                     case BodyPredicate.BodyAtom(pred, _, Polarity.Negative, _, expected) =>
@@ -364,10 +372,13 @@ pub mod Fixpoint3.ProvenanceReconstruct {
                     case BodyPredicate.Functional(outVars, func, inVars)                 =>
                         let args = Vector.map(varSym -> getVal(varSym, varSymToVal), inVars);
                         let result = func(args);
-                        Vector.exists(tuple -> {
-                            let newMap = registerVars(outVars, tuple, varSymToVal);
-                            loop(index + 1, newMap)
-                        }, result) // We evaluate these later
+                        Vector.exists(
+                            tuple -> {
+                                let newMap = registerVars(outVars, tuple, varSymToVal);
+                                loop(index + 1, newMap)
+                            },
+                            result
+                        ) // We evaluate these later
                     case BodyPredicate.Guard0(_)                                         =>
                         loop(index + 1, varSymToVal)
                     case BodyPredicate.Guard1(_, _)                                      =>
@@ -408,11 +419,13 @@ pub mod Fixpoint3.ProvenanceReconstruct {
     ///
     def evalOrCrash(terms: Vector[BodyTerm], varSymToVal: Map[VarSym, Boxed]): Vector[Boxed] =
         terms
-            |> Vector.map(t -> match t {
-                case BodyTerm.Var(v)   => getVal(v, varSymToVal)
-                case BodyTerm.Lit(val) => val
-                case BodyTerm.Wild     => unreachable!()
-            })
+            |> Vector.map(
+                t -> match t {
+                    case BodyTerm.Var(v)   => getVal(v, varSymToVal)
+                    case BodyTerm.Lit(val) => val
+                    case BodyTerm.Wild     => unreachable!()
+                }
+            )
 
     ///
     /// Evaluates the ground terms in `terms` with respect to `varSymToVal` and return a vector of
@@ -421,15 +434,17 @@ pub mod Fixpoint3.ProvenanceReconstruct {
     ///
     def evalGroundTerms(terms: Vector[BodyTerm], varSymToVal: Map[VarSym, Boxed]): Vector[(Int32, Boxed)] =
         let (filterAsList, _) = ((Nil, 0), terms)
-            ||> Vector.foldLeft(match (acc, i) -> t -> match t {
-                case BodyTerm.Wild     => (acc, i + 1)
-                case BodyTerm.Var(v)   =>
-                    match Map.get(v, varSymToVal) {
-                        case None      => (acc, i + 1)
-                        case Some(val) => ((i, val) :: acc, i + 1)
-                    }
-                case BodyTerm.Lit(val) => ((i, val) :: acc, i + 1)
-            });
+            ||> Vector.foldLeft(
+                match (acc, i) -> t -> match t {
+                    case BodyTerm.Wild     => (acc, i + 1)
+                    case BodyTerm.Var(v)   =>
+                        match Map.get(v, varSymToVal) {
+                            case None      => (acc, i + 1)
+                            case Some(val) => ((i, val) :: acc, i + 1)
+                        }
+                    case BodyTerm.Lit(val) => ((i, val) :: acc, i + 1)
+                }
+            );
         List.toVector(List.reverse(filterAsList))
 
     ///
@@ -439,17 +454,19 @@ pub mod Fixpoint3.ProvenanceReconstruct {
     ///
     def getFreeVarSyms(terms: Vector[BodyTerm], varSymToVal: Map[VarSym, Boxed]): Vector[VarSym] =
         terms
-            |> Vector.filterMap(t -> match t {
-                case BodyTerm.Var(v) =>
-                    match Map.memberOf(v, varSymToVal) {
-                        case false => Some(v)
-                        case true  => None
-                    }
+            |> Vector.filterMap(
+                t -> match t {
+                    case BodyTerm.Var(v) =>
+                        match Map.memberOf(v, varSymToVal) {
+                            case false => Some(v)
+                            case true  => None
+                        }
                     // We need to keep the order and positions for `registerVars`.
                     // We do not care about what `_` has been assigned to.
-                case BodyTerm.Wild   => Some(VarSym.VarSym("_"))
-                case _               => None
-            })
+                    case BodyTerm.Wild   => Some(VarSym.VarSym("_"))
+                    case _               => None
+                }
+            )
 
     ///
     /// Register the values new values of `varNames` to be `matchedFacts`.
@@ -474,14 +491,16 @@ pub mod Fixpoint3.ProvenanceReconstruct {
     ///
     def areGuardsSatisfied(guards: Vector[BodyPredicate], varSymToVal: Map[VarSym, Boxed]): Bool = {
         guards
-            |> Vector.forAll(guard -> match guard {
-                case BodyPredicate.Guard1(f, v1)                 => f(getVal(v1, varSymToVal))
-                case BodyPredicate.Guard2(f, v1, v2)             => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal))
-                case BodyPredicate.Guard3(f, v1, v2, v3)         => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal))
-                case BodyPredicate.Guard4(f, v1, v2, v3, v4)     => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal))
-                case BodyPredicate.Guard5(f, v1, v2, v3, v4, v5) => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal))
-                case _                                           => unreachable!()
-            })
+            |> Vector.forAll(
+                guard -> match guard {
+                    case BodyPredicate.Guard1(f, v1)                 => f(getVal(v1, varSymToVal))
+                    case BodyPredicate.Guard2(f, v1, v2)             => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal))
+                    case BodyPredicate.Guard3(f, v1, v2, v3)         => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal))
+                    case BodyPredicate.Guard4(f, v1, v2, v3, v4)     => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal))
+                    case BodyPredicate.Guard5(f, v1, v2, v3, v4, v5) => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal))
+                    case _                                           => unreachable!()
+                }
+            )
     }
 
     ///
@@ -489,14 +508,16 @@ pub mod Fixpoint3.ProvenanceReconstruct {
     ///
     def areHeadApplicationsSatisfied(headApps: Vector[(HeadTerm, Boxed)], varSymToVal: Map[VarSym, Boxed]): Bool = {
         headApps
-            |> Vector.forAll(match (app, val) -> match app {
-                case (HeadTerm.App1(f, v1))                 => val == f(getVal(v1, varSymToVal))
-                case (HeadTerm.App2(f, v1, v2))             => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal))
-                case (HeadTerm.App3(f, v1, v2, v3))         => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal))
-                case (HeadTerm.App4(f, v1, v2, v3, v4))     => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal))
-                case (HeadTerm.App5(f, v1, v2, v3, v4, v5)) => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal))
-                case _                                      => unreachable!()
-            })
+            |> Vector.forAll(
+                match (app, val) -> match app {
+                    case (HeadTerm.App1(f, v1))                 => val == f(getVal(v1, varSymToVal))
+                    case (HeadTerm.App2(f, v1, v2))             => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal))
+                    case (HeadTerm.App3(f, v1, v2, v3))         => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal))
+                    case (HeadTerm.App4(f, v1, v2, v3, v4))     => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal))
+                    case (HeadTerm.App5(f, v1, v2, v3, v4, v5)) => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal))
+                    case _                                      => unreachable!()
+                }
+            )
     }
 
     ///
@@ -511,12 +532,15 @@ pub mod Fixpoint3.ProvenanceReconstruct {
         let c1 = Counter.fresh(rc);
         let c2 = Counter.fresh(rc);
         let size = Vector.length(filter) + Vector.length(newValues);
-        Vector.init(i -> {
-            if (Counter.get(c1) < Vector.length(filter) and i == fst(Vector.get(Counter.get(c1), filter))) {
-                snd(Vector.get(Counter.getAndIncrement(c1), filter))
-            } else {
-                Vector.get(Counter.getAndIncrement(c2), newValues)
-            }
-        }, size)
+        Vector.init(
+            i -> {
+                if (Counter.get(c1) < Vector.length(filter) and i == fst(Vector.get(Counter.get(c1), filter))) {
+                    snd(Vector.get(Counter.getAndIncrement(c1), filter))
+                } else {
+                    Vector.get(Counter.getAndIncrement(c2), newValues)
+                }
+            },
+            size
+        )
     }
 }

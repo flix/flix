@@ -89,9 +89,11 @@ pub mod Fs.FileStat {
     /// In other words, re-interprets the `FileStat` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileStat) + IO = x ->
-        checked_ecast(Fs.FileSystem.handle(
-            y -> runWithFileSystem(() -> f(y))
-        )(x))
+        checked_ecast(
+            Fs.FileSystem.handle(
+                y -> runWithFileSystem(() -> f(y))
+            )(x)
+        )
 
     ///
     /// Runs the `FileStat` effect of the given function `f`.

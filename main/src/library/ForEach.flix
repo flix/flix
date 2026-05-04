@@ -48,11 +48,13 @@ pub mod ForEach {
             let WithIndex.WithIndex(base) = t;
             let indexRef = Ref.fresh(rc, 0);
             base
-                |> ForEach.forEach(elm -> {
-                    let index = indexRef |> Ref.get;
-                    f((index, elm));
-                    indexRef |> Ref.put(index + 1)
-                })
+                |> ForEach.forEach(
+                    elm -> {
+                        let index = indexRef |> Ref.get;
+                        f((index, elm));
+                        indexRef |> Ref.put(index + 1)
+                    }
+                )
         }
     }
 

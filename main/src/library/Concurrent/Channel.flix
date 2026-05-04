@@ -369,9 +369,11 @@ pub mod Concurrent.Channel {
                  randomized to avoid starvation scenarios).
         */
         let index = channels
-            |> List.mapWithIndex(i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
-                (Ref.get(size) > 0, i)
-            })
+            |> List.mapWithIndex(
+                i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
+                    (Ref.get(size) > 0, i)
+                }
+            )
             |> List.findLeft(match (b, _) -> b)
             |> Option.map(snd);
 

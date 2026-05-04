@@ -57,16 +57,17 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
         let matching = Array.repeat(rc, List.length(vs), -1);
         let matchingRev = Array.empty(rc, List.length(us));
         def getMatching(u: Vertex, seen: Array[Bool, rc]): Bool \ rc = {
-            let cond = v -> if (not Array.get(v, seen)) {
-                Array.put(true, v, seen);
-                if (Array.get(v, matching) < 0 or getMatching(Array.get(v, matching), seen)) {
-                    Array.put(u, v, matching);
-                    Array.put(v, u, matchingRev);
-                    true
+            let cond = v ->
+                if (not Array.get(v, seen)) {
+                    Array.put(true, v, seen);
+                    if (Array.get(v, matching) < 0 or getMatching(Array.get(v, matching), seen)) {
+                        Array.put(u, v, matching);
+                        Array.put(v, u, matchingRev);
+                        true
+                    } else
+                        false
                 } else
-                    false
-            } else
-                false;
+                    false;
             Set.exists(cond, MultiMap.get(u, adjList))
         };
         List.filter(u -> getMatching(u, Array.empty(rc, List.length(us))), us)
@@ -112,9 +113,11 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
         let vertices = List.range(0, List.length(searches));
         let zipped = searches |> List.map(Vector.toSet) |> List.zip(vertices);
         let adjList = zipped
-            |> List.foldMap(match (u, s) ->
-                List.filter(p -> Set.isProperSubsetOf(s, snd(p)), zipped)
-                    |> List.map(p -> (u, fst(p))))
+            |> List.foldMap(
+                match (u, s) ->
+                    List.filter(p -> Set.isProperSubsetOf(s, snd(p)), zipped)
+                        |> List.map(p -> (u, fst(p)))
+            )
             |> List.foldLeft(a -> match (u, v) -> MultiMap.insert(u, v, a), MultiMap.empty());
         (vertices, adjList)
 
@@ -127,8 +130,11 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
         let matching = maximumMatching(vertices, vertices, adjList);
         let toSearch = i -> Vector.get(i, searchesVec);
         List.filter(v -> not Map.exists(edge -> _ -> snd(edge) == v, matching), vertices)
-            |> List.foldLeft(acc -> u1 -> {
-                let chain = toSearch(u1) :: List.map(e -> toSearch(snd(e)), maximalPath(u1, matching));
-                chain :: acc
-            }, List.empty())
+            |> List.foldLeft(
+                acc -> u1 -> {
+                    let chain = toSearch(u1) :: List.map(e -> toSearch(snd(e)), maximalPath(u1, matching));
+                    chain :: acc
+                },
+                List.empty()
+            )
 }

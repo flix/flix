@@ -451,12 +451,16 @@ pub mod Set {
     /// `s2` contains all elements of `s` that do not satisfy the predicate `f`.
     ///
     pub def partition(f: a -> Bool \ ef, s: Set[a]): (Set[a], Set[a]) \ ef with Order[a] =
-        foldLeft((acc, x) ->
-            let (a, b) = acc;
-            if (f(x))
-                (insert(x, a), b)
-            else
-                (a, insert(x, b)), (empty(), empty()), s)
+        foldLeft(
+            (acc, x) ->
+                let (a, b) = acc;
+                if (f(x))
+                    (insert(x, a), b)
+                else
+                    (a, insert(x, b)),
+            (empty(), empty()),
+            s
+        )
 
     ///
     /// Returns the set `s` as a list.

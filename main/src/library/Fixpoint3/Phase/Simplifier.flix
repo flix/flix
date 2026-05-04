@@ -44,10 +44,11 @@ pub mod Fixpoint3.Phase.Simplifier {
             match program {
                 case RamProgram.Program(stmt, facts, predicates, index, typeInfo) =>
                     // Compute the a set of all relations which are initialized with facts, i.e. have some EDB facts.
-                    let filterOutEmpty = fact -> fact
-                        |> Map.filter(x -> (not BPlusTree.isEmpty(x)))
-                        |> Map.foldRightWithKey(k -> _ -> Set.insert(k), Set#{})
-                        |> Set.map(rel -> getRelSymAsType(rel, PredType.Full, predicates));
+                    let filterOutEmpty = fact ->
+                        fact
+                            |> Map.filter(x -> (not BPlusTree.isEmpty(x)))
+                            |> Map.foldRightWithKey(k -> _ -> Set.insert(k), Set#{})
+                            |> Set.map(rel -> getRelSymAsType(rel, PredType.Full, predicates));
                     let nonEmpty = filterOutEmpty(fst(facts)) `Set.union` filterOutEmpty(snd(facts));
                     RamProgram.Program(simplifyStmt(stmt, nonEmpty, predicates), facts, predicates, index, typeInfo)
             }
@@ -159,15 +160,19 @@ pub mod Fixpoint3.Phase.Simplifier {
             case RelOp.If(test, then)                               =>
                 let (memberOf, rest) = test
                 // Delete checks of the form `x[i] == x[i]`.
-                    |> Vector.filter(e -> match e {
-                        case BoolExp.Eq(RowLoad(lhs1, lhs2, _, _), RowLoad(rhs1, rhs2, _, _)) =>
-                            (lhs1, lhs2) != (rhs1, rhs2)
-                        case _                                                                => true
-                    }) // Partition into membership tests and rest.
-                    |> Vector.partition(e -> match e {
-                        case BoolExp.NotMemberOf(_, _, _) => true
-                        case _                            => false
-                    });
+                    |> Vector.filter(
+                        e -> match e {
+                            case BoolExp.Eq(RowLoad(lhs1, lhs2, _, _), RowLoad(rhs1, rhs2, _, _)) =>
+                                (lhs1, lhs2) != (rhs1, rhs2)
+                            case _                                                                => true
+                        }
+                    ) // Partition into membership tests and rest.
+                    |> Vector.partition(
+                        e -> match e {
+                            case BoolExp.NotMemberOf(_, _, _) => true
+                            case _                            => false
+                        }
+                    );
                 let newTest = rest ++ memberOf;
                 // Simplify `if () then body` to `body`.
                 match recurse(then) {

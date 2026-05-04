@@ -143,24 +143,33 @@ pub mod RichString {
     ///
     pub def withColor(c: Color, x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
-        map(match Span.Span(r) ->
-            Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, styles = r#styles}), rs)
+        map(
+            match Span.Span(r) ->
+                Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, styles = r#styles}),
+            rs
+        )
 
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given background color `c`.
     ///
     pub def withBgColor(c: Color, x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
-        map(match Span.Span(r) ->
-            Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, styles = r#styles}), rs)
+        map(
+            match Span.Span(r) ->
+                Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, styles = r#styles}),
+            rs
+        )
 
     ///
     /// Returns a `RichString` from given text `x` with the given `style` in addition to any other styles it already has.
     ///
     pub def withStyle(style: Style, x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
-        map(match Span.Span(r) ->
-            Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, styles = Set.insert(style, r#styles)}), rs)
+        map(
+            match Span.Span(r) ->
+                Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, styles = Set.insert(style, r#styles)}),
+            rs
+        )
 
     ///
     /// Returns a `RichString` containing the given span `s`.
@@ -344,31 +353,37 @@ pub mod RichString {
     ///
     def toAnsiString(rs: RichString): String = match rs {
         case RichString(spans) =>
-            Chain.joinWith(match Span.Span(r) -> {
-                // Collect all codes in a list
-                let styleCodes = r#styles |> Set.toList
-                    |> List.map(s -> match s {
-                        case Style.Bold      => "1"
-                        case Style.Underline => "4"
-                    });
+            Chain.joinWith(
+                match Span.Span(r) -> {
+                    // Collect all codes in a list
+                    let styleCodes = r#styles |> Set.toList
+                        |> List.map(
+                            s -> match s {
+                                case Style.Bold      => "1"
+                                case Style.Underline => "4"
+                            }
+                        );
 
-                let fgCodes = match r#fgColor {
-                    case Color.Rgb(red, green, blue) => "38;2;${red};${green};${blue}" :: Nil
-                    case Color.Default               => Nil
-                };
+                    let fgCodes = match r#fgColor {
+                        case Color.Rgb(red, green, blue) => "38;2;${red};${green};${blue}" :: Nil
+                        case Color.Default               => Nil
+                    };
 
-                let bgCodes = match r#bgColor {
-                    case Color.Rgb(red, green, blue) => "48;2;${red};${green};${blue}" :: Nil
-                    case Color.Default               => Nil
-                };
+                    let bgCodes = match r#bgColor {
+                        case Color.Rgb(red, green, blue) => "48;2;${red};${green};${blue}" :: Nil
+                        case Color.Default               => Nil
+                    };
 
-                let allCodes = styleCodes ::: fgCodes ::: bgCodes;
+                    let allCodes = styleCodes ::: fgCodes ::: bgCodes;
 
-                if (List.isEmpty(allCodes))
-                    r#text
-                else
-                    "\u001B[${List.join(";", allCodes)}m${r#text}\u001B[0m"
-            }, "", spans)
+                    if (List.isEmpty(allCodes))
+                        r#text
+                    else
+                        "\u001B[${List.join(";", allCodes)}m${r#text}\u001B[0m"
+                },
+                "",
+                spans
+            )
     }
 
     ///
@@ -378,30 +393,31 @@ pub mod RichString {
     /// - `fg`: A `ColorPalette` record containing foreground colors
     /// - `bg`: A `ColorPalette` record containing background colors
     ///
-    def colors(): {fg = ColorPalette, bg = ColorPalette} = {
-        fg = {
-            black = Color.Rgb(0, 0, 0),
-            gray = Color.Rgb(128, 128, 128),
-            red = Color.Rgb(220, 105, 105),
-            green = Color.Rgb(13, 188, 121),
-            yellow = Color.Rgb(229, 192, 123),
-            blue = Color.Rgb(100, 130, 160),
-            magenta = Color.Rgb(210, 125, 210),
-            cyan = Color.Rgb(17, 168, 205),
-            white = Color.Rgb(255, 255, 255)
-        },
-        bg = {
-            black = Color.Rgb(40, 40, 40),
-            gray = Color.Rgb(128, 128, 128),
-            red = Color.Rgb(205, 49, 49),
-            green = Color.Rgb(13, 188, 121),
-            yellow = Color.Rgb(229, 192, 123),
-            blue = Color.Rgb(36, 114, 200),
-            magenta = Color.Rgb(188, 63, 188),
-            cyan = Color.Rgb(17, 168, 205),
-            white = Color.Rgb(255, 255, 255)
+    def colors(): {fg = ColorPalette, bg = ColorPalette} =
+        {
+            fg = {
+                black = Color.Rgb(0, 0, 0),
+                gray = Color.Rgb(128, 128, 128),
+                red = Color.Rgb(220, 105, 105),
+                green = Color.Rgb(13, 188, 121),
+                yellow = Color.Rgb(229, 192, 123),
+                blue = Color.Rgb(100, 130, 160),
+                magenta = Color.Rgb(210, 125, 210),
+                cyan = Color.Rgb(17, 168, 205),
+                white = Color.Rgb(255, 255, 255)
+            },
+            bg = {
+                black = Color.Rgb(40, 40, 40),
+                gray = Color.Rgb(128, 128, 128),
+                red = Color.Rgb(205, 49, 49),
+                green = Color.Rgb(13, 188, 121),
+                yellow = Color.Rgb(229, 192, 123),
+                blue = Color.Rgb(36, 114, 200),
+                magenta = Color.Rgb(188, 63, 188),
+                cyan = Color.Rgb(17, 168, 205),
+                white = Color.Rgb(255, 255, 255)
+            }
         }
-    }
 
     ///
     /// Returns `true` unless color output is explicitly disabled.

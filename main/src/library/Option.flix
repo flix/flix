@@ -425,10 +425,13 @@ pub mod Option {
         def loop(ll, k) = match ll {
             case Nil     => k(s)
             case x :: xs =>
-                loop(xs, s1 -> match f(x, s1) {
-                    case Some(s2) => k(s2)
-                    case None     => None
-                })
+                loop(
+                    xs,
+                    s1 -> match f(x, s1) {
+                        case Some(s2) => k(s2)
+                        case None     => None
+                    }
+                )
         };
         loop(l, s1 -> checked_ecast(Some(s1)))
 

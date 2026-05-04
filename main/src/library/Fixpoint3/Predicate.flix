@@ -247,14 +247,22 @@ pub mod Fixpoint3.Predicate {
     /// Returns a set of full `RelSym` in `constraints`.
     ///
     def relSymsOf(constraints: Vector[Constraint]): Set[RelSym] =
-        Vector.foldLeft(match set -> match Constraint(headAtom, body) -> {
-            let setWithHead = Set.insert(headAtomToFullRelSym(headAtom), set);
-            Vector.foldLeft(setBody -> bodyConstraint -> match bodyConstraint {
-                case BodyAtom(_, _, _, _, _) =>
-                    Set.insert(bodyAtomToFullRelSym(bodyConstraint), setBody)
-                case _                       => setBody
-            }, setWithHead, body)
-        }, Set#{}, constraints)
+        Vector.foldLeft(
+            match set -> match Constraint(headAtom, body) -> {
+                let setWithHead = Set.insert(headAtomToFullRelSym(headAtom), set);
+                Vector.foldLeft(
+                    setBody -> bodyConstraint -> match bodyConstraint {
+                        case BodyAtom(_, _, _, _, _) =>
+                            Set.insert(bodyAtomToFullRelSym(bodyConstraint), setBody)
+                        case _                       => setBody
+                    },
+                    setWithHead,
+                    body
+                )
+            },
+            Set#{},
+            constraints
+        )
 
     ///
     /// Returns the full `RelSym` associated with the `PredSym` in `head`.

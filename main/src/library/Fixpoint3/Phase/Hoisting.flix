@@ -104,20 +104,24 @@ pub mod Fixpoint3.Phase.Hoisting {
                 // Note that with the above unification, we do not really care about `x[i]`, but some representative.
                 // We might have `x[i] = x[j] = y[k]` and we view these as the same.
                 let termMap = (Map.empty(), constEqualities)
-                    ||> MutMap.foldLeftWithKey(acc -> load -> listOfPairs -> (acc, listOfPairs)
-                        ||> List.foldLeft(innerAcc -> match (val, ty) -> {
-                            // `load` must have been registered by `unifyEqualitiesStmt`.
-                            let rep = getOrCrash(MutDisjointSets.find(load, equalitySets));
-                            match Map.get(rep, innerAcc) {
-                                case Some(RamTerm.Lit(v, _)) =>
-                                    {
-                                        if (v != val) { MutSet.add(fst(rep), impossible) }
-                                    };
-                                    innerAcc
-                                case Some(_)                 => bug!("In Fixpoint.Phase.Hoisting.hoistProgram: termMap contains non-literals before hoistStmt!")
-                                case None                    => Map.insert(rep, RamTerm.Lit(val, ty), innerAcc)
-                            }
-                        }));
+                    ||> MutMap.foldLeftWithKey(
+                        acc -> load -> listOfPairs -> (acc, listOfPairs)
+                            ||> List.foldLeft(
+                                innerAcc -> match (val, ty) -> {
+                                    // `load` must have been registered by `unifyEqualitiesStmt`.
+                                    let rep = getOrCrash(MutDisjointSets.find(load, equalitySets));
+                                    match Map.get(rep, innerAcc) {
+                                        case Some(RamTerm.Lit(v, _)) =>
+                                            {
+                                                if (v != val) { MutSet.add(fst(rep), impossible) }
+                                            };
+                                            innerAcc
+                                        case Some(_)                 => bug!("In Fixpoint.Phase.Hoisting.hoistProgram: termMap contains non-literals before hoistStmt!")
+                                        case None                    => Map.insert(rep, RamTerm.Lit(val, ty), innerAcc)
+                                    }
+                                }
+                            )
+                    );
                 match hoistStmt(rc, termMap, equalitySets, MutSet.toSet(impossible), stmt) {
                     case None              => RamProgram.Program(RamStmt.Comment("No rules are satisfiable"), facts, meta, index, typeInfo)
                     case Some(hoistedStmt) => RamProgram.Program(hoistedStmt, facts, meta, index, typeInfo)
@@ -374,12 +378,14 @@ pub mod Fixpoint3.Phase.Hoisting {
     ): Map[(RowVar, Int32), RamTerm] \ r = {
         // Register all values `rowVar[i]`, for `0 <= i < arity`, as known when hoisting `body`.
         (termMap, Vector.range(0, arityOf(relSym)))
-            ||> Vector.foldLeft(acc -> i -> {
-                match MutDisjointSets.find((rv, i), equalitySets) {
-                    case Some(rep) => Map.insertWith(_ -> v -> v, rep, RamTerm.RowLoad(rv, i, Vector.get(i, types), relSym), acc)
-                    case None      => bug!("In Fixpoint.Phase.Hoisting: Everything should be in the equalitySet")
+            ||> Vector.foldLeft(
+                acc -> i -> {
+                    match MutDisjointSets.find((rv, i), equalitySets) {
+                        case Some(rep) => Map.insertWith(_ -> v -> v, rep, RamTerm.RowLoad(rv, i, Vector.get(i, types), relSym), acc)
+                        case None      => bug!("In Fixpoint.Phase.Hoisting: Everything should be in the equalitySet")
+                    }
                 }
-            })
+            )
     }
 
     ///
@@ -605,9 +611,11 @@ pub mod Fixpoint3.Phase.Hoisting {
             case RamTerm.Lit(_, _)                      => true
             case RamTerm.ProvMax(loads)                 =>
                 loads
-                    |> Vector.forAll(load -> {
-                        Map.memberOf(getOrCrash(MutDisjointSets.find(load, equalitySets)), termMap)
-                    })
+                    |> Vector.forAll(
+                        load -> {
+                            Map.memberOf(getOrCrash(MutDisjointSets.find(load, equalitySets)), termMap)
+                        }
+                    )
             case RamTerm.RowLoad(rv, i, _, _)           =>
                 Map.memberOf(getOrCrash(MutDisjointSets.find((rv, i), equalitySets)), termMap)
             case RamTerm.Meet(_, t1, (rv, relSym), _)   => termGround(t1) and Map.memberOf(getOrCrash(MutDisjointSets.find((rv, arityOfNonLat(relSym)), equalitySets)), termMap)

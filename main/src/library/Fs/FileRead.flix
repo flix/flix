@@ -48,9 +48,11 @@ pub mod Fs.FileRead {
     /// In other words, re-interprets the `FileRead` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileRead) + IO = x ->
-        checked_ecast(Fs.FileSystem.handle(
-            y -> runWithFileSystem(() -> f(y))
-        )(x))
+        checked_ecast(
+            Fs.FileSystem.handle(
+                y -> runWithFileSystem(() -> f(y))
+            )(x)
+        )
 
     ///
     /// Runs the `FileRead` effect of the given function `f`.
