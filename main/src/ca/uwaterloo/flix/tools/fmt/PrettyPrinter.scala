@@ -540,20 +540,8 @@ object PrettyPrinter {
         case Doc.Empty => empty
         case _ =>
           val ci = children.length - split.tail.length - 1
-          val sep = if (ci >= 0 && ci < children.length) {
-            children(ci) match {
-              case closeToken: Token =>
-                split.tail.headOption.flatMap(leftMostToken) match {
-                  case Some(first) if closeToken.end.lineOneIndexed == first.start.lineOneIndexed =>
-                    space
-                  case Some(first) if first.start.lineOneIndexed - closeToken.end.lineOneIndexed > 1 =>
-                    hardline <> hardline
-                  case _ => hardline
-                }
-              case _ => space
-            }
-          } else space
-          sep <> tailContent
+          val closeChild = if (ci >= 0 && ci < children.length) Some(children(ci)) else None
+          bracketTail(closeChild, split.tail.headOption, tailContent)
       }
       renderBracket(tree, split, headerJoin,
         bodyDoc   = formatBody(split.body),
@@ -561,6 +549,24 @@ object PrettyPrinter {
         flatPad   = flatPad,
         nestLevel = nestLevel)
   }
+
+  private def bracketTail(closeChild: Option[SyntaxTree.Child], firstTail: Option[SyntaxTree.Child], tailDoc: Doc): Doc =
+    closeChild match {
+      case Some(closeToken: Token) =>
+        firstTail.flatMap(leftMostToken) match {
+          case Some(first) if closeToken.end.lineOneIndexed == first.start.lineOneIndexed =>
+            space <> tailDoc
+          case Some(first) =>
+            val gap = if (first.start.lineOneIndexed - closeToken.end.lineOneIndexed > 1) hardline <> hardline
+                      else hardline
+            if (isCommentKind(first.kind)) {
+              val col = first.start.colOneIndexed - 1
+              Doc.nestAbsolute(col, gap <> tailDoc)
+            } else gap <> tailDoc
+          case None => space <> tailDoc
+        }
+      case _ => space <> tailDoc
+    }
 
   /**
     * Formatting for constructs with comma-separated bodies (e.g literal vectors, lists, sets, maps, arrays).
@@ -799,15 +805,42 @@ object PrettyPrinter {
       TokenKind.Colon -> (text(":") <> space))
 
   private def prettyUncheckedCast(tree: Tree): Doc =
-    joinChildren(filterEmpty(tree.children),
-      TokenKind.KeywordUncheckedCast -> text("unchecked_cast"),
-      TokenKind.KeywordAs            -> (space <> text("as") <> space),
-      TokenKind.Backslash            -> (space <> text("\\") <> space))
+    prettyKeywordParen(tree,
+      headerReplacements = Seq(TokenKind.KeywordUncheckedCast -> text("unchecked_cast")),
+      bodyReplacements   = Seq(
+        TokenKind.KeywordAs -> (space <> text("as") <> space),
+        TokenKind.Backslash -> (space <> text("\\") <> space)))
 
   private def prettyCheckedCast(tree: Tree, kind: TokenKind, kw: String): Doc =
-    joinChildren(filterEmpty(tree.children),
-      kind                -> text(kw),
-      TokenKind.Backslash -> (space <> text("\\") <> space))
+    prettyKeywordParen(tree,
+      headerReplacements = Seq(kind -> text(kw)),
+      bodyReplacements   = Seq(TokenKind.Backslash -> (space <> text("\\") <> space)))
+
+  private def prettyKeywordParen(
+    tree: Tree,
+    headerReplacements: Seq[(TokenKind, Doc)],
+    bodyReplacements: Seq[(TokenKind, Doc)] = Seq.empty
+  ): Doc = {
+    val children = filterEmpty(tree.children)
+    splitAtBracket(children) match {
+      case None =>
+        joinChildren(children, headerReplacements: _*)
+      case Some(BracketSplit(header, open, body, close, tail)) =>
+        val headerDoc = joinChildren(header, headerReplacements: _*)
+        val bodyDoc   = joinChildren(body, bodyReplacements: _*)
+        val tailDoc   = if (tail.isEmpty) empty else space <> joinWithGap(tail)
+        val pad       = Doc.layoutChoice(empty, line)
+        val bodyStartsWithBracket = body.headOption.exists(c =>
+          leftMostToken(c).exists(tok => tok.kind == TokenKind.CurlyL || tok.kind == TokenKind.ParenL))
+        localLayout(tree) {
+          bodyDoc match {
+            case Doc.Empty                  => headerDoc <> text(open) <> text(close) <> tailDoc
+            case _ if bodyStartsWithBracket => headerDoc <> text(open) <> bodyDoc <> text(close) <> tailDoc
+            case _                          => headerDoc <> text(open) <> nest(4, pad <> bodyDoc) <> pad <> text(close) <> tailDoc
+          }
+        }
+    }
+  }
 
   private def prettyUnsafe(tree: Tree): Doc =
     prettyBracket(tree, filterEmpty(tree.children), flatPad = space)
@@ -1513,26 +1546,36 @@ object PrettyPrinter {
       case _ => false
     }
 
+    val filtered = filterEmpty(tree.children)
     if (!hasArgs) {
-      splitAtBracket(filterEmpty(tree.children)) match {
+      splitAtBracket(filtered) match {
         case None => return text("(") <> text(")")
         case Some(BracketSplit(_, _, _, _, tail)) =>
-          val tailDoc = if (tail.isEmpty) empty else space <> joinWithGap(tail)
+          val tailDoc =
+            if (tail.isEmpty) empty
+            else {
+              val ci = filtered.length - tail.length - 1
+              val closeChild = if (ci >= 0 && ci < filtered.length) Some(filtered(ci)) else None
+              bracketTail(closeChild, tail.headOption, joinWithGap(tail))
+            }
           return text("(") <> text(")") <> tailDoc
       }
     }
 
-    splitAtBracket(filterEmpty(tree.children)) match {
+    splitAtBracket(filtered) match {
       case None => prettyFallback(tree)
       case Some(BracketSplit(header, open, body, close, tail)) =>
         val bodyDoc = commaBodyJoin(body)
         val openDoc =
           if (header.isEmpty) text(open)
           else defaultHeaderJoin(header) <> text(open)
-        val tailDoc = if (tail.isEmpty) empty
-        else {
-          space <> joinWithGap(tail)
-        }
+        val tailDoc =
+          if (tail.isEmpty) empty
+          else {
+            val ci = filtered.length - tail.length - 1
+            val closeChild = if (ci >= 0 && ci < filtered.length) Some(filtered(ci)) else None
+            bracketTail(closeChild, tail.headOption, joinWithGap(tail))
+          }
         val args = body.collect { case t: Tree if t.kind == TreeKind.Argument || t.kind == TreeKind.ArgumentNamed => t }
         val singleBlockArg = args.length == 1 &&
           filterEmpty(args(0).children).headOption.exists(c =>
