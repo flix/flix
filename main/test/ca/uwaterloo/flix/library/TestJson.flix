@@ -1686,4 +1686,23 @@ mod TestJson {
             Json.decode("[1,true,3]")
         )
 
+    /////////////////////////////////////////////////////////////////////////////
+    // JNumber equality is numeric, not by BigDecimal scale                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def numericEq01(): Unit \ Assert =
+        // Top-level scalar: "1" and "1.0" are the same JSON number.
+        assertEq(expected = Json.parse("1"), Json.parse("1.0"))
+
+    @Test
+    def numericEq02(): Unit \ Assert =
+        // Nested in array: scale differences inside elements don't break equality.
+        assertEq(expected = Json.parse("[1, 2, 3]"), Json.parse("[1.0, 2.00, 3.000]"))
+
+    @Test
+    def numericEq03(): Unit \ Assert =
+        // Nested in object: scale differences inside values don't break equality.
+        assertEq(expected = Json.parse("{\"a\": 1, \"b\": 2}"), Json.parse("{\"a\": 1.0, \"b\": 2.00}"))
+
 }
