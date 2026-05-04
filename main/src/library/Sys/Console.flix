@@ -59,6 +59,8 @@ pub mod Sys.Console {
     ///
     /// Prints prompt `p`, reads a line, and returns `default` if the input is empty or whitespace.
     ///
+    /// Returns `default` if the end of input has been reached.
+    ///
     pub def readlnWithDefault(p: a, default: String): String \ Console + Formattable.Aef[a] with Formattable[a] =
         Console.print(prompt(p));
         match Console.readln() {
@@ -72,15 +74,17 @@ pub mod Sys.Console {
     /// Prints prompt `p`, reads a line, and applies `f` to the input.
     ///
     /// If `f` returns `Err(msg)`, prints `msg` to stderr and re-prompts.
-    /// If `f` returns `Ok(v)`, returns `v`.
+    /// If `f` returns `Ok(v)`, returns `Some(v)`.
     ///
-    pub def readlnWith(p: a, f: String -> Result[String, b]): b \ Console + Formattable.Aef[a] with Formattable[a] =
+    /// Returns `None` if the end of input has been reached.
+    ///
+    pub def readlnWith(p: a, f: String -> Result[String, b]): Option[b] \ Console + Formattable.Aef[a] with Formattable[a] =
         Console.print(prompt(p));
         match Console.readln() {
-            case None        => readlnWith(p, f)
+            case None        => None
             case Some(input) =>
                 match f(input) {
-                    case Ok(v)    => v
+                    case Ok(v)    => Some(v)
                     case Err(msg) =>
                         Console.eprintln(msg);
                         readlnWith(p, f)
@@ -93,6 +97,8 @@ pub mod Sys.Console {
     /// Appends `[Y/n]` if `default#default` is `true`, or `[y/N]` if `false`.
     /// Empty input returns `default#default`. Recognizes "y", "yes", "n", "no" (case-insensitive).
     /// Any other input returns `default#default`.
+    ///
+    /// Returns `default#default` if the end of input has been reached.
     ///
     pub def confirm(p: a, default: {default = Bool}): Bool \ Console + Formattable.Aef[a] with Formattable[a] =
         let hint = if (default#default) " [Y/n] " else " [y/N] ";
@@ -116,6 +122,8 @@ pub mod Sys.Console {
     ///
     /// Returns `Some(element)` if the user enters a valid number, `None` otherwise.
     ///
+    /// Returns `None` if the end of input has been reached.
+    ///
     pub def pick(p: a, choices: List[b]): Option[b] \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
         Console.println(prompt(p));
         foreach ((i, opt) <- ForEach.withIndex(choices))
@@ -124,8 +132,7 @@ pub mod Sys.Console {
         match Console.readln() {
             case None        => None
             case Some(raw)   =>
-                let input = String.trim(raw);
-                match Int32.fromString(input) {
+                match Int32.fromString(raw) {
                     case None    => None
                     case Some(n) =>
                         if (1 <= n and n <= List.length(choices))
@@ -138,11 +145,28 @@ pub mod Sys.Console {
     ///
     /// Like `pick`, but re-prompts until the user makes a valid selection.
     ///
-    pub def pickWith(p: a, choices: List[b]): b \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
-        match pick(p, choices) {
-            case Some(v) => v
-            case None    => pickWith(p, choices)
-        }
+    /// Returns `None` if the end of input has been reached.
+    ///
+    pub def pickWith(p: a, choices: List[b]): Option[b] \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
+        Console.println(prompt(p));
+        foreach ((i, opt) <- ForEach.withIndex(choices))
+            Console.println("  ${i + 1}) ${prompt(opt)}");
+        def loop() = {
+            Console.print("> ");
+            match Console.readln() {
+                case None      => None
+                case Some(raw) =>
+                    match Int32.fromString(raw) {
+                        case None    => loop()
+                        case Some(n) =>
+                            if (1 <= n and n <= List.length(choices))
+                                List.head(List.drop(n - 1, choices))
+                            else
+                                loop()
+                    }
+            }
+        };
+        loop()
 
     ///
     /// Handles the `Console` effect of the given function `f`.
