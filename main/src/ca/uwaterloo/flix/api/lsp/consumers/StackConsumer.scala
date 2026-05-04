@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.consumers
 
 import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
-import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
+import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, EqualityConstraint, Instance, *}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}

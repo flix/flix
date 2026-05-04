@@ -14,22 +14,47 @@
  *  limitations under the License.
  */
 
+
+///
+/// An effect used to log messages.
+///
+pub eff Logger {
+
+    ///
+    /// Logs the given message `m` at the given severity `s`.
+    ///
+    def log(s: Logger.Severity, m: RichString): Unit
+
+}
+
 pub mod Logger {
 
     use Sys.Console
     use RichString.{gray, cyan, green, yellow, red, bold, text};
-    use Severity.{Warn, Fatal, Trace, Debug, Info}
+    use Severity.{Trace, Debug, Info, Warn, Fatal}
 
     ///
-    /// An effect used to log messages.
+    /// Represents levels of severity.
     ///
-    pub eff Logger {
+    /// `Trace` is the lowest level of severity.
+    /// `Fatal` is the highest level of severity.
+    ///
+    pub enum Severity with Eq, Order, ToString {
+        case Trace
+        case Debug
+        case Info
+        case Warn
+        case Fatal
+    }
 
-        ///
-        /// Logs the given message `m` at the given severity `s`.
-        ///
-        def log(s: Severity, m: RichString): Unit
-
+    instance Formattable[Severity] {
+        pub def format(s: Severity): RichString = match s {
+            case Severity.Trace => RichString.gray("Trace")
+            case Severity.Debug => RichString.blue("Debug")
+            case Severity.Info  => RichString.green("Info")
+            case Severity.Warn  => RichString.yellow("Warn")
+            case Severity.Fatal => RichString.red("Fatal")
+        }
     }
 
     ///
