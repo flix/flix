@@ -52,6 +52,7 @@ mod Fs.FsLayer {
     use Fs.Size.toBytes
     use IoError.IoError
     use IoError.ErrorKind
+    use Logger.Severity
     use RichString.{text, bold, cyan, green, red, gray}
 
     // ─── Symlink safety ────────────────────────────────────────────────

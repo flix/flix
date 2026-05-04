@@ -14,104 +14,108 @@
  *  limitations under the License.
  */
 
-import java.lang.Byte
-import java.lang.Character
-import java.lang.Double
-import java.lang.Float
-import java.lang.Integer
-import java.lang.Long
-import java.lang.Short
-import java.math.BigInteger
-import java.util.{List => JList}
-import java.util.{Map => JMap}
-import java.util.{Set => JSet}
+pub mod ToFlix {
 
-///
-/// A trait for marshaling values to Flix objects.
-///
-pub trait ToFlix[t: Type] {
-    type In[t]: Type
-    type Aef[t]: Eff = {}
-    pub def toFlix(t: ToFlix.In[t]): t \ ToFlix.Aef[t]
-}
+    import java.lang.Byte
+    import java.lang.Character
+    import java.lang.Double
+    import java.lang.Float
+    import java.lang.Integer
+    import java.lang.Long
+    import java.lang.Short
+    import java.math.BigInteger
+    import java.util.{List => JList}
+    import java.util.{Map => JMap}
+    import java.util.{Set => JSet}
 
-instance ToFlix[Int8] {
-    type In = Byte
-    pub def toFlix(i: Byte): Int8 = Int8.byteValue(i)
-}
-
-instance ToFlix[Int16] {
-    type In = Short
-    pub def toFlix(i: Short): Int16 = Int16.shortValue(i)
-}
-
-instance ToFlix[Int32] {
-    type In = Integer
-    pub def toFlix(i: Integer): Int32 = Int32.intValue(i)
-}
-
-instance ToFlix[Int64] {
-    type In = Long
-    pub def toFlix(i: Long): Int64 = Int64.longValue(i)
-}
-
-instance ToFlix[Float32] {
-    type In = Float
-    pub def toFlix(d: Float): Float32 = Float32.floatValue(d)
-}
-
-instance ToFlix[Float64] {
-    type In = Double
-    pub def toFlix(d: Double): Float64 = Float64.doubleValue(d)
-}
-
-instance ToFlix[BigInt] {
-    type In = BigInteger
-    pub def toFlix(i: BigInteger): BigInt = i
-}
-
-instance ToFlix[BigDecimal] {
-    type In = BigDecimal
-    pub def toFlix(d: BigDecimal): BigDecimal = d
-}
-
-instance ToFlix[Char] {
-    type In = Character
-    pub def toFlix(c: Character): Char = Char.charValue(c)
-}
-
-instance ToFlix[String] {
-    type In = String
-    pub def toFlix(s: String): String = s
-}
-
-instance ToFlix[List[a]] {
-    type In = JList[a]
-    pub def toFlix(l: JList[a]): List[a] = Adaptor.fromList(l)
-}
-
-instance ToFlix[Chain[a]] {
-    type In = JList[a]
-    pub def toFlix(l: JList[a]): Chain[a] = region rc {
-        let it = unsafe IO { l.iterator() };
-        it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
+    ///
+    /// A trait for marshaling values to Flix objects.
+    ///
+    pub trait ToFlix[t: Type] {
+        type In[t]: Type
+        type Aef[t]: Eff = {}
+        pub def toFlix(t: ToFlix.In[t]): t \ ToFlix.Aef[t]
     }
-}
 
-instance ToFlix[Vector[a]] {
-    type In = JList[a]
-    pub def toFlix(l: JList[a]): Vector[a] = region rc {
-        let iter = unsafe IO { l.iterator() };
-        iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+    instance ToFlix[Int8] {
+        type In = Byte
+        pub def toFlix(i: Byte): Int8 = Int8.byteValue(i)
     }
-}
 
-instance ToFlix[Set[a]] with Order[a] {
-    type In = JSet[a]
-    pub def toFlix(s: JSet[a]): Set[a] = Adaptor.fromSet(s)
-}
+    instance ToFlix[Int16] {
+        type In = Short
+        pub def toFlix(i: Short): Int16 = Int16.shortValue(i)
+    }
 
-instance ToFlix[Map[k, v]] with Order[k] {
-    type In = JMap[k, v]
-    pub def toFlix(m: JMap[k, v]): Map[k, v] = Adaptor.fromMap(m)
+    instance ToFlix[Int32] {
+        type In = Integer
+        pub def toFlix(i: Integer): Int32 = Int32.intValue(i)
+    }
+
+    instance ToFlix[Int64] {
+        type In = Long
+        pub def toFlix(i: Long): Int64 = Int64.longValue(i)
+    }
+
+    instance ToFlix[Float32] {
+        type In = Float
+        pub def toFlix(d: Float): Float32 = Float32.floatValue(d)
+    }
+
+    instance ToFlix[Float64] {
+        type In = Double
+        pub def toFlix(d: Double): Float64 = Float64.doubleValue(d)
+    }
+
+    instance ToFlix[BigInt] {
+        type In = BigInteger
+        pub def toFlix(i: BigInteger): BigInt = i
+    }
+
+    instance ToFlix[BigDecimal] {
+        type In = BigDecimal
+        pub def toFlix(d: BigDecimal): BigDecimal = d
+    }
+
+    instance ToFlix[Char] {
+        type In = Character
+        pub def toFlix(c: Character): Char = Char.charValue(c)
+    }
+
+    instance ToFlix[String] {
+        type In = String
+        pub def toFlix(s: String): String = s
+    }
+
+    instance ToFlix[List[a]] {
+        type In = JList[a]
+        pub def toFlix(l: JList[a]): List[a] = Adaptor.fromList(l)
+    }
+
+    instance ToFlix[Chain[a]] {
+        type In = JList[a]
+        pub def toFlix(l: JList[a]): Chain[a] = region rc {
+            let it = unsafe IO { l.iterator() };
+            it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
+        }
+    }
+
+    instance ToFlix[Vector[a]] {
+        type In = JList[a]
+        pub def toFlix(l: JList[a]): Vector[a] = region rc {
+            let iter = unsafe IO { l.iterator() };
+            iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+        }
+    }
+
+    instance ToFlix[Set[a]] with Order[a] {
+        type In = JSet[a]
+        pub def toFlix(s: JSet[a]): Set[a] = Adaptor.fromSet(s)
+    }
+
+    instance ToFlix[Map[k, v]] with Order[k] {
+        type In = JMap[k, v]
+        pub def toFlix(m: JMap[k, v]): Map[k, v] = Adaptor.fromMap(m)
+    }
+
 }
