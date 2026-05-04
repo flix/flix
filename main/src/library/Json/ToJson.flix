@@ -100,6 +100,13 @@ pub mod Json.ToJson {
         pub def toJson(xs: List[a]): Json = JArray(List.toVector(List.map(ToJson.toJson, xs)))
     }
 
+    /// Set elements are emitted in sorted order (by `Order[a]`), giving
+    /// canonical, diff-friendly output.
+    instance ToJson[Set[a]] with ToJson[a] {
+        pub def toJson(s: Set[a]): Json =
+            JArray(List.toVector(List.map(ToJson.toJson, Set.toList(s))))
+    }
+
     /// Object keys are encoded by `ToString.toString` of the Map's key type.
     instance ToJson[Map[k, v]] with ToString[k], ToJson[v] {
         pub def toJson(m: Map[k, v]): Json =
