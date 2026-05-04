@@ -122,7 +122,7 @@ pub mod Json {
         case JNull =>
             StringBuilder.appendString("null", sb)
         case JNumber(n) =>
-            StringBuilder.append(n, sb)
+            StringBuilder.appendString(BigDecimal.toPlainString(n), sb)
         case JObject(m) =>
             StringBuilder.append('{', sb);
             foreach ((i, (k, x)) <- ForEach.withIndex(m)) {
@@ -161,7 +161,7 @@ pub mod Json {
         case JNull =>
             StringBuilder.appendString("null", sb)
         case JNumber(n) =>
-            StringBuilder.append(n, sb)
+            StringBuilder.appendString(BigDecimal.toPlainString(n), sb)
         case JObject(m) if Map.isEmpty(m) =>
             StringBuilder.appendString("{}", sb)
         case JObject(m) =>
@@ -210,7 +210,7 @@ pub mod Json {
         case JNull =>
             RichString.gray("null")
         case JNumber(n) =>
-            RichString.yellow(n)
+            RichString.yellow(BigDecimal.toPlainString(n))
         case JObject(m) if Map.isEmpty(m) =>
             RichString.fromString("{}")
         case JObject(m) =>
