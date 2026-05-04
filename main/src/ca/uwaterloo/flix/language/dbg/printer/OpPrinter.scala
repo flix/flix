@@ -165,6 +165,8 @@ object OpPrinter {
     case ReflectOp.ReflectEff => "reflectEff"
     case ReflectOp.ReflectType => "reflectType"
     case ReflectOp.ReflectValue => "reflectValue"
+    case ObjectOp.RefEq => "==="
+    case ObjectOp.Ordinal => "ordinal"
   }
 
   /**

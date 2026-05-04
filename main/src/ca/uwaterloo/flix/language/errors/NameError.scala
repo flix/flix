@@ -218,4 +218,30 @@ object NameError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error raised to indicate that a companion is not the first declaration in its enclosing module.
+    *
+    * A companion is a declaration (enum, struct, effect, or trait) whose name matches its enclosing module.
+    *
+    * @param name the name of the companion.
+    * @param loc  the location of the misplaced declaration.
+    */
+  case class CompanionMustBeFirst(name: String, loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5975
+
+    def summary: String = s"Companion '$name' must be the first declaration in its enclosing module."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Companion '${red(name)}' must be the first declaration in its enclosing module.
+         |
+         |${highlight(loc, "misplaced declaration", fmt)}
+         |
+         |${underline("Explanation:")} When a declaration shares its name with its enclosing module,
+         |it is the companion of that module and must appear before all other declarations.
+         |Move it to the top of the module.
+         |""".stripMargin
+    }
+  }
 }

@@ -14,50 +14,50 @@
  * limitations under the License.
  */
 
-///
-/// The Result type.
-///
-/// A result represents a successful value or an error value.
-/// The constructor `Ok(v)` represents the successful value `v`,
-/// whereas the constructor `Err(v)` represents the error value `v`.
-///
-pub enum Result[e, t] with Eq, Order, ToString {
-    case Ok(t),
-    case Err(e)
-}
-
-instance Hash[Result[e, t]] with Hash[e], Hash[t] {
-    pub def hash(r: Result[e, t]): Int32 = match r {
-        case Ok(v)  => 5381 + 113 * Hash.hash(v)
-        case Err(v) => 5351 + 97 * Hash.hash(v)
-    }
-}
-
-instance Functor[Result[e]] {
-    pub def map(f: a -> b \ ef, x: Result[e, a]): Result[e, b] \ ef = Result.map(f, x)
-}
-
-instance Applicative[Result[e]] {
-    pub def point(a: a) : Result[e, a] = Ok(a)
-    pub def ap(f: Result[e, a -> b \ ef], x: Result[e, a]): Result[e, b] \ ef = Result.ap(f, x)
-}
-
-instance Monad[Result[e]] {
-    pub def flatMap(f: a -> Result[e, b] \ ef, x : Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
-}
-
-instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
-    type Aef = Formattable.Aef[e] + Formattable.Aef[t]
-
-    pub def format(x: Result[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
-        case Ok(v)  => RichString.fromString("Ok(") + Formattable.format(v) + RichString.fromString(")")
-        case Err(e) => RichString.fromString("Err(") + Formattable.format(e) + RichString.fromString(")")
-    }
-}
-
 pub mod Result {
 
     import java.lang.Exception
+
+    ///
+    /// The Result type.
+    ///
+    /// A result represents a successful value or an error value.
+    /// The constructor `Ok(v)` represents the successful value `v`,
+    /// whereas the constructor `Err(v)` represents the error value `v`.
+    ///
+    pub enum Result[e, t] with Eq, Order, ToString {
+        case Ok(t),
+        case Err(e)
+    }
+
+    instance Hash[Result[e, t]] with Hash[e], Hash[t] {
+        pub def hash(r: Result[e, t]): Int32 = match r {
+            case Ok(v)  => 5381 + 113 * Hash.hash(v)
+            case Err(v) => 5351 + 97 * Hash.hash(v)
+        }
+    }
+
+    instance Functor[Result[e]] {
+        pub def map(f: a -> b \ ef, x: Result[e, a]): Result[e, b] \ ef = Result.map(f, x)
+    }
+
+    instance Applicative[Result[e]] {
+        pub def point(a: a) : Result[e, a] = Ok(a)
+        pub def ap(f: Result[e, a -> b \ ef], x: Result[e, a]): Result[e, b] \ ef = Result.ap(f, x)
+    }
+
+    instance Monad[Result[e]] {
+        pub def flatMap(f: a -> Result[e, b] \ ef, x : Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
+    }
+
+    instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
+        type Aef = Formattable.Aef[e] + Formattable.Aef[t]
+
+        pub def format(x: Result[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
+            case Ok(v)  => RichString.fromString("Ok(") + Formattable.format(v) + RichString.fromString(")")
+            case Err(e) => RichString.fromString("Err(") + Formattable.format(e) + RichString.fromString(")")
+        }
+    }
 
     ///
     /// Returns `true` iff `r` is `Ok(v)`.

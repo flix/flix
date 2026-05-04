@@ -59,6 +59,10 @@ object SimplifiedAstPrinter {
     case Stm(exps, exp, _, _, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
+    case Switch(exp, _, cases, defaultExp, _, _, _) =>
+      val cs = cases.map { case (sym, body) => (DocAst.Expr.Meta(sym.toString), None, print(body)) }
+      val d = (DocAst.Expr.Meta("_"), None, print(defaultExp))
+      DocAst.Expr.Match(print(exp), cs :+ d)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVarSym(sym), fparams.map(printFormalParam), Some(SimpleTypePrinter.print(tpe)), Some(PurityPrinter.print(eff)), print(exp1), print(exp2))
     case Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))

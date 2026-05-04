@@ -183,6 +183,12 @@ object LambdaLift {
     case SimplifiedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
       LiftedAst.Expr.JumpTo(sym, tpe, purity, loc)
 
+    case SimplifiedAst.Expr.Switch(exp, enumSym, cases, defaultExp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val cs = cases.map { case (sym, br) => sym -> visitExp(br) }
+      val d = visitExp(defaultExp)
+      LiftedAst.Expr.Switch(e, enumSym, cs, d, tpe, purity, loc)
+
     case SimplifiedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)

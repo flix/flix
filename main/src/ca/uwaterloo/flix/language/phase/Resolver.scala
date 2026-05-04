@@ -46,16 +46,19 @@ object Resolver {
 
   /**
     * The set of cases that are used by default in the namespace.
+    *
+    * NB: Ordinal is -1 because these are lookup keys used only for namespace/name resolution,
+    * never compared for equality with real CaseSyms.
     */
   private val DefaultCases = Map(
-    "Nil" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "List", SourceLocation.Unknown), "Nil", SourceLocation.Unknown),
-    "Cons" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "List", SourceLocation.Unknown), "Cons", SourceLocation.Unknown),
+    "Nil" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "List", SourceLocation.Unknown), "Nil", -1, SourceLocation.Unknown),
+    "Cons" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "List", SourceLocation.Unknown), "Cons", -1, SourceLocation.Unknown),
 
-    "None" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Option", SourceLocation.Unknown), "None", SourceLocation.Unknown),
-    "Some" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Option", SourceLocation.Unknown), "Some", SourceLocation.Unknown),
+    "None" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Option", SourceLocation.Unknown), "None", -1, SourceLocation.Unknown),
+    "Some" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Option", SourceLocation.Unknown), "Some", -1, SourceLocation.Unknown),
 
-    "Err" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Err", SourceLocation.Unknown),
-    "Ok" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Ok", SourceLocation.Unknown)
+    "Err" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Err", -1, SourceLocation.Unknown),
+    "Ok" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Ok", -1, SourceLocation.Unknown)
   )
 
   /**
@@ -1185,7 +1188,7 @@ object Resolver {
       val es = exps.map(resolveExp(_, scp0))
       scp0.superClass match {
         case Some(clazz) =>
-          ResolvedAst.Expr.InvokeSuperMethod(clazz, methodName, es, loc)
+          ResolvedAst.Expr.InvokeSuperMethod(clazz, methodName, es, scp0.superTargs, loc)
         case None =>
           val error = ResolutionError.IllegalSuperCall(loc)
           sctx.errors.add(error)
@@ -1203,8 +1206,8 @@ object Resolver {
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
       getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
         case Some(clazz) =>
-          val targs = t.typeArguments
-          val superScp = scp0.withSuperClass(Some(clazz))
+          val targs = UnkindedType.eraseAliases(t).typeArguments
+          val superScp = scp0.withSuperClass(Some(clazz)).withSuperTargs(targs)
           val cs = constructors.map(visitJvmConstructor(_, superScp))
           val ms = methods.map(visitJvmMethod(_, superScp))
           ResolvedAst.Expr.NewObject(name, clazz, targs, cs, ms, loc)

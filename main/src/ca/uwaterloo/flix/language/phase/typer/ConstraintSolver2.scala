@@ -168,20 +168,20 @@ object ConstraintSolver2 {
             }
             .flatMap(eliminateIdentities(_, progress))
             .flatMap(eliminateErrors(_, progress))
-            .map(reduceTypes(_, progress))
+            .flatMap(reduceTypes(_, progress))
             .flatMapSubst(makeSubstitution(_, progress))
             .exhaustively(progress) {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
             .flatMap(eliminateIdentities(_, progress))
             .flatMap(eliminateErrors(_, progress))
-            .map(reduceTypes(_, progress))
+            .flatMap(reduceTypes(_, progress))
             .exhaustively(progress) {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
             .flatMap(eliminateIdentities(_, progress))
             .flatMap(eliminateErrors(_, progress))
-            .map(reduceTypes(_, progress))
+            .flatMap(reduceTypes(_, progress))
             .flatMapSubst(recordUnification(_, progress))
             .flatMapSubst(schemaUnification(_, progress))
             .map(purifyEmptyRegion(_, progress))
@@ -549,16 +549,23 @@ object ConstraintSolver2 {
     * Performs reduction on the types in the given type constraints.
     */
   // (redU)
-  private def reduceTypes(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): TypeConstraint = constr match {
+  private def reduceTypes(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): List[TypeConstraint] = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-      TypeConstraint.Equality(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), prov)
+      val (r1, cs1) = reduce(tpe1)(scope, renv, progress, eqenv, flix)
+      val (r2, cs2) = reduce(tpe2)(scope, renv, progress, eqenv, flix)
+      TypeConstraint.Equality(r1, r2, prov) :: cs1 ::: cs2
     case TypeConstraint.Trait(sym, tpe, loc) =>
-      TypeConstraint.Trait(sym, reduce(tpe, scope, renv)(progress, eqenv, flix), loc)
+      val (r, cs) = reduce(tpe)(scope, renv, progress, eqenv, flix)
+      TypeConstraint.Trait(sym, r, loc) :: cs
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested) =>
-      TypeConstraint.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), prov, nested.map(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix)))
+      val (r1, cs1) = reduce(eff1)(scope, renv, progress, eqenv, flix)
+      val (r2, cs2) = reduce(eff2)(scope, renv, progress, eqenv, flix)
+      TypeConstraint.Purification(sym, r1, r2, prov, nested.flatMap(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix))) :: cs1 ::: cs2
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
-      TypeConstraint.Conflicted(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), prov)
-    case TypeConstraint.EffConflicted(_) => constr
+      val (r1, cs1) = reduce(tpe1)(scope, renv, progress, eqenv, flix)
+      val (r2, cs2) = reduce(tpe2)(scope, renv, progress, eqenv, flix)
+      TypeConstraint.Conflicted(r1, r2, prov) :: cs1 ::: cs2
+    case TypeConstraint.EffConflicted(_) => List(constr)
   }
 
   /**

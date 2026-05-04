@@ -10,6 +10,8 @@ mod Test.Exp.Jvm.Generic.Poly {
     import java.util.LinkedList
     import java.util.{List => JList}
     import java.util.{Set => JSet}
+    import java.util.Optional
+    import java.util.Objects
     import java.util.TreeMap
 
     @Test
@@ -130,5 +132,59 @@ mod Test.Exp.Jvm.Generic.Poly {
         let l: LinkedList[String] = new LinkedList();
         l.add("hello");
         assertEq(expected = "hello", l.getFirst())
+
+    /// Polymorphic add to ArrayList.
+    def polyAdd(l: ArrayList[a], x: a): Bool \ IO = l.add(x)
+
+    @Test
+    def testPolyAdd21(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        assertTrue(polyAdd(l, "hello"))
+
+    @Test
+    def testPolyAdd22(): Unit \ {Assert, IO} =
+        let l: ArrayList[Int32] = new ArrayList();
+        assertTrue(polyAdd(l, 42))
+
+    /// Polymorphic get from ArrayList.
+    def polyGet(l: ArrayList[a], i: Int32): a \ IO = l.get(i)
+
+    @Test
+    def testPolyGet23(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        discard l.add("world");
+        assertEq(expected = "world", polyGet(l, 0))
+
+    /// Polymorphic Optional.of.
+    def polyOptionalOf(x: a): Optional[a] \ IO = Optional.of(x)
+
+    @Test
+    def testPolyOptionalOf24(): Unit \ {Assert, IO} =
+        let opt = polyOptionalOf("test");
+        assertTrue(opt.isPresent())
+
+    @Test
+    def testPolyOptionalOf25(): Unit \ {Assert, IO} =
+        let opt = polyOptionalOf(99);
+        assertTrue(opt.isPresent())
+
+    /// Polymorphic Objects.isNull.
+    def polyIsNull(x: a): Bool = Objects.isNull(x)
+
+    @Test
+    def testPolyIsNull26(): Unit \ Assert =
+        assertTrue(not polyIsNull("hello"))
+
+    /// Polymorphic HashMap put and get.
+    def polyPut(m: HashMap[k, v], k: k, v: v): Unit \ IO =
+        discard m.put(k, v)
+
+    def polyGet2(m: HashMap[k, v], k: k): v \ IO = m.get(k)
+
+    @Test
+    def testPolyHashMap27(): Unit \ {Assert, IO} =
+        let m: HashMap[String, Int32] = new HashMap();
+        polyPut(m, "x", 1);
+        assertEq(expected = 1, polyGet2(m, "x"))
 
 }

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-pub enum Comparison with Eq, ToString {
-    case LessThan
-    case EqualTo
-    case GreaterThan
-}
-
 pub mod Comparison {
+
+    pub enum Comparison with Eq, ToString {
+        case LessThan
+        case EqualTo
+        case GreaterThan
+    }
 
     ///
     /// Converts a `Comparison` value to an integer.

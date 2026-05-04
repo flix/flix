@@ -180,24 +180,7 @@ mod TestNec {
 
     @Test
     def get01(): Unit \ Assert =
-        let r = run Nec.get(1, necOf3("a", "b", "c")) with handler OutOfBounds {
-            def outOfBounds(_, _) = "error"
-        };
-        assertEq(expected = "b", r)
-
-    @Test
-    def get02(): Unit \ Assert =
-        let r = run Nec.get(5, necOf3("a", "b", "c")) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index 5 is out of bounds for Nec of length 3", r)
-
-    @Test
-    def get03(): Unit \ Assert =
-        let r = run Nec.get(-1, necOf3("a", "b", "c")) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index -1 is out of bounds for Nec of length 3", r)
+        assertEq(expected = "b", Nec.get(1, necOf3("a", "b", "c")))
 
     /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //

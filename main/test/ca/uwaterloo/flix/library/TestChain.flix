@@ -151,24 +151,7 @@ mod TestChain {
 
     @Test
     def get01(): Unit \ Assert =
-        let r = run Chain.get(1, List.toChain("a" :: "b" :: "c" :: Nil)) with handler OutOfBounds {
-            def outOfBounds(_, _) = "error"
-        };
-        assertEq(expected = "b", r)
-
-    @Test
-    def get02(): Unit \ Assert =
-        let r = run Chain.get(5, List.toChain("a" :: "b" :: "c" :: Nil)) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index 5 is out of bounds for Chain of length 3", r)
-
-    @Test
-    def get03(): Unit \ Assert =
-        let r = run Chain.get(-1, List.toChain("a" :: "b" :: "c" :: Nil)) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index -1 is out of bounds for Chain of length 3", r)
+        assertEq(expected = "b", Chain.get(1, List.toChain("a" :: "b" :: "c" :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //

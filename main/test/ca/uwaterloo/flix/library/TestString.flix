@@ -8,24 +8,7 @@ mod TestString {
 
     @Test
     def get01(): Unit \ Assert =
-        let r = run String.get(0, "Hello") with handler OutOfBounds {
-            def outOfBounds(_, _) = '?'
-        };
-        assertEq(expected = 'H', r)
-
-    @Test
-    def get02(): Unit \ Assert =
-        let r = run String.get(15, "Hello World!") with handler OutOfBounds {
-            def outOfBounds(_, _) = '?'
-        };
-        assertEq(expected = '?', r)
-
-    @Test
-    def get03(): Unit \ Assert =
-        let r = run String.get(-1, "Hello World!") with handler OutOfBounds {
-            def outOfBounds(_, _) = '?'
-        };
-        assertEq(expected = '?', r)
+        assertEq(expected = 'H', String.get(0, "Hello"))
 
     /////////////////////////////////////////////////////////////////////////////
     // charAt                                                                  //
@@ -1915,6 +1898,37 @@ mod TestString {
             };
         assertEq(expected = "acegi", String.unfoldWithIter(step))
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterate                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterate01(): Unit \ Assert =
+        assertEq(expected = "", String.iterate(_c -> (None: Option[Char]), 'a'))
+
+    @Test
+    def iterate02(): Unit \ Assert =
+        assertEq(expected = "A", String.iterate(c -> if (c == 'A') None else Some(Char.toUpperCase(c)), 'a'))
+
+    @Test
+    def iterate03(): Unit \ Assert =
+        assertEq(expected = "bcd", String.iterate(c -> match c {
+            case 'a' => Some('b')
+            case 'b' => Some('c')
+            case 'c' => Some('d')
+            case _   => None
+        }, 'a'))
+
+    @Test
+    def iterate04(): Unit \ Assert =
+        assertEq(expected = "bcde", String.iterate(c -> match c {
+            case 'a' => Some('b')
+            case 'b' => Some('c')
+            case 'c' => Some('d')
+            case 'd' => Some('e')
+            case _   => None
+        }, 'a'))
 
     /////////////////////////////////////////////////////////////////////////////
     // unfoldString                                                            //

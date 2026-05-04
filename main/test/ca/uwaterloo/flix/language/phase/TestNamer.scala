@@ -634,6 +634,66 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
+  test("CompanionMustBeFirst.Enum.01") {
+    val input =
+      """
+        |mod A.B {
+        |    def f(): Int32 = 123
+        |    enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBeFirst](result)
+  }
+
+  test("CompanionMustBeFirst.Struct.01") {
+    val input =
+      """
+        |mod A.B {
+        |    def f(): Int32 = 123
+        |    struct B { x: Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBeFirst](result)
+  }
+
+  test("CompanionMustBeFirst.Effect.01") {
+    val input =
+      """
+        |mod A.B {
+        |    def f(): Int32 = 123
+        |    eff B { def op(): Unit }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBeFirst](result)
+  }
+
+  test("CompanionMustBeFirst.Trait.01") {
+    val input =
+      """
+        |mod A.B {
+        |    def f(): Int32 = 123
+        |    trait B[a]
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBeFirst](result)
+  }
+
+  test("CompanionIsFirst.Enum.01") {
+    val input =
+      """
+        |mod A.B {
+        |    enum B { case B }
+        |    def f(): Int32 = 123
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.CompanionMustBeFirst](result)
+  }
+
   test("Regression.01") {
     // See https://github.com/flix/flix/issues/10116
     // We ensure that duplicate names do not cause unrelated resolution errors

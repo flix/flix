@@ -14,41 +14,38 @@
  *  limitations under the License.
  */
 
-import java.nio.charset.CharsetDecoder
-import java.nio.ByteBuffer
-import java.nio.CharBuffer
-
-///
-/// Adapts a `Readable` of bytes to a `Readable` of chars.
-///
-/// `byteReader`: the underlying byte reader, an instance of `Readable where Readable.Elm[t] ~ Int8`.
-/// `decoder`: used to decode bytes read from `byteReader`.
-/// `leftovers`: stores bytes that have been consumed from `byteReader` but have not yet been decoded;
-///              either because they are lead bytes whose continuation bytes have not been read, or
-///              because `DecodingReader` overestimated the number of bytes needed to fill a char buffer.
-///
-struct DecodingReader[t, r] {
-    rc: Region[r],
-    byteReader: t,
-    decoder: CharsetDecoder,
-    mut leftovers: Array[Int8, r]
-}
-
-instance Readable[DecodingReader[t, rr]] with Readable[t] where Readable.Elm[t] ~ Int8 {
-
-    type Elm = Char
-
-    type Aef = Readable.Aef[t] + IO + rr
-
-    pub def read(buffer: Array[Char, rb], reader: DecodingReader[t, rr]): Result[IoError, Int32] \ rb + rr + Readable.Aef[t] + IO = DecodingReader.read(buffer, reader)
-
-}
-
 pub mod DecodingReader {
+
     import java.nio.charset.CharsetDecoder
     import java.nio.charset.CodingErrorAction
     import java.nio.ByteBuffer
     import java.nio.CharBuffer
+
+    ///
+    /// Adapts a `Readable` of bytes to a `Readable` of chars.
+    ///
+    /// `byteReader`: the underlying byte reader, an instance of `Readable where Readable.Elm[t] ~ Int8`.
+    /// `decoder`: used to decode bytes read from `byteReader`.
+    /// `leftovers`: stores bytes that have been consumed from `byteReader` but have not yet been decoded;
+    ///              either because they are lead bytes whose continuation bytes have not been read, or
+    ///              because `DecodingReader` overestimated the number of bytes needed to fill a char buffer.
+    ///
+    struct DecodingReader[t, r] {
+        rc: Region[r],
+        byteReader: t,
+        decoder: CharsetDecoder,
+        mut leftovers: Array[Int8, r]
+    }
+
+    instance Readable[DecodingReader[t, rr]] with Readable[t] where Readable.Elm[t] ~ Int8 {
+
+        type Elm = Char
+
+        type Aef = Readable.Aef[t] + IO + rr
+
+        pub def read(buffer: Array[Char, rb], reader: DecodingReader[t, rr]): Result[IoError, Int32] \ rb + rr + Readable.Aef[t] + IO = DecodingReader.read(buffer, reader)
+
+    }
 
     ///
     /// Wraps `byteReader` in a `DecodingReader`.

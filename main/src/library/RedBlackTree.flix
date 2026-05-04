@@ -14,92 +14,92 @@
  * limitations under the License.
  */
 
-///
-/// An immutable red-black tree implementation with keys
-/// of type `k` and values of type `v`.
-///
-/// A red-black tree is a self-balancing binary search tree.
-/// Each node is either red or black, although a transitory
-/// color double-black is allowed during deletion.
-/// The red-black tree satisfy the following invariants.
-///
-/// 1. For all nodes with key `x`,
-/// the left subtree contains only nodes with keys `y` < `x` and
-/// the right subtree contains only nodes with keys `z` > `x`.
-/// 2. No red node has a red parent.
-/// 3. Every path from the root to a leaf contains the same
-/// number of black nodes.
-///
-pub enum RedBlackTree[k, v] {
-
-    ///
-    /// A black leaf.
-    ///
-    case Leaf
-
-    ///
-    /// A double-black leaf.
-    ///
-    case DoubleBlackLeaf
-
-    ///
-    /// A tree node consists of a color, left subtree, key, value and right subtree.
-    ///
-    case Node(RedBlackTree.Color, RedBlackTree[k, v], k, v, RedBlackTree[k, v])
-
-}
-
-instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
-    pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool =
-        RedBlackTree.toList(t1) == RedBlackTree.toList(t2)
-}
-
-instance Functor[RedBlackTree[k]] {
-    pub def map(f: a -> b \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = RedBlackTree.mapWithKey((_, v) -> f(v), t)
-}
-
-instance Foldable[RedBlackTree[k]] {
-    pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldLeft((acc, _, v) -> f(acc, v), s, t)
-    pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRight((_, v, acc) -> f(v, acc), s, t)
-    redef isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
-}
-
-instance UnorderedFoldable[RedBlackTree[k]] {
-    pub def foldMap(f: v -> b \ ef, t: RedBlackTree[k, v]): b \ ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
-    redef isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
-    redef exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
-    redef forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
-}
-
-instance Traversable[RedBlackTree[k]] {
-    pub def traverse(f: a -> m[b] \ ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] \ ef with Applicative[m] =
-        RedBlackTree.mapAWithKey((_, v) -> f(v), t)
-
-    redef sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
-        RedBlackTree.mapAWithKey((_, v) -> v, t)
-}
-
-instance Filterable[RedBlackTree[k]] with Order[k] {
-    pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = RedBlackTree.filterMap(f, t)
-    redef filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = RedBlackTree.filter(f, t)
-}
-
-instance Witherable[RedBlackTree[k]] with Order[k]
-
-instance Iterable[RedBlackTree[k, v]] {
-    type Elm = (k, v)
-    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
-            RedBlackTree.iterator(rc, t)
-}
-
-instance ForEach[RedBlackTree[k, v]] {
-    type Elm = (k, v)
-    pub def forEach(f: ((k, v)) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = RedBlackTree.forEach(k -> v -> f((k, v)), t)
-}
-
 pub mod RedBlackTree {
 
     import java.lang.Runtime
+
+    ///
+    /// An immutable red-black tree implementation with keys
+    /// of type `k` and values of type `v`.
+    ///
+    /// A red-black tree is a self-balancing binary search tree.
+    /// Each node is either red or black, although a transitory
+    /// color double-black is allowed during deletion.
+    /// The red-black tree satisfy the following invariants.
+    ///
+    /// 1. For all nodes with key `x`,
+    /// the left subtree contains only nodes with keys `y` < `x` and
+    /// the right subtree contains only nodes with keys `z` > `x`.
+    /// 2. No red node has a red parent.
+    /// 3. Every path from the root to a leaf contains the same
+    /// number of black nodes.
+    ///
+    pub enum RedBlackTree[k, v] {
+
+        ///
+        /// A black leaf.
+        ///
+        case Leaf
+
+        ///
+        /// A double-black leaf.
+        ///
+        case DoubleBlackLeaf
+
+        ///
+        /// A tree node consists of a color, left subtree, key, value and right subtree.
+        ///
+        case Node(RedBlackTree.Color, RedBlackTree[k, v], k, v, RedBlackTree[k, v])
+
+    }
+
+    instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
+        pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool =
+            RedBlackTree.toList(t1) == RedBlackTree.toList(t2)
+    }
+
+    instance Functor[RedBlackTree[k]] {
+        pub def map(f: a -> b \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = RedBlackTree.mapWithKey((_, v) -> f(v), t)
+    }
+
+    instance Foldable[RedBlackTree[k]] {
+        pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldLeft((acc, _, v) -> f(acc, v), s, t)
+        pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRight((_, v, acc) -> f(v, acc), s, t)
+        redef isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
+    }
+
+    instance UnorderedFoldable[RedBlackTree[k]] {
+        pub def foldMap(f: v -> b \ ef, t: RedBlackTree[k, v]): b \ ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
+        redef isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
+        redef exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
+        redef forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
+    }
+
+    instance Traversable[RedBlackTree[k]] {
+        pub def traverse(f: a -> m[b] \ ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] \ ef with Applicative[m] =
+            RedBlackTree.mapAWithKey((_, v) -> f(v), t)
+
+        redef sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
+            RedBlackTree.mapAWithKey((_, v) -> v, t)
+    }
+
+    instance Filterable[RedBlackTree[k]] with Order[k] {
+        pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = RedBlackTree.filterMap(f, t)
+        redef filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = RedBlackTree.filter(f, t)
+    }
+
+    instance Witherable[RedBlackTree[k]] with Order[k]
+
+    instance Iterable[RedBlackTree[k, v]] {
+        type Elm = (k, v)
+        pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
+                RedBlackTree.iterator(rc, t)
+    }
+
+    instance ForEach[RedBlackTree[k, v]] {
+        type Elm = (k, v)
+        pub def forEach(f: ((k, v)) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = RedBlackTree.forEach(k -> v -> f((k, v)), t)
+    }
 
     ///
     /// The color of a red-black tree node.
@@ -494,20 +494,44 @@ pub mod RedBlackTree {
     /// Helper function for `insert` and `delete`.
     ///
     def balance(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Color.Black, Node(Color.Red, Node(Color.Red, a, k1, v1, b), k2, v2, c), k3, v3, d) =>
-            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case Node(Color.Black, Node(Color.Red, a, k1, v1, Node(Color.Red, b, k2, v2, c)), k3, v3, d) =>
-            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case Node(Color.Black, a, k1, v1, Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d)) =>
-            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case Node(Color.Black, a, k1, v1, Node(Color.Red, b, k2, v2, Node(Color.Red, c, k3, v3, d))) =>
-            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case Node(Color.DoubleBlack, a, k1, v1, Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d)) =>
-            Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case Node(Color.DoubleBlack, Node(Color.Red, a, k1, v1, Node(Color.Red, b, k2, v2, c)), k3, v3, d) =>
-            Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+        case Node(Color.Black, left, k1, v1, right) =>
+            balanceBlack(t, left, k1, v1, right)
+        case Node(Color.DoubleBlack, left, k1, v1, right) =>
+            balanceDoubleBlack(t, left, k1, v1, right)
         case _ => t
     }
+
+    ///
+    /// Helper function for `balance`. Handles the black node cases.
+    ///
+    def balanceBlack(t: RedBlackTree[k, v], left: RedBlackTree[k, v], k1: k, v1: v, right: RedBlackTree[k, v]): RedBlackTree[k, v] =
+        match left {
+            case Node(Color.Red, Node(Color.Red, a, k2, v2, b), k3, v3, c) =>
+                Node(Color.Red, Node(Color.Black, a, k2, v2, b), k3, v3, Node(Color.Black, c, k1, v1, right))
+            case Node(Color.Red, a, k2, v2, Node(Color.Red, b, k3, v3, c)) =>
+                Node(Color.Red, Node(Color.Black, a, k2, v2, b), k3, v3, Node(Color.Black, c, k1, v1, right))
+            case _ => match right {
+                case Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d) =>
+                    Node(Color.Red, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+                case Node(Color.Red, b, k2, v2, Node(Color.Red, c, k3, v3, d)) =>
+                    Node(Color.Red, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+                case _ => t
+            }
+        }
+
+    ///
+    /// Helper function for `balance`. Handles the double-black node cases.
+    ///
+    def balanceDoubleBlack(t: RedBlackTree[k, v], left: RedBlackTree[k, v], k1: k, v1: v, right: RedBlackTree[k, v]): RedBlackTree[k, v] =
+        match right {
+            case Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d) =>
+                Node(Color.Black, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+            case _ => match left {
+                case Node(Color.Red, a, k2, v2, Node(Color.Red, b, k3, v3, c)) =>
+                    Node(Color.Black, Node(Color.Black, a, k2, v2, b), k3, v3, Node(Color.Black, c, k1, v1, right))
+                case _ => t
+            }
+        }
 
     ///
     /// Helper function for `insert`.
@@ -524,32 +548,73 @@ pub mod RedBlackTree {
     /// Helper function for `delete`.
     ///
     def rotate(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Color.Red, Node(Color.DoubleBlack, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d)) =>
-            balance(Node(Color.Black, Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, c), k3, v3, d))
-        case Node(Color.Red, DoubleBlackLeaf, k2, v2, Node(Color.Black, c, k3, v3, d)) =>
-            balance(Node(Color.Black, Node(Color.Red, Leaf, k2, v2, c), k3, v3, d))
-        case Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.DoubleBlack, c, k3, v3, d)) =>
-            balance(Node(Color.Black, a, k1, v1, Node(Color.Red, b, k2, v2, Node(Color.Black, c, k3, v3, d))))
-        case Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, DoubleBlackLeaf) =>
-            balance(Node(Color.Black, a, k1, v1, Node(Color.Red, b, k2, v2, Leaf)))
-        case Node(Color.Black, Node(Color.DoubleBlack, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d)) =>
-            balance(Node(Color.DoubleBlack, Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, c), k3, v3, d))
-        case Node(Color.Black, DoubleBlackLeaf, k2, v2, Node(Color.Black, c, k3, v3, d)) =>
-            balance(Node(Color.DoubleBlack, Node(Color.Red, Leaf, k2, v2, c), k3, v3, d))
-        case Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.DoubleBlack, c, k3, v3, d)) =>
-            balance(Node(Color.DoubleBlack, a, k1, v1, Node(Color.Red, b, k2, v2, Node(Color.Black, c, k3, v3, d))))
-        case Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, DoubleBlackLeaf) =>
-            balance(Node(Color.DoubleBlack, a, k1, v1, Node(Color.Red, b, k2, v2, Leaf)))
-        case Node(Color.Black, Node(Color.DoubleBlack, a, k4, v4, b), k1, v1, Node(Color.Red, Node(Color.Black, c, k2, v2, d), k3, v3, e)) =>
-            Node(Color.Black, balance(Node(Color.Black, Node(Color.Red, Node(Color.Black, a, k4, v4, b), k1, v1, c), k2, v2, d)), k3, v3, e)
-        case Node(Color.Black, DoubleBlackLeaf, k1, v1, Node(Color.Red, Node(Color.Black, c, k2, v2, d), k3, v3, e)) =>
-            Node(Color.Black, balance(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, c), k2, v2, d)), k3, v3, e)
-        case Node(Color.Black, Node(Color.Red, a, k4, v4, Node(Color.Black, b, k1, v1, c)), k2, v2, Node(Color.DoubleBlack, d, k3, v3, e)) =>
-            Node(Color.Black, a, k4, v4, balance(Node(Color.Black, b, k1, v1, Node(Color.Red, c, k2, v2, Node(Color.Black, d, k3, v3, e)))))
-        case Node(Color.Black, Node(Color.Red, a, k4, v4, Node(Color.Black, b, k1, v1, c)), k2, v2, DoubleBlackLeaf) =>
-            Node(Color.Black, a, k4, v4, balance(Node(Color.Black, b, k1, v1, Node(Color.Red, c, k2, v2, Leaf))))
+        case Node(Color.Red, left, k1, v1, right) =>
+            rotateRed(t, left, k1, v1, right)
+        case Node(Color.Black, left, k1, v1, right) =>
+            rotateBlack(t, left, k1, v1, right)
         case _ => t
     }
+
+    ///
+    /// Helper function for `rotate`. Handles the red node cases.
+    ///
+    def rotateRed(t: RedBlackTree[k, v], left: RedBlackTree[k, v], k1: k, v1: v, right: RedBlackTree[k, v]): RedBlackTree[k, v] =
+        match left {
+            case Node(Color.DoubleBlack, a, k2, v2, b) => match right {
+                case Node(Color.Black, c, k3, v3, d) =>
+                    balance(Node(Color.Black, Node(Color.Red, Node(Color.Black, a, k2, v2, b), k1, v1, c), k3, v3, d))
+                case _ => t
+            }
+            case DoubleBlackLeaf => match right {
+                case Node(Color.Black, c, k3, v3, d) =>
+                    balance(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, c), k3, v3, d))
+                case _ => t
+            }
+            case Node(Color.Black, a, k2, v2, b) => match right {
+                case Node(Color.DoubleBlack, c, k3, v3, d) =>
+                    balance(Node(Color.Black, a, k2, v2, Node(Color.Red, b, k1, v1, Node(Color.Black, c, k3, v3, d))))
+                case DoubleBlackLeaf =>
+                    balance(Node(Color.Black, a, k2, v2, Node(Color.Red, b, k1, v1, Leaf)))
+                case _ => t
+            }
+            case _ => t
+        }
+
+    ///
+    /// Helper function for `rotate`. Handles the black node cases.
+    ///
+    def rotateBlack(t: RedBlackTree[k, v], left: RedBlackTree[k, v], k1: k, v1: v, right: RedBlackTree[k, v]): RedBlackTree[k, v] =
+        match left {
+            case Node(Color.DoubleBlack, a, k2, v2, b) => match right {
+                case Node(Color.Black, c, k3, v3, d) =>
+                    balance(Node(Color.DoubleBlack, Node(Color.Red, Node(Color.Black, a, k2, v2, b), k1, v1, c), k3, v3, d))
+                case Node(Color.Red, Node(Color.Black, c, k3, v3, d), k4, v4, e) =>
+                    Node(Color.Black, balance(Node(Color.Black, Node(Color.Red, Node(Color.Black, a, k2, v2, b), k1, v1, c), k3, v3, d)), k4, v4, e)
+                case _ => t
+            }
+            case DoubleBlackLeaf => match right {
+                case Node(Color.Black, c, k3, v3, d) =>
+                    balance(Node(Color.DoubleBlack, Node(Color.Red, Leaf, k1, v1, c), k3, v3, d))
+                case Node(Color.Red, Node(Color.Black, c, k3, v3, d), k4, v4, e) =>
+                    Node(Color.Black, balance(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, c), k3, v3, d)), k4, v4, e)
+                case _ => t
+            }
+            case Node(Color.Black, a, k2, v2, b) => match right {
+                case Node(Color.DoubleBlack, c, k3, v3, d) =>
+                    balance(Node(Color.DoubleBlack, a, k2, v2, Node(Color.Red, b, k1, v1, Node(Color.Black, c, k3, v3, d))))
+                case DoubleBlackLeaf =>
+                    balance(Node(Color.DoubleBlack, a, k2, v2, Node(Color.Red, b, k1, v1, Leaf)))
+                case _ => t
+            }
+            case Node(Color.Red, a, k2, v2, Node(Color.Black, b, k3, v3, c)) => match right {
+                case Node(Color.DoubleBlack, d, k4, v4, e) =>
+                    Node(Color.Black, a, k2, v2, balance(Node(Color.Black, b, k3, v3, Node(Color.Red, c, k1, v1, Node(Color.Black, d, k4, v4, e)))))
+                case DoubleBlackLeaf =>
+                    Node(Color.Black, a, k2, v2, balance(Node(Color.Black, b, k3, v3, Node(Color.Red, c, k1, v1, Leaf))))
+                case _ => t
+            }
+            case _ => t
+        }
 
     ///
     /// Helper function for `delete`.
@@ -984,7 +1049,7 @@ pub mod RedBlackTree {
                 Ref.put(leftmost(rtree, es), state);
                 Some((k, v))
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// This represents pending items `(key, value, right-tree)` encountered while finding the

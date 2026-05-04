@@ -466,7 +466,7 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.InvokeSuperMethod(_, _, exps, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeSuperMethod(_, _, exps, _, jvar, tvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val returnTpe = subst(tvar)
       val methodTpe = subst(jvar)
@@ -522,8 +522,8 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e.eff, Type.IO, loc)
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
-    case KindedAst.Expr.NewObject(name, clazz, _, constructors, methods, _, loc) =>
-      val tpe = instantiateJavaTypeWithObjectArgs(clazz, loc)
+    case KindedAst.Expr.NewObject(name, clazz, _, constructors, methods, tvar, loc) =>
+      val tpe = subst(tvar)
       val eff = Type.IO
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)

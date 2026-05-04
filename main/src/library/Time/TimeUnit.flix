@@ -19,6 +19,19 @@ pub mod Time.TimeUnit {
     use Time.TimeUnit
 
     ///
+    /// Represents a time unit.
+    ///
+    pub enum TimeUnit with Eq, ToString {
+        case Days,
+        case Hours,
+        case Microseconds,
+        case Milliseconds,
+        case Minutes,
+        case Nanoseconds,
+        case Seconds
+    }
+
+    ///
     /// Returns the number of milliseconds for timeunit `u`
     ///
     pub def toMilliseconds(u: Time.TimeUnit): Int32 = match u {

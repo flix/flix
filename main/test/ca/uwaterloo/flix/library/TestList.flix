@@ -91,24 +91,7 @@ mod TestList {
 
     @Test
     def get01(): Unit \ Assert =
-        let r = run List.get(0, "a" :: "b" :: "c" :: Nil) with handler OutOfBounds {
-            def outOfBounds(_, _) = "error"
-        };
-        assertEq(expected = "a", r)
-
-    @Test
-    def get02(): Unit \ Assert =
-        let r = run List.get(5, "a" :: "b" :: "c" :: Nil) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index 5 is out of bounds for List of length 3", r)
-
-    @Test
-    def get03(): Unit \ Assert =
-        let r = run List.get(-1, "a" :: "b" :: "c" :: Nil) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index -1 is out of bounds for List of length 3", r)
+        assertEq(expected = "a", List.get(0, "a" :: "b" :: "c" :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
@@ -2493,6 +2476,26 @@ mod TestList {
             };
         assertEq(expected = 48 :: 50 :: 52 :: 54 :: 56 :: Nil, List.unfoldWithIter(step))
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterate                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterate01(): Unit \ Assert =
+        assertEq(expected = (Nil: List[Int32]), List.iterate(s -> if (true) None else Some(s + 1), 0))
+
+    @Test
+    def iterate02(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, List.iterate(s -> if (s >= 1) None else Some(s + 1), 0))
+
+    @Test
+    def iterate03(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, List.iterate(s -> if (s >= 3) None else Some(s + 1), 0))
+
+    @Test
+    def iterate04(): Unit \ Assert =
+        assertEq(expected = 2 :: 4 :: 6 :: 8 :: 10 :: Nil, List.iterate(s -> if (s >= 10) None else Some(s + 2), 0))
 
     /////////////////////////////////////////////////////////////////////////////
     // unfoldWithOkIter                                                        //

@@ -19,6 +19,20 @@ pub mod Fs.ReadFile {
     use Fs.FileRead
 
     ///
+    /// An effect used to read the contents of a file as a string.
+    ///
+    /// Use the `ReadFile.runWithFileRead` handler.
+    ///
+    pub eff ReadFile {
+
+        ///
+        /// Returns a string of all the contents of the given file `f`.
+        ///
+        def read(f: String): Result[IoError, String]
+
+    }
+
+    ///
     /// Handles the `ReadFile` effect of the given function `f` using the `FileRead` effect.
     ///
     pub def runWithFileRead(f: Unit -> a \ ef): a \ (ef - ReadFile) + FileRead =

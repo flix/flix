@@ -43,6 +43,29 @@ mod Test.Derives.Eq {
 
     pub enum OpaqueType(Int32) with Eq, ToString
 
+    /// All-nullary enum (no data-carrying variants).
+    pub enum AllNullaryEnum with Eq, ToString {
+        case A
+        case B
+        case C
+    }
+
+    /// Many nullary variants with a single data-carrying variant.
+    pub enum MostlyNullaryEnum with Eq, ToString {
+        case N1
+        case N2
+        case N3
+        case N4
+        case N5
+        case Data(Int32)
+    }
+
+    /// All data-carrying variants (no nullary).
+    pub enum AllDataEnum with Eq, ToString {
+        case First(Int32)
+        case Second(Bool)
+    }
+
     @Test
     def testEq01(): Unit \ Assert =
         assertEq(expected = Enum.EmptyCase, Enum.EmptyCase)
@@ -138,6 +161,61 @@ mod Test.Derives.Eq {
     @Test
     def testEq24(): Unit \ Assert =
         assertEq(expected = OpaqueType.OpaqueType(123), OpaqueType.OpaqueType(123))
+
+    // All-nullary enum tests
+    @Test
+    def testEqAllNullary01(): Unit \ Assert =
+        assertEq(expected = AllNullaryEnum.A, AllNullaryEnum.A)
+
+    @Test
+    def testEqAllNullary02(): Unit \ Assert =
+        assertEq(expected = AllNullaryEnum.B, AllNullaryEnum.B)
+
+    @Test
+    def testNeqAllNullary01(): Unit \ Assert =
+        assertNeq(unexpected = AllNullaryEnum.A, AllNullaryEnum.B)
+
+    @Test
+    def testNeqAllNullary02(): Unit \ Assert =
+        assertNeq(unexpected = AllNullaryEnum.A, AllNullaryEnum.C)
+
+    // Mostly-nullary enum tests
+    @Test
+    def testEqMostlyNullary01(): Unit \ Assert =
+        assertEq(expected = MostlyNullaryEnum.N1, MostlyNullaryEnum.N1)
+
+    @Test
+    def testEqMostlyNullary02(): Unit \ Assert =
+        assertEq(expected = MostlyNullaryEnum.Data(42), MostlyNullaryEnum.Data(42))
+
+    @Test
+    def testNeqMostlyNullary01(): Unit \ Assert =
+        assertNeq(unexpected = MostlyNullaryEnum.N1, MostlyNullaryEnum.N2)
+
+    @Test
+    def testNeqMostlyNullary02(): Unit \ Assert =
+        assertNeq(unexpected = MostlyNullaryEnum.Data(1), MostlyNullaryEnum.Data(2))
+
+    @Test
+    def testNeqMostlyNullary03(): Unit \ Assert =
+        assertNeq(unexpected = MostlyNullaryEnum.N1, MostlyNullaryEnum.Data(1))
+
+    // All-data enum tests
+    @Test
+    def testEqAllData01(): Unit \ Assert =
+        assertEq(expected = AllDataEnum.First(123), AllDataEnum.First(123))
+
+    @Test
+    def testEqAllData02(): Unit \ Assert =
+        assertEq(expected = AllDataEnum.Second(true), AllDataEnum.Second(true))
+
+    @Test
+    def testNeqAllData01(): Unit \ Assert =
+        assertNeq(unexpected = AllDataEnum.First(1), AllDataEnum.First(2))
+
+    @Test
+    def testNeqAllData02(): Unit \ Assert =
+        assertNeq(unexpected = AllDataEnum.First(1), AllDataEnum.Second(true))
 
     @Test
     def testNeq01(): Unit \ Assert =

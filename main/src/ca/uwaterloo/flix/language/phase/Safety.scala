@@ -827,7 +827,7 @@ object Safety {
         case JvmMethod(_, ident, fparams, _, _, _, methodLoc) =>
           val firstParam = fparams.head
           firstParam.tpe match {
-            case t if Type.eraseAliases(t) == tpe =>
+            case t if Type.classFromFlixType(Type.eraseAliases(t)).contains(clazz) =>
               ()
             case Type.Unit =>
               // Unit arguments are likely inserted by the compiler.
@@ -837,54 +837,33 @@ object Safety {
           }
       }
 
-      val flixMethods = getFlixMethodSignatures(methods)
-      val implemented = flixMethods.keySet
+      // Check for missing abstract method implementations (by name + arity).
+      val flixMethodNameAndArity = methods.map {
+        case JvmMethod(_, ident, fparams, _, _, _, _) => (ident.name, fparams.tail.length)
+      }.toSet
 
-      val classMethods = getInstanceMethods(clazz)
-      val objectClassMethods = getInstanceMethods(classOf[Object]).keySet
-      val canImplement = classMethods.keySet
-      val mustImplement = canImplement.filter(m =>
-        isAbstractMethod(classMethods(m)) && !objectClassMethods.contains(m)
-      )
+      val javaMethods = JvmUtils.getInstanceMethods(clazz)
+      val objectMethodNameAndArity = JvmUtils.getInstanceMethods(classOf[Object])
+        .map(m => (m.getName, m.getParameterCount)).toSet
 
-      // `methods` must include all required signatures (e.g. abstract methods).
-      val unimplemented = mustImplement.diff(implemented)
-      unimplemented.map(m => NewObjectMissingMethod(clazz, classMethods(m), loc)).foreach(sctx.errors.add)
+      val unimplementedMethods = javaMethods.filter { m =>
+        isAbstractMethod(m) &&
+        !objectMethodNameAndArity.contains((m.getName, m.getParameterCount)) &&
+        !flixMethodNameAndArity.contains((m.getName, m.getParameterCount))
+      }
+      unimplementedMethods.foreach(m => sctx.errors.add(NewObjectMissingMethod(clazz, m, loc)))
 
-      // `methods` must not include non-existing methods.
-      val undefined = implemented.diff(canImplement)
-      undefined.map(m => NewObjectUndefinedMethod(clazz, m.name, flixMethods(m).loc)).foreach(sctx.errors.add)
+      // Check for undefined methods (Flix methods not matching any Java method).
+      val javaMethodNameAndArity = javaMethods.map(m => (m.getName, m.getParameterCount)).toSet
+      val undefinedMethods = methods.filter {
+        case JvmMethod(_, ident, fparams, _, _, _, _) =>
+          !javaMethodNameAndArity.contains((ident.name, fparams.tail.length))
+      }
+      undefinedMethods.foreach(m => sctx.errors.add(NewObjectUndefinedMethod(clazz, m.ident.name, m.loc)))
 
       // `methods` must not let control effects escape.
       val controlEffecting = methods.filter(m => hasControlEffects(m.eff))
       controlEffecting.map(m => SafetyError.IllegalMethodEffect(m.eff, m.loc)).foreach(sctx.errors.add)
-  }
-
-  /**
-    * Represents the Flix signature of a Java method.
-    *
-    * The signature contains no [[Type.Alias]].
-    */
-  private case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
-
-  /** Returns a map of `methods` based on their [[MethodSignature]]. */
-  private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
-    methods.map {
-      case m@JvmMethod(_, ident, fparams, _, retTpe, _, _) =>
-        // Drop the first formal parameter (which always represents `this`)
-        val paramTypes = fparams.tail.map(_.tpe)
-        val signature = MethodSignature(ident.name, paramTypes.map(Type.eraseAliases), Type.eraseAliases(retTpe))
-        signature -> m
-    }.toMap
-  }
-
-  /** Returns the instance methods of `clazz` with their [[MethodSignature]]. */
-  private def getInstanceMethods(clazz: Class[?]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = JvmUtils.getInstanceMethods(clazz)
-    methods.map(m => {
-      val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.instantiateJavaTypeWithObjectArgs(_, SourceLocation.Unknown)), Type.instantiateJavaTypeWithObjectArgs(m.getReturnType, SourceLocation.Unknown))
-      signature -> m
-    }).toMap
   }
 
   /** Return `true` if `clazz` has a non-private constructor with zero arguments. */

@@ -18,6 +18,11 @@ pub mod Concurrent.CyclicBarrier {
     import java.util.concurrent.{CyclicBarrier => JCyclicBarrier}
 
     ///
+    /// A wrapper around a Java CyclicBarrier.
+    ///
+    pub enum CyclicBarrier(JCyclicBarrier)
+
+    ///
     /// Create a new CyclicBarrier which will wait for `parties` threads
     ///
     pub def newCyclicBarrier(parties: Int32): CyclicBarrier \ IO =

@@ -1116,10 +1116,12 @@ object Lowering {
 
   /**
     * Lowers `sym` from a restrictable case sym into a regular case sym.
+    *
+    * NB: Ordinal is -1 because restrictable enums do not have fixed ordinals.
     */
   private def lowerRestrictableCaseSym(sym: Symbol.RestrictableCaseSym): Symbol.CaseSym = {
     val enumSym = lowerRestrictableEnumSym(sym.enumSym)
-    new Symbol.CaseSym(enumSym, sym.name, sym.loc)
+    new Symbol.CaseSym(enumSym, sym.name, -1, sym.loc)
   }
 
   /**
@@ -1410,7 +1412,7 @@ object Lowering {
     *
     * @param elmType is assumed to be specialized and lowered.
     */
-  private def mkList(exps: List[MonoAst.Expr], elmType: Type, loc: SourceLocation): MonoAst.Expr = {
+  private def mkList(exps: List[MonoAst.Expr], elmType: Type, loc: SourceLocation)(implicit root: TypedAst.Root): MonoAst.Expr = {
     val nil = mkNil(elmType, loc)
     exps.foldRight(nil) {
       case (e, acc) => mkCons(e, acc, loc)
@@ -1422,14 +1424,14 @@ object Lowering {
     *
     * @param elmType is assumed to be specialized and lowered.
     */
-  private def mkNil(elmType: Type, loc: SourceLocation): MonoAst.Expr = {
+  private def mkNil(elmType: Type, loc: SourceLocation)(implicit root: TypedAst.Root): MonoAst.Expr = {
     mkTag(Enums.FList, "Nil", Nil, Types.mkList(elmType, loc), loc)
   }
 
   /**
     * returns a `Cons(hd, tail)` expression with type `tail.tpe`.
     */
-  private def mkCons(hd: MonoAst.Expr, tail: MonoAst.Expr, loc: SourceLocation): MonoAst.Expr = {
+  private def mkCons(hd: MonoAst.Expr, tail: MonoAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root): MonoAst.Expr = {
     mkTag(Enums.FList, "Cons", List(hd, tail), lowerType(tail.tpe), loc)
   }
 
@@ -1438,8 +1440,8 @@ object Lowering {
     *
     * @param tpe is assumed to be specialized and lowered.
     */
-  private def mkTag(sym: Symbol.EnumSym, tag: String, exps: List[MonoAst.Expr], tpe: Type, loc: SourceLocation): MonoAst.Expr = {
-    val caseSym = new Symbol.CaseSym(sym, tag, loc.asSynthetic)
+  private def mkTag(sym: Symbol.EnumSym, tag: String, exps: List[MonoAst.Expr], tpe: Type, loc: SourceLocation)(implicit root: TypedAst.Root): MonoAst.Expr = {
+    val caseSym = root.enums(sym).cases.values.find(_.sym.name == tag).get.sym
     MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, tpe, Type.Pure, loc)
   }
 
@@ -1840,7 +1842,7 @@ object Lowering {
   /**
     * Constructs a `Fixpoint/Ast/Datalog.HeadTerm.Var` from the given variable symbol `sym`.
     */
-  private def mkHeadTermVar(sym: Symbol.VarSym): MonoAst.Expr = {
+  private def mkHeadTermVar(sym: Symbol.VarSym)(implicit root: TypedAst.Root): MonoAst.Expr = {
     val innerExp = List(mkVarSym(sym))
     mkTag(Enums.HeadTerm, "Var", innerExp, Types.HeadTerm, sym.loc)
   }
@@ -1848,21 +1850,21 @@ object Lowering {
   /**
     * Constructs a `Fixpoint/Ast/Datalog.HeadTerm.Lit` value which wraps the given expression `exp`.
     */
-  private def mkHeadTermLit(exp: MonoAst.Expr): MonoAst.Expr = {
+  private def mkHeadTermLit(exp: MonoAst.Expr)(implicit root: TypedAst.Root): MonoAst.Expr = {
     mkTag(Enums.HeadTerm, "Lit", List(exp), Types.HeadTerm, exp.loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Wild` from the given source location `loc`.
     */
-  private def mkBodyTermWild(loc: SourceLocation): MonoAst.Expr = {
+  private def mkBodyTermWild(loc: SourceLocation)(implicit root: TypedAst.Root): MonoAst.Expr = {
     mkTag(Enums.BodyTerm, "Wild", Nil, Types.BodyTerm, loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Var` from the given variable symbol `sym`.
     */
-  private def mkBodyTermVar(sym: Symbol.VarSym): MonoAst.Expr = {
+  private def mkBodyTermVar(sym: Symbol.VarSym)(implicit root: TypedAst.Root): MonoAst.Expr = {
     val innerExp = List(mkVarSym(sym))
     mkTag(Enums.BodyTerm, "Var", innerExp, Types.BodyTerm, sym.loc)
   }
@@ -1870,14 +1872,14 @@ object Lowering {
   /**
     * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Lit` from the given expression `exp0`.
     */
-  private def mkBodyTermLit(exp: MonoAst.Expr): MonoAst.Expr = {
+  private def mkBodyTermLit(exp: MonoAst.Expr)(implicit root: TypedAst.Root): MonoAst.Expr = {
     mkTag(Enums.BodyTerm, "Lit", List(exp), Types.BodyTerm, exp.loc)
   }
 
   /**
     * Constructs a `Fixpoint/Ast/Datalog.VarSym` from the given variable symbol `sym`.
     */
-  private def mkVarSym(sym: Symbol.VarSym): MonoAst.Expr = {
+  private def mkVarSym(sym: Symbol.VarSym)(implicit root: TypedAst.Root): MonoAst.Expr = {
     val nameExp = MonoAst.Expr.Cst(Constant.Str(sym.text), Type.Str, sym.loc)
     mkTag(Enums.VarSym, "VarSym", List(nameExp), Types.VarSym, sym.loc)
   }
@@ -1915,7 +1917,7 @@ object Lowering {
   /**
     * Constructs a `Fixpoint/Ast/Datalog.Polarity` from the given polarity `p`.
     */
-  private def mkPolarity(p: Polarity, loc: SourceLocation): MonoAst.Expr = p match {
+  private def mkPolarity(p: Polarity, loc: SourceLocation)(implicit root: TypedAst.Root): MonoAst.Expr = p match {
     case Polarity.Positive =>
       mkTag(Enums.Polarity, "Positive", Nil, Types.Polarity, loc)
 
@@ -1926,7 +1928,7 @@ object Lowering {
   /**
     * Constructs a `Fixpoint/Ast/Datalog.Fixity` from the given fixity `f`.
     */
-  private def mkFixity(f: Fixity, loc: SourceLocation): MonoAst.Expr = f match {
+  private def mkFixity(f: Fixity, loc: SourceLocation)(implicit root: TypedAst.Root): MonoAst.Expr = f match {
     case Fixity.Loose =>
       mkTag(Enums.Fixity, "Loose", Nil, Types.Fixity, loc)
 
@@ -2068,7 +2070,7 @@ object Lowering {
   /**
     * Constructs a `Fixpoint/Ast/Shared.PredSym` from the given predicate `pred`.
     */
-  private def mkPredSym(pred: Name.Pred): MonoAst.Expr = pred match {
+  private def mkPredSym(pred: Name.Pred)(implicit root: TypedAst.Root): MonoAst.Expr = pred match {
     case Name.Pred(sym, loc) =>
       val nameExp = MonoAst.Expr.Cst(Constant.Str(sym), Type.Str, loc)
       val idExp = MonoAst.Expr.Cst(Constant.Int64(0), Type.Int64, loc)
@@ -2436,7 +2438,7 @@ object Lowering {
       rules = List(
         MonoAst.MatchRule(
           pat = MonoAst.Pattern.Tag(
-            symUse = SymUse.CaseSymUse(Symbol.mkCaseSym(Enums.PredSym, Name.Ident("PredSym", loc)), loc),
+            symUse = SymUse.CaseSymUse(root.enums(Enums.PredSym).cases.values.find(_.sym.name == "PredSym").get.sym, loc),
             pats = List(
               MonoAst.Pattern.Var(nameVar, Type.Str, Occur.Unknown, loc),
               MonoAst.Pattern.Wild(Type.Int64, loc)

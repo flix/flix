@@ -38,14 +38,9 @@ pub mod Adaptor {
     /// The comparator is backed by the ordering on `a`.
     ///
     pub def comparator(_: Proxy[a]): Comparator[a] \ IO with Order[a] =
-        let f1 = (o1, o2) -> {
-            let a = unchecked_cast(o1 as a);
-            let b = unchecked_cast(o2 as a);
-            Order.compare(a, b) |> Comparison.toInt32
-        };
-        new Comparator[Object] {
-            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
-                f1(t, u)
+        new Comparator[a] {
+            def compare(_this: Comparator[a], t: a, u: a): Int32 =
+                Order.compare(t, u) |> Comparison.toInt32
         }
 
     ///
@@ -54,7 +49,7 @@ pub mod Adaptor {
     pub def fromOptional(o: Optional[a]): Option[a] =
         if (o.isPresent()) {
             let o1 = o.get();
-            Some(unchecked_cast(o1 as a))
+            Some(o1)
         } else
             None
 
@@ -64,7 +59,7 @@ pub mod Adaptor {
     pub def fromMapEntry(e: Entry[k, v]): (k, v) =
         let k1 = e.getKey();
         let v1 = e.getValue();
-        (unchecked_cast(k1 as k), unchecked_cast(v1 as v))
+        (k1, v1)
 
 
     ///
@@ -124,13 +119,13 @@ pub mod Adaptor {
         let iter = iterator(entries);
         let getNext = () -> match hasNext(iter) {
             case true  => {
-                let entry = {let obj = next(iter); unchecked_cast(obj as Entry[k, v])};
+                let entry = next(iter);
                 let (k, v) = fromMapEntry(entry);
                 Some((k, v))
             }
             case false => None
         };
-        Iterator.iterate(rc, getNext)
+        Iterator.unfoldWithIter(rc, getNext)
 
     ///
     /// Returns a fresh Flix `Iterator` from the Java iterator `iter`.
@@ -140,12 +135,12 @@ pub mod Adaptor {
         def next(x) = unsafe IO as r { x.next() };
         let step = () -> {
             match hasNext(iter) {
-                case true  => next(iter) |> (o -> unchecked_cast(o as a)) |> Some
+                case true  => next(iter) |> Some
                 case false => None
             }
         };
         let iterF = () -> (step());
-        Iterator.iterate(rc, iterF)
+        Iterator.unfoldWithIter(rc, iterF)
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java Stream.
@@ -168,7 +163,7 @@ pub mod Adaptor {
     pub def toOptional(o: Option[a]): Optional[a] \ IO =
         match o {
             case None    => Optional.empty()
-            case Some(a) => Optional.of(unchecked_cast(a as Object))
+            case Some(a) => Optional.of(a)
         }
 
     ///
@@ -176,7 +171,7 @@ pub mod Adaptor {
     ///
     pub def toMapEntry(p: (k, v)): Entry[k, v] \ IO =
         let (k, v) = p;
-        JMap.entry(unchecked_cast(k as Object), unchecked_cast(v as Object))
+        JMap.entry(k, v)
 
     ///
     /// Alias for `toArrayList`.
@@ -191,7 +186,7 @@ pub mod Adaptor {
     ///
     pub def toArrayList(ma: m[a]): ArrayList[a] \ (IO + Foldable.Aef[m]) with Foldable[m] =
         let alist: ArrayList[a] = new ArrayList();
-        Foldable.forEach(x -> discard alist.add(unchecked_cast(x as Object)), ma);
+        Foldable.forEach(x -> discard alist.add(x), ma);
         alist
 
     ///
@@ -201,7 +196,7 @@ pub mod Adaptor {
     ///
     pub def toLinkedList(ma: m[a]): LinkedList[a] \ (IO + Foldable.Aef[m]) with Foldable[m] =
         let llist: LinkedList[a] = new LinkedList();
-        Foldable.forEach(x -> discard llist.add(unchecked_cast(x as Object)), ma);
+        Foldable.forEach(x -> discard llist.add(x), ma);
         llist
 
     ///
@@ -214,7 +209,7 @@ pub mod Adaptor {
     ///
     pub def toTreeSet(ma: m[a]): TreeSet[a] \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] =
         let tset: TreeSet[a] = new TreeSet();
-        Foldable.forEach(x -> discard tset.add(unchecked_cast(x as Object)), ma);
+        Foldable.forEach(x -> discard tset.add(x), ma);
         tset
 
     ///
@@ -229,7 +224,7 @@ pub mod Adaptor {
     ///
     pub def toTreeMap(m: Map[k, v]): TreeMap[k, v] \ IO with Order[k] =
         let tmap: TreeMap[k, v] = new TreeMap();
-        Map.forEach((k, v) -> discard tmap.put(unchecked_cast(k as Object), unchecked_cast(v as Object)), m);
+        Map.forEach((k, v) -> discard tmap.put(k, v), m);
         tmap
 
 

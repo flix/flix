@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, N
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.{MethodVisitor, Opcodes}
+import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -42,9 +42,11 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
     case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
-    case BackendObjType.NullaryTag(sym) => JvmName(RootPackage, mkClassName(sym.toString))
+    case BackendObjType.NullaryTag(enumName, sym, _) => JvmName(RootPackage, JvmName.mkClassName(enumName, sym))
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
     case BackendObjType.Tag(tpes) => JvmName(RootPackage, mkClassName("Tag", tpes))
+    case BackendObjType.ExtTagged => JvmName(RootPackage, mkClassName("ExtTagged"))
+    case BackendObjType.ExtTag(tpes) => JvmName(RootPackage, mkClassName("ExtTag", tpes))
     case BackendObjType.AbstractArrow(args, result) => JvmName(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
     case BackendObjType.Defn(sym) => JvmName(sym.namespace, JvmName.mkClassName("Def", sym.name))
@@ -297,30 +299,21 @@ object BackendObjType {
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
 
-      cm.mkField(NameField, IsPublic, NotFinal, NotVolatile)
+      cm.mkField(OrdinalField, IsPublic, NotFinal, NotVolatile)
 
       cm.closeClassMaker()
     }
 
-    def NameField: InstanceField = InstanceField(this.jvmName, "tag", BackendType.String)
+    def OrdinalField: InstanceField = InstanceField(this.jvmName, "ordinal", BackendType.Int32)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
-
-    /** [...] -> [..., tagName] */
-    def mkTagName(name: String)(implicit mv: MethodVisitor): Unit = pushString(JvmOps.getTagName(name))
-
-    /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
-    def eqTagName()(implicit mv: MethodVisitor): Unit = {
-      // ACMP is okay since tag strings are loaded through ldc instructions
-      ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
-    }
   }
 
   sealed trait TagType extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte]
   }
 
-  case class NullaryTag(name: String) extends TagType {
+  case class NullaryTag(enumName: String, name: String, ordinal: Int) extends TagType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
 
@@ -340,8 +333,8 @@ object BackendObjType {
       thisLoad()
       INVOKESPECIAL(Tagged.Constructor)
       thisLoad()
-      Tagged.mkTagName(name)
-      PUTFIELD(Tagged.NameField)
+      pushInt(ordinal)
+      PUTFIELD(Tagged.OrdinalField)
       RETURN()
     }
   }
@@ -358,7 +351,49 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def NameField: InstanceField = Tagged.NameField
+    def OrdinalField: InstanceField = Tagged.OrdinalField
+
+    def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, s"v$i", elms(i))
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
+  }
+
+  case object ExtTagged extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkAbstractClass(this.jvmName)
+
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
+
+      cm.mkField(NameField, IsPublic, NotFinal, NotVolatile)
+
+      cm.closeClassMaker()
+    }
+
+    def NameField: InstanceField = InstanceField(this.jvmName, "tag", BackendType.String)
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
+
+    /** [...] -> [..., tagName] */
+    def mkTagName(name: String)(implicit mv: MethodVisitor): Unit = pushString(JvmOps.getTagName(name))
+
+    /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
+    def eqTagName()(implicit mv: MethodVisitor): Unit = {
+      // ACMP is okay since tag strings are loaded through ldc instructions
+      ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
+    }
+  }
+
+  case class ExtTag(elms: List[BackendType]) extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = ExtTagged.jvmName)
+
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ExtTagged.Constructor)(_))
+      elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
+
+      cm.closeClassMaker()
+    }
+
+    def NameField: InstanceField = ExtTagged.NameField
 
     def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, s"v$i", elms(i))
 
@@ -1562,7 +1597,38 @@ object BackendObjType {
       cm.mkField(Float64Field, IsPublic, NotFinal, NotVolatile)
       cm.mkField(ObjectField, IsPublic, NotFinal, NotVolatile)
 
+      // Cached singleton Value instances for Unit, true, and false
+      cm.mkField(UnitField, IsPublic, IsFinal, NotVolatile)
+      cm.mkField(TrueField, IsPublic, IsFinal, NotVolatile)
+      cm.mkField(FalseField, IsPublic, IsFinal, NotVolatile)
+      cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), staticConstructorIns(_))
+
       cm.closeClassMaker()
+    }
+
+    private def staticConstructorIns(implicit mv: MethodVisitor): Unit = {
+      // Value.UNIT = new Value(); Value.UNIT.o = Unit.INSTANCE
+      NEW(this.jvmName)
+      DUP()
+      INVOKESPECIAL(Constructor)
+      DUP()
+      GETSTATIC(BackendObjType.Unit.SingletonField)
+      PUTFIELD(ObjectField)
+      PUTSTATIC(UnitField)
+      // Value.TRUE = new Value(); Value.TRUE.b = true
+      NEW(this.jvmName)
+      DUP()
+      INVOKESPECIAL(Constructor)
+      DUP()
+      ICONST_1()
+      PUTFIELD(BoolField)
+      PUTSTATIC(TrueField)
+      // Value.FALSE = new Value(); Value.FALSE.b = false (default, but explicit)
+      NEW(this.jvmName)
+      DUP()
+      INVOKESPECIAL(Constructor)
+      PUTSTATIC(FalseField)
+      RETURN()
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
@@ -1584,6 +1650,12 @@ object BackendObjType {
     private def Float64Field: InstanceField = InstanceField(this.jvmName, "f64", BackendType.Float64)
 
     private def ObjectField: InstanceField = InstanceField(this.jvmName, "o", BackendType.Object)
+
+    def UnitField: StaticField = StaticField(this.jvmName, "UNIT", this.toTpe)
+
+    def TrueField: StaticField = StaticField(this.jvmName, "TRUE", this.toTpe)
+
+    def FalseField: StaticField = StaticField(this.jvmName, "FALSE", this.toTpe)
 
     /**
       * Returns the field of Value corresponding to the given type
@@ -2042,13 +2114,28 @@ object BackendObjType {
     private def invokeIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       GETFIELD(ResumptionField)
-      NEW(Value.jvmName)
-      DUP()
-      INVOKESPECIAL(Value.Constructor)
-      DUP()
-      thisLoad()
-      mv.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)
-      PUTFIELD(Value.fieldFromType(tpe.toErased))
+      tpe.toErased match {
+        case BackendType.Bool =>
+          // Use cached Value.TRUE / Value.FALSE singletons
+          thisLoad()
+          mv.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)
+          val falseLabel = new Label()
+          val doneLabel = new Label()
+          mv.visitJumpInsn(Opcodes.IFEQ, falseLabel)
+          GETSTATIC(Value.TrueField)
+          mv.visitJumpInsn(Opcodes.GOTO, doneLabel)
+          mv.visitLabel(falseLabel)
+          GETSTATIC(Value.FalseField)
+          mv.visitLabel(doneLabel)
+        case _ =>
+          NEW(Value.jvmName)
+          DUP()
+          INVOKESPECIAL(Value.Constructor)
+          DUP()
+          thisLoad()
+          mv.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)
+          PUTFIELD(Value.fieldFromType(tpe.toErased))
+      }
       INVOKEINTERFACE(Resumption.RewindMethod)
       xReturn(Result.toTpe)
     }

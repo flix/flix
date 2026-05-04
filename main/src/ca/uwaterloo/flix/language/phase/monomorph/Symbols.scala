@@ -52,7 +52,7 @@ object Symbols {
     lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.ReentrantLock")
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
 
-    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Datalog")
+    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog")
     lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Constraint")
 
     lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.HeadPredicate")

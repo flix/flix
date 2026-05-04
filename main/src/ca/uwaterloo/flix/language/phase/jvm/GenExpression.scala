@@ -69,6 +69,7 @@ object GenExpression {
     lenv: Map[Symbol.LabelSym, Label],
     newFrame: MethodVisitor => Unit, // [...] -> [..., frame]
     setPc: MethodVisitor => Unit, // [..., frame, pc] -> [...]
+    narrowLocals: MethodVisitor => Unit, // re-cast locals to their declared types after resume
     localOffset: Int,
     pcLabels: Vector[Label],
     pcCounter: Ref[Int]
@@ -210,14 +211,8 @@ object GenExpression {
 
         sop match {
           case SemanticOp.BoolOp.Not =>
-            val condElse = new Label()
-            val condEnd = new Label()
-            mv.visitJumpInsn(IFNE, condElse)
             mv.visitInsn(ICONST_1)
-            mv.visitJumpInsn(GOTO, condEnd)
-            mv.visitLabel(condElse)
-            mv.visitInsn(ICONST_0)
-            mv.visitLabel(condEnd)
+            mv.visitInsn(IXOR)
 
           case Float32Op.Neg => mv.visitInsn(FNEG)
 
@@ -246,6 +241,10 @@ object GenExpression {
 
           case _: ReflectOp =>
             throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
+
+          case ObjectOp.Ordinal =>
+            mv.visitTypeInsn(CHECKCAST, BackendObjType.Tagged.jvmName.toInternalName)
+            mv.visitFieldInsn(GETFIELD, BackendObjType.Tagged.jvmName.toInternalName, "ordinal", BackendType.Int32.toDescriptor)
         }
 
       case AtomicOp.Binary(sop) =>
@@ -590,22 +589,37 @@ object GenExpression {
 
           case StringOp.Concat =>
             throw InternalCompilerException(s"Unexpected BinaryOperator StringOp.Concat. It should have been eliminated by Simplifier", loc)
+
+          case ObjectOp.RefEq =>
+            val refEqElse = new Label()
+            val refEqEnd = new Label()
+            compileExpr(exp1)
+            compileExpr(exp2)
+            mv.visitJumpInsn(IF_ACMPNE, refEqElse)
+            mv.visitInsn(ICONST_1)
+            mv.visitJumpInsn(GOTO, refEqEnd)
+            mv.visitLabel(refEqElse)
+            mv.visitInsn(ICONST_0)
+            mv.visitLabel(refEqEnd)
         }
 
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
         val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
-        compileIsTag(sym.name, exp, termTypes)
+        compileIsTag(sym.ordinal, exp, termTypes)
 
       case AtomicOp.Tag(sym) =>
-        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
-        compileTag(sym.name, exps, termTypes)
+        val caze = root.enums(sym.enumSym).cases(sym)
+        val termTypes = caze.tpes.map(BackendType.toBackendType)
+        compileTag(sym.enumSym.toString, sym.name, caze.sym.ordinal, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
+        import BytecodeInstructions.*
         val List(exp) = exps
         val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
 
         compileUntag(exp, idx, termTypes)
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
@@ -615,6 +629,7 @@ object GenExpression {
 
         compileExpr(exp)
         GETFIELD(tupleType.IndexField(idx))
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.Tuple =>
         import BytecodeInstructions.*
@@ -636,6 +651,7 @@ object GenExpression {
         // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
         CHECKCAST(recordType.jvmName)
         GETFIELD(recordType.ValueField)
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.RecordExtend(field) =>
         import BytecodeInstructions.*
@@ -665,11 +681,11 @@ object GenExpression {
       case AtomicOp.ExtIs(sym) =>
         val List(exp) = exps
         val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
-        compileIsTag(sym.name, exp, tpes)
+        compileExtIsTag(sym.name, exp, tpes)
 
       case AtomicOp.ExtTag(sym) =>
         val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(BackendType.toBackendType)
-        compileTag(sym.name, exps, tpes)
+        compileExtTag(sym.name, exps, tpes)
 
       case AtomicOp.ExtUntag(sym, idx) =>
         import BytecodeInstructions.*
@@ -677,7 +693,7 @@ object GenExpression {
         val List(exp) = exps
         val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
 
-        compileUntag(exp, idx, tpes)
+        compileExtUntag(exp, idx, tpes)
         castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.ArrayLit =>
@@ -711,12 +727,14 @@ object GenExpression {
       case AtomicOp.ArrayLoad =>
         import BytecodeInstructions.*
         val List(exp1, exp2) = exps
+        val elmTpe = BackendType.toBackendType(tpe)
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
         compileExpr(exp1)
         compileExpr(exp2)
-        xArrayLoad(BackendType.toBackendType(tpe))
+        xArrayLoad(elmTpe)
+        castIfNotPrim(elmTpe)
 
       case AtomicOp.ArrayStore =>
         import BytecodeInstructions.*
@@ -769,6 +787,7 @@ object GenExpression {
 
         compileExpr(exp)
         GETFIELD(structType.IndexField(idx))
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.StructPut(field) =>
         import BytecodeInstructions.*
@@ -799,22 +818,41 @@ object GenExpression {
       case AtomicOp.Unbox =>
         import BytecodeInstructions.*
         val List(exp) = exps
+        val bType = BackendType.toBackendType(tpe)
         compileExpr(exp)
         CHECKCAST(BackendObjType.Value.jvmName)
-        GETFIELD(BackendObjType.Value.fieldFromType(BackendType.toBackendType(tpe)))
+        GETFIELD(BackendObjType.Value.fieldFromType(bType))
+        castIfNotPrim(bType)
 
       case AtomicOp.Box =>
         import BytecodeInstructions.*
         val List(exp) = exps
-        val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
-        val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
-        compileExpr(exp)
-        NEW(BackendObjType.Value.jvmName)
-        DUP()
-        INVOKESPECIAL(BackendObjType.Value.Constructor)
-        DUP()
-        xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) // two objects on top of the stack
-        PUTFIELD(valueField)
+        exp.tpe match {
+          case SimpleType.Unit =>
+            compileExpr(exp)
+            POP()
+            GETSTATIC(BackendObjType.Value.UnitField)
+          case SimpleType.Bool =>
+            compileExpr(exp)
+            val falseLabel = new Label()
+            val doneLabel = new Label()
+            mv.visitJumpInsn(IFEQ, falseLabel)
+            GETSTATIC(BackendObjType.Value.TrueField)
+            mv.visitJumpInsn(GOTO, doneLabel)
+            mv.visitLabel(falseLabel)
+            GETSTATIC(BackendObjType.Value.FalseField)
+            mv.visitLabel(doneLabel)
+          case _ =>
+            val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
+            val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
+            compileExpr(exp)
+            NEW(BackendObjType.Value.jvmName)
+            DUP()
+            INVOKESPECIAL(BackendObjType.Value.Constructor)
+            DUP()
+            xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) // two objects on top of the stack
+            PUTFIELD(valueField)
+        }
 
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
@@ -1089,7 +1127,7 @@ object GenExpression {
             BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)
           } else {
             ctx match {
-              case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+              case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
                 val pcPoint = pcCounter(0) + 1
                 val pcPointLabel = pcLabels(pcPoint)
                 val afterUnboxing = new Label()
@@ -1098,6 +1136,7 @@ object GenExpression {
                 mv.visitJumpInsn(GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
+                narrowLocals(mv)
 
                 mv.visitVarInsn(ALOAD, 1)
 
@@ -1166,7 +1205,7 @@ object GenExpression {
           }
           // Calling unwind and unboxing
           ctx match {
-            case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+            case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
               val defn = root.defs(sym)
               if (Purity.isControlPure(defn.expr.purity)) {
                 BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
@@ -1179,6 +1218,7 @@ object GenExpression {
                 mv.visitJumpInsn(GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
+                narrowLocals(mv)
                 mv.visitVarInsn(ALOAD, 1)
 
                 mv.visitLabel(afterUnboxing)
@@ -1193,7 +1233,7 @@ object GenExpression {
       case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
         BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 
-      case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+      case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
         import BackendObjType.Suspension
         import BytecodeInstructions.*
 
@@ -1241,6 +1281,7 @@ object GenExpression {
         xReturn(Suspension.toTpe)
 
         mv.visitLabel(pcPointLabel)
+        narrowLocals(mv)
         ALOAD(1)
         GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))
 
@@ -1249,7 +1290,7 @@ object GenExpression {
     }
 
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
-      case EffectContext(_, _, _, setPc, _, _, _) =>
+      case EffectContext(_, _, _, setPc, _, _, _, _) =>
         // The function abstract class name
         val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
@@ -1328,11 +1369,74 @@ object GenExpression {
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
+    case Expr.Switch(exp, enumSym, cases, defaultExp, _, _, _) =>
+      // Compile the scrutinee (pushes enum value onto stack)
+      compileExpr(exp)
+      // Extract ordinal: checkcast Tagged, getfield ordinal
+      mv.visitTypeInsn(CHECKCAST, BackendObjType.Tagged.jvmName.toInternalName)
+      mv.visitFieldInsn(GETFIELD, BackendObjType.Tagged.jvmName.toInternalName, "ordinal", BackendType.Int32.toDescriptor)
+      // Build labels
+      val defaultLabel = new Label()
+      val endLabel = new Label()
+      val caseLabels = cases.map { case (sym, _) => sym.ordinal -> new Label() }.toMap
+      // Choose between tableswitch and lookupswitch based on bytecode size.
+      //
+      // A tableswitch allocates a slot for every ordinal in the range 0..N-1,
+      // even if most slots just point to the default label. A lookupswitch only
+      // stores the explicitly listed cases as sorted (key, label) pairs.
+      //
+      //   tableswitch cost:  12 + 4*N bytes  (N = total enum variants, O(1) dispatch)
+      //   lookupswitch cost:  8 + 8*E bytes  (E = explicit cases,  O(log E) dispatch)
+      //
+      // Example: an enum with 161 variants, matching on 5 cases + wildcard default.
+      //
+      //   tableswitch:  12 + 4*161 = 656 bytes — a 161-entry jump table, mostly
+      //                 pointing to the default. Exceeds the JVM JIT inlining
+      //                 threshold (~325 bytes).
+      //
+      //   lookupswitch:  8 + 8*5  =  48 bytes — 5 sorted (ordinal, label) pairs.
+      //                 The JVM binary-searches the keys (≈3 comparisons for 5 entries).
+      //
+      // The crossover point is when E < (N+1)/2, i.e. when fewer than half the
+      // ordinals have explicit cases.
+      val numTotal = root.enums(enumSym).cases.size
+      val numExplicit = cases.size
+      val tableswitchCost = 12 + 4 * numTotal
+      val lookupswitchCost = 8 + 8 * numExplicit
+      if (lookupswitchCost < tableswitchCost) {
+        val sorted = cases.sortBy(_._1.ordinal)
+        val keys = sorted.map(_._1.ordinal).toArray
+        val labels = sorted.map { case (sym, _) => caseLabels(sym.ordinal) }.toArray
+        mv.visitLookupSwitchInsn(defaultLabel, keys, labels)
+      } else {
+        val table = (0 until numTotal).map(i => caseLabels.getOrElse(i, defaultLabel)).toArray
+        mv.visitTableSwitchInsn(0, numTotal - 1, defaultLabel, table: _*)
+      }
+      // Emit each case branch
+      cases.foreach { case (sym, body) =>
+        mv.visitLabel(caseLabels(sym.ordinal))
+        compileExpr(body)
+        mv.visitJumpInsn(GOTO, endLabel)
+      }
+      // Default branch
+      mv.visitLabel(defaultLabel)
+      compileExpr(defaultExp)
+      // End label
+      mv.visitLabel(endLabel)
+
     case Expr.Let(_, offset, exp1, exp2, _) =>
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
-      castIfNotPrim(bType)
+      // No cast needed in most cases: operations self-cast (Untag, Index, etc.),
+      // function calls are wrapped in Cast by the Eraser, and effect resume
+      // sites use narrowLocals. The exception is NewObject (anonymous Java
+      // classes) where the JVM verifier cannot resolve the generated subclass
+      // name and needs an explicit cast to the declared superclass type.
+      exp1 match {
+        case _: Expr.NewObject => castIfNotPrim(bType)
+        case _ => ()
+      }
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
       compileExpr(exp2)
 
@@ -1477,7 +1581,7 @@ object GenExpression {
           case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
             BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc)
 
-          case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+          case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
             val pcPoint = pcCounter(0) + 1
             val pcPointLabel = pcLabels(pcPoint)
             val afterUnboxing = new Label()
@@ -1486,6 +1590,7 @@ object GenExpression {
             mv.visitJumpInsn(GOTO, afterUnboxing)
 
             mv.visitLabel(pcPointLabel)
+            narrowLocals(mv)
             BytecodeInstructions.ALOAD(1)
             mv.visitLabel(afterUnboxing)
         }
@@ -1529,33 +1634,28 @@ object GenExpression {
     BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
   }
 
-  private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileIsTag(ordinal: Int, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     compileExpr(exp)
-    tpes match {
-      case Nil =>
-        INSTANCEOF(BackendObjType.NullaryTag(name).jvmName)
-      case _ =>
-        CHECKCAST(BackendObjType.Tagged.jvmName)
-        GETFIELD(BackendObjType.Tagged.NameField)
-        BackendObjType.Tagged.mkTagName(name)
-        BackendObjType.Tagged.eqTagName()
-    }
+    CHECKCAST(BackendObjType.Tagged.jvmName)
+    GETFIELD(BackendObjType.Tagged.OrdinalField)
+    pushInt(ordinal)
+    ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
   }
 
-  private def compileTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileTag(enumName: String, name: String, ordinal: Int, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     tpes match {
       case Nil =>
-        GETSTATIC(BackendObjType.NullaryTag(name).SingletonField)
+        GETSTATIC(BackendObjType.NullaryTag(enumName, name, -1).SingletonField)
       case _ =>
         val tagType = BackendObjType.Tag(tpes)
         NEW(tagType.jvmName)
         DUP()
         INVOKESPECIAL(tagType.Constructor)
         DUP()
-        BackendObjType.Tagged.mkTagName(name)
-        PUTFIELD(tagType.NameField)
+        pushInt(ordinal)
+        PUTFIELD(tagType.OrdinalField)
         exps.zipWithIndex.foreach {
           case (e, i) => DUP()
             compileExpr(e)
@@ -1569,6 +1669,39 @@ object GenExpression {
     // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
     val tagType = BackendObjType.Tag(tpes)
+    compileExpr(exp)
+    CHECKCAST(tagType.jvmName)
+    GETFIELD(tagType.IndexField(idx))
+  }
+
+  private def compileExtIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    import BytecodeInstructions.*
+    compileExpr(exp)
+    CHECKCAST(BackendObjType.ExtTagged.jvmName)
+    GETFIELD(BackendObjType.ExtTagged.NameField)
+    BackendObjType.ExtTagged.mkTagName(name)
+    BackendObjType.ExtTagged.eqTagName()
+  }
+
+  private def compileExtTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    import BytecodeInstructions.*
+    val tagType = BackendObjType.ExtTag(tpes)
+    NEW(tagType.jvmName)
+    DUP()
+    INVOKESPECIAL(tagType.Constructor)
+    DUP()
+    BackendObjType.ExtTagged.mkTagName(name)
+    PUTFIELD(tagType.NameField)
+    exps.zipWithIndex.foreach {
+      case (e, i) => DUP()
+        compileExpr(e)
+        PUTFIELD(tagType.IndexField(i))
+    }
+  }
+
+  private def compileExtUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    import BytecodeInstructions.*
+    val tagType = BackendObjType.ExtTag(tpes)
     compileExpr(exp)
     CHECKCAST(tagType.jvmName)
     GETFIELD(tagType.IndexField(idx))

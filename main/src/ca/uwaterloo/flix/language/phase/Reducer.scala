@@ -169,6 +169,12 @@ object Reducer {
       case ErasedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
         JvmAst.Expr.JumpTo(sym, tpe, purity, loc)
 
+      case ErasedAst.Expr.Switch(exp, enumSym, cases, defaultExp, tpe, purity, loc) =>
+        val e = visitExpr(exp)
+        val cs = cases.map { case (sym, body) => (sym, visitExpr(body)) }
+        val d = visitExpr(defaultExp)
+        JvmAst.Expr.Switch(e, enumSym, cs, d, tpe, purity, loc)
+
       case ErasedAst.Expr.Let(sym, exp1, exp2, loc) =>
         val offset = lctx.assignOffset(sym, exp1.tpe)
         lctx.lparams.addOne(JvmAst.LocalParam(sym, offset, exp1.tpe))

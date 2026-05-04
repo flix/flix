@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+
 ///
 /// An effect used to log messages.
 ///
@@ -22,7 +23,7 @@ pub eff Logger {
     ///
     /// Logs the given message `m` at the given severity `s`.
     ///
-    def log(s: Severity, m: RichString): Unit
+    def log(s: Logger.Severity, m: RichString): Unit
 
 }
 
@@ -30,7 +31,31 @@ pub mod Logger {
 
     use Sys.Console
     use RichString.{gray, cyan, green, yellow, red, bold, text};
-    use Severity.{Warn, Fatal, Trace, Debug, Info}
+    use Severity.{Trace, Debug, Info, Warn, Fatal}
+
+    ///
+    /// Represents levels of severity.
+    ///
+    /// `Trace` is the lowest level of severity.
+    /// `Fatal` is the highest level of severity.
+    ///
+    pub enum Severity with Eq, Order, ToString {
+        case Trace
+        case Debug
+        case Info
+        case Warn
+        case Fatal
+    }
+
+    instance Formattable[Severity] {
+        pub def format(s: Severity): RichString = match s {
+            case Severity.Trace => RichString.gray("Trace")
+            case Severity.Debug => RichString.blue("Debug")
+            case Severity.Info  => RichString.green("Info")
+            case Severity.Warn  => RichString.yellow("Warn")
+            case Severity.Fatal => RichString.red("Fatal")
+        }
+    }
 
     ///
     /// Logs the message `m` at the `Trace` level.
@@ -155,6 +180,62 @@ pub mod Logger {
     /// Prints to standard error.
     ///
     pub def runWithStdErr(f: Unit -> a \ ef): a \ ef - Logger + Console = handleWithStdErr(f)()
+
+    ///
+    /// Handles the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    ///
+    /// Discards style from the logged messages. 
+    /// Aborts if an error is encountered while writing to file.
+    ///
+    pub def handleWithFileWriteAbort(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite + Abort = 
+        x -> run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                let output = "[${s}] ${RichString.toPlainString(m)}\n";
+                let res = Fs.FileWrite.append({str = output}, file);
+                match res {
+                    case Err(e) => Abort.abort(RichString.text(e))
+                    case Ok() => ()
+                };
+                k()
+            }
+        }
+
+    ///
+    /// Runs the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    ///
+    /// Discards style from the logged messages. 
+    /// Aborts if an error is encountered while writing to file.
+    ///
+    pub def runWithFileWriteAbort(file: String, f: Unit -> a \ ef): a \ (ef - Logger) + Fs.FileWrite + Abort =
+        handleWithFileWriteAbort(file, f)()
+
+    ///
+    /// Handles the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    ///
+    /// Discards style from the logged messages. 
+    /// Ignores errors encountered while writing.
+    ///
+    pub def handleWithFileWrite(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite = 
+        x -> run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                let output = "[${s}] ${RichString.toPlainString(m)}\n";
+                let _ = Fs.FileWrite.append({str = output}, file);
+                k()
+            }
+        }
+
+    ///
+    /// Runs the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    ///
+    /// Discards style from the logged messages. 
+    /// Ignores errors encountered while writing.
+    ///
+    pub def runWithFileWrite(file: String, f: Unit -> a \ ef): a \ (ef - Logger) + Fs.FileWrite = 
+        handleWithFileWrite(file, f)()
 
     ///
     /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.

@@ -15,162 +15,67 @@
  * limitations under the License.
  */
 
-///
-/// A mutable concurrent B+ Tree implementation with keys of type `k` and values of type `v`.
-///
-/// A B+ Tree is an m-ary self-balancing search tree where each node is either an internal
-/// node or a leaf node. In contrast to binary search trees, a B+ Tree of arity `m` only
-/// allows nodes with at most `m` children and `m-1` keys. A B+ Tree stores its keys in
-/// a sorted order in its internal nodes, which are used to guide searches to leaf nodes
-/// that store the keys' corresponding values.
-///
-/// See below for more details:
-///
-/// - The Ubiquitous B-Tree (1979) by Douglas Comer
-///   (https://dl.acm.org/doi/10.1145/356770.356776)
-///
-/// A BPlusTree satisfies the following.
-///
-/// `root` is the root node of the tree, which upon creation of the tree is a leaf node.
-/// Through insertion into the tree, a new node may be created and propagated up to become
-/// the new root of the tree.
-///
-/// `arity` or `m` is the arity of the tree which determines the maximum number of children
-/// a node may have. The arity must be at least 3.
-///
-/// `rootLock` is a lock on the `root` pointer, which a thread must first acquire before
-/// accessing the root node. It must also be acquired before changing `root`. The node
-/// `root` has a separate lock concerning the contents of the node. The lock of `root`
-/// must first be acquired after successfully acquiring `rootLock`.
-///
-/// `rc` is the region for the tree.
-///
-/// `search` is only used internally within the Fixpoint module where keys are of type
-/// `Vector[Int64]`. A `search` describes the order in which elements should be
-/// compared. E.g. [0, 1, 2, ..., n] is the natural order. A `search` may only be used
-/// when using `Vector[Int64]` as keys.
-///
-/// `counter` is used for keeping track of the number of inserted elements.
-///
-/// For all other usages `search` will be a vector of size 0.
-///
-/// Concurrency: thread-safe operations use optimistic stamps and validation.
-/// Functions marked "Not thread-safe" traverse or mutate the live tree without a stable
-/// snapshot, so concurrent writes may affect the observed result.
-///
-pub struct BPlusTree[k, v, r] {
-    mut root: BPlusTree.Node[k, v, r],
-    arity:    Int32,
-    rootLock: BPlusTree.Lock[r],
-    rc:       Region[r],
-    counter:  BPlusTree.AtomicCounter[r],
-    search:   BPlusTree.Search
-}
-
-instance ForEach[BPlusTree[k, v, r]] {
-    type Elm = (k, v)
-    type Aef = r
-    pub def forEach(f: ((k, v)) -> Unit \ ef, m: BPlusTree[k, v, r]): Unit \ ef + r = BPlusTree.forEach(k -> v -> f((k, v)), m)
-}
-
 pub mod BPlusTree {
     import java.lang.Runtime
-    import java.util.concurrent.atomic.{LongAdder => JLongAdder}
-    import java.util.concurrent.locks.{StampedLock => JStampedLock}
+
+    ///
+    /// A mutable concurrent B+ Tree implementation with keys of type `k` and values of type `v`.
+    ///
+    /// A B+ Tree is an m-ary self-balancing search tree where each node is either an internal
+    /// node or a leaf node. In contrast to binary search trees, a B+ Tree of arity `m` only
+    /// allows nodes with at most `m` children and `m-1` keys. A B+ Tree stores its keys in
+    /// a sorted order in its internal nodes, which are used to guide searches to leaf nodes
+    /// that store the keys' corresponding values.
+    ///
+    /// See below for more details:
+    ///
+    /// - The Ubiquitous B-Tree (1979) by Douglas Comer
+    ///   (https://dl.acm.org/doi/10.1145/356770.356776)
+    ///
+    /// A BPlusTree satisfies the following.
+    ///
+    /// `root` is the root node of the tree, which upon creation of the tree is a leaf node.
+    /// Through insertion into the tree, a new node may be created and propagated up to become
+    /// the new root of the tree.
+    ///
+    /// `arity` or `m` is the arity of the tree which determines the maximum number of children
+    /// a node may have. The arity must be at least 3.
+    ///
+    /// `rootLock` is a lock on the `root` pointer, which a thread must first acquire before
+    /// accessing the root node. It must also be acquired before changing `root`. The node
+    /// `root` has a separate lock concerning the contents of the node. The lock of `root`
+    /// must first be acquired after successfully acquiring `rootLock`.
+    ///
+    /// `rc` is the region for the tree.
+    ///
+    /// `search` is only used internally within the Fixpoint module where keys are of type
+    /// `Vector[Int64]`. A `search` describes the order in which elements should be
+    /// compared. E.g. [0, 1, 2, ..., n] is the natural order. A `search` may only be used
+    /// when using `Vector[Int64]` as keys.
+    ///
+    /// `counter` is used for keeping track of the number of inserted elements.
+    ///
+    /// For all other usages `search` will be a vector of size 0.
+    ///
+    /// Concurrency: thread-safe operations use optimistic stamps and validation.
+    /// Functions marked "Not thread-safe" traverse or mutate the live tree without a stable
+    /// snapshot, so concurrent writes may affect the observed result.
+    ///
+    pub struct BPlusTree[k, v, r] {
+        mut root: BPlusTree.Node[k, v, r],
+        arity:    Int32,
+        rootLock: BPlusTree.Lock[r],
+        rc:       Region[r],
+        counter:  BPlusTree.AtomicCounter[r],
+        search:   BPlusTree.Search
+    }
 
     pub type alias Search = Vector[Int32]
 
-    ///
-    /// A thread-safe counter producing `Int32`.
-    ///
-    /// A `LongAdder` is used as `AtomicInteger`/`AtomicLong` appeared to perform
-    /// badly under high contention.
-    ///
-    pub enum AtomicCounter[_: Region](JLongAdder)
-
-    ///
-    /// The purpose of Lock is to provide a thin wrapper around Java's StampedLock without
-    /// the IO effect. The lock is optimistic in the sense that reads are performed by
-    /// reading the values and only afterwards verifying that no other thread has changed
-    /// the values. Only annotating a region effect to StampedLock is safe, since it can
-    /// only non-deterministically block a thread for some ( potentially infinite) amount
-    /// of time. This is allowed under non-effectful behavior.
-    ///
-    ///
-    /// One possible danger, introduced by StampedLock, is handled by a null-check in
-    /// binarySearch. Consider the following example where everything is initialized to 0:
-    /// Thread 1 executes
-    /// {a = 2; b = 3}
-    /// Thread 2 executes
-    /// {c = a; d = b}
-    /// The question is what can `c` and `d` be? It depends on the JVM, but can be any of:
-    /// {c = 2, d = 3}, {c = 0, d = 0}, {c = 2, d = 0}, {c = 0, d = 3}
-    /// The last follows from the fact that the JVM can reorder statements under some
-    /// requirements. The requirements are roughly that the new 'code' should be
-    /// equivalent on a single-threaded machine and there are no happens-before relations
-    /// which link to other threads preventing the reordering. If either variable were
-    /// volatile we might avoid this, but volatile is expensive (and not in Flix).
-    ///
-    /// For us, this means that {array[size] = 5; size++} can be reordered to
-    /// {oldSize = size++; array[oldSize] = 5}.
-    /// Another thread reading may then see the increase of size and try to access that
-    /// position getting null. This has not happened in our experiments, but we wish to
-    /// handle the case. The risk is in binarySearch and we therefore check whether any
-    /// value read is null and if so 'aborts'.
-    ///
-    /// For Java's memory model see: https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4
-    ///
-    pub enum Lock[_: Region](JStampedLock)
-
-    ///
-    /// The Node struct defines the tree, having either children or values depending on
-    /// whether the node is internal or a leaf, respectively. The following invariants
-    /// hold for Node: `parent` is `None` for the root and `Some(p)` for all other nodes
-    /// where `p` is the parent node. `next` is `None` for internal nodes and the
-    /// rightmost leaf node and `Some(p)` for all leaf nodes where `p` is the node
-    /// directly to the right. `isLeaf` is true if the node is a leaf and false
-    /// otherwise.
-    ///
-    /// If `isLeaf == true`
-    ///
-    ///     `children` is of size 0
-    ///
-    ///     `keys` and `values` have the same size (which is the `arity` of the
-    ///     tree)
-    ///
-    ///     `keys[i]` should store the key for the value stored at `values[i]`
-    ///
-    ///     `size` is the number of keys/values currently stored in the leaf
-    ///
-    /// If `isLeaf == false`
-    ///
-    ///      `values` is of size 0
-    ///
-    ///      `children` is of size `arity` and `keys` have size `arity - 1`
-    ///
-    ///      `keys[i]` stores the smallest key in the subtree `children[i+1]`
-    ///
-    ///      `size` is the number of children currently stored in the leaf
-    ///
-    /// Lock invariants:
-    ///
-    ///     `lock` is the lock associated with the node. When it is held, no other thread may
-    ///     modify the node's contents. The only exception to the previous rule is that the
-    ///     `parent` pointer is owned by the `lock` on the parent For the root node with
-    ///     parent None the parent pointer is owned by the `rootLock` on the tree. When going
-    ///     up the tree locks are forcefully acquired. When going down the tree if a lock
-    ///     cannot be acquired immediately all current locks will be released and the attempt
-    ///     restarted after the wanted lock has been released by the holder.
-    ///
-    pub struct Node[k, v, r] {
-        keys:       Array[k, r],
-        children:   Array[Node[k, v, r], r],
-        values:     Array[v, r],
-        lock:       Lock[r],
-        mut size:   Int32,
-        mut parent: Option[Node[k, v, r]],
-        mut next:   Option[Node[k, v, r]],
-        isLeaf:     Bool
+    instance ForEach[BPlusTree[k, v, r]] {
+        type Elm = (k, v)
+        type Aef = r
+        pub def forEach(f: ((k, v)) -> Unit \ ef, m: BPlusTree[k, v, r]): Unit \ ef + r = BPlusTree.forEach(k -> v -> f((k, v)), m)
     }
 
     ///
@@ -190,22 +95,24 @@ pub mod BPlusTree {
     ///
     /// Thread-safe.
     ///
-    pub def adjustWithKey(f: k -> v -> v \ ef, k: k, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] =
+    pub def adjustWithKey(f: k -> v -> v \ ef, k: k, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] = {
         let (node, stamp) = findLeaf(k, t);
         Node.adjustWithKey(f, k, stamp, t, node)
+    }
 
     ///
     /// Returns true if and only if `t` is a structurally correct tree.
     ///
     /// Only used for internal testing.
     ///
-    pub def assertTreeInvariant(t: BPlusTree[k, v, r]): Bool \ r with Order[k] =
+    pub def assertTreeInvariant(t: BPlusTree[k, v, r]): Bool \ r with Order[k] = {
         let root = t->root;
         let arity = BPlusTree.arity(t);
         let nodeWorks = Node.assertNodeInvariant(root, arity, true, None, t->search);
         let rootIsUnlocked = not BPlusTree.Lock.isLocked(t->rootLock);
         let rootHasNoParent = Option.isEmpty(Node.parent(root));
         nodeWorks and rootHasNoParent and rootIsUnlocked
+    }
 
     ///
     /// Returns the number of mappings in `t` that satisfy the predicate function `f`.
@@ -243,11 +150,12 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: Compares the live leaf chains of `t1` and `t2`.
     ///
-    pub def sameElements(t1: BPlusTree[k, v, r1], t2: BPlusTree[k, v, r2]): Bool \ r1 + r2 with Order[k], Eq[v] =
+    pub def sameElements(t1: BPlusTree[k, v, r1], t2: BPlusTree[k, v, r2]): Bool \ r1 + r2 with Order[k], Eq[v] = {
         if (size(t1) != size(t2))
             false
         else
             Node.sameElementsFromLeaf(0, Node.leftMostLeafUnconditional(t1->root), 0, Node.leftMostLeafUnconditional(t2->root))
+    }
 
     ///
     /// Applies the function `f` to every value in `t`.
@@ -274,7 +182,7 @@ pub mod BPlusTree {
     ///
     /// Thread-safe.
     ///
-    pub def computeIfAbsent(f: Unit -> v \ ef, k: k, t: BPlusTree[k, v, r]): v \ ef + r with Order[k] =
+    pub def computeIfAbsent(f: Unit -> v \ ef, k: k, t: BPlusTree[k, v, r]): v \ ef + r with Order[k] = {
         let (leaf, stamp) = findLeaf(k, t);
         match Node.get(k, stamp, leaf, t) {
             case Some(v) => v
@@ -286,6 +194,7 @@ pub mod BPlusTree {
                     v
                 }, () -> computeIfAbsent(f, k, t))
         }
+    }
 
     ///
     /// Returns `true` if and only if for all `k => v` in `t`, `f(k, v) == true`.
@@ -331,10 +240,11 @@ pub mod BPlusTree {
     ///
     /// Thread-safe.
     ///
-    pub def memberOfPair(k: k, v: v, t: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] =
+    pub def memberOfPair(k: k, v: v, t: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] = {
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         let res = Node.leafMemberOfPair(k, v, t->search, leaf);
         Lock.ifValidElse(stamp, Node.getLock(leaf), () -> res, () -> memberOfPair(k, v, t))
+    }
 
     ///
     /// Returns a `BPlusTree` with mappings `k => f(v)` for every `k => v` in `t`.
@@ -396,7 +306,7 @@ pub mod BPlusTree {
                 }
             }
         };
-        Iterator.iterate(rc1, next)
+        Iterator.unfoldWithIter(rc1, next)
     }
 
     ///
@@ -498,27 +408,30 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: Traverses the live leaf chain of `t`.
     ///
-    pub def foldLeft(f: b -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
+    pub def foldLeft(f: b -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] = {
         let minLeaf = Node.leftMostLeafUnconditional(t->root);
         Node.foldLeftWithKeyFromLeaf(acc -> _ -> v -> f(acc, v), i, 0, minLeaf)
+    }
 
     ///
     /// Applies `f` to a start value `i` and all mappings `k => v` in `t` going from left to right.
     ///
     /// Not thread-safe: Traverses the live leaf chain of `t`.
     ///
-    pub def foldLeftWithKey(f: b -> k -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
+    pub def foldLeftWithKey(f: b -> k -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] = {
         let minLeaf = Node.leftMostLeafUnconditional(t->root);
         Node.foldLeftWithKeyFromLeaf(f, i, 0, minLeaf)
+    }
 
     ///
     /// Applies `f` to all mappings `k => v` in `t`.
     ///
     /// Not thread-safe: Traverses the live leaf chain of `t`.
     ///
-    pub def forEach(f: k -> v -> Unit \ ef, t: BPlusTree[k, v, r]): Unit \ ef + r =
+    pub def forEach(f: k -> v -> Unit \ ef, t: BPlusTree[k, v, r]): Unit \ ef + r = {
         let minLeaf = Node.leftMostLeafUnconditional(t->root);
         Node.traverseRightUnconditional(f, 0, minLeaf)
+    }
 
     ///
     /// Returns the current root of `t` together with an optimistic stamp on that root node.
@@ -526,11 +439,12 @@ pub mod BPlusTree {
     /// The root pointer is validated before returning, but the returned node stamp is still only
     /// optimistic and must be validated by the caller before trusting reads derived from `rootNode`.
     ///
-    def getLockedRoot(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r =
+    def getLockedRoot(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r = {
         let rootPointerStamp = Lock.tryReadLock(t->rootLock);
         let rootNode = t->root;
         let nodeStamp = Lock.tryReadLock(Node.getLock(rootNode));
         Lock.ifValidElse(rootPointerStamp, t->rootLock, () -> (rootNode, nodeStamp), () -> getLockedRoot(t))
+    }
 
     ///
     /// Runs `descend` from the locked root of `t`.
@@ -546,29 +460,28 @@ pub mod BPlusTree {
     ///
     /// Returns the first mapping in `leaf`, if any.
     ///
-    def firstEntryInLeaf(leaf: Node[k, v, r]): Option[(k, v)] \ r =
-        match Node.size(leaf) {
-            case 0 => None
-            case _ => Some(Node.getKeyAndValueAt(0, leaf))
-        }
+    def firstEntryInLeaf(leaf: Node[k, v, r]): Option[(k, v)] \ r = match Node.size(leaf) {
+        case 0 => None
+        case _ => Some(Node.getKeyAndValueAt(0, leaf))
+    }
 
     ///
     /// Returns the last mapping in `leaf`, if any.
     ///
-    def lastEntryInLeaf(leaf: Node[k, v, r]): Option[(k, v)] \ r =
-        match Node.size(leaf) {
-            case 0 => None
-            case n => Some(Node.getKeyAndValueAt(n - 1, leaf))
-        }
+    def lastEntryInLeaf(leaf: Node[k, v, r]): Option[(k, v)] \ r = match Node.size(leaf) {
+        case 0 => None
+        case n => Some(Node.getKeyAndValueAt(n - 1, leaf))
+    }
 
     ///
     /// Returns `Some(v)` if `k => v` is in `t`. Otherwise, returns `None`.
     ///
     /// Thread-safe.
     ///
-    pub def get(k: k, t: BPlusTree[k, v, r]): Option[v] \ r with Order[k] =
+    pub def get(k: k, t: BPlusTree[k, v, r]): Option[v] \ r with Order[k] = {
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.get(k, stamp, leaf, t)
+    }
 
     ///
     /// Returns `Some((k, v))` if `k => v` is in `t`. Otherwise, returns `None`.
@@ -585,9 +498,10 @@ pub mod BPlusTree {
     ///
     /// Thread-safe.
     ///
-    pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
+    pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] = {
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.getWithDefault(k, stamp, d, leaf, t)
+    }
 
 
     ///
@@ -693,11 +607,12 @@ pub mod BPlusTree {
     /// Not thread-safe: Traverses the live leaf chain of `t`, potentially in parallel.
     ///
     @Parallel
-    pub def parForEachWhen(f1: k -> v -> Unit \ r, f2: k -> v -> Unit \ r, parLimit: Int32, t: BPlusTree[k, v, r]): Unit \ r =
+    pub def parForEachWhen(f1: k -> v -> Unit \ r, f2: k -> v -> Unit \ r, parLimit: Int32, t: BPlusTree[k, v, r]): Unit \ r = {
         if (size(t) < parLimit)
             forEach(f1, t)
         else
             parForEach(f2, t)
+    }
 
     ///
     /// Updates the tree `t` with the mapping `k => v`, replacing any existing mapping.
@@ -724,9 +639,10 @@ pub mod BPlusTree {
     /// Returns the `Some(newRoot, stamp)` if the root was split where `stamp` is a write-stamp
     /// on `rootLock`.
     ///
-    def putIfInternal(decider: k -> v -> k -> v -> Bool, k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r with Order[k] =
+    def putIfInternal(decider: k -> v -> k -> v -> Bool, k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r with Order[k] = {
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.insertIntoLeafIf(decider, k, v, leaf, stamp, t)
+    }
 
     ///
     /// Internal method for `put`.
@@ -736,19 +652,21 @@ pub mod BPlusTree {
     /// Returns the `Some(newRoot, stamp)` if the root was split where `stamp` is a write-stamp
     /// on `rootLock`.
     ///
-    def putInternal(k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r with Order[k] =
+    def putInternal(k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r with Order[k] = {
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.insertIntoLeaf(k, v, leaf, stamp, t)
+    }
 
     ///
     /// Returns `true` if and only if `t` is the empty tree.
     ///
     /// Thread-safe.
     ///
-    pub def isEmpty(t: BPlusTree[k, v, r]): Bool \ r =
+    pub def isEmpty(t: BPlusTree[k, v, r]): Bool \ r = {
         let (root, stamp) = BPlusTree.getLockedRoot(t);
         let res = Node.isEmpty(root);
         Lock.ifValidElse(stamp, Node.getLock(root), () -> res, () -> isEmpty(t))
+    }
 
     ///
     /// Returns `true` if and only if `t` contains at least one mapping.
@@ -763,10 +681,11 @@ pub mod BPlusTree {
     ///
     /// Thread-safe.
     ///
-    pub def memberOf(k: k, t: BPlusTree[k, v, r]): Bool \ r with Order[k] =
+    pub def memberOf(k: k, t: BPlusTree[k, v, r]): Bool \ r with Order[k] = {
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         let res = Node.leafMemberOf(k, t->search, leaf);
         Lock.ifValidElse(stamp, Node.getLock(leaf), () -> res, () -> memberOf(k, t))
+    }
 
     ///
     /// Merge `src` into `dst`, modifying `dst` in a left-biased manner.
@@ -899,9 +818,10 @@ pub mod BPlusTree {
     ///
     /// Thread-safe.
     ///
-    def putWithInternal(f: v -> v -> v \ ef, k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ ef + r with Order[k] =
+    def putWithInternal(f: v -> v -> v \ ef, k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ ef + r with Order[k] = {
         let (leaf, stamp) = findLeaf(k, t);
         Node.putWith(f, k, v, t, leaf, stamp)
+    }
 
     ///
     /// Updates `t` with the mapping `k => f(k, v, v1)` if `k => v1` is in `t`.
@@ -943,9 +863,10 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: Traverses the live leaf chain of `t` in range order.
     ///
-    pub def rangeQueryWith(f: k -> v -> Unit \ ef, min: k, max: k, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
+    pub def rangeQueryWith(f: k -> v -> Unit \ ef, min: k, max: k, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] = {
         let (root, stamp) = getLockedRoot(t);
         Node.rangeQueryWith(f, min, max, stamp, root, t)
+    }
 
     ///
     /// Returns the region of `t`.

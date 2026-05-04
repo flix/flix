@@ -557,7 +557,7 @@ object Specialization {
           case Type.Cst(TypeConstructor.Pure, _) => "Pure"
           case _                                 => "Impure"
         }
-        val caseSym = Symbol.mkCaseSym(purityEnumSym, Name.Ident(caseName, loc))
+        val caseSym = root.enums(purityEnumSym).cases.values.find(_.sym.name == caseName).get.sym
         val symUse = CaseSymUse(caseSym, loc)
         val resultType = Type.mkEnum(purityEnumSym, Nil, loc)
         Expr.Tag(symUse, Nil, resultType, Type.Pure, loc)
@@ -579,7 +579,7 @@ object Specialization {
           case Type.Cst(TypeConstructor.Float64, _) => "JvmFloat64"
           case _                                    => "JvmObject"
         }
-        val caseSym = Symbol.mkCaseSym(jvmTypeEnumSym, Name.Ident(caseName, loc))
+        val caseSym = root.enums(jvmTypeEnumSym).cases.values.find(_.sym.name == caseName).get.sym
         val symUse = CaseSymUse(caseSym, loc)
         val resultType = Type.mkEnum(jvmTypeEnumSym, Nil, loc)
         Expr.Tag(symUse, Nil, resultType, Type.Pure, loc)
@@ -600,7 +600,7 @@ object Specialization {
           case Type.Cst(TypeConstructor.Float64, _) => "JvmFloat64"
           case _                                    => "JvmObject"
         }
-        val caseSym = Symbol.mkCaseSym(jvmValueEnumSym, Name.Ident(caseName, loc))
+        val caseSym = root.enums(jvmValueEnumSym).cases.values.find(_.sym.name == caseName).get.sym
         val symUse = CaseSymUse(caseSym, loc)
         val tagArg = if (caseName == "JvmObject") {
           val objType = Type.mkNative(classOf[java.lang.Object], loc)
@@ -1321,7 +1321,8 @@ object Specialization {
     val renv = RigidityEnv.empty
     val progress = Progress()
 
-    val res = TypeReduction2.reduce(assoc, scope, renv)(progress, root.eqEnv, flix)
+    val (res, cs) = TypeReduction2.reduce(assoc)(scope, renv, progress, root.eqEnv, flix)
+    if (cs.nonEmpty) throw InternalCompilerException(s"unexpected constraints: $cs", assoc.loc)
 
     if (progress.query()) res
     else throw InternalCompilerException(s"Could not reduce associated type $assoc", assoc.loc)

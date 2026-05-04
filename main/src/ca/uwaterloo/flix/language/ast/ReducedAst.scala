@@ -80,6 +80,8 @@ object ReducedAst {
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
+    case class Switch(exp: Expr, enumSym: Symbol.EnumSym, cases: List[(Symbol.CaseSym, Expr)], defaultExp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe

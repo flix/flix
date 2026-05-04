@@ -19,6 +19,20 @@ pub mod Fs.IsSymbolicLink {
     use Fs.FileTest
 
     ///
+    /// An effect used to check if a path is a symbolic link.
+    ///
+    /// Use the `IsSymbolicLink.runWithFileTest` handler.
+    ///
+    pub eff IsSymbolicLink {
+
+        ///
+        /// Returns `true` if the given file `f` is a symbolic link.
+        ///
+        def isSymbolicLink(f: String): Result[IoError, Bool]
+
+    }
+
+    ///
     /// Handles the `IsSymbolicLink` effect of the given function `f` using the `FileTest` effect.
     ///
     pub def runWithFileTest(f: Unit -> a \ ef): a \ (ef - IsSymbolicLink) + FileTest =

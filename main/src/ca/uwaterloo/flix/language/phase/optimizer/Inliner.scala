@@ -896,7 +896,6 @@ object Inliner {
     *
     * A simple expression is a value-like expression where sub-expressions are trivial.
     */
-  @tailrec
   private def isSimple(exp0: Expr): Boolean = exp0 match {
     case Expr.Lambda(_, _, _, _) => true
     case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
@@ -905,6 +904,11 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.ArrayLit, exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.StructNew(_, _, _), exps, _, _, _) => exps.forall(isTrivial)
+    // IfThenElse with simple sub-expressions is simple. This enables inlining of
+    // small branching functions like Int32.compare:
+    //   if (x < y) LessThan else if (x > y) GreaterThan else EqualTo
+    case Expr.IfThenElse(cond, thn, els, _, _, _) =>
+      isSimple(cond) && isSimple(thn) && isSimple(els)
     case Expr.Cast(exp, _, _, _) => isSimple(exp)
     case exp => isTrivial(exp)
   }
@@ -929,12 +933,12 @@ object Inliner {
     * - A single array operation with simple arguments.
     * - A single JVM operation with simple arguments.
     */
-  @tailrec
   private def isSingleAction(exp0: Expr): Boolean = exp0 match {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
     case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
     case Expr.Cast(exp, _, _, _) => isSingleAction(exp)
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => isSimple(exp1) && isSingleAction(exp2) && isSingleAction(exp3)
     case Expr.Match(exp, rules, _, _, _) => isSimple(exp) && rules.forall(isSimpleMatchRule)
     case Expr.ApplyAtomic(op, exps, _, _, _) => op match {
       case AtomicOp.ArrayNew => exps.forall(isSimple)
@@ -947,6 +951,8 @@ object Inliner {
       case AtomicOp.PutField(_) => exps.forall(isSimple)
       case AtomicOp.GetStaticField(_) => exps.forall(isSimple)
       case AtomicOp.PutStaticField(_) => exps.forall(isSimple)
+      case AtomicOp.StructGet(_) => exps.forall(isSimple)
+      case AtomicOp.StructPut(_) => exps.forall(isSimple)
       case _ => false
     }
     case _ => false
