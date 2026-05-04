@@ -441,6 +441,7 @@ pub mod Fs.FileWrite {
     /// `mkTempDir` returns `Ok("<dry-run>")`.
     ///
     pub def withDryRun(f: Unit -> a \ ef): a \ (ef - FileWrite) + Logger =
+        use Logger.Severity;
         use RichString.{text, bold, cyan, yellow, gray};
         let tag = yellow("[dry-run]");
         run { f() } with handler FileWrite {

@@ -15,7 +15,7 @@
  */
 
 pub mod Time.Sleep {
-
+    use Logger.Severity
     use Math.Random
     use Time.Duration
     use Time.Sleep

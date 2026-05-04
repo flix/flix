@@ -246,7 +246,6 @@ object Library {
     "RichString.flix" -> LocalResource.get("/src/library/RichString.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
-    "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
     "Math.flix" -> LocalResource.get("/src/library/Math.flix"),
     "Math/Shuffle.flix" -> LocalResource.get("/src/library/Math/Shuffle.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
