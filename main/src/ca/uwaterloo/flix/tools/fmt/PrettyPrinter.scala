@@ -863,29 +863,50 @@ object PrettyPrinter {
     }
   }
 
-  private def prettyFixpointQuery(tree: Tree): Doc =
-    joinChildren(filterEmpty(tree.children),
+  private val FixpointQuerySubclauseKinds: Set[TreeKind] = Set(
+    TreeKind.Expr.FixpointSelect,
+    TreeKind.Expr.FixpointFromFragment,
+    TreeKind.Expr.FixpointWhere,
+    TreeKind.Expr.FixpointWith
+  )
+
+  private def prettyFixpointQuery(tree: Tree): Doc = {
+    val children = filterEmpty(tree.children)
+    val splitIdx = children.indexWhere {
+      case t: Tree => FixpointQuerySubclauseKinds.contains(t.kind)
+      case _       => false
+    }
+    val keywordReplacements: Seq[(TokenKind, Doc)] = Seq(
       TokenKind.KeywordQuery  -> (text("query") <> space),
       TokenKind.KeywordPQuery -> (text("pquery") <> space),
       TokenKind.Comma         -> (text(",") <> space))
 
+    if (splitIdx < 0) return joinChildren(children, keywordReplacements: _*)
+
+    val headDoc = joinChildren(children.take(splitIdx), keywordReplacements: _*)
+    val tailDoc = children.drop(splitIdx).map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
+    localLayout(tree) {
+      nest(4, headDoc <|> tailDoc)
+    }
+  }
+
   private def prettyFixpointSelect(tree: Tree): Doc =
     joinChildren(filterEmpty(tree.children),
-      TokenKind.KeywordSelect -> (space <> text("select") <> space),
+      TokenKind.KeywordSelect -> (text("select") <> space),
       TokenKind.Comma         -> (text(",") <> space))
 
   private def prettyFixpointFromFragment(tree: Tree): Doc =
     joinChildren(filterEmpty(tree.children),
-      TokenKind.KeywordFrom -> (space <> text("from") <> space),
+      TokenKind.KeywordFrom -> (text("from") <> space),
       TokenKind.Comma       -> (text(",") <> space))
 
   private def prettyFixpointWhere(tree: Tree): Doc =
     joinChildren(filterEmpty(tree.children),
-      TokenKind.KeywordWhere -> (space <> text("where") <> space))
+      TokenKind.KeywordWhere -> (text("where") <> space))
 
   private def prettyFixpointWith(tree: Tree): Doc =
     joinChildren(filterEmpty(tree.children),
-      TokenKind.KeywordWith -> (space <> text("with") <> space),
+      TokenKind.KeywordWith -> (text("with") <> space),
       TokenKind.Comma       -> (text(",") <> space))
 
   private def prettyFixpointInject(tree: Tree): Doc =
@@ -1008,8 +1029,7 @@ object PrettyPrinter {
       .reduceLeftOption(_ <> _)
       .getOrElse(empty)
 
-    val bodyIsBlock = bodyParts.exists(isBracedExpr) ||
-      bodyParts.exists(isBracketedExpr)
+    val bodyIsBlock = bodyParts.exists(isBracedExpr)
 
     val defDoc = Doc.setLayout(layoutOfChildren(rest),
       if (bodyIsBlock) sig <+> text("=") <+> body
@@ -1882,22 +1902,6 @@ object PrettyPrinter {
 
   private def isBracedExpr(child: SyntaxTree.Child): Boolean =
     exprMatches(child, t => BracedKinds.contains(t.kind))
-
-  private val BracketedExprKinds: Set[TreeKind] = Set(
-    TreeKind.Expr.Tuple,
-    TreeKind.Expr.Paren,
-    TreeKind.Expr.NewStruct,
-    TreeKind.Expr.LiteralVector,
-    TreeKind.Expr.LiteralList,
-    TreeKind.Expr.LiteralSet,
-    TreeKind.Expr.LiteralMap,
-    TreeKind.Expr.LiteralArray,
-    TreeKind.Expr.RecordOperation,
-    TreeKind.Expr.FixpointConstraintSet
-  )
-
-  private def isBracketedExpr(child: SyntaxTree.Child): Boolean =
-    exprMatches(child, t => BracketedExprKinds.contains(t.kind))
 
   private def isIfThenElseExpr(child: SyntaxTree.Child): Boolean =
     exprMatches(child, _.kind == TreeKind.Expr.IfThenElse)
