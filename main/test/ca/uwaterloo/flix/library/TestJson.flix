@@ -1021,8 +1021,11 @@ mod TestJson {
 
     @Test
     def fromJson14(): Unit \ Assert =
-        // Fractional values are truncated towards 0.
-        assertEq(expected = (Ok(1i32): Result[JsonError, Int32]), FromJson.fromJson(JNumber(1.9ff)))
+        // Fractional values are rejected (no silent truncation).
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Int32"))): Result[JsonError, Int32]),
+            FromJson.fromJson(JNumber(1.9ff))
+        )
 
     @Test
     def fromJson15(): Unit \ Assert =
@@ -1718,6 +1721,75 @@ mod TestJson {
         assertEq(
             expected = Ok("15000000000"),
             Result.map(j -> Json.toPrettyString(2, j), Json.parse("1.5e10"))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // FromJson — integer types accept integer-valued reals, reject fractions //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def integerValued01(): Unit \ Assert =
+        // Int8 accepts an integer-valued real (42.0).
+        assertEq(expected = (Ok(42i8): Result[JsonError, Int8]), FromJson.fromJson(JNumber(42.0ff)))
+
+    @Test
+    def integerValued02(): Unit \ Assert =
+        // Int8 rejects a genuine fraction (42.5).
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Int8"))): Result[JsonError, Int8]),
+            FromJson.fromJson(JNumber(42.5ff))
+        )
+
+    @Test
+    def integerValued03(): Unit \ Assert =
+        // Int16 accepts an integer-valued real (-7.0).
+        assertEq(expected = (Ok(-7i16): Result[JsonError, Int16]), FromJson.fromJson(JNumber(-7.0ff)))
+
+    @Test
+    def integerValued04(): Unit \ Assert =
+        // Int16 rejects a genuine fraction (7.5).
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Int16"))): Result[JsonError, Int16]),
+            FromJson.fromJson(JNumber(7.5ff))
+        )
+
+    @Test
+    def integerValued05(): Unit \ Assert =
+        // Int32 accepts an integer-valued real (100.0).
+        assertEq(expected = (Ok(100i32): Result[JsonError, Int32]), FromJson.fromJson(JNumber(100.0ff)))
+
+    @Test
+    def integerValued06(): Unit \ Assert =
+        // Int32 rejects a negative fraction — locks down "no truncate towards zero".
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Int32"))): Result[JsonError, Int32]),
+            FromJson.fromJson(JNumber(-1.5ff))
+        )
+
+    @Test
+    def integerValued07(): Unit \ Assert =
+        // Int64 accepts an integer-valued real (9999.0).
+        assertEq(expected = (Ok(9999i64): Result[JsonError, Int64]), FromJson.fromJson(JNumber(9999.0ff)))
+
+    @Test
+    def integerValued08(): Unit \ Assert =
+        // Int64 rejects a genuine fraction (9999.5).
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Int64"))): Result[JsonError, Int64]),
+            FromJson.fromJson(JNumber(9999.5ff))
+        )
+
+    @Test
+    def integerValued09(): Unit \ Assert =
+        // BigInt accepts an integer-valued real (42.0).
+        assertEq(expected = (Ok(42ii): Result[JsonError, BigInt]), FromJson.fromJson(JNumber(42.0ff)))
+
+    @Test
+    def integerValued10(): Unit \ Assert =
+        // BigInt rejects a genuine fraction (42.5).
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("BigInt"))): Result[JsonError, BigInt]),
+            FromJson.fromJson(JNumber(42.5ff))
         )
 
 }

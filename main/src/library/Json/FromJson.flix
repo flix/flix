@@ -120,6 +120,14 @@ pub mod Json.FromJson {
     def missingKey(k: String): JsonError = Decode(Json.JsonPath.empty(), MissingKey(k))
 
     ///
+    /// Returns `true` if `d` is integer-valued — i.e. it has no fractional part.
+    ///
+    /// Used by the integer `FromJson` instances to accept JSON numbers like
+    /// `42` and `42.0` while rejecting `42.5`.
+    ///
+    def isIntegerValued(d: BigDecimal): Bool = BigDecimal.floor(d) == d
+
+    ///
     /// Decodes the elements of `v` via `FromJson[a]`, prepending `Index(i)` to
     /// any inner error path. Stops on the first failure.
     ///
@@ -156,10 +164,11 @@ pub mod Json.FromJson {
         }
     }
 
-    /// Fractional values are truncated towards 0; out-of-range values error.
+    /// Integer-valued JSON numbers (e.g. `42`, `42.0`) decode; genuine fractions
+    /// (e.g. `42.5`) and out-of-range values error.
     instance FromJson[Int8] {
         pub def fromJson(j: Json): Result[JsonError, Int8] = match j {
-            case JNumber(d) => match BigDecimal.tryToInt8(d) {
+            case JNumber(d) if isIntegerValued(d) => match BigDecimal.tryToInt8(d) {
                 case Some(i) => Ok(i)
                 case None    => Err(Decode(Json.JsonPath.empty(), TypeMismatch("Int8")))
             }
@@ -167,10 +176,11 @@ pub mod Json.FromJson {
         }
     }
 
-    /// Fractional values are truncated towards 0; out-of-range values error.
+    /// Integer-valued JSON numbers (e.g. `42`, `42.0`) decode; genuine fractions
+    /// (e.g. `42.5`) and out-of-range values error.
     instance FromJson[Int16] {
         pub def fromJson(j: Json): Result[JsonError, Int16] = match j {
-            case JNumber(d) => match BigDecimal.tryToInt16(d) {
+            case JNumber(d) if isIntegerValued(d) => match BigDecimal.tryToInt16(d) {
                 case Some(i) => Ok(i)
                 case None    => Err(Decode(Json.JsonPath.empty(), TypeMismatch("Int16")))
             }
@@ -178,10 +188,11 @@ pub mod Json.FromJson {
         }
     }
 
-    /// Fractional values are truncated towards 0; out-of-range values error.
+    /// Integer-valued JSON numbers (e.g. `42`, `42.0`) decode; genuine fractions
+    /// (e.g. `42.5`) and out-of-range values error.
     instance FromJson[Int32] {
         pub def fromJson(j: Json): Result[JsonError, Int32] = match j {
-            case JNumber(d) => match BigDecimal.tryToInt32(d) {
+            case JNumber(d) if isIntegerValued(d) => match BigDecimal.tryToInt32(d) {
                 case Some(i) => Ok(i)
                 case None    => Err(Decode(Json.JsonPath.empty(), TypeMismatch("Int32")))
             }
@@ -189,10 +200,11 @@ pub mod Json.FromJson {
         }
     }
 
-    /// Fractional values are truncated towards 0; out-of-range values error.
+    /// Integer-valued JSON numbers (e.g. `42`, `42.0`) decode; genuine fractions
+    /// (e.g. `42.5`) and out-of-range values error.
     instance FromJson[Int64] {
         pub def fromJson(j: Json): Result[JsonError, Int64] = match j {
-            case JNumber(d) => match BigDecimal.tryToInt64(d) {
+            case JNumber(d) if isIntegerValued(d) => match BigDecimal.tryToInt64(d) {
                 case Some(i) => Ok(i)
                 case None    => Err(Decode(Json.JsonPath.empty(), TypeMismatch("Int64")))
             }
@@ -200,11 +212,12 @@ pub mod Json.FromJson {
         }
     }
 
-    /// Fractional values are truncated towards 0.
+    /// Integer-valued JSON numbers (e.g. `42`, `42.0`) decode; genuine fractions
+    /// (e.g. `42.5`) error.
     instance FromJson[BigInt] {
         pub def fromJson(j: Json): Result[JsonError, BigInt] = match j {
-            case JNumber(d) => Ok(BigDecimal.toBigInt(d))
-            case _          => Err(Decode(Json.JsonPath.empty(), TypeMismatch("BigInt")))
+            case JNumber(d) if isIntegerValued(d) => Ok(BigDecimal.toBigInt(d))
+            case _                                => Err(Decode(Json.JsonPath.empty(), TypeMismatch("BigInt")))
         }
     }
 
