@@ -19,8 +19,10 @@
 /// Useful for instances of `Index` or `IndexMut`.
 ///
 eff KeyNotFound {
+
     /// Stops execution with an error message.
     def keyNotFound(msg: String): Void
+
 }
 
 pub mod KeyNotFound {
@@ -32,4 +34,5 @@ pub mod KeyNotFound {
             def keyNotFound(msg, _) = Err(msg)
         }
     }
+
 }

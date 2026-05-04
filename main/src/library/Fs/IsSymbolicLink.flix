@@ -24,10 +24,12 @@ pub mod Fs.IsSymbolicLink {
     /// Use the `IsSymbolicLink.runWithFileTest` handler.
     ///
     pub eff IsSymbolicLink {
+
         ///
         /// Returns `true` if the given file `f` is a symbolic link.
         ///
         def isSymbolicLink(f: String): Result[IoError, Bool]
+
     }
 
     ///
@@ -37,4 +39,5 @@ pub mod Fs.IsSymbolicLink {
         run { f() } with handler IsSymbolicLink {
             def isSymbolicLink(filename, k) = k(Fs.FileTest.isSymbolicLink(filename))
         }
+
 }

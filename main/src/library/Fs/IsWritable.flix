@@ -24,10 +24,12 @@ pub mod Fs.IsWritable {
     /// Use the `IsWritable.runWithFilePermission` handler.
     ///
     pub eff IsWritable {
+
         ///
         /// Returns `true` if the given file `f` is writable.
         ///
         def isWritable(f: String): Result[IoError, Bool]
+
     }
 
     ///
@@ -37,4 +39,5 @@ pub mod Fs.IsWritable {
         run { f() } with handler IsWritable {
             def isWritable(filename, k) = k(Fs.FilePermission.isWritable(filename))
         }
+
 }

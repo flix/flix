@@ -20,9 +20,12 @@ mod MonadZero {
     /// A trait for Monads that have a zero element.
     ///
     trait MonadZero[m: Type -> Type] with Monad[m] {
+
         ///
         /// Returns the zero element of the monad.
         ///
         pub def empty(): m[t]
+
     }
+
 }

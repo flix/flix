@@ -24,10 +24,12 @@ pub mod Fs.IsReadable {
     /// Use the `IsReadable.runWithFilePermission` handler.
     ///
     pub eff IsReadable {
+
         ///
         /// Returns `true` if the given file `f` is readable.
         ///
         def isReadable(f: String): Result[IoError, Bool]
+
     }
 
     ///
@@ -37,4 +39,5 @@ pub mod Fs.IsReadable {
         run { f() } with handler IsReadable {
             def isReadable(filename, k) = k(Fs.FilePermission.isReadable(filename))
         }
+
 }

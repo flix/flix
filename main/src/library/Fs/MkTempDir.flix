@@ -24,12 +24,14 @@ pub mod Fs.MkTempDir {
     /// Use the `MkTempDir.runWithFileWrite` handler.
     ///
     pub eff MkTempDir {
+
         ///
         /// Creates a new temporary directory with the given prefix.
         ///
         /// Returns the path to the directory.
         ///
         def mkTempDir(prefix: String): Result[IoError, String]
+
     }
 
     ///
@@ -39,4 +41,5 @@ pub mod Fs.MkTempDir {
         run { f() } with handler MkTempDir {
             def mkTempDir(prefix, k) = k(Fs.FileWrite.mkTempDir(prefix))
         }
+
 }

@@ -24,12 +24,14 @@ pub mod Fs.DeleteFile {
     /// Use the `DeleteFile.runWithFileWrite` handler.
     ///
     pub eff DeleteFile {
+
         ///
         /// Deletes the given file `f`.
         ///
         /// Fails if the file does not exist.
         ///
         def delete(f: String): Result[IoError, Unit]
+
     }
 
     ///
@@ -39,4 +41,5 @@ pub mod Fs.DeleteFile {
         run { f() } with handler DeleteFile {
             def delete(file, k) = k(Fs.FileWrite.delete(file))
         }
+
 }

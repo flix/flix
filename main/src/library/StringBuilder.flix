@@ -17,6 +17,7 @@
 pub mod StringBuilder {
 
     use IoError.IoError
+
     import java.lang.{StringBuilder => JStringBuilder}
 
     ///
@@ -25,6 +26,7 @@ pub mod StringBuilder {
     enum StringBuilder[_: Region](JStringBuilder)
 
     instance Writable[StringBuilder[r]] {
+
         type Elm = Char
 
         type Aef = r
@@ -33,6 +35,7 @@ pub mod StringBuilder {
             let len = Array.length(buffer);
             Array.forEach(c -> StringBuilder.append(c, sb), buffer);
             Ok(len)
+
     }
 
     ///
@@ -106,7 +109,7 @@ pub mod StringBuilder {
             } else {
                 appendString(s, sb)
             };
-        Array.forEachWithIndex(append1, a)
+       Array.forEachWithIndex(append1, a)
 
     ///
     /// Returns an iterator over `sb`.
@@ -140,4 +143,5 @@ pub mod StringBuilder {
     pub def toString(sb: StringBuilder[r]): String \ r =
         let StringBuilder(msb) = sb;
         unsafe IO as r { msb.toString() }
+
 }

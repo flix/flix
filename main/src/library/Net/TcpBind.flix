@@ -20,6 +20,7 @@ pub mod Net.TcpBind {
     use Net.IpAddr
     use Net.TcpServer
     use Net.TcpServer.TcpServer
+
     import java.net.InetAddress
     import java.net.ServerSocket
     import java.io.IOException
@@ -50,7 +51,7 @@ pub mod Net.TcpBind {
                     k(Ok(server))
                 } catch {
                     case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
         }
@@ -62,4 +63,5 @@ pub mod Net.TcpBind {
     ///
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpBind) + IO = handle(f)()
+
 }

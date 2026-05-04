@@ -32,11 +32,12 @@ pub mod Monoid {
         pub def combine(x: a, y: a): a =
             SemiGroup.combine(x, y)
 
-        law leftIdentity: forall (x: a) with Eq[a] Monoid.combine(Monoid.empty(), x) == x
+        law leftIdentity: forall(x: a) with Eq[a] Monoid.combine(Monoid.empty(), x) == x
 
-        law rightIdentity: forall (x: a) with Eq[a] Monoid.combine(x, Monoid.empty()) == x
+        law rightIdentity: forall(x: a) with Eq[a] Monoid.combine(x, Monoid.empty()) == x
 
-        law associative: forall (x: a, y: a, z: a) with Eq[a] Monoid.combine(Monoid.combine(x, y), z) == Monoid.combine(x, Monoid.combine(y, z))
+        law associative: forall(x: a, y: a, z: a) with Eq[a] Monoid.combine(Monoid.combine(x, y), z) == Monoid.combine(x, Monoid.combine(y, z))
+
     }
 
     instance Monoid[Unit] {
@@ -119,4 +120,5 @@ pub mod Monoid {
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.
     ///
     pub def fold(t: t[a]): a \ Foldable.Aef[t] with Foldable[t], Monoid[a] = Foldable.fold(t)
+
 }

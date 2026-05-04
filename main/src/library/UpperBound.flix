@@ -65,4 +65,5 @@ pub mod UpperBound {
     instance UpperBound[Unit] {
         pub def maxValue(): Unit = ()
     }
+
 }

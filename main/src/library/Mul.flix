@@ -57,4 +57,5 @@ pub mod Mul {
     instance Mul[BigInt] {
         pub def mul(x: BigInt, y: BigInt): BigInt = x.multiply(y)
     }
+
 }

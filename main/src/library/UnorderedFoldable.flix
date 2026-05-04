@@ -19,7 +19,7 @@ pub mod UnorderedFoldable {
     ///
     /// A trait for unordered data structures that can be folded.
     ///
-    pub trait UnorderedFoldable[t: Type -> Type] {
+    pub trait UnorderedFoldable[t : Type -> Type] {
         ///
         /// The associated effect of the UnorderedFoldable which represents the
         /// effect of accessing its elements.
@@ -88,5 +88,7 @@ pub mod UnorderedFoldable {
         ///
         pub def count(f: a -> Bool \ ef, t: t[a]): Int32 \ (ef + UnorderedFoldable.Aef[t]) =
             UnorderedFoldable.foldMap(a -> if (f(a)) 1 else 0, t)
+
     }
+
 }

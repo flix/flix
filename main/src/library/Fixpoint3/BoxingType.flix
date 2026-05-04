@@ -124,4 +124,5 @@ pub mod Fixpoint3.BoxingType {
         TypeInfo[r],
         Vector[ReadWriteLock[r]]
     )
+
 }

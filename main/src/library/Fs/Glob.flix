@@ -23,10 +23,12 @@ pub mod Fs.Glob {
     /// An effect used to find files matching a glob pattern.
     ///
     pub eff Glob {
+
         ///
         /// Returns a list of paths under `base` that match the given glob `pattern`.
         ///
         def glob(base: String, pattern: String): Result[IoError, List[String]]
+
     }
 
     ///
@@ -61,7 +63,7 @@ pub mod Fs.Glob {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Glob) + { Glob, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Glob) + {Glob, Logger} =
         run { f() } with handler Glob {
             def glob(base, pattern, k) = {
                 logPre("glob", base);
@@ -147,4 +149,5 @@ pub mod Fs.Glob {
         run { f() } with handler Glob {
             def glob(base, pattern, k) = k(Glob.glob(resolve(base), pattern))
         }
+
 }

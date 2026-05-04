@@ -26,10 +26,12 @@ pub mod Fs.MoveFile {
     /// Use the `MoveFile.runWithFileWrite` handler.
     ///
     pub eff MoveFile {
+
         ///
         /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
         ///
         def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
+
     }
 
     ///
@@ -45,4 +47,5 @@ pub mod Fs.MoveFile {
         run { f() } with handler MoveFile {
             def moveWith(src, dst, opts, k) = k(Fs.FileWrite.moveWith(src, dst, opts))
         }
+
 }

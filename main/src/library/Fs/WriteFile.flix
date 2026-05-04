@@ -24,12 +24,14 @@ pub mod Fs.WriteFile {
     /// Use the `WriteFile.runWithFileWrite` handler.
     ///
     pub eff WriteFile {
+
         ///
         /// Writes `str` to the given file `f`.
         ///
         /// Creates file `f` if it does not exist. Overwrites it if it exists.
         ///
         def write(data: {str = String}, f: String): Result[IoError, Unit]
+
     }
 
     ///
@@ -39,4 +41,5 @@ pub mod Fs.WriteFile {
         run { f() } with handler WriteFile {
             def write(data, file, k) = k(Fs.FileWrite.write(data, file))
         }
+
 }

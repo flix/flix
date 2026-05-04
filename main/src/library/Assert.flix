@@ -18,17 +18,19 @@
 pub mod Assert {
 
     use Sys.Console
-    use RichString.{blue, red, text, yellow}
-    import java.lang.AssertionError
+    use RichString.{blue, red, text, yellow};
+    import java.lang.AssertionError;
 
     ///
     /// An effect used to perform assertions during program execution.
     ///
     pub eff Assert {
+
         ///
         /// Asserts that the given condition `cond` is `true` with a message `msg`.
         ///
         def assert(cond: Bool, msg: RichString): Unit
+
     }
 
     ///
@@ -300,12 +302,16 @@ pub mod Assert {
                         println(RichString.toString(msg));
                         println("");
                         print(RichString.toString(yellow("Continue execution? (Y/n): ")));
-                        let input = readln();
-                        let trimmed = String.trim(input);
-                        if (String.toLowerCase(trimmed) == "n" or String.toLowerCase(trimmed) == "no")
-                            throw new AssertionError("Execution aborted by user after the following assertion failure: ${RichString.toString(msg)}")
-                        else
-                            resume()
+                        match readln() {
+                            case None =>
+                                throw new AssertionError("Execution aborted (no interactive console) after the following assertion failure: ${RichString.toString(msg)}")
+                            case Some(input) =>
+                                let trimmed = String.toLowerCase(String.trim(input));
+                                if (trimmed == "n" or trimmed == "no")
+                                    throw new AssertionError("Execution aborted by user after the following assertion failure: ${RichString.toString(msg)}")
+                                else
+                                    resume()
+                        }
                     } with Console.runWithIO
                 }
             }
@@ -318,4 +324,5 @@ pub mod Assert {
     /// If the user chooses not to continue, the program throws an exception.
     ///
     pub def runWithPrompt(f: Unit -> a \ ef): a \ (ef - Assert) + IO = handleWithPrompt(f)()
+
 }

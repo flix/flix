@@ -20,7 +20,7 @@ pub mod Validation {
     /// The Validation type.
     ///
     pub enum Validation[e, t] with Eq, Order, ToString {
-        case Success(t)
+        case Success(t),
         case Failure(Nec[e])
     }
 
@@ -33,10 +33,10 @@ pub mod Validation {
 
     instance SemiGroup[Validation[e, t]] with SemiGroup[t] {
         pub def combine(x: Validation[e, t], y: Validation[e, t]): Validation[e, t] = match (x, y) {
-            case (Validation.Success(x1), Validation.Success(y1))   => Validation.Success(SemiGroup.combine(x1, y1))
-            case (Validation.Failure(es1), Validation.Failure(es2)) => Validation.Failure(Nec.append(es1, es2))
-            case (Validation.Failure(_), _)                         => x
-            case (_, Validation.Failure(_))                         => y
+            case (Validation.Success(x1), Validation.Success(y1))       => Validation.Success(SemiGroup.combine(x1, y1))
+            case (Validation.Failure(es1), Validation.Failure(es2))     => Validation.Failure(Nec.append(es1, es2))
+            case (Validation.Failure(_), _)                             => x
+            case (_, Validation.Failure(_))                             => y
         }
     }
 
@@ -49,7 +49,7 @@ pub mod Validation {
     }
 
     instance Applicative[Validation[e]] {
-        pub def point(a: a): Validation[e, a] = Validation.Success(a)
+        pub def point(a: a) : Validation[e, a] = Validation.Success(a)
         pub def ap(f: Validation[e, a -> b \ ef], x: Validation[e, a]): Validation[e, b] \ ef = Validation.ap(f, x)
     }
 
@@ -159,11 +159,10 @@ pub mod Validation {
     pub def traverse(f: a -> Validation[e, b] \ ef, l: List[a]): Validation[e, List[b]] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
-            case x :: xs =>
-                match f(x) {
-                    case Success(y) => loop(xs, ks -> k(y :: ks))
-                    case Failure(y) => collectFailuresWith(f, xs, y)
-                }
+            case x :: xs => match f(x) {
+                case Success(y) => loop(xs, ks -> k(y :: ks))
+                case Failure(y) => collectFailuresWith(f, xs, y)
+            }
         };
         loop(l, ks -> Success(ks))
 
@@ -177,11 +176,10 @@ pub mod Validation {
     ///
     pub def traverseX(f: a -> Validation[e, b] \ ef, l: List[a]): Validation[e, Unit] \ ef = match l {
         case Nil     => Success()
-        case x :: xs =>
-            match f(x) {
-                case Success(_) => traverseX(f, xs)
-                case Failure(e) => collectFailuresWith(f, xs, e)
-            }
+        case x :: xs => match f(x) {
+            case Success(_) => traverseX(f, xs)
+            case Failure(e) => collectFailuresWith(f, xs, e)
+        }
     }
 
     ///
@@ -189,11 +187,10 @@ pub mod Validation {
     ///
     def collectFailuresWith(f: a -> Validation[e, b] \ ef, l: List[a], acc: Nec[e]): Validation[e, c] \ ef = match l {
         case Nil     => Failure(acc)
-        case x :: xs =>
-            match f(x) {
-                case Success(_) => collectFailuresWith(f, xs, acc)
-                case Failure(e) => collectFailuresWith(f, xs, Nec.append(acc, e))
-            }
+        case x :: xs => match f(x) {
+            case Success(_) => collectFailuresWith(f, xs, acc)
+            case Failure(e) => collectFailuresWith(f, xs, Nec.append(acc, e))
+        }
     }
 
     ///
@@ -250,7 +247,7 @@ pub mod Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, `v3` and `v4` are `Failure(xs1)`.
     ///
-    pub def map4(f: (t1, t2, t3, t4) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4]): Validation[e, u] \ ef =
+    pub def map4(f: (t1, t2, t3, t4) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4]): Validation[e, u] \ ef=
         ap(map3(f, v1, v2, v3), v4)
 
     ///
@@ -274,7 +271,7 @@ pub mod Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v7` are `Failure(xs1)`.
     ///
-    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7]): Validation[e, u] \ ef =
+    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7]): Validation[e, u] \ ef=
         ap(map6(f, v1, v2, v3, v4, v5, v6), v7)
 
     ///
@@ -300,4 +297,5 @@ pub mod Validation {
     ///
     pub def map10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7], v8: Validation[e, t8], v9: Validation[e, t9], v10: Validation[e, t10]): Validation[e, u] \ ef =
         ap(map9(f, v1, v2, v3, v4, v5, v6, v7, v8, v9), v10)
+
 }

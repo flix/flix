@@ -21,7 +21,7 @@ pub mod Foldable {
     ///
     /// A trait for data structures that can be folded.
     ///
-    pub trait Foldable[t: Type -> Type] {
+    pub trait Foldable[t : Type -> Type] {
         ///
         /// The associated effect of the Foldable which represents the effect of accessing its elements.
         ///
@@ -127,7 +127,7 @@ pub mod Foldable {
         /// Returns true if and only if `t` is empty.
         ///
         pub def isEmpty(t: t[a]): Bool \ Foldable.Aef[t] =
-            Foldable.foldLeft((_, _) -> false, true, t)
+          Foldable.foldLeft((_, _) -> false, true, t)
 
         ///
         /// Returns true if and only if `t` is non-empty.
@@ -255,14 +255,10 @@ pub mod Foldable {
         ///
         pub def dropWhile(f: a -> Bool, t: t[a]): List[a] \ Foldable.Aef[t] =
             Foldable.foldLeft((acc, x) -> {
-                let (c, tail) = acc;
-                if (c and f(x))
-                    (true, tail)
-                else
-                    (false, x :: tail)
-            }, (true, Nil), t)
-                |> snd
-                |> List.reverse
+                    let (c, tail) = acc;
+                    if (c and f(x)) (true, tail)
+                    else (false, x :: tail)
+                }, (true, Nil), t) |> snd |> List.reverse
 
         ///
         /// Returns the longest prefix of `t` that satisfies the predicate `f`.
@@ -282,10 +278,13 @@ pub mod Foldable {
         /// Applies `f` to each element in `t`.
         ///
         pub def forEach(f: a -> Unit \ ef, t: t[a]): Unit \ (ef + Foldable.Aef[t]) =
-            Foldable.foldLeft((_, x) -> f(x), (), t) // Acknowledgement: `foldLeftM` and `foldRightM` are derived from Haskell's Data.Foldable.
-            // Because they use CPS, the implementations work for both strict and lazy languages.
-            // Counterintuitively `foldLeftM` uses a right-fold and `foldRighM` uses a left-fold
-            // but the "direction of travel" is observably correct.
+            Foldable.foldLeft((_, x) -> f(x), (), t)
+
+
+        // Acknowledgement: `foldLeftM` and `foldRightM` are derived from Haskell's Data.Foldable.
+        // Because they use CPS, the implementations work for both strict and lazy languages.
+        // Counterintuitively `foldLeftM` uses a right-fold and `foldRighM` uses a left-fold
+        // but the "direction of travel" is observably correct.
 
         ///
         /// A monadic version of `foldLeft`.
@@ -335,6 +334,7 @@ pub mod Foldable {
             t |> Foldable.forEach(x -> { append(f(x), sb); append(sep, sb) });
             StringBuilder.toString(sb) |> String.dropRight(lastSep)
         }
+
     }
 
     ///
@@ -347,4 +347,5 @@ pub mod Foldable {
     /// Returns the number of elements in `t`.
     ///
     pub def size(t: t[a]): Int32 \ Foldable.Aef[t] with Foldable[t] = Foldable.length(t)
+
 }

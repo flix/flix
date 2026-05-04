@@ -19,6 +19,7 @@ pub mod Net.Ipv6Addr {
     import java.lang.NumberFormatException
     import java.net.InetAddress
     import java.net.UnknownHostException
+
     use Net.Ipv4Addr
     use Net.Ipv6Addr
 
@@ -26,24 +27,11 @@ pub mod Net.Ipv6Addr {
     /// Represents a V6 Ip Address.
     ///
     pub enum Ipv6Addr with Eq {
-        case Ipv6Addr(
-            // 128 bits
-            Int8,
-            Int8,
-            Int8,
-            Int8, // 32 bits
-            Int8,
-            Int8,
-            Int8,
-            Int8, // 32 bits
-            Int8,
-            Int8,
-            Int8,
-            Int8, // 32 bits
-            Int8,
-            Int8,
-            Int8,
-            Int8 // 32 bits
+        case Ipv6Addr( // 128 bits
+          Int8, Int8, Int8, Int8, // 32 bits
+          Int8, Int8, Int8, Int8, // 32 bits
+          Int8, Int8, Int8, Int8, // 32 bits
+          Int8, Int8, Int8, Int8  // 32 bits
         )
     }
 
@@ -64,7 +52,7 @@ pub mod Net.Ipv6Addr {
     ///
     pub def tryToIpv4(x: Ipv6Addr): Option[Ipv4Addr] = match x {
         case Ipv6Addr.Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, -1i8, -1i8, b1, b2, b3, b4) => Some(Ipv4Addr.Ipv4Addr(b1, b2, b3, b4))
-        case _                                                                                               => None
+        case _ => None
     }
 
     ///
@@ -73,33 +61,23 @@ pub mod Net.Ipv6Addr {
     pub def localhost(): Ipv6Addr =
         Ipv6Addr.Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 1i8)
 
+
     ///
     /// Attempts to parse the given String `s` as an `Ipv6Addr`.
     ///
     /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
     ///
-    pub def fromString(s: String): Option[Ipv6Addr] = match s |> cleanIpv6String |> parseIpv6List {
-        case Some(b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: Nil) =>
-            Some(Ipv6Addr.Ipv6Addr(
-                b1,
-                b2,
-                b3,
-                b4,
-                b5,
-                b6,
-                b7,
-                b8,
-                b9,
-                b10,
-                b11,
-                b12,
-                b13,
-                b14,
-                b15,
-                b16
-            ))
-        case _                                                                                                                => None
-    }
+    pub def fromString(s: String): Option[Ipv6Addr] =
+        match s |> cleanIpv6String |> parseIpv6List {
+            case Some(b1::b2::b3::b4::b5::b6::b7::b8::b9::b10::b11::b12::b13::b14::b15::b16::Nil) =>
+                Some(Ipv6Addr.Ipv6Addr(
+                  b1,  b2,  b3,  b4,
+                  b5,  b6,  b7,  b8,
+                  b9,  b10, b11, b12,
+                  b13, b14, b15, b16
+                ))
+            case _ => None
+        }
 
     ///
     /// Returns a String representation of the given Ipv6Addr `x`.
@@ -121,7 +99,7 @@ pub mod Net.Ipv6Addr {
         let hexString = String.toUpperCase(Integer.toString(combined, 16));
         match String.length(hexString) {
             case 4 => hexString
-            case i => String.repeat(4 - i, "0") ++ hexString
+            case i => String.repeat(4 - i,"0") ++ hexString
         }
     }
 
@@ -132,7 +110,7 @@ pub mod Net.Ipv6Addr {
         try {
             let b = Integer.parseInt(s, 16);
             if (b > 127)
-                let bs = Int32.toString(b - 256);
+                let bs = Int32.toString(b-256);
                 Int8.fromString(bs)
             else
                 let bs = Int32.toString(b);
@@ -152,14 +130,13 @@ pub mod Net.Ipv6Addr {
             Nil
         else
             let groups = s
-                |> String.replace({src = "::"}, {dst = ":expa:"}) // mark for expansion
+                |> String.replace({src = "::"}, {dst = ":expa:"})         // mark for expansion
                 |> String.replace({src = ":0:0:"}, {dst = ":0000:0000:"}) // expand ":0:0:"
-                |> String.split(regex = "[:]") // split groups
-                |> List.map(g -> {
-                    // add leading 0's
+                |> String.split(regex = "[:]")                            // split groups
+                |> List.map(g -> {                                        // add leading 0's
                     match String.length(g) {
                         case 4 => g
-                        case i => String.repeat(4 - i, "0") ++ g
+                        case i => String.repeat(4 - i,"0") ++ g
                     }
                 });
             let missing = 8 - List.length(groups);
@@ -171,26 +148,28 @@ pub mod Net.Ipv6Addr {
     ///
     /// Fill in expasion gaps in Ipv6 String representation with "0000".
     ///
-    def addGroups(l: List[String], missing: Int32): List[String] = match l {
-        case h :: t => {
-            if (h == "expa")
-                List.repeat(missing + 1, "0000") ::: t
-            else
-                h :: addGroups(t, missing)
+    def addGroups(l: List[String], missing: Int32): List[String] =
+        match l {
+            case h :: t => {
+                if (h == "expa")
+                    List.repeat(missing+1, "0000") ::: t
+                else
+                    h :: addGroups(t, missing)
+            }
+            case Nil => Nil
         }
-        case Nil    => Nil
-    }
 
     ///
     /// Attemps to convert groups of an Ipv6 address `l` into a List[Int8].
     ///
     def parseIpv6List(l: List[String]): Option[List[Int8]] =
         l
-            |> List.map(g -> String.splitAt(2, g))
-            |> List.map(b -> {
-                let (b1, b2) = b;
-                b1 :: b2 :: Nil
-            })
-            |> List.flatten
-            |> List.traverse(byteStringToInt8)
+        |> List.map(g -> String.splitAt(2, g))
+        |> List.map(b -> {
+            let (b1, b2) = b;
+            b1 :: b2 :: Nil
+        })
+        |> List.flatten
+        |> List.traverse(byteStringToInt8)
+
 }

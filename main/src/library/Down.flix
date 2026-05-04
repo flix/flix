@@ -79,4 +79,5 @@ pub mod Down {
             case (Down.Down(xx), Down.Down(yy)) => yy <=> xx
         }
     }
+
 }

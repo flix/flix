@@ -24,12 +24,14 @@ pub mod Fs.WriteBytes {
     /// Use the `WriteBytes.runWithFileWrite` handler.
     ///
     pub eff WriteBytes {
+
         ///
         /// Writes `data` to the given file `f`.
         ///
         /// Creates file `f` if it does not exist. Overwrites it if it exists.
         ///
         def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
     }
 
     ///
@@ -39,4 +41,5 @@ pub mod Fs.WriteBytes {
         run { f() } with handler WriteBytes {
             def writeBytes(data, file, k) = k(Fs.FileWrite.writeBytes(data, file))
         }
+
 }

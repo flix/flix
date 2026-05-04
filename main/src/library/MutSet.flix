@@ -20,7 +20,7 @@ pub mod MutSet {
     /// The Mutable Set type.
     ///
     pub struct MutSet[t: Type, r: Region] {
-        rc:        Region[r],
+        rc: Region[r],
         mut inner: Set[t]
     }
 
@@ -47,19 +47,21 @@ pub mod MutSet {
     ///
     /// Returns a string representation of the given mutable set `s`.
     ///
-    pub def toString(s: MutSet[a, r]): String \ r with ToString[a] = region rc {
+    pub def toString(s: MutSet[a, r]): String \r with ToString[a] = region rc {
         "MutSet#{" + (MutSet.iterator(rc, s) |> Iterator.join(", ")) + "}"
     }
 
     ///
     /// Returns a fresh empty set.
     ///
-    pub def empty(rc: Region[r]): MutSet[a, r] \ r = new MutSet @ rc {rc = rc, inner = Set.empty()}
+    pub def empty(rc: Region[r]): MutSet[a, r] \ r =
+        new MutSet @ rc { rc = rc, inner = Set.empty() }
 
     ///
     /// Returns the singleton set containing `x`.
     ///
-    pub def singleton(rc: Region[r], x: a): MutSet[a, r] \ r with Order[a] = new MutSet @ rc {rc = rc, inner = Set.singleton(x)}
+    pub def singleton(rc: Region[r], x: a): MutSet[a, r] \ r with Order[a] =
+        new MutSet @ rc { rc = rc, inner = Set.singleton(x) }
 
     ///
     /// Adds the element `x` to the mutable set `s`.
@@ -217,7 +219,7 @@ pub mod MutSet {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b \ ef, s: MutSet[a, r]): b \ { ef, r } with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, s: MutSet[a, r]): b \ {ef, r} with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
 
     ///
@@ -247,7 +249,8 @@ pub mod MutSet {
     ///
     /// Returns a shallow copy of the mutable set `s`.
     ///
-    pub def copy(rc1: Region[r1], s: MutSet[a, r]): MutSet[a, r1] \ { r, r1 } = new MutSet @ rc1 {rc = rc1, inner = s->inner}
+    pub def copy(rc1: Region[r1], s: MutSet[a, r]): MutSet[a, r1] \ { r, r1 } =
+        new MutSet @ rc1 { rc = rc1, inner = s->inner }
 
     ///
     /// Returns the mutable set `s` as an immutable set.
@@ -321,4 +324,5 @@ pub mod MutSet {
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, s: MutSet[a, r]): String \ { ef, r } =
         Set.joinWith(f, sep, s->inner)
+
 }
