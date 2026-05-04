@@ -274,6 +274,19 @@ pub mod Json.FromJson {
         }
     }
 
+    /// Duplicate elements are deduplicated by `Order[a]`. The element type's
+    /// path is threaded as `Index(i)` for any decode failure.
+    instance FromJson[Set[a]] with FromJson[a], Order[a] {
+        pub def fromJson(j: Json): Result[JsonError, Set[a]] = match j {
+            case JArray(v) =>
+                Result.map(
+                    xs -> Vector.foldLeft((acc, x) -> Set.insert(x, acc), Set#{}, xs),
+                    traverseIndexed(v)
+                )
+            case _ => Err(Decode(Json.JsonPath.empty(), TypeMismatch("JArray")))
+        }
+    }
+
     /// Object keys are decoded via `FromString[k]`; a key that fails to parse
     /// errors with `TypeMismatch("Map key")` at path `Key(stringKey)`. Value
     /// decode failures carry path `Key(stringKey)` followed by the inner path.

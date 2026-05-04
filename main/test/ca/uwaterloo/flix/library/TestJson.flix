@@ -1837,4 +1837,53 @@ mod TestJson {
             Json.parse("{\"a\":1,\"a\":2}")
         )
 
+    /////////////////////////////////////////////////////////////////////////////
+    // ToJson / FromJson — Set                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def setJson01(): Unit \ Assert =
+        // Empty set encodes as an empty array.
+        assertEq(expected = JArray(Vector#{}), ToJson.toJson((Set#{}: Set[Int32])))
+
+    @Test
+    def setJson02(): Unit \ Assert =
+        // Set elements are emitted in sorted order regardless of insertion order.
+        assertEq(
+            expected = JArray(Vector#{num(1), num(2), num(3)}),
+            ToJson.toJson(Set#{3i32, 1i32, 2i32})
+        )
+
+    @Test
+    def setJson03(): Unit \ Assert =
+        // Decoding an empty array yields the empty set.
+        assertEq(
+            expected = (Ok((Set#{}: Set[Int32])): Result[JsonError, Set[Int32]]),
+            FromJson.fromJson(JArray(Vector#{}))
+        )
+
+    @Test
+    def setJson04(): Unit \ Assert =
+        // Decoding an array dedups by Order[a].
+        assertEq(
+            expected = (Ok(Set#{1i32, 2i32}): Result[JsonError, Set[Int32]]),
+            FromJson.fromJson(JArray(Vector#{num(1), num(2), num(1)}))
+        )
+
+    @Test
+    def setJson05(): Unit \ Assert =
+        // Element decode failures carry the failing index in the path.
+        assertEq(
+            expected = (Err(Decode(JsonPath.fromList(Index(1) :: Nil), TypeMismatch("Int32"))): Result[JsonError, Set[Int32]]),
+            FromJson.fromJson(JArray(Vector#{num(1), JBool(true)}))
+        )
+
+    @Test
+    def setJson06(): Unit \ Assert =
+        // Decoding a non-array produces a TypeMismatch at the empty path.
+        assertEq(
+            expected = (Err(Decode(JsonPath.empty(), TypeMismatch("JArray"))): Result[JsonError, Set[Int32]]),
+            FromJson.fromJson(JString("nope"))
+        )
+
 }
