@@ -751,10 +751,6 @@ mod TestJson {
         assertEq(expected = JBool(false), ToJson.toJson(false))
 
     @Test
-    def toJson04(): Unit \ Assert =
-        assertEq(expected = JString("a"), ToJson.toJson('a'))
-
-    @Test
     def toJson05(): Unit \ Assert =
         assertEq(expected = JString(""), ToJson.toJson(""))
 
@@ -993,15 +989,6 @@ mod TestJson {
     @Test
     def fromJson05(): Unit \ Assert =
         assertEq(expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Bool"))): Result[JsonError, Bool]), FromJson.fromJson(JString("yes")))
-
-    @Test
-    def fromJson06(): Unit \ Assert =
-        assertEq(expected = (Ok('x'): Result[JsonError, Char]), FromJson.fromJson(JString("x")))
-
-    @Test
-    def fromJson07(): Unit \ Assert =
-        // Multi-char string is not a Char.
-        assertEq(expected = (Err(Decode(JsonPath.empty(), TypeMismatch("Char"))): Result[JsonError, Char]), FromJson.fromJson(JString("ab")))
 
     @Test
     def fromJson08(): Unit \ Assert =

@@ -38,9 +38,8 @@ pub mod Json.ToJson {
         pub def toJson(x: Bool): Json = JBool(x)
     }
 
-    instance ToJson[Char] {
-        pub def toJson(x: Char): Json = JString(Char.toString(x))
-    }
+    // No `ToJson[Char]`: `Char` is a single UTF-16 code unit (BMP only), but JSON
+    // strings carry full Unicode. Use `String` for JSON-bound character data.
 
     instance ToJson[String] {
         pub def toJson(x: String): Json = JString(x)
