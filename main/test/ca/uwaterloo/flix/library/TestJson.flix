@@ -20,6 +20,7 @@ mod TestJson {
     use Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
     use Json.JsonError.JsonError
     use Json.JsonError.JsonError.{Decode, Parse}
+    use Json.JsonError.ParseErrorKind.{DuplicateKey, InvalidEscape, UnexpectedChar, UnexpectedEof}
     use Json.JsonError.DecodeErrorKind.{MissingKey, TypeMismatch}
     use Json.JsonPath.JsonPath
     use Json.JsonPath.JsonStep
@@ -1629,7 +1630,7 @@ mod TestJson {
     def pathError16(): Unit \ Assert =
         // A parser failure produces a Parse(...) error, not Decode.
         match Json.parse("{") {
-            case Err(Parse(_)) => assertEq(expected = true, true)
+            case Err(Parse(_, _)) => assertEq(expected = true, true)
             case _             => assertEq(expected = true, false)
         }
 
@@ -1656,7 +1657,7 @@ mod TestJson {
     def decode03(): Unit \ Assert =
         // Parse failure surfaces as Err(Parse(...)).
         match (Json.decode("{"): Result[JsonError, Json.Json]) {
-            case Err(Parse(_)) => assertEq(expected = true, true)
+            case Err(Parse(_, _)) => assertEq(expected = true, true)
             case _             => assertEq(expected = true, false)
         }
 
@@ -1790,6 +1791,50 @@ mod TestJson {
         assertEq(
             expected = (Err(Decode(JsonPath.empty(), TypeMismatch("BigInt"))): Result[JsonError, BigInt]),
             FromJson.fromJson(JNumber(42.5ff))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Parse errors carry the UTF-16 offset of the failure                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def parseOffset01(): Unit \ Assert =
+        // Empty input: parser is at offset 0 expecting any value.
+        assertEq(
+            expected = (Err(Parse(0, UnexpectedEof)): Result[JsonError, Json.Json]),
+            Json.parse("")
+        )
+
+    @Test
+    def parseOffset02(): Unit \ Assert =
+        // Trailing junk after a value: offset of the first stray char.
+        assertEq(
+            expected = (Err(Parse(5, UnexpectedChar('x'))): Result[JsonError, Json.Json]),
+            Json.parse("null x")
+        )
+
+    @Test
+    def parseOffset03(): Unit \ Assert =
+        // Unterminated string: EOF at the end of input.
+        assertEq(
+            expected = (Err(Parse(4, UnexpectedEof)): Result[JsonError, Json.Json]),
+            Json.parse("\"abc")
+        )
+
+    @Test
+    def parseOffset04(): Unit \ Assert =
+        // Bad escape: offset of the offending escape character.
+        assertEq(
+            expected = (Err(Parse(2, InvalidEscape("q"))): Result[JsonError, Json.Json]),
+            Json.parse("\"\\q\"")
+        )
+
+    @Test
+    def parseOffset05(): Unit \ Assert =
+        // Duplicate key: offset of the second occurrence's key string.
+        assertEq(
+            expected = (Err(Parse(7, DuplicateKey("a"))): Result[JsonError, Json.Json]),
+            Json.parse("{\"a\":1,\"a\":2}")
         )
 
 }

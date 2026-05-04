@@ -56,7 +56,7 @@ pub mod Json {
             case Ok((j, i1)) =>
                 let i2 = skipWs(s, i1, n);
                 if (i2 >= n) Ok(j)
-                else Err(Parse(UnexpectedChar(String.charAt(i2, s))))
+                else Err(Parse(i2, UnexpectedChar(String.charAt(i2, s))))
         }
 
     ///
@@ -318,7 +318,7 @@ pub mod Json {
     ///
     def parseValue(s: String, i: Int32, n: Int32): Result[JsonError, (Json, Int32)] =
         let j = skipWs(s, i, n);
-        if (j >= n) Err(Parse(UnexpectedEof))
+        if (j >= n) Err(Parse(j, UnexpectedEof))
         else {
             let c = String.charAt(j, s);
             match c {
@@ -330,7 +330,7 @@ pub mod Json {
                 case _ if Char.toBmpCodePoint(c) == 0x22 =>
                     Result.map(match (str, k) -> (JString(str), k), parseString(s, j, n))
                 case _ if Char.isDigit(c) or c == '-' => parseNumber(s, j, n)
-                case _ => Err(Parse(UnexpectedChar(c)))
+                case _ => Err(Parse(j, UnexpectedChar(c)))
             }
         }
 
@@ -340,8 +340,8 @@ pub mod Json {
     def parseLiteral(s: String, i: Int32, n: Int32, lit: String, v: Json): Result[JsonError, (Json, Int32)] =
         let m = String.length(lit);
         if (matchAt(s, i, n, lit, m, 0)) Ok((v, i + m))
-        else if (i >= n) Err(Parse(UnexpectedEof))
-        else Err(Parse(UnexpectedChar(String.charAt(i, s))))
+        else if (i >= n) Err(Parse(i, UnexpectedEof))
+        else Err(Parse(i, UnexpectedChar(String.charAt(i, s))))
 
     ///
     /// Returns `true` if `s[i..i+m]` equals `lit`. Returns `false` if it differs
@@ -362,7 +362,7 @@ pub mod Json {
         let str = String.slice(start = i, end = end, s);
         match BigDecimal.fromString(str) {
             case Some(bd) => Ok((JNumber(bd), end))
-            case None     => Err(Parse(InvalidNumber(str)))
+            case None     => Err(Parse(i, InvalidNumber(str)))
         }
 
     ///
@@ -383,9 +383,9 @@ pub mod Json {
     /// at the opening double quote).
     ///
     def parseString(s: String, i: Int32, n: Int32): Result[JsonError, (String, Int32)] = region rc {
-        if (i >= n) Err(Parse(UnexpectedEof))
+        if (i >= n) Err(Parse(i, UnexpectedEof))
         else if (Char.toBmpCodePoint(String.charAt(i, s)) != 0x22)
-            Err(Parse(UnexpectedChar(String.charAt(i, s))))
+            Err(Parse(i, UnexpectedChar(String.charAt(i, s))))
         else {
             let sb = StringBuilder.empty(rc);
             scanString(s, i + 1, n, sb)
@@ -398,7 +398,7 @@ pub mod Json {
     /// position just past the closing `"`.
     ///
     def scanString(s: String, i: Int32, n: Int32, sb: StringBuilder[r]): Result[JsonError, (String, Int32)] \ r =
-        if (i >= n) Err(Parse(UnexpectedEof))
+        if (i >= n) Err(Parse(i, UnexpectedEof))
         else {
             let c = String.charAt(i, s);
             let cp = Char.toBmpCodePoint(c);
@@ -415,7 +415,7 @@ pub mod Json {
     /// Decodes a JSON string escape starting at `i` (just past the backslash).
     ///
     def scanEscape(s: String, i: Int32, n: Int32, sb: StringBuilder[r]): Result[JsonError, (String, Int32)] \ r =
-        if (i >= n) Err(Parse(UnexpectedEof))
+        if (i >= n) Err(Parse(i, UnexpectedEof))
         else {
             let c = String.charAt(i, s);
             let cp = Char.toBmpCodePoint(c);
@@ -429,7 +429,7 @@ pub mod Json {
                 case 0x72 => StringBuilder.appendCodePoint(0x0D, sb); scanString(s, i + 1, n, sb)
                 case 0x74 => StringBuilder.appendCodePoint(0x09, sb); scanString(s, i + 1, n, sb)
                 case 0x75 => parseUnicode(s, i + 1, n, sb)
-                case _    => Err(Parse(InvalidEscape(Char.toString(c))))
+                case _    => Err(Parse(i, InvalidEscape(Char.toString(c))))
             }
         }
 
@@ -437,7 +437,7 @@ pub mod Json {
     /// Decodes a `\uXXXX` escape starting at `i` (just past the `u`).
     ///
     def parseUnicode(s: String, i: Int32, n: Int32, sb: StringBuilder[r]): Result[JsonError, (String, Int32)] \ r =
-        if (i + 4 > n) Err(Parse(UnexpectedEof))
+        if (i + 4 > n) Err(Parse(i, UnexpectedEof))
         else {
             let hex = String.slice(start = i, end = i + 4, s);
             match Int32.parse(16, hex) {
@@ -445,7 +445,7 @@ pub mod Json {
                     StringBuilder.appendCodePoint(cp, sb);
                     scanString(s, i + 4, n, sb)
                 case Err(_) =>
-                    Err(Parse(InvalidUnicode(hex)))
+                    Err(Parse(i, InvalidUnicode(hex)))
             }
         }
 
@@ -455,7 +455,7 @@ pub mod Json {
     def parseArray(s: String, i: Int32, n: Int32): Result[JsonError, (Json, Int32)] = region rc {
         let i1 = i + 1;
         let i2 = skipWs(s, i1, n);
-        if (i2 >= n) Err(Parse(UnexpectedEof))
+        if (i2 >= n) Err(Parse(i2, UnexpectedEof))
         else if (String.charAt(i2, s) == ']') Ok((JArray(Vector#{}), i2 + 1))
         else {
             let items = MutList.empty(rc);
@@ -472,12 +472,12 @@ pub mod Json {
             case Ok((v, i1)) =>
                 MutList.push(v, items);
                 let i2 = skipWs(s, i1, n);
-                if (i2 >= n) Err(Parse(UnexpectedEof))
+                if (i2 >= n) Err(Parse(i2, UnexpectedEof))
                 else {
                     let c = String.charAt(i2, s);
                     if (c == ',') scanArrayElements(s, skipWs(s, i2 + 1, n), n, items)
                     else if (c == ']') Ok((JArray(MutList.toVector(items)), i2 + 1))
-                    else Err(Parse(UnexpectedChar(c)))
+                    else Err(Parse(i2, UnexpectedChar(c)))
                 }
         }
 
@@ -489,7 +489,7 @@ pub mod Json {
     def parseObject(s: String, i: Int32, n: Int32): Result[JsonError, (Json, Int32)] =
         let i1 = i + 1;
         let i2 = skipWs(s, i1, n);
-        if (i2 >= n) Err(Parse(UnexpectedEof))
+        if (i2 >= n) Err(Parse(i2, UnexpectedEof))
         else if (String.charAt(i2, s) == '}') Ok((JObject(Map#{}), i2 + 1))
         else scanObjectEntries(s, i2, n, Map#{})
 
@@ -500,22 +500,22 @@ pub mod Json {
         match parseString(s, i, n) {
             case Err(e) => Err(e)
             case Ok((k, i1)) =>
-                if (Map.memberOf(k, m)) Err(Parse(DuplicateKey(k)))
+                if (Map.memberOf(k, m)) Err(Parse(i, DuplicateKey(k)))
                 else {
                     let i2 = skipWs(s, i1, n);
-                    if (i2 >= n) Err(Parse(UnexpectedEof))
-                    else if (String.charAt(i2, s) != ':') Err(Parse(UnexpectedChar(String.charAt(i2, s))))
+                    if (i2 >= n) Err(Parse(i2, UnexpectedEof))
+                    else if (String.charAt(i2, s) != ':') Err(Parse(i2, UnexpectedChar(String.charAt(i2, s))))
                     else match parseValue(s, i2 + 1, n) {
                         case Err(e) => Err(e)
                         case Ok((v, i3)) =>
                             let m1 = Map.insert(k, v, m);
                             let i4 = skipWs(s, i3, n);
-                            if (i4 >= n) Err(Parse(UnexpectedEof))
+                            if (i4 >= n) Err(Parse(i4, UnexpectedEof))
                             else {
                                 let c = String.charAt(i4, s);
                                 if (c == ',') scanObjectEntries(s, skipWs(s, i4 + 1, n), n, m1)
                                 else if (c == '}') Ok((JObject(m1), i4 + 1))
-                                else Err(Parse(UnexpectedChar(c)))
+                                else Err(Parse(i4, UnexpectedChar(c)))
                             }
                     }
                 }

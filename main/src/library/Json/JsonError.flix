@@ -22,14 +22,14 @@ pub mod Json.JsonError {
     ///
     /// An error that can occur when parsing or decoding JSON.
     ///
-    /// `Parse` wraps a parser failure (no path — parsing happens character by
-    /// character on the raw input).
+    /// `Parse` wraps a parser failure together with the UTF-16 code-unit
+    /// offset into the input where the failure was detected.
     ///
     /// `Decode` wraps a decoder failure together with the path of the failing
     /// value inside the parsed `Json` document.
     ///
     pub enum JsonError with Eq {
-        case Parse(ParseErrorKind)
+        case Parse(Int32, ParseErrorKind)
         case Decode(JsonPath, DecodeErrorKind)
     }
 
@@ -75,7 +75,7 @@ pub mod Json.JsonError {
 
     instance ToString[JsonError] {
         pub def toString(e: JsonError): String = match e {
-            case JsonError.Parse(k)     => ToString.toString(k)
+            case JsonError.Parse(o, k)  => "${ToString.toString(k)} at offset ${o}"
             case JsonError.Decode(p, k) => match Json.JsonPath.steps(p) {
                 case Nil => ToString.toString(k)
                 case _   => "${ToString.toString(k)} at ${p}"
@@ -93,7 +93,8 @@ pub mod Json.JsonError {
 
     instance Formattable[JsonError] {
         pub def format(e: JsonError): RichString = match e {
-            case JsonError.Parse(k)     => Formattable.format(k)
+            case JsonError.Parse(o, k)  =>
+                Formattable.format(k) + RichString.fromString(" at offset ") + RichString.yellow(Int32.toString(o))
             case JsonError.Decode(p, k) => match Json.JsonPath.steps(p) {
                 case Nil => Formattable.format(k)
                 case _   => Formattable.format(k) + RichString.fromString(" at ") + Formattable.format(p)
@@ -110,7 +111,7 @@ pub mod Json.JsonError {
     ///
     pub def prependStep(s: JsonStep, e: JsonError): JsonError = match e {
         case JsonError.Decode(p, k) => JsonError.Decode(Json.JsonPath.cons(s, p), k)
-        case JsonError.Parse(_)     => e
+        case JsonError.Parse(_, _)  => e
     }
 
 }
