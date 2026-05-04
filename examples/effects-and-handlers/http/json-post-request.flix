@@ -1,8 +1,8 @@
 use Net.Http
 use Net.HttpRequest
 use Net.HttpResponse
-use Json.Json
-use Json.Json.{JNumber, JString}
+use Util.Json.Json
+use Util.Json.Json.{JNumber, JString}
 
 /// Sends a POST request with a typed JSON body and prints the response status and body.
 /// Uses `HttpRequest.withJson` to serialise via the `ToJson` trait, which also

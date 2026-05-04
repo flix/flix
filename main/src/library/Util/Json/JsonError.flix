@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-pub mod Json.JsonError {
+pub mod Util.Json.JsonError {
 
-    use Json.JsonPath.JsonPath
-    use Json.JsonPath.JsonStep
+    use Util.Json.JsonPath.JsonPath
+    use Util.Json.JsonPath.JsonStep
 
     ///
     /// An error that can occur when parsing or decoding JSON.
@@ -76,7 +76,7 @@ pub mod Json.JsonError {
     instance ToString[JsonError] {
         pub def toString(e: JsonError): String = match e {
             case JsonError.Parse(o, k)  => "${ToString.toString(k)} at offset ${o}"
-            case JsonError.Decode(p, k) => match Json.JsonPath.steps(p) {
+            case JsonError.Decode(p, k) => match Util.Json.JsonPath.steps(p) {
                 case Nil => ToString.toString(k)
                 case _   => "${ToString.toString(k)} at ${p}"
             }
@@ -95,7 +95,7 @@ pub mod Json.JsonError {
         pub def format(e: JsonError): RichString = match e {
             case JsonError.Parse(o, k)  =>
                 Formattable.format(k) + RichString.fromString(" at offset ") + RichString.yellow(Int32.toString(o))
-            case JsonError.Decode(p, k) => match Json.JsonPath.steps(p) {
+            case JsonError.Decode(p, k) => match Util.Json.JsonPath.steps(p) {
                 case Nil => Formattable.format(k)
                 case _   => Formattable.format(k) + RichString.fromString(" at ") + Formattable.format(p)
             }
@@ -110,7 +110,7 @@ pub mod Json.JsonError {
     /// of a failing decode lazily — i.e. only on the error path.
     ///
     pub def prependStep(s: JsonStep, e: JsonError): JsonError = match e {
-        case JsonError.Decode(p, k) => JsonError.Decode(Json.JsonPath.cons(s, p), k)
+        case JsonError.Decode(p, k) => JsonError.Decode(Util.Json.JsonPath.cons(s, p), k)
         case JsonError.Parse(_, _)  => e
     }
 

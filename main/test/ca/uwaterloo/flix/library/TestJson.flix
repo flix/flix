@@ -17,17 +17,18 @@
 mod TestJson {
 
     use Assert.{assertEq, assertErr};
-    use Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
-    use Json.JsonError.JsonError
-    use Json.JsonError.JsonError.{Decode, Parse}
-    use Json.JsonError.ParseErrorKind.{DuplicateKey, InvalidEscape, UnexpectedChar, UnexpectedEof}
-    use Json.JsonError.DecodeErrorKind.{MissingKey, TypeMismatch}
-    use Json.JsonPath.JsonPath
-    use Json.JsonPath.JsonStep
-    use Json.JsonPath.JsonStep.{Index, Key}
-    use Json.ToJson.ToJson
-    use Json.FromJson.FromJson
-    use Json.FromJson.{getAtKey, getAtKeyOpt, decodeAtKey, decodeAtIndex, decodeAtKeyOpt}
+    use Util.Json
+    use Util.Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
+    use Util.Json.JsonError.JsonError
+    use Util.Json.JsonError.JsonError.{Decode, Parse}
+    use Util.Json.JsonError.ParseErrorKind.{DuplicateKey, InvalidEscape, UnexpectedChar, UnexpectedEof}
+    use Util.Json.JsonError.DecodeErrorKind.{MissingKey, TypeMismatch}
+    use Util.Json.JsonPath.JsonPath
+    use Util.Json.JsonPath.JsonStep
+    use Util.Json.JsonPath.JsonStep.{Index, Key}
+    use Util.Json.ToJson.ToJson
+    use Util.Json.FromJson.FromJson
+    use Util.Json.FromJson.{getAtKey, getAtKeyOpt, decodeAtKey, decodeAtIndex, decodeAtKeyOpt}
 
     def num(n: Int32): Json.Json = JNumber(Int32.toBigDecimal(n))
 
