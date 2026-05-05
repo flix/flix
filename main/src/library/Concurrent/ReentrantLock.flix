@@ -25,6 +25,11 @@ pub mod Concurrent.ReentrantLock {
     use Concurrent.Condition.Condition
 
     ///
+    /// A wrapper around a Java ReentrantLock.
+    ///
+    pub enum ReentrantLock(JReentrantLock)
+
+    ///
     /// Creates an instance of ReentrantLock with the given fairness policy.
     /// `fair = False` is the default for Java.
     ///

@@ -23,6 +23,18 @@ pub mod Time.Clock {
     import java.util.concurrent.{TimeUnit => JTimeUnit}
 
     ///
+    /// An effect used to access the current (real-world) time.
+    ///
+    pub eff Clock {
+
+        ///
+        /// Returns a measure of time since the epoch in the given time unit `u`.
+        ///
+        def currentTime(u: TimeUnit): Int64
+
+    }
+
+    ///
     /// Returns the number of milliseconds since the epoch.
     ///
     /// Equivalent to `currentTime(TimeUnit.Milliseconds)`.

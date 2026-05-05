@@ -18,6 +18,64 @@ pub mod Time.Duration {
 
     use Time.TimeUnit
 
+    ///
+    /// Represents a duration of time stored as nanoseconds (Int64).
+    ///
+    pub enum Duration(Int64) with Eq, Order, Hash
+
+    instance Add[Duration] {
+        pub def add(x: Duration, y: Duration): Duration =
+            let Duration.Duration(x1) = x;
+            let Duration.Duration(y1) = y;
+            Duration.Duration(x1 + y1)
+    }
+
+    instance Sub[Duration] {
+        pub def sub(x: Duration, y: Duration): Duration =
+            let Duration.Duration(x1) = x;
+            let Duration.Duration(y1) = y;
+            Duration.Duration(x1 - y1)
+    }
+
+    instance ToString[Duration] {
+        pub def toString(d: Duration): String =
+            let Duration.Duration(nanos) = d;
+            if (nanos == 0i64)
+                "0ns"
+            else
+                let abs = Int64.abs(nanos);
+                let sign = if (nanos < 0i64) "-" else "";
+                if (abs >= 3_600_000_000_000i64)
+                    let h = abs / 3_600_000_000_000i64;
+                    let rem1 = abs - (h * 3_600_000_000_000i64);
+                    let m = rem1 / 60_000_000_000i64;
+                    let rem2 = rem1 - (m * 60_000_000_000i64);
+                    let s = rem2 / 1_000_000_000i64;
+                    "${sign}${h}h ${m}m ${s}s"
+                else if (abs >= 60_000_000_000i64)
+                    let m = abs / 60_000_000_000i64;
+                    let rem1 = abs - (m * 60_000_000_000i64);
+                    let s = rem1 / 1_000_000_000i64;
+                    "${sign}${m}m ${s}s"
+                else if (abs >= 1_000_000_000i64)
+                    let s = abs / 1_000_000_000i64;
+                    let rem1 = abs - (s * 1_000_000_000i64);
+                    let ms = rem1 / 1_000_000i64;
+                    "${sign}${s}s ${ms}ms"
+                else if (abs >= 1_000_000i64)
+                    let ms = abs / 1_000_000i64;
+                    "${sign}${ms}ms"
+                else if (abs >= 1_000i64)
+                    let us = abs / 1_000i64;
+                    "${sign}${us}us"
+                else
+                    "${sign}${abs}ns"
+    }
+
+    instance Formattable[Duration] {
+        pub def format(d: Duration): RichString = RichString.fromString(ToString.toString(d))
+    }
+
     /// Returns the zero duration.
     pub def zero(): Time.Duration = Time.Duration.Duration(0i64)
 

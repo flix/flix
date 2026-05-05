@@ -15,104 +15,104 @@
  */
 
 
-///
-/// The Set type.
-///
-/// A set is currently represented internally as a red-black tree.
-///
-pub enum Set[t] {
-    case Set(RedBlackTree[t, Unit])
-}
-
-instance Eq[Set[a]] with Eq[a] {
-    pub def eq(s1: Set[a], s2: Set[a]): Bool =
-        Set.toList(s1) == Set.toList(s2)
-}
-
-instance Order[Set[a]] with Order[a] {
-    pub def compare(s1: Set[a], s2: Set[a]): Comparison =
-        Set.toList(s1) <=> Set.toList(s2)
-
-}
-
-instance Hash[Set[a]] with Hash[a] {
-    pub def hash(s: Set[a]): Int32 =
-        Set.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), s)
-}
-
-instance Formattable[Set[a]] with Formattable[a] {
-    type Aef = Formattable.Aef[a]
-
-    pub def format(x: Set[a]): RichString \ Formattable.Aef[a] =
-        RichString.fromString("Set#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), Set.toList(x)) + RichString.fromString("}")
-}
-
-instance ToString[Set[a]] with ToString[a] {
-    pub def toString(s: Set[a]): String = Set.toString(s)
-}
-
-instance LowerBound[Set[a]] {
-    pub def minValue(): Set[a] = Set.empty()
-}
-
-instance PartialOrder[Set[a]] with Order[a] {
-    pub def lessEqual(s1: Set[a], s2: Set[a]): Bool = s1 `Set.isSubsetOf` s2
-}
-
-instance JoinLattice[Set[a]] with Order[a] {
-    pub def leastUpperBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.union` s2
-}
-
-instance MeetLattice[Set[a]] with Order[a] {
-    pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.intersection` s2
-}
-
-instance Foldable[Set] {
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
-    redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
-    redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
-    redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
-}
-
-instance UnorderedFoldable[Set] {
-    pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with CommutativeMonoid[b] = Set.foldMap(f, s)
-    redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
-    redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
-    redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
-
-    @ParallelWhenPure
-    redef count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
-}
-
-instance SemiGroup[Set[a]] with Order[a] {
-    pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
-}
-
-instance CommutativeSemiGroup[Set[a]] with Order[a]
-
-instance Monoid[Set[a]] with Order[a] {
-    pub def empty(): Set[a] = Set.empty()
-}
-
-instance CommutativeMonoid[Set[a]] with Order[a]
-
-instance Collectable[Set[a]] with Order[a] {
-    type Elm = a
-    pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } = Iterator.toSet(iter)
-}
-
-instance Iterable[Set[a]] {
-    type Elm = a
-    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
-}
-
-instance ForEach[Set[a]] {
-    type Elm = a
-    pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef = Set.forEach(f, s)
-}
-
 pub mod Set {
+
+    ///
+    /// The Set type.
+    ///
+    /// A set is currently represented internally as a red-black tree.
+    ///
+    pub enum Set[t] {
+        case Set(RedBlackTree[t, Unit])
+    }
+
+    instance Eq[Set[a]] with Eq[a] {
+        pub def eq(s1: Set[a], s2: Set[a]): Bool =
+            Set.toList(s1) == Set.toList(s2)
+    }
+
+    instance Order[Set[a]] with Order[a] {
+        pub def compare(s1: Set[a], s2: Set[a]): Comparison =
+            Set.toList(s1) <=> Set.toList(s2)
+
+    }
+
+    instance Hash[Set[a]] with Hash[a] {
+        pub def hash(s: Set[a]): Int32 =
+            Set.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), s)
+    }
+
+    instance Formattable[Set[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
+
+        pub def format(x: Set[a]): RichString \ Formattable.Aef[a] =
+            RichString.fromString("Set#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), Set.toList(x)) + RichString.fromString("}")
+    }
+
+    instance ToString[Set[a]] with ToString[a] {
+        pub def toString(s: Set[a]): String = Set.toString(s)
+    }
+
+    instance LowerBound[Set[a]] {
+        pub def minValue(): Set[a] = Set.empty()
+    }
+
+    instance PartialOrder[Set[a]] with Order[a] {
+        pub def lessEqual(s1: Set[a], s2: Set[a]): Bool = s1 `Set.isSubsetOf` s2
+    }
+
+    instance JoinLattice[Set[a]] with Order[a] {
+        pub def leastUpperBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.union` s2
+    }
+
+    instance MeetLattice[Set[a]] with Order[a] {
+        pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.intersection` s2
+    }
+
+    instance Foldable[Set] {
+        pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
+        pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
+        redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+        redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
+        redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
+    }
+
+    instance UnorderedFoldable[Set] {
+        pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with CommutativeMonoid[b] = Set.foldMap(f, s)
+        redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+        redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
+        redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
+
+        @ParallelWhenPure
+        redef count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
+    }
+
+    instance SemiGroup[Set[a]] with Order[a] {
+        pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
+    }
+
+    instance CommutativeSemiGroup[Set[a]] with Order[a]
+
+    instance Monoid[Set[a]] with Order[a] {
+        pub def empty(): Set[a] = Set.empty()
+    }
+
+    instance CommutativeMonoid[Set[a]] with Order[a]
+
+    instance Collectable[Set[a]] with Order[a] {
+        type Elm = a
+        pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } = Iterator.toSet(iter)
+    }
+
+    instance Iterable[Set[a]] {
+        type Elm = a
+        pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
+    }
+
+    instance ForEach[Set[a]] {
+        type Elm = a
+        pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef = Set.forEach(f, s)
+    }
 
     ///
     /// Returns a string representation of the given set `s`.

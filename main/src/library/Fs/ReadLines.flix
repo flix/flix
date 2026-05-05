@@ -19,6 +19,20 @@ pub mod Fs.ReadLines {
     use Fs.FileRead
 
     ///
+    /// An effect used to read the lines of a file.
+    ///
+    /// Use the `ReadLines.runWithFileRead` handler.
+    ///
+    pub eff ReadLines {
+
+        ///
+        /// Returns a list of all lines in the given file `f`.
+        ///
+        def readLines(f: String): Result[IoError, List[String]]
+
+    }
+
+    ///
     /// Handles the `ReadLines` effect of the given function `f` using the `FileRead` effect.
     ///
     pub def runWithFileRead(f: Unit -> a \ ef): a \ (ef - ReadLines) + FileRead =

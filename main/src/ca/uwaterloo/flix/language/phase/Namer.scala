@@ -63,9 +63,43 @@ object Namer {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
 
+      val modules = buildModuleMap(units)
+
       val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
-      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
+      (NamedAst.Root(symbols, instances, uses, units, modules, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
+
+  /**
+    * Returns every `Mod` declaration nested inside `decls`, including `decls` itself.
+    */
+  private def collectModNodes(decls: List[NamedAst.Declaration]): List[NamedAst.Declaration.Mod] =
+    decls.flatMap {
+      case m @ NamedAst.Declaration.Mod(_, _, _, _, _, inner, _) => m :: collectModNodes(inner)
+      case _ => Nil
+    }
+
+  /**
+    * Builds the canonical map from `Symbol.ModuleSym` to its `Mod` declaration.
+    *
+    * Each module symbol must have exactly one declaration site in the program. The first
+    * site encountered (in deterministic order by source name then start line) wins and is
+    * placed in the map. Any subsequent site for the same symbol is reported as a
+    * [[NameError.DuplicateModule]] error against the winner.
+    */
+  private def buildModuleMap(units: Map[Source, NamedAst.CompilationUnit])(implicit sctx: SharedContext): Map[Symbol.ModuleSym, NamedAst.Declaration.Mod] = {
+    val ordered = units.values.toList
+      .flatMap(u => collectModNodes(u.decls))
+      .sortBy(m => (m.loc.source.name, m.loc.startLine))
+
+    ordered.foldLeft(Map.empty[Symbol.ModuleSym, NamedAst.Declaration.Mod]) {
+      case (acc, modDecl) => acc.get(modDecl.sym) match {
+        case None => acc + (modDecl.sym -> modDecl)
+        case Some(prev) =>
+          sctx.errors.add(NameError.DuplicateModule(modDecl.sym.toString, prev.nameLoc, modDecl.nameLoc))
+          acc
+      }
+    }
+  }
 
   /**
     * Check that every module has a parent.
@@ -87,7 +121,7 @@ object Namer {
         for (decl <- decls) {
           decl match {
             // We check if it is a *public* module declaration.
-            case Declaration.Mod(_, mod, sym, _, _, loc) if mod.isPublic =>
+            case Declaration.Mod(_, mod, sym, _, _, _, loc) if mod.isPublic =>
               // Check if `sym` has parent.
               sym.parent() match {
                 case None => // No parent, nothing to check.
@@ -130,7 +164,7 @@ object Namer {
       val ds = decls.getOrElse(sym.ns.last, Nil)
       // Check that the declarations contain a module declaration for `sym`.
       val exists = ds.exists {
-        case Declaration.Mod(_, _, otherSym, _, _, _) => sym == otherSym
+        case Declaration.Mod(_, _, otherSym, _, _, _, _) => sym == otherSym
         case _ => false
       }
       // If no declaration exists then `sym` is an orphan.
@@ -206,7 +240,7 @@ object Namer {
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
-      NamedAst.Declaration.Mod(ann, mod, sym, usesAndImports, ds, loc)
+      NamedAst.Declaration.Mod(ann, mod, sym, qname.loc, usesAndImports, ds, loc)
   }
 
   /**
@@ -217,7 +251,7 @@ object Namer {
   }
 
   private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
-    case NamedAst.Declaration.Mod(_, _, sym, usesAndImports, decls, _) =>
+    case NamedAst.Declaration.Mod(_, _, sym, _, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
       val table2 = decls.foldLeft(table1)(tableDecl)
@@ -1731,7 +1765,7 @@ object Namer {
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected instance", loc)
-    case NamedAst.Declaration.Mod(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
+    case NamedAst.Declaration.Mod(_, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 
   /**

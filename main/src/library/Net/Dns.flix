@@ -25,6 +25,14 @@ pub mod Net.Dns {
     import java.net.UnknownHostException
 
     ///
+    /// The effect used to resolve domain names to IP addresses.
+    ///
+    pub eff Dns {
+        def lookup(host: String): Result[IoError, IpAddr]
+        def lookupAll(host: String): Result[IoError, List[IpAddr]]
+    }
+
+    ///
     /// Handles the `Dns` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Dns` effect using the `IO` effect.

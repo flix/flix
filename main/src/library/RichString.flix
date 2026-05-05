@@ -14,40 +14,40 @@
  * limitations under the License.
  */
 
-///
-/// A rich string composed of multiple styled spans.
-///
-pub enum RichString {
-    case RichString(Chain[RichString.Span])
-}
-
-instance Add[RichString] {
-    pub def add(x: RichString, y: RichString): RichString = RichString.combine(x, y)
-}
-
-instance ToString[RichString] {
-    pub def toString(x: RichString): String = RichString.toString(x)
-}
-
-instance SemiGroup[RichString] {
-    pub def combine(x: RichString, y: RichString): RichString = RichString.combine(x, y)
-}
-
-instance Monoid[RichString] {
-    pub def empty(): RichString = RichString.empty()
-}
-
-instance Formattable[RichString] {
-    pub def format(x: RichString): RichString = x
-}
-
-instance Eq[RichString] {
-    pub def eq(x: RichString, y: RichString): Bool = RichString.equals(x, y)
-}
-
 pub mod RichString {
 
     use Sys.Env
+
+    ///
+    /// A rich string composed of multiple styled spans.
+    ///
+    pub enum RichString {
+        case RichString(Chain[RichString.Span])
+    }
+
+    instance Add[RichString] {
+        pub def add(x: RichString, y: RichString): RichString = RichString.combine(x, y)
+    }
+
+    instance ToString[RichString] {
+        pub def toString(x: RichString): String = RichString.toString(x)
+    }
+
+    instance SemiGroup[RichString] {
+        pub def combine(x: RichString, y: RichString): RichString = RichString.combine(x, y)
+    }
+
+    instance Monoid[RichString] {
+        pub def empty(): RichString = RichString.empty()
+    }
+
+    instance Formattable[RichString] {
+        pub def format(x: RichString): RichString = x
+    }
+
+    instance Eq[RichString] {
+        pub def eq(x: RichString, y: RichString): Bool = RichString.equals(x, y)
+    }
 
     ///
     /// Represents a color with RGB components or the terminal's default color.

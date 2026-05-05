@@ -14,36 +14,36 @@
  * limitations under the License.
  */
 
-///
-/// Represents a mutable hash set that preserves insertion order.
-///
-pub struct MutHashSet[t: Type, r: Region] {
-    inner: MutHashMap[t, Unit, r]
-}
-
-instance ForEach[MutHashSet[a, r]] {
-    type Elm = a
-    type Aef = r
-    pub def forEach(f: a -> Unit \ ef, s: MutHashSet[a, r]): Unit \ ef + r =
-        MutHashSet.forEach(f, s)
-}
-
-instance Iterable[MutHashSet[a, r]] {
-    type Elm = a
-    type Aef = r
-    pub def iterator(rc: Region[r1], s: MutHashSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
-        MutHashSet.iterator(rc, s)
-}
-
-instance Formattable[MutHashSet[t, r]] with Formattable[t] {
-    type Aef = Formattable.Aef[t] + r
-
-    pub def format(x: MutHashSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
-        use RichString.{fromString, joinWith};
-        fromString("MutHashSet#{") + joinWith(Formattable.format, fromString(", "), MutHashSet.toList(x)) + fromString("}")
-}
-
 pub mod MutHashSet {
+
+    ///
+    /// Represents a mutable hash set that preserves insertion order.
+    ///
+    pub struct MutHashSet[t: Type, r: Region] {
+        inner: MutHashMap[t, Unit, r]
+    }
+
+    instance ForEach[MutHashSet[a, r]] {
+        type Elm = a
+        type Aef = r
+        pub def forEach(f: a -> Unit \ ef, s: MutHashSet[a, r]): Unit \ ef + r =
+            MutHashSet.forEach(f, s)
+    }
+
+    instance Iterable[MutHashSet[a, r]] {
+        type Elm = a
+        type Aef = r
+        pub def iterator(rc: Region[r1], s: MutHashSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
+            MutHashSet.iterator(rc, s)
+    }
+
+    instance Formattable[MutHashSet[t, r]] with Formattable[t] {
+        type Aef = Formattable.Aef[t] + r
+
+        pub def format(x: MutHashSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
+            use RichString.{fromString, joinWith};
+            fromString("MutHashSet#{") + joinWith(Formattable.format, fromString(", "), MutHashSet.toList(x)) + fromString("}")
+    }
 
     ///
     /// Returns a new empty set.

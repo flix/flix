@@ -15,22 +15,5 @@
  */
 
 pub mod Concurrent {
-    import java.util.concurrent.locks.{Condition => JCondition}
-    import java.util.concurrent.{CyclicBarrier => JCyclicBarrier}
-    import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
-
-    ///
-    /// A wrapper around a Java Condition.
-    ///
-    pub enum Condition(JCondition)
-
-    ///
-    /// A wrapper around a Java CyclicBarrier.
-    ///
-    pub enum CyclicBarrier(JCyclicBarrier)
-
-    ///
-    /// A wrapper around a Java ReentrantLock.
-    ///
-    pub enum ReentrantLock(JReentrantLock)
+    /* empty */
 }

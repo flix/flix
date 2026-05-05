@@ -15,139 +15,138 @@
  */
 
 
-///
-/// The List type.
-///
-/// A list is either the empty list represented by `Nil`, or
-/// an element `v` followed by a list `vs` represented by `v :: vs`.
-///
-pub enum List[t] {
-    case Nil,
-    case Cons(t, List[t])
-}
-
-instance Formattable[List[a]] with Formattable[a] {
-    type Aef = Formattable.Aef[a]
-
-    pub def format(x: List[a]): RichString \ Formattable.Aef[a] =
-        RichString.fromString("List#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
-}
-
-instance ToString[List[a]] with ToString[a] {
-    pub def toString(l: List[a]): String = List.toString(l)
-}
-
-instance Hash[List[a]] with Hash[a] {
-    pub def hash(l: List[a]): Int32 =
-        List.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), l)
-}
-
-instance Eq[List[a]] with Eq[a] {
-    @Terminates @Tailrec
-    pub def eq(l1: List[a], l2: List[a]): Bool = match (l1, l2) {
-        case (Nil, Nil) => true
-        case (x :: rs, y :: qs) => if (x != y) false else rs == qs
-        case _ => false
-    }
-}
-
-instance Order[List[a]] with Order[a] {
-
-    ///
-    /// Compares `l1` and `l2` lexicographically.
-    ///
-    @Terminates @Tailrec
-    pub def compare(l1: List[a], l2: List[a]): Comparison = match (l1, l2) {
-        case (_ :: _, Nil) => Comparison.GreaterThan
-        case (Nil, Nil) => Comparison.EqualTo
-        case (Nil, _ :: _) => Comparison.LessThan
-        case (z :: zs, w :: ws) =>
-            let cmp = z <=> w;
-            if (cmp == Comparison.EqualTo) zs <=> ws else cmp
-    }
-
-}
-
-instance Functor[List] {
-    pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef = List.map(f, l)
-}
-
-instance Applicative[List] {
-    pub def point(a: a) : List[a] = List.point(a)
-    pub def ap(f: List[a -> b \ ef], x: List[a]) : List[b] \ ef = List.ap(f, x)
-}
-
-instance Monad[List] {
-    pub def flatMap(f: a -> List[b] \ ef, x : List[a]) : List[b] \ ef = List.flatMap(f, x)
-}
-
-instance MonadZero[List] {
-    pub def empty(): List[a] = Nil
-}
-
-instance MonadZip[List] {
-    pub def zipWith(f: (a, b) -> c \ ef, xs: List[a], ys: List[b]): List[c] \ ef = List.zipWith(f, xs, ys)
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: List[a], ys: List[b]): f[List[c]] \ ef with Applicative[f] = List.zipWithA(f, xs, ys)
-    redef zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
-    redef unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
-}
-
-instance Foldable[List] {
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
-    redef head(l: List[a]): Option[a] = List.head(l)
-    redef isEmpty(l: List[a]): Bool = List.isEmpty(l)
-    redef memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
-    redef forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
-    redef exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
-}
-
-instance UnorderedFoldable[List] {
-    pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
-    redef isEmpty(l: List[a]): Bool = List.isEmpty(l)
-    redef exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
-    redef forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
-    redef memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
-}
-
-instance Traversable[List] {
-    pub def traverse(f: a -> m[b] \ ef, t: List[a]): m[List[b]] \ ef with Applicative[m] = List.traverse(f, t)
-    redef sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
-}
-
-instance Filterable[List] {
-    pub def filterMap(f: a -> Option[b] \ ef, x: List[a]): List[b] \ ef = List.filterMap(f, x)
-    redef filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
-}
-
-instance Witherable[List]
-
-instance SemiGroup[List[a]] {
-    pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
-}
-
-instance Monoid[List[a]] {
-    pub def empty(): List[a] = Nil
-}
-
-instance Collectable[List[a]] {
-    type Elm = a
-    pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } = Iterator.toList(iter)
-}
-
-instance Iterable[List[a]] {
-    type Elm = a
-    pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = List.iterator(rc, l)
-}
-
-instance ForEach[List[a]] {
-    type Elm = a
-    pub def forEach(f: a -> Unit \ ef, t: List[a]): Unit \ ef = List.forEach(f, t)
-}
-
-
 pub mod List {
     use Math.Shuffle
+
+    ///
+    /// The List type.
+    ///
+    /// A list is either the empty list represented by `Nil`, or
+    /// an element `v` followed by a list `vs` represented by `v :: vs`.
+    ///
+    pub enum List[t] {
+        case Nil,
+        case Cons(t, List[t])
+    }
+
+    instance Formattable[List[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
+
+        pub def format(x: List[a]): RichString \ Formattable.Aef[a] =
+            RichString.fromString("List#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
+    }
+
+    instance ToString[List[a]] with ToString[a] {
+        pub def toString(l: List[a]): String = List.toString(l)
+    }
+
+    instance Hash[List[a]] with Hash[a] {
+        pub def hash(l: List[a]): Int32 =
+            List.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), l)
+    }
+
+    instance Eq[List[a]] with Eq[a] {
+        @Terminates @Tailrec
+        pub def eq(l1: List[a], l2: List[a]): Bool = match (l1, l2) {
+            case (Nil, Nil) => true
+            case (x :: rs, y :: qs) => if (x != y) false else rs == qs
+            case _ => false
+        }
+    }
+
+    instance Order[List[a]] with Order[a] {
+
+        ///
+        /// Compares `l1` and `l2` lexicographically.
+        ///
+        @Terminates @Tailrec
+        pub def compare(l1: List[a], l2: List[a]): Comparison = match (l1, l2) {
+            case (_ :: _, Nil) => Comparison.GreaterThan
+            case (Nil, Nil) => Comparison.EqualTo
+            case (Nil, _ :: _) => Comparison.LessThan
+            case (z :: zs, w :: ws) =>
+                let cmp = z <=> w;
+                if (cmp == Comparison.EqualTo) zs <=> ws else cmp
+        }
+
+    }
+
+    instance Functor[List] {
+        pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef = List.map(f, l)
+    }
+
+    instance Applicative[List] {
+        pub def point(a: a) : List[a] = List.point(a)
+        pub def ap(f: List[a -> b \ ef], x: List[a]) : List[b] \ ef = List.ap(f, x)
+    }
+
+    instance Monad[List] {
+        pub def flatMap(f: a -> List[b] \ ef, x : List[a]) : List[b] \ ef = List.flatMap(f, x)
+    }
+
+    instance MonadZero[List] {
+        pub def empty(): List[a] = Nil
+    }
+
+    instance MonadZip[List] {
+        pub def zipWith(f: (a, b) -> c \ ef, xs: List[a], ys: List[b]): List[c] \ ef = List.zipWith(f, xs, ys)
+        pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: List[a], ys: List[b]): f[List[c]] \ ef with Applicative[f] = List.zipWithA(f, xs, ys)
+        redef zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
+        redef unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
+    }
+
+    instance Foldable[List] {
+        pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
+        pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
+        redef head(l: List[a]): Option[a] = List.head(l)
+        redef isEmpty(l: List[a]): Bool = List.isEmpty(l)
+        redef memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+        redef forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
+        redef exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
+    }
+
+    instance UnorderedFoldable[List] {
+        pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
+        redef isEmpty(l: List[a]): Bool = List.isEmpty(l)
+        redef exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
+        redef forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
+        redef memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+    }
+
+    instance Traversable[List] {
+        pub def traverse(f: a -> m[b] \ ef, t: List[a]): m[List[b]] \ ef with Applicative[m] = List.traverse(f, t)
+        redef sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
+    }
+
+    instance Filterable[List] {
+        pub def filterMap(f: a -> Option[b] \ ef, x: List[a]): List[b] \ ef = List.filterMap(f, x)
+        redef filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
+    }
+
+    instance Witherable[List]
+
+    instance SemiGroup[List[a]] {
+        pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
+    }
+
+    instance Monoid[List[a]] {
+        pub def empty(): List[a] = Nil
+    }
+
+    instance Collectable[List[a]] {
+        type Elm = a
+        pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } = Iterator.toList(iter)
+    }
+
+    instance Iterable[List[a]] {
+        type Elm = a
+        pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = List.iterator(rc, l)
+    }
+
+    instance ForEach[List[a]] {
+        type Elm = a
+        pub def forEach(f: a -> Unit \ ef, t: List[a]): Unit \ ef = List.forEach(f, t)
+    }
 
     ///
     /// Renders the list `l` to a String.

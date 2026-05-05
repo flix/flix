@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-///
-/// An error that can occur when performing I/O operations involving the file system.
-///
-/// The first element describes the general kind of error that occurred.
-/// This can be used to determine the correct action to take to handle specific kinds of errors.
-///
-/// The second element is a string that describes the error, meant to be used for debugging purposes.
-///
-pub enum IoError(IoError.ErrorKind, String) with Eq, ToString
-
-instance Formattable[IoError] {
-    pub def format(e: IoError): RichString = match e {
-        case IoError.IoError(kind, msg) =>
-            Formattable.format(kind) + RichString.fromString(": ") + RichString.fromString(msg)
-    }
-}
-
 pub mod IoError {
+
+    ///
+    /// An error that can occur when performing I/O operations involving the file system.
+    ///
+    /// The first element describes the general kind of error that occurred.
+    /// This can be used to determine the correct action to take to handle specific kinds of errors.
+    ///
+    /// The second element is a string that describes the error, meant to be used for debugging purposes.
+    ///
+    pub enum IoError(IoError.ErrorKind, String) with Eq, ToString
+
+    instance Formattable[IoError] {
+        pub def format(e: IoError): RichString = match e {
+            case IoError.IoError(kind, msg) =>
+                Formattable.format(kind) + RichString.fromString(": ") + RichString.fromString(msg)
+        }
+    }
 
     pub enum ErrorKind with Eq, ToString {
         case AlreadyExists,
