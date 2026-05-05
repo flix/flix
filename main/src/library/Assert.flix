@@ -18,8 +18,8 @@
 pub mod Assert {
 
     use Sys.Console
-    use RichString.{blue, red, text, yellow};
-    import java.lang.AssertionError;
+    use RichString.{blue, red, text, yellow}
+    import java.lang.AssertionError
 
     ///
     /// An effect used to perform assertions during program execution.
@@ -303,7 +303,7 @@ pub mod Assert {
                         println("");
                         print(RichString.toString(yellow("Continue execution? (Y/n): ")));
                         match readln() {
-                            case None =>
+                            case None        =>
                                 throw new AssertionError("Execution aborted (no interactive console) after the following assertion failure: ${RichString.toString(msg)}")
                             case Some(input) =>
                                 let trimmed = String.toLowerCase(String.trim(input));

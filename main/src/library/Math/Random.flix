@@ -17,7 +17,6 @@
 pub mod Math.Random {
 
     use Math.Random
-
     import java.util.{Random => JRandom}
 
     ///
@@ -48,8 +47,8 @@ pub mod Math.Random {
             run {
                 f(x)
             } with handler Random {
-                def randomFloat64(k)    = k(rnd.nextDouble())
-                def randomInt64(k)      = k(rnd.nextLong())
+                def randomFloat64(k) = k(rnd.nextDouble())
+                def randomInt64(k) = k(rnd.nextLong())
             }
         }
 
@@ -73,8 +72,8 @@ pub mod Math.Random {
             run {
                 f(x)
             } with handler Random {
-                def randomFloat64(k)  = k(unsafe IO { rnd.nextDouble() })
-                def randomInt64(k)    = k(unsafe IO { rnd.nextLong() })
+                def randomFloat64(k) = k(unsafe IO { rnd.nextDouble() })
+                def randomInt64(k) = k(unsafe IO { rnd.nextLong() })
             }
         }
 

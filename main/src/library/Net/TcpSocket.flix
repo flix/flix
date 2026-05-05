@@ -19,7 +19,6 @@ pub mod Net.TcpSocket {
     import java.io.InputStream
     import java.io.OutputStream
     import java.net.Socket
-
     use Net.TcpSocket
     use Net.TcpSocket.TcpSocket
 

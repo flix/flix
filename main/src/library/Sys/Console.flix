@@ -17,7 +17,6 @@
 pub mod Sys.Console {
 
     use Sys.Console
-
     import java.lang.System
     import java.io.BufferedReader
     import java.io.InputStreamReader
@@ -104,8 +103,8 @@ pub mod Sys.Console {
         let hint = if (default#default) " [Y/n] " else " [y/N] ";
         Console.print(prompt(p) + hint);
         match Console.readln() {
-            case None        => default#default
-            case Some(raw)   =>
+            case None      => default#default
+            case Some(raw) =>
                 let input = String.toLowerCase(String.trim(raw));
                 if (String.isEmpty(input))
                     default#default
@@ -130,8 +129,8 @@ pub mod Sys.Console {
             Console.println("  ${i + 1}) ${prompt(opt)}");
         Console.print("> ");
         match Console.readln() {
-            case None        => None
-            case Some(raw)   =>
+            case None      => None
+            case Some(raw) =>
                 match Int32.fromString(raw) {
                     case None    => None
                     case Some(n) =>
@@ -184,10 +183,10 @@ pub mod Sys.Console {
         run {
             f(x)
         } with handler Console {
-            def readln(k)      = k(reader())
-            def print(s, k)    = { System.out.print(s); System.out.flush(); k() }
-            def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }
-            def println(s, k)  = { System.out.println(s); System.out.flush(); k() }
+            def readln(k) = k(reader())
+            def print(s, k) = { System.out.print(s); System.out.flush(); k() }
+            def eprint(s, k) = { System.err.print(s); System.err.flush(); k() }
+            def println(s, k) = { System.out.println(s); System.out.flush(); k() }
             def eprintln(s, k) = { System.err.println(s); System.err.flush(); k() }
         }
 
