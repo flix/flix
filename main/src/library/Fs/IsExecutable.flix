@@ -24,10 +24,12 @@ pub mod Fs.IsExecutable {
     /// Use the `IsExecutable.runWithFilePermission` handler.
     ///
     pub eff IsExecutable {
+
         ///
         /// Returns `true` if the given file `f` is executable.
         ///
         def isExecutable(f: String): Result[IoError, Bool]
+
     }
 
     ///
@@ -37,4 +39,5 @@ pub mod Fs.IsExecutable {
         run { f() } with handler IsExecutable {
             def isExecutable(filename, k) = k(Fs.FilePermission.isExecutable(filename))
         }
+
 }

@@ -128,4 +128,5 @@ pub mod ToJava {
         type Aef = IO
         pub def toJava(m: Map[k, v]): JMap[k, v] \ IO = Adaptor.toMap(m)
     }
+
 }

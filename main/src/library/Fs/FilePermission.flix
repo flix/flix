@@ -26,6 +26,7 @@ pub mod Fs.FilePermission {
     /// An effect used to check file permissions (readable, writable, executable).
     ///
     pub eff FilePermission {
+
         ///
         /// Returns `true` if the given file `f` is readable.
         ///
@@ -40,6 +41,7 @@ pub mod Fs.FilePermission {
         /// Returns `true` if the given file `f` is executable.
         ///
         def isExecutable(f: String): Result[IoError, Bool]
+
     }
 
     ///
@@ -50,12 +52,11 @@ pub mod Fs.FilePermission {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FilePermission) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                y ->
-                    checked_ecast(
-                        Fs.FileStat.runWithFileSystem(
-                            () -> runWithFileStat(() -> f(y))
-                        )
+                y -> checked_ecast(
+                    Fs.FileStat.runWithFileSystem(
+                        () -> runWithFileStat(() -> f(y))
                     )
+                )
             )(x)
         )
 
@@ -72,8 +73,8 @@ pub mod Fs.FilePermission {
     ///
     pub def runWithFileStat(f: Unit -> a \ ef): a \ (ef - FilePermission) + FileStat =
         run { f() } with handler FilePermission {
-            def isReadable(filename, k) = k(Fs.FileStat.isReadable(filename))
-            def isWritable(filename, k) = k(Fs.FileStat.isWritable(filename))
+            def isReadable(filename, k)  = k(Fs.FileStat.isReadable(filename))
+            def isWritable(filename, k)  = k(Fs.FileStat.isWritable(filename))
             def isExecutable(filename, k) = k(Fs.FileStat.isExecutable(filename))
         }
 
@@ -83,7 +84,7 @@ pub mod Fs.FilePermission {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FilePermission) + { FilePermission, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FilePermission) + {FilePermission, Logger} =
         run { f() } with handler FilePermission {
             def isReadable(filename, k) = {
                 logPre("isReadable", filename);
@@ -114,8 +115,8 @@ pub mod Fs.FilePermission {
     pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
         let r = p -> Fs.FsLayer.resolve(baseDir, p);
         run { f() } with handler FilePermission {
-            def isReadable(filename, k) = k(FilePermission.isReadable(r(filename)))
-            def isWritable(filename, k) = k(FilePermission.isWritable(r(filename)))
+            def isReadable(filename, k)   = k(FilePermission.isReadable(r(filename)))
+            def isWritable(filename, k)   = k(FilePermission.isWritable(r(filename)))
             def isExecutable(filename, k) = k(FilePermission.isExecutable(r(filename)))
         }
 
@@ -127,8 +128,8 @@ pub mod Fs.FilePermission {
     pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
         run { f() } with handler FilePermission {
-            def isReadable(filename, k) = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
-            def isWritable(filename, k) = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
             def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
         }
 
@@ -140,8 +141,8 @@ pub mod Fs.FilePermission {
     pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
         run { f() } with handler FilePermission {
-            def isReadable(filename, k) = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
-            def isWritable(filename, k) = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
             def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
         }
 
@@ -153,8 +154,8 @@ pub mod Fs.FilePermission {
     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
         run { f() } with handler FilePermission {
-            def isReadable(filename, k) = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
-            def isWritable(filename, k) = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
             def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
         }
 
@@ -166,8 +167,8 @@ pub mod Fs.FilePermission {
     pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
         let c = p -> Fs.FsLayer.allowGlob(patterns, p);
         run { f() } with handler FilePermission {
-            def isReadable(filename, k) = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
-            def isWritable(filename, k) = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
             def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
         }
 
@@ -179,8 +180,8 @@ pub mod Fs.FilePermission {
     pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
         run { f() } with handler FilePermission {
-            def isReadable(filename, k) = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
-            def isWritable(filename, k) = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
             def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
         }
 
@@ -197,8 +198,9 @@ pub mod Fs.FilePermission {
             case Err(e)                              => Err(e)
         };
         run { f() } with handler FilePermission {
-            def isReadable(filename, k) = k(resolveBool(filename, p -> FilePermission.isReadable(p)))
-            def isWritable(filename, k) = k(resolveBool(filename, p -> FilePermission.isWritable(p)))
+            def isReadable(filename, k)   = k(resolveBool(filename, p -> FilePermission.isReadable(p)))
+            def isWritable(filename, k)   = k(resolveBool(filename, p -> FilePermission.isWritable(p)))
             def isExecutable(filename, k) = k(resolveBool(filename, p -> FilePermission.isExecutable(p)))
         }
+
 }

@@ -24,10 +24,12 @@ pub mod Fs.IsDirectory {
     /// Use the `IsDirectory.runWithFileTest` handler.
     ///
     pub eff IsDirectory {
+
         ///
         /// Returns `true` if the given file `f` is a directory.
         ///
         def isDirectory(f: String): Result[IoError, Bool]
+
     }
 
     ///
@@ -37,4 +39,5 @@ pub mod Fs.IsDirectory {
         run { f() } with handler IsDirectory {
             def isDirectory(filename, k) = k(Fs.FileTest.isDirectory(filename))
         }
+
 }

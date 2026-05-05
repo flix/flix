@@ -22,9 +22,10 @@ pub mod Net.RetryOutcome {
     /// Describes why a retry is being considered.
     ///
     pub enum RetryOutcome {
-         /// A transport-level failure (connection refused, timeout, etc.).
+        /// A transport-level failure (connection refused, timeout, etc.).
         case TransportError(IoError)
-         /// A response was received but its status code warrants a retry (e.g. 429, 503).
+        /// A response was received but its status code warrants a retry (e.g. 429, 503).
         case HttpError(HttpResponse)
     }
+
 }

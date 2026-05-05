@@ -28,7 +28,8 @@ pub mod Net.Retry {
     ///
     /// Returns a strategy that never retries.
     ///
-    pub def noRetry(): (Int32, HttpRequest, RetryOutcome) -> RetryDecision = (_, _, _) -> RetryDecision.Stop
+    pub def noRetry(): (Int32, HttpRequest, RetryOutcome) -> RetryDecision =
+        (_, _, _) -> RetryDecision.Stop
 
     ///
     /// Returns a strategy that retries up to `maxRetries` times with a fixed `delay`.
@@ -37,10 +38,8 @@ pub mod Net.Retry {
         let maxRetries = mr#maxRetries;
         let delay = dm#delay;
         (attempt, _, _) ->
-            if (attempt < maxRetries)
-                RetryDecision.Retry(delay)
-            else
-                RetryDecision.Stop
+            if (attempt < maxRetries) RetryDecision.Retry(delay)
+            else RetryDecision.Stop
 
     ///
     /// Returns a strategy with exponential backoff.
@@ -56,8 +55,7 @@ pub mod Net.Retry {
                 let delay = baseNanos * Int64.leftShift(1i64, Int32.min(attempt, 62));
                 let clamped = if (delay <= 0i64) Int64.maxValue() else delay;
                 RetryDecision.Retry(nanoseconds(clamped))
-            else
-                RetryDecision.Stop
+            else RetryDecision.Stop
 
     ///
     /// Returns a strategy that retries up to `maxRetries` times, honouring an integer-seconds
@@ -69,19 +67,17 @@ pub mod Net.Retry {
         let maxRetries = mr#maxRetries;
         let baseDelay = bdm#baseDelay;
         (attempt, _, outcome) ->
-            if (attempt >= maxRetries)
-                RetryDecision.Stop
+            if (attempt >= maxRetries) RetryDecision.Stop
             else
                 let delay = match outcome {
-                    case RetryOutcome.HttpError(resp)   =>
+                    case RetryOutcome.HttpError(resp) =>
                         match HttpResponse.headerValue("retry-after", resp) {
-                            case Some(s) =>
-                                match Int64.fromString(s) {
-                                    // Clamp to Int32 range to guard against absurd Retry-After values from untrusted servers.
-                                    case Some(secs) => seconds(Int64.clampToInt32(min = 0, max = Int32.maxValue(), secs))
-                                    case None       => baseDelay
-                                }
-                            case None    => baseDelay
+                            case Some(s) => match Int64.fromString(s) {
+                                // Clamp to Int32 range to guard against absurd Retry-After values from untrusted servers.
+                            case Some(secs) => seconds(Int64.clampToInt32(min = 0, max = Int32.maxValue(), secs))
+                                case None       => baseDelay
+                            }
+                            case None => baseDelay
                         }
                     case RetryOutcome.TransportError(_) => baseDelay
                 };
@@ -98,16 +94,15 @@ pub mod Net.Retry {
         let delay = dm#delay;
         (attempt, _, outcome) -> match outcome {
             case RetryOutcome.TransportError(_) if attempt < maxRetries => RetryDecision.Retry(delay)
-            case _                                                      => RetryDecision.Stop
+            case _                                                       => RetryDecision.Stop
         }
 
     ///
     /// Wraps `inner` by adding uniform random jitter in `[0, maxJitter]` to any `Retry` delay.
     ///
-    pub def withJitter(
-        mjm: {maxJitter = Duration},
-        inner: (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef
-    ): (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef + Random =
+    pub def withJitter(mjm: {maxJitter = Duration},
+                       inner: (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef):
+                       (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef + Random =
         let maxJitterNanos = toNanos(mjm#maxJitter);
         (attempt, req, outcome) ->
             let base = inner(attempt, req, outcome);
@@ -125,11 +120,9 @@ pub mod Net.Retry {
     /// `startMs` should be the result of `Clock.now()` captured before entering the retry loop.
     /// Returns `Stop` if the deadline is already past.
     ///
-    pub def withDeadline(
-        dlm: {deadline = Duration},
-        sm: {startMs = Int64},
-        inner: (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef
-    ): (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef + Clock =
+    pub def withDeadline(dlm: {deadline = Duration}, sm: {startMs = Int64},
+                         inner: (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef):
+                         (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef + Clock =
         let deadlineMs = toMillis(dlm#deadline);
         let startMs = sm#startMs;
         (attempt, req, outcome) ->
@@ -138,10 +131,10 @@ pub mod Net.Retry {
                 case RetryDecision.Stop     => RetryDecision.Stop
                 case RetryDecision.Retry(d) =>
                     let elapsed = Clock.now() - startMs;
-                    if (elapsed >= deadlineMs)
-                        RetryDecision.Stop
+                    if (elapsed >= deadlineMs) RetryDecision.Stop
                     else
                         let ms = Int64.min(toMillis(d), deadlineMs - elapsed);
                         RetryDecision.Retry(milliseconds(Int64.clampToInt32(min = 0, max = Int32.maxValue(), ms)))
             }
+
 }

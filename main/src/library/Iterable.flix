@@ -37,5 +37,7 @@ pub mod Iterable {
         /// Returns an iterator over `t`.
         ///
         pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], r + aef, r] \ (r + aef) where Iterable.Aef[t] ~ aef
+
     }
+
 }

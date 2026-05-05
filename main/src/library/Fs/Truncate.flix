@@ -24,10 +24,12 @@ pub mod Fs.Truncate {
     /// Use the `Truncate.runWithFileWrite` handler.
     ///
     pub eff Truncate {
+
         ///
         /// Truncates the given file `f`.
         ///
         def truncate(f: String): Result[IoError, Unit]
+
     }
 
     ///
@@ -37,4 +39,5 @@ pub mod Fs.Truncate {
         run { f() } with handler Truncate {
             def truncate(file, k) = k(Fs.FileWrite.truncate(file))
         }
+
 }

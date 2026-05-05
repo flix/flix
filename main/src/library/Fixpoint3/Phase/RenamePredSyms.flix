@@ -57,29 +57,26 @@ pub mod Fixpoint3.Phase.RenamePredSyms {
     /// Recursively applies `mapping` to the different Datalog enums to make `PredSym`s unique.
     ///
     def fixPredSymsInternal(d: Datalog, mapping: UniqueInts[PredSym, r]): Datalog \ r = match d {
-        case Datalog(facts, rules)    =>
+        case Datalog(facts, rules) =>
             let transformer = mapForward(mapping);
             Datalog(remapConstraints(facts, transformer), remapConstraints(rules, transformer))
-        case Model(facts)             =>
+        case Model(facts) =>
             (Map#{}, facts)
-                ||> Map.foldLeftWithKey(
-                    acc -> match RelSym.Symbol(predSym, arity, den) -> v -> {
-                        let newSym = RelSym.Symbol(mapForward(mapping, predSym), arity, den);
-                        Map.insert(newSym, v, acc)
-                    }
-                )
+                ||> Map.foldLeftWithKey(acc -> match RelSym.Symbol(predSym, arity, den) -> v -> {
+                    let newSym = RelSym.Symbol(mapForward(mapping, predSym), arity, den);
+                    Map.insert(newSym, v, acc)
+                })
                 |> Model
         case Provenance(rules, facts) =>
             let transformer = mapForward(mapping);
             let newRules = remapConstraints(rules, transformer);
             (Map#{}, facts)
-                ||> Map.foldLeftWithKey(
-                    acc -> match RelSym.Symbol(predSym, arity, den) -> v ->
-                        let newSym = RelSym.Symbol(mapForward(mapping, predSym), arity, den);
-                        Map.insert(newSym, v, acc)
+                ||> Map.foldLeftWithKey(acc -> match RelSym.Symbol(predSym, arity, den) -> v ->
+                    let newSym = RelSym.Symbol(mapForward(mapping, predSym), arity, den);
+                    Map.insert(newSym, v, acc)
                 )
                 |> Provenance(newRules)
-        case Join(d1, d2)             =>
+        case Join(d1, d2) =>
             Join(fixPredSymsInternal(d1, mapping), fixPredSymsInternal(d2, mapping))
     }
 
@@ -87,28 +84,26 @@ pub mod Fixpoint3.Phase.RenamePredSyms {
     /// Replaces `PredSym(name, id)` in `d` with `Map.get(id, fixing)`.
     ///
     pub def renamePredSyms(d: Datalog, fixing: FixInformation): Datalog = match d {
-        case Datalog(facts, rules)    =>
+        case Datalog(facts, rules) =>
             let transformer = mapBack(fixing);
             Datalog(remapConstraints(facts, transformer), remapConstraints(rules, transformer))
-        case Model(map)               =>
+        case Model(map) =>
             let transformer = mapBack(fixing);
             (Map#{}, map)
-                ||> Map.foldLeftWithKey(
-                    newMap -> match RelSym.Symbol(p, arity, den) -> v ->
-                        Map.insert(RelSym.Symbol(transformer(p), arity, den), v, newMap)
+                ||> Map.foldLeftWithKey(newMap -> match RelSym.Symbol(p, arity, den) -> v ->
+                    Map.insert(RelSym.Symbol(transformer(p), arity, den), v, newMap)
                 )
                 |> Model
         case Provenance(rules, model) => {
             let transformer = mapBack(fixing);
             let newRules = remapConstraints(rules, transformer);
             (Map#{}, model)
-                ||> Map.foldLeftWithKey(
-                    newMap -> match RelSym.Symbol(p, arity, den) -> v ->
-                        Map.insert(RelSym.Symbol(transformer(p), arity, den), v, newMap)
+                ||> Map.foldLeftWithKey(newMap -> match RelSym.Symbol(p, arity, den) -> v ->
+                    Map.insert(RelSym.Symbol(transformer(p), arity, den), v, newMap)
                 )
                 |> Provenance(newRules)
         }
-        case Join(_, _)               => bug!("Bad argument of type 'Join' in PredSym renaming")
+        case Join(_, _) => bug!("Bad argument of type 'Join' in PredSym renaming")
     }
 
     ///
@@ -148,6 +143,6 @@ pub mod Fixpoint3.Phase.RenamePredSyms {
     ///
     def remapBody(transformer: PredSym -> PredSym \ r, body: BodyPredicate): BodyPredicate \ r = match body {
         case BodyAtom(pred, den, pol, fixed, terms) => BodyAtom(transformer(pred), den, pol, fixed, terms)
-        case _                                      => body
+        case _ => body
     }
 }

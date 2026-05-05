@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+
 ///
 /// Basic support for regular expression matching on Strings.
 ///
@@ -29,25 +30,21 @@
 /// > String.breakOnLeft ~> Regex/Text.breakOnFirst
 /// > String.breakOnRight ~> Regex/Text.breakOnLast
 ///
+
 pub mod Regex {
 
     import java.util.regex.Pattern
     import java.util.regex.{Matcher => JMatcher}
     import java.lang.Exception
+
     use Regex.Flag
-    use Regex.Flag.{
-        CanonEq,
-        CaseInsenstive,
-        Comments,
-        Dotall,
-        Literal,
-        Multiline,
-        UnicodeCase,
-        UnicodeCharacterClass,
-        UnixLines
+    use Regex.Flag.{CanonEq, CaseInsenstive,
+        Comments, Dotall, Literal, Multiline,
+        UnicodeCase, UnicodeCharacterClass, UnixLines
     }
     use Regex.Matcher
     use Regex.Matcher.{Matcher}
+
 
     ///
     /// Represents a flag controlling the compilation of regular expression.
@@ -70,23 +67,24 @@ pub mod Regex {
     /// Regex Pattern Flags predate `Enum` in Java so they are represented as an `Int32`
     /// and can be summed to make a bit mask.
     ///
-    def toInt(flag: Flag): Int32 = match flag {
-        case CanonEq               => Pattern.CANON_EQ
-        case CaseInsenstive        => Pattern.CASE_INSENSITIVE
-        case Comments              => Pattern.COMMENTS
-        case Dotall                => Pattern.DOTALL
-        case Literal               => Pattern.LITERAL
-        case Multiline             => Pattern.MULTILINE
-        case UnicodeCase           => Pattern.UNICODE_CASE
-        case UnicodeCharacterClass => Pattern.UNICODE_CHARACTER_CLASS
-        case UnixLines             => Pattern.UNIX_LINES
-    }
+    def toInt(flag: Flag): Int32 =
+        match flag {
+            case CanonEq                => Pattern.CANON_EQ
+            case CaseInsenstive         => Pattern.CASE_INSENSITIVE
+            case Comments               => Pattern.COMMENTS
+            case Dotall                 => Pattern.DOTALL
+            case Literal                => Pattern.LITERAL
+            case Multiline              => Pattern.MULTILINE
+            case UnicodeCase            => Pattern.UNICODE_CASE
+            case UnicodeCharacterClass  => Pattern.UNICODE_CHARACTER_CLASS
+            case UnixLines              => Pattern.UNIX_LINES
+        }
 
     ///
     /// Sum a list of flags to an `Int32` bit mask.
     ///
     pub def sumFlags(flags: Set[Flag]): Int32 =
-        Set.foldLeft((ac, e) -> ac + toInt(e), 0, flags)
+        Set.foldLeft((ac,e) -> ac + toInt(e), 0, flags)
 
     ///
     /// Decompose an Int32 representing bit masks into a list of flags.
@@ -96,19 +94,8 @@ pub mod Regex {
             let y1 = toInt(y);
             Int32.bitwiseAnd(x, y1) == y1
         };
-        List.filter(
-            check,
-            CanonEq
-                :: CaseInsenstive
-                :: Comments
-                :: Dotall
-                :: Literal
-                :: Multiline
-                :: UnicodeCase
-                :: UnicodeCharacterClass
-                :: UnixLines
-                :: Nil
-        )
+        List.filter(check, CanonEq :: CaseInsenstive :: Comments :: Dotall :: Literal ::
+                            Multiline :: UnicodeCase :: UnicodeCharacterClass :: UnixLines :: Nil)
 
     ///
     /// Return the unmatchable Regex - a regular expression that will not match any input.
@@ -138,6 +125,7 @@ pub mod Regex {
     pub def flags(rgx: Regex): Set[Flag] =
         let i = rgx.flags();
         listFlags(i) |> List.toSet
+
 
     ///
     /// Returns `true` if the entire string `s` is matched by the Regex `rgx`.
@@ -191,16 +179,8 @@ pub mod Regex {
         let m = newMatcher(rc, rgx, s);
         if (find(m))
             let cnt = groupCount(m);
-            match List.foldRight(
-                (a, x) ->
-                    forM (
-                        x2 <- x;
-                        a2 <- a
-                    ) yield a2 :: x2,
-                Ok(Nil),
-                List.map(matcherGroup(m), List.range(1, cnt + 1))
-            ) {
-                case Ok(l)  => l
+            match List.foldRight((a,x) -> forM(x2 <- x; a2 <- a) yield a2 :: x2, Ok(Nil), List.map(matcherGroup(m),List.range(1,cnt + 1))) {
+                case Ok(l) => l
                 case Err(_) => Nil
             }
         else
@@ -453,8 +433,8 @@ pub mod Regex {
     ///
     pub def isMatchWithBounds(rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Bool = region rc {
         match newMatcherWithBounds(rc, rgx, start, end, s) {
-            case Ok(Matcher(m)) => unsafe IO { m.matches() }
-            case Err(_)         => false
+            case Ok(Matcher(m))  => unsafe IO { m.matches() }
+            case Err(_)          => false
         }
     }
 
@@ -482,11 +462,10 @@ pub mod Regex {
     ///
     pub def indicesOfWithBounds(substr: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Vector[Int32] = region rc {
         match newMatcherWithBounds(rc, substr, start, end, s) {
-            case Ok(m)  =>
-                match foldSubmatches(Chain.snoc, Chain.empty(), matcherStart, m) {
-                    case Ok(c)  => Chain.toList(c) |> List.toVector
-                    case Err(_) => Vector.empty()
-                }
+            case Ok(m)  => match foldSubmatches(Chain.snoc, Chain.empty(), matcherStart, m) {
+               case Ok(c)  => Chain.toList(c) |> List.toVector
+               case Err(_) => Vector.empty()
+            }
             case Err(_) => Vector.empty()
         }
     }
@@ -499,11 +478,10 @@ pub mod Regex {
     ///
     pub def submatchesWithBounds(substr: Regex, start: {start = Int32}, end: {end = Int32}, s: String): List[String] = region rc {
         match newMatcherWithBounds(rc, substr, start, end, s) {
-            case Ok(m)  =>
-                match foldSubmatches(Chain.snoc, Chain.empty(), matcherContent, m) {
-                    case Ok(c)  => Chain.toList(c)
-                    case Err(_) => Nil
-                }
+            case Ok(m)   => match foldSubmatches(Chain.snoc, Chain.empty(), matcherContent, m) {
+                case Ok(c)  => Chain.toList(c)
+                case Err(_) => Nil
+            }
             case Err(_) => Nil
         }
     }
@@ -515,11 +493,10 @@ pub mod Regex {
     ///
     pub def countSubmatchesWithBounds(substr: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Int32 = region rc {
         match newMatcherWithBounds(rc, substr, start, end, s) {
-            case Ok(m)  =>
-                match foldSubmatches((acc, _) -> acc + 1, 0, matcherStart, m) {
-                    case Ok(n)  => n
-                    case Err(_) => 0
-                }
+            case Ok(m)  => match foldSubmatches((acc, _) -> acc + 1, 0, matcherStart, m) {
+                case Ok(n)  => n
+                case Err(_) => 0
+            }
             case Err(_) => 0
         }
     }
@@ -580,6 +557,7 @@ pub mod Regex {
     // Internal support for matching using java.util.regex.Matcher           //
     ///////////////////////////////////////////////////////////////////////////
 
+
     ///
     /// Matcher is imperative - it can be seen as a stepper through a stream
     /// of matches. The matcher is updated with the function find to move to
@@ -623,13 +601,11 @@ pub mod Regex {
     /// The internal state of the matcher is updated.
     ///
     def findFrom(pos: Int32, m: Matcher[r]): Bool \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { m1.find(pos) }
-            }
-        )
-            |> Result.getWithDefault(false)
+        Result.tryCatch(_ -> {
+            let Matcher(m1) = m;
+            unsafe IO as r { m1.find(pos) }
+        }) |> Result.getWithDefault(false)
+
 
     ///
     /// Attempt to find the last match by iterating through the input string.
@@ -645,13 +621,13 @@ pub mod Regex {
     def findLast(m: Matcher[r]): Bool \ r =
         def loop(lastPos) = {
             match find(m) {
-                case true  => { let pos1 = matcherStart(m); loop(pos1) }
+                case true  => {let pos1 = matcherStart(m); loop(pos1)}
                 case false => lastPos
             }
         };
         match find(m) {
-            case false => false
-            case true  => {
+            case false  => false
+            case true   => {
                 let pos = matcherStart(m);
                 match loop(pos) {
                     case Err(_)          => false
@@ -664,72 +640,63 @@ pub mod Regex {
     /// Set the bounds of the matcher's region.
     ///
     def setBounds(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { discard m1.$region(start#start, end#end) }
-            }
-        )
+        Result.tryCatch(_ -> {
+            let Matcher(m1) = m;
+            unsafe IO as r { discard m1.$region(start#start, end#end) }
+        })
+
 
     ///
     /// Return the start position of the current match of Matcher `m`.
     ///
     def matcherStart(m: Matcher[r]): Result[String, Int32] \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { m1.start() }
-            }
-        )
+        Result.tryCatch(_ -> {
+            let Matcher(m1) = m;
+            unsafe IO as r { m1.start() }
+        })
 
     ///
     /// Return the end position of the current match of Matcher `m`.
     ///
     def matcherEnd(m: Matcher[r]): Result[String, Int32] \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { m1.end() }
-            }
-        )
+        Result.tryCatch(_ -> {
+            let Matcher(m1) = m;
+            unsafe IO as r { m1.end() }
+        })
 
     ///
     /// Return the start and end positions of the matcher `m`.
     ///
     def matcherRange(m: Matcher[r]): Result[String, {start = Int32, end = Int32}] \ r =
-        forM (
-            s <- matcherStart(m);
-            e <- matcherEnd(m)
-        ) yield ({start = s, end = e})
+        forM (s <- matcherStart(m);
+              e <- matcherEnd(m))
+        yield ({start = s, end = e})
+
 
     ///
     /// Return the text content of the current match of matcher `m`.
     ///
     def matcherContent(m: Matcher[r]): Result[String, String] \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { m1.group() }
-            }
-        )
+        Result.tryCatch(_ -> {
+            let Matcher(m1) = m;
+            unsafe IO as r { m1.group() }
+        })
 
     ///
     /// Return the text content of the current groups in matcher `m`.
     ///
-    def matcherGroup(m: Matcher[r], i: Int32): Result[String, String] \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { if (not Object.isNull(m1.group(i))) m1.group(i) else "" }
-            }
-        )
+    def matcherGroup(m: Matcher[r], i:Int32): Result[String, String] \ r =
+        Result.tryCatch(_ -> {
+            let Matcher(m1) = m;
+            unsafe IO as r { if (not Object.isNull(m1.group(i))) m1.group(i) else "" }
+        })
 
     ///
     /// Return the number of groups in matcher `m`.
     ///
     def groupCount(m: Matcher[r]): Int32 \ r =
-        let Matcher(m1) = m;
-        unsafe IO as r { m1.groupCount() }
+            let Matcher(m1) = m;
+            unsafe IO as r { m1.groupCount() }
 
     ///
     /// `MatchQuery` is a read query applied to a the current match of a `Matcher`.
@@ -746,6 +713,7 @@ pub mod Regex {
             asks(m)
         else
             Err("No match")
+
 
     ///
     /// Returns the last result found by applying the query `asks` to `m` going from left to right.
@@ -769,13 +737,13 @@ pub mod Regex {
     def foldSubmatches(f: (b, a) -> b \ ef, x: b, asks: MatchQuery[a, r], m: Matcher[r]): Result[String, b] \ { r, ef } =
         def loop(acc) = {
             match find(m) {
-                case true  =>
-                    match asks(m) {
-                        case Ok(a)    => loop(f(acc, a))
-                        case Err(msg) => Err(msg)
-                    }
+                case true  => match asks(m) {
+                    case Ok(a)    => loop(f(acc, a))
+                    case Err(msg) => Err(msg)
+                }
                 case false => Ok(acc)
             }
         };
         loop(x)
+
 }

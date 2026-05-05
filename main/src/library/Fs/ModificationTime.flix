@@ -24,10 +24,12 @@ pub mod Fs.ModificationTime {
     /// Use the `ModificationTime.runWithFileTime` handler.
     ///
     pub eff ModificationTime {
+
         ///
         /// Returns the last-modified timestamp of the given file `f` in milliseconds since the epoch.
         ///
         def modificationTime(f: String): Result[IoError, Int64]
+
     }
 
     ///
@@ -37,4 +39,5 @@ pub mod Fs.ModificationTime {
         run { f() } with handler ModificationTime {
             def modificationTime(filename, k) = k(Fs.FileTime.modificationTime(filename))
         }
+
 }

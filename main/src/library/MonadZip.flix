@@ -22,6 +22,7 @@ mod MonadZip {
     /// A minimal implementation must define `zipWith` and `zipWithA`.
     ///
     trait MonadZip[m: Type -> Type] with Monad[m] {
+
         ///
         /// Returns single monad where the element (or elements) of `ma` and `mb` are combined
         /// with the function `f`.
@@ -45,5 +46,7 @@ mod MonadZip {
         /// (monadic) containers `ma` and `mb`.
         ///
         pub def zipWithA(f: (a, b) -> f[c] \ ef, ma: m[a], mb: m[b]): f[m[c]] \ ef with Applicative[f]
+
     }
+
 }

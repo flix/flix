@@ -19,6 +19,7 @@
 pub mod Concurrent.Channel {
 
     import dev.flix.runtime.Global
+
     use Concurrent.ReentrantLock.lock
     use Concurrent.ReentrantLock
     use Concurrent.ReentrantLock.newLock
@@ -140,9 +141,7 @@ pub mod Concurrent.Channel {
     ///
     @LoweringTarget
     pub def newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO =
-        if (bufferSize < 0)
-            bug!("bufferSize < 0")
-        else {
+        if (bufferSize < 0) bug!("bufferSize < 0") else {
             let unBuffered = bufferSize == 0;
             let reentrantLock = newLock(fairness());
             let size = Ref.fresh(Static, 0);
@@ -227,7 +226,7 @@ pub mod Concurrent.Channel {
         let optionalElement = MutDeque.popFront(elementDeque);
 
         let value = match optionalElement {
-            case None          =>
+            case None =>
                 // The compiler should only use `unsafeGetAndUnlock` based on the
                 // guaranteed output of `select`, so this should never happen.
                 bug!("assertiveGet could not retrieve channel element")
@@ -267,9 +266,9 @@ pub mod Concurrent.Channel {
         let selectCondition = newCondition(selectLock);
 
         // Sort locks to avoid deadlocks
-        let sortedLocks = channels
-            |> List.sortBy(match MpmcAdmin.MpmcAdmin(id, _, _, _, _, _, _, _) -> id)
-            |> List.map(match MpmcAdmin.MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
+        let sortedLocks = channels |>
+            List.sortBy(match MpmcAdmin.MpmcAdmin(id, _, _, _, _, _, _, _) -> id) |>
+            List.map(match MpmcAdmin.MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
 
     ///
@@ -308,8 +307,7 @@ pub mod Concurrent.Channel {
         let optionalElement = MutDeque.popFront(elementDeque);
 
         match optionalElement {
-            case None    => {
-                // No element was found
+            case None => { // No element was found
                 // Create a new lock and condition
                 let conditionLock = newLock(fairness());
                 lock(conditionLock);
@@ -354,6 +352,7 @@ pub mod Concurrent.Channel {
         selectLock: ReentrantLock,
         selectCondition: Condition
     ): (Int32, List[ReentrantLock]) \ IO =
+
         // Lock all locks in sorted order. This avoids the case
         // where a channel receives an element while the later channels are
         // searched for elements but before we place the condition on the
@@ -369,23 +368,19 @@ pub mod Concurrent.Channel {
         /* TODO: Optimization opportunity. The order of searching here could be
                  randomized to avoid starvation scenarios).
         */
-        let index = channels
-            |> List.mapWithIndex(
-                i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
-                    (Ref.get(size) > 0, i)
-                }
-            )
-            |> List.findLeft(match (b, _) -> b)
-            |> Option.map(snd);
+        let index = channels |>
+            List.mapWithIndex(i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
+                (Ref.get(size) > 0, i)
+            }) |>
+            List.findLeft(match (b, _) -> b) |>
+            Option.map(snd);
 
         match index {
             case Some(i) =>
                 (i, sortedLocks `List.append` (selectLock :: Nil))
 
-            case None    => {
-                // No channel had an element ready
-                if (blocking) {
-                    // We have to wait for an element
+            case None => { // No channel had an element ready
+                if (blocking) { // We have to wait for an element
                     // Add our condition to all channels to get notified when a
                     // new element is added.
                     List.forEach(addGetter(selectLock, selectCondition), channels);
@@ -404,8 +399,8 @@ pub mod Concurrent.Channel {
                     // Try again
                     selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
                 } else {
-                    (sortedLocks `List.append` (selectLock :: Nil))
-                        |> List.forEach(unlock);
+                    (sortedLocks `List.append` (selectLock :: Nil)) |>
+                        List.forEach(unlock);
                     (-1, Nil)
                 }
             }
@@ -456,7 +451,10 @@ pub mod Concurrent.Channel {
         // Unlock the channel
         unlock(channelLock)
 
+
     // ------------- Helper Methods --------------------------------------------
+
+
 
     ///
     /// Unsafe wrapper for `Concurrent.Condition.await(c)`
@@ -470,22 +468,25 @@ pub mod Concurrent.Channel {
     /// `Err` with `bug!`.
     /// The condition lock is expected to be held.
     ///
-    def signalCondition(c: Condition): Unit \ IO = match Concurrent.Condition.signalAll(c) {
-        case Ok(_)  => ()
-        case Err(_) =>
-            // Error: awaiting without holding the corresponding lock
-            bug!("Implementation error: lock not held")
-    }
+    def signalCondition(c: Condition): Unit \ IO =
+        match Concurrent.Condition.signalAll(c) {
+            case Ok(_) => ()
+            case Err(_) =>
+                // Error: awaiting without holding the corresponding lock
+                bug!("Implementation error: lock not held")
+        }
 
     ///
     /// Unsafe wrapper for `Concurrent.ReentrantLock.unlock(l)` that handles
     /// `Err` with `bug!`.
     /// The lock is expected to be held.
     ///
-    def unlock(l: ReentrantLock): Unit \ IO = match Concurrent.ReentrantLock.unlock(l) {
-        case Ok(_)  => ()
-        case Err(_) =>
-            // Error: unlock without holding the lock
-            bug!("Implementation error: lock not held")
-    }
+    def unlock(l: ReentrantLock): Unit \ IO =
+        match Concurrent.ReentrantLock.unlock(l) {
+            case Ok(_) => ()
+            case Err(_) =>
+                // Error: unlock without holding the lock
+                bug!("Implementation error: lock not held")
+        }
+
 }

@@ -26,4 +26,5 @@ pub mod Checksum {
             let md = MessageDigest.getInstance("SHA-256");
             Array.toVector(md.digest(v))
         }
+
 }

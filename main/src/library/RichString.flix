@@ -56,8 +56,8 @@ pub mod RichString {
     /// Default represents no color override, using the terminal's current color settings.
     ///
     pub enum Color with Eq {
-        case Rgb(Int32, Int32, Int32) // Red, Green, Blue components
-        case Default // Use terminal's default color
+        case Rgb(Int32, Int32, Int32),  // Red, Green, Blue components
+        case Default                    // Use terminal's default color
     }
 
     ///
@@ -66,7 +66,7 @@ pub mod RichString {
     /// Defines the visual appearance of text spans beyond color.
     ///
     pub enum Style with Eq, Order {
-        case Bold
+        case Bold,
         case Underline
     }
 
@@ -83,15 +83,15 @@ pub mod RichString {
     /// A record type representing a palette of colors.
     ///
     type alias ColorPalette = {
-        black = Color,
-        gray = Color,
-        red = Color,
-        green = Color,
-        yellow = Color,
-        blue = Color,
+        black   = Color,
+        gray    = Color,
+        red     = Color,
+        green   = Color,
+        yellow  = Color,
+        blue    = Color,
         magenta = Color,
-        cyan = Color,
-        white = Color
+        cyan    = Color,
+        white   = Color
     }
 
     ///
@@ -112,19 +112,17 @@ pub mod RichString {
     pub def map(f: Span -> Span, rs: RichString): RichString = match rs {
         case RichString(spans) => RichString(Chain.map(f, spans))
     }
-
+    
     ///
     /// Returns a `Bool` according to the equality of `rs1` and `rs2`.
     ///
     /// Checks whether text and styling is equivalent for each individual character.
     ///
-    pub def equals(rs1: RichString, rs2: RichString): Bool =
+    pub def equals(rs1: RichString, rs2: RichString): Bool = 
         let (RichString(chain1), RichString(chain2)) = (rs1, rs2);
-        let splitSpans = (
-            match Span.Span({text = t, fgColor = fg, bgColor = bg, styles}) -> {
-                String.toList(t) |> List.toChain |> Chain.map(c -> (Span.Span({text = Char.toString(c), fgColor = fg, bgColor = bg, styles = styles})))
-            }
-        );
+        let splitSpans = (match Span.Span({text = t, fgColor = fg, bgColor = bg, styles}) -> { 
+            String.toList(t) |> List.toChain |> Chain.map(c -> (Span.Span({text = Char.toString(c), fgColor = fg, bgColor = bg, styles = styles})))
+        });
         let l1 = Chain.flatMap(splitSpans, chain1);
         let l2 = Chain.flatMap(splitSpans, chain2);
         if (Chain.length(l1) != Chain.length(l2)) {
@@ -143,33 +141,24 @@ pub mod RichString {
     ///
     pub def withColor(c: Color, x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
-        map(
-            match Span.Span(r) ->
-                Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, styles = r#styles}),
-            rs
-        )
+        map(match Span.Span(r) ->
+            Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, styles = r#styles}), rs)
 
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given background color `c`.
     ///
-    pub def withBgColor(c: Color, x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def withBgColor(c: Color, x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
-        map(
-            match Span.Span(r) ->
-                Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, styles = r#styles}),
-            rs
-        )
+        map(match Span.Span(r) ->
+            Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, styles = r#styles}), rs)
 
     ///
     /// Returns a `RichString` from given text `x` with the given `style` in addition to any other styles it already has.
     ///
-    pub def withStyle(style: Style, x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def withStyle(style: Style, x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
-        map(
-            match Span.Span(r) ->
-                Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, styles = Set.insert(style, r#styles)}),
-            rs
-        )
+        map(match Span.Span(r) ->
+            Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, styles = Set.insert(style, r#styles)}), rs)
 
     ///
     /// Returns a `RichString` containing the given span `s`.
@@ -186,7 +175,7 @@ pub mod RichString {
     ///
     /// Returns a `RichString` with the given text `x` in black color.
     ///
-    pub def black(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def black(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withColor(colors()#fg#black, x)
 
     ///
@@ -240,61 +229,61 @@ pub mod RichString {
     ///
     /// Returns a `RichString` with the given text `x` on black background.
     ///
-    pub def bgBlack(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def bgBlack(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(colors()#bg#black, x)
 
     ///
     /// Returns a `RichString` with the given text `x` on red background.
     ///
-    pub def bgRed(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def bgRed(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(colors()#bg#red, x)
 
     ///
     /// Returns a `RichString` with the given text `x` on green background.
     ///
-    pub def bgGreen(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def bgGreen(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(colors()#bg#green, x)
 
     ///
     /// Returns a `RichString` with the given text `x` on yellow background.
     ///
-    pub def bgYellow(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def bgYellow(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(colors()#bg#yellow, x)
 
     ///
     /// Returns a `RichString` with the given text `x` on blue background.
     ///
-    pub def bgBlue(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def bgBlue(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(colors()#bg#blue, x)
 
     ///
     /// Returns a `RichString` with the given text `x` on magenta background.
     ///
-    pub def bgMagenta(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def bgMagenta(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(colors()#bg#magenta, x)
 
     ///
     /// Returns a `RichString` with the given text `x` on cyan background.
     ///
-    pub def bgCyan(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def bgCyan(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(colors()#bg#cyan, x)
 
     ///
     /// Returns a `RichString` with the given text `x` on white background.
     ///
-    pub def bgWhite(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def bgWhite(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(colors()#bg#white, x)
 
     ///
     /// Returns a `RichString` with the given text `x` in bold style.
     ///
-    pub def bold(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def bold(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withStyle(Style.Bold, x)
 
     ///
     /// Returns a `RichString` with the given text `x` in underline style.
     ///
-    pub def underline(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+    pub def underline(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withStyle(Style.Underline, x)
 
     ///
@@ -353,37 +342,30 @@ pub mod RichString {
     ///
     def toAnsiString(rs: RichString): String = match rs {
         case RichString(spans) =>
-            Chain.joinWith(
-                match Span.Span(r) -> {
-                    // Collect all codes in a list
-                    let styleCodes = r#styles |> Set.toList
-                        |> List.map(
-                            s -> match s {
-                                case Style.Bold      => "1"
-                                case Style.Underline => "4"
-                            }
-                        );
+            Chain.joinWith(match Span.Span(r) -> {
+                // Collect all codes in a list
+                let styleCodes = r#styles |> Set.toList |> List.map(s -> match s {
+                    case Style.Bold => "1"
+                    case Style.Underline => "4"
+                });
 
-                    let fgCodes = match r#fgColor {
-                        case Color.Rgb(red, green, blue) => "38;2;${red};${green};${blue}" :: Nil
-                        case Color.Default               => Nil
-                    };
+                let fgCodes = match r#fgColor {
+                    case Color.Rgb(red, green, blue) => "38;2;${red};${green};${blue}" :: Nil
+                    case Color.Default => Nil
+                };
 
-                    let bgCodes = match r#bgColor {
-                        case Color.Rgb(red, green, blue) => "48;2;${red};${green};${blue}" :: Nil
-                        case Color.Default               => Nil
-                    };
+                let bgCodes = match r#bgColor {
+                    case Color.Rgb(red, green, blue) => "48;2;${red};${green};${blue}" :: Nil
+                    case Color.Default => Nil
+                };
 
-                    let allCodes = styleCodes ::: fgCodes ::: bgCodes;
+                let allCodes = styleCodes ::: fgCodes ::: bgCodes;
 
-                    if (List.isEmpty(allCodes))
-                        r#text
-                    else
-                        "\u001B[${List.join(";", allCodes)}m${r#text}\u001B[0m"
-                },
-                "",
-                spans
-            )
+                if (List.isEmpty(allCodes))
+                    r#text
+                else
+                    "\u001B[${List.join(";", allCodes)}m${r#text}\u001B[0m"
+            }, "", spans)
     }
 
     ///
@@ -393,31 +375,30 @@ pub mod RichString {
     /// - `fg`: A `ColorPalette` record containing foreground colors
     /// - `bg`: A `ColorPalette` record containing background colors
     ///
-    def colors(): {fg = ColorPalette, bg = ColorPalette} =
-        {
-            fg = {
-                black = Color.Rgb(0, 0, 0),
-                gray = Color.Rgb(128, 128, 128),
-                red = Color.Rgb(220, 105, 105),
-                green = Color.Rgb(13, 188, 121),
-                yellow = Color.Rgb(229, 192, 123),
-                blue = Color.Rgb(100, 130, 160),
-                magenta = Color.Rgb(210, 125, 210),
-                cyan = Color.Rgb(17, 168, 205),
-                white = Color.Rgb(255, 255, 255)
-            },
-            bg = {
-                black = Color.Rgb(40, 40, 40),
-                gray = Color.Rgb(128, 128, 128),
-                red = Color.Rgb(205, 49, 49),
-                green = Color.Rgb(13, 188, 121),
-                yellow = Color.Rgb(229, 192, 123),
-                blue = Color.Rgb(36, 114, 200),
-                magenta = Color.Rgb(188, 63, 188),
-                cyan = Color.Rgb(17, 168, 205),
-                white = Color.Rgb(255, 255, 255)
-            }
+    def colors(): {fg = ColorPalette, bg = ColorPalette} = {
+        fg = {
+            black   = Color.Rgb(0, 0, 0),
+            gray    = Color.Rgb(128, 128, 128),
+            red     = Color.Rgb(220, 105, 105),
+            green   = Color.Rgb(13, 188, 121),
+            yellow  = Color.Rgb(229, 192, 123),
+            blue    = Color.Rgb(100, 130, 160),
+            magenta = Color.Rgb(210, 125, 210),
+            cyan    = Color.Rgb(17, 168, 205),
+            white   = Color.Rgb(255, 255, 255)
+        },
+        bg = {
+            black   = Color.Rgb(40, 40, 40),
+            gray    = Color.Rgb(128, 128, 128),
+            red     = Color.Rgb(205, 49, 49),
+            green   = Color.Rgb(13, 188, 121),
+            yellow  = Color.Rgb(229, 192, 123),
+            blue    = Color.Rgb(36, 114, 200),
+            magenta = Color.Rgb(188, 63, 188),
+            cyan    = Color.Rgb(17, 168, 205),
+            white   = Color.Rgb(255, 255, 255)
         }
+    }
 
     ///
     /// Returns `true` unless color output is explicitly disabled.
@@ -426,12 +407,12 @@ pub mod RichString {
     /// - NO_COLOR environment variable is set (following the no-color.org standard)
     /// - TERM=dumb (indicates a terminal with no capabilities)
     ///
-    def isColorTerm(): Bool =
-        unsafe IO {
-            run {
-                let noColor = Env.getVar("NO_COLOR") |> Option.nonEmpty;
-                let isDumbTerm = Env.getVar("TERM") |> Option.exists(t -> t == "dumb");
-                not (noColor or isDumbTerm)
-            } with Env.runWithIO
-        }
+    def isColorTerm(): Bool = unsafe IO {
+        run {
+            let noColor = Env.getVar("NO_COLOR") |> Option.nonEmpty;
+            let isDumbTerm = Env.getVar("TERM") |> Option.exists(t -> t == "dumb");
+            not (noColor or isDumbTerm)
+        } with Env.runWithIO
+    }
+
 }

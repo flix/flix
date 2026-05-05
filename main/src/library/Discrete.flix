@@ -32,4 +32,5 @@ mod Discrete {
         pub def succ(x: Int32): Int32 = x + 1
         pub def prev(x: Int32): Int32 = x - 1
     }
+
 }

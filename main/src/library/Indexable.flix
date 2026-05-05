@@ -29,6 +29,7 @@ pub mod Indexable {
     /// that iteration would go through all integers.
     ///
     pub trait Indexable[t] {
+
         /// The argument type of `get`, used to access the elements of the data structure.
         type Idx: Type
 
@@ -40,5 +41,7 @@ pub mod Indexable {
 
         /// Retrieve the element at index `i` in `t`.
         pub def get(t: t, i: Indexable.Idx[t]): Indexable.Elm[t] \ Indexable.Aef[t]
+
     }
+
 }

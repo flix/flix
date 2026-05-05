@@ -24,10 +24,12 @@ pub mod Fs.FileExists {
     /// Use the `FileExists.runWithFileTest` handler.
     ///
     pub eff FileExists {
+
         ///
         /// Returns `true` if the given file `f` exists.
         ///
         def exists(f: String): Result[IoError, Bool]
+
     }
 
     ///
@@ -37,4 +39,5 @@ pub mod Fs.FileExists {
         run { f() } with handler FileExists {
             def exists(filename, k) = k(Fs.FileTest.exists(filename))
         }
+
 }

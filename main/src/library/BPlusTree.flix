@@ -186,18 +186,13 @@ pub mod BPlusTree {
         let (leaf, stamp) = findLeaf(k, t);
         match Node.get(k, stamp, leaf, t) {
             case Some(v) => v
-            case None    =>
+            case None =>
                 let lock = Node.getLock(leaf);
-                Lock.withWriteLockOrElse(
-                    stamp,
-                    lock,
-                    writeStamp -> {
-                        let v = f();
-                        fixRoot(Node.insertIntoLeaf(k, v, leaf, writeStamp, t), t);
-                        v
-                    },
-                    () -> computeIfAbsent(f, k, t)
-                )
+                Lock.withWriteLockOrElse(stamp, lock, writeStamp -> {
+                    let v = f();
+                    fixRoot(Node.insertIntoLeaf(k, v, leaf, writeStamp, t), t);
+                    v
+                }, () -> computeIfAbsent(f, k, t))
         }
     }
 
@@ -302,15 +297,14 @@ pub mod BPlusTree {
             if (index < Node.size(node)) {
                 Ref.put(index + 1, indexRef);
                 Some(Node.getKeyAndValueAt(index, node))
-            } else
-                match Node.next(node) {
-                    case None           => None
-                    case Some(nextNode) => {
-                        Ref.put(nextNode, nodeRef);
-                        Ref.put(0, indexRef);
-                        next()
-                    }
+            } else match Node.next(node) {
+                case None => None
+                case Some(nextNode) => {
+                    Ref.put(nextNode, nodeRef);
+                    Ref.put(0, indexRef);
+                    next()
                 }
+            }
         };
         Iterator.unfoldWithIter(rc1, next)
     }
@@ -406,7 +400,7 @@ pub mod BPlusTree {
             t->root = root;
             Lock.unlockWrite(rootStamp, t->rootLock);
             ()
-        case None                    => ()
+        case None => ()
     }
 
     ///
@@ -509,6 +503,7 @@ pub mod BPlusTree {
         Node.getWithDefault(k, stamp, d, leaf, t)
     }
 
+
     ///
     /// Returns the set of keys in `t`.
     ///
@@ -588,16 +583,14 @@ pub mod BPlusTree {
         } else {
             let minLeaf = Node.leftMostLeafUnconditional(t->root);
             unsafe IO as r {
-                Vector.range(0, threadNum)
-                    |> Vector.forEach(
-                        i -> {
-                            let _: Unit = spawn unsafe r as IO {
-                                // Flix does not allow region effect in spawns. Remove the effect.
-                                Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
-                            } @ rc;
-                            ()
-                        }
-                    )
+                Vector.range(0, threadNum) |>
+                Vector.forEach(i -> {
+                    let _: Unit = spawn unsafe r as IO {
+                        // Flix does not allow region effect in spawns. Remove the effect.
+                        Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
+                    } @ rc;
+                    ()
+                })
             }
         }
     }
@@ -738,17 +731,13 @@ pub mod BPlusTree {
             let i2 = iterator(rc, t2);
             def checkRemaining(m1, m2) = match (m1, m2) {
                 case (Some((k1, v1)), Some((k2, v2))) => {
-                    if (k1 < k2)
-                        false
-                    else if (k1 > k2)
-                        checkRemaining(m1, Iterator.next(i2))
-                    else if (v1 != v2)
-                        false
-                    else
-                        checkRemaining(Iterator.next(i1), Iterator.next(i2))
+                    if (k1 < k2) false
+                    else if (k1 > k2) checkRemaining(m1, Iterator.next(i2))
+                    else if (v1 != v2) false
+                    else checkRemaining(Iterator.next(i1), Iterator.next(i2))
                 }
-                case (Some(_), None)                  => false
-                case (None, _)                        => true
+                case (Some(_), None) => false
+                case (None, _) => true
             };
             checkRemaining(Iterator.next(i1), Iterator.next(i2))
         }
@@ -943,4 +932,5 @@ pub mod BPlusTree {
     ///
     def unlockRootPointer(stamp: Int64, t: BPlusTree[k, v, r]): Unit \ r =
         Lock.unlockWrite(stamp, t->rootLock)
+
 }

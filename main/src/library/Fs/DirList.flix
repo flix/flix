@@ -26,10 +26,12 @@ pub mod Fs.DirList {
     /// Use the `DirList.runWithFileSystem` handler.
     ///
     pub eff DirList {
+
         ///
         /// Returns a list with the names of all files and directories in the given directory `f`.
         ///
         def list(f: String): Result[IoError, List[String]]
+
     }
 
     ///
@@ -64,7 +66,7 @@ pub mod Fs.DirList {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - DirList) + { DirList, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - DirList) + {DirList, Logger} =
         run { f() } with handler DirList {
             def list(filename, k) = {
                 logPre("list", filename);
@@ -150,4 +152,5 @@ pub mod Fs.DirList {
         run { f() } with handler DirList {
             def list(filename, k) = k(DirList.list(resolve(filename)))
         }
+
 }
