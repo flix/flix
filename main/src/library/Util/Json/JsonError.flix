@@ -18,6 +18,7 @@ pub mod Util.Json.JsonError {
 
     use Util.Json.JsonPath.JsonPath
     use Util.Json.JsonPath.JsonStep
+    use Util.Json.JsonPath.{cons, fromList, steps}
 
     ///
     /// An error that can occur when parsing or decoding JSON.
@@ -51,6 +52,7 @@ pub mod Util.Json.JsonError {
     /// parsed `Json` value into a typed value.
     ///
     pub enum DecodeErrorKind with Eq {
+        case MissingIndex(Int32)
         case MissingKey(String)
         case TypeMismatch(String)
     }
@@ -68,6 +70,7 @@ pub mod Util.Json.JsonError {
 
     instance ToString[DecodeErrorKind] {
         pub def toString(k: DecodeErrorKind): String = match k {
+            case DecodeErrorKind.MissingIndex(i)   => "missing index ${i}"
             case DecodeErrorKind.MissingKey(k1)    => "missing key '${k1}'"
             case DecodeErrorKind.TypeMismatch(d)   => "type mismatch: expected ${d}"
         }
@@ -76,7 +79,7 @@ pub mod Util.Json.JsonError {
     instance ToString[JsonError] {
         pub def toString(e: JsonError): String = match e {
             case JsonError.Parse(o, k)  => "${ToString.toString(k)} at offset ${o}"
-            case JsonError.Decode(p, k) => match Util.Json.JsonPath.steps(p) {
+            case JsonError.Decode(p, k) => match steps(p) {
                 case Nil => ToString.toString(k)
                 case _   => "${ToString.toString(k)} at ${p}"
             }
@@ -95,7 +98,7 @@ pub mod Util.Json.JsonError {
         pub def format(e: JsonError): RichString = match e {
             case JsonError.Parse(o, k)  =>
                 Formattable.format(k) + RichString.fromString(" at offset ") + RichString.yellow(Int32.toString(o))
-            case JsonError.Decode(p, k) => match Util.Json.JsonPath.steps(p) {
+            case JsonError.Decode(p, k) => match steps(p) {
                 case Nil => Formattable.format(k)
                 case _   => Formattable.format(k) + RichString.fromString(" at ") + Formattable.format(p)
             }
@@ -110,7 +113,20 @@ pub mod Util.Json.JsonError {
     /// of a failing decode lazily — i.e. only on the error path.
     ///
     pub def prependStep(s: JsonStep, e: JsonError): JsonError = match e {
-        case JsonError.Decode(p, k) => JsonError.Decode(Util.Json.JsonPath.cons(s, p), k)
+        case JsonError.Decode(p, k) => JsonError.Decode(cons(s, p), k)
+        case JsonError.Parse(_, _)  => e
+    }
+
+    ///
+    /// Prepends the steps of `p` to the path of `e` if `e` is a `Decode`.
+    /// Leaves `Parse` errors unchanged.
+    ///
+    /// Used to stitch a leaf decoder's inner path onto a navigation prefix
+    /// when decoding at a multi-step path.
+    ///
+    pub def prependPath(p: JsonPath, e: JsonError): JsonError = match e {
+        case JsonError.Decode(p2, k) =>
+            JsonError.Decode(fromList(steps(p) ::: steps(p2)), k)
         case JsonError.Parse(_, _)  => e
     }
 

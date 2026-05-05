@@ -20,10 +20,11 @@ pub mod Util.Json.FromJson {
     use Util.Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
     use Util.Json.JsonError.JsonError
     use Util.Json.JsonError.JsonError.Decode
-    use Util.Json.JsonError.prependStep
-    use Util.Json.JsonError.DecodeErrorKind.{MissingKey, TypeMismatch}
+    use Util.Json.JsonError.{prependStep, prependPath}
+    use Util.Json.JsonError.DecodeErrorKind.{MissingIndex, MissingKey, TypeMismatch}
     use Util.Json.JsonPath.JsonPath
     use Util.Json.JsonPath.JsonStep
+    use Util.Json.JsonPath.{empty, fromList, steps}
 
     ///
     /// A trait for types that can be decoded from a `Json` value.
@@ -33,19 +34,65 @@ pub mod Util.Json.FromJson {
     }
 
     ///
+    /// Walks `p` in `j` and returns the raw `Json` value at the leaf.
+    ///
+    /// On failure the error's path points to the prefix of `p` that was
+    /// successfully traversed — i.e. up to but not including the failing
+    /// step. The failing step is reflected in the error's *kind*:
+    /// `MissingKey(k)` for an absent object key, `MissingIndex(i)` for an
+    /// out-of-range array index, and `TypeMismatch` for a step that
+    /// descends into the wrong shape (e.g. a `Key` into a non-object).
+    ///
+    pub def getAtPath(p: JsonPath, j: Json): Result[JsonError, Json] =
+        getSteps(steps(p), j)
+
+    ///
+    /// Looks up the value at `p` in `j` and decodes it via `FromJson[a]`.
+    ///
+    /// Navigation failures follow the same path/kind convention as
+    /// `getAtPath`. If navigation succeeds and the leaf decoder fails, the
+    /// leaf's own inner path (e.g. `/0` from a failing `Vector` element) is
+    /// appended to `p`, giving the full root-to-failure path.
+    ///
+    pub def decodeAtPath(p: JsonPath, j: Json): Result[JsonError, a] with FromJson[a] =
+        match getAtPath(p, j) {
+            case Err(e)   => Err(e)
+            case Ok(leaf) => match FromJson.fromJson(leaf) {
+                case Err(e) => Err(prependPath(p, e))
+                case Ok(x)  => Ok(x)
+            }
+        }
+
+    ///
+    /// Looks up the value at `p` in `j` and, if present, decodes it via
+    /// `FromJson[a]`.
+    ///
+    /// Missing-key and missing-index failures along `p` yield `Ok(None)`.
+    /// Type-mismatch failures (a `Key` step into a non-object, or an `Index`
+    /// step into a non-array) still error, since those signal a real shape
+    /// disagreement. Leaf decode failures are reported with the full
+    /// `p`-prefixed path.
+    ///
+    pub def decodeAtPathOpt(p: JsonPath, j: Json): Result[JsonError, Option[a]] with FromJson[a] =
+        match getAtPath(p, j) {
+            case Ok(leaf) => match FromJson.fromJson(leaf) {
+                case Err(e) => Err(prependPath(p, e))
+                case Ok(x)  => Ok(Some(x))
+            }
+            case Err(Decode(_, MissingKey(_)))   => Ok(None)
+            case Err(Decode(_, MissingIndex(_))) => Ok(None)
+            case Err(e)                                    => Err(e)
+        }
+
+    ///
     /// Looks up `k` in `j`, which must be a `JObject`.
     ///
     /// Returns the raw `Json` value at `k`, `MissingKey(k)` if `k` is absent,
     /// or `TypeMismatch` if `j` is not a `JObject`. Both errors carry the
     /// empty path (the failure is at the level of `j` itself).
     ///
-    pub def getAtKey(k: String, j: Json): Result[JsonError, Json] = match j {
-        case JObject(m) => match Map.get(k, m) {
-            case Some(v) => Ok(v)
-            case None    => Err(missingKey(k))
-        }
-        case _ => Err(typeMismatch("JObject"))
-    }
+    pub def getAtKey(k: String, j: Json): Result[JsonError, Json] =
+        getAtPath(fromList(JsonStep.Key(k) :: Nil), j)
 
     ///
     /// Looks up `k` in `j`, which must be a `JObject`.
@@ -66,13 +113,7 @@ pub mod Util.Json.FromJson {
     /// prepended with `Key(k)`.
     ///
     pub def decodeAtKey(k: String, j: Json): Result[JsonError, a] with FromJson[a] =
-        match getAtKey(k, j) {
-            case Err(e) => Err(e)
-            case Ok(v)  => match FromJson.fromJson(v) {
-                case Err(e) => Err(prependStep(JsonStep.Key(k), e))
-                case Ok(x)  => Ok(x)
-            }
-        }
+        decodeAtPath(fromList(JsonStep.Key(k) :: Nil), j)
 
     ///
     /// Looks up `k` in `j` and, if present, decodes the value via `FromJson[a]`.
@@ -81,43 +122,57 @@ pub mod Util.Json.FromJson {
     /// decodable, or the decode error otherwise.
     ///
     pub def decodeAtKeyOpt(k: String, j: Json): Result[JsonError, Option[a]] with FromJson[a] =
-        match getAtKeyOpt(k, j) {
-            case Err(e)      => Err(e)
-            case Ok(None)    => Ok(None)
-            case Ok(Some(v)) => match FromJson.fromJson(v) {
-                case Err(e) => Err(prependStep(JsonStep.Key(k), e))
-                case Ok(x)  => Ok(Some(x))
-            }
-        }
+        decodeAtPathOpt(fromList(JsonStep.Key(k) :: Nil), j)
 
     ///
     /// Looks up index `i` in `j`, which must be a `JArray`, and decodes the
     /// element via `FromJson[a]`.
     ///
-    /// If `i` is out of range, errors with `TypeMismatch` at the empty path.
-    /// If the element is present but fails to decode, the inner error's path
-    /// is prepended with `Index(i)`.
+    /// If `i` is out of range, errors with `MissingIndex(i)` at the empty
+    /// path. If the element is present but fails to decode, the inner error's
+    /// path is prepended with `Index(i)`.
     ///
-    pub def decodeAtIndex(i: Int32, j: Json): Result[JsonError, a] with FromJson[a] = match j {
-        case JArray(v) =>
-            if (i < 0 or i >= Vector.length(v))
-                Err(typeMismatch("JArray index ${i}"))
-            else match FromJson.fromJson(Vector.get(i, v)) {
-                case Err(e) => Err(prependStep(JsonStep.Index(i), e))
-                case Ok(x)  => Ok(x)
+    pub def decodeAtIndex(i: Int32, j: Json): Result[JsonError, a] with FromJson[a] =
+        decodeAtPath(fromList(JsonStep.Index(i) :: Nil), j)
+
+    ///
+    /// Recursive walker for `getAtPath`: descends `j` step by step. On a
+    /// successful descent, prepends the consumed step to any deeper error's
+    /// path, so the final error path is the prefix that was traversed.
+    ///
+    def getSteps(steps: List[JsonStep], j: Json): Result[JsonError, Json] = match steps {
+        case Nil => Ok(j)
+        case JsonStep.Key(k) :: rest => match j {
+            case JObject(m) => match Map.get(k, m) {
+                case None    => Err(missingKey(k))
+                case Some(v) => Result.mapErr(prependStep(JsonStep.Key(k)), getSteps(rest, v))
             }
-        case _ => Err(typeMismatch("JArray"))
+            case _ => Err(typeMismatch("JObject"))
+        }
+        case JsonStep.Index(i) :: rest => match j {
+            case JArray(v) =>
+                if (i < 0 or i >= Vector.length(v))
+                    Err(missingIndex(i))
+                else
+                    Result.mapErr(prependStep(JsonStep.Index(i)), getSteps(rest, Vector.get(i, v)))
+            case _ => Err(typeMismatch("JArray"))
+        }
     }
 
     ///
     /// Constructs a `Decode` error with `TypeMismatch(d)` at the empty path.
     ///
-    def typeMismatch(d: String): JsonError = Decode(Util.Json.JsonPath.empty(), TypeMismatch(d))
+    def typeMismatch(d: String): JsonError = Decode(empty(), TypeMismatch(d))
 
     ///
     /// Constructs a `Decode` error with `MissingKey(k)` at the empty path.
     ///
-    def missingKey(k: String): JsonError = Decode(Util.Json.JsonPath.empty(), MissingKey(k))
+    def missingKey(k: String): JsonError = Decode(empty(), MissingKey(k))
+
+    ///
+    /// Constructs a `Decode` error with `MissingIndex(i)` at the empty path.
+    ///
+    def missingIndex(i: Int32): JsonError = Decode(empty(), MissingIndex(i))
 
     ///
     /// Returns `true` if `d` is integer-valued — i.e. it has no fractional part.
@@ -143,14 +198,14 @@ pub mod Util.Json.FromJson {
     instance FromJson[Unit] {
         pub def fromJson(j: Json): Result[JsonError, Unit] = match j {
             case JNull => Ok(())
-            case _     => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Unit")))
+            case _     => Err(Decode(empty(), TypeMismatch("Unit")))
         }
     }
 
     instance FromJson[Bool] {
         pub def fromJson(j: Json): Result[JsonError, Bool] = match j {
             case JBool(b) => Ok(b)
-            case _        => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Bool")))
+            case _        => Err(Decode(empty(), TypeMismatch("Bool")))
         }
     }
 
@@ -160,7 +215,7 @@ pub mod Util.Json.FromJson {
     instance FromJson[String] {
         pub def fromJson(j: Json): Result[JsonError, String] = match j {
             case JString(s) => Ok(s)
-            case _          => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("String")))
+            case _          => Err(Decode(empty(), TypeMismatch("String")))
         }
     }
 
@@ -170,9 +225,9 @@ pub mod Util.Json.FromJson {
         pub def fromJson(j: Json): Result[JsonError, Int8] = match j {
             case JNumber(d) if isIntegerValued(d) => match BigDecimal.tryToInt8(d) {
                 case Some(i) => Ok(i)
-                case None    => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Int8")))
+                case None    => Err(Decode(empty(), TypeMismatch("Int8")))
             }
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Int8")))
+            case _ => Err(Decode(empty(), TypeMismatch("Int8")))
         }
     }
 
@@ -182,9 +237,9 @@ pub mod Util.Json.FromJson {
         pub def fromJson(j: Json): Result[JsonError, Int16] = match j {
             case JNumber(d) if isIntegerValued(d) => match BigDecimal.tryToInt16(d) {
                 case Some(i) => Ok(i)
-                case None    => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Int16")))
+                case None    => Err(Decode(empty(), TypeMismatch("Int16")))
             }
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Int16")))
+            case _ => Err(Decode(empty(), TypeMismatch("Int16")))
         }
     }
 
@@ -194,9 +249,9 @@ pub mod Util.Json.FromJson {
         pub def fromJson(j: Json): Result[JsonError, Int32] = match j {
             case JNumber(d) if isIntegerValued(d) => match BigDecimal.tryToInt32(d) {
                 case Some(i) => Ok(i)
-                case None    => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Int32")))
+                case None    => Err(Decode(empty(), TypeMismatch("Int32")))
             }
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Int32")))
+            case _ => Err(Decode(empty(), TypeMismatch("Int32")))
         }
     }
 
@@ -206,9 +261,9 @@ pub mod Util.Json.FromJson {
         pub def fromJson(j: Json): Result[JsonError, Int64] = match j {
             case JNumber(d) if isIntegerValued(d) => match BigDecimal.tryToInt64(d) {
                 case Some(i) => Ok(i)
-                case None    => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Int64")))
+                case None    => Err(Decode(empty(), TypeMismatch("Int64")))
             }
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Int64")))
+            case _ => Err(Decode(empty(), TypeMismatch("Int64")))
         }
     }
 
@@ -217,14 +272,14 @@ pub mod Util.Json.FromJson {
     instance FromJson[BigInt] {
         pub def fromJson(j: Json): Result[JsonError, BigInt] = match j {
             case JNumber(d) if isIntegerValued(d) => Ok(BigDecimal.toBigInt(d))
-            case _                                => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("BigInt")))
+            case _                                => Err(Decode(empty(), TypeMismatch("BigInt")))
         }
     }
 
     instance FromJson[BigDecimal] {
         pub def fromJson(j: Json): Result[JsonError, BigDecimal] = match j {
             case JNumber(d) => Ok(d)
-            case _          => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("BigDecimal")))
+            case _          => Err(Decode(empty(), TypeMismatch("BigDecimal")))
         }
     }
 
@@ -233,9 +288,9 @@ pub mod Util.Json.FromJson {
         pub def fromJson(j: Json): Result[JsonError, Float32] = match j {
             case JNumber(d) => match BigDecimal.tryToFloat32(d) {
                 case Some(f) => Ok(f)
-                case None    => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Float32")))
+                case None    => Err(Decode(empty(), TypeMismatch("Float32")))
             }
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Float32")))
+            case _ => Err(Decode(empty(), TypeMismatch("Float32")))
         }
     }
 
@@ -244,9 +299,9 @@ pub mod Util.Json.FromJson {
         pub def fromJson(j: Json): Result[JsonError, Float64] = match j {
             case JNumber(d) => match BigDecimal.tryToFloat64(d) {
                 case Some(f) => Ok(f)
-                case None    => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Float64")))
+                case None    => Err(Decode(empty(), TypeMismatch("Float64")))
             }
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("Float64")))
+            case _ => Err(Decode(empty(), TypeMismatch("Float64")))
         }
     }
 
@@ -263,14 +318,14 @@ pub mod Util.Json.FromJson {
     instance FromJson[Vector[a]] with FromJson[a] {
         pub def fromJson(j: Json): Result[JsonError, Vector[a]] = match j {
             case JArray(v) => traverseIndexed(v)
-            case _         => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray")))
+            case _         => Err(Decode(empty(), TypeMismatch("JArray")))
         }
     }
 
     instance FromJson[List[a]] with FromJson[a] {
         pub def fromJson(j: Json): Result[JsonError, List[a]] = match j {
             case JArray(v) => Result.map(Vector.toList, traverseIndexed(v))
-            case _         => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray")))
+            case _         => Err(Decode(empty(), TypeMismatch("JArray")))
         }
     }
 
@@ -283,7 +338,7 @@ pub mod Util.Json.FromJson {
                     xs -> Vector.foldLeft((acc, x) -> Set.insert(x, acc), Set#{}, xs),
                     traverseIndexed(v)
                 )
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray")))
+            case _ => Err(Decode(empty(), TypeMismatch("JArray")))
         }
     }
 
@@ -296,14 +351,14 @@ pub mod Util.Json.FromJson {
                 Map.foldLeftWithKey((acc, k, jv) -> match acc {
                     case Err(e) => Err(e)
                     case Ok(m1) => match FromString.fromString(k) {
-                        case None     => Err(Decode(Util.Json.JsonPath.fromList(JsonStep.Key(k) :: Nil), TypeMismatch("Map key")))
+                        case None     => Err(Decode(fromList(JsonStep.Key(k) :: Nil), TypeMismatch("Map key")))
                         case Some(kp) => match FromJson.fromJson(jv) {
                             case Err(e2) => Err(prependStep(JsonStep.Key(k), e2))
                             case Ok(vp)  => Ok(Map.insert(kp, vp, m1))
                         }
                     }
                 }, Ok(Map#{}), m)
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JObject")))
+            case _ => Err(Decode(empty(), TypeMismatch("JObject")))
         }
     }
 
@@ -314,7 +369,7 @@ pub mod Util.Json.FromJson {
                     x1 <- Result.mapErr(prependStep(JsonStep.Index(0)), FromJson.fromJson(Vector.get(0, v)));
                     x2 <- Result.mapErr(prependStep(JsonStep.Index(1)), FromJson.fromJson(Vector.get(1, v)))
                 ) yield (x1, x2)
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray of length 2")))
+            case _ => Err(Decode(empty(), TypeMismatch("JArray of length 2")))
         }
     }
 
@@ -326,7 +381,7 @@ pub mod Util.Json.FromJson {
                     x2 <- Result.mapErr(prependStep(JsonStep.Index(1)), FromJson.fromJson(Vector.get(1, v)));
                     x3 <- Result.mapErr(prependStep(JsonStep.Index(2)), FromJson.fromJson(Vector.get(2, v)))
                 ) yield (x1, x2, x3)
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray of length 3")))
+            case _ => Err(Decode(empty(), TypeMismatch("JArray of length 3")))
         }
     }
 
@@ -339,7 +394,7 @@ pub mod Util.Json.FromJson {
                     x3 <- Result.mapErr(prependStep(JsonStep.Index(2)), FromJson.fromJson(Vector.get(2, v)));
                     x4 <- Result.mapErr(prependStep(JsonStep.Index(3)), FromJson.fromJson(Vector.get(3, v)))
                 ) yield (x1, x2, x3, x4)
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray of length 4")))
+            case _ => Err(Decode(empty(), TypeMismatch("JArray of length 4")))
         }
     }
 
@@ -353,7 +408,7 @@ pub mod Util.Json.FromJson {
                     x4 <- Result.mapErr(prependStep(JsonStep.Index(3)), FromJson.fromJson(Vector.get(3, v)));
                     x5 <- Result.mapErr(prependStep(JsonStep.Index(4)), FromJson.fromJson(Vector.get(4, v)))
                 ) yield (x1, x2, x3, x4, x5)
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray of length 5")))
+            case _ => Err(Decode(empty(), TypeMismatch("JArray of length 5")))
         }
     }
 
@@ -368,7 +423,7 @@ pub mod Util.Json.FromJson {
                     x5 <- Result.mapErr(prependStep(JsonStep.Index(4)), FromJson.fromJson(Vector.get(4, v)));
                     x6 <- Result.mapErr(prependStep(JsonStep.Index(5)), FromJson.fromJson(Vector.get(5, v)))
                 ) yield (x1, x2, x3, x4, x5, x6)
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray of length 6")))
+            case _ => Err(Decode(empty(), TypeMismatch("JArray of length 6")))
         }
     }
 
@@ -384,7 +439,7 @@ pub mod Util.Json.FromJson {
                     x6 <- Result.mapErr(prependStep(JsonStep.Index(5)), FromJson.fromJson(Vector.get(5, v)));
                     x7 <- Result.mapErr(prependStep(JsonStep.Index(6)), FromJson.fromJson(Vector.get(6, v)))
                 ) yield (x1, x2, x3, x4, x5, x6, x7)
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray of length 7")))
+            case _ => Err(Decode(empty(), TypeMismatch("JArray of length 7")))
         }
     }
 
@@ -401,7 +456,7 @@ pub mod Util.Json.FromJson {
                     x7 <- Result.mapErr(prependStep(JsonStep.Index(6)), FromJson.fromJson(Vector.get(6, v)));
                     x8 <- Result.mapErr(prependStep(JsonStep.Index(7)), FromJson.fromJson(Vector.get(7, v)))
                 ) yield (x1, x2, x3, x4, x5, x6, x7, x8)
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray of length 8")))
+            case _ => Err(Decode(empty(), TypeMismatch("JArray of length 8")))
         }
     }
 
@@ -419,7 +474,7 @@ pub mod Util.Json.FromJson {
                     x8 <- Result.mapErr(prependStep(JsonStep.Index(7)), FromJson.fromJson(Vector.get(7, v)));
                     x9 <- Result.mapErr(prependStep(JsonStep.Index(8)), FromJson.fromJson(Vector.get(8, v)))
                 ) yield (x1, x2, x3, x4, x5, x6, x7, x8, x9)
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray of length 9")))
+            case _ => Err(Decode(empty(), TypeMismatch("JArray of length 9")))
         }
     }
 
@@ -438,7 +493,7 @@ pub mod Util.Json.FromJson {
                     x9  <- Result.mapErr(prependStep(JsonStep.Index(8)), FromJson.fromJson(Vector.get(8, v)));
                     x10 <- Result.mapErr(prependStep(JsonStep.Index(9)), FromJson.fromJson(Vector.get(9, v)))
                 ) yield (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
-            case _ => Err(Decode(Util.Json.JsonPath.empty(), TypeMismatch("JArray of length 10")))
+            case _ => Err(Decode(empty(), TypeMismatch("JArray of length 10")))
         }
     }
 
