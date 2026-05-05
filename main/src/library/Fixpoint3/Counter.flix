@@ -18,6 +18,17 @@
 pub mod Fixpoint3.Counter {
 
     ///
+    /// `Counter` is a wrapper around `Ref` for a simple counter.
+    ///
+    /// Its primary use is for generating identifiers.
+    ///
+    /// Not thread-safe.
+    ///
+    pub struct Counter[r: Region] {
+        mut state: Int32
+    }
+
+    ///
     /// Returns a fresh `Counter` initialized to `0`.
     ///
     pub def fresh(rc: Region[r]): Counter[r] \ r = new Counter @ rc {state = 0}

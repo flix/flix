@@ -23,6 +23,22 @@ pub mod Net.IpAddr {
     import java.net.UnknownHostException
 
     ///
+    /// Represents an IP address.
+    ///
+    pub enum IpAddr with Eq, ToString {
+        case V4(Ipv4Addr),
+        case V6(Ipv6Addr)
+    }
+
+    instance FromString[IpAddr] {
+        pub def fromString(x: String): Option[IpAddr] = IpAddr.fromString(x)
+    }
+
+    instance Formattable[IpAddr] {
+        pub def format(x: IpAddr): RichString = RichString.fromString(ToString.toString(x))
+    }
+
+    ///
     /// Converts a `List[Int8]` into `IpAddr`
     ///
     /// an Ipv4 is 4 bytes and Ipv6 is 16 bytes

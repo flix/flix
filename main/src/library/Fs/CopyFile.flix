@@ -18,6 +18,21 @@ pub mod Fs.CopyFile {
 
     use Fs.FileWrite
     use Fs.CopyFile
+    use Fs.CopyOption
+
+    ///
+    /// An effect used to copy a file.
+    ///
+    /// Use the `CopyFile.runWithFileWrite` handler.
+    ///
+    pub eff CopyFile {
+
+        ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
+    }
 
     ///
     /// Convenience function: copies `src` to `dst` with no options.

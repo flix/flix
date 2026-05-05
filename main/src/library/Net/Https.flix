@@ -18,6 +18,7 @@ pub mod Net.Https {
 
     use IoError.ErrorKind
     use IoError.IoError
+    use Logger.Severity
     use Net.HttpLayer
     use Net.Https
     use Net.HttpRequest
@@ -31,6 +32,13 @@ pub mod Net.Https {
     use Time.Duration
     use Time.Duration.toMillis
 
+
+    ///
+    /// The effect used to send HTTPS-only requests.
+    ///
+    pub eff Https {
+        def request(req: HttpRequest): Result[IoError, HttpResponse]
+    }
 
     ///
     /// Sends the given request `req` via the `Https` effect.

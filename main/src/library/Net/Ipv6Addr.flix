@@ -24,6 +24,30 @@ pub mod Net.Ipv6Addr {
     use Net.Ipv6Addr
 
     ///
+    /// Represents a V6 Ip Address.
+    ///
+    pub enum Ipv6Addr with Eq {
+        case Ipv6Addr( // 128 bits
+          Int8, Int8, Int8, Int8, // 32 bits
+          Int8, Int8, Int8, Int8, // 32 bits
+          Int8, Int8, Int8, Int8, // 32 bits
+          Int8, Int8, Int8, Int8  // 32 bits
+        )
+    }
+
+    instance FromString[Ipv6Addr] {
+        pub def fromString(x: String): Option[Ipv6Addr] = Ipv6Addr.fromString(x)
+    }
+
+    instance ToString[Ipv6Addr] {
+        pub def toString(x: Ipv6Addr): String = Ipv6Addr.toString(x)
+    }
+
+    instance Formattable[Ipv6Addr] {
+        pub def format(x: Ipv6Addr): RichString = RichString.fromString(ToString.toString(x))
+    }
+
+    ///
     /// Attempt to convert `x` from Ipv6 to Ipv4.
     ///
     pub def tryToIpv4(x: Ipv6Addr): Option[Ipv4Addr] = match x {

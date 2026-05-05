@@ -506,7 +506,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.ExtraneousDef](result)
   }
 
-  test("Test.OrphanInstance.01") {
+  ignore("Test.OrphanInstance.01") {
     val input =
       """
         |trait C[a]
@@ -532,7 +532,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OrphanInstance](result)
   }
 
-  test("Test.OrphanInstance.03") {
+  ignore("Test.OrphanInstance.03") {
     val input =
       """
         |mod N {

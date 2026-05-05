@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Jakob Schneider Villumsen
+ * Copyright 2026 Flix Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-pub mod MutDisjointSets.Node {
-    pub def parent(n: Node[t, r]): Option[Node[t, r]] \ r = n->parent
-    pub def rank(n: Node[t, r]): Int32 \ r = n->rank
-    pub def incrementRank(n: Node[t, r]): Unit \ r = n->rank = n->rank + 1
-    pub def setParent(newParent: Option[Node[t, r]], n: Node[t, r]): Unit \ r = n->parent = newParent
-    pub def value(n: Node[t, r]): t = n->value
+pub mod Net.TcpServer {
+
+    import java.net.ServerSocket
+
+    ///
+    /// Represents a TCP server.
+    ///
+    pub enum TcpServer(ServerSocket)
+
 }

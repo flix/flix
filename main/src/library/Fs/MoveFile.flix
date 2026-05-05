@@ -18,6 +18,21 @@ pub mod Fs.MoveFile {
 
     use Fs.FileWrite
     use Fs.MoveFile
+    use Fs.MoveOption
+
+    ///
+    /// An effect used to move (rename) a file or directory.
+    ///
+    /// Use the `MoveFile.runWithFileWrite` handler.
+    ///
+    pub eff MoveFile {
+
+        ///
+        /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
+        ///
+        def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
+
+    }
 
     ///
     /// Convenience function: moves `src` to `dst` with no options.

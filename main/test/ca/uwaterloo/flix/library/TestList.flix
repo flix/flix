@@ -2478,6 +2478,26 @@ mod TestList {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // iterate                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterate01(): Unit \ Assert =
+        assertEq(expected = (Nil: List[Int32]), List.iterate(s -> if (true) None else Some(s + 1), 0))
+
+    @Test
+    def iterate02(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, List.iterate(s -> if (s >= 1) None else Some(s + 1), 0))
+
+    @Test
+    def iterate03(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, List.iterate(s -> if (s >= 3) None else Some(s + 1), 0))
+
+    @Test
+    def iterate04(): Unit \ Assert =
+        assertEq(expected = 2 :: 4 :: 6 :: 8 :: 10 :: Nil, List.iterate(s -> if (s >= 10) None else Some(s + 2), 0))
+
+    /////////////////////////////////////////////////////////////////////////////
     // unfoldWithOkIter                                                        //
     /////////////////////////////////////////////////////////////////////////////
 

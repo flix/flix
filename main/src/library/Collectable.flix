@@ -14,23 +14,27 @@
  *  limitations under the License.
  */
 
-///
-/// A trait representing collections that can be produced from an Iterator.
-///
-pub trait Collectable[t: Type] {
-    ///
-    /// The element type of the Collectable.
-    ///
-    type Elm[t]: Type
+pub mod Collectable {
 
     ///
-    /// The associated effect of the Collectable which represents the effect of accessing its elements.
+    /// A trait representing collections that can be produced from an Iterator.
     ///
-    type Aef[t]: Eff = {}
+    pub trait Collectable[t: Type] {
+        ///
+        /// The element type of the Collectable.
+        ///
+        type Elm[t]: Type
 
-    ///
-    /// Run an Iterator collecting the results.
-    ///
-    pub def collect(iter: Iterator[Collectable.Elm[t], ef, r]): t \ (ef + Collectable.Aef[t] + r)
+        ///
+        /// The associated effect of the Collectable which represents the effect of accessing its elements.
+        ///
+        type Aef[t]: Eff = {}
+
+        ///
+        /// Run an Iterator collecting the results.
+        ///
+        pub def collect(iter: Iterator[Collectable.Elm[t], ef, r]): t \ (ef + Collectable.Aef[t] + r)
+
+    }
 
 }

@@ -14,25 +14,29 @@
  *  limitations under the License.
  */
 
-///
-/// A trait for data structures that can be traversed in left-to-right
-/// order with an applicative partial functor.
-///
-pub trait Witherable[t : Type -> Type] with Traversable[t], Filterable[t] {
+pub mod Witherable {
 
     ///
-    /// Returns the result of applying the applicative partial mapping function `f` to all the elements of the
-    /// data structure `t`.
+    /// A trait for data structures that can be traversed in left-to-right
+    /// order with an applicative partial functor.
     ///
-    pub def wither(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ (ef + Foldable.Aef[t]) with Applicative[m] =
-        use Functor.{<$>};
-        use Filterable.filterMap;
-        (identity |> filterMap) <$> Traversable.traverse(f, t)
+    pub trait Witherable[t : Type -> Type] with Traversable[t], Filterable[t] {
 
-    ///
-    /// Returns the result of running all the actions in the data structure `t`.
-    ///
-    pub def sequenceWither(t: t[m[Option[a]]]): m[t[a]] \ Foldable.Aef[t] with Applicative[m] =
-        Witherable.wither(identity, t)
+        ///
+        /// Returns the result of applying the applicative partial mapping function `f` to all the elements of the
+        /// data structure `t`.
+        ///
+        pub def wither(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ (ef + Foldable.Aef[t]) with Applicative[m] =
+            use Functor.{<$>};
+            use Filterable.filterMap;
+            (identity |> filterMap) <$> Traversable.traverse(f, t)
+
+        ///
+        /// Returns the result of running all the actions in the data structure `t`.
+        ///
+        pub def sequenceWither(t: t[m[Option[a]]]): m[t[a]] \ Foldable.Aef[t] with Applicative[m] =
+            Witherable.wither(identity, t)
+
+    }
 
 }

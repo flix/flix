@@ -19,6 +19,20 @@ pub mod Fs.IsRegularFile {
     use Fs.FileTest
 
     ///
+    /// An effect used to check if a path is a regular file.
+    ///
+    /// Use the `IsRegularFile.runWithFileTest` handler.
+    ///
+    pub eff IsRegularFile {
+
+        ///
+        /// Returns `true` if the given file `f` is a regular file.
+        ///
+        def isRegularFile(f: String): Result[IoError, Bool]
+
+    }
+
+    ///
     /// Handles the `IsRegularFile` effect of the given function `f` using the `FileTest` effect.
     ///
     pub def runWithFileTest(f: Unit -> a \ ef): a \ (ef - IsRegularFile) + FileTest =

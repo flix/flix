@@ -15,125 +15,125 @@
  */
 
 
-///
-/// The Chain type.
-///
-/// A chain is a list represented as an unbalanced binary tree.
-/// It supports efficient append and "snoc" - appending elements at the tail
-/// of the list.
-///
-/// Note - the constructors `Empty`, `One` and `Chain` should not be used directly.
-///
-pub enum Chain[t] {
-    case Empty
-    case One(t)
-    case Chain(Chain[t], Chain[t])
-}
-
-instance Eq[Chain[a]] with Eq[a] {
-    pub def eq(c1: Chain[a], c2: Chain[a]): Bool = Chain.equals(c1, c2)
-}
-
-instance Order[Chain[a]] with Order[a] {
-    pub def compare(c1: Chain[a], c2: Chain[a]): Comparison = Chain.compare(c1, c2)
-}
-
-instance SemiGroup[Chain[a]] {
-    pub def combine(c1: Chain[a], c2: Chain[a]): Chain[a] = Chain.append(c1, c2)
-}
-
-instance Monoid[Chain[a]] {
-    pub def empty(): Chain[a] = Chain.empty()
-}
-
-instance Functor[Chain] {
-    pub def map(f: a -> b \ ef, c: Chain[a]): Chain[b] \ ef = Chain.map(f, c)
-}
-
-instance Applicative[Chain] {
-    pub def point(x: a) : Chain[a] = Chain.singleton(x)
-    pub def ap(f: Chain[a -> b \ ef], x: Chain[a]) : Chain[b] \ ef = Chain.ap(f, x)
-}
-
-instance Monad[Chain] {
-    pub def flatMap(f: a -> Chain[b] \ ef, x : Chain[a]) : Chain[b] \ ef = Chain.flatMap(f, x)
-}
-
-instance MonadZero[Chain] {
-    pub def empty(): Chain[a] = Chain.empty()
-}
-
-instance MonadZip[Chain] {
-    pub def zipWith(f: (a, b) -> c \ ef, xs: Chain[a], ys: Chain[b]): Chain[c] \ ef = Chain.zipWith(f, xs, ys)
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Chain[a], ys: Chain[b]): f[Chain[c]] \ ef with Applicative[f] = Chain.zipWithA(f, xs, ys)
-    redef zip(xs: Chain[a], ys: Chain[b]): Chain[(a, b)] = Chain.zip(xs, ys)
-    redef unzip(xs: Chain[(a, b)]): (Chain[a], Chain[b]) = Chain.unzip(xs)
-}
-
-instance Foldable[Chain] {
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
-    redef head(c: Chain[a]): Option[a] = Chain.head(c)
-    redef isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
-    redef memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
-    redef forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
-    redef exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
-}
-
-instance UnorderedFoldable[Chain] {
-    pub def foldMap(f: a -> b \ ef, c: Chain[a]): b \ ef with CommutativeMonoid[b] = Chain.foldMap(f, c)
-    redef isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
-    redef exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
-    redef forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
-    redef memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
-}
-
-instance Traversable[Chain] {
-    pub def traverse(f: a -> m[b] \ ef, t: Chain[a]): m[Chain[b]] \ ef with Applicative[m] = Chain.traverse(f, t)
-    redef sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
-}
-
-instance Filterable[Chain] {
-    pub def filterMap(f: a -> Option[b] \ ef, x: Chain[a]): Chain[b] \ ef = Chain.filterMap(f, x)
-    redef filter(f: a -> Bool \ ef, x: Chain[a]): Chain[a] \ ef = Chain.filter(f, x)
-}
-
-instance Witherable[Chain]
-
-instance Formattable[Chain[a]] with Formattable[a] {
-    type Aef = Formattable.Aef[a]
-
-    pub def format(c: Chain[a]): RichString \ Formattable.Aef[a] =
-        RichString.fromString("Chain#{") +
-        RichString.join(RichString.fromString(", "), c) +
-        RichString.fromString("}")
-}
-
-instance ToString[Chain[a]] with ToString[a] {
-    pub def toString(c: Chain[a]): String = region rc {
-        "Chain#{" + (Chain.iterator(rc, c) |> Iterator.join(", ")) + "}"
-    }
-}
-
-instance Collectable[Chain[a]] {
-    type Elm = a
-    pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } = Iterator.toChain(iter)
-}
-
-instance Iterable[Chain[a]] {
-    type Elm = a
-    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
-}
-
-instance ForEach[Chain[a]] {
-    type Elm = a
-    pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = Chain.forEach(f, c)
-}
-
 pub mod Chain {
     use Math.Shuffle
     use ViewLeft.{NoneLeft, SomeLeft}
     use ViewRight.{NoneRight, SomeRight}
+
+    ///
+    /// The Chain type.
+    ///
+    /// A chain is a list represented as an unbalanced binary tree.
+    /// It supports efficient append and "snoc" - appending elements at the tail
+    /// of the list.
+    ///
+    /// Note - the constructors `Empty`, `One` and `Chain` should not be used directly.
+    ///
+    pub enum Chain[t] {
+        case Empty
+        case One(t)
+        case Chain(Chain[t], Chain[t])
+    }
+
+    instance Eq[Chain[a]] with Eq[a] {
+        pub def eq(c1: Chain[a], c2: Chain[a]): Bool = Chain.equals(c1, c2)
+    }
+
+    instance Order[Chain[a]] with Order[a] {
+        pub def compare(c1: Chain[a], c2: Chain[a]): Comparison = Chain.compare(c1, c2)
+    }
+
+    instance SemiGroup[Chain[a]] {
+        pub def combine(c1: Chain[a], c2: Chain[a]): Chain[a] = Chain.append(c1, c2)
+    }
+
+    instance Monoid[Chain[a]] {
+        pub def empty(): Chain[a] = Chain.empty()
+    }
+
+    instance Functor[Chain] {
+        pub def map(f: a -> b \ ef, c: Chain[a]): Chain[b] \ ef = Chain.map(f, c)
+    }
+
+    instance Applicative[Chain] {
+        pub def point(x: a) : Chain[a] = Chain.singleton(x)
+        pub def ap(f: Chain[a -> b \ ef], x: Chain[a]) : Chain[b] \ ef = Chain.ap(f, x)
+    }
+
+    instance Monad[Chain] {
+        pub def flatMap(f: a -> Chain[b] \ ef, x : Chain[a]) : Chain[b] \ ef = Chain.flatMap(f, x)
+    }
+
+    instance MonadZero[Chain] {
+        pub def empty(): Chain[a] = Chain.empty()
+    }
+
+    instance MonadZip[Chain] {
+        pub def zipWith(f: (a, b) -> c \ ef, xs: Chain[a], ys: Chain[b]): Chain[c] \ ef = Chain.zipWith(f, xs, ys)
+        pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Chain[a], ys: Chain[b]): f[Chain[c]] \ ef with Applicative[f] = Chain.zipWithA(f, xs, ys)
+        redef zip(xs: Chain[a], ys: Chain[b]): Chain[(a, b)] = Chain.zip(xs, ys)
+        redef unzip(xs: Chain[(a, b)]): (Chain[a], Chain[b]) = Chain.unzip(xs)
+    }
+
+    instance Foldable[Chain] {
+        pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
+        pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
+        redef head(c: Chain[a]): Option[a] = Chain.head(c)
+        redef isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
+        redef memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
+        redef forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
+        redef exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
+    }
+
+    instance UnorderedFoldable[Chain] {
+        pub def foldMap(f: a -> b \ ef, c: Chain[a]): b \ ef with CommutativeMonoid[b] = Chain.foldMap(f, c)
+        redef isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
+        redef exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
+        redef forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
+        redef memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
+    }
+
+    instance Traversable[Chain] {
+        pub def traverse(f: a -> m[b] \ ef, t: Chain[a]): m[Chain[b]] \ ef with Applicative[m] = Chain.traverse(f, t)
+        redef sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
+    }
+
+    instance Filterable[Chain] {
+        pub def filterMap(f: a -> Option[b] \ ef, x: Chain[a]): Chain[b] \ ef = Chain.filterMap(f, x)
+        redef filter(f: a -> Bool \ ef, x: Chain[a]): Chain[a] \ ef = Chain.filter(f, x)
+    }
+
+    instance Witherable[Chain]
+
+    instance Formattable[Chain[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
+
+        pub def format(c: Chain[a]): RichString \ Formattable.Aef[a] =
+            RichString.fromString("Chain#{") +
+            RichString.join(RichString.fromString(", "), c) +
+            RichString.fromString("}")
+    }
+
+    instance ToString[Chain[a]] with ToString[a] {
+        pub def toString(c: Chain[a]): String = region rc {
+            "Chain#{" + (Chain.iterator(rc, c) |> Iterator.join(", ")) + "}"
+        }
+    }
+
+    instance Collectable[Chain[a]] {
+        type Elm = a
+        pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } = Iterator.toChain(iter)
+    }
+
+    instance Iterable[Chain[a]] {
+        type Elm = a
+        pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
+    }
+
+    instance ForEach[Chain[a]] {
+        type Elm = a
+        pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = Chain.forEach(f, c)
+    }
 
     ///
     /// A datatype for pattern matching on a chain (traversing left-to-right).
@@ -832,7 +832,7 @@ pub mod Chain {
                 Ref.put(viewLeft(xs), cursor);
                 Some(x)
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Returns the chain `c` as a Nel.

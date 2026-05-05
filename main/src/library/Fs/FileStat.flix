@@ -21,6 +21,69 @@ pub mod Fs.FileStat {
     use Fs.FsLayer.{logPre, logPost}
     use IoError.IoError
     use IoError.ErrorKind
+    use Fs.Size
+
+    ///
+    /// An effect used to read file metadata (test, permissions, timestamps, size).
+    ///
+    pub eff FileStat {
+
+        ///
+        /// Returns `true` if the given file `f` exists.
+        ///
+        def exists(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is a directory.
+        ///
+        def isDirectory(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is a regular file.
+        ///
+        def isRegularFile(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is a symbolic link.
+        ///
+        def isSymbolicLink(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is readable.
+        ///
+        def isReadable(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is writable.
+        ///
+        def isWritable(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is executable.
+        ///
+        def isExecutable(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns the last access time of the given file `f` in milliseconds since the epoch.
+        ///
+        def accessTime(f: String): Result[IoError, Int64]
+
+        ///
+        /// Returns the creation time of the given file `f` in milliseconds since the epoch.
+        ///
+        def creationTime(f: String): Result[IoError, Int64]
+
+        ///
+        /// Returns the last-modified timestamp of the given file `f` in milliseconds since the epoch.
+        ///
+        def modificationTime(f: String): Result[IoError, Int64]
+
+        ///
+        /// Returns the size of the given file `f`.
+        ///
+        def size(f: String): Result[IoError, Size]
+
+    }
 
     ///
     /// Handles the `FileStat` effect of the given function `f`.

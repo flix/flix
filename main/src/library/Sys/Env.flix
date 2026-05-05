@@ -29,6 +29,90 @@ pub mod Sys.Env {
     import java.util.{Map$Entry => Entry}
 
     ///
+    /// An effect used to access the system environment.
+    ///
+    pub eff Env {
+
+        ///
+        /// Returns the arguments passed to the program via the command line.
+        ///
+        def getArgs(): List[String]
+
+        ///
+        /// Returns an map of the current system environment.
+        ///
+        def getEnv(): Map[String, String]
+
+        ///
+        /// Returns the value of the specified environment variable.
+        ///
+        def getVar(name: String): Option[String]
+
+        ///
+        /// Returns the system property by name.
+        ///
+        def getProp(name: String): Option[String]
+
+        ///
+        /// Returns the operating system name
+        ///
+        def getOsName(): Option[String]
+
+        ///
+        /// Returns the operating system architecture
+        ///
+        def getOsArch(): Option[String]
+
+        ///
+        /// Returns the operating system version
+        ///
+        def getOsVersion(): Option[String]
+
+        ///
+        /// Returns the file separator
+        ///
+        def getFileSeparator(): String
+
+        ///
+        /// Returns the path separator
+        ///
+        def getPathSeparator(): String
+
+        ///
+        /// Returns the system line separator
+        ///
+        def getLineSeparator(): String
+
+        ///
+        /// Returns the user's current working directory
+        ///
+        def getCurrentWorkingDirectory(): Option[String]
+
+        ///
+        /// Returns the default temp file path
+        ///
+        def getTemporaryDirectory(): Option[String]
+
+        ///
+        /// Returns the user's account name
+        ///
+        def getUserName(): Option[String]
+
+        ///
+        /// Returns the user's home directory
+        ///
+        def getUserHomeDirectory(): Option[String]
+
+        ///
+        /// Returns the number of virtual processors available to the JVM.
+        ///
+        /// The returned value is never less than one.
+        ///
+        def getVirtualProcessors(): Int32
+
+    }
+
+    ///
     /// Handles the `Env` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Env` effect using the `IO` effect.

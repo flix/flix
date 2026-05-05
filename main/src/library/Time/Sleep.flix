@@ -15,13 +15,25 @@
  */
 
 pub mod Time.Sleep {
-
+    use Logger.Severity
     use Math.Random
     use Time.Duration
     use Time.Sleep
     use RichString.{text, gray}
 
     import java.lang.{Thread => JThread}
+
+    ///
+    /// An effect used to sleep the current thread.
+    ///
+    pub eff Sleep {
+
+        ///
+        /// Sleeps the current thread for the given duration `d`.
+        ///
+        def sleep(d: Duration): Unit
+
+    }
 
     ///
     /// Handles the `Sleep` effect of the given function `f`.

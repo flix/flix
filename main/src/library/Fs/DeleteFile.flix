@@ -19,6 +19,22 @@ pub mod Fs.DeleteFile {
     use Fs.FileWrite
 
     ///
+    /// An effect used to delete a file.
+    ///
+    /// Use the `DeleteFile.runWithFileWrite` handler.
+    ///
+    pub eff DeleteFile {
+
+        ///
+        /// Deletes the given file `f`.
+        ///
+        /// Fails if the file does not exist.
+        ///
+        def delete(f: String): Result[IoError, Unit]
+
+    }
+
+    ///
     /// Handles the `DeleteFile` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - DeleteFile) + FileWrite =

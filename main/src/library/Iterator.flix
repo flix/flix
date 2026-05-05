@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-pub enum Iterator[a: Type, ef: Eff, r: Region] {
-    case Iterator(Region[r], Unit -> Iterator.Step[a] \ {r, ef})
-}
-
 pub mod Iterator {
     use Step.{Ans, Skip, Done}
+
+    pub enum Iterator[a: Type, ef: Eff, r: Region] {
+        case Iterator(Region[r], Unit -> Iterator.Step[a] \ {r, ef})
+    }
 
 
     ///
@@ -41,10 +41,48 @@ pub mod Iterator {
     ///
     /// Returns an iterator built with the stepper function `f`.
     ///
-    pub def iterate(rc: Region[r], f: Unit -> Option[a] \ ef): Iterator[a, ef, r] =
+    /// `f` is expected to encapsulate a stateful resource.
+    ///
+    /// `f` should return `Some(a)` to signal a new element `a`.
+    ///
+    /// `f` should return `None` to signal the end of the iterator.
+    ///
+    pub def unfoldWithIter(rc: Region[r], f: Unit -> Option[a] \ ef): Iterator[a, ef, r] =
         let f1 = () -> match f() {
             case Some(a) => Ans(a)
             case None    => Done
+        };
+        let iterF = () -> checked_ecast(f1());
+        Iterator(rc, iterF)
+
+    ///
+    /// Build an iterator by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(a, st1)` to signal a new element `a` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of the iterator.
+    ///
+    pub def unfold(rc: Region[r], f: s -> Option[(a, s)] \ ef, st: s): Iterator[a, ef + r, r] \ r =
+        let state = Ref.fresh(rc, st);
+        let f1 = () -> match f(Ref.get(state)) {
+            case None           => Done
+            case Some((a, st1)) => Ref.put(st1, state); Ans(a)
+        };
+        let iterF = () -> checked_ecast(f1());
+        Iterator(rc, iterF)
+
+    ///
+    /// Build an iterator by applying `f` to the initial value `x`.
+    ///
+    /// `f` should return `Some(a1)` to signal a new element `a1` (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of the iterator.
+    ///
+    pub def iterate(rc: Region[r], f: a -> Option[a] \ ef, x: a): Iterator[a, ef + r, r] \ r =
+        let state = Ref.fresh(rc, x);
+        let f1 = () -> match f(Ref.get(state)) {
+            case None     => Done
+            case Some(a1) => Ref.put(a1, state); Ans(a1)
         };
         let iterF = () -> checked_ecast(f1());
         Iterator(rc, iterF)
@@ -442,7 +480,7 @@ pub mod Iterator {
     ///
     pub def unfoldWithOk(rc: Region[r], f: Unit -> Result[e, a] \ ef): Iterator[a, ef, r] =
         let iterF = () -> Result.toOption(f());
-        Iterator.iterate(rc, iterF)
+        Iterator.unfoldWithIter(rc, iterF)
 
     ///
     /// Returns `iter` without the first `n` elements.

@@ -23,6 +23,25 @@ pub mod Net.Ipv4Addr {
     use Net.Ipv6Addr
 
     ///
+    /// Represents a V4 Ip Address.
+    ///
+    pub enum Ipv4Addr with Eq { // 32 bits
+        case Ipv4Addr(Int8, Int8, Int8, Int8)
+    }
+
+    instance FromString[Ipv4Addr] {
+        pub def fromString(x: String): Option[Ipv4Addr] = Ipv4Addr.fromString(x)
+    }
+
+    instance ToString[Ipv4Addr] {
+        pub def toString(x: Ipv4Addr): String = Ipv4Addr.toString(x)
+    }
+
+    instance Formattable[Ipv4Addr] {
+        pub def format(x: Ipv4Addr): RichString = RichString.fromString(ToString.toString(x))
+    }
+
+    ///
     /// Returns the Ipv4 localhost address.
     ///
     pub def localhost(): Ipv4Addr =

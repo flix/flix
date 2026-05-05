@@ -21,6 +21,23 @@ pub mod Math.Random {
     import java.util.{Random => JRandom}
 
     ///
+    /// An effect used to generate random numbers.
+    ///
+    pub eff Random {
+
+        ///
+        /// Returns a pseudorandom 64-bit floating-point number in the range [0.0, 1.0].
+        ///
+        def randomFloat64(): Float64
+
+        ///
+        /// Returns a pseudorandom 64-bit integer.
+        ///
+        def randomInt64(): Int64
+
+    }
+
+    ///
     /// Handles the `Random` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Random` effect using the `IO` effects.

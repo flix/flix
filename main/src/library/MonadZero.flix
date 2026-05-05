@@ -14,14 +14,18 @@
  *  limitations under the License.
  */
 
-///
-/// A trait for Monads that have a zero element.
-///
-trait MonadZero[m: Type -> Type] with Monad[m] {
+mod MonadZero {
 
     ///
-    /// Returns the zero element of the monad.
+    /// A trait for Monads that have a zero element.
     ///
-    pub def empty(): m[t]
+    trait MonadZero[m: Type -> Type] with Monad[m] {
+
+        ///
+        /// Returns the zero element of the monad.
+        ///
+        pub def empty(): m[t]
+
+    }
 
 }

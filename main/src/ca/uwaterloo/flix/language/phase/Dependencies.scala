@@ -591,6 +591,11 @@ object Dependencies {
     visitType(ec.tpe2)
   }
 
+  private def visitEqualityConstraint(ec: TypedAst.EqualityConstraint)(implicit sctx: SharedContext): Unit = {
+    visitType(ec.tpe1)
+    visitType(ec.tpe2)
+  }
+
   private def visitBinder(bnd: TypedAst.Binder)(implicit sctx: SharedContext): Unit =
     visitType(bnd.tpe)
 
