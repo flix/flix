@@ -26,9 +26,9 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  val empty: Root = Root(ListMap.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, List.empty,Map.empty, TraitEnv.empty, EqualityEnv.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, List.empty,Map.empty, TraitEnv.empty, EqualityEnv.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
 
-  case class Root(modules: ListMap[Symbol.ModuleSym, Symbol],
+  case class Root(modules: Map[Symbol.ModuleSym, Mod],
                   traits: Map[Symbol.TraitSym, Trait],
                   instances: ListMap[Symbol.TraitSym, Instance],
                   sigs: Map[Symbol.SigSym, Sig],
@@ -54,6 +54,8 @@ object TypedAst {
     val ann: Annotations
     val mod: Modifiers
   }
+
+  case class Mod(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.ModuleSym, children: List[Symbol], loc: SourceLocation) extends Decl
 
   case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation) extends Decl
 

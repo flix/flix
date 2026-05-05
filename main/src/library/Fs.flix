@@ -16,6 +16,7 @@
 
 /// Effect Hierarchy ([D] = has @DefaultHandler):
 ///
+/// ```
 /// FileSystem [D]                      (29 ops — unified root)
 /// ├── FileStat [D]                    (11 ops)
 /// │   ├── FileTest [D]                (4 ops)
@@ -52,9 +53,11 @@
 ///     ├── MkDir                             — mkDir
 ///     ├── MkDirs                            — mkDirs
 ///     └── MkTempDir                         — mkTempDir
+/// ```
 ///
 /// Middleware Availability:
 ///
+/// ```
 ///                    FileTest  FilePermission  FileTime  FileStat  FileRead  DirList  Glob  FileWrite  FileSystem
 /// withLogging        x         x               x         x         x         x        x     x          x
 /// withBaseDir        x         x               x         x         x         x        x     x          x
@@ -75,6 +78,7 @@
 /// withSizeRotation                                                                          x          x
 /// withMemoryOverlay                                                                                    x
 /// withInMemoryFS                                                                                       x
+/// ```
 pub mod Fs {
     /* empty */
 }
