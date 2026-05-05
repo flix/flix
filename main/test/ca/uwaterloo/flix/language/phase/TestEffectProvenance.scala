@@ -123,6 +123,31 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
     expectOneError[TypeError.ExplicitlyPureFunctionUsesIO](result)
   }
 
+  test("Test.ExplicitlyPureFunctionUsesIO.07") {
+    val input =
+      """
+        |eff Foo {
+        |    def f(): Unit
+        |}
+        |eff Baz {
+        |    def b(): Unit
+        |}
+        |
+        |def bar(): Unit \ Foo + IO = println("€"); Foo.f()
+        |
+        |def main(): Unit \ {} =
+        |    run {
+        |        bar()
+        |    } with handler Foo {
+        |        def f(k) = {
+        |         k()
+        |        }
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectOneError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
   test("Test.ImplicitlyPureFunctionUsesIO.01") {
     val input =
       """
