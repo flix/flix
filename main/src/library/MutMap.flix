@@ -20,7 +20,7 @@ pub mod MutMap {
     /// The Mutable Map type.
     ///
     pub struct MutMap[k: Type, v: Type, r: Region] {
-        rc:        Region[r],
+        rc: Region[r],
         mut inner: Map[k, v]
     }
 
@@ -32,7 +32,7 @@ pub mod MutMap {
         pub def get(t: MutMap[k, v, r], i: k): v \ r + KeyNotFound = {
             match MutMap.get(i, t) {
                 case Some(v) => v
-                case None    => KeyNotFound.keyNotFound("key not found")
+                case None => KeyNotFound.keyNotFound("key not found")
             }
         }
     }
@@ -76,13 +76,13 @@ pub mod MutMap {
     /// Returns a fresh empty mutable map.
     ///
     pub def empty(rc: Region[r]): MutMap[k, v, r] \ r =
-        new MutMap @ rc {rc = rc, inner = Map.empty()}
+        new MutMap @ rc { rc = rc, inner = Map.empty() }
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
     ///
     pub def singleton(rc: Region[r], k: k, v: v): MutMap[k, v, r] \ r with Order[k] =
-        new MutMap @ rc {rc = rc, inner = Map.singleton(k, v)}
+        new MutMap @ rc { rc = rc, inner = Map.singleton(k, v) }
 
     ///
     /// Returns `true` if and only if the mutable map `m` contains the key `k`.
@@ -384,7 +384,7 @@ pub mod MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     pub def mapWithKey(rc: Region[r1], f: (k, v1) -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, r, r1 } =
-        new MutMap @ rc {rc = rc, inner = Map.mapWithKey(f, m->inner)}
+        new MutMap @ rc { rc = rc, inner = Map.mapWithKey(f, m->inner) }
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -492,7 +492,7 @@ pub mod MutMap {
     /// Returns a shallow copy of the mutable map `m`.
     ///
     pub def copy(rc: Region[r1], m: MutMap[k, v, r]): MutMap[k, v, r1] \ { r, r1 } =
-        new MutMap @ rc {rc = rc, inner = m->inner}
+        new MutMap @ rc { rc = rc, inner = m->inner }
 
     ///
     /// Returns the mutable map `m` as an immutable map.
@@ -515,7 +515,7 @@ pub mod MutMap {
     ///
     /// Returns the mutable map `m` as an array of key-value pairs.
     ///
-    pub def toArray(rc1: Region[r1], m: MutMap[k, v, r]): Array[(k, v), r1] \ { r, r1 } =
+    pub def toArray(rc1: Region[r1], m: MutMap[k, v, r]): Array[(k, v), r1] \ {r, r1} =
         Map.toArray(rc1, m->inner)
 
     ///

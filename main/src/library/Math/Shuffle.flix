@@ -17,6 +17,7 @@
 pub mod Math.Shuffle {
 
     use Math.Shuffle
+
     import java.util.{Random => JRandom}
 
     ///
@@ -62,22 +63,21 @@ pub mod Math.Shuffle {
     ///
     /// Fisher-Yates shuffle algorithm for arrays.
     ///
-    def fisherYatesShuffle(arr: Array[Int32, r]): Unit \ { r, NonDet } =
-        unsafe IO as r {
-            let rnd = new JRandom();
-            let len = Array.length(arr);
-            def loop(i) = {
-                if (i >= len - 1)
-                    ()
-                else {
-                    let j = i + rnd.nextInt(len - i);
-                    let temp = Array.get(i, arr);
-                    Array.put(Array.get(j, arr), i, arr);
-                    Array.put(temp, j, arr);
-                    loop(i + 1)
-                }
-            };
-            loop(0)
-        }
+    def fisherYatesShuffle(arr: Array[Int32, r]): Unit \ {r, NonDet} = unsafe IO as r {
+        let rnd = new JRandom();
+        let len = Array.length(arr);
+        def loop(i) = {
+            if (i >= len - 1)
+                ()
+            else {
+                let j = i + rnd.nextInt(len - i);
+                let temp = Array.get(i, arr);
+                Array.put(Array.get(j, arr), i, arr);
+                Array.put(temp, j, arr);
+                loop(i + 1)
+            }
+        };
+        loop(0)
+    }
 
 }

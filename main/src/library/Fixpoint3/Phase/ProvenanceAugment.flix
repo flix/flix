@@ -30,7 +30,7 @@
 /// must ensure this property. Note that only this does not refers to the `NotMemberOf` relating
 /// to negative dependencies/the `not A(...)` constructs.
 ///
-pub mod Fixpoint3.Phase.ProvenanceAugment {
+ pub mod Fixpoint3.Phase.ProvenanceAugment {
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{RamProgram, RamStmt, RelOp, RamTerm, RelSym, arityOf, RowVar, BoolExp}
     use Fixpoint3.Boxed
@@ -46,27 +46,24 @@ pub mod Fixpoint3.Phase.ProvenanceAugment {
     /// rule used to generate them. Further add extend facts to contain a depth and rule.
     ///
     pub def augmentProgram(withProv: Bool, program: RamProgram): RamProgram =
-        if (not withProv)
-            program
-        else
-            augmentProgramInternal(program)
+        if (not withProv) program
+        else augmentProgramInternal(program)
 
     ///
     /// Augment `program` to maintain proof depth of atoms and rule used to generate them.
     /// Further extend facts to contain a depth and rule.
     ///
     def augmentProgramInternal(program: RamProgram): RamProgram = match program {
-        case RamProgram.Program(stmt, facts, predicates, indexInfo, typeInfo) =>
-            unsafe IO {
-                let (f1, f2) = facts;
-                let augmentedF1 = Map.map(augmentFacts, f1);
-                let augmentedF2 = Map.map(augmentFacts, f2);
-                let augmentedFacts = (augmentedF1, augmentedF2);
-                let augmentedStmt = augmentStmt(stmt);
-                let newTypeInfo = expandTypeInfoToProv(typeInfo, predicates);
-                RamProgram.Program(augmentedStmt, augmentedFacts, predicates, indexInfo, newTypeInfo)
-                    |> Fixpoint3.Debugging.notifyPreLowering("Provenance")
-            }
+        case RamProgram.Program(stmt, facts, predicates, indexInfo, typeInfo) => unsafe IO {
+            let (f1, f2) = facts;
+            let augmentedF1 = Map.map(augmentFacts, f1);
+            let augmentedF2 = Map.map(augmentFacts, f2);
+            let augmentedFacts = (augmentedF1, augmentedF2);
+            let augmentedStmt = augmentStmt(stmt);
+            let newTypeInfo = expandTypeInfoToProv(typeInfo, predicates);
+            RamProgram.Program(augmentedStmt, augmentedFacts, predicates, indexInfo, newTypeInfo) |>
+                Fixpoint3.Debugging.notifyPreLowering("Provenance")
+        }
     }
 
     ///
@@ -80,19 +77,17 @@ pub mod Fixpoint3.Phase.ProvenanceAugment {
     ///
     def augmentFacts(oldTree: BPlusTree[Vector[Boxed], Boxed, Static]): BPlusTree[Vector[Boxed], Boxed, Static] \ IO = {
         let newTree = BPlusTree.emptyWithArity(Static, usedArity());
-        BPlusTree.forEach(
-            tuple -> v ->
-                let annotatedVector = tuple ++ Vector#{BoxedInt64(0i64), BoxedInt64(-1i64)};
-                BPlusTree.put(annotatedVector, v, newTree),
-            oldTree
-        );
+        BPlusTree.forEach(tuple -> v ->
+            let annotatedVector = tuple ++ Vector#{BoxedInt64(0i64), BoxedInt64(-1i64)};
+            BPlusTree.put(annotatedVector, v, newTree)
+        , oldTree);
         newTree
     }
 
     ///
     /// Augments `RelOp`'s in `stmt` with `ProvMax` terms.
     ///
-    def augmentStmt(stmt: RamStmt): RamStmt \ r = match stmt {
+    def augmentStmt(stmt: RamStmt): RamStmt \ r= match stmt {
         case RamStmt.Insert(op)         => RamStmt.Insert(augmentOp(Nil, op))
         case RamStmt.MergeInto(_, _)    => stmt
         case RamStmt.Swap(_, _)         => stmt
@@ -107,26 +102,26 @@ pub mod Fixpoint3.Phase.ProvenanceAugment {
     /// Augments `op` with `ProvMax` terms.
     ///
     def augmentOp(rowVarsArity: List[(RowVar, Int32)], op: RelOp): RelOp \ r = match op {
-        case RelOp.Search(rowVar, relSym, t, body)                 =>
-            augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body)
-                |> RelOp.Search(rowVar, relSym, t)
-        case RelOp.Query(rowVar, relSym, bools, index, t, body)    =>
-            augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body)
-                |> RelOp.Query(rowVar, relSym, removeNotMemberOf(bools), index, t)
+        case RelOp.Search(rowVar, relSym, t, body) =>
+            augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body) |>
+                RelOp.Search(rowVar, relSym, t)
+        case RelOp.Query(rowVar, relSym, bools, index, t, body) =>
+            augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body) |>
+                RelOp.Query(rowVar, relSym, removeNotMemberOf(bools), index, t)
         case RelOp.Functional(rowVar, func, terms, body, arity, t) =>
             // Do not add this to `rowVarsArity`. We use this in `ProvMax` as `Functional`
             // has no concept of depth.
             RelOp.Functional(rowVar, func, terms, augmentOp(rowVarsArity, body), arity, t)
-        case RelOp.Project(terms, relSym, ruleNum)                 =>
-            let newTerms = terms
-                ++ Vector#{
-                    RamTerm.ProvMax(List.toVector(rowVarsArity)),
-                    RamTerm.Lit(BoxedInt64(Int32.toInt64(ruleNum)), provType())
-                };
+        case RelOp.Project(terms, relSym, ruleNum) =>
+            let newTerms = terms ++ Vector#{
+                RamTerm.ProvMax(List.toVector(rowVarsArity)),
+                RamTerm.Lit(BoxedInt64(Int32.toInt64(ruleNum)), provType())
+            };
             RelOp.Project(newTerms, relSym, ruleNum)
-        case RelOp.If(boolExps, body)                              =>
+        case RelOp.If(boolExps, body) =>
             RelOp.If(removeNotMemberOf(boolExps), augmentOp(rowVarsArity, body))
     }
+
 
     ///
     /// Returns the `BoolExp`'s in `boolExps` without `NotMemberOf`. The `NotMemberOf` introduced by
@@ -142,7 +137,7 @@ pub mod Fixpoint3.Phase.ProvenanceAugment {
     ///
     def notNotMemberOf(boolExp: BoolExp): Option[BoolExp] = match boolExp {
         case BoolExp.NotMemberOf(_, _, false) => None
-        case _                                => Some(boolExp)
+        case _ => Some(boolExp)
     }
 
 }

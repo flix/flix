@@ -108,12 +108,11 @@ pub mod Float64 {
     /// Parse the string `s` as a Float64, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Float64] =
-        try {
-            Some(Double.parseDouble(s.strip()))
-        } catch {
-            case _: NumberFormatException => None
-        }
+    pub def fromString(s: String): Option[Float64] = try {
+        Some(Double.parseDouble(s.strip()))
+    } catch {
+        case _: NumberFormatException => None
+    }
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -231,11 +230,12 @@ pub mod Float64 {
     ///
     def clamp(min: {min = Float64}, max: {max = Float64}, x: Float64): Float64 =
         if (x < min#min)
-            min#min
-        else if (x > max#max)
-            max#max
+             min#min
         else
-            x
+            if (x > max#max)
+                max#max
+            else
+                x
 
     ///
     /// Convert `x` to an `Int8`.

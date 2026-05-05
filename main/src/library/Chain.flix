@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 pub mod Chain {
     use Math.Shuffle
     use ViewLeft.{NoneLeft, SomeLeft}
@@ -55,12 +56,12 @@ pub mod Chain {
     }
 
     instance Applicative[Chain] {
-        pub def point(x: a): Chain[a] = Chain.singleton(x)
-        pub def ap(f: Chain[a -> b \ ef], x: Chain[a]): Chain[b] \ ef = Chain.ap(f, x)
+        pub def point(x: a) : Chain[a] = Chain.singleton(x)
+        pub def ap(f: Chain[a -> b \ ef], x: Chain[a]) : Chain[b] \ ef = Chain.ap(f, x)
     }
 
     instance Monad[Chain] {
-        pub def flatMap(f: a -> Chain[b] \ ef, x: Chain[a]): Chain[b] \ ef = Chain.flatMap(f, x)
+        pub def flatMap(f: a -> Chain[b] \ ef, x : Chain[a]) : Chain[b] \ ef = Chain.flatMap(f, x)
     }
 
     instance MonadZero[Chain] {
@@ -108,9 +109,9 @@ pub mod Chain {
         type Aef = Formattable.Aef[a]
 
         pub def format(c: Chain[a]): RichString \ Formattable.Aef[a] =
-            RichString.fromString("Chain#{")
-                + RichString.join(RichString.fromString(", "), c)
-                + RichString.fromString("}")
+            RichString.fromString("Chain#{") +
+            RichString.join(RichString.fromString(", "), c) +
+            RichString.fromString("}")
     }
 
     instance ToString[Chain[a]] with ToString[a] {
@@ -165,7 +166,7 @@ pub mod Chain {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: Chain[a -> b \ ef], x: Chain[a]): Chain[b] \ ef =
+    pub def ap(f: Chain[a -> b \ ef], x: Chain[a]) : Chain[b] \ ef =
         def loop(g, acc) = match g {
             case ViewLeft.NoneLeft        => acc
             case ViewLeft.SomeLeft(h, xs) => loop(viewLeft(xs), acc `append` map(h, x))
@@ -594,8 +595,8 @@ pub mod Chain {
     /// Returns `c` without the longest prefix that satisfies the predicate `f`.
     ///
     pub def dropWhileLeft(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef = match viewLeft(c) {
-        case ViewLeft.SomeLeft(x, xs) => if (f(x)) dropWhileLeft(f, xs) else c
-        case ViewLeft.NoneLeft        => c
+        case ViewLeft.SomeLeft(x, xs)  => if (f(x)) dropWhileLeft(f, xs) else c
+        case ViewLeft.NoneLeft         => c
     }
 
     ///
@@ -677,11 +678,10 @@ pub mod Chain {
     ///
     pub def findMap(f: a -> Option[b] \ ef, c: Chain[a]): Option[b] \ ef = match viewLeft(c) {
         case ViewLeft.NoneLeft        => None
-        case ViewLeft.SomeLeft(x, xs) =>
-            match f(x) {
-                case None    => findMap(f, xs)
-                case Some(v) => Some(v)
-            }
+        case ViewLeft.SomeLeft(x, xs) => match f(x) {
+            case None    => findMap(f, xs)
+            case Some(v) => Some(v)
+        }
     }
 
     ///
@@ -690,7 +690,7 @@ pub mod Chain {
     ///
     /// If either `c1` or `c2` becomes depleted, then no further elements are added to the resulting chain.
     ///
-    pub def zip(c1: Chain[a], c2: Chain[b]): Chain[(a, b)] =
+    pub def zip(c1: Chain[a], c2: Chain[b]): Chain[(a,b)] =
         def loop(cc1, cc2, acc) = match (viewLeft(cc1), viewLeft(cc2)) {
             case (ViewLeft.SomeLeft(a, rs), ViewLeft.SomeLeft(b, qs)) => loop(rs, qs, snoc(acc, (a, b)))
             case _                                                    => acc
@@ -717,10 +717,11 @@ pub mod Chain {
         use Functor.{<$>};
         use Applicative.{<*>, point};
         def loop(v1, v2, k) = match (v1, v2) {
-            case (ViewLeft.SomeLeft(x, c1), ViewLeft.SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x, y) <*> ks))
+            case (ViewLeft.SomeLeft(x, c1), ViewLeft.SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
             case (_, _)                                               => k(point(empty()))
         };
         loop(viewLeft(xs), viewLeft(ys), x -> checked_ecast(x))
+
 
     ///
     /// Returns a pair of chains, the first containing all first components in `c`
@@ -757,7 +758,7 @@ pub mod Chain {
             case ViewRight.SomeRight(rs, a) => {
                 let (s2, b) = f(s1, a);
                 loop(rs, s2, cons(b, acc))
-            }
+           }
         };
         loop(c, start, Empty)
 
@@ -775,7 +776,7 @@ pub mod Chain {
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, c: Chain[a]): Unit \ ef =
         def loop(cc, i) = match cc {
             case ViewLeft.NoneLeft        => ()
-            case ViewLeft.SomeLeft(x, xs) => f(i, x); loop(viewLeft(xs), i + 1)
+            case ViewLeft.SomeLeft(x, xs) => f(i, x); loop(viewLeft(xs), i+1)
         };
         loop(viewLeft(c), 0)
 
@@ -809,7 +810,7 @@ pub mod Chain {
             let arr = Array.empty(rc, length(c));
             forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
             arr
-    }
+        }
 
     ///
     /// Returns the chain `c` as a vector.
@@ -872,11 +873,10 @@ pub mod Chain {
             case (SomeLeft(_, _), NoneLeft)         => Comparison.GreaterThan
             case (NoneLeft, NoneLeft)               => Comparison.EqualTo
             case (NoneLeft, SomeLeft(_, _))         => Comparison.LessThan
-            case (SomeLeft(l, ls), SomeLeft(r, rs)) =>
-                match (l <=> r) {
-                    case Comparison.EqualTo => loop(viewLeft(ls), viewLeft(rs))
-                    case cmp                => cmp
-                }
+            case (SomeLeft(l, ls), SomeLeft(r, rs)) => match (l <=> r) {
+                case Comparison.EqualTo => loop(viewLeft(ls), viewLeft(rs))
+                case cmp                => cmp
+            }
         };
         loop(viewLeft(c1), viewLeft(c2))
 
@@ -909,7 +909,7 @@ pub mod Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a, a) -> Comparison, c: Chain[a]): Chain[a] = region rc {
+    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region rc {
         toArray(rc, c) !> Array.sortWith(cmp) |> Array.toChain
     }
 

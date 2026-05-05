@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 pub mod Set {
 
     ///
@@ -87,7 +88,7 @@ pub mod Set {
     }
 
     instance SemiGroup[Set[a]] with Order[a] {
-        pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x, y)
+        pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
     }
 
     instance CommutativeSemiGroup[Set[a]] with Order[a]
@@ -218,7 +219,7 @@ pub mod Set {
     pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def min() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.LessThan) x else y, s);
         match purityOf2(cmp) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
@@ -249,7 +250,7 @@ pub mod Set {
     pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def max() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.GreaterThan) x else y, s);
         match purityOf2(cmp) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
@@ -344,7 +345,7 @@ pub mod Set {
     @ParallelWhenPure
     pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef =
         match purityOf(f) {
-            case Purity.Pure(g)   =>
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(s))
                     let h = (k, _) -> g(k);
                     let Set(t) = s;
@@ -453,16 +454,13 @@ pub mod Set {
     /// `s2` contains all elements of `s` that do not satisfy the predicate `f`.
     ///
     pub def partition(f: a -> Bool \ ef, s: Set[a]): (Set[a], Set[a]) \ ef with Order[a] =
-        foldLeft(
-            (acc, x) ->
-                let (a, b) = acc;
-                if (f(x))
-                    (insert(x, a), b)
-                else
-                    (a, insert(x, b)),
-            (empty(), empty()),
-            s
-        )
+        foldLeft((acc, x) ->
+            let (a, b) = acc;
+            if (f(x))
+                (insert(x, a), b)
+            else
+                (a, insert(x, b)), (empty(), empty()),
+            s)
 
     ///
     /// Returns the set `s` as a list.
@@ -479,7 +477,7 @@ pub mod Set {
             let a = Array.empty(rc, sz);
             Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
             a
-    }
+        }
 
     ///
     /// Returns the set `s` as a vector.

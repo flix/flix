@@ -32,34 +32,34 @@ pub mod Order {
         /// Returns `true` if and only if `x < y`.
         ///
         pub def less(x: a, y: a): Bool = match Order.compare(x, y) {
-            case Comparison.LessThan => true
-            case _                   => false
+            case Comparison.LessThan   => true
+            case _          => false
         }
 
         ///
         /// Returns `true` if and only if `x <= y`.
         ///
         pub def lessEqual(x: a, y: a): Bool = match Order.compare(x, y) {
-            case Comparison.LessThan => true
-            case Comparison.EqualTo  => true
-            case _                   => false
+            case Comparison.LessThan   => true
+            case Comparison.EqualTo    => true
+            case _          => false
         }
 
         ///
         /// Returns `true` if and only if `x > y`.
         ///
         pub def greater(x: a, y: a): Bool = match Order.compare(x, y) {
-            case Comparison.GreaterThan => true
-            case _                      => false
+            case Comparison.GreaterThan    => true
+            case _              => false
         }
 
         ///
         /// Returns `true` if and only if `x >= y`.
         ///
         pub def greaterEqual(x: a, y: a): Bool = match Order.compare(x, y) {
-            case Comparison.GreaterThan => true
-            case Comparison.EqualTo     => true
-            case _                      => false
+            case Comparison.GreaterThan    => true
+            case Comparison.EqualTo        => true
+            case _              => false
         }
 
         ///
@@ -67,7 +67,7 @@ pub mod Order {
         ///
         pub def min(x: a, y: a): a = match (x <=> y) {
             case Comparison.GreaterThan => y
-            case _                      => x
+            case _ => x
         }
 
         ///
@@ -75,59 +75,59 @@ pub mod Order {
         ///
         pub def max(x: a, y: a): a = match (x <=> y) {
             case Comparison.LessThan => y
-            case _                   => x
+            case _ => x
         }
 
         ///
         /// Reflexivity: An element `x` is lower or equal to itself.
         ///
-        law reflexivity: forall (x: a) x <= x
+        law reflexivity: forall(x: a) x <= x
 
         ///
         /// Antisymmetry: If `x` is lower or equal to `y` and `y` is lower or equal to `x` then `x` must be equal to `y`.
         ///
-        law symmetry: forall (x: a, y: a) ((x <= y) and (y <= x)) ==> (x == y)
+        law symmetry: forall(x: a, y: a) ((x <= y) and (y <= x)) ==> (x == y)
 
         ///
         /// Transitivity: If `x` is lower or equal to `y` and `y` is lower equal to `z` then `x` must be lower or equal to `z`.
         ///
-        law transitivity: forall (x: a, y: a, z: a) ((x <= y) and (y <= z)) ==> (x <= z)
+        law transitivity: forall(x: a, y: a, z: a) ((x <= y) and (y <= z)) ==> (x <= z)
 
         ///
         /// Totality: For each two elements `x` and `y` either `x` is lower or equal to `y` or the other way round.
         ///
-        law totality: forall (x: a, y: a) ((x <= y) or (y <= x))
+        law totality: forall(x: a, y: a) ((x <= y) or (y <= x))
 
         ///
         /// Definition of the minimum function.
         ///
-        law min: forall (x: a, y: a) ((x <= y) ==> (Order.min(x, y) == x)) and ((y <= x) ==> (Order.min(x, y) == y))
+        law min: forall(x: a, y: a) ((x <= y) ==> (Order.min(x, y) == x)) and ((y <= x) ==> (Order.min(x, y) == y))
 
         ///
         /// Definition of the maximum function.
         ///
-        law max: forall (x: a, y: a) ((y <= x) ==> (Order.max(x, y) == x)) and ((x <= y) ==> (Order.max(x, y) == y))
+        law max: forall(x: a, y: a) ((y <= x) ==> (Order.max(x, y) == x)) and ((x <= y) ==> (Order.max(x, y) == y))
 
         ///
         /// x < y is logically equivalent to not (y <= x).
         /// This law defines the associated strict total order "<" associated with "<=".
         ///
-        law strictTotalOrder: forall (x: a, y: a) (x < y) <==> (not (y <= x))
+        law strictTotalOrder: forall(x: a, y: a) (x < y) <==> (not (y <= x))
 
         ///
         /// This law defines ">" based on "<".
         ///
-        law inverseOrder1: forall (x: a, y: a) (x > y) <==> (y < x)
+        law inverseOrder1: forall(x: a, y: a) (x > y) <==> (y < x)
 
         ///
         /// This law defines ">=" based on "<=".
         ///
-        law inverseOrder2: forall (x: a, y: a) (x >= y) <==> (y <= x)
+        law inverseOrder2: forall(x: a, y: a) (x >= y) <==> (y <= x)
 
         ///
         /// Definition of `compare` based on the defined total order.
         ///
-        law compare: forall (x: a, y: a) ((x < y) ==> (Order.compare(x, y) == Comparison.LessThan)) and ((x == y) ==> (Order.compare(x, y) == Comparison.EqualTo)) and ((x > y) ==> (Order.compare(x, y) == Comparison.GreaterThan))
+        law compare: forall(x: a, y: a) ((x < y) ==> (Order.compare(x, y) == Comparison.LessThan)) and ((x == y) ==> (Order.compare(x, y) == Comparison.EqualTo)) and ((x > y) ==> (Order.compare(x, y) == Comparison.GreaterThan))
     }
 
     ///
@@ -376,7 +376,7 @@ pub mod Order {
             let (y1, y2) = t2;
             match x1 <=> y1 {
                 case Comparison.EqualTo => x2 <=> y2
-                case res                => res
+                case res => res
             }
 
     }
@@ -390,12 +390,11 @@ pub mod Order {
             let (x1, x2, x3) = t1;
             let (y1, y2, y3) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo => x3 <=> y3
-                        case res                => res
-                    }
-                case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => x3 <=> y3
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -409,16 +408,14 @@ pub mod Order {
             let (x1, x2, x3, x4) = t1;
             let (y1, y2, y3, y4) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo => x4 <=> y4
-                                case res                => res
-                            }
-                        case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => x4 <=> y4
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -432,20 +429,17 @@ pub mod Order {
             let (x1, x2, x3, x4, x5) = t1;
             let (y1, y2, y3, y4, y5) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo => x5 <=> y5
-                                        case res                => res
-                                    }
-                                case res                => res
-                            }
-                        case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => x5 <=> y5
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -459,24 +453,20 @@ pub mod Order {
             let (x1, x2, x3, x4, x5, x6) = t1;
             let (y1, y2, y3, y4, y5, y6) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo =>
-                                            match x5 <=> y5 {
-                                                case Comparison.EqualTo => x6 <=> y6
-                                                case res                => res
-                                            }
-                                        case res                => res
-                                    }
-                                case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => match x5 <=> y5 {
+                                case Comparison.EqualTo => x6 <=> y6
+                                case res => res
                             }
-                        case res                => res
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -490,28 +480,23 @@ pub mod Order {
             let (x1, x2, x3, x4, x5, x6, x7) = t1;
             let (y1, y2, y3, y4, y5, y6, y7) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo =>
-                                            match x5 <=> y5 {
-                                                case Comparison.EqualTo =>
-                                                    match x6 <=> y6 {
-                                                        case Comparison.EqualTo => x7 <=> y7
-                                                        case res                => res
-                                                    }
-                                                case res                => res
-                                            }
-                                        case res                => res
-                                    }
-                                case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => match x5 <=> y5 {
+                                case Comparison.EqualTo => match x6 <=> y6 {
+                                    case Comparison.EqualTo => x7 <=> y7
+                                    case res => res
+                                }
+                                case res => res
                             }
-                        case res                => res
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -525,32 +510,26 @@ pub mod Order {
             let (x1, x2, x3, x4, x5, x6, x7, x8) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo =>
-                                            match x5 <=> y5 {
-                                                case Comparison.EqualTo =>
-                                                    match x6 <=> y6 {
-                                                        case Comparison.EqualTo =>
-                                                            match x7 <=> y7 {
-                                                                case Comparison.EqualTo => x8 <=> y8
-                                                                case res                => res
-                                                            }
-                                                        case res                => res
-                                                    }
-                                                case res                => res
-                                            }
-                                        case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => match x5 <=> y5 {
+                                case Comparison.EqualTo => match x6 <=> y6 {
+                                    case Comparison.EqualTo => match x7 <=> y7 {
+                                        case Comparison.EqualTo => x8 <=> y8
+                                        case res => res
                                     }
-                                case res                => res
+                                    case res => res
+                                }
+                                case res => res
                             }
-                        case res                => res
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -564,36 +543,29 @@ pub mod Order {
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo =>
-                                            match x5 <=> y5 {
-                                                case Comparison.EqualTo =>
-                                                    match x6 <=> y6 {
-                                                        case Comparison.EqualTo =>
-                                                            match x7 <=> y7 {
-                                                                case Comparison.EqualTo =>
-                                                                    match x8 <=> y8 {
-                                                                        case Comparison.EqualTo => x9 <=> y9
-                                                                        case res                => res
-                                                                    }
-                                                                case res                => res
-                                                            }
-                                                        case res                => res
-                                                    }
-                                                case res                => res
-                                            }
-                                        case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => match x5 <=> y5 {
+                                case Comparison.EqualTo => match x6 <=> y6 {
+                                    case Comparison.EqualTo => match x7 <=> y7 {
+                                        case Comparison.EqualTo => match x8 <=> y8 {
+                                            case Comparison.EqualTo => x9 <=> y9
+                                            case res => res
+                                        }
+                                        case res => res
                                     }
-                                case res                => res
+                                    case res => res
+                                }
+                                case res => res
                             }
-                        case res                => res
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -607,40 +579,32 @@ pub mod Order {
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo =>
-                                            match x5 <=> y5 {
-                                                case Comparison.EqualTo =>
-                                                    match x6 <=> y6 {
-                                                        case Comparison.EqualTo =>
-                                                            match x7 <=> y7 {
-                                                                case Comparison.EqualTo =>
-                                                                    match x8 <=> y8 {
-                                                                        case Comparison.EqualTo =>
-                                                                            match x9 <=> y9 {
-                                                                                case Comparison.EqualTo => x10 <=> y10
-                                                                                case res                => res
-                                                                            }
-                                                                        case res                => res
-                                                                    }
-                                                                case res                => res
-                                                            }
-                                                        case res                => res
-                                                    }
-                                                case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => match x5 <=> y5 {
+                                case Comparison.EqualTo => match x6 <=> y6 {
+                                    case Comparison.EqualTo => match x7 <=> y7 {
+                                        case Comparison.EqualTo => match x8 <=> y8 {
+                                            case Comparison.EqualTo => match x9 <=> y9 {
+                                                case Comparison.EqualTo => x10 <=> y10
+                                                case res => res
                                             }
-                                        case res                => res
+                                            case res => res
+                                        }
+                                        case res => res
                                     }
-                                case res                => res
+                                    case res => res
+                                }
+                                case res => res
                             }
-                        case res                => res
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -654,44 +618,35 @@ pub mod Order {
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo =>
-                                            match x5 <=> y5 {
-                                                case Comparison.EqualTo =>
-                                                    match x6 <=> y6 {
-                                                        case Comparison.EqualTo =>
-                                                            match x7 <=> y7 {
-                                                                case Comparison.EqualTo =>
-                                                                    match x8 <=> y8 {
-                                                                        case Comparison.EqualTo =>
-                                                                            match x9 <=> y9 {
-                                                                                case Comparison.EqualTo =>
-                                                                                    match x10 <=> y10 {
-                                                                                        case Comparison.EqualTo => x11 <=> y11
-                                                                                        case res                => res
-                                                                                    }
-                                                                                case res                => res
-                                                                            }
-                                                                        case res                => res
-                                                                    }
-                                                                case res                => res
-                                                            }
-                                                        case res                => res
-                                                    }
-                                                case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => match x5 <=> y5 {
+                                case Comparison.EqualTo => match x6 <=> y6 {
+                                    case Comparison.EqualTo => match x7 <=> y7 {
+                                        case Comparison.EqualTo => match x8 <=> y8 {
+                                            case Comparison.EqualTo => match x9 <=> y9 {
+                                                case Comparison.EqualTo => match x10 <=> y10 {
+                                                    case Comparison.EqualTo => x11 <=> y11
+                                                    case res => res
+                                                }
+                                                case res => res
                                             }
-                                        case res                => res
+                                            case res => res
+                                        }
+                                        case res => res
                                     }
-                                case res                => res
+                                    case res => res
+                                }
+                                case res => res
                             }
-                        case res                => res
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -705,48 +660,38 @@ pub mod Order {
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo =>
-                                            match x5 <=> y5 {
-                                                case Comparison.EqualTo =>
-                                                    match x6 <=> y6 {
-                                                        case Comparison.EqualTo =>
-                                                            match x7 <=> y7 {
-                                                                case Comparison.EqualTo =>
-                                                                    match x8 <=> y8 {
-                                                                        case Comparison.EqualTo =>
-                                                                            match x9 <=> y9 {
-                                                                                case Comparison.EqualTo =>
-                                                                                    match x10 <=> y10 {
-                                                                                        case Comparison.EqualTo =>
-                                                                                            match x11 <=> y11 {
-                                                                                                case Comparison.EqualTo => x12 <=> y12
-                                                                                                case res                => res
-                                                                                            }
-                                                                                        case res                => res
-                                                                                    }
-                                                                                case res                => res
-                                                                            }
-                                                                        case res                => res
-                                                                    }
-                                                                case res                => res
-                                                            }
-                                                        case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => match x5 <=> y5 {
+                                case Comparison.EqualTo => match x6 <=> y6 {
+                                    case Comparison.EqualTo => match x7 <=> y7 {
+                                        case Comparison.EqualTo => match x8 <=> y8 {
+                                            case Comparison.EqualTo => match x9 <=> y9 {
+                                                case Comparison.EqualTo => match x10 <=> y10 {
+                                                    case Comparison.EqualTo => match x11 <=> y11 {
+                                                        case Comparison.EqualTo => x12 <=> y12
+                                                        case res => res
                                                     }
-                                                case res                => res
+                                                    case res => res
+                                                }
+                                                case res => res
                                             }
-                                        case res                => res
+                                            case res => res
+                                        }
+                                        case res => res
                                     }
-                                case res                => res
+                                    case res => res
+                                }
+                                case res => res
                             }
-                        case res                => res
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -760,52 +705,41 @@ pub mod Order {
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo =>
-                                            match x5 <=> y5 {
-                                                case Comparison.EqualTo =>
-                                                    match x6 <=> y6 {
-                                                        case Comparison.EqualTo =>
-                                                            match x7 <=> y7 {
-                                                                case Comparison.EqualTo =>
-                                                                    match x8 <=> y8 {
-                                                                        case Comparison.EqualTo =>
-                                                                            match x9 <=> y9 {
-                                                                                case Comparison.EqualTo =>
-                                                                                    match x10 <=> y10 {
-                                                                                        case Comparison.EqualTo =>
-                                                                                            match x11 <=> y11 {
-                                                                                                case Comparison.EqualTo =>
-                                                                                                    match x12 <=> y12 {
-                                                                                                        case Comparison.EqualTo => x13 <=> y13
-                                                                                                        case res                => res
-                                                                                                    }
-                                                                                                case res                => res
-                                                                                            }
-                                                                                        case res                => res
-                                                                                    }
-                                                                                case res                => res
-                                                                            }
-                                                                        case res                => res
-                                                                    }
-                                                                case res                => res
-                                                            }
-                                                        case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => match x5 <=> y5 {
+                                case Comparison.EqualTo => match x6 <=> y6 {
+                                    case Comparison.EqualTo => match x7 <=> y7 {
+                                        case Comparison.EqualTo => match x8 <=> y8 {
+                                            case Comparison.EqualTo => match x9 <=> y9 {
+                                                case Comparison.EqualTo => match x10 <=> y10 {
+                                                    case Comparison.EqualTo => match x11 <=> y11 {
+                                                        case Comparison.EqualTo => match x12 <=> y12 {
+                                                            case Comparison.EqualTo => x13 <=> y13
+                                                            case res => res
+                                                        }
+                                                        case res => res
                                                     }
-                                                case res                => res
+                                                    case res => res
+                                                }
+                                                case res => res
                                             }
-                                        case res                => res
+                                            case res => res
+                                        }
+                                        case res => res
                                     }
-                                case res                => res
+                                    case res => res
+                                }
+                                case res => res
                             }
-                        case res                => res
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -819,56 +753,44 @@ pub mod Order {
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo =>
-                                            match x5 <=> y5 {
-                                                case Comparison.EqualTo =>
-                                                    match x6 <=> y6 {
-                                                        case Comparison.EqualTo =>
-                                                            match x7 <=> y7 {
-                                                                case Comparison.EqualTo =>
-                                                                    match x8 <=> y8 {
-                                                                        case Comparison.EqualTo =>
-                                                                            match x9 <=> y9 {
-                                                                                case Comparison.EqualTo =>
-                                                                                    match x10 <=> y10 {
-                                                                                        case Comparison.EqualTo =>
-                                                                                            match x11 <=> y11 {
-                                                                                                case Comparison.EqualTo =>
-                                                                                                    match x12 <=> y12 {
-                                                                                                        case Comparison.EqualTo =>
-                                                                                                            match x13 <=> y13 {
-                                                                                                                case Comparison.EqualTo => x14 <=> y14
-                                                                                                                case res                => res
-                                                                                                            }
-                                                                                                        case res                => res
-                                                                                                    }
-                                                                                                case res                => res
-                                                                                            }
-                                                                                        case res                => res
-                                                                                    }
-                                                                                case res                => res
-                                                                            }
-                                                                        case res                => res
-                                                                    }
-                                                                case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => match x5 <=> y5 {
+                                case Comparison.EqualTo => match x6 <=> y6 {
+                                    case Comparison.EqualTo => match x7 <=> y7 {
+                                        case Comparison.EqualTo => match x8 <=> y8 {
+                                            case Comparison.EqualTo => match x9 <=> y9 {
+                                                case Comparison.EqualTo => match x10 <=> y10 {
+                                                    case Comparison.EqualTo => match x11 <=> y11 {
+                                                        case Comparison.EqualTo => match x12 <=> y12 {
+                                                            case Comparison.EqualTo => match x13 <=> y13 {
+                                                                case Comparison.EqualTo => x14 <=> y14
+                                                                case res => res
                                                             }
-                                                        case res                => res
+                                                            case res => res
+                                                        }
+                                                        case res => res
                                                     }
-                                                case res                => res
+                                                    case res => res
+                                                }
+                                                case res => res
                                             }
-                                        case res                => res
+                                            case res => res
+                                        }
+                                        case res => res
                                     }
-                                case res                => res
+                                    case res => res
+                                }
+                                case res => res
                             }
-                        case res                => res
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }
@@ -882,60 +804,47 @@ pub mod Order {
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15) = t2;
             match x1 <=> y1 {
-                case Comparison.EqualTo =>
-                    match x2 <=> y2 {
-                        case Comparison.EqualTo =>
-                            match x3 <=> y3 {
-                                case Comparison.EqualTo =>
-                                    match x4 <=> y4 {
-                                        case Comparison.EqualTo =>
-                                            match x5 <=> y5 {
-                                                case Comparison.EqualTo =>
-                                                    match x6 <=> y6 {
-                                                        case Comparison.EqualTo =>
-                                                            match x7 <=> y7 {
-                                                                case Comparison.EqualTo =>
-                                                                    match x8 <=> y8 {
-                                                                        case Comparison.EqualTo =>
-                                                                            match x9 <=> y9 {
-                                                                                case Comparison.EqualTo =>
-                                                                                    match x10 <=> y10 {
-                                                                                        case Comparison.EqualTo =>
-                                                                                            match x11 <=> y11 {
-                                                                                                case Comparison.EqualTo =>
-                                                                                                    match x12 <=> y12 {
-                                                                                                        case Comparison.EqualTo =>
-                                                                                                            match x13 <=> y13 {
-                                                                                                                case Comparison.EqualTo =>
-                                                                                                                    match x14 <=> y14 {
-                                                                                                                        case Comparison.EqualTo => x15 <=> y15
-                                                                                                                        case res                => res
-                                                                                                                    }
-                                                                                                                case res                => res
-                                                                                                            }
-                                                                                                        case res                => res
-                                                                                                    }
-                                                                                                case res                => res
-                                                                                            }
-                                                                                        case res                => res
-                                                                                    }
-                                                                                case res                => res
-                                                                            }
-                                                                        case res                => res
-                                                                    }
-                                                                case res                => res
+                case Comparison.EqualTo => match x2 <=> y2 {
+                    case Comparison.EqualTo => match x3 <=> y3 {
+                        case Comparison.EqualTo => match x4 <=> y4 {
+                            case Comparison.EqualTo => match x5 <=> y5 {
+                                case Comparison.EqualTo => match x6 <=> y6 {
+                                    case Comparison.EqualTo => match x7 <=> y7 {
+                                        case Comparison.EqualTo => match x8 <=> y8 {
+                                            case Comparison.EqualTo => match x9 <=> y9 {
+                                                case Comparison.EqualTo => match x10 <=> y10 {
+                                                    case Comparison.EqualTo => match x11 <=> y11 {
+                                                        case Comparison.EqualTo => match x12 <=> y12 {
+                                                            case Comparison.EqualTo => match x13 <=> y13 {
+                                                                case Comparison.EqualTo => match x14 <=> y14 {
+                                                                    case Comparison.EqualTo => x15 <=> y15
+                                                                    case res => res
+                                                                }
+                                                                case res => res
                                                             }
-                                                        case res                => res
+                                                            case res => res
+                                                        }
+                                                        case res => res
                                                     }
-                                                case res                => res
+                                                    case res => res
+                                                }
+                                                case res => res
                                             }
-                                        case res                => res
+                                            case res => res
+                                        }
+                                        case res => res
                                     }
-                                case res                => res
+                                    case res => res
+                                }
+                                case res => res
                             }
-                        case res                => res
+                            case res => res
+                        }
+                        case res => res
                     }
-                case res                => res
+                    case res => res
+                }
+                case res => res
             }
 
     }

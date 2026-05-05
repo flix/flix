@@ -19,6 +19,7 @@ mod Fs.InMemoryFs {
     import java.nio.file.FileSystems
     import java.nio.file.PathMatcher
     import java.nio.file.Paths
+
     use IoError.IoError
     use IoError.ErrorKind
     use Time.Clock
@@ -30,21 +31,21 @@ mod Fs.InMemoryFs {
     /// - `times`:   map from normalized absolute paths to `{atime, ctime, mtime}` records (ms since epoch).
     /// - `counter`: monotonically increasing counter for generating unique temp directory names.
     pub struct InMemoryFs[r: Region] {
-        mut files:   Map[String, Entry],
-        mut dirs:    Set[String],
-        mut times:   Map[String, {atime = Int64, ctime = Int64, mtime = Int64}],
+        mut files: Map[String, Entry],
+        mut dirs: Set[String],
+        mut times: Map[String, {atime = Int64, ctime = Int64, mtime = Int64}],
         mut counter: Int32
     }
 
     /// The content of an in-memory entry.
     pub enum Entry with ToString {
-        case BinaryEntry(Vector[Int8])
+        case BinaryEntry(Vector[Int8]),
         case TextEntry(String)
     }
 
     /// Creates a fresh, empty in-memory filesystem in region `rc`.
     pub def fresh(rc: Region[r]): Fs.InMemoryFs[r] \ r =
-        new Fs.InMemoryFs @ rc {files = Map.empty(), dirs = Set.empty(), times = Map.empty(), counter = 0}
+        new Fs.InMemoryFs @ rc { files = Map.empty(), dirs = Set.empty(), times = Map.empty(), counter = 0 }
 
     // ─── Path helpers (private) ───────────────────────────────────────
 
@@ -230,10 +231,8 @@ mod Fs.InMemoryFs {
     // ─── Other write ops ─────────────────────────────────────────────
 
     pub def truncate(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
-        if (hasFile(path, o))
-            write(path, "", o)
-        else
-            notFound(path)
+        if (hasFile(path, o)) write(path, "", o)
+        else notFound(path)
 
     pub def copy(src: String, dst: String, opts: Set[Fs.CopyOption], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let normSrc = normalize(src);
@@ -253,7 +252,7 @@ mod Fs.InMemoryFs {
                         touchNew(normDst, o);
                     Ok(())
                 }
-            case None    => notFound(src)
+            case None => notFound(src)
         }
 
     pub def move(src: String, dst: String, opts: Set[Fs.MoveOption], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
@@ -274,7 +273,7 @@ mod Fs.InMemoryFs {
                     o->times = Map.remove(normSrc, o->times);
                     Ok(())
                 }
-            case None    => notFound(src)
+            case None => notFound(src)
         }
 
     pub def delete(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
@@ -284,13 +283,11 @@ mod Fs.InMemoryFs {
             o->dirs = Set.remove(norm, o->dirs);
             o->times = Map.remove(norm, o->times);
             Ok(())
-        } else
-            notFound(path)
+        } else notFound(path)
 
     pub def mkDir(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let norm = normalize(path);
-        if (hasEntry(path, o))
-            alreadyExists(path)
+        if (hasEntry(path, o)) alreadyExists(path)
         else {
             o->dirs = Set.insert(norm, o->dirs);
             touchNew(norm, o);
@@ -305,7 +302,7 @@ mod Fs.InMemoryFs {
         match parentDir(norm) {
             case Some(parent) =>
                 if (not Set.memberOf(parent, o->dirs)) mkDirs(parent, o) else Ok(())
-            case None         => Ok(())
+            case None => Ok(())
         }
 
     pub def mkTempDir(prefix: String, o: Fs.InMemoryFs[r]): Result[IoError, String] \ r + Clock =
@@ -320,8 +317,7 @@ mod Fs.InMemoryFs {
 
     pub def list(dir: String, o: Fs.InMemoryFs[r]): Result[IoError, List[String]] \ r =
         let norm = normalize(dir);
-        if (not hasDir(dir, o))
-            notFound(dir)
+        if (not hasDir(dir, o)) notFound(dir)
         else {
             let fileNames = Map.keysOf(o->files)
                 |> Set.filter(p -> parentDir(p) == Some(norm))
@@ -333,26 +329,23 @@ mod Fs.InMemoryFs {
         }
 
     pub def glob(base: String, pattern: String, o: Fs.InMemoryFs[r]): Result[IoError, List[String]] \ r =
-        if (not hasDir(base, o))
-            notFound(base)
-        else
-            unsafe IO {
-                let basePath = Paths.get(normalize(base));
-                let matcher: PathMatcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
-                let matchesPattern = path -> {
-                    let p = Paths.get(path);
-                    let starts = p.startsWith(basePath);
-                    if (starts) {
-                        let rel = basePath.relativize(p);
-                        matcher.matches(rel)
-                    } else
-                        false
-                };
-                let matched = Set.union(
-                    Map.keysOf(o->files) |> Set.filter(matchesPattern),
-                    o->dirs |> Set.filter(matchesPattern)
-                );
-                Ok(Set.toList(matched))
-            }
+        if (not hasDir(base, o)) notFound(base)
+        else unsafe IO {
+            let basePath = Paths.get(normalize(base));
+            let matcher: PathMatcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+            let matchesPattern = path -> {
+                let p = Paths.get(path);
+                let starts = p.startsWith(basePath);
+                if (starts) {
+                    let rel = basePath.relativize(p);
+                    matcher.matches(rel)
+                } else false
+            };
+            let matched = Set.union(
+                Map.keysOf(o->files) |> Set.filter(matchesPattern),
+                o->dirs              |> Set.filter(matchesPattern)
+            );
+            Ok(Set.toList(matched))
+        }
 
 }

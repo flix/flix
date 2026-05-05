@@ -60,11 +60,10 @@ pub mod Net.HttpResponse {
     /// If the body is binary, it is decoded as UTF-8.
     ///
     pub def body(r: HttpResponse): String = match r {
-        case HttpResponse(x) =>
-            match x#body {
-                case Body.Text(s)  => s
-                case Body.Bytes(v) => HttpLayer.bytesToString(v)
-            }
+        case HttpResponse(x) => match x#body {
+            case Body.Text(s)  => s
+            case Body.Bytes(v) => HttpLayer.bytesToString(v)
+        }
     }
 
     ///
@@ -73,11 +72,10 @@ pub mod Net.HttpResponse {
     /// If the body is text, it is encoded as UTF-8.
     ///
     pub def bodyBytes(r: HttpResponse): Vector[Int8] = match r {
-        case HttpResponse(x) =>
-            match x#body {
-                case Body.Bytes(v) => v
-                case Body.Text(s)  => HttpLayer.stringToBytes(s)
-            }
+        case HttpResponse(x) => match x#body {
+            case Body.Bytes(v) => v
+            case Body.Text(s)  => HttpLayer.stringToBytes(s)
+        }
     }
 
     ///
@@ -138,10 +136,8 @@ pub mod Net.HttpResponse {
     /// Returns `Ok(r)` if the response status is in the 2xx range, or `Err` otherwise.
     ///
     pub def expect(r: HttpResponse): Result[IoError, HttpResponse] =
-        if (isSuccess(r))
-            Ok(r)
-        else
-            Err(IoError(ErrorKind.Other, "Unexpected HTTP status: ${status(r)}"))
+        if (isSuccess(r)) Ok(r)
+        else Err(IoError(ErrorKind.Other, "Unexpected HTTP status: ${status(r)}"))
 
     ///
     /// Returns the value of the `content-type` header, or `None` if not present.

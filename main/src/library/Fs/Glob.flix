@@ -63,7 +63,7 @@ pub mod Fs.Glob {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Glob) + { Glob, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Glob) + {Glob, Logger} =
         run { f() } with handler Glob {
             def glob(base, pattern, k) = {
                 logPre("glob", base);

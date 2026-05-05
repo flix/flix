@@ -50,7 +50,9 @@ pub mod BPlusTree.Lock {
     ///
     /// For Java's memory model see: https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4
     ///
-    pub enum Lock[_: Region](JStampedLock) // Unchecked casts are here used to remove the IO effect. It is replaced with an
+    pub enum Lock[_: Region](JStampedLock)
+
+    // Unchecked casts are here used to remove the IO effect. It is replaced with an
     // effect to a region to ensure that the code is not optimized away.
 
     ///
@@ -117,15 +119,10 @@ pub mod BPlusTree.Lock {
         onValid: Unit -> a \ ef1,
         onInvalid: Unit -> a \ ef2
     ): a \ ef1 + ef2 + r =
-        ifValidElseNoYield(
-            stamp,
-            lock,
-            onValid,
-            () -> {
-                yieldBasedOn(lock);
-                onInvalid()
-            }
-        )
+        ifValidElseNoYield(stamp, lock, onValid, () -> {
+            yieldBasedOn(lock);
+            onInvalid()
+        })
 
     ///
     /// Returns a fresh lock.

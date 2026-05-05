@@ -66,7 +66,7 @@ pub mod Fs.DirList {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - DirList) + { DirList, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - DirList) + {DirList, Logger} =
         run { f() } with handler DirList {
             def list(filename, k) = {
                 logPre("list", filename);

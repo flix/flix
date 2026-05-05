@@ -32,6 +32,7 @@ pub mod Net.Https {
     use Time.Duration
     use Time.Duration.toMillis
 
+
     ///
     /// The effect used to send HTTPS-only requests.
     ///
@@ -123,7 +124,7 @@ pub mod Net.Https {
     /// Middleware that intercepts the `Https` effect, enforcing a minimum interval
     /// between consecutive HTTPS requests.
     ///
-    pub def withMinInterval(ims: {interval = Duration}, f: Unit -> a \ ef): a \ (ef - Https) + { Clock, Https } =
+    pub def withMinInterval(ims: {interval = Duration}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
         let intervalMs = toMillis(ims#interval);
         region rc {
             let last = Ref.fresh(rc, 0i64);
@@ -142,18 +143,18 @@ pub mod Net.Https {
     /// rate limit. Allows an initial burst of `burstSize` requests, then
     /// sustains at 1 request per `interval`.
     ///
-    pub def withTokenBucket(bs: {burstSize = Int32}, ims: {interval = Duration}, f: Unit -> a \ ef): a \ (ef - Https) + { Clock, Https } =
+    pub def withTokenBucket(bs: {burstSize = Int32}, ims: {interval = Duration}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
         let burstSize = bs#burstSize;
         let intervalMs = toMillis(ims#interval);
         region rc {
-            let tokens = Ref.fresh(rc, burstSize);
+            let tokens   = Ref.fresh(rc, burstSize);
             let lastTime = Ref.fresh(rc, Clock.now());
             run { f() } with handler Https {
                 def request(req, k) =
                     def acquire() = {
-                        let now = Clock.now();
+                        let now     = Clock.now();
                         let elapsed = now - Ref.get(lastTime);
-                        let added = Int64.clampToInt32(min = 0, max = burstSize, elapsed / intervalMs);
+                        let added   = Int64.clampToInt32(min = 0, max = burstSize, elapsed / intervalMs);
                         if (added > 0) {
                             Ref.put(Int32.min(burstSize, Ref.get(tokens) + added), tokens);
                             Ref.put(Ref.get(lastTime) + Int32.toInt64(added) * intervalMs, lastTime)
@@ -176,7 +177,7 @@ pub mod Net.Https {
     /// rate limit. Allows at most `maxRequests` within any rolling `window`.
     /// When the limit is reached, sleeps until the oldest request expires.
     ///
-    pub def withSlidingWindow(mr: {maxRequests = Int32}, wms: {window = Duration}, f: Unit -> a \ ef): a \ (ef - Https) + { Clock, Https } =
+    pub def withSlidingWindow(mr: {maxRequests = Int32}, wms: {window = Duration}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
         let maxRequests = mr#maxRequests;
         let windowMs = toMillis(wms#window);
         region rc {
@@ -189,7 +190,7 @@ pub mod Net.Https {
                             case Some(ts) if now - ts > windowMs =>
                                 discard MutDeque.popFront(timestamps);
                                 evict()
-                            case _                               => ()
+                            case _ => ()
                         };
                         evict();
                         if (MutDeque.size(timestamps) < maxRequests) {
@@ -200,7 +201,7 @@ pub mod Net.Https {
                                     let wait = windowMs - (now - oldest);
                                     if (wait > 0i64) { unsafe IO { HttpLayer.sleep(wait) } };
                                     acquire()
-                                case None         =>
+                                case None =>
                                     // maxRequests <= 0: sleep for the full window and retry.
                                     unsafe IO { HttpLayer.sleep(windowMs) };
                                     acquire()
@@ -223,15 +224,12 @@ pub mod Net.Https {
     ///
     /// Non-failure responses (2xx, 3xx, 4xx) reset the failure counter.
     ///
-    pub def withCircuitBreaker(
-        ft: {failureThreshold = Int32},
-        cdm: {cooldown = Duration},
-        f: Unit -> a \ ef
-    ): a \ (ef - Https) + { Clock, Https } =
+    pub def withCircuitBreaker(ft: {failureThreshold = Int32}, cdm: {cooldown = Duration},
+                               f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
         let failureThreshold = ft#failureThreshold;
         let cooldownMs = toMillis(cdm#cooldown);
         region rc {
-            let failures = Ref.fresh(rc, 0);
+            let failures  = Ref.fresh(rc, 0);
             let openSince = Ref.fresh(rc, 0i64);
             run { f() } with handler Https {
                 def request(req, k) =
@@ -242,7 +240,7 @@ pub mod Net.Https {
                     else {
                         let result = Https.request(req);
                         match result {
-                            case Err(_)   =>
+                            case Err(_) =>
                                 let count = Ref.get(failures) + 1;
                                 Ref.put(count, failures);
                                 if (count >= failureThreshold) {
@@ -273,10 +271,8 @@ pub mod Net.Https {
     /// Validates the `https://` scheme once before entering the retry loop.
     /// Each `Https.request` is re-raised to an outer `Https` handler that performs the actual I/O.
     ///
-    pub def withRetry(
-        strategy: (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef1,
-        f: Unit -> a \ ef2
-    ): a \ ef1 + (ef2 - Https) + Https =
+    pub def withRetry(strategy: (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef1,
+                      f: Unit -> a \ ef2): a \ ef1 + (ef2 - Https) + Https =
         run { f() } with handler Https {
             def request(req, k) =
                 match validateHttps(req) {
@@ -285,12 +281,12 @@ pub mod Net.Https {
                         def loop(attempt) =
                             match Https.request(req) {
                                 case Ok(resp) if HttpResponse.isSuccess(resp) => Ok(resp)
-                                case Ok(resp)                                 =>
+                                case Ok(resp) =>
                                     match strategy(attempt, req, RetryOutcome.HttpError(resp)) {
                                         case RetryDecision.Retry(d) => unsafe IO { HttpLayer.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
                                         case RetryDecision.Stop     => Ok(resp)
                                     }
-                                case Err(error)                               =>
+                                case Err(error) =>
                                     match strategy(attempt, req, RetryOutcome.TransportError(error)) {
                                         case RetryDecision.Retry(d) => unsafe IO { HttpLayer.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
                                         case RetryDecision.Stop     => Err(error)
@@ -304,10 +300,8 @@ pub mod Net.Https {
     /// Middleware that intercepts the `Https` effect, injecting default headers
     /// into every request. Headers already present on the request are not overridden.
     ///
-    pub def withDefaultHeaders(
-        defaults: Map[String, List[String]],
-        f: Unit -> a \ ef
-    ): a \ (ef - Https) + Https =
+    pub def withDefaultHeaders(defaults: Map[String, List[String]],
+                               f: Unit -> a \ ef): a \ (ef - Https) + Https =
         run { f() } with handler Https {
             def request(req, k) =
                 let HttpRequest(x) = req;
@@ -322,29 +316,24 @@ pub mod Net.Https {
     ///
     pub def withBaseUrl(base: String, f: Unit -> a \ ef): a \ (ef - Https) + Https =
         let base1 = if (String.endsWith(suffix = "/", base))
-            String.dropRight(1, base)
-        else
-            base;
+                         String.dropRight(1, base) else base;
         run { f() } with handler Https {
             def request(req, k) =
                 let HttpRequest(x) = req;
                 let url = x#url;
                 // Check that "://" appears before the first "/" to detect a scheme.
                 let hasScheme = match String.indexOf(substr = "://", url) {
-                    case Some(i) =>
-                        match String.indexOf(substr = "/", url) {
-                            case Some(s) => i < s
-                            case None    => true
-                        }
-                    case None    => false
+                    case Some(i) => match String.indexOf(substr = "/", url) {
+                        case Some(s) => i < s
+                        case None    => true
+                    }
+                    case None => false
                 };
                 if (hasScheme)
                     k(Https.request(req))
                 else
                     let path1 = if (String.startsWith(prefix = "/", url))
-                        url
-                    else
-                        "/${url}";
+                                     url else "/${url}";
                     k(Https.request(HttpRequest({url = "${base1}${path1}" | x})))
         }
 
@@ -352,38 +341,31 @@ pub mod Net.Https {
     /// Middleware that intercepts the `Https` effect, logging each request
     /// and its corresponding response via the `Logger` effect at `Debug` level.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Https) + { Https, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Https) + {Https, Logger} =
         run { f() } with handler Https {
             def request(req, k) =
                 let method = String.toUpperCase("${HttpRequest.method(req)}");
-                let url = HttpRequest.url(req);
-                Logger.log(
-                    Severity.Debug,
-                    gray("-->") + text(" ") + bold(method) + text(" ") + cyan(url)
-                );
+                let url    = HttpRequest.url(req);
+                Logger.log(Severity.Debug,
+                    gray("-->") + text(" ") + bold(method) + text(" ") + cyan(url));
                 let result = Https.request(req);
                 match result {
                     case Ok(resp) =>
                         let status = HttpResponse.status(resp);
-                        let color = if (status >= 200 and status <= 299)
-                            green("${status}")
-                        else if (status >= 400)
-                            red("${status}")
-                        else
-                            yellow("${status}");
+                        let color  = if (status >= 200 and status <= 299)
+                                         green("${status}")
+                                     else if (status >= 400)
+                                         red("${status}")
+                                     else
+                                         yellow("${status}");
                         let size = Vector.length(HttpResponse.bodyBytes(resp));
-                        Logger.log(
-                            Severity.Debug,
-                            gray("<--") + text(" ") + color + text(" ") + cyan(url)
-                                + gray(" (${size} bytes)")
-                        )
+                        Logger.log(Severity.Debug,
+                            gray("<--") + text(" ") + color + text(" ") + cyan(url) +
+                            gray(" (${size} bytes)"))
                     case Err(err) =>
-                        Logger.log(
-                            Severity.Debug,
-                            gray("<--") + text(" ") + red("ERR") + text(" ") + cyan(url)
-                                + text(" ")
-                                + red("${err}")
-                        )
+                        Logger.log(Severity.Debug,
+                            gray("<--") + text(" ") + red("ERR") + text(" ") + cyan(url) +
+                            text(" ") + red("${err}"))
                 };
                 k(result)
         }

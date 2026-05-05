@@ -177,16 +177,16 @@ pub mod Fixpoint3.Ast.ExecutableRam {
                 case RelOp.Search(var, relSym, _, _, writes, body) =>
                     let writeString = Vector.joinWith(match term -> ToString.toString(term), " ∧ ", writes);
                     "search x${var} ∈ indexes[${relSym}] | ${writeString} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Query(var, ramSym, _, _, writes, body)  =>
+                case RelOp.Query(var, ramSym, _, _, writes, body) =>
                     let writeString = Vector.joinWith(match term -> ToString.toString(term), " ∧ ", writes);
                     "query {x${var} ∈ indexes[${ramSym}] | ${writeString}} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Functional(id, _, terms, _, body, _)    =>
+                case RelOp.Functional(id, _, terms, _, body, _) =>
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Project(terms, ramSym, _)               =>
+                case RelOp.Project(terms, ramSym, _) =>
                     "project (${terms |> Vector.join(", ")}) into ${ramSym}"
-                case RelOp.ProvProject(terms, ramSym, _)           =>
+                case RelOp.ProvProject(terms, ramSym, _) =>
                     "project (${terms |> Vector.join(", ")}) into ${ramSym}"
-                case RelOp.If(test, then)                          =>
+                case RelOp.If(test, then) =>
                     let tst = test |> Vector.join(" ∧ ");
                     "if (${tst}) then${nl}${String.indent(4, "${then}")}end"
             }

@@ -31,7 +31,7 @@ pub mod Fixpoint3.UniqueInts {
     /// the value, which `UniqueInts` assigned index `i`.
     ///
     pub struct UniqueInts[k: Type, r: Region] {
-        map:     MutMap[k, Int32, r],
+        map: MutMap[k, Int32, r],
         counter: Counter[r]
     }
 
@@ -54,7 +54,7 @@ pub mod Fixpoint3.UniqueInts {
         let map = state->map;
         let counter = state->counter;
         match MutMap.get(val, map) {
-            case None    =>
+            case None =>
                 let id = Counter.getAndIncrement(counter);
                 MutMap.put(val, id, map);
                 id
