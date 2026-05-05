@@ -910,7 +910,7 @@ object ConstraintGen {
         val (tpe, eff) = visitExp(exp1)
         val (handlerTpe, handlerExpEff) = visitExp(exp2)
         val handlerArg = Type.mkArrowWithEffect(Type.Unit, eff, tpe, loc.asSynthetic)
-        c.unifyType(Type.mkArrowWithEffect(handlerArg, evar, tvar, loc.asSynthetic), handlerTpe, loc)
+        c.unifyHandler(Type.mkArrowWithEffect(handlerArg, evar, tvar, loc.asSynthetic), handlerTpe, loc)
         val resultTpe = tvar
         val resultEff = Type.mkUnion(evar, handlerExpEff, loc.asSynthetic)
         (resultTpe, resultEff)

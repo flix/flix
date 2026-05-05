@@ -115,6 +115,8 @@ object TypeConstraint {
       */
     case class ExpectArgument(expected: Type, actual: Type, sym: Symbol, num: Int, loc: SourceLocation) extends Provenance
 
+    case class Handler(runBlock: Type, handler: Type, loc: SourceLocation) extends Provenance
+
     /**
       * The constraint indicates that the types must match.
       */
