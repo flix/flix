@@ -62,7 +62,7 @@ object DefCompleter {
     */
   private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: Root): Iterable[Completion] = {
     val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
-      case Some(Resolution.Declaration(Mod(_, _, name, _, _, _, _))) => name.toString
+      case Some(Resolution.Declaration(Mod(_, _, _, name, _, _, _, _))) => name.toString
       case Some(Resolution.Declaration(Effect(_, _, _, name, _, _, _))) => name.toString
       case _ => return Nil
     }
