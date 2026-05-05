@@ -25,9 +25,10 @@ import java.lang.reflect.Field
 
 object ResolvedAst {
 
-  val empty: Root = Root(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, List.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, List.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
 
-  case class Root(traits: Map[Symbol.TraitSym, Declaration.Trait],
+  case class Root(modules: Map[Symbol.ModuleSym, Declaration.Mod],
+                  traits: Map[Symbol.TraitSym, Declaration.Trait],
                   instances: ListMap[Symbol.TraitSym, Declaration.Instance],
                   defs: Map[Symbol.DefnSym, Declaration.Def],
                   enums: Map[Symbol.EnumSym, Declaration.Enum],
@@ -48,7 +49,7 @@ object ResolvedAst {
   sealed trait Declaration
 
   object Declaration {
-    case class Mod(sym: Symbol.ModuleSym, usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
+    case class Mod(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.ModuleSym, usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
     case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[Declaration.AssocTypeSig], sigs: Map[Symbol.SigSym, Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 

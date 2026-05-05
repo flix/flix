@@ -28,7 +28,7 @@ object UseCompleter {
     val namespace = qn.namespace.idents.map(_.name)
     val ident = qn.ident.name
     val moduleSym = Symbol.mkModuleSym(namespace)
-    root.modules.get(moduleSym).collect {
+    root.modules.get(moduleSym).map(_.children).getOrElse(Nil).collect {
       case mod: Symbol.ModuleSym if fuzzyMatch(ident, mod.ns.last) => UseCompletion(mod.toString, range, Priority.Medium(0), CompletionItemKind.Module)
       case enm: Symbol.EnumSym if fuzzyMatch(ident, enm.name) && CompletionUtils.isAvailable(enm) => UseCompletion(enm.toString, range, Priority.Medium(0), CompletionItemKind.Enum)
       case eff: Symbol.EffSym if fuzzyMatch(ident, eff.name) && CompletionUtils.isAvailable(eff) => UseCompletion(eff.toString, range, Priority.Medium(0), CompletionItemKind.Event)

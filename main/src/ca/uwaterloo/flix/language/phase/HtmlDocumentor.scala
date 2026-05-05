@@ -243,7 +243,7 @@ object HtmlDocumentor {
       var enums: List[Enum] = Nil
       var typeAliases: List[TypedAst.TypeAlias] = Nil
       var defs: List[TypedAst.Def] = Nil
-      mod.foreach {
+      mod.children.foreach {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
         case sym: Symbol.TraitSym =>
           traits = mkTrait(sym, moduleSym, root) :: traits
@@ -258,6 +258,7 @@ object HtmlDocumentor {
 
       Module(
         moduleSym,
+        mod.doc,
         parent,
         uses,
         submodules.map(visitMod(_, Some(moduleSym))),
@@ -334,11 +335,12 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterContents(mod: Module, packageModules: PackageModules): Module = mod match {
-    case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
       val included = packageModules.contains(sym)
       if (included) {
         Module(
           sym,
+          doc,
           parent,
           uses,
           submodules.map(m => filterContents(m, PackageModules.All)),
@@ -357,6 +359,7 @@ object HtmlDocumentor {
 
         Module(
           sym,
+          doc,
           parent,
           Nil,
           sm.map(m => filterContents(m, packageModules)),
@@ -446,7 +449,7 @@ object HtmlDocumentor {
       * Recursively walks the module tree removing empty modules.
       */
     def visitMod(mod: Module): Option[Module] = mod match {
-      case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+      case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
         val filteredSubMods = submodules.flatMap(visitMod)
 
         val isEmpty =
@@ -461,6 +464,7 @@ object HtmlDocumentor {
         else Some(
           Module(
             sym,
+            doc,
             parent,
             uses,
             filteredSubMods,
@@ -476,6 +480,7 @@ object HtmlDocumentor {
     visitMod(mod)
       .getOrElse(Module(
         mod.sym,
+        mod.doc,
         None,
         Nil,
         Nil,
@@ -491,7 +496,7 @@ object HtmlDocumentor {
     * Get the given module tree, but with all companion modules paired to their respective items.
     */
   private def pairModules(mod: Module): Module = mod match {
-    case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
 
       val visitedSubmodules = submodules.map(pairModules)
 
@@ -518,6 +523,7 @@ object HtmlDocumentor {
 
       Module(
         sym,
+        doc,
         parent,
         uses,
         filteredSubmodules,
@@ -577,6 +583,7 @@ object HtmlDocumentor {
 
     sb.append("<main>")
     sb.append(s"<h1>${esc(mod.qualifiedName)}</h1>")
+    docDoc(mod.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedDefs, docDef)
     sb.append("</main>")
@@ -1540,6 +1547,7 @@ object HtmlDocumentor {
     * A representation of a module that's easier to work with while generating documentation.
     */
   private case class Module(sym: Symbol.ModuleSym,
+                            doc: Doc,
                             parent: Option[Symbol.ModuleSym],
                             uses: List[UseOrImport],
                             submodules: List[Module],

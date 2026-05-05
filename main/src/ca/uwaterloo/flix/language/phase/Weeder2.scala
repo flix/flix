@@ -248,11 +248,12 @@ object Weeder2 {
       }
       val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       mapN(
+        pickDocumentation(tree),
         pickQName(tree),
         pickAllUsesAndImports(tree),
         pickAllDeclarations(tree)
       ) {
-        (qname, usesAndImports, declarations) => Declaration.Mod(annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
+        (doc, qname, usesAndImports, declarations) => Declaration.Mod(doc, annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
       }
     }
 
