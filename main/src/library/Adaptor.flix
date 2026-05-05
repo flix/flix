@@ -61,7 +61,6 @@ pub mod Adaptor {
         let v1 = e.getValue();
         (k1, v1)
 
-
     ///
     /// Returns all elements in the given Java List as a Flix List.
     ///
@@ -226,6 +225,5 @@ pub mod Adaptor {
         let tmap: TreeMap[k, v] = new TreeMap();
         Map.forEach((k, v) -> discard tmap.put(k, v), m);
         tmap
-
 
 }

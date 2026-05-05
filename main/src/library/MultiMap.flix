@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 pub mod MultiMap {
 
     ///
@@ -82,11 +81,11 @@ pub mod MultiMap {
         redef forAll(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forAll(_ -> f, m)
     }
 
-    instance SemiGroup[MultiMap[k,v]] with Order[k], Order[v] {
-        pub def combine(x: MultiMap[k,v], y: MultiMap[k,v]): MultiMap[k,v] = MultiMap.union(x, y)
+    instance SemiGroup[MultiMap[k, v]] with Order[k], Order[v] {
+        pub def combine(x: MultiMap[k, v], y: MultiMap[k, v]): MultiMap[k, v] = MultiMap.union(x, y)
     }
 
-    instance CommutativeSemiGroup[MultiMap[k,v]] with Order[k], Order[v]
+    instance CommutativeSemiGroup[MultiMap[k, v]] with Order[k], Order[v]
 
     instance Monoid[MultiMap[k, v]] with Order[k], Order[v] {
         pub def empty(): MultiMap[k, v] = MultiMap.empty()
@@ -226,10 +225,10 @@ pub mod MultiMap {
     pub def removeWithValue(k: k, v: v, m: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         let MultiMap(m1) = m;
         match Map.get(k, m1) {
-            case None                               => m
-            case Some(s) if not Set.memberOf(v, s)  => m
-            case Some(s) if s == Set#{v}            => remove(k, m)
-            case Some(_)                            => MultiMap(Map.adjust(s1 -> Set.remove(v, s1), k, m1))
+            case None                              => m
+            case Some(s) if not Set.memberOf(v, s) => m
+            case Some(s) if s == Set#{v}           => remove(k, m)
+            case Some(_)                           => MultiMap(Map.adjust(s1 -> Set.remove(v, s1), k, m1))
         }
 
     ///
@@ -444,11 +443,12 @@ pub mod MultiMap {
         let MultiMap(mm1) = m1;
         let MultiMap(mm2) = m2;
         let step = (acc, k, s) -> match Map.get(k, mm2) {
-            case None => acc
-            case Some(s1) => match Set.intersection(s, s1) {
-                case s2 if Set.isEmpty(s2) => acc
-                case s2                    => Map.insert(k, s2, acc)
-            }
+            case None     => acc
+            case Some(s1) =>
+                match Set.intersection(s, s1) {
+                    case s2 if Set.isEmpty(s2) => acc
+                    case s2                    => Map.insert(k, s2, acc)
+                }
         };
         MultiMap(Map.foldLeftWithKey(step, Map.empty(), mm1))
 
@@ -517,7 +517,7 @@ pub mod MultiMap {
     ///
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef = region rc {
         let ix = Ref.fresh(rc, 0);
-        let f1 = (k , v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
+        let f1 = (k, v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
         forEach(f1, m)
     }
 

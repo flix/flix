@@ -171,18 +171,22 @@ pub mod Fixpoint3.Ast.Ram {
         pub def toString(op: RelOp): String =
             let nl = String.lineSeparator();
             match op {
-                case RelOp.Search(var, relSym, _, body) =>
+                case RelOp.Search(var, relSym, _, body)                       =>
                     "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Query(var, relSym, prefixQuery, _, _, body) =>
-                    let qry = Vector.joinWith(match term -> {
-                        ToString.toString(term)
-                    }, " ∧ ", prefixQuery);
+                case RelOp.Query(var, relSym, prefixQuery, _, _, body)        =>
+                    let qry = Vector.joinWith(
+                        match term -> {
+                            ToString.toString(term)
+                        },
+                        " ∧ ",
+                        prefixQuery
+                    );
                     "query {${var} ∈ ${relSym} | ${qry}} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Functional(RowVar.Named(id), _, terms, body, _, _) =>
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Project(terms, relSym, _) =>
+                case RelOp.Project(terms, relSym, _)                          =>
                     "project (${terms |> Vector.join(", ")}) into ${relSym}"
-                case RelOp.If(test, then) =>
+                case RelOp.If(test, then)                                     =>
                     let tst = test |> Vector.join(" ∧ ");
                     "if (${tst}) then${nl}${String.indent(4, "${then}")}end"
             }
@@ -366,10 +370,11 @@ pub mod Fixpoint3.Ast.Ram {
     /// Returns the arity of the non-lattice part of `relSym`.
     ///
     pub def arityOfNonLat(relSym: RelSym): Int32 = match relSym {
-        case RelSym.Symbol(_, arity, den) => match den {
-            case Relational => arity
-            case _          => arity - 1
-        }
+        case RelSym.Symbol(_, arity, den) =>
+            match den {
+                case Relational => arity
+                case _          => arity - 1
+            }
     }
 
     ///
@@ -400,7 +405,6 @@ pub mod Fixpoint3.Ast.Ram {
     ///        ...
     /// `e1` and `e2` would be the identifiers. Identifiers will only be defined
     /// once in a program, but can be reffered to from elsewhere.
-
     pub enum RowVar with Eq {
         case Named(Int32)
     }

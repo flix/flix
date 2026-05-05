@@ -31,9 +31,9 @@ pub mod CommutativeSemiGroup {
         ///
         pub def combine(x: a, y: a): a = SemiGroup.combine(x, y)
 
-        law associative: forall(x: a, y: a, z: a) with Eq[a] CommutativeSemiGroup.combine(CommutativeSemiGroup.combine(x, y), z) == CommutativeSemiGroup.combine(x, CommutativeSemiGroup.combine(y, z))
+        law associative: forall (x: a, y: a, z: a) with Eq[a] CommutativeSemiGroup.combine(CommutativeSemiGroup.combine(x, y), z) == CommutativeSemiGroup.combine(x, CommutativeSemiGroup.combine(y, z))
 
-        law commutative: forall(x: a, y: a) with Eq[a] CommutativeSemiGroup.combine(x, y) == CommutativeSemiGroup.combine(y, x)
+        law commutative: forall (x: a, y: a) with Eq[a] CommutativeSemiGroup.combine(x, y) == CommutativeSemiGroup.combine(y, x)
 
     }
 

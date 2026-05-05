@@ -20,7 +20,6 @@ pub mod Concurrent.ReentrantLock {
     import java.lang.InterruptedException
     import java.lang.IllegalMonitorStateException
     import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
-
     use Concurrent.Condition
     use Concurrent.Condition.Condition
 
