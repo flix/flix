@@ -51,7 +51,7 @@ object Typer {
     val typeAliases = visitTypeAliases(root)
     val precedenceGraph = LabelledPrecedenceGraph.empty
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
-    val modules = ListMap(collectModules(root))
+    val modules = collectModules(root)
     val defaultHandlers = DefaultHandlers.visitDefaultHandlers(root)(flix, sctx, traitEnv, eqEnv)
     val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, defaultHandlers, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty, root.tokens)
 
@@ -60,10 +60,15 @@ object Typer {
   }
 
   /**
-    * Collects the symbols in the given root into a map.
+    * Collects the symbols in the given root into a map of typed `Mod` declarations.
+    *
+    * For each module symbol (declared explicitly via `mod` or synthesized from a leaf
+    * symbol's namespace), we attach its children and any documentation/annotations/modifiers
+    * carried over from the kinded root. Synthesized modules with no declaration site receive
+    * empty defaults.
     */
-  private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _, _) =>
+  private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, TypedAst.Mod] = root match {
+    case KindedAst.Root(modules, traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _, _) =>
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -114,9 +119,18 @@ object Typer {
         case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
       }
 
-      groups.map {
-        case (k, v) => (k, v.toList)
-      }
+      // Every module symbol that either appears as a key (has children) or has an
+      // explicit declaration must have an entry in the result.
+      val allModuleSyms = groups.keySet ++ modules.keySet
+
+      allModuleSyms.iterator.map { sym =>
+        val children = groups.getOrElse(sym, Set.empty).toList
+        val mod = modules.get(sym) match {
+          case Some(m) => TypedAst.Mod(m.doc, m.ann, m.mod, sym, children, m.loc)
+          case None => TypedAst.Mod(Doc(Nil, SourceLocation.Unknown), Annotations.Empty, Modifiers.Empty, sym, children, SourceLocation.Unknown)
+        }
+        sym -> mod
+      }.toMap
   }
 
   /**

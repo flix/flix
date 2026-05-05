@@ -1,33 +1,28 @@
 mod A {
     pub def f(): Bool = true
-}
+    pub def g(): Bool = true
 
-mod A.B {
-    pub def f(): Bool = true
-}
-
-mod A.B.C {
-    pub def f(): Bool = true
-}
-
-mod A {
     mod B {
+        pub def f(): Bool = true
+        pub def g(): Bool = true
+
         mod C {
+            pub def f(): Bool = true
             pub def g(): Bool = true
         }
-        pub def g(): Bool = true
     }
-    pub def g(): Bool = true
 }
 
 mod X {
+    pub def f(): Bool = true
+
     mod Y {
+        pub def f(): Bool = X.f()
+
         mod Z {
             pub def f(): Bool = X.Y.f()
         }
-        pub def f(): Bool = X.f()
     }
-    pub def f(): Bool = true
 }
 
 mod Test.Dec.Mod {

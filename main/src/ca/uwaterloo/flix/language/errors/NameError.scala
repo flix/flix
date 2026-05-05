@@ -111,6 +111,38 @@ object NameError {
   }
 
   /**
+    * An error raised to indicate that the module `name` is declared in more than one place.
+    *
+    * Each module must have exactly one declaration site in the program.
+    *
+    * @param name the fully qualified module name.
+    * @param loc1 the location of the first declaration.
+    * @param loc2 the location of the duplicate declaration.
+    */
+  case class DuplicateModule(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5410
+
+    def summary: String = s"Duplicate module: '$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Duplicate module: '${red(name)}'.
+         |
+         |${highlight(loc1, s"first declaration in ${loc1.source.name}", fmt)}
+         |
+         |${highlight(loc2, s"duplicate declaration in ${loc2.source.name}", fmt)}
+         |
+         |${underline("Explanation:")} A module may have only one declaration site
+         |in the program. Reopening a module — either across files or as multiple
+         |sibling blocks — is not allowed. Combine the declarations into a single
+         |module body.
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = loc1
+  }
+
+  /**
     * An error raised to indicate that the module `sym` is orphaned because the module `parentSym` does not exist.
     *
     * @param sym       the orphaned module symbol.
