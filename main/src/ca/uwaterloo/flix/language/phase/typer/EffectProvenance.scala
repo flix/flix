@@ -56,7 +56,7 @@ object EffectProvenance {
   def getErrors(constrs0: List[TypeConstraint])(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): Option[List[EffConflicted]] = {
     implicit val alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]] = new ZhegalkinAlgebra[CofiniteIntSet](CofiniteIntSet.LatticeOps)
     if (isDebug(constrs0)) return None
-    val newConstrs = constrs0.flatMap(visitHandlers(_, constrs0)).flatMap(simplifyConstraint)
+    val newConstrs = constrs0.flatMap(simplifyConstraint)//.flatMap(visitHandlers(_, constrs0))
     val (sources0, rest) = newConstrs.partition {
       case TypeConstraint.Equality(_, _, prov) => prov match {
         case Provenance.Source(_, eff2, _) => !isFlexible(eff2) && !isPure(eff2)
@@ -78,7 +78,7 @@ object EffectProvenance {
     val res = sources.map(a => (a, initialSub(a, Map.empty))
     ).flatMap {
       case (c, (Left(ze), m)) =>
-        val (errs, unused) = doStuff(c, rest, ze, m, s, handledEffs)
+        val (errs, unused) = doStuff(c, constrs0.filterNot(_==c), ze, m, s, handledEffs)
         s = unused
         errs
       case (_, (Right(err), _)) => err
@@ -93,6 +93,17 @@ object EffectProvenance {
     val unused = s.map(x => EffConflicted(TypeError.UnusedEffectInSignature(typeToSym(x).head, x.loc))).toList
     val r = unused ++ res ++ singles
     if (r.isEmpty) None else Some(r)
+  }
+
+  private def sortSinks(workQueue: Queue[TypeConstraint]): Queue[TypeConstraint] = {
+    if (workQueue.size >= 2){
+      val (tmp, wq1) = workQueue.dequeue
+      if (isSink(tmp)) {
+        val (newHead, wq2) = wq1.dequeue
+        wq2.prepended(tmp).prepended(newHead)
+      } else workQueue
+    }
+    else workQueue
   }
 
 
@@ -121,7 +132,8 @@ object EffectProvenance {
     }
 
     def doStuffHelper(visited: List[TypeConstraint], unvisited: List[TypeConstraint], workQueue: Queue[TypeConstraint], sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], m: Map[Type, Int])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): List[EffConflicted] = {
-      val (workQueue2, unvisited2) = findNext(visited, unvisited, workQueue, idMap)
+      val (workQueue1, unvisited2) = findNext(visited, unvisited, workQueue, idMap)
+      val workQueue2 = sortSinks(workQueue1)
       try {
         val (x, q) = workQueue2.dequeue
         val (newSub, newMap) = applySubs(x, sub, m)
