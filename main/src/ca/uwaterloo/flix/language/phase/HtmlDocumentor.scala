@@ -22,7 +22,8 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
-import com.github.rjeschke.txtmark
+import org.commonmark.parser.Parser
+import org.commonmark.renderer.html.HtmlRenderer
 
 import java.io.IOException
 import java.net.URLEncoder
@@ -1375,18 +1376,13 @@ object HtmlDocumentor {
       return
     }
 
-    val escaped = esc(text)
-
-    val config =
-      txtmark.Configuration.builder()
-        .build()
-    val parsed = txtmark.Processor.process(escaped, config)
-
-    // Since both esc and process escapes the & character, it needs to be unescaped once
-    val unescaped = parsed.replace("&amp;", "&")
+    val parser = Parser.builder().build()
+    val node = parser.parse(text)
+    val renderer = HtmlRenderer.builder().escapeHtml(true).build()
+    val html = renderer.render(node)
 
     sb.append("<div class='doc'>")
-    sb.append(unescaped)
+    sb.append(html)
     sb.append("</div>")
   }
 
