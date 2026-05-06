@@ -54,16 +54,16 @@ pub mod Fixpoint3.PrecedenceGraph {
         let pseudoStratums = MutList.empty(rc);
         def loop(s1, list) = match list {
             case s2 :: rest =>
-                let mergeable = s1
-                    |> List.forAll(
+                let mergeable = s1 |>
+                    List.forAll(
                         Set.forAll(u -> s2 |> Set.forAll(v -> not MutGraph.hasEdge(u, v, g)))
                     );
-                let next = if (mergeable)
-                    s2 :: s1
-                else {
-                    MutList.push(s1, pseudoStratums);
-                    s2 :: Nil
-                };
+                let next =
+                    if (mergeable) s2 :: s1
+                    else {
+                        MutList.push(s1, pseudoStratums);
+                        s2 :: Nil
+                    };
                 loop(next, rest)
             case Nil => MutList.push(s1, pseudoStratums)
         };

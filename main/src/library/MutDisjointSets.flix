@@ -21,18 +21,18 @@ pub mod MutDisjointSets {
     /// using union-by-rank and path compression.
     ///
     pub struct MutDisjointSets[t: Type, r: Region] {
-        rc:     Region[r],
+        rc: Region[r],
         forest: MutMap[t, Node[t, r], r]
     }
 
     ///
     /// Represents an element in the disjoint set forest.
     ///
-    struct Node[t: Type, r: Region] {
-        rc:         Region[r],
-        value:      t,
+    struct Node[t: Type, r: Region]{
+        rc: Region[r],
+        value: t,
         mut parent: Option[Node[t, r]],
-        mut rank:   Int32
+        mut rank: Int32
     }
 
     mod Node {
@@ -47,7 +47,7 @@ pub mod MutDisjointSets {
     /// Returns new and empty `MutDisjointSets` in the region `rc`.
     ///
     pub def empty(rc: Region[r]): MutDisjointSets[t, r] \ r =
-        new MutDisjointSets @ rc {rc = rc, forest = MutMap.empty(rc)}
+        new MutDisjointSets @ rc { rc = rc, forest = MutMap.empty(rc) }
 
     ///
     /// Updates `s` with a new disjoint set containing `x`
@@ -55,7 +55,7 @@ pub mod MutDisjointSets {
     ///
     pub def makeSet(x: t, s: MutDisjointSets[t, r]): Unit \ r with Order[t] = {
         def singleton(rc, y) = {
-            new MutDisjointSets.Node @ rc {rc = rc, value = y, parent = None, rank = 0}
+            new MutDisjointSets.Node @ rc { rc = rc, value = y, parent = None, rank = 0 }
         };
 
         if (not memberOf(x, s)) {
@@ -101,7 +101,7 @@ pub mod MutDisjointSets {
             }
         };
         MutMap.get(x, s->forest)
-            |> Option.map(findRoot(Nil))
+        |> Option.map(findRoot(Nil))
     }
 
     ///
@@ -131,7 +131,8 @@ pub mod MutDisjointSets {
                 } else {
                     ()
                 }
-            } else {
+            }
+            else {
                 ()
             }
         };
@@ -145,7 +146,7 @@ pub mod MutDisjointSets {
                 makeSet(x, s);
                 union(x, y, s)
             }
-            case (None, None) => {
+            case (None, None)     => {
                 makeSet(x, s);
                 makeSet(y, s);
                 union(x, y, s)

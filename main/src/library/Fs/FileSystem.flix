@@ -260,7 +260,7 @@ pub mod Fs.FileSystem {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileSystem) + { FileSystem, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileSystem) + {FileSystem, Logger} =
         run { f() } with handler FileSystem {
             def exists(filename, k) = {
                 logPre("exists", filename);
@@ -746,7 +746,7 @@ pub mod Fs.FileSystem {
     /// `mkTempDir` returns `Ok("<dry-run>")`. Read, stat, and test operations
     /// are passed through to the underlying `FileSystem` effect unchanged.
     ///
-    pub def withDryRun(f: Unit -> a \ ef): a \ (ef - FileSystem) + { FileSystem, Logger } =
+    pub def withDryRun(f: Unit -> a \ ef): a \ (ef - FileSystem) + {FileSystem, Logger} =
         use Logger.Severity;
         use RichString.{text, bold, cyan, yellow, gray};
         let tag = yellow("[dry-run]");
@@ -835,108 +835,66 @@ pub mod Fs.FileSystem {
             let o = Fs.MemoryOverlay.fresh(rc);
             run { f() } with handler FileSystem {
                 // ── Stat/test ops — delegate on None ───────────────
-                def exists(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryExists(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.exists(f1)
-                        }
-                    )
-                def isDirectory(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsDirectory(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isDirectory(f1)
-                        }
-                    )
-                def isRegularFile(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsRegularFile(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isRegularFile(f1)
-                        }
-                    )
-                def isSymbolicLink(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsSymbolicLink(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isSymbolicLink(f1)
-                        }
-                    )
-                def isReadable(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsReadable(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isReadable(f1)
-                        }
-                    )
-                def isWritable(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsWritable(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isWritable(f1)
-                        }
-                    )
-                def isExecutable(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsExecutable(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isExecutable(f1)
-                        }
-                    )
-                def accessTime(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryTime(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.accessTime(f1)
-                        }
-                    )
-                def creationTime(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryTime(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.creationTime(f1)
-                        }
-                    )
-                def modificationTime(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryTime(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.modificationTime(f1)
-                        }
-                    )
-                def size(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.trySize(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.size(f1)
-                        }
-                    )
-                def read(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryRead(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.read(f1)
-                        }
-                    )
-                def readLines(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryReadLines(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.readLines(f1)
-                        }
-                    )
-                def readBytes(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryReadBytes(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.readBytes(f1)
-                        }
-                    )
+                def exists(f1, k) = k(match Fs.MemoryOverlay.tryExists(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.exists(f1)
+                })
+                def isDirectory(f1, k) = k(match Fs.MemoryOverlay.tryIsDirectory(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isDirectory(f1)
+                })
+                def isRegularFile(f1, k) = k(match Fs.MemoryOverlay.tryIsRegularFile(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isRegularFile(f1)
+                })
+                def isSymbolicLink(f1, k) = k(match Fs.MemoryOverlay.tryIsSymbolicLink(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isSymbolicLink(f1)
+                })
+                def isReadable(f1, k) = k(match Fs.MemoryOverlay.tryIsReadable(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isReadable(f1)
+                })
+                def isWritable(f1, k) = k(match Fs.MemoryOverlay.tryIsWritable(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isWritable(f1)
+                })
+                def isExecutable(f1, k) = k(match Fs.MemoryOverlay.tryIsExecutable(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isExecutable(f1)
+                })
+                def accessTime(f1, k) = k(match Fs.MemoryOverlay.tryTime(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.accessTime(f1)
+                })
+                def creationTime(f1, k) = k(match Fs.MemoryOverlay.tryTime(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.creationTime(f1)
+                })
+                def modificationTime(f1, k) = k(match Fs.MemoryOverlay.tryTime(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.modificationTime(f1)
+                })
+                def size(f1, k) = k(match Fs.MemoryOverlay.trySize(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.size(f1)
+                })
+                def read(f1, k) = k(match Fs.MemoryOverlay.tryRead(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.read(f1)
+                })
+                def readLines(f1, k) = k(match Fs.MemoryOverlay.tryReadLines(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.readLines(f1)
+                })
+                def readBytes(f1, k) = k(match Fs.MemoryOverlay.tryReadBytes(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.readBytes(f1)
+                })
 
                 // ── List/glob — pass lower result to Overlay ────────
-                def list(f1, k)               = k(Fs.MemoryOverlay.list(f1, FileSystem.list(f1), o))
-                def glob(base, pattern, k)    = k(Fs.MemoryOverlay.glob(base, pattern, FileSystem.glob(base, pattern), o))
+                def list(f1, k) = k(Fs.MemoryOverlay.list(f1, FileSystem.list(f1), o))
+                def glob(base, pattern, k) = k(Fs.MemoryOverlay.glob(base, pattern, FileSystem.glob(base, pattern), o))
 
                 // ── Write ops — direct forwarding ──────────────────
                 def write(data, file, k)      = k(Fs.MemoryOverlay.write(file, data#str, o))
@@ -966,8 +924,7 @@ pub mod Fs.FileSystem {
                 def copyWith(src, dst, _opts, k) = {
                     let lower = if (Fs.MemoryOverlay.needsLower(src#src, o))
                         Result.toOption(FileSystem.readBytes(src#src))
-                    else
-                        None;
+                    else None;
                     k(Fs.MemoryOverlay.copy(src#src, dst, lower, o))
                 }
 
@@ -975,8 +932,7 @@ pub mod Fs.FileSystem {
                 def moveWith(src, dst, _opts, k) = {
                     let lower = if (Fs.MemoryOverlay.needsLower(src#src, o))
                         Result.toOption(FileSystem.readBytes(src#src))
-                    else
-                        None;
+                    else None;
                     k(Fs.MemoryOverlay.move(src#src, dst, lower, o))
                 }
             }
@@ -1037,36 +993,36 @@ pub mod Fs.FileSystem {
         let denied = op -> Err(IoError(ErrorKind.PermissionDenied, "read-only: ${op} is not permitted"));
         run { f() } with handler FileSystem {
             // Read/stat/test ops — pass through
-            def exists(filename, k)            = k(FileSystem.exists(filename))
-            def isDirectory(filename, k)       = k(FileSystem.isDirectory(filename))
-            def isRegularFile(filename, k)     = k(FileSystem.isRegularFile(filename))
-            def isSymbolicLink(filename, k)    = k(FileSystem.isSymbolicLink(filename))
-            def isReadable(filename, k)        = k(FileSystem.isReadable(filename))
-            def isWritable(filename, k)        = k(FileSystem.isWritable(filename))
-            def isExecutable(filename, k)      = k(FileSystem.isExecutable(filename))
-            def accessTime(filename, k)        = k(FileSystem.accessTime(filename))
-            def creationTime(filename, k)      = k(FileSystem.creationTime(filename))
-            def modificationTime(filename, k)  = k(FileSystem.modificationTime(filename))
-            def size(filename, k)              = k(FileSystem.size(filename))
-            def read(filename, k)              = k(FileSystem.read(filename))
-            def readLines(filename, k)         = k(FileSystem.readLines(filename))
-            def readBytes(filename, k)         = k(FileSystem.readBytes(filename))
-            def list(filename, k)              = k(FileSystem.list(filename))
-            def glob(base, pattern, k)         = k(FileSystem.glob(base, pattern))
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def read(filename, k)             = k(FileSystem.read(filename))
+            def readLines(filename, k)        = k(FileSystem.readLines(filename))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
             // Write ops — blocked
-            def write(_data, _file, k)         = k(denied("write"))
-            def writeLines(_data, _file, k)    = k(denied("writeLines"))
-            def writeBytes(_data, _file, k)    = k(denied("writeBytes"))
-            def append(_data, _file, k)        = k(denied("append"))
-            def appendLines(_data, _file, k)   = k(denied("appendLines"))
-            def appendBytes(_data, _file, k)   = k(denied("appendBytes"))
-            def truncate(_file, k)             = k(denied("truncate"))
-            def copyWith(_src, _dst, _opts, k) = k(denied("copy"))
-            def moveWith(_src, _dst, _opts, k) = k(denied("move"))
-            def delete(_file, k)               = k(denied("delete"))
-            def mkDir(_d, k)                   = k(denied("mkDir"))
-            def mkDirs(_d, k)                  = k(denied("mkDirs"))
-            def mkTempDir(_prefix, k)          = k(Err(IoError(ErrorKind.PermissionDenied, "read-only: mkTempDir is not permitted")))
+            def write(_data, _file, k)          = k(denied("write"))
+            def writeLines(_data, _file, k)     = k(denied("writeLines"))
+            def writeBytes(_data, _file, k)     = k(denied("writeBytes"))
+            def append(_data, _file, k)         = k(denied("append"))
+            def appendLines(_data, _file, k)    = k(denied("appendLines"))
+            def appendBytes(_data, _file, k)    = k(denied("appendBytes"))
+            def truncate(_file, k)              = k(denied("truncate"))
+            def copyWith(_src, _dst, _opts, k)  = k(denied("copy"))
+            def moveWith(_src, _dst, _opts, k)  = k(denied("move"))
+            def delete(_file, k)                = k(denied("delete"))
+            def mkDir(_d, k)                    = k(denied("mkDir"))
+            def mkDirs(_d, k)                   = k(denied("mkDirs"))
+            def mkTempDir(_prefix, k)           = k(Err(IoError(ErrorKind.PermissionDenied, "read-only: mkTempDir is not permitted")))
         }
 
     ///
@@ -1079,7 +1035,7 @@ pub mod Fs.FileSystem {
     /// copy, move, delete, mkdir) are passed through unchanged.
     ///
     pub def withAtomicWrite(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
-        let mv = (tmp, dst) -> FileSystem.moveWith(src = tmp, dst, Set#{Fs.MoveOption.AtomicMove, Fs.MoveOption.ReplaceExisting});
+        let mv  = (tmp, dst) -> FileSystem.moveWith(src = tmp, dst, Set#{Fs.MoveOption.AtomicMove, Fs.MoveOption.ReplaceExisting});
         let del = tmp -> FileSystem.delete(tmp);
         run { f() } with handler FileSystem {
             // Read/stat/test ops — pass through
@@ -1312,10 +1268,8 @@ pub mod Fs.FileSystem {
             let snap = file -> Fs.FsLayer.snapshotModTime(file, snapshots, getModTime);
             let check = file -> Fs.FsLayer.conflictCheck(file, snapshots, getModTime);
             let checkAndResnap = (file, doWrite) ->
-                forM (
-                    _ <- check(file);
-                    v <- doWrite()
-                ) yield { snap(file); v };
+                forM (_ <- check(file); v <- doWrite())
+                    yield { snap(file); v };
             run { f() } with handler FileSystem {
                 // ── Stat/test/perm/time/size — pass through ──
                 def exists(filename, k)           = k(FileSystem.exists(filename))
@@ -1371,7 +1325,7 @@ pub mod Fs.FileSystem {
                 def delete(file, k) = {
                     match check(file) {
                         case Err(e) => k(Err(e))
-                        case Ok(_) =>
+                        case Ok(_)  =>
                             let result = FileSystem.delete(file);
                             match result {
                                 case Ok(_) => MutMap.remove(file, snapshots)
@@ -1405,8 +1359,8 @@ pub mod Fs.FileSystem {
     /// All other operations are passed through unchanged.
     ///
     pub def withSizeRotation(maxSize: Size, maxFiles: Int32, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
-        let doSize = file -> FileSystem.size(file);
-        let doMove = (src, dst) -> FileSystem.moveWith(src = src, dst, Set#{Fs.MoveOption.ReplaceExisting});
+        let doSize   = file -> FileSystem.size(file);
+        let doMove   = (src, dst) -> FileSystem.moveWith(src = src, dst, Set#{Fs.MoveOption.ReplaceExisting});
         let doDelete = file -> FileSystem.delete(file);
         run { f() } with handler FileSystem {
             // Read/stat/test ops — pass through
@@ -1428,9 +1382,9 @@ pub mod Fs.FileSystem {
             def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
 
             // Append ops — rotate if needed before appending
-            def append(data, file, k)         = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.append(data, file)))
-            def appendLines(data, file, k)    = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.appendLines(data, file)))
-            def appendBytes(data, file, k)    = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.appendBytes(data, file)))
+            def append(data, file, k)      = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.append(data, file)))
+            def appendLines(data, file, k) = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.appendLines(data, file)))
+            def appendBytes(data, file, k) = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.appendBytes(data, file)))
 
             // Other write ops — pass through
             def write(data, file, k)          = k(FileSystem.write(data, file))
@@ -1464,11 +1418,8 @@ pub mod Fs.FileSystem {
     /// Stat, test, permission, time, size, list, and glob operations are
     /// passed through unchanged.
     ///
-    pub def withChecksum(
-        hash: Vector[Int8] -> Vector[Int8],
-        sidecar: String,
-        f: Unit -> a \ ef
-    ): a \ (ef - FileSystem) + FileSystem =
+    pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
+                         f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
         let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
         let doReadBytes = file -> FileSystem.readBytes(file);
         let doReadSidecar = file -> FileSystem.read(file);
@@ -1493,26 +1444,26 @@ pub mod Fs.FileSystem {
             def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
 
             // ── Read ops — verify checksum after read ──
-            def read(filename, k)             = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.read(filename), doReadBytes, doReadSidecar))
-            def readLines(filename, k)        = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.readLines(filename), doReadBytes, doReadSidecar))
-            def readBytes(filename, k)        = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileSystem.readBytes(filename), doReadSidecar))
+            def read(filename, k)      = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.read(filename), doReadBytes, doReadSidecar))
+            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.readLines(filename), doReadBytes, doReadSidecar))
+            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileSystem.readBytes(filename), doReadSidecar))
 
             // ── Write ops — update checksum sidecar after write ──
-            def write(data, file, k)          = k(afterWrite(file, () -> FileSystem.write(data, file)))
-            def writeLines(data, file, k)     = k(afterWrite(file, () -> FileSystem.writeLines(data, file)))
-            def writeBytes(data, file, k)     = k(afterWrite(file, () -> FileSystem.writeBytes(data, file)))
-            def append(data, file, k)         = k(afterWrite(file, () -> FileSystem.append(data, file)))
-            def appendLines(data, file, k)    = k(afterWrite(file, () -> FileSystem.appendLines(data, file)))
-            def appendBytes(data, file, k)    = k(afterWrite(file, () -> FileSystem.appendBytes(data, file)))
-            def truncate(file, k)             = k(afterWrite(file, () -> FileSystem.truncate(file)))
-            def copyWith(src, dst, opts, k)   = k(afterWrite(dst, () -> FileSystem.copyWith(src, dst, opts)))
-            def moveWith(src, dst, opts, k)   = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar, FileSystem.moveWith(src, dst, opts), doMoveSidecar))
-            def delete(file, k)               = k(Fs.FsLayer.checksumAfterDelete(file, sidecar, FileSystem.delete(file), doDeleteSidecar))
+            def write(data, file, k)        = k(afterWrite(file, () -> FileSystem.write(data, file)))
+            def writeLines(data, file, k)   = k(afterWrite(file, () -> FileSystem.writeLines(data, file)))
+            def writeBytes(data, file, k)   = k(afterWrite(file, () -> FileSystem.writeBytes(data, file)))
+            def append(data, file, k)       = k(afterWrite(file, () -> FileSystem.append(data, file)))
+            def appendLines(data, file, k)  = k(afterWrite(file, () -> FileSystem.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(afterWrite(file, () -> FileSystem.appendBytes(data, file)))
+            def truncate(file, k)           = k(afterWrite(file, () -> FileSystem.truncate(file)))
+            def copyWith(src, dst, opts, k) = k(afterWrite(dst, () -> FileSystem.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar, FileSystem.moveWith(src, dst, opts), doMoveSidecar))
+            def delete(file, k)             = k(Fs.FsLayer.checksumAfterDelete(file, sidecar, FileSystem.delete(file), doDeleteSidecar))
 
             // ── Directory ops — pass through ──
-            def mkDir(d, k)                   = k(FileSystem.mkDir(d))
-            def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
-            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+            def mkDir(d, k)       = k(FileSystem.mkDir(d))
+            def mkDirs(d, k)      = k(FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k) = k(FileSystem.mkTempDir(prefix))
         }
 
 }

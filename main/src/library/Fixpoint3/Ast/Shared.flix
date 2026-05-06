@@ -21,6 +21,7 @@ pub mod Fixpoint3.Ast.Shared {
     use Fixpoint3.Boxable
     use Fixpoint3.Boxed
 
+
     /////////////////////////////////////////////////////////////////////////////
     // Denotation                                                              //
     /////////////////////////////////////////////////////////////////////////////
@@ -69,7 +70,7 @@ pub mod Fixpoint3.Ast.Shared {
     ///
     @LoweringTarget
     pub def box(d: Denotation[t]): Denotation[Boxed] with Order[t] = match d {
-        case Denotation.Relational => Denotation.Relational
+        case Denotation.Relational                     => Denotation.Relational
         case Denotation.Latticenal(bot, leq, lub, glb) =>
             Denotation.Latticenal(
                 Boxable.box(bot),

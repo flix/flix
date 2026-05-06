@@ -119,15 +119,10 @@ pub mod BPlusTree.Lock {
         onValid: Unit -> a \ ef1,
         onInvalid: Unit -> a \ ef2
     ): a \ ef1 + ef2 + r =
-        ifValidElseNoYield(
-            stamp,
-            lock,
-            onValid,
-            () -> {
-                yieldBasedOn(lock);
-                onInvalid()
-            }
-        )
+        ifValidElseNoYield(stamp, lock, onValid, () -> {
+            yieldBasedOn(lock);
+            onInvalid()
+        })
 
     ///
     /// Returns a fresh lock.

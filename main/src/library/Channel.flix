@@ -17,7 +17,6 @@
 pub mod Channel {
 
     use Time.TimeUnit
-
     import java.lang.{Thread => JThread}
 
     ///

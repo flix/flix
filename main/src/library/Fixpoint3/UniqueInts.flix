@@ -31,7 +31,7 @@ pub mod Fixpoint3.UniqueInts {
     /// the value, which `UniqueInts` assigned index `i`.
     ///
     pub struct UniqueInts[k: Type, r: Region] {
-        map:     MutMap[k, Int32, r],
+        map: MutMap[k, Int32, r],
         counter: Counter[r]
     }
 

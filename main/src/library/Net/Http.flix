@@ -317,11 +317,10 @@ pub mod Net.Http {
                 let url = x#url;
                 // Check that "://" appears before the first "/" to detect a scheme.
                 let hasScheme = match String.indexOf(substr = "://", url) {
-                    case Some(i) =>
-                        match String.indexOf(substr = "/", url) {
-                            case Some(s) => i < s
-                            case None    => true
-                        }
+                    case Some(i) => match String.indexOf(substr = "/", url) {
+                        case Some(s) => i < s
+                        case None    => true
+                    }
                     case None => false
                 };
                 if (hasScheme)

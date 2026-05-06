@@ -172,7 +172,7 @@ pub mod Fs.FileWrite {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileWrite) + { FileWrite, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, Logger} =
         run { f() } with handler FileWrite {
             def write(data, file, k) = {
                 logPre("write", file);
@@ -534,7 +534,7 @@ pub mod Fs.FileWrite {
     /// passed through unchanged.
     ///
     pub def withAtomicWrite(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
-        let mv = (tmp, dst) -> FileWrite.moveWith(src = tmp, dst, Set#{Fs.MoveOption.AtomicMove, Fs.MoveOption.ReplaceExisting});
+        let mv  = (tmp, dst) -> FileWrite.moveWith(src = tmp, dst, Set#{Fs.MoveOption.AtomicMove, Fs.MoveOption.ReplaceExisting});
         let del = tmp -> FileWrite.delete(tmp);
         run { f() } with handler FileWrite {
             def write(data, file, k)        = k(Fs.FsLayer.atomicWrite(file, tmp -> FileWrite.write(data, tmp), mv, del))
@@ -633,9 +633,9 @@ pub mod Fs.FileWrite {
     ///
     /// All other operations are passed through unchanged.
     ///
-    pub def withSizeRotation(maxSize: Size, maxFiles: Int32, f: Unit -> a \ ef): a \ (ef - FileWrite) + { FileWrite, FileStat } =
-        let doSize = file -> FileStat.size(file);
-        let doMove = (src, dst) -> FileWrite.moveWith(src = src, dst, Set#{Fs.MoveOption.ReplaceExisting});
+    pub def withSizeRotation(maxSize: Size, maxFiles: Int32, f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileStat} =
+        let doSize   = file -> FileStat.size(file);
+        let doMove   = (src, dst) -> FileWrite.moveWith(src = src, dst, Set#{Fs.MoveOption.ReplaceExisting});
         let doDelete = file -> FileWrite.delete(file);
         run { f() } with handler FileWrite {
             // Append ops — rotate if needed before appending
@@ -667,7 +667,7 @@ pub mod Fs.FileWrite {
     /// Operations that don't transfer data (`truncate`, `moveWith`, `delete`,
     /// `mkDir`, `mkDirs`, `mkTempDir`) are passed through unchanged.
     ///
-    pub def withTransferLimit(maxSize: Size, f: Unit -> a \ ef): a \ (ef - FileWrite) + { FileWrite, FileStat } =
+    pub def withTransferLimit(maxSize: Size, f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileStat} =
         let check = sz -> Fs.FsLayer.checkTransferLimit(maxSize, sz);
         let estStr = s -> Fs.FsLayer.estimateStringBytes(s);
         run { f() } with handler FileWrite {
@@ -707,17 +707,15 @@ pub mod Fs.FileWrite {
     /// on read operations. Conflict detection begins after the first write to
     /// each file, catching write-write conflicts from external processes.
     ///
-    pub def withConflictCheck(f: Unit -> a \ ef): a \ (ef - FileWrite) + { FileWrite, FileStat } =
+    pub def withConflictCheck(f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileStat} =
         region rc {
             let snapshots: MutMap[String, Int64, rc] = MutMap.empty(rc);
             let getModTime = file -> FileStat.modificationTime(file);
             let snap = file -> Fs.FsLayer.snapshotModTime(file, snapshots, getModTime);
             let check = file -> Fs.FsLayer.conflictCheck(file, snapshots, getModTime);
             let checkAndResnap = (file, doWrite) ->
-                forM (
-                    _ <- check(file);
-                    v <- doWrite()
-                ) yield { snap(file); v };
+                forM (_ <- check(file); v <- doWrite())
+                    yield { snap(file); v };
             run { f() } with handler FileWrite {
                 // ── Write ops — conflict check before, re-snapshot after ──
                 def write(data, file, k)        = k(checkAndResnap(file, () -> FileWrite.write(data, file)))
@@ -730,7 +728,7 @@ pub mod Fs.FileWrite {
                 def delete(file, k) = {
                     match check(file) {
                         case Err(e) => k(Err(e))
-                        case Ok(_) =>
+                        case Ok(_)  =>
                             let result = FileWrite.delete(file);
                             match result {
                                 case Ok(_) => MutMap.remove(file, snapshots)
@@ -765,11 +763,8 @@ pub mod Fs.FileWrite {
     ///
     /// `mkDir`, `mkDirs`, and `mkTempDir` are passed through unchanged.
     ///
-    pub def withChecksum(
-        hash: Vector[Int8] -> Vector[Int8],
-        sidecar: String,
-        f: Unit -> a \ ef
-    ): a \ (ef - FileWrite) + { FileWrite, FileRead } =
+    pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
+                         f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileRead} =
         let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
         let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, f1 -> FileRead.readBytes(f1), (str, f1) -> FileWrite.write(str = str, f1));
         let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);

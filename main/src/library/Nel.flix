@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 pub mod Nel {
     use Math.Shuffle
 
@@ -68,7 +69,7 @@ pub mod Nel {
     }
 
     instance Monad[Nel] {
-        pub def flatMap(f: a -> Nel[b] \ ef, x: Nel[a]): Nel[b] \ ef = Nel.flatMap(f, x)
+        pub def flatMap(f: a -> Nel[b] \ ef, x : Nel[a]) : Nel[b] \ ef = Nel.flatMap(f, x)
     }
 
     instance MonadZip[Nel] {
@@ -102,8 +103,8 @@ pub mod Nel {
     }
 
     instance Reducible[Nel] {
-        pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ { ef1, ef2 } = Nel.reduceLeftTo(f, g, l)
-        pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ { ef1, ef2 } = Nel.reduceRightTo(f, g, l)
+        pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
+        pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)
         redef head(l: Nel[a]): a = Nel.head(l)
         redef last(l: Nel[a]): a = Nel.last(l)
         redef init(l: Nel[a]): List[a] = Nel.init(l)
@@ -192,11 +193,10 @@ pub mod Nel {
     ///
     pub def init(l: Nel[a]): List[a] = match l {
         case Nel(_, Nil) => Nil
-        case Nel(x, xs) =>
-            match List.reverse(xs) {
-                case Nil     => x :: Nil
-                case _ :: ys => x :: List.reverse(ys)
-            }
+        case Nel(x, xs)  => match List.reverse(xs) {
+            case Nil     => x :: Nil
+            case _ :: ys => x :: List.reverse(ys)
+        }
     }
 
     ///
@@ -277,11 +277,10 @@ pub mod Nel {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = match l {
-        case Nel(x, xs) =>
-            match List.findRight(f, xs) {
-                case None    => if (f(x)) Some(x) else None
-                case Some(y) => Some(y)
-            }
+        case Nel(x, xs) => match List.findRight(f, xs) {
+            case None    => if (f(x)) Some(x) else None
+            case Some(y) => Some(y)
+        }
     }
 
     ///
@@ -310,19 +309,15 @@ pub mod Nel {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: Nel[a -> b \ ef], l: Nel[a]): Nel[b] \ ef =
+    pub def ap(f: Nel[a -> b \ ef], l: Nel[a]) : Nel[b] \ ef =
         // Note - loop has been worker-wrapper transformed to represent the list of
         // functions as head (f1) and tail (fs) so we never have an empty list to deal with.
         def loop(f1, fs, k) = match fs {
-            case Nil => k(map(f1, l))
+            case Nil      => k(map(f1, l))
             case f2 :: rs =>
                 let ks1 = map(f1, l);
-                loop(
-                    f2,
-                    rs,
-                    ks2 ->
-                        k(append(ks1, ks2))
-                )
+                loop(f2, rs, ks2 ->
+                  k(append(ks1, ks2)))
         };
         match f {
             case Nel(f1, Nil) => map(f1, l)
@@ -333,21 +328,19 @@ pub mod Nel {
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
     pub def flatMap(f: a -> Nel[b] \ ef, l: Nel[a]): Nel[b] \ ef = match l {
-        case Nel(x, xs) =>
-            match f(x) {
-                case Nel(y, ys) => Nel(y, ys ::: List.flatMap(z -> toList(f(z)), xs))
-            }
+        case Nel(x, xs) => match f(x) {
+            case Nel(y, ys) => Nel(y, ys ::: List.flatMap(z -> toList(f(z)), xs))
+        }
     }
 
     ///
     /// Returns the reverse of `l`.
     ///
     pub def reverse(l: Nel[a]): Nel[a] = match l {
-        case Nel(x, xs) =>
-            match List.reverse(x :: xs) {
-                case y :: ys => Nel(y, ys)
-                case _       => unreachable!()
-            }
+        case Nel(x, xs) => match List.reverse(x :: xs) {
+            case y :: ys => Nel(y, ys)
+            case _       => unreachable!()
+        }
     }
 
     ///
@@ -362,11 +355,10 @@ pub mod Nel {
     /// That is, `l` is the first permutation and `reverse(l)` is the last permutation.
     ///
     pub def permutations(l: Nel[a]): Nel[List[a]] = match l {
-        case Nel(x, xs) =>
-            match List.permutations(x :: xs) {
-                case y :: ys => Nel(y, ys)
-                case Nil     => unreachable!()
-            }
+        case Nel(x, xs) => match List.permutations(x :: xs) {
+            case y :: ys => Nel(y, ys)
+            case Nil => unreachable!()
+        }
     }
 
     ///
@@ -375,19 +367,18 @@ pub mod Nel {
     /// That is, `l` is the first subsequence and `Nil` is the last subsequence.
     ///
     pub def subsequences(l: Nel[a]): Nel[List[a]] = match l {
-        case Nel(x, xs) =>
-            match List.subsequences(x :: xs) {
-                case y :: ys => Nel(y, ys)
-                case Nil     => unreachable!()
-            }
+        case Nel(x, xs) => match List.subsequences(x :: xs) {
+            case y :: ys => Nel(y, ys)
+            case Nil => unreachable!()
+        }
     }
 
     ///
     /// Returns `l` with `a` inserted between every two adjacent elements.
     ///
     pub def intersperse(a: a, l: Nel[a]): Nel[a] = match l {
-        case Nel(x, Nil) => Nel(x, Nil)
-        case Nel(x, xs)  => Nel(x, a :: List.intersperse(a, xs))
+        case Nel(x, Nil)  => Nel(x, Nil)
+        case Nel(x, xs)   => Nel(x, a :: List.intersperse(a, xs))
     }
 
     ///
@@ -424,7 +415,7 @@ pub mod Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ { ef1, ef2 } = match l {
+    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = match l {
         case Nel(x, xs) => List.foldLeft(f, g(x), xs)
     }
 
@@ -433,7 +424,7 @@ pub mod Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ { ef1, ef2 } =
+    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} =
         def loop(ll, k) = match ll {
             case x :: Nil => k(g(x))
             case x :: xs  => loop(xs, ks -> k(f(x, ks)))
@@ -464,11 +455,10 @@ pub mod Nel {
     /// That is, the result is of the form: `f(x1, ...f(xn-2, f(xn-1, xn))...)`
     ///
     pub def reduceRight(f: (a, a) -> a \ ef, l: Nel[a]): a \ ef = match l {
-        case Nel(x, xs) =>
-            match List.reduceRight(f, x :: xs) {
-                case None    => unreachable!()
-                case Some(v) => v
-            }
+        case Nel(x, xs) => match List.reduceRight(f, x :: xs) {
+            case None    => unreachable!()
+            case Some(v) => v
+        }
     }
 
     ///
@@ -528,7 +518,7 @@ pub mod Nel {
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
-    pub def zip(l1: Nel[a], l2: Nel[b]): Nel[(a, b)] = match (l1, l2) {
+    pub def zip(l1: Nel[a], l2: Nel[b]): Nel[(a,b)] = match (l1, l2) {
         case (Nel(x, xs), Nel(y, ys)) => Nel((x, y), List.zip(xs, ys))
     }
 
@@ -573,6 +563,8 @@ pub mod Nel {
         match (xs, ys) {
             case (Nel(x, l1), Nel(y, l2)) => ((c, cs) -> Nel(c, cs)) <$> f(x, y) <*> List.zipWithA(f, l1, l2)
         }
+
+
 
     ///
     /// Returns `l` as a normal list.
@@ -650,7 +642,7 @@ pub mod Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a, a) -> Comparison, l: Nel[a]): Nel[a] = region rc {
+    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region rc {
         let list = toArray(rc, l) !> Array.sortWith(cmp) |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
@@ -662,8 +654,8 @@ pub mod Nel {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r =
-        let Nel(x, xs) = l;
-        List.iterator(rc, x :: xs)
+       let Nel(x, xs) = l;
+       List.iterator(rc, x :: xs)
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
@@ -738,12 +730,12 @@ pub mod Nel {
     ///
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): Option[Nel[a]] \ ef =
         match f(st) {
-            case None => None
+            case None           => None
             case Some((a, st1)) =>
                 @Tailrec
                 def loop(sst, acc) = match f(sst) {
-                    case None           => acc
-                    case Some((b, st2)) => loop(st2, b :: acc)
+                    case None            => acc
+                    case Some((b, st2))  => loop(st2, b :: acc)
                 };
                 Some(Nel(a, List.reverse(loop(st1, Nil))))
         }
@@ -760,7 +752,7 @@ pub mod Nel {
     ///
     pub def unfoldWithIter(next: Unit -> Option[a] \ ef): Option[Nel[a]] \ ef =
         match next() {
-            case None => None
+            case None    => None
             case Some(a) =>
                 @Tailrec
                 def loop(acc) = match next() {
@@ -781,7 +773,7 @@ pub mod Nel {
     ///
     pub def iterate(f: a -> Option[a] \ ef, x: a): Option[Nel[a]] \ ef =
         match f(x) {
-            case None => None
+            case None     => None
             case Some(a1) =>
                 @Tailrec
                 def loop(st, acc) = match f(st) {

@@ -109,7 +109,7 @@ pub mod StringBuilder {
             } else {
                 appendString(s, sb)
             };
-        Array.forEachWithIndex(append1, a)
+       Array.forEachWithIndex(append1, a)
 
     ///
     /// Returns an iterator over `sb`.

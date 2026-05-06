@@ -163,22 +163,20 @@ pub mod Net.HttpRequest {
     /// Returns the text body of the request `r`, or `None` if absent or binary.
     ///
     pub def body(r: HttpRequest): Option[String] = match r {
-        case HttpRequest(x) =>
-            match x#body {
-                case Some(Body.Text(s)) => Some(s)
-                case _                  => None
-            }
+        case HttpRequest(x) => match x#body {
+            case Some(Body.Text(s)) => Some(s)
+            case _                  => None
+        }
     }
 
     ///
     /// Returns the binary body of the request `r`, or `None` if absent or text.
     ///
     pub def bodyBytes(r: HttpRequest): Option[Vector[Int8]] = match r {
-        case HttpRequest(x) =>
-            match x#body {
-                case Some(Body.Bytes(v)) => Some(v)
-                case _                   => None
-            }
+        case HttpRequest(x) => match x#body {
+            case Some(Body.Bytes(v)) => Some(v)
+            case _                   => None
+        }
     }
 
     ///

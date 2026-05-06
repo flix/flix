@@ -62,6 +62,7 @@ pub mod Fixpoint3.Phase.Stratifier {
                     let predSym = PredSym.PredSym(Array.get(x, predSyms), Int32.toInt64(x));
                     MutMap.put(predSym, (pseudoStratum, stratum), result)
                 }
+
             }
         };
         MutMap.toMap(result)
@@ -73,7 +74,7 @@ pub mod Fixpoint3.Phase.Stratifier {
     def addDepEdges(graph: MutGraph[r], d: Datalog): Unit \ r = match d {
         case Datalog(_, rules) => Vector.forEach(precedenceHelper(graph), rules)
         case Model(_)          => ()
-        case Join(d1, d2) =>
+        case Join(d1, d2)      =>
             addDepEdges(graph, d1);
             addDepEdges(graph, d2)
         case Provenance(_, _)  => ()
@@ -98,11 +99,10 @@ pub mod Fixpoint3.Phase.Stratifier {
         case (HeadAtom(PredSym.PredSym(_, dstId), _, _), BodyAtom(PredSym.PredSym(_, srcId), _, _, _, _)) => {
             if (dstId != srcId) {
                 MutGraph.addEdge(toInt32(srcId), toInt32(dstId), graph)
-            } else
-                (
-                    // We still register the vertex, as it is needed later.
-                    MutGraph.addVertex(toInt32(dstId), graph)
-                )
+            } else (
+                // We still register the vertex, as it is needed later.
+                MutGraph.addVertex(toInt32(dstId), graph)
+            )
         }
         case _ => ()
     }

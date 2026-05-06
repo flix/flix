@@ -80,7 +80,7 @@ pub mod Fs.FileRead {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileRead) + { FileRead, Logger } =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileRead) + {FileRead, Logger} =
         run { f() } with handler FileRead {
             def read(filename, k) = {
                 logPre("read", filename);
@@ -201,7 +201,7 @@ pub mod Fs.FileRead {
     /// reading. For string-based reads, the limit applies to the on-disk file size
     /// (not the in-memory string length).
     ///
-    pub def withTransferLimit(maxSize: Size, f: Unit -> a \ ef): a \ (ef - FileRead) + { FileRead, FileStat } =
+    pub def withTransferLimit(maxSize: Size, f: Unit -> a \ ef): a \ (ef - FileRead) + {FileRead, FileStat} =
         let check = sz -> Fs.FsLayer.checkTransferLimit(maxSize, sz);
         run { f() } with handler FileRead {
             def read(filename, k)      = k(Result.flatMap(_ -> FileRead.read(filename), Result.flatMap(check, FileStat.size(filename))))
@@ -221,11 +221,8 @@ pub mod Fs.FileRead {
     /// If no sidecar file exists, the read proceeds normally.
     /// If the checksum does not match, returns `Err(IoError(ChecksumMismatch, ...))`.
     ///
-    pub def withChecksum(
-        hash: Vector[Int8] -> Vector[Int8],
-        sidecar: String,
-        f: Unit -> a \ ef
-    ): a \ (ef - FileRead) + FileRead =
+    pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
+                         f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
         let doReadBytes = file -> FileRead.readBytes(file);
         let doReadSidecar = file -> FileRead.read(file);

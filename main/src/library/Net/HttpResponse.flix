@@ -60,11 +60,10 @@ pub mod Net.HttpResponse {
     /// If the body is binary, it is decoded as UTF-8.
     ///
     pub def body(r: HttpResponse): String = match r {
-        case HttpResponse(x) =>
-            match x#body {
-                case Body.Text(s)  => s
-                case Body.Bytes(v) => HttpLayer.bytesToString(v)
-            }
+        case HttpResponse(x) => match x#body {
+            case Body.Text(s)  => s
+            case Body.Bytes(v) => HttpLayer.bytesToString(v)
+        }
     }
 
     ///
@@ -73,11 +72,10 @@ pub mod Net.HttpResponse {
     /// If the body is text, it is encoded as UTF-8.
     ///
     pub def bodyBytes(r: HttpResponse): Vector[Int8] = match r {
-        case HttpResponse(x) =>
-            match x#body {
-                case Body.Bytes(v) => v
-                case Body.Text(s)  => HttpLayer.stringToBytes(s)
-            }
+        case HttpResponse(x) => match x#body {
+            case Body.Bytes(v) => v
+            case Body.Text(s)  => HttpLayer.stringToBytes(s)
+        }
     }
 
     ///
