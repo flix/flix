@@ -40,7 +40,7 @@ pub mod Net.Dns {
         run {
             f(x)
         } with handler Dns {
-            def lookup(host, k) = {
+            def lookup(host, k)    = {
                 try {
                     let address = InetAddress.getByName(host);
                     let addrBytes = Array.toList(address.getAddress());

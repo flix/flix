@@ -142,7 +142,7 @@ pub mod Sys.Process {
                 k(res)
             }
 
-            def exitValue(ph, k) =
+            def exitValue(ph, k)                              =
                 try {
                     let ProcessHandle(p) = ph;
                     k(Ok(p.exitValue()))
@@ -151,7 +151,7 @@ pub mod Sys.Process {
                     case ex: IOException                 => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
-            def isAlive(ph, k) =
+            def isAlive(ph, k)                                =
                 try {
                     let ProcessHandle(p) = ph;
                     k(Ok(p.isAlive()))
@@ -159,7 +159,7 @@ pub mod Sys.Process {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
-            def pid(ph, k) =
+            def pid(ph, k)                                    =
                 try {
                     let ProcessHandle(p) = ph;
                     let pid = p.pid();
@@ -169,7 +169,7 @@ pub mod Sys.Process {
                     case ex: IOException                   => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
-            def stdin(ph, k) =
+            def stdin(ph, k)                                  =
                 try {
                     let ProcessHandle(p) = ph;
                     k(Ok(StdIn(p.getOutputStream())))
@@ -177,7 +177,7 @@ pub mod Sys.Process {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
-            def stdout(ph, k) =
+            def stdout(ph, k)                                 =
                 try {
                     let ProcessHandle(p) = ph;
                     k(Ok(StdOut(p.getInputStream())))
@@ -185,7 +185,7 @@ pub mod Sys.Process {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
-            def stderr(ph, k) =
+            def stderr(ph, k)                                 =
                 try {
                     let ProcessHandle(p) = ph;
                     k(Ok(StdErr(p.getErrorStream())))
@@ -193,7 +193,7 @@ pub mod Sys.Process {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
-            def stop(ph, k) =
+            def stop(ph, k)                                   =
                 try {
                     let ProcessHandle(p) = ph;
                     k(Ok(p.destroy()))
@@ -201,7 +201,7 @@ pub mod Sys.Process {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
-            def waitFor(ph, k) =
+            def waitFor(ph, k)                                =
                 try {
                     let ProcessHandle(p) = ph;
                     let exitVal = p.waitFor();
@@ -211,7 +211,7 @@ pub mod Sys.Process {
                     case ex: IOException          => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
-            def waitForTimeout(ph, time, unit, k) =
+            def waitForTimeout(ph, time, unit, k)             =
                 try {
                     let timeMS = time * Int32.toInt64(TimeUnit.toMilliseconds(unit));
                     let ProcessHandle(p) = ph;

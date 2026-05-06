@@ -44,6 +44,7 @@
 ///
 pub mod Fixpoint3.Boxing {
     import java.lang.{Float, Double, Object, Character, Runtime}
+
     use Fixpoint3.Ast.Datalog.Datalog
     use Fixpoint3.Ast.ExecutableRam.{Facts => EFacts}
     use Fixpoint3.Ast.Ram

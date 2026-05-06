@@ -93,19 +93,19 @@ pub mod Fs.FileTest {
     ///
     pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTest) + { FileTest, Logger } =
         run { f() } with handler FileTest {
-            def exists(filename, k) = {
+            def exists(filename, k)         = {
                 logPre("exists", filename);
                 let result = FileTest.exists(filename);
                 logPost("exists", filename, b -> "${b}", result);
                 k(result)
             }
-            def isDirectory(filename, k) = {
+            def isDirectory(filename, k)    = {
                 logPre("isDirectory", filename);
                 let result = FileTest.isDirectory(filename);
                 logPost("isDirectory", filename, b -> "${b}", result);
                 k(result)
             }
-            def isRegularFile(filename, k) = {
+            def isRegularFile(filename, k)  = {
                 logPre("isRegularFile", filename);
                 let result = FileTest.isRegularFile(filename);
                 logPost("isRegularFile", filename, b -> "${b}", result);

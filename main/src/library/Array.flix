@@ -67,6 +67,7 @@ instance Formattable[Array[a, r]] with Formattable[a] {
 
 pub mod Array {
     use Math.Shuffle
+
     import java.lang.Object
     import java.lang.System
     import java.util.Arrays

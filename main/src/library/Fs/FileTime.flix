@@ -85,13 +85,13 @@ pub mod Fs.FileTime {
     ///
     pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTime) + { FileTime, Logger } =
         run { f() } with handler FileTime {
-            def accessTime(filename, k) = {
+            def accessTime(filename, k)       = {
                 logPre("accessTime", filename);
                 let result = FileTime.accessTime(filename);
                 logPost("accessTime", filename, t -> "${t}ms", result);
                 k(result)
             }
-            def creationTime(filename, k) = {
+            def creationTime(filename, k)     = {
                 logPre("creationTime", filename);
                 let result = FileTime.creationTime(filename);
                 logPost("creationTime", filename, t -> "${t}ms", result);

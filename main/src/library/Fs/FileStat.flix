@@ -131,55 +131,55 @@ pub mod Fs.FileStat {
     ///
     pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileStat) + { FileStat, Logger } =
         run { f() } with handler FileStat {
-            def exists(filename, k) = {
+            def exists(filename, k)           = {
                 logPre("exists", filename);
                 let result = FileStat.exists(filename);
                 logPost("exists", filename, b -> "${b}", result);
                 k(result)
             }
-            def isDirectory(filename, k) = {
+            def isDirectory(filename, k)      = {
                 logPre("isDirectory", filename);
                 let result = FileStat.isDirectory(filename);
                 logPost("isDirectory", filename, b -> "${b}", result);
                 k(result)
             }
-            def isRegularFile(filename, k) = {
+            def isRegularFile(filename, k)    = {
                 logPre("isRegularFile", filename);
                 let result = FileStat.isRegularFile(filename);
                 logPost("isRegularFile", filename, b -> "${b}", result);
                 k(result)
             }
-            def isSymbolicLink(filename, k) = {
+            def isSymbolicLink(filename, k)   = {
                 logPre("isSymbolicLink", filename);
                 let result = FileStat.isSymbolicLink(filename);
                 logPost("isSymbolicLink", filename, b -> "${b}", result);
                 k(result)
             }
-            def isReadable(filename, k) = {
+            def isReadable(filename, k)       = {
                 logPre("isReadable", filename);
                 let result = FileStat.isReadable(filename);
                 logPost("isReadable", filename, b -> "${b}", result);
                 k(result)
             }
-            def isWritable(filename, k) = {
+            def isWritable(filename, k)       = {
                 logPre("isWritable", filename);
                 let result = FileStat.isWritable(filename);
                 logPost("isWritable", filename, b -> "${b}", result);
                 k(result)
             }
-            def isExecutable(filename, k) = {
+            def isExecutable(filename, k)     = {
                 logPre("isExecutable", filename);
                 let result = FileStat.isExecutable(filename);
                 logPost("isExecutable", filename, b -> "${b}", result);
                 k(result)
             }
-            def accessTime(filename, k) = {
+            def accessTime(filename, k)       = {
                 logPre("accessTime", filename);
                 let result = FileStat.accessTime(filename);
                 logPost("accessTime", filename, t -> "${t}ms", result);
                 k(result)
             }
-            def creationTime(filename, k) = {
+            def creationTime(filename, k)     = {
                 logPre("creationTime", filename);
                 let result = FileStat.creationTime(filename);
                 logPost("creationTime", filename, t -> "${t}ms", result);
@@ -191,7 +191,7 @@ pub mod Fs.FileStat {
                 logPost("modificationTime", filename, t -> "${t}ms", result);
                 k(result)
             }
-            def size(filename, k) = {
+            def size(filename, k)             = {
                 logPre("size", filename);
                 let result = FileStat.size(filename);
                 logPost("size", filename, s -> "${s}", result);

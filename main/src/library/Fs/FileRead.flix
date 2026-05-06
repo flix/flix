@@ -82,7 +82,7 @@ pub mod Fs.FileRead {
     ///
     pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileRead) + { FileRead, Logger } =
         run { f() } with handler FileRead {
-            def read(filename, k) = {
+            def read(filename, k)      = {
                 logPre("read", filename);
                 let result = FileRead.read(filename);
                 logPost("read", filename, s -> "${String.length(s)} chars", result);
