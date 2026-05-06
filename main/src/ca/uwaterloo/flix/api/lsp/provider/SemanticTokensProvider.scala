@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
-import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.TypedAst.{EqualityConstraint, *}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
@@ -938,8 +938,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given equality constraint `tc0`.
     */
   private def visitEqualityConstraint(ec0: EqualityConstraint): Iterator[SemanticToken] = ec0 match {
-    case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      visitAssocTypeSymUse(cst) ++ visitType(tpe1) ++ visitType(tpe2)
+    case EqualityConstraint(tpe1, tpe2, _) =>
+      val assocTokens = tpe1 match {
+        case Type.AssocType(cst, _, _, _) => visitAssocTypeSymUse(cst)
+        case _ => Iterator.empty
+      }
+      assocTokens ++ visitType(tpe1) ++ visitType(tpe2)
   }
 
   /**

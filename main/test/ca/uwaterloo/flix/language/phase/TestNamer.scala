@@ -71,9 +71,6 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A {
          |  def f(): Int = 42
-         |}
-         |
-         |mod A {
          |  def f(): Int = 21
          |}
        """.stripMargin
@@ -86,14 +83,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A.B.C {
          |  def f(): Int = 42
-         |}
-         |
-         |mod A {
-         |  mod B {
-         |    mod C {
-         |      def f(): Int = 21
-         |    }
-         |  }
+         |  def f(): Int = 21
          |}
        """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -229,9 +219,6 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A {
          |  type alias USD = Int
-         |}
-         |
-         |mod A {
          |  type alias USD = Int
          |}
        """.stripMargin
@@ -269,9 +256,6 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A {
          |  type alias USD = Int
-         |}
-         |
-         |mod A {
          |  enum USD {
          |    case B
          |  }
@@ -319,9 +303,6 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  enum USD {
          |    case A
          |  }
-         |}
-         |
-         |mod A {
          |  enum USD {
          |    case B
          |  }
@@ -357,9 +338,6 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A {
          |  type alias USD = Int
-         |}
-         |
-         |mod A {
          |  trait USD[a]
          |}
        """.stripMargin
@@ -401,9 +379,6 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  enum USD {
          |    case A
          |  }
-         |}
-         |
-         |mod A {
          |  trait USD[a]
          |}
        """.stripMargin
@@ -437,9 +412,6 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A {
          |  trait USD[a]
-         |}
-         |
-         |mod A {
          |  trait USD[a]
          |}
        """.stripMargin
@@ -560,6 +532,67 @@ class TestNamer extends AnyFunSuite with TestUtils {
     """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateModule.01") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B { pub def foo(): Int32 = 1 }
+         |    mod B { pub def bar(): Int32 = 2 }
+         |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateModule](result)
+  }
+
+  test("DuplicateModule.02") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B.C { pub def foo(): Int32 = 1 }
+         |    mod B {
+         |        mod C { pub def bar(): Int32 = 2 }
+         |    }
+         |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateModule](result)
+  }
+
+  test("DuplicateModule.03") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B { pub def f(): Int32 = 1 }
+         |    mod B { pub def g(): Int32 = 2 }
+         |    mod B { pub def h(): Int32 = 3 }
+         |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateModule](result)
+  }
+
+  test("DuplicateModule.04") {
+    val input =
+      s"""
+         |mod A { pub def f(): Int32 = 1 }
+         |mod A { pub def g(): Int32 = 2 }
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateModule](result)
+  }
+
+  test("DuplicateModule.05") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B { pub def f(): Int32 = 1 }
+         |    mod C { pub def g(): Int32 = 2 }
+         |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.DuplicateModule](result)
   }
 
   test("IllegalReservedName.Enum.01") {

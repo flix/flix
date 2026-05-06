@@ -24,7 +24,7 @@ pub mod Option {
     /// whereas the constructor `Some(v)` represents the value `v`.
     ///
     pub enum Option[t] with Eq, Order, ToString {
-        case None,
+        case None
         case Some(t)
     }
 
@@ -33,27 +33,27 @@ pub mod Option {
     }
 
     instance PartialOrder[Option[t]] with PartialOrder[t] {
-        pub def lessEqual(x: Option[t], y: Option[t]): Bool = match (x,y) {
-           case (None, _)           => true
-           case (Some(a), Some(b))  => PartialOrder.lessEqual(a,b)
-           case _                   => false
-       }
+        pub def lessEqual(x: Option[t], y: Option[t]): Bool = match (x, y) {
+            case (None, _)          => true
+            case (Some(a), Some(b)) => PartialOrder.lessEqual(a, b)
+            case _                  => false
+        }
     }
 
     instance JoinLattice[Option[t]] with JoinLattice[t] {
-        pub def leastUpperBound(x: Option[t], y: Option[t]): Option[t] = match (x,y) {
-           case (None, _)           => y
-           case (_, None)           => x
-           case (Some(a), Some(b))  => Some(JoinLattice.leastUpperBound(a,b))
-       }
+        pub def leastUpperBound(x: Option[t], y: Option[t]): Option[t] = match (x, y) {
+            case (None, _)          => y
+            case (_, None)          => x
+            case (Some(a), Some(b)) => Some(JoinLattice.leastUpperBound(a, b))
+        }
     }
 
     instance MeetLattice[Option[t]] with MeetLattice[t] {
-        pub def greatestLowerBound(x: Option[t], y: Option[t]): Option[t] = match (x,y) {
-           case (None, _)           => None
-           case (_, None)           => None
-           case (Some(a), Some(b))  => Some(MeetLattice.greatestLowerBound(a, b))
-       }
+        pub def greatestLowerBound(x: Option[t], y: Option[t]): Option[t] = match (x, y) {
+            case (None, _)          => None
+            case (_, None)          => None
+            case (Some(a), Some(b)) => Some(MeetLattice.greatestLowerBound(a, b))
+        }
     }
 
     instance Hash[Option[a]] with Hash[a] {
@@ -68,9 +68,9 @@ pub mod Option {
     }
 
     instance Applicative[Option] {
-        pub def point(x: a) : Option[a] = Option.point(x)
+        pub def point(x: a): Option[a] = Option.point(x)
 
-        pub def ap(f: Option[a -> b \ ef], x: Option[a]) : Option[b] \ ef = Option.ap(f, x)
+        pub def ap(f: Option[a -> b \ ef], x: Option[a]): Option[b] \ ef = Option.ap(f, x)
 
         // Same as the default implementation using `map` and `ap` but with less indirection.
         redef map2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.map2(f, x1, x2)
@@ -80,7 +80,7 @@ pub mod Option {
     }
 
     instance Monad[Option] {
-        pub def flatMap(f: a -> Option[b] \ ef, x : Option[a]) : Option[b] \ ef = Option.flatMap(f, x)
+        pub def flatMap(f: a -> Option[b] \ ef, x: Option[a]): Option[b] \ ef = Option.flatMap(f, x)
     }
 
     instance MonadZero[Option] {
@@ -116,7 +116,7 @@ pub mod Option {
             use Applicative.{point};
             use Functor.{map};
             match t {
-                case None => point(None)
+                case None    => point(None)
                 case Some(a) => f(a) |> map(Some)
             }
 
@@ -125,7 +125,7 @@ pub mod Option {
             use Functor.{map};
             match t {
                 case Some(ma) => map(Some, ma)
-                case None => point(None)
+                case None     => point(None)
             }
 
     }
@@ -139,9 +139,9 @@ pub mod Option {
 
     instance SemiGroup[Option[a]] with SemiGroup[a] {
         pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
-            case (a, None)              => a
-            case (None, b)              => b
-            case (Some(x1), Some(y1))   => Some(SemiGroup.combine(x1, y1))
+            case (a, None)            => a
+            case (None, b)            => b
+            case (Some(x1), Some(y1)) => Some(SemiGroup.combine(x1, y1))
         }
     }
 
@@ -267,19 +267,20 @@ pub mod Option {
     ///
     /// Returns `Some(x)`.
     ///
-    pub def point(x: a) : Option[a] = Some(x)
+    pub def point(x: a): Option[a] = Some(x)
 
     ///
     /// If both arguments are `Some`, return a `Some` containing the result of applying the function inside
     /// `f` to the value inside `x`. Otherwise return `None`.
     ///
-    pub def ap(f: Option[a -> b \ ef], x: Option[a]) : Option[b] \ ef =
+    pub def ap(f: Option[a -> b \ ef], x: Option[a]): Option[b] \ ef =
         match f {
             case None    => None
-            case Some(g) => match x {
-                case None    => None
-                case Some(y) => Some(g(y))
-            }
+            case Some(g) =>
+                match x {
+                    case None    => None
+                    case Some(y) => Some(g(y))
+                }
         }
 
     ///
@@ -360,9 +361,9 @@ pub mod Option {
     ///
     pub def sequence(l: List[Option[a]]): Option[List[a]] =
         def loop(ll, k) = match ll {
-            case Nil            => k(Nil)
-            case None :: _      => None
-            case Some(x) :: xs  => loop(xs, ks -> k(x :: ks))
+            case Nil           => k(Nil)
+            case None :: _     => None
+            case Some(x) :: xs => loop(xs, ks -> k(x :: ks))
         };
         loop(l, ks -> Some(ks))
 
@@ -372,10 +373,11 @@ pub mod Option {
     pub def traverse(f: a -> Option[b] \ ef, l: List[a]): Option[List[b]] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
-            case x :: xs => match f(x) {
-                case None    => None
-                case Some(y) => loop(xs, ys -> k(y :: ys))
-            }
+            case x :: xs =>
+                match f(x) {
+                    case None    => None
+                    case Some(y) => loop(xs, ys -> k(y :: ys))
+                }
         };
         loop(l, ks -> Some(ks))
 
@@ -387,10 +389,11 @@ pub mod Option {
     ///
     pub def traverseX(f: a -> Option[b] \ ef, l: List[a]): Option[Unit] \ ef = match l {
         case Nil     => Some()
-        case x :: xs => match f(x) {
-            case None    => None
-            case Some(_) => traverseX(f, xs)
-        }
+        case x :: xs =>
+            match f(x) {
+                case None    => None
+                case Some(_) => traverseX(f, xs)
+            }
     }
 
     ///
@@ -405,10 +408,11 @@ pub mod Option {
     ///
     pub def foldLeftM(f: (b, a) -> Option[b] \ ef, s: b, l: List[a]): Option[b] \ ef = match l {
         case Nil     => Some(s)
-        case x :: xs => match f(s, x) {
-            case Some(s1) => foldLeftM(f, s1, xs)
-            case None     => None
-        }
+        case x :: xs =>
+            match f(s, x) {
+                case Some(s1) => foldLeftM(f, s1, xs)
+                case None     => None
+            }
     }
 
     ///
@@ -424,10 +428,14 @@ pub mod Option {
     pub def foldRightM(f: (a, b) -> Option[b] \ ef, s: b, l: List[a]): Option[b] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(s)
-            case x :: xs => loop(xs, s1 -> match f(x, s1) {
-                case Some(s2) => k(s2)
-                case None     => None
-            })
+            case x :: xs =>
+                loop(
+                    xs,
+                    s1 -> match f(x, s1) {
+                        case Some(s2) => k(s2)
+                        case None     => None
+                    }
+                )
         };
         loop(l, s1 -> checked_ecast(Some(s1)))
 
@@ -563,7 +571,7 @@ pub mod Option {
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o7` are `None`.
     ///
-    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7]): Option[u] \ ef=
+    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7]): Option[u] \ ef =
         ap(map6(f, o1, o2, o3, o4, o5, o6), o7)
 
     ///

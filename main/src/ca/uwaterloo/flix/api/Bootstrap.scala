@@ -66,6 +66,7 @@ object Bootstrap {
     //
     val sourceDirectory = getSourceDirectory(p)
     val testDirectory = getTestDirectory(p)
+    val workflowsDirectory = getWorkflowsDirectory(p)
 
     val manifestFile = getManifestFile(p)
     val gitignoreFile = getGitIgnoreFile(p)
@@ -73,12 +74,14 @@ object Bootstrap {
     val readmeFile = getReadmeFile(p)
     val mainSourceFile = getMainSourceFile(p)
     val mainTestFile = getMainTestFile(p)
+    val buildAndTestWorkflowFile = getBuildAndTestWorkflowFile(p)
 
     //
     // Create the project directories and files.
     //
     FileOps.newDirectoryIfAbsent(sourceDirectory)
     FileOps.newDirectoryIfAbsent(testDirectory)
+    FileOps.newDirectoryIfAbsent(workflowsDirectory)
 
     FileOps.newFileIfAbsent(manifestFile) {
       s"""[package]
@@ -126,6 +129,48 @@ object Bootstrap {
         |def test01(): Unit \ Assert = Assert.assertEq(expected = 2, 1 + 1)
         |""".stripMargin
     }
+
+    FileOps.newFileIfAbsent(buildAndTestWorkflowFile) {
+      """name: Build and Test
+        |
+        |on:
+        |  pull_request:
+        |  push:
+        |    branches: [ main, master ]
+        |
+        |jobs:
+        |  build-and-test:
+        |    runs-on: ubuntu-latest
+        |    steps:
+        |      - name: Check out
+        |        uses: actions/checkout@v5
+        |
+        |      - name: Install JDK 21
+        |        uses: actions/setup-java@v4
+        |        with:
+        |          distribution: 'temurin'
+        |          java-version: '21'
+        |
+        |      - name: Read Flix version from flix.toml
+        |        id: flix
+        |        run: |
+        |          version=$(grep -E '^"?flix"?[[:space:]]*=' flix.toml \
+        |            | head -n1 \
+        |            | sed -E 's/.*"([^"]+)"[[:space:]]*$/\1/')
+        |          echo "version=$version" >> "$GITHUB_OUTPUT"
+        |
+        |      - name: Download Flix
+        |        run: |
+        |          curl -fsSL -o flix.jar \
+        |            "https://github.com/flix/flix/releases/download/v${{ steps.flix.outputs.version }}/flix.jar"
+        |
+        |      - name: Check
+        |        run: java -jar flix.jar check
+        |
+        |      - name: Test
+        |        run: java -jar flix.jar test
+        |""".stripMargin
+    }
     Result.Ok(())
   }
 
@@ -149,6 +194,16 @@ object Bootstrap {
 
   /** The readme file name. */
   private val README: String = "README.md"
+
+  /** The build-and-test GitHub Actions workflow file name. */
+  private val BUILD_AND_TEST_WORKFLOW: String = "build-and-test.yaml"
+
+  /**
+    * The relative path to the GitHub Actions workflows directory as a string.
+    *
+    * N.B.: Use [[getWorkflowsDirectory]] if possible.
+    */
+  private val workflowsDirectoryRaw: String = ".github/workflows/"
 
   /**
     * Returns the path to the artifact directory relative to the given path `p`.
@@ -225,6 +280,16 @@ object Bootstrap {
     * Returns the path to the README file relative to the given path `p`.
     */
   private def getReadmeFile(p: Path): Path = p.resolve(s"./$README").normalize()
+
+  /**
+    * Returns the path to the GitHub Actions workflows directory relative to the given path `p`.
+    */
+  private def getWorkflowsDirectory(p: Path): Path = p.resolve(s"./$workflowsDirectoryRaw").normalize()
+
+  /**
+    * Returns the path to the build-and-test workflow file relative to the given path `p`.
+    */
+  private def getBuildAndTestWorkflowFile(p: Path): Path = getWorkflowsDirectory(p).resolve(s"./$BUILD_AND_TEST_WORKFLOW").normalize()
 
   /**
     * Returns the path to the main source file relative to the given path `p`.

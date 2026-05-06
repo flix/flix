@@ -61,16 +61,16 @@ pub mod Char {
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
     pub def isOctDigit(c: Char): Bool =
-        '0' <= c and c <= '7'     // '0'..'7'
+        '0' <= c and c <= '7' // '0'..'7'
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...9, A...F, or a...f.
     ///
     pub def isHexDigit(c: Char): Bool = match c {
-        case i if '0' <= i and i <= '9' => true        // '0'..'9'
-        case i if 'A' <= i and i <= 'F' => true        // 'A'..'F'
-        case i if 'a' <= i and i <= 'f' => true        // 'a'..'f'
-        case _ => false
+        case i if '0' <= i and i <= '9' => true // '0'..'9'
+        case i if 'A' <= i and i <= 'F' => true // 'A'..'F'
+        case i if 'a' <= i and i <= 'f' => true // 'a'..'f'
+        case _                          => false
     }
 
     ///

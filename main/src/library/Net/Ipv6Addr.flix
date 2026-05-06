@@ -27,12 +27,7 @@ pub mod Net.Ipv6Addr {
     /// Represents a V6 Ip Address.
     ///
     pub enum Ipv6Addr with Eq {
-        case Ipv6Addr( // 128 bits
-          Int8, Int8, Int8, Int8, // 32 bits
-          Int8, Int8, Int8, Int8, // 32 bits
-          Int8, Int8, Int8, Int8, // 32 bits
-          Int8, Int8, Int8, Int8  // 32 bits
-        )
+        case Ipv6Addr(Int8, Int8, Int8, Int8,Int8, Int8, Int8, Int8,Int8, Int8, Int8, Int8,Int8, Int8, Int8, Int8)
     }
 
     instance FromString[Ipv6Addr] {
@@ -70,12 +65,7 @@ pub mod Net.Ipv6Addr {
     pub def fromString(s: String): Option[Ipv6Addr] =
         match s |> cleanIpv6String |> parseIpv6List {
             case Some(b1::b2::b3::b4::b5::b6::b7::b8::b9::b10::b11::b12::b13::b14::b15::b16::Nil) =>
-                Some(Ipv6Addr.Ipv6Addr(
-                  b1,  b2,  b3,  b4,
-                  b5,  b6,  b7,  b8,
-                  b9,  b10, b11, b12,
-                  b13, b14, b15, b16
-                ))
+                Some(Ipv6Addr.Ipv6Addr(b1,  b2,  b3,  b4,b5,  b6,  b7,  b8,b9,  b10, b11, b12, b13, b14, b15, b16))
             case _ => None
         }
 
