@@ -73,16 +73,16 @@ pub mod CodePoint {
     /// Returns `true` if the given code point `cp` represents a character in the range 0...7.
     ///
     pub def isOctDigit(cp: Int32): Bool =
-        0x0030 <= cp and cp <= 0x0037     // '0'..'7'
+        0x0030 <= cp and cp <= 0x0037 // '0'..'7'
 
     ///
     /// Returns `true` if the given code point `cp` represents a character in the range 0...F.
     ///
     pub def isHexDigit(cp: Int32): Bool = match cp {
-        case i if 0x0030 <= i and i <= 0x0039 => true        // '0'..'9'
-        case i if 0x0041 <= i and i <= 0x0046 => true        // 'A'..'F'
-        case i if 0x0061 <= i and i <= 0x0066 => true        // 'a'..'f'
-        case _ => false
+        case i if 0x0030 <= i and i <= 0x0039 => true // '0'..'9'
+        case i if 0x0041 <= i and i <= 0x0046 => true // 'A'..'F'
+        case i if 0x0061 <= i and i <= 0x0066 => true // 'a'..'f'
+        case _                                => false
     }
 
     ///
@@ -231,7 +231,7 @@ pub mod CodePoint {
     ///
     pub def toChars(cp: Int32): Option[Vector[Char]] = try {
         region rc {
-            let arr : Array[Char, rc] = Array.empty(rc, 2);
+            let arr: Array[Char, rc] = Array.empty(rc, 2);
             let size = unchecked_cast(Character.toChars(cp, arr, 0) as _ \ rc);
             Array.toVector(arr) |> Vector.takeLeft(size) |> Some
         }
@@ -245,7 +245,7 @@ pub mod CodePoint {
     ///
     pub def toBmpChar(cp: Int32): Option[Char] = try {
         region rc {
-            let arr : Array[Char, rc] = Array.empty(rc, 2);
+            let arr: Array[Char, rc] = Array.empty(rc, 2);
             let i = Character.toChars(cp, arr, 0);
             if (i == 1)
                 Array.nth(0, arr)
@@ -262,7 +262,7 @@ pub mod CodePoint {
     ///
     pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
         region rc {
-            let arr : Array[Char, rc] = Array.empty(rc, 2);
+            let arr: Array[Char, rc] = Array.empty(rc, 2);
             let i = Character.toChars(cp, arr, 0);
             if (i == 2)
                 Some((Array.get(0, arr), Array.get(1, arr)))

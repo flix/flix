@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 pub mod Map {
 
     ///
@@ -92,11 +91,11 @@ pub mod Map {
 
     instance Witherable[Map[k]] with Order[k]
 
-    instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
-        pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
+    instance SemiGroup[Map[k, v]] with Order[k], SemiGroup[v] {
+        pub def combine(x: Map[k, v], y: Map[k, v]): Map[k, v] = Map.unionWith(SemiGroup.combine, x, y)
     }
 
-    instance CommutativeSemiGroup[Map[k,v]] with Order[k], CommutativeSemiGroup[v]
+    instance CommutativeSemiGroup[Map[k, v]] with Order[k], CommutativeSemiGroup[v]
 
     instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
         pub def empty(): Map[k, v] = Map.empty()
@@ -236,7 +235,7 @@ pub mod Map {
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
@@ -266,7 +265,7 @@ pub mod Map {
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
@@ -296,7 +295,7 @@ pub mod Map {
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
@@ -326,7 +325,7 @@ pub mod Map {
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
@@ -589,7 +588,7 @@ pub mod Map {
     pub def count(f: (k, v) -> Bool \ ef, m: Map[k, v]): Int32 \ ef =
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         match purityOf2(f) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     let Map(t) = m;
                     RedBlackTree.parCount(g, t)
@@ -608,7 +607,7 @@ pub mod Map {
         let Map(t) = m;
         def sw() = RedBlackTree.sumWith(f, t);
         match purityOf2(f) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parSumWith(g, t)
                 else
@@ -628,7 +627,7 @@ pub mod Map {
         let Map(t) = m;
         def e() = RedBlackTree.exists(f, t);
         match purityOf2(f) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parExists(g, t)
                 else
@@ -648,7 +647,7 @@ pub mod Map {
         let Map(t) = m;
         def fa() = RedBlackTree.forAll(f, t);
         match purityOf2(f) {
-            case Purity2.Pure(g) =>
+            case Purity2.Pure(g)   =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parForAll(g, t)
                 else
@@ -729,15 +728,18 @@ pub mod Map {
     ///
     pub def differenceWithKey(f: (k, v, v) -> Option[v] \ ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] \ ef with Order[k] =
         let diff = filterWithKey((k, _) -> not memberOf(k, m2), m1);
-        let g = (k, v, acc) -> if (memberOf(k, m1))
-                                match get(k, m1) {
-                                    case Some(v1) => match f(k, v1, v) {
-                                        case None => acc
-                                        case Some(w) => insert(k, w, acc)
-                                    }
-                                    case None => unreachable!()
-                                }
-                             else acc;
+        let g = (k, v, acc) ->
+            if (memberOf(k, m1))
+                match get(k, m1) {
+                    case Some(v1) =>
+                        match f(k, v1, v) {
+                            case None    => acc
+                            case Some(w) => insert(k, w, acc)
+                        }
+                    case None     => unreachable!()
+                }
+            else
+                acc;
         foldRightWithKey(g, diff, m2)
 
     ///
@@ -765,7 +767,7 @@ pub mod Map {
             let a = Array.empty(rc, sz);
             forEachWithIndex((i, k, v) -> Array.put((k, v), i, a), m);
             a
-        }
+    }
 
     ///
     /// Returns the map `m` as a vector.
@@ -786,7 +788,7 @@ pub mod Map {
     /// Returns the map `m` as a chain of key-value pairs.
     ///
     pub def toChain(m: Map[a, b]): Chain[(a, b)] with Order[a] =
-        foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k,v)), Chain.empty(), m)
+        foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k, v)), Chain.empty(), m)
 
     ///
     /// Returns a MultiMap where key `k` is mapped to the singleton set containing `v`.
@@ -818,7 +820,7 @@ pub mod Map {
     ///
     pub def unfold(f: s -> Option[(k, v, s)] \ ef, st: s): Map[k, v] \ ef with Order[k] =
         def loop(sst, m) = match f(sst) {
-            case None            => m
+            case None              => m
             case Some((k, v, st1)) => loop(st1, insert(k, v, m))
         };
         loop(st, empty())
@@ -847,8 +849,8 @@ pub mod Map {
     ///
     pub def iterate(f: (k, v) -> Option[(k, v)] \ ef, k: k, v: v): Map[k, v] \ ef with Order[k] =
         def loop(ck, cv, m) = match f(ck, cv) {
-            case None              => m
-            case Some((k1, v1))    => loop(k1, v1, insert(k1, v1, m))
+            case None           => m
+            case Some((k1, v1)) => loop(k1, v1, insert(k1, v1, m))
         };
         loop(k, v, empty())
 
