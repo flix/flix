@@ -101,13 +101,16 @@ final class TopRenderer(flix: Flix) {
     val pool = flix.threadPool
     val parallelism = if (pool == null) flix.options.threads.max(1) else pool.getParallelism.max(1)
 
-    // Budget rows for the two tables based on the current terminal height.
-    val dataRows = (terminalRows() - ChromeRows).max(MinDataRows)
+    // Budget rows for the two tables based on the current terminal height,
+    // reserving an extra `RowMargin` rows so the view never quite touches
+    // the top or bottom edge of the terminal.
+    val dataRows = (terminalRows() - ChromeRows - RowMargin).max(MinDataRows)
     val moduleN = (dataRows / 3).max(MinModuleN).min(MaxModuleN)
     val defN = (dataRows - moduleN).max(MinDefN).min(MaxDefN)
 
-    // Compute the column layout based on the current terminal width.
-    val layout = computeLayout(terminalCols())
+    // Compute the column layout based on the current terminal width,
+    // reserving 2 columns for the 1-space left and right table padding.
+    val layout = computeLayout((terminalCols() - 2).max(1))
 
     val snap = flix.defnTimer.snapshot().sortBy(-_.totalNanos)
     val visible = snap.take(defN)
@@ -202,9 +205,13 @@ final class TopRenderer(flix: Flix) {
 
   private def renderTableHeader(sb: StringBuilder, layout: Layout): Unit = {
     val header = buildHeader(rpad("Def", layout.symWidth), rpad("location", layout.locWidth), layout)
+    sb.append(' ')
     sb.append(bold(cyan(header)))
+    sb.append(' ')
     sb.append('\n')
+    sb.append(' ')
     sb.append(dim("─" * header.length))
+    sb.append(' ')
     sb.append('\n')
   }
 
@@ -230,7 +237,7 @@ final class TopRenderer(flix: Flix) {
   private def renderRows(sb: StringBuilder, visible: Vector[DefnStats], elapsed: Long, parallelism: Int, layout: Layout): Unit = {
     if (visible.isEmpty) {
       val msg = "(no timings yet)"
-      val pad = ((layout.totalWidth - msg.length) / 2).max(0)
+      val pad = (((layout.totalWidth + 2) - msg.length) / 2).max(0)
       sb.append('\n')
       sb.append(" " * pad)
       sb.append(dim(msg))
@@ -248,10 +255,12 @@ final class TopRenderer(flix: Flix) {
       val symField = rpad(truncate(s.sym.name, layout.symWidth), layout.symWidth)
       val locField = rpad(truncate(locStr, layout.locWidth), layout.locWidth)
 
+      sb.append(' ')
       sb.append(symField)
       sb.append(' ')
       sb.append(dim(locField))
       appendNumericFields(sb, locLines, s.callCount.toLong, phase, s.totalNanos, pctCpu, pctWall, layout)
+      sb.append(' ')
       sb.append('\n')
     }
   }
@@ -262,9 +271,13 @@ final class TopRenderer(flix: Flix) {
     sb.append('\n')
     val modWidth = layout.symWidth + 1 + layout.locWidth
     val header = buildModuleHeader(rpad("Module", modWidth), layout)
+    sb.append(' ')
     sb.append(bold(cyan(header)))
+    sb.append(' ')
     sb.append('\n')
+    sb.append(' ')
     sb.append(dim("─" * header.length))
+    sb.append(' ')
     sb.append('\n')
 
     val safeElapsed = elapsed.max(1L).toDouble
@@ -275,8 +288,10 @@ final class TopRenderer(flix: Flix) {
 
       val modField = rpad(truncate(m.module, modWidth), modWidth)
 
+      sb.append(' ')
       sb.append(modField)
       appendNumericFields(sb, m.totalLocLines, m.totalCallCount, phase, m.totalNanos, pctCpu, pctWall, layout)
+      sb.append(' ')
       sb.append('\n')
     }
   }
@@ -581,6 +596,9 @@ object TopRenderer {
     * 1 blank-before-modules + 2 module-chrome + 1 cursor-parking row.
     */
   private val ChromeRows: Int = 11
+
+  /** Reserved breathing room above and below the rendered view. */
+  private val RowMargin: Int = 2
 
   /** Floor on the total data-row budget. */
   private val MinDataRows: Int = 8
