@@ -1770,9 +1770,13 @@ object PrettyPrinter {
     * @return the formatted use or import list as Doc
     */
   private def prettyUseOrImportList(tree: Tree): Doc = {
-    val children = tree.children.collect { case t: Tree => traverse(t) }
-    if (children.isEmpty) return empty
-    hardStack(children.toList)
+    val items = tree.children.collect { case t: Tree => t }
+    if (items.isEmpty) return empty
+    items.tail.foldLeft((traverse(items.head), items.head.kind: TreeKind)) {
+      case ((acc, prevKind), t) =>
+        val sep = if (t.kind != prevKind) hardline <> hardline else hardline
+        (acc <> sep <> traverse(t), t.kind)
+    }._1
   }
 
   private def prettyChild(child: SyntaxTree.Child): Doc = child match {
