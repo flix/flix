@@ -279,7 +279,8 @@ object PrettyPrinter {
     val bodyParts = rest.drop(eqIndex + 1)
     val sig       = buildSig(sigParts)
     val sigWidth  = pretty(Layout.SingleLine, sig).length
-    val padding   = if (sigWidth < maxWidth) text(" " * (maxWidth - sigWidth)) else empty
+    val isSingleLine = effectiveLayoutOf(tree) == Layout.SingleLine
+    val padding   = if (isSingleLine && sigWidth < maxWidth) text(" " * (maxWidth - sigWidth)) else empty
     val sigPadded = sig <> padding
     val body      = bodyParts.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
 
@@ -298,7 +299,8 @@ object PrettyPrinter {
     val filtered = filterEmpty(children)
     if (filtered.isEmpty) return empty
     val rules    = filtered.collect { case t: Tree if t.kind == TreeKind.Expr.RunWithRuleFragment => t }
-    val maxWidth = rules.map(runWithRulePreEqualWidth).maxOption.getOrElse(0)
+    val singleLineRules = rules.filter(r => effectiveLayoutOf(r) == Layout.SingleLine)
+    val maxWidth = singleLineRules.map(runWithRulePreEqualWidth).maxOption.getOrElse(0)
     val docs = filtered.map {
       case t: Tree if t.kind == TreeKind.Expr.RunWithRuleFragment => alignedRunWithRule(t, maxWidth)
       case other                                                  => prettyChild(other)
@@ -713,7 +715,9 @@ object PrettyPrinter {
     if (idx < 0) return prettyRecordFieldAssign(tree)
     val nameDoc  = recordFieldName(tree)
     val valueDoc = joinWithGap(children.drop(idx + 1))
-    Doc.fill(maxWidth, nameDoc) <+> text("=") <+> valueDoc
+    val isSingleLine = effectiveLayoutOf(tree) == Layout.SingleLine
+    val name = if (isSingleLine) Doc.fill(maxWidth, nameDoc) else nameDoc
+    name <+> text("=") <+> valueDoc
   }
 
   private def alignedRecordBody(fieldKinds: Set[TreeKind], children: Array[SyntaxTree.Child]): Doc = {
@@ -721,7 +725,8 @@ object PrettyPrinter {
     if (filtered.isEmpty) return empty
     val fields = filtered.collect { case t: Tree if fieldKinds.contains(t.kind) => t }
     if (fields.length < 2) return commaBodyJoin(children)
-    val maxWidth = fields.map(recordFieldPreEqualWidth).max
+    val singleLineFields = fields.filter(f => effectiveLayoutOf(f) == Layout.SingleLine)
+    val maxWidth = singleLineFields.map(recordFieldPreEqualWidth).maxOption.getOrElse(0)
     filtered.foldLeft(empty) { (acc, c) =>
       val doc = c match {
         case t: Tree  if fieldKinds.contains(t.kind) => alignedRecordField(t, maxWidth)
@@ -862,13 +867,16 @@ object PrettyPrinter {
     if (idx < 0) return prettyFallback(tree)
     val nameDoc = spaceJoin(children.take(idx), noSpacePairs = Set.empty)
     val typeDoc = joinWithGap(children.drop(idx + 1))
-    Doc.fill(maxWidth + 1, nameDoc <> text(":")) <+> typeDoc
+    val isSingleLine = effectiveLayoutOf(tree) == Layout.SingleLine
+    val head = if (isSingleLine) Doc.fill(maxWidth + 1, nameDoc <> text(":")) else nameDoc <> text(":")
+    head <+> typeDoc
   }
 
   private def alignedStructBody(children: Array[SyntaxTree.Child]): Doc = {
     val filtered = filterEmpty(children)
     val fields   = filtered.collect { case t: Tree if t.kind == TreeKind.StructField => t }
-    val maxWidth = fields.map(structFieldPreColonWidth).maxOption.getOrElse(0)
+    val singleLineFields = fields.filter(f => effectiveLayoutOf(f) == Layout.SingleLine)
+    val maxWidth = singleLineFields.map(structFieldPreColonWidth).maxOption.getOrElse(0)
     val docs = filtered.map {
       case t: Tree if t.kind == TreeKind.StructField => alignedStructField(t, maxWidth)
       case other                                      => prettyChild(other)
@@ -909,7 +917,8 @@ object PrettyPrinter {
   private def alignedMatchBody(children: Array[SyntaxTree.Child]): Doc = {
     val filtered = filterEmpty(children)
     val rules    = filtered.collect { case t: Tree if ArrowRuleKinds.contains(t.kind) => t }
-    val maxWidth = rules.map(arrowPatternWidth).maxOption.getOrElse(0)
+    val singleLineRules = rules.filter(r => effectiveLayoutOf(r) == Layout.SingleLine)
+    val maxWidth = singleLineRules.map(arrowPatternWidth).maxOption.getOrElse(0)
     val docs = filtered.map {
       case t: Tree if ArrowRuleKinds.contains(t.kind) => alignedArrowRule(t, maxWidth)
       case other                                       => prettyChild(other)
@@ -939,11 +948,13 @@ object PrettyPrinter {
     val patternDoc  = arrowPatternHeaderJoin(tree.kind)(patternPart)
     val bodyDoc     = joinWithGap(bodyPart)
     val bodyIsBlock = bodyPart.headOption.exists(isBlockExpr)
+    val isSingleLine = effectiveLayoutOf(tree) == Layout.SingleLine
+    val pattern = if (isSingleLine) Doc.fill(maxWidth, patternDoc) else patternDoc
 
     if (!bodyIsBlock && effectiveLayoutOf(tree) == Layout.MultiLine)
-      Doc.fill(maxWidth, patternDoc) <+> text("=>") <> nest(4, hardline <> bodyDoc)
+      pattern <+> text("=>") <> nest(4, hardline <> bodyDoc)
     else
-      Doc.fill(maxWidth, patternDoc) <+> text("=>") <+> bodyDoc
+      pattern <+> text("=>") <+> bodyDoc
   }
 
   private def prettyTry(tree: Tree): Doc =
