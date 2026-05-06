@@ -234,7 +234,7 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
     if (modules.isEmpty) return
 
     sb.append('\n')
-    val header = f"${"Module"}%-24s ${"LOC"}%6s ${"phase"}%-10s ${"time"}%9s ${"%cpu"}%6s ${"%wall"}%6s"
+    val header = f"${"Module"}%-53s ${"LOC"}%4s ${"n"}%4s ${"phase"}%-10s ${"time"}%9s ${"%cpu"}%6s ${"%wall"}%6s"
     sb.append(bold(cyan(header)))
     sb.append('\n')
     sb.append(dim("─" * header.length))
@@ -247,8 +247,9 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
       val phase = m.dominantPhase.getOrElse("?")
       val isOutlier = m.totalNanos >= outlierThreshold
 
-      val modField = rpad(truncate(m.module, 24), 24)
-      val locField = lpad(if (m.totalLocLines > 0) m.totalLocLines.toString else "-", 6)
+      val modField = rpad(truncate(m.module, 53), 53)
+      val locCntField = lpad(if (m.totalLocLines > 0) m.totalLocLines.toString else "-", 4)
+      val nField = lpad(m.totalCallCount.toString, 4)
       val phaseField = rpad(truncate(phase, 10), 10)
       val timeField = lpad(formatMillis(m.totalNanos), 9)
       val pctCpuField = f"$pctCpu%5.1f%%"
@@ -256,7 +257,9 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
 
       sb.append(if (isOutlier) bold(red(modField)) else modField)
       sb.append(' ')
-      sb.append(locField)
+      sb.append(locCntField)
+      sb.append(' ')
+      sb.append(nField)
       sb.append(' ')
       sb.append(phaseField)
       sb.append(' ')
@@ -432,6 +435,7 @@ object TopRenderer {
   private final case class ModuleStats(
     module: String,
     totalNanos: Long,
+    totalCallCount: Long,
     totalLocLines: Int,
     byPhase: Map[String, Long]
   ) {
@@ -446,13 +450,14 @@ object TopRenderer {
     }
     groups.iterator.map { case (mod, defs) =>
       val totalNanos = defs.iterator.map(_.totalNanos).sum
+      val totalCallCount = defs.iterator.map(_.callCount.toLong).sum
       val totalLocLines = defs.iterator.map(s => locLineCount(s.loc)).sum
       val byPhase = defs.foldLeft(Map.empty[String, Long]) { (acc, d) =>
         d.byPhase.foldLeft(acc) { case (m, (phase, n)) =>
           m.updated(phase, m.getOrElse(phase, 0L) + n)
         }
       }
-      ModuleStats(mod, totalNanos, totalLocLines, byPhase)
+      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase)
     }.toVector.sortBy(-_.totalNanos)
   }
 
