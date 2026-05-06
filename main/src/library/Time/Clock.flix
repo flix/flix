@@ -54,13 +54,13 @@ pub mod Time.Clock {
                 let time = System.currentTimeMillis();
                 let ms = JTimeUnit.MILLISECONDS;
                 match u {
-                    case TimeUnit.Days          => k(ms.toDays(time))
-                    case TimeUnit.Hours         => k(ms.toHours(time))
-                    case TimeUnit.Microseconds  => k(ms.toMicros(time))
-                    case TimeUnit.Milliseconds  => k(ms.toMillis(time))
-                    case TimeUnit.Minutes       => k(ms.toMinutes(time))
-                    case TimeUnit.Nanoseconds   => k(ms.toNanos(time))
-                    case TimeUnit.Seconds       => k(ms.toSeconds(time))
+                    case TimeUnit.Days         => k(ms.toDays(time))
+                    case TimeUnit.Hours        => k(ms.toHours(time))
+                    case TimeUnit.Microseconds => k(ms.toMicros(time))
+                    case TimeUnit.Milliseconds => k(ms.toMillis(time))
+                    case TimeUnit.Minutes      => k(ms.toMinutes(time))
+                    case TimeUnit.Nanoseconds  => k(ms.toNanos(time))
+                    case TimeUnit.Seconds      => k(ms.toSeconds(time))
                 }
             }
         }
