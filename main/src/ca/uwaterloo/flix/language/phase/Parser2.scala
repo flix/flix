@@ -2870,7 +2870,7 @@ object Parser2 {
             delimiterR = TokenKind.CurlyR
           )
         }
-        close(mark, TreeKind.Expr.NewStruct)
+        close(mark, TreeKind.Expr.NewStructOrObject)
       } else if (at(TokenKind.CurlyL)) {
         // `new Type { ... }`.
         zeroOrMore(
@@ -2895,7 +2895,7 @@ object Parser2 {
           delimiterR = TokenKind.CurlyR,
           separation = Separation.None
         )
-        close(mark, TreeKind.Expr.NewObject)
+        close(mark, TreeKind.Expr.NewStructOrObject)
       } else {
         // `new Type(exps...)`.
         arguments()

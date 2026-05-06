@@ -154,8 +154,6 @@ object WeededAst {
 
     case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(name: Name.QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
-
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
@@ -199,7 +197,7 @@ object WeededAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class NewObject(tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewStructOrObject(tpe: Type, region: Option[Expr], fields: List[(Name.Label, Expr)], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 

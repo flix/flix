@@ -291,5 +291,6 @@ object ErrorCode {
   case object E9961 extends ErrorCode
   case object E9972 extends ErrorCode
   case object E9983 extends ErrorCode
+  case object E9990 extends ErrorCode
   case object E9999 extends ErrorCode
 }

@@ -153,8 +153,6 @@ object NamedAst {
 
     case class ArrayLength(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(qname: Name.QName, exps: List[(Name.Label, Expr)], region: Option[Expr], loc: SourceLocation) extends Expr
-
     case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
 
     case class StructPut(exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
@@ -194,7 +192,7 @@ object NamedAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewStructOrObject(name: String, tpe: Type, region: Option[Expr], fields: List[(Name.Label, Expr)], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 

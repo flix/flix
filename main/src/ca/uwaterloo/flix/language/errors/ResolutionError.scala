@@ -488,6 +488,29 @@ object ResolutionError {
     * @param actual   the actual number of parameters.
     * @param loc      the location where the error occurred.
     */
+  /**
+    * An error raised when the body of a `new` expression does not match the kind of name it refers to.
+    *
+    * Occurs when a struct name is given a JVM-style body, or a Java class is given a struct-style body.
+    *
+    * @param name     the qualified name being instantiated.
+    * @param expected a description of the expected body shape.
+    * @param loc      the location where the error occurred.
+    */
+  case class MismatchedNewBody(name: Name.QName, expected: String, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E9990
+
+    def summary: String = s"Mismatched body for 'new ${name.toString}'. Expected $expected."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched body for 'new ${red(name.toString)}'. Expected $expected.
+         |
+         |${highlight(loc, s"expected $expected", fmt)}
+         |""".stripMargin
+    }
+  }
+
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0912
 
