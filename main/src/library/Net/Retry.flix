@@ -76,12 +76,11 @@ pub mod Net.Retry {
                 let delay = match outcome {
                     case RetryOutcome.HttpError(resp) =>
                         match HttpResponse.headerValue("retry-after", resp) {
-                            case Some(s) =>
-                                match Int64.fromString(s) {
-                                    // Clamp to Int32 range to guard against absurd Retry-After values from untrusted servers.
-                                    case Some(secs) => seconds(Int64.clampToInt32(min = 0, max = Int32.maxValue(), secs))
-                                    case None       => baseDelay
-                                }
+                            case Some(s) => match Int64.fromString(s) {
+                                // Clamp to Int32 range to guard against absurd Retry-After values from untrusted servers.
+                                case Some(secs) => seconds(Int64.clampToInt32(min = 0, max = Int32.maxValue(), secs))
+                                case None       => baseDelay
+                            }
                             case None => baseDelay
                         }
                     case RetryOutcome.TransportError(_) => baseDelay
