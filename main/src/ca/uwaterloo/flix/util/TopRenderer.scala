@@ -33,7 +33,7 @@ import scala.jdk.CollectionConverters.*
   * [[TopRenderer.RefreshIntervalMs]] milliseconds and re-renders the screen
   * using ANSI escape codes.
   */
-final class TopRenderer(flix: Flix, topN: Int = 20) {
+final class TopRenderer(flix: Flix, topN: Int = 10) {
 
   import TopRenderer.*
 
@@ -89,18 +89,23 @@ final class TopRenderer(flix: Flix, topN: Int = 20) {
     while (throughputHistory.size > SparkWidth) throughputHistory.dequeue()
 
     // Outlier threshold: mean + 2σ of total nanos across visible entries.
-    val outlierThreshold = computeOutlierThreshold(visible)
+    val defOutlierThreshold = computeOutlierThreshold(visible.map(_.totalNanos))
+
+    // Aggregate by module for the second table.
+    val modules = aggregateByModule(snap).take(ModuleTopN)
+    val moduleOutlierThreshold = computeOutlierThreshold(modules.map(_.totalNanos))
 
     val sb = new StringBuilder
     sb.append(ClearScreen)
+    sb.append('\n')
 
     renderHeader(sb, elapsed)
     renderProgressBar(sb)
     renderResources(sb, elapsed, throughputPerSec)
     sb.append('\n')
     renderTableHeader(sb)
-    renderRows(sb, visible, elapsed, parallelism, outlierThreshold)
-    renderLegend(sb)
+    renderRows(sb, visible, elapsed, parallelism, defOutlierThreshold)
+    renderModuleTable(sb, modules, elapsed, parallelism, moduleOutlierThreshold)
 
     System.out.print(sb)
     System.out.flush()
@@ -118,6 +123,7 @@ final class TopRenderer(flix: Flix, topN: Int = 20) {
       if (pool == null) (0, flix.options.threads)
       else (pool.getActiveThreadCount, pool.getParallelism)
 
+    sb.append("  ")
     sb.append(color(rpad(phase, 14), groupColor(group)))
     sb.append(dim(" ("))
     sb.append(color(group, groupColor(group)))
@@ -135,8 +141,9 @@ final class TopRenderer(flix: Flix, topN: Int = 20) {
     val done = if (idx < 0) 0 else idx + 1
     val filled = (BarWidth.toLong * done / total).toInt
 
+    sb.append("  ")
     sb.append(dim("["))
-    sb.append(cyan("█" * filled))
+    sb.append(dim(cyan("█" * filled)))
     sb.append(dim("░" * (BarWidth - filled)))
     sb.append(dim("] "))
     sb.append(f"$done%2d/$total%2d")
@@ -153,6 +160,7 @@ final class TopRenderer(flix: Flix, topN: Int = 20) {
     val heapRatio = if (heapMaxMb <= 0) 0.0 else heapUsedMb.toDouble / heapMaxMb
     val gcField = f"$gcPct%4.1f%% (${gcMs}%5dms)"
 
+    sb.append("  ")
     sb.append(dim("heap: "))
     sb.append(styleHeap(heapUsedField, heapRatio))
     sb.append(dim(" / "))
@@ -160,14 +168,14 @@ final class TopRenderer(flix: Flix, topN: Int = 20) {
     sb.append(dim("   gc: "))
     sb.append(styleGc(gcField, gcPct))
     sb.append(dim("   throughput: "))
-    sb.append(cyan(renderSparkline()))
+    sb.append(dim(cyan(renderSparkline())))
     sb.append(' ')
     sb.append(formatRate(throughputPerSec))
     sb.append('\n')
   }
 
   private def renderTableHeader(sb: StringBuilder): Unit = {
-    val header = f"${"DefnSym"}%-38s ${"location"}%-22s ${"LOC"}%4s ${"n"}%4s ${"phase"}%-12s ${"time"}%9s ${"%cpu"}%6s ${"%wall"}%6s"
+    val header = f"${"DefnSym"}%-24s ${"location"}%-28s ${"LOC"}%4s ${"n"}%4s ${"phase"}%-10s ${"time"}%9s ${"%cpu"}%6s ${"%wall"}%6s"
     sb.append(bold(cyan(header)))
     sb.append('\n')
     sb.append(dim("─" * header.length))
@@ -176,7 +184,13 @@ final class TopRenderer(flix: Flix, topN: Int = 20) {
 
   private def renderRows(sb: StringBuilder, visible: Vector[DefnStats], elapsed: Long, parallelism: Int, outlierThreshold: Long): Unit = {
     if (visible.isEmpty) {
-      sb.append(dim("(no DefnSyms have been timed yet)\n"))
+      val msg = "(no timings yet)"
+      val pad = ((DefTableWidth - msg.length) / 2).max(0)
+      sb.append('\n')
+      sb.append('\n')
+      sb.append(" " * pad)
+      sb.append(dim(msg))
+      sb.append('\n')
       return
     }
     val safeElapsed = elapsed.max(1L).toDouble
@@ -188,11 +202,11 @@ final class TopRenderer(flix: Flix, topN: Int = 20) {
       val phase = s.dominantPhase.getOrElse("?")
       val isOutlier = s.totalNanos >= outlierThreshold
 
-      val symField = rpad(truncate(s.sym.toString, 38), 38)
-      val locField = rpad(truncate(locStr, 22), 22)
+      val symField = rpad(truncate(s.sym.name, 24), 24)
+      val locField = rpad(truncate(locStr, 28), 28)
       val locCntField = lpad(if (locLines > 0) locLines.toString else "-", 4)
       val nField = lpad(s.callCount.toString, 4)
-      val phaseField = rpad(truncate(phase, 12), 12)
+      val phaseField = rpad(truncate(phase, 10), 10)
       val timeField = lpad(formatMillis(s.totalNanos), 9)
       val pctCpuField = f"$pctCpu%5.1f%%"
       val pctWallField = f"$pctWall%5.1f%%"
@@ -216,10 +230,43 @@ final class TopRenderer(flix: Flix, topN: Int = 20) {
     }
   }
 
-  private def renderLegend(sb: StringBuilder): Unit = {
+  private def renderModuleTable(sb: StringBuilder, modules: Vector[ModuleStats], elapsed: Long, parallelism: Int, outlierThreshold: Long): Unit = {
+    if (modules.isEmpty) return
+
     sb.append('\n')
-    sb.append(dim("bold red sym = outlier (>µ+2σ)    %cpu = totalNanos / (elapsed × threads)    %wall = totalNanos / elapsed"))
+    val header = f"${"Module"}%-24s ${"LOC"}%6s ${"phase"}%-10s ${"time"}%9s ${"%cpu"}%6s ${"%wall"}%6s"
+    sb.append(bold(cyan(header)))
     sb.append('\n')
+    sb.append(dim("─" * header.length))
+    sb.append('\n')
+
+    val safeElapsed = elapsed.max(1L).toDouble
+    for (m <- modules) {
+      val pctWall = 100.0 * m.totalNanos / safeElapsed
+      val pctCpu = pctWall / parallelism
+      val phase = m.dominantPhase.getOrElse("?")
+      val isOutlier = m.totalNanos >= outlierThreshold
+
+      val modField = rpad(truncate(m.module, 24), 24)
+      val locField = lpad(if (m.totalLocLines > 0) m.totalLocLines.toString else "-", 6)
+      val phaseField = rpad(truncate(phase, 10), 10)
+      val timeField = lpad(formatMillis(m.totalNanos), 9)
+      val pctCpuField = f"$pctCpu%5.1f%%"
+      val pctWallField = f"$pctWall%5.1f%%"
+
+      sb.append(if (isOutlier) bold(red(modField)) else modField)
+      sb.append(' ')
+      sb.append(locField)
+      sb.append(' ')
+      sb.append(phaseField)
+      sb.append(' ')
+      sb.append(styleTime(timeField, m.totalNanos))
+      sb.append(' ')
+      sb.append(stylePctCpu(pctCpuField, pctCpu))
+      sb.append(' ')
+      sb.append(stylePctWall(pctWallField, pctWall))
+      sb.append('\n')
+    }
   }
 
   private def renderSparkline(): String = {
@@ -373,14 +420,47 @@ object TopRenderer {
     ManagementFactory.getGarbageCollectorMXBeans.asScala.iterator
       .map(_.getCollectionTime).filter(_ >= 0L).sum
 
-  private def computeOutlierThreshold(stats: Vector[DefnStats]): Long = {
-    if (stats.length < 3) return Long.MaxValue
-    val xs = stats.map(_.totalNanos.toDouble).toArray
+  private def computeOutlierThreshold(values: Iterable[Long]): Long = {
+    val xs = values.iterator.map(_.toDouble).toArray
+    if (xs.length < 3) return Long.MaxValue
     val mean = xs.sum / xs.length
     val variance = xs.map(x => (x - mean) * (x - mean)).sum / xs.length
     val stdev = math.sqrt(variance)
     (mean + 2.0 * stdev).toLong
   }
+
+  private final case class ModuleStats(
+    module: String,
+    totalNanos: Long,
+    totalLocLines: Int,
+    byPhase: Map[String, Long]
+  ) {
+    def dominantPhase: Option[String] =
+      if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
+  }
+
+  private def aggregateByModule(snap: Vector[DefnStats]): Vector[ModuleStats] = {
+    val groups = snap.groupBy { s =>
+      val ns = s.sym.namespace
+      if (ns.isEmpty) "(root)" else ns.mkString(".")
+    }
+    groups.iterator.map { case (mod, defs) =>
+      val totalNanos = defs.iterator.map(_.totalNanos).sum
+      val totalLocLines = defs.iterator.map(s => locLineCount(s.loc)).sum
+      val byPhase = defs.foldLeft(Map.empty[String, Long]) { (acc, d) =>
+        d.byPhase.foldLeft(acc) { case (m, (phase, n)) =>
+          m.updated(phase, m.getOrElse(phase, 0L) + n)
+        }
+      }
+      ModuleStats(mod, totalNanos, totalLocLines, byPhase)
+    }.toVector.sortBy(-_.totalNanos)
+  }
+
+  /** Top N modules to display in the module-aggregate table. */
+  private val ModuleTopN: Int = 5
+
+  /** Width of the def-table border (sum of column widths plus separators). */
+  private val DefTableWidth: Int = 98
 
   // -- Formatting helpers -------------------------------------------------
 
