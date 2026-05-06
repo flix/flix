@@ -19,6 +19,7 @@ pub mod Net.IpAddr {
     use Net.IpAddr
     use Net.Ipv4Addr
     use Net.Ipv6Addr
+
     import java.net.UnknownHostException
 
     ///

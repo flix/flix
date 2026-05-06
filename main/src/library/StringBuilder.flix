@@ -17,6 +17,7 @@
 pub mod StringBuilder {
 
     use IoError.IoError
+
     import java.lang.{StringBuilder => JStringBuilder}
 
     ///

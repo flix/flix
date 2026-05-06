@@ -15,6 +15,7 @@
  */
 pub mod Fixpoint3.Boxable {
     import java.lang.Object
+
     use Vector.get
     use Fixpoint3.Boxed
 

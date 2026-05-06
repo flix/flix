@@ -19,6 +19,7 @@ mod Fs.InMemoryFs {
     import java.nio.file.FileSystems
     import java.nio.file.PathMatcher
     import java.nio.file.Paths
+
     use IoError.IoError
     use IoError.ErrorKind
     use Time.Clock

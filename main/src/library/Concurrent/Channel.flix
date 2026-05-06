@@ -19,6 +19,7 @@
 pub mod Concurrent.Channel {
 
     import dev.flix.runtime.Global
+
     use Concurrent.ReentrantLock.lock
     use Concurrent.ReentrantLock
     use Concurrent.ReentrantLock.newLock

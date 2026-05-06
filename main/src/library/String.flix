@@ -22,6 +22,7 @@ pub mod String {
     import java.util.regex.Pattern
     import java.util.regex.PatternSyntaxException
     import java.lang.IndexOutOfBoundsException
+
     use Regex.Flag
 
     ///

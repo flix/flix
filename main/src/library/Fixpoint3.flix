@@ -18,6 +18,7 @@
 pub mod Fixpoint3 {
     import java.lang.Object
     import java.util.concurrent.locks.{ReadWriteLock => JReadWriteLock}
+
     use Fixpoint3.Ast.Shared.PredSym
 
     ///

@@ -17,6 +17,7 @@
 pub mod Sys.Env {
 
     use Sys.Env
+
     import dev.flix.runtime.Global
     import java.lang.Exception
     import java.lang.Runtime

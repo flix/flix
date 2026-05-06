@@ -34,6 +34,7 @@ pub mod Regex {
     import java.util.regex.Pattern
     import java.util.regex.{Matcher => JMatcher}
     import java.lang.Exception
+
     use Regex.Flag
     use Regex.Flag.{
         CanonEq,

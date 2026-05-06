@@ -19,6 +19,7 @@ pub mod Net.Ipv6Addr {
     import java.lang.NumberFormatException
     import java.net.InetAddress
     import java.net.UnknownHostException
+
     use Net.Ipv4Addr
     use Net.Ipv6Addr
 

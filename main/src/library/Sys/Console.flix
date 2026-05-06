@@ -17,6 +17,7 @@
 pub mod Sys.Console {
 
     use Sys.Console
+
     import java.lang.System
     import java.io.BufferedReader
     import java.io.InputStreamReader
@@ -183,10 +184,10 @@ pub mod Sys.Console {
         run {
             f(x)
         } with handler Console {
-            def readln(k) = k(reader())
-            def print(s, k) = { System.out.print(s); System.out.flush(); k() }
-            def eprint(s, k) = { System.err.print(s); System.err.flush(); k() }
-            def println(s, k) = { System.out.println(s); System.out.flush(); k() }
+            def readln(k)      = k(reader())
+            def print(s, k)    = { System.out.print(s); System.out.flush(); k() }
+            def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }
+            def println(s, k)  = { System.out.println(s); System.out.flush(); k() }
             def eprintln(s, k) = { System.err.println(s); System.err.flush(); k() }
         }
 

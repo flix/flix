@@ -18,6 +18,7 @@
 
 pub mod Fixpoint3.Solver {
     import dev.flix.runtime.Global
+
     use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym}
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, HeadTerm}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model, Provenance}

@@ -20,6 +20,7 @@ pub mod Time.Sleep {
     use Time.Duration
     use Time.Sleep
     use RichString.{text, gray}
+
     import java.lang.{Thread => JThread}
 
     ///

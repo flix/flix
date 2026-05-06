@@ -17,6 +17,7 @@
 pub mod Hash {
 
     use Bool.{==>}
+
     import java.lang.Byte
     import java.lang.Character
     import java.lang.Double

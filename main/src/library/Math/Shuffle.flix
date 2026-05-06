@@ -17,6 +17,7 @@
 pub mod Math.Shuffle {
 
     use Math.Shuffle
+
     import java.util.{Random => JRandom}
 
     ///
