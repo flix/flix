@@ -64,10 +64,6 @@ object TypeError {
   case class ArgumentGivenWrongEffect(expected: List[EffSymOrRigidVar], actual: List[EffSymOrRigidVar], loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6218
 
-    private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
-      case x :: Nil => s"'${x.name}'"
-      case xs => xs.map(_.name).mkString("'{", ", ", "}'")
-    }
 
     def summary: String =
       s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
@@ -181,22 +177,19 @@ object TypeError {
     *
     * @param defEffSyms the symbol(s) the effect(s) in the function definition
     * @param usedEffSym the symbol of the effect causing the error
-    * @param loc    the location of the function explicitly declared as defEffSym.
-    * @param loc2   the location where the other effect is used.
+    * @param loc        the location of the function explicitly declared as defEffSym.
+    * @param loc2       the location where the other effect is used.
     */
   case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6216
 
-    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as '${defEffSyms}'"
+    //override def locs: List[SourceLocation] = List(loc, loc2)
+
+    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as '${effectsToString(defEffSyms)}'"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      def formatEffs(syms: List[EffSymOrRigidVar]): String = syms match {
-        case Nil => ""
-        case end :: Nil => s"${magenta(end.name)}"
-        case head :: tail => s"${magenta(head.name)}, " + formatEffs(tail)
-      }
-      val defString = s"{${magenta(formatEffs(defEffSyms))}}"
+      val defString = s"{${magenta(effectsToString(defEffSyms))}}"
       s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
          |
          |${highlight(loc, s"function declared as '$defString'", fmt)}
@@ -205,7 +198,7 @@ object TypeError {
          |
          |${underline("Explanation:")} The function is explicitly declared as '$defString',
          |meaning it may not perform other effects. Since '${magenta(usedEffSym.name)}' is another effect,
-         |it cannot be used in this function. To fix this, either add ${(magenta(usedEffSym.name))} to $defString
+         |it cannot be used in this function. To fix this, either add ${magenta(usedEffSym.name)} to $defString
          |or remove the use of '${magenta(usedEffSym.name)}' inside the function.
          |""".stripMargin
     }
@@ -222,6 +215,8 @@ object TypeError {
     def code: ErrorCode = ErrorCode.E6215
 
     def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
+
+    //override def locs: List[SourceLocation] = List(loc, loc2)
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
@@ -950,7 +945,7 @@ object TypeError {
     * An error raised when an effect declared in a function signature is unused.
     *
     * @param unusedEff the symbol of the unused effect in the function signature
-    * @param loc    the location of the unused effect in the function signature.
+    * @param loc       the location of the unused effect in the function signature.
     */
   case class UnusedEffectInSignature(unusedEff: EffSymOrRigidVar, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6217
@@ -961,11 +956,12 @@ object TypeError {
       import fmt.*
       s"""${highlight(loc, s"Unused effect: '${magenta(unusedEff.name)}'", fmt)}
          |
-         |${underline("Explanation:")} To fix this, either remove '${(magenta(unusedEff.name))}' from the signature
+         |${underline("Explanation:")} To fix this, either remove '${magenta(unusedEff.name)}' from the signature
          |or use the effect in the function body
          |""".stripMargin
     }
   }
+
   /**
     * Returns the constructors of the given class sorted by parameter count.
     */
@@ -1003,6 +999,11 @@ object TypeError {
       Type.getFlixType(tpe).toString
     else
       tpe.getName
+  }
+
+  private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
+    case x :: Nil => s"'${x.name}'"
+    case xs => xs.map(_.name).mkString("'{", ", ", "}'")
   }
 
 }
