@@ -123,9 +123,8 @@ final class TopRenderer(flix: Flix) {
     sb.append(ClearScreen)
     sb.append('\n')
 
-    renderHeader(sb, elapsed)
-    renderProgressBar(sb)
-    renderResources(sb, elapsed, activeThreads, parallelism)
+    renderDashboard(sb, activeThreads, parallelism)
+    renderStats(sb, elapsed)
     sb.append('\n')
     renderTableHeader(sb, layout)
     renderRows(sb, visible, elapsed, parallelism, layout)
@@ -136,36 +135,40 @@ final class TopRenderer(flix: Flix) {
 
   }
 
-  private def renderHeader(sb: StringBuilder, elapsed: Long): Unit = {
+  /**
+    * Top dashboard line: current phase + progress bar + active-threads bar.
+    * Both bars sit beside each other so the eye picks them up as a pair.
+    */
+  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int): Unit = {
     val phase = flix.currentPhaseName
     val group = phaseGroup(phase)
-
-    sb.append("  ")
-    sb.append(color(rpad(phase, 14), groupColor(group)))
-    sb.append(dim(" ("))
-    sb.append(color(group, groupColor(group)))
-    sb.append(dim(")   elapsed: "))
-    sb.append(formatMillis(elapsed))
-    sb.append('\n')
-  }
-
-  private def renderProgressBar(sb: StringBuilder): Unit = {
-    val phase = flix.currentPhaseName
     val total = Phases.size
     val idx = Phases.indexOf(phase)
     val done = if (idx < 0) 0 else idx + 1
     val filled = (BarWidth.toLong * done / total).toInt
 
     sb.append("  ")
+    sb.append(color(rpad(phase, MaxPhaseLen), groupColor(group)))
+    sb.append(' ')
+    sb.append(dim("("))
+    sb.append(color(group, groupColor(group)))
+    sb.append(dim(")"))
+    sb.append(" " * (MaxGroupLen - group.length).max(0))
+    sb.append(dim("  progress "))
     sb.append(dim("["))
     sb.append(dim(cyan("█" * filled)))
     sb.append(dim("░" * (BarWidth - filled)))
     sb.append(dim("] "))
     sb.append(f"$done%2d/$total%2d")
+    sb.append(dim("   threads "))
+    sb.append(dim(cyan(renderSparkline(parallelism.toDouble))))
+    sb.append(' ')
+    sb.append(styleThreads(activeThreads, parallelism))
     sb.append('\n')
   }
 
-  private def renderResources(sb: StringBuilder, elapsed: Long, activeThreads: Int, parallelism: Int): Unit = {
+  /** Stats line: elapsed · heap · gc. */
+  private def renderStats(sb: StringBuilder, elapsed: Long): Unit = {
     val (heapUsedMb, heapMaxMb) = heapUsage()
     val gcMs = gcMillis()
     val gcPct = 100.0 * gcMs * 1_000_000L / elapsed.max(1L)
@@ -174,18 +177,19 @@ final class TopRenderer(flix: Flix) {
     val heapMaxField = f"$heapMaxMb%4d MB"
     val heapRatio = if (heapMaxMb <= 0) 0.0 else heapUsedMb.toDouble / heapMaxMb
     val gcField = f"$gcPct%4.1f%% (${gcMs}%5dms)"
+    val sep = dim(" · ")
 
     sb.append("  ")
-    sb.append(dim("heap: "))
+    sb.append(dim("elapsed "))
+    sb.append(formatMillis(elapsed))
+    sb.append(sep)
+    sb.append(dim("heap "))
     sb.append(styleHeap(heapUsedField, heapRatio))
     sb.append(dim(" / "))
     sb.append(heapMaxField)
-    sb.append(dim("   gc: "))
+    sb.append(sep)
+    sb.append(dim("gc "))
     sb.append(styleGc(gcField, gcPct))
-    sb.append(dim("   threads: "))
-    sb.append(dim(cyan(renderSparkline(parallelism.toDouble))))
-    sb.append(' ')
-    sb.append(styleThreads(activeThreads, parallelism))
     sb.append('\n')
   }
 
@@ -341,11 +345,17 @@ object TopRenderer {
   /** How often the screen refreshes, in milliseconds. */
   private val RefreshIntervalMs: Long = 100L
 
-  /** Width (in characters) of the phase-progress bar. */
-  private val BarWidth: Int = 32
+  /** Maximum length of any name in [[Phases]] — used to pad the phase column. Lazy to defer until [[Phases]] is initialized. */
+  private lazy val MaxPhaseLen: Int = Phases.iterator.map(_.length).max
 
-  /** Width of the throughput sparkline. */
-  private val SparkWidth: Int = 24
+  /** Maximum length of any group label — `"semantic"` is the longest at 8. */
+  private val MaxGroupLen: Int = 8
+
+  /** Width (in characters) of the phase-progress bar. */
+  private val BarWidth: Int = 12
+
+  /** Width of the threads-sparkline. */
+  private val SparkWidth: Int = 12
 
   /** Block characters used for the sparkline, low → high. */
   private val SparkChars: Array[Char] = "▁▂▃▄▅▆▇█".toArray
@@ -582,10 +592,10 @@ object TopRenderer {
   }
 
   /**
-    * Fixed-overhead rows: blank + 3 header lines + blank + 2 def-chrome +
+    * Fixed-overhead rows: blank + 2 dashboard/stats lines + blank + 2 def-chrome +
     * 1 blank-before-modules + 2 module-chrome + 1 cursor-parking row.
     */
-  private val ChromeRows: Int = 11
+  private val ChromeRows: Int = 10
 
   /** Reserved breathing room above and below the rendered view. */
   private val RowMargin: Int = 2
