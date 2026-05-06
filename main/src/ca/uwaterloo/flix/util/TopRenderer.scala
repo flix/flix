@@ -156,7 +156,7 @@ final class TopRenderer(flix: Flix) {
     sb.append(" " * (MaxGroupLen - group.length).max(0))
     sb.append(dim("  progress "))
     sb.append(dim("["))
-    sb.append(dim(cyan("█" * filled)))
+    sb.append(green("█" * filled))
     sb.append(dim("░" * (BarWidth - filled)))
     sb.append(dim("] "))
     sb.append(f"$done%2d/$total%2d")
@@ -167,29 +167,34 @@ final class TopRenderer(flix: Flix) {
     sb.append('\n')
   }
 
-  /** Stats line: elapsed · heap · gc. */
+  /**
+    * Stats line: elapsed (right-aligned under `progress`) and heap
+    * (right-aligned under `threads`).
+    */
   private def renderStats(sb: StringBuilder, elapsed: Long): Unit = {
     val (heapUsedMb, heapMaxMb) = heapUsage()
-    val gcMs = gcMillis()
-    val gcPct = 100.0 * gcMs * 1_000_000L / elapsed.max(1L)
-
     val heapUsedField = f"$heapUsedMb%4d MB"
     val heapMaxField = f"$heapMaxMb%4d MB"
     val heapRatio = if (heapMaxMb <= 0) 0.0 else heapUsedMb.toDouble / heapMaxMb
-    val gcField = f"$gcPct%4.1f%% (${gcMs}%5dms)"
-    val sep = dim(" · ")
+    val elapsedField = formatMillis(elapsed)
+
+    // "elapsed" (7 chars) right-aligned with "progress" (8 chars) → start at GcStartCol + 1.
+    val elapsedStartCol = GcStartCol + 1
+    // "heap" (4 chars) right-aligned with "threads" (7 chars) → start at HeapStartCol + 3.
+    val heapStartCol = HeapStartCol + 3
 
     sb.append("  ")
+    sb.append(" " * (elapsedStartCol - 3).max(0))
     sb.append(dim("elapsed "))
-    sb.append(formatMillis(elapsed))
-    sb.append(sep)
+    sb.append(elapsedField)
+
+    val colAfterElapsed = elapsedStartCol + "elapsed ".length + elapsedField.length
+    sb.append(" " * (heapStartCol - colAfterElapsed).max(1))
+
     sb.append(dim("heap "))
     sb.append(styleHeap(heapUsedField, heapRatio))
     sb.append(dim(" / "))
     sb.append(heapMaxField)
-    sb.append(sep)
-    sb.append(dim("gc "))
-    sb.append(styleGc(gcField, gcPct))
     sb.append('\n')
   }
 
@@ -353,6 +358,12 @@ object TopRenderer {
 
   /** Width (in characters) of the phase-progress bar. */
   private val BarWidth: Int = 12
+
+  /** 1-indexed column where the `gc` label starts on the stats line, aligned with `progress` on the dashboard. */
+  private lazy val GcStartCol: Int = 8 + MaxPhaseLen + MaxGroupLen
+
+  /** 1-indexed column where the `heap` label starts on the stats line, aligned with `threads` on the dashboard. */
+  private lazy val HeapStartCol: Int = GcStartCol + 20 + BarWidth
 
   /** Width of the threads-sparkline. */
   private val SparkWidth: Int = 12
