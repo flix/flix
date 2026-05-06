@@ -369,11 +369,13 @@ object PrettyPrinter {
 
     if (body.isEmpty) headerDoc
     else {
-      val bodyDoc    = body.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
-      val bodyIsBlock = body.headOption.exists(isBlockExpr)
+      val bodyDoc        = body.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
+      val bodyIsBraced   = body.headOption.exists(isBracedExpr)
+      val bodyOnSameLine = bodyStartsOnSameLineAs(children(arrowIndex), body)
       localLayout(tree) {
-        if (bodyIsBlock) headerDoc <+> bodyDoc
-        else headerDoc <> nest(4, line <> bodyDoc)
+        if (bodyIsBraced && bodyOnSameLine) headerDoc <+> bodyDoc
+        else if (bodyIsBraced)              headerDoc <> nest(4, hardline <> bodyDoc)
+        else                                 headerDoc <> nest(4, line <> bodyDoc)
       }
     }
   }
@@ -791,12 +793,18 @@ object PrettyPrinter {
     if (leading.isEmpty) {
       bodyDoc
     } else {
+      val hasLeadingComma = leading.exists {
+        case t: Token if t.kind == TokenKind.Comma => true
+        case _ => false
+      }
       val comments = leading.filter {
         case t: Token if t.kind == TokenKind.Comma => false
         case _ => true
       }
       comments.map(prettyChild).reduceLeftOption(_ <+> _) match {
-        case Some(commentDoc) => space <> commentDoc <> hardline <> bodyDoc
+        case Some(commentDoc) =>
+          if (hasLeadingComma) space <> commentDoc <> hardline <> bodyDoc
+          else                 commentDoc <> hardline <> bodyDoc
         case None             => hardline <> bodyDoc
       }
     }
@@ -943,15 +951,18 @@ object PrettyPrinter {
     val idx = children.indexWhere { case t: Token if t.kind == TokenKind.ArrowThickR => true; case _ => false }
     if (idx < 0) return prettyFallback(tree)
 
-    val patternPart = children.take(idx)
-    val bodyPart    = children.drop(idx + 1)
-    val patternDoc  = arrowPatternHeaderJoin(tree.kind)(patternPart)
-    val bodyDoc     = joinWithGap(bodyPart)
-    val bodyIsBlock = bodyPart.headOption.exists(isBlockExpr)
-    val isSingleLine = effectiveLayoutOf(tree) == Layout.SingleLine
+    val patternPart    = children.take(idx)
+    val bodyPart       = children.drop(idx + 1)
+    val patternDoc     = arrowPatternHeaderJoin(tree.kind)(patternPart)
+    val bodyDoc        = joinWithGap(bodyPart)
+    val bodyIsBraced   = bodyPart.headOption.exists(isBracedExpr)
+    val bodyOnSameLine = bodyStartsOnSameLineAs(children(idx), bodyPart)
+    val isSingleLine   = effectiveLayoutOf(tree) == Layout.SingleLine
     val pattern = if (isSingleLine) Doc.fill(maxWidth, patternDoc) else patternDoc
 
-    if (!bodyIsBlock && effectiveLayoutOf(tree) == Layout.MultiLine)
+    if (bodyIsBraced && !bodyOnSameLine)
+      pattern <+> text("=>") <> nest(4, hardline <> bodyDoc)
+    else if (!bodyIsBraced && effectiveLayoutOf(tree) == Layout.MultiLine)
       pattern <+> text("=>") <> nest(4, hardline <> bodyDoc)
     else
       pattern <+> text("=>") <+> bodyDoc
