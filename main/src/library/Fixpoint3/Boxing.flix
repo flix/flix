@@ -44,6 +44,7 @@
 ///
 pub mod Fixpoint3.Boxing {
     import java.lang.{Float, Double, Object, Character, Runtime}
+
     use Fixpoint3.Ast.Datalog.Datalog
     use Fixpoint3.Ast.ExecutableRam.{Facts => EFacts}
     use Fixpoint3.Ast.Ram
@@ -102,21 +103,25 @@ pub mod Fixpoint3.Boxing {
         boxingInfo: Boxing[r],
         mapping: Vector[Int32],
         newTree: BPlusTree[Vector[Int64], Boxed, r]
-    ): Unit \ r + IO = unchecked_cast({
-        facts |>
-            BPlusTree.forEach(tuple -> lat -> {
-                // `facts` and `newTree` must have same the same region. Cast to achieve this.
-                unchecked_cast(({
-                    let savedVec = tuple |>
-                        Vector.mapWithIndex(index -> boxedVal ->
-                            let unifiedPos = Vector.get(index, mapping);
-                            unboxWith(boxedVal, unifiedPos, boxingInfo)
-                        );
-                    BPlusTree.put(savedVec, lat, newTree)
-                }: _ \ r) as _ \ IO)}
-            )
+    ): Unit \ r + IO =
+        unchecked_cast({
+            facts
+                |> BPlusTree.forEach(
+                    tuple -> lat -> {
+                        // `facts` and `newTree` must have same the same region. Cast to achieve this.
+                        unchecked_cast(({
+                            let savedVec = tuple
+                                |> Vector.mapWithIndex(
+                                    index -> boxedVal ->
+                                        let unifiedPos = Vector.get(index, mapping);
+                                        unboxWith(boxedVal, unifiedPos, boxingInfo)
+                                );
+                            BPlusTree.put(savedVec, lat, newTree)
+                        }: _\r) as _ \ IO)
+                    }
+                )
     // This is to signal that we indeed modify the region `r`.
-    } as _ \ IO + r)
+        } as _ \ IO + r)
 
     ///
     /// Construct a `Boxing` from `program`.
@@ -171,13 +176,17 @@ pub mod Fixpoint3.Boxing {
         let objectList = Vector.get(index, objectLists);
         let objectMap = Vector.get(index, vecObjectMap);
         let lock = Vector.get(index, locks);
-        BPlusTree.computeIfAbsent(() -> {
-            ReadWriteLock.writeLock(lock);
-            let id = getNextIndex(objectList);
-            MutList.insert(box, id, objectList);
-            ReadWriteLock.unlockWrite(lock);
-            Int32.toInt64(id)
-        }, box, objectMap)
+        BPlusTree.computeIfAbsent(
+            () -> {
+                ReadWriteLock.writeLock(lock);
+                let id = getNextIndex(objectList);
+                MutList.insert(box, id, objectList);
+                ReadWriteLock.unlockWrite(lock);
+                Int32.toInt64(id)
+            },
+            box,
+            objectMap
+        )
     }
 
     ///
@@ -230,16 +239,16 @@ pub mod Fixpoint3.Boxing {
     pub def boxWith(v: Int64, index: UnifiedTypePos, info: Boxing[r]): Boxed \ r =
         let (_, _, typeInfo, _) = info;
         match BoxingType.getType(index, typeInfo) {
-            case Types.TyBool      => Boxed.BoxedBool(not(v == 0i64))
-            case Types.TyChar      => BoxedChar(unsafe IO { Array.get(0, Character.toChars(getOrCrash(Int64.tryToInt32(v)))) })
-            case Types.TyInt8      => BoxedInt8(getOrCrash(Int64.tryToInt8(v)))
-            case Types.TyInt16     => BoxedInt16(getOrCrash(Int64.tryToInt16(v)))
-            case Types.TyInt32     => BoxedInt32(getOrCrash(Int64.tryToInt32(v)))
-            case Types.TyInt64     => BoxedInt64(v)
-            case Types.TyFloat32   => BoxedFloat32(Float.intBitsToFloat(getOrCrash(Int64.tryToInt32(v))))
-            case Types.TyFloat64   => BoxedFloat64(Double.longBitsToDouble(v))
-            case Types.TyObject    => deMarshalObject(v, index, info)
-            case Types.TyUnknown   => bug!("Unormalizing value, which has never been normalized")
+            case Types.TyBool    => Boxed.BoxedBool(not (v == 0i64))
+            case Types.TyChar    => BoxedChar(unsafe IO { Array.get(0, Character.toChars(getOrCrash(Int64.tryToInt32(v)))) })
+            case Types.TyInt8    => BoxedInt8(getOrCrash(Int64.tryToInt8(v)))
+            case Types.TyInt16   => BoxedInt16(getOrCrash(Int64.tryToInt16(v)))
+            case Types.TyInt32   => BoxedInt32(getOrCrash(Int64.tryToInt32(v)))
+            case Types.TyInt64   => BoxedInt64(v)
+            case Types.TyFloat32 => BoxedFloat32(Float.intBitsToFloat(getOrCrash(Int64.tryToInt32(v))))
+            case Types.TyFloat64 => BoxedFloat64(Double.longBitsToDouble(v))
+            case Types.TyObject  => deMarshalObject(v, index, info)
+            case Types.TyUnknown => bug!("Unormalizing value, which has never been normalized")
         }
 
 }

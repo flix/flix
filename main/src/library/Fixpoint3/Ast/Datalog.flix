@@ -18,8 +18,7 @@
  */
 
 pub mod Fixpoint3.Ast.Datalog {
-    use Fixpoint3.Boxed;
-
+    use Fixpoint3.Boxed
     use Fixpoint3.PredSymsOf
     use Fixpoint3.PredSymsOf.predSymsOf
     use Fixpoint3.SubstitutePredSym
@@ -58,8 +57,8 @@ pub mod Fixpoint3.Ast.Datalog {
                 let factSyms = facts |> Vector.map(predSymsOf) |> Monoid.fold;
                 let ruleSyms = rules |> Vector.map(predSymsOf) |> Monoid.fold;
                 factSyms ++ ruleSyms
-            case Datalog.Model(m)                 => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
-            case Datalog.Join(v1, v2)             => predSymsOf(v1) ++ predSymsOf(v2)
+            case Datalog.Model(m)     => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
+            case Datalog.Join(v1, v2) => predSymsOf(v1) ++ predSymsOf(v2)
             case Datalog.Provenance(rules, model) =>
                 let ruleSyms = rules |> Vector.map(predSymsOf) |> Monoid.fold;
                 let modelSyms = Map.keysOf(model) |> Set.map(predSymsOf) |> Monoid.fold;
@@ -79,12 +78,13 @@ pub mod Fixpoint3.Ast.Datalog {
                     Map.insert(newSym, v, macc)
                 };
                 Datalog.Model(Map.foldLeftWithKey(f, Map.empty(), m))
-            case Datalog.Join(v1, v2)             => Datalog.Join(substitute(v1, s), substitute(v2, s))
+            case Datalog.Join(v1, v2) => Datalog.Join(substitute(v1, s), substitute(v2, s))
             case Datalog.Provenance(rules, model) =>
                 let newRules = Vector.map(c -> substitute(c, s), rules);
-                let newModel = (Map#{}, model) ||>
-                    Map.foldLeftWithKey(acc -> pred -> facts ->
-                        Map.insert(substitute(pred, s), facts, acc)
+                let newModel = (Map#{}, model)
+                    ||> Map.foldLeftWithKey(
+                        acc -> pred -> facts ->
+                            Map.insert(substitute(pred, s), facts, acc)
                     );
                 Datalog.Provenance(newRules, newModel)
         }
@@ -92,54 +92,61 @@ pub mod Fixpoint3.Ast.Datalog {
 
     instance ToString[Datalog] {
         pub def toString(cs: Datalog): String = match cs {
-            case Datalog.Datalog(facts, rules) => region rc {
-                if (not Fixpoint3.Options.enableDebugPrintFacts()) {
-                    "Printing facts disabled ${String.lineSeparator()}" +
-                    Vector.iterator(rc, rules) |> Iterator.join(String.lineSeparator())
-                } else {
-                    Iterator.append(Vector.iterator(rc, facts), Vector.iterator(rc, rules))
-                        |> Iterator.join(String.lineSeparator())
-                }
-            }
-            case Datalog.Model(db) => region rc {
-                use Fixpoint3.Ast.Ram.toDenotation;
-                if (not Fixpoint3.Options.enableDebugPrintFacts()) {
-                    "Printing facts disabled."
-                } else {
-                   unsafe IO {
-                        let builder = StringBuilder.empty(rc);
-                        foreach ((relSym, innerMap) <- db) {
-                            foreach ((tuple, lat) <- innerMap) {
-                                let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
-                                match toDenotation(relSym) {
-                                    case Relational             => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
-                                    case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; ${Debug.stringify(lat)}).${String.lineSeparator()}", builder)
-                                }
-                            }
-                        };
-                        StringBuilder.toString(builder)
+            case Datalog.Datalog(facts, rules) =>
+                region rc {
+                    if (not Fixpoint3.Options.enableDebugPrintFacts()) {
+                        "Printing facts disabled ${String.lineSeparator()}"
+                            + Vector.iterator(rc, rules) |> Iterator.join(String.lineSeparator())
+                    } else {
+                        Iterator.append(Vector.iterator(rc, facts), Vector.iterator(rc, rules))
+                            |> Iterator.join(String.lineSeparator())
                     }
                 }
-            }
+            case Datalog.Model(db) =>
+                region rc {
+                    use Fixpoint3.Ast.Ram.toDenotation;
+                    if (not Fixpoint3.Options.enableDebugPrintFacts()) {
+                        "Printing facts disabled."
+                    } else {
+                        unsafe IO {
+                            let builder = StringBuilder.empty(rc);
+                            foreach ((relSym, innerMap) <- db) {
+                                foreach ((tuple, lat) <- innerMap) {
+                                    let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
+                                    match toDenotation(relSym) {
+                                        case Relational             => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
+                                        case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; ${Debug.stringify(lat)}).${String.lineSeparator()}", builder)
+                                    }
+                                }
+                            };
+                            StringBuilder.toString(builder)
+                        }
+                    }
+                }
             case Datalog.Join(d1, d2) => {
                 let lineSep = String.lineSeparator();
                 "${d1}${lineSep}${d2}${lineSep}"
             }
-            case Datalog.Provenance(_, db) => region rc {
-                unsafe IO {
-                    let indent = String.repeat(4, " ");
-                    Map.joinWith(predSym -> facts -> {
-                        let builder = StringBuilder.empty(rc);
-                        foreach ((fact, annotation) <- facts) {
-                            StringBuilder.append("${indent}${fact} @ ${annotation},${String.lineSeparator()}${indent}", builder)
-                        };
-                        let textOverflow = String.length("$,${String.lineSeparator()}${indent}");
-                        let rawFactString = StringBuilder.toString(builder);
-                        let factsString = String.sliceLeft(end = String.length(rawFactString)- textOverflow, rawFactString);
-                        "${predSym}:${String.lineSeparator()}${factsString}"
-                    }, "${String.lineSeparator()}", db)
+            case Datalog.Provenance(_, db) =>
+                region rc {
+                    unsafe IO {
+                        let indent = String.repeat(4, " ");
+                        Map.joinWith(
+                            predSym -> facts -> {
+                                let builder = StringBuilder.empty(rc);
+                                foreach ((fact, annotation) <- facts) {
+                                    StringBuilder.append("${indent}${fact} @ ${annotation},${String.lineSeparator()}${indent}", builder)
+                                };
+                                let textOverflow = String.length("$,${String.lineSeparator()}${indent}");
+                                let rawFactString = StringBuilder.toString(builder);
+                                let factsString = String.sliceLeft(end = String.length(rawFactString) - textOverflow, rawFactString);
+                                "${predSym}:${String.lineSeparator()}${factsString}"
+                            },
+                            "${String.lineSeparator()}",
+                            db
+                        )
+                    }
                 }
-            }
         }
     }
 
@@ -190,7 +197,7 @@ pub mod Fixpoint3.Ast.Datalog {
 
     instance PredSymsOf[HeadPredicate] {
         pub def predSymsOf(x: HeadPredicate): Set[PredSym] = match x {
-            case HeadPredicate.HeadAtom(predSym, _, _ ) => Set.singleton(predSym)
+            case HeadPredicate.HeadAtom(predSym, _, _) => Set.singleton(predSym)
         }
     }
 
@@ -205,9 +212,9 @@ pub mod Fixpoint3.Ast.Datalog {
     instance ToString[HeadPredicate] {
         pub def toString(head: HeadPredicate): String =
             match head {
-                case HeadPredicate.HeadAtom(predSym, Relational, terms)             => "${predSym}(${terms |> Vector.join(", ")})"
+                case HeadPredicate.HeadAtom(predSym, Relational, terms) => "${predSym}(${terms |> Vector.join(", ")})"
                 case HeadPredicate.HeadAtom(predSym, Latticenal(_, _, _, _), terms) =>
-                    let (keyTerms, latticeTerms) = Vector.splitAt(Vector.length(terms)-1, terms);
+                    let (keyTerms, latticeTerms) = Vector.splitAt(Vector.length(terms) - 1, terms);
                     match Vector.head(latticeTerms) {
                         case None    => "${predSym}(${keyTerms |> Vector.join(", ")})"
                         case Some(l) => "${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
@@ -260,7 +267,7 @@ pub mod Fixpoint3.Ast.Datalog {
                 case BodyPredicate.BodyAtom(predSym, Relational, p, f, terms) =>
                     "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> Vector.join(", ")})"
                 case BodyPredicate.BodyAtom(predSym, Latticenal(_, _, _, _), p, f, terms) =>
-                    let n = Vector.length(terms)-1;
+                    let n = Vector.length(terms) - 1;
                     let (keyTerms, latticeTerms) = (Vector.take(n, terms), Vector.drop(n, terms));
                     match Vector.head(latticeTerms) {
                         case None    => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}()"
@@ -333,7 +340,7 @@ pub mod Fixpoint3.Ast.Datalog {
     /////////////////////////////////////////////////////////////////////////////
 
     pub enum Fixity {
-        case Loose,
+        case Loose
         case Fixed
     }
 
@@ -342,7 +349,7 @@ pub mod Fixpoint3.Ast.Datalog {
     /////////////////////////////////////////////////////////////////////////////
 
     pub enum Polarity {
-        case Positive,
+        case Positive
         case Negative
     }
 
