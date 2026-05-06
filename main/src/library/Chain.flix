@@ -394,7 +394,7 @@ pub mod Chain {
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): Chain[b] \ ef =
         def loop(cc, a, acc) = match viewLeft(cc) {
-            case ViewLeft.NoneLeft        => acc
+            case ViewLeft.NoneLeft => acc
             case ViewLeft.SomeLeft(x, xs) =>
                 let aa = f(a, x);
                 loop(xs, aa, snoc(acc, aa))
@@ -408,7 +408,7 @@ pub mod Chain {
     ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): Chain[b] \ ef =
         def loop(cc, a, acc) = match viewRight(cc) {
-            case ViewRight.NoneRight        => acc
+            case ViewRight.NoneRight => acc
             case ViewRight.SomeRight(xs, x) =>
                 let aa = f(x, a);
                 loop(xs, aa, cons(aa, acc))
@@ -434,7 +434,7 @@ pub mod Chain {
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, c: Chain[a]): Chain[b] \ ef =
         def loop(cc, i, acc) = match viewLeft(cc) {
-            case ViewLeft.NoneLeft        => acc
+            case ViewLeft.NoneLeft => acc
             case ViewLeft.SomeLeft(x, rs) =>
                 let a = f(i, x);
                 loop(rs, i + 1, snoc(acc, a))
@@ -676,7 +676,7 @@ pub mod Chain {
     /// Returns `None` if every element of `c` is `None`.
     ///
     pub def findMap(f: a -> Option[b] \ ef, c: Chain[a]): Option[b] \ ef = match viewLeft(c) {
-        case ViewLeft.NoneLeft        => None
+        case ViewLeft.NoneLeft => None
         case ViewLeft.SomeLeft(x, xs) =>
             match f(x) {
                 case None    => findMap(f, xs)
@@ -739,7 +739,7 @@ pub mod Chain {
     ///
     pub def mapAccumLeft(f: (s, a) -> (s, b) \ ef, start: s, c: Chain[a]): (s, Chain[b]) \ ef =
         def loop(cc, s1, acc) = match viewLeft(cc) {
-            case ViewLeft.NoneLeft        => (s1, acc)
+            case ViewLeft.NoneLeft => (s1, acc)
             case ViewLeft.SomeLeft(a, rs) => {
                 let (s2, b) = f(s1, a);
                 loop(rs, s2, snoc(acc, b))
@@ -753,7 +753,7 @@ pub mod Chain {
     ///
     pub def mapAccumRight(f: (s, a) -> (s, b) \ ef, start: s, c: Chain[a]): (s, Chain[b]) \ ef =
         def loop(cc, s1, acc) = match viewRight(cc) {
-            case ViewRight.NoneRight        => (s1, acc)
+            case ViewRight.NoneRight => (s1, acc)
             case ViewRight.SomeRight(rs, a) => {
                 let (s2, b) = f(s1, a);
                 loop(rs, s2, cons(b, acc))
@@ -804,7 +804,7 @@ pub mod Chain {
     /// Returns the chain `c` as an array.
     ///
     pub def toArray(rc: Region[r], c: Chain[a]): Array[a, r] \ r = match head(c) {
-        case None    => Array#{} @ rc
+        case None => Array#{} @ rc
         case Some(_) =>
             let arr = Array.empty(rc, length(c));
             forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
@@ -826,7 +826,7 @@ pub mod Chain {
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r =
         let cursor = Ref.fresh(rc, viewLeft(c));
         let next = () -> match (Ref.get(cursor)) {
-            case ViewLeft.NoneLeft        => None
+            case ViewLeft.NoneLeft => None
             case ViewLeft.SomeLeft(x, xs) =>
                 Ref.put(viewLeft(xs), cursor);
                 Some(x)
@@ -869,9 +869,9 @@ pub mod Chain {
     ///
     pub def compare(c1: Chain[a], c2: Chain[a]): Comparison with Order[a] =
         def loop(cc1, cc2) = match (cc1, cc2) {
-            case (SomeLeft(_, _), NoneLeft)         => Comparison.GreaterThan
-            case (NoneLeft, NoneLeft)               => Comparison.EqualTo
-            case (NoneLeft, SomeLeft(_, _))         => Comparison.LessThan
+            case (SomeLeft(_, _), NoneLeft) => Comparison.GreaterThan
+            case (NoneLeft, NoneLeft)       => Comparison.EqualTo
+            case (NoneLeft, SomeLeft(_, _)) => Comparison.LessThan
             case (SomeLeft(l, ls), SomeLeft(r, rs)) =>
                 match (l <=> r) {
                     case Comparison.EqualTo => loop(viewLeft(ls), viewLeft(rs))

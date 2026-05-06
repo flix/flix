@@ -38,7 +38,7 @@ pub mod Hash {
         ///
         /// Hash values are consistent with equality: equal values have equal hashes.
         ///
-        law consistency: forall(x: a, y: a) with Eq[a] (x == y) ==> (Hash.hash(x) == Hash.hash(y))
+        law consistency: forall (x: a, y: a) with Eq[a] (x == y) ==> (Hash.hash(x) == Hash.hash(y))
     }
 
     instance Hash[Unit] {
@@ -47,7 +47,7 @@ pub mod Hash {
 
     instance Hash[Bool] {
         pub def hash(x: Bool): Int32 = match x {
-            case true => 1231
+            case true  => 1231
             case false => 1237
         }
     }
@@ -123,7 +123,8 @@ pub mod Hash {
         pub def hash(t: (a1, a2, a3, a4, a5, a6)): Int32 = match t {
             case (x1, x2, x3, x4, x5, x6) =>
                 Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
-                    `Hash.combine` Hash.hash(x5) `Hash.combine` Hash.hash(x6)
+                    `Hash.combine` Hash.hash(x5)
+                    `Hash.combine` Hash.hash(x6)
         }
     }
 
@@ -131,7 +132,9 @@ pub mod Hash {
         pub def hash(t: (a1, a2, a3, a4, a5, a6, a7)): Int32 = match t {
             case (x1, x2, x3, x4, x5, x6, x7) =>
                 Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
-                    `Hash.combine` Hash.hash(x5) `Hash.combine` Hash.hash(x6) `Hash.combine` Hash.hash(x7)
+                    `Hash.combine` Hash.hash(x5)
+                    `Hash.combine` Hash.hash(x6)
+                    `Hash.combine` Hash.hash(x7)
         }
     }
 
@@ -139,7 +142,10 @@ pub mod Hash {
         pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8)): Int32 = match t {
             case (x1, x2, x3, x4, x5, x6, x7, x8) =>
                 Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
-                    `Hash.combine` Hash.hash(x5) `Hash.combine` Hash.hash(x6) `Hash.combine` Hash.hash(x7) `Hash.combine` Hash.hash(x8)
+                    `Hash.combine` Hash.hash(x5)
+                    `Hash.combine` Hash.hash(x6)
+                    `Hash.combine` Hash.hash(x7)
+                    `Hash.combine` Hash.hash(x8)
         }
     }
 
@@ -147,7 +153,10 @@ pub mod Hash {
         pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Int32 = match t {
             case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
                 Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
-                    `Hash.combine` Hash.hash(x5) `Hash.combine` Hash.hash(x6) `Hash.combine` Hash.hash(x7) `Hash.combine` Hash.hash(x8)
+                    `Hash.combine` Hash.hash(x5)
+                    `Hash.combine` Hash.hash(x6)
+                    `Hash.combine` Hash.hash(x7)
+                    `Hash.combine` Hash.hash(x8)
                     `Hash.combine` Hash.hash(x9)
         }
     }
@@ -156,8 +165,12 @@ pub mod Hash {
         pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Int32 = match t {
             case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
                 Hash.hash(x1) `Hash.combine` Hash.hash(x2) `Hash.combine` Hash.hash(x3) `Hash.combine` Hash.hash(x4)
-                    `Hash.combine` Hash.hash(x5) `Hash.combine` Hash.hash(x6) `Hash.combine` Hash.hash(x7) `Hash.combine` Hash.hash(x8)
-                    `Hash.combine` Hash.hash(x9) `Hash.combine` Hash.hash(x10)
+                    `Hash.combine` Hash.hash(x5)
+                    `Hash.combine` Hash.hash(x6)
+                    `Hash.combine` Hash.hash(x7)
+                    `Hash.combine` Hash.hash(x8)
+                    `Hash.combine` Hash.hash(x9)
+                    `Hash.combine` Hash.hash(x10)
         }
     }
 

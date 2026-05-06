@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 pub mod Set {
 
     ///
@@ -88,7 +87,7 @@ pub mod Set {
     }
 
     instance SemiGroup[Set[a]] with Order[a] {
-        pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
+        pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x, y)
     }
 
     instance CommutativeSemiGroup[Set[a]] with Order[a]
@@ -454,13 +453,16 @@ pub mod Set {
     /// `s2` contains all elements of `s` that do not satisfy the predicate `f`.
     ///
     pub def partition(f: a -> Bool \ ef, s: Set[a]): (Set[a], Set[a]) \ ef with Order[a] =
-        foldLeft((acc, x) ->
-            let (a, b) = acc;
-            if (f(x))
-                (insert(x, a), b)
-            else
-                (a, insert(x, b)), (empty(), empty()),
-            s)
+        foldLeft(
+            (acc, x) ->
+                let (a, b) = acc;
+                if (f(x))
+                    (insert(x, a), b)
+                else
+                    (a, insert(x, b)),
+            (empty(), empty()),
+            s
+        )
 
     ///
     /// Returns the set `s` as a list.
@@ -472,12 +474,12 @@ pub mod Set {
     /// Returns the set `s` as an array.
     ///
     pub def toArray(rc: Region[r], s: Set[a]): Array[a, r] \ r = match size(s) {
-        case 0  => Array#{} @ rc
+        case 0 => Array#{} @ rc
         case sz =>
             let a = Array.empty(rc, sz);
             Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
             a
-        }
+    }
 
     ///
     /// Returns the set `s` as a vector.
