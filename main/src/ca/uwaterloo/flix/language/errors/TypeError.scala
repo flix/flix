@@ -185,18 +185,18 @@ object TypeError {
 
     //override def locs: List[SourceLocation] = List(loc, loc2)
 
-    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as '${effectsToString(defEffSyms)}'"
+    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as ${effectsToString(defEffSyms)}"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
       val defString = s"{${magenta(effectsToString(defEffSyms))}}"
-      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
+      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as $defString.
          |
-         |${highlight(loc, s"function declared as '$defString'", fmt)}
+         |${highlight(loc, s"function declared as $defString", fmt)}
          |
          |${highlight(loc2, s"'${magenta(usedEffSym.name)}' used here", fmt)}
          |
-         |${underline("Explanation:")} The function is explicitly declared as '$defString',
+         |${underline("Explanation:")} The function is explicitly declared as $defString,
          |meaning it may not perform other effects. Since '${magenta(usedEffSym.name)}' is another effect,
          |it cannot be used in this function. To fix this, either add ${magenta(usedEffSym.name)} to $defString
          |or remove the use of '${magenta(usedEffSym.name)}' inside the function.
