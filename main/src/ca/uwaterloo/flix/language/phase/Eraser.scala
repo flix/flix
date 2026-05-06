@@ -42,7 +42,7 @@ object Eraser {
   def run(root: ReducedAst.Root)(implicit flix: Flix): ErasedAst.Root = flix.phase("Eraser") {
     implicit val r: ReducedAst.Root = root
     implicit val ctx: SharedContext = new SharedContext()
-    val newDefs = ParOps.parMapValues(root.defs)(visitDef)
+    val newDefs = ParOps.parMapValues(root.defs)(defn => flix.defnTimer.track(defn.sym, defn.loc)(visitDef(defn)))
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
     // Specializations must happen after all other types and expressions are visited.
     val newEnums = specializeEnums(ctx.getEnumSpecializations)

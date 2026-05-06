@@ -185,12 +185,13 @@ object Typer {
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
     changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_) {
-      case defn =>
+      case defn => flix.defnTimer.track(defn.sym, defn.loc) {
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
         // If no effect is specified, we assume the function is pure
         val eff1 = defn.spec.eff.getOrElse(Type.Pure)
         val enableSubeffects = shouldSubeffect(eff1, Subeffecting.ModDefs)
         visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
+      }
     })
   }
 

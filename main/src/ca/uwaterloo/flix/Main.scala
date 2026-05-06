@@ -72,6 +72,7 @@ object Main {
       outputJvm = false,
       outputPath = Options.Default.outputPath,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
+      top = cmdOpts.top,
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xprintphases = cmdOpts.xprintphases,
@@ -91,6 +92,12 @@ object Main {
 
     // Don't use progress bar if not attached to a console.
     if (System.console() == null) {
+      options = options.copy(progress = false)
+    }
+
+    // Don't use progress bar if --top is set: the live TUI repaints the screen
+    // every 100ms and the spinner would just fight with it.
+    if (cmdOpts.top) {
       options = options.copy(progress = false)
     }
 
@@ -168,19 +175,39 @@ object Main {
 
           flix.setFormatter(formatter)
 
+          // Start the live `--top` TUI, if requested.
+          val topRenderer = if (options.top) {
+            val r = new TopRenderer(flix)
+            r.start()
+            Some(r)
+          } else None
+          def stopTop(): Unit = topRenderer.foreach(_.stop())
+
           // evaluate main.
-          flix.check() match {
-            case (Some(root), Nil) =>
-              flix.codeGen(root).getMain match {
-                case None => // nop
-                case Some(m) =>
-                  // Invoke main with the supplied arguments.
-                  m(cmdOpts.args.toArray)
-              }
-              System.exit(0)
-            case (optRoot, errors) =>
-              println(CompilationMessage.formatAll(errors)(formatter, optRoot))
-              System.exit(1)
+          try {
+            flix.check() match {
+              case (Some(root), Nil) =>
+                val main = flix.codeGen(root).getMain
+                // Stop the renderer before user main runs so it doesn't
+                // collide with the TUI repaint. The final frame drawn here
+                // is what completes the progress bar.
+                stopTop()
+                main match {
+                  case None => // nop
+                  case Some(m) =>
+                    // Invoke main with the supplied arguments.
+                    m(cmdOpts.args.toArray)
+                }
+                System.exit(0)
+              case (optRoot, errors) =>
+                stopTop()
+                println(CompilationMessage.formatAll(errors)(formatter, optRoot))
+                System.exit(1)
+            }
+          } catch {
+            case t: Throwable =>
+              stopTop()
+              throw t
           }
 
         case Command.Init =>
@@ -468,6 +495,7 @@ object Main {
     json: Boolean = false,
     listen: Option[Int] = None,
     threads: Option[Int] = None,
+    top: Boolean = false,
     assumeYes: Boolean = false,
     xbenchmarkCodeSize: Boolean = false,
     xbenchmarkIncremental: Boolean = false,
@@ -660,6 +688,9 @@ object Main {
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
+
+      opt[Unit]("top").action((_, c) => c.copy(top = true)).
+        text("displays a live view of the DefnSyms the compiler spends most time on.")
 
       opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
         text("automatically answer yes to all prompts.")

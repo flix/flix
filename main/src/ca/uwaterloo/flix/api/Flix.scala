@@ -111,9 +111,23 @@ class Flix {
   var phaseTimers: ArrayBuffer[PhaseTime] = ArrayBuffer.empty
 
   /**
+    * Tracks the time spent compiling each [[Symbol.DefnSym]].
+    *
+    * Driven by the `--top` option.
+    */
+  val defnTimer: DefnTimer = new DefnTimer(() => currentPhaseName)
+
+  /**
     * The current phase we are in. Initially null.
     */
   private var currentPhase: PhaseTime = _
+
+  /**
+    * The name of the phase currently executing. Read by the `--top` renderer
+    * thread, written by whichever thread calls [[phase]] / [[phaseNew]];
+    * volatile so cross-thread reads are visible.
+    */
+  @volatile var currentPhaseName: String = "starting"
 
   /**
     * The progress bar.
@@ -440,6 +454,8 @@ class Flix {
 
     // Reset the phase information.
     phaseTimers = ArrayBuffer.empty
+    currentPhaseName = "starting"
+    defnTimer.reset()
 
     // Reset the phase list file if relevant
     if (this.options.xprintphases) {
@@ -687,6 +703,7 @@ class Flix {
   def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0)
+    currentPhaseName = phase
 
     if (options.progress) {
       progressBar.observe(currentPhase.phase, "")
@@ -717,6 +734,7 @@ class Flix {
   def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0)
+    currentPhaseName = phase
 
     if (options.progress) {
       progressBar.observe(currentPhase.phase, "")

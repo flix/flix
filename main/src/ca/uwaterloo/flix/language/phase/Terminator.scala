@@ -86,7 +86,7 @@ object Terminator {
       implicit val sctx: SharedContext = SharedContext.mk()
       implicit val _r: Root = root
       val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(
-        ParOps.parMapValues(_)(visitDef))
+        ParOps.parMapValues(_)(defn => flix.defnTimer.track(defn.sym, defn.loc)(visitDef(defn))))
       val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(
         ParOps.parMapValues(_)(visitTrait))
       val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances,

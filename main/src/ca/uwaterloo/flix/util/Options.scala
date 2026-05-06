@@ -36,6 +36,7 @@ object Options {
     outputPath = Path.of("./build/"),
     progress = false,
     threads = Runtime.getRuntime.availableProcessors(),
+    top = false,
     loadClassFiles = true,
     assumeYes = false,
     xprintphases = false,
@@ -83,6 +84,7 @@ object Options {
   * @param outputPath     The path to the output folder.
   * @param progress       print progress during compilation.
   * @param threads        selects the number of threads to use.
+  * @param top            shows a live TUI of the DefnSyms the compiler spends most time on.
   * @param loadClassFiles loads the generated class files into the JVM.
   * @param assumeYes      run non-interactively and assume answer to all prompts is yes.
   */
@@ -97,6 +99,7 @@ case class Options(lib: LibLevel,
                    outputJvm: Boolean,
                    outputPath: Path,
                    threads: Int,
+                   top: Boolean,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
                    xprintphases: Boolean,
