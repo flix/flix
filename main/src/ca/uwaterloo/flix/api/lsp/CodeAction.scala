@@ -40,7 +40,7 @@ import scala.jdk.CollectionConverters.*
   */
 case class CodeAction(title: String,
                       kind: CodeActionKind,
-                      diagnostic: Option[Diagnostic] = None,
+                      diagnostics: List[Diagnostic] = Nil,
                       isPreferred: Boolean = false,
                       disabledReason: Option[String] = None,
                       edit: Option[WorkspaceEdit],
@@ -49,7 +49,7 @@ case class CodeAction(title: String,
   def toJSON: JValue =
     ("title" -> title) ~
       ("kind" -> kind.toJSON) ~
-      ("diagnostic" -> diagnostic.map(_.toJSON)) ~
+      ("diagnostic" -> diagnostics.map(_.toJSON)) ~
       ("isPreferred" -> isPreferred) ~
       ("disabled" -> disabledReason.map("reason" -> _)) ~
       ("edit" -> edit.map(_.toJSON)) ~
@@ -59,7 +59,7 @@ case class CodeAction(title: String,
     val c = new lsp4j.CodeAction()
     c.setTitle(title)
     c.setKind(kind.toLsp4j)
-    diagnostic.foreach(d => c.setDiagnostics(List(d.toLsp4j).asJava))
+    diagnostics.foreach(d => c.setDiagnostics(List(d.toLsp4j).asJava))
     c.setIsPreferred(isPreferred)
     disabledReason.foreach(reason => c.setDisabled(new lsp4j.CodeActionDisabled(reason)))
     edit.foreach(e => c.setEdit(e.toLsp4j))
