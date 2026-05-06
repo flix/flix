@@ -73,11 +73,12 @@ pub mod Writable {
     pub def writeString(string: String, writer: t): Result[IoError, Unit] \ Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
         region rc {
             let buffer = String.toArray(rc, string);
-            forM(
+            forM (
                 charsWritten <- Writable.write(buffer, writer);
                 _ <- if (charsWritten < String.length(string)) {
                     writeString(string |> String.drop(charsWritten), writer)
-                } else Ok(())
+                } else
+                    Ok(())
             ) yield ()
         }
 
@@ -96,7 +97,7 @@ pub mod Writable {
     /// The new line separator is platform dependent, and is determined by the "line.separator" system property.
     ///
     pub def writeLine(line: String, writer: t): Result[IoError, Unit] \ IO + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
-        forM(
+        forM (
             _ <- writeString(line, writer);
             _ <- writeNewLine(writer)
         ) yield ()
