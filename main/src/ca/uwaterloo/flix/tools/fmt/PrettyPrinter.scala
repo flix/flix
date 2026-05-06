@@ -1356,10 +1356,13 @@ object PrettyPrinter {
       val endsWithClose = rightMostToken(tree.children(0)).exists(t =>
         t.kind == TokenKind.CurlyR
       )
-      val sep = if (endsWithComment(tree.children(1))) hardline else space
+      val operatorEndsWithComment = endsWithComment(tree.children(1))
+      val sep = if (operatorEndsWithComment) hardline else space
       localLayout(tree) {
         if (endsWithClose)
           parts(0) <> space <> parts(1) <> sep <> parts(2)
+        else if (operatorEndsWithComment)
+          parts(0) <+> nest(4, parts(1) <> hardline <> parts(2))
         else
           parts(0) <> nest(4, line <> parts(1) <> sep <> parts(2))
       }
@@ -1675,8 +1678,24 @@ object PrettyPrinter {
   private def prettyStringInterpolation(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
 
-  private def prettyOperator(tree: Tree): Doc =
-    tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+  private def prettyOperator(tree: Tree): Doc = {
+    val children = tree.children
+    if (children.isEmpty) empty
+    else children.indices.tail.foldLeft(prettyChild(children.head)) { (acc, i) =>
+      val prevChild = children(i - 1)
+      val nextChild = children(i)
+      val sep = nextChild match {
+        case t: Tree if t.kind == TreeKind.CommentList =>
+          val sameLine = (rightMostToken(prevChild), leftMostToken(nextChild)) match {
+            case (Some(p), Some(n)) => p.end.lineOneIndexed == n.start.lineOneIndexed
+            case _                  => false
+          }
+          if (sameLine) space else hardline
+        case _ => empty
+      }
+      acc <> sep <> prettyChild(nextChild)
+    }
+  }
 
   private def prettyQName(tree: Tree): Doc = prettyOperator(tree)
 
