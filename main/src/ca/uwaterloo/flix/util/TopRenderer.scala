@@ -63,11 +63,9 @@ final class TopRenderer(flix: Flix) {
     if (w > 0) w else DefaultCols
   }
 
-  // State carried across frames so we can compute the throughput sparkline.
-  // Touched only by the renderer thread.
-  private var prevFrameNanos: Long = startNanos
-  private var prevTotalCalls: Long = 0L
-  private val throughputHistory = mutable.Queue.empty[Double]
+  // State carried across frames so we can compute the active-threads
+  // sparkline. Touched only by the renderer thread.
+  private val threadsHistory = mutable.Queue.empty[Double]
 
   /** Starts the renderer on a daemon thread. */
   def start(): Unit = {
@@ -97,9 +95,9 @@ final class TopRenderer(flix: Flix) {
   private def render(): Unit = {
     val now = System.nanoTime()
     val elapsed = now - startNanos
-    val frameDt = (now - prevFrameNanos).max(1L)
     val pool = flix.threadPool
     val parallelism = if (pool == null) flix.options.threads.max(1) else pool.getParallelism.max(1)
+    val activeThreads = if (pool == null) 0 else pool.getActiveThreadCount
 
     // Budget rows for the two tables based on the current terminal height,
     // reserving an extra `RowMargin` rows so the view never quite touches
@@ -115,12 +113,9 @@ final class TopRenderer(flix: Flix) {
     val snap = flix.defnTimer.snapshot().sortBy(-_.totalNanos)
     val visible = snap.take(defN)
 
-    // Throughput sparkline: visits-per-second since last frame.
-    val totalCalls = flix.defnTimer.totalCallCount
-    val callsThisFrame = (totalCalls - prevTotalCalls).max(0L)
-    val throughputPerSec = callsThisFrame.toDouble * 1_000_000_000.0 / frameDt
-    throughputHistory.enqueue(throughputPerSec)
-    while (throughputHistory.size > SparkWidth) throughputHistory.dequeue()
+    // Active-threads sparkline: history of thread-pool occupancy.
+    threadsHistory.enqueue(activeThreads.toDouble)
+    while (threadsHistory.size > SparkWidth) threadsHistory.dequeue()
 
     val modules = aggregateByModule(snap).take(moduleN)
 
@@ -130,7 +125,7 @@ final class TopRenderer(flix: Flix) {
 
     renderHeader(sb, elapsed)
     renderProgressBar(sb)
-    renderResources(sb, elapsed, throughputPerSec)
+    renderResources(sb, elapsed, activeThreads, parallelism)
     sb.append('\n')
     renderTableHeader(sb, layout)
     renderRows(sb, visible, elapsed, parallelism, layout)
@@ -139,18 +134,11 @@ final class TopRenderer(flix: Flix) {
     System.out.print(sb)
     System.out.flush()
 
-    // Update carried state for next frame.
-    prevFrameNanos = now
-    prevTotalCalls = totalCalls
   }
 
   private def renderHeader(sb: StringBuilder, elapsed: Long): Unit = {
     val phase = flix.currentPhaseName
     val group = phaseGroup(phase)
-    val pool = flix.threadPool
-    val (active, par) =
-      if (pool == null) (0, flix.options.threads)
-      else (pool.getActiveThreadCount, pool.getParallelism)
 
     sb.append("  ")
     sb.append(color(rpad(phase, 14), groupColor(group)))
@@ -158,8 +146,6 @@ final class TopRenderer(flix: Flix) {
     sb.append(color(group, groupColor(group)))
     sb.append(dim(")   elapsed: "))
     sb.append(formatMillis(elapsed))
-    sb.append(dim("   threads: "))
-    sb.append(styleThreads(active, par))
     sb.append('\n')
   }
 
@@ -179,7 +165,7 @@ final class TopRenderer(flix: Flix) {
     sb.append('\n')
   }
 
-  private def renderResources(sb: StringBuilder, elapsed: Long, throughputPerSec: Double): Unit = {
+  private def renderResources(sb: StringBuilder, elapsed: Long, activeThreads: Int, parallelism: Int): Unit = {
     val (heapUsedMb, heapMaxMb) = heapUsage()
     val gcMs = gcMillis()
     val gcPct = 100.0 * gcMs * 1_000_000L / elapsed.max(1L)
@@ -196,10 +182,10 @@ final class TopRenderer(flix: Flix) {
     sb.append(heapMaxField)
     sb.append(dim("   gc: "))
     sb.append(styleGc(gcField, gcPct))
-    sb.append(dim("   throughput: "))
-    sb.append(dim(cyan(renderSparkline())))
+    sb.append(dim("   threads: "))
+    sb.append(dim(cyan(renderSparkline(parallelism.toDouble))))
     sb.append(' ')
-    sb.append(formatRate(throughputPerSec))
+    sb.append(styleThreads(activeThreads, parallelism))
     sb.append('\n')
   }
 
@@ -333,14 +319,18 @@ final class TopRenderer(flix: Flix) {
     sb.append(' '); sb.append(stylePctWall(f"$pctWall%5.1f%%", pctWall))
   }
 
-  private def renderSparkline(): String = {
-    if (throughputHistory.isEmpty) return " " * SparkWidth
-    val max = throughputHistory.max.max(1.0)
-    val chars = throughputHistory.iterator.map { v =>
-      val i = math.min(SparkChars.length - 1, math.max(0, (v / max * (SparkChars.length - 1)).round.toInt))
+  /**
+    * Renders the threads-history sparkline at a fixed scale where
+    * `█` ⇔ `maxValue` (typically the threadpool's parallelism). Earlier
+    * samples appear on the left, the most recent on the right.
+    */
+  private def renderSparkline(maxValue: Double): String = {
+    if (threadsHistory.isEmpty) return " " * SparkWidth
+    val safeMax = maxValue.max(1.0)
+    val chars = threadsHistory.iterator.map { v =>
+      val i = math.min(SparkChars.length - 1, math.max(0, (v / safeMax * (SparkChars.length - 1)).round.toInt))
       SparkChars(i)
     }.toArray
-    // Right-align so the most recent sample is at the right edge.
     val pad = (SparkWidth - chars.length).max(0)
     " " * pad + new String(chars)
   }
@@ -623,13 +613,7 @@ object TopRenderer {
     else f"${ms}ms"
   }
 
-  /** Format a per-second rate of count as e.g. "1.2k/s" or "421/s". */
-  private def formatRate(perSec: Double): String = {
-    if (perSec >= 1000.0) f"${perSec / 1000.0}%.1fk/s"
-    else f"${perSec.toInt}%d/s"
-  }
-
-  private def truncate(s: String, width: Int): String =
+private def truncate(s: String, width: Int): String =
     if (s.length <= width) s else s.take(width - 1) + "…"
 
   private def lpad(s: String, w: Int): String =
