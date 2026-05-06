@@ -261,7 +261,54 @@ object PrettyPrinter {
   private def prettyHandler(tree: Tree): Doc =
     prettyBracket(tree, filterEmpty(tree.children),
       headerJoin = cs => spaceJoin(cs, Set.empty),
-      formatBody = cs => joinWithGap(filterEmpty(cs), line))
+      formatBody = alignedHandlerBody)
+
+  private def runWithRulePreEqualWidth(rule: Tree): Int = {
+    val (_, rest) = extractAnnAndDoc(rule)
+    val idx = rest.indexWhere { case t: Token if t.kind == TokenKind.Equal => true; case _ => false }
+    if (idx < 0) 0
+    else pretty(Layout.SingleLine, buildSig(rest.take(idx))).length
+  }
+
+  private def alignedRunWithRule(tree: Tree, maxWidth: Int): Doc = {
+    val (annDoc, rest) = extractAnnAndDoc(tree)
+    val eqIndex = rest.indexWhere { case t: Token if t.kind == TokenKind.Equal => true; case _ => false }
+    if (eqIndex < 0) return prepend(annDoc, buildSig(rest))
+
+    val sigParts  = rest.take(eqIndex)
+    val bodyParts = rest.drop(eqIndex + 1)
+    val sig       = buildSig(sigParts)
+    val sigWidth  = pretty(Layout.SingleLine, sig).length
+    val padding   = if (sigWidth < maxWidth) text(" " * (maxWidth - sigWidth)) else empty
+    val sigPadded = sig <> padding
+    val body      = bodyParts.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+
+    val bodyIsBlock    = bodyParts.exists(isBracedExpr)
+    val bodyOnSameLine = bodyStartsOnSameLineAs(rest(eqIndex), bodyParts)
+
+    val ruleDoc = Doc.setLayout(layoutOfChildren(rest),
+      if (bodyIsBlock && bodyOnSameLine) sigPadded <+> text("=") <+> body
+      else sigPadded <+> text("=") <> nest(4, line <> body)
+    )
+
+    prepend(annDoc, ruleDoc)
+  }
+
+  private def alignedHandlerBody(children: Array[SyntaxTree.Child]): Doc = {
+    val filtered = filterEmpty(children)
+    if (filtered.isEmpty) return empty
+    val rules    = filtered.collect { case t: Tree if t.kind == TreeKind.Expr.RunWithRuleFragment => t }
+    val maxWidth = rules.map(runWithRulePreEqualWidth).maxOption.getOrElse(0)
+    val docs = filtered.map {
+      case t: Tree if t.kind == TreeKind.Expr.RunWithRuleFragment => alignedRunWithRule(t, maxWidth)
+      case other                                                  => prettyChild(other)
+    }
+    val pairs = filtered.zip(docs)
+    pairs.sliding(2).foldLeft(pairs.head._2) {
+      case (acc, Array((prev, _), (next, nextDoc))) => acc <> structuralGap(prev, next) <> nextDoc
+      case (acc, _)                                 => acc
+    }
+  }
 
   private def prettyIfThenElse(tree: Tree): Doc = {
     val children = filterEmpty(tree.children)
