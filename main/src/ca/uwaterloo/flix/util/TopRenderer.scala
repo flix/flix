@@ -88,12 +88,7 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
     throughputHistory.enqueue(throughputPerSec)
     while (throughputHistory.size > SparkWidth) throughputHistory.dequeue()
 
-    // Outlier threshold: mean + 2σ of total nanos across visible entries.
-    val defOutlierThreshold = computeOutlierThreshold(visible.map(_.totalNanos))
-
-    // Aggregate by module for the second table.
     val modules = aggregateByModule(snap).take(ModuleTopN)
-    val moduleOutlierThreshold = computeOutlierThreshold(modules.map(_.totalNanos))
 
     val sb = new StringBuilder
     sb.append(ClearScreen)
@@ -104,8 +99,8 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
     renderResources(sb, elapsed, throughputPerSec)
     sb.append('\n')
     renderTableHeader(sb)
-    renderRows(sb, visible, elapsed, parallelism, defOutlierThreshold)
-    renderModuleTable(sb, modules, elapsed, parallelism, moduleOutlierThreshold)
+    renderRows(sb, visible, elapsed, parallelism)
+    renderModuleTable(sb, modules, elapsed, parallelism)
 
     System.out.print(sb)
     System.out.flush()
@@ -175,18 +170,17 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
   }
 
   private def renderTableHeader(sb: StringBuilder): Unit = {
-    val header = f"${"DefnSym"}%-24s ${"location"}%-28s ${"LOC"}%4s ${"n"}%4s ${"phase"}%-10s ${"time"}%9s ${"%cpu"}%6s ${"%wall"}%6s"
+    val header = f"${"Def"}%-24s ${"location"}%-28s ${"LOC"}%4s ${"n"}%4s ${"phase"}%-10s ${"time"}%9s ${"%cpu"}%6s ${"%wall"}%6s"
     sb.append(bold(cyan(header)))
     sb.append('\n')
     sb.append(dim("─" * header.length))
     sb.append('\n')
   }
 
-  private def renderRows(sb: StringBuilder, visible: Vector[DefnStats], elapsed: Long, parallelism: Int, outlierThreshold: Long): Unit = {
+  private def renderRows(sb: StringBuilder, visible: Vector[DefnStats], elapsed: Long, parallelism: Int): Unit = {
     if (visible.isEmpty) {
       val msg = "(no timings yet)"
       val pad = ((DefTableWidth - msg.length) / 2).max(0)
-      sb.append('\n')
       sb.append('\n')
       sb.append(" " * pad)
       sb.append(dim(msg))
@@ -200,7 +194,6 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
       val locStr = formatLocation(s.loc)
       val locLines = locLineCount(s.loc)
       val phase = s.dominantPhase.getOrElse("?")
-      val isOutlier = s.totalNanos >= outlierThreshold
 
       val symField = rpad(truncate(s.sym.name, 24), 24)
       val locField = rpad(truncate(locStr, 28), 28)
@@ -211,7 +204,7 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
       val pctCpuField = f"$pctCpu%5.1f%%"
       val pctWallField = f"$pctWall%5.1f%%"
 
-      sb.append(if (isOutlier) bold(red(symField)) else symField)
+      sb.append(symField)
       sb.append(' ')
       sb.append(dim(locField))
       sb.append(' ')
@@ -230,7 +223,7 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
     }
   }
 
-  private def renderModuleTable(sb: StringBuilder, modules: Vector[ModuleStats], elapsed: Long, parallelism: Int, outlierThreshold: Long): Unit = {
+  private def renderModuleTable(sb: StringBuilder, modules: Vector[ModuleStats], elapsed: Long, parallelism: Int): Unit = {
     if (modules.isEmpty) return
 
     sb.append('\n')
@@ -245,7 +238,6 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
       val pctWall = 100.0 * m.totalNanos / safeElapsed
       val pctCpu = pctWall / parallelism
       val phase = m.dominantPhase.getOrElse("?")
-      val isOutlier = m.totalNanos >= outlierThreshold
 
       val modField = rpad(truncate(m.module, 53), 53)
       val locCntField = lpad(if (m.totalLocLines > 0) m.totalLocLines.toString else "-", 4)
@@ -255,7 +247,7 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
       val pctCpuField = f"$pctCpu%5.1f%%"
       val pctWallField = f"$pctWall%5.1f%%"
 
-      sb.append(if (isOutlier) bold(red(modField)) else modField)
+      sb.append(modField)
       sb.append(' ')
       sb.append(locCntField)
       sb.append(' ')
@@ -422,15 +414,6 @@ object TopRenderer {
   private def gcMillis(): Long =
     ManagementFactory.getGarbageCollectorMXBeans.asScala.iterator
       .map(_.getCollectionTime).filter(_ >= 0L).sum
-
-  private def computeOutlierThreshold(values: Iterable[Long]): Long = {
-    val xs = values.iterator.map(_.toDouble).toArray
-    if (xs.length < 3) return Long.MaxValue
-    val mean = xs.sum / xs.length
-    val variance = xs.map(x => (x - mean) * (x - mean)).sum / xs.length
-    val stdev = math.sqrt(variance)
-    (mean + 2.0 * stdev).toLong
-  }
 
   private final case class ModuleStats(
     module: String,
