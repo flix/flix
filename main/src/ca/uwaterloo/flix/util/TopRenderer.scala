@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.lang.management.ManagementFactory
 import java.util.concurrent.atomic.AtomicBoolean
@@ -33,13 +34,34 @@ import scala.jdk.CollectionConverters.*
   * [[TopRenderer.RefreshIntervalMs]] milliseconds and re-renders the screen
   * using ANSI escape codes.
   */
-final class TopRenderer(flix: Flix, topN: Int = 10) {
+final class TopRenderer(flix: Flix) {
 
   import TopRenderer.*
 
   private val running = new AtomicBoolean(false)
   private var thread: Thread = _
   private val startNanos: Long = System.nanoTime()
+
+  /** A JLine terminal handle used to query screen size. May be null if JLine fails. */
+  private val terminal: Terminal = {
+    java.util.logging.Logger.getLogger("org.jline").setLevel(java.util.logging.Level.OFF)
+    try TerminalBuilder.builder().system(true).build()
+    catch { case _: Throwable => null }
+  }
+
+  /** Returns the terminal height in rows, or [[DefaultRows]] if unavailable. */
+  private def terminalRows(): Int = {
+    if (terminal == null) return DefaultRows
+    val h = terminal.getHeight
+    if (h > 0) h else DefaultRows
+  }
+
+  /** Returns the terminal width in columns, or [[DefaultCols]] if unavailable. */
+  private def terminalCols(): Int = {
+    if (terminal == null) return DefaultCols
+    val w = terminal.getWidth
+    if (w > 0) w else DefaultCols
+  }
 
   // State carried across frames so we can compute the throughput sparkline.
   // Touched only by the renderer thread.
@@ -61,6 +83,7 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
     if (thread != null) thread.join()
     render()
     System.out.println()
+    if (terminal != null) try terminal.close() catch { case _: Throwable => () }
   }
 
   private def loop(): Unit = {
@@ -78,8 +101,16 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
     val pool = flix.threadPool
     val parallelism = if (pool == null) flix.options.threads.max(1) else pool.getParallelism.max(1)
 
+    // Budget rows for the two tables based on the current terminal height.
+    val dataRows = (terminalRows() - ChromeRows).max(MinDataRows)
+    val moduleN = (dataRows / 3).max(MinModuleN).min(MaxModuleN)
+    val defN = (dataRows - moduleN).max(MinDefN).min(MaxDefN)
+
+    // Compute the column layout based on the current terminal width.
+    val layout = computeLayout(terminalCols())
+
     val snap = flix.defnTimer.snapshot().sortBy(-_.totalNanos)
-    val visible = snap.take(topN)
+    val visible = snap.take(defN)
 
     // Throughput sparkline: visits-per-second since last frame.
     val totalCalls = flix.defnTimer.totalCallCount
@@ -88,7 +119,7 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
     throughputHistory.enqueue(throughputPerSec)
     while (throughputHistory.size > SparkWidth) throughputHistory.dequeue()
 
-    val modules = aggregateByModule(snap).take(ModuleTopN)
+    val modules = aggregateByModule(snap).take(moduleN)
 
     val sb = new StringBuilder
     sb.append(ClearScreen)
@@ -98,9 +129,9 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
     renderProgressBar(sb)
     renderResources(sb, elapsed, throughputPerSec)
     sb.append('\n')
-    renderTableHeader(sb)
-    renderRows(sb, visible, elapsed, parallelism)
-    renderModuleTable(sb, modules, elapsed, parallelism)
+    renderTableHeader(sb, layout)
+    renderRows(sb, visible, elapsed, parallelism, layout)
+    renderModuleTable(sb, modules, elapsed, parallelism, layout)
 
     System.out.print(sb)
     System.out.flush()
@@ -169,18 +200,37 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
     sb.append('\n')
   }
 
-  private def renderTableHeader(sb: StringBuilder): Unit = {
-    val header = f"${"Def"}%-24s ${"location"}%-28s ${"LOC"}%4s ${"n"}%4s ${"phase"}%-10s ${"time"}%9s ${"%cpu"}%6s ${"%wall"}%6s"
+  private def renderTableHeader(sb: StringBuilder, layout: Layout): Unit = {
+    val header = buildHeader(rpad("Def", layout.symWidth), rpad("location", layout.locWidth), layout)
     sb.append(bold(cyan(header)))
     sb.append('\n')
     sb.append(dim("─" * header.length))
     sb.append('\n')
   }
 
-  private def renderRows(sb: StringBuilder, visible: Vector[DefnStats], elapsed: Long, parallelism: Int): Unit = {
+  /**
+    * Builds a table header (or any row's left side) given the formatted text
+    * for the first two columns. Numeric columns are conditionally appended
+    * per the layout's visibility flags.
+    */
+  private def buildHeader(firstCol: String, secondCol: String, layout: Layout): String = {
+    val sb = new StringBuilder
+    sb.append(firstCol)
+    sb.append(' ')
+    sb.append(secondCol)
+    if (layout.showLOC) { sb.append(' '); sb.append(lpad("LOC", 4)) }
+    if (layout.showN) { sb.append(' '); sb.append(lpad("n", 4)) }
+    if (layout.showPhase) { sb.append(' '); sb.append(rpad("phase", 10)) }
+    sb.append(' '); sb.append(lpad("time", 9))
+    sb.append(' '); sb.append(lpad("%cpu", 6))
+    sb.append(' '); sb.append(lpad("%wall", 6))
+    sb.toString
+  }
+
+  private def renderRows(sb: StringBuilder, visible: Vector[DefnStats], elapsed: Long, parallelism: Int, layout: Layout): Unit = {
     if (visible.isEmpty) {
       val msg = "(no timings yet)"
-      val pad = ((DefTableWidth - msg.length) / 2).max(0)
+      val pad = ((layout.totalWidth - msg.length) / 2).max(0)
       sb.append('\n')
       sb.append(" " * pad)
       sb.append(dim(msg))
@@ -195,39 +245,23 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
       val locLines = locLineCount(s.loc)
       val phase = s.dominantPhase.getOrElse("?")
 
-      val symField = rpad(truncate(s.sym.name, 24), 24)
-      val locField = rpad(truncate(locStr, 28), 28)
-      val locCntField = lpad(if (locLines > 0) locLines.toString else "-", 4)
-      val nField = lpad(s.callCount.toString, 4)
-      val phaseField = rpad(truncate(phase, 10), 10)
-      val timeField = lpad(formatMillis(s.totalNanos), 9)
-      val pctCpuField = f"$pctCpu%5.1f%%"
-      val pctWallField = f"$pctWall%5.1f%%"
+      val symField = rpad(truncate(s.sym.name, layout.symWidth), layout.symWidth)
+      val locField = rpad(truncate(locStr, layout.locWidth), layout.locWidth)
 
       sb.append(symField)
       sb.append(' ')
       sb.append(dim(locField))
-      sb.append(' ')
-      sb.append(locCntField)
-      sb.append(' ')
-      sb.append(nField)
-      sb.append(' ')
-      sb.append(phaseField)
-      sb.append(' ')
-      sb.append(styleTime(timeField, s.totalNanos))
-      sb.append(' ')
-      sb.append(stylePctCpu(pctCpuField, pctCpu))
-      sb.append(' ')
-      sb.append(stylePctWall(pctWallField, pctWall))
+      appendNumericFields(sb, locLines, s.callCount.toLong, phase, s.totalNanos, pctCpu, pctWall, layout)
       sb.append('\n')
     }
   }
 
-  private def renderModuleTable(sb: StringBuilder, modules: Vector[ModuleStats], elapsed: Long, parallelism: Int): Unit = {
+  private def renderModuleTable(sb: StringBuilder, modules: Vector[ModuleStats], elapsed: Long, parallelism: Int, layout: Layout): Unit = {
     if (modules.isEmpty) return
 
     sb.append('\n')
-    val header = f"${"Module"}%-53s ${"LOC"}%4s ${"n"}%4s ${"phase"}%-10s ${"time"}%9s ${"%cpu"}%6s ${"%wall"}%6s"
+    val modWidth = layout.symWidth + 1 + layout.locWidth
+    val header = buildModuleHeader(rpad("Module", modWidth), layout)
     sb.append(bold(cyan(header)))
     sb.append('\n')
     sb.append(dim("─" * header.length))
@@ -239,29 +273,49 @@ final class TopRenderer(flix: Flix, topN: Int = 10) {
       val pctCpu = pctWall / parallelism
       val phase = m.dominantPhase.getOrElse("?")
 
-      val modField = rpad(truncate(m.module, 53), 53)
-      val locCntField = lpad(if (m.totalLocLines > 0) m.totalLocLines.toString else "-", 4)
-      val nField = lpad(m.totalCallCount.toString, 4)
-      val phaseField = rpad(truncate(phase, 10), 10)
-      val timeField = lpad(formatMillis(m.totalNanos), 9)
-      val pctCpuField = f"$pctCpu%5.1f%%"
-      val pctWallField = f"$pctWall%5.1f%%"
+      val modField = rpad(truncate(m.module, modWidth), modWidth)
 
       sb.append(modField)
-      sb.append(' ')
-      sb.append(locCntField)
-      sb.append(' ')
-      sb.append(nField)
-      sb.append(' ')
-      sb.append(phaseField)
-      sb.append(' ')
-      sb.append(styleTime(timeField, m.totalNanos))
-      sb.append(' ')
-      sb.append(stylePctCpu(pctCpuField, pctCpu))
-      sb.append(' ')
-      sb.append(stylePctWall(pctWallField, pctWall))
+      appendNumericFields(sb, m.totalLocLines, m.totalCallCount, phase, m.totalNanos, pctCpu, pctWall, layout)
       sb.append('\n')
     }
+  }
+
+  /** Module-table header: single wide first column, then the same numeric columns as the def table. */
+  private def buildModuleHeader(firstCol: String, layout: Layout): String = {
+    val sb = new StringBuilder
+    sb.append(firstCol)
+    if (layout.showLOC) { sb.append(' '); sb.append(lpad("LOC", 4)) }
+    if (layout.showN) { sb.append(' '); sb.append(lpad("n", 4)) }
+    if (layout.showPhase) { sb.append(' '); sb.append(rpad("phase", 10)) }
+    sb.append(' '); sb.append(lpad("time", 9))
+    sb.append(' '); sb.append(lpad("%cpu", 6))
+    sb.append(' '); sb.append(lpad("%wall", 6))
+    sb.toString
+  }
+
+  /**
+    * Appends the trailing numeric columns (LOC, n, phase, time, %cpu, %wall)
+    * to a row, honoring the layout's visibility flags. Always emits a leading
+    * separator before each column it writes.
+    */
+  private def appendNumericFields(sb: StringBuilder, locLines: Int, callCount: Long, phase: String,
+                                   nanos: Long, pctCpu: Double, pctWall: Double, layout: Layout): Unit = {
+    if (layout.showLOC) {
+      sb.append(' ')
+      sb.append(lpad(if (locLines > 0) locLines.toString else "-", 4))
+    }
+    if (layout.showN) {
+      sb.append(' ')
+      sb.append(lpad(callCount.toString, 4))
+    }
+    if (layout.showPhase) {
+      sb.append(' ')
+      sb.append(rpad(truncate(phase, 10), 10))
+    }
+    sb.append(' '); sb.append(styleTime(lpad(formatMillis(nanos), 9), nanos))
+    sb.append(' '); sb.append(stylePctCpu(f"$pctCpu%5.1f%%", pctCpu))
+    sb.append(' '); sb.append(stylePctWall(f"$pctWall%5.1f%%", pctWall))
   }
 
   private def renderSparkline(): String = {
@@ -444,11 +498,98 @@ object TopRenderer {
     }.toVector.sortBy(-_.totalNanos)
   }
 
-  /** Top N modules to display in the module-aggregate table. */
-  private val ModuleTopN: Int = 5
+  /** Fallback terminal height when JLine cannot determine the real one. */
+  private val DefaultRows: Int = 24
 
-  /** Width of the def-table border (sum of column widths plus separators). */
-  private val DefTableWidth: Int = 98
+  /** Fallback terminal width when JLine cannot determine the real one. */
+  private val DefaultCols: Int = 100
+
+  /**
+    * Column layout for the per-frame table render. Computed from the current
+    * terminal width: when the terminal is narrow, the optional LOC / n /
+    * phase columns are dropped in that order (lowest-signal first). When the
+    * terminal is wide, the surplus is distributed between the DefnSym and
+    * location columns proportionally to their default widths.
+    */
+  private final case class Layout(
+    symWidth: Int,
+    locWidth: Int,
+    showLOC: Boolean,
+    showN: Boolean,
+    showPhase: Boolean,
+    totalWidth: Int
+  )
+
+  /** Default DefnSym/location widths and minimum bounds when the terminal shrinks. */
+  private val DefaultSymWidth: Int = 24
+  private val DefaultLocWidth: Int = 28
+  private val MinSymWidth: Int = 16
+  private val MinLocWidth: Int = 20
+
+  /** Fixed-width contribution of `time + %cpu + %wall` columns and their separators. */
+  private val FixedTailWidth: Int = 9 + 1 + 6 + 1 + 6 // time(9) + %cpu(6) + %wall(6) with two separators between
+
+  /** Width contribution of an optional column (separator + width). */
+  private val LocColWidth: Int = 1 + 4
+  private val NColWidth: Int = 1 + 4
+  private val PhaseColWidth: Int = 1 + 10
+
+  private def computeLayout(cols: Int): Layout = {
+    // Width contribution of the "fixed" half: separator before time + tail.
+    val tail = 1 + FixedTailWidth
+    // Width of just the text section (sym + 1 + location) at default sizes.
+    def textWidth(symW: Int, locW: Int): Int = symW + 1 + locW
+
+    // Try tiers in descending feature order.
+    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + NColWidth + PhaseColWidth + tail
+    if (cols >= full) {
+      // Surplus → expand sym (~46%) and location (~54%) proportionally.
+      val extra = cols - full
+      val extraSym = extra * 46 / 100
+      val extraLoc = extra - extraSym
+      val symW = DefaultSymWidth + extraSym
+      val locW = DefaultLocWidth + extraLoc
+      return Layout(symW, locW, showLOC = true, showN = true, showPhase = true,
+        totalWidth = textWidth(symW, locW) + LocColWidth + NColWidth + PhaseColWidth + tail)
+    }
+
+    // Tier: drop phase.
+    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + NColWidth + tail
+    if (cols >= noPhase)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showN = true, showPhase = false, noPhase)
+
+    // Tier: drop phase + n.
+    val noPhaseNoN = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + tail
+    if (cols >= noPhaseNoN)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showN = false, showPhase = false, noPhaseNoN)
+
+    // Tier: drop phase + n + LOC.
+    val noOptional = textWidth(DefaultSymWidth, DefaultLocWidth) + tail
+    if (cols >= noOptional)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = false, showN = false, showPhase = false, noOptional)
+
+    // Even minimum tier doesn't fit; shrink sym/locWidth to floors.
+    val available = (cols - tail).max(MinSymWidth + 1 + MinLocWidth)
+    val symW = MinSymWidth.max(available * 46 / 100)
+    val locW = MinLocWidth.max(available - 1 - symW)
+    Layout(symW, locW, showLOC = false, showN = false, showPhase = false,
+      textWidth(symW, locW) + tail)
+  }
+
+  /**
+    * Fixed-overhead rows: blank + 3 header lines + blank + 2 def-chrome +
+    * 1 blank-before-modules + 2 module-chrome + 1 cursor-parking row.
+    */
+  private val ChromeRows: Int = 11
+
+  /** Floor on the total data-row budget. */
+  private val MinDataRows: Int = 8
+
+  /** Bounds on per-table row counts. */
+  private val MinDefN: Int = 5
+  private val MaxDefN: Int = 30
+  private val MinModuleN: Int = 3
+  private val MaxModuleN: Int = 10
 
   // -- Formatting helpers -------------------------------------------------
 
