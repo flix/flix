@@ -14,41 +14,40 @@
  * limitations under the License.
  */
 
-///
-/// A trait for data structures that can be traversed in left-to-right
-/// order with an applicative functor.
-///
-pub trait Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
-
-    ///
-    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
-    /// data structure `t`.
-    ///
-    pub def traverse(f: a -> m[b] \ ef, t: t[a]): m[t[b]] \ (ef + Foldable.Aef[t]) with Applicative[m]
-
-    ///
-    /// Returns the result of running all the actions in the data structure `t`.
-    ///
-    pub def sequence(t: t[m[a]]): m[t[a]] \ Foldable.Aef[t] with Applicative[m] =
-        Traversable.traverse(identity, t)
-
-    ///
-    /// Traversing with the identity function wrapped into an applicative preserves the container `t`
-    /// where accessing elements within `t` is pure.
-    ///
-    law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] where Foldable.Aef[t] ~ {} Traversable.traverse(f, t) == Applicative.point(t)
-
-    ///
-    /// sequence identity.
-    ///
-    law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] where Foldable.Aef[t] ~ {} Traversable.sequence(Functor.map(f, t)) == Applicative.point(t)
-
-    // Missing laws: naturality and composition.
-
-}
-
-
 pub mod Traversable {
+
+    ///
+    /// A trait for data structures that can be traversed in left-to-right
+    /// order with an applicative functor.
+    ///
+    pub trait Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
+
+        ///
+        /// Returns the result of applying the applicative mapping function `f` to all the elements of the
+        /// data structure `t`.
+        ///
+        pub def traverse(f: a -> m[b] \ ef, t: t[a]): m[t[b]] \ (ef + Foldable.Aef[t]) with Applicative[m]
+
+        ///
+        /// Returns the result of running all the actions in the data structure `t`.
+        ///
+        pub def sequence(t: t[m[a]]): m[t[a]] \ Foldable.Aef[t] with Applicative[m] =
+            Traversable.traverse(identity, t)
+
+        ///
+        /// Traversing with the identity function wrapped into an applicative preserves the container `t`
+        /// where accessing elements within `t` is pure.
+        ///
+        law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] where Foldable.Aef[t] ~ {} Traversable.traverse(f, t) == Applicative.point(t)
+
+        ///
+        /// sequence identity.
+        ///
+        law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] where Foldable.Aef[t] ~ {} Traversable.sequence(Functor.map(f, t)) == Applicative.point(t)
+
+        // Missing laws: naturality and composition.
+
+    }
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
@@ -79,4 +78,3 @@ pub mod Traversable {
         }
 
 }
-

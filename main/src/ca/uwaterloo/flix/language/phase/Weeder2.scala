@@ -248,11 +248,12 @@ object Weeder2 {
       }
       val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       mapN(
+        pickDocumentation(tree),
         pickQName(tree),
         pickAllUsesAndImports(tree),
         pickAllDeclarations(tree)
       ) {
-        (qname, usesAndImports, declarations) => Declaration.Mod(annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
+        (doc, qname, usesAndImports, declarations) => Declaration.Mod(doc, annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
       }
     }
 
@@ -647,8 +648,13 @@ object Weeder2 {
       docTree match {
         case None => Validation.Success(Doc(List.empty, tree0.loc))
         case Some(tree) =>
-          // strip prefixing `///` and trim
-          var lines = text(tree).map(_.stripPrefix("///").trim)
+          // Strip the `///` prefix, one optional separator space, and trailing whitespace.
+          // Internal indentation is preserved so that code blocks and ASCII layout survive.
+          var lines = text(tree).map { s =>
+            val s1 = s.stripPrefix("///")
+            val s2 = if (s1.startsWith(" ")) s1.drop(1) else s1
+            s2.stripTrailing()
+          }
           // Drop first/last line if it is empty
           if (lines.headOption.exists(_.isEmpty)) {
             lines = lines.tail

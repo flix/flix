@@ -59,9 +59,12 @@ pub mod Int8 {
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
     pub def abs(x: Int8): Int8 = {
-        if      (x >= 0i8)          x
-        else if (x == minValue())   -1i8
-        else                        -x
+        if (x >= 0i8)
+            x
+        else if (x == minValue())
+            -1i8
+        else
+            -x
     }
 
     ///
@@ -91,11 +94,16 @@ pub mod Int8 {
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int8, y: Int8): Int8 = {
-        if      (x >= 0i8 and y >= 0i8)                 abs(x - y)
-        else if (x < 0i8 and y < 0i8)                   abs(x - y)
-        else if (x == minValue() or y == minValue())    -1i8
-        else if (minValue() + abs(x) + abs(y) >= 0i8)   -1i8
-        else                                            abs(x - y)
+        if (x >= 0i8 and y >= 0i8)
+            abs(x - y)
+        else if (x < 0i8 and y < 0i8)
+            abs(x - y)
+        else if (x == minValue() or y == minValue())
+            -1i8
+        else if (minValue() + abs(x) + abs(y) >= 0i8)
+            -1i8
+        else
+            abs(x - y)
     }
 
     ///
@@ -103,9 +111,12 @@ pub mod Int8 {
     /// The sign of x - y.
     ///
     pub def compare(x: Int8, y: Int8): Int32 = {
-        if      (x == y)    0
-        else if (x < y)     -1
-        else                1
+        if (x == y)
+            0
+        else if (x < y)
+            -1
+        else
+            1
     }
 
     ///
@@ -118,7 +129,6 @@ pub mod Int8 {
     /// Returns `base` raised to the power of `n`.
     ///
     pub def pow(base: {base = Int8}, n: Int8): Int8 = %%INT8_EXP%%(base#base, n)
-
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
@@ -136,9 +146,12 @@ pub mod Int8 {
     /// representation of `x`.
     ///
     pub def bitCount(x: Int8): Int32 = {
-        if      (x == 0i8)           0
-        else if (x `remainder` 2i8 != 0i8) bitCount(logicalRightShift(dist = 1, x)) + 1
-        else                         bitCount(logicalRightShift(dist = 1, x))
+        if (x == 0i8)
+            0
+        else if (x `remainder` 2i8 != 0i8)
+            bitCount(logicalRightShift(dist = 1, x)) + 1
+        else
+            bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
@@ -163,13 +176,13 @@ pub mod Int8 {
     /// Returns the value obtained by reversing the bits in the
     /// two's complement binary representation of `x`.
     ///
-    pub def reverse(x: Int8): Int8 = reverseHelper(x, 0, size()-1)
+    pub def reverse(x: Int8): Int8 = reverseHelper(x, 0, size() - 1)
 
     ///
     /// Helper function for `reverse`.
     ///
     def reverseHelper(x: Int8, l: Int32, r: Int32): Int8 =
-        if (l >= r) x else reverseHelper(swap(x, l, r), l+1, r-1)
+        if (l >= r) x else reverseHelper(swap(x, l, r), l + 1, r - 1)
 
     ///
     /// Helper function for `reverse`.
@@ -177,7 +190,7 @@ pub mod Int8 {
     def swap(x: Int8, l: Int32, r: Int32): Int8 = match (getBit(pos = l, x), getBit(pos = r, x)) {
         case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
         case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
-        case _ => x
+        case _      => x
     }
 
     ///
@@ -204,11 +217,16 @@ pub mod Int8 {
     /// Otherwise recursively check the next bit in the same way.
     ///
     def oneBitPositionHelper(x: Int8, position: Int32, delta: Int32): Int32 = {
-        if      (position < 0)                   -1
-        else if (position > (size() - 1))        -1
-        else if (getBit(pos = position, x) == 1) position
-        else if (delta == 0)                     -1
-        else                                     oneBitPositionHelper(x, position + delta, delta)
+        if (position < 0)
+            -1
+        else if (position > (size() - 1))
+            -1
+        else if (getBit(pos = position, x) == 1)
+            position
+        else if (delta == 0)
+            -1
+        else
+            oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///

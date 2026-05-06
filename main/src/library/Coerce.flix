@@ -14,19 +14,23 @@
  *  limitations under the License.
  */
 
-///
-/// A trait for type that can be coerced.
-///
-/// Currently only supports newtype-style wrappers.
-///
-pub trait Coerce[t] {
-    ///
-    /// The return type of the coerce function.
-    ///
-    type Out
+pub mod Coerce {
 
     ///
-    /// Returns the unwrapped value of `x`.
+    /// A trait for type that can be coerced.
     ///
-    pub def coerce(x: t): Coerce.Out[t]
+    /// Currently only supports newtype-style wrappers.
+    ///
+    pub trait Coerce[t] {
+        ///
+        /// The return type of the coerce function.
+        ///
+        type Out
+
+        ///
+        /// Returns the unwrapped value of `x`.
+        ///
+        pub def coerce(x: t): Coerce.Out[t]
+    }
+
 }
