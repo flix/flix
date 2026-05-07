@@ -85,7 +85,7 @@ mod Fs.FsLayer {
     ///
     pub def logPost(op: String, path: String, describe: a -> String, result: Result[IoError, a]): Unit \ Logger =
         match result {
-            case Ok(v)    =>
+            case Ok(v) =>
                 Logger.log(Severity.Debug, gray("<--") + text(" ") + green("OK") + text(" ") + bold(op) + text(" ") + cyan(path) + gray(" (${describe(v)})"))
             case Err(err) =>
                 Logger.log(Severity.Warn, gray("<--") + text(" ") + red("ERR") + text(" ") + bold(op) + text(" ") + cyan(path) + text(" ") + red("${err}"))
@@ -96,7 +96,7 @@ mod Fs.FsLayer {
     ///
     pub def logPost2(op: String, src: String, dst: String, result: Result[IoError, Unit]): Unit \ Logger =
         match result {
-            case Ok(_)    =>
+            case Ok(_) =>
                 Logger.log(Severity.Debug, gray("<--") + text(" ") + green("OK") + text(" ") + bold(op) + text(" ") + cyan(src) + gray(" -> ") + cyan(dst))
             case Err(err) =>
                 Logger.log(Severity.Warn, gray("<--") + text(" ") + red("ERR") + text(" ") + bold(op) + text(" ") + cyan(src) + gray(" -> ") + cyan(dst) + text(" ") + red("${err}"))

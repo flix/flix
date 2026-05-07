@@ -835,104 +835,90 @@ pub mod Fs.FileSystem {
             let o = Fs.MemoryOverlay.fresh(rc);
             run { f() } with handler FileSystem {
                 // ── Stat/test ops — delegate on None ───────────────
-                def exists(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryExists(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.exists(f1)
-                        }
-                    )
-                def isDirectory(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsDirectory(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isDirectory(f1)
-                        }
-                    )
-                def isRegularFile(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsRegularFile(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isRegularFile(f1)
-                        }
-                    )
-                def isSymbolicLink(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsSymbolicLink(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isSymbolicLink(f1)
-                        }
-                    )
-                def isReadable(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsReadable(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isReadable(f1)
-                        }
-                    )
-                def isWritable(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsWritable(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isWritable(f1)
-                        }
-                    )
-                def isExecutable(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryIsExecutable(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.isExecutable(f1)
-                        }
-                    )
-                def accessTime(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryTime(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.accessTime(f1)
-                        }
-                    )
-                def creationTime(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryTime(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.creationTime(f1)
-                        }
-                    )
-                def modificationTime(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryTime(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.modificationTime(f1)
-                        }
-                    )
-                def size(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.trySize(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.size(f1)
-                        }
-                    )
-                def read(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryRead(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.read(f1)
-                        }
-                    )
-                def readLines(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryReadLines(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.readLines(f1)
-                        }
-                    )
-                def readBytes(f1, k) =
-                    k(
-                        match Fs.MemoryOverlay.tryReadBytes(f1, o) {
-                            case Some(r) => r
-                            case None    => FileSystem.readBytes(f1)
-                        }
-                    )
+                def exists(f1, k) = k(
+                    match Fs.MemoryOverlay.tryExists(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.exists(f1)
+                    }
+                )
+                def isDirectory(f1, k) = k(
+                    match Fs.MemoryOverlay.tryIsDirectory(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.isDirectory(f1)
+                    }
+                )
+                def isRegularFile(f1, k) = k(
+                    match Fs.MemoryOverlay.tryIsRegularFile(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.isRegularFile(f1)
+                    }
+                )
+                def isSymbolicLink(f1, k) = k(
+                    match Fs.MemoryOverlay.tryIsSymbolicLink(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.isSymbolicLink(f1)
+                    }
+                )
+                def isReadable(f1, k) = k(
+                    match Fs.MemoryOverlay.tryIsReadable(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.isReadable(f1)
+                    }
+                )
+                def isWritable(f1, k) = k(
+                    match Fs.MemoryOverlay.tryIsWritable(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.isWritable(f1)
+                    }
+                )
+                def isExecutable(f1, k) = k(
+                    match Fs.MemoryOverlay.tryIsExecutable(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.isExecutable(f1)
+                    }
+                )
+                def accessTime(f1, k) = k(
+                    match Fs.MemoryOverlay.tryTime(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.accessTime(f1)
+                    }
+                )
+                def creationTime(f1, k) = k(
+                    match Fs.MemoryOverlay.tryTime(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.creationTime(f1)
+                    }
+                )
+                def modificationTime(f1, k) = k(
+                    match Fs.MemoryOverlay.tryTime(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.modificationTime(f1)
+                    }
+                )
+                def size(f1, k) = k(
+                    match Fs.MemoryOverlay.trySize(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.size(f1)
+                    }
+                )
+                def read(f1, k) = k(
+                    match Fs.MemoryOverlay.tryRead(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.read(f1)
+                    }
+                )
+                def readLines(f1, k) = k(
+                    match Fs.MemoryOverlay.tryReadLines(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.readLines(f1)
+                    }
+                )
+                def readBytes(f1, k) = k(
+                    match Fs.MemoryOverlay.tryReadBytes(f1, o) {
+                        case Some(r) => r
+                        case None    => FileSystem.readBytes(f1)
+                    }
+                )
 
                 // ── List/glob — pass lower result to Overlay ────────
                 def list(f1, k)               = k(Fs.MemoryOverlay.list(f1, FileSystem.list(f1), o))
