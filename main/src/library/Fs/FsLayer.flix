@@ -72,16 +72,13 @@ mod Fs.FsLayer {
     /// Logs a pre-operation message at `Debug` level.
     ///
     pub def logPre(op: String, path: String): Unit \ Logger =
-        Logger.log(Severity.Debug,
-            gray("-->") + text(" ") + bold(op) + text(" ") + cyan(path))
+        Logger.log(Severity.Debug, gray("-->") + text(" ") + bold(op) + text(" ") + cyan(path))
 
     ///
     /// Logs a pre-operation message for two-path operations (copy/move) at `Debug` level.
     ///
     pub def logPre2(op: String, src: String, dst: String): Unit \ Logger =
-        Logger.log(Severity.Debug,
-            gray("-->") + text(" ") + bold(op) + text(" ") + cyan(src) +
-            gray(" -> ") + cyan(dst))
+        Logger.log(Severity.Debug, gray("-->") + text(" ") + bold(op) + text(" ") + cyan(src) + gray(" -> ") + cyan(dst))
 
     ///
     /// Logs a post-operation message: `Debug` on success, `Warn` on error.
@@ -89,15 +86,9 @@ mod Fs.FsLayer {
     pub def logPost(op: String, path: String, describe: a -> String, result: Result[IoError, a]): Unit \ Logger =
         match result {
             case Ok(v)    =>
-                Logger.log(Severity.Debug,
-                    gray("<--") + text(" ") + green("OK") + text(" ") +
-                    bold(op) + text(" ") + cyan(path) +
-                    gray(" (${describe(v)})"))
+                Logger.log(Severity.Debug, gray("<--") + text(" ") + green("OK") + text(" ") + bold(op) + text(" ") + cyan(path) + gray(" (${describe(v)})"))
             case Err(err) =>
-                Logger.log(Severity.Warn,
-                    gray("<--") + text(" ") + red("ERR") + text(" ") +
-                    bold(op) + text(" ") + cyan(path) +
-                    text(" ") + red("${err}"))
+                Logger.log(Severity.Warn, gray("<--") + text(" ") + red("ERR") + text(" ") + bold(op) + text(" ") + cyan(path) + text(" ") + red("${err}"))
         }
 
     ///
@@ -106,16 +97,9 @@ mod Fs.FsLayer {
     pub def logPost2(op: String, src: String, dst: String, result: Result[IoError, Unit]): Unit \ Logger =
         match result {
             case Ok(_)    =>
-                Logger.log(Severity.Debug,
-                    gray("<--") + text(" ") + green("OK") + text(" ") +
-                    bold(op) + text(" ") + cyan(src) +
-                    gray(" -> ") + cyan(dst))
+                Logger.log(Severity.Debug, gray("<--") + text(" ") + green("OK") + text(" ") + bold(op) + text(" ") + cyan(src) + gray(" -> ") + cyan(dst))
             case Err(err) =>
-                Logger.log(Severity.Warn,
-                    gray("<--") + text(" ") + red("ERR") + text(" ") +
-                    bold(op) + text(" ") + cyan(src) +
-                    gray(" -> ") + cyan(dst) +
-                    text(" ") + red("${err}"))
+                Logger.log(Severity.Warn, gray("<--") + text(" ") + red("ERR") + text(" ") + bold(op) + text(" ") + cyan(src) + gray(" -> ") + cyan(dst) + text(" ") + red("${err}"))
         }
 
     // ─── File-test operations ──────────────────────────────────────────
@@ -566,8 +550,7 @@ mod Fs.FsLayer {
                 if (resolved.startsWith(base))
                     Ok(resolved.toString())
                 else
-                    Err(IoError(ErrorKind.PermissionDenied,
-                        "Path '${path}' escapes chroot '${chrootDir}'"))
+                    Err(IoError(ErrorKind.PermissionDenied, "Path '${path}' escapes chroot '${chrootDir}'"))
             } catch {
                 case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
@@ -594,8 +577,7 @@ mod Fs.FsLayer {
                 if (allowed)
                     Ok(resolved.toString())
                 else
-                    Err(IoError(ErrorKind.PermissionDenied,
-                        "Path '${path}' is not within any allowed directory"))
+                    Err(IoError(ErrorKind.PermissionDenied, "Path '${path}' is not within any allowed directory"))
             } catch {
                 case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
@@ -620,8 +602,7 @@ mod Fs.FsLayer {
                     deniedDirs
                 );
                 if (denied)
-                    Err(IoError(ErrorKind.PermissionDenied,
-                        "Path '${path}' is within a denied directory"))
+                    Err(IoError(ErrorKind.PermissionDenied, "Path '${path}' is within a denied directory"))
                 else
                     Ok(resolved.toString())
             } catch {
@@ -650,8 +631,7 @@ mod Fs.FsLayer {
                 if (allowed)
                     Ok(resolved.toString())
                 else
-                    Err(IoError(ErrorKind.PermissionDenied,
-                        "Path '${path}' does not match any allowed glob pattern"))
+                    Err(IoError(ErrorKind.PermissionDenied, "Path '${path}' does not match any allowed glob pattern"))
             } catch {
                 case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                 case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
@@ -675,8 +655,7 @@ mod Fs.FsLayer {
                     patterns
                 );
                 if (denied)
-                    Err(IoError(ErrorKind.PermissionDenied,
-                        "Path '${path}' matches a denied glob pattern"))
+                    Err(IoError(ErrorKind.PermissionDenied, "Path '${path}' matches a denied glob pattern"))
                 else
                     Ok(resolved.toString())
             } catch {
@@ -798,8 +777,7 @@ mod Fs.FsLayer {
         if (actualBytes <= maxBytes)
             Ok(())
         else
-            Err(IoError(ErrorKind.TransferLimitExceeded,
-                "transfer limit exceeded: ${actualSize} > ${maxSize}"))
+            Err(IoError(ErrorKind.TransferLimitExceeded, "transfer limit exceeded: ${actualSize} > ${maxSize}"))
 
     ///
     /// Estimates the UTF-8 byte size of a string by multiplying the character
@@ -854,8 +832,7 @@ mod Fs.FsLayer {
                         if (curTime == oldTime)
                             Ok(())
                         else
-                            Err(IoError(ErrorKind.Conflict,
-                                "Conflict on '${file}': expected mtime ${oldTime}, found ${curTime}"))
+                            Err(IoError(ErrorKind.Conflict, "Conflict on '${file}': expected mtime ${oldTime}, found ${curTime}"))
                     case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
                     case Err(e) => Err(e)
                 }
@@ -891,8 +868,7 @@ mod Fs.FsLayer {
                 if (String.trim(expected) == actual)
                     Ok(())
                 else
-                    Err(IoError(ErrorKind.ChecksumMismatch,
-                        "Checksum mismatch for '${file}': expected ${String.trim(expected)}, got ${actual}"))
+                    Err(IoError(ErrorKind.ChecksumMismatch, "Checksum mismatch for '${file}': expected ${String.trim(expected)}, got ${actual}"))
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
             case Err(e) => Err(e)
         }
