@@ -63,7 +63,7 @@ pub mod Math.Shuffle {
     ///
     /// Fisher-Yates shuffle algorithm for arrays.
     ///
-    def fisherYatesShuffle(arr: Array[Int32, r]): Unit \ {r, NonDet} = unsafe IO as r {
+    def fisherYatesShuffle(arr: Array[Int32, r]): Unit \ { r, NonDet } = unsafe IO as r {
         let rnd = new JRandom();
         let len = Array.length(arr);
         def loop(i) = {

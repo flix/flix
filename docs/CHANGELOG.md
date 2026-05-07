@@ -1,7 +1,9 @@
 # Changelog
 
-Version 0.71.0:
+Version 0.72.0:
+- Compiler: Improved effect error messages (thanks Alexander and Samuel!)
 
+Version 0.71.0:
 - Compiler: Significantly improved Java interoperability for generic/polymorphic types (thanks Magnus!)
 - Compiler: Improved pattern match compilation with ordinal dispatch and tableswitch (thanks Magnus!)
 - Compiler: Various bytecode optimizations for improved runtime performance (thanks Magnus!)

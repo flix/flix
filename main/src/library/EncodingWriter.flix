@@ -14,31 +14,30 @@
  *  limitations under the License.
  */
 
-import java.nio.charset.CharsetEncoder
-
-///
-/// Adapts a `Writable` of bytes to a `Writable` of chars.
-///
-/// `byteWriter`: the underlying byte writer, an instance of `Writable` where `Writable.Elm[t] ~ Int8`.
-/// `encoder`: used to encode bytes before writing them to the `byteReader`.
-///
-enum EncodingWriter[t]({encoder = CharsetEncoder, byteWriter = t})
-
-instance Writable[EncodingWriter[t]] with Writable[t] where Writable.Elm[t] ~ Int8 {
-
-    type Elm = Char
-
-    type Aef = Writable.Aef[t]
-
-    pub def write(buffer: Array[Char, r], writer: EncodingWriter[t]): Result[IoError, Int32] \ r + Writable.Aef[t] = EncodingWriter.write(buffer, writer)
-
-}
-
 pub mod EncodingWriter {
+
     import java.nio.charset.CharsetEncoder
     import java.nio.charset.CodingErrorAction
     import java.nio.ByteBuffer
     import java.nio.CharBuffer
+
+    ///
+    /// Adapts a `Writable` of bytes to a `Writable` of chars.
+    ///
+    /// `byteWriter`: the underlying byte writer, an instance of `Writable` where `Writable.Elm[t] ~ Int8`.
+    /// `encoder`: used to encode bytes before writing them to the `byteReader`.
+    ///
+    enum EncodingWriter[t]({encoder = CharsetEncoder, byteWriter = t})
+
+    instance Writable[EncodingWriter[t]] with Writable[t] where Writable.Elm[t] ~ Int8 {
+
+        type Elm = Char
+
+        type Aef = Writable.Aef[t]
+
+        pub def write(buffer: Array[Char, r], writer: EncodingWriter[t]): Result[IoError, Int32] \ r + Writable.Aef[t] = EncodingWriter.write(buffer, writer)
+
+    }
 
     ///
     /// Wraps `byteWriter` in an `EncodingWriter`.
@@ -46,7 +45,7 @@ pub mod EncodingWriter {
     pub def wrap(charset: CharacterSet, byteWriter: t): EncodingWriter[t] \ IO =
         let CharacterSet.CharacterSet(cs) = charset;
         EncodingWriter({
-            encoder = cs.newEncoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE),
+            encoder    = cs.newEncoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE),
             byteWriter = byteWriter
         })
 
@@ -60,10 +59,10 @@ pub mod EncodingWriter {
     /// Returns `Err(e)` if some underlying I/O error occurs.
     ///
     pub def write(src: Array[Char, r], writer: EncodingWriter[t]): Result[IoError, Int32] \ r + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Int8 =
-        let EncodingWriter.EncodingWriter({ encoder, byteWriter }) = writer;
+        let EncodingWriter.EncodingWriter({encoder, byteWriter}) = writer;
         region rc {
             let dest = encoder |> encode(rc, src);
-            forM(
+            forM (
                 _ <- byteWriter |> writeBytes(rc, dest)
             ) yield {
                 src |> Array.length
@@ -117,7 +116,7 @@ pub mod EncodingWriter {
             if (Array.isEmpty(arr)) {
                 Ok(())
             } else {
-                forM(
+                forM (
                     bytesWritten <- Writable.write(arr, byteWriter);
                     _ <- loop(arr |> Array.drop(rc, bytesWritten))
                 ) yield ()

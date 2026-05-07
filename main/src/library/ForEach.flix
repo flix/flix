@@ -14,29 +14,29 @@
  *  limitations under the License.
  */
 
-///
-/// A trait for data structures that support a forEach operation.
-///
-trait ForEach[t] {
-
-    ///
-    /// The type of elements in the data structure.
-    ///
-    type Elm: Type
-
-    ///
-    /// The effect of `forEach`.
-    ///
-    type Aef: Eff = {}
-
-    ///
-    /// Applies `f` to each element in the data structure.
-    ///
-    pub def forEach(f: ForEach.Elm[t] -> Unit \ ef, t: t): Unit \ (ef + ForEach.Aef[t])
-
-}
-
 pub mod ForEach {
+
+    ///
+    /// A trait for data structures that support a forEach operation.
+    ///
+    trait ForEach[t] {
+
+        ///
+        /// The type of elements in the data structure.
+        ///
+        type Elm: Type
+
+        ///
+        /// The effect of `forEach`.
+        ///
+        type Aef: Eff = {}
+
+        ///
+        /// Applies `f` to each element in the data structure.
+        ///
+        pub def forEach(f: ForEach.Elm[t] -> Unit \ ef, t: t): Unit \ (ef + ForEach.Aef[t])
+
+    }
 
      ///
      /// A view for `ForEach` instance `t` that wraps each element with its index.

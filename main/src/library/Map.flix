@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 pub mod Map {
 
     ///
@@ -92,11 +91,11 @@ pub mod Map {
 
     instance Witherable[Map[k]] with Order[k]
 
-    instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
-        pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
+    instance SemiGroup[Map[k, v]] with Order[k], SemiGroup[v] {
+        pub def combine(x: Map[k, v], y: Map[k, v]): Map[k, v] = Map.unionWith(SemiGroup.combine, x, y)
     }
 
-    instance CommutativeSemiGroup[Map[k,v]] with Order[k], CommutativeSemiGroup[v]
+    instance CommutativeSemiGroup[Map[k, v]] with Order[k], CommutativeSemiGroup[v]
 
     instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
         pub def empty(): Map[k, v] = Map.empty()
@@ -729,15 +728,18 @@ pub mod Map {
     ///
     pub def differenceWithKey(f: (k, v, v) -> Option[v] \ ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] \ ef with Order[k] =
         let diff = filterWithKey((k, _) -> not memberOf(k, m2), m1);
-        let g = (k, v, acc) -> if (memberOf(k, m1))
-                                match get(k, m1) {
-                                    case Some(v1) => match f(k, v1, v) {
-                                        case None => acc
-                                        case Some(w) => insert(k, w, acc)
-                                    }
-                                    case None => unreachable!()
-                                }
-                             else acc;
+        let g = (k, v, acc) ->
+            if (memberOf(k, m1))
+                match get(k, m1) {
+                    case Some(v1) =>
+                        match f(k, v1, v) {
+                            case None    => acc
+                            case Some(w) => insert(k, w, acc)
+                        }
+                    case None => unreachable!()
+                }
+            else
+                acc;
         foldRightWithKey(g, diff, m2)
 
     ///
@@ -760,12 +762,12 @@ pub mod Map {
     /// Returns the map `m` as an array.
     ///
     pub def toArray(rc: Region[r], m: Map[k, v]): Array[(k, v), r] \ r = match size(m) {
-        case 0  => Array#{} @ rc
+        case 0 => Array#{} @ rc
         case sz =>
             let a = Array.empty(rc, sz);
             forEachWithIndex((i, k, v) -> Array.put((k, v), i, a), m);
             a
-        }
+    }
 
     ///
     /// Returns the map `m` as a vector.
@@ -786,7 +788,7 @@ pub mod Map {
     /// Returns the map `m` as a chain of key-value pairs.
     ///
     pub def toChain(m: Map[a, b]): Chain[(a, b)] with Order[a] =
-        foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k,v)), Chain.empty(), m)
+        foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k, v)), Chain.empty(), m)
 
     ///
     /// Returns a MultiMap where key `k` is mapped to the singleton set containing `v`.
@@ -818,7 +820,7 @@ pub mod Map {
     ///
     pub def unfold(f: s -> Option[(k, v, s)] \ ef, st: s): Map[k, v] \ ef with Order[k] =
         def loop(sst, m) = match f(sst) {
-            case None            => m
+            case None              => m
             case Some((k, v, st1)) => loop(st1, insert(k, v, m))
         };
         loop(st, empty())
@@ -847,8 +849,8 @@ pub mod Map {
     ///
     pub def iterate(f: (k, v) -> Option[(k, v)] \ ef, k: k, v: v): Map[k, v] \ ef with Order[k] =
         def loop(ck, cv, m) = match f(ck, cv) {
-            case None              => m
-            case Some((k1, v1))    => loop(k1, v1, insert(k1, v1, m))
+            case None           => m
+            case Some((k1, v1)) => loop(k1, v1, insert(k1, v1, m))
         };
         loop(k, v, empty())
 

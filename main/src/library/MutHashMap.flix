@@ -92,7 +92,7 @@ pub mod MutHashMap {
     ///
     /// Each entry is part of both a hash bucket chain and the insertion order chain.
     ///
-    pub struct Node[k: Type, v: Type, r: Region] {
+    struct Node[k: Type, v: Type, r: Region] {
         key: k,                                    // The key for this entry
         hash: Int32,                               // Cached hash code for the key
         mut value: v,                              // The value associated with the key
@@ -102,7 +102,6 @@ pub mod MutHashMap {
     }
 
     mod Node {
-
         pub def getKey(e: Node[k, v, r]): k = e->key
         pub def getValue(e: Node[k, v, r]): v \ r = e->value
         pub def setValue(v: v, e: Node[k, v, r]): Unit \ r = e->value = v

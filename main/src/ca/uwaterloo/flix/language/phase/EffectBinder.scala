@@ -198,11 +198,12 @@ object EffectBinder {
       bindBinders(binders, e)
 
     case LiftedAst.Expr.Stm(exps, exp, _, _, loc) =>
-      val binders = mutable.ArrayBuffer.empty[Binder]
-      val es = exps.map(visitExprInnerWithBinders(binders))
+      // Each exp is processed with visitExpr (its own binder scope) to preserve
+      // evaluation order. Shared binders would hoist bindings from later exps
+      // before earlier ones execute.
+      val es = exps.map(visitExpr)
       val e2 = visitExpr(exp)
-      val e = ReducedAst.Expr.Stm(es, e2, loc)
-      bindBinders(binders, e)
+      ReducedAst.Expr.Stm(es, e2, loc)
 
     case LiftedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
       val e = visitExpr(exp)

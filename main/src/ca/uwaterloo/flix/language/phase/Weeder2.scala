@@ -248,11 +248,12 @@ object Weeder2 {
       }
       val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       mapN(
+        pickDocumentation(tree),
         pickQName(tree),
         pickAllUsesAndImports(tree),
         pickAllDeclarations(tree)
       ) {
-        (qname, usesAndImports, declarations) => Declaration.Mod(annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
+        (doc, qname, usesAndImports, declarations) => Declaration.Mod(doc, annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
       }
     }
 
@@ -647,8 +648,13 @@ object Weeder2 {
       docTree match {
         case None => Validation.Success(Doc(List.empty, tree0.loc))
         case Some(tree) =>
-          // strip prefixing `///` and trim
-          var lines = text(tree).map(_.stripPrefix("///").trim)
+          // Strip the `///` prefix, one optional separator space, and trailing whitespace.
+          // Internal indentation is preserved so that code blocks and ASCII layout survive.
+          var lines = text(tree).map { s =>
+            val s1 = s.stripPrefix("///")
+            val s2 = if (s1.startsWith(" ")) s1.drop(1) else s1
+            s2.stripTrailing()
+          }
           // Drop first/last line if it is empty
           if (lines.headOption.exists(_.isEmpty)) {
             lines = lines.tail
@@ -1385,11 +1391,41 @@ object Weeder2 {
       }
     }
 
+    /**
+      * Flattens a right-nested Statement tree into a list of head expression trees and a single tail tree.
+      * Uses `unfold` to peek through Expr.Expr wrapper nodes.
+      *
+      * Example: Statement(f(), Expr(Statement(g(), Expr(h()))))
+      *       => (List(f(), g()), h())
+      */
+    private def flattenStmTree(tree: Tree): (List[Tree], Tree) = {
+      val heads = mutable.ArrayBuffer.empty[Tree]
+      var current = tree
+      var tail: Tree = null
+      var done = false
+      while (!done) {
+        pickAll(TreeKind.Expr.Expr, current) match {
+          case first :: second :: Nil =>
+            heads.addOne(first)
+            val inner = unfold(second)
+            if (inner.kind == TreeKind.Expr.Statement) {
+              current = inner
+            } else {
+              tail = second
+              done = true
+            }
+          case exprs =>
+            throw InternalCompilerException(s"Parser error. Expected 2 expressions in statement but found '${exprs.length}'.", current.loc)
+        }
+      }
+      (heads.toList, tail)
+    }
+
     private def visitStatementExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Statement)
-      mapN(traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)) {
-        case ex1 :: ex2 :: Nil => Expr.Stm(List(ex1), ex2, tree.loc)
-        case exprs => throw InternalCompilerException(s"Parser error. Expected 2 expressions in statement but found '${exprs.length}'.", tree.loc)
+      val (headTrees, tailTree) = flattenStmTree(tree)
+      mapN(traverse(headTrees)(visitExpr), visitExpr(tailTree)) {
+        case (exps, exp) => Expr.Stm(exps, exp, tree.loc)
       }
     }
 
@@ -1408,7 +1444,9 @@ object Weeder2 {
 
       // Extract (defBody, restExp) from the Stm wrapping the local def.
       val exprs = mapN(pickExpr(tree)) {
-        case Expr.Stm(defBody :: Nil, exp, _) => (defBody, exp)
+        case Expr.Stm(defBody :: rest, exp, loc) =>
+          val continuation = if (rest.isEmpty) exp else Expr.Stm(rest, exp, loc)
+          (defBody, continuation)
         case e =>
           // Fall back on Expr.Error. Parser has reported an error here.
           val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), SyntacticContext.Expr.OtherExpr, hint = Some("Internal definitions must be followed by an expression"), loc = e.loc)
@@ -1607,7 +1645,9 @@ object Weeder2 {
         (pattern, tpe, expr) =>
           // Extract (boundValue, restExp) from the Stm wrapping the let-match.
           val exprs = expr match {
-            case Expr.Stm(boundValue :: Nil, exp, _) => Validation.Success((boundValue, exp))
+            case Expr.Stm(boundValue :: rest, exp, loc) =>
+              val continuation = if (rest.isEmpty) exp else Expr.Stm(rest, exp, loc)
+              Validation.Success((boundValue, continuation))
             // Fall back on Expr.Error. Parser has reported an error here.
             case e =>
               // The location of the error is the end of the expression, zero-width.

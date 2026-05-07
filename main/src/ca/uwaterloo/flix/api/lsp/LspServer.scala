@@ -39,8 +39,11 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 object LspServer {
-  def run(o: Options): Unit = {
+  def run(opts: Options): Unit = {
     System.err.println(s"Starting Default LSP Server...")
+
+    // Explicitly ensure that the progressbar is disabled.
+    val o = opts.copy(progress = false)
 
     val server = new FlixLanguageServer(o)
     val launcher = LSPLauncher.createServerLauncher(server, System.in, System.out)
@@ -202,7 +205,7 @@ object LspServer {
 
     override def shutdown(): CompletableFuture[AnyRef] = {
       System.err.println("shutdown")
-      CompletableFuture.completedFuture(new Object)
+      CompletableFuture.completedFuture(null)
     }
 
     override def exit(): Unit = {
