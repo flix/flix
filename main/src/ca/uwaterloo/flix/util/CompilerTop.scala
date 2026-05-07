@@ -19,16 +19,13 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
-import java.lang.management.ManagementFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.*
 
 /**
   * A live, top(1)-style TUI showing which `DefnSym`s the compiler has spent
-  * the most wall-clock time on so far, with per-phase breakdown, call count,
-  * top-mover deltas, throughput sparkline, threadpool occupancy, heap usage,
-  * GC time, and outlier highlighting.
+  * the most wall-clock time on so far, with a per-phase breakdown, call
+  * count, active-threads sparkline, threadpool occupancy, and heap usage.
   *
   * Reads from [[Flix.getProfiler]] and [[Flix.currentPhaseName]] every
   * [[CompilerTop.RefreshIntervalMs]] milliseconds and re-renders the screen
@@ -178,10 +175,10 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     val heapRatio = if (heapMaxMb <= 0) 0.0 else heapUsedMb.toDouble / heapMaxMb
     val elapsedField = formatMillis(elapsed)
 
-    // "elapsed" (7 chars) right-aligned with "progress" (8 chars) → start at GcStartCol + 1.
-    val elapsedStartCol = GcStartCol + 1
-    // "heap" (4 chars) right-aligned with "threads" (7 chars) → start at HeapStartCol + 3.
-    val heapStartCol = HeapStartCol + 3
+    // "elapsed" (7 chars) right-aligned with "progress" (8 chars) → start at ProgressStartCol + 1.
+    val elapsedStartCol = ProgressStartCol + 1
+    // "heap" (4 chars) right-aligned with "threads" (7 chars) → start at ThreadsStartCol + 3.
+    val heapStartCol = ThreadsStartCol + 3
 
     sb.append("  ")
     sb.append(" " * (elapsedStartCol - 3).max(0))
@@ -381,11 +378,11 @@ object CompilerTop {
   /** Width (in characters) of the phase-progress bar. */
   private val BarWidth: Int = 12
 
-  /** 1-indexed column where the `gc` label starts on the stats line, aligned with `progress` on the dashboard. */
-  private lazy val GcStartCol: Int = 8 + MaxPhaseLen + MaxGroupLen
+  /** 1-indexed column where the `progress` label starts on the dashboard. */
+  private lazy val ProgressStartCol: Int = 8 + MaxPhaseLen + MaxGroupLen
 
-  /** 1-indexed column where the `heap` label starts on the stats line, aligned with `threads` on the dashboard. */
-  private lazy val HeapStartCol: Int = GcStartCol + 20 + BarWidth
+  /** 1-indexed column where the `threads` label starts on the dashboard. */
+  private lazy val ThreadsStartCol: Int = ProgressStartCol + 20 + BarWidth
 
   /** Width of the threads-sparkline. */
   private val SparkWidth: Int = 12
@@ -457,12 +454,6 @@ object CompilerTop {
     else green(formatted)
   }
 
-  private def styleGc(formatted: String, pct: Double): String = {
-    if (pct >= 10.0) bold(red(formatted))
-    else if (pct >= 3.0) yellow(formatted)
-    else green(formatted)
-  }
-
   /**
     * The compiler phases, in the order they fire.
     *
@@ -512,10 +503,6 @@ object CompilerTop {
     val max = rt.maxMemory()
     (used / (1024L * 1024L), max / (1024L * 1024L))
   }
-
-  private def gcMillis(): Long =
-    ManagementFactory.getGarbageCollectorMXBeans.asScala.iterator
-      .map(_.getCollectionTime).filter(_ >= 0L).sum
 
   private final case class ModuleStats(
     module: String,
@@ -656,7 +643,7 @@ object CompilerTop {
     else f"${ms}ms"
   }
 
-private def truncate(s: String, width: Int): String =
+  private def truncate(s: String, width: Int): String =
     if (s.length <= width) s else s.take(width - 1) + "…"
 
   private def lpad(s: String, w: Int): String =
