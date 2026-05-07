@@ -85,7 +85,7 @@ mod Fs.FsLayer {
     ///
     pub def logPost(op: String, path: String, describe: a -> String, result: Result[IoError, a]): Unit \ Logger =
         match result {
-            case Ok(v)    =>
+            case Ok(v) =>
                 Logger.log(Severity.Debug, gray("<--") + text(" ") + green("OK") + text(" ") + bold(op) + text(" ") + cyan(path) + gray(" (${describe(v)})"))
             case Err(err) =>
                 Logger.log(Severity.Warn, gray("<--") + text(" ") + red("ERR") + text(" ") + bold(op) + text(" ") + cyan(path) + text(" ") + red("${err}"))
@@ -96,7 +96,7 @@ mod Fs.FsLayer {
     ///
     pub def logPost2(op: String, src: String, dst: String, result: Result[IoError, Unit]): Unit \ Logger =
         match result {
-            case Ok(_)    =>
+            case Ok(_) =>
                 Logger.log(Severity.Debug, gray("<--") + text(" ") + green("OK") + text(" ") + bold(op) + text(" ") + cyan(src) + gray(" -> ") + cyan(dst))
             case Err(err) =>
                 Logger.log(Severity.Warn, gray("<--") + text(" ") + red("ERR") + text(" ") + bold(op) + text(" ") + cyan(src) + gray(" -> ") + cyan(dst) + text(" ") + red("${err}"))
@@ -208,10 +208,10 @@ mod Fs.FsLayer {
         try {
             Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
         } catch {
-            case ex: InvalidPathException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException       => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: CharacterCodingException  => Err(IoError(ErrorKind.InvalidData, ex.getMessage()))
-            case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: InvalidPathException     => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException      => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+            case ex: CharacterCodingException => Err(IoError(ErrorKind.InvalidData, ex.getMessage()))
+            case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     pub def readBytes(f: String): Result[IoError, Vector[Int8]] \ IO =
@@ -284,10 +284,13 @@ mod Fs.FsLayer {
     pub def writeLines(data: {lines = List[String]}, f: String): Result[IoError, Unit] \ IO =
         try {
             let bf = Files.newBufferedWriter(Paths.get(f));
-            List.forEach(line -> {
-                bf.write(line, 0, String.length(line));
-                bf.newLine()
-            }, data#lines);
+            List.forEach(
+                line -> {
+                    bf.write(line, 0, String.length(line));
+                    bf.newLine()
+                },
+                data#lines
+            );
             bf.close();
             Ok(())
         } catch {
@@ -333,10 +336,13 @@ mod Fs.FsLayer {
                 checked_cast(StandardOpenOption.CREATE)
             };
             let bf = Files.newBufferedWriter(Paths.get(f), opts);
-            List.forEach(line -> {
-                bf.write(line, 0, String.length(line));
-                bf.newLine()
-            }, data#lines);
+            List.forEach(
+                line -> {
+                    bf.write(line, 0, String.length(line));
+                    bf.newLine()
+                },
+                data#lines
+            );
             bf.close();
             Ok(())
         } catch {
@@ -382,10 +388,14 @@ mod Fs.FsLayer {
 
     pub def copyWith(src: {src = String}, dst: String, opts: Set[Fs.CopyOption]): Result[IoError, Unit] \ IO =
         try {
-            let copyOpts: Vector[CopyOption] = Set.foldLeft((acc, opt) -> match opt {
-                case Fs.CopyOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
-                case Fs.CopyOption.CopyAttributes  => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.COPY_ATTRIBUTES)})
-            }, (Vector#{}: Vector[CopyOption]), opts);
+            let copyOpts: Vector[CopyOption] = Set.foldLeft(
+                (acc, opt) -> match opt {
+                    case Fs.CopyOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
+                    case Fs.CopyOption.CopyAttributes  => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.COPY_ATTRIBUTES)})
+                },
+                (Vector#{}: Vector[CopyOption]),
+                opts
+            );
             discard Files.copy(Paths.get(src#src), Paths.get(dst), copyOpts);
             Ok(())
         } catch {
@@ -403,10 +413,14 @@ mod Fs.FsLayer {
 
     pub def moveWith(src: {src = String}, dst: String, opts: Set[Fs.MoveOption]): Result[IoError, Unit] \ IO =
         try {
-            let copyOpts: Vector[CopyOption] = Set.foldLeft((acc, opt) -> match opt {
-                case Fs.MoveOption.AtomicMove      => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.ATOMIC_MOVE)})
-                case Fs.MoveOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
-            }, (Vector#{}: Vector[CopyOption]), opts);
+            let copyOpts: Vector[CopyOption] = Set.foldLeft(
+                (acc, opt) -> match opt {
+                    case Fs.MoveOption.AtomicMove      => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.ATOMIC_MOVE)})
+                    case Fs.MoveOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
+                },
+                (Vector#{}: Vector[CopyOption]),
+                opts
+            );
             discard Files.move(Paths.get(src#src), Paths.get(dst), copyOpts);
             Ok(())
         } catch {
@@ -427,9 +441,9 @@ mod Fs.FsLayer {
             Files.delete(Paths.get(f));
             Ok(())
         } catch {
-            case ex: InvalidPathException  => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException   => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException           => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+            case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     // ─── Directory operations ──────────────────────────────────────────
@@ -734,7 +748,7 @@ mod Fs.FsLayer {
         doAction: Unit -> Result[IoError, a] \ ef
     ): Result[IoError, a] \ ef =
         match parentDir(file) {
-            case None    => doAction()
+            case None => doAction()
             case Some(d) => match doMkDirs(d) {
                 case Ok(_)  => doAction()
                 case Err(e) => Err(e)
@@ -760,9 +774,9 @@ mod Fs.FsLayer {
     ): Result[IoError, a] \ ef =
         let bak = file + suffix;
         match doCopy(file, bak) {
-            case Ok(_)                              => doAction()
+            case Ok(_)                               => doAction()
             case Err(IoError(ErrorKind.NotFound, _)) => doAction()
-            case Err(e)                             => Err(e)
+            case Err(e)                              => Err(e)
         }
 
     // ─── Transfer limit helper ──────────────────────────────────────────
@@ -825,7 +839,7 @@ mod Fs.FsLayer {
         getModTime: String -> Result[IoError, Int64] \ ef
     ): Result[IoError, Unit] \ { ef, r } =
         match MutMap.get(file, snapshots) {
-            case None          => Ok(())
+            case None => Ok(())
             case Some(oldTime) =>
                 match getModTime(file) {
                     case Ok(curTime) =>
@@ -834,7 +848,7 @@ mod Fs.FsLayer {
                         else
                             Err(IoError(ErrorKind.Conflict, "Conflict on '${file}': expected mtime ${oldTime}, found ${curTime}"))
                     case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
-                    case Err(e) => Err(e)
+                    case Err(e)                              => Err(e)
                 }
         }
 
@@ -870,7 +884,7 @@ mod Fs.FsLayer {
                 else
                     Err(IoError(ErrorKind.ChecksumMismatch, "Checksum mismatch for '${file}': expected ${String.trim(expected)}, got ${actual}"))
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
-            case Err(e) => Err(e)
+            case Err(e)                              => Err(e)
         }
 
     ///
@@ -884,9 +898,10 @@ mod Fs.FsLayer {
         doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef1,
         doWriteSidecar: (String, String) -> Result[IoError, Unit] \ ef2
     ): Result[IoError, Unit] \ ef1 + ef2 =
-        forM (bytes <- doReadBytes(file);
-              _     <- doWriteSidecar(computeHex(bytes), file + sidecar))
-            yield ()
+        forM (
+            bytes <- doReadBytes(file);
+            _ <- doWriteSidecar(computeHex(bytes), file + sidecar)
+        ) yield ()
 
     ///
     /// Performs `doWrite`, then computes and writes a checksum sidecar for `file`.
@@ -914,9 +929,10 @@ mod Fs.FsLayer {
         readResult: Result[IoError, Vector[Int8]],
         doReadSidecar: String -> Result[IoError, String] \ ef
     ): Result[IoError, Vector[Int8]] \ ef =
-        forM (bytes <- readResult;
-              _     <- verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar))
-            yield bytes
+        forM (
+            bytes <- readResult;
+            _ <- verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar)
+        ) yield bytes
 
     ///
     /// Verifies a `read` or `readLines` result against a checksum sidecar.
@@ -933,10 +949,11 @@ mod Fs.FsLayer {
         doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef,
         doReadSidecar: String -> Result[IoError, String] \ ef
     ): Result[IoError, a] \ ef =
-        forM (v     <- readResult;
-              bytes <- doReadBytes(file);
-              _     <- verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar))
-            yield v
+        forM (
+            v <- readResult;
+            bytes <- doReadBytes(file);
+            _ <- verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar)
+        ) yield v
 
     ///
     /// Moves the checksum sidecar after a successful `moveWith`.
@@ -986,11 +1003,11 @@ mod Fs.FsLayer {
     /// `doAction` proceeds directly (append will create it).
     ///
     pub def rotateIfNeeded(
-        file:     String,
-        maxSize:  Size,
+        file: String,
+        maxSize: Size,
         maxFiles: Int32,
-        doSize:   String -> Result[IoError, Size] \ ef1,
-        doMove:   String -> String -> Result[IoError, Unit] \ ef2,
+        doSize: String -> Result[IoError, Size] \ ef1,
+        doMove: String -> String -> Result[IoError, Unit] \ ef2,
         doDelete: String -> Result[IoError, Unit] \ ef2,
         doAction: Unit -> Result[IoError, a] \ ef2
     ): Result[IoError, a] \ ef1 + ef2 =
@@ -1019,7 +1036,7 @@ mod Fs.FsLayer {
                     };
                     match shift(maxFiles - 1) {
                         case Err(e) => Err(e)
-                        case Ok(_)  =>
+                        case Ok(_) =>
                             // Move the current file to file.1
                             match doMove(file, "${file}.1") {
                                 case Err(e) => Err(e)

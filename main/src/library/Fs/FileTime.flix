@@ -50,11 +50,12 @@ pub mod Fs.FileTime {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileTime) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                y -> checked_ecast(
-                    Fs.FileStat.runWithFileSystem(
-                        () -> runWithFileStat(() -> f(y))
+                y ->
+                    checked_ecast(
+                        Fs.FileStat.runWithFileSystem(
+                            () -> runWithFileStat(() -> f(y))
+                        )
                     )
-                )
             )(x)
         )
 
@@ -82,7 +83,7 @@ pub mod Fs.FileTime {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTime) + {FileTime, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTime) + { FileTime, Logger } =
         run { f() } with handler FileTime {
             def accessTime(filename, k) = {
                 logPre("accessTime", filename);
