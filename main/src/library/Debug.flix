@@ -29,10 +29,10 @@ pub mod Debug {
     import java.lang.Object
     import java.lang.Short
     import java.lang.System
-    import java.lang.{Class => JClass} // needed for getClass() method resolution
-    import java.lang.{String => JString} // needed for instanceof on Object
-    import java.math.{BigDecimal => JBigDecimal} // needed for instanceof on Object
-    import java.math.{BigInteger => JBigInteger} // needed for instanceof on Object
+    import java.lang.{Class => JClass}
+    import java.lang.{String => JString}
+    import java.math.{BigDecimal => JBigDecimal}
+    import java.math.{BigInteger => JBigInteger}
     import java.util.Arrays
     import java.util.Objects
 
