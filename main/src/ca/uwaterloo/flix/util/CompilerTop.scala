@@ -140,7 +140,7 @@ final class CompilerTop(flix: Flix) {
     * Both bars sit beside each other so the eye picks them up as a pair.
     */
   private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int): Unit = {
-    val phase = flix.currentPhaseName
+    val phase = flix.currentPhaseName.getOrElse("starting")
     val group = phaseGroup(phase)
     val total = Phases.size
     val idx = Phases.indexOf(phase)

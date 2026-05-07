@@ -118,16 +118,18 @@ class Flix {
   val compilerProfiler: CompilerProfiler = new CompilerProfiler(() => currentPhaseName)
 
   /**
-    * The current phase we are in. Initially null.
+    * The current phase we are in. Initially null. Volatile so the `--top`
+    * renderer thread sees each store made by the compile thread in
+    * [[phase]] / [[phaseNew]].
     */
-  private var currentPhase: PhaseTime = _
+  @volatile private var currentPhase: PhaseTime = _
 
   /**
-    * The name of the phase currently executing. Read by the `--top` renderer
-    * thread, written by whichever thread calls [[phase]] / [[phaseNew]];
-    * volatile so cross-thread reads are visible.
+    * Name of the currently-executing phase, or `None` before the first
+    * phase has started or after [[compile]] has reset state.
     */
-  @volatile var currentPhaseName: String = "starting"
+  def currentPhaseName: Option[String] =
+    Option(currentPhase).map(_.phase)
 
   /**
     * The progress bar.
@@ -454,7 +456,7 @@ class Flix {
 
     // Reset the phase information.
     phaseTimers = ArrayBuffer.empty
-    currentPhaseName = "starting"
+    currentPhase = null
     compilerProfiler.reset()
 
     // Reset the phase list file if relevant
@@ -703,7 +705,6 @@ class Flix {
   def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0)
-    currentPhaseName = phase
 
     if (options.progress) {
       progressBar.observe(currentPhase.phase, "")
@@ -734,7 +735,6 @@ class Flix {
   def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0)
-    currentPhaseName = phase
 
     if (options.progress) {
       progressBar.observe(currentPhase.phase, "")

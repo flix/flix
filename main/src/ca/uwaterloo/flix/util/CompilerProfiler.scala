@@ -80,16 +80,19 @@ final case class DefnStats(
   *     `GenFunAndClosureClasses`; not a `parMap` and would require a
   *     dedicated hook inside the class generator.
   */
-final class CompilerProfiler(phaseProvider: () => String) {
+final class CompilerProfiler(phaseProvider: () => Option[String]) {
 
   private val stats = new ConcurrentHashMap[Symbol.DefnSym, CompilerProfiler.Counters]()
 
   /**
     * Runs `thunk` and records its elapsed wall-clock time against `sym`,
-    * attributed to whatever phase is currently running.
+    * attributed to whatever phase is currently running. If no phase is
+    * active (e.g. before the first phase has started), the time is
+    * bucketed under `"?"` to match the unknown-phase label used by the
+    * renderer.
     */
   def track[A](sym: Symbol.DefnSym, loc: SourceLocation)(thunk: => A): A = {
-    val phase = phaseProvider()
+    val phase = phaseProvider().getOrElse("?")
     val t0 = System.nanoTime()
     try thunk
     finally {
