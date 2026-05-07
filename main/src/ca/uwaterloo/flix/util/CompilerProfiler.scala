@@ -130,9 +130,6 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) {
     n
   }
 
-  /** Removes all recorded statistics. */
-  def reset(): Unit = stats.clear()
-
   private def countersFor(sym: Symbol.DefnSym): CompilerProfiler.Counters =
     stats.computeIfAbsent(sym, _ => new CompilerProfiler.Counters)
 }

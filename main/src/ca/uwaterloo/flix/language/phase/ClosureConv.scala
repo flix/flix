@@ -35,7 +35,7 @@ object ClosureConv {
     * Performs closure conversion on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("ClosureConv") {
-    val newDefs = ParOps.parMapValues(root.defs)(defn => flix.compilerProfiler.track(defn.sym, defn.loc)(visitDef(defn)))
+    val newDefs = ParOps.parMapValues(root.defs)(defn => flix.track(defn.sym, defn.loc)(visitDef(defn)))
 
     root.copy(defs = newDefs)
   }

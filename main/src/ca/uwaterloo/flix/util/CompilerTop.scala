@@ -30,11 +30,11 @@ import scala.jdk.CollectionConverters.*
   * top-mover deltas, throughput sparkline, threadpool occupancy, heap usage,
   * GC time, and outlier highlighting.
   *
-  * Reads from [[Flix.compilerProfiler]] and [[Flix.currentPhaseName]] every
+  * Reads from [[Flix.getProfiler]] and [[Flix.currentPhaseName]] every
   * [[CompilerTop.RefreshIntervalMs]] milliseconds and re-renders the screen
   * using ANSI escape codes.
   */
-final class CompilerTop(flix: Flix) {
+final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
   import CompilerTop.*
 
@@ -110,7 +110,7 @@ final class CompilerTop(flix: Flix) {
     // reserving 2 columns for the 1-space left and right table padding.
     val layout = computeLayout((terminalCols() - 2).max(1))
 
-    val snap = flix.compilerProfiler.snapshot().sortBy(-_.totalNanos)
+    val snap = profiler.snapshot().sortBy(-_.totalNanos)
     val visible = snap.take(defN)
 
     // Active-threads sparkline: history of thread-pool occupancy.
@@ -359,9 +359,14 @@ object CompilerTop {
     */
   def runDuring[A](flix: Flix, enabled: Boolean)(body: => A): A = {
     if (!enabled) return body
-    val r = new CompilerTop(flix)
+    val profiler = new CompilerProfiler(() => flix.currentPhaseName)
+    flix.setProfiler(Some(profiler))
+    val r = new CompilerTop(flix, profiler)
     r.start()
-    try body finally r.stop()
+    try body finally {
+      r.stop()
+      flix.setProfiler(None)
+    }
   }
 
   /** How often the screen refreshes, in milliseconds. */

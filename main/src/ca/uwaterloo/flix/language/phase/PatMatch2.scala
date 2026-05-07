@@ -614,7 +614,7 @@ object PatMatch2 {
       implicit val r: Root = root
       implicit val sctx: SharedContext = SharedContext.mk()
 
-      val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(defn => flix.compilerProfiler.track(defn.sym, defn.loc)(visitDef(defn))))
+      val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(defn => flix.track(defn.sym, defn.loc)(visitDef(defn))))
       val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
       val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances,
         (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor

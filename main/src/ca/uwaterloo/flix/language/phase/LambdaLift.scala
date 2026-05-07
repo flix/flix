@@ -37,7 +37,7 @@ object LambdaLift {
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
-    val defs = ParOps.parMapValues(root.defs)(defn => flix.compilerProfiler.track(defn.sym, defn.loc)(visitDef(defn)))
+    val defs = ParOps.parMapValues(root.defs)(defn => flix.track(defn.sym, defn.loc)(visitDef(defn)))
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)

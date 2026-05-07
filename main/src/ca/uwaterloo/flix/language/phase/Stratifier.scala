@@ -56,7 +56,7 @@ object Stratifier {
     implicit val r: Root = root
 
     // Compute the stratification at every datalog expression in the ast.
-    val ds = ParOps.parMapValues(root.defs)(defn => flix.compilerProfiler.track(defn.sym, defn.loc)(visitDef(defn)))
+    val ds = ParOps.parMapValues(root.defs)(defn => flix.track(defn.sym, defn.loc)(visitDef(defn)))
     val is = ParOps.parMapValueList(root.instances)(visitInstance)
     val ts = ParOps.parMapValues(root.traits)(visitTrait)
 

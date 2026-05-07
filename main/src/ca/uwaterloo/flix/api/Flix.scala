@@ -111,11 +111,28 @@ class Flix {
   var phaseTimers: ArrayBuffer[PhaseTime] = ArrayBuffer.empty
 
   /**
-    * Tracks the time spent compiling each [[Symbol.DefnSym]].
-    *
-    * Driven by the `--top` option.
+    * Optional profiler that records per-`DefnSym` timing data. Installed
+    * by [[CompilerTop.runDuring]] when `--top` is enabled; absent on the
+    * default path so [[track]] is a no-op with no measurement overhead.
     */
-  val compilerProfiler: CompilerProfiler = new CompilerProfiler(() => currentPhaseName)
+  private var profiler: Option[CompilerProfiler] = None
+
+  /** Returns the currently installed profiler, or `None`. */
+  def getProfiler: Option[CompilerProfiler] = profiler
+
+  /** Installs (or removes, when `None`) the profiler that backs [[track]]. */
+  def setProfiler(p: Option[CompilerProfiler]): Unit = profiler = p
+
+  /**
+    * Records the time spent running `thunk` against `sym`, attributed to
+    * the currently running phase. When no profiler is installed, `thunk`
+    * runs unchanged.
+    */
+  def track[A](sym: Symbol.DefnSym, loc: SourceLocation)(thunk: => A): A =
+    profiler match {
+      case Some(p) => p.track(sym, loc)(thunk)
+      case None    => thunk
+    }
 
   /**
     * The current phase we are in. Initially `None`. Volatile so the `--top`
@@ -457,7 +474,6 @@ class Flix {
     // Reset the phase information.
     phaseTimers = ArrayBuffer.empty
     currentPhase = None
-    compilerProfiler.reset()
 
     // Reset the phase list file if relevant
     if (this.options.xprintphases) {

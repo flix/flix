@@ -57,7 +57,7 @@ object Redundancy {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val errorsFromDefs = ParOps.parAgg(root.defs, Used.empty)({
-      case (acc, (sym, decl)) => acc ++ flix.compilerProfiler.track(sym, decl.loc)(visitDef(decl)(sctx, root, flix))
+      case (acc, (sym, decl)) => acc ++ flix.track(sym, decl.loc)(visitDef(decl)(sctx, root, flix))
     }, _ ++ _).errors.toList
 
     val errorsFromSigs = ParOps.parAgg(root.sigs, Used.empty)({
