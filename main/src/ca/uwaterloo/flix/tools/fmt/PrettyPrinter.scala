@@ -284,12 +284,13 @@ object PrettyPrinter {
     val sigPadded = sig <> padding
     val body      = bodyParts.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
 
-    val bodyIsBlock    = bodyParts.exists(isBracedExpr)
-    val bodyOnSameLine = bodyStartsOnSameLineAs(rest(eqIndex), bodyParts)
+    val bodyIsPreserved = bodyParts.exists(isPreservedBodyKind)
+    val bodyOnSameLine  = bodyStartsOnSameLineAs(rest(eqIndex), bodyParts)
 
     val ruleDoc = Doc.setLayout(layoutOfChildren(rest),
-      if (bodyIsBlock && bodyOnSameLine) sigPadded <+> text("=") <+> body
-      else sigPadded <+> text("=") <> nest(4, line <> body)
+      if (bodyIsPreserved && bodyOnSameLine) sigPadded <+> text("=") <+> body
+      else if (bodyIsPreserved)              sigPadded <+> text("=") <> nest(4, hardline <> body)
+      else                                    sigPadded <+> text("=") <> nest(4, line <> body)
     )
 
     prepend(annDoc, ruleDoc)
@@ -369,13 +370,13 @@ object PrettyPrinter {
 
     if (body.isEmpty) headerDoc
     else {
-      val bodyDoc        = body.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
-      val bodyIsBraced   = body.headOption.exists(isBracedExpr)
-      val bodyOnSameLine = bodyStartsOnSameLineAs(children(arrowIndex), body)
+      val bodyDoc         = body.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
+      val bodyIsPreserved = body.headOption.exists(isPreservedBodyKind)
+      val bodyOnSameLine  = bodyStartsOnSameLineAs(children(arrowIndex), body)
       localLayout(tree) {
-        if (bodyIsBraced && bodyOnSameLine) headerDoc <+> bodyDoc
-        else if (bodyIsBraced)              headerDoc <> nest(4, hardline <> bodyDoc)
-        else                                 headerDoc <> nest(4, line <> bodyDoc)
+        if (bodyIsPreserved && bodyOnSameLine) headerDoc <+> bodyDoc
+        else if (bodyIsPreserved)              headerDoc <> nest(4, hardline <> bodyDoc)
+        else                                    headerDoc <> nest(4, line <> bodyDoc)
       }
     }
   }
@@ -951,18 +952,18 @@ object PrettyPrinter {
     val idx = children.indexWhere { case t: Token if t.kind == TokenKind.ArrowThickR => true; case _ => false }
     if (idx < 0) return prettyFallback(tree)
 
-    val patternPart    = children.take(idx)
-    val bodyPart       = children.drop(idx + 1)
-    val patternDoc     = arrowPatternHeaderJoin(tree.kind)(patternPart)
-    val bodyDoc        = joinWithGap(bodyPart)
-    val bodyIsBraced   = bodyPart.headOption.exists(isBracedExpr)
-    val bodyOnSameLine = bodyStartsOnSameLineAs(children(idx), bodyPart)
-    val isSingleLine   = effectiveLayoutOf(tree) == Layout.SingleLine
+    val patternPart     = children.take(idx)
+    val bodyPart        = children.drop(idx + 1)
+    val patternDoc      = arrowPatternHeaderJoin(tree.kind)(patternPart)
+    val bodyDoc         = joinWithGap(bodyPart)
+    val bodyIsPreserved = bodyPart.headOption.exists(isPreservedBodyKind)
+    val bodyOnSameLine  = bodyStartsOnSameLineAs(children(idx), bodyPart)
+    val isSingleLine    = effectiveLayoutOf(tree) == Layout.SingleLine
     val pattern = if (isSingleLine) Doc.fill(maxWidth, patternDoc) else patternDoc
 
-    if (bodyIsBraced && !bodyOnSameLine)
+    if (bodyIsPreserved && !bodyOnSameLine)
       pattern <+> text("=>") <> nest(4, hardline <> bodyDoc)
-    else if (!bodyIsBraced && effectiveLayoutOf(tree) == Layout.MultiLine)
+    else if (!bodyIsPreserved && effectiveLayoutOf(tree) == Layout.MultiLine)
       pattern <+> text("=>") <> nest(4, hardline <> bodyDoc)
     else
       pattern <+> text("=>") <+> bodyDoc
@@ -1224,12 +1225,13 @@ object PrettyPrinter {
       .reduceLeftOption(_ <> _)
       .getOrElse(empty)
 
-    val bodyIsBlock = bodyParts.exists(isBracedExpr)
-    val bodyOnSameLine = bodyStartsOnSameLineAs(rest(eqIndex), bodyParts)
+    val bodyIsPreserved = bodyParts.exists(isPreservedBodyKind)
+    val bodyOnSameLine  = bodyStartsOnSameLineAs(rest(eqIndex), bodyParts)
 
     val defDoc = Doc.setLayout(layoutOfChildren(rest),
-      if (bodyIsBlock && bodyOnSameLine) sig <+> text("=") <+> body
-      else sig <+> text("=") <> nest(4, line <> body)
+      if (bodyIsPreserved && bodyOnSameLine) sig <+> text("=") <+> body
+      else if (bodyIsPreserved)              sig <+> text("=") <> nest(4, hardline <> body)
+      else                                    sig <+> text("=") <> nest(4, line <> body)
     )
 
     prepend(annDoc, defDoc)
@@ -2170,6 +2172,12 @@ object PrettyPrinter {
 
   private def isIfThenElseExpr(child: SyntaxTree.Child): Boolean =
     exprMatches(child, _.kind == TreeKind.Expr.IfThenElse)
+
+  private def isApplyExpr(child: SyntaxTree.Child): Boolean =
+    exprMatches(child, _.kind == TreeKind.Expr.Apply)
+
+  private def isPreservedBodyKind(child: SyntaxTree.Child): Boolean =
+    isBracedExpr(child) || isApplyExpr(child) || isIfThenElseExpr(child)
 
   /**
     * Sets the layout of the given document based on the layout of the given tree.
