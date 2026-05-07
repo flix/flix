@@ -90,9 +90,9 @@ object Main {
       options = options.copy(progress = false)
     }
 
-    // Don't use progress bar if not attached to a console.
+    // Don't use progress bar / --top TUI if not attached to a console.
     if (System.console() == null) {
-      options = options.copy(progress = false)
+      options = options.copy(progress = false, top = false)
     }
 
     // Don't use progress bar if --top is set: the live TUI repaints the screen
@@ -175,18 +175,19 @@ object Main {
 
           flix.setFormatter(formatter)
 
-          // Run the compilation pipeline, optionally wrapped in the live `--top` TUI.
-          val (optRoot, errors, cgResult) = CompilerTop.runDuring(flix, options.top) {
-            val (root, errs) = flix.check()
-            val cg = if (errs.isEmpty) root.map(flix.codeGen) else None
-            (root, errs, cg)
-          }
-          if (errors.isEmpty) {
-            cgResult.flatMap(_.getMain).foreach(_(cmdOpts.args.toArray))
-            System.exit(0)
-          } else {
-            println(CompilationMessage.formatAll(errors)(formatter, optRoot))
-            System.exit(1)
+          // evaluate main.
+          flix.check() match {
+            case (Some(root), Nil) =>
+              flix.codeGen(root).getMain match {
+                case None => // nop
+                case Some(m) =>
+                  // Invoke main with the supplied arguments.
+                  m(cmdOpts.args.toArray)
+              }
+              System.exit(0)
+            case (optRoot, errors) =>
+              println(CompilationMessage.formatAll(errors)(formatter, optRoot))
+              System.exit(1)
           }
 
         case Command.Init =>

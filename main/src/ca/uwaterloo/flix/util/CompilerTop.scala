@@ -117,6 +117,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     val modules = aggregateByModule(snap).take(moduleN)
 
     val sb = new StringBuilder
+    sb.append(BeginSync)
     sb.append(ClearScreen)
     sb.append('\n')
 
@@ -127,6 +128,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     renderRows(sb, visible, elapsed, parallelism, layout)
     renderModuleTable(sb, modules, elapsed, parallelism, layout)
 
+    sb.append(EndSync)
     System.out.print(sb)
     System.out.flush()
 
@@ -344,28 +346,6 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
 object CompilerTop {
 
-  /**
-    * Runs `body` with the live `--top` TUI active when `enabled`. When
-    * disabled, `body` runs unchanged. When enabled, a [[CompilerTop]] is
-    * started before `body` runs and stopped (with a final frame) in a
-    * `finally` block, so the terminal is restored on both normal return
-    * and exception.
-    *
-    * `body` must not call [[System.exit]] — exit handling stays in the
-    * caller, after the renderer has been stopped.
-    */
-  def runDuring[A](flix: Flix, enabled: Boolean)(body: => A): A = {
-    if (!enabled) return body
-    val profiler = new CompilerProfiler(() => flix.currentPhaseName)
-    flix.setProfiler(Some(profiler))
-    val r = new CompilerTop(flix, profiler)
-    r.start()
-    try body finally {
-      r.stop()
-      flix.setProfiler(None)
-    }
-  }
-
   /** How often the screen refreshes, in milliseconds. */
   private val RefreshIntervalMs: Long = 100L
 
@@ -393,6 +373,16 @@ object CompilerTop {
   /** ANSI escape character. */
   private val ESC: Char = 27.toChar
   private val ClearScreen: String = s"$ESC[H$ESC[2J"
+
+  /**
+    * DEC mode 2026 — Begin/End Synchronized Update. Terminals that
+    * support it (iTerm2, kitty, alacritty, wezterm, modern xterm, recent
+    * VTE) buffer the bytes between BSU and ESU and swap atomically,
+    * which eliminates the flash from the clear-and-redraw at each tick.
+    * Terminals that don't recognize the sequence silently ignore it.
+    */
+  private val BeginSync: String = s"$ESC[?2026h"
+  private val EndSync: String = s"$ESC[?2026l"
 
   // Color codes.
   private val Reset: String = s"$ESC[0m"

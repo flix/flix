@@ -112,10 +112,13 @@ class Flix {
 
   /**
     * Optional profiler that records per-`DefnSym` timing data. Installed
-    * by [[CompilerTop.runDuring]] when `--top` is enabled; absent on the
-    * default path so [[track]] is a no-op with no measurement overhead.
+    * by [[setOptions]] when `--top` is enabled; absent on the default
+    * path so [[track]] is a no-op with no measurement overhead.
     */
   private var profiler: Option[CompilerProfiler] = None
+
+  /** The live `--top` TUI, if it has been started. */
+  private var compilerTop: Option[CompilerTop] = None
 
   /** Returns the currently installed profiler, or `None`. */
   def getProfiler: Option[CompilerProfiler] = profiler
@@ -433,6 +436,13 @@ class Flix {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
     options = opts
+    if (opts.top && compilerTop.isEmpty) {
+      val p = new CompilerProfiler(() => currentPhaseName)
+      setProfiler(Some(p))
+      val t = new CompilerTop(this, p)
+      t.start()
+      compilerTop = Some(t)
+    }
     this
   }
 
@@ -587,6 +597,9 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
+    // Stop the live `--top` TUI, if it is running.
+    compilerTop.foreach(_.stop())
+
     // Print summary?
     if (options.xsummary) {
       result.foreach(root => {
@@ -676,6 +689,9 @@ class Flix {
 
     // Reset the progress bar.
     progressBar.complete()
+
+    // Stop the live `--top` TUI, if it is running.
+    compilerTop.foreach(_.stop())
 
     // Return the result.
     result
