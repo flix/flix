@@ -24,7 +24,7 @@ object Safety {
     implicit val sctx: SharedContext = SharedContext.mk()
     implicit val _r: Root = root
 
-    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(defn => flix.defnTimer.track(defn.sym, defn.loc)(visitDef(defn))))
+    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(defn => flix.compilerProfiler.track(defn.sym, defn.loc)(visitDef(defn))))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
     val uses = changeSet.updateStaleValueLists(root.uses, oldRoot.uses, (uoi1: UseOrImport, uoi2: UseOrImport) => uoi1 == uoi2)(ParOps.parMapValueList(_)(visitUseOrImport))

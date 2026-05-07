@@ -40,7 +40,7 @@ object TailPos {
 
   /** Identifies expressions in tail position in `root`. */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TailPos") {
-    val defns = ParOps.parMapValues(root.defs)(defn => flix.defnTimer.track(defn.sym, defn.loc)(visitDef(defn)))
+    val defns = ParOps.parMapValues(root.defs)(defn => flix.compilerProfiler.track(defn.sym, defn.loc)(visitDef(defn)))
     root.copy(defs = defns)
   }
 

@@ -42,7 +42,7 @@ object Reducer {
     implicit val r: ErasedAst.Root = root
     implicit val ctx: SharedContext = new SharedContext()
 
-    val defs = ParOps.parMapValues(root.defs)(defn => flix.defnTimer.track(defn.sym, defn.loc)(visitDef(defn)))
+    val defs = ParOps.parMapValues(root.defs)(defn => flix.compilerProfiler.track(defn.sym, defn.loc)(visitDef(defn)))
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)

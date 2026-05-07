@@ -30,13 +30,13 @@ import scala.jdk.CollectionConverters.*
   * top-mover deltas, throughput sparkline, threadpool occupancy, heap usage,
   * GC time, and outlier highlighting.
   *
-  * Reads from [[Flix.defnTimer]] and [[Flix.currentPhaseName]] every
-  * [[TopRenderer.RefreshIntervalMs]] milliseconds and re-renders the screen
+  * Reads from [[Flix.compilerProfiler]] and [[Flix.currentPhaseName]] every
+  * [[CompilerTop.RefreshIntervalMs]] milliseconds and re-renders the screen
   * using ANSI escape codes.
   */
-final class TopRenderer(flix: Flix) {
+final class CompilerTop(flix: Flix) {
 
-  import TopRenderer.*
+  import CompilerTop.*
 
   private val running = new AtomicBoolean(false)
   private var thread: Thread = _
@@ -110,7 +110,7 @@ final class TopRenderer(flix: Flix) {
     // reserving 2 columns for the 1-space left and right table padding.
     val layout = computeLayout((terminalCols() - 2).max(1))
 
-    val snap = flix.defnTimer.snapshot().sortBy(-_.totalNanos)
+    val snap = flix.compilerProfiler.snapshot().sortBy(-_.totalNanos)
     val visible = snap.take(defN)
 
     // Active-threads sparkline: history of thread-pool occupancy.
@@ -345,11 +345,11 @@ final class TopRenderer(flix: Flix) {
   }
 }
 
-object TopRenderer {
+object CompilerTop {
 
   /**
     * Runs `body` with the live `--top` TUI active when `enabled`. When
-    * disabled, `body` runs unchanged. When enabled, a [[TopRenderer]] is
+    * disabled, `body` runs unchanged. When enabled, a [[CompilerTop]] is
     * started before `body` runs and stopped (with a final frame) in a
     * `finally` block, so the terminal is restored on both normal return
     * and exception.
@@ -359,7 +359,7 @@ object TopRenderer {
     */
   def runDuring[A](flix: Flix, enabled: Boolean)(body: => A): A = {
     if (!enabled) return body
-    val r = new TopRenderer(flix)
+    val r = new CompilerTop(flix)
     r.start()
     try body finally r.stop()
   }
@@ -465,7 +465,7 @@ object TopRenderer {
     * `Flix.check` followed by `Flix.codeGen`.
     *
     * Note: appearance here means the phase advances the progress bar; it does
-    * not mean the phase feeds [[DefnTimer]]. See `DefnTimer`'s class-level
+    * not mean the phase feeds [[CompilerProfiler]]. See `CompilerProfiler`'s class-level
     * doc for the list of instrumented vs. uninstrumented phases.
     */
   private val Phases: Vector[String] = Vector(

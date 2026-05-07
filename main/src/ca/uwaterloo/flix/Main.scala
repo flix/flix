@@ -176,7 +176,7 @@ object Main {
           flix.setFormatter(formatter)
 
           // Run the compilation pipeline, optionally wrapped in the live `--top` TUI.
-          val (optRoot, errors, cgResult) = TopRenderer.runDuring(flix, options.top) {
+          val (optRoot, errors, cgResult) = CompilerTop.runDuring(flix, options.top) {
             val (root, errs) = flix.check()
             val cg = if (errs.isEmpty) root.map(flix.codeGen) else None
             (root, errs, cg)

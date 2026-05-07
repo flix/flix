@@ -115,7 +115,7 @@ class Flix {
     *
     * Driven by the `--top` option.
     */
-  val defnTimer: DefnTimer = new DefnTimer(() => currentPhaseName)
+  val compilerProfiler: CompilerProfiler = new CompilerProfiler(() => currentPhaseName)
 
   /**
     * The current phase we are in. Initially null.
@@ -455,7 +455,7 @@ class Flix {
     // Reset the phase information.
     phaseTimers = ArrayBuffer.empty
     currentPhaseName = "starting"
-    defnTimer.reset()
+    compilerProfiler.reset()
 
     // Reset the phase list file if relevant
     if (this.options.xprintphases) {

@@ -80,9 +80,9 @@ final case class DefnStats(
   *     `GenFunAndClosureClasses`; not a `parMap` and would require a
   *     dedicated hook inside the class generator.
   */
-final class DefnTimer(phaseProvider: () => String) {
+final class CompilerProfiler(phaseProvider: () => String) {
 
-  private val stats = new ConcurrentHashMap[Symbol.DefnSym, DefnTimer.Counters]()
+  private val stats = new ConcurrentHashMap[Symbol.DefnSym, CompilerProfiler.Counters]()
 
   /**
     * Runs `thunk` and records its elapsed wall-clock time against `sym`,
@@ -130,11 +130,11 @@ final class DefnTimer(phaseProvider: () => String) {
   /** Removes all recorded statistics. */
   def reset(): Unit = stats.clear()
 
-  private def countersFor(sym: Symbol.DefnSym): DefnTimer.Counters =
-    stats.computeIfAbsent(sym, _ => new DefnTimer.Counters)
+  private def countersFor(sym: Symbol.DefnSym): CompilerProfiler.Counters =
+    stats.computeIfAbsent(sym, _ => new CompilerProfiler.Counters)
 }
 
-object DefnTimer {
+object CompilerProfiler {
   private final class Counters {
     val totalNanos = new AtomicLong(0L)
     val callCount = new AtomicInteger(0)
