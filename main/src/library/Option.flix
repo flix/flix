@@ -275,7 +275,7 @@ pub mod Option {
     ///
     pub def ap(f: Option[a -> b \ ef], x: Option[a]): Option[b] \ ef =
         match f {
-            case None    => None
+            case None => None
             case Some(g) =>
                 match x {
                     case None    => None
@@ -372,7 +372,7 @@ pub mod Option {
     ///
     pub def traverse(f: a -> Option[b] \ ef, l: List[a]): Option[List[b]] \ ef =
         def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
+            case Nil => k(Nil)
             case x :: xs =>
                 match f(x) {
                     case None    => None
@@ -388,7 +388,7 @@ pub mod Option {
     /// of applying `f` to each element but do not care about collecting the results.
     ///
     pub def traverseX(f: a -> Option[b] \ ef, l: List[a]): Option[Unit] \ ef = match l {
-        case Nil     => Some()
+        case Nil => Some()
         case x :: xs =>
             match f(x) {
                 case None    => None
@@ -407,7 +407,7 @@ pub mod Option {
     /// `Some(f(...f(f(s, x1), x2)..., xn))`.
     ///
     pub def foldLeftM(f: (b, a) -> Option[b] \ ef, s: b, l: List[a]): Option[b] \ ef = match l {
-        case Nil     => Some(s)
+        case Nil => Some(s)
         case x :: xs =>
             match f(s, x) {
                 case Some(s1) => foldLeftM(f, s1, xs)
@@ -427,7 +427,7 @@ pub mod Option {
     ///
     pub def foldRightM(f: (a, b) -> Option[b] \ ef, s: b, l: List[a]): Option[b] \ ef =
         def loop(ll, k) = match ll {
-            case Nil     => k(s)
+            case Nil => k(s)
             case x :: xs =>
                 loop(
                     xs,
