@@ -34,10 +34,12 @@ pub mod SemiGroup {
         /// Returns `x` combined with itself `n` times.
         ///
         pub def combineN(x: a, n: Int32): a =
-            if (n <= 1) x
-            else SemiGroup.combine(x, SemiGroup.combineN(x, n - 1))
+            if (n <= 1)
+                x
+            else
+                SemiGroup.combine(x, SemiGroup.combineN(x, n - 1))
 
-        law associative: forall(x: a, y: a, z: a) with Eq[a] SemiGroup.combine(SemiGroup.combine(x, y), z) == SemiGroup.combine(x, SemiGroup.combine(y, z))
+        law associative: forall (x: a, y: a, z: a) with Eq[a] SemiGroup.combine(SemiGroup.combine(x, y), z) == SemiGroup.combine(x, SemiGroup.combine(y, z))
 
     }
 
@@ -148,7 +150,6 @@ pub mod SemiGroup {
     }
 
     instance CommutativeMonoid[Any]
-
 
     pub enum All(Bool)
 
