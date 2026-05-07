@@ -175,39 +175,18 @@ object Main {
 
           flix.setFormatter(formatter)
 
-          // Start the live `--top` TUI, if requested.
-          val topRenderer = if (options.top) {
-            val r = new TopRenderer(flix)
-            r.start()
-            Some(r)
-          } else None
-          def stopTop(): Unit = topRenderer.foreach(_.stop())
-
-          // evaluate main.
-          try {
-            flix.check() match {
-              case (Some(root), Nil) =>
-                val main = flix.codeGen(root).getMain
-                // Stop the renderer before user main runs so it doesn't
-                // collide with the TUI repaint. The final frame drawn here
-                // is what completes the progress bar.
-                stopTop()
-                main match {
-                  case None => // nop
-                  case Some(m) =>
-                    // Invoke main with the supplied arguments.
-                    m(cmdOpts.args.toArray)
-                }
-                System.exit(0)
-              case (optRoot, errors) =>
-                stopTop()
-                println(CompilationMessage.formatAll(errors)(formatter, optRoot))
-                System.exit(1)
-            }
-          } catch {
-            case t: Throwable =>
-              stopTop()
-              throw t
+          // Run the compilation pipeline, optionally wrapped in the live `--top` TUI.
+          val (optRoot, errors, cgResult) = TopRenderer.runDuring(flix, options.top) {
+            val (root, errs) = flix.check()
+            val cg = if (errs.isEmpty) root.map(flix.codeGen) else None
+            (root, errs, cg)
+          }
+          if (errors.isEmpty) {
+            cgResult.flatMap(_.getMain).foreach(_(cmdOpts.args.toArray))
+            System.exit(0)
+          } else {
+            println(CompilationMessage.formatAll(errors)(formatter, optRoot))
+            System.exit(1)
           }
 
         case Command.Init =>

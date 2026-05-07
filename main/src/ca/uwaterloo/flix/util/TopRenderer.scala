@@ -347,6 +347,23 @@ final class TopRenderer(flix: Flix) {
 
 object TopRenderer {
 
+  /**
+    * Runs `body` with the live `--top` TUI active when `enabled`. When
+    * disabled, `body` runs unchanged. When enabled, a [[TopRenderer]] is
+    * started before `body` runs and stopped (with a final frame) in a
+    * `finally` block, so the terminal is restored on both normal return
+    * and exception.
+    *
+    * `body` must not call [[System.exit]] — exit handling stays in the
+    * caller, after the renderer has been stopped.
+    */
+  def runDuring[A](flix: Flix, enabled: Boolean)(body: => A): A = {
+    if (!enabled) return body
+    val r = new TopRenderer(flix)
+    r.start()
+    try body finally r.stop()
+  }
+
   /** How often the screen refreshes, in milliseconds. */
   private val RefreshIntervalMs: Long = 100L
 
