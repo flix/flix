@@ -235,7 +235,7 @@ pub mod Map {
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
@@ -265,7 +265,7 @@ pub mod Map {
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
@@ -295,7 +295,7 @@ pub mod Map {
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
@@ -325,7 +325,7 @@ pub mod Map {
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
@@ -588,7 +588,7 @@ pub mod Map {
     pub def count(f: (k, v) -> Bool \ ef, m: Map[k, v]): Int32 \ ef =
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         match purityOf2(f) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let Map(t) = m;
                     RedBlackTree.parCount(g, t)
@@ -607,7 +607,7 @@ pub mod Map {
         let Map(t) = m;
         def sw() = RedBlackTree.sumWith(f, t);
         match purityOf2(f) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parSumWith(g, t)
                 else
@@ -627,7 +627,7 @@ pub mod Map {
         let Map(t) = m;
         def e() = RedBlackTree.exists(f, t);
         match purityOf2(f) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parExists(g, t)
                 else
@@ -647,7 +647,7 @@ pub mod Map {
         let Map(t) = m;
         def fa() = RedBlackTree.forAll(f, t);
         match purityOf2(f) {
-            case Purity2.Pure(g)   =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parForAll(g, t)
                 else
@@ -736,7 +736,7 @@ pub mod Map {
                             case None    => acc
                             case Some(w) => insert(k, w, acc)
                         }
-                    case None     => unreachable!()
+                    case None => unreachable!()
                 }
             else
                 acc;
@@ -762,7 +762,7 @@ pub mod Map {
     /// Returns the map `m` as an array.
     ///
     pub def toArray(rc: Region[r], m: Map[k, v]): Array[(k, v), r] \ r = match size(m) {
-        case 0  => Array#{} @ rc
+        case 0 => Array#{} @ rc
         case sz =>
             let a = Array.empty(rc, sz);
             forEachWithIndex((i, k, v) -> Array.put((k, v), i, a), m);
