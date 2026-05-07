@@ -118,18 +118,18 @@ class Flix {
   val compilerProfiler: CompilerProfiler = new CompilerProfiler(() => currentPhaseName)
 
   /**
-    * The current phase we are in. Initially null. Volatile so the `--top`
+    * The current phase we are in. Initially `None`. Volatile so the `--top`
     * renderer thread sees each store made by the compile thread in
     * [[phase]] / [[phaseNew]].
     */
-  @volatile private var currentPhase: PhaseTime = _
+  @volatile private var currentPhase: Option[PhaseTime] = None
 
   /**
     * Name of the currently-executing phase, or `None` before the first
     * phase has started or after [[compile]] has reset state.
     */
   def currentPhaseName: Option[String] =
-    Option(currentPhase).map(_.phase)
+    currentPhase.map(_.phase)
 
   /**
     * The progress bar.
@@ -456,7 +456,7 @@ class Flix {
 
     // Reset the phase information.
     phaseTimers = ArrayBuffer.empty
-    currentPhase = null
+    currentPhase = None
     compilerProfiler.reset()
 
     // Reset the phase list file if relevant
@@ -704,10 +704,10 @@ class Flix {
     */
   def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0)
+    currentPhase = Some(PhaseTime(phase, 0))
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "")
+      progressBar.observe(phase, "")
     }
 
     // Measure the execution time.
@@ -715,11 +715,10 @@ class Flix {
     val (root, errs) = f
     val e = System.nanoTime() - t
 
-    // Update the phase time.
-    currentPhase = currentPhase.copy(time = e)
-
-    // And add it to the list of executed phases.
-    phaseTimers += currentPhase
+    // Update the phase time and add it to the list of executed phases.
+    val finished = PhaseTime(phase, e)
+    currentPhase = Some(finished)
+    phaseTimers += finished
 
     if (this.options.xprintphases) {
       d.output(phase, root)(this)
@@ -734,10 +733,10 @@ class Flix {
     */
   def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0)
+    currentPhase = Some(PhaseTime(phase, 0))
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "")
+      progressBar.observe(phase, "")
     }
 
     // Measure the execution time.
@@ -745,11 +744,10 @@ class Flix {
     val r = f
     val e = System.nanoTime() - t
 
-    // Update the phase time.
-    currentPhase = currentPhase.copy(time = e)
-
-    // And add it to the list of executed phases.
-    phaseTimers += currentPhase
+    // Update the phase time and add it to the list of executed phases.
+    val finished = PhaseTime(phase, e)
+    currentPhase = Some(finished)
+    phaseTimers += finished
 
     if (this.options.xprintphases) {
       d.output(phase, r)(this)
