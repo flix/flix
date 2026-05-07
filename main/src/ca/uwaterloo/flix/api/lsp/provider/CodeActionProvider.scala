@@ -110,16 +110,6 @@ object CodeActionProvider {
         command = None
       ))
 
-    case te@TypeError.EffectfulFunctionUsesOtherEffect(syms, usedSym, loc, loc2) if overlaps(range, loc) || overlaps(range, loc2) =>
-      List(CodeAction(
-        title = f"Add ${usedSym.name} to effect set in signature",
-        kind = CodeActionKind.QuickFix,
-        diagnostics = List(Diagnostic.fromWithLoc(te, loc, Some(root)), Diagnostic.fromWithLoc(te, loc2, Some(root))),
-        isPreferred = true,
-        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), f"${effectsToString(syms)} + ${usedSym.name}"))))),
-        command = None
-      ))
-
     case ParseError.ExpectedArrowThickRGotEqual(_, loc) if overlaps(range, loc) =>
       List(CodeAction(
         title = "Replace '=' with '=>'",
