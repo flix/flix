@@ -74,7 +74,7 @@ pub mod Fixpoint3.Phase.Stratifier {
     def addDepEdges(graph: MutGraph[r], d: Datalog): Unit \ r = match d {
         case Datalog(_, rules) => Vector.forEach(precedenceHelper(graph), rules)
         case Model(_)          => ()
-        case Join(d1, d2)      =>
+        case Join(d1, d2) =>
             addDepEdges(graph, d1);
             addDepEdges(graph, d2)
         case Provenance(_, _)  => ()
