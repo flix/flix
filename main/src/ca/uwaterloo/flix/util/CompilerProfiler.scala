@@ -45,6 +45,21 @@ final case class DefnStats(
   * `phaseProvider` is consulted at the start of every [[track]] call to
   * attribute the elapsed time to the currently running phase.
   *
+  * == Roll-up of refreshed symbols ==
+  *
+  * A fresh [[Symbol.DefnSym]] minted from an existing sym via
+  * [[Symbol.freshDefnSym]] is recorded under that existing sym, not under
+  * its own identity. So every specialization produced by `Monomorpher` and
+  * every closure/local-def lifted out by `LambdaLift` folds back into the
+  * source sym it was derived from, and the user-facing table shows one row
+  * per source-level definition rather than one row per fresh refresh.
+  *
+  * The folding is implemented inside this profiler (see [[sourceOf]]) and
+  * relies on [[Symbol.freshDefnSym]] preserving the source sym's
+  * `(namespace, text, loc)` triple — which is true today across all three
+  * refresh sites (`Specialization`, `LambdaLift` closure lift, `LambdaLift`
+  * local-def lift).
+  *
   * == Instrumented phases ==
   *
   * The following phases call [[track]] and contribute per-`DefnSym` data:
@@ -131,7 +146,22 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) {
   }
 
   private def countersFor(sym: Symbol.DefnSym): CompilerProfiler.Counters =
-    stats.computeIfAbsent(sym, _ => new CompilerProfiler.Counters)
+    stats.computeIfAbsent(sourceOf(sym), _ => new CompilerProfiler.Counters)
+
+  /**
+    * Returns the source-equivalent sym for `sym`: same `(namespace, text,
+    * loc)` triple but with `id = None`, i.e. the sym a user would have
+    * written. A sym that is already a source sym (`id.isEmpty`) is returned
+    * unchanged.
+    *
+    * Correct only as long as [[Symbol.freshDefnSym]] keeps the triple
+    * identical to its argument; if a future change starts varying any of
+    * those three, the roll-up here would silently cross-attribute time
+    * between unrelated defs.
+    */
+  private def sourceOf(sym: Symbol.DefnSym): Symbol.DefnSym =
+    if (sym.id.isEmpty) sym
+    else new Symbol.DefnSym(None, sym.namespace, sym.text, sym.loc)
 }
 
 object CompilerProfiler {
