@@ -68,11 +68,12 @@ final case class DefnStats(
   *     `Kinder` (visitDefSpecs + visitDefs), `Typer`, `EntryPoints`,
   *     `PredDeps`, `Stratifier`, `PatMatch`, `Redundancy`, `Safety`,
   *     `Terminator`, `Dependencies`.
-  *   - Backend (13 sites):
+  *   - Backend (16 sites):
   *     `Monomorpher` (initial + worklist; keyed by source generic sym),
   *     `LambdaDrop`, `OccurrenceAnalyzer`, `Inliner`, `Simplifier`,
   *     `ClosureConv`, `LambdaLift`, `EffectBinder`, `TailPos`, `Eraser`,
-  *     `Reducer`.
+  *     `Reducer`, `JvmBackend` (closure + control-pure function +
+  *     control-impure function cases in `GenFunAndClosureClasses`).
   *
   * == Uninstrumented phases ==
   *
@@ -91,9 +92,10 @@ final case class DefnStats(
   *   - `Optimizer` — a wrapper that re-runs `OccurrenceAnalyzer` and
   *     `Inliner` in a fixed-point loop. All work is captured transitively
   *     through those instrumented inner phases.
-  *   - `JvmBackend` — class-file generation through
-  *     `GenFunAndClosureClasses`; not a `parMap` and would require a
-  *     dedicated hook inside the class generator.
+  *   - `JvmBackend` — top-level orchestration (namespace classes, runtime
+  *     types, etc.) is not per-def. The dominant per-def work — function
+  *     and closure class generation in `GenFunAndClosureClasses` — *is*
+  *     instrumented (see Backend list above).
   */
 final class CompilerProfiler(phaseProvider: () => Option[String]) {
 
