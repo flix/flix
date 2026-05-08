@@ -27,13 +27,26 @@ eff KeyNotFound {
 
 pub mod KeyNotFound {
 
-    /// Turns the `KeyNotFound` effect into `Err(msg)`.
+    ///
+    /// Handles the `KeyNotFound` effect of the given function `f` by converting
+    /// key-not-found errors to `Result` values.
+    ///
+    /// Returns `Ok(f(x))` if the computation completes successfully.
+    /// Returns `Err(msg)` if the computation raises `keyNotFound(msg)`.
+    ///
     @Experimental
-    pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - KeyNotFound) = {
-        x ->
-            run Ok(f(x)) with handler KeyNotFound {
-                def keyNotFound(msg, _) = Err(msg)
-            }
-    }
+    pub def handleWithResult(f: a -> b \ ef): a -> Result[String, b] \ (ef - KeyNotFound) = x ->
+        run Ok(f(x)) with handler KeyNotFound {
+            def keyNotFound(msg, _k) = Err(msg)
+        }
+
+    ///
+    /// Runs the `KeyNotFound` effect of the given function `f`.
+    ///
+    /// Returns `Ok(f())` if the computation completes successfully.
+    /// Returns `Err(msg)` if the computation raises `keyNotFound(msg)`.
+    ///
+    @Experimental
+    pub def runWithResult(f: Unit -> a \ ef): Result[String, a] \ (ef - KeyNotFound) = handleWithResult(f)()
 
 }
