@@ -157,14 +157,34 @@ object CompilerTop {
   /** Wraps `s` in ANSI cyan codes. */
   private def cyan(s: String): String = color(s, Cyan)
 
+  // -- Warning thresholds --------------------------------------------------
+  //
+  // Per-column tier cutoffs consumed by the `style*` functions below. Naming:
+  // `<Column><Tier>Threshold[<Unit>]`. Sorted alphabetically — keep new
+  // entries in order. Adjusting a number here is a UX call; please don't
+  // bury it inside one of the styling functions.
+
+  private val CallCountRedThreshold:           Long   = 500L
+  private val CallCountYellowThreshold:        Long   = 50L
+  private val HeapRedThresholdRatio:           Double = 0.9
+  private val HeapYellowThresholdRatio:        Double = 0.7
+  private val HotnessRedThresholdMsPerLine:    Double = 25.0
+  private val HotnessYellowThresholdMsPerLine: Double = 15.0
+  private val LocRedThreshold:                 Int    = 250
+  private val PctCpuRedThreshold:              Double = 5.0
+  private val PctCpuYellowThreshold:           Double = 1.0
+  private val PctWallRedThreshold:             Double = 15.0
+  private val PctWallYellowThreshold:          Double = 5.0
+  private val TimeRedThresholdMs:              Long   = 1000L
+  private val TimeYellowThresholdMs:           Long   = 50L
+
   // -- Conditional styling -------------------------------------------------
 
-  /** Colors a formatted time field by absolute magnitude (≥1s red bold, ≥200ms yellow bold, ≥50ms yellow). */
+  /** Colors a formatted time field by absolute magnitude. */
   private def styleTime(formatted: String, nanos: Long): String = {
     val ms = nanos / 1_000_000L
-    if (ms >= 1000) bold(red(formatted))
-    else if (ms >= 200) bold(yellow(formatted))
-    else if (ms >= 50) yellow(formatted)
+    if (ms >= TimeRedThresholdMs) bold(red(formatted))
+    else if (ms >= TimeYellowThresholdMs) yellow(formatted)
     else formatted
   }
 
@@ -178,22 +198,22 @@ object CompilerTop {
   private def styleSym(name: String, nanos: Long, locLines: Int): String = {
     if (locLines <= 0) return name
     val msPerLine = (nanos / 1_000_000L).toDouble / locLines
-    if (msPerLine >= 25.0) bold(red(name))
-    else if (msPerLine >= 15.0) yellow(name)
+    if (msPerLine >= HotnessRedThresholdMsPerLine) bold(red(name))
+    else if (msPerLine >= HotnessYellowThresholdMsPerLine) yellow(name)
     else name
   }
 
   /** %cpu = totalNanos / (elapsed × threads). One def's slice of total compute. */
   private def stylePctCpu(formatted: String, pct: Double): String = {
-    if (pct >= 5.0) bold(red(formatted))
-    else if (pct >= 1.0) yellow(formatted)
+    if (pct >= PctCpuRedThreshold) bold(red(formatted))
+    else if (pct >= PctCpuYellowThreshold) yellow(formatted)
     else formatted
   }
 
   /** %wall = totalNanos / elapsed. Upper bound on wall-clock savings if removed. */
   private def stylePctWall(formatted: String, pct: Double): String = {
-    if (pct >= 15.0) bold(red(formatted))
-    else if (pct >= 5.0) yellow(formatted)
+    if (pct >= PctWallRedThreshold) bold(red(formatted))
+    else if (pct >= PctWallYellowThreshold) yellow(formatted)
     else formatted
   }
 
@@ -207,23 +227,23 @@ object CompilerTop {
     else yellow(s)
   }
 
-  /** Colors a formatted heap field by used/max ratio: ≥90% red bold, ≥70% yellow, else green. */
+  /** Colors a formatted heap field by used/max ratio. */
   private def styleHeap(formatted: String, ratio: Double): String = {
-    if (ratio >= 0.9) bold(red(formatted))
-    else if (ratio >= 0.7) yellow(formatted)
+    if (ratio >= HeapRedThresholdRatio) bold(red(formatted))
+    else if (ratio >= HeapYellowThresholdRatio) yellow(formatted)
     else green(formatted)
   }
 
-  /** Colors a formatted LOC field: ≥250 lines red bold (large definition). */
+  /** Colors a formatted LOC field — large definition. */
   private def styleLoc(formatted: String, locLines: Int): String = {
-    if (locLines >= 250) bold(red(formatted))
+    if (locLines >= LocRedThreshold) bold(red(formatted))
     else formatted
   }
 
-  /** Colors a formatted call-count field: ≥500 red bold, ≥50 yellow (high re-visit count). */
+  /** Colors a formatted call-count field — high re-visit count. */
   private def styleN(formatted: String, callCount: Long): String = {
-    if (callCount >= 500) bold(red(formatted))
-    else if (callCount >= 50) yellow(formatted)
+    if (callCount >= CallCountRedThreshold) bold(red(formatted))
+    else if (callCount >= CallCountYellowThreshold) yellow(formatted)
     else formatted
   }
 
