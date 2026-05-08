@@ -183,7 +183,12 @@ object TypeError {
   case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6216
 
-    //override def locs: List[SourceLocation] = List(loc, loc2)
+    /*  Commented out until DiagnosticRelatedInformation is fixed.
+     *  Setting locs will display additional hover information in VSCode.
+     *  Disabled for now since setting it will cause the LSP to hang,
+     *  and not generate quickfixes
+     */
+    // override def locs: List[SourceLocation] = List(loc, loc2)
 
     def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as ${effectsToString(defEffSyms)}"
 
@@ -216,7 +221,12 @@ object TypeError {
 
     def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
 
-    //override def locs: List[SourceLocation] = List(loc, loc2)
+    /*  Commented out until DiagnosticRelatedInformation is fixed.
+     *  Setting locs will display additional hover information in VSCode.
+     *  Disabled for now since setting it will cause the LSP to hang,
+     *  and not generate quickfixes
+     */
+    // override def locs: List[SourceLocation] = List(loc, loc2)
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
