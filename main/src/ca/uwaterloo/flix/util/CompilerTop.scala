@@ -250,7 +250,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       val locField = rpad(truncate(locStr, layout.locWidth), layout.locWidth)
 
       sb.append(' ')
-      sb.append(symField)
+      sb.append(styleSym(symField, s.totalNanos, locLines))
       sb.append(' ')
       sb.append(dim(locField))
       appendNumericFields(sb, locLines, s.callCount.toLong, phase, s.totalNanos, pctCpu, pctWall, layout)
@@ -413,6 +413,21 @@ object CompilerTop {
     else if (ms >= 200) bold(yellow(formatted))
     else if (ms >= 50) yellow(formatted)
     else formatted
+  }
+
+  /**
+    * Colors the sym name based on `time / locLines` — a "hotness per line"
+    * signal that surfaces small defs which consume time disproportionate
+    * to their body size. Defs with no real source span (`locLines <= 0`,
+    * e.g. lifted closures) are left unstyled because the denominator is
+    * meaningless.
+    */
+  private def styleSym(name: String, nanos: Long, locLines: Int): String = {
+    if (locLines <= 0) return name
+    val msPerLine = (nanos / 1_000_000L).toDouble / locLines
+    if (msPerLine >= 25.0) bold(red(name))
+    else if (msPerLine >= 15.0) yellow(name)
+    else name
   }
 
   /** %cpu = totalNanos / (elapsed × threads). One def's slice of total compute. */
