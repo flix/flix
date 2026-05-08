@@ -351,6 +351,26 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
   /** True while the renderer thread should keep looping. */
   private val running = new AtomicBoolean(false)
 
+  /**
+    * Flips to true when [[stop]] is first called. Drives the dashboard's
+    * "done — press q to quit" mode and guards [[stop]] against re-entry from
+    * both the error path in `Flix.check` and the success path in `Flix.compile`.
+    */
+  private val completed = new AtomicBoolean(false)
+
+  /**
+    * Elapsed nanos at the moment compilation finished. Captured by [[stop]]
+    * before flipping [[completed]] so the dashboard can freeze the field
+    * instead of advancing it during the wait-for-quit phase.
+    */
+  @volatile private var frozenElapsedNanos: Long = 0L
+
+  /** Active-thread count captured at the same instant as [[frozenElapsedNanos]]. */
+  @volatile private var frozenActiveThreads: Int = 0
+
+  /** `(usedMb, maxMb)` heap snapshot captured at the same instant as [[frozenElapsedNanos]]. */
+  @volatile private var frozenHeap: (Long, Long) = (0L, 0L)
+
   /** The renderer thread, or `null` before [[start]] / after [[stop]]. */
   private var thread: Thread = _
 
@@ -389,12 +409,44 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     thread.start()
   }
 
-  /** Stops the renderer, prints one final frame, and joins the render thread. */
+  /**
+    * Marks compilation done, blocks until the user presses `q` (or hits EOF /
+    * Ctrl-C), then tears the renderer down and clears the screen so whatever
+    * Main prints next (errors, runtime output) starts on a clean slate.
+    *
+    * Idempotent: the second caller — both error and success paths in `Flix`
+    * may fire — returns immediately rather than blocking again.
+    */
   def stop(): Unit = {
+    // Snapshot live values BEFORE flipping `completed`. The renderer reads
+    // `completed` first and uses the snapshot when it sees true; the volatile
+    // writes here happen-before the AtomicBoolean store via JMM.
+    frozenElapsedNanos = System.nanoTime() - startNanos
+    frozenActiveThreads = if (flix.threadPool == null) 0 else flix.threadPool.getActiveThreadCount
+    frozenHeap = heapUsage()
+
+    if (!completed.compareAndSet(false, true)) return
+
+    // Block until the user dismisses the TUI. The renderer keeps drawing the
+    // "press q to quit" hint while we wait.
+    if (terminal != null) {
+      val attrs = terminal.enterRawMode()
+      try {
+        val r = terminal.reader()
+        var quit = false
+        while (!quit) {
+          val c = r.read()
+          if (c == -1 || c == 'q' || c == 'Q' || c == 3) quit = true
+        }
+      } finally {
+        try terminal.setAttributes(attrs) catch { case _: Throwable => () }
+      }
+    }
+
     if (!running.compareAndSet(true, false)) return
     if (thread != null) thread.join()
-    render()
-    System.out.println()
+    System.out.print(ClearScreen)
+    System.out.flush()
     if (terminal != null) try terminal.close() catch { case _: Throwable => () }
   }
 
@@ -409,11 +461,15 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
   /** Builds and prints one full frame of the TUI. */
   private def render(): Unit = {
+    val isDone = completed.get()
     val now = System.nanoTime()
-    val elapsed = now - startNanos
     val pool = flix.threadPool
     val parallelism = if (pool == null) flix.options.threads.max(1) else pool.getParallelism.max(1)
-    val activeThreads = if (pool == null) 0 else pool.getActiveThreadCount
+    // Once compilation is done, freeze elapsed + active threads at their
+    // snapshot values so the dashboard reflects the state at completion
+    // rather than ticking forward during the wait-for-quit phase.
+    val elapsed = if (isDone) frozenElapsedNanos else now - startNanos
+    val activeThreads = if (isDone) frozenActiveThreads else (if (pool == null) 0 else pool.getActiveThreadCount)
 
     // Budget rows for the two tables based on the current terminal height,
     // reserving an extra `RowMargin` rows so the view never quite touches
@@ -429,9 +485,13 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     val snap = profiler.snapshot().sortBy(-_.totalNanos)
     val visible = snap.take(defN)
 
-    // Active-threads sparkline: history of thread-pool occupancy.
-    threadsHistory.enqueue(activeThreads.toDouble)
-    while (threadsHistory.size > SparkWidth) threadsHistory.dequeue()
+    // Active-threads sparkline: history of thread-pool occupancy. Stops
+    // updating once compilation is done so the bar reflects the work, not
+    // a long tail of zero-occupancy samples while waiting for `q`.
+    if (!isDone) {
+      threadsHistory.enqueue(activeThreads.toDouble)
+      while (threadsHistory.size > SparkWidth) threadsHistory.dequeue()
+    }
 
     val modules = aggregateByModule(snap).take(moduleN)
 
@@ -458,8 +518,12 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * Both bars sit beside each other so the eye picks them up as a pair.
     */
   private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int): Unit = {
-    val phase = flix.getCurrentPhaseName.getOrElse("starting")
-    val done = (flix.phaseTimers.size + 1).min(TotalPhases)
+    val isDone = completed.get()
+    val phase = if (isDone) "done" else flix.getCurrentPhaseName.getOrElse("starting")
+    // Once compilation has finished, force the bar to 100% rather than relying
+    // on `phaseTimers.size + 1` (which is +1 ahead of reality during execution
+    // and would still under-fill if any phase is uninstrumented).
+    val done = if (isDone) TotalPhases else (flix.phaseTimers.size + 1).min(TotalPhases)
     val filled = (BarWidth.toLong * done / TotalPhases).toInt
 
     sb.append("  ")
@@ -474,6 +538,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(dim(cyan(renderSparkline(parallelism.toDouble))))
     sb.append(' ')
     sb.append(styleThreads(activeThreads, parallelism))
+    if (isDone) sb.append(dim("   press q to quit"))
     sb.append('\n')
   }
 
@@ -482,7 +547,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * (right-aligned under `threads`).
     */
   private def renderStats(sb: StringBuilder, elapsed: Long): Unit = {
-    val (heapUsedMb, heapMaxMb) = heapUsage()
+    val (heapUsedMb, heapMaxMb) = if (completed.get()) frozenHeap else heapUsage()
     val heapUsedField = f"$heapUsedMb%4d MB"
     val heapMaxField = f"$heapMaxMb%4d MB"
     val heapRatio = if (heapMaxMb <= 0) 0.0 else heapUsedMb.toDouble / heapMaxMb
