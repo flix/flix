@@ -93,13 +93,13 @@ object CompilerProfiler {
   /**
     * Mutable per-`DefnSym` accumulators feeding [[DefnStats]].
     *
-    * @param totalNanos    total wall-clock time spent inside `track` calls for this sym, in nanoseconds.
+    * @param inProgress    number of `track` calls currently in flight for this source sym.
     * @param callCount     number of `track` calls observed for this sym.
+    * @param totalNanos    total wall-clock time spent inside `track` calls for this sym, in nanoseconds.
     * @param perPhaseNanos per-phase nanosecond accumulator, keyed by phase name.
     * @param loc           set on first `track` call; carries the def-body span so we can show LOC.
-    * @param inProgress    number of `track` calls currently in flight for this source sym.
     */
-  private final case class Counters(totalNanos: AtomicLong = new AtomicLong(0L), callCount: AtomicInteger = new AtomicInteger(0), perPhaseNanos: ConcurrentHashMap[String, AtomicLong] = new ConcurrentHashMap[String, AtomicLong](), loc: AtomicReference[SourceLocation] = new AtomicReference[SourceLocation](null), inProgress: AtomicInteger = new AtomicInteger(0))
+  private final case class Counters(inProgress: AtomicInteger, callCount: AtomicInteger, totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], loc: AtomicReference[SourceLocation])
 }
 
 final class CompilerProfiler(phaseProvider: () => Option[String]) {
@@ -156,7 +156,13 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) {
   }
 
   private def countersFor(sym: Symbol.DefnSym): CompilerProfiler.Counters =
-    stats.computeIfAbsent(sourceOf(sym), _ => new CompilerProfiler.Counters)
+    stats.computeIfAbsent(sourceOf(sym), _ => CompilerProfiler.Counters(
+      inProgress = new AtomicInteger(0),
+      callCount = new AtomicInteger(0),
+      totalNanos = new AtomicLong(0L),
+      perPhaseNanos = new ConcurrentHashMap[String, AtomicLong](),
+      loc = new AtomicReference[SourceLocation](null)
+    ))
 
   /**
     * Returns the source-equivalent sym for `sym`: same `(namespace, text,
