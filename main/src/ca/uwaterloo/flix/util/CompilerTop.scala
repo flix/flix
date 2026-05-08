@@ -560,13 +560,14 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       val phase = s.dominantPhase.getOrElse("?")
 
       val nameMax = layout.symWidth - 1
-      val nameField = rpad(truncate(s.sym.name, nameMax), nameMax)
+      val nameText = truncate(s.sym.name, nameMax)
       val locField = rpad(truncate(locStr, layout.locWidth), layout.locWidth)
       val marker = if (s.isActive) yellow("*") else " "
 
       sb.append(' ')
-      sb.append(styleSym(nameField, s.totalNanos, locLines))
+      sb.append(styleSym(nameText, s.totalNanos, locLines))
       sb.append(marker)
+      sb.append(" " * (nameMax - nameText.length))
       sb.append(' ')
       sb.append(dim(locField))
       appendNumericFields(sb, locLines, s.callCount.toLong, phase, s.totalNanos, pctCpu, pctWall, layout)
