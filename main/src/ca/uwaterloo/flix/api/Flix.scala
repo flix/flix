@@ -112,12 +112,12 @@ class Flix {
 
   /**
     * Optional profiler that records where compile time is spent. Installed
-    * by [[setOptions]] when `--top` is enabled; absent on the default
-    * path so [[profile]] is a no-op with no measurement overhead.
+    * by [[setOptions]] when the compiler profiler is enabled; absent on the
+    * default path so [[profile]] is a no-op with no measurement overhead.
     */
   private var profiler: Option[CompilerProfiler] = None
 
-  /** The live `--top` TUI, if it has been started. */
+  /** The live compiler profiler TUI, if it has been started. */
   private var compilerTop: Option[CompilerTop] = None
 
   /** Returns the currently installed profiler, or `None`. */
@@ -138,8 +138,8 @@ class Flix {
     }
 
   /**
-    * The current phase we are in. Initially `None`. Volatile so the `--top`
-    * renderer thread sees each store made by the compile thread in
+    * The current phase we are in. Initially `None`. Volatile so the compiler
+    * profiler renderer thread sees each store made by the compile thread in
     * [[phase]] / [[phaseNew]].
     */
   @volatile private var currentPhase: Option[PhaseTime] = None
@@ -597,9 +597,9 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
-    // Stop the live `--top` TUI only if there are errors and no `codeGen`
-    // will follow. On the success path, leave it running so `codeGen` can
-    // continue updating it through the mid-end and backend phases.
+    // Stop the live compiler profiler TUI only if there are errors and no
+    // `codeGen` will follow. On the success path, leave it running so
+    // `codeGen` can continue updating it through the mid-end and backend phases.
     if (errors.nonEmpty) {
       compilerTop.foreach(_.stop())
     }
@@ -694,7 +694,7 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
-    // Stop the live `--top` TUI, if it is running.
+    // Stop the live compiler profiler TUI, if it is running.
     compilerTop.foreach(_.stop())
 
     // Return the result.
