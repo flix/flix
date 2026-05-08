@@ -111,7 +111,7 @@ class Flix {
   var phaseTimers: ArrayBuffer[PhaseTime] = ArrayBuffer.empty
 
   /**
-    * Optional profiler that records per-`DefnSym` timing data. Installed
+    * Optional profiler that records where compile time is spent. Installed
     * by [[setOptions]] when `--top` is enabled; absent on the default
     * path so [[track]] is a no-op with no measurement overhead.
     */
@@ -436,7 +436,7 @@ class Flix {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
     options = opts
-    if (opts.top && compilerTop.isEmpty) {
+    if (opts.compilerTop && compilerTop.isEmpty) {
       val p = new CompilerProfiler(() => currentPhaseName)
       setProfiler(Some(p))
       val t = new CompilerTop(this, p)

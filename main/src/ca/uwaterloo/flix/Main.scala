@@ -72,7 +72,7 @@ object Main {
       outputJvm = false,
       outputPath = Options.Default.outputPath,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
-      top = cmdOpts.top,
+      compilerTop = cmdOpts.top,
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xprintphases = cmdOpts.xprintphases,
@@ -92,7 +92,7 @@ object Main {
 
     // Don't use progress bar / --top TUI if not attached to a console.
     if (System.console() == null) {
-      options = options.copy(progress = false, top = false)
+      options = options.copy(progress = false, compilerTop = false)
     }
 
     // Don't use progress bar if --top is set: the live TUI repaints the screen
@@ -670,7 +670,7 @@ object Main {
         text("number of threads to use for compilation.")
 
       opt[Unit]("top").action((_, c) => c.copy(top = true)).
-        text("displays a live view of the DefnSyms the compiler spends most time on.")
+        text("displays a live view of where the compiler spends its time.")
 
       opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
         text("automatically answer yes to all prompts.")

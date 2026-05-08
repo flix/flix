@@ -27,6 +27,7 @@ object Options {
   val Default: Options = Options(
     lib = LibLevel.All,
     build = Build.Development,
+    compilerTop = false,
     entryPoint = None,
     githubToken = None,
     installDeps = false,
@@ -36,7 +37,6 @@ object Options {
     outputPath = Path.of("./build/"),
     progress = false,
     threads = Runtime.getRuntime.availableProcessors(),
-    top = false,
     loadClassFiles = true,
     assumeYes = false,
     xprintphases = false,
@@ -75,6 +75,7 @@ object Options {
   *
   * @param lib            selects the level of libraries to include.
   * @param build          selects development or production mode.
+  * @param compilerTop    shows a live TUI of where the compiler spends its time.
   * @param entryPoint     specifies the main entry point.
   * @param githubToken    the API key to use for GitHub dependency resolution.
   * @param incremental    enables incremental compilation.
@@ -84,12 +85,12 @@ object Options {
   * @param outputPath     The path to the output folder.
   * @param progress       print progress during compilation.
   * @param threads        selects the number of threads to use.
-  * @param top            shows a live TUI of the DefnSyms the compiler spends most time on.
   * @param loadClassFiles loads the generated class files into the JVM.
   * @param assumeYes      run non-interactively and assume answer to all prompts is yes.
   */
 case class Options(lib: LibLevel,
                    build: Build,
+                   compilerTop: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
                    githubToken: Option[String],
                    incremental: Boolean,
@@ -99,7 +100,6 @@ case class Options(lib: LibLevel,
                    outputJvm: Boolean,
                    outputPath: Path,
                    threads: Int,
-                   top: Boolean,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
                    xprintphases: Boolean,
