@@ -76,8 +76,8 @@ object CompilerTop {
     case object Hotness extends Sort
   }
 
-  /** How often the screen refreshes, in milliseconds. */
-  private val RefreshIntervalMs: Long = 100L
+  /** How often the screen refreshes, in milliseconds (5 FPS). */
+  private val RefreshIntervalMs: Long = 200L
 
   /** Poll interval for the input thread (ms); doubles as how fast `running=false` is observed. */
   private val InputPollMs: Long = 100L
