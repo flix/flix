@@ -145,7 +145,7 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
         |    }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectOneError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+    expectOneError[TypeError.UnhandledEffect](result)
   }
 
   test("Test.ImplicitlyPureFunctionUsesIO.01") {
@@ -485,7 +485,7 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
         |    }; IO.println()
         """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectOneError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+    expectOneError[TypeError.UnhandledEffect](result)
   }
 
   test("Test.UnusedEffectInSignature.01") {

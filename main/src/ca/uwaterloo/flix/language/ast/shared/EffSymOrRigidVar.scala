@@ -23,6 +23,11 @@ sealed trait EffSymOrRigidVar {
 
 object EffSymOrRigidVar {
 
+  def format(effs: List[EffSymOrRigidVar]): String = effs match {
+    case x :: Nil => s"'${x.name}'"
+    case xs => xs.map(_.name).mkString("'{", ", ", "}'")
+  }
+
   case class Eff(symbol: Symbol.EffSym) extends EffSymOrRigidVar {
     def name: String = symbol.name
   }

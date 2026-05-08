@@ -115,12 +115,13 @@ object TypeConstraint {
       */
     case class ExpectArgument(expected: Type, actual: Type, sym: Symbol, num: Int, loc: SourceLocation) extends Provenance
 
-    case class Handler(runBlock: Type, handler: Type, loc: SourceLocation) extends Provenance
+    case class Handler(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
 
     /**
       * The constraint indicates that the types must match.
       */
     case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
+
 
     /**
       * The constraint indicates that the left effect is a variable representing the source effect on the right.

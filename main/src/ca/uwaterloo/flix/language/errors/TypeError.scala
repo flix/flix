@@ -64,10 +64,7 @@ object TypeError {
   case class ArgumentGivenWrongEffect(expected: List[EffSymOrRigidVar], actual: List[EffSymOrRigidVar], loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6218
 
-    private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
-      case x :: Nil => s"'${x.name}'"
-      case xs => xs.map(_.name).mkString("'{", ", ", "}'")
-    }
+    private def effectsToString(effs: List[EffSymOrRigidVar]): String = EffSymOrRigidVar.format(effs)
 
     def summary: String =
       s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
@@ -894,6 +891,28 @@ object TypeError {
       s""">> Unexpected type: expected '${cyan(formatType(expected, Some(renv), amb = amb))}', found '${red(formatType(inferred, Some(renv), amb = amb))}'.
          |
          |${highlight(loc, "unexpected type", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  case class UnhandledEffect(unhandled: EffSymOrRigidVar, signature: EffSymOrRigidVar, uLoc: SourceLocation, handlerLoc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7796
+
+    def loc = uLoc
+
+    def summary: String = s"the effect ${unhandled.name}' is not handled nor in the function signature."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> effect ${magenta(unhandled.name)} inside run statement is left unhandled.
+         |
+         |${highlight(loc, s"unhandled effect ${magenta(unhandled.name)}", fmt)}
+         |
+         |is not handled by a handler:
+         |${highlight(handlerLoc, "", fmt)}
+         |
+         |and is not in the signature:
+         |${highlight(sigLoc, s"${magenta(signature.name)}", fmt)}
          |""".stripMargin
     }
   }
