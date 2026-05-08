@@ -36,36 +36,42 @@ import scala.jdk.CollectionConverters.*
   *
   * Instrumentation coverage of the compiler pipeline:
   *
-  * | Phase                                          | Instrumented | Reason                                                                                                                |
-  * | ---------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------- |
-  * | Reader, Lexer, Parser2, Weeder2, Desugar, Namer | No          | Run before any `DefnSym` exists, so there is no key to attribute time to.                                             |
-  * | Resolver                                       | No           | Per-def work is nested inside trait/instance walks rather than a clean `parMapValues` over `root.defs`.               |
-  * | Deriver                                        | No           | Generates new instances from enum derivations; iterates over enums, not existing defs.                                |
-  * | Instances                                      | No           | Per-instance-def work interleaves with trait conformance checks; instrumentable but not a one-line wrap.              |
-  * | Kinder                                         | Yes          | `visitDefSpecs` + `visitDefs`.                                                                                        |
-  * | Typer                                          | Yes          |                                                                                                                       |
-  * | EntryPoints                                    | Yes          |                                                                                                                       |
-  * | PredDeps                                       | Yes          |                                                                                                                       |
-  * | Stratifier                                     | Yes          |                                                                                                                       |
-  * | PatMatch                                       | Yes          |                                                                                                                       |
-  * | Redundancy                                     | Yes          |                                                                                                                       |
-  * | Safety                                         | Yes          |                                                                                                                       |
-  * | Terminator                                     | Yes          |                                                                                                                       |
-  * | Dependencies                                   | Yes          |                                                                                                                       |
-  * | TreeShaker1, TreeShaker2                       | No           | Pure filter passes; no per-def work to time.                                                                          |
-  * | Monomorpher                                    | Yes          | Initial + worklist, keyed by the source generic sym.                                                                  |
-  * | LambdaDrop                                     | Yes          |                                                                                                                       |
-  * | Optimizer                                      | No           | Fixed-point wrapper around `OccurrenceAnalyzer` / `Inliner`; captured transitively through those inner phases.        |
-  * | OccurrenceAnalyzer                             | Yes          |                                                                                                                       |
-  * | Inliner                                        | Yes          |                                                                                                                       |
-  * | Simplifier                                     | Yes          |                                                                                                                       |
-  * | ClosureConv                                    | Yes          |                                                                                                                       |
-  * | LambdaLift                                     | Yes          |                                                                                                                       |
-  * | EffectBinder                                   | Yes          |                                                                                                                       |
-  * | TailPos                                        | Yes          |                                                                                                                       |
-  * | Eraser                                         | Yes          |                                                                                                                       |
-  * | Reducer                                        | Yes          |                                                                                                                       |
-  * | JvmBackend                                     | Partial      | Top-level orchestration is not per-def. The dominant per-def work — closure + control-pure + control-impure cases in `GenFunAndClosureClasses` — is instrumented. |
+  * | Phase              | Instrumented | Reason                                                                                                        |
+  * | ------------------ | ------------ | ------------------------------------------------------------------------------------------------------------- |
+  * | Reader             | No           | Runs before any `DefnSym` exists, so there is no key to attribute time to.                                    |
+  * | Lexer              | No           | -- same --                                                                                                    |
+  * | Parser2            | No           | -- same --                                                                                                    |
+  * | Weeder2            | No           | -- same --                                                                                                    |
+  * | Desugar            | No           | -- same --                                                                                                    |
+  * | Namer              | No           | -- same --                                                                                                    |
+  * | Resolver           | No           | Per-def work is nested inside trait/instance walks rather than a clean `parMapValues` over `root.defs`.       |
+  * | Deriver            | No           | Generates new instances from enum derivations; iterates over enums, not existing defs.                        |
+  * | Instances          | No           | Per-instance-def work interleaves with trait conformance checks; instrumentable but not a one-line wrap.      |
+  * | Kinder             | Yes          | `visitDefSpecs` + `visitDefs`.                                                                                |
+  * | Typer              | Yes          |                                                                                                               |
+  * | EntryPoints        | Yes          |                                                                                                               |
+  * | PredDeps           | Yes          |                                                                                                               |
+  * | Stratifier         | Yes          |                                                                                                               |
+  * | PatMatch           | Yes          |                                                                                                               |
+  * | Redundancy         | Yes          |                                                                                                               |
+  * | Safety             | Yes          |                                                                                                               |
+  * | Terminator         | Yes          |                                                                                                               |
+  * | Dependencies       | Yes          |                                                                                                               |
+  * | TreeShaker1        | No           | Pure filter pass; no per-def work to time.                                                                    |
+  * | Monomorpher        | Yes          | Initial + worklist, keyed by the source generic sym.                                                          |
+  * | LambdaDrop         | Yes          |                                                                                                               |
+  * | Optimizer          | No           | Fixed-point wrapper around `OccurrenceAnalyzer` / `Inliner`; captured transitively through those inner phases.|
+  * | OccurrenceAnalyzer | Yes          |                                                                                                               |
+  * | Inliner            | Yes          |                                                                                                               |
+  * | Simplifier         | Yes          |                                                                                                               |
+  * | ClosureConv        | Yes          |                                                                                                               |
+  * | LambdaLift         | Yes          |                                                                                                               |
+  * | TreeShaker2        | No           | -- same as TreeShaker1 --                                                                                     |
+  * | EffectBinder       | Yes          |                                                                                                               |
+  * | TailPos            | Yes          |                                                                                                               |
+  * | Eraser             | Yes          |                                                                                                               |
+  * | Reducer            | Yes          |                                                                                                               |
+  * | JvmBackend         | Partial      | Only the per-def cases in `GenFunAndClosureClasses` are instrumented; top-level orchestration is not.         |
   */
 object CompilerProfiler {
   /**
