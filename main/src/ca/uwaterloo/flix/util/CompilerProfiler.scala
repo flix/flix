@@ -104,6 +104,7 @@ object CompilerProfiler {
 
 final class CompilerProfiler(phaseProvider: () => Option[String]) {
 
+  /** Per-source-`DefnSym` accumulators, keyed by the sym returned from [[sourceOf]]. */
   private val stats = new ConcurrentHashMap[Symbol.DefnSym, CompilerProfiler.Counters]()
 
   /**
@@ -155,6 +156,10 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) {
     n
   }
 
+  /**
+    * Returns the [[Counters]] entry for `sym`'s source sym, creating a fresh
+    * zero-initialized entry on first use. Atomic in the underlying map.
+    */
   private def countersFor(sym: Symbol.DefnSym): CompilerProfiler.Counters =
     stats.computeIfAbsent(sourceOf(sym), _ => CompilerProfiler.Counters(
       inProgress = new AtomicInteger(0),
