@@ -64,6 +64,7 @@ object CodeActionProvider {
       List(CodeAction(
         title = "Change {} to IO",
         kind = CodeActionKind.QuickFix,
+        // As of right now, having multiple diagnostics does not seem to do much, and the location provided is ignored.
         diagnostics = List(Diagnostic.from(te, Some(root)), Diagnostic.fromWithLoc(te, loc2, Some(root))),
         isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "IO"))))),
