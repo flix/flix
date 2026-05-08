@@ -31,7 +31,8 @@ final case class DefnStats(
   loc: SourceLocation,
   totalNanos: Long,
   callCount: Int,
-  byPhase: Map[String, Long]
+  byPhase: Map[String, Long],
+  isActive: Boolean
 ) {
   /** Returns the phase that consumed the most time, or None if empty. */
   def dominantPhase: Option[String] =
@@ -110,17 +111,19 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) {
     */
   def track[A](sym: Symbol.DefnSym, loc: SourceLocation)(thunk: => A): A = {
     val phase = phaseProvider().getOrElse("?")
+    val c = countersFor(sym)
+    c.loc.compareAndSet(null, loc)
+    c.inProgress.incrementAndGet()
     val t0 = System.nanoTime()
     try thunk
     finally {
       val elapsed = System.nanoTime() - t0
-      val c = countersFor(sym)
-      c.loc.compareAndSet(null, loc)
       c.totalNanos.addAndGet(elapsed)
       c.callCount.incrementAndGet()
       c.perPhaseNanos
         .computeIfAbsent(phase, _ => new AtomicLong(0L))
         .addAndGet(elapsed)
+      c.inProgress.decrementAndGet()
     }
   }
 
@@ -135,7 +138,8 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) {
       val byPhase = c.perPhaseNanos.entrySet().iterator().asScala
         .map(pe => (pe.getKey, pe.getValue.get())).toMap
       val loc = Option(c.loc.get()).getOrElse(e.getKey.loc)
-      DefnStats(e.getKey, loc, c.totalNanos.get(), c.callCount.get(), byPhase)
+      DefnStats(e.getKey, loc, c.totalNanos.get(), c.callCount.get(), byPhase,
+        isActive = c.inProgress.get() > 0)
     }.toVector
   }
 
@@ -173,5 +177,7 @@ object CompilerProfiler {
     val perPhaseNanos = new ConcurrentHashMap[String, AtomicLong]()
     /** Set on first `track` call; carries the def-body span so we can show LOC. */
     val loc = new AtomicReference[SourceLocation](null)
+    /** Number of `track` calls currently in flight for this source sym. */
+    val inProgress = new AtomicInteger(0)
   }
 }
