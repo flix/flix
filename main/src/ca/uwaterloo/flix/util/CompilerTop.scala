@@ -18,15 +18,54 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.CompilerProfiler.DefnStats
-import org.jline.terminal.{Terminal, TerminalBuilder}
+import org.jline.terminal.{Attributes, Terminal, TerminalBuilder}
 
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.mutable
 
 object CompilerTop {
 
+  /**
+    * Restricts which phases' time the dashboard accounts for. Toggled
+    * interactively via the input thread (`f` / `b` / `a`). The split tracks
+    * `Flix.check` (frontend) vs the phases that follow in `Flix.compile`'s
+    * `codeGen` (backend) — see [[FrontendPhases]].
+    */
+  sealed trait Filter
+  object Filter {
+    case object All extends Filter
+    case object Frontend extends Filter
+    case object Backend extends Filter
+  }
+
+  /**
+    * Phase-name strings that count as "frontend" — i.e. phases that run
+    * inside `Flix.check`. Strings must match the literals each phase passes
+    * to `flix.phase("…")` / `flix.phaseNew("…")`. Verified against the
+    * `run` methods under `main/src/ca/uwaterloo/flix/language/phase`.
+    *
+    * Phases not in this set (and not the unknown-phase fallback `"?"`) are
+    * treated as backend.
+    */
+  private val FrontendPhases: Set[String] = Set(
+    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar", "Namer", "Resolver",
+    "Kinder", "Deriver", "Typer", "EntryPoints", "Instances", "PredDeps",
+    "Stratifier", "PatMatch", "Redundancy", "Safety", "Terminator", "Dependencies",
+  )
+
+  /** True if `phase` should be accounted for under the current `f`. */
+  private def matchesFilter(phase: String, f: Filter): Boolean = f match {
+    case Filter.All      => true
+    case Filter.Frontend => FrontendPhases.contains(phase)
+    case Filter.Backend  => phase != "?" && !FrontendPhases.contains(phase)
+  }
+
   /** How often the screen refreshes, in milliseconds. */
   private val RefreshIntervalMs: Long = 100L
+
+  /** Poll interval for the input thread (ms); doubles as how fast `running=false` is observed. */
+  private val InputPollMs: Long = 100L
 
   /** Total number of phases the compiler runs. Bump when `Flix.check` / `Flix.codeGen` adds or removes a `phase` / `phaseNew` call. */
   private val TotalPhases: Int = 32
@@ -384,8 +423,31 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
   /** `(usedMb, maxMb)` heap snapshot captured at the same instant as [[frozenElapsedNanos]]. */
   @volatile private var frozenHeap: (Long, Long) = (0L, 0L)
 
+  /**
+    * Active filter for the def / module tables. Written by the input thread,
+    * read by the renderer thread. Default is [[Filter.All]] (no filtering).
+    */
+  private val filter = new AtomicReference[Filter](Filter.All)
+
+  /**
+    * Counted down by the input thread when the user presses `q` (only after
+    * [[completed]] is set). [[stop]] awaits it before tearing the renderer
+    * down so the user can keep toggling the filter post-compile.
+    */
+  private val quitLatch = new CountDownLatch(1)
+
+  /**
+    * Terminal attributes captured before entering raw mode in [[start]].
+    * Restored by [[stop]] so the user's shell isn't left with line buffering
+    * and echo disabled if anything goes wrong further down the teardown.
+    */
+  private var savedAttrs: Attributes = _
+
   /** The renderer thread, or `null` before [[start]] / after [[stop]]. */
   private var thread: Thread = _
+
+  /** The input thread that reads keypresses (filter toggles + quit), or `null` before [[start]] / after [[stop]]. */
+  private var inputThread: Thread = _
 
   /** Wall-clock start time, used as the denominator for `%wall` and `%cpu`. */
   private val startNanos: Long = System.nanoTime()
@@ -414,12 +476,62 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     if (w > 0) w else DefaultCols
   }
 
-  /** Starts the renderer on a daemon thread. */
+  /**
+    * Starts the renderer + input threads on daemon threads. Enters raw mode
+    * once at startup so the input thread can read individual keystrokes
+    * during compilation as well as after it finishes.
+    */
   def start(): Unit = {
     if (!running.compareAndSet(false, true)) return
+
+    // Enter raw mode for the lifetime of the TUI so keypresses (f/b/a/q)
+    // are delivered immediately rather than line-buffered.
+    if (terminal != null) {
+      try savedAttrs = terminal.enterRawMode()
+      catch { case _: Throwable => savedAttrs = null }
+    }
+
     thread = new Thread(() => loop(), "flix-top-renderer")
     thread.setDaemon(true)
     thread.start()
+
+    inputThread = new Thread(() => inputLoop(), "flix-top-input")
+    inputThread.setDaemon(true)
+    inputThread.start()
+  }
+
+  /**
+    * Input-thread body: reads keypresses with a [[InputPollMs]] timeout so
+    * shutdown is responsive to `running.get() == false`.
+    *
+    *   - `f` / `F` → filter to frontend phases
+    *   - `b` / `B` → filter to backend phases
+    *   - `a` / `A` → reset to all phases
+    *   - `q` / `Q` / Ctrl-C / EOF → if compilation has completed, signal
+    *     [[stop]] to finish teardown; otherwise ignored (pressing `q`
+    *     mid-compile must not abort the build).
+    *   - Any other key is ignored.
+    */
+  private def inputLoop(): Unit = {
+    if (terminal == null) return
+    val r = terminal.reader()
+    while (running.get()) {
+      val c =
+        try r.read(InputPollMs)
+        catch { case _: InterruptedException => return; case _: Throwable => -1 }
+      c match {
+        case -2 => // timeout — loop and re-check `running`
+        case -1 | 3 | 'q' | 'Q' =>
+          if (completed.get()) {
+            quitLatch.countDown()
+            return
+          }
+        case 'f' | 'F' => filter.set(Filter.Frontend)
+        case 'b' | 'B' => filter.set(Filter.Backend)
+        case 'a' | 'A' => filter.set(Filter.All)
+        case _         => // ignored
+      }
+    }
   }
 
   /**
@@ -440,24 +552,20 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
     if (!completed.compareAndSet(false, true)) return
 
-    // Block until the user dismisses the TUI. The renderer keeps drawing the
-    // "press q to quit" hint while we wait.
+    // Block until the input thread observes `q`. The renderer keeps drawing
+    // the "press q to quit" hint and the user can keep toggling f/b/a in
+    // the meantime.
     if (terminal != null) {
-      val attrs = terminal.enterRawMode()
-      try {
-        val r = terminal.reader()
-        var quit = false
-        while (!quit) {
-          val c = r.read()
-          if (c == -1 || c == 'q' || c == 'Q' || c == 3) quit = true
-        }
-      } finally {
-        try terminal.setAttributes(attrs) catch { case _: Throwable => () }
-      }
+      try quitLatch.await()
+      catch { case _: InterruptedException => () }
     }
 
     if (!running.compareAndSet(true, false)) return
     if (thread != null) thread.join()
+    if (inputThread != null) inputThread.join()
+    if (terminal != null && savedAttrs != null) {
+      try terminal.setAttributes(savedAttrs) catch { case _: Throwable => () }
+    }
     System.out.print(ClearScreen)
     System.out.flush()
     if (terminal != null) try terminal.close() catch { case _: Throwable => () }
@@ -495,7 +603,8 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     // reserving 2 columns for the 1-space left and right table padding.
     val layout = computeLayout((terminalCols() - 2).max(1))
 
-    val snap = profiler.snapshot().sortBy(-_.totalNanos)
+    val activeFilter = filter.get()
+    val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(-_.totalNanos)
     val visible = snap.take(defN)
 
     // Active-threads sparkline: history of thread-pool occupancy. Stops
@@ -513,7 +622,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(ClearScreen)
     sb.append('\n')
 
-    renderDashboard(sb, activeThreads, parallelism)
+    renderDashboard(sb, activeThreads, parallelism, activeFilter)
     renderStats(sb, elapsed)
     sb.append('\n')
     renderTableHeader(sb, layout)
@@ -530,7 +639,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * Top dashboard line: current phase + progress bar + active-threads bar.
     * Both bars sit beside each other so the eye picks them up as a pair.
     */
-  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int): Unit = {
+  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int, activeFilter: Filter): Unit = {
     val isDone = completed.get()
     val phase = if (isDone) "done" else flix.getCurrentPhaseName.getOrElse("starting")
     // Once compilation has finished, force the bar to 100% rather than relying
@@ -551,8 +660,48 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(dim(cyan(renderSparkline(parallelism.toDouble))))
     sb.append(' ')
     sb.append(styleThreads(activeThreads, parallelism))
+    sb.append("   ")
+    sb.append(renderFilterLegend(activeFilter))
     if (isDone) sb.append(dim("   press q to quit"))
     sb.append('\n')
+  }
+
+  /**
+    * Renders the `[f|b|a]` legend with the active letter highlighted in
+    * bold cyan when the filter is non-default. Always visible so the user
+    * sees the available toggles whether the filter is active or not.
+    */
+  private def renderFilterLegend(active: Filter): String = {
+    val sb = new StringBuilder
+    sb.append(dim("["))
+    sb.append(if (active == Filter.All) bold(cyan("a")) else dim("a"))
+    sb.append(dim("|"))
+    sb.append(if (active == Filter.Frontend) bold(cyan("f")) else dim("f"))
+    sb.append(dim("|"))
+    sb.append(if (active == Filter.Backend) bold(cyan("b")) else dim("b"))
+    sb.append(dim("]"))
+    sb.toString
+  }
+
+  /**
+    * Projects each [[DefnStats]] through the active filter: keep only the
+    * `byPhase` and `byPhaseCount` entries whose phase matches, and recompute
+    * `totalNanos` and `callCount` as the sum over the kept phases. Module
+    * aggregation re-rolls from these filtered defs, so module rows track
+    * the filter automatically.
+    *
+    * `loc` isn't per-phase and passes through unchanged.
+    */
+  private def applyFilter(snap: Vector[DefnStats], f: Filter): Vector[DefnStats] = {
+    if (f == Filter.All) return snap
+    snap.map { s =>
+      val keptPhases = s.byPhase.filter { case (p, _) => matchesFilter(p, f) }
+      val keptCounts = s.byPhaseCount.filter { case (p, _) => matchesFilter(p, f) }
+      val keptTotal = keptPhases.values.sum
+      // Sum of per-phase counts cannot overflow Int in any realistic build.
+      val keptCount = keptCounts.values.sum.toInt
+      s.copy(totalNanos = keptTotal, callCount = keptCount, byPhase = keptPhases, byPhaseCount = keptCounts)
+    }
   }
 
   /**
