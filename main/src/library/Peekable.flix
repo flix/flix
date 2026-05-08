@@ -77,7 +77,7 @@ mod Peekable {
         /// Returns `Err(err)` if there is an IO error.
         ///
         pub def readLine(reader: t): Result[IoError, String] \ IO + Readable.Aef[t] where Readable.Elm[t] ~ Char =
-            forM(
+            forM (
                 line <- Peekable.readUntil(c -> c == '\n' or c == '\r', reader);
                 _ <- Peekable.skipElem('\r', reader);
                 _ <- Peekable.skipElem('\n', reader)
@@ -100,14 +100,15 @@ mod Peekable {
         /// Returns `Err(err)` if there is an IO error.
         ///
         pub def skipIf(p: (a) -> Bool \ ef, reader: t): Result[IoError, Bool] \ ef + Readable.Aef[t] where Readable.Elm[t] ~ a =
-            forM(
+            forM (
                 peeked <- reader |> Peekable.peek;
                 n <- match peeked {
-                    case Some(next) => if (p(next)) {
-                        reader |> Peekable.skip(1)
-                    } else {
-                        Ok(0)
-                    }
+                    case Some(next) =>
+                        if (p(next)) {
+                            reader |> Peekable.skip(1)
+                        } else {
+                            Ok(0)
+                        }
                     case None => Ok(0)
                 }
             ) yield n != 0
