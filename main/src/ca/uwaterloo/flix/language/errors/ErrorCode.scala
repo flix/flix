@@ -65,6 +65,7 @@ object ErrorCode {
   case object E1512 extends ErrorCode
   case object E1563 extends ErrorCode
   case object E1578 extends ErrorCode
+  case object E1624 extends ErrorCode
   case object E1625 extends ErrorCode
   case object E1674 extends ErrorCode
   case object E1689 extends ErrorCode
