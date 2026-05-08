@@ -648,7 +648,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       sb.append(" " * (nameMax - nameText.length))
       sb.append(' ')
       sb.append(dim(locField))
-      appendNumericFields(sb, locLines, s.callCount.toLong, phase, s.totalNanos, pctCpu, pctWall, layout)
+      appendNumericFields(sb, locLines, s.callCount.toLong, phase, s.totalNanos, pctCpu, pctWall, layout, aggregate = false)
       sb.append(' ')
       sb.append('\n')
     }
@@ -680,7 +680,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
       sb.append(' ')
       sb.append(modField)
-      appendNumericFields(sb, m.totalLocLines, m.totalCallCount, phase, m.totalNanos, pctCpu, pctWall, layout)
+      appendNumericFields(sb, m.totalLocLines, m.totalCallCount, phase, m.totalNanos, pctCpu, pctWall, layout, aggregate = true)
       sb.append(' ')
       sb.append('\n')
     }
@@ -703,17 +703,25 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * Appends the trailing numeric columns (LOC, n, phase, time, %cpu, %wall)
     * to a row, honoring the layout's visibility flags. Always emits a leading
     * separator before each column it writes.
+    *
+    * `aggregate` controls whether LOC and n carry warning colors. The
+    * `styleLoc` / `styleN` thresholds were picked for individual defs;
+    * module rows are sums-across-defs and would trip the thresholds
+    * unconditionally, so they render those columns plain.
     */
   private def appendNumericFields(sb: StringBuilder, locLines: Int, callCount: Long, phase: String,
-                                   nanos: Long, pctCpu: Double, pctWall: Double, layout: Layout): Unit = {
+                                   nanos: Long, pctCpu: Double, pctWall: Double, layout: Layout,
+                                   aggregate: Boolean): Unit = {
     if (layout.showLOC) {
       sb.append(' ')
       val locStr = if (locLines > 0) locLines.toString else "-"
-      sb.append(styleLoc(lpad(locStr, 4), locLines))
+      val padded = lpad(locStr, 4)
+      sb.append(if (aggregate) padded else styleLoc(padded, locLines))
     }
     if (layout.showN) {
       sb.append(' ')
-      sb.append(styleN(lpad(callCount.toString, 4), callCount))
+      val padded = lpad(callCount.toString, 4)
+      sb.append(if (aggregate) padded else styleN(padded, callCount))
     }
     if (layout.showPhase) {
       sb.append(' ')
