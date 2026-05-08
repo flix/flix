@@ -170,7 +170,6 @@ object CompilerTop {
   private val HeapYellowThresholdRatio:        Double = 0.7
   private val HotnessRedThresholdMsPerLine:    Double = 25.0
   private val HotnessYellowThresholdMsPerLine: Double = 15.0
-  private val LocRedThreshold:                 Int    = 250
   private val PctCpuRedThreshold:              Double = 5.0
   private val PctCpuYellowThreshold:           Double = 1.0
   private val PctWallRedThreshold:             Double = 15.0
@@ -232,12 +231,6 @@ object CompilerTop {
     if (ratio >= HeapRedThresholdRatio) bold(red(formatted))
     else if (ratio >= HeapYellowThresholdRatio) yellow(formatted)
     else green(formatted)
-  }
-
-  /** Colors a formatted LOC field — large definition. */
-  private def styleLoc(formatted: String, locLines: Int): String = {
-    if (locLines >= LocRedThreshold) bold(red(formatted))
-    else formatted
   }
 
   /** Colors a formatted call-count field — high re-visit count. */
@@ -936,10 +929,10 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * to a row, honoring the layout's visibility flags. Always emits a leading
     * separator before each column it writes.
     *
-    * `aggregate` controls whether LOC and n carry warning colors. The
-    * `styleLoc` / `styleN` thresholds were picked for individual defs;
-    * module rows are sums-across-defs and would trip the thresholds
-    * unconditionally, so they render those columns plain.
+    * `aggregate` skips all warning colors. The `style*` thresholds are
+    * calibrated for individual defs; at module scale, sums-across-defs
+    * would trip the thresholds unconditionally and the colors become
+    * noise rather than signal.
     */
   private def appendNumericFields(sb: StringBuilder, locLines: Int, callCount: Long, phase: String,
                                    nanos: Long, pctCpu: Double, pctWall: Double, layout: Layout,
@@ -947,8 +940,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     if (layout.showLOC) {
       sb.append(' ')
       val locStr = if (locLines > 0) locLines.toString else "-"
-      val padded = lpad(locStr, 4)
-      sb.append(if (aggregate) padded else styleLoc(padded, locLines))
+      sb.append(lpad(locStr, 4))
     }
     if (layout.showN) {
       sb.append(' ')
@@ -959,9 +951,12 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       sb.append(' ')
       sb.append(rpad(truncate(phase, 10), 10))
     }
-    sb.append(' '); sb.append(styleTime(lpad(formatMillis(nanos), 9), nanos))
-    sb.append(' '); sb.append(stylePctCpu(f"$pctCpu%5.1f%%", pctCpu))
-    sb.append(' '); sb.append(stylePctWall(f"$pctWall%5.1f%%", pctWall))
+    val timeField = lpad(formatMillis(nanos), 9)
+    val cpuField  = f"$pctCpu%5.1f%%"
+    val wallField = f"$pctWall%5.1f%%"
+    sb.append(' '); sb.append(if (aggregate) timeField else styleTime(timeField, nanos))
+    sb.append(' '); sb.append(if (aggregate) cpuField else stylePctCpu(cpuField, pctCpu))
+    sb.append(' '); sb.append(if (aggregate) wallField else stylePctWall(wallField, pctWall))
   }
 
   /**
