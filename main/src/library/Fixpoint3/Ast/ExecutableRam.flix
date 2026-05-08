@@ -120,7 +120,7 @@ pub mod Fixpoint3.Ast.ExecutableRam {
                 case RamStmt.Swap(lhs, rhs)         => "Swap indexes[${lhs}] and indexes[${rhs}]"
                 case RamStmt.Purge(ramSym)          => "Purge indexes[${ramSym}]"
                 case RamStmt.Seq(xs)                => Vector.join(";${nl}", xs)
-                case RamStmt.Until(test, body)      =>
+                case RamStmt.Until(test, body) =>
                     let tst = test |> Vector.join(" ∧ ");
                     "Until(${tst}) do${nl}${String.indent(4, "${body}")}end"
                 case RamStmt.Comment(comment)       => "/* ${comment} */"
@@ -301,7 +301,7 @@ pub mod Fixpoint3.Ast.ExecutableRam {
             case RamTerm.Lit(v, _)                                  => Debug.stringify(v)
             case RamTerm.LoadFromTuple(tupleIndex, indexInTuple, _) => "x${tupleIndex}[${indexInTuple}]"
             case RamTerm.LoadLatVar(i, _)                           => "LoadLatVar[${i}]"
-            case RamTerm.ProvMax(loads)                             =>
+            case RamTerm.ProvMax(loads) =>
                 let loadsStr = Vector.joinWith(match (rv, i) -> "${rv}[${i}]", ", ", loads);
                 "max(${loadsStr})"
             case RamTerm.Meet(_, lhs, rhs, _)                       => "(${lhs} ⊓ ${rhs})"
