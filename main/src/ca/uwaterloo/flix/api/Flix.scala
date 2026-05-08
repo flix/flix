@@ -597,8 +597,12 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
-    // Stop the live `--top` TUI, if it is running.
-    compilerTop.foreach(_.stop())
+    // Stop the live `--top` TUI only if there are errors and no `codeGen`
+    // will follow. On the success path, leave it running so `codeGen` can
+    // continue updating it through the mid-end and backend phases.
+    if (errors.nonEmpty) {
+      compilerTop.foreach(_.stop())
+    }
 
     // Print summary?
     if (options.xsummary) {
