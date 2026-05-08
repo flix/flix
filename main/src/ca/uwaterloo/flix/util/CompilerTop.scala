@@ -61,6 +61,21 @@ object CompilerTop {
     case Filter.Backend  => phase != "?" && !FrontendPhases.contains(phase)
   }
 
+  /**
+    * Selects the descending sort key applied to the def and module tables.
+    * Each option surfaces a different kind of suspect, so the same def can
+    * top one ranking and not another.
+    */
+  sealed trait Sort
+  object Sort {
+    /** Slowest defs first. The default. */
+    case object Time extends Sort
+    /** Most-revisited defs first (monomorph explosions, inliner re-entry). */
+    case object Count extends Sort
+    /** Hottest-per-line defs first — small defs that burn disproportionate time. */
+    case object Hotness extends Sort
+  }
+
   /** How often the screen refreshes, in milliseconds. */
   private val RefreshIntervalMs: Long = 100L
 
@@ -237,8 +252,8 @@ object CompilerTop {
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
   }
 
-  /** Groups `snap` by namespace, sums each metric, and returns rows sorted by `totalNanos` descending. */
-  private def aggregateByModule(snap: Vector[DefnStats]): Vector[ModuleStats] = {
+  /** Groups `snap` by namespace, sums each metric, and returns rows sorted by `srt` descending. */
+  private def aggregateByModule(snap: Vector[DefnStats], srt: Sort): Vector[ModuleStats] = {
     val groups = snap.groupBy { s =>
       val ns = s.sym.namespace
       if (ns.isEmpty) "(root)" else ns.mkString(".")
@@ -253,7 +268,27 @@ object CompilerTop {
         }
       }
       ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase)
-    }.toVector.sortBy(-_.totalNanos)
+    }.toVector.sortBy(m => -moduleSortKey(m, srt))
+  }
+
+  /**
+    * Returns the descending sort key for a def under the given sort mode.
+    * `Hotness` (time / LOC) is 0 for synthetic defs with no real source
+    * span (`locLines <= 0`) so they sink to the bottom rather than dominating.
+    */
+  private def defSortKey(s: DefnStats, srt: Sort): Double = srt match {
+    case Sort.Time    => s.totalNanos.toDouble
+    case Sort.Count   => s.callCount.toDouble
+    case Sort.Hotness =>
+      val lines = locLineCount(s.loc)
+      if (lines <= 0) 0.0 else s.totalNanos.toDouble / lines
+  }
+
+  /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
+  private def moduleSortKey(m: ModuleStats, srt: Sort): Double = srt match {
+    case Sort.Time    => m.totalNanos.toDouble
+    case Sort.Count   => m.totalCallCount.toDouble
+    case Sort.Hotness => if (m.totalLocLines <= 0) 0.0 else m.totalNanos.toDouble / m.totalLocLines
   }
 
   /** Fallback terminal height when JLine cannot determine the real one. */
@@ -430,6 +465,12 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
   private val filter = new AtomicReference[Filter](Filter.All)
 
   /**
+    * Active sort for the def / module tables. Written by the input thread,
+    * read by the renderer thread. Default is [[Sort.Time]].
+    */
+  private val sort = new AtomicReference[Sort](Sort.Time)
+
+  /**
     * Counted down by the input thread when the user presses `q` (only after
     * [[completed]] is set). [[stop]] awaits it before tearing the renderer
     * down so the user can keep toggling the filter post-compile.
@@ -529,6 +570,9 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
         case 'f' | 'F' => filter.set(Filter.Frontend)
         case 'b' | 'B' => filter.set(Filter.Backend)
         case 'a' | 'A' => filter.set(Filter.All)
+        case 't' | 'T' => sort.set(Sort.Time)
+        case 'n' | 'N' => sort.set(Sort.Count)
+        case 'h' | 'H' => sort.set(Sort.Hotness)
         case _         => // ignored
       }
     }
@@ -604,7 +648,8 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     val layout = computeLayout((terminalCols() - 2).max(1))
 
     val activeFilter = filter.get()
-    val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(-_.totalNanos)
+    val activeSort = sort.get()
+    val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(s => -defSortKey(s, activeSort))
     val visible = snap.take(defN)
 
     // Active-threads sparkline: history of thread-pool occupancy. Stops
@@ -615,14 +660,14 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       while (threadsHistory.size > SparkWidth) threadsHistory.dequeue()
     }
 
-    val modules = aggregateByModule(snap).take(moduleN)
+    val modules = aggregateByModule(snap, activeSort).take(moduleN)
 
     val sb = new StringBuilder
     sb.append(BeginSync)
     sb.append(ClearScreen)
     sb.append('\n')
 
-    renderDashboard(sb, activeThreads, parallelism, activeFilter)
+    renderDashboard(sb, activeThreads, parallelism, activeFilter, activeSort)
     renderStats(sb, elapsed)
     sb.append('\n')
     renderTableHeader(sb, layout)
@@ -639,7 +684,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * Top dashboard line: current phase + progress bar + active-threads bar.
     * Both bars sit beside each other so the eye picks them up as a pair.
     */
-  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int, activeFilter: Filter): Unit = {
+  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int, activeFilter: Filter, activeSort: Sort): Unit = {
     val isDone = completed.get()
     val phase = if (isDone) "done" else flix.getCurrentPhaseName.getOrElse("starting")
     // Once compilation has finished, force the bar to 100% rather than relying
@@ -662,6 +707,8 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(styleThreads(activeThreads, parallelism))
     sb.append("   ")
     sb.append(renderFilterLegend(activeFilter))
+    sb.append(' ')
+    sb.append(renderSortLegend(activeSort))
     if (isDone) sb.append(dim("   press q to quit"))
     sb.append('\n')
   }
@@ -679,6 +726,22 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(if (active == Filter.Frontend) bold(cyan("f")) else dim("f"))
     sb.append(dim("|"))
     sb.append(if (active == Filter.Backend) bold(cyan("b")) else dim("b"))
+    sb.append(dim("]"))
+    sb.toString
+  }
+
+  /**
+    * Renders the `[t|n|h]` sort-key legend with the active letter highlighted
+    * in bold cyan. `t` = time, `n` = call count, `h` = hotness (time/LOC).
+    */
+  private def renderSortLegend(active: Sort): String = {
+    val sb = new StringBuilder
+    sb.append(dim("["))
+    sb.append(if (active == Sort.Time) bold(cyan("t")) else dim("t"))
+    sb.append(dim("|"))
+    sb.append(if (active == Sort.Count) bold(cyan("n")) else dim("n"))
+    sb.append(dim("|"))
+    sb.append(if (active == Sort.Hotness) bold(cyan("h")) else dim("h"))
     sb.append(dim("]"))
     sb.toString
   }
