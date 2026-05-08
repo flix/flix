@@ -22,82 +22,81 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 import scala.jdk.CollectionConverters.*
 
 /**
-  * Per-`DefnSym` statistics: total wall-clock time, number of times the
-  * compiler visited the def, and a per-phase breakdown of where the time
-  * went.
+  * Per-`DefnSym` compile-time profiler.
+  *
+  * [[CompilerProfiler]] tracks cumulative wall-clock time, call counts, and a
+  * per-phase breakdown for each [[Symbol.DefnSym]] the compiler visits. Its
+  * [[CompilerProfiler.track]] entry point is called from inside instrumented
+  * phases and is safe to invoke from multiple threads.
+  *
+  * A fresh sym minted from an existing one via [[Symbol.freshDefnSym]] is
+  * folded back to its source sym (see [[CompilerProfiler.sourceOf]]) so the
+  * user-facing table shows one row per source-level definition rather than
+  * one row per refresh.
+  *
+  * Instrumentation coverage of the compiler pipeline:
+  *
+  * | Phase                                          | Instrumented | Reason                                                                                                                |
+  * | ---------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------- |
+  * | Reader, Lexer, Parser2, Weeder2, Desugar, Namer | No          | Run before any `DefnSym` exists, so there is no key to attribute time to.                                             |
+  * | Resolver                                       | No           | Per-def work is nested inside trait/instance walks rather than a clean `parMapValues` over `root.defs`.               |
+  * | Deriver                                        | No           | Generates new instances from enum derivations; iterates over enums, not existing defs.                                |
+  * | Instances                                      | No           | Per-instance-def work interleaves with trait conformance checks; instrumentable but not a one-line wrap.              |
+  * | Kinder                                         | Yes          | `visitDefSpecs` + `visitDefs`.                                                                                        |
+  * | Typer                                          | Yes          |                                                                                                                       |
+  * | EntryPoints                                    | Yes          |                                                                                                                       |
+  * | PredDeps                                       | Yes          |                                                                                                                       |
+  * | Stratifier                                     | Yes          |                                                                                                                       |
+  * | PatMatch                                       | Yes          |                                                                                                                       |
+  * | Redundancy                                     | Yes          |                                                                                                                       |
+  * | Safety                                         | Yes          |                                                                                                                       |
+  * | Terminator                                     | Yes          |                                                                                                                       |
+  * | Dependencies                                   | Yes          |                                                                                                                       |
+  * | TreeShaker1, TreeShaker2                       | No           | Pure filter passes; no per-def work to time.                                                                          |
+  * | Monomorpher                                    | Yes          | Initial + worklist, keyed by the source generic sym.                                                                  |
+  * | LambdaDrop                                     | Yes          |                                                                                                                       |
+  * | Optimizer                                      | No           | Fixed-point wrapper around `OccurrenceAnalyzer` / `Inliner`; captured transitively through those inner phases.        |
+  * | OccurrenceAnalyzer                             | Yes          |                                                                                                                       |
+  * | Inliner                                        | Yes          |                                                                                                                       |
+  * | Simplifier                                     | Yes          |                                                                                                                       |
+  * | ClosureConv                                    | Yes          |                                                                                                                       |
+  * | LambdaLift                                     | Yes          |                                                                                                                       |
+  * | EffectBinder                                   | Yes          |                                                                                                                       |
+  * | TailPos                                        | Yes          |                                                                                                                       |
+  * | Eraser                                         | Yes          |                                                                                                                       |
+  * | Reducer                                        | Yes          |                                                                                                                       |
+  * | JvmBackend                                     | Partial      | Top-level orchestration is not per-def. The dominant per-def work — closure + control-pure + control-impure cases in `GenFunAndClosureClasses` — is instrumented. |
   */
-final case class DefnStats(
-  sym: Symbol.DefnSym,
-  loc: SourceLocation,
-  totalNanos: Long,
-  callCount: Int,
-  byPhase: Map[String, Long],
-  isActive: Boolean
-) {
-  /** Returns the phase that consumed the most time, or None if empty. */
-  def dominantPhase: Option[String] =
-    if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
+object CompilerProfiler {
+  /**
+    * Per-`DefnSym` statistics: total wall-clock time, number of times the
+    * compiler visited the def, and a per-phase breakdown of where the time
+    * went.
+    */
+  final case class DefnStats(
+    sym: Symbol.DefnSym,
+    loc: SourceLocation,
+    totalNanos: Long,
+    callCount: Int,
+    byPhase: Map[String, Long],
+    isActive: Boolean
+  ) {
+    /** Returns the phase that consumed the most time, or None if empty. */
+    def dominantPhase: Option[String] =
+      if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
+  }
+
+  private final class Counters {
+    val totalNanos = new AtomicLong(0L)
+    val callCount = new AtomicInteger(0)
+    val perPhaseNanos = new ConcurrentHashMap[String, AtomicLong]()
+    /** Set on first `track` call; carries the def-body span so we can show LOC. */
+    val loc = new AtomicReference[SourceLocation](null)
+    /** Number of `track` calls currently in flight for this source sym. */
+    val inProgress = new AtomicInteger(0)
+  }
 }
 
-/**
-  * Tracks cumulative wall-clock time, call counts, and per-phase breakdowns
-  * for each [[Symbol.DefnSym]]. Safe to call from multiple threads.
-  *
-  * `phaseProvider` is consulted at the start of every [[track]] call to
-  * attribute the elapsed time to the currently running phase.
-  *
-  * == Roll-up of refreshed symbols ==
-  *
-  * A fresh [[Symbol.DefnSym]] minted from an existing sym via
-  * [[Symbol.freshDefnSym]] is recorded under that existing sym, not under
-  * its own identity. So every specialization produced by `Monomorpher` and
-  * every closure/local-def lifted out by `LambdaLift` folds back into the
-  * source sym it was derived from, and the user-facing table shows one row
-  * per source-level definition rather than one row per fresh refresh.
-  *
-  * The folding is implemented inside this profiler (see [[sourceOf]]) and
-  * relies on [[Symbol.freshDefnSym]] preserving the source sym's
-  * `(namespace, text, loc)` triple — which is true today across all three
-  * refresh sites (`Specialization`, `LambdaLift` closure lift, `LambdaLift`
-  * local-def lift).
-  *
-  * == Instrumented phases ==
-  *
-  * The following phases call [[track]] and contribute per-`DefnSym` data:
-  *
-  *   - Frontend (10 sites):
-  *     `Kinder` (visitDefSpecs + visitDefs), `Typer`, `EntryPoints`,
-  *     `PredDeps`, `Stratifier`, `PatMatch`, `Redundancy`, `Safety`,
-  *     `Terminator`, `Dependencies`.
-  *   - Backend (16 sites):
-  *     `Monomorpher` (initial + worklist; keyed by source generic sym),
-  *     `LambdaDrop`, `OccurrenceAnalyzer`, `Inliner`, `Simplifier`,
-  *     `ClosureConv`, `LambdaLift`, `EffectBinder`, `TailPos`, `Eraser`,
-  *     `Reducer`, `JvmBackend` (closure + control-pure function +
-  *     control-impure function cases in `GenFunAndClosureClasses`).
-  *
-  * == Uninstrumented phases ==
-  *
-  * These phases run but do not feed the timer:
-  *
-  *   - `Reader`, `Lexer`, `Parser2`, `Weeder2`, `Desugar`, `Namer` —
-  *     pre-`DefnSym`; the symbol does not exist yet.
-  *   - `Resolver` — per-def work is nested inside trait/instance walks
-  *     rather than a clean `parMapValues` over `root.defs`.
-  *   - `Deriver` — generates new instances from enum derivations; iterates
-  *     over enums, not over existing defs.
-  *   - `Instances` — per-instance-def work is interleaved with trait
-  *     conformance checks; instrumentable but not a one-line wrap.
-  *   - `TreeShaker1`, `TreeShaker2` — pure filter passes; no per-def work
-  *     to time.
-  *   - `Optimizer` — a wrapper that re-runs `OccurrenceAnalyzer` and
-  *     `Inliner` in a fixed-point loop. All work is captured transitively
-  *     through those instrumented inner phases.
-  *   - `JvmBackend` — top-level orchestration (namespace classes, runtime
-  *     types, etc.) is not per-def. The dominant per-def work — function
-  *     and closure class generation in `GenFunAndClosureClasses` — *is*
-  *     instrumented (see Backend list above).
-  */
 final class CompilerProfiler(phaseProvider: () => Option[String]) {
 
   private val stats = new ConcurrentHashMap[Symbol.DefnSym, CompilerProfiler.Counters]()
@@ -131,14 +130,14 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) {
     * Returns an approximate snapshot. Iterators over the underlying maps are
     * weakly consistent, so individual entries may be slightly stale.
     */
-  def snapshot(): Vector[DefnStats] = {
+  def snapshot(): Vector[CompilerProfiler.DefnStats] = {
     val it = stats.entrySet().iterator().asScala
     it.map { e =>
       val c = e.getValue
       val byPhase = c.perPhaseNanos.entrySet().iterator().asScala
         .map(pe => (pe.getKey, pe.getValue.get())).toMap
       val loc = Option(c.loc.get()).getOrElse(e.getKey.loc)
-      DefnStats(e.getKey, loc, c.totalNanos.get(), c.callCount.get(), byPhase,
+      CompilerProfiler.DefnStats(e.getKey, loc, c.totalNanos.get(), c.callCount.get(), byPhase,
         isActive = c.inProgress.get() > 0)
     }.toVector
   }
@@ -170,14 +169,3 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) {
     else new Symbol.DefnSym(None, sym.namespace, sym.text, sym.loc)
 }
 
-object CompilerProfiler {
-  private final class Counters {
-    val totalNanos = new AtomicLong(0L)
-    val callCount = new AtomicInteger(0)
-    val perPhaseNanos = new ConcurrentHashMap[String, AtomicLong]()
-    /** Set on first `track` call; carries the def-body span so we can show LOC. */
-    val loc = new AtomicReference[SourceLocation](null)
-    /** Number of `track` calls currently in flight for this source sym. */
-    val inProgress = new AtomicInteger(0)
-  }
-}

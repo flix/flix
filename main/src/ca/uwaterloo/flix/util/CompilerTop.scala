@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.CompilerProfiler.DefnStats
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.util.concurrent.atomic.AtomicBoolean
