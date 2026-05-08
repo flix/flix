@@ -160,6 +160,19 @@ object CompilerTop {
     else green(formatted)
   }
 
+  /** Colors a formatted LOC field: ≥250 lines red bold (large definition). */
+  private def styleLoc(formatted: String, locLines: Int): String = {
+    if (locLines >= 250) bold(red(formatted))
+    else formatted
+  }
+
+  /** Colors a formatted call-count field: ≥500 red bold, ≥50 yellow (high re-visit count). */
+  private def styleN(formatted: String, callCount: Long): String = {
+    if (callCount >= 500) bold(red(formatted))
+    else if (callCount >= 50) yellow(formatted)
+    else formatted
+  }
+
   // -- Numeric helpers ----------------------------------------------------
 
   /** Returns `(usedMb, maxMb)` from the JVM runtime. */
@@ -695,11 +708,12 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
                                    nanos: Long, pctCpu: Double, pctWall: Double, layout: Layout): Unit = {
     if (layout.showLOC) {
       sb.append(' ')
-      sb.append(lpad(if (locLines > 0) locLines.toString else "-", 4))
+      val locStr = if (locLines > 0) locLines.toString else "-"
+      sb.append(styleLoc(lpad(locStr, 4), locLines))
     }
     if (layout.showN) {
       sb.append(' ')
-      sb.append(lpad(callCount.toString, 4))
+      sb.append(styleN(lpad(callCount.toString, 4), callCount))
     }
     if (layout.showPhase) {
       sb.append(' ')
