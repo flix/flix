@@ -561,8 +561,9 @@ object Parser2 {
   private def speculate(f: => Boolean)(implicit s: State): Boolean = {
     val snap = snapshot()
     val result = f
+    val noOfErrors = s.errors.length
     restore(snap)
-    result
+    result && noOfErrors == s.errors.length
   }
 
   /** Returns the distance to the first non-comment token after lookahead. */

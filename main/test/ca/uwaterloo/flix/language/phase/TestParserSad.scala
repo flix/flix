@@ -741,4 +741,16 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     rejectError[ParseError.MissingBackslash](result)
     expectError[ParseError.UnexpectedToken](result)
   }
+
+  test("MissingBackslash.Negative.06") {
+    // {num+1}: gets parsed but gives errors,
+    // so the speculation correctly rejects.
+    val input =
+      """
+        |def inc(n: Int32): Int32 {n+1} = n+1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[ParseError.MissingBackslash](result)
+    expectError[ParseError.UnexpectedToken](result)
+  }
 }
