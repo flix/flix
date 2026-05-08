@@ -27,12 +27,26 @@ eff OutOfBounds {
 
 pub mod OutOfBounds {
 
-    /// Turns the `OutOfBounds` effect into `Err(msg)`.
+    ///
+    /// Handles the `OutOfBounds` effect of the given function `f` by converting
+    /// out-of-bounds errors to `Result` values.
+    ///
+    /// Returns `Ok(f(x))` if the computation completes successfully.
+    /// Returns `Err(msg)` if the computation raises `outOfBounds(msg)`.
+    ///
     @Experimental
-    pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - OutOfBounds) = {
-        x -> run Ok(f(x)) with handler OutOfBounds {
-            def outOfBounds(msg, _) = Err(msg)
+    pub def handleWithResult(f: a -> b \ ef): a -> Result[String, b] \ (ef - OutOfBounds) = x ->
+        run Ok(f(x)) with handler OutOfBounds {
+            def outOfBounds(msg, _k) = Err(msg)
         }
-    }
+
+    ///
+    /// Runs the `OutOfBounds` effect of the given function `f`.
+    ///
+    /// Returns `Ok(f())` if the computation completes successfully.
+    /// Returns `Err(msg)` if the computation raises `outOfBounds(msg)`.
+    ///
+    @Experimental
+    pub def runWithResult(f: Unit -> a \ ef): Result[String, a] \ (ef - OutOfBounds) = handleWithResult(f)()
 
 }

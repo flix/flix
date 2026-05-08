@@ -52,11 +52,12 @@ pub mod Fs.FilePermission {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FilePermission) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                y -> checked_ecast(
-                    Fs.FileStat.runWithFileSystem(
-                        () -> runWithFileStat(() -> f(y))
+                y ->
+                    checked_ecast(
+                        Fs.FileStat.runWithFileSystem(
+                            () -> runWithFileStat(() -> f(y))
+                        )
                     )
-                )
             )(x)
         )
 
@@ -73,8 +74,8 @@ pub mod Fs.FilePermission {
     ///
     pub def runWithFileStat(f: Unit -> a \ ef): a \ (ef - FilePermission) + FileStat =
         run { f() } with handler FilePermission {
-            def isReadable(filename, k)  = k(Fs.FileStat.isReadable(filename))
-            def isWritable(filename, k)  = k(Fs.FileStat.isWritable(filename))
+            def isReadable(filename, k)   = k(Fs.FileStat.isReadable(filename))
+            def isWritable(filename, k)   = k(Fs.FileStat.isWritable(filename))
             def isExecutable(filename, k) = k(Fs.FileStat.isExecutable(filename))
         }
 
@@ -84,7 +85,7 @@ pub mod Fs.FilePermission {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FilePermission) + {FilePermission, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FilePermission) + { FilePermission, Logger } =
         run { f() } with handler FilePermission {
             def isReadable(filename, k) = {
                 logPre("isReadable", filename);
