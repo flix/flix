@@ -499,6 +499,72 @@ object Parser2 {
     false
   }
 
+  /**
+    * Saves the current parser state as a tuple that can be passed to [[restore]].
+    *
+    * The snapshot captures all mutable fields of [[State]]:
+    *   - `position` — which token we are currently looking at
+    *   - `fuel`     — the loop-guard counter
+    *   - `eventsLen` / `errorsLen` — current lengths of the two [[ArrayBuffer]]s
+    *   - `inBlock`  — whether the parser is currently inside a block expression
+    *
+    * This is the foundation for speculative ("what-if") parsing: take a snapshot,
+    * attempt a parse, check whether the result is sensible, then always [[restore]]
+    * to the snapshot so the caller can re-parse cleanly (with or without error recovery).
+    *
+    * Safety note: [[openBefore]] uses [[scala.collection.mutable.ArrayBuffer.insert]], which
+    * shifts event indices. The snapshot is still safe as long as every [[Mark.Closed]] passed
+    * to [[openBefore]] during the speculative session was itself created *after* the snapshot
+    * was taken — i.e. its [[Mark.Closed.index]] >= `eventsLen`. This holds for all type
+    * parsing (the only current use-site), because [[Type.ttype]] creates fresh marks.
+    */
+  private def snapshot()(implicit s: State): (Int, Int, Int, Int, Boolean) =
+    (s.position, s.fuel, s.events.length, s.errors.length, s.inBlock)
+
+  /**
+    * Rolls the parser back to a previously saved [[snapshot]], discarding every event
+    * and error produced since the snapshot was taken.
+    */
+  private def restore(snap: (Int, Int, Int, Int, Boolean))(implicit s: State): Unit = {
+    val (position, fuel, eventsLen, errorsLen, inBlock) = snap
+    s.position = position
+    s.fuel     = fuel
+    s.inBlock  = inBlock
+    s.events.dropRightInPlace(s.events.length - eventsLen)
+    s.errors.dropRightInPlace(s.errors.length - errorsLen)
+  }
+
+  /**
+    * Runs `f` speculatively (as a pure probe) and always restores the parser to the
+    * state it had before the call, regardless of whether `f` succeeded.
+    *
+    * Returns whatever `f` returns, which the caller uses to decide what to do next.
+    *
+    * Because the parser is always rolled back, calling code must re-parse the same
+    * tokens for real if the speculation succeeds. This two-pass cost is trivial
+    * compared to the benefit of generating precise, actionable error messages.
+    *
+    * Typical usage pattern:
+    * {{{
+    *   if (speculate { Type.ttype(); at(TokenKind.Equal) }) {
+    *     // Hypothesis confirmed — re-parse for real, injecting the targeted error.
+    *     closeWithError(open(), ParseError.MissingBackslash(sctx, currentSourceLocation()))
+    *     val effectMark = open()
+    *     Type.ttype()
+    *     close(effectMark, TreeKind.Type.Effect)
+    *   } else {
+    *     // Hypothesis rejected — fall back to the generic error.
+    *     expect(TokenKind.Equal)
+    *   }
+    * }}}
+    */
+  private def speculate(f: => Boolean)(implicit s: State): Boolean = {
+    val snap = snapshot()
+    val result = f
+    restore(snap)
+    result
+  }
+
   /** Returns the distance to the first non-comment token after lookahead. */
   @tailrec
   private def nextNonComment(lookahead: Int)(implicit s: State): Int = {
@@ -1107,6 +1173,22 @@ object Parser2 {
       // def f(): Unit // <- no equal sign
       // def main(): Unit = ()
       if (eat(TokenKind.Equal)) {
+        Expr.statement()
+      } else if (nth(0).isFirstInType && speculate { Type.ttype(); at(TokenKind.Equal) }) {
+        // Speculative parse succeeded: the next token(s) form a valid type and '=' follows it.
+        // This means the user most likely forgot '\' between the return type and the effect type.
+        //   e.g.  def f(): Unit IO = ()        <- forgot '\'
+        //   vs.   def f(): Unit \ IO = ()      <- correct
+        //
+        // Strategy:
+        //   1. Emit a zero-width error node at the effect's position (represents the missing '\').
+        //   2. Re-parse the effect type for real into a proper Type.Effect node.
+        //   3. Consume '=' and parse the body normally.
+        closeWithError(open(), ParseError.MissingBackslash(sctx, currentSourceLocation()))
+        val effectMark = open()
+        Type.ttype()
+        close(effectMark, TreeKind.Type.Effect)
+        eat(TokenKind.Equal)
         Expr.statement()
       } else {
         expect(TokenKind.Equal) // Produce an error for missing '='.
