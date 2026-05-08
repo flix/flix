@@ -35,7 +35,7 @@ object OccurrenceAnalyzer {
     */
   def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): MonoAst.Root = {
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
-    val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef)
+    val visitedDefs = ParOps.parMapValues(changedDefs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
     root.copy(defs = root.defs ++ visitedDefs)
   }
 
