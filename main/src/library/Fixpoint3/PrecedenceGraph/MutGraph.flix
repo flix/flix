@@ -100,8 +100,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     ///
     pub def toString(g: MutGraph[r]): String \ r =
         let edges = g->adjList
-            |> MutMap.joinWith(
-                u -> vSet ->
+            |> MutMap.joinWith(u -> vSet ->
                     Set.joinWith(v -> "\n ${u} -> ${v}", ",", vSet),
                 ","
             );
@@ -136,12 +135,10 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
             // We are guaranteed to have singleton sets
             |> Map.map(Set.find(_ -> true) >> getOrCrash);
         topologicalSort(condensation)
-            |> List.map(
-                u ->
+            |> List.map(u ->
                     componentMap
                         |> MutMap.get(getOrCrash(Map.get(u, inverseRootMap)))
-                        |> getOrCrash
-            )
+                        |> getOrCrash)
     }
 
     ///
@@ -196,16 +193,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
         let time = Counter.fresh(rc);
         foreach (u <- getVertices(g)) {
             if (Array.get(u, disc) == -1) {
-                stronglyConnectedComponentsVisit(
-                    components,
-                    stack,
-                    disc,
-                    low,
-                    onStack,
-                    time,
-                    g,
-                    u
-                )
+                stronglyConnectedComponentsVisit(components, stack, disc, low, onStack, time, g, u)
             }
         };
         MutList.toList(components)
@@ -251,16 +239,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
 
         foreach (v <- getNeighbors(u, g)) {
             if (Array.get(v, disc) == -1) {
-                stronglyConnectedComponentsVisit(
-                    components,
-                    stack,
-                    disc,
-                    low,
-                    onStack,
-                    time,
-                    g,
-                    v
-                );
+                stronglyConnectedComponentsVisit(components, stack, disc, low, onStack, time, g, v);
                 let uLow = Array.get(u, low);
                 let vLow = Array.get(v, low);
                 Array.put(Int32.min(uLow, vLow), u, low)

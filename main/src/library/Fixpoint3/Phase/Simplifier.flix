@@ -159,20 +159,16 @@ pub mod Fixpoint3.Phase.Simplifier {
             case RelOp.If(test, then) =>
                 let (memberOf, rest) = test
                     // Delete checks of the form `x[i] == x[i]`.
-                    |> Vector.filter(
-                        e -> match e {
+                    |> Vector.filter(e -> match e {
                             case BoolExp.Eq(RowLoad(lhs1, lhs2, _, _), RowLoad(rhs1, rhs2, _, _)) =>
                                 (lhs1, lhs2) != (rhs1, rhs2)
                             case _ => true
-                        }
-                    )
+                        })
                     // Partition into membership tests and rest.
-                    |> Vector.partition(
-                        e -> match e {
+                    |> Vector.partition(e -> match e {
                             case BoolExp.NotMemberOf(_, _, _) => true
                             case _                            => false
-                        }
-                    );
+                        });
                 let newTest = rest ++ memberOf;
                 // Simplify `if () then body` to `body`.
                 match recurse(then) {
