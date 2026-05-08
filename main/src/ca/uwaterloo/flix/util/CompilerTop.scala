@@ -100,8 +100,8 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     // reserving an extra `RowMargin` rows so the view never quite touches
     // the top or bottom edge of the terminal.
     val dataRows = (terminalRows() - ChromeRows - RowMargin).max(MinDataRows)
-    val moduleN = (dataRows / 3).max(MinModuleN).min(MaxModuleN)
-    val defN = (dataRows - moduleN).max(MinDefN).min(MaxDefN)
+    val moduleN = (dataRows / 3).max(MinModuleN)
+    val defN = (dataRows - moduleN).max(MinDefN)
 
     // Compute the column layout based on the current terminal width,
     // reserving 2 columns for the 1-space left and right table padding.
@@ -613,11 +613,9 @@ object CompilerTop {
   /** Floor on the total data-row budget. */
   private val MinDataRows: Int = 8
 
-  /** Bounds on per-table row counts. */
+  /** Floors on per-table row counts; both tables grow with terminal height. */
   private val MinDefN: Int = 5
-  private val MaxDefN: Int = 30
   private val MinModuleN: Int = 3
-  private val MaxModuleN: Int = 10
 
   // -- Formatting helpers -------------------------------------------------
 
