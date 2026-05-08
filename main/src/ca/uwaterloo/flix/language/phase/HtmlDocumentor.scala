@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
+import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
 
@@ -583,7 +584,7 @@ object HtmlDocumentor {
 
     sb.append("<main>")
     sb.append(s"<h1>${esc(mod.qualifiedName)}</h1>")
-    docDoc(mod.doc)
+    modDoc(mod.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedDefs, docDef)
     sb.append("</main>")
@@ -860,6 +861,7 @@ object HtmlDocumentor {
        |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
+       |<link href='https://fonts.googleapis.com/css?family=Open+Sans&display=swap' rel='stylesheet'>
        |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
        |<script type='module' src='./index.js'></script>
@@ -1378,17 +1380,32 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docDoc(doc: Doc)(implicit sb: StringBuilder): Unit = {
+    renderDoc(doc, "doc")
+  }
+
+  /**
+    * Renders a module-level [[Doc]] using the `mod-doc` CSS class.
+    *
+    * Module-level documentation uses its own class so it can carry distinct
+    * typography from item-level docs (e.g. larger font, different family).
+    */
+  private def modDoc(doc: Doc)(implicit sb: StringBuilder): Unit = {
+    renderDoc(doc, "mod-doc")
+  }
+
+  private def renderDoc(doc: Doc, cls: String)(implicit sb: StringBuilder): Unit = {
     val text = doc.text
     if (text.isBlank) {
       return
     }
 
-    val parser = Parser.builder().build()
+    val extensions = java.util.List.of(TablesExtension.create())
+    val parser = Parser.builder().extensions(extensions).build()
     val node = parser.parse(text)
-    val renderer = HtmlRenderer.builder().escapeHtml(true).build()
+    val renderer = HtmlRenderer.builder().extensions(extensions).escapeHtml(true).build()
     val html = renderer.render(node)
 
-    sb.append("<div class='doc'>")
+    sb.append(s"<div class='$cls'>")
     sb.append(html)
     sb.append("</div>")
   }

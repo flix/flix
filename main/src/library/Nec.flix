@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-
 pub mod Nec {
     use Math.Shuffle
     use ViewLeft.{OneLeft, SomeLeft}
     use ViewRight.{OneRight, SomeRight}
-
     use Functor.{<$>}
     use Applicative.{<*>}
 
@@ -48,14 +46,14 @@ pub mod Nec {
         pub def compare(c1: Nec[a], c2: Nec[a]): Comparison =
             use Nec.ViewLeft;
             match (Nec.viewLeft(c1), Nec.viewLeft(c2)) {
-                case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => x <=> y
-                case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => match (x <=> y) {
+                case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y)) => x <=> y
+                case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _)) => match (x <=> y) {
                     case Comparison.EqualTo => Comparison.LessThan
-                    case cmp     => cmp
+                    case cmp                => cmp
                 }
-                case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => match (x <=> y) {
+                case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y)) => match (x <=> y) {
                     case Comparison.EqualTo => Comparison.GreaterThan
-                    case cmp     => cmp
+                    case cmp                => cmp
                 }
                 case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) =>
                     let cmp = x <=> y;
@@ -76,12 +74,12 @@ pub mod Nec {
     }
 
     instance Applicative[Nec] {
-        pub def point(x: a) : Nec[a] = Nec.singleton(x)
-        pub def ap(f: Nec[a -> b \ ef], x: Nec[a]) : Nec[b] \ ef = Nec.ap(f, x)
+        pub def point(x: a): Nec[a] = Nec.singleton(x)
+        pub def ap(f: Nec[a -> b \ ef], x: Nec[a]): Nec[b] \ ef = Nec.ap(f, x)
     }
 
     instance Monad[Nec] {
-        pub def flatMap(f: a -> Nec[b] \ ef, x : Nec[a]) : Nec[b] \ ef = Nec.flatMap(f, x)
+        pub def flatMap(f: a -> Nec[b] \ ef, x: Nec[a]): Nec[b] \ ef = Nec.flatMap(f, x)
     }
 
     instance MonadZip[Nec] {
@@ -115,8 +113,8 @@ pub mod Nec {
     }
 
     instance Reducible[Nec] {
-        pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceLeftTo(f, g, l)
-        pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceRightTo(f, g, l)
+        pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ { ef1, ef2 } = Nec.reduceLeftTo(f, g, l)
+        pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ { ef1, ef2 } = Nec.reduceRightTo(f, g, l)
         redef head(l: Nec[a]): a = Nec.head(l)
         redef last(l: Nec[a]): a = Nec.last(l)
         redef init(l: Nec[a]): List[a] = Nec.init(l)
@@ -284,11 +282,10 @@ pub mod Nec {
         def loop(c1: Nec[a], rs: Option[Nec[a]], k: ViewLeft[a] -> ViewLeft[a]) = match (c1, rs) {
             case (NecOne(x), None)      => k(ViewLeft.OneLeft(x))
             case (NecOne(x), Some(rs1)) => k(ViewLeft.SomeLeft(x, rs1))
-            case (Nec(l, r), None)      => loop(l, Some(r),  k)
+            case (Nec(l, r), None)      => loop(l, Some(r), k)
             case (Nec(l, r), Some(rs1)) => loop(l, Some(append(r, rs1)), k)
         };
         loop(c, None, x -> x)
-
 
     ///
     /// Deconstruct a Nec from right-to-left.
@@ -394,9 +391,9 @@ pub mod Nec {
     /// Returns `None` if `b >= e`.
     ///
     pub def range(b: Int32, e: Int32): Option[Nec[Int32]] =
-        def loop(ix: Int32, k: Nec[Int32] -> Nec[Int32]) = match (e-1) {
+        def loop(ix: Int32, k: Nec[Int32] -> Nec[Int32]) = match (e - 1) {
             case e1 if ix == e1 => k(singleton(ix))
-            case e1 if ix < e1  => loop(ix+1, ks -> k(cons(ix, ks)))
+            case e1 if ix < e1  => loop(ix + 1, ks -> k(cons(ix, ks)))
             case _              => unreachable!()
         };
         if (b < e)
@@ -411,8 +408,8 @@ pub mod Nec {
     ///
     pub def map(f: a -> b \ ef, c: Nec[a]): Nec[b] \ ef =
         def loop(c1: Nec[a], k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
-            case ViewLeft.OneLeft(x)      => {let a = f(x); k(NecOne(a))}
-            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(cons(a, ks))})
+            case ViewLeft.OneLeft(x)      => { let a = f(x); k(NecOne(a)) }
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> { let a = f(x); k(cons(a, ks)) })
         };
         loop(c, x -> checked_ecast(x))
 
@@ -423,8 +420,8 @@ pub mod Nec {
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, c: Nec[a]): Nec[b] \ ef =
         def loop(c1: Nec[a], i: Int32, k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
-            case ViewLeft.OneLeft(x)      => {let a = f(i, x); k(NecOne(a))}
-            case ViewLeft.SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(i, x); k(cons(a, ks))})
+            case ViewLeft.OneLeft(x)      => { let a = f(i, x); k(NecOne(a)) }
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, i + 1, ks -> { let a = f(i, x); k(cons(a, ks)) })
         };
         loop(c, 0, x -> checked_ecast(x))
 
@@ -433,7 +430,7 @@ pub mod Nec {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: Nec[a -> b \ ef], c: Nec[a]) : Nec[b] \ ef =
+    pub def ap(f: Nec[a -> b \ ef], c: Nec[a]): Nec[b] \ ef =
         def loop(f1: Nec[a -> b \ ef], k: Nec[b] -> Nec[b] \ ef) = match viewLeft(f1) {
             case ViewLeft.OneLeft(f2)      => k(map(f2, c))
             case ViewLeft.SomeLeft(f2, rs) => loop(rs, ks -> k(map(f2, c) `append` ks))
@@ -445,8 +442,8 @@ pub mod Nec {
     ///
     pub def flatMap(f: a -> Nec[b] \ ef, c: Nec[a]): Nec[b] \ ef =
         def loop(c1: Nec[a], k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
-            case ViewLeft.OneLeft(x)      => {let a = f(x); k(a)}
-            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(append(a, ks))})
+            case ViewLeft.OneLeft(x)      => { let a = f(x); k(a) }
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> { let a = f(x); k(append(a, ks)) })
         };
         loop(c, x -> checked_ecast(x))
 
@@ -477,7 +474,7 @@ pub mod Nec {
     /// That is, `c` is the first permutation and `reverse(c)` is the last permutation.
     ///
     pub def permutations(c: Nec[a]): Nec[List[a]] = match viewLeft(c) {
-        case ViewLeft.OneLeft(x)      => singleton(x :: Nil)
+        case ViewLeft.OneLeft(x) => singleton(x :: Nil)
         case ViewLeft.SomeLeft(x, xs) => match fromList(List.permutations(x :: toList(xs))) {
             case Some(ans) => ans
             case None      => unreachable!()
@@ -489,7 +486,7 @@ pub mod Nec {
     /// That is, `l` is the first subsequence and `Nil` is the last subsequence.
     ///
     pub def subsequences(c: Nec[a]): Nec[List[a]] = match viewLeft(c) {
-        case ViewLeft.OneLeft(x)      => cons(x :: Nil, singleton(Nil))
+        case ViewLeft.OneLeft(x) => cons(x :: Nil, singleton(Nil))
         case ViewLeft.SomeLeft(x, xs) => match fromList(List.subsequences(x :: toList(xs))) {
             case Some(ans) => ans
             case None      => unreachable!()
@@ -504,11 +501,11 @@ pub mod Nec {
     ///
     def fromList(l: List[a]): Option[Nec[a]] =
         def loop(x, xs, k) = match xs {
-            case Nil       => k(singleton(x))
-            case x1 :: rs  => loop(x1, rs, ks -> k(cons(x, ks)))
+            case Nil      => k(singleton(x))
+            case x1 :: rs => loop(x1, rs, ks -> k(cons(x, ks)))
         };
         match l {
-            case Nil => None
+            case Nil     => None
             case x :: xs => loop(x, xs, ks -> ks) |> Some
         }
 
@@ -582,8 +579,6 @@ pub mod Nec {
         };
         loop(c, x -> checked_ecast(x))
 
-
-
     ///
     /// Returns the result of applying `combine` to all the elements in `l`, using `empty` as the initial value.
     ///
@@ -595,7 +590,7 @@ pub mod Nec {
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b \ ef, acc: b, c: Nec[a]): b \ ef = match viewLeft(c) {
-        case ViewLeft.OneLeft(x)      => f(acc, x)
+        case ViewLeft.OneLeft(x) => f(acc, x)
         case ViewLeft.SomeLeft(x, rs) => {
             let b = f(acc, x);
             foldLeft(f, b, rs)
@@ -608,7 +603,7 @@ pub mod Nec {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = match viewRight(c) {
-        case ViewRight.OneRight(x)      => f(x, s)
+        case ViewRight.OneRight(x) => f(x, s)
         case ViewRight.SomeRight(rs, x) => {
             let b = f(x, s);
             foldRight(f, b, rs)
@@ -626,7 +621,7 @@ pub mod Nec {
     ///
     pub def filterMap(f: a -> Option[b] \ ef, c: Nec[a]): List[b] \ ef =
         def loop(l, k) = match viewLeft(l) {
-            case ViewLeft.OneLeft(x)      => match (f(x)) {
+            case ViewLeft.OneLeft(x) => match (f(x)) {
                 case Some(a) => k(a :: Nil)
                 case None    => k(Nil)
             }
@@ -643,7 +638,7 @@ pub mod Nec {
     /// Returns `None` if f(c) for every element of c is `None`.
     ///
     pub def findMap(f: a -> Option[b] \ ef, c: Nec[a]): Option[b] \ ef = match viewLeft(c) {
-        case ViewLeft.OneLeft(x)      => f(x)
+        case ViewLeft.OneLeft(x) => f(x)
         case ViewLeft.SomeLeft(x, rs) => match f(x) {
             case Some(v) => Some(v)
             case None    => findMap(f, rs)
@@ -656,8 +651,8 @@ pub mod Nec {
     ///
     /// If either `c1` or `c2` becomes depleted, then no further elements are added to the resulting Nec.
     ///
-    pub def zip(c1: Nec[a], c2: Nec[b]): Nec[(a,b)] =
-        def loop(nec1: Nec[a], nec2: Nec[b], k: Nec[(a,b)] -> Nec[(a,b)]) = match (viewLeft(nec1), viewLeft(nec2)) {
+    pub def zip(c1: Nec[a], c2: Nec[b]): Nec[(a, b)] =
+        def loop(nec1: Nec[a], nec2: Nec[b], k: Nec[(a, b)] -> Nec[(a, b)]) = match (viewLeft(nec1), viewLeft(nec2)) {
             case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) => loop(xs, ys, ks -> k(cons((x, y), ks)))
             case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => k(NecOne((x, y)))
             case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => k(NecOne((x, y)))
@@ -673,9 +668,9 @@ pub mod Nec {
     ///
     pub def zipWith(f: (a, b) -> c \ ef, c1: Nec[a], c2: Nec[b]): Nec[c] \ ef =
         def loop(nec1: Nec[a], nec2: Nec[b], k: Nec[c] -> Nec[c] \ ef) = match (viewLeft(nec1), viewLeft(nec2)) {
-            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => {let a = f(x, y); k(singleton(a))}
-            case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => {let a = f(x, y); k(singleton(a))}
-            case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => {let a = f(x, y); k(singleton(a))}
+            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))     => { let a = f(x, y); k(singleton(a)) }
+            case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _)) => { let a = f(x, y); k(singleton(a)) }
+            case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y)) => { let a = f(x, y); k(singleton(a)) }
             case (ViewLeft.SomeLeft(x, rs), ViewLeft.SomeLeft(y, qs)) => {
                 let a = f(x, y);
                 loop(rs, qs, ks -> k(cons(a, ks)))
@@ -710,10 +705,10 @@ pub mod Nec {
     ///
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] \ ef with Applicative[f] =
         def loop(v1, v2, k) = match (v1, v2) {
-            case (ViewLeft.SomeLeft(x, c1), ViewLeft.SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
-            case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => k(singleton <$> f(x,y))
-            case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => k(singleton <$> f(x,y))
-            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => k(singleton <$> f(x,y))
+            case (ViewLeft.SomeLeft(x, c1), ViewLeft.SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x, y) <*> ks))
+            case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => k(singleton <$> f(x, y))
+            case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => k(singleton <$> f(x, y))
+            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => k(singleton <$> f(x, y))
         };
         loop(viewLeft(xs), viewLeft(ys), x -> checked_ecast(x))
 
@@ -723,7 +718,7 @@ pub mod Nec {
     ///
     pub def mapAccumLeft(f: (s, a) -> (s, b) \ ef, start: s, c: Nec[a]): (s, Nec[b]) \ ef =
         def loop(s1, c1, k) = match viewLeft(c1) {
-            case ViewLeft.OneLeft(x)      => {
+            case ViewLeft.OneLeft(x) => {
                 let (s2, x1) = f(s1, x);
                 k((s2, NecOne(x1)))
             }
@@ -740,14 +735,14 @@ pub mod Nec {
     ///
     pub def mapAccumRight(f: (s, a) -> (s, b) \ ef, start: s, c: Nec[a]): (s, Nec[b]) \ ef =
         def loop(s1, c1, k) = match viewRight(c1) {
-            case ViewRight.OneRight(x)      => {
+            case ViewRight.OneRight(x) => {
                 let (s2, x1) = f(s1, x);
                 k((s2, NecOne(x1)))
             }
             case ViewRight.SomeRight(rs, x) => {
                 let (s2, x1) = f(s1, x);
                 loop(s2, rs, match (s3, ks) -> k((s3, snoc(ks, x1))))
-           }
+            }
         };
         loop(start, c, identity)
 
@@ -765,7 +760,7 @@ pub mod Nec {
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, c: Nec[a]): Unit \ ef =
         def loop(v, i) = match v {
             case ViewLeft.OneLeft(x)      => f(i, x)
-            case ViewLeft.SomeLeft(x, rs) => f(i, x); loop(viewLeft(rs), i+1)
+            case ViewLeft.SomeLeft(x, rs) => f(i, x); loop(viewLeft(rs), i + 1)
         };
         loop(viewLeft(c), 0)
 
@@ -827,7 +822,7 @@ pub mod Nec {
     def iteratorHelper(rc: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r, r] \ r =
         let cursor = Ref.fresh(rc, vl);
         let next = () -> match (Ref.get(cursor)) {
-            case None             => None
+            case None => None
             case Some(OneLeft(x)) =>
                 Ref.put(None, cursor);
                 Some(x)
@@ -841,7 +836,7 @@ pub mod Nec {
     /// Helper for the `sort` functions.
     ///
     def fromArray(arr: Array[a, r]): Option[Nec[a]] \ r =
-        def loop(ix, end, acc) = if (ix >= end) acc else {let x = Array.get(ix, arr); loop(ix+1, end, snoc(acc, x))};
+        def loop(ix, end, acc) = if (ix >= end) acc else { let x = Array.get(ix, arr); loop(ix + 1, end, snoc(acc, x)) };
         let len = Array.length(arr);
         if (len < 1)
             None
@@ -849,7 +844,6 @@ pub mod Nec {
             let acc = singleton(Array.get(0, arr));
             loop(1, len, acc) |> Some
         }
-
 
     ///
     /// Sort Nec `c` so that elements are ordered from low to high according to their `Order` instance.
@@ -865,7 +859,6 @@ pub mod Nec {
             case None     => unreachable!()
         }
     }
-
 
     /// Sort Nec `c` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -922,7 +915,7 @@ pub mod Nec {
     pub def traverse(f: a -> m[b] \ ef, c: Nec[a]): m[Nec[b]] \ ef with Applicative[m] =
         def loop(l2, k) = match viewLeft(l2) {
             case ViewLeft.OneLeft(x)      => k(NecOne <$> f(x))
-            case ViewLeft.SomeLeft(x, rs) => {let ans = f(x); loop(rs, ks -> k(consA(ans, ks)))}
+            case ViewLeft.SomeLeft(x, rs) => { let ans = f(x); loop(rs, ks -> k(consA(ans, ks))) }
         };
         loop(c, identity)
 
@@ -939,7 +932,6 @@ pub mod Nec {
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, c: Nec[a]): String \ ef =
         Foldable.joinWith(f, sep, c)
-
 
     ///
     /// Applies `combine` to all elements in `c` until a single value is obtained.
@@ -974,7 +966,7 @@ pub mod Nec {
     /// Applies `g` to the initial element of `c` and combines it
     /// with the remainder of `c` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, c: Nec[a]): b \ {ef1, ef2} = match viewLeft(c) {
+    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, c: Nec[a]): b \ { ef1, ef2 } = match viewLeft(c) {
         case ViewLeft.OneLeft(x)      => g(x)
         case ViewLeft.SomeLeft(x, xs) => foldLeft(f, g(x), xs)
     }
@@ -984,7 +976,7 @@ pub mod Nec {
     /// Applies `g` to the initial element of `c` and combines it
     /// with the remainder of `c` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, c: Nec[a]): b \ {ef1, ef2} = match viewRight(c) {
+    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, c: Nec[a]): b \ { ef1, ef2 } = match viewRight(c) {
         case ViewRight.OneRight(x)      => g(x)
         case ViewRight.SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), g(x), xs)
     }
@@ -1018,7 +1010,6 @@ pub mod Nec {
             case ViewLeft.SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else k(Nil)
         };
         loop(c, identity)
-
 
     ///
     /// Returns the longest prefix of `c` that satisfies the predicate `f`.
