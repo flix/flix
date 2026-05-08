@@ -715,9 +715,16 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(dim("] "))
     sb.append(f"$done%2d/$TotalPhases%2d")
     sb.append(dim("   threads "))
-    sb.append(dim(cyan(renderSparkline(parallelism.toDouble))))
-    sb.append(' ')
-    sb.append(styleThreads(activeThreads, parallelism))
+    // With parallelism=1 ForkJoin runs work inline on the submitter, leaving
+    // `getActiveThreadCount` at 0 most of the time — sparkline goes flat,
+    // field reads `0/1` continuously. Show a label instead.
+    if (parallelism > 1) {
+      sb.append(dim(cyan(renderSparkline(parallelism.toDouble))))
+      sb.append(' ')
+      sb.append(styleThreads(activeThreads, parallelism))
+    } else {
+      sb.append(dim("single-threaded"))
+    }
     sb.append("   ")
     sb.append(renderFilterLegend(activeFilter))
     sb.append(' ')
