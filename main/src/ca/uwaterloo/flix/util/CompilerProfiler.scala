@@ -148,14 +148,6 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) {
     }.toVector
   }
 
-  /** Returns the total number of `track` calls made so far across all defs. */
-  def totalCallCount: Long = {
-    var n = 0L
-    val it = stats.values().iterator()
-    while (it.hasNext) n += it.next().callCount.get()
-    n
-  }
-
   /**
     * Returns the [[Counters]] entry for `sym`'s source sym, creating a fresh
     * zero-initialized entry on first use. Atomic in the underlying map.
