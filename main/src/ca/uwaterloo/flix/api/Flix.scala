@@ -113,7 +113,7 @@ class Flix {
   /**
     * Optional profiler that records where compile time is spent. Installed
     * by [[setOptions]] when `--top` is enabled; absent on the default
-    * path so [[track]] is a no-op with no measurement overhead.
+    * path so [[profile]] is a no-op with no measurement overhead.
     */
   private var profiler: Option[CompilerProfiler] = None
 
@@ -123,7 +123,7 @@ class Flix {
   /** Returns the currently installed profiler, or `None`. */
   def getProfiler: Option[CompilerProfiler] = profiler
 
-  /** Installs (or removes, when `None`) the profiler that backs [[track]]. */
+  /** Installs (or removes, when `None`) the profiler that backs [[profile]]. */
   def setProfiler(p: Option[CompilerProfiler]): Unit = profiler = p
 
   /**
@@ -131,7 +131,7 @@ class Flix {
     * the currently running phase. When no profiler is installed, `thunk`
     * runs unchanged.
     */
-  def track[A](sym: Symbol.DefnSym, loc: SourceLocation)(thunk: => A): A =
+  def profile[A](sym: Symbol.DefnSym, loc: SourceLocation)(thunk: => A): A =
     profiler match {
       case Some(p) => p.track(sym, loc)(thunk)
       case None    => thunk

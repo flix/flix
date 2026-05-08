@@ -73,7 +73,7 @@ object Inliner {
   /** Performs inlining on the given AST `root`. */
   def run(root: MonoAst.Root)(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
     val sctx: SharedContext = SharedContext.mk()
-    val defs = ParOps.parMapValues(root.defs)(defn => flix.track(defn.sym, defn.loc)(visitDef(defn)(sctx, root, flix)))
+    val defs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)(sctx, root, flix)))
     val newDelta = sctx.changed.asScala.keys.toSet
     val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
     val liveDefs = defs.filter(kv => liveSyms.contains(kv._1))

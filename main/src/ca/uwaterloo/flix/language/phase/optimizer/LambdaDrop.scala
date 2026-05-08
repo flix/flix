@@ -56,7 +56,7 @@ object LambdaDrop {
 
   /** See [[LambdaDrop]] for documentation. */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("LambdaDrop") {
-    val newDefs = ParOps.parMapValues(root.defs)(defn => flix.track(defn.sym, defn.loc)(visitDef(defn)))
+    val newDefs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
     root.copy(defs = newDefs)
   }
 

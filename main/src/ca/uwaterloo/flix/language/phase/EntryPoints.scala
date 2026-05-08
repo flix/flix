@@ -173,7 +173,7 @@ object EntryPoints {
     implicit val sctx: SharedContext = SharedContext.mk()
     implicit val r: TypedAst.Root = root
 
-    ParOps.parMapValues(root.defs)(defn => flix.track(defn.sym, defn.loc)(visitDef(defn)))
+    ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
 
     // Remove the entrypoint if it is not valid.
     val root1 = if (sctx.invalidMain.get()) root.copy(mainEntryPoint = None) else root
