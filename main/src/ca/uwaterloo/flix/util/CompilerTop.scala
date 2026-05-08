@@ -23,6 +23,365 @@ import org.jline.terminal.{Terminal, TerminalBuilder}
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.mutable
 
+object CompilerTop {
+
+  /** How often the screen refreshes, in milliseconds. */
+  private val RefreshIntervalMs: Long = 100L
+
+  /** Maximum length of any name in [[Phases]] — used to pad the phase column. Lazy to defer until [[Phases]] is initialized. */
+  private lazy val MaxPhaseLen: Int = Phases.iterator.map(_.length).max
+
+  /** Maximum length of any group label — `"semantic"` is the longest at 8. */
+  private val MaxGroupLen: Int = 8
+
+  /** Width (in characters) of the phase-progress bar. */
+  private val BarWidth: Int = 12
+
+  /** 1-indexed column where the `progress` label starts on the dashboard. */
+  private lazy val ProgressStartCol: Int = 8 + MaxPhaseLen + MaxGroupLen
+
+  /** 1-indexed column where the `threads` label starts on the dashboard. */
+  private lazy val ThreadsStartCol: Int = ProgressStartCol + 20 + BarWidth
+
+  /** Width of the threads-sparkline. */
+  private val SparkWidth: Int = 12
+
+  /** Block characters used for the sparkline, low → high. */
+  private val SparkChars: Array[Char] = "▁▂▃▄▅▆▇█".toArray
+
+  /** ANSI escape character. */
+  private val ESC: Char = 27.toChar
+
+  /** ANSI sequence that homes the cursor and clears the screen. */
+  private val ClearScreen: String = s"$ESC[H$ESC[2J"
+
+  /**
+    * DEC mode 2026 — Begin Synchronized Update. Terminals that support it
+    * (iTerm2, kitty, alacritty, wezterm, modern xterm, recent VTE) buffer
+    * the bytes between BSU and ESU and swap atomically, eliminating the
+    * flash from clear-and-redraw. Terminals that don't recognize the
+    * sequence silently ignore it.
+    */
+  private val BeginSync: String = s"$ESC[?2026h"
+
+  /** DEC mode 2026 — End Synchronized Update; pair of [[BeginSync]]. */
+  private val EndSync: String = s"$ESC[?2026l"
+
+  // Color codes.
+
+  /** ANSI reset (clears bold, dim, color, etc.). */
+  private val Reset: String = s"$ESC[0m"
+  /** ANSI bold. */
+  private val BoldCode: String = s"$ESC[1m"
+  /** ANSI dim/faint. */
+  private val DimCode: String = s"$ESC[2m"
+  /** ANSI foreground red. */
+  private val Red: String = s"$ESC[31m"
+  /** ANSI foreground green. */
+  private val Green: String = s"$ESC[32m"
+  /** ANSI foreground yellow. */
+  private val Yellow: String = s"$ESC[33m"
+  /** ANSI foreground blue. */
+  private val Blue: String = s"$ESC[34m"
+  /** ANSI foreground magenta. */
+  private val Magenta: String = s"$ESC[35m"
+  /** ANSI foreground cyan. */
+  private val Cyan: String = s"$ESC[36m"
+  /** ANSI foreground bright black (gray). */
+  private val Gray: String = s"$ESC[90m"
+
+  // Wrappers — each takes a string and returns it surrounded by codes.
+
+  /** Wraps `s` in the ANSI color code `c` and a reset suffix. */
+  private def color(s: String, c: String): String = s"$c$s$Reset"
+  /** Wraps `s` in ANSI bold codes. */
+  private def bold(s: String): String = s"$BoldCode$s$Reset"
+  /** Wraps `s` in ANSI dim/faint codes. */
+  private def dim(s: String): String = s"$DimCode$s$Reset"
+  /** Wraps `s` in ANSI red codes. */
+  private def red(s: String): String = color(s, Red)
+  /** Wraps `s` in ANSI yellow codes. */
+  private def yellow(s: String): String = color(s, Yellow)
+  /** Wraps `s` in ANSI green codes. */
+  private def green(s: String): String = color(s, Green)
+  /** Wraps `s` in ANSI cyan codes. */
+  private def cyan(s: String): String = color(s, Cyan)
+
+  // -- Conditional styling -------------------------------------------------
+
+  /** Colors a formatted time field by absolute magnitude (≥1s red bold, ≥200ms yellow bold, ≥50ms yellow). */
+  private def styleTime(formatted: String, nanos: Long): String = {
+    val ms = nanos / 1_000_000L
+    if (ms >= 1000) bold(red(formatted))
+    else if (ms >= 200) bold(yellow(formatted))
+    else if (ms >= 50) yellow(formatted)
+    else formatted
+  }
+
+  /**
+    * Colors the sym name based on `time / locLines` — a "hotness per line"
+    * signal that surfaces small defs which consume time disproportionate
+    * to their body size. Defs with no real source span (`locLines <= 0`,
+    * e.g. lifted closures) are left unstyled because the denominator is
+    * meaningless.
+    */
+  private def styleSym(name: String, nanos: Long, locLines: Int): String = {
+    if (locLines <= 0) return name
+    val msPerLine = (nanos / 1_000_000L).toDouble / locLines
+    if (msPerLine >= 25.0) bold(red(name))
+    else if (msPerLine >= 15.0) yellow(name)
+    else name
+  }
+
+  /** %cpu = totalNanos / (elapsed × threads). One def's slice of total compute. */
+  private def stylePctCpu(formatted: String, pct: Double): String = {
+    if (pct >= 5.0) bold(red(formatted))
+    else if (pct >= 1.0) yellow(formatted)
+    else formatted
+  }
+
+  /** %wall = totalNanos / elapsed. Upper bound on wall-clock savings if removed. */
+  private def stylePctWall(formatted: String, pct: Double): String = {
+    if (pct >= 15.0) bold(red(formatted))
+    else if (pct >= 5.0) yellow(formatted)
+    else formatted
+  }
+
+  /** Colors the active/parallelism field by occupancy: full=green bold, ≥50%=green, idle=gray, else yellow. */
+  private def styleThreads(active: Int, par: Int): String = {
+    val s = f"$active%2d/$par%-2d"
+    if (par <= 0) color(s, Gray)
+    else if (active == par) bold(green(s))
+    else if (active.toDouble / par >= 0.5) green(s)
+    else if (active == 0) color(s, Gray)
+    else yellow(s)
+  }
+
+  /** Colors a formatted heap field by used/max ratio: ≥90% red bold, ≥70% yellow, else green. */
+  private def styleHeap(formatted: String, ratio: Double): String = {
+    if (ratio >= 0.9) bold(red(formatted))
+    else if (ratio >= 0.7) yellow(formatted)
+    else green(formatted)
+  }
+
+  /**
+    * The compiler phases, in the order they fire.
+    *
+    * Mirrors the calls to `flix.phase` / `flix.phaseNew` in
+    * `Flix.check` followed by `Flix.codeGen`.
+    *
+    * Note: appearance here means the phase advances the progress bar; it does
+    * not mean the phase feeds [[CompilerProfiler]]. See `CompilerProfiler`'s class-level
+    * doc for the list of instrumented vs. uninstrumented phases.
+    */
+  private val Phases: Vector[String] = Vector(
+    // syntax (parsing)
+    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar",
+    // semantic (frontend)
+    "Namer", "Resolver", "Kinder", "Deriver", "Typer", "EntryPoints", "Instances",
+    "PredDeps", "Stratifier", "PatMatch", "Redundancy", "Safety", "Terminator", "Dependencies",
+    // mid-end (lowering and optimization)
+    "TreeShaker1", "Monomorpher", "LambdaDrop", "Optimizer", "Simplifier",
+    "ClosureConv", "LambdaLift", "TreeShaker2", "EffectBinder", "TailPos",
+    "Eraser", "Reducer",
+    // backend
+    "JvmBackend"
+  )
+
+  /** Returns the dashboard color-group for `phase` (`syntax`, `semantic`, `midend`, `backend`, or `?`). */
+  private def phaseGroup(phase: String): String = {
+    val idx = Phases.indexOf(phase)
+    if (idx < 0) "?"
+    else if (idx <= 4) "syntax"
+    else if (idx <= 18) "semantic"
+    else if (idx <= 30) "midend"
+    else "backend"
+  }
+
+  /** Returns the ANSI color associated with a phase group. */
+  private def groupColor(group: String): String = group match {
+    case "syntax"   => Blue
+    case "semantic" => Green
+    case "midend"   => Yellow
+    case "backend"  => Magenta
+    case _          => Gray
+  }
+
+  // -- Numeric helpers ----------------------------------------------------
+
+  /** Returns `(usedMb, maxMb)` from the JVM runtime. */
+  private def heapUsage(): (Long, Long) = {
+    val rt = Runtime.getRuntime
+    val used = rt.totalMemory() - rt.freeMemory()
+    val max = rt.maxMemory()
+    (used / (1024L * 1024L), max / (1024L * 1024L))
+  }
+
+  /**
+    * A row in the per-module aggregate table.
+    *
+    * @param module         dot-joined namespace (or `(root)` when empty).
+    * @param totalNanos     summed wall-clock time across the module's defs.
+    * @param totalCallCount summed `track` call counts across the module's defs.
+    * @param totalLocLines  summed source-line counts across the module's defs.
+    * @param byPhase        phase → summed nanoseconds across the module's defs.
+    */
+  private final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long]) {
+    /** Returns the phase that consumed the most time in this module, or None if empty. */
+    def dominantPhase: Option[String] =
+      if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
+  }
+
+  /** Groups `snap` by namespace, sums each metric, and returns rows sorted by `totalNanos` descending. */
+  private def aggregateByModule(snap: Vector[DefnStats]): Vector[ModuleStats] = {
+    val groups = snap.groupBy { s =>
+      val ns = s.sym.namespace
+      if (ns.isEmpty) "(root)" else ns.mkString(".")
+    }
+    groups.iterator.map { case (mod, defs) =>
+      val totalNanos = defs.iterator.map(_.totalNanos).sum
+      val totalCallCount = defs.iterator.map(_.callCount.toLong).sum
+      val totalLocLines = defs.iterator.map(s => locLineCount(s.loc)).sum
+      val byPhase = defs.foldLeft(Map.empty[String, Long]) { (acc, d) =>
+        d.byPhase.foldLeft(acc) { case (m, (phase, n)) =>
+          m.updated(phase, m.getOrElse(phase, 0L) + n)
+        }
+      }
+      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase)
+    }.toVector.sortBy(-_.totalNanos)
+  }
+
+  /** Fallback terminal height when JLine cannot determine the real one. */
+  private val DefaultRows: Int = 24
+
+  /** Fallback terminal width when JLine cannot determine the real one. */
+  private val DefaultCols: Int = 100
+
+  /**
+    * Column layout for the per-frame table render. Computed from the current
+    * terminal width: when the terminal is narrow, the optional LOC / n /
+    * phase columns are dropped in that order (lowest-signal first). When the
+    * terminal is wide, the surplus is distributed between the DefnSym and
+    * location columns proportionally to their default widths.
+    *
+    * @param symWidth   width of the DefnSym column.
+    * @param locWidth   width of the location column.
+    * @param showLOC    whether to render the LOC column.
+    * @param showN      whether to render the call-count (n) column.
+    * @param showPhase  whether to render the dominant-phase column.
+    * @param totalWidth total rendered width of the row, less leading/trailing pad.
+    */
+  private final case class Layout(symWidth: Int, locWidth: Int, showLOC: Boolean, showN: Boolean, showPhase: Boolean, totalWidth: Int)
+
+  /** Default width of the DefnSym column when the terminal is wide enough. */
+  private val DefaultSymWidth: Int = 24
+  /** Default width of the location column when the terminal is wide enough. */
+  private val DefaultLocWidth: Int = 28
+  /** Floor on the DefnSym column width when the terminal is narrow. */
+  private val MinSymWidth: Int = 16
+  /** Floor on the location column width when the terminal is narrow. */
+  private val MinLocWidth: Int = 20
+
+  /** Fixed-width contribution of `time + %cpu + %wall` columns and their separators. */
+  private val FixedTailWidth: Int = 9 + 1 + 6 + 1 + 6 // time(9) + %cpu(6) + %wall(6) with two separators between
+
+  /** Width contribution of the optional LOC column (separator + width). */
+  private val LocColWidth: Int = 1 + 4
+  /** Width contribution of the optional call-count column (separator + width). */
+  private val NColWidth: Int = 1 + 4
+  /** Width contribution of the optional dominant-phase column (separator + width). */
+  private val PhaseColWidth: Int = 1 + 10
+
+  /** Picks a [[Layout]] for the given terminal width by trying tiers in descending feature order. */
+  private def computeLayout(cols: Int): Layout = {
+    // Width contribution of the "fixed" half: separator before time + tail.
+    val tail = 1 + FixedTailWidth
+    // Width of just the text section (sym + 1 + location) at default sizes.
+    def textWidth(symW: Int, locW: Int): Int = symW + 1 + locW
+
+    // Try tiers in descending feature order.
+    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + NColWidth + PhaseColWidth + tail
+    if (cols >= full) {
+      // Surplus → expand sym (~46%) and location (~54%) proportionally.
+      val extra = cols - full
+      val extraSym = extra * 46 / 100
+      val extraLoc = extra - extraSym
+      val symW = DefaultSymWidth + extraSym
+      val locW = DefaultLocWidth + extraLoc
+      return Layout(symW, locW, showLOC = true, showN = true, showPhase = true,
+        totalWidth = textWidth(symW, locW) + LocColWidth + NColWidth + PhaseColWidth + tail)
+    }
+
+    // Tier: drop phase.
+    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + NColWidth + tail
+    if (cols >= noPhase)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showN = true, showPhase = false, noPhase)
+
+    // Tier: drop phase + n.
+    val noPhaseNoN = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + tail
+    if (cols >= noPhaseNoN)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showN = false, showPhase = false, noPhaseNoN)
+
+    // Tier: drop phase + n + LOC.
+    val noOptional = textWidth(DefaultSymWidth, DefaultLocWidth) + tail
+    if (cols >= noOptional)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = false, showN = false, showPhase = false, noOptional)
+
+    // Even minimum tier doesn't fit; shrink sym/locWidth to floors.
+    val available = (cols - tail).max(MinSymWidth + 1 + MinLocWidth)
+    val symW = MinSymWidth.max(available * 46 / 100)
+    val locW = MinLocWidth.max(available - 1 - symW)
+    Layout(symW, locW, showLOC = false, showN = false, showPhase = false,
+      textWidth(symW, locW) + tail)
+  }
+
+  /**
+    * Fixed-overhead rows: blank + 2 dashboard/stats lines + blank + 2 def-chrome +
+    * 1 blank-before-modules + 2 module-chrome + 1 cursor-parking row.
+    */
+  private val ChromeRows: Int = 10
+
+  /** Reserved breathing room above and below the rendered view. */
+  private val RowMargin: Int = 2
+
+  /** Floor on the total data-row budget. */
+  private val MinDataRows: Int = 8
+
+  /** Floor on the def-table row count. */
+  private val MinDefN: Int = 5
+  /** Floor on the module-table row count. */
+  private val MinModuleN: Int = 3
+
+  // -- Formatting helpers -------------------------------------------------
+
+  /** Renders a [[SourceLocation]] as `file:line`, or `?` if synthetic. */
+  private def formatLocation(loc: SourceLocation): String =
+    if (!loc.isReal) "?" else s"${loc.source.name}:${loc.startLine}"
+
+  /** Returns the inclusive line span of `loc`, or 0 if synthetic. */
+  private def locLineCount(loc: SourceLocation): Int =
+    if (!loc.isReal) 0 else (loc.endLine - loc.startLine + 1).max(0)
+
+  /** Formats a nanosecond duration as `Nms` or `N.Ns` (≥10s). */
+  private def formatMillis(nanos: Long): String = {
+    val ms = nanos / 1_000_000L
+    if (ms >= 10_000L) f"${ms / 1000.0}%.1fs"
+    else f"${ms}ms"
+  }
+
+  /** Returns `s` truncated to `width` characters, with a trailing ellipsis when shortened. */
+  private def truncate(s: String, width: Int): String =
+    if (s.length <= width) s else s.take(width - 1) + "…"
+
+  /** Left-pads `s` with spaces to width `w`. */
+  private def lpad(s: String, w: Int): String =
+    if (s.length >= w) s else " " * (w - s.length) + s
+
+  /** Right-pads `s` with spaces to width `w`. */
+  private def rpad(s: String, w: Int): String =
+    if (s.length >= w) s else s + " " * (w - s.length)
+}
+
 /**
   * A live, top(1)-style TUI showing which `DefnSym`s the compiler has spent
   * the most wall-clock time on so far, with a per-phase breakdown, call
@@ -36,8 +395,13 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
   import CompilerTop.*
 
+  /** True while the renderer thread should keep looping. */
   private val running = new AtomicBoolean(false)
+
+  /** The renderer thread, or `null` before [[start]] / after [[stop]]. */
   private var thread: Thread = _
+
+  /** Wall-clock start time, used as the denominator for `%wall` and `%cpu`. */
   private val startNanos: Long = System.nanoTime()
 
   /** A JLine terminal handle used to query screen size. May be null if JLine fails. */
@@ -46,6 +410,9 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     try TerminalBuilder.builder().system(true).build()
     catch { case _: Throwable => null }
   }
+
+  /** Rolling history of active-thread counts feeding the dashboard sparkline. Touched only by the renderer thread. */
+  private val threadsHistory = mutable.Queue.empty[Double]
 
   /** Returns the terminal height in rows, or [[DefaultRows]] if unavailable. */
   private def terminalRows(): Int = {
@@ -60,10 +427,6 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     val w = terminal.getWidth
     if (w > 0) w else DefaultCols
   }
-
-  // State carried across frames so we can compute the active-threads
-  // sparkline. Touched only by the renderer thread.
-  private val threadsHistory = mutable.Queue.empty[Double]
 
   /** Starts the renderer on a daemon thread. */
   def start(): Unit = {
@@ -82,6 +445,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     if (terminal != null) try terminal.close() catch { case _: Throwable => () }
   }
 
+  /** Renderer thread body: render, sleep, repeat until [[running]] is false. */
   private def loop(): Unit = {
     while (running.get()) {
       render()
@@ -90,6 +454,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     }
   }
 
+  /** Builds and prints one full frame of the TUI. */
   private def render(): Unit = {
     val now = System.nanoTime()
     val elapsed = now - startNanos
@@ -198,6 +563,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append('\n')
   }
 
+  /** Renders the def-table column header and the divider underneath it. */
   private def renderTableHeader(sb: StringBuilder, layout: Layout): Unit = {
     val header = buildHeader(rpad("Def", layout.symWidth), rpad("location", layout.locWidth), layout)
     sb.append(' ')
@@ -229,6 +595,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.toString
   }
 
+  /** Renders the def-table body (one row per [[DefnStats]]), or a centered placeholder if `visible` is empty. */
   private def renderRows(sb: StringBuilder, visible: Vector[DefnStats], elapsed: Long, parallelism: Int, layout: Layout): Unit = {
     if (visible.isEmpty) {
       val msg = "(no timings yet)"
@@ -263,6 +630,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     }
   }
 
+  /** Renders the per-module aggregate table below the def table; no-op if `modules` is empty. */
   private def renderModuleTable(sb: StringBuilder, modules: Vector[ModuleStats], elapsed: Long, parallelism: Int, layout: Layout): Unit = {
     if (modules.isEmpty) return
 
@@ -346,316 +714,4 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     val pad = (SparkWidth - chars.length).max(0)
     " " * pad + new String(chars)
   }
-}
-
-object CompilerTop {
-
-  /** How often the screen refreshes, in milliseconds. */
-  private val RefreshIntervalMs: Long = 100L
-
-  /** Maximum length of any name in [[Phases]] — used to pad the phase column. Lazy to defer until [[Phases]] is initialized. */
-  private lazy val MaxPhaseLen: Int = Phases.iterator.map(_.length).max
-
-  /** Maximum length of any group label — `"semantic"` is the longest at 8. */
-  private val MaxGroupLen: Int = 8
-
-  /** Width (in characters) of the phase-progress bar. */
-  private val BarWidth: Int = 12
-
-  /** 1-indexed column where the `progress` label starts on the dashboard. */
-  private lazy val ProgressStartCol: Int = 8 + MaxPhaseLen + MaxGroupLen
-
-  /** 1-indexed column where the `threads` label starts on the dashboard. */
-  private lazy val ThreadsStartCol: Int = ProgressStartCol + 20 + BarWidth
-
-  /** Width of the threads-sparkline. */
-  private val SparkWidth: Int = 12
-
-  /** Block characters used for the sparkline, low → high. */
-  private val SparkChars: Array[Char] = "▁▂▃▄▅▆▇█".toArray
-
-  /** ANSI escape character. */
-  private val ESC: Char = 27.toChar
-  private val ClearScreen: String = s"$ESC[H$ESC[2J"
-
-  /**
-    * DEC mode 2026 — Begin/End Synchronized Update. Terminals that
-    * support it (iTerm2, kitty, alacritty, wezterm, modern xterm, recent
-    * VTE) buffer the bytes between BSU and ESU and swap atomically,
-    * which eliminates the flash from the clear-and-redraw at each tick.
-    * Terminals that don't recognize the sequence silently ignore it.
-    */
-  private val BeginSync: String = s"$ESC[?2026h"
-  private val EndSync: String = s"$ESC[?2026l"
-
-  // Color codes.
-  private val Reset: String = s"$ESC[0m"
-  private val BoldCode: String = s"$ESC[1m"
-  private val DimCode: String = s"$ESC[2m"
-  private val Red: String = s"$ESC[31m"
-  private val Green: String = s"$ESC[32m"
-  private val Yellow: String = s"$ESC[33m"
-  private val Blue: String = s"$ESC[34m"
-  private val Magenta: String = s"$ESC[35m"
-  private val Cyan: String = s"$ESC[36m"
-  private val Gray: String = s"$ESC[90m"
-
-  // Wrappers — each takes a string and returns it surrounded by codes.
-  private def color(s: String, c: String): String = s"$c$s$Reset"
-  private def bold(s: String): String = s"$BoldCode$s$Reset"
-  private def dim(s: String): String = s"$DimCode$s$Reset"
-  private def red(s: String): String = color(s, Red)
-  private def yellow(s: String): String = color(s, Yellow)
-  private def green(s: String): String = color(s, Green)
-  private def cyan(s: String): String = color(s, Cyan)
-
-  // -- Conditional styling -------------------------------------------------
-
-  private def styleTime(formatted: String, nanos: Long): String = {
-    val ms = nanos / 1_000_000L
-    if (ms >= 1000) bold(red(formatted))
-    else if (ms >= 200) bold(yellow(formatted))
-    else if (ms >= 50) yellow(formatted)
-    else formatted
-  }
-
-  /**
-    * Colors the sym name based on `time / locLines` — a "hotness per line"
-    * signal that surfaces small defs which consume time disproportionate
-    * to their body size. Defs with no real source span (`locLines <= 0`,
-    * e.g. lifted closures) are left unstyled because the denominator is
-    * meaningless.
-    */
-  private def styleSym(name: String, nanos: Long, locLines: Int): String = {
-    if (locLines <= 0) return name
-    val msPerLine = (nanos / 1_000_000L).toDouble / locLines
-    if (msPerLine >= 25.0) bold(red(name))
-    else if (msPerLine >= 15.0) yellow(name)
-    else name
-  }
-
-  /** %cpu = totalNanos / (elapsed × threads). One def's slice of total compute. */
-  private def stylePctCpu(formatted: String, pct: Double): String = {
-    if (pct >= 5.0) bold(red(formatted))
-    else if (pct >= 1.0) yellow(formatted)
-    else formatted
-  }
-
-  /** %wall = totalNanos / elapsed. Upper bound on wall-clock savings if removed. */
-  private def stylePctWall(formatted: String, pct: Double): String = {
-    if (pct >= 15.0) bold(red(formatted))
-    else if (pct >= 5.0) yellow(formatted)
-    else formatted
-  }
-
-  private def styleThreads(active: Int, par: Int): String = {
-    val s = f"$active%2d/$par%-2d"
-    if (par <= 0) color(s, Gray)
-    else if (active == par) bold(green(s))
-    else if (active.toDouble / par >= 0.5) green(s)
-    else if (active == 0) color(s, Gray)
-    else yellow(s)
-  }
-
-  private def styleHeap(formatted: String, ratio: Double): String = {
-    if (ratio >= 0.9) bold(red(formatted))
-    else if (ratio >= 0.7) yellow(formatted)
-    else green(formatted)
-  }
-
-  /**
-    * The compiler phases, in the order they fire.
-    *
-    * Mirrors the calls to `flix.phase` / `flix.phaseNew` in
-    * `Flix.check` followed by `Flix.codeGen`.
-    *
-    * Note: appearance here means the phase advances the progress bar; it does
-    * not mean the phase feeds [[CompilerProfiler]]. See `CompilerProfiler`'s class-level
-    * doc for the list of instrumented vs. uninstrumented phases.
-    */
-  private val Phases: Vector[String] = Vector(
-    // syntax (parsing)
-    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar",
-    // semantic (frontend)
-    "Namer", "Resolver", "Kinder", "Deriver", "Typer", "EntryPoints", "Instances",
-    "PredDeps", "Stratifier", "PatMatch", "Redundancy", "Safety", "Terminator", "Dependencies",
-    // mid-end (lowering and optimization)
-    "TreeShaker1", "Monomorpher", "LambdaDrop", "Optimizer", "Simplifier",
-    "ClosureConv", "LambdaLift", "TreeShaker2", "EffectBinder", "TailPos",
-    "Eraser", "Reducer",
-    // backend
-    "JvmBackend"
-  )
-
-  private def phaseGroup(phase: String): String = {
-    val idx = Phases.indexOf(phase)
-    if (idx < 0) "?"
-    else if (idx <= 4) "syntax"
-    else if (idx <= 18) "semantic"
-    else if (idx <= 30) "midend"
-    else "backend"
-  }
-
-  private def groupColor(group: String): String = group match {
-    case "syntax"   => Blue
-    case "semantic" => Green
-    case "midend"   => Yellow
-    case "backend"  => Magenta
-    case _          => Gray
-  }
-
-  // -- Numeric helpers ----------------------------------------------------
-
-  private def heapUsage(): (Long, Long) = {
-    val rt = Runtime.getRuntime
-    val used = rt.totalMemory() - rt.freeMemory()
-    val max = rt.maxMemory()
-    (used / (1024L * 1024L), max / (1024L * 1024L))
-  }
-
-  private final case class ModuleStats(
-    module: String,
-    totalNanos: Long,
-    totalCallCount: Long,
-    totalLocLines: Int,
-    byPhase: Map[String, Long]
-  ) {
-    def dominantPhase: Option[String] =
-      if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
-  }
-
-  private def aggregateByModule(snap: Vector[DefnStats]): Vector[ModuleStats] = {
-    val groups = snap.groupBy { s =>
-      val ns = s.sym.namespace
-      if (ns.isEmpty) "(root)" else ns.mkString(".")
-    }
-    groups.iterator.map { case (mod, defs) =>
-      val totalNanos = defs.iterator.map(_.totalNanos).sum
-      val totalCallCount = defs.iterator.map(_.callCount.toLong).sum
-      val totalLocLines = defs.iterator.map(s => locLineCount(s.loc)).sum
-      val byPhase = defs.foldLeft(Map.empty[String, Long]) { (acc, d) =>
-        d.byPhase.foldLeft(acc) { case (m, (phase, n)) =>
-          m.updated(phase, m.getOrElse(phase, 0L) + n)
-        }
-      }
-      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase)
-    }.toVector.sortBy(-_.totalNanos)
-  }
-
-  /** Fallback terminal height when JLine cannot determine the real one. */
-  private val DefaultRows: Int = 24
-
-  /** Fallback terminal width when JLine cannot determine the real one. */
-  private val DefaultCols: Int = 100
-
-  /**
-    * Column layout for the per-frame table render. Computed from the current
-    * terminal width: when the terminal is narrow, the optional LOC / n /
-    * phase columns are dropped in that order (lowest-signal first). When the
-    * terminal is wide, the surplus is distributed between the DefnSym and
-    * location columns proportionally to their default widths.
-    */
-  private final case class Layout(
-    symWidth: Int,
-    locWidth: Int,
-    showLOC: Boolean,
-    showN: Boolean,
-    showPhase: Boolean,
-    totalWidth: Int
-  )
-
-  /** Default DefnSym/location widths and minimum bounds when the terminal shrinks. */
-  private val DefaultSymWidth: Int = 24
-  private val DefaultLocWidth: Int = 28
-  private val MinSymWidth: Int = 16
-  private val MinLocWidth: Int = 20
-
-  /** Fixed-width contribution of `time + %cpu + %wall` columns and their separators. */
-  private val FixedTailWidth: Int = 9 + 1 + 6 + 1 + 6 // time(9) + %cpu(6) + %wall(6) with two separators between
-
-  /** Width contribution of an optional column (separator + width). */
-  private val LocColWidth: Int = 1 + 4
-  private val NColWidth: Int = 1 + 4
-  private val PhaseColWidth: Int = 1 + 10
-
-  private def computeLayout(cols: Int): Layout = {
-    // Width contribution of the "fixed" half: separator before time + tail.
-    val tail = 1 + FixedTailWidth
-    // Width of just the text section (sym + 1 + location) at default sizes.
-    def textWidth(symW: Int, locW: Int): Int = symW + 1 + locW
-
-    // Try tiers in descending feature order.
-    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + NColWidth + PhaseColWidth + tail
-    if (cols >= full) {
-      // Surplus → expand sym (~46%) and location (~54%) proportionally.
-      val extra = cols - full
-      val extraSym = extra * 46 / 100
-      val extraLoc = extra - extraSym
-      val symW = DefaultSymWidth + extraSym
-      val locW = DefaultLocWidth + extraLoc
-      return Layout(symW, locW, showLOC = true, showN = true, showPhase = true,
-        totalWidth = textWidth(symW, locW) + LocColWidth + NColWidth + PhaseColWidth + tail)
-    }
-
-    // Tier: drop phase.
-    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + NColWidth + tail
-    if (cols >= noPhase)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showN = true, showPhase = false, noPhase)
-
-    // Tier: drop phase + n.
-    val noPhaseNoN = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + tail
-    if (cols >= noPhaseNoN)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showN = false, showPhase = false, noPhaseNoN)
-
-    // Tier: drop phase + n + LOC.
-    val noOptional = textWidth(DefaultSymWidth, DefaultLocWidth) + tail
-    if (cols >= noOptional)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = false, showN = false, showPhase = false, noOptional)
-
-    // Even minimum tier doesn't fit; shrink sym/locWidth to floors.
-    val available = (cols - tail).max(MinSymWidth + 1 + MinLocWidth)
-    val symW = MinSymWidth.max(available * 46 / 100)
-    val locW = MinLocWidth.max(available - 1 - symW)
-    Layout(symW, locW, showLOC = false, showN = false, showPhase = false,
-      textWidth(symW, locW) + tail)
-  }
-
-  /**
-    * Fixed-overhead rows: blank + 2 dashboard/stats lines + blank + 2 def-chrome +
-    * 1 blank-before-modules + 2 module-chrome + 1 cursor-parking row.
-    */
-  private val ChromeRows: Int = 10
-
-  /** Reserved breathing room above and below the rendered view. */
-  private val RowMargin: Int = 2
-
-  /** Floor on the total data-row budget. */
-  private val MinDataRows: Int = 8
-
-  /** Floors on per-table row counts; both tables grow with terminal height. */
-  private val MinDefN: Int = 5
-  private val MinModuleN: Int = 3
-
-  // -- Formatting helpers -------------------------------------------------
-
-  private def formatLocation(loc: SourceLocation): String =
-    if (!loc.isReal) "?" else s"${loc.source.name}:${loc.startLine}"
-
-  private def locLineCount(loc: SourceLocation): Int =
-    if (!loc.isReal) 0 else (loc.endLine - loc.startLine + 1).max(0)
-
-  private def formatMillis(nanos: Long): String = {
-    val ms = nanos / 1_000_000L
-    if (ms >= 10_000L) f"${ms / 1000.0}%.1fs"
-    else f"${ms}ms"
-  }
-
-  private def truncate(s: String, width: Int): String =
-    if (s.length <= width) s else s.take(width - 1) + "…"
-
-  private def lpad(s: String, w: Int): String =
-    if (s.length >= w) s else " " * (w - s.length) + s
-
-  private def rpad(s: String, w: Int): String =
-    if (s.length >= w) s else s + " " * (w - s.length)
 }
