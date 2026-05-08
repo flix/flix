@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.CompilerProfiler.DefnStats
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -31,14 +31,11 @@ object CompilerTop {
   /** Maximum length of any name in [[Phases]] — used to pad the phase column. Lazy to defer until [[Phases]] is initialized. */
   private lazy val MaxPhaseLen: Int = Phases.iterator.map(_.length).max
 
-  /** Maximum length of any group label — `"semantic"` is the longest at 8. */
-  private val MaxGroupLen: Int = 8
-
   /** Width (in characters) of the phase-progress bar. */
   private val BarWidth: Int = 12
 
   /** 1-indexed column where the `progress` label starts on the dashboard. */
-  private lazy val ProgressStartCol: Int = 8 + MaxPhaseLen + MaxGroupLen
+  private lazy val ProgressStartCol: Int = 5 + MaxPhaseLen
 
   /** 1-indexed column where the `threads` label starts on the dashboard. */
   private lazy val ThreadsStartCol: Int = ProgressStartCol + 20 + BarWidth
@@ -81,10 +78,6 @@ object CompilerTop {
   private val Green: String = s"$ESC[32m"
   /** ANSI foreground yellow. */
   private val Yellow: String = s"$ESC[33m"
-  /** ANSI foreground blue. */
-  private val Blue: String = s"$ESC[34m"
-  /** ANSI foreground magenta. */
-  private val Magenta: String = s"$ESC[35m"
   /** ANSI foreground cyan. */
   private val Cyan: String = s"$ESC[36m"
   /** ANSI foreground bright black (gray). */
@@ -187,25 +180,6 @@ object CompilerTop {
     // backend
     "JvmBackend"
   )
-
-  /** Returns the dashboard color-group for `phase` (`syntax`, `semantic`, `midend`, `backend`, or `?`). */
-  private def phaseGroup(phase: String): String = {
-    val idx = Phases.indexOf(phase)
-    if (idx < 0) "?"
-    else if (idx <= 4) "syntax"
-    else if (idx <= 18) "semantic"
-    else if (idx <= 30) "midend"
-    else "backend"
-  }
-
-  /** Returns the ANSI color associated with a phase group. */
-  private def groupColor(group: String): String = group match {
-    case "syntax"   => Blue
-    case "semantic" => Green
-    case "midend"   => Yellow
-    case "backend"  => Magenta
-    case _          => Gray
-  }
 
   // -- Numeric helpers ----------------------------------------------------
 
@@ -506,19 +480,13 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     */
   private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int): Unit = {
     val phase = flix.getCurrentPhaseName.getOrElse("starting")
-    val group = phaseGroup(phase)
     val total = Phases.size
     val idx = Phases.indexOf(phase)
     val done = if (idx < 0) 0 else idx + 1
     val filled = (BarWidth.toLong * done / total).toInt
 
     sb.append("  ")
-    sb.append(color(rpad(phase, MaxPhaseLen), groupColor(group)))
-    sb.append(' ')
-    sb.append(dim("("))
-    sb.append(color(group, groupColor(group)))
-    sb.append(dim(")"))
-    sb.append(" " * (MaxGroupLen - group.length).max(0))
+    sb.append(bold(rpad(phase, MaxPhaseLen)))
     sb.append(dim("  progress "))
     sb.append(dim("["))
     sb.append(green("█" * filled))
