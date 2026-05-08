@@ -28,8 +28,11 @@ object CompilerTop {
   /** How often the screen refreshes, in milliseconds. */
   private val RefreshIntervalMs: Long = 100L
 
-  /** Maximum length of any name in [[Phases]] — used to pad the phase column. Lazy to defer until [[Phases]] is initialized. */
-  private lazy val MaxPhaseLen: Int = Phases.iterator.map(_.length).max
+  /** Total number of phases the compiler runs. Bump when `Flix.check` / `Flix.codeGen` adds or removes a `phase` / `phaseNew` call. */
+  private val TotalPhases: Int = 32
+
+  /** Longest phase-name length, used to pad the phase column. Currently set by `"Dependencies"` / `"EffectBinder"`. */
+  private val MaxPhaseLen: Int = 12
 
   /** Width (in characters) of the phase-progress bar. */
   private val BarWidth: Int = 12
@@ -156,30 +159,6 @@ object CompilerTop {
     else if (ratio >= 0.7) yellow(formatted)
     else green(formatted)
   }
-
-  /**
-    * The compiler phases, in the order they fire.
-    *
-    * Mirrors the calls to `flix.phase` / `flix.phaseNew` in
-    * `Flix.check` followed by `Flix.codeGen`.
-    *
-    * Note: appearance here means the phase advances the progress bar; it does
-    * not mean the phase feeds [[CompilerProfiler]]. See `CompilerProfiler`'s class-level
-    * doc for the list of instrumented vs. uninstrumented phases.
-    */
-  private val Phases: Vector[String] = Vector(
-    // syntax (parsing)
-    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar",
-    // semantic (frontend)
-    "Namer", "Resolver", "Kinder", "Deriver", "Typer", "EntryPoints", "Instances",
-    "PredDeps", "Stratifier", "PatMatch", "Redundancy", "Safety", "Terminator", "Dependencies",
-    // mid-end (lowering and optimization)
-    "TreeShaker1", "Monomorpher", "LambdaDrop", "Optimizer", "Simplifier",
-    "ClosureConv", "LambdaLift", "TreeShaker2", "EffectBinder", "TailPos",
-    "Eraser", "Reducer",
-    // backend
-    "JvmBackend"
-  )
 
   // -- Numeric helpers ----------------------------------------------------
 
@@ -480,10 +459,8 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     */
   private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int): Unit = {
     val phase = flix.getCurrentPhaseName.getOrElse("starting")
-    val total = Phases.size
-    val idx = Phases.indexOf(phase)
-    val done = if (idx < 0) 0 else idx + 1
-    val filled = (BarWidth.toLong * done / total).toInt
+    val done = (flix.phaseTimers.size + 1).min(TotalPhases)
+    val filled = (BarWidth.toLong * done / TotalPhases).toInt
 
     sb.append("  ")
     sb.append(bold(rpad(phase, MaxPhaseLen)))
@@ -492,7 +469,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(green("█" * filled))
     sb.append(dim("░" * (BarWidth - filled)))
     sb.append(dim("] "))
-    sb.append(f"$done%2d/$total%2d")
+    sb.append(f"$done%2d/$TotalPhases%2d")
     sb.append(dim("   threads "))
     sb.append(dim(cyan(renderSparkline(parallelism.toDouble))))
     sb.append(' ')
