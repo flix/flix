@@ -27,7 +27,7 @@ import scala.collection.mutable
   * the most wall-clock time on so far, with a per-phase breakdown, call
   * count, active-threads sparkline, threadpool occupancy, and heap usage.
   *
-  * Reads from [[Flix.getProfiler]] and [[Flix.currentPhaseName]] every
+  * Reads from [[Flix.getProfiler]] and [[Flix.getCurrentPhaseName]] every
   * [[CompilerTop.RefreshIntervalMs]] milliseconds and re-renders the screen
   * using ANSI escape codes.
   */
@@ -139,7 +139,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * Both bars sit beside each other so the eye picks them up as a pair.
     */
   private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int): Unit = {
-    val phase = flix.currentPhaseName.getOrElse("starting")
+    val phase = flix.getCurrentPhaseName.getOrElse("starting")
     val group = phaseGroup(phase)
     val total = Phases.size
     val idx = Phases.indexOf(phase)

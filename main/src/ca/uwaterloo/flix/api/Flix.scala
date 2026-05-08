@@ -148,7 +148,7 @@ class Flix {
     * Name of the currently-executing phase, or `None` before the first
     * phase has started or after [[compile]] has reset state.
     */
-  def currentPhaseName: Option[String] =
+  def getCurrentPhaseName: Option[String] =
     currentPhase.map(_.phase)
 
   /**
@@ -437,7 +437,7 @@ class Flix {
       throw new IllegalArgumentException("'opts' must be non-null.")
     options = opts
     if (opts.compilerTop && compilerTop.isEmpty) {
-      val p = new CompilerProfiler(() => currentPhaseName)
+      val p = new CompilerProfiler(() => getCurrentPhaseName)
       setProfiler(Some(p))
       val t = new CompilerTop(this, p)
       t.start()
