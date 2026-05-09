@@ -194,13 +194,63 @@ object CompilerTop {
     groups.iterator.map { case (mod, defs) =>
       val totalNanos = defs.iterator.map(_.totalNanos).sum
       val totalCallCount = defs.iterator.map(_.callCount.toLong).sum
-      val totalLocLines = defs.iterator.map(s => locLineCount(s.loc)).sum
+      // Source-level entries only — fresh syms inherit the parent's loc, so
+      // counting them here would multiply the same source span N times.
+      val totalLocLines = defs.iterator.filter(_.sym.id.isEmpty).map(s => locLineCount(s.loc)).sum
       val byPhase = defs.foldLeft(Map.empty[String, Long]) { (acc, d) =>
         d.byPhase.foldLeft(acc) { case (m, (phase, n)) =>
           m.updated(phase, m.getOrElse(phase, 0L) + n)
         }
       }
       ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase)
+    }.toVector.sortBy(-_.totalNanos)
+  }
+
+  /**
+    * A parent def together with its fresh-sym children (lifted lambdas etc.)
+    * minted via [[ca.uwaterloo.flix.language.ast.Symbol.freshDefnSym]] from
+    * the same source sym. The renderer shows the parent on one row with
+    * rolled-up totals, then a few children indented underneath.
+    *
+    * @param parentText   the source-level def's text (shared across the group).
+    * @param parentLoc    the source span, used to format `loc` and compute LOC.
+    * @param parentStats  the source-level entry, if at least one phase tracked it.
+    * @param children     fresh-sym entries belonging to this parent, sorted by `totalNanos` desc.
+    * @param totalNanos   rolled-up time across parent + all children.
+    * @param totalCallCount rolled-up `track` count across the group.
+    * @param byPhase      rolled-up per-phase nanos across the group.
+    * @param anyActive    true if any entry in the group is currently in flight.
+    */
+  private final case class Group(parentText: String, parentLoc: SourceLocation,
+                                  parentStats: Option[DefnStats], children: Vector[DefnStats],
+                                  totalNanos: Long, totalCallCount: Long,
+                                  byPhase: Map[String, Long], anyActive: Boolean) {
+    /** Returns the phase that consumed the most time in this group, or None if empty. */
+    def dominantPhase: Option[String] =
+      if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
+  }
+
+  /**
+    * Groups `snap` by `(namespace, text, loc)` so fresh syms minted from the
+    * same source def land in the same bucket. Returned groups are sorted by
+    * rolled-up `totalNanos` descending; children within each group are
+    * sorted by their own `totalNanos` descending.
+    */
+  private def groupSnap(snap: Vector[DefnStats]): Vector[Group] = {
+    val grouped = snap.groupBy(s => (s.sym.namespace, s.sym.text, s.sym.loc))
+    grouped.iterator.map { case ((_, text, parentLoc), entries) =>
+      val (parents, children) = entries.partition(_.sym.id.isEmpty)
+      val parentStats = parents.headOption
+      val sortedChildren = children.sortBy(-_.totalNanos)
+      val totalNanos = entries.iterator.map(_.totalNanos).sum
+      val totalCallCount = entries.iterator.map(_.callCount.toLong).sum
+      val byPhase = entries.foldLeft(Map.empty[String, Long]) { (acc, d) =>
+        d.byPhase.foldLeft(acc) { case (m, (phase, n)) =>
+          m.updated(phase, m.getOrElse(phase, 0L) + n)
+        }
+      }
+      val anyActive = entries.exists(_.isActive)
+      Group(text, parentLoc, parentStats, sortedChildren, totalNanos, totalCallCount, byPhase, anyActive)
     }.toVector.sortBy(-_.totalNanos)
   }
 
@@ -304,6 +354,9 @@ object CompilerTop {
   private val MinDefN: Int = 5
   /** Floor on the module-table row count. */
   private val MinModuleN: Int = 3
+
+  /** Cap on the number of child rows shown per parent group. */
+  private val MaxChildrenPerGroup: Int = 3
 
   // -- Formatting helpers -------------------------------------------------
 
@@ -426,8 +479,8 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     // reserving 2 columns for the 1-space left and right table padding.
     val layout = computeLayout((terminalCols() - 2).max(1))
 
-    val snap = profiler.snapshot().sortBy(-_.totalNanos)
-    val visible = snap.take(defN)
+    val snap = profiler.snapshot()
+    val groups = groupSnap(snap)
 
     // Active-threads sparkline: history of thread-pool occupancy.
     threadsHistory.enqueue(activeThreads.toDouble)
@@ -444,7 +497,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     renderStats(sb, elapsed)
     sb.append('\n')
     renderTableHeader(sb, layout)
-    renderRows(sb, visible, elapsed, parallelism, layout)
+    renderRows(sb, groups, defN, elapsed, parallelism, layout)
     renderModuleTable(sb, modules, elapsed, parallelism, layout)
 
     sb.append(EndSync)
@@ -540,9 +593,15 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.toString
   }
 
-  /** Renders the def-table body (one row per [[DefnStats]]), or a centered placeholder if `visible` is empty. */
-  private def renderRows(sb: StringBuilder, visible: Vector[DefnStats], elapsed: Long, parallelism: Int, layout: Layout): Unit = {
-    if (visible.isEmpty) {
+  /**
+    * Renders the def-table body. Each [[Group]] becomes one parent row with
+    * rolled-up totals, optionally followed by up to [[MaxChildrenPerGroup]]
+    * indented child rows (lifted lambdas etc.) sorted by their own time.
+    * Renders a centered placeholder if `groups` is empty.
+    */
+  private def renderRows(sb: StringBuilder, groups: Vector[Group], rowBudget: Int,
+                          elapsed: Long, parallelism: Int, layout: Layout): Unit = {
+    if (groups.isEmpty) {
       val msg = "(no timings yet)"
       val pad = (((layout.totalWidth + 2) - msg.length) / 2).max(0)
       sb.append('\n')
@@ -552,28 +611,80 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       return
     }
     val safeElapsed = elapsed.max(1L).toDouble
-    for (s <- visible) {
-      val pctWall = 100.0 * s.totalNanos / safeElapsed
-      val pctCpu = pctWall / parallelism
-      val locStr = formatLocation(s.loc)
-      val locLines = locLineCount(s.loc)
-      val phase = s.dominantPhase.getOrElse("?")
-
-      val nameMax = layout.symWidth - 1
-      val nameText = truncate(s.sym.name, nameMax)
-      val locField = rpad(truncate(locStr, layout.locWidth), layout.locWidth)
-      val marker = if (s.isActive) yellow("*") else " "
-
-      sb.append(' ')
-      sb.append(styleSym(nameText, s.totalNanos, locLines))
-      sb.append(marker)
-      sb.append(" " * (nameMax - nameText.length))
-      sb.append(' ')
-      sb.append(dim(locField))
-      appendNumericFields(sb, locLines, s.callCount.toLong, phase, s.totalNanos, pctCpu, pctWall, layout)
-      sb.append(' ')
-      sb.append('\n')
+    var remaining = rowBudget
+    val it = groups.iterator
+    while (it.hasNext && remaining > 0) {
+      val g = it.next()
+      renderParentRow(sb, g, safeElapsed, parallelism, layout)
+      remaining -= 1
+      val childBudget = MaxChildrenPerGroup.min(remaining)
+      val toShow = g.children.take(childBudget)
+      val n = toShow.length
+      var i = 0
+      while (i < n) {
+        val isLast = i == n - 1
+        renderChildRow(sb, toShow(i), isLast, safeElapsed, parallelism, layout)
+        remaining -= 1
+        i += 1
+      }
     }
+  }
+
+  /** Renders one parent row with rolled-up group totals. */
+  private def renderParentRow(sb: StringBuilder, g: Group, safeElapsed: Double,
+                               parallelism: Int, layout: Layout): Unit = {
+    val pctWall = 100.0 * g.totalNanos / safeElapsed
+    val pctCpu = pctWall / parallelism
+    val locStr = formatLocation(g.parentLoc)
+    val locLines = locLineCount(g.parentLoc)
+    val phase = g.dominantPhase.getOrElse("?")
+
+    val nameMax = layout.symWidth - 1
+    val nameText = truncate(g.parentText, nameMax)
+    val locField = rpad(truncate(locStr, layout.locWidth), layout.locWidth)
+    val marker = if (g.anyActive) yellow("*") else " "
+
+    sb.append(' ')
+    sb.append(styleSym(nameText, g.totalNanos, locLines))
+    sb.append(marker)
+    sb.append(" " * (nameMax - nameText.length))
+    sb.append(' ')
+    sb.append(dim(locField))
+    appendNumericFields(sb, locLines, g.totalCallCount, phase, g.totalNanos, pctCpu, pctWall, layout)
+    sb.append(' ')
+    sb.append('\n')
+  }
+
+  /**
+    * Renders one child row indented under its parent. The "name" column shows
+    * `├ #id` or `└ #id` rather than repeating the parent's text. The LOC
+    * numeric is suppressed because a fresh sym's `loc` may be either the
+    * lifted body's span or the parent's body span depending on the pass that
+    * minted it — we render `-` rather than risk a misleading number.
+    */
+  private def renderChildRow(sb: StringBuilder, c: DefnStats, isLast: Boolean,
+                              safeElapsed: Double, parallelism: Int, layout: Layout): Unit = {
+    val pctWall = 100.0 * c.totalNanos / safeElapsed
+    val pctCpu = pctWall / parallelism
+    val phase = c.dominantPhase.getOrElse("?")
+
+    val glyph = if (isLast) "└ " else "├ "
+    val idStr = c.sym.id.map(i => s"#$i").getOrElse("#?")
+    val nameMax = layout.symWidth - 1
+    val nameText = truncate(s"$glyph$idStr", nameMax)
+    val marker = if (c.isActive) yellow("*") else " "
+
+    val locField = rpad(truncate(formatLocation(c.loc), layout.locWidth), layout.locWidth)
+
+    sb.append(' ')
+    sb.append(dim(nameText))
+    sb.append(marker)
+    sb.append(" " * (nameMax - nameText.length))
+    sb.append(' ')
+    sb.append(dim(locField))
+    appendNumericFields(sb, 0, c.callCount.toLong, phase, c.totalNanos, pctCpu, pctWall, layout)
+    sb.append(' ')
+    sb.append('\n')
   }
 
   /** Renders the per-module aggregate table below the def table; no-op if `modules` is empty. */
