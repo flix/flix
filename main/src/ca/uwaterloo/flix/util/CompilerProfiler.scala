@@ -29,10 +29,10 @@ import scala.jdk.CollectionConverters.*
   * [[CompilerProfiler.track]] entry point is called from inside instrumented
   * phases and is safe to invoke from multiple threads.
   *
-  * A fresh sym minted from an existing one via [[Symbol.freshDefnSym]] is
-  * folded back to its source sym (see [[CompilerProfiler.sourceOf]]) so the
-  * user-facing table shows one row per source-level definition rather than
-  * one row per refresh.
+  * Each [[Symbol.DefnSym]] is tracked independently: source-level defs and
+  * fresh syms (e.g. lifted closures from [[Symbol.freshDefnSym]]) each get
+  * their own row. Grouping fresh syms under their source-level parent
+  * (matched on `(namespace, text, loc)`) is the renderer's responsibility.
   *
   * Instrumentation coverage of the compiler pipeline:
   *
@@ -104,7 +104,7 @@ object CompilerProfiler {
 
 final class CompilerProfiler(phaseProvider: () => Option[String]) {
 
-  /** Per-source-`DefnSym` accumulators, keyed by the sym returned from [[sourceOf]]. */
+  /** Per-`DefnSym` accumulators, keyed by the actual sym (source or fresh) passed to [[track]]. */
   private val stats = new ConcurrentHashMap[Symbol.DefnSym, CompilerProfiler.Counters]()
 
   /**
@@ -149,31 +149,16 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) {
   }
 
   /**
-    * Returns the [[Counters]] entry for `sym`'s source sym, creating a fresh
-    * zero-initialized entry on first use. Atomic in the underlying map.
+    * Returns the [[Counters]] entry for `sym`, creating a fresh zero-
+    * initialized entry on first use. Atomic in the underlying map.
     */
   private def countersFor(sym: Symbol.DefnSym): CompilerProfiler.Counters =
-    stats.computeIfAbsent(sourceOf(sym), _ => CompilerProfiler.Counters(
+    stats.computeIfAbsent(sym, _ => CompilerProfiler.Counters(
       inProgress = new AtomicInteger(0),
       callCount = new AtomicInteger(0),
       totalNanos = new AtomicLong(0L),
       perPhaseNanos = new ConcurrentHashMap[String, AtomicLong](),
       loc = new AtomicReference[SourceLocation](null)
     ))
-
-  /**
-    * Returns the source-equivalent sym for `sym`: same `(namespace, text,
-    * loc)` triple but with `id = None`, i.e. the sym a user would have
-    * written. A sym that is already a source sym (`id.isEmpty`) is returned
-    * unchanged.
-    *
-    * Correct only as long as [[Symbol.freshDefnSym]] keeps the triple
-    * identical to its argument; if a future change starts varying any of
-    * those three, the roll-up here would silently cross-attribute time
-    * between unrelated defs.
-    */
-  private def sourceOf(sym: Symbol.DefnSym): Symbol.DefnSym =
-    if (sym.id.isEmpty) sym
-    else new Symbol.DefnSym(None, sym.namespace, sym.text, sym.loc)
 }
 

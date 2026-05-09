@@ -346,7 +346,7 @@ object Specialization {
       // Extract a function from the queue and specializes it w.r.t. its substitution.
       val queue = ctx.dequeueAllSpecializations
       ParOps.parMap(queue) {
-        case (freshSym, defn, subst) => flix.profile(defn.sym, defn.loc) {
+        case (freshSym, defn, subst) => flix.profile(freshSym, defn.loc) {
           val specializedDefn = specializeDef(freshSym, defn, subst)
           val loweredDefn = Lowering.lowerDef(specializedDefn)
           ctx.addSpecializedDef(freshSym, loweredDefn)
