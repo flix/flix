@@ -385,15 +385,26 @@ object CompilerTop {
   /** Width contribution of the optional dominant-phase column (separator + width). */
   private val PhaseColWidth: Int = 1 + 10
 
-  /** Picks a [[Layout]] for the given terminal width by trying tiers in descending feature order. */
-  private def computeLayout(cols: Int): Layout = {
+  /**
+    * Picks a [[Layout]] for the given terminal width by trying tiers in
+    * descending feature order. The mono / opt / cls counts are filter-gated:
+    * they only carry useful signal under [[PhaseFilter.Backend]] (mono runs
+    * once per def in the all/frontend views, opt and cls are essentially
+    * zero), so we hide the columns and reclaim the width when the user
+    * isn't filtering to backend.
+    */
+  private def computeLayout(cols: Int, activeFilter: PhaseFilter): Layout = {
     // Width contribution of the "fixed" half: separator before time + tail.
     val tail = 1 + FixedTailWidth
     // Width of just the text section (sym + 1 + location) at default sizes.
     def textWidth(symW: Int, locW: Int): Int = symW + 1 + locW
 
+    // The counts columns are only meaningful in the backend view.
+    val countsAllowed = activeFilter == PhaseFilter.Backend
+    val countsW = if (countsAllowed) CountsColWidth else 0
+
     // Try tiers in descending feature order.
-    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + CountsColWidth + PhaseColWidth + tail
+    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + countsW + PhaseColWidth + tail
     if (cols >= full) {
       // Surplus → expand sym (~46%) and location (~54%) proportionally.
       val extra = cols - full
@@ -401,16 +412,18 @@ object CompilerTop {
       val extraLoc = extra - extraSym
       val symW = DefaultSymWidth + extraSym
       val locW = DefaultLocWidth + extraLoc
-      return Layout(symW, locW, showLOC = true, showCounts = true, showPhase = true,
-        totalWidth = textWidth(symW, locW) + LocColWidth + CountsColWidth + PhaseColWidth + tail)
+      return Layout(symW, locW, showLOC = true, showCounts = countsAllowed, showPhase = true,
+        totalWidth = textWidth(symW, locW) + LocColWidth + countsW + PhaseColWidth + tail)
     }
 
     // Tier: drop phase.
-    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + CountsColWidth + tail
+    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + countsW + tail
     if (cols >= noPhase)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = true, showPhase = false, noPhase)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = countsAllowed, showPhase = false, noPhase)
 
-    // Tier: drop phase + counts.
+    // Tier: drop phase + counts. (When `countsAllowed` is false, the counts
+    // contribution was already 0, making this tier identical to the previous
+    // one and unreachable — fine, the previous tier returns first.)
     val noPhaseNoCounts = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + tail
     if (cols >= noPhaseNoCounts)
       return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = false, showPhase = false, noPhaseNoCounts)
@@ -698,12 +711,15 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     val moduleN = (dataRows / 3).max(MinModuleN)
     val defN = (dataRows - moduleN).max(MinDefN)
 
-    // Compute the column layout based on the current terminal width,
-    // reserving 2 columns for the 1-space left and right table padding.
-    val layout = computeLayout((terminalCols() - 2).max(1))
-
     val activeFilter = filter.get()
     val activeSort = sort.get()
+
+    // Compute the column layout based on the current terminal width,
+    // reserving 2 columns for the 1-space left and right table padding.
+    // The filter is part of the input because the mono / opt / cls columns
+    // only render under the backend view.
+    val layout = computeLayout((terminalCols() - 2).max(1), activeFilter)
+
     val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(s => -defSortKey(s, activeSort))
     val visible = snap.take(defN)
 
