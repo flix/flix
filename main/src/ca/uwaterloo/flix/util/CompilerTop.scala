@@ -32,11 +32,11 @@ object CompilerTop {
     * `Flix.check` (frontend) vs the phases that follow in `Flix.compile`'s
     * `codeGen` (backend) — see [[FrontendPhases]].
     */
-  sealed trait Filter
-  object Filter {
-    case object All extends Filter
-    case object Frontend extends Filter
-    case object Backend extends Filter
+  sealed trait PhaseFilter
+  object PhaseFilter {
+    case object All extends PhaseFilter
+    case object Frontend extends PhaseFilter
+    case object Backend extends PhaseFilter
   }
 
   /**
@@ -55,10 +55,10 @@ object CompilerTop {
   )
 
   /** True if `phase` should be accounted for under the current `f`. */
-  private def matchesFilter(phase: String, f: Filter): Boolean = f match {
-    case Filter.All      => true
-    case Filter.Frontend => FrontendPhases.contains(phase)
-    case Filter.Backend  => phase != "?" && !FrontendPhases.contains(phase)
+  private def matchesFilter(phase: String, f: PhaseFilter): Boolean = f match {
+    case PhaseFilter.All      => true
+    case PhaseFilter.Frontend => FrontendPhases.contains(phase)
+    case PhaseFilter.Backend  => phase != "?" && !FrontendPhases.contains(phase)
   }
 
   /**
@@ -473,9 +473,9 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
   /**
     * Active filter for the def / module tables. Written by the input thread,
-    * read by the renderer thread. Default is [[Filter.All]] (no filtering).
+    * read by the renderer thread. Default is [[PhaseFilter.All]] (no filtering).
     */
-  private val filter = new AtomicReference[Filter](Filter.All)
+  private val filter = new AtomicReference[PhaseFilter](PhaseFilter.All)
 
   /**
     * Active sort for the def / module tables. Written by the input thread,
@@ -580,9 +580,9 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
             quitLatch.countDown()
             return
           }
-        case 'f' | 'F' => filter.set(Filter.Frontend)
-        case 'b' | 'B' => filter.set(Filter.Backend)
-        case 'a' | 'A' => filter.set(Filter.All)
+        case 'f' | 'F' => filter.set(PhaseFilter.Frontend)
+        case 'b' | 'B' => filter.set(PhaseFilter.Backend)
+        case 'a' | 'A' => filter.set(PhaseFilter.All)
         case 't' | 'T' => sort.set(Sort.Time)
         case 'n' | 'N' => sort.set(Sort.Count)
         case 'h' | 'H' => sort.set(Sort.Hotness)
@@ -697,7 +697,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * Top dashboard line: current phase + progress bar + active-threads bar.
     * Both bars sit beside each other so the eye picks them up as a pair.
     */
-  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int, activeFilter: Filter, activeSort: Sort): Unit = {
+  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int, activeFilter: PhaseFilter, activeSort: Sort): Unit = {
     val isDone = completed.get()
     val phase = if (isDone) "done" else flix.getCurrentPhaseName.getOrElse("starting")
     // Once compilation has finished, force the bar to 100% rather than relying
@@ -738,14 +738,14 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * bold cyan when the filter is non-default. Always visible so the user
     * sees the available toggles whether the filter is active or not.
     */
-  private def renderFilterLegend(active: Filter): String = {
+  private def renderFilterLegend(active: PhaseFilter): String = {
     val sb = new StringBuilder
     sb.append(dim("["))
-    sb.append(if (active == Filter.All) bold(cyan("a")) else dim("a"))
+    sb.append(if (active == PhaseFilter.All) bold(cyan("a")) else dim("a"))
     sb.append(dim("|"))
-    sb.append(if (active == Filter.Frontend) bold(cyan("f")) else dim("f"))
+    sb.append(if (active == PhaseFilter.Frontend) bold(cyan("f")) else dim("f"))
     sb.append(dim("|"))
-    sb.append(if (active == Filter.Backend) bold(cyan("b")) else dim("b"))
+    sb.append(if (active == PhaseFilter.Backend) bold(cyan("b")) else dim("b"))
     sb.append(dim("]"))
     sb.toString
   }
@@ -775,8 +775,8 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     *
     * `loc` isn't per-phase and passes through unchanged.
     */
-  private def applyFilter(snap: Vector[DefnStats], f: Filter): Vector[DefnStats] = {
-    if (f == Filter.All) return snap
+  private def applyFilter(snap: Vector[DefnStats], f: PhaseFilter): Vector[DefnStats] = {
+    if (f == PhaseFilter.All) return snap
     snap.map { s =>
       val keptPhases = s.byPhase.filter { case (p, _) => matchesFilter(p, f) }
       val keptCounts = s.byPhaseCount.filter { case (p, _) => matchesFilter(p, f) }
