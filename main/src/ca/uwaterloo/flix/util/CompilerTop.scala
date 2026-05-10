@@ -70,10 +70,14 @@ object CompilerTop {
   object Sort {
     /** Slowest defs first. The default. */
     case object Time extends Sort
-    /** Most-revisited defs first (monomorph explosions, inliner re-entry). */
-    case object Count extends Sort
     /** Hottest-per-line defs first — small defs that burn disproportionate time. */
     case object Hotness extends Sort
+    /** Most monomorphic instances first — surfaces generic-explosion hotspots. */
+    case object Mono extends Sort
+    /** Most optimizer fixed-point re-visits first — surfaces inliner / occurrence-analyzer thrashing. */
+    case object Opt extends Sort
+    /** Most class files emitted first — surfaces JVM fan-out from polymorphism / closures. */
+    case object Cls extends Sort
   }
 
   /** How often the screen refreshes, in milliseconds (5 FPS). */
@@ -129,6 +133,10 @@ object CompilerTop {
   private val BoldCode: String = s"$ESC[1m"
   /** ANSI dim/faint. */
   private val DimCode: String = s"$ESC[2m"
+  /** ANSI underline on (paired with [[NoUnderlineCode]] — surgical, leaves bold/color intact). */
+  private val UnderlineCode: String = s"$ESC[4m"
+  /** ANSI underline off; cancels [[UnderlineCode]] without disturbing bold/color. */
+  private val NoUnderlineCode: String = s"$ESC[24m"
   /** ANSI foreground red. */
   private val Red: String = s"$ESC[31m"
   /** ANSI foreground green. */
@@ -156,6 +164,25 @@ object CompilerTop {
   private def green(s: String): String = color(s, Green)
   /** Wraps `s` in ANSI cyan codes. */
   private def cyan(s: String): String = color(s, Cyan)
+
+  /**
+    * Renders a column header with one keystroke letter underlined. Active
+    * sort columns are bold yellow; the rest are bold cyan. The label string
+    * is taken as-is (already padded by the caller) and the keystroke
+    * position is given as a 0-based index into it. Visible width is
+    * unchanged — only ANSI codes are inserted around the keystroke char.
+    */
+  private def keyHeader(paddedLabel: String, keyIdx: Int, active: Boolean): String = {
+    val c = if (active) Yellow else Cyan
+    val before = paddedLabel.take(keyIdx)
+    val key = paddedLabel.slice(keyIdx, keyIdx + 1)
+    val after = paddedLabel.drop(keyIdx + 1)
+    s"$BoldCode$c$before$UnderlineCode$key$NoUnderlineCode$after$Reset"
+  }
+
+  /** Renders a non-sort column header (no underlined keystroke) in bold cyan. */
+  private def plainHeader(paddedLabel: String): String =
+    s"$BoldCode$Cyan$paddedLabel$Reset"
 
   // -- Warning thresholds --------------------------------------------------
   //
@@ -300,17 +327,21 @@ object CompilerTop {
     */
   private def defSortKey(s: DefnStats, srt: Sort): Double = srt match {
     case Sort.Time    => s.totalNanos.toDouble
-    case Sort.Count   => s.callCount.toDouble
     case Sort.Hotness =>
       val lines = locLineCount(s.loc)
       if (lines <= 0) 0.0 else s.totalNanos.toDouble / lines
+    case Sort.Mono => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
+    case Sort.Opt  => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
+    case Sort.Cls  => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
   }
 
   /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
   private def moduleSortKey(m: ModuleStats, srt: Sort): Double = srt match {
     case Sort.Time    => m.totalNanos.toDouble
-    case Sort.Count   => m.totalCallCount.toDouble
     case Sort.Hotness => if (m.totalLocLines <= 0) 0.0 else m.totalNanos.toDouble / m.totalLocLines
+    case Sort.Mono => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
+    case Sort.Opt  => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
+    case Sort.Cls  => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
   }
 
   /** Fallback terminal height when JLine cannot determine the real one. */
@@ -593,8 +624,10 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
         case 'b' | 'B' => filter.set(PhaseFilter.Backend)
         case 'a' | 'A' => filter.set(PhaseFilter.All)
         case 't' | 'T' => sort.set(Sort.Time)
-        case 'n' | 'N' => sort.set(Sort.Count)
         case 'h' | 'H' => sort.set(Sort.Hotness)
+        case 'm' | 'M' => sort.set(Sort.Mono)
+        case 'o' | 'O' => sort.set(Sort.Opt)
+        case 'c' | 'C' => sort.set(Sort.Cls)
         case _         => // ignored
       }
     }
@@ -689,12 +722,12 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(ClearScreen)
     sb.append('\n')
 
-    renderDashboard(sb, activeThreads, parallelism, activeFilter, activeSort)
+    renderDashboard(sb, activeThreads, parallelism, activeFilter)
     renderStats(sb, elapsed)
     sb.append('\n')
-    renderTableHeader(sb, layout)
+    renderTableHeader(sb, layout, activeSort)
     renderRows(sb, visible, elapsed, parallelism, layout)
-    renderModuleTable(sb, modules, elapsed, parallelism, layout)
+    renderModuleTable(sb, modules, elapsed, parallelism, layout, activeSort)
 
     sb.append(EndSync)
     System.out.print(sb)
@@ -706,7 +739,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * Top dashboard line: current phase + progress bar + active-threads bar.
     * Both bars sit beside each other so the eye picks them up as a pair.
     */
-  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int, activeFilter: PhaseFilter, activeSort: Sort): Unit = {
+  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int, activeFilter: PhaseFilter): Unit = {
     val isDone = completed.get()
     val phase = if (isDone) "done" else flix.getCurrentPhaseName.getOrElse("starting")
     // Once compilation has finished, force the bar to 100% rather than relying
@@ -736,8 +769,6 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     }
     sb.append("   ")
     sb.append(renderFilterLegend(activeFilter))
-    sb.append(' ')
-    sb.append(renderSortLegend(activeSort))
     if (isDone) sb.append(dim("   press q to quit"))
     sb.append('\n')
   }
@@ -755,22 +786,6 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(if (active == PhaseFilter.Frontend) bold(cyan("f")) else dim("f"))
     sb.append(dim("|"))
     sb.append(if (active == PhaseFilter.Backend) bold(cyan("b")) else dim("b"))
-    sb.append(dim("]"))
-    sb.toString
-  }
-
-  /**
-    * Renders the `[t|n|h]` sort-key legend with the active letter highlighted
-    * in bold cyan. `t` = time, `n` = call count, `h` = hotness (time/LOC).
-    */
-  private def renderSortLegend(active: Sort): String = {
-    val sb = new StringBuilder
-    sb.append(dim("["))
-    sb.append(if (active == Sort.Time) bold(cyan("t")) else dim("t"))
-    sb.append(dim("|"))
-    sb.append(if (active == Sort.Count) bold(cyan("n")) else dim("n"))
-    sb.append(dim("|"))
-    sb.append(if (active == Sort.Hotness) bold(cyan("h")) else dim("h"))
     sb.append(dim("]"))
     sb.toString
   }
@@ -828,38 +843,47 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
   }
 
   /** Renders the def-table column header and the divider underneath it. */
-  private def renderTableHeader(sb: StringBuilder, layout: Layout): Unit = {
-    val header = buildHeader(rpad("Def", layout.symWidth), rpad("location", layout.locWidth), layout)
+  private def renderTableHeader(sb: StringBuilder, layout: Layout, activeSort: Sort): Unit = {
     sb.append(' ')
-    sb.append(bold(cyan(header)))
+    sb.append(buildHeader(layout, activeSort))
     sb.append(' ')
     sb.append('\n')
     sb.append(' ')
-    sb.append(dim("─" * header.length))
+    sb.append(dim("─" * layout.totalWidth))
     sb.append(' ')
     sb.append('\n')
   }
 
   /**
-    * Builds a table header (or any row's left side) given the formatted text
-    * for the first two columns. Numeric columns are conditionally appended
-    * per the layout's visibility flags.
+    * Builds the def-table header. Each sortable column underlines its
+    * keystroke letter (`m̲ono`, `o̲pt`, `c̲ls`, `t̲ime`) and the Def header
+    * carries a tiny `(h̲ot)` annotation marking the hotness sort key.
+    * The active column is rendered bold yellow; the rest bold cyan.
     */
-  private def buildHeader(firstCol: String, secondCol: String, layout: Layout): String = {
+  private def buildHeader(layout: Layout, activeSort: Sort): String = {
     val sb = new StringBuilder
-    sb.append(firstCol)
+
+    // First column: "Def (hot)" — the 'h' (index 5) is the hotness keystroke.
+    val defPadded = rpad("Def (hot)", layout.symWidth)
+    sb.append(keyHeader(defPadded, 5, activeSort == Sort.Hotness))
+
     sb.append(' ')
-    sb.append(secondCol)
-    if (layout.showLOC) { sb.append(' '); sb.append(lpad("LOC", 4)) }
-    if (layout.showCounts) {
-      sb.append(' '); sb.append(lpad("mono", 4))
-      sb.append(' '); sb.append(lpad("opt", 4))
-      sb.append(' '); sb.append(lpad("cls", 4))
+    sb.append(plainHeader(rpad("location", layout.locWidth)))
+
+    if (layout.showLOC) {
+      sb.append(' '); sb.append(plainHeader(lpad("LOC", 4)))
     }
-    if (layout.showPhase) { sb.append(' '); sb.append(rpad("phase", 10)) }
-    sb.append(' '); sb.append(lpad("time", 9))
-    sb.append(' '); sb.append(lpad("%cpu", 6))
-    sb.append(' '); sb.append(lpad("%wall", 6))
+    if (layout.showCounts) {
+      val monoP = lpad("mono", 4); sb.append(' '); sb.append(keyHeader(monoP, monoP.indexOf('m'), activeSort == Sort.Mono))
+      val optP  = lpad("opt", 4);  sb.append(' '); sb.append(keyHeader(optP,  optP.indexOf('o'),  activeSort == Sort.Opt))
+      val clsP  = lpad("cls", 4);  sb.append(' '); sb.append(keyHeader(clsP,  clsP.indexOf('c'),  activeSort == Sort.Cls))
+    }
+    if (layout.showPhase) {
+      sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
+    }
+    val timeP = lpad("time", 9); sb.append(' '); sb.append(keyHeader(timeP, timeP.indexOf('t'), activeSort == Sort.Time))
+    sb.append(' '); sb.append(plainHeader(lpad("%cpu", 6)))
+    sb.append(' '); sb.append(plainHeader(lpad("%wall", 6)))
     sb.toString
   }
 
@@ -900,18 +924,17 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
   }
 
   /** Renders the per-module aggregate table below the def table; no-op if `modules` is empty. */
-  private def renderModuleTable(sb: StringBuilder, modules: Vector[ModuleStats], elapsed: Long, parallelism: Int, layout: Layout): Unit = {
+  private def renderModuleTable(sb: StringBuilder, modules: Vector[ModuleStats], elapsed: Long, parallelism: Int, layout: Layout, activeSort: Sort): Unit = {
     if (modules.isEmpty) return
 
     sb.append('\n')
     val modWidth = layout.symWidth + 1 + layout.locWidth
-    val header = buildModuleHeader(rpad("Module", modWidth), layout)
     sb.append(' ')
-    sb.append(bold(cyan(header)))
+    sb.append(buildModuleHeader(layout, activeSort))
     sb.append(' ')
     sb.append('\n')
     sb.append(' ')
-    sb.append(dim("─" * header.length))
+    sb.append(dim("─" * layout.totalWidth))
     sb.append(' ')
     sb.append('\n')
 
@@ -931,20 +954,33 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     }
   }
 
-  /** Module-table header: single wide first column, then the same numeric columns as the def table. */
-  private def buildModuleHeader(firstCol: String, layout: Layout): String = {
+  /**
+    * Module-table header: single wide first column, then the same numeric
+    * columns as the def table. Mirrors [[buildHeader]]'s underline / active
+    * styling so the same sort keys are discoverable in both tables.
+    */
+  private def buildModuleHeader(layout: Layout, activeSort: Sort): String = {
     val sb = new StringBuilder
-    sb.append(firstCol)
-    if (layout.showLOC) { sb.append(' '); sb.append(lpad("LOC", 4)) }
-    if (layout.showCounts) {
-      sb.append(' '); sb.append(lpad("mono", 4))
-      sb.append(' '); sb.append(lpad("opt", 4))
-      sb.append(' '); sb.append(lpad("cls", 4))
+    val modWidth = layout.symWidth + 1 + layout.locWidth
+
+    // First column: "Module (hot)" — the 'h' (index 8) is the hotness keystroke.
+    val modPadded = rpad("Module (hot)", modWidth)
+    sb.append(keyHeader(modPadded, 8, activeSort == Sort.Hotness))
+
+    if (layout.showLOC) {
+      sb.append(' '); sb.append(plainHeader(lpad("LOC", 4)))
     }
-    if (layout.showPhase) { sb.append(' '); sb.append(rpad("phase", 10)) }
-    sb.append(' '); sb.append(lpad("time", 9))
-    sb.append(' '); sb.append(lpad("%cpu", 6))
-    sb.append(' '); sb.append(lpad("%wall", 6))
+    if (layout.showCounts) {
+      val monoP = lpad("mono", 4); sb.append(' '); sb.append(keyHeader(monoP, monoP.indexOf('m'), activeSort == Sort.Mono))
+      val optP  = lpad("opt", 4);  sb.append(' '); sb.append(keyHeader(optP,  optP.indexOf('o'),  activeSort == Sort.Opt))
+      val clsP  = lpad("cls", 4);  sb.append(' '); sb.append(keyHeader(clsP,  clsP.indexOf('c'),  activeSort == Sort.Cls))
+    }
+    if (layout.showPhase) {
+      sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
+    }
+    val timeP = lpad("time", 9); sb.append(' '); sb.append(keyHeader(timeP, timeP.indexOf('t'), activeSort == Sort.Time))
+    sb.append(' '); sb.append(plainHeader(lpad("%cpu", 6)))
+    sb.append(' '); sb.append(plainHeader(lpad("%wall", 6)))
     sb.toString
   }
 
