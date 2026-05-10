@@ -18,15 +18,69 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.CompilerProfiler.DefnStats
-import org.jline.terminal.{Terminal, TerminalBuilder}
+import org.jline.terminal.{Attributes, Terminal, TerminalBuilder}
 
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.mutable
 
 object CompilerTop {
 
-  /** How often the screen refreshes, in milliseconds. */
-  private val RefreshIntervalMs: Long = 100L
+  /**
+    * Restricts which phases' time the dashboard accounts for. Toggled
+    * interactively via the input thread (`f` / `b` / `a`). The split tracks
+    * `Flix.check` (frontend) vs the phases that follow in `Flix.compile`'s
+    * `codeGen` (backend) — see [[FrontendPhases]].
+    */
+  sealed trait PhaseFilter
+  object PhaseFilter {
+    case object All extends PhaseFilter
+    case object Frontend extends PhaseFilter
+    case object Backend extends PhaseFilter
+  }
+
+  /**
+    * Phase-name strings that count as "frontend" — i.e. phases that run
+    * inside `Flix.check`. Strings must match the literals each phase passes
+    * to `flix.phase("…")` / `flix.phaseNew("…")`. Verified against the
+    * `run` methods under `main/src/ca/uwaterloo/flix/language/phase`.
+    *
+    * Phases not in this set (and not the unknown-phase fallback `"?"`) are
+    * treated as backend.
+    */
+  private val FrontendPhases: Set[String] = Set(
+    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar", "Namer", "Resolver",
+    "Kinder", "Deriver", "Typer", "EntryPoints", "Instances", "PredDeps",
+    "Stratifier", "PatMatch", "Redundancy", "Safety", "Terminator", "Dependencies",
+  )
+
+  /** True if `phase` should be accounted for under the current `f`. */
+  private def matchesFilter(phase: String, f: PhaseFilter): Boolean = f match {
+    case PhaseFilter.All      => true
+    case PhaseFilter.Frontend => FrontendPhases.contains(phase)
+    case PhaseFilter.Backend  => phase != "?" && !FrontendPhases.contains(phase)
+  }
+
+  /**
+    * Selects the descending sort key applied to the def and module tables.
+    * Each option surfaces a different kind of suspect, so the same def can
+    * top one ranking and not another.
+    */
+  sealed trait Sort
+  object Sort {
+    /** Slowest defs first. The default. */
+    case object Time extends Sort
+    /** Most-revisited defs first (monomorph explosions, inliner re-entry). */
+    case object Count extends Sort
+    /** Hottest-per-line defs first — small defs that burn disproportionate time. */
+    case object Hotness extends Sort
+  }
+
+  /** How often the screen refreshes, in milliseconds (5 FPS). */
+  private val RefreshIntervalMs: Long = 200L
+
+  /** Poll interval for the input thread (ms); doubles as how fast `running=false` is observed. */
+  private val InputPollMs: Long = 100L
 
   /** Total number of phases the compiler runs. Bump when `Flix.check` / `Flix.codeGen` adds or removes a `phase` / `phaseNew` call. */
   private val TotalPhases: Int = 32
@@ -103,14 +157,33 @@ object CompilerTop {
   /** Wraps `s` in ANSI cyan codes. */
   private def cyan(s: String): String = color(s, Cyan)
 
+  // -- Warning thresholds --------------------------------------------------
+  //
+  // Per-column tier cutoffs consumed by the `style*` functions below. Naming:
+  // `<Column><Tier>Threshold[<Unit>]`. Sorted alphabetically — keep new
+  // entries in order. Adjusting a number here is a UX call; please don't
+  // bury it inside one of the styling functions.
+
+  private val CallCountRedThreshold:           Long   = 500L
+  private val CallCountYellowThreshold:        Long   = 50L
+  private val HeapRedThresholdRatio:           Double = 0.9
+  private val HeapYellowThresholdRatio:        Double = 0.7
+  private val HotnessRedThresholdMsPerLine:    Double = 25.0
+  private val HotnessYellowThresholdMsPerLine: Double = 15.0
+  private val PctCpuRedThreshold:              Double = 5.0
+  private val PctCpuYellowThreshold:           Double = 1.0
+  private val PctWallRedThreshold:             Double = 15.0
+  private val PctWallYellowThreshold:          Double = 5.0
+  private val TimeRedThresholdMs:              Long   = 1000L
+  private val TimeYellowThresholdMs:           Long   = 50L
+
   // -- Conditional styling -------------------------------------------------
 
-  /** Colors a formatted time field by absolute magnitude (≥1s red bold, ≥200ms yellow bold, ≥50ms yellow). */
+  /** Colors a formatted time field by absolute magnitude. */
   private def styleTime(formatted: String, nanos: Long): String = {
     val ms = nanos / 1_000_000L
-    if (ms >= 1000) bold(red(formatted))
-    else if (ms >= 200) bold(yellow(formatted))
-    else if (ms >= 50) yellow(formatted)
+    if (ms >= TimeRedThresholdMs) bold(red(formatted))
+    else if (ms >= TimeYellowThresholdMs) yellow(formatted)
     else formatted
   }
 
@@ -124,22 +197,22 @@ object CompilerTop {
   private def styleSym(name: String, nanos: Long, locLines: Int): String = {
     if (locLines <= 0) return name
     val msPerLine = (nanos / 1_000_000L).toDouble / locLines
-    if (msPerLine >= 25.0) bold(red(name))
-    else if (msPerLine >= 15.0) yellow(name)
+    if (msPerLine >= HotnessRedThresholdMsPerLine) bold(red(name))
+    else if (msPerLine >= HotnessYellowThresholdMsPerLine) yellow(name)
     else name
   }
 
   /** %cpu = totalNanos / (elapsed × threads). One def's slice of total compute. */
   private def stylePctCpu(formatted: String, pct: Double): String = {
-    if (pct >= 5.0) bold(red(formatted))
-    else if (pct >= 1.0) yellow(formatted)
+    if (pct >= PctCpuRedThreshold) bold(red(formatted))
+    else if (pct >= PctCpuYellowThreshold) yellow(formatted)
     else formatted
   }
 
   /** %wall = totalNanos / elapsed. Upper bound on wall-clock savings if removed. */
   private def stylePctWall(formatted: String, pct: Double): String = {
-    if (pct >= 15.0) bold(red(formatted))
-    else if (pct >= 5.0) yellow(formatted)
+    if (pct >= PctWallRedThreshold) bold(red(formatted))
+    else if (pct >= PctWallYellowThreshold) yellow(formatted)
     else formatted
   }
 
@@ -153,11 +226,18 @@ object CompilerTop {
     else yellow(s)
   }
 
-  /** Colors a formatted heap field by used/max ratio: ≥90% red bold, ≥70% yellow, else green. */
+  /** Colors a formatted heap field by used/max ratio. */
   private def styleHeap(formatted: String, ratio: Double): String = {
-    if (ratio >= 0.9) bold(red(formatted))
-    else if (ratio >= 0.7) yellow(formatted)
+    if (ratio >= HeapRedThresholdRatio) bold(red(formatted))
+    else if (ratio >= HeapYellowThresholdRatio) yellow(formatted)
     else green(formatted)
+  }
+
+  /** Colors a formatted call-count field — high re-visit count. */
+  private def styleN(formatted: String, callCount: Long): String = {
+    if (callCount >= CallCountRedThreshold) bold(red(formatted))
+    else if (callCount >= CallCountYellowThreshold) yellow(formatted)
+    else formatted
   }
 
   // -- Numeric helpers ----------------------------------------------------
@@ -185,8 +265,8 @@ object CompilerTop {
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
   }
 
-  /** Groups `snap` by namespace, sums each metric, and returns rows sorted by `totalNanos` descending. */
-  private def aggregateByModule(snap: Vector[DefnStats]): Vector[ModuleStats] = {
+  /** Groups `snap` by namespace, sums each metric, and returns rows sorted by `srt` descending. */
+  private def aggregateByModule(snap: Vector[DefnStats], srt: Sort): Vector[ModuleStats] = {
     val groups = snap.groupBy { s =>
       val ns = s.sym.namespace
       if (ns.isEmpty) "(root)" else ns.mkString(".")
@@ -201,7 +281,27 @@ object CompilerTop {
         }
       }
       ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase)
-    }.toVector.sortBy(-_.totalNanos)
+    }.toVector.sortBy(m => -moduleSortKey(m, srt))
+  }
+
+  /**
+    * Returns the descending sort key for a def under the given sort mode.
+    * `Hotness` (time / LOC) is 0 for synthetic defs with no real source
+    * span (`locLines <= 0`) so they sink to the bottom rather than dominating.
+    */
+  private def defSortKey(s: DefnStats, srt: Sort): Double = srt match {
+    case Sort.Time    => s.totalNanos.toDouble
+    case Sort.Count   => s.callCount.toDouble
+    case Sort.Hotness =>
+      val lines = locLineCount(s.loc)
+      if (lines <= 0) 0.0 else s.totalNanos.toDouble / lines
+  }
+
+  /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
+  private def moduleSortKey(m: ModuleStats, srt: Sort): Double = srt match {
+    case Sort.Time    => m.totalNanos.toDouble
+    case Sort.Count   => m.totalCallCount.toDouble
+    case Sort.Hotness => if (m.totalLocLines <= 0) 0.0 else m.totalNanos.toDouble / m.totalLocLines
   }
 
   /** Fallback terminal height when JLine cannot determine the real one. */
@@ -351,8 +451,57 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
   /** True while the renderer thread should keep looping. */
   private val running = new AtomicBoolean(false)
 
+  /**
+    * Flips to true when [[stop]] is first called. Drives the dashboard's
+    * "done — press q to quit" mode and guards [[stop]] against re-entry from
+    * both the error path in `Flix.check` and the success path in `Flix.compile`.
+    */
+  private val completed = new AtomicBoolean(false)
+
+  /**
+    * Elapsed nanos at the moment compilation finished. Captured by [[stop]]
+    * before flipping [[completed]] so the dashboard can freeze the field
+    * instead of advancing it during the wait-for-quit phase.
+    */
+  @volatile private var frozenElapsedNanos: Long = 0L
+
+  /** Active-thread count captured at the same instant as [[frozenElapsedNanos]]. */
+  @volatile private var frozenActiveThreads: Int = 0
+
+  /** `(usedMb, maxMb)` heap snapshot captured at the same instant as [[frozenElapsedNanos]]. */
+  @volatile private var frozenHeap: (Long, Long) = (0L, 0L)
+
+  /**
+    * Active filter for the def / module tables. Written by the input thread,
+    * read by the renderer thread. Default is [[PhaseFilter.All]] (no filtering).
+    */
+  private val filter = new AtomicReference[PhaseFilter](PhaseFilter.All)
+
+  /**
+    * Active sort for the def / module tables. Written by the input thread,
+    * read by the renderer thread. Default is [[Sort.Time]].
+    */
+  private val sort = new AtomicReference[Sort](Sort.Time)
+
+  /**
+    * Counted down by the input thread when the user presses `q` (only after
+    * [[completed]] is set). [[stop]] awaits it before tearing the renderer
+    * down so the user can keep toggling the filter post-compile.
+    */
+  private val quitLatch = new CountDownLatch(1)
+
+  /**
+    * Terminal attributes captured before entering raw mode in [[start]].
+    * Restored by [[stop]] so the user's shell isn't left with line buffering
+    * and echo disabled if anything goes wrong further down the teardown.
+    */
+  private var savedAttrs: Attributes = _
+
   /** The renderer thread, or `null` before [[start]] / after [[stop]]. */
   private var thread: Thread = _
+
+  /** The input thread that reads keypresses (filter toggles + quit), or `null` before [[start]] / after [[stop]]. */
+  private var inputThread: Thread = _
 
   /** Wall-clock start time, used as the denominator for `%wall` and `%cpu`. */
   private val startNanos: Long = System.nanoTime()
@@ -381,20 +530,101 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     if (w > 0) w else DefaultCols
   }
 
-  /** Starts the renderer on a daemon thread. */
+  /**
+    * Starts the renderer + input threads on daemon threads. Enters raw mode
+    * once at startup so the input thread can read individual keystrokes
+    * during compilation as well as after it finishes.
+    */
   def start(): Unit = {
     if (!running.compareAndSet(false, true)) return
+
+    // Enter raw mode for the lifetime of the TUI so keypresses (f/b/a/q)
+    // are delivered immediately rather than line-buffered.
+    if (terminal != null) {
+      try savedAttrs = terminal.enterRawMode()
+      catch { case _: Throwable => savedAttrs = null }
+    }
+
     thread = new Thread(() => loop(), "flix-top-renderer")
     thread.setDaemon(true)
     thread.start()
+
+    inputThread = new Thread(() => inputLoop(), "flix-top-input")
+    inputThread.setDaemon(true)
+    inputThread.start()
   }
 
-  /** Stops the renderer, prints one final frame, and joins the render thread. */
+  /**
+    * Input-thread body: reads keypresses with a [[InputPollMs]] timeout so
+    * shutdown is responsive to `running.get() == false`.
+    *
+    *   - `f` / `F` → filter to frontend phases
+    *   - `b` / `B` → filter to backend phases
+    *   - `a` / `A` → reset to all phases
+    *   - `q` / `Q` / Ctrl-C / EOF → if compilation has completed, signal
+    *     [[stop]] to finish teardown; otherwise ignored (pressing `q`
+    *     mid-compile must not abort the build).
+    *   - Any other key is ignored.
+    */
+  private def inputLoop(): Unit = {
+    if (terminal == null) return
+    val r = terminal.reader()
+    while (running.get()) {
+      val c =
+        try r.read(InputPollMs)
+        catch { case _: InterruptedException => return; case _: Throwable => -1 }
+      c match {
+        case -2 => // timeout — loop and re-check `running`
+        case -1 | 3 | 'q' | 'Q' =>
+          if (completed.get()) {
+            quitLatch.countDown()
+            return
+          }
+        case 'f' | 'F' => filter.set(PhaseFilter.Frontend)
+        case 'b' | 'B' => filter.set(PhaseFilter.Backend)
+        case 'a' | 'A' => filter.set(PhaseFilter.All)
+        case 't' | 'T' => sort.set(Sort.Time)
+        case 'n' | 'N' => sort.set(Sort.Count)
+        case 'h' | 'H' => sort.set(Sort.Hotness)
+        case _         => // ignored
+      }
+    }
+  }
+
+  /**
+    * Marks compilation done, blocks until the user presses `q` (or hits EOF /
+    * Ctrl-C), then tears the renderer down and clears the screen so whatever
+    * Main prints next (errors, runtime output) starts on a clean slate.
+    *
+    * Idempotent: the second caller — both error and success paths in `Flix`
+    * may fire — returns immediately rather than blocking again.
+    */
   def stop(): Unit = {
+    // Snapshot live values BEFORE flipping `completed`. The renderer reads
+    // `completed` first and uses the snapshot when it sees true; the volatile
+    // writes here happen-before the AtomicBoolean store via JMM.
+    frozenElapsedNanos = System.nanoTime() - startNanos
+    frozenActiveThreads = if (flix.threadPool == null) 0 else flix.threadPool.getActiveThreadCount
+    frozenHeap = heapUsage()
+
+    if (!completed.compareAndSet(false, true)) return
+
+    // Block until the input thread observes `q`. The renderer keeps drawing
+    // the "press q to quit" hint and the user can keep toggling f/b/a in
+    // the meantime.
+    if (terminal != null) {
+      try quitLatch.await()
+      catch { case _: InterruptedException => () }
+    }
+
     if (!running.compareAndSet(true, false)) return
     if (thread != null) thread.join()
-    render()
-    System.out.println()
+    if (inputThread != null) inputThread.join()
+    if (terminal != null && savedAttrs != null) {
+      try terminal.setAttributes(savedAttrs) catch { case _: Throwable => () }
+    }
+    System.out.print(ClearScreen)
+    System.out.flush()
     if (terminal != null) try terminal.close() catch { case _: Throwable => () }
   }
 
@@ -409,11 +639,15 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
   /** Builds and prints one full frame of the TUI. */
   private def render(): Unit = {
+    val isDone = completed.get()
     val now = System.nanoTime()
-    val elapsed = now - startNanos
     val pool = flix.threadPool
     val parallelism = if (pool == null) flix.options.threads.max(1) else pool.getParallelism.max(1)
-    val activeThreads = if (pool == null) 0 else pool.getActiveThreadCount
+    // Once compilation is done, freeze elapsed + active threads at their
+    // snapshot values so the dashboard reflects the state at completion
+    // rather than ticking forward during the wait-for-quit phase.
+    val elapsed = if (isDone) frozenElapsedNanos else now - startNanos
+    val activeThreads = if (isDone) frozenActiveThreads else (if (pool == null) 0 else pool.getActiveThreadCount)
 
     // Budget rows for the two tables based on the current terminal height,
     // reserving an extra `RowMargin` rows so the view never quite touches
@@ -426,21 +660,27 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     // reserving 2 columns for the 1-space left and right table padding.
     val layout = computeLayout((terminalCols() - 2).max(1))
 
-    val snap = profiler.snapshot().sortBy(-_.totalNanos)
+    val activeFilter = filter.get()
+    val activeSort = sort.get()
+    val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(s => -defSortKey(s, activeSort))
     val visible = snap.take(defN)
 
-    // Active-threads sparkline: history of thread-pool occupancy.
-    threadsHistory.enqueue(activeThreads.toDouble)
-    while (threadsHistory.size > SparkWidth) threadsHistory.dequeue()
+    // Active-threads sparkline: history of thread-pool occupancy. Stops
+    // updating once compilation is done so the bar reflects the work, not
+    // a long tail of zero-occupancy samples while waiting for `q`.
+    if (!isDone) {
+      threadsHistory.enqueue(activeThreads.toDouble)
+      while (threadsHistory.size > SparkWidth) threadsHistory.dequeue()
+    }
 
-    val modules = aggregateByModule(snap).take(moduleN)
+    val modules = aggregateByModule(snap, activeSort).take(moduleN)
 
     val sb = new StringBuilder
     sb.append(BeginSync)
     sb.append(ClearScreen)
     sb.append('\n')
 
-    renderDashboard(sb, activeThreads, parallelism)
+    renderDashboard(sb, activeThreads, parallelism, activeFilter, activeSort)
     renderStats(sb, elapsed)
     sb.append('\n')
     renderTableHeader(sb, layout)
@@ -457,9 +697,13 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * Top dashboard line: current phase + progress bar + active-threads bar.
     * Both bars sit beside each other so the eye picks them up as a pair.
     */
-  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int): Unit = {
-    val phase = flix.getCurrentPhaseName.getOrElse("starting")
-    val done = (flix.phaseTimers.size + 1).min(TotalPhases)
+  private def renderDashboard(sb: StringBuilder, activeThreads: Int, parallelism: Int, activeFilter: PhaseFilter, activeSort: Sort): Unit = {
+    val isDone = completed.get()
+    val phase = if (isDone) "done" else flix.getCurrentPhaseName.getOrElse("starting")
+    // Once compilation has finished, force the bar to 100% rather than relying
+    // on `phaseTimers.size + 1` (which is +1 ahead of reality during execution
+    // and would still under-fill if any phase is uninstrumented).
+    val done = if (isDone) TotalPhases else (flix.phaseTimers.size + 1).min(TotalPhases)
     val filled = (BarWidth.toLong * done / TotalPhases).toInt
 
     sb.append("  ")
@@ -471,10 +715,76 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(dim("] "))
     sb.append(f"$done%2d/$TotalPhases%2d")
     sb.append(dim("   threads "))
-    sb.append(dim(cyan(renderSparkline(parallelism.toDouble))))
+    // With parallelism=1 ForkJoin runs work inline on the submitter, leaving
+    // `getActiveThreadCount` at 0 most of the time — sparkline goes flat,
+    // field reads `0/1` continuously. Show a label instead.
+    if (parallelism > 1) {
+      sb.append(dim(cyan(renderSparkline(parallelism.toDouble))))
+      sb.append(' ')
+      sb.append(styleThreads(activeThreads, parallelism))
+    } else {
+      sb.append(dim("single-threaded"))
+    }
+    sb.append("   ")
+    sb.append(renderFilterLegend(activeFilter))
     sb.append(' ')
-    sb.append(styleThreads(activeThreads, parallelism))
+    sb.append(renderSortLegend(activeSort))
+    if (isDone) sb.append(dim("   press q to quit"))
     sb.append('\n')
+  }
+
+  /**
+    * Renders the `[f|b|a]` legend with the active letter highlighted in
+    * bold cyan when the filter is non-default. Always visible so the user
+    * sees the available toggles whether the filter is active or not.
+    */
+  private def renderFilterLegend(active: PhaseFilter): String = {
+    val sb = new StringBuilder
+    sb.append(dim("["))
+    sb.append(if (active == PhaseFilter.All) bold(cyan("a")) else dim("a"))
+    sb.append(dim("|"))
+    sb.append(if (active == PhaseFilter.Frontend) bold(cyan("f")) else dim("f"))
+    sb.append(dim("|"))
+    sb.append(if (active == PhaseFilter.Backend) bold(cyan("b")) else dim("b"))
+    sb.append(dim("]"))
+    sb.toString
+  }
+
+  /**
+    * Renders the `[t|n|h]` sort-key legend with the active letter highlighted
+    * in bold cyan. `t` = time, `n` = call count, `h` = hotness (time/LOC).
+    */
+  private def renderSortLegend(active: Sort): String = {
+    val sb = new StringBuilder
+    sb.append(dim("["))
+    sb.append(if (active == Sort.Time) bold(cyan("t")) else dim("t"))
+    sb.append(dim("|"))
+    sb.append(if (active == Sort.Count) bold(cyan("n")) else dim("n"))
+    sb.append(dim("|"))
+    sb.append(if (active == Sort.Hotness) bold(cyan("h")) else dim("h"))
+    sb.append(dim("]"))
+    sb.toString
+  }
+
+  /**
+    * Projects each [[DefnStats]] through the active filter: keep only the
+    * `byPhase` and `byPhaseCount` entries whose phase matches, and recompute
+    * `totalNanos` and `callCount` as the sum over the kept phases. Module
+    * aggregation re-rolls from these filtered defs, so module rows track
+    * the filter automatically.
+    *
+    * `loc` isn't per-phase and passes through unchanged.
+    */
+  private def applyFilter(snap: Vector[DefnStats], f: PhaseFilter): Vector[DefnStats] = {
+    if (f == PhaseFilter.All) return snap
+    snap.map { s =>
+      val keptPhases = s.byPhase.filter { case (p, _) => matchesFilter(p, f) }
+      val keptCounts = s.byPhaseCount.filter { case (p, _) => matchesFilter(p, f) }
+      val keptTotal = keptPhases.values.sum
+      // Sum of per-phase counts cannot overflow Int in any realistic build.
+      val keptCount = keptCounts.values.sum.toInt
+      s.copy(totalNanos = keptTotal, callCount = keptCount, byPhase = keptPhases, byPhaseCount = keptCounts)
+    }
   }
 
   /**
@@ -482,7 +792,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * (right-aligned under `threads`).
     */
   private def renderStats(sb: StringBuilder, elapsed: Long): Unit = {
-    val (heapUsedMb, heapMaxMb) = heapUsage()
+    val (heapUsedMb, heapMaxMb) = if (completed.get()) frozenHeap else heapUsage()
     val heapUsedField = f"$heapUsedMb%4d MB"
     val heapMaxField = f"$heapMaxMb%4d MB"
     val heapRatio = if (heapMaxMb <= 0) 0.0 else heapUsedMb.toDouble / heapMaxMb
@@ -570,7 +880,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       sb.append(" " * (nameMax - nameText.length))
       sb.append(' ')
       sb.append(dim(locField))
-      appendNumericFields(sb, locLines, s.callCount.toLong, phase, s.totalNanos, pctCpu, pctWall, layout)
+      appendNumericFields(sb, locLines, s.callCount.toLong, phase, s.totalNanos, pctCpu, pctWall, layout, aggregate = false)
       sb.append(' ')
       sb.append('\n')
     }
@@ -602,7 +912,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
       sb.append(' ')
       sb.append(modField)
-      appendNumericFields(sb, m.totalLocLines, m.totalCallCount, phase, m.totalNanos, pctCpu, pctWall, layout)
+      appendNumericFields(sb, m.totalLocLines, m.totalCallCount, phase, m.totalNanos, pctCpu, pctWall, layout, aggregate = true)
       sb.append(' ')
       sb.append('\n')
     }
@@ -625,24 +935,35 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * Appends the trailing numeric columns (LOC, n, phase, time, %cpu, %wall)
     * to a row, honoring the layout's visibility flags. Always emits a leading
     * separator before each column it writes.
+    *
+    * `aggregate` skips all warning colors. The `style*` thresholds are
+    * calibrated for individual defs; at module scale, sums-across-defs
+    * would trip the thresholds unconditionally and the colors become
+    * noise rather than signal.
     */
   private def appendNumericFields(sb: StringBuilder, locLines: Int, callCount: Long, phase: String,
-                                   nanos: Long, pctCpu: Double, pctWall: Double, layout: Layout): Unit = {
+                                   nanos: Long, pctCpu: Double, pctWall: Double, layout: Layout,
+                                   aggregate: Boolean): Unit = {
     if (layout.showLOC) {
       sb.append(' ')
-      sb.append(lpad(if (locLines > 0) locLines.toString else "-", 4))
+      val locStr = if (locLines > 0) locLines.toString else "-"
+      sb.append(lpad(locStr, 4))
     }
     if (layout.showN) {
       sb.append(' ')
-      sb.append(lpad(callCount.toString, 4))
+      val padded = lpad(callCount.toString, 4)
+      sb.append(if (aggregate) padded else styleN(padded, callCount))
     }
     if (layout.showPhase) {
       sb.append(' ')
       sb.append(rpad(truncate(phase, 10), 10))
     }
-    sb.append(' '); sb.append(styleTime(lpad(formatMillis(nanos), 9), nanos))
-    sb.append(' '); sb.append(stylePctCpu(f"$pctCpu%5.1f%%", pctCpu))
-    sb.append(' '); sb.append(stylePctWall(f"$pctWall%5.1f%%", pctWall))
+    val timeField = lpad(formatMillis(nanos), 9)
+    val cpuField  = f"$pctCpu%5.1f%%"
+    val wallField = f"$pctWall%5.1f%%"
+    sb.append(' '); sb.append(if (aggregate) timeField else styleTime(timeField, nanos))
+    sb.append(' '); sb.append(if (aggregate) cpuField else stylePctCpu(cpuField, pctCpu))
+    sb.append(' '); sb.append(if (aggregate) wallField else stylePctWall(wallField, pctWall))
   }
 
   /**
