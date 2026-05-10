@@ -145,6 +145,8 @@ object CompilerTop {
   private val Green: String = s"$ESC[32m"
   /** ANSI foreground yellow. */
   private val Yellow: String = s"$ESC[33m"
+  /** ANSI foreground blue. */
+  private val Blue: String = s"$ESC[34m"
   /** ANSI foreground cyan. */
   private val Cyan: String = s"$ESC[36m"
   /** ANSI foreground bright black (gray). */
@@ -164,6 +166,8 @@ object CompilerTop {
   private def yellow(s: String): String = color(s, Yellow)
   /** Wraps `s` in ANSI green codes. */
   private def green(s: String): String = color(s, Green)
+  /** Wraps `s` in ANSI blue codes. */
+  private def blue(s: String): String = color(s, Blue)
   /** Wraps `s` in ANSI cyan codes. */
   private def cyan(s: String): String = color(s, Cyan)
 
@@ -784,7 +788,10 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     sb.append(bold(rpad(phase, MaxPhaseLen)))
     sb.append(dim("  progress "))
     sb.append(dim("["))
-    sb.append(green("█" * filled))
+    // Blue while compilation is in progress; green once finished so the bar
+    // doubles as a "done" indicator.
+    val filledBar = "█" * filled
+    sb.append(if (isDone) green(filledBar) else blue(filledBar))
     sb.append(dim("░" * (BarWidth - filled)))
     sb.append(dim("] "))
     sb.append(f"$done%2d/$TotalPhases%2d")
