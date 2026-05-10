@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.*
 
-import java.io.{File, PrintStream}
+import java.io.{File, OutputStream, PrintStream}
 import java.net.BindException
 import java.nio.file.Paths
 
@@ -104,7 +104,12 @@ object Main {
     // check if command was passed.
     try {
       implicit val formatter: Formatter = Formatter.getDefault
-      implicit val out: PrintStream = System.err
+      // In --top mode the live TUI owns the screen; suppressing the Bootstrap
+      // status banner ("Found flix.toml…", dependency-resolution chatter)
+      // avoids it flashing under the TUI before the first repaint.
+      implicit val out: PrintStream =
+        if (cmdOpts.top) new PrintStream(OutputStream.nullOutputStream())
+        else System.err
 
       cmdOpts.command match {
         case Command.None =>
