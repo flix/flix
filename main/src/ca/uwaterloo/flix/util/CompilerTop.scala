@@ -80,6 +80,10 @@ object CompilerTop {
     case object Cls extends Sort
     /** Most type constraints first — surfaces type-checking-heavy defs. */
     case object Cns extends Sort
+    /** Most type variables first — surfaces broadly polymorphic defs. */
+    case object Tvars extends Sort
+    /** Most effect variables first — surfaces effect-polymorphic defs. */
+    case object Evars extends Sort
   }
 
   /** How often the screen refreshes, in milliseconds (5 FPS). */
@@ -285,8 +289,10 @@ object CompilerTop {
     * @param byPhase        phase → summed nanoseconds across the module's defs.
     * @param byPhaseCount   phase → summed track-call counts across the module's defs.
     * @param totalCns       summed Typer constraint counts across the module's defs.
+    * @param totalTvars     summed `Kind.Star` type-variable counts across the module's defs.
+    * @param totalEvars     summed `Kind.Eff`  effect-variable counts across the module's defs.
     */
-  private final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], totalCns: Long) {
+  private final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
@@ -313,7 +319,9 @@ object CompilerTop {
         }
       }
       val totalCns = defs.iterator.map(_.cns).sum
-      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase, byPhaseCount, totalCns)
+      val totalTvars = defs.iterator.map(_.tvars.toLong).sum
+      val totalEvars = defs.iterator.map(_.evars.toLong).sum
+      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase, byPhaseCount, totalCns, totalTvars, totalEvars)
     }.toVector.sortBy(m => -moduleSortKey(m, srt))
   }
 
@@ -338,20 +346,24 @@ object CompilerTop {
     case Sort.Hotness =>
       val lines = locLineCount(s.loc)
       if (lines <= 0) 0.0 else s.totalNanos.toDouble / lines
-    case Sort.Mono => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
-    case Sort.Opt  => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
-    case Sort.Cls  => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
-    case Sort.Cns  => s.cns.toDouble
+    case Sort.Mono  => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
+    case Sort.Opt   => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
+    case Sort.Cls   => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
+    case Sort.Cns   => s.cns.toDouble
+    case Sort.Tvars => s.tvars.toDouble
+    case Sort.Evars => s.evars.toDouble
   }
 
   /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
   private def moduleSortKey(m: ModuleStats, srt: Sort): Double = srt match {
     case Sort.Time    => m.totalNanos.toDouble
     case Sort.Hotness => if (m.totalLocLines <= 0) 0.0 else m.totalNanos.toDouble / m.totalLocLines
-    case Sort.Mono => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
-    case Sort.Opt  => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
-    case Sort.Cls  => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
-    case Sort.Cns  => m.totalCns.toDouble
+    case Sort.Mono  => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
+    case Sort.Opt   => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
+    case Sort.Cls   => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
+    case Sort.Cns   => m.totalCns.toDouble
+    case Sort.Tvars => m.totalTvars.toDouble
+    case Sort.Evars => m.totalEvars.toDouble
   }
 
   /** Fallback terminal height when JLine cannot determine the real one. */
@@ -395,6 +407,15 @@ object CompilerTop {
   private val CountsColWidth: Int = 3 * (1 + 4)
   /** Width contribution of the optional cns column (separator + 5-char numeric field). */
   private val CnsColWidth: Int = 1 + 5
+  /** Width contribution of the optional tvars column (separator + 4-char numeric field). */
+  private val TvarsColWidth: Int = 1 + 4
+  /** Width contribution of the optional evars column (separator + 4-char numeric field). */
+  private val EvarsColWidth: Int = 1 + 4
+  /**
+    * Combined width contribution of all three frontend-only columns
+    * (`cns`, `tv`, `ev`) including separators.
+    */
+  private val FrontendColsWidth: Int = CnsColWidth + TvarsColWidth + EvarsColWidth
   /** Width contribution of the optional dominant-phase column (separator + width). */
   private val PhaseColWidth: Int = 1 + 10
 
@@ -418,7 +439,7 @@ object CompilerTop {
     val countsAllowed = activeFilter == PhaseFilter.Backend
     val countsW = if (countsAllowed) CountsColWidth else 0
     val cnsAllowed = activeFilter == PhaseFilter.Frontend
-    val cnsW = if (cnsAllowed) CnsColWidth else 0
+    val cnsW = if (cnsAllowed) FrontendColsWidth else 0
     // Combined extra contribution of all filter-specific count columns. At
     // most one filter's columns are active for any given filter, so this is
     // either CountsColWidth, CnsColWidth, or zero.
@@ -661,6 +682,8 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
         case 'o' | 'O' => sort.set(Sort.Opt)
         case 'c' | 'C' => sort.set(Sort.Cls)
         case 'n' | 'N' => sort.set(Sort.Cns)
+        case 'v' | 'V' => sort.set(Sort.Tvars)
+        case 'e' | 'E' => sort.set(Sort.Evars)
         case _         => // ignored
       }
     }
@@ -933,6 +956,10 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     if (layout.showCns) {
       val cnsP = lpad("cns", 5)
       sb.append(' '); sb.append(keyHeader(cnsP, cnsP.indexOf('n'), activeSort == Sort.Cns))
+      val tvP  = lpad("tv",  4)
+      sb.append(' '); sb.append(keyHeader(tvP,  tvP.indexOf('v'),  activeSort == Sort.Tvars))
+      val evP  = lpad("ev",  4)
+      sb.append(' '); sb.append(keyHeader(evP,  evP.indexOf('e'),  activeSort == Sort.Evars))
     }
     if (layout.showPhase) {
       sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
@@ -973,7 +1000,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       sb.append(" " * (nameMax - nameText.length))
       sb.append(' ')
       sb.append(dim(locField))
-      appendNumericFields(sb, locLines, s.byPhaseCount, s.cns, phase, s.totalNanos, pctCpu, pctWall, layout, aggregate = false)
+      appendNumericFields(sb, locLines, s.byPhaseCount, s.cns, s.tvars.toLong, s.evars.toLong, phase, s.totalNanos, pctCpu, pctWall, layout, aggregate = false)
       sb.append(' ')
       sb.append('\n')
     }
@@ -1004,7 +1031,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
       sb.append(' ')
       sb.append(modField)
-      appendNumericFields(sb, m.totalLocLines, m.byPhaseCount, m.totalCns, phase, m.totalNanos, pctCpu, pctWall, layout, aggregate = true)
+      appendNumericFields(sb, m.totalLocLines, m.byPhaseCount, m.totalCns, m.totalTvars, m.totalEvars, phase, m.totalNanos, pctCpu, pctWall, layout, aggregate = true)
       sb.append(' ')
       sb.append('\n')
     }
@@ -1034,6 +1061,10 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     if (layout.showCns) {
       val cnsP = lpad("cns", 5)
       sb.append(' '); sb.append(keyHeader(cnsP, cnsP.indexOf('n'), activeSort == Sort.Cns))
+      val tvP  = lpad("tv",  4)
+      sb.append(' '); sb.append(keyHeader(tvP,  tvP.indexOf('v'),  activeSort == Sort.Tvars))
+      val evP  = lpad("ev",  4)
+      sb.append(' '); sb.append(keyHeader(evP,  evP.indexOf('e'),  activeSort == Sort.Evars))
     }
     if (layout.showPhase) {
       sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
@@ -1055,7 +1086,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     * colors become noise. Counts (mono / opt / cls / cns) render plain in
     * both tables.
     */
-  private def appendNumericFields(sb: StringBuilder, locLines: Int, byPhaseCount: Map[String, Long], cns: Long, phase: String,
+  private def appendNumericFields(sb: StringBuilder, locLines: Int, byPhaseCount: Map[String, Long], cns: Long, tvars: Long, evars: Long, phase: String,
                                    nanos: Long, pctCpu: Double, pctWall: Double, layout: Layout,
                                    aggregate: Boolean): Unit = {
     if (layout.showLOC) {
@@ -1073,6 +1104,8 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     }
     if (layout.showCns) {
       sb.append(' '); sb.append(lpad(cns.toString, 5))
+      sb.append(' '); sb.append(lpad(tvars.toString, 4))
+      sb.append(' '); sb.append(lpad(evars.toString, 4))
     }
     if (layout.showPhase) {
       sb.append(' ')
