@@ -78,6 +78,8 @@ object CompilerTop {
     case object Opt extends Sort
     /** Most class files emitted first — surfaces JVM fan-out from polymorphism / closures. */
     case object Cls extends Sort
+    /** Most type constraints first — surfaces type-checking-heavy defs. */
+    case object Cns extends Sort
   }
 
   /** How often the screen refreshes, in milliseconds (5 FPS). */
@@ -278,8 +280,9 @@ object CompilerTop {
     * @param totalLocLines  summed source-line counts across the module's defs.
     * @param byPhase        phase → summed nanoseconds across the module's defs.
     * @param byPhaseCount   phase → summed track-call counts across the module's defs.
+    * @param totalCns       summed Typer constraint counts across the module's defs.
     */
-  private final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long]) {
+  private final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], totalCns: Long) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
@@ -305,7 +308,8 @@ object CompilerTop {
           m.updated(phase, m.getOrElse(phase, 0L) + n)
         }
       }
-      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase, byPhaseCount)
+      val totalCns = defs.iterator.map(_.cns).sum
+      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase, byPhaseCount, totalCns)
     }.toVector.sortBy(m => -moduleSortKey(m, srt))
   }
 
@@ -333,6 +337,7 @@ object CompilerTop {
     case Sort.Mono => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
     case Sort.Opt  => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
     case Sort.Cls  => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
+    case Sort.Cns  => s.cns.toDouble
   }
 
   /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
@@ -342,6 +347,7 @@ object CompilerTop {
     case Sort.Mono => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
     case Sort.Opt  => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
     case Sort.Cls  => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
+    case Sort.Cns  => m.totalCns.toDouble
   }
 
   /** Fallback terminal height when JLine cannot determine the real one. */
@@ -352,19 +358,20 @@ object CompilerTop {
 
   /**
     * Column layout for the per-frame table render. Computed from the current
-    * terminal width: when the terminal is narrow, the optional LOC / counts /
-    * phase columns are dropped in that order (lowest-signal first). When the
-    * terminal is wide, the surplus is distributed between the DefnSym and
-    * location columns proportionally to their default widths.
+    * terminal width: when the terminal is narrow, the optional LOC / counts
+    * / cns / phase columns are dropped in that order (lowest-signal first).
+    * When the terminal is wide, the surplus is distributed between the
+    * DefnSym and location columns proportionally to their default widths.
     *
     * @param symWidth    width of the DefnSym column.
     * @param locWidth    width of the location column.
     * @param showLOC     whether to render the LOC column.
-    * @param showCounts  whether to render the mono / opt / cls per-phase count columns.
+    * @param showCounts  whether to render the mono / opt / cls per-phase count columns (backend filter only).
+    * @param showCns     whether to render the cns (constraints) column (frontend filter only).
     * @param showPhase   whether to render the dominant-phase column.
     * @param totalWidth  total rendered width of the row, less leading/trailing pad.
     */
-  private final case class Layout(symWidth: Int, locWidth: Int, showLOC: Boolean, showCounts: Boolean, showPhase: Boolean, totalWidth: Int)
+  private final case class Layout(symWidth: Int, locWidth: Int, showLOC: Boolean, showCounts: Boolean, showCns: Boolean, showPhase: Boolean, totalWidth: Int)
 
   /** Default width of the DefnSym column when the terminal is wide enough. */
   private val DefaultSymWidth: Int = 24
@@ -382,16 +389,21 @@ object CompilerTop {
   private val LocColWidth: Int = 1 + 4
   /** Width contribution of the optional mono / opt / cls per-phase count columns (3 × separator + width). */
   private val CountsColWidth: Int = 3 * (1 + 4)
+  /** Width contribution of the optional cns column (separator + 5-char numeric field). */
+  private val CnsColWidth: Int = 1 + 5
   /** Width contribution of the optional dominant-phase column (separator + width). */
   private val PhaseColWidth: Int = 1 + 10
 
   /**
     * Picks a [[Layout]] for the given terminal width by trying tiers in
-    * descending feature order. The mono / opt / cls counts are filter-gated:
-    * they only carry useful signal under [[PhaseFilter.Backend]] (mono runs
-    * once per def in the all/frontend views, opt and cls are essentially
-    * zero), so we hide the columns and reclaim the width when the user
-    * isn't filtering to backend.
+    * descending feature order. The optional count-style columns are
+    * filter-gated to the views where their values are meaningful:
+    *   - `mono` / `opt` / `cls` only under [[PhaseFilter.Backend]] (the
+    *     phases that populate them only fire in the backend pipeline).
+    *   - `cns` only under [[PhaseFilter.Frontend]] (constraint generation
+    *     is purely a Typer concern).
+    * Outside their respective filters, the columns are hidden and the
+    * reclaimed width expands the sym / location text columns instead.
     */
   private def computeLayout(cols: Int, activeFilter: PhaseFilter): Layout = {
     // Width contribution of the "fixed" half: separator before time + tail.
@@ -399,12 +411,17 @@ object CompilerTop {
     // Width of just the text section (sym + 1 + location) at default sizes.
     def textWidth(symW: Int, locW: Int): Int = symW + 1 + locW
 
-    // The counts columns are only meaningful in the backend view.
     val countsAllowed = activeFilter == PhaseFilter.Backend
     val countsW = if (countsAllowed) CountsColWidth else 0
+    val cnsAllowed = activeFilter == PhaseFilter.Frontend
+    val cnsW = if (cnsAllowed) CnsColWidth else 0
+    // Combined extra contribution of all filter-specific count columns. At
+    // most one filter's columns are active for any given filter, so this is
+    // either CountsColWidth, CnsColWidth, or zero.
+    val extraColsW = countsW + cnsW
 
     // Try tiers in descending feature order.
-    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + countsW + PhaseColWidth + tail
+    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + extraColsW + PhaseColWidth + tail
     if (cols >= full) {
       // Surplus → expand sym (~46%) and location (~54%) proportionally.
       val extra = cols - full
@@ -412,32 +429,30 @@ object CompilerTop {
       val extraLoc = extra - extraSym
       val symW = DefaultSymWidth + extraSym
       val locW = DefaultLocWidth + extraLoc
-      return Layout(symW, locW, showLOC = true, showCounts = countsAllowed, showPhase = true,
-        totalWidth = textWidth(symW, locW) + LocColWidth + countsW + PhaseColWidth + tail)
+      return Layout(symW, locW, showLOC = true, showCounts = countsAllowed, showCns = cnsAllowed, showPhase = true,
+        totalWidth = textWidth(symW, locW) + LocColWidth + extraColsW + PhaseColWidth + tail)
     }
 
     // Tier: drop phase.
-    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + countsW + tail
+    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + extraColsW + tail
     if (cols >= noPhase)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = countsAllowed, showPhase = false, noPhase)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = countsAllowed, showCns = cnsAllowed, showPhase = false, noPhase)
 
-    // Tier: drop phase + counts. (When `countsAllowed` is false, the counts
-    // contribution was already 0, making this tier identical to the previous
-    // one and unreachable — fine, the previous tier returns first.)
-    val noPhaseNoCounts = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + tail
-    if (cols >= noPhaseNoCounts)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = false, showPhase = false, noPhaseNoCounts)
+    // Tier: drop phase + filter-specific counts (mono/opt/cls or cns).
+    val noPhaseNoExtras = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + tail
+    if (cols >= noPhaseNoExtras)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = false, showCns = false, showPhase = false, noPhaseNoExtras)
 
-    // Tier: drop phase + counts + LOC.
+    // Tier: drop phase + extras + LOC.
     val noOptional = textWidth(DefaultSymWidth, DefaultLocWidth) + tail
     if (cols >= noOptional)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = false, showCounts = false, showPhase = false, noOptional)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = false, showCounts = false, showCns = false, showPhase = false, noOptional)
 
     // Even minimum tier doesn't fit; shrink sym/locWidth to floors.
     val available = (cols - tail).max(MinSymWidth + 1 + MinLocWidth)
     val symW = MinSymWidth.max(available * 46 / 100)
     val locW = MinLocWidth.max(available - 1 - symW)
-    Layout(symW, locW, showLOC = false, showCounts = false, showPhase = false,
+    Layout(symW, locW, showLOC = false, showCounts = false, showCns = false, showPhase = false,
       textWidth(symW, locW) + tail)
   }
 
@@ -641,6 +656,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
         case 'm' | 'M' => sort.set(Sort.Mono)
         case 'o' | 'O' => sort.set(Sort.Opt)
         case 'c' | 'C' => sort.set(Sort.Cls)
+        case 'n' | 'N' => sort.set(Sort.Cns)
         case _         => // ignored
       }
     }
@@ -894,6 +910,10 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       val optP  = lpad("opt", 4);  sb.append(' '); sb.append(keyHeader(optP,  optP.indexOf('o'),  activeSort == Sort.Opt))
       val clsP  = lpad("cls", 4);  sb.append(' '); sb.append(keyHeader(clsP,  clsP.indexOf('c'),  activeSort == Sort.Cls))
     }
+    if (layout.showCns) {
+      val cnsP = lpad("cns", 5)
+      sb.append(' '); sb.append(keyHeader(cnsP, cnsP.indexOf('n'), activeSort == Sort.Cns))
+    }
     if (layout.showPhase) {
       sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
     }
@@ -933,7 +953,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       sb.append(" " * (nameMax - nameText.length))
       sb.append(' ')
       sb.append(dim(locField))
-      appendNumericFields(sb, locLines, s.byPhaseCount, phase, s.totalNanos, pctCpu, pctWall, layout, aggregate = false)
+      appendNumericFields(sb, locLines, s.byPhaseCount, s.cns, phase, s.totalNanos, pctCpu, pctWall, layout, aggregate = false)
       sb.append(' ')
       sb.append('\n')
     }
@@ -964,7 +984,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
 
       sb.append(' ')
       sb.append(modField)
-      appendNumericFields(sb, m.totalLocLines, m.byPhaseCount, phase, m.totalNanos, pctCpu, pctWall, layout, aggregate = true)
+      appendNumericFields(sb, m.totalLocLines, m.byPhaseCount, m.totalCns, phase, m.totalNanos, pctCpu, pctWall, layout, aggregate = true)
       sb.append(' ')
       sb.append('\n')
     }
@@ -991,6 +1011,10 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       val optP  = lpad("opt", 4);  sb.append(' '); sb.append(keyHeader(optP,  optP.indexOf('o'),  activeSort == Sort.Opt))
       val clsP  = lpad("cls", 4);  sb.append(' '); sb.append(keyHeader(clsP,  clsP.indexOf('c'),  activeSort == Sort.Cls))
     }
+    if (layout.showCns) {
+      val cnsP = lpad("cns", 5)
+      sb.append(' '); sb.append(keyHeader(cnsP, cnsP.indexOf('n'), activeSort == Sort.Cns))
+    }
     if (layout.showPhase) {
       sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
     }
@@ -1001,17 +1025,17 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
   }
 
   /**
-    * Appends the trailing numeric columns (LOC, mono / opt / cls, phase,
-    * time, %cpu, %wall) to a row, honoring the layout's visibility flags.
-    * Always emits a leading separator before each column it writes.
+    * Appends the trailing numeric columns (LOC, mono / opt / cls, cns,
+    * phase, time, %cpu, %wall) to a row, honoring the layout's visibility
+    * flags. Always emits a leading separator before each column it writes.
     *
     * `aggregate` skips all warning colors on `time` / `%cpu` / `%wall`. The
     * `style*` thresholds are calibrated for individual defs; at module
     * scale, sums-across-defs trip the thresholds unconditionally and the
-    * colors become noise. Counts (mono / opt / cls) render plain in both
-    * tables.
+    * colors become noise. Counts (mono / opt / cls / cns) render plain in
+    * both tables.
     */
-  private def appendNumericFields(sb: StringBuilder, locLines: Int, byPhaseCount: Map[String, Long], phase: String,
+  private def appendNumericFields(sb: StringBuilder, locLines: Int, byPhaseCount: Map[String, Long], cns: Long, phase: String,
                                    nanos: Long, pctCpu: Double, pctWall: Double, layout: Layout,
                                    aggregate: Boolean): Unit = {
     if (layout.showLOC) {
@@ -1026,6 +1050,9 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
       sb.append(' '); sb.append(lpad(mono.toString, 4))
       sb.append(' '); sb.append(lpad(opt.toString, 4))
       sb.append(' '); sb.append(lpad(cls.toString, 4))
+    }
+    if (layout.showCns) {
+      sb.append(' '); sb.append(lpad(cns.toString, 5))
     }
     if (layout.showPhase) {
       sb.append(' ')

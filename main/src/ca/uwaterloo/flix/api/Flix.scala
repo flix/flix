@@ -439,6 +439,9 @@ class Flix {
     if (opts.compilerTop && compilerTop.isEmpty) {
       val p = new CompilerProfiler(() => getCurrentPhaseName)
       setProfiler(Some(p))
+      // The profiler subscribes to compiler events (e.g. NewConstraintsDef)
+      // to track signals that are awkward to thread through `track()`.
+      addListener(p)
       val t = new CompilerTop(this, p)
       t.start()
       compilerTop = Some(t)
