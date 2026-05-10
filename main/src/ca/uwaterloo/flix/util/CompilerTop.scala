@@ -808,7 +808,6 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     }
     sb.append("   ")
     sb.append(renderFilterLegend(activeFilter))
-    if (isDone) sb.append(dim("   press q to quit"))
     sb.append('\n')
   }
 
