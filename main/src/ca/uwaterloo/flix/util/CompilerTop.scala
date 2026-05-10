@@ -819,13 +819,27 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
   private def renderFilterLegend(active: PhaseFilter): String = {
     val sb = new StringBuilder
     sb.append(dim("["))
-    sb.append(if (active == PhaseFilter.All) bold(cyan("a")) else dim("a"))
+    sb.append(filterLegendEntry("all",      active == PhaseFilter.All))
     sb.append(dim("|"))
-    sb.append(if (active == PhaseFilter.Frontend) bold(cyan("f")) else dim("f"))
+    sb.append(filterLegendEntry("frontend", active == PhaseFilter.Frontend))
     sb.append(dim("|"))
-    sb.append(if (active == PhaseFilter.Backend) bold(cyan("b")) else dim("b"))
+    sb.append(filterLegendEntry("backend",  active == PhaseFilter.Backend))
     sb.append(dim("]"))
     sb.toString
+  }
+
+  /**
+    * Renders one filter-legend entry: the first letter is the keystroke,
+    * underlined. The whole word is bold cyan when this is the active filter,
+    * dim otherwise. Underline state is toggled surgically so the inactive
+    * dim styling and the active bold+cyan styling pass through unchanged on
+    * the remaining letters.
+    */
+  private def filterLegendEntry(label: String, active: Boolean): String = {
+    val key = label.head.toString
+    val rest = label.tail
+    if (active) s"$BoldCode$Yellow$UnderlineCode$key$NoUnderlineCode$rest$Reset"
+    else s"$DimCode$UnderlineCode$key$NoUnderlineCode$rest$Reset"
   }
 
   /**
