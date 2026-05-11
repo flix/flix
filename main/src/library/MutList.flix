@@ -279,7 +279,10 @@ pub mod MutList {
         def loop(i) = {
             if (i >= v->length)
                 None
-            else if (x == Array.get(i, v->values)) Some(i) else loop(i + 1)
+            else if (x == Array.get(i, v->values))
+                Some(i)
+            else
+                loop(i + 1)
         };
         loop(0)
 
