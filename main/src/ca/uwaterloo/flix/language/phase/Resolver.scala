@@ -1014,103 +1014,16 @@ object Resolver {
       val b = resolveExp(exp, scp0)
       ResolvedAst.Expr.ArrayLength(b, loc)
 
-    case NamedAst.Expr.NewStructOrObject(anonName, tpe, region0, fields0, constructors, methods, loc) =>
+    case NamedAst.Expr.AmbiguousNew(anonName, tpe, region0, fields0, constructors, methods, loc) =>
       val qnameOpt = tpe match {
         case NamedAst.Type.Ambiguous(qname, _) => Some(qname)
         case _ => None
       }
       val isStructShape = region0.isDefined || fields0.nonEmpty
-      if (isStructShape) {
-        // Body is struct-shaped: name must resolve to a struct.
-        qnameOpt match {
-          case Some(qname) =>
-            lookupStruct(qname, scp0, ns0, root) match {
-              case Result.Ok(st0) =>
-                checkStructIsAccessible(st0, ns0, loc)
-                val fields = fields0.map {
-                  case (f, exp) =>
-                    val e = resolveExp(exp, scp0)
-                    val label = st0.fields.find(_.sym.name == f.name) match {
-                      case Some(field) => Name.Label(field.sym.name, field.sym.loc)
-                      case None => Name.Label(f.name, SourceLocation.Unknown)
-                    }
-                    val fieldSym = Symbol.mkStructFieldSym(st0.sym, label)
-                    val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
-                    (fieldSymUse, e)
-                }
-                val regionOpt = region0.map(resolveExp(_, scp0))
-                val providedFieldNames = fields0.map { case (k, _) => Name.Label(k.name, k.loc) }
-                val expectedFieldNames = st0.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
-                val extraFields = providedFieldNames.diff(expectedFieldNames)
-                val missingFields = expectedFieldNames.diff(providedFieldNames)
-                val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
-                val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
-                (extraFieldErrors ++ missingFieldErrors).foreach(sctx.errors.add)
-                ResolvedAst.Expr.StructNew(st0.sym, fields, regionOpt, loc)
-              case Result.Err(error) =>
-                // Probe whether the name actually refers to a Java class — if so, body shape mismatched.
-                val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
-                getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
-                  case Some(_) =>
-                    val mismatch = ResolutionError.MismatchedNewBody(qname, "JVM constructors or methods", loc)
-                    sctx.errors.add(mismatch)
-                    ResolvedAst.Expr.Error(mismatch)
-                  case None =>
-                    sctx.errors.add(error)
-                    ResolvedAst.Expr.Error(error)
-                }
-            }
-          case None =>
-            val err = ResolutionError.IllegalNonJavaType(resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root), loc)
-            sctx.errors.add(err)
-            ResolvedAst.Expr.Error(err)
-        }
-      } else {
-        // Body is object-shaped (or empty): name should resolve to a Java class.
-        // First check if the name is actually a struct — that's a body-shape mismatch.
-        val structOpt = qnameOpt.flatMap { qname =>
-          lookupStruct(qname, scp0, ns0, root) match {
-            case Result.Ok(st) => Some(st)
-            case Result.Err(_) => None
-          }
-        }
-        structOpt match {
-          case Some(_) =>
-            val mismatch = ResolutionError.MismatchedNewBody(qnameOpt.get, "struct fields", loc)
-            sctx.errors.add(mismatch)
-            ResolvedAst.Expr.Error(mismatch)
-          case None =>
-            val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
-            val erased = UnkindedType.eraseAliases(t)
-            getNativeClassFromType(erased) match {
-              case Some(clazz) =>
-                val targs = erased.typeArguments
-                val superScp = scp0.withSuperClass(Some(clazz)).withSuperTargs(targs)
-                val cs = constructors.map(visitJvmConstructor(_, superScp))
-                val ms = methods.map(visitJvmMethod(_, superScp))
-                ResolvedAst.Expr.NewObject(anonName, clazz, targs, cs, ms, loc)
-              case None =>
-                erased match {
-                  case _: UnkindedType.Error =>
-                    // Type was undefined — emit a clean UndefinedName for the user.
-                    qnameOpt match {
-                      case Some(qname) =>
-                        val err = ResolutionError.UndefinedName(qname, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, qname.loc)
-                        sctx.errors.add(err)
-                        ResolvedAst.Expr.Error(err)
-                      case None =>
-                        val err = ResolutionError.IllegalNonJavaType(t, t.loc)
-                        sctx.errors.add(err)
-                        ResolvedAst.Expr.Error(err)
-                    }
-                  case _ =>
-                    val err = ResolutionError.IllegalNonJavaType(t, t.loc)
-                    sctx.errors.add(err)
-                    ResolvedAst.Expr.Error(err)
-                }
-            }
-        }
-      }
+      if (isStructShape)
+        resolveAmbiguousNewAsStruct(qnameOpt, tpe, region0, fields0, scp0, loc)
+      else
+        resolveAmbiguousNewAsObject(anonName, qnameOpt, tpe, constructors, methods, scp0, loc)
 
     case NamedAst.Expr.StructGet(exp, field0, loc) =>
       lookupStructField(field0, scp0, ns0, root) match {
@@ -1657,6 +1570,105 @@ object Resolver {
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
       ResolvedAst.JvmMethod(ann, ident, fparams, e, t, p, loc)
+  }
+
+  /**
+    * Resolves an ambiguous `new` expression where the body is struct-shaped (has a region or fields).
+    * The name must refer to a Flix struct. If it resolves to a Java class instead, emits `NewObjectWithStructBody`.
+    */
+  private def resolveAmbiguousNewAsStruct(qnameOpt: Option[Name.QName], tpe: NamedAst.Type, region0: Option[NamedAst.Expr], fields0: List[(Name.Label, NamedAst.Expr)], scp0: LocalScope, loc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    qnameOpt match {
+      case Some(qname) =>
+        lookupStruct(qname, scp0, ns0, root) match {
+          case Result.Ok(st0) =>
+            checkStructIsAccessible(st0, ns0, loc)
+            val fields = fields0.map {
+              case (f, exp) =>
+                val e = resolveExp(exp, scp0)
+                val label = st0.fields.find(_.sym.name == f.name) match {
+                  case Some(field) => Name.Label(field.sym.name, field.sym.loc)
+                  case None => Name.Label(f.name, SourceLocation.Unknown)
+                }
+                val fieldSym = Symbol.mkStructFieldSym(st0.sym, label)
+                val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
+                (fieldSymUse, e)
+            }
+            val regionOpt = region0.map(resolveExp(_, scp0))
+            val providedFieldNames = fields0.map { case (k, _) => Name.Label(k.name, k.loc) }
+            val expectedFieldNames = st0.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
+            val extraFields = providedFieldNames.diff(expectedFieldNames)
+            val missingFields = expectedFieldNames.diff(providedFieldNames)
+            val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
+            val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
+            (extraFieldErrors ++ missingFieldErrors).foreach(sctx.errors.add)
+            ResolvedAst.Expr.StructNew(st0.sym, fields, regionOpt, loc)
+          case Result.Err(error) =>
+            // Probe whether the name actually refers to a Java class — if so, body shape mismatched.
+            val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
+            getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
+              case Some(_) =>
+                val err = ResolutionError.NewObjectWithStructBody(qname, loc)
+                sctx.errors.add(err)
+                ResolvedAst.Expr.Error(err)
+              case None =>
+                sctx.errors.add(error)
+                ResolvedAst.Expr.Error(error)
+            }
+        }
+      case None =>
+        val err = ResolutionError.IllegalNonJavaType(resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root), loc)
+        sctx.errors.add(err)
+        ResolvedAst.Expr.Error(err)
+    }
+  }
+
+  /**
+    * Resolves an ambiguous `new` expression where the body is object-shaped (JVM constructors/methods or empty).
+    * The name must refer to a Java class. If it resolves to a Flix struct instead, emits `NewStructWithObjectBody`.
+    */
+  private def resolveAmbiguousNewAsObject(anonName: String, qnameOpt: Option[Name.QName], tpe: NamedAst.Type, constructors: List[NamedAst.JvmConstructor], methods: List[NamedAst.JvmMethod], scp0: LocalScope, loc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    val structOpt = qnameOpt.flatMap { qname =>
+      lookupStruct(qname, scp0, ns0, root) match {
+        case Result.Ok(st) => Some(st)
+        case Result.Err(_) => None
+      }
+    }
+    structOpt match {
+      case Some(_) =>
+        val err = ResolutionError.NewStructWithObjectBody(qnameOpt.get, loc)
+        sctx.errors.add(err)
+        ResolvedAst.Expr.Error(err)
+      case None =>
+        val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
+        val erased = UnkindedType.eraseAliases(t)
+        getNativeClassFromType(erased) match {
+          case Some(clazz) =>
+            val targs = erased.typeArguments
+            val superScp = scp0.withSuperClass(Some(clazz)).withSuperTargs(targs)
+            val cs = constructors.map(visitJvmConstructor(_, superScp))
+            val ms = methods.map(visitJvmMethod(_, superScp))
+            ResolvedAst.Expr.NewObject(anonName, clazz, targs, cs, ms, loc)
+          case None =>
+            erased match {
+              case _: UnkindedType.Error =>
+                // Type was undefined — emit a clean UndefinedName for the user.
+                qnameOpt match {
+                  case Some(qname) =>
+                    val err = ResolutionError.UndefinedName(qname, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, qname.loc)
+                    sctx.errors.add(err)
+                    ResolvedAst.Expr.Error(err)
+                  case None =>
+                    val err = ResolutionError.IllegalNonJavaType(t, t.loc)
+                    sctx.errors.add(err)
+                    ResolvedAst.Expr.Error(err)
+                }
+              case _ =>
+                val err = ResolutionError.IllegalNonJavaType(t, t.loc)
+                sctx.errors.add(err)
+                ResolvedAst.Expr.Error(err)
+            }
+        }
+    }
   }
 
   /**

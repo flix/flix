@@ -1001,14 +1001,14 @@ object Namer {
       val e = visitExp(exp)
       NamedAst.Expr.ArrayLength(e, loc)
 
-    case DesugaredAst.Expr.NewStructOrObject(tpe, region0, fields0, constructors, methods, loc) =>
+    case DesugaredAst.Expr.AmbiguousNew(tpe, region0, fields0, constructors, methods, loc) =>
       val t = visitType(tpe)
       val region = region0.map(visitExp)
       val fields = fields0.map(visitStructField)
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
       val name = s"Anon$$${flix.genSym.freshId()}"
-      NamedAst.Expr.NewStructOrObject(name, t, region, fields, cs, ms, loc)
+      NamedAst.Expr.AmbiguousNew(name, t, region, fields, cs, ms, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val e = visitExp(exp)

@@ -304,7 +304,7 @@ object SyntaxTree {
 
       case object MatchRuleFragment extends Expr
 
-      case object NewStructOrObject extends Expr
+      case object AmbiguousNew extends Expr
 
       case object StructGet extends Expr
 

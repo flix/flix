@@ -933,7 +933,7 @@ object Weeder2 {
         case TreeKind.Expr.InvokeSuperConstructor => visitInvokeSuperConstructorExpr(tree)
         case TreeKind.Expr.InvokeMethod => visitInvokeMethodExpr(tree)
         case TreeKind.Expr.InvokeSuperMethod => visitInvokeSuperMethodExpr(tree)
-        case TreeKind.Expr.NewStructOrObject => visitNewStructOrObjectExpr(tree)
+        case TreeKind.Expr.AmbiguousNew => visitAmbiguousNewExpr(tree)
         case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
         case TreeKind.Expr.StructPut => visitStructPutExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
@@ -2056,8 +2056,8 @@ object Weeder2 {
       }
     }
 
-    private def visitNewStructOrObjectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.NewStructOrObject)
+    private def visitAmbiguousNewExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.AmbiguousNew)
       val fieldTrees = pickAll(TreeKind.Expr.LiteralStructFieldFragment, tree)
       val constructorTrees = pickAll(TreeKind.Expr.JvmConstructor, tree)
       val methodTrees = pickAll(TreeKind.Expr.JvmMethod, tree)
@@ -2070,7 +2070,7 @@ object Weeder2 {
         traverse(methodTrees)(visitJvmMethod)
       ) {
         (tpe, region, fields, constructors, methods) =>
-          Expr.NewStructOrObject(tpe, region, fields, constructors, methods, tree.loc)
+          Expr.AmbiguousNew(tpe, region, fields, constructors, methods, tree.loc)
       }
     }
 

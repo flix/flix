@@ -197,7 +197,7 @@ object WeededAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class NewStructOrObject(tpe: Type, region: Option[Expr], fields: List[(Name.Label, Expr)], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class AmbiguousNew(tpe: Type, region: Option[Expr], fields: List[(Name.Label, Expr)], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 

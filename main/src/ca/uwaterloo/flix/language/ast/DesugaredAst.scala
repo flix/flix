@@ -177,7 +177,7 @@ object DesugaredAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class NewStructOrObject(tpe: Type, region: Option[Expr], fields: List[(Name.Label, Expr)], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class AmbiguousNew(tpe: Type, region: Option[Expr], fields: List[(Name.Label, Expr)], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 
