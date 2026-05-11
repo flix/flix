@@ -391,9 +391,12 @@ pub mod RedBlackTree {
                             true
                         else
                             par (
-                                l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                                r <- visitSubtree((n - 2) / 2, b) // We spawn two new threads leaving us with n - 2
-                            ) yield l or r // that we distribute over the two spanned threads.
+                                // We divide the rest of the threads as follows:
+                                // We spawn two new threads leaving us with n - 2
+                                // that we distribute over the two spanned threads.
+                                l <- visitSubtree((n - 2) / 2, a);
+                                r <- visitSubtree((n - 2) / 2, b)
+                            ) yield l or r
                     case _ => false
                 }
         };
@@ -446,9 +449,12 @@ pub mod RedBlackTree {
                             false
                         else
                             par (
-                                l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                                r <- visitSubtree((n - 2) / 2, b) // We spawn two new threads leaving us with n - 2
-                            ) yield l and r // that we distribute over the two spanned threads.
+                                // We divide the rest of the threads as follows:
+                                // We spawn two new threads leaving us with n - 2
+                                // that we distribute over the two spanned threads.
+                                l <- visitSubtree((n - 2) / 2, a);
+                                r <- visitSubtree((n - 2) / 2, b)
+                            ) yield l and r
                     case _ => false
                 }
         };
@@ -736,9 +742,12 @@ pub mod RedBlackTree {
                     case DoubleBlackLeaf => DoubleBlackLeaf
                     case Node(c, a, k, v, b) =>
                         par (
-                            l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                            r <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
-                            v1 <- f(k, v) // that we distribute over the two spanned threads.
+                            // We divide the rest of the threads as follows:
+                            // We spawn two new threads leaving us with n - 2
+                            // that we distribute over the two spanned threads.
+                            l <- visitSubtree((n - 2) / 2, a);
+                            r <- visitSubtree((n - 2) / 2, b);
+                            v1 <- f(k, v)
                         ) yield Node(c, l, k, v1, r)
                 }
         };
@@ -795,9 +804,12 @@ pub mod RedBlackTree {
                     case DoubleBlackLeaf => 0
                     case Node(_, a, k, v, b) =>
                         par (
-                            l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                            r <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
-                            v1 <- if (f(k, v)) 1 else 0 // that we distribute over the two spanned threads.
+                            // We divide the rest of the threads as follows:
+                            // We spawn two new threads leaving us with n - 2
+                            // that we distribute over the two spanned threads.
+                            l <- visitSubtree((n - 2) / 2, a);
+                            r <- visitSubtree((n - 2) / 2, b);
+                            v1 <- if (f(k, v)) 1 else 0
                         ) yield l + v1 + r
                 }
         };
@@ -863,9 +875,12 @@ pub mod RedBlackTree {
                     case DoubleBlackLeaf => 0
                     case Node(_, a, k, v, b) =>
                         par (
-                            l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                            r <- visitSubtree((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
-                            v1 <- f(k, v) // that we distribute over the two spanned threads.
+                            // We divide the rest of the threads as follows:
+                            // We spawn two new threads leaving us with n - 2
+                            // that we distribute over the two spanned threads.
+                            l <- visitSubtree((n - 2) / 2, a);
+                            r <- visitSubtree((n - 2) / 2, b);
+                            v1 <- f(k, v)
                         ) yield l + v1 + r
                 }
         };
@@ -962,10 +977,12 @@ pub mod RedBlackTree {
                     case DoubleBlackLeaf => None
                     case Node(_, a, k, v, b) =>
                         par (
-                            l <- visitSubtree((n - 2) / 2, a); // We divide the rest of the threads as follows:
-                            r <- visitSubtree((n - 2) / 2, b) // We spawn two new threads leaving us with n - 2
-                        ) yield match (l, r) {
+                            // We divide the rest of the threads as follows:
+                            // We spawn two new threads leaving us with n - 2
                             // that we distribute over the two spanned threads.
+                            l <- visitSubtree((n - 2) / 2, a);
+                            r <- visitSubtree((n - 2) / 2, b)
+                        ) yield match (l, r) {
                             case (None, None)           => Some((k, v))
                             case (None, Some((kr, vr))) => Some(cmp(k, v, kr, vr))
                             case (Some((kl, vl)), None) => Some(cmp(kl, vl, k, v))
