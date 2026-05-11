@@ -73,7 +73,7 @@ import scala.jdk.CollectionConverters.*
   * | TailPos            | Yes          |                                                                                                               |
   * | Eraser             | Yes          |                                                                                                               |
   * | Reducer            | Yes          |                                                                                                               |
-  * | JvmBackend         | Partial      | Only the per-def cases in `GenFunAndClosureClasses` are instrumented; top-level orchestration is not.         |
+  * | CodeGen            | Partial      | Only the per-def cases in `GenFunAndClosureClasses` are instrumented; top-level orchestration is not.         |
   */
 object CompilerProfiler {
   /**

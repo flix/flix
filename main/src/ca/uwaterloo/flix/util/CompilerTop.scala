@@ -166,7 +166,7 @@ object CompilerTop {
   /** Phases whose `track` count maps to the `opt` column — optimizer fixed-point re-visits. */
   private val OptCountPhases: Set[String] = Set("Optimizer", "LambdaDrop")
   /** Phases whose `track` count maps to the `cls` column — class files emitted post-specialization. */
-  private val ClsCountPhases: Set[String] = Set("JvmBackend")
+  private val ClsCountPhases: Set[String] = Set("CodeGen")
 
   /** Sums `byPhaseCount` entries for the given phase set. */
   private def sumPhaseCounts(byPhaseCount: Map[String, Long], phases: Set[String]): Long =
