@@ -1146,11 +1146,30 @@ object PrettyPrinter {
       noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
       noSpaceBefore = Set(TokenKind.Colon))
 
-  private def instanceHeaderJoin(cs: Array[SyntaxTree.Child]): Doc =
-    spaceJoin(cs,
-      noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
-      noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR),
-      noSpaceAfter  = Set(TokenKind.BracketL))
+  private def instanceHeaderJoin(cs: Array[SyntaxTree.Child]): Doc = {
+    val join: Array[SyntaxTree.Child] => Doc = parts =>
+      spaceJoin(parts,
+        noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
+        noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR),
+        noSpaceAfter  = Set(TokenKind.BracketL))
+    val constraintIdx = cs.indexWhere {
+      case t: Tree if t.kind == TreeKind.Type.ConstraintList => true
+      case _                                                  => false
+    }
+    val onNewLine = constraintIdx > 0 && {
+      (rightMostCodeToken(cs(constraintIdx - 1)), leftMostCodeToken(cs(constraintIdx))) match {
+        case (Some(p), Some(w)) => w.start.lineOneIndexed > p.end.lineOneIndexed
+        case _                  => false
+      }
+    }
+    if (onNewLine) {
+      val before = cs.take(constraintIdx)
+      val after  = cs.drop(constraintIdx)
+      join(before) <> nest(4, hardline <> join(after))
+    } else {
+      join(cs)
+    }
+  }
 
   /**
     * Formatting for module declarations.
@@ -2137,20 +2156,6 @@ object PrettyPrinter {
     TreeKind.Expr.FixpointConstraintSet
   )
 
-  /**
-    * Tree kinds whose pretty-printer unconditionally forces [[Layout.MultiLine]].
-    * Currently `ForMonadic`, `ForApplicative`, and `ParYield` (see
-    * [[prettyFor]] and [[prettyParYield]]).
-    *
-    * If any of these appear inside a container (e.g. an `ArgumentList`), the
-    * container's own layout decision can no longer be `SingleLine` even when
-    * the source happened to fit on one line — once the inner construct expands,
-    * the surrounding output is multi-line. Forcing the container to MultiLine
-    * up-front is necessary for idempotency: otherwise pass 1 chooses
-    * SingleLine (because the source was one line), produces multi-line output
-    * (because of the forced inner), and pass 2 reads the multi-line output and
-    * chooses MultiLine — flipping the decision.
-    */
   private val ForcedMultiLineKinds: Set[TreeKind] = Set(
     TreeKind.Expr.ForMonadic,
     TreeKind.Expr.ForApplicative,
