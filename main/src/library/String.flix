@@ -182,7 +182,7 @@ pub mod String {
             Ok(Pattern.compile(regex))
         } catch {
             case e: PatternSyntaxException =>
-                Err(unchecked_cast(e.getMessage() as _ \ {}))
+                Err(unsafe IO { e.getMessage() })
         }
 
 
@@ -200,7 +200,7 @@ pub mod String {
             Ok(Pattern.compile(regex, Regex.sumFlags(flags)))
         } catch {
             case e: PatternSyntaxException =>
-                Err(unchecked_cast(e.getMessage() as _ \ {}))
+                Err(unsafe IO { e.getMessage() })
         }
 
 
