@@ -436,14 +436,11 @@ pub mod MutList {
         let rdestIndex = Ref.fresh(rc1, 0);
         let size = MutList.sumWith(MutList.length, v);
         let destArray = Array.empty(rc1, Int32.max(size, minCapacity()));
-        v
-            |> MutList.forEach(
-                bs -> {
-                    let destIndex = Ref.get(rdestIndex);
-                    Array.patch(destIndex, length(bs), bs->values, destArray);
-                    Ref.put(destIndex + length(bs), rdestIndex)
-                }
-            );
+        foreach (bs <- v) {
+            let destIndex = Ref.get(rdestIndex);
+            Array.patch(destIndex, length(bs), bs->values, destArray);
+            Ref.put(destIndex + length(bs), rdestIndex)
+        };
         new MutList @ rc1 {r = rc1, values = destArray, length = size}
 
     ///
