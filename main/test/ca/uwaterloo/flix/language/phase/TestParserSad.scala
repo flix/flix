@@ -690,6 +690,24 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError.MissingBackslash](result)
   }
 
+  test("MissingBackslash.04") {
+    val input =
+      """
+        |def f(): a -> a IO = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBackslash](result)
+  }
+
+  test("MissingBackslash.05") {
+    val input =
+      """
+        |def f(): (a -> a IO) \\ IO = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBackslash](result)
+  }
+
   test("MissingBackslash.Negative.01") {
     val input =
       """

@@ -530,12 +530,13 @@ object Parser2 {
     s.position = position
     s.fuel     = fuel
     s.inBlock  = inBlock
+    // Discard speculative events and errors
     s.events.dropRightInPlace(s.events.length - eventsLen)
     s.errors.dropRightInPlace(s.errors.length - errorsLen)
   }
 
   /**
-    * Runs `f` speculatively (as a pure probe) and always restores the parser to the
+    * Runs `f` speculatively and always restores the parser to the
     * state it had before the call, regardless of whether `f` succeeded.
     *
     * Returns whatever `f` returns, which the caller uses to decide what to do next.
@@ -1133,8 +1134,7 @@ object Parser2 {
       }
       parameters()
       expect(TokenKind.Colon)
-      Type.typeAndEffect()
-
+      Type.typeAndEffect(isFollow = t => t == TokenKind.Equal || t == TokenKind.KeywordWith || t == TokenKind.KeywordWhere)
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -1157,7 +1157,7 @@ object Parser2 {
       }
       parameters()
       expect(TokenKind.Colon)
-      Type.typeAndEffect()
+      Type.typeAndEffect(isFollow = t => t == TokenKind.Equal || t == TokenKind.KeywordWith || t == TokenKind.KeywordWhere)
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -1175,24 +1175,8 @@ object Parser2 {
       // def main(): Unit = ()
       if (eat(TokenKind.Equal)) {
         Expr.statement()
-      } else if (nth(0).isFirstInType && speculate { Type.ttype(); at(TokenKind.Equal) }) {
-        // Speculative parse succeeded: the next token(s) form a valid type and '=' follows it.
-        // This means the user most likely forgot '\' between the return type and the effect type.
-        //   e.g.  def f(): Unit IO = ()        <- forgot '\'
-        //   vs.   def f(): Unit \ IO = ()      <- correct
-        //
-        // Strategy:
-        //   1. Emit a zero-width error node at the effect's position (represents the missing '\').
-        //   2. Re-parse the effect type for real into a proper Type.Effect node.
-        //   3. Consume '=' and parse the body normally.
-        closeWithError(open(), ParseError.MissingBackslash(sctx, currentSourceLocation()))
-        val effectMark = open()
-        Type.ttype()
-        close(effectMark, TreeKind.Type.Effect)
-        eat(TokenKind.Equal)
-        Expr.statement()
       } else {
-        expect(TokenKind.Equal) // Produce an error for missing '='.
+        expect(TokenKind.Equal)
       }
 
       val treeKind = if (declKind == TokenKind.KeywordRedef) TreeKind.Decl.Redef else TreeKind.Decl.Def
@@ -3485,7 +3469,7 @@ object Parser2 {
   }
 
   private object Type {
-    def typeAndEffect()(implicit s: State): Mark.Closed = {
+    def typeAndEffect(isFollow: TokenKind => Boolean = _ => false)(implicit s: State): Mark.Closed = {
       val lhs = ttype()
       if (eat(TokenKind.Backslash)) {
         val mark = open()
@@ -3496,11 +3480,17 @@ object Parser2 {
         val mark = open()
         ttype()
         close(mark, TreeKind.Type.Effect)
+      } else if (nth(0).isFirstInType && speculate { ttype(); isFollow(nth(0)) }) {
+        val errorLoc = mkSourceLocation(previousSourceLocation().end, currentSourceLocation().start)
+        closeWithError(open(), ParseError.MissingBackslash(SyntacticContext.Unknown, errorLoc))
+        val effectMark = open()
+        ttype()
+        close(effectMark, TreeKind.Type.Effect)
       } else lhs
     }
 
     def ttype(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
-      if (left == TokenKind.ArrowThinRWhitespace) return typeAndEffect()
+      if (left == TokenKind.ArrowThinRWhitespace) return typeAndEffect(isFollow = t => !t.isFirstInType)
       var lhs = typeDelimited()
       // Handle Type argument application.
       while (at(TokenKind.BracketL)) {
