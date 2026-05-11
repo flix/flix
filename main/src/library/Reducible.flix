@@ -105,8 +105,10 @@ pub mod Reducible {
         /// Returns the tail of `t` as a list.
         ///
         pub def tail(t: t[a]): List[a] =
-            Reducible.reduceLeftTo((k, a) -> ks -> k(a :: ks), _ -> identity, t)(Nil) // NB: Builds a continuation function without the first
-                                                                                       // element that is immediately invoked to avoid `foldRight`.
+            // NB: Builds a continuation function without the first
+            // element that is immediately invoked to avoid `foldRight`.
+            Reducible.reduceLeftTo((k, a) -> ks -> k(a :: ks), _ -> identity, t)(Nil)
+
         ///
         /// Returns the reverse of `t` as a list.
         ///
