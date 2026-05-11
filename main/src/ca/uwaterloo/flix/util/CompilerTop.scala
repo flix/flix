@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.tools.compilertop.Ansi.*
+import ca.uwaterloo.flix.tools.compilertop.Formatting.*
+import ca.uwaterloo.flix.tools.compilertop.Styling.*
 import ca.uwaterloo.flix.util.CompilerProfiler.DefnStats
 import org.jline.terminal.{Attributes, Terminal, TerminalBuilder}
 
@@ -112,172 +114,6 @@ object CompilerTop {
 
   /** Block characters used for the sparkline, low → high. */
   private val SparkChars: Array[Char] = "▁▂▃▄▅▆▇█".toArray
-
-  /** ANSI escape character. */
-  private val ESC: Char = 27.toChar
-
-  /** ANSI sequence that homes the cursor and clears the screen. */
-  private val ClearScreen: String = s"$ESC[H$ESC[2J"
-
-  /**
-    * DEC mode 2026 — Begin Synchronized Update. Terminals that support it
-    * (iTerm2, kitty, alacritty, wezterm, modern xterm, recent VTE) buffer
-    * the bytes between BSU and ESU and swap atomically, eliminating the
-    * flash from clear-and-redraw. Terminals that don't recognize the
-    * sequence silently ignore it.
-    */
-  private val BeginSync: String = s"$ESC[?2026h"
-
-  /** DEC mode 2026 — End Synchronized Update; pair of [[BeginSync]]. */
-  private val EndSync: String = s"$ESC[?2026l"
-
-  // Color codes.
-
-  /** ANSI reset (clears bold, dim, color, etc.). */
-  private val Reset: String = s"$ESC[0m"
-  /** ANSI bold. */
-  private val BoldCode: String = s"$ESC[1m"
-  /** ANSI dim/faint. */
-  private val DimCode: String = s"$ESC[2m"
-  /** ANSI underline on (paired with [[NoUnderlineCode]] — surgical, leaves bold/color intact). */
-  private val UnderlineCode: String = s"$ESC[4m"
-  /** ANSI underline off; cancels [[UnderlineCode]] without disturbing bold/color. */
-  private val NoUnderlineCode: String = s"$ESC[24m"
-  /** ANSI foreground red. */
-  private val Red: String = s"$ESC[31m"
-  /** ANSI foreground green. */
-  private val Green: String = s"$ESC[32m"
-  /** ANSI foreground yellow. */
-  private val Yellow: String = s"$ESC[33m"
-  /** ANSI foreground blue. */
-  private val Blue: String = s"$ESC[34m"
-  /** ANSI foreground cyan. */
-  private val Cyan: String = s"$ESC[36m"
-  /** ANSI foreground bright black (gray). */
-  private val Gray: String = s"$ESC[90m"
-
-  // Wrappers — each takes a string and returns it surrounded by codes.
-
-  /** Wraps `s` in the ANSI color code `c` and a reset suffix. */
-  private def color(s: String, c: String): String = s"$c$s$Reset"
-  /** Wraps `s` in ANSI bold codes. */
-  private def bold(s: String): String = s"$BoldCode$s$Reset"
-  /** Wraps `s` in ANSI dim/faint codes. */
-  private def dim(s: String): String = s"$DimCode$s$Reset"
-  /** Wraps `s` in ANSI red codes. */
-  private def red(s: String): String = color(s, Red)
-  /** Wraps `s` in ANSI yellow codes. */
-  private def yellow(s: String): String = color(s, Yellow)
-  /** Wraps `s` in ANSI green codes. */
-  private def green(s: String): String = color(s, Green)
-  /** Wraps `s` in ANSI blue codes. */
-  private def blue(s: String): String = color(s, Blue)
-  /** Wraps `s` in ANSI cyan codes. */
-  private def cyan(s: String): String = color(s, Cyan)
-
-  /**
-    * Renders a column header with one keystroke letter underlined. Active
-    * sort columns are bold yellow; the rest are bold cyan. The label string
-    * is taken as-is (already padded by the caller) and the keystroke
-    * position is given as a 0-based index into it. Visible width is
-    * unchanged — only ANSI codes are inserted around the keystroke char.
-    */
-  private def keyHeader(paddedLabel: String, keyIdx: Int, active: Boolean): String = {
-    val c = if (active) Yellow else Cyan
-    val before = paddedLabel.take(keyIdx)
-    val key = paddedLabel.slice(keyIdx, keyIdx + 1)
-    val after = paddedLabel.drop(keyIdx + 1)
-    s"$BoldCode$c$before$UnderlineCode$key$NoUnderlineCode$after$Reset"
-  }
-
-  /** Renders a non-sort column header (no underlined keystroke) in bold cyan. */
-  private def plainHeader(paddedLabel: String): String =
-    s"$BoldCode$Cyan$paddedLabel$Reset"
-
-  // -- Warning thresholds --------------------------------------------------
-  //
-  // Per-column tier cutoffs consumed by the `style*` functions below. Naming:
-  // `<Column><Tier>Threshold[<Unit>]`. Sorted alphabetically — keep new
-  // entries in order. Adjusting a number here is a UX call; please don't
-  // bury it inside one of the styling functions.
-
-  private val HeapRedThresholdRatio:           Double = 0.9
-  private val HeapYellowThresholdRatio:        Double = 0.7
-  private val HotnessRedThresholdMsPerLine:    Double = 25.0
-  private val HotnessYellowThresholdMsPerLine: Double = 15.0
-  private val PctCpuRedThreshold:              Double = 5.0
-  private val PctCpuYellowThreshold:           Double = 1.0
-  private val PctWallRedThreshold:             Double = 15.0
-  private val PctWallYellowThreshold:          Double = 5.0
-  private val TimeRedThresholdMs:              Long   = 1000L
-  private val TimeYellowThresholdMs:           Long   = 50L
-
-  // -- Conditional styling -------------------------------------------------
-
-  /** Colors a formatted time field by absolute magnitude. */
-  private def styleTime(formatted: String, nanos: Long): String = {
-    val ms = nanos / 1_000_000L
-    if (ms >= TimeRedThresholdMs) bold(red(formatted))
-    else if (ms >= TimeYellowThresholdMs) yellow(formatted)
-    else formatted
-  }
-
-  /**
-    * Colors the sym name based on `time / locLines` — a "hotness per line"
-    * signal that surfaces small defs which consume time disproportionate
-    * to their body size. Defs with no real source span (`locLines <= 0`,
-    * e.g. lifted closures) are left unstyled because the denominator is
-    * meaningless.
-    */
-  private def styleSym(name: String, nanos: Long, locLines: Int): String = {
-    if (locLines <= 0) return name
-    val msPerLine = (nanos / 1_000_000L).toDouble / locLines
-    if (msPerLine >= HotnessRedThresholdMsPerLine) bold(red(name))
-    else if (msPerLine >= HotnessYellowThresholdMsPerLine) yellow(name)
-    else name
-  }
-
-  /** %cpu = totalNanos / (elapsed × threads). One def's slice of total compute. */
-  private def stylePctCpu(formatted: String, pct: Double): String = {
-    if (pct >= PctCpuRedThreshold) bold(red(formatted))
-    else if (pct >= PctCpuYellowThreshold) yellow(formatted)
-    else formatted
-  }
-
-  /** %wall = totalNanos / elapsed. Upper bound on wall-clock savings if removed. */
-  private def stylePctWall(formatted: String, pct: Double): String = {
-    if (pct >= PctWallRedThreshold) bold(red(formatted))
-    else if (pct >= PctWallYellowThreshold) yellow(formatted)
-    else formatted
-  }
-
-  /** Colors the active/parallelism field by occupancy: full=green bold, ≥50%=green, idle=gray, else yellow. */
-  private def styleThreads(active: Int, par: Int): String = {
-    val s = f"$active%2d/$par%-2d"
-    if (par <= 0) color(s, Gray)
-    else if (active == par) bold(green(s))
-    else if (active.toDouble / par >= 0.5) green(s)
-    else if (active == 0) color(s, Gray)
-    else yellow(s)
-  }
-
-  /** Colors a formatted heap field by used/max ratio. */
-  private def styleHeap(formatted: String, ratio: Double): String = {
-    if (ratio >= HeapRedThresholdRatio) bold(red(formatted))
-    else if (ratio >= HeapYellowThresholdRatio) yellow(formatted)
-    else green(formatted)
-  }
-
-
-  // -- Numeric helpers ----------------------------------------------------
-
-  /** Returns `(usedMb, maxMb)` from the JVM runtime. */
-  private def heapUsage(): (Long, Long) = {
-    val rt = Runtime.getRuntime
-    val used = rt.totalMemory() - rt.freeMemory()
-    val max = rt.maxMemory()
-    (used / (1024L * 1024L), max / (1024L * 1024L))
-  }
 
   /**
     * A row in the per-module aggregate table.
@@ -498,34 +334,6 @@ object CompilerTop {
   /** Floor on the module-table row count. */
   private val MinModuleN: Int = 3
 
-  // -- Formatting helpers -------------------------------------------------
-
-  /** Renders a [[SourceLocation]] as `file:line`, or `?` if synthetic. */
-  private def formatLocation(loc: SourceLocation): String =
-    if (!loc.isReal) "?" else s"${loc.source.name}:${loc.startLine}"
-
-  /** Returns the inclusive line span of `loc`, or 0 if synthetic. */
-  private def locLineCount(loc: SourceLocation): Int =
-    if (!loc.isReal) 0 else (loc.endLine - loc.startLine + 1).max(0)
-
-  /** Formats a nanosecond duration as `Nms` or `N.Ns` (≥10s). */
-  private def formatMillis(nanos: Long): String = {
-    val ms = nanos / 1_000_000L
-    if (ms >= 10_000L) f"${ms / 1000.0}%.1fs"
-    else f"${ms}ms"
-  }
-
-  /** Returns `s` truncated to `width` characters, with a trailing ellipsis when shortened. */
-  private def truncate(s: String, width: Int): String =
-    if (s.length <= width) s else s.take(width - 1) + "…"
-
-  /** Left-pads `s` with spaces to width `w`. */
-  private def lpad(s: String, w: Int): String =
-    if (s.length >= w) s else " " * (w - s.length) + s
-
-  /** Right-pads `s` with spaces to width `w`. */
-  private def rpad(s: String, w: Int): String =
-    if (s.length >= w) s else s + " " * (w - s.length)
 }
 
 /**
