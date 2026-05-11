@@ -110,11 +110,10 @@ pub mod Fixpoint3.Phase.Hoisting {
                                 // `load` must have been registered by `unifyEqualitiesStmt`.
                                 let rep = getOrCrash(MutDisjointSets.find(load, equalitySets));
                                 match Map.get(rep, innerAcc) {
-                                    case Some(RamTerm.Lit(v, _)) =>
-                                        {
-                                            if (v != val) { MutSet.add(fst(rep), impossible) }
-                                        };
-                                        innerAcc
+                                    case Some(RamTerm.Lit(v, _)) => {
+                                        if (v != val) { MutSet.add(fst(rep), impossible) }
+                                    };
+                                    innerAcc
                                     case Some(_) => bug!("In Fixpoint.Phase.Hoisting.hoistProgram: termMap contains non-literals before hoistStmt!")
                                     case None    => Map.insert(rep, RamTerm.Lit(val, ty), innerAcc)
                                 }
@@ -161,31 +160,34 @@ pub mod Fixpoint3.Phase.Hoisting {
                     let isEmptyBools = relSymsOfStmt(stmt)
                         |> List.map(relSym -> BoolExp.Not(BoolExp.IsEmpty(relSym)))
                         |> List.toVector;
-                    let newStmt = if (MutList.size(independent) == 0) {
-                        RamStmt.Insert(RelOp.If(isEmptyBools, newOp))
-                    } else {
-                        let bools = MutList.toVector(independent) ++ isEmptyBools;
-                        RamStmt.Insert(RelOp.If(bools, newOp))
-                    };
-                    Some(newStmt)
+                    let newStmt =
+                        if (MutList.size(independent) == 0) {
+                            RamStmt.Insert(RelOp.If(isEmptyBools, newOp))
+                        } else {
+                            let bools = MutList.toVector(independent) ++ isEmptyBools;
+                            RamStmt.Insert(RelOp.If(bools, newOp))
+                        };
+                        Some(newStmt)
             }
         case RamStmt.MergeInto(_, _) => Some(stmt)
         case RamStmt.Swap(_, _)      => Some(stmt)
         case RamStmt.Purge(_)        => Some(stmt)
         case RamStmt.Seq(xs) =>
-            let children = Vector.filterMap(hoistStmt(rc, termMap, equalitySets, impossible), xs);
-            match Vector.length(children) {
-                case 0 => None
-                case 1 => Vector.head(children)
-                case _ => Some(RamStmt.Seq(children))
-            }
+            let children =
+                Vector.filterMap(hoistStmt(rc, termMap, equalitySets, impossible), xs);
+                match Vector.length(children) {
+                    case 0 => None
+                    case 1 => Vector.head(children)
+                    case _ => Some(RamStmt.Seq(children))
+                }
         case RamStmt.Par(xs) =>
-            let children = Vector.filterMap(hoistStmt(rc, termMap, equalitySets, impossible), xs);
-            match Vector.length(children) {
-                case 0 => None
-                case 1 => Vector.head(children)
-                case _ => Some(RamStmt.Par(children))
-            }
+            let children =
+                Vector.filterMap(hoistStmt(rc, termMap, equalitySets, impossible), xs);
+                match Vector.length(children) {
+                    case 0 => None
+                    case 1 => Vector.head(children)
+                    case _ => Some(RamStmt.Par(children))
+                }
         case RamStmt.Until(test, body) =>
             match hoistStmt(rc, termMap, equalitySets, impossible, body) {
                 case None    => None
@@ -267,11 +269,12 @@ pub mod Fixpoint3.Phase.Hoisting {
                             // but not without `rowVar`.
                             let hoistedToHere = getBoolsHoistedToHere(rowVar, termMap, termMapWithCur, equalitySets, idToBool);
                             let combined = List.toVector(knownEqualities ::: intraEqualities ::: hoistedToHere);
-                            let newOp = if (Vector.length(combined) != 0)
-                                RelOp.Query(rowVar, relSym, combined, -1, t, hoistedBody)
-                            else
-                                RelOp.Search(rowVar, relSym, t, hoistedBody);
-                            Some(newOp)
+                            let newOp =
+                                if (Vector.length(combined) != 0)
+                                    RelOp.Query(rowVar, relSym, combined, -1, t, hoistedBody)
+                                else
+                                    RelOp.Search(rowVar, relSym, t, hoistedBody);
+                                Some(newOp)
                     }
                 }
             case RelOp.Query(_, _, _, _, _, _) =>
