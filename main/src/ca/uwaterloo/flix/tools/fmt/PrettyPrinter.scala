@@ -1214,10 +1214,29 @@ object PrettyPrinter {
       case _ => false
     }
 
-  private def buildSig(parts: Array[SyntaxTree.Child]): Doc =
-    spaceJoin(parts,
-      noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
-      noSpaceBefore = Set(TokenKind.Colon))
+  private def buildSig(parts: Array[SyntaxTree.Child]): Doc = {
+    val join: Array[SyntaxTree.Child] => Doc = ps =>
+      spaceJoin(ps,
+        noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
+        noSpaceBefore = Set(TokenKind.Colon))
+    val constraintIdx = parts.indexWhere {
+      case t: Tree if t.kind == TreeKind.Type.ConstraintList => true
+      case _                                                  => false
+    }
+    val onNewLine = constraintIdx > 0 && {
+      (rightMostCodeToken(parts(constraintIdx - 1)), leftMostCodeToken(parts(constraintIdx))) match {
+        case (Some(p), Some(w)) => w.start.lineOneIndexed > p.end.lineOneIndexed
+        case _                  => false
+      }
+    }
+    if (onNewLine) {
+      val before = parts.take(constraintIdx)
+      val after  = parts.drop(constraintIdx)
+      join(before) <> nest(4, hardline <> join(after))
+    } else {
+      join(parts)
+    }
+  }
 
   /**
     * Formatting for definitions.
