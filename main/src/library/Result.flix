@@ -16,8 +16,6 @@
 
 pub mod Result {
 
-    import java.lang.Exception
-
     ///
     /// The Result type.
     ///
@@ -434,18 +432,5 @@ pub mod Result {
         case Err(_) => Iterator.empty(rc)
         case Ok(x)  => Iterator.singleton(rc, x)
     }
-
-    ///
-    /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
-    ///
-    /// If `f` throws a Java `Exception`, `Err(e)` is returned
-    /// where `e` is the error message.
-    ///
-    pub def tryCatch(f: Unit -> a \ ef): Result[String, a] \ ef =
-        try {
-            Ok(f())
-        } catch {
-            case e: Exception => Err(e.getMessage())
-        }
 
 }
