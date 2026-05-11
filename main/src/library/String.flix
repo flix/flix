@@ -16,6 +16,7 @@
 
 pub mod String {
 
+    import java.lang.Exception
     import java.lang.System
     import java.lang.{String => JString}
     import java.nio.charset.StandardCharsets
@@ -178,11 +179,12 @@ pub mod String {
     /// Regex literals are checked at compile time.
     ///
     pub def toRegex(regex: String): Result[String, Regex] =
-        Result.tryCatch(
-            _ -> {
-                Pattern.compile(regex)
-            }
-        )
+        try {
+            Ok(Pattern.compile(regex))
+        } catch {
+            case e: Exception => Err(e.getMessage())
+        }
+
 
     ///
     /// Compile the regular expression `regex` into a Regex with the supplied flags.
@@ -194,11 +196,12 @@ pub mod String {
     /// `java.util.regex.Pattern` for guidance on enabling flags with embedded flag expressions.
     ///
     pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
-        Result.tryCatch(
-            _ -> {
-                Pattern.compile(regex, Regex.sumFlags(flags))
-            }
-        )
+        try {
+            Ok(Pattern.compile(regex, Regex.sumFlags(flags)))
+        } catch {
+            case e: Exception => Err(e.getMessage())
+        }
+
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
