@@ -2859,16 +2859,17 @@ object Parser2 {
         expression()
         if (!at(TokenKind.CurlyL)) {
           expect(TokenKind.CurlyL)
+        } else {
+          zeroOrMore(
+            namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+            checkForItem = NAME_FIELD.contains,
+            getItem = structFieldInit,
+            breakWhen = _.isRecoverInExpr,
+            separation = Separation.Required(TokenKind.Comma),
+            delimiterL = TokenKind.CurlyL,
+            delimiterR = TokenKind.CurlyR
+          )
         }
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
-          checkForItem = NAME_FIELD.contains,
-          getItem = structFieldInit,
-          breakWhen = _.isRecoverInExpr,
-          separation = Separation.Required(TokenKind.Comma),
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR
-        )
         close(mark, TreeKind.Expr.AmbiguousNew)
       } else if (at(TokenKind.CurlyL)) {
         // `new Type { ... }`.
