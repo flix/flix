@@ -646,8 +646,7 @@ pub mod MutList {
                 loop(i1 + 1)
             } else if (i1 == n) {
                 Array.put(Reflect.default(), i1, v->values)
-            } else
-                ()
+            }
         };
         if (i < v->length) {
             loop(i);
