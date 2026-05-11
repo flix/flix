@@ -62,7 +62,6 @@ pub mod Fixpoint3.Phase.Stratifier {
                     let predSym = PredSym.PredSym(Array.get(x, predSyms), Int32.toInt64(x));
                     MutMap.put(predSym, (pseudoStratum, stratum), result)
                 }
-
             }
         };
         MutMap.toMap(result)
