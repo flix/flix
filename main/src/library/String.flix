@@ -16,7 +16,6 @@
 
 pub mod String {
 
-    import java.lang.Exception
     import java.lang.System
     import java.lang.{String => JString}
     import java.nio.charset.StandardCharsets
@@ -182,7 +181,8 @@ pub mod String {
         try {
             Ok(Pattern.compile(regex))
         } catch {
-            case e: Exception => Err(e.getMessage())
+            case e: PatternSyntaxException =>
+                Err(unsafe IO { e.getMessage() })
         }
 
 
@@ -199,7 +199,8 @@ pub mod String {
         try {
             Ok(Pattern.compile(regex, Regex.sumFlags(flags)))
         } catch {
-            case e: Exception => Err(e.getMessage())
+            case e: PatternSyntaxException =>
+                Err(unsafe IO { e.getMessage() })
         }
 
 
