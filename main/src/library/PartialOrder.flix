@@ -72,44 +72,33 @@ pub mod PartialOrder {
         }
     }
 
-    instance PartialOrder[(a1, a2, a3)] with
-        PartialOrder[a1],
-        PartialOrder[a2],
-        PartialOrder[a3] {
-            pub def lessEqual(
-                x: (a1, a2, a3),
-                y: (a1, a2, a3)
-            ): Bool = match (x, y) {
-                case ((x1, x2, x3), (y1, y2, y3)) =>
-                    PartialOrder.lessEqual(x1, y1)
-                        and PartialOrder.lessEqual(x2, y2)
-                        and PartialOrder.lessEqual(x3, y3)
-            }
+    instance PartialOrder[(a1, a2, a3)] with PartialOrder[a1], PartialOrder[a2], PartialOrder[a3] {
+        pub def lessEqual(
+            x: (a1, a2, a3),
+            y: (a1, a2, a3)
+        ): Bool = match (x, y) {
+            case ((x1, x2, x3), (y1, y2, y3)) =>
+                PartialOrder.lessEqual(x1, y1)
+                    and PartialOrder.lessEqual(x2, y2)
+                    and PartialOrder.lessEqual(x3, y3)
+        }
     }
 
-    instance PartialOrder[(a1, a2, a3, a4)] with
-        PartialOrder[a1],
-        PartialOrder[a2],
-        PartialOrder[a3],
-        PartialOrder[a4] {
-            pub def lessEqual(
-                x: (a1, a2, a3, a4),
-                y: (a1, a2, a3, a4)
-            ): Bool = match (x, y) {
-                case ((x1, x2, x3, x4), (y1, y2, y3, y4)) =>
-                    PartialOrder.lessEqual(x1, y1)
-                        and PartialOrder.lessEqual(x2, y2)
-                        and PartialOrder.lessEqual(x3, y3)
-                        and PartialOrder.lessEqual(x4, y4)
-            }
+    instance PartialOrder[(a1, a2, a3, a4)] with PartialOrder[a1], PartialOrder[a2], PartialOrder[a3], PartialOrder[a4] {
+        pub def lessEqual(
+            x: (a1, a2, a3, a4),
+            y: (a1, a2, a3, a4)
+        ): Bool = match (x, y) {
+            case ((x1, x2, x3, x4), (y1, y2, y3, y4)) =>
+                PartialOrder.lessEqual(x1, y1)
+                    and PartialOrder.lessEqual(x2, y2)
+                    and PartialOrder.lessEqual(x3, y3)
+                    and PartialOrder.lessEqual(x4, y4)
+        }
     }
 
-    instance PartialOrder[(a1, a2, a3, a4, a5)] with
-        PartialOrder[a1],
-        PartialOrder[a2],
-        PartialOrder[a3],
-        PartialOrder[a4],
-        PartialOrder[a5] {
+    instance PartialOrder[(a1, a2, a3, a4, a5)]
+        with PartialOrder[a1], PartialOrder[a2], PartialOrder[a3], PartialOrder[a4], PartialOrder[a5] {
             pub def lessEqual(
                 x: (a1, a2, a3, a4, a5),
                 y: (a1, a2, a3, a4, a5)
@@ -123,13 +112,8 @@ pub mod PartialOrder {
             }
     }
 
-    instance PartialOrder[(a1, a2, a3, a4, a5, a6)] with
-        PartialOrder[a1],
-        PartialOrder[a2],
-        PartialOrder[a3],
-        PartialOrder[a4],
-        PartialOrder[a5],
-        PartialOrder[a6] {
+    instance PartialOrder[(a1, a2, a3, a4, a5, a6)]
+        with PartialOrder[a1], PartialOrder[a2], PartialOrder[a3], PartialOrder[a4], PartialOrder[a5], PartialOrder[a6] {
             pub def lessEqual(
                 x: (a1, a2, a3, a4, a5, a6),
                 y: (a1, a2, a3, a4, a5, a6)
@@ -144,14 +128,8 @@ pub mod PartialOrder {
             }
     }
 
-    instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7)] with
-        PartialOrder[a1],
-        PartialOrder[a2],
-        PartialOrder[a3],
-        PartialOrder[a4],
-        PartialOrder[a5],
-        PartialOrder[a6],
-        PartialOrder[a7] {
+    instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7)]
+        with PartialOrder[a1], PartialOrder[a2], PartialOrder[a3], PartialOrder[a4], PartialOrder[a5], PartialOrder[a6], PartialOrder[a7] {
             pub def lessEqual(
                 x: (a1, a2, a3, a4, a5, a6, a7),
                 y: (a1, a2, a3, a4, a5, a6, a7)
@@ -167,15 +145,8 @@ pub mod PartialOrder {
             }
     }
 
-    instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7, a8)] with
-        PartialOrder[a1],
-        PartialOrder[a2],
-        PartialOrder[a3],
-        PartialOrder[a4],
-        PartialOrder[a5],
-        PartialOrder[a6],
-        PartialOrder[a7],
-        PartialOrder[a8] {
+    instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7, a8)]
+        with PartialOrder[a1], PartialOrder[a2], PartialOrder[a3], PartialOrder[a4], PartialOrder[a5], PartialOrder[a6], PartialOrder[a7], PartialOrder[a8] {
             pub def lessEqual(
                 x: (a1, a2, a3, a4, a5, a6, a7, a8),
                 y: (a1, a2, a3, a4, a5, a6, a7, a8)
@@ -192,16 +163,8 @@ pub mod PartialOrder {
             }
     }
 
-    instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with
-        PartialOrder[a1],
-        PartialOrder[a2],
-        PartialOrder[a3],
-        PartialOrder[a4],
-        PartialOrder[a5],
-        PartialOrder[a6],
-        PartialOrder[a7],
-        PartialOrder[a8],
-        PartialOrder[a9] {
+    instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7, a8, a9)]
+        with PartialOrder[a1], PartialOrder[a2], PartialOrder[a3], PartialOrder[a4], PartialOrder[a5], PartialOrder[a6], PartialOrder[a7], PartialOrder[a8], PartialOrder[a9] {
             pub def lessEqual(
                 x: (a1, a2, a3, a4, a5, a6, a7, a8, a9),
                 y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)
@@ -219,17 +182,8 @@ pub mod PartialOrder {
             }
     }
 
-    instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with
-        PartialOrder[a1],
-        PartialOrder[a2],
-        PartialOrder[a3],
-        PartialOrder[a4],
-        PartialOrder[a5],
-        PartialOrder[a6],
-        PartialOrder[a7],
-        PartialOrder[a8],
-        PartialOrder[a9],
-        PartialOrder[a10] {
+    instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)]
+        with PartialOrder[a1], PartialOrder[a2], PartialOrder[a3], PartialOrder[a4], PartialOrder[a5], PartialOrder[a6], PartialOrder[a7], PartialOrder[a8], PartialOrder[a9], PartialOrder[a10] {
             pub def lessEqual(
                 x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10),
                 y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
