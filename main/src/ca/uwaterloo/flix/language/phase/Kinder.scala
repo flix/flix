@@ -273,9 +273,10 @@ object Kinder {
     */
   private def visitDefSpecs(root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Spec] = {
     ParOps.parMapValues(root.defs) {
-      case defn =>
+      case defn => flix.profile(defn.sym, defn.loc) {
         val kenv = getKindEnvFromSpec(defn.spec, KindEnv.empty, root)
         visitSpec(defn.spec, Nil, None, kenv, root)
+      }
     }
   }
 
@@ -297,7 +298,7 @@ object Kinder {
     * Performs kinding on the all the definitions in the given root.
     */
   private def visitDefs(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit rootEnv: RootEnv, sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
-    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, root)))
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn, KindEnv.empty, root))))
   }
 
   /**

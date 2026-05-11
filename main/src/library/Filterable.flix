@@ -19,7 +19,7 @@ pub mod Filterable {
     ///
     /// A trait for filtering container functors.
     ///
-    pub trait Filterable[m : Type -> Type] with Functor[m], Foldable[m] {
+    pub trait Filterable[m: Type -> Type] with Functor[m], Foldable[m] {
 
         ///
         /// Applies the partial function `f` to every element in `x` collecting the results.

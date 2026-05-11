@@ -131,7 +131,7 @@ pub mod Fixpoint3.Ast.Ram {
                 case RamStmt.Purge(relSym)       => "Purge ${relSym}"
                 case RamStmt.Seq(xs)             => Vector.join(";${nl}", xs)
                 case RamStmt.Par(xs)             => Vector.join("|${nl}", xs)
-                case RamStmt.Until(test, body)   =>
+                case RamStmt.Until(test, body) =>
                     let tst = test |> Vector.join(" && ");
                     "until(${tst}) do${nl}${String.indent(4, "${body}")}end"
                 case RamStmt.Comment(comment)    => "/* ${comment} */"
@@ -174,9 +174,13 @@ pub mod Fixpoint3.Ast.Ram {
                 case RelOp.Search(var, relSym, _, body) =>
                     "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Query(var, relSym, prefixQuery, _, _, body) =>
-                    let qry = Vector.joinWith(match term -> {
-                        ToString.toString(term)
-                    }, " ∧ ", prefixQuery);
+                    let qry = Vector.joinWith(
+                        match term -> {
+                            ToString.toString(term)
+                        },
+                        " ∧ ",
+                        prefixQuery
+                    );
                     "query {${var} ∈ ${relSym} | ${qry}} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Functional(RowVar.Named(id), _, terms, body, _, _) =>
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
@@ -288,7 +292,7 @@ pub mod Fixpoint3.Ast.Ram {
     instance ToString[RamTerm] {
         pub def toString(term: RamTerm): String = match term {
             case RamTerm.Lit(v, _)                      => Debug.stringify(v)
-            case RamTerm.ProvMax(loads)                 =>
+            case RamTerm.ProvMax(loads) =>
                 let loadsStr = Vector.joinWith(match (rv, i) -> "${rv}[${i}]", ", ", loads);
                 "max(${loadsStr})"
             case RamTerm.RowLoad(var, index, _, _)      => "${var}[${index}]"
@@ -400,7 +404,6 @@ pub mod Fixpoint3.Ast.Ram {
     ///        ...
     /// `e1` and `e2` would be the identifiers. Identifiers will only be defined
     /// once in a program, but can be reffered to from elsewhere.
-
     pub enum RowVar with Eq {
         case Named(Int32)
     }
