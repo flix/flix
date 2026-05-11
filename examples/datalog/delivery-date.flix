@@ -3,33 +3,31 @@
 def main(): Unit \ IO =
     let p = #{
         // Parts and the components they depend on.
-        PartDepends("Car",       "Chassis").
-        PartDepends("Car",       "Engine").
-        PartDepends("Engine",    "Piston").
-        PartDepends("Engine",    "Ignition").
+        PartDepends("Car", "Chassis").
+        PartDepends("Car", "Engine").
+        PartDepends("Engine", "Piston").
+        PartDepends("Engine", "Ignition").
 
         // The time required to assemble a part from its components.
-        AssemblyTime("Car",     7).
-        AssemblyTime("Engine",  2).
+        AssemblyTime("Car", 7).
+        AssemblyTime("Engine", 2).
 
         // The expected delivery date for certain components.
-        DeliveryDate("Chassis";  2).
-        DeliveryDate("Piston";   1).
-        DeliveryDate("Ignition"; 7).
+        DeliveryDate("Chassis";2).
+        DeliveryDate("Piston";1).
+        DeliveryDate("Ignition";7).
 
         // A part is ready when it is delivered.
-        ReadyDate(part; date) :-
-            DeliveryDate(part; date).
+        ReadyDate(part;date) :- DeliveryDate(part;date).
 
         // Or when it can be assembled from its components.
-        ReadyDate(part; assemblyTime + componentDate) :-
-            PartDepends(part, component),
+        ReadyDate(part;assemblyTime + componentDate) :- PartDepends(part, component),
             AssemblyTime(part, assemblyTime),
-            ReadyDate(component; componentDate).
+            ReadyDate(component;componentDate).
     };
 
     // Computes a map from parts to delivery dates.
-    let m = query p select (c, d) from ReadyDate(c; d) |> Vector.toMap;
+    let m = query p select (c, d) from ReadyDate(c;d) |> Vector.toMap;
 
     // Looks up the delivery date for the car and prints it.
     Map.getWithDefault("Car", 0, m) |> println

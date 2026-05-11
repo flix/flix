@@ -3,9 +3,9 @@
 ///
 /// In the real-world we would use newtype wrappers for increased type safety.
 ///
-type alias Station = String             // e.g. Aarhus
-type alias Train   = String             // e.g. InterCity-432.
-type alias Time    = (Int32, Int32)     // e.g. (10, 32) which is 10.32 AM.
+type alias Station = String // e.g. Aarhus
+type alias Train = String // e.g. InterCity-432.
+type alias Time = (Int32, Int32) // e.g. (10, 32) which is 10.32 AM.
 
 ///
 /// We compute all connections from Aalborg to Copenhagen.
@@ -21,7 +21,7 @@ def main(): Unit \ IO =
     let pr = #{
         // An edge is of the form (FromStation, ToStation, Train, DepartureTime, ArrivalTime).
         Path(x, y, tx, ty) :- Edge(x, y, _, tx, ty).
-        Path(x, z, tx, tz) :- Path(x, y, tx, ty1), Edge(y, z, _, ty2, tz), if (ty1 < ty2).
+        Path(x, z, tx, tz) :- Path(x, y, tx, ty1), Edge(y, z, _, ty2, tz), if(ty1 < ty2).
     };
 
     // Use the database and Datalog program to compute *all* connections between `src` and `dst`.
@@ -40,7 +40,7 @@ def main(): Unit \ IO =
 
         // Use a provenance query to compute the edges that connect `src` and `dst`.
         let p = pquery db, pr select Path(src, dst, t1, t2) with {Edge};
-        let itinerary = Vector.map(v -> ematch v { case Edge(s, d, train, tx, ty) => (s, d, train, tx, ty) }, p);
+        let itinerary = Vector.map(v -> ematch v {case Edge(s, d, train, tx, ty) => (s, d, train, tx, ty)}, p);
 
         foreach ((s, d, t, tx, ty) <- itinerary) {
             let fmtS = String.padRight(10, ' ', s);
@@ -57,18 +57,18 @@ def main(): Unit \ IO =
 ///
 def database(): #{ Edge(Station, Station, Train, Time, Time) | r } = #{
     // Aalborg --> Aarhus
-    Edge("Aalborg", "Aarhus", "InterCity 4332",     (09, 09), (10, 40)).
-    Edge("Aalborg", "Aarhus", "InterCityLyn 4034",  (09, 59), (11, 08)).
-    Edge("Aalborg", "Aarhus", "InterCity 4336",     (10, 07), (11, 38)).
+    Edge("Aalborg", "Aarhus", "InterCity 4332", (09, 09), (10, 40)).
+    Edge("Aalborg", "Aarhus", "InterCityLyn 4034", (09, 59), (11, 08)).
+    Edge("Aalborg", "Aarhus", "InterCity 4336", (10, 07), (11, 38)).
 
     // Aarhus -> Kolding
-    Edge("Aarhus", "Kolding", "InterCity 432",      (10, 45), (12, 04)).
-    Edge("Aarhus", "Kolding", "InterCity 436",      (11, 45), (13, 04)).
+    Edge("Aarhus", "Kolding", "InterCity 432", (10, 45), (12, 04)).
+    Edge("Aarhus", "Kolding", "InterCity 436", (11, 45), (13, 04)).
 
     // Kolding -> Odense
-    Edge("Kolding", "Odense", "InterCityLyn 934",   (12, 05), (12, 54)).
-    Edge("Kolding", "Odense", "InterCity 838",      (13, 13), (13, 52)).
-    Edge("Kolding", "Odense", "EuroCity-396",       (13, 46), (14, 23)).
+    Edge("Kolding", "Odense", "InterCityLyn 934", (12, 05), (12, 54)).
+    Edge("Kolding", "Odense", "InterCity 838", (13, 13), (13, 52)).
+    Edge("Kolding", "Odense", "EuroCity-396", (13, 46), (14, 23)).
 
     // Odense -> Copenhagen
     Edge("Odense", "Copenhagen", "InterCityLyn 38", (13, 57), (15, 06)).

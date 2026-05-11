@@ -9,7 +9,7 @@ use Time.Duration.seconds
 /// A successful request resets the failure counter.
 def main(): Unit \ { Clock, Http, IO } =
     run {
-        let urls = List#{"/a", "/b", "/c", "/d", "/e", "/f", "/g", "/h"};
+        let urls = List#{ "/a", "/b", "/c", "/d", "/e", "/f", "/g", "/h" };
         foreach (url <- urls) {
             match Http.get(url) {
                 case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")

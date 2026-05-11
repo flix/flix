@@ -12,11 +12,11 @@ use Time.Duration.{milliseconds, seconds}
 /// Relative paths are resolved against the base URL; absolute URLs bypass it.
 def main(): Unit \ { Clock, Http, Logger, IO } =
     let defaultHeaders = Map#{
-        "Accept"        => List#{"application/json"},
-        "Authorization" => List#{"Bearer tok123"}
+        "Accept" => List#{ "application/json" },
+        "Authorization" => List#{ "Bearer tok123" }
     };
     run {
-        let urls = List#{"/api/users", "/api/posts"};
+        let urls = List#{ "/api/users", "/api/posts" };
         foreach (url <- urls) {
             match Http.get(url) {
                 case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")

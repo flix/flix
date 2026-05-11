@@ -1,8 +1,8 @@
 ///
 /// We introduce type aliases to model the inheritance domain.
 ///
-type alias Class = String         // e.g. "Circle"
-type alias Interface = String     // e.g. "Shape"
+type alias Class = String // e.g. "Circle"
+type alias Interface = String // e.g. "Shape"
 
 ///
 /// We compute all inheritance cycles in a class hierarchy.
@@ -88,4 +88,3 @@ def database(): #{ Extends(Class, Class), Implements(Class, Interface) | r } = #
     Implements("Drawable", "Paintable").
     Implements("Paintable", "Drawable").
 }
-

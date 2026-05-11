@@ -9,7 +9,6 @@
 /// works in Flix.
 ///
 def main(): Unit \ IO = region rc {
-
     //
     // Construct a simple list.
     //
@@ -66,8 +65,8 @@ def main(): Unit \ IO = region rc {
     // to read than `foreach` function calls.
     //
     let q = Ref.fresh(rc, Nil);
-    List.iterator(rc, l) |>
-    Iterator.forEach(match x -> Ref.put(x :: Ref.get(q), q));
+    List.iterator(rc, l)
+        |> Iterator.forEach(match x -> Ref.put(x :: Ref.get(q), q));
 
     //
     // This is true in particular for nested
@@ -87,12 +86,14 @@ def main(): Unit \ IO = region rc {
     // below.
     //
     let v = Ref.fresh(rc, Nil);
-    List.iterator(rc, l) |>
-    Iterator.forEach(match a -> {
-        Ref.put(a :: Ref.get(v), v);
-        List.iterator(rc, k) |>
-        Iterator.forEach(match b -> Ref.put(b :: Ref.get(v), v))
-    });
+    List.iterator(rc, l)
+        |> Iterator.forEach(
+            match a -> {
+                Ref.put(a :: Ref.get(v), v);
+                List.iterator(rc, k)
+                    |> Iterator.forEach(match b -> Ref.put(b :: Ref.get(v), v))
+            }
+        );
 
     //
     // We can even simplify nested loops
@@ -105,20 +106,24 @@ def main(): Unit \ IO = region rc {
     // some experience with Scala's for-loops.
     //
     let e = Ref.fresh(rc, Nil);
-    foreach (a <- l;
-             b <- k)
-                Ref.put((a, b) :: Ref.get(e), e);
+    foreach (
+        a <- l;
+        b <- k
+    )
+        Ref.put((a, b) :: Ref.get(e), e);
 
     //
     // The equivalent functional style expression
     // has a bit more visual noise.
     //
     let e1 = Ref.fresh(rc, Nil);
-    List.iterator(rc, l) |>
-    Iterator.forEach(match a -> {
-        List.iterator(rc, k) |>
-        Iterator.forEach(match b -> Ref.put((a, b) :: Ref.get(e1), e1))
-    });
+    List.iterator(rc, l)
+        |> Iterator.forEach(
+            match a -> {
+                List.iterator(rc, k)
+                    |> Iterator.forEach(match b -> Ref.put((a, b) :: Ref.get(e1), e1))
+            }
+        );
 
     //
     // Finally, we can also include guards
@@ -135,21 +140,25 @@ def main(): Unit \ IO = region rc {
     // for-loops.
     //
     let c = Ref.fresh(rc, Nil);
-    foreach (a <- l;
-             if a > 1;
-             b <- k;
-             if b < 6)
-                Ref.put((a, b) :: Ref.get(c), c);
+    foreach (
+        a <- l;
+        if a > 1;
+        b <- k;
+        if b < 6
+    )
+        Ref.put((a, b) :: Ref.get(c), c);
 
     //
     // Alternatively, we can put a single guard
     // at the end of the parenthesis.
     //
     let d = Ref.fresh(rc, Nil);
-    foreach (a <- l;
-             b <- k;
-             if a > 1 and b < 6)
-                Ref.put((a, b) :: Ref.get(d), d);
+    foreach (
+        a <- l;
+        b <- k;
+        if a > 1 and b < 6
+    )
+        Ref.put((a, b) :: Ref.get(d), d);
 
     //
     // Here's the equivalent functional expression
@@ -168,13 +177,17 @@ def main(): Unit \ IO = region rc {
     // and include guards.
     //
     let cf = Ref.fresh(rc, Nil);
-    List.iterator(rc, l) |>
-    Iterator.forEach(match a -> {
-        List.iterator(rc, k) |>
-        Iterator.forEach(match b -> {
-            if (a > 1 and b < 6) Ref.put((a, b) :: Ref.get(cf), cf) else ()
-        })
-    });
+    List.iterator(rc, l)
+        |> Iterator.forEach(
+            match a -> {
+                List.iterator(rc, k)
+                    |> Iterator.forEach(
+                        match b -> {
+                            if (a > 1 and b < 6) Ref.put((a, b) :: Ref.get(cf), cf) else ()
+                        }
+                    )
+            }
+        );
 
     println("z == q? ${Ref.get(z) == Ref.get(q)}");
     println("w == l with k prepended to every element of l");

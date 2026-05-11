@@ -11,7 +11,7 @@ def main(): Unit \ { Clock, Http, IO } =
     // Min interval: at least 100ms between consecutive requests.
     run {
         println("--- Min interval ---");
-        let urls = List#{"/a", "/b", "/c", "/d"};
+        let urls = List#{ "/a", "/b", "/c", "/d" };
         foreach (url <- urls) {
             match Http.get(url) {
                 case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")
@@ -24,7 +24,7 @@ def main(): Unit \ { Clock, Http, IO } =
     // Token bucket: burst of 2, then 1 request per 100ms.
     run {
         println("--- Token bucket ---");
-        let urls = List#{"/a", "/b", "/c", "/d"};
+        let urls = List#{ "/a", "/b", "/c", "/d" };
         foreach (url <- urls) {
             match Http.get(url) {
                 case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")
@@ -37,7 +37,7 @@ def main(): Unit \ { Clock, Http, IO } =
     // Sliding window: at most 2 requests per 1000ms window.
     run {
         println("--- Sliding window ---");
-        let urls = List#{"/a", "/b", "/c", "/d"};
+        let urls = List#{ "/a", "/b", "/c", "/d" };
         foreach (url <- urls) {
             match Http.get(url) {
                 case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")

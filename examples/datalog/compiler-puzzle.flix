@@ -14,8 +14,7 @@ def main(): Unit \ IO =
         // We have a compiler from src1 -> dst1 written in lang1.
         // We have a compiler that can compile lang1 to dst2.
         // Now we have a compiler from src1 to dst1 written in dst2.
-        Compiler(src1, dst1, dst2) :-
-            Compiler(src1, dst1, lang1),
+        Compiler(src1, dst1, dst2) :- Compiler(src1, dst1, lang1),
             Compiler(lang1, dst2, lang2),
             Interpreter(lang2).
 
@@ -23,10 +22,11 @@ def main(): Unit \ IO =
         // If we have a compiler from src -> intermediate and
         // we have a compiler from intermediate -> dst then
         // we can obtain a compiler from src -> dst.
-        Compiler(src, dst, lang) :-
-            Compiler(src, intermediate, lang),
+        Compiler(src, dst, lang) :- Compiler(src, intermediate, lang),
             Compiler(intermediate, dst, lang),
             Interpreter(lang).
     };
     query facts, rules
-        select (src, dst) from Compiler(src, _, dst) |> println
+        select (src, dst)
+        from Compiler(src, _, dst)
+        |> println

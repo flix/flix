@@ -32,22 +32,21 @@ mod Stratifier {
         let pg: PrecedenceGraph = convertProgram(p);
         let (pos, neg) = partition(e -> match e {case (_, b, _) => b}, pg);
         let removeBool = triple -> match triple {case (a, _, b) => (a, b)};
-        let facts = inject map(removeBool, pos), map(removeBool, neg) into PositiveDependencyEdge/2, NegativeDependencyEdge/2;
+        let facts = inject map(removeBool, pos), map(removeBool, neg) into PositiveDependencyEdge / 2, NegativeDependencyEdge / 2;
         let rules = #{
-            Stratum(pd; 0) :- PositiveDependencyEdge(pd, _).
-            Stratum(pd; 0) :- PositiveDependencyEdge(_, pd).
-            Stratum(pd; 0) :- NegativeDependencyEdge(pd, _).
-            Stratum(pd; 0) :- NegativeDependencyEdge(_, pd).
-            Stratum(ph; max(pbs, phs)) :- PositiveDependencyEdge(ph, pb), Stratum(pb; pbs), Stratum(ph; phs).
-            Stratum(ph; max(pbs + 1, phs)) :-
-                NegativeDependencyEdge(ph, pb),
-                Stratum(pb; pbs),
-                Stratum(ph; phs),
-                if (pbs < numberOfPredicates).
-                // allow one level of strata above the bound for a stratification check later
+            Stratum(pd;0) :- PositiveDependencyEdge(pd, _).
+            Stratum(pd;0) :- PositiveDependencyEdge(_, pd).
+            Stratum(pd;0) :- NegativeDependencyEdge(pd, _).
+            Stratum(pd;0) :- NegativeDependencyEdge(_, pd).
+            Stratum(ph;max(pbs, phs)) :- PositiveDependencyEdge(ph, pb), Stratum(pb;pbs), Stratum(ph;phs).
+            Stratum(ph;max(pbs + 1, phs)) :- NegativeDependencyEdge(ph, pb),
+                Stratum(pb;pbs),
+                Stratum(ph;phs),
+                if(pbs < numberOfPredicates).
+            // allow one level of strata above the bound for a stratification check later
         };
         let solution = solve facts, rules;
-        let m = query solution select (pd, s) from Stratum(pd; s) |> Vector.toMap;
+        let m = query solution select (pd, s) from Stratum(pd;s) |> Vector.toMap;
         let notStratified = Map.exists((_, stratum) -> stratum >= numberOfPredicates, m);
         if (notStratified)
             None
@@ -60,15 +59,15 @@ mod Stratifier {
         // B :- D
         // C :- not D
         let p = Program.Program(
-            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))) :: BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))) :: Nil) ::
-            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil) ::
-            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil) ::
-            Nil
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))) :: BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))) :: Nil)
+                :: Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil)
+                :: Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil)
+                :: Nil
         );
         let result = ullman(p, 4);
         let expected = "Map#{PredicateSymbol(A) -> 2, PredicateSymbol(B) -> 1, PredicateSymbol(C) -> 2, PredicateSymbol(D) -> 1}";
         let rs = match result {
-            case None => "Not Stratified"
+            case None      => "Not Stratified"
             case Some(res) => ToString.toString(res)
         };
         "Output:\n${rs}\nExpected:\n${expected}" |> println
@@ -80,15 +79,15 @@ mod Stratifier {
         // C :- not D
         // D :- A
         let p = Program.Program(
-            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))) :: BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))) :: Nil) ::
-            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil) ::
-            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil) ::
-            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))) :: Nil) ::
-            Nil
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))) :: BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))) :: Nil)
+                :: Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil)
+                :: Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil)
+                :: Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))) :: Nil)
+                :: Nil
         );
         let result = ullman(p, 4);
         let rs = match result {
-            case None => "Not Stratified"
+            case None      => "Not Stratified"
             case Some(res) => ToString.toString(res)
         };
         "Output:\n${rs}\nExpected:\nNot Stratified" |> println
@@ -97,21 +96,21 @@ mod Stratifier {
         println("example03");
         // A :- not B.
         let p = Program.Program(
-            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))) :: Nil) ::
-            Nil
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))) :: Nil)
+                :: Nil
         );
         let result = ullman(p, 2);
         let expected = "Map#{PredicateSymbol(A) -> 1, PredicateSymbol(B) -> 0}";
         let rs = match result {
-            case None => "Not Stratified"
+            case None      => "Not Stratified"
             case Some(res) => ToString.toString(res)
         };
         "Output:\n${rs}\nExpected:\n${expected}" |> println
 }
 
 def main(): Unit \ IO =
-        Stratifier.example01();
-        println("");
-        Stratifier.example02();
-        println("");
-        Stratifier.example03()
+    Stratifier.example01();
+    println("");
+    Stratifier.example02();
+    println("");
+    Stratifier.example03()

@@ -24,8 +24,8 @@ pub type alias Graph[node] = {
 /// Given the undirected graph described by `nodes` and `edges`, connected components are
 /// found and a relation with the component representative for each node is returned.
 pub def connectedComponentRep(g: Graph[node]): #{ ComponentRep(node, node) | r } with Order[node] =
-    let nodes = inject g#nodes into Node/1;
-    let edges = inject g#edges into Edge/2;
+    let nodes = inject g#nodes into Node / 1;
+    let edges = inject g#edges into Edge / 2;
     let reachability = #{
         // `Reachable(n1, n2)` describes that `n1` can reach `n2`.
         // All nodes can reach themselves.
@@ -41,7 +41,7 @@ pub def connectedComponentRep(g: Graph[node]): #{ ComponentRep(node, node) | r }
         // `ReachUp` contains nodes that can reach at least one other
         // node with a higher value. This contains all nodes
         // that are not the maximum node of their component.
-        ReachUp(n1) :- Reachable(n1, n2), if (n1 < n2).
+        ReachUp(n1) :- Reachable(n1, n2), if(n1 < n2).
         // `n` is in a component that is represented by `rep`.
         // `rep` is the highest node of the component.
         ComponentRep(n, rep) :- Reachable(n, rep), not ReachUp(rep).
@@ -55,40 +55,40 @@ pub def connectGraph(g: Graph[node]): #{ Edge(Set[node], Set[node]) | r } with O
         // `Component(rep; c)` describes that the node `rep` is the representative of the component
         // `c` which is a set of nodes. The semicolon makes `c` use lattice semantics which
         // cause multiple components for a specific `rep` to be reduced to one value by union.
-        Component(rep; Set#{n}) :- ComponentRep(n, rep).
+        Component(rep;Set#{ n }) :- ComponentRep(n, rep).
         // every pair of components `(c1, c2)` where `c1` is lexicographically
         // smaller than `c2`. The fix keyword is used here to ensure that the
         // full union is computed before producing Edge values.
-        Edge(c1, c2) :- fix Component(_; c1), fix Component(_; c2), if (c1 < c2).
+        Edge(c1, c2) :- fix Component(_;c1), fix Component(_;c2), if(c1 < c2).
     };
     solve connectedComponentRep(g), missingEdges project Edge
 
 def main(): Unit \ IO =
     let graph = {
         nodes = Set.range(0, 8),
-        edges = Set#{(0, 4), (0, 7), (2, 3), (1, 6), (5, 6)}
+        edges = Set#{ (0, 4), (0, 7), (2, 3), (1, 6), (5, 6) }
     };
     let connectedGraph = connectGraph(graph);
     let result = query connectedGraph select (c1, c2) from Edge(c1, c2);
     let graphString =
-        "    ┌─┐           ┌─┐" ::
-        "    │5│       ┌─┐ │2│" ::
-        "    └─┴─┐     │3├─┴─┘" ::
-        "  ┌─┐   ├─┐   └─┘    " ::
-        "  │1│   │6│          " ::
-        "  └─┴───┴─┘          " ::
-        "  ┌─┐                " ::
-        "  │4│                " ::
-        "  └─┴──┬─┐           " ::
-        "       │0│    ┌─┐    " ::
-        "       └─┴────┤7│    " ::
-        "              └─┘    " ::
-        Nil;
+        "    ┌─┐           ┌─┐"
+            :: "    │5│       ┌─┐ │2│"
+            :: "    └─┴─┐     │3├─┴─┘"
+            :: "  ┌─┐   ├─┐   └─┘    "
+            :: "  │1│   │6│          "
+            :: "  └─┴───┴─┘          "
+            :: "  ┌─┐                "
+            :: "  │4│                "
+            :: "  └─┴──┬─┐           "
+            :: "       │0│    ┌─┐    "
+            :: "       └─┴────┤7│    "
+            :: "              └─┘    "
+            :: Nil;
 
-    println(graphString |> String.intercalate(String.lineSeparator()));
-    println("The graph above has the components below with edges between them");
+        println(graphString |> String.intercalate(String.lineSeparator()));
+        println("The graph above has the components below with edges between them");
 
-    def pad(s) = ToString.toString(s) |> String.padLeft(15, ' ');
-    result |>
-        Vector.map(match (c1, c2) -> "${pad(c1)} <--> ${c2}") |>
-        Vector.forEach(println)
+        def pad(s) = ToString.toString(s) |> String.padLeft(15, ' ');
+        result
+            |> Vector.map(match (c1, c2) -> "${pad(c1)} <--> ${c2}")
+            |> Vector.forEach(println)

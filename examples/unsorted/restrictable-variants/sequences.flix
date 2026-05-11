@@ -10,7 +10,7 @@ mod Seq {
     type alias SList[a] = Seq[<Seq.Nil, Seq.Cons>][a]
     type alias SNel[a] = Seq[<Seq.One, Seq.Cons>][a]
 
-    pub def main(): Unit \ IO  = {
+    pub def main(): Unit \ IO = {
         // Hovering over each of the declarations shows its inferred type.
 
         // We can create a sequence of one element
@@ -70,8 +70,8 @@ mod Seq {
     /// Returns true if and only if `l` is the empty list, i.e. `Nil`.
     ///
     pub def isEmpty(l: Seq[s][a]): Bool = choose l {
-        case Seq.Nil    => true
-        case Seq.One(_) => false
+        case Seq.Nil        => true
+        case Seq.One(_)     => false
         case Seq.Cons(_, _) => false
     }
 
@@ -91,16 +91,16 @@ mod Seq {
     /// Returns `None` if `l` is empty.
     ///
     pub def last(l: Seq[s rvand <Seq.One, Seq.Cons>][a]): a = choose l {
-        case Seq.One(x)         => x
-        case Seq.Cons(_, xs)    => last(xs)
+        case Seq.One(x)      => x
+        case Seq.Cons(_, xs) => last(xs)
     }
 
     ///
     /// Returns the number of elements in `l`.
     ///
-    pub def length(l: Seq[s][a]): Int32 = choose l{
-        case Seq.Nil => 0
-        case Seq.One(_) => 1
+    pub def length(l: Seq[s][a]): Int32 = choose l {
+        case Seq.Nil         => 0
+        case Seq.One(_)      => 1
         case Seq.Cons(_, xs) => length(xs) + 1
     }
 
@@ -109,18 +109,18 @@ mod Seq {
     ///
     ///
     pub def append(l1: Seq[s1][a], l2: Seq[s2][a]): Seq[s2 rvadd <Seq.Cons>][a] = choose* l1 {
-        case Seq.Nil            => l2
-        case Seq.One(x)         => open_variant Seq.Cons(x, l2)
-        case Seq.Cons(x, xs)    => open_variant Seq.Cons(x, append(xs, l2))
+        case Seq.Nil         => l2
+        case Seq.One(x)      => open_variant Seq.Cons(x, l2)
+        case Seq.Cons(x, xs) => open_variant Seq.Cons(x, append(xs, l2))
     }
 
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
     ///
     pub def memberOf(a: a, l: Seq[s][a]): Bool with Eq[a] = choose l {
-        case Seq.Nil            => false
-        case Seq.One(x)         => a == x
-        case Seq.Cons(x, xs)    => if (a == x) true else memberOf(a, xs)
+        case Seq.Nil         => false
+        case Seq.One(x)      => a == x
+        case Seq.Cons(x, xs) => if (a == x) true else memberOf(a, xs)
     }
 
     ///
@@ -159,9 +159,9 @@ mod Seq {
     /// Optionally returns the position of `x` in `l`.
     ///
     pub def indexOf(a: a, l: Seq[s][a]): SOption[Int32] with Eq[a] = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (x == a) open_variant Seq.One(0) else open_variant Seq.Nil
-        case Seq.Cons(x, xs)    => if (x == a) open_variant Seq.One(0) else indexOf(a, xs) |> map(y -> y + 1)
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => if (x == a) open_variant Seq.One(0) else open_variant Seq.Nil
+        case Seq.Cons(x, xs) => if (x == a) open_variant Seq.One(0) else indexOf(a, xs) |> map(y -> y + 1)
     }
 
     ///
@@ -173,9 +173,9 @@ mod Seq {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
     pub def findLeft(f: a -> Bool \ ef, l: Seq[s][a]): SOption[a] \ ef = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
-        case Seq.Cons(x, xs)    => if (f(x)) open_variant Seq.One(x) else findLeft(f, xs)
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
+        case Seq.Cons(x, xs) => if (f(x)) open_variant Seq.One(x) else findLeft(f, xs)
     }
 
     ///
@@ -184,10 +184,10 @@ mod Seq {
     pub def findRight(f: a -> Bool \ ef, l: Seq[s][a]): SOption[a] \ ef =
         findRightHelper(f, l, () -> open_variant Seq.Nil)
 
-    def findRightHelper(f: a -> Bool \ ef1, l: Seq[s][a], k: Unit -> SOption[a] \ ef2): SOption[a] \ {ef1, ef2} = choose* l {
-        case Seq.Nil            => k()
-        case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else k()
-        case Seq.Cons(x, xs)    => findRightHelper(f, xs, () -> if (f(x)) open_variant Seq.One(x) else k())
+    def findRightHelper(f: a -> Bool \ ef1, l: Seq[s][a], k: Unit -> SOption[a] \ ef2): SOption[a] \ { ef1, ef2 } = choose* l {
+        case Seq.Nil         => k()
+        case Seq.One(x)      => if (f(x)) open_variant Seq.One(x) else k()
+        case Seq.Cons(x, xs) => findRightHelper(f, xs, () -> if (f(x)) open_variant Seq.One(x) else k())
     }
 
     ///
@@ -225,9 +225,9 @@ mod Seq {
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, l: Seq[s][a]): SNel[b] \ ef = choose* l {
-        case Seq.Nil            => Seq.One(s)
-        case Seq.One(x)         => open_variant Seq.Cons(s, Seq.One(f(s, x)))
-        case Seq.Cons(x, xs)    => open_variant Seq.Cons(s, scanLeft(f, f(s, x), xs))
+        case Seq.Nil         => Seq.One(s)
+        case Seq.One(x)      => open_variant Seq.Cons(s, Seq.One(f(s, x)))
+        case Seq.Cons(x, xs) => open_variant Seq.Cons(s, scanLeft(f, f(s, x), xs))
     }
 
     // ///
@@ -236,9 +236,9 @@ mod Seq {
     // /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     // ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, l: Seq[s][a]): SNel[b] \ ef = choose* l {
-        case Seq.Nil            => Seq.One(s)
-        case Seq.One(x)         => open_variant Seq.Cons(f(x, s), Seq.One(s))
-        case Seq.Cons(x, xs)    =>
+        case Seq.Nil    => Seq.One(s)
+        case Seq.One(x) => open_variant Seq.Cons(f(x, s), Seq.One(s))
+        case Seq.Cons(x, xs) =>
             let r = scanRight(f, s, xs);
             open_variant Seq.Cons(f(x, head(r)), r)
     }
@@ -249,15 +249,15 @@ mod Seq {
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
     pub def map(f: a -> b \ ef, l: Seq[s][a]): Seq[s][b] \ ef = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => Seq.One(f(x))
-        case Seq.Cons(x, xs)    => open_variant Seq.Cons(f(x), map(f, xs))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => Seq.One(f(x))
+        case Seq.Cons(x, xs) => open_variant Seq.Cons(f(x), map(f, xs))
     }
 
     ///
     /// Return the singleton list with element `x`.
     ///
-    pub def point(a: a) : Seq[<Seq.One>][a] = Seq.One(a)
+    pub def point(a: a): Seq[<Seq.One>][a] = Seq.One(a)
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
@@ -272,24 +272,24 @@ mod Seq {
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
     pub def flatMap(f: a -> Seq[s1][b] \ ef, l: Seq[s2][a]): Seq[(s2 rvand <Seq.Nil, Seq.Cons>) rvadd s1][b] \ ef = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => f(x)
-        case Seq.Cons(x, xs)    => append(f(x), flatMap(f, xs))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => f(x)
+        case Seq.Cons(x, xs) => append(f(x), flatMap(f, xs))
     }
 
     ///
     /// Returns the reverse of `l`.
     ///
     pub def reverse(l: Seq[s][a]): Seq[(s rvand <Seq.Nil>) rvadd <Seq.One, Seq.Cons>][a] = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => Seq.One(x)
-        case Seq.Cons(x, xs)    => revAppend(xs, Seq.One(x))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => Seq.One(x)
+        case Seq.Cons(x, xs) => revAppend(xs, Seq.One(x))
     }
 
     def revAppend(l1: Seq[s1][a], l2: Seq[s2][a]): Seq[s2 rvadd <Seq.Cons>][a] = choose* l1 {
-        case Seq.Nil            => l2
-        case Seq.One(x)         => open_variant Seq.Cons(x, l2)
-        case Seq.Cons(x, xs)    => revAppend(xs, open_variant Seq.Cons(x, l2))
+        case Seq.Nil         => l2
+        case Seq.One(x)      => open_variant Seq.Cons(x, l2)
+        case Seq.Cons(x, xs) => revAppend(xs, open_variant Seq.Cons(x, l2))
     }
 
     ///
@@ -298,9 +298,9 @@ mod Seq {
     /// Returns `l` if `i < 0` or `i > length(l)-1`.
     ///
     pub def update(i: Int32, a: a, l: Seq[s][a]): Seq[s][a] = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (i == 0) Seq.One(a) else Seq.One(x)
-        case Seq.Cons(x, xs)    => if (i == 0) open_variant Seq.Cons(a, xs) else open_variant Seq.Cons(x, update(i - 1, a, xs))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => if (i == 0) Seq.One(a) else Seq.One(x)
+        case Seq.Cons(x, xs) => if (i == 0) open_variant Seq.Cons(a, xs) else open_variant Seq.Cons(x, update(i - 1, a, xs))
     }
 
     ///
@@ -313,15 +313,15 @@ mod Seq {
     /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
     pub def intersperse(a: a, l: Seq[s][a]): Seq[s rvadd <Seq.Cons>][a] = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => Seq.One(x)
-        case Seq.Cons(x, xs)    => open_variant Seq.Cons(x, presperse(a, xs))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => Seq.One(x)
+        case Seq.Cons(x, xs) => open_variant Seq.Cons(x, presperse(a, xs))
     }
 
     def presperse(a: a, l: Seq[s][a]): Seq[s rvadd <Seq.Cons>][a] = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => open_variant Seq.Cons(a, Seq.One(x))
-        case Seq.Cons(x, xs)    => open_variant Seq.Cons(a, open_variant Seq.Cons(x, presperse(a, xs)))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => open_variant Seq.Cons(a, Seq.One(x))
+        case Seq.Cons(x, xs) => open_variant Seq.Cons(a, open_variant Seq.Cons(x, presperse(a, xs)))
     }
 
     ///
@@ -330,33 +330,33 @@ mod Seq {
     /// That is, returns `y1 :: x1 ... xn :: y2 :: ... yn-1 :: x1 :: ... :: xn :: yn :: Nil`.
     ///
     pub def intercalate(l1: Seq[s1][a], l2: Seq[s2o][Seq[s2i][a]]): Seq[(s2o rvand <Seq.Nil>) rvadd s2i rvadd <Seq.Cons>][a] = choose* l2 {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => x
-        case Seq.Cons(x, xs)    => append(x, precalate(l1, xs))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => x
+        case Seq.Cons(x, xs) => append(x, precalate(l1, xs))
     }
 
     def precalate(l1: Seq[s1][a], l2: Seq[s2o][Seq[s2i][a]]): Seq[(s2o rvand <Seq.Nil>) rvadd s2i rvadd <Seq.Cons>][a] = choose* l2 {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => append(l1, x)
-        case Seq.Cons(x, xs)    => append(append(l1, x), precalate(l1, xs))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => append(l1, x)
+        case Seq.Cons(x, xs) => append(append(l1, x), precalate(l1, xs))
     }
 
     ///
     /// Returns `true` if and only if `l1` is a prefix of `l2`.
     ///
     pub def isPrefixOf(l1: Seq[s1][a], l2: Seq[s2][a]): Bool with Eq[a] = choose l1 {
-        case Seq.Nil            => true
-        case Seq.One(x)         =>
+        case Seq.Nil => true
+        case Seq.One(x) =>
             choose l2 {
                 case Seq.Nil        => false
                 case Seq.One(y)     => x == y
                 case Seq.Cons(y, _) => x == y
             }
-        case Seq.Cons(x, xs)    =>
+        case Seq.Cons(x, xs) =>
             choose l2 {
-                case Seq.Nil            => false
-                case Seq.One(y)         => x == y
-                case Seq.Cons(y, ys)    => x == y and xs `isPrefixOf` ys
+                case Seq.Nil         => false
+                case Seq.One(y)      => x == y
+                case Seq.Cons(y, ys) => x == y and xs `isPrefixOf` ys
             }
     }
 
@@ -364,13 +364,13 @@ mod Seq {
     /// Returns `true` if and only if `l1` is an infix of `l2`.
     ///
     pub def isInfixOf(l1: Seq[s1][a], l2: Seq[s2][a]): Bool with Eq[a] = choose l1 {
-        case Seq.Nil            => true
-        case Seq.One(x)         => memberOf(x, l2)
-        case Seq.Cons(x, xs)    =>
+        case Seq.Nil    => true
+        case Seq.One(x) => memberOf(x, l2)
+        case Seq.Cons(x, xs) =>
             choose l2 {
-                case Seq.Nil            => false
-                case Seq.One(y)         => x == y and isEmpty(xs)
-                case Seq.Cons(y, ys)    => (x == y and xs `isPrefixOf` ys) or l1 `isInfixOf` ys
+                case Seq.Nil         => false
+                case Seq.One(y)      => x == y and isEmpty(xs)
+                case Seq.Cons(y, ys) => (x == y and xs `isPrefixOf` ys) or l1 `isInfixOf` ys
             }
     }
 
@@ -390,9 +390,9 @@ mod Seq {
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Seq[s][a]): b \ ef = choose l {
-        case Seq.Nil            => s
-        case Seq.One(x)         => f(s, x)
-        case Seq.Cons(x, xs)    => foldLeft(f, f(s, x), xs)
+        case Seq.Nil         => s
+        case Seq.One(x)      => f(s, x)
+        case Seq.Cons(x, xs) => foldLeft(f, f(s, x), xs)
     }
 
     ///
@@ -401,9 +401,9 @@ mod Seq {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Seq[s][a]): b \ ef = choose l {
-        case Seq.Nil            => s
-        case Seq.One(x)         => f(x, s)
-        case Seq.Cons(x, xs)    => f(x, foldRight(f, s, xs))
+        case Seq.Nil         => s
+        case Seq.One(x)      => f(x, s)
+        case Seq.Cons(x, xs) => f(x, foldRight(f, s, xs))
     }
 
     ///
@@ -415,8 +415,8 @@ mod Seq {
     /// Returns `None` if `l` is empty.
     ///
     pub def reduceLeft(f: (a, a) -> a \ ef, l: Seq[s rvsub <Seq.Nil>][a]): a \ ef = choose l {
-        case Seq.One(x)         => x
-        case Seq.Cons(x, xs)    => foldLeft(f, x, xs)
+        case Seq.One(x)      => x
+        case Seq.Cons(x, xs) => foldLeft(f, x, xs)
     }
 
     ///
@@ -427,8 +427,8 @@ mod Seq {
     /// Returns `None` if `l` is empty.
     ///
     pub def reduceRight(f: (a, a) -> a \ ef, l: Seq[s rvsub <Seq.Nil>][a]): a \ ef = choose l {
-        case Seq.One(x)         => x
-        case Seq.Cons(x, xs)    => foldRight(f, x, xs)
+        case Seq.One(x)      => x
+        case Seq.Cons(x, xs) => foldRight(f, x, xs)
     }
 
     ///
@@ -441,9 +441,9 @@ mod Seq {
     /// Returns the concatenation of the elements in `l`.
     ///
     pub def flatten(l: Seq[s1][Seq[s2][a]]): Seq[s2 rvadd (s1 rvand <Seq.Nil, Seq.Cons>)][a] = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => x
-        case Seq.Cons(x, xs)    => append(x, flatten(xs))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => x
+        case Seq.Cons(x, xs) => append(x, flatten(xs))
     }
 
     ///
@@ -452,9 +452,9 @@ mod Seq {
     /// Returns `false` if `l` is empty.
     ///
     pub def exists(f: a -> Bool \ ef, l: Seq[s][a]): Bool \ ef = choose l {
-        case Seq.Nil            => false
-        case Seq.One(x)         => f(x)
-        case Seq.Cons(x, xs)    => f(x) or exists(f, xs)
+        case Seq.Nil         => false
+        case Seq.One(x)      => f(x)
+        case Seq.Cons(x, xs) => f(x) or exists(f, xs)
     }
 
     ///
@@ -463,18 +463,18 @@ mod Seq {
     /// Returns `true` if `l` is empty.
     ///
     pub def forAll(f: a -> Bool \ ef, l: Seq[s][a]): Bool \ ef = choose l {
-        case Seq.Nil            => true
-        case Seq.One(x)         => f(x)
-        case Seq.Cons(x, xs)    => f(x) and forAll(f, xs)
+        case Seq.Nil         => true
+        case Seq.One(x)      => f(x)
+        case Seq.Cons(x, xs) => f(x) and forAll(f, xs)
     }
 
     ///
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
     ///
     pub def filter(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s rvadd <Seq.Nil>][a] \ ef = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
-        case Seq.Cons(x, xs)    => if (f(x)) open_variant Seq.Cons(x, filter(f, xs)) else open_variant_as Seq filter(f, xs)
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
+        case Seq.Cons(x, xs) => if (f(x)) open_variant Seq.Cons(x, filter(f, xs)) else open_variant_as Seq filter(f, xs)
     }
 
     ///
@@ -482,8 +482,8 @@ mod Seq {
     /// Returns `None` if the list `l` is `Nil`.
     ///
     pub def tail(l: Seq[s rvsub <Seq.Nil>][a]): Seq[s rvadd <Seq.Nil>][a] = choose* l {
-        case Seq.One(_)         => Seq.Nil
-        case Seq.Cons(_, xs)    => xs
+        case Seq.One(_)      => Seq.Nil
+        case Seq.Cons(_, xs) => xs
     }
 
     ///
@@ -506,9 +506,9 @@ mod Seq {
             open_variant_as Seq l
         } else {
             choose* l {
-                case Seq.Nil            => Seq.Nil
-                case Seq.One(_)         => Seq.Nil
-                case Seq.Cons(_, xs)    => drop(n - 1, xs)
+                case Seq.Nil         => Seq.Nil
+                case Seq.One(_)      => Seq.Nil
+                case Seq.Cons(_, xs) => drop(n - 1, xs)
             }
         }
     }
@@ -517,9 +517,9 @@ mod Seq {
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
     pub def dropWhile(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s rvadd <Seq.Nil>][a] \ ef = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (f(x)) open_variant Seq.Nil else open_variant Seq.One(x)
-        case Seq.Cons(x, xs)    => if (f(x)) open_variant_as Seq dropWhile(f, xs) else open_variant Seq.Cons(x, open_variant_as Seq xs)
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => if (f(x)) open_variant Seq.Nil else open_variant Seq.One(x)
+        case Seq.Cons(x, xs) => if (f(x)) open_variant_as Seq dropWhile(f, xs) else open_variant Seq.Cons(x, open_variant_as Seq xs)
     }
 
     ///
@@ -533,9 +533,9 @@ mod Seq {
             open_variant Seq.Nil
         } else {
             choose* l {
-                case Seq.Nil            => Seq.Nil
-                case Seq.One(x)         => Seq.One(x)
-                case Seq.Cons(x, xs)    => open_variant Seq.Cons(x, take(n - 1, xs))
+                case Seq.Nil         => Seq.Nil
+                case Seq.One(x)      => Seq.One(x)
+                case Seq.Cons(x, xs) => open_variant Seq.Cons(x, take(n - 1, xs))
             }
         }
     }
@@ -544,9 +544,9 @@ mod Seq {
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
     pub def takeWhile(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s rvadd <Seq.Nil>][a] \ ef = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
-        case Seq.Cons(x, xs)    => if (f(x)) open_variant Seq.Cons(x, takeWhile(f, xs)) else open_variant_as Seq takeWhile(f, xs)
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
+        case Seq.Cons(x, xs) => if (f(x)) open_variant Seq.Cons(x, takeWhile(f, xs)) else open_variant_as Seq takeWhile(f, xs)
     }
 
     ///
@@ -568,18 +568,18 @@ mod Seq {
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
     pub def zip(l1: Seq[s1][a], l2: Seq[s2][b]): Seq[((s1 rvadd s2) rvand <Seq.Nil>) rvadd ((s1 rvadd s2) rvand <Seq.One>) rvadd ((s1 rvand s2) rvand <Seq.Cons>)][(a, b)] = choose* l1 {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         =>
+        case Seq.Nil => Seq.Nil
+        case Seq.One(x) =>
             choose* l2 {
-                case Seq.Nil            => Seq.Nil
-                case Seq.One(y)         => Seq.One((x, y))
-                case Seq.Cons(y, _)     => Seq.One((x, y))
+                case Seq.Nil        => Seq.Nil
+                case Seq.One(y)     => Seq.One((x, y))
+                case Seq.Cons(y, _) => Seq.One((x, y))
             }
-        case Seq.Cons(x, xs)    =>
+        case Seq.Cons(x, xs) =>
             choose* l2 {
-                case Seq.Nil            => Seq.Nil
-                case Seq.One(y)         => Seq.One((x, y))
-                case Seq.Cons(y, ys)    => open_variant Seq.Cons((x, y), zip(xs, ys))
+                case Seq.Nil         => Seq.Nil
+                case Seq.One(y)      => Seq.One((x, y))
+                case Seq.Cons(y, ys) => open_variant Seq.Cons((x, y), zip(xs, ys))
             }
     }
 
@@ -600,9 +600,9 @@ mod Seq {
     pub def zipWithIndex(l: Seq[s][a]): Seq[s][(Int32, a)] = zipWithIndexHelper(0, l)
 
     def zipWithIndexHelper(i: Int32, l: Seq[s][a]): Seq[s][(Int32, a)] = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => Seq.One((i, x))
-        case Seq.Cons(x, xs)    => open_variant Seq.Cons((i, x), zipWithIndexHelper(i + 1, xs))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => Seq.One((i, x))
+        case Seq.Cons(x, xs) => open_variant Seq.Cons((i, x), zipWithIndexHelper(i + 1, xs))
     }
 
     ///
@@ -667,7 +667,6 @@ mod Seq {
     pub def foldRight2(f: (a, b, c) -> c \ ef, c: c, l1: Seq[s1][a], l2: Seq[s2][b]): c \ ef =
         (c, zip(l1, l2)) ||> foldRight(match (x, y) -> z -> f(x, y, z))
 
-
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
@@ -680,9 +679,9 @@ mod Seq {
     /// Returns `None` if every element of `l` is `None`.
     ///
     pub def findMap(f: a -> Seq[s1 rvand <Seq.Nil, Seq.One>][b] \ ef, l: Seq[s2][a]): Seq[(s2 rvand <Seq.Nil>) rvadd (s1 rvand <Seq.Nil, Seq.One>)][b] \ ef = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => f(x)
-        case Seq.Cons(x, xs)    =>
+        case Seq.Nil    => Seq.Nil
+        case Seq.One(x) => f(x)
+        case Seq.Cons(x, xs) =>
             choose* f(x) {
                 case Seq.Nil    => findMap(f, xs)
                 case Seq.One(v) => Seq.One(v)
@@ -707,9 +706,9 @@ mod Seq {
     /// Returns the elements of `l` as a `DelayList`.
     ///
     pub def toDelayList(l: Seq[s][a]): DelayList[a] = choose l {
-        case Seq.Nil            => DelayList.ENil
-        case Seq.One(x)         => DelayList.LCons(x, lazy DelayList.ENil)
-        case Seq.Cons(x, xs)    => DelayList.LCons(x, lazy toDelayList(xs))
+        case Seq.Nil         => DelayList.ENil
+        case Seq.One(x)      => DelayList.LCons(x, lazy DelayList.ENil)
+        case Seq.Cons(x, xs) => DelayList.LCons(x, lazy toDelayList(xs))
     }
 
     ///
@@ -754,9 +753,9 @@ mod Seq {
     /// Applies `f` to every element of `l`.
     ///
     pub def forEach(f: a -> Unit \ ef, l: Seq[s][a]): Unit \ ef = choose l {
-        case Seq.Nil            => ()
-        case Seq.One(x)         => f(x)
-        case Seq.Cons(x, xs)    => f(x); forEach(f, xs)
+        case Seq.Nil         => ()
+        case Seq.One(x)      => f(x)
+        case Seq.Cons(x, xs) => f(x); forEach(f, xs)
     }
 
     ///
@@ -770,10 +769,10 @@ mod Seq {
     /// Returns the list `l` as an array.
     ///
     pub def toArray(rc: Region[r], l: Seq[s][a]): Array[a, r] \ r = {
-            let a = Array.empty(rc, length(l));
-            forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
-            a
-        }
+        let a = Array.empty(rc, length(l));
+        forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
+        a
+    }
 
     ///
     /// Returns the list `l` as a vector.
@@ -790,15 +789,15 @@ mod Seq {
     // /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `l`.
     // ///
     pub def sort(l: Seq[s][a]): Seq[s][a] with Order[a] = choose* l {
-        case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => Seq.One(x)
-        case Seq.Cons(x, xs)    => insert(x, sort(xs))
+        case Seq.Nil         => Seq.Nil
+        case Seq.One(x)      => Seq.One(x)
+        case Seq.Cons(x, xs) => insert(x, sort(xs))
     }
 
     def insert(x: a, l: Seq[s][a]): Seq[s rvadd <Seq.Cons>][a] with Order[a] = choose* l {
-        case Seq.Nil            => open_variant Seq.Cons(x, Seq.Nil)
-        case Seq.One(y)         => if (x <= y) open_variant Seq.Cons(x, Seq.One(y)) else open_variant Seq.Cons(y, Seq.One(x))
-        case Seq.Cons(y, ys)    => if (x <= y) open_variant Seq.Cons(x, open_variant Seq.Cons(y, ys)) else open_variant Seq.Cons(y, insert(x, ys))
+        case Seq.Nil         => open_variant Seq.Cons(x, Seq.Nil)
+        case Seq.One(y)      => if (x <= y) open_variant Seq.Cons(x, Seq.One(y)) else open_variant Seq.Cons(y, Seq.One(x))
+        case Seq.Cons(y, ys) => if (x <= y) open_variant Seq.Cons(x, open_variant Seq.Cons(y, ys)) else open_variant Seq.Cons(y, insert(x, ys))
     }
 
     ///
@@ -820,9 +819,9 @@ mod Seq {
         let ls = Ref.fresh(rc, open_variant_as Seq xs);
         let next = () -> {
             choose (Ref.get(ls)) {
-                case Seq.Nil            => None
-                case Seq.One(x)         => Ref.put(open_variant Seq.Nil, ls); Some(x)
-                case Seq.Cons(x, rs)    => Ref.put(rs, ls); Some(x)
+                case Seq.Nil         => None
+                case Seq.One(x)      => Ref.put(open_variant Seq.Nil, ls); Some(x)
+                case Seq.Cons(x, rs) => Ref.put(rs, ls); Some(x)
             }
         };
         Iterator.unfoldWithIter(rc, next)
@@ -836,9 +835,7 @@ mod Seq {
     pub def toDelayMap(l: Seq[s][(a, b)]): DelayMap[a, b] with Order[a] =
         foldRight((x, acc) -> DelayMap.insert(fst(x), snd(x), acc), DelayMap.empty(), l)
 
-
 }
-
 
 instance ToString[Seq.Seq[s][a]] with ToString[a] {
     pub def toString(l: Seq.Seq[s][a]): String = Seq.toString(l)
@@ -866,9 +863,9 @@ instance Order[Seq.Seq[s][a]] with Order[a] {
 }
 
 def compareHelper(l: Seq.Seq[s][(a, a)]): Comparison with Order[a] = choose l {
-    case Seq.Seq.Nil            => Comparison.EqualTo
-    case Seq.Seq.One(x)         => fst(x) <=> snd(x)
-    case Seq.Seq.Cons(x, xs)    => (fst(x) <=> snd(x)) `Order.thenCompare` lazy compareHelper(xs)
+    case Seq.Seq.Nil         => Comparison.EqualTo
+    case Seq.Seq.One(x)      => fst(x) <=> snd(x)
+    case Seq.Seq.Cons(x, xs) => (fst(x) <=> snd(x)) `Order.thenCompare` lazy compareHelper(xs)
 }
 
 instance Functor[Seq.Seq[s]] {
