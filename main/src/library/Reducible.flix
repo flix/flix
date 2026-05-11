@@ -105,8 +105,10 @@ pub mod Reducible {
         /// Returns the tail of `t` as a list.
         ///
         pub def tail(t: t[a]): List[a] =
-            Reducible.reduceLeftTo((k, a) -> ks -> k(a :: ks), _ -> identity, t)(Nil) // NB: Builds a continuation function without the first
-                                                                                       // element that is immediately invoked to avoid `foldRight`.
+            // NB: Builds a continuation function without the first
+            // element that is immediately invoked to avoid `foldRight`.
+            Reducible.reduceLeftTo((k, a) -> ks -> k(a :: ks), _ -> identity, t)(Nil)
+
         ///
         /// Returns the reverse of `t` as a list.
         ///
@@ -209,25 +211,23 @@ pub mod Reducible {
         /// Returns `t` as a list without the longest prefix that satisfies the predicate `f`.
         ///
         pub def dropWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
-            (Reducible.foldLeft((acc, a) -> {
-                let (c, k) = acc;
-                if (c and f(a))
-                    (true, k)
-                else
-                    (false, ks -> k(a :: ks))
-            }, (true, identity), t) |> snd)(Nil)
+            def step(acc, a) = {
+                let (c, xs) = acc;
+                if (c and f(a)) (true, xs)
+                else            (false, a :: xs)
+            };
+            Reducible.foldLeft(step, (true, Nil), t) |> snd |> List.reverse
 
         ///
         /// Returns the longest prefix of `t` as a list that satisfies the predicate `f`.
         ///
         pub def takeWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
-            (Reducible.foldLeft((acc, a) -> {
-                let (c, k) = acc;
-                if (c and f(a))
-                    (true, ks -> k(a :: ks))
-                else
-                    (false, k)
-            }, (true, identity), t) |> snd)(Nil)
+            def step(acc, a) = {
+                let (c, xs) = acc;
+                if (c and f(a)) (true, a :: xs)
+                else            (false, xs)
+            };
+            Reducible.foldLeft(step, (true, Nil), t) |> snd |> List.reverse
 
         ///
         /// Returns `t` as a list with `a` inserted between every two adjacent elements.

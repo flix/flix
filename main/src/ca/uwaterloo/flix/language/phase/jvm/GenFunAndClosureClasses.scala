@@ -37,19 +37,25 @@ object GenFunAndClosureClasses {
     ParOps.parAgg(defs.values, Map.empty[JvmName, JvmClass])({
 
       case (macc, closure) if isClosure(closure) =>
-        val closureName = JvmOps.getClosureClassName(closure.sym)
-        val code = genClosure(closureName, closure)
-        macc + (closureName -> JvmClass(closureName, code))
+        flix.profile(closure.sym, closure.loc) {
+          val closureName = JvmOps.getClosureClassName(closure.sym)
+          val code = genClosure(closureName, closure)
+          macc + (closureName -> JvmClass(closureName, code))
+        }
 
       case (macc, defn) if isFunction(defn) && isControlPure(defn) =>
-        val functionName = BackendObjType.Defn(defn.sym).jvmName
-        val code = genControlPureFunction(functionName, defn)
-        macc + (functionName -> JvmClass(functionName, code))
+        flix.profile(defn.sym, defn.loc) {
+          val functionName = BackendObjType.Defn(defn.sym).jvmName
+          val code = genControlPureFunction(functionName, defn)
+          macc + (functionName -> JvmClass(functionName, code))
+        }
 
       case (macc, defn) if isFunction(defn) =>
-        val functionName = BackendObjType.Defn(defn.sym).jvmName
-        val code = genControlImpureFunction(functionName, defn)
-        macc + (functionName -> JvmClass(functionName, code))
+        flix.profile(defn.sym, defn.loc) {
+          val functionName = BackendObjType.Defn(defn.sym).jvmName
+          val code = genControlImpureFunction(functionName, defn)
+          macc + (functionName -> JvmClass(functionName, code))
+        }
 
       case (macc, _) =>
         macc

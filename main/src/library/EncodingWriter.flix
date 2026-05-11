@@ -45,7 +45,7 @@ pub mod EncodingWriter {
     pub def wrap(charset: CharacterSet, byteWriter: t): EncodingWriter[t] \ IO =
         let CharacterSet.CharacterSet(cs) = charset;
         EncodingWriter({
-            encoder = cs.newEncoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE),
+            encoder    = cs.newEncoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE),
             byteWriter = byteWriter
         })
 
@@ -59,10 +59,10 @@ pub mod EncodingWriter {
     /// Returns `Err(e)` if some underlying I/O error occurs.
     ///
     pub def write(src: Array[Char, r], writer: EncodingWriter[t]): Result[IoError, Int32] \ r + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Int8 =
-        let EncodingWriter.EncodingWriter({ encoder, byteWriter }) = writer;
+        let EncodingWriter.EncodingWriter({encoder, byteWriter}) = writer;
         region rc {
             let dest = encoder |> encode(rc, src);
-            forM(
+            forM (
                 _ <- byteWriter |> writeBytes(rc, dest)
             ) yield {
                 src |> Array.length
@@ -116,7 +116,7 @@ pub mod EncodingWriter {
             if (Array.isEmpty(arr)) {
                 Ok(())
             } else {
-                forM(
+                forM (
                     bytesWritten <- Writable.write(arr, byteWriter);
                     _ <- loop(arr |> Array.drop(rc, bytesWritten))
                 ) yield ()

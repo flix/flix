@@ -36,22 +36,22 @@ pub mod Eq {
         ///
         /// Reflexivity: An element `x` is equal to itself.
         ///
-        law reflexivity: forall(x: a) x == x
+        law reflexivity: forall (x: a) x == x
 
         ///
         /// Symmetry: If `x` is equal to `y` then `y` must also be equal to `x`.
         ///
-        law symmetry: forall(x: a, y: a) (x == y) ==> (y == x)
+        law symmetry: forall (x: a, y: a) (x == y) ==> (y == x)
 
         ///
         /// Transitivity: If `x` is equal to `y` and `y` is equal to `z` then `x` must be equal to `z`.
         ///
-        law transitivity: forall(x: a, y: a, z: a) ((x == y) and (y == z)) ==> (x == z)
+        law transitivity: forall (x: a, y: a, z: a) ((x == y) and (y == z)) ==> (x == z)
 
         ///
         /// x != y is logically equivalent to not (x == y).
         ///
-        law inverseNeq: forall(x: a, y: a) (x != y) <==> (not (x == y))
+        law inverseNeq: forall (x: a, y: a) (x != y) <==> (not (x == y))
     }
 
     instance Eq[Unit] {
@@ -123,7 +123,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2), t2: (a1, a2)): Bool =
             let (x1, x2) = t1;
             let (y1, y2) = t2;
-                x1 == y1 and x2 == y2
+            x1 == y1 and x2 == y2
 
     }
 
@@ -132,7 +132,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3), t2: (a1, a2, a3)): Bool =
             let (x1, x2, x3) = t1;
             let (y1, y2, y3) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3
+            x1 == y1 and x2 == y2 and x3 == y3
 
     }
 
@@ -141,7 +141,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4), t2: (a1, a2, a3, a4)): Bool =
             let (x1, x2, x3, x4) = t1;
             let (y1, y2, y3, y4) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4
 
     }
 
@@ -150,7 +150,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5), t2: (a1, a2, a3, a4, a5)): Bool =
             let (x1, x2, x3, x4, x5) = t1;
             let (y1, y2, y3, y4, y5) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5
 
     }
 
@@ -159,7 +159,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5, a6), t2: (a1, a2, a3, a4, a5, a6)): Bool =
             let (x1, x2, x3, x4, x5, x6) = t1;
             let (y1, y2, y3, y4, y5, y6) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6
 
     }
 
@@ -168,7 +168,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7), t2: (a1, a2, a3, a4, a5, a6, a7)): Bool =
             let (x1, x2, x3, x4, x5, x6, x7) = t1;
             let (y1, y2, y3, y4, y5, y6, y7) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7
 
     }
 
@@ -177,7 +177,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8), t2: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool =
             let (x1, x2, x3, x4, x5, x6, x7, x8) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8
     }
 
     instance Eq[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Eq[a1], Eq[a2], Eq[a3], Eq[a4], Eq[a5], Eq[a6], Eq[a7], Eq[a8], Eq[a9] {
@@ -185,7 +185,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool =
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9
 
     }
 
@@ -194,7 +194,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool =
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10
 
     }
 
@@ -203,7 +203,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)): Bool =
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11
 
     }
 
@@ -212,7 +212,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)): Bool =
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12
 
     }
 
@@ -221,7 +221,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)): Bool =
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12 and x13 == y13
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12 and x13 == y13
 
     }
 
@@ -230,7 +230,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)): Bool =
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12 and x13 == y13 and x14 == y14
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12 and x13 == y13 and x14 == y14
 
     }
 
@@ -239,7 +239,7 @@ pub mod Eq {
         pub def eq(t1: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15), t2: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)): Bool =
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15) = t1;
             let (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15) = t2;
-                x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12 and x13 == y13 and x14 == y14 and x15 == y15
+            x1 == y1 and x2 == y2 and x3 == y3 and x4 == y4 and x5 == y5 and x6 == y6 and x7 == y7 and x8 == y8 and x9 == y9 and x10 == y10 and x11 == y11 and x12 == y12 and x13 == y13 and x14 == y14 and x15 == y15
 
     }
 

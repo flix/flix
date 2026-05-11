@@ -19,7 +19,7 @@ pub mod UnorderedFoldable {
     ///
     /// A trait for unordered data structures that can be folded.
     ///
-    pub trait UnorderedFoldable[t : Type -> Type] {
+    pub trait UnorderedFoldable[t: Type -> Type] {
         ///
         /// The associated effect of the UnorderedFoldable which represents the
         /// effect of accessing its elements.
