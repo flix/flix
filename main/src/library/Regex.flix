@@ -622,13 +622,12 @@ pub mod Regex {
     /// The internal state of the matcher is updated.
     ///
     def findFrom(pos: Int32, m: Matcher[r]): Bool \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { m1.find(pos) }
-            }
-        )
-            |> Result.getWithDefault(false)
+        try {
+            let Matcher(m1) = m;
+            unsafe IO as r { m1.find(pos) }
+        } catch {
+            case _: Exception => false
+        }
 
     ///
     /// Attempt to find the last match by iterating through the input string.
@@ -663,34 +662,35 @@ pub mod Regex {
     /// Set the bounds of the matcher's region.
     ///
     def setBounds(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { discard m1.$region(start#start, end#end) }
-            }
-        )
+        try {
+            let Matcher(m1) = m;
+            unsafe IO as r { discard m1.$region(start#start, end#end) };
+            Ok(())
+        } catch {
+            case e: Exception => Err(e.getMessage())
+        }
 
     ///
     /// Return the start position of the current match of Matcher `m`.
     ///
     def matcherStart(m: Matcher[r]): Result[String, Int32] \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { m1.start() }
-            }
-        )
+        try {
+            let Matcher(m1) = m;
+            Ok(unsafe IO as r { m1.start() })
+        } catch {
+            case e: Exception => Err(e.getMessage())
+        }
 
     ///
     /// Return the end position of the current match of Matcher `m`.
     ///
     def matcherEnd(m: Matcher[r]): Result[String, Int32] \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { m1.end() }
-            }
-        )
+        try {
+            let Matcher(m1) = m;
+            Ok(unsafe IO as r { m1.end() })
+        } catch {
+            case e: Exception => Err(e.getMessage())
+        }
 
     ///
     /// Return the start and end positions of the matcher `m`.
@@ -705,23 +705,23 @@ pub mod Regex {
     /// Return the text content of the current match of matcher `m`.
     ///
     def matcherContent(m: Matcher[r]): Result[String, String] \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { m1.group() }
-            }
-        )
+        try {
+            let Matcher(m1) = m;
+            Ok(unsafe IO as r { m1.group() })
+        } catch {
+            case e: Exception => Err(e.getMessage())
+        }
 
     ///
     /// Return the text content of the current groups in matcher `m`.
     ///
     def matcherGroup(m: Matcher[r], i: Int32): Result[String, String] \ r =
-        Result.tryCatch(
-            _ -> {
-                let Matcher(m1) = m;
-                unsafe IO as r { if (not Object.isNull(m1.group(i))) m1.group(i) else "" }
-            }
-        )
+        try {
+            let Matcher(m1) = m;
+            Ok(unsafe IO as r { if (not Object.isNull(m1.group(i))) m1.group(i) else "" })
+        } catch {
+            case e: Exception => Err(e.getMessage())
+        }
 
     ///
     /// Return the number of groups in matcher `m`.
