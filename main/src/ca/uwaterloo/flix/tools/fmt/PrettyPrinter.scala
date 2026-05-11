@@ -1523,11 +1523,49 @@ object PrettyPrinter {
     * @return the formatted let-match expression as Doc
     */
   private def prettyLetMatch(tree: Tree): Doc = localLayout(tree) {
-    joinChildren(tree.children,
+    val children = tree.children
+    val eqIndex = children.indexWhere {
+      case token: Token if token.kind == TokenKind.Equal => true
+      case _ => false
+    }
+    if (eqIndex < 0) {
+      return joinChildren(children,
+        TokenKind.KeywordLet -> (text("let") <> space),
+        TokenKind.Colon      -> (text(":") <> space),
+        TokenKind.Semi       -> (text(";") <> line))
+    }
+
+    val headParts = children.take(eqIndex)
+    val rest      = children.drop(eqIndex + 1)
+
+    // A trailing top-level Semi only appears when the let has no continuation expression.
+    // With a continuation, the Semi lives inside the body's Statement subtree.
+    val semiIdx = rest.indexWhere {
+      case t: Token if t.kind == TokenKind.Semi => true
+      case _ => false
+    }
+    val (bodyParts, tailParts) =
+      if (semiIdx < 0) (rest, Array.empty[SyntaxTree.Child])
+      else              (rest.take(semiIdx), rest.drop(semiIdx))
+
+    val headDoc = joinChildren(headParts,
       TokenKind.KeywordLet -> (text("let") <> space),
-      TokenKind.Colon      -> (text(":") <> space),
-      TokenKind.Equal      -> (space <> text("=") <> space),
-      TokenKind.Semi       -> (text(";") <> line))
+      TokenKind.Colon      -> (text(":") <> space))
+
+    val bodyDoc = bodyParts.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+
+    val tailDoc = joinChildren(tailParts,
+      TokenKind.Semi -> (text(";") <> line))
+
+    val bodyIsPreserved = bodyParts.exists(isPreservedBodyKind)
+    val bodyOnSameLine  = bodyStartsOnSameLineAs(children(eqIndex), bodyParts)
+
+    val letDoc =
+      if (bodyIsPreserved && bodyOnSameLine) headDoc <+> text("=") <+> bodyDoc
+      else if (bodyIsPreserved)              headDoc <+> text("=") <> nest(4, hardline <> bodyDoc)
+      else                                    headDoc <+> text("=") <+> bodyDoc
+
+    letDoc <> tailDoc
   }
 
   /**
@@ -2153,6 +2191,8 @@ object PrettyPrinter {
 
   private def exprMatches(child: SyntaxTree.Child, pred: Tree => Boolean): Boolean = child match {
     case t: Tree if t.kind == TreeKind.Expr.Expr => t.children.exists(c => exprMatches(c, pred))
+    case t: Tree if t.kind == TreeKind.Expr.Statement =>
+      filterEmpty(t.children).headOption.exists(c => exprMatches(c, pred))
     case t: Tree => pred(t)
     case _       => false
   }
