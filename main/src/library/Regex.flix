@@ -32,8 +32,10 @@
 pub mod Regex {
 
     import java.util.regex.Pattern
+    import java.util.regex.PatternSyntaxException
     import java.util.regex.{Matcher => JMatcher}
-    import java.lang.Exception
+    import java.lang.IllegalStateException
+    import java.lang.IndexOutOfBoundsException
 
     use Regex.Flag
     use Regex.Flag.{
@@ -119,7 +121,7 @@ pub mod Regex {
         try {
             Pattern.compile("^\\b$")
         } catch {
-            case _: Exception => unreachable!()
+            case _: PatternSyntaxException => unreachable!()
         }
 
     ///
@@ -626,7 +628,7 @@ pub mod Regex {
             let Matcher(m1) = m;
             unsafe IO as r { m1.find(pos) }
         } catch {
-            case _: Exception => false
+            case _: IndexOutOfBoundsException => false
         }
 
     ///
@@ -667,7 +669,7 @@ pub mod Regex {
             unsafe IO as r { discard m1.$region(start#start, end#end) };
             Ok(())
         } catch {
-            case e: Exception => Err(e.getMessage())
+            case e: IndexOutOfBoundsException => Err(e.getMessage())
         }
 
     ///
@@ -678,7 +680,7 @@ pub mod Regex {
             let Matcher(m1) = m;
             Ok(unsafe IO as r { m1.start() })
         } catch {
-            case e: Exception => Err(e.getMessage())
+            case e: IllegalStateException => Err(e.getMessage())
         }
 
     ///
@@ -689,7 +691,7 @@ pub mod Regex {
             let Matcher(m1) = m;
             Ok(unsafe IO as r { m1.end() })
         } catch {
-            case e: Exception => Err(e.getMessage())
+            case e: IllegalStateException => Err(e.getMessage())
         }
 
     ///
@@ -709,7 +711,7 @@ pub mod Regex {
             let Matcher(m1) = m;
             Ok(unsafe IO as r { m1.group() })
         } catch {
-            case e: Exception => Err(e.getMessage())
+            case e: IllegalStateException => Err(e.getMessage())
         }
 
     ///
@@ -720,7 +722,8 @@ pub mod Regex {
             let Matcher(m1) = m;
             Ok(unsafe IO as r { if (not Object.isNull(m1.group(i))) m1.group(i) else "" })
         } catch {
-            case e: Exception => Err(e.getMessage())
+            case e: IllegalStateException     => Err(e.getMessage())
+            case e: IndexOutOfBoundsException => Err(e.getMessage())
         }
 
     ///
