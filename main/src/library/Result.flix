@@ -281,6 +281,7 @@ pub mod Result {
     pub def foldRightM(f: (a, b) -> Result[e, b] \ ef, s: b, l: List[a]): Result[e, b] \ ef =
         def loop(ll, k) = match ll {
             case Nil => k(s)
+<<<<<<< experiment-format-stdlib
             case x :: xs =>
                 loop(
                     xs,
@@ -289,6 +290,15 @@ pub mod Result {
                         case Err(e) => Err(e)
                     }
                 )
+=======
+            case x :: xs => loop(
+                xs,
+                s1 -> match f(x, s1) {
+                    case Ok(s2) => k(s2)
+                    case Err(e) => Err(e)
+                }
+            )
+>>>>>>> master
         };
         loop(l, s1 -> checked_ecast(Ok(s1)))
 

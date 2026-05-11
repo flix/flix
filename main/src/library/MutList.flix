@@ -229,7 +229,10 @@ pub mod MutList {
         def loop(i) = {
             if (i >= v->length)
                 false
-            else if (f(Array.get(i, v->values))) true else loop(i + 1)
+            else if (f(Array.get(i, v->values)))
+                true
+            else
+                loop(i + 1)
         };
         loop(0)
 
@@ -242,7 +245,10 @@ pub mod MutList {
         def loop(i) = {
             if (i >= v->length)
                 true
-            else if (f(Array.get(i, v->values))) loop(i + 1) else false
+            else if (f(Array.get(i, v->values)))
+                loop(i + 1)
+            else
+                false
         };
         loop(0)
 
@@ -279,7 +285,10 @@ pub mod MutList {
         def loop(i) = {
             if (i >= v->length)
                 None
-            else if (x == Array.get(i, v->values)) Some(i) else loop(i + 1)
+            else if (x == Array.get(i, v->values))
+                Some(i)
+            else
+                loop(i + 1)
         };
         loop(0)
 
@@ -291,7 +300,10 @@ pub mod MutList {
         def loop(i) = {
             if (i < 0)
                 None
-            else if (x == Array.get(i, v->values)) Some(i) else loop(i - 1)
+            else if (x == Array.get(i, v->values))
+                Some(i)
+            else
+                loop(i - 1)
         };
         loop(v->length - 1)
 
@@ -302,7 +314,10 @@ pub mod MutList {
         def loop(i, indices) = {
             if (i >= v->length)
                 indices
-            else if (x == Array.get(i, v->values)) loop(i + 1, i :: indices) else loop(i + 1, indices)
+            else if (x == Array.get(i, v->values))
+                loop(i + 1, i :: indices)
+            else
+                loop(i + 1, indices)
         };
         loop(0, Nil) |> List.reverse |> List.toVector
 
@@ -421,14 +436,11 @@ pub mod MutList {
         let rdestIndex = Ref.fresh(rc1, 0);
         let size = MutList.sumWith(MutList.length, v);
         let destArray = Array.empty(rc1, Int32.max(size, minCapacity()));
-        v
-            |> MutList.forEach(
-                bs -> {
-                    let destIndex = Ref.get(rdestIndex);
-                    Array.patch(destIndex, length(bs), bs->values, destArray);
-                    Ref.put(destIndex + length(bs), rdestIndex)
-                }
-            );
+        foreach (bs <- v) {
+            let destIndex = Ref.get(rdestIndex);
+            Array.patch(destIndex, length(bs), bs->values, destArray);
+            Ref.put(destIndex + length(bs), rdestIndex)
+        };
         new MutList @ rc1 {r = rc1, values = destArray, length = size}
 
     ///
@@ -631,15 +643,13 @@ pub mod MutList {
                 loop(i1 + 1)
             } else if (i1 == n) {
                 Array.put(Reflect.default(), i1, v->values)
-            } else
-                ()
+            }
         };
         if (i < v->length) {
             loop(i);
             v->length = n;
             compress(v)
-        } else
-            ()
+        }
 
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
@@ -699,8 +709,7 @@ pub mod MutList {
             let newCap = Order.max(n, minCap);
             v->values = Array.copyOfRange(v->r, 0, newCap, v->values);
             v->length = Order.min(v->length, newCap)
-        } else
-            ()
+        }
 
     ///
     /// Shrinks the given mutable list `v` to its actual size.
@@ -723,8 +732,7 @@ pub mod MutList {
             let c = Order.max(l, minCap);
             v->length = l;
             Array.updateSequence(0, v->values, Array.empty(v->r, c))
-        } else
-            ()
+        }
 
     ///
     /// Increases the capacity of the given mutable list `v` by at least `n`.
@@ -855,8 +863,7 @@ pub mod MutList {
                 shrinkTo(1, v)
             else
                 shrinkTo(c / 2, v)
-        } else
-            ()
+        }
 
     ///
     /// Returns the capacity of `v`.
