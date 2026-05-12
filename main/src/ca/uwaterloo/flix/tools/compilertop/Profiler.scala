@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.util
+package ca.uwaterloo.flix.tools.compilertop
 
 import ca.uwaterloo.flix.api.{FlixEvent, FlixListener}
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
@@ -26,13 +26,13 @@ import scala.jdk.CollectionConverters.*
 /**
   * Per-`DefnSym` compile-time profiler.
   *
-  * [[CompilerProfiler]] tracks cumulative wall-clock time, call counts, and a
+  * [[Profiler]] tracks cumulative wall-clock time, call counts, and a
   * per-phase breakdown for each [[Symbol.DefnSym]] the compiler visits. Its
-  * [[CompilerProfiler.track]] entry point is called from inside instrumented
+  * [[Profiler.track]] entry point is called from inside instrumented
   * phases and is safe to invoke from multiple threads.
   *
   * A fresh sym minted from an existing one via [[Symbol.freshDefnSym]] is
-  * folded back to its source sym (see [[CompilerProfiler.sourceOf]]) so the
+  * folded back to its source sym (see [[Profiler.sourceOf]]) so the
   * user-facing table shows one row per source-level definition rather than
   * one row per refresh.
   *
@@ -73,11 +73,11 @@ import scala.jdk.CollectionConverters.*
   * | TailPos            | Yes          |                                                                                                               |
   * | Eraser             | Yes          |                                                                                                               |
   * | Reducer            | Yes          |                                                                                                               |
-  * | JvmBackend         | Partial      | Only the per-def cases in `GenFunAndClosureClasses` are instrumented; top-level orchestration is not.         |
+  * | CodeGen            | Partial      | Only the per-def cases in `GenFunAndClosureClasses` are instrumented; top-level orchestration is not.         |
   */
-object CompilerProfiler {
+object Profiler {
   /**
-    * A snapshot of per-`DefnSym` statistics produced by [[CompilerProfiler.snapshot]].
+    * A snapshot of per-`DefnSym` statistics produced by [[Profiler.snapshot]].
     *
     * @param sym          the source-level [[Symbol.DefnSym]] this row aggregates.
     * @param isActive     true if at least one `track` call is currently in flight for this sym.
@@ -165,10 +165,10 @@ object CompilerProfiler {
   }
 }
 
-final class CompilerProfiler(phaseProvider: () => Option[String]) extends FlixListener {
+final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
 
-  /** Per-source-`DefnSym` accumulators, keyed by [[CompilerProfiler.DefnSymWithLoc]] so that defs at distinct locations don't aggregate. */
-  private val stats = new ConcurrentHashMap[CompilerProfiler.DefnSymWithLoc, CompilerProfiler.Counters]()
+  /** Per-source-`DefnSym` accumulators, keyed by [[Profiler.DefnSymWithLoc]] so that defs at distinct locations don't aggregate. */
+  private val stats = new ConcurrentHashMap[Profiler.DefnSymWithLoc, Profiler.Counters]()
 
   /**
     * Subscribes the profiler to compiler events emitted via `Flix.emitEvent`.
@@ -184,7 +184,7 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) extends FlixLi
       // constraints / variables, and an incremental rebuild that re-types the
       // def shouldn't make the column appear to grow.
       c.constraints.set(tconstrs.size.toLong)
-      val (tv, ev) = CompilerProfiler.countVars(tconstrs)
+      val (tv, ev) = Profiler.countVars(tconstrs)
       c.tvars.set(tv)
       c.evars.set(ev)
     case _ => ()
@@ -222,7 +222,7 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) extends FlixLi
     * Returns an approximate snapshot. Iterators over the underlying maps are
     * weakly consistent, so individual entries may be slightly stale.
     */
-  def snapshot(): Vector[CompilerProfiler.DefnStats] = {
+  def snapshot(): Vector[Profiler.DefnStats] = {
     val it = stats.entrySet().iterator().asScala
     it.map { e =>
       val key = e.getKey
@@ -232,7 +232,7 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) extends FlixLi
       val byPhaseCount = c.perPhaseCount.entrySet().iterator().asScala
         .map(pe => (pe.getKey, pe.getValue.get())).toMap
       val loc = Option(c.loc.get()).getOrElse(key.loc)
-      CompilerProfiler.DefnStats(key.sym, isActive = c.inProgress.get() > 0,
+      Profiler.DefnStats(key.sym, isActive = c.inProgress.get() > 0,
         c.callCount.get(), c.totalNanos.get(), byPhase, byPhaseCount,
         c.constraints.get(), c.tvars.get(), c.evars.get(), loc)
     }.toVector
@@ -242,8 +242,8 @@ final class CompilerProfiler(phaseProvider: () => Option[String]) extends FlixLi
     * Returns the [[Counters]] entry for `sym`'s source sym, creating a fresh
     * zero-initialized entry on first use. Atomic in the underlying map.
     */
-  private def countersFor(sym: Symbol.DefnSym): CompilerProfiler.Counters =
-    stats.computeIfAbsent(CompilerProfiler.DefnSymWithLoc(sourceOf(sym), sym.loc), _ => CompilerProfiler.Counters(
+  private def countersFor(sym: Symbol.DefnSym): Profiler.Counters =
+    stats.computeIfAbsent(Profiler.DefnSymWithLoc(sourceOf(sym), sym.loc), _ => Profiler.Counters(
       inProgress = new AtomicInteger(0),
       callCount = new AtomicInteger(0),
       totalNanos = new AtomicLong(0L),
