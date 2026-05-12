@@ -7,9 +7,9 @@ mod A {
 
     pub def isWarm(c: Color): Bool =
         match c {
-            case Color.Red    => true
-            case Color.Green  => false
-            case Color.Blue   => false
+            case Color.Red   => true
+            case Color.Green => false
+            case Color.Blue  => false
         }
 }
 
