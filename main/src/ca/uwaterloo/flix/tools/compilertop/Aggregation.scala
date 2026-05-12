@@ -65,9 +65,7 @@ object Aggregation {
     */
   def defSortKey(s: DefnStats, srt: Sort): Double = srt match {
     case Sort.Time    => s.totalNanos.toDouble
-    case Sort.Hotness =>
-      val lines = locLineCount(s.loc)
-      if (lines <= 0) 0.0 else s.totalNanos.toDouble / lines
+    case Sort.Hotness => Formatting.hotnessMsPerLine(s.totalNanos, locLineCount(s.loc))
     case Sort.Mono  => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
     case Sort.Opt   => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
     case Sort.Cls   => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
@@ -79,7 +77,7 @@ object Aggregation {
   /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
   def moduleSortKey(m: ModuleStats, srt: Sort): Double = srt match {
     case Sort.Time    => m.totalNanos.toDouble
-    case Sort.Hotness => if (m.totalLocLines <= 0) 0.0 else m.totalNanos.toDouble / m.totalLocLines
+    case Sort.Hotness => Formatting.hotnessMsPerLine(m.totalNanos, m.totalLocLines)
     case Sort.Mono  => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
     case Sort.Opt   => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
     case Sort.Cls   => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble

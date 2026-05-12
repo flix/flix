@@ -309,7 +309,7 @@ final class Renderer {
       sb.append(" " * (nameMax - nameText.length))
       sb.append(' ')
       sb.append(dim(locField))
-      appendNumericFields(sb, locLines, s.byPhaseCount, s.cns, s.tvars.toLong, s.evars.toLong, phase, s.totalNanos, pctCpu, pctWall, layout, aggregate = false)
+      appendNumericFields(sb, locLines, s.byPhaseCount, s.cns, s.tvars, s.evars, phase, s.totalNanos, pctCpu, pctWall, layout, aggregate = false)
       sb.append(' ')
       sb.append('\n')
     }
