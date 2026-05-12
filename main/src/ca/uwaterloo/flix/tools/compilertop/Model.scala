@@ -85,6 +85,8 @@ object Model {
     case object Mono    extends Sort { val key = 'm' }
     /** Most optimizer fixed-point re-visits first — surfaces inliner / occurrence-analyzer thrashing. */
     case object Opt     extends Sort { val key = 'o' }
+    /** Most times inlined at a call site first — surfaces small leaf defs that get duplicated everywhere. */
+    case object Inl     extends Sort { val key = 'i' }
     /** Most class files emitted first — surfaces JVM fan-out from polymorphism / closures. */
     case object Cls     extends Sort { val key = 'c' }
     /** Most type constraints first — surfaces type-checking-heavy defs. The key is `n` (not `c`, which is taken by [[Cls]]). */
@@ -95,7 +97,7 @@ object Model {
     case object Evars   extends Sort { val key = 'e' }
 
     /** All sort values. */
-    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Cls, Cns, Tvars, Evars)
+    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Cns, Tvars, Evars)
 
     /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
@@ -120,8 +122,9 @@ object Model {
     * @param totalCns       summed Typer constraint counts across the module's defs.
     * @param totalTvars     summed `Kind.Star` type-variable counts across the module's defs.
     * @param totalEvars     summed `Kind.Eff`  effect-variable counts across the module's defs.
+    * @param totalInlined   summed inliner call-site inline counts across the module's defs.
     */
-  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long) {
+  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)

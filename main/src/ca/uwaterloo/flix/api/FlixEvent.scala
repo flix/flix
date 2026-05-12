@@ -48,6 +48,12 @@ object FlixEvent {
   case class NewConstraintsDef(sym: Symbol.DefnSym, tconstrs: List[TypeConstraint]) extends FlixEvent
 
   /**
+    * An event that is fired each time the inliner replaces a call site of `sym` with the def's body.
+    * `sym` is the callee being inlined.
+    */
+  case class InlinedDef(sym: Symbol.DefnSym) extends FlixEvent
+
+  /**
    * An event that is fired when a new system of Boolean equation is about to be solved.
    */
   case class SolveEffEquations(econstrs: List[Equation]) extends FlixEvent

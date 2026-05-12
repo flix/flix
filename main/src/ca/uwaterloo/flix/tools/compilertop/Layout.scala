@@ -48,8 +48,8 @@ object Layout {
 
   /** Width contribution of the optional LOC column (separator + width). */
   private val LocColWidth: Int = 1 + 4
-  /** Width contribution of the optional mono / opt / cls per-phase count columns (3 × separator + width). */
-  private val CountsColWidth: Int = 3 * (1 + 4)
+  /** Width contribution of the optional mono / opt / inl / cls per-phase count columns (4 × separator + width). */
+  private val CountsColWidth: Int = 4 * (1 + 4)
   /** Width contribution of the optional cns column (separator + 5-char numeric field). */
   private val CnsColWidth: Int = 1 + 5
   /** Width contribution of the optional tvars column (separator + 4-char numeric field). */
@@ -67,7 +67,7 @@ object Layout {
   /**
     * Picks a [[Layout]] for the given terminal width by trying tiers in
     * descending feature order. The caller gates the optional count-style
-    * columns by passing `showCounts` (mono / opt / cls) and `showCns`
+    * columns by passing `showCounts` (mono / opt / inl / cls) and `showCns`
     * (cns / tv / ev) — Layout itself doesn't know which UI mode they
     * correspond to. When a flag is false the column is hidden and the
     * reclaimed width expands the sym / location text columns instead.
