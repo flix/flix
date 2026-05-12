@@ -17,7 +17,7 @@
 
 package ca.uwaterloo.flix.language.phase.optimizer
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
@@ -198,6 +198,7 @@ object Inliner {
       val es = exps.map(visitExp(_, ctx0))
       if (shouldInlineDef(root.defs(sym), es, ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
+        flix.emitEvent(FlixEvent.InlinedDef(sym))
         val defn = root.defs(sym)
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
         val letBinding = bindArgs(defn.exp, defn.spec.fparams, es, loc)
