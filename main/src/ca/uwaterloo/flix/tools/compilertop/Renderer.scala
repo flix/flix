@@ -83,6 +83,96 @@ object Renderer {
 
   /** Block characters used for the sparkline, low → high. */
   private val SparkChars: Array[Char] = "▁▂▃▄▅▆▇█".toArray
+
+  /**
+    * Numeric fields shared between def and module table rows. Built once
+    * per row by [[Row.cells]] from a [[DefnStats]] or [[ModuleStats]] plus
+    * the per-frame `safeElapsed` and `parallelism`. Lets
+    * [[Renderer.appendNumericFields]] take a single record instead of a
+    * dozen positional parameters.
+    *
+    * @param aggregate `true` for module rows — disables the per-field
+    *                  warning colors, since aggregating across defs almost
+    *                  always trips the thresholds. False for def rows.
+    */
+  private final case class RowCells(locLines: Int,
+                                    byPhaseCount: Map[String, Long],
+                                    cns: Long,
+                                    tvars: Long,
+                                    evars: Long,
+                                    dominantPhase: String,
+                                    nanos: Long,
+                                    pctCpu: Double,
+                                    pctWall: Double,
+                                    aggregate: Boolean)
+
+  /**
+    * A renderable table row. The numeric trailing columns are uniform
+    * across def and module rows ([[RowCells]] / [[Renderer.appendNumericFields]]);
+    * only the leading "first cell" differs (sym + active marker + location
+    * for defs; a single wide module-name field for modules).
+    */
+  private sealed trait Row {
+    def cells: RowCells
+    def appendFirstCell(sb: StringBuilder, layout: Layout): Unit
+  }
+
+  /** Def-table row: hotness-colored sym, active marker, location column. */
+  private final case class DefnRow(s: DefnStats, safeElapsed: Double, parallelism: Int) extends Row {
+    private val locLines = locLineCount(s.loc)
+
+    val cells: RowCells = {
+      val pctWall = 100.0 * s.totalNanos / safeElapsed
+      RowCells(
+        locLines      = locLines,
+        byPhaseCount  = s.byPhaseCount,
+        cns           = s.cns,
+        tvars         = s.tvars,
+        evars         = s.evars,
+        dominantPhase = s.dominantPhase.getOrElse("?"),
+        nanos         = s.totalNanos,
+        pctCpu        = pctWall / parallelism,
+        pctWall       = pctWall,
+        aggregate     = false,
+      )
+    }
+
+    def appendFirstCell(sb: StringBuilder, layout: Layout): Unit = {
+      val nameMax  = layout.symWidth - 1
+      val nameText = truncate(s.sym.name, nameMax)
+      val locField = rpad(truncate(formatLocation(s.loc), layout.locWidth), layout.locWidth)
+      val marker   = if (s.isActive) yellow("*") else " "
+      sb.append(styleSym(nameText, s.totalNanos, locLines))
+      sb.append(marker)
+      sb.append(" " * (nameMax - nameText.length))
+      sb.append(' ')
+      sb.append(dim(locField))
+    }
+  }
+
+  /** Module-table row: one wide name field spanning sym + location widths. */
+  private final case class ModuleRow(m: ModuleStats, safeElapsed: Double, parallelism: Int) extends Row {
+    val cells: RowCells = {
+      val pctWall = 100.0 * m.totalNanos / safeElapsed
+      RowCells(
+        locLines      = m.totalLocLines,
+        byPhaseCount  = m.byPhaseCount,
+        cns           = m.totalCns,
+        tvars         = m.totalTvars,
+        evars         = m.totalEvars,
+        dominantPhase = m.dominantPhase.getOrElse("?"),
+        nanos         = m.totalNanos,
+        pctCpu        = pctWall / parallelism,
+        pctWall       = pctWall,
+        aggregate     = true,
+      )
+    }
+
+    def appendFirstCell(sb: StringBuilder, layout: Layout): Unit = {
+      val modWidth = layout.symWidth + 1 + layout.locWidth
+      sb.append(rpad(truncate(m.module, modWidth), modWidth))
+    }
+  }
 }
 
 /**
@@ -116,9 +206,23 @@ final class Renderer {
     renderDashboard(sb, state)
     renderStats(sb, state)
     sb.append('\n')
-    renderTableHeader(sb, state.layout, state.activeSort)
-    renderRows(sb, state.visible, state.elapsed, state.parallelism, state.layout)
-    renderModuleTable(sb, state.modules, state.elapsed, state.parallelism, state.layout, state.activeSort)
+
+    val safeElapsed = state.elapsed.max(1L).toDouble
+    val defRows: Vector[Row] = state.visible.map(s => DefnRow(s, safeElapsed, state.parallelism))
+    val modRows: Vector[Row] = state.modules.map(m => ModuleRow(m, safeElapsed, state.parallelism))
+
+    // Def table: header, then rows or a centered placeholder if empty.
+    renderHeaderRow(sb, rpad("Def (hot)", state.layout.symWidth), withLocation = true, state.layout, state.activeSort)
+    if (defRows.isEmpty) renderEmptyPlaceholder(sb, "(no timings yet)", state.layout)
+    else renderTable(sb, defRows, state.layout)
+
+    // Module table: only when non-empty, separated by a blank line.
+    if (modRows.nonEmpty) {
+      val modWidth = state.layout.symWidth + 1 + state.layout.locWidth
+      sb.append('\n')
+      renderHeaderRow(sb, rpad("Module (hot)", modWidth), withLocation = false, state.layout, state.activeSort)
+      renderTable(sb, modRows, state.layout)
+    }
 
     sb.append(EndSync)
     sb.toString
@@ -219,34 +323,41 @@ final class Renderer {
     sb.append('\n')
   }
 
-  /** Renders the def-table column header and the divider underneath it. */
-  private def renderTableHeader(sb: StringBuilder, layout: Layout, activeSort: Sort): Unit = {
+  /**
+    * Prints the parametrized header row + the divider underneath it. The
+    * `leading` argument is a pre-padded first-column label (either
+    * `"Def (hot)"` at `symWidth` or `"Module (hot)"` at the combined
+    * sym+loc width). `withLocation` toggles the second `"location"` header,
+    * which the def table has and the module table doesn't.
+    */
+  private def renderHeaderRow(sb: StringBuilder, leading: String, withLocation: Boolean, layout: Layout, activeSort: Sort): Unit = {
     sb.append(' ')
-    sb.append(buildHeader(layout, activeSort))
-    sb.append(' ')
-    sb.append('\n')
+    sb.append(buildHeader(leading, withLocation, layout, activeSort))
+    sb.append(' '); sb.append('\n')
     sb.append(' ')
     sb.append(dim("─" * layout.totalWidth))
-    sb.append(' ')
-    sb.append('\n')
+    sb.append(' '); sb.append('\n')
   }
 
   /**
-    * Builds the def-table header. Each sortable column underlines its
-    * keystroke letter (`m̲ono`, `o̲pt`, `c̲ls`, `t̲ime`) and the Def header
-    * carries a tiny `(h̲ot)` annotation marking the hotness sort key.
-    * The active column is rendered bold yellow; the rest bold cyan.
+    * Builds a table column header from a pre-padded leading-column label
+    * and a `withLocation` flag. Each sortable column underlines its
+    * [[Sort.key]] letter (`m̲ono`, `o̲pt`, `c̲ls`, `t̲ime`, …) and the leading
+    * "(h̲ot)" annotation marks the hotness sort key. The active column is
+    * rendered bold yellow; the rest bold cyan.
+    *
+    * Two callers — `Def (hot)` + a `"location"` column for the def table,
+    * `Module (hot)` (single wide column, no location) for the module table.
     */
-  private def buildHeader(layout: Layout, activeSort: Sort): String = {
+  private def buildHeader(leading: String, withLocation: Boolean, layout: Layout, activeSort: Sort): String = {
     val sb = new StringBuilder
 
-    // First column: "Def (hot)" — the parenthesized "(hot)" annotation
-    // carries the Hotness keystroke ('h').
-    sb.append(sortableColumn(rpad("Def (hot)", layout.symWidth), Sort.Hotness, activeSort))
+    sb.append(sortableColumn(leading, Sort.Hotness, activeSort))
 
-    sb.append(' ')
-    sb.append(plainHeader(rpad("location", layout.locWidth)))
-
+    if (withLocation) {
+      sb.append(' ')
+      sb.append(plainHeader(rpad("location", layout.locWidth)))
+    }
     if (layout.showLOC) {
       sb.append(' '); sb.append(plainHeader(lpad("LOC", 4)))
     }
@@ -279,150 +390,70 @@ final class Renderer {
   private def sortableColumn(padded: String, sort: Sort, activeSort: Sort): String =
     keyHeader(padded, padded.indexOf(sort.key), activeSort == sort)
 
-  /** Renders the def-table body (one row per [[DefnStats]]), or a centered placeholder if `visible` is empty. */
-  private def renderRows(sb: StringBuilder, visible: Vector[DefnStats], elapsed: Long, parallelism: Int, layout: Layout): Unit = {
-    if (visible.isEmpty) {
-      val msg = "(no timings yet)"
-      val pad = (((layout.totalWidth + 2) - msg.length) / 2).max(0)
-      sb.append('\n')
-      sb.append(" " * pad)
-      sb.append(dim(msg))
-      sb.append('\n')
-      return
-    }
-    val safeElapsed = elapsed.max(1L).toDouble
-    for (s <- visible) {
-      val pctWall = 100.0 * s.totalNanos / safeElapsed
-      val pctCpu = pctWall / parallelism
-      val locStr = formatLocation(s.loc)
-      val locLines = locLineCount(s.loc)
-      val phase = s.dominantPhase.getOrElse("?")
-
-      val nameMax = layout.symWidth - 1
-      val nameText = truncate(s.sym.name, nameMax)
-      val locField = rpad(truncate(locStr, layout.locWidth), layout.locWidth)
-      val marker = if (s.isActive) yellow("*") else " "
-
-      sb.append(' ')
-      sb.append(styleSym(nameText, s.totalNanos, locLines))
-      sb.append(marker)
-      sb.append(" " * (nameMax - nameText.length))
-      sb.append(' ')
-      sb.append(dim(locField))
-      appendNumericFields(sb, locLines, s.byPhaseCount, s.cns, s.tvars, s.evars, phase, s.totalNanos, pctCpu, pctWall, layout, aggregate = false)
-      sb.append(' ')
-      sb.append('\n')
-    }
-  }
-
-  /** Renders the per-module aggregate table below the def table; no-op if `modules` is empty. */
-  private def renderModuleTable(sb: StringBuilder, modules: Vector[ModuleStats], elapsed: Long, parallelism: Int, layout: Layout, activeSort: Sort): Unit = {
-    if (modules.isEmpty) return
-
-    sb.append('\n')
-    val modWidth = layout.symWidth + 1 + layout.locWidth
-    sb.append(' ')
-    sb.append(buildModuleHeader(layout, activeSort))
-    sb.append(' ')
-    sb.append('\n')
-    sb.append(' ')
-    sb.append(dim("─" * layout.totalWidth))
-    sb.append(' ')
-    sb.append('\n')
-
-    val safeElapsed = elapsed.max(1L).toDouble
-    for (m <- modules) {
-      val pctWall = 100.0 * m.totalNanos / safeElapsed
-      val pctCpu = pctWall / parallelism
-      val phase = m.dominantPhase.getOrElse("?")
-
-      val modField = rpad(truncate(m.module, modWidth), modWidth)
-
-      sb.append(' ')
-      sb.append(modField)
-      appendNumericFields(sb, m.totalLocLines, m.byPhaseCount, m.totalCns, m.totalTvars, m.totalEvars, phase, m.totalNanos, pctCpu, pctWall, layout, aggregate = true)
-      sb.append(' ')
-      sb.append('\n')
-    }
-  }
-
   /**
-    * Module-table header: single wide first column, then the same numeric
-    * columns as the def table. Mirrors [[buildHeader]]'s underline / active
-    * styling so the same sort keys are discoverable in both tables.
+    * Renders a sequence of [[Row]] values as table rows. The first cell is
+    * row-type-specific (see [[Row.appendFirstCell]]); the trailing numeric
+    * columns are shared via [[appendNumericFields]].
     */
-  private def buildModuleHeader(layout: Layout, activeSort: Sort): String = {
-    val sb = new StringBuilder
-    val modWidth = layout.symWidth + 1 + layout.locWidth
+  private def renderTable(sb: StringBuilder, rows: Vector[Row], layout: Layout): Unit = {
+    for (r <- rows) {
+      sb.append(' ')
+      r.appendFirstCell(sb, layout)
+      appendNumericFields(sb, r.cells, layout)
+      sb.append(' '); sb.append('\n')
+    }
+  }
 
-    // First column: "Module (hot)" — the parenthesized "(hot)" annotation
-    // carries the Hotness keystroke ('h').
-    sb.append(sortableColumn(rpad("Module (hot)", modWidth), Sort.Hotness, activeSort))
-
-    if (layout.showLOC) {
-      sb.append(' '); sb.append(plainHeader(lpad("LOC", 4)))
-    }
-    if (layout.showCounts) {
-      sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono, activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,  activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,  activeSort))
-    }
-    if (layout.showCns) {
-      sb.append(' '); sb.append(sortableColumn(lpad("cns", 5), Sort.Cns,   activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("tv",  4), Sort.Tvars, activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("ev",  4), Sort.Evars, activeSort))
-    }
-    if (layout.showPhase) {
-      sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
-    }
-    sb.append(' '); sb.append(sortableColumn(lpad("time", 9), Sort.Time, activeSort))
-    sb.append(' '); sb.append(plainHeader(lpad("%cpu", 6)))
-    sb.append(' '); sb.append(plainHeader(lpad("%wall", 6)))
-    sb.toString
+  /** Renders a centered placeholder message under an empty table header. */
+  private def renderEmptyPlaceholder(sb: StringBuilder, msg: String, layout: Layout): Unit = {
+    val pad = (((layout.totalWidth + 2) - msg.length) / 2).max(0)
+    sb.append('\n')
+    sb.append(" " * pad)
+    sb.append(dim(msg))
+    sb.append('\n')
   }
 
   /**
     * Appends the trailing numeric columns (LOC, mono / opt / cls, cns,
-    * phase, time, %cpu, %wall) to a row, honoring the layout's visibility
-    * flags. Always emits a leading separator before each column it writes.
+    * phase, time, %cpu, %wall) for one row, honoring the layout's
+    * visibility flags. Always emits a leading separator before each column
+    * it writes.
     *
-    * `aggregate` skips all warning colors on `time` / `%cpu` / `%wall`. The
-    * `style*` thresholds are calibrated for individual defs; at module
-    * scale, sums-across-defs trip the thresholds unconditionally and the
-    * colors become noise. Counts (mono / opt / cls / cns) render plain in
-    * both tables.
+    * [[RowCells.aggregate]] skips all warning colors on `time` / `%cpu` /
+    * `%wall`. The `style*` thresholds are calibrated for individual defs;
+    * at module scale, sums-across-defs trip the thresholds unconditionally
+    * and the colors become noise. Counts (mono / opt / cls / cns) render
+    * plain in both tables.
     */
-  private def appendNumericFields(sb: StringBuilder, locLines: Int, byPhaseCount: Map[String, Long], cns: Long, tvars: Long, evars: Long, phase: String,
-                                   nanos: Long, pctCpu: Double, pctWall: Double, layout: Layout,
-                                   aggregate: Boolean): Unit = {
+  private def appendNumericFields(sb: StringBuilder, cells: RowCells, layout: Layout): Unit = {
     if (layout.showLOC) {
       sb.append(' ')
-      val locStr = if (locLines > 0) locLines.toString else "-"
+      val locStr = if (cells.locLines > 0) cells.locLines.toString else "-"
       sb.append(lpad(locStr, 4))
     }
     if (layout.showCounts) {
-      val mono = sumPhaseCounts(byPhaseCount, MonoCountPhases)
-      val opt  = sumPhaseCounts(byPhaseCount, OptCountPhases)
-      val cls  = sumPhaseCounts(byPhaseCount, ClsCountPhases)
+      val mono = sumPhaseCounts(cells.byPhaseCount, MonoCountPhases)
+      val opt  = sumPhaseCounts(cells.byPhaseCount, OptCountPhases)
+      val cls  = sumPhaseCounts(cells.byPhaseCount, ClsCountPhases)
       sb.append(' '); sb.append(lpad(mono.toString, 4))
       sb.append(' '); sb.append(lpad(opt.toString, 4))
       sb.append(' '); sb.append(lpad(cls.toString, 4))
     }
     if (layout.showCns) {
-      sb.append(' '); sb.append(lpad(cns.toString, 5))
-      sb.append(' '); sb.append(lpad(tvars.toString, 4))
-      sb.append(' '); sb.append(lpad(evars.toString, 4))
+      sb.append(' '); sb.append(lpad(cells.cns.toString, 5))
+      sb.append(' '); sb.append(lpad(cells.tvars.toString, 4))
+      sb.append(' '); sb.append(lpad(cells.evars.toString, 4))
     }
     if (layout.showPhase) {
       sb.append(' ')
-      sb.append(rpad(truncate(phase, 10), 10))
+      sb.append(rpad(truncate(cells.dominantPhase, 10), 10))
     }
-    val timeField = lpad(formatMillis(nanos), 9)
-    val cpuField  = f"$pctCpu%5.1f%%"
-    val wallField = f"$pctWall%5.1f%%"
-    sb.append(' '); sb.append(if (aggregate) timeField else styleTime(timeField, nanos))
-    sb.append(' '); sb.append(if (aggregate) cpuField else stylePctCpu(cpuField, pctCpu))
-    sb.append(' '); sb.append(if (aggregate) wallField else stylePctWall(wallField, pctWall))
+    val timeField = lpad(formatMillis(cells.nanos), 9)
+    val cpuField  = f"${cells.pctCpu}%5.1f%%"
+    val wallField = f"${cells.pctWall}%5.1f%%"
+    sb.append(' '); sb.append(if (cells.aggregate) timeField else styleTime(timeField, cells.nanos))
+    sb.append(' '); sb.append(if (cells.aggregate) cpuField else stylePctCpu(cpuField, cells.pctCpu))
+    sb.append(' '); sb.append(if (cells.aggregate) wallField else stylePctWall(wallField, cells.pctWall))
   }
 
   /**
