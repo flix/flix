@@ -16,8 +16,11 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.tools.compilertop.Aggregation.*
 import ca.uwaterloo.flix.tools.compilertop.Ansi.*
 import ca.uwaterloo.flix.tools.compilertop.Formatting.*
+import ca.uwaterloo.flix.tools.compilertop.Layout
+import ca.uwaterloo.flix.tools.compilertop.Model.*
 import ca.uwaterloo.flix.tools.compilertop.Styling.*
 import ca.uwaterloo.flix.util.CompilerProfiler.DefnStats
 import org.jline.terminal.{Attributes, Terminal, TerminalBuilder}
@@ -27,66 +30,6 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.mutable
 
 object CompilerTop {
-
-  /**
-    * Restricts which phases' time the dashboard accounts for. Toggled
-    * interactively via the input thread (`f` / `b` / `a`). The split tracks
-    * `Flix.check` (frontend) vs the phases that follow in `Flix.compile`'s
-    * `codeGen` (backend) — see [[FrontendPhases]].
-    */
-  sealed trait PhaseFilter
-  object PhaseFilter {
-    case object All extends PhaseFilter
-    case object Frontend extends PhaseFilter
-    case object Backend extends PhaseFilter
-  }
-
-  /**
-    * Phase-name strings that count as "frontend" — i.e. phases that run
-    * inside `Flix.check`. Strings must match the literals each phase passes
-    * to `flix.phase("…")` / `flix.phaseNew("…")`. Verified against the
-    * `run` methods under `main/src/ca/uwaterloo/flix/language/phase`.
-    *
-    * Phases not in this set (and not the unknown-phase fallback `"?"`) are
-    * treated as backend.
-    */
-  private val FrontendPhases: Set[String] = Set(
-    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar", "Namer", "Resolver",
-    "Kinder", "Deriver", "Typer", "EntryPoints", "Instances", "PredDeps",
-    "Stratifier", "PatMatch", "Redundancy", "Safety", "Terminator", "Dependencies",
-  )
-
-  /** True if `phase` should be accounted for under the current `f`. */
-  private def matchesFilter(phase: String, f: PhaseFilter): Boolean = f match {
-    case PhaseFilter.All      => true
-    case PhaseFilter.Frontend => FrontendPhases.contains(phase)
-    case PhaseFilter.Backend  => phase != "?" && !FrontendPhases.contains(phase)
-  }
-
-  /**
-    * Selects the descending sort key applied to the def and module tables.
-    * Each option surfaces a different kind of suspect, so the same def can
-    * top one ranking and not another.
-    */
-  sealed trait Sort
-  object Sort {
-    /** Slowest defs first. The default. */
-    case object Time extends Sort
-    /** Hottest-per-line defs first — small defs that burn disproportionate time. */
-    case object Hotness extends Sort
-    /** Most monomorphic instances first — surfaces generic-explosion hotspots. */
-    case object Mono extends Sort
-    /** Most optimizer fixed-point re-visits first — surfaces inliner / occurrence-analyzer thrashing. */
-    case object Opt extends Sort
-    /** Most class files emitted first — surfaces JVM fan-out from polymorphism / closures. */
-    case object Cls extends Sort
-    /** Most type constraints first — surfaces type-checking-heavy defs. */
-    case object Cns extends Sort
-    /** Most type variables first — surfaces broadly polymorphic defs. */
-    case object Tvars extends Sort
-    /** Most effect variables first — surfaces effect-polymorphic defs. */
-    case object Evars extends Sort
-  }
 
   /** How often the screen refreshes, in milliseconds (5 FPS). */
   private val RefreshIntervalMs: Long = 200L
@@ -115,92 +58,6 @@ object CompilerTop {
   /** Block characters used for the sparkline, low → high. */
   private val SparkChars: Array[Char] = "▁▂▃▄▅▆▇█".toArray
 
-  /**
-    * A row in the per-module aggregate table.
-    *
-    * @param module         dot-joined namespace (or `(root)` when empty).
-    * @param totalNanos     summed wall-clock time across the module's defs.
-    * @param totalCallCount summed `track` call counts across the module's defs.
-    * @param totalLocLines  summed source-line counts across the module's defs.
-    * @param byPhase        phase → summed nanoseconds across the module's defs.
-    * @param byPhaseCount   phase → summed track-call counts across the module's defs.
-    * @param totalCns       summed Typer constraint counts across the module's defs.
-    * @param totalTvars     summed `Kind.Star` type-variable counts across the module's defs.
-    * @param totalEvars     summed `Kind.Eff`  effect-variable counts across the module's defs.
-    */
-  private final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long) {
-    /** Returns the phase that consumed the most time in this module, or None if empty. */
-    def dominantPhase: Option[String] =
-      if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
-  }
-
-  /** Groups `snap` by namespace, sums each metric, and returns rows sorted by `srt` descending. */
-  private def aggregateByModule(snap: Vector[DefnStats], srt: Sort): Vector[ModuleStats] = {
-    val groups = snap.groupBy { s =>
-      val ns = s.sym.namespace
-      if (ns.isEmpty) "(root)" else ns.mkString(".")
-    }
-    groups.iterator.map { case (mod, defs) =>
-      val totalNanos = defs.iterator.map(_.totalNanos).sum
-      val totalCallCount = defs.iterator.map(_.callCount.toLong).sum
-      val totalLocLines = defs.iterator.map(s => locLineCount(s.loc)).sum
-      val byPhase = defs.foldLeft(Map.empty[String, Long]) { (acc, d) =>
-        d.byPhase.foldLeft(acc) { case (m, (phase, n)) =>
-          m.updated(phase, m.getOrElse(phase, 0L) + n)
-        }
-      }
-      val byPhaseCount = defs.foldLeft(Map.empty[String, Long]) { (acc, d) =>
-        d.byPhaseCount.foldLeft(acc) { case (m, (phase, n)) =>
-          m.updated(phase, m.getOrElse(phase, 0L) + n)
-        }
-      }
-      val totalCns = defs.iterator.map(_.cns).sum
-      val totalTvars = defs.iterator.map(_.tvars.toLong).sum
-      val totalEvars = defs.iterator.map(_.evars.toLong).sum
-      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase, byPhaseCount, totalCns, totalTvars, totalEvars)
-    }.toVector.sortBy(m => -moduleSortKey(m, srt))
-  }
-
-  /** Phases whose `track` count maps to the `mono` column — number of monomorphic instances created. */
-  private val MonoCountPhases: Set[String] = Set("Monomorpher")
-  /** Phases whose `track` count maps to the `opt` column — optimizer fixed-point re-visits. */
-  private val OptCountPhases: Set[String] = Set("Optimizer", "LambdaDrop")
-  /** Phases whose `track` count maps to the `cls` column — class files emitted post-specialization. */
-  private val ClsCountPhases: Set[String] = Set("CodeGen")
-
-  /** Sums `byPhaseCount` entries for the given phase set. */
-  private def sumPhaseCounts(byPhaseCount: Map[String, Long], phases: Set[String]): Long =
-    byPhaseCount.iterator.collect { case (p, n) if phases.contains(p) => n }.sum
-
-  /**
-    * Returns the descending sort key for a def under the given sort mode.
-    * `Hotness` (time / LOC) is 0 for synthetic defs with no real source
-    * span (`locLines <= 0`) so they sink to the bottom rather than dominating.
-    */
-  private def defSortKey(s: DefnStats, srt: Sort): Double = srt match {
-    case Sort.Time    => s.totalNanos.toDouble
-    case Sort.Hotness =>
-      val lines = locLineCount(s.loc)
-      if (lines <= 0) 0.0 else s.totalNanos.toDouble / lines
-    case Sort.Mono  => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
-    case Sort.Opt   => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
-    case Sort.Cls   => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
-    case Sort.Cns   => s.cns.toDouble
-    case Sort.Tvars => s.tvars.toDouble
-    case Sort.Evars => s.evars.toDouble
-  }
-
-  /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
-  private def moduleSortKey(m: ModuleStats, srt: Sort): Double = srt match {
-    case Sort.Time    => m.totalNanos.toDouble
-    case Sort.Hotness => if (m.totalLocLines <= 0) 0.0 else m.totalNanos.toDouble / m.totalLocLines
-    case Sort.Mono  => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
-    case Sort.Opt   => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
-    case Sort.Cls   => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
-    case Sort.Cns   => m.totalCns.toDouble
-    case Sort.Tvars => m.totalTvars.toDouble
-    case Sort.Evars => m.totalEvars.toDouble
-  }
 
   /** Fallback terminal height when JLine cannot determine the real one. */
   private val DefaultRows: Int = 24
@@ -208,114 +65,6 @@ object CompilerTop {
   /** Fallback terminal width when JLine cannot determine the real one. */
   private val DefaultCols: Int = 100
 
-  /**
-    * Column layout for the per-frame table render. Computed from the current
-    * terminal width: when the terminal is narrow, the optional LOC / counts
-    * / cns / phase columns are dropped in that order (lowest-signal first).
-    * When the terminal is wide, the surplus is distributed between the
-    * DefnSym and location columns proportionally to their default widths.
-    *
-    * @param symWidth    width of the DefnSym column.
-    * @param locWidth    width of the location column.
-    * @param showLOC     whether to render the LOC column.
-    * @param showCounts  whether to render the mono / opt / cls per-phase count columns (backend filter only).
-    * @param showCns     whether to render the cns (constraints) column (frontend filter only).
-    * @param showPhase   whether to render the dominant-phase column.
-    * @param totalWidth  total rendered width of the row, less leading/trailing pad.
-    */
-  private final case class Layout(symWidth: Int, locWidth: Int, showLOC: Boolean, showCounts: Boolean, showCns: Boolean, showPhase: Boolean, totalWidth: Int)
-
-  /** Default width of the DefnSym column when the terminal is wide enough. */
-  private val DefaultSymWidth: Int = 24
-  /** Default width of the location column when the terminal is wide enough. */
-  private val DefaultLocWidth: Int = 28
-  /** Floor on the DefnSym column width when the terminal is narrow. */
-  private val MinSymWidth: Int = 16
-  /** Floor on the location column width when the terminal is narrow. */
-  private val MinLocWidth: Int = 20
-
-  /** Fixed-width contribution of `time + %cpu + %wall` columns and their separators. */
-  private val FixedTailWidth: Int = 9 + 1 + 6 + 1 + 6 // time(9) + %cpu(6) + %wall(6) with two separators between
-
-  /** Width contribution of the optional LOC column (separator + width). */
-  private val LocColWidth: Int = 1 + 4
-  /** Width contribution of the optional mono / opt / cls per-phase count columns (3 × separator + width). */
-  private val CountsColWidth: Int = 3 * (1 + 4)
-  /** Width contribution of the optional cns column (separator + 5-char numeric field). */
-  private val CnsColWidth: Int = 1 + 5
-  /** Width contribution of the optional tvars column (separator + 4-char numeric field). */
-  private val TvarsColWidth: Int = 1 + 4
-  /** Width contribution of the optional evars column (separator + 4-char numeric field). */
-  private val EvarsColWidth: Int = 1 + 4
-  /**
-    * Combined width contribution of all three frontend-only columns
-    * (`cns`, `tv`, `ev`) including separators.
-    */
-  private val FrontendColsWidth: Int = CnsColWidth + TvarsColWidth + EvarsColWidth
-  /** Width contribution of the optional dominant-phase column (separator + width). */
-  private val PhaseColWidth: Int = 1 + 10
-
-  /**
-    * Picks a [[Layout]] for the given terminal width by trying tiers in
-    * descending feature order. The optional count-style columns are
-    * filter-gated to the views where their values are meaningful:
-    *   - `mono` / `opt` / `cls` only under [[PhaseFilter.Backend]] (the
-    *     phases that populate them only fire in the backend pipeline).
-    *   - `cns` only under [[PhaseFilter.Frontend]] (constraint generation
-    *     is purely a Typer concern).
-    * Outside their respective filters, the columns are hidden and the
-    * reclaimed width expands the sym / location text columns instead.
-    */
-  private def computeLayout(cols: Int, activeFilter: PhaseFilter): Layout = {
-    // Width contribution of the "fixed" half: separator before time + tail.
-    val tail = 1 + FixedTailWidth
-    // Width of just the text section (sym + 1 + location) at default sizes.
-    def textWidth(symW: Int, locW: Int): Int = symW + 1 + locW
-
-    val countsAllowed = activeFilter == PhaseFilter.Backend
-    val countsW = if (countsAllowed) CountsColWidth else 0
-    val cnsAllowed = activeFilter == PhaseFilter.Frontend
-    val cnsW = if (cnsAllowed) FrontendColsWidth else 0
-    // Combined extra contribution of all filter-specific count columns. At
-    // most one filter's columns are active for any given filter, so this is
-    // either CountsColWidth, CnsColWidth, or zero.
-    val extraColsW = countsW + cnsW
-
-    // Try tiers in descending feature order.
-    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + extraColsW + PhaseColWidth + tail
-    if (cols >= full) {
-      // Surplus → expand sym (~46%) and location (~54%) proportionally.
-      val extra = cols - full
-      val extraSym = extra * 46 / 100
-      val extraLoc = extra - extraSym
-      val symW = DefaultSymWidth + extraSym
-      val locW = DefaultLocWidth + extraLoc
-      return Layout(symW, locW, showLOC = true, showCounts = countsAllowed, showCns = cnsAllowed, showPhase = true,
-        totalWidth = textWidth(symW, locW) + LocColWidth + extraColsW + PhaseColWidth + tail)
-    }
-
-    // Tier: drop phase.
-    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + extraColsW + tail
-    if (cols >= noPhase)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = countsAllowed, showCns = cnsAllowed, showPhase = false, noPhase)
-
-    // Tier: drop phase + filter-specific counts (mono/opt/cls or cns).
-    val noPhaseNoExtras = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + tail
-    if (cols >= noPhaseNoExtras)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = false, showCns = false, showPhase = false, noPhaseNoExtras)
-
-    // Tier: drop phase + extras + LOC.
-    val noOptional = textWidth(DefaultSymWidth, DefaultLocWidth) + tail
-    if (cols >= noOptional)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = false, showCounts = false, showCns = false, showPhase = false, noOptional)
-
-    // Even minimum tier doesn't fit; shrink sym/locWidth to floors.
-    val available = (cols - tail).max(MinSymWidth + 1 + MinLocWidth)
-    val symW = MinSymWidth.max(available * 46 / 100)
-    val locW = MinLocWidth.max(available - 1 - symW)
-    Layout(symW, locW, showLOC = false, showCounts = false, showCns = false, showPhase = false,
-      textWidth(symW, locW) + tail)
-  }
 
   /**
     * Fixed-overhead rows: blank + 2 dashboard/stats lines + blank + 2 def-chrome +
@@ -569,7 +318,7 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     // reserving 2 columns for the 1-space left and right table padding.
     // The filter is part of the input because the mono / opt / cls columns
     // only render under the backend view.
-    val layout = computeLayout((terminalCols() - 2).max(1), activeFilter)
+    val layout = Layout.compute((terminalCols() - 2).max(1), activeFilter)
 
     val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(s => -defSortKey(s, activeSort))
     val visible = snap.take(defN)
@@ -671,27 +420,6 @@ final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
     val rest = label.tail
     if (active) s"$BoldCode$Yellow$UnderlineCode$key$NoUnderlineCode$rest$Reset"
     else s"$DimCode$UnderlineCode$key$NoUnderlineCode$rest$Reset"
-  }
-
-  /**
-    * Projects each [[DefnStats]] through the active filter: keep only the
-    * `byPhase` and `byPhaseCount` entries whose phase matches, and recompute
-    * `totalNanos` and `callCount` as the sum over the kept phases. Module
-    * aggregation re-rolls from these filtered defs, so module rows track
-    * the filter automatically.
-    *
-    * `loc` isn't per-phase and passes through unchanged.
-    */
-  private def applyFilter(snap: Vector[DefnStats], f: PhaseFilter): Vector[DefnStats] = {
-    if (f == PhaseFilter.All) return snap
-    snap.map { s =>
-      val keptPhases = s.byPhase.filter { case (p, _) => matchesFilter(p, f) }
-      val keptCounts = s.byPhaseCount.filter { case (p, _) => matchesFilter(p, f) }
-      val keptTotal = keptPhases.values.sum
-      // Sum of per-phase counts cannot overflow Int in any realistic build.
-      val keptCount = keptCounts.values.sum.toInt
-      s.copy(totalNanos = keptTotal, callCount = keptCount, byPhase = keptPhases, byPhaseCount = keptCounts)
-    }
   }
 
   /**
