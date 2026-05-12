@@ -87,8 +87,8 @@ pub mod Fixpoint3.Phase.Simplifier {
             simplifyOp(nonEmpty, predicates, inUntil, Set#{}, op)
                 |> Option.map(RamStmt.Insert)
         case RamStmt.MergeInto(_, _) => Some(stmt)
-        case RamStmt.Swap(_, _)      => Some(stmt)
-        case RamStmt.Purge(_)        => Some(stmt)
+        case RamStmt.Swap(_, _) => Some(stmt)
+        case RamStmt.Purge(_) => Some(stmt)
         case RamStmt.Seq(xs) =>
             Vector.filterMap(simplifyHelper(nonEmpty, predicates, inUntil), xs)
                 |> RamStmt.Seq
@@ -107,7 +107,7 @@ pub mod Fixpoint3.Phase.Simplifier {
                         Some(RamStmt.Until(test, simplifiedBody))
                     }
             }
-        case RamStmt.Comment(_)      => Some(stmt)
+        case RamStmt.Comment(_) => Some(stmt)
     }
 
     ///

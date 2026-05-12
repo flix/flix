@@ -102,34 +102,35 @@ pub mod Fixpoint3.Phase.IndexSelection {
                         )
                 );
             // Account for relations that have no body atoms with bound variables
-            let indexesMissing = relSymsOfProgram(program)
-                |> List.filter(relSym -> not Map.memberOf(relSym, indexesFull))
-                |> List.foldLeft(
-                    acc -> relSym -> {
-                        let deltaRelSym = relSymFromPredType(relSym, PredType.Delta, meta);
-                        let search = match relSymToPredType(relSym, meta) {
-                            case PredType.New =>
-                                match Map.get(deltaRelSym, indexesFull) {
-                                    case Some(v) => Vector.get(0, v)
-                                    case None    => Vector.range(0, arityOfNonLat(deltaRelSym))
-                                }
-                            case _ => Vector.range(0, arityOfNonLat(relSym))
-                        };
-                        Map.insert(relSym, Vector#{search}, acc)
-                    },
-                    Map#{}
-                );
-            let indexes = Map.union(indexesFull, indexesMissing);
-            let (indexedStmt, indexPlacement) = region rc2 {
-                let indexState = UniqueInts.empty(rc2);
-                let indexedStmt = indexStmt(newStmt, indexes, indexState);
-                foreach ((relSym, _) <- indexes) {
-                    discard UniqueInts.createIndex((relSym, 0), indexState)
+            let indexesMissing =
+                relSymsOfProgram(program)
+                    |> List.filter(relSym -> not Map.memberOf(relSym, indexesFull))
+                    |> List.foldLeft(
+                        acc -> relSym -> {
+                            let deltaRelSym = relSymFromPredType(relSym, PredType.Delta, meta);
+                            let search = match relSymToPredType(relSym, meta) {
+                                case PredType.New =>
+                                    match Map.get(deltaRelSym, indexesFull) {
+                                        case Some(v) => Vector.get(0, v)
+                                        case None    => Vector.range(0, arityOfNonLat(deltaRelSym))
+                                    }
+                                case _ => Vector.range(0, arityOfNonLat(relSym))
+                            };
+                            Map.insert(relSym, Vector#{search}, acc)
+                        },
+                        Map#{}
+                    );
+                let indexes = Map.union(indexesFull, indexesMissing);
+                let (indexedStmt, indexPlacement) = region rc2 {
+                    let indexState = UniqueInts.empty(rc2);
+                    let indexedStmt = indexStmt(newStmt, indexes, indexState);
+                    foreach ((relSym, _) <- indexes) {
+                        discard UniqueInts.createIndex((relSym, 0), indexState)
+                    };
+                    let finalState = UniqueInts.toMap(indexState);
+                    (indexedStmt, finalState)
                 };
-                let finalState = UniqueInts.toMap(indexState);
-                (indexedStmt, finalState)
-            };
-            RamProgram.Program(indexedStmt, facts, meta, (indexes, indexPlacement), typeInfo)
+                RamProgram.Program(indexedStmt, facts, meta, (indexes, indexPlacement), typeInfo)
     }
 
     ///
@@ -212,7 +213,7 @@ pub mod Fixpoint3.Phase.IndexSelection {
             RelOp.Query(rowVar, relSym, boolExps, absoluteIndex, t, indexOp(body, constructedIndexes, indexState))
         case RelOp.Functional(rowVar, func, terms, body, arity, t) =>
             RelOp.Functional(rowVar, func, terms, indexOp(body, constructedIndexes, indexState), arity, t)
-        case RelOp.Project(_, _, _)   => op
+        case RelOp.Project(_, _, _) => op
         case RelOp.If(boolExps, body) => RelOp.If(boolExps, indexOp(body, constructedIndexes, indexState))
     }
 
@@ -280,20 +281,21 @@ pub mod Fixpoint3.Phase.IndexSelection {
             let newBody = searchesOfOp(body, indexes, extendedSeenTuples);
             searchOf(relSym, search, indexes);
             let otherBoolExps = MutList.toVector(otherBoolExpList);
-            let nestedBody = if (Vector.length(otherBoolExps) == 0)
-                newBody
-            else
-                RelOp.If(otherBoolExps, newBody);
-            let equalExps = MutList.toVector(equalExpList);
-            if (Vector.length(equalExps) == 0)
-                RelOp.Search(rowVar, relSym, t, nestedBody)
-            else
-                RelOp.Query(rowVar, relSym, equalExps, -1, t, nestedBody)
+            let nestedBody =
+                if (Vector.length(otherBoolExps) == 0)
+                    newBody
+                else
+                    RelOp.If(otherBoolExps, newBody);
+                let equalExps = MutList.toVector(equalExpList);
+                if (Vector.length(equalExps) == 0)
+                    RelOp.Search(rowVar, relSym, t, nestedBody)
+                else
+                    RelOp.Query(rowVar, relSym, equalExps, -1, t, nestedBody)
         }
         case RelOp.Functional(rowVar, func, terms, body, arity, t) =>
             let extendedSeenTuples = Set.insert(rowVar, seenTuples);
             RelOp.Functional(rowVar, func, terms, searchesOfOp(body, indexes, extendedSeenTuples), arity, t)
-        case RelOp.Project(_, _, _)   => op
+        case RelOp.Project(_, _, _) => op
         case RelOp.If(boolExps, body) => RelOp.If(boolExps, searchesOfOp(body, indexes, seenTuples))
     }
 
