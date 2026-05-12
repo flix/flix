@@ -923,7 +923,8 @@ object PrettyPrinter {
     val filtered = filterEmpty(children)
     val rules    = filtered.collect { case t: Tree if ArrowRuleKinds.contains(t.kind) => t }
     val singleLineRules = rules.filter(r => effectiveLayoutOf(r) == Layout.SingleLine)
-    val maxWidth = singleLineRules.map(arrowPatternWidth).maxOption.getOrElse(0)
+    val alignArrows = rules.nonEmpty && singleLineRules.length == rules.length
+    val maxWidth = if (alignArrows) singleLineRules.map(arrowPatternWidth).maxOption.getOrElse(0) else 0
     val docs = filtered.map {
       case t: Tree if ArrowRuleKinds.contains(t.kind) => alignedArrowRule(t, maxWidth)
       case other                                       => prettyChild(other)
@@ -955,7 +956,7 @@ object PrettyPrinter {
     val bodyIsPreserved = bodyPart.headOption.exists(isPreservedBodyKind)
     val bodyOnSameLine  = bodyStartsOnSameLineAs(children(idx), bodyPart)
     val isSingleLine    = effectiveLayoutOf(tree) == Layout.SingleLine
-    val pattern = if (isSingleLine) Doc.fill(maxWidth, patternDoc) else patternDoc
+    val pattern = if (isSingleLine && maxWidth > 0) Doc.fill(maxWidth, patternDoc) else patternDoc
 
     if (bodyIsPreserved && !bodyOnSameLine)
       pattern <+> text("=>") <> nest(4, hardline <> bodyDoc)
