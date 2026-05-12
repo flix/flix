@@ -130,15 +130,15 @@ pub mod Fixpoint3.Solver {
             };
             Model(Map.unionWithKey(union, db1, db2))
         }
-        case (Model(_), Datalog(_, _))             => Join(d1, d2)
-        case (Datalog(_, _), Model(_))             => Join(d2, d1)
+        case (Model(_), Datalog(_, _)) => Join(d1, d2)
+        case (Datalog(_, _), Model(_)) => Join(d2, d1)
         case (Join(model, datalog), Datalog(_, _)) => Join(model, union(datalog, d2))
         case (Datalog(_, _), Join(model, datalog)) => Join(model, union(datalog, d1))
-        case (Join(model, datalog), Model(_))      => Join(union(model, d2), datalog)
-        case (Model(_), Join(model, datalog))      => Join(union(model, d1), datalog)
-        case (Join(x, y), Join(z, w))              => Join(union(x, z), union(y, w))
-        case (Provenance(_, _), _)                 => union(provenanceToModel(d1), d2)
-        case (_, Provenance(_, _))                 => union(d1, provenanceToModel(d2))
+        case (Join(model, datalog), Model(_)) => Join(union(model, d2), datalog)
+        case (Model(_), Join(model, datalog)) => Join(union(model, d1), datalog)
+        case (Join(x, y), Join(z, w)) => Join(union(x, z), union(y, w))
+        case (Provenance(_, _), _) => union(provenanceToModel(d1), d2)
+        case (_, Provenance(_, _)) => union(d1, provenanceToModel(d2))
     }
 
     ///
@@ -160,7 +160,7 @@ pub mod Fixpoint3.Solver {
                         // Temporary
                         let termsStr = Vector.join(", ", f);
                         bug!("${p}(${termsStr}) is not a fact")
-                    case true => Vector#{mkExtVar(p, f)}
+                    case true => Vector#{ mkExtVar(p, f) }
                 }
             }
         }
@@ -170,7 +170,7 @@ pub mod Fixpoint3.Solver {
                 bug!("${p}(${termsStr}) is not a fact")
             case Some(v) => Vector.map(match (pred, fact) -> mkExtVar(pred, fact), v)
         }
-        case Join(_, _)    => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
+        case Join(_, _) => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
     }
 
     ///
@@ -221,7 +221,7 @@ pub mod Fixpoint3.Solver {
             let fakeRelSym = Ram.makeFakeRelSym(p);
             match Map.get(fakeRelSym, db) {
                 case None    => Provenance(rules, Map#{})
-                case Some(v) => Provenance(rules, Map#{fakeRelSym => v})
+                case Some(v) => Provenance(rules, Map#{ fakeRelSym => v })
             }
         case Join(d1, d2) => union(projectSym(p, d1), projectSym(p, d2))
     }
@@ -663,7 +663,7 @@ pub mod Fixpoint3.Solver {
                 toModel(db)
         // Remove the `IO` effect from dealing with `Static`.
             }
-        }: _\IO + ef + Foldable.Aef[f]) as _ \ ef + Foldable.Aef[f])
+        }: _ \ IO + ef + Foldable.Aef[f]) as _ \ ef + Foldable.Aef[f])
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
