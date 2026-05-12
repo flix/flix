@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.tools.compilertop
 
-import ca.uwaterloo.flix.tools.compilertop.Model.PhaseFilter
-
 /**
   * Column layout for the per-frame table render. Computed from the current
   * terminal width: when the terminal is narrow, the optional LOC / counts
@@ -27,8 +25,8 @@ import ca.uwaterloo.flix.tools.compilertop.Model.PhaseFilter
   * @param symWidth    width of the DefnSym column.
   * @param locWidth    width of the location column.
   * @param showLOC     whether to render the LOC column.
-  * @param showCounts  whether to render the mono / opt / cls per-phase count columns (backend filter only).
-  * @param showCns     whether to render the cns (constraints) column (frontend filter only).
+  * @param showCounts  whether to render the mono / opt / cls per-phase count columns.
+  * @param showCns     whether to render the cns / tv / ev columns.
   * @param showPhase   whether to render the dominant-phase column.
   * @param totalWidth  total rendered width of the row, less leading/trailing pad.
   */
@@ -68,28 +66,25 @@ object Layout {
 
   /**
     * Picks a [[Layout]] for the given terminal width by trying tiers in
-    * descending feature order. The optional count-style columns are
-    * filter-gated to the views where their values are meaningful:
-    *   - `mono` / `opt` / `cls` only under [[PhaseFilter.Backend]] (the
-    *     phases that populate them only fire in the backend pipeline).
-    *   - `cns` only under [[PhaseFilter.Frontend]] (constraint generation
-    *     is purely a Typer concern).
-    * Outside their respective filters, the columns are hidden and the
+    * descending feature order. The caller gates the optional count-style
+    * columns by passing `showCounts` (mono / opt / cls) and `showCns`
+    * (cns / tv / ev) — Layout itself doesn't know which UI mode they
+    * correspond to. When a flag is false the column is hidden and the
     * reclaimed width expands the sym / location text columns instead.
+    *
+    * At most one of `showCounts` and `showCns` is true under the current
+    * UI gating, but the algorithm accepts any combination — both false
+    * means neither column group renders; both true would render both.
     */
-  def compute(cols: Int, activeFilter: PhaseFilter): Layout = {
+  def compute(cols: Int, showCounts: Boolean, showCns: Boolean): Layout = {
     // Width contribution of the "fixed" half: separator before time + tail.
     val tail = 1 + FixedTailWidth
     // Width of just the text section (sym + 1 + location) at default sizes.
     def textWidth(symW: Int, locW: Int): Int = symW + 1 + locW
 
-    val countsAllowed = activeFilter == PhaseFilter.Backend
-    val countsW = if (countsAllowed) CountsColWidth else 0
-    val cnsAllowed = activeFilter == PhaseFilter.Frontend
-    val cnsW = if (cnsAllowed) FrontendColsWidth else 0
-    // Combined extra contribution of all filter-specific count columns. At
-    // most one filter's columns are active for any given filter, so this is
-    // either CountsColWidth, CnsColWidth, or zero.
+    val countsW = if (showCounts) CountsColWidth else 0
+    val cnsW = if (showCns) FrontendColsWidth else 0
+    // Combined extra contribution of the optional count columns.
     val extraColsW = countsW + cnsW
 
     // Try tiers in descending feature order.
@@ -101,16 +96,16 @@ object Layout {
       val extraLoc = extra - extraSym
       val symW = DefaultSymWidth + extraSym
       val locW = DefaultLocWidth + extraLoc
-      return Layout(symW, locW, showLOC = true, showCounts = countsAllowed, showCns = cnsAllowed, showPhase = true,
+      return Layout(symW, locW, showLOC = true, showCounts = showCounts, showCns = showCns, showPhase = true,
         totalWidth = textWidth(symW, locW) + LocColWidth + extraColsW + PhaseColWidth + tail)
     }
 
     // Tier: drop phase.
     val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + extraColsW + tail
     if (cols >= noPhase)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = countsAllowed, showCns = cnsAllowed, showPhase = false, noPhase)
+      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = showCounts, showCns = showCns, showPhase = false, noPhase)
 
-    // Tier: drop phase + filter-specific counts (mono/opt/cls or cns).
+    // Tier: drop phase + the optional counts (mono/opt/cls or cns/tv/ev).
     val noPhaseNoExtras = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + tail
     if (cols >= noPhaseNoExtras)
       return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = false, showCns = false, showPhase = false, noPhaseNoExtras)

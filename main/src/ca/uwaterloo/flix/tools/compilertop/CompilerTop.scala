@@ -300,11 +300,16 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val activeFilter = filter.get()
     val activeSort = sort.get()
 
+    // The mono / opt / cls columns only render under the backend view (the
+    // phases that populate them only fire in the backend pipeline). The cns /
+    // tv / ev columns only render under the frontend view (constraint
+    // generation is purely a Typer concern). Layout itself doesn't know about
+    // PhaseFilter; we hand it booleans.
+    val showCounts = activeFilter == PhaseFilter.Backend
+    val showCns    = activeFilter == PhaseFilter.Frontend
     // Compute the column layout based on the current terminal width,
     // reserving 2 columns for the 1-space left and right table padding.
-    // The filter is part of the input because the mono / opt / cls columns
-    // only render under the backend view.
-    val layout = Layout.compute((terminalCols() - 2).max(1), activeFilter)
+    val layout = Layout.compute((terminalCols() - 2).max(1), showCounts, showCns)
 
     val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(s => -defSortKey(s, activeSort))
     val visible = snap.take(defN)
