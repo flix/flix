@@ -229,9 +229,12 @@ pub mod MutDeque {
     /// Pushes `x` to the back of `d`.
     ///
     pub def pushBack(x: a, d: MutDeque[a, r]): Unit \ r =
-        Array.put(x, d->back, d->values); // Store `x` in the array.
-        d->back = (d->back + 1) `Int32.modulo` capacity(d); // Update back index reference to point to next empty index.
-        expand(d) // Optionally expand `d`.
+        // Store `x` in the array.
+        Array.put(x, d->back, d->values);
+        // Update back index reference to point to next empty index.
+        d->back = (d->back + 1) `Int32.modulo` capacity(d);
+        // Optionally expand `d`.
+        expand(d)
 
     ///
     /// Optionally returns the front element. Does *not* remove it.
@@ -324,8 +327,10 @@ pub mod MutDeque {
             // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
             Array.updateSequence(0, Array.slice(rc2, start = f, end = b, a), a1)
         } else {
-            Array.updateSequence(0, Array.slice(rc2, start = f, end = c, a), a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
-            Array.updateSequence(c - f, Array.slice(rc2, start = 0, end = b, a), a1) // Copy the back  elements of `a` to a1[(c - f) .. b].
+            // Copy the front elements of `a` to a1[0 .. (c - f)].
+            Array.updateSequence(0, Array.slice(rc2, start = f, end = c, a), a1);
+            // Copy the back  elements of `a` to a1[(c - f) .. b].
+            Array.updateSequence(c - f, Array.slice(rc2, start = 0, end = b, a), a1)
         }
 
     ///
