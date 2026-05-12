@@ -121,7 +121,7 @@ mod Domain.Interval {
             let b = BigInt.min(BigInt.min(b1 * b2, b1 * e2), BigInt.min(e1 * b2, e1 * e2));
             let e = BigInt.max(BigInt.max(b1 * b2, b1 * e2), BigInt.max(e1 * b2, e1 * e2));
             norm(Interval.Range(b, e))
-        case _                 => Interval.Top
+        case _ => Interval.Top
     }
 
     // ------------------------------------------------------------------------

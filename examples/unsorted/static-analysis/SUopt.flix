@@ -64,14 +64,14 @@ def main(): Unit =
         //
         // Store
         // ---------
-        SU((l: String), (a: String);f(b)) :- Store(l, p, q), Pt(p, a), Pt(q, b).
+        SU((l: String), (a: String); f(b)) :- Store(l, p, q), Pt(p, a), Pt(q, b).
         //
         PtH((a: String), (b: String)) :- Store(_l, p, q), Pt(p, a), Pt(q, b).
         PtH(a, b) :- FIStore(p, q), Pt(p, a), Pt(q, b).
         //
         // Load
         // ---------
-        Pt(p, b) :- Load(l, p, q), Pt(q, a), PtH(a, b), SU(l, a;t), if(filter(t, b)).
+        Pt(p, b) :- Load(l, p, q), Pt(q, a), PtH(a, b), SU(l, a; t), if (filter(t, b)).
         Pt(p, b) :- FILoad(p, q), Pt(q, a), PtH(a, b).
         //
         // CFlow
@@ -82,18 +82,18 @@ def main(): Unit =
         // ---------
         //su-after(l,a,t) :- su-before(l,a,t), NOT kill(l,a).
 
-        SU(l2, a;t) :- CFG(l1, l2), SU(l1, a;t), Multi(a).
-        SU(l2, a;t) :- CFG(l1, l2), SU(l1, a;t), Kill(l2;k), if(killNot(a, k)).
+        SU(l2, a; t) :- CFG(l1, l2), SU(l1, a; t), Multi(a).
+        SU(l2, a; t) :- CFG(l1, l2), SU(l1, a; t), Kill(l2; k), if (killNot(a, k)).
         //SU(l2,a,t) :- CFG(l1, l2), SU(l1,a,t), Phi(l2).
         //
         // PtSu
         // ---------
-        SU(l, a;f(b)) :- Clear(l), PtH(a, b).
+        SU(l, a; f(b)) :- Clear(l), PtH(a, b).
 
         // Kill
         // ---------
-        Kill((l: String);f(b)) :- Store(l, p, _q), Pt(p, b).
-        Kill(l;SULattice.Top) :- Phi(l).
+        Kill((l: String); f(b)) :- Store(l, p, _q), Pt(p, b).
+        Kill(l; SULattice.Top) :- Phi(l).
     };
     let _m = solve p;
     ()

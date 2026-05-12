@@ -31,8 +31,8 @@ def typeOf(e: Expr[(tpe = Type | r)]): Type = match e {
 /// and returns a typed expression decorated with the type.
 /// For simplicity, the actual checks have been omitted.
 def typeCheck(e: Expr[()]): Expr[(tpe = Type)] = match e {
-    case Expr.True   => Expr.True
-    case Expr.False  => Expr.False
+    case Expr.True => Expr.True
+    case Expr.False => Expr.False
     case Expr.Cst(i) => Expr.Cst({value = i#value, tpe = Type.TInt})
     case Expr.Add(i) =>
         let e1 = typeCheck(i#exp1);
@@ -57,8 +57,8 @@ def example(): Type =
 /// We can extend the function above to be one that is polymorphic
 /// in whatever other labels an expression may be decorated with:
 def typeCheck2(e: Expr[r]): Expr[(tpe = Type | r)] = match e {
-    case Expr.True   => Expr.True
-    case Expr.False  => Expr.False
+    case Expr.True => Expr.True
+    case Expr.False => Expr.False
     case Expr.Cst(i) => Expr.Cst({+tpe = Type.TInt | {value = i#value | i}})
     case Expr.Add(i) =>
         let e1 = typeCheck2(i#exp1);

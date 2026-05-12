@@ -15,7 +15,7 @@ def main(): Unit \ { FileRead, FileTest, IO } =
 
 def safeRead(file: String): Unit \ { FileExists, ReadFile, IO } =
     match FileExists.exists(file) {
-        case Err(err)  => println("Error: ${err}")
+        case Err(err) => println("Error: ${err}")
         case Ok(false) => println("File does not exist")
         case Ok(true) =>
             match ReadFile.read(file) {

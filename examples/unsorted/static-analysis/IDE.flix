@@ -67,7 +67,7 @@ mod IDE {
         let apply = ide#apply;
         let compose = ide#compose;
 
-        def prependId(v) = Vector#{ (ide#zero, ide#id) } ++ v;
+        def prependId(v) = Vector#{(ide#zero, ide#id)} ++ v;
         def augmentForZero(d, v) = if (d == ide#zero) prependId(v) else v;
 
         def eshIntra1(n, d) = augmentForZero(d, ide#eshIntra(n, d));
@@ -86,49 +86,56 @@ mod IDE {
             Proc(p) :- InProc(p, _).
 
             // intraproc
-            JumpFn(d1, m, d3;compose(long, short)) :- CFG(n, m),
-                JumpFn(d1, n, d2;long),
+            JumpFn(d1, m, d3; compose(long, short)) :-
+                CFG(n, m),
+                JumpFn(d1, n, d2; long),
                 let(d3, short) = eshIntra1(n, d2).
 
             // use summary
-            JumpFn(d1, m, d3;compose(caller, summary)) :- CFG(n, m),
-                JumpFn(d1, n, d2;caller),
-                SummaryFn(n, d2, d3;summary).
+            JumpFn(d1, m, d3; compose(caller, summary)) :-
+                CFG(n, m),
+                JumpFn(d1, n, d2; caller),
+                SummaryFn(n, d2, d3; summary).
 
-            EshCallStart(call, d2, target, d3, f) :- JumpFn(_d1, call, d2;nonbottom1),
+            EshCallStart(call, d2, target, d3, f) :-
+                JumpFn(_d1, call, d2; nonbottom1),
                 CallGraph(call, target),
                 let(d3, f) = eshCallStart1(call, d2, target).
 
-            JumpFn(d3, start, d3;ide#id) :- EshCallStart(call, d2, target, d3, nonbottom2),
+            JumpFn(d3, start, d3; ide#id) :-
+                EshCallStart(call, d2, target, d3, nonbottom2),
                 StartNode(target, start).
 
             // Phase I line [6] from paper
-            JumpFn(ide#zero, n, ide#zero;ide#id) :- StartNode(main, n).
+            JumpFn(ide#zero, n, ide#zero; ide#id) :- StartNode(main, n).
 
             // compute summary
-            SummaryFn(call, d4, d5;compose(compose(cs, se), er)) :- CallGraph(call, target),
+            SummaryFn(call, d4, d5; compose(compose(cs, se), er)) :-
+                CallGraph(call, target),
                 StartNode(target, _start),
                 EndNode(target, end),
                 EshCallStart(call, d4, target, d1, cs),
-                JumpFn(d1, end, d2;se),
+                JumpFn(d1, end, d2; se),
                 let(d5, er) = eshEndReturn1(target, d2, call).
 
             // Phase II line [13] from paper
-            ResultProc(proc, dp;apply(cs, v)) :- Results(call, d;v),
+            ResultProc(proc, dp; apply(cs, v)) :-
+                Results(call, d; v),
                 EshCallStart(call, d, proc, dp, cs).
 
             // Phase II line [2] from paper
-            ResultProc(ide#main, ide#zero;UpperBound.maxValue()).
+            ResultProc(ide#main, ide#zero; UpperBound.maxValue()).
 
             // tabulate result
-            Results(n, d;apply(fn, vp)) :- ResultProc(proc, dp;vp),
+            Results(n, d; apply(fn, vp)) :-
+                ResultProc(proc, dp; vp),
                 InProc(proc, n),
-                JumpFn(dp, n, d;fn).
+                JumpFn(dp, n, d; fn).
         };
 
-        let f1 = inject ide#cfg, ide#callGraph, ide#startNodes, ide#endNodes into CFG / 2, CallGraph / 2, StartNode / 2, EndNode / 2;
+        let f1 = inject ide#cfg, ide#callGraph, ide#startNodes, ide#endNodes into CFG/2, CallGraph/2, StartNode/2, EndNode/2;
 
-        query p, f1 select (n, d, l) from Results(n, d;l)
+        query p, f1 select (n, d, l) from Results(n, d; l)
 
 }
 
@@ -365,11 +372,11 @@ def main(): Unit \ IO =
                         case _   => ?unreachable
                     };
 
-                    let globalVars = Set#{ "x" };
+                    let globalVars = Set#{"x"};
                     def isGlobalVar(v) = Set.memberOf(v, globalVars);
 
                     def instruction(n) = match n {
-                        case "smain" => IR.MainEntry(Vector#{ "x" })
+                        case "smain" => IR.MainEntry(Vector#{"x"})
                         case "n1"    => IR.CallConst("p", 7)
                         case "n2"    => IR.Nop
                         case "n3"    => IR.Nop
@@ -394,38 +401,38 @@ def main(): Unit \ IO =
                             else
                                 Vector#{}
                         case IR.Assign(v1, c1, v2, c2) =>
-                            let kill = if (d == v1) Vector#{} else Vector#{ (d, ConstantProp.id()) };
+                            let kill = if (d == v1) Vector#{} else Vector#{(d, ConstantProp.id())};
                             let microfn = ConstantProp.MicroFunction.NonBot(c1, c2, ConstantProp.Const.Bot);
-                            let gen = if (d == v2) Vector#{ (v1, microfn) } else Vector#{};
+                            let gen = if (d == v2) Vector#{(v1, microfn)} else Vector#{};
                             kill ++ gen
                         case IR.CallConst(_, _) if isGlobalVar(d) => Vector#{}
-                        case IR.CallVar(_, _) if isGlobalVar(d)   => Vector#{}
-                        case _                                    => Vector#{ (d, ConstantProp.id()) }
+                        case IR.CallVar(_, _) if isGlobalVar(d) => Vector#{}
+                        case _ => Vector#{(d, ConstantProp.id())}
                     };
 
                     def eshCallStart(n, d, p) = match instruction(n) {
                         case IR.CallConst(proc, arg) if (proc == p) =>
                             let parm = procedureParameters(proc);
                             if (d == "zero")
-                                Vector#{ (parm, ConstantProp.MicroFunction.NonBot(0, arg, ConstantProp.Const.Bot)) }
+                                Vector#{(parm, ConstantProp.MicroFunction.NonBot(0, arg, ConstantProp.Const.Bot))}
                             else if (d == parm)
                                 Vector#{}
                             else
-                                Vector#{ (d, ConstantProp.id()) }
+                                Vector#{(d, ConstantProp.id())}
                         case IR.CallVar(proc, arg) if (proc == p) =>
                             let parm = procedureParameters(proc);
                             if (d == arg)
-                                Vector#{ (parm, ConstantProp.id()) }
+                                Vector#{(parm, ConstantProp.id())}
                             else if (d == parm)
                                 Vector#{}
                             else
-                                Vector#{ (d, ConstantProp.id()) }
+                                Vector#{(d, ConstantProp.id())}
                         case _ => Vector#{}
                     };
 
                     def eshEndReturn(p, d, n) = match instruction(n) {
-                        case IR.CallConst(proc, _) if p == proc and isGlobalVar(d) => Vector#{ (d, ConstantProp.id()) }
-                        case IR.CallVar(proc, _) if p == proc and isGlobalVar(d)   => Vector#{ (d, ConstantProp.id()) }
+                        case IR.CallConst(proc, _) if p == proc and isGlobalVar(d) => Vector#{(d, ConstantProp.id())}
+                        case IR.CallVar(proc, _) if p == proc and isGlobalVar(d)   => Vector#{(d, ConstantProp.id())}
                         case _                                                     => Vector#{}
                     };
 

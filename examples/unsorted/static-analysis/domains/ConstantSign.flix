@@ -34,8 +34,8 @@ mod Domain.ConstantSign {
     ///
     //    #upperBound #leastUpperBound #commutative #associative
     pub def lub(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) {
-        case (ConstantSign.Bot, x)                   => x
-        case (x, ConstantSign.Bot)                   => x
+        case (ConstantSign.Bot, x) => x
+        case (x, ConstantSign.Bot) => x
         case (ConstantSign.Cst(n1), ConstantSign.Cst(n2)) =>
             if (n1 == n2)
                 ConstantSign.Cst(n1)
@@ -49,9 +49,9 @@ mod Domain.ConstantSign {
         case (ConstantSign.Neg, ConstantSign.Cst(n)) => if (n <= 0ii) ConstantSign.Neg else ConstantSign.Top
         case (ConstantSign.Cst(n), ConstantSign.Pos) => if (n >= 0ii) ConstantSign.Pos else ConstantSign.Top
         case (ConstantSign.Pos, ConstantSign.Cst(n)) => if (n >= 0ii) ConstantSign.Pos else ConstantSign.Top
-        case (ConstantSign.Neg, ConstantSign.Neg)    => ConstantSign.Neg
-        case (ConstantSign.Pos, ConstantSign.Pos)    => ConstantSign.Pos
-        case _                                       => ConstantSign.Top
+        case (ConstantSign.Neg, ConstantSign.Neg) => ConstantSign.Neg
+        case (ConstantSign.Pos, ConstantSign.Pos) => ConstantSign.Pos
+        case _ => ConstantSign.Top
     }
 
     ///

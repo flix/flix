@@ -10,7 +10,7 @@ mod BooleanFormulas {
     }
 
     pub def main(): Unit \ IO = {
-        let subst = Map#{ 1 => true, 2 => false };
+        let subst = Map#{1 => true, 2 => false};
         // ~v1 and (v2 xor true)
         let example = open_variant Exp.And(open_variant Exp.Not(open_variant Exp.Var(1)), open_variant Exp.Xor(open_variant Exp.Var(2), open_variant Exp.Cst(true)));
         println("input is '${toString(example)}'");
@@ -43,10 +43,10 @@ mod BooleanFormulas {
 
     pub def simplifyNaive(e: Exp[s]): Exp[rvnot <Exp.Xor>] =
         choose e {
-            case Exp.Var(x)    => open_variant Exp.Var(x)
-            case Exp.Cst(b)    => open_variant Exp.Cst(b)
-            case Exp.Not(x)    => open_variant Exp.Not(simplifyNaive(x))
-            case Exp.Or(x, y)  => open_variant Exp.Or(simplifyNaive(x), simplifyNaive(y))
+            case Exp.Var(x) => open_variant Exp.Var(x)
+            case Exp.Cst(b) => open_variant Exp.Cst(b)
+            case Exp.Not(x) => open_variant Exp.Not(simplifyNaive(x))
+            case Exp.Or(x, y) => open_variant Exp.Or(simplifyNaive(x), simplifyNaive(y))
             case Exp.And(x, y) => open_variant Exp.And(simplifyNaive(x), simplifyNaive(y))
             case Exp.Xor(x, y) =>
                 let x1 = simplifyNaive(x);
@@ -66,10 +66,10 @@ mod BooleanFormulas {
 
     pub def simplify(e: Exp[s]): Exp[(s rvsub <Exp.Xor>) rvadd <Exp.Or, Exp.And, Exp.Not>] =
         choose* e {
-            case Exp.Var(x)    => open_variant Exp.Var(x)
-            case Exp.Cst(b)    => open_variant Exp.Cst(b)
-            case Exp.Not(x)    => open_variant Exp.Not(simplify(x))
-            case Exp.Or(x, y)  => open_variant Exp.Or(simplify(x), simplify(y))
+            case Exp.Var(x) => open_variant Exp.Var(x)
+            case Exp.Cst(b) => open_variant Exp.Cst(b)
+            case Exp.Not(x) => open_variant Exp.Not(simplify(x))
+            case Exp.Or(x, y) => open_variant Exp.Or(simplify(x), simplify(y))
             case Exp.And(x, y) => open_variant Exp.And(simplify(x), simplify(y))
             case Exp.Xor(x, y) =>
                 let x1 = simplify(x);

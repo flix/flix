@@ -62,14 +62,14 @@ mod FordFulkerson {
     /// or if it has non-zero flow.
     ///
     def augmentingPath(src: t, dst: t, g: m[(t, Int32, Int32, t)]): Option[Path[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] =
-        let edges = inject g into Edge / 4;
+        let edges = inject g into Edge/4;
         let rules = #{
-            Reach(x, y;init(y, x)) :- Edge(x, u, f, y), if((u - f) > 0). // Forward edge
-            Reach(x, z;cons(z, p)) :- Reach(x, y;p), Edge(y, u, f, z), if((u - f) > 0). // Forward edge
-            Reach(x, y;init(y, x)) :- Edge(y, u, f, x), if(f > 0). // Back edge
-            Reach(x, z;cons(z, p)) :- Reach(x, y;p), Edge(z, u, f, y), if(f > 0). // Back edge
+            Reach(x, y; init(y, x)) :- Edge(x, u, f, y), if ((u - f) > 0). // Forward edge
+            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, u, f, z), if ((u - f) > 0). // Forward edge
+            Reach(x, y; init(y, x)) :- Edge(y, u, f, x), if (f > 0). // Back edge
+            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(z, u, f, y), if (f > 0). // Back edge
         };
-        let result = query edges, rules select fn from Reach(src, dst;fn);
+        let result = query edges, rules select fn from Reach(src, dst; fn);
         Vector.head(result)
 
     ///
@@ -227,7 +227,7 @@ mod FordFulkerson {
     /// The maximum flow is `19`.
     ///
     pub def exampleGraph01(): Set[(Int32, Int32, Int32)] =
-        Set#{ (0, 10, 1), (0, 10, 3), (1, 2, 3), (1, 4, 2), (1, 8, 4), (2, 10, 5), (3, 9, 4), (4, 6, 2), (4, 10, 5) }
+        Set#{(0, 10, 1), (0, 10, 3), (1, 2, 3), (1, 4, 2), (1, 8, 4), (2, 10, 5), (3, 9, 4), (4, 6, 2), (4, 10, 5)}
 
     ///
     /// Returns the following graph:
@@ -255,7 +255,7 @@ mod FordFulkerson {
     /// The maximum flow is `20`.
     ///
     pub def exampleGraph02(): Set[(Int32, Int32, Int32)] =
-        Set#{ (0, 10, 1), (0, 10, 3), (1, 25, 2), (2, 10, 5), (3, 15, 4), (4, 6, 1), (4, 10, 5) }
+        Set#{(0, 10, 1), (0, 10, 3), (1, 25, 2), (2, 10, 5), (3, 15, 4), (4, 6, 1), (4, 10, 5)}
 
     ///
     /// Returns the following graph:
@@ -281,7 +281,7 @@ mod FordFulkerson {
     /// The maximum flow is `2000`.
     ///
     pub def exampleGraph03(): Set[(Int32, Int32, Int32)] =
-        Set#{ (0, 1000, 1), (0, 1000, 2), (1, 1, 2), (1, 1000, 3), (2, 1000, 3) }
+        Set#{(0, 1000, 1), (0, 1000, 2), (1, 1, 2), (1, 1000, 3), (2, 1000, 3)}
 
     ///
     /// Returns the following graph:
@@ -347,7 +347,7 @@ mod FordFulkerson {
     def testAugmentingPath01(): Unit \ Assert =
         let s = 1;
         let t = 5;
-        let g = Set#{ (1, 1, 0, 2), (2, 1, 0, 3), (3, 1, 0, 4), (3, 1, 0, 8), (4, 1, 0, 5), (3, 1, 0, 5) };
+        let g = Set#{(1, 1, 0, 2), (2, 1, 0, 3), (3, 1, 0, 4), (3, 1, 0, 8), (4, 1, 0, 5), (3, 1, 0, 5)};
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
         Assert.assertEq(expected = Path(5 :: 3 :: 2 :: 1 :: Nil), p)
 
@@ -461,13 +461,13 @@ mod FordFulkerson {
     @Test
     def testMinCapacity01(): Unit \ Assert =
         let p = Path(5 :: 4 :: 3 :: 2 :: 1 :: Nil);
-        let g = Set#{ (1, 3, 0, 2), (1, 4, 0, 3), (2, 1, 0, 3), (3, 5, 0, 4), (4, 10, 0, 5) };
+        let g = Set#{(1, 3, 0, 2), (1, 4, 0, 3), (2, 1, 0, 3), (3, 5, 0, 4), (4, 10, 0, 5)};
         Assert.assertEq(expected = 1, minCapacity(p, g))
 
     @Test
     def testMinCapacity02(): Unit \ Assert =
         let p = Path(5 :: 4 :: 3 :: 2 :: 1 :: Nil);
-        let g = Set#{ (1, 3, 0, 2), (1, 4, 0, 3), (2, 3, 0, 3), (3, 5, 0, 4), (4, 10, 0, 5), (6, 1, 0, 7) };
+        let g = Set#{(1, 3, 0, 2), (1, 4, 0, 3), (2, 3, 0, 3), (3, 5, 0, 4), (4, 10, 0, 5), (6, 1, 0, 7)};
         Assert.assertEq(expected = 3, minCapacity(p, g))
 
     @Test
@@ -583,8 +583,8 @@ mod FordFulkerson {
                 }
             );
         // These are what the engine produces.
-        let g2 = Vector#{ (0, 10, 4, 1), (0, 10, 0, 3), (1, 2, 0, 3), (1, 4, 4, 2), (1, 8, 0, 4), (2, 10, 4, 5), (3, 9, 0, 4), (4, 6, 0, 2), (4, 10, 0, 5) };
-        let g3 = Vector#{ (0, 10, 8, 1), (0, 10, 0, 3), (1, 2, 0, 3), (1, 4, 0, 2), (1, 8, 8, 4), (2, 10, 0, 5), (3, 9, 0, 4), (4, 6, 0, 2), (4, 10, 8, 5) };
+        let g2 = Vector#{(0, 10, 4, 1), (0, 10, 0, 3), (1, 2, 0, 3), (1, 4, 4, 2), (1, 8, 0, 4), (2, 10, 4, 5), (3, 9, 0, 4), (4, 6, 0, 2), (4, 10, 0, 5)};
+        let g3 = Vector#{(0, 10, 8, 1), (0, 10, 0, 3), (1, 2, 0, 3), (1, 4, 0, 2), (1, 8, 8, 4), (2, 10, 0, 5), (3, 9, 0, 4), (4, 6, 0, 2), (4, 10, 8, 5)};
         if (p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
             Assert.assertEq(expected = g1, increaseFlow(p, incr, g))
         } else if (p == Path(5 :: 2 :: 1 :: 0 :: Nil)) {
@@ -618,7 +618,7 @@ mod FordFulkerson {
                 }
             )
             |> Foldable.toVector;
-        let g2 = Vector#{ (0, 10, 4, 1), (0, 10, 9, 3), (1, 2, 0, 3), (1, 4, 4, 2), (1, 8, 0, 4), (2, 10, 4, 5), (3, 9, 9, 4), (4, 6, 0, 2), (4, 10, 9, 5) };
+        let g2 = Vector#{(0, 10, 4, 1), (0, 10, 9, 3), (1, 2, 0, 3), (1, 4, 4, 2), (1, 8, 0, 4), (2, 10, 4, 5), (3, 9, 9, 4), (4, 6, 0, 2), (4, 10, 9, 5)};
         if (p == Path(5 :: 4 :: 1 :: 0 :: Nil)) {
             Assert.assertEq(expected = g1, increaseFlow(p, incr, g))
         } else {
@@ -671,7 +671,7 @@ mod FordFulkerson {
                 }
             )
             |> Foldable.toVector;
-        let g2 = Vector#{ (0, 10, 10, 1), (0, 10, 0, 3), (1, 25, 10, 2), (2, 10, 10, 5), (3, 15, 0, 4), (4, 6, 0, 1), (4, 10, 0, 5) };
+        let g2 = Vector#{(0, 10, 10, 1), (0, 10, 0, 3), (1, 25, 10, 2), (2, 10, 10, 5), (3, 15, 0, 4), (4, 6, 0, 1), (4, 10, 0, 5)};
         if (p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
             Assert.assertEq(expected = g1, increaseFlow(p, incr, g))
         } else {

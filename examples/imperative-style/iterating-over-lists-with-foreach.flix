@@ -6,10 +6,7 @@ def main(): Unit \ IO =
 
     // Create a nested foreach-loop
     // in a single expression.
-    foreach (
-        x <- xs;
-        y <- ys
-    )
+    foreach (x <- xs; y <- ys)
         println(x + y);
 
     // Equivalent to nesting like below.

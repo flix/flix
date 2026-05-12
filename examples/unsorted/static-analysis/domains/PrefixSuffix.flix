@@ -39,8 +39,8 @@ mod Domain.PrefixSuffix {
     ///
     //    #upperBound #leastUpperBound #commutative #associative
     pub def lub(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) {
-        case (PrefixSuffix.Bot, x)                              => x
-        case (x, PrefixSuffix.Bot)                              => x
+        case (PrefixSuffix.Bot, x) => x
+        case (x, PrefixSuffix.Bot) => x
         case (PrefixSuffix.PreSuf(p1, s1), PrefixSuffix.PreSuf(p2, s2)) =>
             if ((p1 == p2) and (s1 == s2))
                 PrefixSuffix.PreSuf(p1, s1)
@@ -54,9 +54,9 @@ mod Domain.PrefixSuffix {
         case (PrefixSuffix.Pre(p1), PrefixSuffix.PreSuf(p2, _)) => if (p1 == p2) PrefixSuffix.Pre(p1) else PrefixSuffix.Top
         case (PrefixSuffix.PreSuf(_, s1), PrefixSuffix.Suf(s2)) => if (s1 == s2) PrefixSuffix.Suf(s1) else PrefixSuffix.Top
         case (PrefixSuffix.Suf(s1), PrefixSuffix.PreSuf(_, s2)) => if (s1 == s2) PrefixSuffix.Suf(s1) else PrefixSuffix.Top
-        case (PrefixSuffix.Pre(p1), PrefixSuffix.Pre(p2))       => if (p1 == p2) PrefixSuffix.Pre(p1) else PrefixSuffix.Top
-        case (PrefixSuffix.Suf(s1), PrefixSuffix.Suf(s2))       => if (s1 == s2) PrefixSuffix.Suf(s1) else PrefixSuffix.Top
-        case _                                                  => PrefixSuffix.Top
+        case (PrefixSuffix.Pre(p1), PrefixSuffix.Pre(p2)) => if (p1 == p2) PrefixSuffix.Pre(p1) else PrefixSuffix.Top
+        case (PrefixSuffix.Suf(s1), PrefixSuffix.Suf(s2)) => if (s1 == s2) PrefixSuffix.Suf(s1) else PrefixSuffix.Top
+        case _ => PrefixSuffix.Top
     }
 
     ///

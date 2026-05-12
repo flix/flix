@@ -7,12 +7,12 @@ mod ShortestPath {
     /// in the graph `g`.
     ///
     pub def sssp(src: t, g: m[(t, t)]): Map[t, Vector[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
-        let edges = inject g into Edge / 2;
+        let edges = inject g into Edge/2;
         let rules = #{
-            Reach(x, y;init(y, x)) :- Edge(x, y).
-            Reach(x, z;cons(z, p)) :- Reach(x, y;p), Edge(y, z).
+            Reach(x, y; init(y, x)) :- Edge(x, y).
+            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, z).
         };
-        let res = query edges, rules select (t, p) from Reach(src, t;p);
+        let res = query edges, rules select (t, p) from Reach(src, t; p);
         res |> Functor.map(match (t, p) -> (t, Foldable.toVector(p) |> Vector.reverse))
             |> Foldable.toMap
     }
@@ -126,7 +126,7 @@ mod ShortestPath {
     /// The shortest path from 0 to 5 is `0 -> 3 -> 4 -> 5`.
     ///
     pub def exampleGraph01(): Set[(Int32, Int32)] =
-        Set#{ (0, 1), (0, 3), (1, 4), (1, 2), (1, 3), (2, 5), (3, 4), (4, 2), (4, 5) }
+        Set#{(0, 1), (0, 3), (1, 4), (1, 2), (1, 3), (2, 5), (3, 4), (4, 2), (4, 5)}
 
     ///
     /// Returns the following graph:
@@ -154,7 +154,7 @@ mod ShortestPath {
     /// The shortest path from 0 to 5 is `0 -> 3 -> 4 -> 5`.
     ///
     pub def exampleGraph02(): Set[(Int32, Int32)] =
-        Set#{ (0, 1), (0, 3), (1, 2), (1, 4), (2, 5), (3, 4), (4, 5) }
+        Set#{(0, 1), (0, 3), (1, 2), (1, 4), (2, 5), (3, 4), (4, 5)}
 
     ///
     /// Returns the following graph:
@@ -180,7 +180,7 @@ mod ShortestPath {
     /// The shortest path from 0 to 3 is `0 -> 2 -> 3`.
     ///
     pub def exampleGraph03(): Set[(Int32, Int32)] =
-        Set#{ (0, 1), (0, 2), (1, 2), (1, 3), (2, 3) }
+        Set#{(0, 1), (0, 2), (1, 2), (1, 3), (2, 3)}
 
     ///
     /// Returns the following graph:
@@ -271,7 +271,7 @@ mod ShortestPath {
     /// The shortest path from 0 to 6 is `0 -> 3 -> 5 -> 6`.
     ///
     pub def exampleGraph05(): Set[(Int32, Int32)] =
-        Set#{ (0, 1), (0, 3), (1, 2), (1, 5), (2, 6), (3, 5), (3, 4), (5, 6) }
+        Set#{(0, 1), (0, 3), (1, 2), (1, 5), (2, 6), (3, 5), (3, 4), (5, 6)}
 
     @Test
     def testExampleGraphShortestPaths01(): Unit \ Assert =
@@ -279,14 +279,14 @@ mod ShortestPath {
             sssp(0, exampleGraph01())
                 |> Map.forAll(
                     k -> v -> match k {
-                        case 1 => v == Vector#{ 0, 1 }
-                        case 2 => v == Vector#{ 0, 1, 2 }
-                        case 3 => v == Vector#{ 0, 3 }
+                        case 1 => v == Vector#{0, 1}
+                        case 2 => v == Vector#{0, 1, 2}
+                        case 3 => v == Vector#{0, 3}
                         case 4 =>
-                            let shortestPathFound = v == Vector#{ 0, 3, 4 } or v == Vector#{ 0, 1, 4 };
+                            let shortestPathFound = v == Vector#{0, 3, 4} or v == Vector#{0, 1, 4};
                             shortestPathFound
                         case 5 =>
-                            let shortestPathFound = v == Vector#{ 0, 1, 2, 5 } or v == Vector#{ 0, 3, 4, 5 } or v == Vector#{ 0, 1, 4, 5 };
+                            let shortestPathFound = v == Vector#{0, 1, 2, 5} or v == Vector#{0, 3, 4, 5} or v == Vector#{0, 1, 4, 5};
                             shortestPathFound
                         case _ => unreachable!()
                     }
@@ -299,14 +299,14 @@ mod ShortestPath {
             sssp(0, exampleGraph02())
                 |> Map.forAll(
                     k -> v -> match k {
-                        case 1 => v == Vector#{ 0, 1 }
-                        case 2 => v == Vector#{ 0, 1, 2 }
-                        case 3 => v == Vector#{ 0, 3 }
+                        case 1 => v == Vector#{0, 1}
+                        case 2 => v == Vector#{0, 1, 2}
+                        case 3 => v == Vector#{0, 3}
                         case 4 =>
-                            let shortestPathFound = v == Vector#{ 0, 1, 4 } or v == Vector#{ 0, 3, 4 };
+                            let shortestPathFound = v == Vector#{0, 1, 4} or v == Vector#{0, 3, 4};
                             shortestPathFound
                         case 5 =>
-                            let shortestPathFound = v == Vector#{ 0, 1, 4, 5 } or v == Vector#{ 0, 1, 2, 5 } or v == Vector#{ 0, 3, 4, 5 };
+                            let shortestPathFound = v == Vector#{0, 1, 4, 5} or v == Vector#{0, 1, 2, 5} or v == Vector#{0, 3, 4, 5};
                             shortestPathFound
                         case _ => unreachable!()
                     }
@@ -319,10 +319,10 @@ mod ShortestPath {
             sssp(0, exampleGraph03())
                 |> Map.forAll(
                     k -> v -> match k {
-                        case 1 => v == Vector#{ 0, 1 }
-                        case 2 => v == Vector#{ 0, 2 }
+                        case 1 => v == Vector#{0, 1}
+                        case 2 => v == Vector#{0, 2}
                         case 3 =>
-                            let shortestPathFound = v == Vector#{ 0, 2, 3 } or v == Vector#{ 0, 1, 3 };
+                            let shortestPathFound = v == Vector#{0, 2, 3} or v == Vector#{0, 1, 3};
                             shortestPathFound
                         case _ => unreachable!()
                     }
@@ -335,21 +335,21 @@ mod ShortestPath {
             sssp(0, exampleGraph04())
                 |> Map.forAll(
                     k -> v -> match k {
-                        case 1 => v == Vector#{ 0, 1 }
-                        case 2 => v == Vector#{ 0, 1, 2 }
-                        case 3 => v == Vector#{ 0, 1, 2, 3 }
-                        case 4 => v == Vector#{ 0, 4 }
-                        case 5 => v == Vector#{ 0, 4, 5 }
+                        case 1 => v == Vector#{0, 1}
+                        case 2 => v == Vector#{0, 1, 2}
+                        case 3 => v == Vector#{0, 1, 2, 3}
+                        case 4 => v == Vector#{0, 4}
+                        case 5 => v == Vector#{0, 4, 5}
                         case 6 =>
                             let shortestPathFound = v
-                                == Vector#{ 0, 4, 5, 6 } or v == Vector#{ 0, 1, 2, 6 } or v == Vector#{ 0, 7, 8, 6 } or v == Vector#{ 0, 7, 5, 6 };
+                                == Vector#{0, 4, 5, 6} or v == Vector#{0, 1, 2, 6} or v == Vector#{0, 7, 8, 6} or v == Vector#{0, 7, 5, 6};
                             shortestPathFound
-                        case 7 => v == Vector#{ 0, 7 }
-                        case 8 => v == Vector#{ 0, 7, 8 }
-                        case 9 => v == Vector#{ 0, 7, 8, 9 }
+                        case 7 => v == Vector#{0, 7}
+                        case 8 => v == Vector#{0, 7, 8}
+                        case 9 => v == Vector#{0, 7, 8, 9}
                         case 10 =>
                             let shortestPathFound =
-                                v == Vector#{ 0, 1, 2, 3, 10 } or v == Vector#{ 0, 1, 2, 6, 10 } or v == Vector#{ 0, 4, 5, 6, 10 } or v == Vector#{ 0, 7, 5, 6, 10 } or v == Vector#{ 0, 7, 8, 6, 10 } or v == Vector#{ 0, 7, 8, 9, 10 };
+                                v == Vector#{0, 1, 2, 3, 10} or v == Vector#{0, 1, 2, 6, 10} or v == Vector#{0, 4, 5, 6, 10} or v == Vector#{0, 7, 5, 6, 10} or v == Vector#{0, 7, 8, 6, 10} or v == Vector#{0, 7, 8, 9, 10};
                                 shortestPathFound
                         case _ => unreachable!()
                     }
@@ -362,15 +362,15 @@ mod ShortestPath {
             sssp(0, exampleGraph05())
                 |> Map.forAll(
                     k -> v -> match k {
-                        case 1 => v == Vector#{ 0, 1 }
-                        case 2 => v == Vector#{ 0, 1, 2 }
-                        case 3 => v == Vector#{ 0, 3 }
-                        case 4 => v == Vector#{ 0, 3, 4 }
+                        case 1 => v == Vector#{0, 1}
+                        case 2 => v == Vector#{0, 1, 2}
+                        case 3 => v == Vector#{0, 3}
+                        case 4 => v == Vector#{0, 3, 4}
                         case 5 =>
-                            let shortestPathFound = v == Vector#{ 0, 1, 5 } or v == Vector#{ 0, 3, 5 };
+                            let shortestPathFound = v == Vector#{0, 1, 5} or v == Vector#{0, 3, 5};
                             shortestPathFound
                         case 6 =>
-                            let shortestPathFound = v == Vector#{ 0, 1, 2, 6 } or v == Vector#{ 0, 1, 5, 6 } or v == Vector#{ 0, 3, 5, 6 };
+                            let shortestPathFound = v == Vector#{0, 1, 2, 6} or v == Vector#{0, 1, 5, 6} or v == Vector#{0, 3, 5, 6};
                             shortestPathFound
                         case _ => unreachable!()
                     }

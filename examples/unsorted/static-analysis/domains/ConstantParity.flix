@@ -34,8 +34,8 @@ mod Domain.ConstantParity {
     ///
     //    #upperBound #leastUpperBound #commutative #associative
     pub def lub(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) {
-        case (ConstantParity.Bot, x)                      => x
-        case (x, ConstantParity.Bot)                      => x
+        case (ConstantParity.Bot, x) => x
+        case (x, ConstantParity.Bot) => x
         case (ConstantParity.Cst(n1), ConstantParity.Cst(n2)) =>
             if (n1 == n2)
                 ConstantParity.Cst(n1)
@@ -45,13 +45,13 @@ mod Domain.ConstantParity {
                 ConstantParity.Even
             else
                 ConstantParity.Top
-        case (ConstantParity.Cst(n), ConstantParity.Odd)  => if (isOdd(n)) ConstantParity.Odd else ConstantParity.Top
-        case (ConstantParity.Odd, ConstantParity.Cst(n))  => if (isOdd(n)) ConstantParity.Odd else ConstantParity.Top
+        case (ConstantParity.Cst(n), ConstantParity.Odd) => if (isOdd(n)) ConstantParity.Odd else ConstantParity.Top
+        case (ConstantParity.Odd, ConstantParity.Cst(n)) => if (isOdd(n)) ConstantParity.Odd else ConstantParity.Top
         case (ConstantParity.Cst(n), ConstantParity.Even) => if (isEven(n)) ConstantParity.Even else ConstantParity.Top
         case (ConstantParity.Even, ConstantParity.Cst(n)) => if (isEven(n)) ConstantParity.Even else ConstantParity.Top
-        case (ConstantParity.Odd, ConstantParity.Odd)     => ConstantParity.Odd
-        case (ConstantParity.Even, ConstantParity.Even)   => ConstantParity.Even
-        case _                                            => ConstantParity.Top
+        case (ConstantParity.Odd, ConstantParity.Odd) => ConstantParity.Odd
+        case (ConstantParity.Even, ConstantParity.Even) => ConstantParity.Even
+        case _ => ConstantParity.Top
     }
 
     ///

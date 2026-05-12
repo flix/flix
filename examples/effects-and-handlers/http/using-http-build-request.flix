@@ -9,7 +9,7 @@ use Time.Duration.seconds
 def main(): Unit \ { Http, IO } =
     let req = HttpRequest.get("https://flix.dev/api/search")
         |> HttpRequest.withQueryParam("q", "flix programming language")
-        |> HttpRequest.withQueryParams(Map#{ "page" => "1", "per_page" => "25", "sort" => "relevance" })
+        |> HttpRequest.withQueryParams(Map#{"page" => "1", "per_page" => "25", "sort" => "relevance"})
         |> HttpRequest.withBearerToken("ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789")
         |> HttpRequest.withHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         |> HttpRequest.withTimeout(seconds(5));

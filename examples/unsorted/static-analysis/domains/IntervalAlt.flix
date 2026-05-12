@@ -141,7 +141,7 @@ mod Domain.IntervalAlt {
             let b = BigInt.min(BigInt.min(b1 * b2, b1 * e2), BigInt.min(e1 * b2, e1 * e2));
             let e = BigInt.max(BigInt.max(b1 * b2, b1 * e2), BigInt.max(e1 * b2, e1 * e2));
             norm(IntervalAlt.Range(b, e))
-        case _                    => IntervalAlt.Top
+        case _ => IntervalAlt.Top
     }
 
     // ------------------------------------------------------------------------

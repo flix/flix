@@ -26,28 +26,35 @@ def main(): Unit \ IO =
 
         IsBefore(x, y) :- Edge(x, y).
 
-        IsBefore(x, y) :- IsBefore(x, z),
+        IsBefore(x, y) :-
+            IsBefore(x, z),
             IsBefore(z, y).
 
-        IsAfter(x, y) :- Edge(y, x).
+        IsAfter(x, y) :-
+            Edge(y, x).
 
-        IsAfter(x, y) :- IsAfter(z, x),
+        IsAfter(x, y) :-
+            IsAfter(z, x),
             IsAfter(y, z).
 
-        Indices(x, 0) :- Vertex(x),
+        Indices(x, 0) :-
+            Vertex(x),
             not EdgeSecond(x),
             not EdgeFirst(x).
 
-        Indices(x, 1) :- Vertex(x),
+        Indices(x, 1) :-
+            Vertex(x),
             not EdgeSecond(x),
             Edge(x, _).
 
-        Indices(x, i + 1) :- IsBefore(y, x),
+        Indices(x, i + 1) :-
+            IsBefore(y, x),
             not IsBefore(x, y),
             IsAfter(x, y),
             Indices(y, i).
 
-        Index(x, i) :- Indices(x, i),
+        Index(x, i) :-
+            Indices(x, i),
             not IndicesPlusOne(x, i).
     };
 

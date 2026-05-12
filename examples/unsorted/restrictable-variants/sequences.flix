@@ -236,7 +236,7 @@ mod Seq {
     // /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     // ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, l: Seq[s][a]): SNel[b] \ ef = choose* l {
-        case Seq.Nil    => Seq.One(s)
+        case Seq.Nil => Seq.One(s)
         case Seq.One(x) => open_variant Seq.Cons(f(x, s), Seq.One(s))
         case Seq.Cons(x, xs) =>
             let r = scanRight(f, s, xs);
@@ -364,7 +364,7 @@ mod Seq {
     /// Returns `true` if and only if `l1` is an infix of `l2`.
     ///
     pub def isInfixOf(l1: Seq[s1][a], l2: Seq[s2][a]): Bool with Eq[a] = choose l1 {
-        case Seq.Nil    => true
+        case Seq.Nil => true
         case Seq.One(x) => memberOf(x, l2)
         case Seq.Cons(x, xs) =>
             choose l2 {
@@ -679,7 +679,7 @@ mod Seq {
     /// Returns `None` if every element of `l` is `None`.
     ///
     pub def findMap(f: a -> Seq[s1 rvand <Seq.Nil, Seq.One>][b] \ ef, l: Seq[s2][a]): Seq[(s2 rvand <Seq.Nil>) rvadd (s1 rvand <Seq.Nil, Seq.One>)][b] \ ef = choose* l {
-        case Seq.Nil    => Seq.Nil
+        case Seq.Nil => Seq.Nil
         case Seq.One(x) => f(x)
         case Seq.Cons(x, xs) =>
             choose* f(x) {

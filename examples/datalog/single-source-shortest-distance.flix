@@ -48,7 +48,7 @@ mod ShortestDistance {
     /// The shortest route from 0 to 5 is `0 -> 1 -> 4 -> 2 -> 5` with a total distance of `2 + 4 + 3 + 1 = 10`.
     ///
     pub def exampleGraph01(): Set[(Int32, Int32, Int32)] =
-        Set#{ (0, 2, 1), (0, 3, 3), (1, 4, 4), (1, 8, 2), (1, 10, 3), (2, 1, 5), (3, 5, 4), (4, 3, 2), (4, 10, 5) }
+        Set#{(0, 2, 1), (0, 3, 3), (1, 4, 4), (1, 8, 2), (1, 10, 3), (2, 1, 5), (3, 5, 4), (4, 3, 2), (4, 10, 5)}
 
     ///
     /// Returns the following graph:
@@ -76,7 +76,7 @@ mod ShortestDistance {
     /// The shortest route from 0 to 5 is `0 -> 1 -> 4 -> 5` with a total distance of `1 + 1 + 1 = 3`.
     ///
     pub def exampleGraph02(): Set[(Int32, Int32, Int32)] =
-        Set#{ (0, 1, 1), (0, 1, 3), (1, 1, 2), (1, 1, 4), (2, 2, 5), (3, 2, 4), (4, 1, 5) }
+        Set#{(0, 1, 1), (0, 1, 3), (1, 1, 2), (1, 1, 4), (2, 2, 5), (3, 2, 4), (4, 1, 5)}
 
     ///
     /// Returns the following graph:
@@ -102,7 +102,7 @@ mod ShortestDistance {
     /// The shortest route from 0 to 3 is `0 -> 1 -> 2 -> 3` with a total distance of `10 + 1 + 10 = 21`.
     ///
     pub def exampleGraph03(): Set[(Int32, Int32, Int32)] =
-        Set#{ (0, 10, 1), (0, 15, 2), (1, 1, 2), (1, 15, 3), (2, 10, 3) }
+        Set#{(0, 10, 1), (0, 15, 2), (1, 1, 2), (1, 15, 3), (2, 10, 3)}
 
     ///
     /// Returns the following graph:
@@ -193,7 +193,7 @@ mod ShortestDistance {
     /// The shortest route from 0 to 6 is `0 -> 1 -> 5 -> 6` with a total distance of `1 + 1 + 1 = 3`.
     ///
     pub def exampleGraph05(): Set[(Int32, Int32, Int32)] =
-        Set#{ (0, 1, 1), (0, 1, 3), (1, 1, 2), (1, 1, 5), (2, 2, 6), (3, 2, 5), (3, 6, 4), (5, 1, 6) }
+        Set#{(0, 1, 1), (0, 1, 3), (1, 1, 2), (1, 1, 5), (2, 2, 6), (3, 2, 5), (3, 6, 4), (5, 1, 6)}
 
     @Test
     def testExampleGraphShortestDistances01(): Unit \ Assert =
