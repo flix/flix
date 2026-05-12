@@ -53,15 +53,14 @@ object Styling {
   }
 
   /**
-    * Colors the sym name based on `time / locLines` — a "hotness per line"
-    * signal that surfaces small defs which consume time disproportionate
-    * to their body size. Defs with no real source span (`locLines <= 0`,
-    * e.g. lifted closures) are left unstyled because the denominator is
-    * meaningless.
+    * Colors the sym name based on its hotness (ms-per-source-line) — surfaces
+    * small defs that consume time disproportionate to their body size. Defs
+    * with no real source span (`locLines <= 0`) are left unstyled because the
+    * denominator is meaningless; [[hotnessMsPerLine]] returns 0 for them so
+    * they fall below the yellow threshold and pass through unchanged.
     */
   def styleSym(name: String, nanos: Long, locLines: Int): String = {
-    if (locLines <= 0) return name
-    val msPerLine = (nanos / 1_000_000L).toDouble / locLines
+    val msPerLine = Formatting.hotnessMsPerLine(nanos, locLines)
     if (msPerLine >= HotnessRedThresholdMsPerLine) bold(red(name))
     else if (msPerLine >= HotnessYellowThresholdMsPerLine) yellow(name)
     else name
