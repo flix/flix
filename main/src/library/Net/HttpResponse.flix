@@ -18,6 +18,9 @@ pub mod Net.HttpResponse {
 
     use IoError.ErrorKind
     use IoError.IoError
+    use Util.Json
+    use Util.Json.FromJson
+    use Util.Json.JsonError
     use Net.Body
     use Net.HttpLayer
     use Net.HttpResponse
@@ -77,6 +80,28 @@ pub mod Net.HttpResponse {
             case Body.Text(s)  => HttpLayer.stringToBytes(s)
         }
     }
+
+    ///
+    /// Parses the body of the response `r` as a JSON value.
+    ///
+    /// Returns `Err(Parse(...))` if the body is not valid JSON.
+    /// Does not check the response status.
+    ///
+    pub def bodyJson(r: HttpResponse): Result[JsonError, Json.Json] =
+        Json.parse(body(r))
+
+    ///
+    /// Parses the body of the response `r` as JSON and decodes it as a value
+    /// of type `a`.
+    ///
+    /// Returns `Err(Parse(...))` if the body is not valid JSON or
+    /// `Err(Decode(...))` if the JSON does not match the shape of `a`.
+    ///
+    /// Does not check the response status; compose with `expect` if you also
+    /// need a 2xx guarantee.
+    ///
+    pub def bodyJsonAs(r: HttpResponse): Result[JsonError, a] with FromJson[a] =
+        Json.decode(body(r))
 
     ///
     /// Returns the list of values for the header with the given `name`, or `None` if not present.
