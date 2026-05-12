@@ -113,7 +113,9 @@ object Renderer {
     * for defs; a single wide module-name field for modules).
     */
   private sealed trait Row {
+    /** The trailing numeric columns for this row, ready for [[Renderer.appendNumericFields]]. */
     def cells: RowCells
+    /** Appends this row's leading (type-specific) cell to `sb`. */
     def appendFirstCell(sb: StringBuilder, layout: Layout): Unit
   }
 
@@ -121,6 +123,7 @@ object Renderer {
   private final case class DefnRow(s: DefnStats, safeElapsed: Double, parallelism: Int) extends Row {
     private val locLines = locLineCount(s.loc)
 
+    /** Numeric cells for this def, with `aggregate = false` so warning colors apply. */
     val cells: RowCells = {
       val pctWall = 100.0 * s.totalNanos / safeElapsed
       RowCells(
@@ -137,6 +140,7 @@ object Renderer {
       )
     }
 
+    /** Appends the sym name (hotness-colored, with `*` if active) and a dim location field. */
     def appendFirstCell(sb: StringBuilder, layout: Layout): Unit = {
       val nameMax  = layout.symWidth - 1
       val nameText = truncate(s.sym.name, nameMax)
@@ -152,6 +156,7 @@ object Renderer {
 
   /** Module-table row: one wide name field spanning sym + location widths. */
   private final case class ModuleRow(m: ModuleStats, safeElapsed: Double, parallelism: Int) extends Row {
+    /** Numeric cells for this module, with `aggregate = true` so per-def warning colors are skipped. */
     val cells: RowCells = {
       val pctWall = 100.0 * m.totalNanos / safeElapsed
       RowCells(
@@ -168,6 +173,7 @@ object Renderer {
       )
     }
 
+    /** Appends the module name, padded to span the def-table's sym + location columns. */
     def appendFirstCell(sb: StringBuilder, layout: Layout): Unit = {
       val modWidth = layout.symWidth + 1 + layout.locWidth
       sb.append(rpad(truncate(m.module, modWidth), modWidth))
