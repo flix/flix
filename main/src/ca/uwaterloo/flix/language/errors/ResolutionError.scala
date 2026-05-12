@@ -512,7 +512,7 @@ object ResolutionError {
          |
          |${highlight(loc, "unexpected struct body", fmt)}
          |
-         |${underline("Hint:")} To implement a Java interface or extend a class, use:
+         |${underline("Explanation:")} To implement a Java interface or extend a class, use:
          |
          |  new ${name.toString} { def method(...) = ... }
          |""".stripMargin
@@ -542,7 +542,7 @@ object ResolutionError {
          |
          |${highlight(loc, "unexpected JVM body", fmt)}
          |
-         |${underline("Hint:")} To create a struct, use:
+         |${underline("Explanation:")}} To create a struct, use:
          |
          |  new ${name.toString} @ region { field = value, ... }
          |""".stripMargin
