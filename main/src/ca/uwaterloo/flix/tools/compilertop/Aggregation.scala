@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools.compilertop
 
 import ca.uwaterloo.flix.tools.compilertop.Formatting.locLineCount
 import ca.uwaterloo.flix.tools.compilertop.Model.*
-import ca.uwaterloo.flix.util.CompilerProfiler.DefnStats
+import ca.uwaterloo.flix.tools.compilertop.Profiler.DefnStats
 
 /**
   * Pure filter / sort / module-rollup logic for compiler-top stat snapshots.
