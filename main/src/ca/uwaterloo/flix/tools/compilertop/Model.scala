@@ -27,12 +27,26 @@ object Model {
     * interactively via the input thread (`f` / `b` / `a`). The split tracks
     * `Flix.check` (frontend) vs the phases that follow in `Flix.compile`'s
     * `codeGen` (backend) — see [[FrontendPhases]].
+    *
+    * `label` is the legend word; `key` is the keystroke that selects this
+    * filter (by convention the first character of `label`). The renderer
+    * derives the legend from these fields and the input loop dispatches via
+    * [[PhaseFilter.fromKey]] — neither encodes the mapping inline.
     */
-  sealed trait PhaseFilter
+  sealed trait PhaseFilter {
+    def label: String
+    final def key: Char = label.head
+  }
   object PhaseFilter {
-    case object All extends PhaseFilter
-    case object Frontend extends PhaseFilter
-    case object Backend extends PhaseFilter
+    case object All      extends PhaseFilter { val label = "all" }
+    case object Frontend extends PhaseFilter { val label = "frontend" }
+    case object Backend  extends PhaseFilter { val label = "backend" }
+
+    /** All filter values in legend display order. */
+    val all: List[PhaseFilter] = List(All, Frontend, Backend)
+
+    /** The filter whose `key` matches `c` (case-insensitive), or `None`. */
+    def fromKey(c: Char): Option[PhaseFilter] = all.find(_.key == c.toLower)
   }
 
   /**
@@ -54,25 +68,37 @@ object Model {
     * Selects the descending sort key applied to the def and module tables.
     * Each option surfaces a different kind of suspect, so the same def can
     * top one ranking and not another.
+    *
+    * `key` is the keystroke that selects this sort. Stored lowercase; the
+    * input loop normalizes via `c.toLower` before dispatching. The renderer
+    * also reads `key` when deciding which character in a column header to
+    * underline — adding a new sort needs only a single line here and one
+    * `sortableColumn(...)` call in the renderer.
     */
-  sealed trait Sort
+  sealed trait Sort { def key: Char }
   object Sort {
     /** Slowest defs first. The default. */
-    case object Time extends Sort
+    case object Time    extends Sort { val key = 't' }
     /** Hottest-per-line defs first — small defs that burn disproportionate time. */
-    case object Hotness extends Sort
+    case object Hotness extends Sort { val key = 'h' }
     /** Most monomorphic instances first — surfaces generic-explosion hotspots. */
-    case object Mono extends Sort
+    case object Mono    extends Sort { val key = 'm' }
     /** Most optimizer fixed-point re-visits first — surfaces inliner / occurrence-analyzer thrashing. */
-    case object Opt extends Sort
+    case object Opt     extends Sort { val key = 'o' }
     /** Most class files emitted first — surfaces JVM fan-out from polymorphism / closures. */
-    case object Cls extends Sort
-    /** Most type constraints first — surfaces type-checking-heavy defs. */
-    case object Cns extends Sort
+    case object Cls     extends Sort { val key = 'c' }
+    /** Most type constraints first — surfaces type-checking-heavy defs. The key is `n` (not `c`, which is taken by [[Cls]]). */
+    case object Cns     extends Sort { val key = 'n' }
     /** Most type variables first — surfaces broadly polymorphic defs. */
-    case object Tvars extends Sort
+    case object Tvars   extends Sort { val key = 'v' }
     /** Most effect variables first — surfaces effect-polymorphic defs. */
-    case object Evars extends Sort
+    case object Evars   extends Sort { val key = 'e' }
+
+    /** All sort values. */
+    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Cls, Cns, Tvars, Evars)
+
+    /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
+    def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
   }
 
   /** Phases whose `track` count maps to the `mono` column — number of monomorphic instances created. */
