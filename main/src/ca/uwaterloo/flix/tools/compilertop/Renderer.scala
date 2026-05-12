@@ -61,6 +61,30 @@ final case class FrameState(parallelism: Int,
                             visible: Vector[DefnStats],
                             modules: Vector[ModuleStats])
 
+object Renderer {
+
+  /** Total number of phases the compiler runs. Bump when `Flix.check` / `Flix.codeGen` adds or removes a `phase` / `phaseNew` call. */
+  private val TotalPhases: Int = 32
+
+  /** Longest phase-name length, used to pad the phase column. Currently set by `"Dependencies"` / `"EffectBinder"`. */
+  private val MaxPhaseLen: Int = 12
+
+  /** Width (in characters) of the phase-progress bar. */
+  private val BarWidth: Int = 12
+
+  /** 1-indexed column where the `progress` label starts on the dashboard. */
+  private lazy val ProgressStartCol: Int = 5 + MaxPhaseLen
+
+  /** 1-indexed column where the `threads` label starts on the dashboard. */
+  private lazy val ThreadsStartCol: Int = ProgressStartCol + 20 + BarWidth
+
+  /** Width of the threads-sparkline. */
+  private val SparkWidth: Int = 12
+
+  /** Block characters used for the sparkline, low → high. */
+  private val SparkChars: Array[Char] = "▁▂▃▄▅▆▇█".toArray
+}
+
 /**
   * Frame builder for the compiler-top TUI. Each instance owns one piece of
   * mutable state — the rolling thread-occupancy history that feeds the
@@ -417,28 +441,4 @@ final class Renderer {
     val pad = (SparkWidth - chars.length).max(0)
     " " * pad + new String(chars)
   }
-}
-
-object Renderer {
-
-  /** Total number of phases the compiler runs. Bump when `Flix.check` / `Flix.codeGen` adds or removes a `phase` / `phaseNew` call. */
-  private val TotalPhases: Int = 32
-
-  /** Longest phase-name length, used to pad the phase column. Currently set by `"Dependencies"` / `"EffectBinder"`. */
-  private val MaxPhaseLen: Int = 12
-
-  /** Width (in characters) of the phase-progress bar. */
-  private val BarWidth: Int = 12
-
-  /** 1-indexed column where the `progress` label starts on the dashboard. */
-  private lazy val ProgressStartCol: Int = 5 + MaxPhaseLen
-
-  /** 1-indexed column where the `threads` label starts on the dashboard. */
-  private lazy val ThreadsStartCol: Int = ProgressStartCol + 20 + BarWidth
-
-  /** Width of the threads-sparkline. */
-  private val SparkWidth: Int = 12
-
-  /** Block characters used for the sparkline, low → high. */
-  private val SparkChars: Array[Char] = "▁▂▃▄▅▆▇█".toArray
 }
