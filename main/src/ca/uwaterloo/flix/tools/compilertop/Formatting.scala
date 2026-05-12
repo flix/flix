@@ -60,6 +60,24 @@ object Formatting {
     else f"${ms}ms"
   }
 
+  /**
+    * Formats a byte count compactly into at most 5 characters: `NB`, `N.NKB`,
+    * `NNNKB`, `N.NMB`, or `NNNMB`. Uses one decimal place under 10 of the
+    * higher unit so small values keep precision while large ones stay narrow.
+    */
+  def formatBytes(bytes: Long): String = {
+    val Kib = 1024.0
+    val Mib = 1024.0 * 1024.0
+    if (bytes < 1024L) s"${bytes}B"
+    else if (bytes < 1024L * 1024L) {
+      val kb = bytes / Kib
+      if (kb < 10.0) f"$kb%.1fKB" else f"${kb.round}%dKB"
+    } else {
+      val mb = bytes / Mib
+      if (mb < 10.0) f"$mb%.1fMB" else f"${mb.round}%dMB"
+    }
+  }
+
   /** Returns `s` truncated to `width` characters, with a trailing ellipsis when shortened. */
   def truncate(s: String, width: Int): String =
     if (s.length <= width) s else s.take(width - 1) + "…"

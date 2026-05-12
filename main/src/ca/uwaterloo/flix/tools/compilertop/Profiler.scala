@@ -89,9 +89,10 @@ object Profiler {
     * @param tvars        number of distinct `Kind.Star` type variables present in the constraint system for this def, from the most recent typing pass.
     * @param evars        number of distinct `Kind.Eff` effect variables present in the constraint system for this def, from the most recent typing pass.
     * @param inlined      number of times this def was inlined at a call site by the inliner across all optimizer rounds.
+    * @param classBytes   total bytes of generated `.class` files attributed to this def (function class + any closure classes).
     * @param loc          the source location of the def's body, used to compute LOC.
     */
-  final case class DefnStats(sym: Symbol.DefnSym, isActive: Boolean, callCount: Int, totalNanos: Long, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], cns: Long, tvars: Long, evars: Long, inlined: Long, loc: SourceLocation) {
+  final case class DefnStats(sym: Symbol.DefnSym, isActive: Boolean, callCount: Int, totalNanos: Long, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], cns: Long, tvars: Long, evars: Long, inlined: Long, classBytes: Long, loc: SourceLocation) {
     /** Returns the phase that consumed the most time, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
@@ -109,9 +110,10 @@ object Profiler {
     * @param tvars         distinct `Kind.Star` type variables from the most recent constraint system.
     * @param evars         distinct `Kind.Eff` effect variables from the most recent constraint system.
     * @param inlined       accumulator: number of times this def was inlined at a call site by the inliner.
+    * @param classBytes    accumulator: summed `.class` byte length of every class emitted for this def.
     * @param loc           set on first `track` call; carries the def-body span so we can show LOC.
     */
-  private final case class Counters(inProgress: AtomicInteger, callCount: AtomicInteger, totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], perPhaseCount: ConcurrentHashMap[String, AtomicLong], constraints: AtomicLong, tvars: AtomicLong, evars: AtomicLong, inlined: AtomicLong, loc: AtomicReference[SourceLocation])
+  private final case class Counters(inProgress: AtomicInteger, callCount: AtomicInteger, totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], perPhaseCount: ConcurrentHashMap[String, AtomicLong], constraints: AtomicLong, tvars: AtomicLong, evars: AtomicLong, inlined: AtomicLong, classBytes: AtomicLong, loc: AtomicReference[SourceLocation])
 
   /**
     * Composite map key for per-`DefnSym` accumulators.
@@ -191,6 +193,8 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       c.evars.set(ev)
     case FlixEvent.InlinedDef(sym) =>
       countersFor(sym).inlined.incrementAndGet()
+    case FlixEvent.EmittedClass(sym, bytes) =>
+      countersFor(sym).classBytes.addAndGet(bytes.toLong)
     case _ => ()
   }
 
@@ -238,7 +242,7 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       val loc = Option(c.loc.get()).getOrElse(key.loc)
       Profiler.DefnStats(key.sym, isActive = c.inProgress.get() > 0,
         c.callCount.get(), c.totalNanos.get(), byPhase, byPhaseCount,
-        c.constraints.get(), c.tvars.get(), c.evars.get(), c.inlined.get(), loc)
+        c.constraints.get(), c.tvars.get(), c.evars.get(), c.inlined.get(), c.classBytes.get(), loc)
     }.toVector
   }
 
@@ -257,6 +261,7 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       tvars = new AtomicLong(0L),
       evars = new AtomicLong(0L),
       inlined = new AtomicLong(0L),
+      classBytes = new AtomicLong(0L),
       loc = new AtomicReference[SourceLocation](null)
     ))
 
