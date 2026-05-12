@@ -82,11 +82,11 @@ object PrettyPrinter {
     case TreeKind.Expr.FixpointSolveWithProject     => prettyFixpointSolve(tree)
     case TreeKind.Expr.FixpointSolveWithProvenance  => prettyFixpointSolve(tree)
     case TreeKind.Expr.FixpointLambda               => prettyFixpointLambda(tree)
-    case TreeKind.Expr.LiteralVector            => prettySpacedCommaBracket(tree)
-    case TreeKind.Expr.LiteralList              => prettySpacedCommaBracket(tree)
-    case TreeKind.Expr.LiteralSet               => prettySpacedCommaBracket(tree)
-    case TreeKind.Expr.LiteralMap               => prettySpacedCommaBracket(tree)
-    case TreeKind.Expr.LiteralArray             => prettySpacedCommaBracket(tree)
+    case TreeKind.Expr.LiteralVector            => prettyCommaBracket(tree)
+    case TreeKind.Expr.LiteralList              => prettyCommaBracket(tree)
+    case TreeKind.Expr.LiteralSet               => prettyCommaBracket(tree)
+    case TreeKind.Expr.LiteralMap               => prettyLiteralMap(tree)
+    case TreeKind.Expr.LiteralArray             => prettyCommaBracket(tree)
     case TreeKind.Expr.RecordOperation          => prettyAlignedRecord(tree, Set(TreeKind.Expr.RecordOpExtend, TreeKind.Expr.RecordOpUpdate))
     case TreeKind.Expr.RecordOpExtend           => prettyRecordOpExtend(tree)
     case TreeKind.Expr.RecordOpRestrict         => prettyRecordOpRestrict(tree)
@@ -130,6 +130,7 @@ object PrettyPrinter {
     case TreeKind.Predicate.ParamList           => prettyCommaBracket(tree)
     case TreeKind.Predicate.PatternList         => prettyCommaBracket(tree)
     case TreeKind.Predicate.TermList            => prettyCommaBracket(tree)
+    case TreeKind.Predicate.Guard               => keywordSpaced(tree, TokenKind.KeywordIf, "if")
     case TreeKind.Decl.EqualityConstraintList   => prettyCommaBracket(tree)
     case TreeKind.UsesOrImports.ImportMany      => prettyCommaBracket(tree)
     case TreeKind.UsesOrImports.UseMany         => prettyCommaBracket(tree)
@@ -159,6 +160,7 @@ object PrettyPrinter {
     case TreeKind.UsesOrImports.Alias           => prettyAlias(tree)
     case TreeKind.Decl.EqualityConstraintFragment => prettyEqualityConstraint(tree)
     case TreeKind.AnnotationList                => spaceJoin(filterEmpty(tree.children), Set.empty)
+    case TreeKind.PredicateAndArity             => joinChildren(filterEmpty(tree.children))
     case _ => prettyFallback(tree)
   }
 
@@ -382,19 +384,26 @@ object PrettyPrinter {
   }
 
   private def prettyMatchRuleFragment(tree: Tree): Doc =
-    prettyArrowRuleFragment(tree, defaultHeaderJoin)
+    prettyArrowRuleFragment(tree, arrowPatternHeaderJoin(tree.kind))
 
   private def prettyParYield(tree: Tree): Doc =
     splitAtBracket(filterEmpty(tree.children)) match {
       case None => prettyFallback(tree)
       case Some(BracketSplit(header, open, body, close, tail)) =>
         val headerDoc  = defaultHeaderJoin(header)
-        val bodyDoc    = joinChildren(body, TokenKind.Semi -> (text(";") <> line))
         val tailDoc    = defaultHeaderJoin(tail)
-        val tailSuffix = if (tail.nonEmpty) space <> tailDoc else empty
-        Doc.setLayout(Layout.MultiLine,
-          headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <> tailSuffix
-        )
+        if (layoutOfChildren(body) == Layout.SingleLine) {
+          val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
+          Doc.setLayout(Layout.MultiLine,
+            headerDoc <+> text(open) <> bodyDoc <> text(close) <> nest(4, hardline <> tailDoc)
+          )
+        } else {
+          val bodyDoc    = joinChildren(body, TokenKind.Semi -> (text(";") <> line))
+          val tailSuffix = if (tail.nonEmpty) space <> tailDoc else empty
+          Doc.setLayout(Layout.MultiLine,
+            headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <> tailSuffix
+          )
+        }
     }
 
   private def prettyRestrictableChoose(tree: Tree): Doc =
@@ -692,6 +701,7 @@ object PrettyPrinter {
   private def commaBodyJoin(children: Array[SyntaxTree.Child]): Doc =
     joinChildren(children,
       TokenKind.Comma -> (text(",") <> line),
+      TokenKind.Semi  -> (text(";") <> space),
       TokenKind.Bar   -> (space <> text("|") <> space))
 
   /**
@@ -739,6 +749,47 @@ object PrettyPrinter {
 
   private def prettyAlignedRecord(tree: Tree, fieldKinds: Set[TreeKind]): Doc =
     prettyBracket(tree, tree.children, formatBody = cs => alignedRecordBody(fieldKinds, cs))
+
+  private def prettyLiteralMap(tree: Tree): Doc =
+    prettyBracket(tree, tree.children, formatBody = alignedMapBody)
+
+  private def mapKeyDoc(fragment: Tree): Doc = {
+    val children = filterEmpty(fragment.children)
+    val idx = children.indexWhere { case t: Token if t.kind == TokenKind.ArrowThickR => true; case _ => false }
+    if (idx < 0) empty else joinWithGap(children.take(idx))
+  }
+
+  private def mapKeyWidth(fragment: Tree): Int =
+    pretty(Layout.SingleLine, mapKeyDoc(fragment)).length
+
+  private def alignedMapFragment(tree: Tree, maxWidth: Int): Doc = {
+    val children = filterEmpty(tree.children)
+    val idx = children.indexWhere { case t: Token if t.kind == TokenKind.ArrowThickR => true; case _ => false }
+    if (idx < 0) return prettyLiteralMapKeyValueFragment(tree)
+    val keyDoc       = mapKeyDoc(tree)
+    val valueDoc     = joinWithGap(children.drop(idx + 1))
+    val isSingleLine = effectiveLayoutOf(tree) == Layout.SingleLine
+    val key = if (isSingleLine && maxWidth > 0) Doc.fill(maxWidth, keyDoc) else keyDoc
+    key <+> text("=>") <+> valueDoc
+  }
+
+  private def alignedMapBody(children: Array[SyntaxTree.Child]): Doc = {
+    val filtered  = filterEmpty(children)
+    if (filtered.isEmpty) return empty
+    val fragments = filtered.collect { case t: Tree if t.kind == TreeKind.Expr.LiteralMapKeyValueFragment => t }
+    val singleLineFragments = fragments.filter(f => effectiveLayoutOf(f) == Layout.SingleLine)
+    // Align the `=>` arrows only when there are at least two key-value pairs and every one is single-line.
+    val alignArrows = fragments.length >= 2 && singleLineFragments.length == fragments.length
+    val maxWidth = if (alignArrows) singleLineFragments.map(mapKeyWidth).maxOption.getOrElse(0) else 0
+    filtered.foldLeft(empty) { (acc, c) =>
+      val doc = c match {
+        case t: Tree  if t.kind == TreeKind.Expr.LiteralMapKeyValueFragment => alignedMapFragment(t, maxWidth)
+        case t: Token if t.kind == TokenKind.Comma => text(",") <> line
+        case other                                  => prettyChild(other)
+      }
+      acc <> doc
+    }
+  }
 
   /**
     * Formatting for enum and restrictable enum declarations.
@@ -908,11 +959,18 @@ object PrettyPrinter {
     TreeKind.Expr.TryCatchRuleFragment
   )
 
-  private def arrowPatternHeaderJoin(kind: TreeKind): Array[SyntaxTree.Child] => Doc =
-    if (kind == TreeKind.Expr.TryCatchRuleFragment)
+  private def arrowPatternHeaderJoin(kind: TreeKind): Array[SyntaxTree.Child] => Doc = kind match {
+    case TreeKind.Expr.TryCatchRuleFragment =>
       cs => spaceJoin(cs, noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon))
-    else
+    case TreeKind.Expr.SelectRuleFragment =>
+      // The `recv(...)` call in a select rule is a flat sequence of children
+      // (`recv`, `(`, expr, `)`), so keep the parentheses tight against it.
+      cs => spaceJoin(cs, noSpacePairs = Set.empty,
+        noSpaceBefore = Set(TokenKind.ParenL, TokenKind.ParenR),
+        noSpaceAfter  = Set(TokenKind.ParenL))
+    case _ =>
       defaultHeaderJoin
+  }
 
   private def prettyMatch(tree: Tree): Doc =
     prettyBracket(tree, filterEmpty(tree.children),
@@ -1074,8 +1132,11 @@ object PrettyPrinter {
         TokenKind.Comma         -> (text(",") <> line),
         TokenKind.DotWhiteSpace -> text("."))
 
+      // Preserve a user-defined newline after `:-`: only keep the first body
+      // atom next to `:-` if the source had it there.
+      val bodyOnSameLine = bodyStartsOnSameLineAs(children(colonIdx), body)
       val mainDoc = localLayout(tree) {
-        headDoc <+> text(":-") <+> nest(4, bodyDoc)
+        headDoc <+> text(":-") <> nest(4, (if (bodyOnSameLine) space else line) <> bodyDoc)
       }
 
       if (trailing.isEmpty) mainDoc
