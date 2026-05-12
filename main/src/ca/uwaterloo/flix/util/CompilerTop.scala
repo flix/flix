@@ -21,8 +21,9 @@ import ca.uwaterloo.flix.tools.compilertop.Ansi.*
 import ca.uwaterloo.flix.tools.compilertop.Formatting.*
 import ca.uwaterloo.flix.tools.compilertop.Layout
 import ca.uwaterloo.flix.tools.compilertop.Model.*
+import ca.uwaterloo.flix.tools.compilertop.Profiler
+import ca.uwaterloo.flix.tools.compilertop.Profiler.DefnStats
 import ca.uwaterloo.flix.tools.compilertop.Styling.*
-import ca.uwaterloo.flix.util.CompilerProfiler.DefnStats
 import org.jline.terminal.{Attributes, Terminal, TerminalBuilder}
 
 import java.util.concurrent.CountDownLatch
@@ -94,7 +95,7 @@ object CompilerTop {
   * [[CompilerTop.RefreshIntervalMs]] milliseconds and re-renders the screen
   * using ANSI escape codes.
   */
-final class CompilerTop(flix: Flix, profiler: CompilerProfiler) {
+final class CompilerTop(flix: Flix, profiler: Profiler) {
 
   import CompilerTop.*
 
