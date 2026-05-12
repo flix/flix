@@ -1607,12 +1607,14 @@ object Resolver {
             val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
             getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
               case Some(_) =>
-                val err = if (region0.isDefined)
+                if (region0.isDefined) sctx.errors.add(ResolutionError.NewObjectWithStructRegion(qname, loc))
+                if (fields0.nonEmpty) sctx.errors.add(ResolutionError.NewObjectWithStructFields(qname, loc))
+
+                val primaryErr = if (region0.isDefined)
                   ResolutionError.NewObjectWithStructRegion(qname, loc)
                 else
                   ResolutionError.NewObjectWithStructFields(qname, loc)
-                sctx.errors.add(err)
-                ResolvedAst.Expr.Error(err)
+                ResolvedAst.Expr.Error(primaryErr)
               case None =>
                 sctx.errors.add(error)
                 ResolvedAst.Expr.Error(error)
@@ -1638,12 +1640,14 @@ object Resolver {
     }
     structOpt match {
       case Some(_) =>
-        val err = if (constructors.nonEmpty)
+        if (constructors.nonEmpty) sctx.errors.add(ResolutionError.NewStructWithObjectConstructors(qnameOpt.get, loc))
+        if (methods.nonEmpty) sctx.errors.add(ResolutionError.NewStructWithObjectMethods(qnameOpt.get, loc))
+
+        val primaryErr = if (constructors.nonEmpty)
           ResolutionError.NewStructWithObjectConstructors(qnameOpt.get, loc)
         else
           ResolutionError.NewStructWithObjectMethods(qnameOpt.get, loc)
-        sctx.errors.add(err)
-        ResolvedAst.Expr.Error(err)
+        ResolvedAst.Expr.Error(primaryErr)
       case None =>
         val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
         val erased = UnkindedType.eraseAliases(t)

@@ -2199,8 +2199,20 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.NewObjectWithStructRegion](result)
   }
 
-  test("NewObjectWithStructRegion.02") {
-    // region > fields
+  test("NewObjectWithStructFields.01") {
+    val input =
+      raw"""
+           |import java.lang.Object
+           |def foo(): Unit \ IO =  {
+           |    let _ = new Object @ rc { x = 1 };
+           |    ()
+           |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.NewObjectWithStructFields](result)
+  }
+
+  test("NewObjectWithStructRegionAndFields.01") {
     val input =
       raw"""
            |import java.lang.Object
@@ -2211,6 +2223,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.NewObjectWithStructRegion](result)
+    expectError[ResolutionError.NewObjectWithStructFields](result)
   }
 
   test("NewStructWithObjectConstructors.01") {
@@ -2234,6 +2247,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.NewStructWithObjectMethods](result)
+  }
+
+  test("NewStructWithObjectConstructorsAndMethods.01") {
+    val input =
+      raw"""
+           |struct S[r] { f: Int32 }
+           |def foo(): Unit \ IO =
+           |    let _ = new S {
+           |        def new(): S \ IO = super()
+           |        def m(): Unit = ()
+           |    };
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.NewStructWithObjectConstructors](result)
     expectError[ResolutionError.NewStructWithObjectMethods](result)
   }
 
