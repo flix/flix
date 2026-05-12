@@ -263,7 +263,8 @@ object PrettyPrinter {
   private def prettyHandler(tree: Tree): Doc =
     prettyBracket(tree, filterEmpty(tree.children),
       headerJoin = cs => spaceJoin(cs, Set.empty),
-      formatBody = alignedHandlerBody)
+      formatBody = alignedHandlerBody,
+      flatPad    = space)
 
   private def runWithRulePreEqualWidth(rule: Tree): Int = {
     val (_, rest) = extractAnnAndDoc(rule)
