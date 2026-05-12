@@ -7,8 +7,8 @@ def sendMessage(s: Sender[String]): Unit \ { Chan, NonDet, IO } =
 def recvMessage(c: Receiver[String]): String \ { Chan, NonDet, IO } =
     let t = Channel.timeout(1, TimeUnit.Milliseconds);
     select {
-        case m <- recv ( c ) => m
-        case _ <- recv ( t ) => "Timeout"
+        case m <- recv(c) => m
+        case _ <- recv(t) => "Timeout"
     }
 
 def main(): Unit \ { Chan, NonDet, IO } =

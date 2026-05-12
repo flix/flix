@@ -15,6 +15,6 @@ instance Addable[Set[a]] with Order[a] {
 
 def main(): Unit \ IO =
     let x = Addable.add(123, 456);
-    let y = Addable.add(Set#{ 1, 2, 3 }, 4);
+    let y = Addable.add(Set#{1, 2, 3}, 4);
     println("x = ${x}");
     println("y = ${y}")

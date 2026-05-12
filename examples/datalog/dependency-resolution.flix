@@ -30,20 +30,23 @@ def main(): Unit \ IO =
         // Inductive case: if a package is resolved and declares a dependency,
         // resolve every published version satisfying the constraint.
         // (Datalog computes all valid candidates, not a single "best" version.)
-        Resolved(dep, depVer) :- Resolved(pkg, pkgVer),
+        Resolved(dep, depVer) :-
+            Resolved(pkg, pkgVer),
             Dependency(pkg, pkgVer, dep, minVer),
             Published(dep, depVer),
-            if(depVer >= minVer).
+            if (depVer >= minVer).
 
         // Auxiliary predicate: true if at least one published version
         // satisfies the dependency. Used to detect unsatisfiable constraints.
-        Satisfied(pkg, pkgVer, dep, minVer) :- Dependency(pkg, pkgVer, dep, minVer),
+        Satisfied(pkg, pkgVer, dep, minVer) :-
+            Dependency(pkg, pkgVer, dep, minVer),
             Published(dep, depVer),
-            if(depVer >= minVer).
+            if (depVer >= minVer).
 
         // A dependency is missing when a resolved package requires something
         // that has no satisfying version (negation-as-failure over Satisfied).
-        Missing(pkg, pkgVer, dep, minVer) :- Resolved(pkg, pkgVer),
+        Missing(pkg, pkgVer, dep, minVer) :-
+            Resolved(pkg, pkgVer),
             Dependency(pkg, pkgVer, dep, minVer),
             not Satisfied(pkg, pkgVer, dep, minVer).
     };

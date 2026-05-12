@@ -3,8 +3,8 @@ def sendMessage(s: Sender[String]): Unit \ Chan =
 
 def recvMessage(rx: Receiver[String]): Unit \ { Chan, NonDet, IO } =
     select {
-        case m <- recv ( rx ) => println(m)
-        case _                => println("No message was ready")
+        case m <- recv(rx) => println(m)
+        case _             => println("No message was ready")
     }
 
 def main(): Unit \ { Chan, NonDet, IO } =

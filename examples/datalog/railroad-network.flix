@@ -7,7 +7,7 @@ use Sys.Env
 /// then they are unsafely connected. Because if c fails there is no way to get from a to b.
 ///
 def safeConnects(src: n, links: f[(n, n)]): {safe = Vector[n], unsafe1 = Vector[n]} \ Foldable.Aef[f] with Foldable[f], Order[n] =
-    let db = inject links into Link / 2;
+    let db = inject links into Link/2;
     let pr = #{
         // Directly linked stations.
         Linked(a, b) :- Link(a, b).
@@ -21,11 +21,11 @@ def safeConnects(src: n, links: f[(n, n)]): {safe = Vector[n], unsafe1 = Vector[
         Cutpoint(x, a, b) :- Connected(a, b), Station(x), not Circumvent(x, a, b).
 
         // Stations `a` and `b` are linked without using station `x`.
-        Circumvent(x, a, b) :- Linked(a, b), if(x != a), Station(x), if(x != b).
+        Circumvent(x, a, b) :- Linked(a, b), if (x != a), Station(x), if (x != b).
         Circumvent(x, a, b) :- Circumvent(x, a, c), Circumvent(x, c, b).
 
         // Check the cutpoint is neither station `a` or `b`.
-        HasICutPoint(a, b) :- Cutpoint(x, a, b), if(x != a), if(x != b).
+        HasICutPoint(a, b) :- Cutpoint(x, a, b), if (x != a), if (x != b).
         // Stations are safely connected if there is no cutpoints.
         SafelyConnected(a, b) :- Connected(a, b), not HasICutPoint(a, b).
         // The set of stations not safely connected are unsafely connected.

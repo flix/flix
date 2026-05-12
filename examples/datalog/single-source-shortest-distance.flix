@@ -7,12 +7,12 @@ mod ShortestDistance {
     /// weighted directed graph `g`.
     ///
     pub def sssd(src: t, g: m[(t, Int32, t)]): Map[t, Int32] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
-        let edges = inject g into Edge / 3;
+        let edges = inject g into Edge/3;
         let dists = #{
-            Dist(src;Down(0)).
-            Dist(y;d + Down(w)) :- Dist(x;d), Edge(x, w, y).
+            Dist(src; Down(0)).
+            Dist(y; d + Down(w)) :- Dist(x; d), Edge(x, w, y).
         };
-        let res = query edges, dists select (x, coerce(d)) from Dist(x;d);
+        let res = query edges, dists select (x, coerce(d)) from Dist(x; d);
         res |> Vector.toMap
     }
 
@@ -197,27 +197,27 @@ mod ShortestDistance {
 
     @Test
     def testExampleGraphShortestDistances01(): Unit \ Assert =
-        let expected = Map#{ 0 => 0, 1 => 2, 2 => 9, 3 => 3, 4 => 6, 5 => 10 };
+        let expected = Map#{0 => 0, 1 => 2, 2 => 9, 3 => 3, 4 => 6, 5 => 10};
         Assert.assertEq(expected = expected, sssd(0, exampleGraph01()))
 
     @Test
     def testExampleGraphShortestDistances02(): Unit \ Assert =
-        let expected = Map#{ 0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 2, 5 => 3 };
+        let expected = Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 2, 5 => 3};
         Assert.assertEq(expected = expected, sssd(0, exampleGraph02()))
 
     @Test
     def testExampleGraphShortestDistances03(): Unit \ Assert =
-        let expected = Map#{ 0 => 0, 1 => 10, 2 => 11, 3 => 21 };
+        let expected = Map#{0 => 0, 1 => 10, 2 => 11, 3 => 21};
         Assert.assertEq(expected = expected, sssd(0, exampleGraph03()))
 
     @Test
     def testExampleGraphShortestDistances04(): Unit \ Assert =
-        let expected = Map#{ 0 => 0, 1 => 10, 2 => 25, 3 => 30, 4 => 10, 5 => 30, 6 => 20, 7 => 10, 8 => 15, 9 => 22, 10 => 35 };
+        let expected = Map#{0 => 0, 1 => 10, 2 => 25, 3 => 30, 4 => 10, 5 => 30, 6 => 20, 7 => 10, 8 => 15, 9 => 22, 10 => 35};
         Assert.assertEq(expected = expected, sssd(0, exampleGraph04()))
 
     @Test
     def testExampleGraphShortestDistances05(): Unit \ Assert =
-        let expected = Map#{ 0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 7, 5 => 2, 6 => 3 };
+        let expected = Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 7, 5 => 2, 6 => 3};
         Assert.assertEq(expected = expected, sssd(0, exampleGraph05()))
 
 }

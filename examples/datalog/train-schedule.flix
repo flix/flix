@@ -21,7 +21,7 @@ def main(): Unit \ IO =
     let pr = #{
         // An edge is of the form (FromStation, ToStation, Train, DepartureTime, ArrivalTime).
         Path(x, y, tx, ty) :- Edge(x, y, _, tx, ty).
-        Path(x, z, tx, tz) :- Path(x, y, tx, ty1), Edge(y, z, _, ty2, tz), if(ty1 < ty2).
+        Path(x, z, tx, tz) :- Path(x, y, tx, ty1), Edge(y, z, _, ty2, tz), if (ty1 < ty2).
     };
 
     // Use the database and Datalog program to compute *all* connections between `src` and `dst`.

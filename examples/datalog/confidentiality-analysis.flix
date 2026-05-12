@@ -23,7 +23,8 @@ pub def main(): Unit \ IO =
 
         // A violation occurs when information flows between variables
         // with incompatible security levels.
-        Violation(src, dst) :- Reaches(src, dst),
+        Violation(src, dst) :-
+            Reaches(src, dst),
             Classification(src, srcLevel),
             Classification(dst, dstLevel),
             not CanFlowTo(srcLevel, dstLevel).
