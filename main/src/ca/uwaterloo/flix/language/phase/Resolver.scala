@@ -1607,7 +1607,10 @@ object Resolver {
             val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
             getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
               case Some(_) =>
-                val err = ResolutionError.NewObjectWithStructBody(qname, loc)
+                val err = if (region0.isDefined)
+                  ResolutionError.NewObjectWithStructRegion(qname, loc)
+                else
+                  ResolutionError.NewObjectWithStructFields(qname, loc)
                 sctx.errors.add(err)
                 ResolvedAst.Expr.Error(err)
               case None =>
@@ -1624,7 +1627,7 @@ object Resolver {
 
   /**
     * Resolves an ambiguous `new` expression where the body is object-shaped (JVM constructors/methods or empty).
-    * The name must refer to a Java class. If it resolves to a Flix struct instead, emits `NewStructWithObjectBody`.
+    * The name must refer to a Java class. If it resolves to a Flix struct instead, emits `NewStructWithObjectConstructors` or `NewStructWithObjectMethods`.
     */
   private def resolveAmbiguousNewAsObject(anonName: String, qnameOpt: Option[Name.QName], tpe: NamedAst.Type, constructors: List[NamedAst.JvmConstructor], methods: List[NamedAst.JvmMethod], scp0: LocalScope, loc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val structOpt = qnameOpt.flatMap { qname =>
@@ -1635,7 +1638,10 @@ object Resolver {
     }
     structOpt match {
       case Some(_) =>
-        val err = ResolutionError.NewStructWithObjectBody(qnameOpt.get, loc)
+        val err = if (constructors.nonEmpty)
+          ResolutionError.NewStructWithObjectConstructors(qnameOpt.get, loc)
+        else
+          ResolutionError.NewStructWithObjectMethods(qnameOpt.get, loc)
         sctx.errors.add(err)
         ResolvedAst.Expr.Error(err)
       case None =>

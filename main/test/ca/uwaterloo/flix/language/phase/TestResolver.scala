@@ -2185,4 +2185,78 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.IllegalNonJavaAnnotation](result)
   }
+
+  test("NewObjectWithStructRegion.01") {
+    val input =
+      raw"""
+           |import java.lang.Object
+           |def foo(): Unit \ IO =  {
+           |    let _ = new Object @ rc { };
+           |    ()
+           |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.NewObjectWithStructRegion](result)
+  }
+
+  test("NewObjectWithStructRegion.02") {
+    // region > fields
+    val input =
+      raw"""
+           |import java.lang.Object
+           |def foo(): Unit \ IO =  {
+           |    let _ = new Object @ rc { x = 1 };
+           |    ()
+           |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.NewObjectWithStructRegion](result)
+  }
+
+  test("NewStructWithObjectConstructors.01") {
+    val input =
+      raw"""
+           |struct S[r] { f: Int32 }
+           |def foo(): Unit \ IO =
+           |    let _ = new S { def new(): S \ IO = super() };
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.NewStructWithObjectConstructors](result)
+  }
+
+  test("NewStructWithObjectMethods.01") {
+    val input =
+      raw"""
+           |struct S[r] { f: Int32 }
+           |def foo(): Unit =
+           |    let _ = new S { def m(): Unit = () };
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.NewStructWithObjectMethods](result)
+  }
+
+  test("UndefinedNameWithObjectBody.01") {
+    val input =
+      raw"""
+           |def foo(): Unit \ IO =
+           |    let _ = new Foo { def hello(): Unit = () };
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedStructWithStructBody.01") {
+    val input =
+      raw"""
+           |def foo(): Unit \ IO = region rc {
+           |    let _ = new Foo @ rc { x = 1 };
+           |    ()
+           |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedStruct](result)
+  }
 }
