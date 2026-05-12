@@ -29,4 +29,6 @@ def main(): Unit \ IO =
             Interpreter(lang).
     };
     query facts, rules
-        select (src, dst) from Compiler(src, _, dst) |> println
+        select (src, dst)
+        from Compiler(src, _, dst)
+        |> println
