@@ -90,7 +90,7 @@ object Profiler {
     * @param evars        number of distinct `Kind.Eff` effect variables present in the constraint system for this def, from the most recent typing pass.
     * @param loc          the source location of the def's body, used to compute LOC.
     */
-  final case class DefnStats(sym: Symbol.DefnSym, isActive: Boolean, callCount: Int, totalNanos: Long, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], cns: Long, tvars: Int, evars: Int, loc: SourceLocation) {
+  final case class DefnStats(sym: Symbol.DefnSym, isActive: Boolean, callCount: Int, totalNanos: Long, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], cns: Long, tvars: Long, evars: Long, loc: SourceLocation) {
     /** Returns the phase that consumed the most time, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
@@ -109,7 +109,7 @@ object Profiler {
     * @param evars         distinct `Kind.Eff` effect variables from the most recent constraint system.
     * @param loc           set on first `track` call; carries the def-body span so we can show LOC.
     */
-  private final case class Counters(inProgress: AtomicInteger, callCount: AtomicInteger, totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], perPhaseCount: ConcurrentHashMap[String, AtomicLong], constraints: AtomicLong, tvars: AtomicInteger, evars: AtomicInteger, loc: AtomicReference[SourceLocation])
+  private final case class Counters(inProgress: AtomicInteger, callCount: AtomicInteger, totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], perPhaseCount: ConcurrentHashMap[String, AtomicLong], constraints: AtomicLong, tvars: AtomicLong, evars: AtomicLong, loc: AtomicReference[SourceLocation])
 
   /**
     * Composite map key for per-`DefnSym` accumulators.
@@ -140,7 +140,7 @@ object Profiler {
     * Other kinds (`Kind.Bool`, `Kind.SchemaRow`, arrows, …) are ignored —
     * they're rarer per-def and not surfaced as columns today.
     */
-  private def countVars(cs: List[TypeConstraint]): (Int, Int) = {
+  private def countVars(cs: List[TypeConstraint]): (Long, Long) = {
     val vars = scala.collection.mutable.HashSet.empty[Type.Var]
     def collect(c: TypeConstraint): Unit = c match {
       case TypeConstraint.Equality(t1, t2, _)         => vars ++= t1.typeVars; vars ++= t2.typeVars
@@ -152,12 +152,12 @@ object Profiler {
       case TypeConstraint.EffConflicted(_)            => ()
     }
     cs.foreach(collect)
-    var tv = 0
-    var ev = 0
+    var tv = 0L
+    var ev = 0L
     vars.foreach { v =>
       v.kind match {
-        case Kind.Star => tv += 1
-        case Kind.Eff  => ev += 1
+        case Kind.Star => tv += 1L
+        case Kind.Eff  => ev += 1L
         case _         => ()
       }
     }
@@ -250,8 +250,8 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       perPhaseNanos = new ConcurrentHashMap[String, AtomicLong](),
       perPhaseCount = new ConcurrentHashMap[String, AtomicLong](),
       constraints = new AtomicLong(0L),
-      tvars = new AtomicInteger(0),
-      evars = new AtomicInteger(0),
+      tvars = new AtomicLong(0L),
+      evars = new AtomicLong(0L),
       loc = new AtomicReference[SourceLocation](null)
     ))
 

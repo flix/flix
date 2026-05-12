@@ -33,6 +33,16 @@ object Formatting {
     (used / (1024L * 1024L), max / (1024L * 1024L))
   }
 
+  /**
+    * Returns ms-per-source-line for the given `nanos / locLines` pair, or 0
+    * when `locLines <= 0` (synthetic defs with no real source span — the
+    * denominator would be meaningless). Single source of truth for the
+    * "hotness" metric used by both the hotness sort key and the threshold-
+    * based row coloring.
+    */
+  def hotnessMsPerLine(nanos: Long, locLines: Int): Double =
+    if (locLines <= 0) 0.0 else (nanos / 1_000_000L).toDouble / locLines
+
   // -- Formatting helpers -------------------------------------------------
 
   /** Renders a [[SourceLocation]] as `file:line`, or `?` if synthetic. */
