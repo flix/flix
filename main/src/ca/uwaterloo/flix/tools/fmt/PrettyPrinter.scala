@@ -973,7 +973,8 @@ object PrettyPrinter {
 
   private def prettyAscribe(tree: Tree): Doc =
     joinChildren(filterEmpty(tree.children),
-      TokenKind.Colon -> (text(":") <> space))
+      TokenKind.Colon -> (text(":") <> space),
+      TokenKind.Backslash -> (space <> text("\\") <> space))
 
   private def prettyUncheckedCast(tree: Tree): Doc =
     prettyKeywordParen(tree,
