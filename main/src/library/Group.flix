@@ -55,7 +55,7 @@ pub mod Group {
         /// identity (neutral element) then
         /// `combine(x, y) == combine(y, x) == e`
         ///
-        law leftInvertible: forall(x: a) with Eq[a] Group.combine(Group.inverse(x), x) == Group.empty()
+        law leftInvertible: forall (x: a) with Eq[a] Group.combine(Group.inverse(x), x) == Group.empty()
 
         ///
         /// Combining the inverse of `x` with `x` yields the neutral element in the group.
@@ -64,7 +64,7 @@ pub mod Group {
         /// identity (neutral element) then
         /// `combine(x, y) == combine(y, x) == e`
         ///
-        law rightInvertible: forall(x: a) with Eq[a] Group.combine(x, Group.inverse(x)) == Group.empty()
+        law rightInvertible: forall (x: a) with Eq[a] Group.combine(x, Group.inverse(x)) == Group.empty()
 
     }
 

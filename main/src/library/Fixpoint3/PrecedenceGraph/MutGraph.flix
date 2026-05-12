@@ -26,7 +26,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     ///
     pub struct MutGraph[r] {
         vertices: MutSet[Vertex, r],
-        adjList: MutMap[Vertex, Set[Vertex], r]
+        adjList:  MutMap[Vertex, Set[Vertex], r]
     }
 
     ///
@@ -36,8 +36,8 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     /// and `Black` if it and all of its neighbors have been visited.
     ///
     enum Color with Eq {
-        case White,
-        case Gray,
+        case White
+        case Gray
         case Black
     }
 
@@ -99,9 +99,10 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     /// Returns a string representation of `g`.
     ///
     pub def toString(g: MutGraph[r]): String \ r =
-        let edges = g->adjList |>
-            MutMap.joinWith(u -> vSet ->
-                Set.joinWith(v -> "\n ${u} -> ${v}", ",", vSet), ","
+        let edges = g->adjList
+            |> MutMap.joinWith(u -> vSet ->
+                    Set.joinWith(v -> "\n ${u} -> ${v}", ",", vSet),
+                ","
             );
         "MutGraph(${edges})"
 
@@ -135,10 +136,9 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
             |> Map.map(Set.find(_ -> true) >> getOrCrash);
         topologicalSort(condensation)
             |> List.map(u ->
-                componentMap
-                    |> MutMap.get(getOrCrash(Map.get(u, inverseRootMap)))
-                    |> getOrCrash
-        )
+                    componentMap
+                        |> MutMap.get(getOrCrash(Map.get(u, inverseRootMap)))
+                        |> getOrCrash)
     }
 
     ///
@@ -193,9 +193,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
         let time = Counter.fresh(rc);
         foreach (u <- getVertices(g)) {
             if (Array.get(u, disc) == -1) {
-                stronglyConnectedComponentsVisit(
-                    components, stack, disc, low, onStack, time, g, u
-                )
+                stronglyConnectedComponentsVisit(components, stack, disc, low, onStack, time, g, u)
             }
         };
         MutList.toList(components)
@@ -241,9 +239,7 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
 
         foreach (v <- getNeighbors(u, g)) {
             if (Array.get(v, disc) == -1) {
-                stronglyConnectedComponentsVisit(
-                    components, stack, disc, low, onStack, time, g, v
-                );
+                stronglyConnectedComponentsVisit(components, stack, disc, low, onStack, time, g, v);
                 let uLow = Array.get(u, low);
                 let vLow = Array.get(v, low);
                 Array.put(Int32.min(uLow, vLow), u, low)
