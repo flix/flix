@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.tools.compilertop
 
 import ca.uwaterloo.flix.tools.compilertop.Ansi.*
-import ca.uwaterloo.flix.tools.compilertop.Formatting.hotnessMsPerLine
 
 /**
   * Threshold-driven coloring of formatted fields for the compiler-top TUI.
@@ -61,7 +60,7 @@ object Styling {
     * they fall below the yellow threshold and pass through unchanged.
     */
   def styleSym(name: String, nanos: Long, locLines: Int): String = {
-    val msPerLine = hotnessMsPerLine(nanos, locLines)
+    val msPerLine = Formatting.hotnessMsPerLine(nanos, locLines)
     if (msPerLine >= HotnessRedThresholdMsPerLine) bold(red(name))
     else if (msPerLine >= HotnessYellowThresholdMsPerLine) yellow(name)
     else name
