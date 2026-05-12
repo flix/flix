@@ -204,18 +204,15 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
             quitLatch.countDown()
             return
           }
-        case 'f' | 'F' => filter.set(PhaseFilter.Frontend)
-        case 'b' | 'B' => filter.set(PhaseFilter.Backend)
-        case 'a' | 'A' => filter.set(PhaseFilter.All)
-        case 't' | 'T' => sort.set(Sort.Time)
-        case 'h' | 'H' => sort.set(Sort.Hotness)
-        case 'm' | 'M' => sort.set(Sort.Mono)
-        case 'o' | 'O' => sort.set(Sort.Opt)
-        case 'c' | 'C' => sort.set(Sort.Cls)
-        case 'n' | 'N' => sort.set(Sort.Cns)
-        case 'v' | 'V' => sort.set(Sort.Tvars)
-        case 'e' | 'E' => sort.set(Sort.Evars)
-        case _         => // ignored
+        case ch if ch > 0 =>
+          // Dispatch via the Sort / PhaseFilter ADTs so the key ↔ value
+          // mapping lives in one place ([[Model.Sort.fromKey]],
+          // [[Model.PhaseFilter.fromKey]]) rather than being duplicated
+          // across this match and the renderer's header / legend code.
+          val char = ch.toChar
+          Sort.fromKey(char).foreach(sort.set)
+          PhaseFilter.fromKey(char).foreach(filter.set)
+        case _ => // ignored
       }
     }
   }

@@ -163,34 +163,29 @@ final class Renderer {
   }
 
   /**
-    * Renders the `[f|b|a]` legend with the active letter highlighted in
-    * bold cyan when the filter is non-default. Always visible so the user
-    * sees the available toggles whether the filter is active or not.
+    * Renders the `[a|f|b]` legend with the active filter highlighted in
+    * bold yellow. Always visible so the user sees the available toggles
+    * whether the filter is active or not. Driven entirely by
+    * [[PhaseFilter.all]]: adding a new filter is a one-line change in
+    * [[Model]] and the legend follows automatically.
     */
   private def renderFilterLegend(active: PhaseFilter): String = {
-    val sb = new StringBuilder
-    sb.append(dim("["))
-    sb.append(filterLegendEntry("all",      active == PhaseFilter.All))
-    sb.append(dim("|"))
-    sb.append(filterLegendEntry("frontend", active == PhaseFilter.Frontend))
-    sb.append(dim("|"))
-    sb.append(filterLegendEntry("backend",  active == PhaseFilter.Backend))
-    sb.append(dim("]"))
-    sb.toString
+    val entries = PhaseFilter.all.map(f => filterLegendEntry(f, f == active))
+    s"${dim("[")}${entries.mkString(dim("|"))}${dim("]")}"
   }
 
   /**
-    * Renders one filter-legend entry: the first letter is the keystroke,
-    * underlined. The whole word is bold cyan when this is the active filter,
-    * dim otherwise. Underline state is toggled surgically so the inactive
-    * dim styling and the active bold+cyan styling pass through unchanged on
-    * the remaining letters.
+    * Renders one filter-legend entry: the keystroke letter is underlined.
+    * The whole word is bold yellow when this is the active filter, dim
+    * otherwise. Underline state is toggled surgically so the inactive
+    * dim styling and the active bold+yellow styling pass through unchanged
+    * on the remaining letters.
     */
-  private def filterLegendEntry(label: String, active: Boolean): String = {
-    val key = label.head.toString
-    val rest = label.tail
+  private def filterLegendEntry(f: PhaseFilter, active: Boolean): String = {
+    val key = f.key.toString
+    val rest = f.label.tail
     if (active) s"$BoldCode$Yellow$UnderlineCode$key$NoUnderlineCode$rest$Reset"
-    else s"$DimCode$UnderlineCode$key$NoUnderlineCode$rest$Reset"
+    else        s"$DimCode$UnderlineCode$key$NoUnderlineCode$rest$Reset"
   }
 
   /**
@@ -245,9 +240,9 @@ final class Renderer {
   private def buildHeader(layout: Layout, activeSort: Sort): String = {
     val sb = new StringBuilder
 
-    // First column: "Def (hot)" — the 'h' (index 5) is the hotness keystroke.
-    val defPadded = rpad("Def (hot)", layout.symWidth)
-    sb.append(keyHeader(defPadded, 5, activeSort == Sort.Hotness))
+    // First column: "Def (hot)" — the parenthesized "(hot)" annotation
+    // carries the Hotness keystroke ('h').
+    sb.append(sortableColumn(rpad("Def (hot)", layout.symWidth), Sort.Hotness, activeSort))
 
     sb.append(' ')
     sb.append(plainHeader(rpad("location", layout.locWidth)))
@@ -256,26 +251,33 @@ final class Renderer {
       sb.append(' '); sb.append(plainHeader(lpad("LOC", 4)))
     }
     if (layout.showCounts) {
-      val monoP = lpad("mono", 4); sb.append(' '); sb.append(keyHeader(monoP, monoP.indexOf('m'), activeSort == Sort.Mono))
-      val optP  = lpad("opt", 4);  sb.append(' '); sb.append(keyHeader(optP,  optP.indexOf('o'),  activeSort == Sort.Opt))
-      val clsP  = lpad("cls", 4);  sb.append(' '); sb.append(keyHeader(clsP,  clsP.indexOf('c'),  activeSort == Sort.Cls))
+      sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono, activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,  activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,  activeSort))
     }
     if (layout.showCns) {
-      val cnsP = lpad("cns", 5)
-      sb.append(' '); sb.append(keyHeader(cnsP, cnsP.indexOf('n'), activeSort == Sort.Cns))
-      val tvP  = lpad("tv",  4)
-      sb.append(' '); sb.append(keyHeader(tvP,  tvP.indexOf('v'),  activeSort == Sort.Tvars))
-      val evP  = lpad("ev",  4)
-      sb.append(' '); sb.append(keyHeader(evP,  evP.indexOf('e'),  activeSort == Sort.Evars))
+      sb.append(' '); sb.append(sortableColumn(lpad("cns", 5), Sort.Cns,   activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("tv",  4), Sort.Tvars, activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("ev",  4), Sort.Evars, activeSort))
     }
     if (layout.showPhase) {
       sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
     }
-    val timeP = lpad("time", 9); sb.append(' '); sb.append(keyHeader(timeP, timeP.indexOf('t'), activeSort == Sort.Time))
+    sb.append(' '); sb.append(sortableColumn(lpad("time", 9), Sort.Time, activeSort))
     sb.append(' '); sb.append(plainHeader(lpad("%cpu", 6)))
     sb.append(' '); sb.append(plainHeader(lpad("%wall", 6)))
     sb.toString
   }
+
+  /**
+    * Renders one sortable column header — the first occurrence of
+    * [[Sort.key]] in `padded` is underlined, and the whole label is bold
+    * yellow when `sort == activeSort`, bold cyan otherwise. The key letter
+    * comes from [[Sort]] itself so there is no separate keystroke
+    * declaration to keep in sync with the input loop.
+    */
+  private def sortableColumn(padded: String, sort: Sort, activeSort: Sort): String =
+    keyHeader(padded, padded.indexOf(sort.key), activeSort == sort)
 
   /** Renders the def-table body (one row per [[DefnStats]]), or a centered placeholder if `visible` is empty. */
   private def renderRows(sb: StringBuilder, visible: Vector[DefnStats], elapsed: Long, parallelism: Int, layout: Layout): Unit = {
@@ -353,30 +355,27 @@ final class Renderer {
     val sb = new StringBuilder
     val modWidth = layout.symWidth + 1 + layout.locWidth
 
-    // First column: "Module (hot)" — the 'h' (index 8) is the hotness keystroke.
-    val modPadded = rpad("Module (hot)", modWidth)
-    sb.append(keyHeader(modPadded, 8, activeSort == Sort.Hotness))
+    // First column: "Module (hot)" — the parenthesized "(hot)" annotation
+    // carries the Hotness keystroke ('h').
+    sb.append(sortableColumn(rpad("Module (hot)", modWidth), Sort.Hotness, activeSort))
 
     if (layout.showLOC) {
       sb.append(' '); sb.append(plainHeader(lpad("LOC", 4)))
     }
     if (layout.showCounts) {
-      val monoP = lpad("mono", 4); sb.append(' '); sb.append(keyHeader(monoP, monoP.indexOf('m'), activeSort == Sort.Mono))
-      val optP  = lpad("opt", 4);  sb.append(' '); sb.append(keyHeader(optP,  optP.indexOf('o'),  activeSort == Sort.Opt))
-      val clsP  = lpad("cls", 4);  sb.append(' '); sb.append(keyHeader(clsP,  clsP.indexOf('c'),  activeSort == Sort.Cls))
+      sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono, activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,  activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,  activeSort))
     }
     if (layout.showCns) {
-      val cnsP = lpad("cns", 5)
-      sb.append(' '); sb.append(keyHeader(cnsP, cnsP.indexOf('n'), activeSort == Sort.Cns))
-      val tvP  = lpad("tv",  4)
-      sb.append(' '); sb.append(keyHeader(tvP,  tvP.indexOf('v'),  activeSort == Sort.Tvars))
-      val evP  = lpad("ev",  4)
-      sb.append(' '); sb.append(keyHeader(evP,  evP.indexOf('e'),  activeSort == Sort.Evars))
+      sb.append(' '); sb.append(sortableColumn(lpad("cns", 5), Sort.Cns,   activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("tv",  4), Sort.Tvars, activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("ev",  4), Sort.Evars, activeSort))
     }
     if (layout.showPhase) {
       sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
     }
-    val timeP = lpad("time", 9); sb.append(' '); sb.append(keyHeader(timeP, timeP.indexOf('t'), activeSort == Sort.Time))
+    sb.append(' '); sb.append(sortableColumn(lpad("time", 9), Sort.Time, activeSort))
     sb.append(' '); sb.append(plainHeader(lpad("%cpu", 6)))
     sb.append(' '); sb.append(plainHeader(lpad("%wall", 6)))
     sb.toString
