@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.util
+package ca.uwaterloo.flix.tools.compilertop
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.tools.compilertop.Aggregation.*
 import ca.uwaterloo.flix.tools.compilertop.Ansi.*
 import ca.uwaterloo.flix.tools.compilertop.Formatting.*
-import ca.uwaterloo.flix.tools.compilertop.Layout
 import ca.uwaterloo.flix.tools.compilertop.Model.*
-import ca.uwaterloo.flix.tools.compilertop.Profiler
-import ca.uwaterloo.flix.tools.compilertop.{FrameState, Renderer}
 import org.jline.terminal.{Attributes, Terminal, TerminalBuilder}
 
 import java.util.concurrent.CountDownLatch

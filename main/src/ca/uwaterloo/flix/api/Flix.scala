@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
-import ca.uwaterloo.flix.tools.compilertop.Profiler
+import ca.uwaterloo.flix.tools.compilertop.{CompilerTop, Profiler}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
