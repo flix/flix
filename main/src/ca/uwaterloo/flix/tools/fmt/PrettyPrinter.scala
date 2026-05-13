@@ -417,12 +417,19 @@ object PrettyPrinter {
       case None => prettyFallback(tree)
       case Some(BracketSplit(header, open, body, close, tail)) =>
         val headerDoc  = defaultHeaderJoin(header)
-        val bodyDoc    = joinChildren(body, TokenKind.Semi -> (text(";") <> line))
         val tailDoc    = defaultHeaderJoin(tail)
-        val tailSuffix = if (tail.nonEmpty) space <> tailDoc else empty
-        Doc.setLayout(Layout.MultiLine,
-          headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <> tailSuffix
-        )
+        if (layoutOfChildren(body) == Layout.SingleLine) {
+          val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
+          Doc.setLayout(Layout.MultiLine,
+            headerDoc <+> text(open) <> bodyDoc <> text(close) <> nest(4, hardline <> tailDoc)
+          )
+        } else {
+          val bodyDoc    = joinChildren(body, TokenKind.Semi -> (text(";") <> line))
+          val tailSuffix = if (tail.nonEmpty) space <> tailDoc else empty
+          Doc.setLayout(Layout.MultiLine,
+            headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <> tailSuffix
+          )
+        }
     }
 
   private def prettyForFragment(tree: Tree): Doc =
@@ -1708,23 +1715,22 @@ object PrettyPrinter {
         val tailStart = tail.headOption.flatMap(leftMostToken)
         val isBlock = tailStart.exists(t => t.kind == TokenKind.CurlyL || t.kind == TokenKind.ParenL)
         val tailSep = if (isBlock) space <> tailDoc else nest(4, line <> tailDoc)
-        val headerFitsOnOneLine = body.isEmpty || {
-          val firstLine = body.headOption.flatMap(leftMostToken).map(_.start.lineOneIndexed)
-          val lastLine = body.lastOption.flatMap(rightMostToken).map(_.end.lineOneIndexed)
-          firstLine == lastLine
-        }
-        if (headerFitsOnOneLine) {
+        if (layoutOfChildren(body) == Layout.SingleLine) {
           val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
-          headerDoc <+> text(open) <> bodyDoc <> text(close) <> tailSep
+          Doc.setLayout(Layout.MultiLine,
+            headerDoc <+> text(open) <> bodyDoc <> text(close) <> tailSep
+          )
         } else {
           val bodyDoc = joinWithGap(body)
           val closeSep = if (body.nonEmpty && endsWithComment(body.last)) hardline
           else Doc.layoutChoice(empty, line)
-          headerDoc <+> text(open) <>
-            nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <>
-            closeSep <>
-            text(close) <>
-            tailSep
+          Doc.setLayout(Layout.MultiLine,
+            headerDoc <+> text(open) <>
+              nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <>
+              closeSep <>
+              text(close) <>
+              tailSep
+          )
         }
     }
 
