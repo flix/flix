@@ -116,98 +116,98 @@ def main(): Unit \ IO =
             :: ("n9", "ep")
             :: Nil;
 
-        let callGraph =
-            ("n2", "p")
-                :: ("n7", "p")
-                :: Nil;
+    let callGraph =
+        ("n2", "p")
+            :: ("n7", "p")
+            :: Nil;
 
-            let startNodes =
-                ("main", "smain")
-                    :: ("p", "sp")
-                    :: Nil;
+    let startNodes =
+        ("main", "smain")
+            :: ("p", "sp")
+            :: Nil;
 
-                let endNodes =
-                    ("main", "emain")
-                        :: ("p", "ep")
-                        :: Nil;
+    let endNodes =
+        ("main", "emain")
+            :: ("p", "ep")
+            :: Nil;
 
-                    def procedureParameters(p) = match p {
-                        case "p" => "a"
-                        case _   => ?unreachable
-                    };
+    def procedureParameters(p) = match p {
+        case "p" => "a"
+        case _   => ?unreachable
+    };
 
-                    let globalVars = Set#{"g"};
-                    def isGlobalVar(v) = Set.memberOf(v, globalVars);
+    let globalVars = Set#{"g"};
+    def isGlobalVar(v) = Set.memberOf(v, globalVars);
 
-                    let allVars = Set#{"a", "x"} ++ globalVars;
+    let allVars = Set#{"a", "x"} ++ globalVars;
 
-                    def instruction(n) = match n {
-                        case "smain" => IR.MainEntry(Vector#{"x"})
-                        case "n1"    => IR.Read("x")
-                        case "n2"    => IR.Call("p", "x")
-                        case "n3"    => IR.Nop
-                        case "emain" => IR.Nop
+    def instruction(n) = match n {
+        case "smain" => IR.MainEntry(Vector#{"x"})
+        case "n1"    => IR.Read("x")
+        case "n2"    => IR.Call("p", "x")
+        case "n3"    => IR.Nop
+        case "emain" => IR.Nop
 
-                        case "sp"    => IR.Nop
-                        case "n4"    => IR.Nop
-                        case "n5"    => IR.Read("g")
-                        case "n6"    => IR.Assign("a", "a", "g")
-                        case "n7"    => IR.Call("p", "a")
-                        case "n8"    => IR.Nop
-                        case "n9"    => IR.Nop
-                        case "ep"    => IR.Nop
+        case "sp"    => IR.Nop
+        case "n4"    => IR.Nop
+        case "n5"    => IR.Read("g")
+        case "n6"    => IR.Assign("a", "a", "g")
+        case "n7"    => IR.Call("p", "a")
+        case "n8"    => IR.Nop
+        case "n9"    => IR.Nop
+        case "ep"    => IR.Nop
 
-                        case _       => ?unreachable
-                    };
+        case _       => ?unreachable
+    };
 
-                    def eshIntra(n, d) = match instruction(n) {
-                        case IR.MainEntry(vars) =>
-                            if (d == "zero")
-                                vars ++ Foldable.toVector(globalVars)
-                            else
-                                Vector#{}
-                        case IR.Nop => Vector#{d}
-                        case IR.Call(target, arg) =>
-                            if (isGlobalVar(d)) Vector#{} else Vector#{d}
-                        case IR.Read(v) =>
-                            if (d == v) Vector#{} else Vector#{d}
-                        case IR.Assign(v1, v2, v3) =>
-                            let kill = if (d == v1) Vector#{} else Vector#{d};
-                            let gen = if (d == v2 or d == v3) Vector#{v1} else Vector#{};
-                            kill ++ gen
-                    };
+    def eshIntra(n, d) = match instruction(n) {
+        case IR.MainEntry(vars) =>
+            if (d == "zero")
+                vars ++ Foldable.toVector(globalVars)
+            else
+                Vector#{}
+        case IR.Nop => Vector#{d}
+        case IR.Call(target, arg) =>
+            if (isGlobalVar(d)) Vector#{} else Vector#{d}
+        case IR.Read(v) =>
+            if (d == v) Vector#{} else Vector#{d}
+        case IR.Assign(v1, v2, v3) =>
+            let kill = if (d == v1) Vector#{} else Vector#{d};
+            let gen = if (d == v2 or d == v3) Vector#{v1} else Vector#{};
+            kill ++ gen
+    };
 
-                    def eshCallStart(n, d, p) = match instruction(n) {
-                        case IR.Call(proc, arg) if (proc == p) =>
-                            let parm = procedureParameters(proc);
-                            if (d == arg)
-                                Vector#{parm}
-                            else if (d == parm)
-                                Vector#{}
-                            else
-                                Vector#{d}
-                        case _ => Vector#{}
-                    };
+    def eshCallStart(n, d, p) = match instruction(n) {
+        case IR.Call(proc, arg) if (proc == p) =>
+            let parm = procedureParameters(proc);
+            if (d == arg)
+                Vector#{parm}
+            else if (d == parm)
+                Vector#{}
+            else
+                Vector#{d}
+        case _ => Vector#{}
+    };
 
-                    def eshEndReturn(p, d, n) = match instruction(n) {
-                        case IR.Call(proc, _) if p == proc and isGlobalVar(d) =>
-                            Vector#{d}
-                        case _ => Vector#{}
-                    };
+    def eshEndReturn(p, d, n) = match instruction(n) {
+        case IR.Call(proc, _) if p == proc and isGlobalVar(d) =>
+            Vector#{d}
+        case _ => Vector#{}
+    };
 
-                    let result = IFDS.runSolver({
-                        zero         = "zero",
-                        main         = "main",
-                        cfg          = cfg,
-                        startNodes   = startNodes,
-                        endNodes     = endNodes,
-                        callGraph    = callGraph,
-                        eshIntra     = eshIntra,
-                        eshCallStart = eshCallStart,
-                        eshEndReturn = eshEndReturn
-                    });
+    let result = IFDS.runSolver({
+        zero         = "zero",
+        main         = "main",
+        cfg          = cfg,
+        startNodes   = startNodes,
+        endNodes     = endNodes,
+        callGraph    = callGraph,
+        eshIntra     = eshIntra,
+        eshCallStart = eshCallStart,
+        eshEndReturn = eshEndReturn
+    });
 
-                    println(result)
+    println(result)
 
     // Prints:
     // Vector#{

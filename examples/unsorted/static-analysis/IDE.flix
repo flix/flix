@@ -47,19 +47,7 @@ mod IDE {
     /// Solves the given IDE instances.
     ///
     pub def runSolver(ide: IDE[p, n, d, f, l]): Vector[(n, d, l)]
-        with
-            LowerBound[f],
-            JoinLattice[f],
-            MeetLattice[f],
-            LowerBound[l],
-            UpperBound[l],
-            JoinLattice[l],
-            MeetLattice[l],
-            Order[n],
-            Order[d],
-            Order[p],
-            Order[f],
-            Order[l] =
+        with LowerBound[f], JoinLattice[f], MeetLattice[f], LowerBound[l], UpperBound[l], JoinLattice[l], MeetLattice[l], Order[n], Order[d], Order[p], Order[f], Order[l] =
         // Extract main.
         let main = ide#main;
 
@@ -352,106 +340,106 @@ def main(): Unit \ IO =
             :: ("n9", "ep")
             :: Nil;
 
-        let callGraph =
-            ("n1", "p")
-                :: ("n6", "p")
-                :: Nil;
+    let callGraph =
+        ("n1", "p")
+            :: ("n6", "p")
+            :: Nil;
 
-            let startNodes =
-                ("main", "smain")
-                    :: ("p", "sp")
-                    :: Nil;
+    let startNodes =
+        ("main", "smain")
+            :: ("p", "sp")
+            :: Nil;
 
-                let endNodes =
-                    ("main", "emain")
-                        :: ("p", "ep")
-                        :: Nil;
+    let endNodes =
+        ("main", "emain")
+            :: ("p", "ep")
+            :: Nil;
 
-                    def procedureParameters(p) = match p {
-                        case "p" => "a"
-                        case _   => ?unreachable
-                    };
+    def procedureParameters(p) = match p {
+        case "p" => "a"
+        case _   => ?unreachable
+    };
 
-                    let globalVars = Set#{"x"};
-                    def isGlobalVar(v) = Set.memberOf(v, globalVars);
+    let globalVars = Set#{"x"};
+    def isGlobalVar(v) = Set.memberOf(v, globalVars);
 
-                    def instruction(n) = match n {
-                        case "smain" => IR.MainEntry(Vector#{"x"})
-                        case "n1"    => IR.CallConst("p", 7)
-                        case "n2"    => IR.Nop
-                        case "n3"    => IR.Nop
-                        case "emain" => IR.Nop
+    def instruction(n) = match n {
+        case "smain" => IR.MainEntry(Vector#{"x"})
+        case "n1"    => IR.CallConst("p", 7)
+        case "n2"    => IR.Nop
+        case "n3"    => IR.Nop
+        case "emain" => IR.Nop
 
-                        case "sp"    => IR.Nop
-                        case "n4"    => IR.Nop
-                        case "n5"    => IR.Assign("a", 1, "a", -2)
-                        case "n6"    => IR.CallVar("p", "a")
-                        case "n7"    => IR.Nop
-                        case "n8"    => IR.Assign("a", 1, "a", 2)
-                        case "n9"    => IR.Assign("x", -2, "a", 5)
-                        case "ep"    => IR.Nop
+        case "sp"    => IR.Nop
+        case "n4"    => IR.Nop
+        case "n5"    => IR.Assign("a", 1, "a", -2)
+        case "n6"    => IR.CallVar("p", "a")
+        case "n7"    => IR.Nop
+        case "n8"    => IR.Assign("a", 1, "a", 2)
+        case "n9"    => IR.Assign("x", -2, "a", 5)
+        case "ep"    => IR.Nop
 
-                        case _       => ?unreachable
-                    };
+        case _       => ?unreachable
+    };
 
-                    def eshIntra(n, d) = match instruction(n) {
-                        case IR.MainEntry(vars) =>
-                            if (d == "zero")
-                                Vector.map(v -> (v, ConstantProp.MicroFunction.Bot), vars)
-                            else
-                                Vector#{}
-                        case IR.Assign(v1, c1, v2, c2) =>
-                            let kill = if (d == v1) Vector#{} else Vector#{(d, ConstantProp.id())};
-                            let microfn = ConstantProp.MicroFunction.NonBot(c1, c2, ConstantProp.Const.Bot);
-                            let gen = if (d == v2) Vector#{(v1, microfn)} else Vector#{};
-                            kill ++ gen
-                        case IR.CallConst(_, _) if isGlobalVar(d) => Vector#{}
-                        case IR.CallVar(_, _) if isGlobalVar(d) => Vector#{}
-                        case _ => Vector#{(d, ConstantProp.id())}
-                    };
+    def eshIntra(n, d) = match instruction(n) {
+        case IR.MainEntry(vars) =>
+            if (d == "zero")
+                Vector.map(v -> (v, ConstantProp.MicroFunction.Bot), vars)
+            else
+                Vector#{}
+        case IR.Assign(v1, c1, v2, c2) =>
+            let kill = if (d == v1) Vector#{} else Vector#{(d, ConstantProp.id())};
+            let microfn = ConstantProp.MicroFunction.NonBot(c1, c2, ConstantProp.Const.Bot);
+            let gen = if (d == v2) Vector#{(v1, microfn)} else Vector#{};
+            kill ++ gen
+        case IR.CallConst(_, _) if isGlobalVar(d) => Vector#{}
+        case IR.CallVar(_, _) if isGlobalVar(d) => Vector#{}
+        case _ => Vector#{(d, ConstantProp.id())}
+    };
 
-                    def eshCallStart(n, d, p) = match instruction(n) {
-                        case IR.CallConst(proc, arg) if (proc == p) =>
-                            let parm = procedureParameters(proc);
-                            if (d == "zero")
-                                Vector#{(parm, ConstantProp.MicroFunction.NonBot(0, arg, ConstantProp.Const.Bot))}
-                            else if (d == parm)
-                                Vector#{}
-                            else
-                                Vector#{(d, ConstantProp.id())}
-                        case IR.CallVar(proc, arg) if (proc == p) =>
-                            let parm = procedureParameters(proc);
-                            if (d == arg)
-                                Vector#{(parm, ConstantProp.id())}
-                            else if (d == parm)
-                                Vector#{}
-                            else
-                                Vector#{(d, ConstantProp.id())}
-                        case _ => Vector#{}
-                    };
+    def eshCallStart(n, d, p) = match instruction(n) {
+        case IR.CallConst(proc, arg) if (proc == p) =>
+            let parm = procedureParameters(proc);
+            if (d == "zero")
+                Vector#{(parm, ConstantProp.MicroFunction.NonBot(0, arg, ConstantProp.Const.Bot))}
+            else if (d == parm)
+                Vector#{}
+            else
+                Vector#{(d, ConstantProp.id())}
+        case IR.CallVar(proc, arg) if (proc == p) =>
+            let parm = procedureParameters(proc);
+            if (d == arg)
+                Vector#{(parm, ConstantProp.id())}
+            else if (d == parm)
+                Vector#{}
+            else
+                Vector#{(d, ConstantProp.id())}
+        case _ => Vector#{}
+    };
 
-                    def eshEndReturn(p, d, n) = match instruction(n) {
-                        case IR.CallConst(proc, _) if p == proc and isGlobalVar(d) => Vector#{(d, ConstantProp.id())}
-                        case IR.CallVar(proc, _) if p == proc and isGlobalVar(d)   => Vector#{(d, ConstantProp.id())}
-                        case _                                                     => Vector#{}
-                    };
+    def eshEndReturn(p, d, n) = match instruction(n) {
+        case IR.CallConst(proc, _) if p == proc and isGlobalVar(d) => Vector#{(d, ConstantProp.id())}
+        case IR.CallVar(proc, _) if p == proc and isGlobalVar(d)   => Vector#{(d, ConstantProp.id())}
+        case _                                                     => Vector#{}
+    };
 
-                    let result = IDE.runSolver({
-                        zero         = "zero",
-                        main         = "main",
-                        cfg          = cfg,
-                        startNodes   = startNodes,
-                        endNodes     = endNodes,
-                        callGraph    = callGraph,
-                        eshIntra     = eshIntra,
-                        eshCallStart = eshCallStart,
-                        eshEndReturn = eshEndReturn,
-                        id           = ConstantProp.id(),
-                        apply        = ConstantProp.apply,
-                        compose      = ConstantProp.compose
-                    });
+    let result = IDE.runSolver({
+        zero         = "zero",
+        main         = "main",
+        cfg          = cfg,
+        startNodes   = startNodes,
+        endNodes     = endNodes,
+        callGraph    = callGraph,
+        eshIntra     = eshIntra,
+        eshCallStart = eshCallStart,
+        eshEndReturn = eshEndReturn,
+        id           = ConstantProp.id(),
+        apply        = ConstantProp.apply,
+        compose      = ConstantProp.compose
+    });
 
-                    println(result)
+    println(result)
 
     // Prints:
     // Vector#{
