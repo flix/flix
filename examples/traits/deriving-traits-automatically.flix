@@ -1,8 +1,8 @@
 enum Suit with Eq, Order, ToString {
-    case Diamonds,  // ♦
-    case Clubs,     // ♣
-    case Hearts,    // ♥
-    case Spades     // ♠
+    case Diamonds // ♦
+    case Clubs // ♣
+    case Hearts // ♥
+    case Spades // ♠
 }
 
 def main(): Unit \ IO =

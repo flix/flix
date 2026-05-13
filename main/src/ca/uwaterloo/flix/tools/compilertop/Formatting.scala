@@ -33,6 +33,16 @@ object Formatting {
     (used / (1024L * 1024L), max / (1024L * 1024L))
   }
 
+  /**
+    * Returns ms-per-source-line for the given `nanos / locLines` pair, or 0
+    * when `locLines <= 0` (synthetic defs with no real source span — the
+    * denominator would be meaningless). Single source of truth for the
+    * "hotness" metric used by both the hotness sort key and the threshold-
+    * based row coloring.
+    */
+  def hotnessMsPerLine(nanos: Long, locLines: Int): Double =
+    if (locLines <= 0) 0.0 else (nanos / 1_000_000L).toDouble / locLines
+
   // -- Formatting helpers -------------------------------------------------
 
   /** Renders a [[SourceLocation]] as `file:line`, or `?` if synthetic. */
@@ -48,6 +58,24 @@ object Formatting {
     val ms = nanos / 1_000_000L
     if (ms >= 10_000L) f"${ms / 1000.0}%.1fs"
     else f"${ms}ms"
+  }
+
+  /**
+    * Formats a byte count compactly into at most 5 characters: `NB`, `N.NKB`,
+    * `NNNKB`, `N.NMB`, or `NNNMB`. Uses one decimal place under 10 of the
+    * higher unit so small values keep precision while large ones stay narrow.
+    */
+  def formatBytes(bytes: Long): String = {
+    val Kib = 1024.0
+    val Mib = 1024.0 * 1024.0
+    if (bytes < 1024L) s"${bytes}B"
+    else if (bytes < 1024L * 1024L) {
+      val kb = bytes / Kib
+      if (kb < 10.0) f"$kb%.1fKB" else f"${kb.round}%dKB"
+    } else {
+      val mb = bytes / Mib
+      if (mb < 10.0) f"$mb%.1fMB" else f"${mb.round}%dMB"
+    }
   }
 
   /** Returns `s` truncated to `width` characters, with a trailing ellipsis when shortened. */

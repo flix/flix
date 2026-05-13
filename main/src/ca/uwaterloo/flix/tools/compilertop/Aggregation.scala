@@ -65,12 +65,12 @@ object Aggregation {
     */
   def defSortKey(s: DefnStats, srt: Sort): Double = srt match {
     case Sort.Time    => s.totalNanos.toDouble
-    case Sort.Hotness =>
-      val lines = locLineCount(s.loc)
-      if (lines <= 0) 0.0 else s.totalNanos.toDouble / lines
+    case Sort.Hotness => Formatting.hotnessMsPerLine(s.totalNanos, locLineCount(s.loc))
     case Sort.Mono  => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
     case Sort.Opt   => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
+    case Sort.Inl   => s.inlined.toDouble
     case Sort.Cls   => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
+    case Sort.Size  => s.classBytes.toDouble
     case Sort.Cns   => s.cns.toDouble
     case Sort.Tvars => s.tvars.toDouble
     case Sort.Evars => s.evars.toDouble
@@ -79,10 +79,12 @@ object Aggregation {
   /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
   def moduleSortKey(m: ModuleStats, srt: Sort): Double = srt match {
     case Sort.Time    => m.totalNanos.toDouble
-    case Sort.Hotness => if (m.totalLocLines <= 0) 0.0 else m.totalNanos.toDouble / m.totalLocLines
+    case Sort.Hotness => Formatting.hotnessMsPerLine(m.totalNanos, m.totalLocLines)
     case Sort.Mono  => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
     case Sort.Opt   => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
+    case Sort.Inl   => m.totalInlined.toDouble
     case Sort.Cls   => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
+    case Sort.Size  => m.totalClassBytes.toDouble
     case Sort.Cns   => m.totalCns.toDouble
     case Sort.Tvars => m.totalTvars.toDouble
     case Sort.Evars => m.totalEvars.toDouble
@@ -111,7 +113,9 @@ object Aggregation {
       val totalCns = defs.iterator.map(_.cns).sum
       val totalTvars = defs.iterator.map(_.tvars.toLong).sum
       val totalEvars = defs.iterator.map(_.evars.toLong).sum
-      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase, byPhaseCount, totalCns, totalTvars, totalEvars)
+      val totalInlined = defs.iterator.map(_.inlined).sum
+      val totalClassBytes = defs.iterator.map(_.classBytes).sum
+      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase, byPhaseCount, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes)
     }.toVector.sortBy(m => -moduleSortKey(m, srt))
   }
 }
