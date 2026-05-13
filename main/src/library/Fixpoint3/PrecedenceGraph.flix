@@ -65,7 +65,7 @@ pub mod Fixpoint3.PrecedenceGraph {
                         MutList.push(s1, pseudoStratums);
                         s2 :: Nil
                     };
-                loop(next, rest)
+                    loop(next, rest)
             case Nil => MutList.push(s1, pseudoStratums)
         };
         match sorted {

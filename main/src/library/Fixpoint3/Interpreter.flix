@@ -119,24 +119,20 @@ pub mod Fixpoint3.Interpreter {
         search: Vector[Int32],
         tuples: BPlusTree[Tuple, Boxed, r]
     ): Index[r] \ r =
-        if (BPlusTree.search(tuples) == search)
-            tuples // We can simply use `tuples` as it has the correct order.
+        if (BPlusTree.search(tuples) == search) tuples // We can simply use `tuples` as it has the correct order.
         else {
             let index = BPlusTree.emptyWithArityAndSearch(rc, usedArity(), search);
             if (BPlusTree.isEmpty(tuples))
                 index
             else {
-                BPlusTree.forEach(
-                    nonLat -> lat -> {
-                        match toDenotation(relSym) {
-                            case Relational =>
-                                BPlusTree.put(nonLat, lat, index)
-                            case Latticenal(_, _, lub, _) =>
-                                BPlusTree.putWith(lub, nonLat, lat, index)
-                        }
-                    },
-                    tuples
-                );
+                BPlusTree.forEach(nonLat -> lat -> {
+                    match toDenotation(relSym) {
+                        case Relational =>
+                            BPlusTree.put(nonLat, lat, index)
+                        case Latticenal(_, _, lub, _) =>
+                            BPlusTree.putWith(lub, nonLat, lat, index)
+                    }
+                }, tuples);
                 index
             }
         }
@@ -156,7 +152,7 @@ pub mod Fixpoint3.Interpreter {
         foreach ((relSym, searches) <- indexMap) {
             // We need to ensure that we do not pass a tree with `null` as search.
             let default = match Vector.head(searches) {
-                case None          => BPlusTree.empty(rc) // The foreach will be empty.
+                case None => BPlusTree.empty(rc) // The foreach will be empty.
                 case Some(search0) => BPlusTree.emptyWithArityAndSearch(rc, usedArity(), search0)
             };
             let tuples = Map.getWithDefault(relSym, default, facts);
@@ -215,14 +211,12 @@ pub mod Fixpoint3.Interpreter {
         foreach (relSym <- allFullRelSyms(predTrack)) {
             let innerMap = BPlusTree.empty(Static);
             let curBoxingInfo = getTypeOf(toId(relSym), typeInfo);
-            Array.get(getOrCrash(Map.get((relSym, 0), indexPos)), db)
-                |> BPlusTree.forEach(
-                    vec -> latticeElem -> {
-                        let boxedVec = vec
-                            |> Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
-                        BPlusTree.put(boxedVec, latticeElem, innerMap)
-                    }
-                );
+            Array.get(getOrCrash(Map.get((relSym, 0), indexPos)), db) |>
+                BPlusTree.forEach(vec -> latticeElem -> {
+                    let boxedVec = vec |>
+                        Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
+                    BPlusTree.put(boxedVec, latticeElem, innerMap)
+                });
             MutMap.put(relSym, innerMap, res)
         };
         res
@@ -284,8 +278,7 @@ pub mod Fixpoint3.Interpreter {
                     let _: Unit = spawn unchecked_cast({
                         let threadCtx = copyCtx(rc, ctx);
                         evalStmt(rc, threadCtx, parLevel, innerStmt)
-                    } as _ \ IO) @ rc2;
-                    // spawn may not take an `r` effect, so we cast it to `IO`
+                    } as _ \ IO) @ rc2; // spawn may not take an `r` effect, so we cast it to `IO`
                     ()
                 } as _ \ rc2)
             }
@@ -311,17 +304,17 @@ pub mod Fixpoint3.Interpreter {
             case RelOp.Search(tuplePos, searchIndex, _, Relational, writes, body) =>
                 if (parLevel == 0) {
                     // We have exhausted all allowed attempts to spawn threads. Recurse sequentially.
-                    lookupIndex(searchIndex, db)
-                        |> BPlusTree.forEach(evalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel))
+                    lookupIndex(searchIndex, db) |>
+                        BPlusTree.forEach(evalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel))
                 } else {
                     // We are allowed to spawn threads. Try to do so.
-                    lookupIndex(searchIndex, db)
-                        |> BPlusTree.parForEach(parEvalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel - 1))
+                    lookupIndex(searchIndex, db) |>
+                        BPlusTree.parForEach(parEvalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel - 1))
                 }
             case RelOp.Query(tuplePos, searchIndex, _, Relational, writes, body) =>
                 let (minEnv, maxEnv, _, _) = env;
-                lookupIndex(searchIndex, db)
-                    |> BPlusTree.rangeQueryWith(
+                lookupIndex(searchIndex, db) |>
+                    BPlusTree.rangeQueryWith(
                         evalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel),
                         // We could here use Vector.toArray, but it would create a copy. To avoid memory
                         // allocation we simply cast.
@@ -349,25 +342,23 @@ pub mod Fixpoint3.Interpreter {
                     let len = Vector.length(terms);
                     let tuple = evalTermsWithLat(ctx, terms);
                     let latVal = evalBoxedTerm(env, boxing, Vector.get(len - 1, terms));
-                    if (latVal `leq` bot)
-                        ()
-                    else
-                        BPlusTree.putWith(lub, tuple, latVal, relIndex)
+                    if (latVal `leq` bot) ()
+                    else BPlusTree.putWith(lub, tuple, latVal, relIndex)
             }
             case RelOp.Search(tuplePos, searchIndex, meetWith, Latticenal(bot, leq, _, glb), writes, body) =>
                 if (parLevel == 0) {
                     // We have exhausted all allowed attempts to spawn threads. Recurse sequentially.
-                    lookupIndex(searchIndex, db)
-                        |> BPlusTree.forEach(evalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel))
+                    lookupIndex(searchIndex, db) |>
+                        BPlusTree.forEach(evalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel))
                 } else {
                     // We are allowed to spawn threads. Try to do so.
-                    lookupIndex(searchIndex, db)
-                        |> BPlusTree.parForEach(parEvalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel))
+                    lookupIndex(searchIndex, db) |>
+                        BPlusTree.parForEach(parEvalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel))
                 }
             case RelOp.Query(tuplePos, searchIndex, meetWith, Latticenal(bot, leq, _, glb), writes, body) =>
                 let (minEnv, maxEnv, _, _) = env;
-                lookupIndex(searchIndex, db)
-                    |> BPlusTree.rangeQueryWith(
+                lookupIndex(searchIndex, db) |>
+                    BPlusTree.rangeQueryWith(
                         evalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel),
                         // We could here use Vector.toArray, but it would create a copy. To avoid memory
                         // allocation we simply cast.
@@ -389,10 +380,9 @@ pub mod Fixpoint3.Interpreter {
                 }
             case RelOp.Functional(tupleIndex, f, terms, writes, body, i2) =>
                 let args = Vector.map(evalBoxedTerm(env, boxing), terms);
-                let result = f(args)
-                    |> Vector.map(
-                        vec ->
-                            Vector.mapWithIndex(i -> x -> unboxWith(x, Vector.get(i, i2), boxing), vec)
+                let result = f(args)|>
+                    Vector.map(vec ->
+                        Vector.mapWithIndex(i -> x -> unboxWith(x, Vector.get(i, i2), boxing), vec)
                     );
                 let (minEnv, maxEnv, tupleEnv, _) = env;
                 foreach (t <- result) {
@@ -519,8 +509,7 @@ pub mod Fixpoint3.Interpreter {
             evalOp(rc, ctx, parLevel, body)
         } else {
             let meet = l `glb` Array.get(meetWith, latEnv);
-            if (meet `leq` bot)
-                ()
+            if (meet `leq` bot) ()
             else {
                 Array.put(meet, tuplePos, latEnv);
                 evalOp(rc, ctx, parLevel, body)

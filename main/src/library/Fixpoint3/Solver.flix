@@ -242,8 +242,7 @@ pub mod Fixpoint3.Solver {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let nextId = unsafe IO { Global.newId() + 1i64 };
-                // We add one because the counter starts at zero.
+                let nextId = unsafe IO { Global.newId() + 1i64 }; // We add one because the counter starts at zero.
                 let newPredSym = PredSym(name, nextId);
                 Map.insert(predSym, newPredSym, macc)
             }
@@ -327,7 +326,7 @@ pub mod Fixpoint3.Solver {
     @LoweringTarget
     pub def injectInto7(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Foldable[f] =
         injectIntoX(
-            match (v1, v2, v3, v4, v5, v6, v7) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6), box(v7)},
+            match (v1, v2, v3, v4, v5, v6, v7) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6),box(v7)},
             p,
             ts
         )
