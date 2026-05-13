@@ -1630,32 +1630,65 @@ object PrettyPrinter {
     val headParts = children.take(eqIndex)
     val rest      = children.drop(eqIndex + 1)
 
-    // A trailing top-level Semi only appears when the let has no continuation expression.
-    // With a continuation, the Semi lives inside the body's Statement subtree.
-    val semiIdx = rest.indexWhere {
-      case t: Token if t.kind == TokenKind.Semi => true
-      case _ => false
-    }
-    val (bodyParts, tailParts) =
-      if (semiIdx < 0) (rest, Array.empty[SyntaxTree.Child])
-      else              (rest.take(semiIdx), rest.drop(semiIdx))
-
     val headDoc = joinChildren(headParts,
       TokenKind.KeywordLet -> (text("let") <> space),
       TokenKind.Colon      -> (text(":") <> space))
 
-    val bodyDoc = bodyParts.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+    // When the let has a continuation, the parser nests it inside a Statement
+    // subtree of the body: [Expr(Statement(binding, Semi, Expr(cont)))]. The
+    // continuation must render at the outer indent, not be folded into the
+    // body's nest(4, ...) scope.
+    val stmtSplit: Option[(Array[SyntaxTree.Child], Array[SyntaxTree.Child], Token)] =
+      rest.headOption.flatMap(unwrapToStatement).flatMap { stmt =>
+        val stmtChildren = filterEmpty(stmt.children)
+        val idx = stmtChildren.indexWhere {
+          case t: Token if t.kind == TokenKind.Semi => true
+          case _ => false
+        }
+        stmtChildren.lift(idx) match {
+          case Some(t: Token) =>
+            Some((stmtChildren.take(idx), stmtChildren.drop(idx + 1), t))
+          case _ => None
+        }
+      }
 
-    val tailDoc = joinChildren(tailParts,
-      TokenKind.Semi -> (text(";") <> line))
+    stmtSplit match {
+      case Some((bodyExprs, contExprs, semiToken)) =>
+        val bodyDoc = bodyExprs.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+        val contDoc = contExprs.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+        val contSep = {
+          val extraBlank = contExprs.headOption.exists(next => hadBlankLineBetween(semiToken, next))
+          if (extraBlank) line <> Doc.layoutChoice(empty, hardline) else line
+        }
+        val bodyOnSameLine = bodyStartsOnSameLineAs(children(eqIndex), bodyExprs)
+        val bodyPart =
+          if (bodyOnSameLine) headDoc <+> text("=") <+> bodyDoc
+          else                headDoc <+> text("=") <> nest(4, hardline <> bodyDoc)
+        if (contExprs.isEmpty) bodyPart <> text(";")
+        else bodyPart <> text(";") <> contSep <> contDoc
 
-    val bodyOnSameLine = bodyStartsOnSameLineAs(children(eqIndex), bodyParts)
+      case None =>
+        // No continuation; the optional trailing Semi (if any) sits at the top level.
+        val semiIdx = rest.indexWhere {
+          case t: Token if t.kind == TokenKind.Semi => true
+          case _ => false
+        }
+        val (bodyParts, tailParts) =
+          if (semiIdx < 0) (rest, Array.empty[SyntaxTree.Child])
+          else              (rest.take(semiIdx), rest.drop(semiIdx))
 
-    val letDoc =
-      if (bodyOnSameLine) headDoc <+> text("=") <+> bodyDoc
-      else                headDoc <+> text("=") <> nest(4, hardline <> bodyDoc)
+        val bodyDoc = bodyParts.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+        val tailDoc = joinChildren(tailParts,
+          TokenKind.Semi -> (text(";") <> line))
 
-    letDoc <> tailDoc
+        val bodyOnSameLine = bodyStartsOnSameLineAs(children(eqIndex), bodyParts)
+
+        val letDoc =
+          if (bodyOnSameLine) headDoc <+> text("=") <+> bodyDoc
+          else                headDoc <+> text("=") <> nest(4, hardline <> bodyDoc)
+
+        letDoc <> tailDoc
+    }
   }
 
   /**
