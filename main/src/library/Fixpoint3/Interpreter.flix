@@ -284,7 +284,8 @@ pub mod Fixpoint3.Interpreter {
                     let _: Unit = spawn unchecked_cast({
                         let threadCtx = copyCtx(rc, ctx);
                         evalStmt(rc, threadCtx, parLevel, innerStmt)
-                    } as _ \ IO) @ rc2; // spawn may not take an `r` effect, so we cast it to `IO`
+                    } as _ \ IO) @ rc2;
+                    // spawn may not take an `r` effect, so we cast it to `IO`
                     ()
                 } as _ \ rc2)
             }
