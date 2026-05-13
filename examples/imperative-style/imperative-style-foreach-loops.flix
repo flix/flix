@@ -106,10 +106,7 @@ def main(): Unit \ IO = region rc {
     // some experience with Scala's for-loops.
     //
     let e = Ref.fresh(rc, Nil);
-    foreach (
-        a <- l;
-        b <- k
-    )
+    foreach (a <- l; b <- k)
         Ref.put((a, b) :: Ref.get(e), e);
 
     //

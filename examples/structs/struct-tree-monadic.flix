@@ -13,15 +13,11 @@ mod Tree {
             case Comparison.EqualTo => Some(t->value)
             case Comparison.LessThan =>
                 // Search in the left subtree.
-                forM (
-                    l <- t->left;
-                    result <- search(k, l)
-                ) yield result
+                forM (l <- t->left; result <- search(k, l))
+                    yield result
             case Comparison.GreaterThan =>
                 // Search in the right subtree.
-                forM (
-                    r <- t->right;
-                    result <- search(k, r)
-                ) yield result
+                forM (r <- t->right; result <- search(k, r))
+                    yield result
         }
 }
