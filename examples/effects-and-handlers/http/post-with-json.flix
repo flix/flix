@@ -7,8 +7,8 @@ use Net.HttpResponse
 def main(): Unit \ { Http, IO } =
     let body = "{\"name\": \"Asterix\", \"age\": 35}";
     let req = HttpRequest.post("https://flix.dev/api/users", body)
-                |> HttpRequest.withContentType("application/json")
-                |> HttpRequest.withAccept("application/json");
+        |> HttpRequest.withContentType("application/json")
+        |> HttpRequest.withAccept("application/json");
     match Http.send(req) {
         case Ok(resp) =>
             println("Status: ${HttpResponse.status(resp)}");
