@@ -47,19 +47,7 @@ mod IDE {
     /// Solves the given IDE instances.
     ///
     pub def runSolver(ide: IDE[p, n, d, f, l]): Vector[(n, d, l)]
-        with
-            LowerBound[f],
-            JoinLattice[f],
-            MeetLattice[f],
-            LowerBound[l],
-            UpperBound[l],
-            JoinLattice[l],
-            MeetLattice[l],
-            Order[n],
-            Order[d],
-            Order[p],
-            Order[f],
-            Order[l] =
+        with LowerBound[f], JoinLattice[f], MeetLattice[f], LowerBound[l], UpperBound[l], JoinLattice[l], MeetLattice[l], Order[n], Order[d], Order[p], Order[f], Order[l] =
         // Extract main.
         let main = ide#main;
 
