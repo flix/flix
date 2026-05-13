@@ -167,7 +167,7 @@ pub mod Fixpoint3.Phase.Hoisting {
                             let bools = MutList.toVector(independent) ++ isEmptyBools;
                             RamStmt.Insert(RelOp.If(bools, newOp))
                         };
-                        Some(newStmt)
+                    Some(newStmt)
             }
         case RamStmt.MergeInto(_, _) => Some(stmt)
         case RamStmt.Swap(_, _) => Some(stmt)
@@ -175,19 +175,19 @@ pub mod Fixpoint3.Phase.Hoisting {
         case RamStmt.Seq(xs) =>
             let children =
                 Vector.filterMap(hoistStmt(rc, termMap, equalitySets, impossible), xs);
-                match Vector.length(children) {
-                    case 0 => None
-                    case 1 => Vector.head(children)
-                    case _ => Some(RamStmt.Seq(children))
-                }
+            match Vector.length(children) {
+                case 0 => None
+                case 1 => Vector.head(children)
+                case _ => Some(RamStmt.Seq(children))
+            }
         case RamStmt.Par(xs) =>
             let children =
                 Vector.filterMap(hoistStmt(rc, termMap, equalitySets, impossible), xs);
-                match Vector.length(children) {
-                    case 0 => None
-                    case 1 => Vector.head(children)
-                    case _ => Some(RamStmt.Par(children))
-                }
+            match Vector.length(children) {
+                case 0 => None
+                case 1 => Vector.head(children)
+                case _ => Some(RamStmt.Par(children))
+            }
         case RamStmt.Until(test, body) =>
             match hoistStmt(rc, termMap, equalitySets, impossible, body) {
                 case None    => None
@@ -274,7 +274,7 @@ pub mod Fixpoint3.Phase.Hoisting {
                                     RelOp.Query(rowVar, relSym, combined, -1, t, hoistedBody)
                                 else
                                     RelOp.Search(rowVar, relSym, t, hoistedBody);
-                                Some(newOp)
+                            Some(newOp)
                     }
                 }
             case RelOp.Query(_, _, _, _, _, _) =>

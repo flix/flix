@@ -177,47 +177,47 @@ pub mod Fixpoint3.Phase.Compiler {
             } else {
                 MutList.head(inserts)
             };
-            match optPar {
-                case None => ()
-                case Some(par1) =>
-                    MutList.push(par1, stmts);
+        match optPar {
+            case None => ()
+            case Some(par1) =>
+                MutList.push(par1, stmts);
 
-                    // Construct the merges, swaps and purges for step 1.
-                    MutList.push(constructMerges(idb, predicates), stmts);
+                // Construct the merges, swaps and purges for step 1.
+                MutList.push(constructMerges(idb, predicates), stmts);
 
-                    let loopBody = MutList.empty(rc);
+                let loopBody = MutList.empty(rc);
 
-                    let loopInserts = MutList.empty(rc);
+                let loopInserts = MutList.empty(rc);
 
-                    let finalFunctionalCounter = Counter.get(functionalCounter);
-                    Counter.set(functionalCountBackUp, functionalCounter);
-                    foreach ((rule, ruleNum) <- ForEach.withZip(stratum, rulesWithId)) {
-                        compileRuleIncr(loopInserts, rule, ruleNum, idbIds, predicates, counter, functionalCounter, typeInfo)
+                let finalFunctionalCounter = Counter.get(functionalCounter);
+                Counter.set(functionalCountBackUp, functionalCounter);
+                foreach ((rule, ruleNum) <- ForEach.withZip(stratum, rulesWithId)) {
+                    compileRuleIncr(loopInserts, rule, ruleNum, idbIds, predicates, counter, functionalCounter, typeInfo)
+                };
+                Counter.set(finalFunctionalCounter, functionalCounter);
+                let loopParOpt =
+                    if (MutList.size(loopInserts) > 1) {
+                        Some(RamStmt.Par(MutList.toVector(loopInserts)))
+                    } else {
+                        MutList.head(loopInserts)
                     };
-                    Counter.set(finalFunctionalCounter, functionalCounter);
-                    let loopParOpt =
-                        if (MutList.size(loopInserts) > 1) {
-                            Some(RamStmt.Par(MutList.toVector(loopInserts)))
-                        } else {
-                            MutList.head(loopInserts)
-                        };
-                        match loopParOpt {
-                            case None => ()
-                            case Some(loopPar) =>
-                                MutList.push(loopPar, loopBody);
-                                MutList.push(constructMerges(idb, predicates), loopBody);
-                                let loopTest =
-                                    idb
-                                        |> Set.toVector
-                                        |> Vector.map(
-                                            relSym ->
-                                                BoolExp.IsEmpty(Predicate.getRelSymAsType(relSym, Delta, predicates))
-                                        );
-                                    let untilBody = RamStmt.Seq(MutList.toVector(loopBody));
-                                    let fixpoint = RamStmt.Until(loopTest, untilBody);
-                                    MutList.push(fixpoint, stmts)
-                        }
-            }
+                match loopParOpt {
+                    case None => ()
+                    case Some(loopPar) =>
+                        MutList.push(loopPar, loopBody);
+                        MutList.push(constructMerges(idb, predicates), loopBody);
+                        let loopTest =
+                            idb
+                                |> Set.toVector
+                                |> Vector.map(
+                                    relSym ->
+                                        BoolExp.IsEmpty(Predicate.getRelSymAsType(relSym, Delta, predicates))
+                                );
+                        let untilBody = RamStmt.Seq(MutList.toVector(loopBody));
+                        let fixpoint = RamStmt.Until(loopTest, untilBody);
+                        MutList.push(fixpoint, stmts)
+                }
+        }
     }
 
     ///

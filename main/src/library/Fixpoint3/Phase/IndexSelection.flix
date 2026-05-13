@@ -120,17 +120,17 @@ pub mod Fixpoint3.Phase.IndexSelection {
                         },
                         Map#{}
                     );
-                let indexes = Map.union(indexesFull, indexesMissing);
-                let (indexedStmt, indexPlacement) = region rc2 {
-                    let indexState = UniqueInts.empty(rc2);
-                    let indexedStmt = indexStmt(newStmt, indexes, indexState);
-                    foreach ((relSym, _) <- indexes) {
-                        discard UniqueInts.createIndex((relSym, 0), indexState)
-                    };
-                    let finalState = UniqueInts.toMap(indexState);
-                    (indexedStmt, finalState)
+            let indexes = Map.union(indexesFull, indexesMissing);
+            let (indexedStmt, indexPlacement) = region rc2 {
+                let indexState = UniqueInts.empty(rc2);
+                let indexedStmt = indexStmt(newStmt, indexes, indexState);
+                foreach ((relSym, _) <- indexes) {
+                    discard UniqueInts.createIndex((relSym, 0), indexState)
                 };
-                RamProgram.Program(indexedStmt, facts, meta, (indexes, indexPlacement), typeInfo)
+                let finalState = UniqueInts.toMap(indexState);
+                (indexedStmt, finalState)
+            };
+            RamProgram.Program(indexedStmt, facts, meta, (indexes, indexPlacement), typeInfo)
     }
 
     ///
@@ -286,11 +286,11 @@ pub mod Fixpoint3.Phase.IndexSelection {
                     newBody
                 else
                     RelOp.If(otherBoolExps, newBody);
-                let equalExps = MutList.toVector(equalExpList);
-                if (Vector.length(equalExps) == 0)
-                    RelOp.Search(rowVar, relSym, t, nestedBody)
-                else
-                    RelOp.Query(rowVar, relSym, equalExps, -1, t, nestedBody)
+            let equalExps = MutList.toVector(equalExpList);
+            if (Vector.length(equalExps) == 0)
+                RelOp.Search(rowVar, relSym, t, nestedBody)
+            else
+                RelOp.Query(rowVar, relSym, equalExps, -1, t, nestedBody)
         }
         case RelOp.Functional(rowVar, func, terms, body, arity, t) =>
             let extendedSeenTuples = Set.insert(rowVar, seenTuples);
