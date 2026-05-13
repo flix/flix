@@ -1656,10 +1656,18 @@ object PrettyPrinter {
       case Some((bodyExprs, contExprs, semiToken)) =>
         val bodyDoc = bodyExprs.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
         val contDoc = contExprs.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
-        val contSep = {
-          val extraBlank = contExprs.headOption.exists(next => hadBlankLineBetween(semiToken, next))
-          if (extraBlank) line <> Doc.layoutChoice(empty, hardline) else line
+        // If the continuation begins with a comment that was on the same source line
+        // as the `;`, keep it attached to the `;` (e.g. `...; // note`) instead of
+        // moving it to its own line.
+        val contStartsWithSameLineComment = contExprs.headOption.flatMap(leftMostToken).exists { t =>
+          isCommentKind(t.kind) && t.start.lineOneIndexed == semiToken.end.lineOneIndexed
         }
+        val contSep =
+          if (contStartsWithSameLineComment) space
+          else {
+            val extraBlank = contExprs.headOption.exists(next => hadBlankLineBetween(semiToken, next))
+            if (extraBlank) line <> Doc.layoutChoice(empty, hardline) else line
+          }
         val bodyOnSameLine = bodyStartsOnSameLineAs(children(eqIndex), bodyExprs)
         val bodyPart =
           if (bodyOnSameLine) headDoc <+> text("=") <+> bodyDoc
