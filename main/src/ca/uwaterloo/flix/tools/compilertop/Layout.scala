@@ -48,8 +48,8 @@ object Layout {
 
   /** Width contribution of the optional LOC column (separator + width). */
   private val LocColWidth: Int = 1 + 4
-  /** Width contribution of the optional mono / opt / cls per-phase count columns (3 × separator + width). */
-  private val CountsColWidth: Int = 3 * (1 + 4)
+  /** Width contribution of the optional mono / opt / inl / cls / size per-phase count columns (4 × 4-char + 1 × 5-char, with separators). */
+  private val CountsColWidth: Int = 4 * (1 + 4) + (1 + 5)
   /** Width contribution of the optional cns column (separator + 5-char numeric field). */
   private val CnsColWidth: Int = 1 + 5
   /** Width contribution of the optional tvars column (separator + 4-char numeric field). */
@@ -67,9 +67,9 @@ object Layout {
   /**
     * Picks a [[Layout]] for the given terminal width by trying tiers in
     * descending feature order. The caller gates the optional count-style
-    * columns by passing `showCounts` (mono / opt / cls) and `showCns`
-    * (cns / tv / ev) — Layout itself doesn't know which UI mode they
-    * correspond to. When a flag is false the column is hidden and the
+    * columns by passing `showCounts` (mono / opt / inl / cls / size) and
+    * `showCns` (cns / tv / ev) — Layout itself doesn't know which UI mode
+    * they correspond to. When a flag is false the column is hidden and the
     * reclaimed width expands the sym / location text columns instead.
     *
     * At most one of `showCounts` and `showCns` is true under the current
@@ -87,33 +87,45 @@ object Layout {
     // Combined extra contribution of the optional count columns.
     val extraColsW = countsW + cnsW
 
-    // Try tiers in descending feature order.
-    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + extraColsW + PhaseColWidth + tail
-    if (cols >= full) {
-      // Surplus → expand sym (~46%) and location (~54%) proportionally.
-      val extra = cols - full
+    /**
+      * Returns a [[Layout]] for `tierFixed` chars of non-text columns
+      * (LOC / counts / phase / tail) plus a sym + loc text section that
+      * expands to fill any surplus over [[DefaultSymWidth]] /
+      * [[DefaultLocWidth]]. The resulting `totalWidth` equals `cols`
+      * exactly, so the divider and rows fill the terminal regardless of
+      * which tier we landed in.
+      */
+    def fillTier(tierFixed: Int, showLOC: Boolean, showCountsOut: Boolean, showCnsOut: Boolean, showPhase: Boolean): Layout = {
+      val baseText = textWidth(DefaultSymWidth, DefaultLocWidth)
+      val extra = (cols - (baseText + tierFixed)).max(0)
       val extraSym = extra * 46 / 100
       val extraLoc = extra - extraSym
       val symW = DefaultSymWidth + extraSym
       val locW = DefaultLocWidth + extraLoc
-      return Layout(symW, locW, showLOC = true, showCounts = showCounts, showCns = showCns, showPhase = true,
-        totalWidth = textWidth(symW, locW) + LocColWidth + extraColsW + PhaseColWidth + tail)
+      Layout(symW, locW, showLOC = showLOC, showCounts = showCountsOut, showCns = showCnsOut, showPhase = showPhase,
+        totalWidth = textWidth(symW, locW) + tierFixed)
     }
+
+    // Try tiers in descending feature order. Each tier expands sym/loc
+    // into whatever width is left over after its fixed columns.
+    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + extraColsW + PhaseColWidth + tail
+    if (cols >= full)
+      return fillTier(LocColWidth + extraColsW + PhaseColWidth + tail, showLOC = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = true)
 
     // Tier: drop phase.
     val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + extraColsW + tail
     if (cols >= noPhase)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = showCounts, showCns = showCns, showPhase = false, noPhase)
+      return fillTier(LocColWidth + extraColsW + tail, showLOC = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = false)
 
-    // Tier: drop phase + the optional counts (mono/opt/cls or cns/tv/ev).
+    // Tier: drop phase + the optional counts (mono/opt/inl/cls/size or cns/tv/ev).
     val noPhaseNoExtras = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + tail
     if (cols >= noPhaseNoExtras)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = true, showCounts = false, showCns = false, showPhase = false, noPhaseNoExtras)
+      return fillTier(LocColWidth + tail, showLOC = true, showCountsOut = false, showCnsOut = false, showPhase = false)
 
     // Tier: drop phase + extras + LOC.
     val noOptional = textWidth(DefaultSymWidth, DefaultLocWidth) + tail
     if (cols >= noOptional)
-      return Layout(DefaultSymWidth, DefaultLocWidth, showLOC = false, showCounts = false, showCns = false, showPhase = false, noOptional)
+      return fillTier(tail, showLOC = false, showCountsOut = false, showCnsOut = false, showPhase = false)
 
     // Even minimum tier doesn't fit; shrink sym/locWidth to floors.
     val available = (cols - tail).max(MinSymWidth + 1 + MinLocWidth)

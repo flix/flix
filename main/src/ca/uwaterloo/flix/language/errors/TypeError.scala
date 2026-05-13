@@ -181,11 +181,13 @@ object TypeError {
     *
     * @param defEffSyms the symbol(s) the effect(s) in the function definition
     * @param usedEffSym the symbol of the effect causing the error
-    * @param loc    the location of the function explicitly declared as defEffSym.
+    * @param loc1    the location of the function explicitly declared as defEffSym.
     * @param loc2   the location where the other effect is used.
     */
-  case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
+  case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6216
+
+    def loc: SourceLocation = loc2
 
     def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as '${defEffSyms}'"
 
@@ -199,7 +201,7 @@ object TypeError {
       val defString = s"{${magenta(formatEffs(defEffSyms))}}"
       s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
          |
-         |${highlight(loc, s"function declared as '$defString'", fmt)}
+         |${highlight(loc1, s"function declared as '$defString'", fmt)}
          |
          |${highlight(loc2, s"'${magenta(usedEffSym.name)}' used here", fmt)}
          |
@@ -215,11 +217,13 @@ object TypeError {
     * An error raised when an effect is used in a function that is explicitly declared Pure.
     *
     * @param effSym the symbol of the effect causing the error
-    * @param loc    the location of the function explicitly declared as {}.
+    * @param loc1    the location of the function explicitly declared as {}.
     * @param loc2   the location where the effect is used.
     */
-  case class ExplicitlyPureFunctionUsesEffect(effSym: EffSymOrRigidVar, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
+  case class ExplicitlyPureFunctionUsesEffect(effSym: EffSymOrRigidVar, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6215
+
+    def loc: SourceLocation = loc2
 
     def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
 
@@ -227,7 +231,7 @@ object TypeError {
       import fmt.*
       s""">> Unexpected effect '${magenta(effSym.name)}' in {} function.
          |
-         |${highlight(loc, "function declared {}", fmt)}
+         |${highlight(loc1, "function declared {}", fmt)}
          |
          |${highlight(loc2, s"'${magenta(effSym.name)}' used here", fmt)}
          |
@@ -242,11 +246,13 @@ object TypeError {
   /**
     * An error raised when IO is used in a function that is explicitly declared Pure.
     *
-    * @param loc  the location of the function explicitly declared as {}.
+    * @param loc1  the location of the function explicitly declared as {}.
     * @param loc2 the location where IO is used.
     */
-  case class ExplicitlyPureFunctionUsesIO(loc: SourceLocation, loc2: SourceLocation) extends TypeError {
+  case class ExplicitlyPureFunctionUsesIO(loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6214
+
+    def loc: SourceLocation = loc2
 
     def summary: String = s"Unexpected effect 'IO' in {} function"
 
@@ -254,7 +260,7 @@ object TypeError {
       import fmt.*
       s""">> Unexpected effect '${magenta("IO")}' in {} function.
          |
-         |${highlight(loc, "function declared {}", fmt)}
+         |${highlight(loc1, "function declared {}", fmt)}
          |
          |${highlight(loc2, s"'${magenta("IO")}' used here", fmt)}
          |

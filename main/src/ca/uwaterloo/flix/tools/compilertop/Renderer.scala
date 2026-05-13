@@ -97,6 +97,8 @@ object Renderer {
     */
   private final case class RowCells(locLines: Int,
                                     byPhaseCount: Map[String, Long],
+                                    inlined: Long,
+                                    classBytes: Long,
                                     cns: Long,
                                     tvars: Long,
                                     evars: Long,
@@ -129,6 +131,8 @@ object Renderer {
       RowCells(
         locLines      = locLines,
         byPhaseCount  = s.byPhaseCount,
+        inlined       = s.inlined,
+        classBytes    = s.classBytes,
         cns           = s.cns,
         tvars         = s.tvars,
         evars         = s.evars,
@@ -162,6 +166,8 @@ object Renderer {
       RowCells(
         locLines      = m.totalLocLines,
         byPhaseCount  = m.byPhaseCount,
+        inlined       = m.totalInlined,
+        classBytes    = m.totalClassBytes,
         cns           = m.totalCns,
         tvars         = m.totalTvars,
         evars         = m.totalEvars,
@@ -370,7 +376,9 @@ final class Renderer {
     if (layout.showCounts) {
       sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono, activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,  activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("inl",  4), Sort.Inl,  activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,  activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("size", 5), Sort.Size, activeSort))
     }
     if (layout.showCns) {
       sb.append(' '); sb.append(sortableColumn(lpad("cns", 5), Sort.Cns,   activeSort))
@@ -443,7 +451,9 @@ final class Renderer {
       val cls  = sumPhaseCounts(cells.byPhaseCount, ClsCountPhases)
       sb.append(' '); sb.append(lpad(mono.toString, 4))
       sb.append(' '); sb.append(lpad(opt.toString, 4))
+      sb.append(' '); sb.append(lpad(cells.inlined.toString, 4))
       sb.append(' '); sb.append(lpad(cls.toString, 4))
+      sb.append(' '); sb.append(lpad(formatBytes(cells.classBytes), 5))
     }
     if (layout.showCns) {
       sb.append(' '); sb.append(lpad(cells.cns.toString, 5))
