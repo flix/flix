@@ -7,17 +7,16 @@ mod Belnap {
     /// The elements of the boolean lattice.
     ///
     pub enum Belnap with Eq {
-                  case Top,
-
-        case True,         case False,
-
-                  case Bot
+        case Top
+        case True
+        case False
+        case Bot
     }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
-//    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
+    //    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
     pub def leq(e1: Belnap, e2: Belnap): Bool =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
@@ -31,7 +30,7 @@ mod Belnap {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-//    #upperBound #leastUpperBound #commutative #associative
+    //    #upperBound #leastUpperBound #commutative #associative
     pub def lub(e1: Belnap, e2: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
@@ -45,7 +44,7 @@ mod Belnap {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-//    #lowerBound #greatestLowerBound #commutative #associative
+    //    #lowerBound #greatestLowerBound #commutative #associative
     pub def glb(e1: Belnap, e2: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
@@ -59,14 +58,14 @@ mod Belnap {
     ///
     /// The lattice height function.
     ///
-//    #nonNegative
+    //    #nonNegative
     pub def height(e: Belnap): BigInt =
         use Belnap.{Top, True, False, Bot};
         match e {
-            case Top    => 0ii
-            case True   => 1ii
-            case False  => 1ii
-            case Bot    => 2ii
+            case Top   => 0ii
+            case True  => 1ii
+            case False => 1ii
+            case Bot   => 2ii
         }
 
     ///
@@ -77,22 +76,22 @@ mod Belnap {
     ///
     /// Over-approximates logical negation.
     ///
-//    #safe1(x -> neg x)
-//    #strict1 #monotone1
+    //    #safe1(x -> neg x)
+    //    #strict1 #monotone1
     pub def neg(e: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match e {
-            case Bot    => Bot
-            case True   => False
-            case False  => True
-            case Top    => Top
+            case Bot   => Bot
+            case True  => False
+            case False => True
+            case Top   => Top
         }
 
     ///
     /// Over-approximates the logical `and` operator.
     ///
-//    #safe2((x, y) -> x and y)
-//    #strict2 #monotone2 #commutative #associative
+    //    #safe2((x, y) -> x and y)
+    //    #strict2 #monotone2 #commutative #associative
     pub def band(e1: Belnap, e2: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
@@ -108,8 +107,8 @@ mod Belnap {
     ///
     /// Over-approximates the logical `or` operator.
     ///
-//    #safe2((x, y) -> x or y)
-//    #strict2 #monotone2 #commutative #associative
+    //    #safe2((x, y) -> x or y)
+    //    #strict2 #monotone2 #commutative #associative
     pub def bor(e1: Belnap, e2: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
@@ -125,8 +124,8 @@ mod Belnap {
     ///
     /// Over-approximates the logical `xor` operator.
     ///
-//    #safe2((x, y) -> x ⊕ y)
-//    #strict2 #monotone2 #commutative #associative
+    //    #safe2((x, y) -> x ⊕ y)
+    //    #strict2 #monotone2 #commutative #associative
     pub def bxor(e1: Belnap, e2: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
@@ -142,25 +141,25 @@ mod Belnap {
     ///
     /// Over-approximates the logical `implies` operator.
     ///
-//    #safe2((x, y) -> x → y)
-//    #strict2 #monotone2
+    //    #safe2((x, y) -> x → y)
+    //    #strict2 #monotone2
     pub def implies(e1: Belnap, e2: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
-            case (Bot, _)         => Bot
-            case (_, Bot)         => Bot
-            case (True, True)     => True
-            case (True, False)    => False
-            case (False, True)    => True
-            case (False, False)   => True
-            case _                => Top
+            case (Bot, _)       => Bot
+            case (_, Bot)       => Bot
+            case (True, True)   => True
+            case (True, False)  => False
+            case (False, True)  => True
+            case (False, False) => True
+            case _              => Top
         }
 
     ///
     /// Over-approximates the logical `bicondition` operator.
     ///
-//    #safe2((x, y) -> x ↔ y)
-//    #strict2 #monotone2 #commutative #associative
+    //    #safe2((x, y) -> x ↔ y)
+    //    #strict2 #monotone2 #commutative #associative
     pub def bicondition(e1: Belnap, e2: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match (e1, e2) {
@@ -177,28 +176,28 @@ mod Belnap {
     // ## Specialized Laws
     //
 
-//    law upperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice.leastUpperBound1(leq, lub)
+    //    law upperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice.leastUpperBound1(leq, lub)
 
-//    law leastUpperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice.leastUpperBound2(leq, lub)
+    //    law leastUpperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice.leastUpperBound2(leq, lub)
 
-//    law lowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.greatestLowerBound1(leq, glb)
+    //    law lowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.greatestLowerBound1(leq, glb)
 
-//    law greatestLowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.greatestLowerBound2(leq, glb)
+    //    law greatestLowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.greatestLowerBound2(leq, glb)
 
-//    law leastElement(leq: (Belnap, Belnap) -> Bool, bot: Belnap): Bool = Bounded.leastElement(bot, leq)
+    //    law leastElement(leq: (Belnap, Belnap) -> Bool, bot: Belnap): Bool = Bounded.leastElement(bot, leq)
 
-//    law greatestElement(leq: (Belnap, Belnap) -> Bool, top: Belnap): Bool = Bounded.greatestElement(top, leq)
+    //    law greatestElement(leq: (Belnap, Belnap) -> Bool, top: Belnap): Bool = Bounded.greatestElement(top, leq)
 
-//    law strict1(f: Belnap -> Belnap): Bool = Bounded.strict1(f, Bot, Bot)
+    //    law strict1(f: Belnap -> Belnap): Bool = Bounded.strict1(f, Bot, Bot)
 
-//    law strict2(f: (Belnap, Belnap) -> Belnap): Bool = Bounded.strict2(f, Bot, Bot, Bot)
+    //    law strict2(f: (Belnap, Belnap) -> Belnap): Bool = Bounded.strict2(f, Bot, Bot, Bot)
 
-//    law monotone1(f: Belnap -> Belnap): Bool =  PartialOrder.monotone1(f, leq, leq)
+    //    law monotone1(f: Belnap -> Belnap): Bool =  PartialOrder.monotone1(f, leq, leq)
 
-//    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  PartialOrder.monotone2(f, leq, leq, leq)
+    //    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  PartialOrder.monotone2(f, leq, leq, leq)
 
-//    law safe1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
+    //    law safe1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-//    law safe2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
+    //    law safe2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }
