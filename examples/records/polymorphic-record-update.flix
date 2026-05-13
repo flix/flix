@@ -1,6 +1,6 @@
 /// Returns the record `r` with a new value of its `x` label.
 def setX(r: {x = Int32, y = Int32}, v: Int32): {x = Int32, y = Int32} =
-    { x = v | r }
+    {x = v | r}
 
 /// Returns the value 1 + 3 = 4.
 def main2(): Int32 =
@@ -11,7 +11,7 @@ def main2(): Int32 =
 /// Returns the record `r` with a new value of its `y` label.
 /// Preserves (retains) all other labels polymorphically.
 def setY(r: {y = Int32 | a}, v: Int32): {y = Int32 | a} =
-    { y = v | r }
+    {y = v | r}
 
 /// Returns the value 0 + 1 + 3 = 4.
 def main(): Unit \ IO =

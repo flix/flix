@@ -117,7 +117,7 @@ pub mod Fixpoint3.Boxing {
                                         unboxWith(boxedVal, unifiedPos, boxingInfo)
                                 );
                             BPlusTree.put(savedVec, lat, newTree)
-                        }: _\r) as _ \ IO)
+                        }: _ \ r) as _ \ IO)
                     }
                 )
     // This is to signal that we indeed modify the region `r`.

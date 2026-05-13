@@ -25,10 +25,10 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.MapOps
 
 
-object JvmBackend {
+object CodeGen {
 
   /** Emits JVM bytecode for `root`. */
-  def run(root: Root)(implicit flix: Flix): BytecodeAst.Root = flix.phase("JvmBackend") {
+  def run(root: Root)(implicit flix: Flix): BytecodeAst.Root = flix.phase("CodeGen") {
     implicit val r: Root = root
 
     // Types/classes required for Flix runtime.

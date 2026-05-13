@@ -28,7 +28,7 @@ mod Colors {
 
         // lets look at the inferred type of isWarm
         let _isWarmLocal = c -> choose c {
-            case Color.Red => true
+            case Color.Red  => true
             case Color.Blue => false
         };
         // by hovering on `_isWarmLocal` you should see the type (possibly alpha-renamed):
@@ -47,7 +47,6 @@ mod Colors {
 
         ()
     }
-
 
     pub def isWarm(c: Color[<Color.Red, Color.Blue>]): Bool =
         choose c {
