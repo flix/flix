@@ -6,8 +6,8 @@ def l(): List[Int32] =
 
 /// We can use pattern matching to take a list apart:
 def length(l: List[a]): Int32 = match l {
-  case Nil     => 0
-  case _ :: xs => 1 + length(xs)
+    case Nil     => 0
+    case _ :: xs => 1 + length(xs)
 }
 
 /// The Flix library has extensive support for lists:
