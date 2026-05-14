@@ -481,15 +481,6 @@ object ResolutionError {
   }
 
   /**
-    * An error indicating the number of effect operation parameters does not match the expected number.
-    *
-    * @param op       the effect operation symbol.
-    * @param expected the expected number of parameters.
-    * @param actual   the actual number of parameters.
-    * @param loc      the location where the error occurred.
-    */
-
-  /**
     * An error raised when a Java class is instantiated with struct-style fields.
     *
     * @param name the qualified name being instantiated.
@@ -514,15 +505,6 @@ object ResolutionError {
          |""".stripMargin
     }
   }
-
-  /**
-    * An error indicating the number of effect operation parameters does not match the expected number.
-    *
-    * @param op       the effect operation symbol.
-    * @param expected the expected number of parameters.
-    * @param actual   the actual number of parameters.
-    * @param loc      the location where the error occurred.
-    */
 
   /**
     * An error raised when a Java class is instantiated with a struct-style region.
@@ -602,6 +584,14 @@ object ResolutionError {
     }
   }
 
+  /**
+    * An error indicating the number of effect operation parameters does not match the expected number.
+    *
+    * @param op       the effect operation symbol.
+    * @param expected the expected number of parameters.
+    * @param actual   the actual number of parameters.
+    * @param loc      the location where the error occurred.
+    */
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0912
 
