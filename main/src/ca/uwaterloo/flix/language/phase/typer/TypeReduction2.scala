@@ -37,15 +37,8 @@ object TypeReduction2 {
 
     case t: Type.Cst => (t, Nil)
 
-    case Type.Apply(tpe1, tpe2, loc) =>
-      val (t1, cs1) = reduce(tpe1)
-      val (t2, cs2) = reduce(tpe2)
-      // Performance: Reuse this, if possible.
-      val tpe = if ((t1 eq tpe1) && (t2 eq tpe2))
-        tpe0
-      else
-        Type.Apply(t1, t2, loc)
-      (tpe, cs1 ::: cs2)
+    case _: Type.Apply =>
+      reduceApplyIterative(tpe0)
 
     case Type.Alias(_, _, tpe, _) => (tpe, Nil)
 
@@ -172,6 +165,43 @@ object TypeReduction2 {
             case _ => (unresolved, cs)
           }
       }
+  }
+
+  /**
+    * Iterative bottom-up reduction of a Type.Apply tree.
+    *
+    * Equivalent to the recursive Apply case in [[reduce]], but uses an explicit work stack
+    * to avoid JVM stack overflow on deeply nested types (e.g. 5000-deep union from LetSeq).
+    *
+    * Each work item is either Left(t) — reduce t — or Right(apply) — rebuild after children.
+    */
+  private def reduceApplyIterative(tpe0: Type)(implicit scope: RegionScope, renv: RigidityEnv, progress: Progress, eqenv: EqualityEnv, flix: Flix): (Type, List[TypeConstraint]) = {
+    var work: List[Either[Type, Type.Apply]] = List(Left(tpe0))
+    var results: List[(Type, List[TypeConstraint])] = Nil
+
+    while (work.nonEmpty) {
+      work.head match {
+        case Left(t) =>
+          work = work.tail
+          t match {
+            case apply: Type.Apply =>
+              // Push: reduce tpe1, reduce tpe2, then rebuild
+              work = Left(apply.tpe1) :: Left(apply.tpe2) :: Right(apply) :: work
+            case nonApply =>
+              results = reduce(nonApply) :: results
+          }
+        case Right(apply) =>
+          work = work.tail
+          // t2 result is on top (processed second), t1 result is below it
+          val (t2, cs2) = results.head
+          val (t1, cs1) = results.tail.head
+          results = results.drop(2)
+          val rebuilt = if ((t1 eq apply.tpe1) && (t2 eq apply.tpe2)) apply else Type.Apply(t1, t2, apply.loc)
+          results = (rebuilt, cs1 ::: cs2) :: results
+      }
+    }
+
+    results.head
   }
 
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */

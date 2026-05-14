@@ -1440,6 +1440,19 @@ object GenExpression {
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
       compileExpr(exp2)
 
+    case Expr.LetSeq(bindings, body, _) =>
+      import BytecodeInstructions.*
+      bindings.foreach { case (_, offset, exp) =>
+        val bType = BackendType.toBackendType(exp.tpe)
+        compileExpr(exp)
+        exp match {
+          case _: Expr.NewObject => castIfNotPrim(bType)
+          case _ => ()
+        }
+        xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
+      }
+      compileExpr(body)
+
     case Expr.Stm(exps, exp, _) =>
       import BytecodeInstructions.*
       exps.foreach { e =>

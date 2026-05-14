@@ -917,6 +917,13 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.Let(sym, e1, e2, loc)
 
+    case DesugaredAst.Expr.LetSeq(bindings, body, loc) =>
+      val namedBindings = bindings.map { case (ident, exp) =>
+        (Symbol.freshVarSym(ident, BoundBy.Let), visitExp(exp))
+      }
+      val namedBody = visitExp(body)
+      NamedAst.Expr.LetSeq(namedBindings, namedBody, loc)
+
     case DesugaredAst.Expr.LocalDef(ann, ident, fparams, exp1, exp2, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.LocalDef)
       val fps = fparams.map(visitFormalParam(_))

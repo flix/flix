@@ -203,6 +203,7 @@ object Summary {
     case Expr.Unary(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Let(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.LetSeq(bindings, body, _, _, _) => (bindings.map(_._2) :+ body).map(countCheckedEcasts).sum
     case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Region(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum

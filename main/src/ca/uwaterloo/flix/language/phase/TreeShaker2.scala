@@ -88,6 +88,9 @@ object TreeShaker2 {
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expr.LetSeq(bindings, body, _, _, _) =>
+      bindings.foldLeft(visitExp(body)) { case (acc, (_, exp)) => visitExp(exp) ++ acc }
+
     case Expr.Stm(exps, exp, _, _, _) =>
       exps.foldRight(visitExp(exp))((e, acc) => visitExp(e) ++ acc)
 

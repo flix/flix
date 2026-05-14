@@ -476,6 +476,17 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
+      case Expr.LetSeq(bindings, body, loc) =>
+        var resEff: Type = Type.Pure
+        bindings.foreach { case (sym, exp) =>
+          val (tpe, eff) = visitExp(exp)
+          c.unifyType(sym.tvar, tpe, exp.loc)
+          resEff = Type.mkUnion(resEff, eff, loc)
+        }
+        val (bodyTpe, bodyEff) = visitExp(body)
+        resEff = Type.mkUnion(resEff, bodyEff, loc)
+        (bodyTpe, resEff)
+
       case Expr.LocalDef(_, sym, fparams, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))

@@ -631,6 +631,17 @@ object Specialization {
       val e2 = specializeExp(exp2, env1, subst)
       Expr.Let(Binder(freshSym, subst(bnd.tpe)), e1, e2, subst(tpe), subst(eff), loc)
 
+    case Expr.LetSeq(bindings, body, tpe, eff, loc) =>
+      var env = env0
+      val specializedBindings = bindings.map { case (bnd, exp) =>
+        val freshSym = Symbol.freshVarSym(bnd.sym)
+        val e = specializeExp(exp, env, subst)
+        env = env + (bnd.sym -> freshSym)
+        (Binder(freshSym, subst(bnd.tpe)), e)
+      }
+      val specializedBody = specializeExp(body, env, subst)
+      Expr.LetSeq(specializedBindings, specializedBody, subst(tpe), subst(eff), loc)
+
     case Expr.LocalDef(ann, bnd, fparams, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(bnd.sym)
       val env1 = env0 + (bnd.sym -> freshSym)

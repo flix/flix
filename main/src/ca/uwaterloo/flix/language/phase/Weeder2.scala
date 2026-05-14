@@ -909,6 +909,7 @@ object Weeder2 {
         case TreeKind.Expr.ForMonadic => visitForMonadicExpr(tree)
         case TreeKind.Expr.GetField => visitGetFieldExpr(tree)
         case TreeKind.Expr.LetMatch => visitLetMatchExpr(tree)
+        case TreeKind.Expr.LetSeq => visitLetSeqExpr(tree)
         case TreeKind.Expr.Tuple => visitTupleExpr(tree)
         case TreeKind.Expr.RecordSelect => visitRecordSelectExpr(tree)
         case TreeKind.Expr.RecordOperation => visitRecordOperationOrLiteralExpr(tree)
@@ -1442,7 +1443,7 @@ object Weeder2 {
           Annotations(as.filter(a => a.isInstanceOf[Annotation.TailRecursive] || a.isInstanceOf[Annotation.Terminates]))
       }
 
-      // Extract (defBody, restExp) from the Stm wrapping the local def.
+      // Extract (defBody, restExp) from the expression wrapping the local def.
       val exprs = mapN(pickExpr(tree)) {
         case Expr.Stm(defBody :: rest, exp, loc) =>
           val continuation = if (rest.isEmpty) exp else Expr.Stm(rest, exp, loc)
@@ -1656,6 +1657,21 @@ object Weeder2 {
               Validation.Success((e, Expr.Error(error)))
           }
           mapN(exprs)(exprs => Expr.LetMatch(Patterns.restrictToNonConstant(pattern), tpe, exprs._1, exprs._2, tree.loc))
+      }
+    }
+
+    private def visitLetSeqExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.LetSeq)
+      val bindingTrees = pickAll(TreeKind.Expr.LetBinding, tree)
+      mapN(
+        traverse(bindingTrees) { b =>
+          mapN(Patterns.pickPattern(b), Types.tryPickType(b), pickExpr(b)) { (pat, tpe, e) =>
+            (Patterns.restrictToNonConstant(pat), tpe, e)
+          }
+        },
+        pickExpr(tree)
+      ) {
+        case (bindings, body) => Expr.LetSeq(bindings, body, tree.loc)
       }
     }
 

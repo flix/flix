@@ -374,16 +374,25 @@ object EffUnification3 {
       *     false for `ef`)
       *   - `getAtoms(Indexable.Aef[Error]) = Set.empty`
       */
-    def getAtoms(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): SortedSet[Atom] = t match {
-      case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
-      case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
-      case Type.Cst(TypeConstructor.Effect(sym, _), _) => SortedSet(Atom.Eff(sym))
-      case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(Atom.Region(sym))
-      case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
-      case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
-      case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
-      case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getAssocAtoms(assoc))
-      case _ => SortedSet.empty
+    def getAtoms(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): SortedSet[Atom] = {
+      // Iterative traversal to avoid stack overflow on deeply nested types.
+      import scala.collection.mutable
+      val result = mutable.SortedSet.empty[Atom]
+      val stack = mutable.Stack[Type](t)
+      while (stack.nonEmpty) {
+        stack.pop() match {
+          case Type.Var(sym, _) if renv.isRigid(sym) => result += Atom.VarRigid(sym)
+          case Type.Var(sym, _) => result += Atom.VarFlex(sym)
+          case Type.Cst(TypeConstructor.Effect(sym, _), _) => result += Atom.Eff(sym)
+          case Type.Cst(TypeConstructor.Region(sym), _) => result += Atom.Region(sym)
+          case Type.Cst(TypeConstructor.Error(id, _), _) => result += Atom.Error(id)
+          case Type.Apply(tpe1, tpe2, _) => stack.push(tpe1); stack.push(tpe2)
+          case Type.Alias(_, _, tpe, _) => stack.push(tpe)
+          case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).foreach(result += _)
+          case _ => // no atoms
+        }
+      }
+      result.to(SortedSet)
     }
 
     /**

@@ -94,6 +94,8 @@ object SimplifiedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
+    case class LetSeq(bindings: List[(Symbol.VarSym, Expr)], body: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+
     case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Region(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr

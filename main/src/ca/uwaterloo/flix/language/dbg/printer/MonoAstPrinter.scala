@@ -33,6 +33,8 @@ object MonoAstPrinter {
     case Expr.ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.ApplyLocalDef(sym, exps.map(print))
     case Expr.ApplyOp(sym, exps, _, _, _) => DocAst.Expr.ApplyOp(sym, exps.map(print))
     case Expr.Let(sym, exp1, exp2, _, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.LetSeq(bindings, body, _, _, _) =>
+      bindings.foldRight(print(body)) { case ((sym, exp), acc) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp.tpe)), print(exp), acc) }
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Region(sym, _, exp, _, _, _) => DocAst.Expr.Region(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))

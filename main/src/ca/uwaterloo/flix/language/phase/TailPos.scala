@@ -61,6 +61,10 @@ object TailPos {
       val e2 = visitExp(exp2)
       Expr.Let(sym, exp1, e2, loc)
 
+    case Expr.LetSeq(bindings, body, loc) =>
+      // Only `body` is in tail position.
+      Expr.LetSeq(bindings, visitExp(body), loc)
+
     case Expr.Stm(exps, exp, loc) =>
       // `exp` is in tail position.
       val e = visitExp(exp)

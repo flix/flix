@@ -501,6 +501,11 @@ object Kinder {
         val exp2 = visitExp(exp20, kenv0, root)
         KindedAst.Expr.Let(sym, exp1, exp2, loc)
 
+      case ResolvedAst.Expr.LetSeq(bindings, body, loc) =>
+        val kindedBindings = bindings.map { case (sym, exp) => (sym, visitExp(exp, kenv0, root)) }
+        val kindedBody = visitExp(body, kenv0, root)
+        KindedAst.Expr.LetSeq(kindedBindings, kindedBody, loc)
+
       case ResolvedAst.Expr.LocalDef(ann, sym, fparams0, exp10, exp20, loc) =>
         // we must infer the formal parameters because the may contain wildcard types
         // which would not appear in the function's kenv
