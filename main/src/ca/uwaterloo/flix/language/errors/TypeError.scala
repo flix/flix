@@ -181,7 +181,7 @@ object TypeError {
     * @param loc    the location of the function explicitly declared as defEffSym.
     * @param loc2   the location where the other effect is used.
     */
-  case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
+  case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, formattedString: String, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6216
 
     def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as '${defEffSyms}'"
@@ -194,9 +194,9 @@ object TypeError {
         case head :: tail => s"${magenta(head.name)}, " + formatEffs(tail)
       }
       val defString = s"{${magenta(formatEffs(defEffSyms))}}"
-      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
+      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function expected to return '${magenta(formattedString)}'.
          |
-         |${highlight(loc, s"function declared as '$defString'", fmt)}
+         |${highlight(loc, s"function expected to return '$defString'", fmt)}
          |
          |${highlight(loc2, s"'${magenta(usedEffSym.name)}' used here", fmt)}
          |
@@ -314,6 +314,25 @@ object TypeError {
          |
          |Available fields:
          |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    */
+  case class HandledEffectAppearsInSignature(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6217
+
+    def summary: String = s"handled effect '${handledEff.name}', reappears in signature"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""handled effect among expected effects in signature:
+         |${highlight(loc, s"handled effect: '${magenta(handledEff.name)}'", fmt)}
+         |${highlight(sigLoc, "also appears in the signature", fmt)}
+         |
+         |${underline("Solution:")} To fix this remove '${(magenta(handledEff.name))}' from the signature
+         |or subtract it from the other effect(s)
          |""".stripMargin
     }
   }

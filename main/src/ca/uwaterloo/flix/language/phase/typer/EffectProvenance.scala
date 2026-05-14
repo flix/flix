@@ -58,8 +58,9 @@ object EffectProvenance {
     if (isDebug(constrs0)) return None
     val newConstrs = constrs0.flatMap(simplifyConstraint) //.flatMap(visitHandlers(_, constrs0))
     val (sources0, rest) = newConstrs.partition {
-      case TypeConstraint.Equality(_, _, prov) => prov match {
+      case TypeConstraint.Equality(_, tpe2, prov) => prov match {
         case Provenance.Source(_, eff2, _) => !isFlexible(eff2) && !isPure(eff2)
+        case Provenance.ExpectArgument(_, _, _, _, _) => !isFlexible(tpe2) && !isPure(tpe2)
         case Provenance.ExpectType(_, _, _) => true
         case _ => false
       }
@@ -119,6 +120,14 @@ object EffectProvenance {
     deconstructType(t, cons, concat, Nil)
   }
 
+  private def consUsedTypeArgs(t: Type): List[Type] = t match {
+    case Type.Apply(tpe1, tpe2, _) => t.typeConstructor match {
+      case Some(TypeConstructor.Difference) => consUsedTypeArgs(t.typeArguments.head)
+      case Some(_) => consUsedTypeArgs(tpe1) ::: consUsedTypeArgs(tpe2)
+      case None => Nil
+    }
+    case x => consTypeArgs(x)
+  }
   /**
     * main algorithm that finds errors
     * TODO rename function
@@ -156,7 +165,7 @@ object EffectProvenance {
   }
 
   private def extractTypes(constr: TypeConstraint): Option[(Type, Type)] = constr match {
-    case TypeConstraint.Equality(consTpe1, consTpe2, prov) => Some((consTpe1, consTpe2))
+    case TypeConstraint.Equality(consTpe1, consTpe2, _) => Some((consTpe1, consTpe2))
     case _ => None
   }
 
@@ -175,22 +184,23 @@ object EffectProvenance {
   }
 
   private def findDiffInTypes(tpe1: Type, tpe2: Type): List[Type] = {
-    val x = consTypeArgs(tpe1)
-    val y = consTypeArgs(tpe2)
+    val x = consUsedTypeArgs(tpe1)
+    val y = consUsedTypeArgs(tpe2)
     x.diff(y)
   }
 
   private def searchForSource(start: Type, constrs0: List[TypeConstraint]): Option[TypeConstraint] = {
-    findType(start, constrs0).foldLeft(None: Option[TypeConstraint]) ((acc, t) =>
+    findType(start, constrs0).foldLeft(None: Option[TypeConstraint])((acc, t) =>
       if (acc.isDefined) acc else
-      t match {
-        case TypeConstraint.Equality(_, _, Provenance.Source(_, _, _)) => Some(t)
-        case TypeConstraint.Equality(tpe1, tpe2, _) =>
-          val unvisited = constrs0.filter(_!=t)
-          val a = (tpe: Type) => if (tpe != start) searchForSource(tpe, unvisited) else None
-          a(tpe1).orElse(a(tpe2))
-        case _ => None
-    })
+        t match {
+          case TypeConstraint.Equality(_, _, Provenance.Source(_, _, _)) => Some(t)
+          case TypeConstraint.Equality(_, _, Provenance.ExpectType(_, _, _)) => Some(t)
+          case TypeConstraint.Equality(tpe1, tpe2, _) =>
+            val unvisited = constrs0.filter(_ != t)
+            val a = (tpe: Type) => if (tpe != start) searchForSource(tpe, unvisited) else None
+            a(tpe1).orElse(a(tpe2))
+          case _ => None
+        })
   }
 
   private def isPure(tpe: Type): Boolean = tpe match {
@@ -213,8 +223,28 @@ object EffectProvenance {
     Nil
   }
 
+  /**
+    * tries to make errors for mismatches in handled effects and the signature
+    * @param sink type constraint of the signature/sink
+    * @param contexts handler contexts
+    */
+  private def mkHandlerMismatch(sink: TypeConstraint, contexts: List[HandlerContext]): List[EffConflicted] = sink match {
+    case TypeConstraint.Equality(tpe1, _, _) =>
+      val handledEffectIsReturned = contexts.foldLeft(None: Option[(HandlerContext, SourceLocation)])((_, c) => {
+        consUsedTypeArgs(tpe1).find(_ == c.handler) match {
+          case Some(t) => Some((c, t.loc))
+          case None => None
+        }
+      })
+      handledEffectIsReturned match {
+        case Some((c, sLoc)) => List(EffConflicted(TypeError.HandledEffectAppearsInSignature(typeToSym(c.handler).head, c.handler.loc, sLoc)))
+        case None => Nil
+      }
+    case _ => Nil
+  }
+
   private def mkUnhandledError(source: TypeConstraint, sink: TypeConstraint, contexts: List[HandlerContext]): List[EffConflicted] = source match {
-    case TypeConstraint.Equality(_, tpe2, prov) => contexts.find(a => a.runConstraint == source).map {
+    case TypeConstraint.Equality(_, _, prov) => contexts.find(a => a.runConstraint == source).map {
       case HandlerContext(inRun, handled, _, _, handlerConstraint) => sink match {
         case TypeConstraint.Equality(tpe1, _, _) =>
           val unhandledEffs = consTypeArgs(inRun).diff(consTypeArgs(handled))
@@ -252,15 +282,31 @@ object EffectProvenance {
     }
     val b = a.map({ case (sourceTpe, sProv) =>
       val sourceSyms = typeToSym(sourceTpe)
-      val filtered = (xs: Type, tpe1: Type) => consTypeArgs(xs).filterNot(x => handledEffs.contains(x) || consTypeArgs(tpe1).contains(x) || isFlexible(x))
+      val sinkString = (sink: Type) => s"${EffSymOrRigidVar.format(consUsedTypeArgs(sink).flatMap(typeToSym))}"
+      val filtered = (xs: Type, tpe1: Type) => {
+        consUsedTypeArgs(xs).filterNot(x =>
+          // an effect that is handled is not a source off an error
+          contexts.exists(c => c.handled == x && consTypeArgs(c.inRun).contains(x))
+           // neither is an effect that is in the sink
+            || consTypeArgs(tpe1).contains(x)
+            // flexible variables are never sources of an error
+            || isFlexible(x)
+        )
+      }
       sink match {
         case TypeConstraint.Equality(tpe1, _, prov) =>
           // remove source effect from the set of unused effects
-          s = s.diff(consTypeArgs(sourceTpe).toSet)
-          if (tpe1 == sourceTpe) Nil else {
+          s = s.diff(consUsedTypeArgs(sourceTpe).toSet)
+          s = s.diff(handledEffs)
+          if (tpe1 == sourceTpe)
+            contexts.find(c => c.inRun == sourceTpe).map(c =>
+              List(EffConflicted(TypeError.UnusedEffectInSignature(typeToSym(c.handler).head, c.handler.loc)))
+            ).getOrElse(Nil)
+          else {
             val errs = prov match {
               case Provenance.ExpectEffect(expected, _, _) => expected match {
-                case Type.Var(sym, _) => List(EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), sourceSyms.head, expected.loc, source.loc)))
+                case Type.Var(sym, _) =>
+                  filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), typeToSym(x).head, sinkString(tpe1), expected.loc, source.loc)))
                 case Type.Cst(tc, loc) => tc match {
                   case TypeConstructor.Pure =>
                     def mkPureEffErr(sourceEff: Type): EffConflicted = {
@@ -283,23 +329,27 @@ object EffectProvenance {
                     case Type.Cst(tc2, _) => tc2 match {
                       // source effects that are pure do not constitute an error
                       case TypeConstructor.Pure => Nil
-                      case _ => List(EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), sourceSyms.head, loc, source.loc)))
+                      case _ => List(EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), sourceSyms.head, sinkString(tpe1), loc, source.loc)))
                     }
                     case Type.Apply(_, _, _) =>
                       // filter out any source effect that is handled or is in the function signature, then create an error
-                      filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), typeToSym(x).head, loc, source.loc)))
-                    case _ => List(EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), sourceSyms.head, loc, source.loc)))
+                      filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), typeToSym(x).head, sinkString(tpe1), loc, source.loc)))
+                    case _ => List(EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), sourceSyms.head, sinkString(tpe1), loc, source.loc)))
                   }
                   case _ => Nil
                 }
                 case Type.Apply(_, _, _) =>
                   val notInDef = findDiffInTypes(sourceTpe, expected)
-                  notInDef.foldLeft(List.empty[Type])((acc, x) => if (acc.contains(x) || isFlexible(x) || isPure(x) || handledEffs.contains(x)) acc else x :: acc).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(expected), typeToSym(x).head, expected.loc, source.loc)))
+                  notInDef.foldLeft(List.empty[Type])((acc, x) => if (acc.contains(x) || isFlexible(x) || isPure(x) || handledEffs.contains(x)) acc else x :: acc).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(expected), typeToSym(x).head, sinkString(tpe1), expected.loc, source.loc)))
                 case _ => Nil
               }
               case Provenance.ExpectArgument(expected, _, sym, _, _) => sym match {
                 case ds: Symbol.DefnSym => List(EffConflicted(TypeError.ArgumentGivenWrongEffect(typeToSym(expected), sourceSyms, sink.loc, ds.loc, sProv.loc)))
                 case _ => Nil
+              }
+              // wild edge case involving regions and pipes
+              case Provenance.Match(_, _, _) => {
+                filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(tpe1), typeToSym(x).head, sinkString(tpe1), prov.loc, x.loc)))
               }
               case _ => Nil
             }
@@ -310,7 +360,8 @@ object EffectProvenance {
 
     }).getOrElse(Nil)
     val unhs = mkUnhandledError(source, sink, contexts)
-    (unhs ++ b, s)
+    val hs = mkHandlerMismatch(sink,contexts)
+    (hs ++ unhs ++ b, s)
   }
 
   /**
@@ -622,13 +673,21 @@ object EffectProvenance {
   }
 
   private def visitHandlers(constr: TypeConstraint, constrs0: List[TypeConstraint]): Option[HandlerContext] = constr match {
-    case TypeConstraint.Equality(et1, handled, Provenance.Handler(_, _, loc)) =>
+    case TypeConstraint.Equality(_, handled, Provenance.Handler(_, _, _)) =>
       // we get the type of (evar - handled effect) + effect of handler
       // we need the evar to be able to see which effects are handled
       consTypeArgs(handled) match {
         case inRun :: h :: hr :: Nil =>
-          searchForSource(inRun, constrs0.filter(_!=constr)).flatMap {
+          searchForSource(inRun, constrs0.filter(_ != constr)).flatMap {
             case source@TypeConstraint.Equality(_, tpe2, _) => Some(HandlerContext(tpe2, h, hr, source, constr))
+            case _ => None
+          }
+
+        case inRun :: hr :: Nil =>
+          searchForSource(inRun, constrs0.filter(_ != constr)).flatMap {
+            case source@TypeConstraint.Equality(_, tpe2, _) =>
+              println(tpe2)
+              Some(HandlerContext(tpe2, tpe2, hr, source, constr))
             case _ => None
           }
         case _ => None
