@@ -433,6 +433,50 @@ object Lowering {
         MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
       }
 
+    case TypedAst.Expr.InstanceOfMatch(exp, rules, tpe, eff, loc) =>
+      // Lowers `e instanceof { case x_1: T_1 => body_1; ...; case x_n => body_n }` to a
+      // let-bound scrutinee threaded through nested if-then-else branches:
+      //
+      //   let s = lower(e) in
+      //     if InstanceOf(s, T_1.class) then let x_1: T_1 = (s as T_1) in body_1
+      //     else if InstanceOf(s, T_2.class) then let x_2: T_2 = (s as T_2) in body_2
+      //     ...
+      //     else let x_n = s in body_n   // untyped rule binds x_n to the scrutinee
+      //
+      // If a typed rule's scrutinee static type is not a Java reference type, the
+      // `instanceof` check is statically false. Such typed rules are dropped: the chain
+      // collapses to whichever later rule is reachable (typically the trailing wildcard).
+      // If no rule matches at runtime (and no untyped catch-all is present), control falls
+      // through to a synthetic `MatchError`.
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      val scrutSym = mkLetSym("instanceOfMatch", loc.asSynthetic)
+      def scrutRef(l: SourceLocation): MonoAst.Expr = MonoAst.Expr.Var(scrutSym, e.tpe, l)
+      val fallback: MonoAst.Expr = MonoAst.Expr.ApplyAtomic(AtomicOp.MatchError, Nil, t, eff, loc.asSynthetic)
+      val nested = rules.foldRight(fallback) {
+        case (TypedAst.InstanceOfMatchRule(bnd, Some(ruleTpe), body, ruleLoc), acc) =>
+          val b = lowerExp(body)
+          val ruleT = lowerType(ruleTpe)
+          val cast = mkCast(scrutRef(ruleLoc), ruleT, Type.Pure, ruleLoc)
+          val taken = MonoAst.Expr.Let(bnd.sym, cast, b, t, eff, Occur.Unknown, ruleLoc)
+          // The typed rule only fires when the scrutinee is a Java reference. If the
+          // scrutinee's static type isn't Java, the instanceof check can never succeed,
+          // so we drop this rule entirely and fall through to `acc`.
+          if (javaClassOfTpe(e.tpe).isEmpty) acc
+          else {
+            val clazz = javaClassOfTpe(ruleTpe).getOrElse(
+              throw InternalCompilerException(s"Unexpected non-Java rule type: $ruleTpe", ruleLoc)
+            )
+            val test = MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(scrutRef(ruleLoc)), Type.Bool, Type.Pure, ruleLoc)
+            MonoAst.Expr.IfThenElse(test, taken, acc, t, eff, ruleLoc)
+          }
+        case (TypedAst.InstanceOfMatchRule(bnd, None, body, ruleLoc), _) =>
+          // Untyped rule: unconditionally bind to the scrutinee and run the body.
+          val b = lowerExp(body)
+          MonoAst.Expr.Let(bnd.sym, scrutRef(ruleLoc), b, t, eff, Occur.Unknown, ruleLoc)
+      }
+      MonoAst.Expr.Let(scrutSym, e, nested, t, eff, Occur.Unknown, loc)
+
     case TypedAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
       // Note: We do *NOT* erase checked (i.e. safe) casts.
       // In Java, `String` is a subtype of `Object`, but the Flix IR makes this upcast _explicit_.
@@ -970,6 +1014,12 @@ object Lowering {
     *
     * N.B.: `tpe` must be normalized.
     */
+  /** Extracts the Java reference class corresponding to `tpe`, if any. */
+  private def javaClassOfTpe(tpe: Type): Option[java.lang.Class[?]] = tpe.baseType match {
+    case Type.Cst(TypeConstructor.Native(c), _) => Some(c)
+    case _ => None
+  }
+
   private def isPrimType(tpe: Type): Boolean = tpe match {
     case Type.Char => true
     case Type.Bool => true

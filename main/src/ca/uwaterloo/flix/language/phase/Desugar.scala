@@ -567,6 +567,11 @@ object Desugar {
       val rs = rules.map(visitMatchRule)
       Expr.Match(e, rs, loc)
 
+    case WeededAst.Expr.InstanceOfMatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitInstanceOfMatchRule)
+      Expr.InstanceOfMatch(e, rs, loc)
+
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
@@ -676,10 +681,6 @@ object Desugar {
       val ts = expectedType.map(visitType)
       val effs = expectedEff.map(visitType)
       Expr.Ascribe(e, ts, effs, loc)
-
-    case WeededAst.Expr.InstanceOf(exp, className, loc) =>
-      val e = visitExp(exp)
-      Expr.InstanceOf(e, className, loc)
 
     case WeededAst.Expr.CheckedCast(cast, exp, loc) =>
       val e = visitExp(exp)
@@ -1415,6 +1416,11 @@ object Desugar {
     val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
     val body = DesugaredAst.Expr.ExtMatch(paramVarExpr, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
+  }
+
+  private def visitInstanceOfMatchRule(rule0: WeededAst.InstanceOfMatchRule)(implicit flix: Flix): DesugaredAst.InstanceOfMatchRule = rule0 match {
+    case WeededAst.InstanceOfMatchRule(ident, tpe, exp, loc) =>
+      DesugaredAst.InstanceOfMatchRule(ident, tpe.map(visitType), visitExp(exp), loc)
   }
 
   /**

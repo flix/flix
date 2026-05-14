@@ -424,6 +424,14 @@ object Symbol {
       */
     def withKind(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, isSlack, scope, loc)
 
+    /**
+      * Returns true if this symbol is a wildcard.
+      */
+    def isWild: Boolean = text match {
+      case VarText.Absent => false
+      case VarText.SourceText(s) => s.startsWith("_")
+    }
+
     override def compare(that: UnkindedTypeVarSym): Int = that.id - this.id
 
     override def equals(that: Any): Boolean = that match {

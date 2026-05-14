@@ -665,6 +665,12 @@ object Kinder {
         val exp = visitExp(exp0, kenv0, root)
         KindedAst.Expr.InstanceOf(exp, clazz, loc)
 
+      case ResolvedAst.Expr.InstanceOfMatch(exp0, rules0, loc) =>
+        val exp = visitExp(exp0, kenv0, root)
+        val rules = rules0.map(visitInstanceOfMatchRule(_, kenv0, root))
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        KindedAst.Expr.InstanceOfMatch(exp, rules, tvar, loc)
+
       case ResolvedAst.Expr.CheckedCast(cast, exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
         val tvar = Type.freshVar(Kind.Star, loc)
@@ -905,6 +911,16 @@ object Kinder {
     case ResolvedAst.CatchRule(sym, clazz, exp0, loc) =>
       val exp = visitExp(exp0, kenv, root)
       KindedAst.CatchRule(sym, clazz, exp, loc)
+  }
+
+  /**
+    * Performs kinding on the given instanceof match rule under the given kind environment.
+    */
+  private def visitInstanceOfMatchRule(rule0: ResolvedAst.InstanceOfMatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.InstanceOfMatchRule = rule0 match {
+    case ResolvedAst.InstanceOfMatchRule(sym, tpe0, exp0, loc) =>
+      val tpe = tpe0.map(visitType(_, Kind.Star, kenv, root))
+      val exp = visitExp(exp0, kenv, root)
+      KindedAst.InstanceOfMatchRule(sym, tpe, exp, loc)
   }
 
   /**

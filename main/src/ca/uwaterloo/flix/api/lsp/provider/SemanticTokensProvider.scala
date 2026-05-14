@@ -479,6 +479,14 @@ object SemanticTokensProvider {
           acc ++ visitPat(pat) ++ guard.toList.flatMap(visitExp) ++ visitExp(exp)
       }
 
+    case Expr.InstanceOfMatch(matchExp, rules, _, _, _) =>
+      val m = visitExp(matchExp)
+      rules.foldLeft(m) {
+        case (acc, InstanceOfMatchRule(bnd, tpe, exp, _)) =>
+          val t = SemanticToken(SemanticTokenType.Variable, Nil, bnd.sym.loc)
+          acc ++ Iterator(t) ++ tpe.iterator.flatMap(visitType) ++ visitExp(exp)
+      }
+
     case Expr.RestrictableChoose(_, exp1, rules, _, _, _) =>
       val c = visitExp(exp1)
       rules.foldLeft(c) {

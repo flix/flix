@@ -232,6 +232,7 @@ object SafetyError {
     }
   }
 
+
   /**
     * An error raised to indicate that the object in a `throw` expression is not a Throwable.
     *
