@@ -895,24 +895,42 @@ object TypeError {
     }
   }
 
+  /**
+    * An unhandled effect error.
+    *
+    * Occurs when an effect used inside a `run` expression is neither:
+    *   (a) handled by a handler
+    *   (b) declared in the enclosing function's effect signature.
+    *
+    * @param unhandled  The effect symbol or rigid variable that is unhandled.
+    * @param signature  The effect symbol or rigid variable representing the signature.
+    * @param uLoc       The source location of the unhandled effect use.
+    * @param handlerLoc The source location of the `run` expression's handler block.
+    * @param sigLoc     The source location of the enclosing function's effect signature.
+    */
   case class UnhandledEffect(unhandled: EffSymOrRigidVar, signature: EffSymOrRigidVar, uLoc: SourceLocation, handlerLoc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7796
 
-    def loc = uLoc
+    def loc: SourceLocation = uLoc
 
-    def summary: String = s"the effect ${unhandled.name}' is not handled nor in the function signature."
+    def summary: String = s"Unhandled effect: '${unhandled.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> effect ${magenta(unhandled.name)} inside run statement is left unhandled.
+      s""">> Unhandled effect: '${magenta(unhandled.name)}'.
          |
-         |${highlight(loc, s"unhandled effect ${magenta(unhandled.name)}", fmt)}
+         |${highlight(uLoc, s"effect '${magenta(unhandled.name)}' is not handled", fmt)}
          |
-         |is not handled by a handler:
+         |The effect is not handled by a handler:
          |${highlight(handlerLoc, "", fmt)}
          |
-         |and is not in the signature:
-         |${highlight(sigLoc, s"${magenta(signature.name)}", fmt)}
+         |And is not declared in the function signature:
+         |${highlight(sigLoc, s"'${magenta(unhandled.name)}' missing from signature", fmt)}
+         |
+         |${underline("Possible fixes:")}
+         |
+         |  (a) Add a handler for '${magenta(unhandled.name)}', or
+         |  (b) Add '${magenta(unhandled.name)}' to the enclosing function's effect signature.
          |""".stripMargin
     }
   }

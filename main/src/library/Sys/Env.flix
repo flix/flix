@@ -142,29 +142,29 @@ pub mod Sys.Env {
                     case _: Exception => k(None)
                 }
 
-            def getProp(name, k) = k(getPropHelper(name))
+            def getProp(name, k)              = k(getPropHelper(name))
 
-            def getOsName(k) = k(getPropHelper("os.name"))
+            def getOsName(k)                  = k(getPropHelper("os.name"))
 
-            def getOsArch(k) = k(getPropHelper("os.arch"))
+            def getOsArch(k)                  = k(getPropHelper("os.arch"))
 
-            def getOsVersion(k) = k(getPropHelper("os.version"))
+            def getOsVersion(k)               = k(getPropHelper("os.version"))
 
-            def getFileSeparator(k) = k(JFile.separator)
+            def getFileSeparator(k)           = k(JFile.separator)
 
-            def getPathSeparator(k) = k(JFile.pathSeparator)
+            def getPathSeparator(k)           = k(JFile.pathSeparator)
 
-            def getLineSeparator(k) = k(System.lineSeparator())
+            def getLineSeparator(k)           = k(System.lineSeparator())
 
             def getCurrentWorkingDirectory(k) = k(getPropHelper("user.dir"))
 
-            def getTemporaryDirectory(k) = k(getPropHelper("java.io.tmpdir"))
+            def getTemporaryDirectory(k)      = k(getPropHelper("java.io.tmpdir"))
 
-            def getUserName(k) = k(getPropHelper("user.name"))
+            def getUserName(k)                = k(getPropHelper("user.name"))
 
-            def getUserHomeDirectory(k) = k(getPropHelper("user.home"))
+            def getUserHomeDirectory(k)       = k(getPropHelper("user.home"))
 
-            def getVirtualProcessors(k) = k(Runtime.getRuntime().availableProcessors())
+            def getVirtualProcessors(k)       = k(Runtime.getRuntime().availableProcessors())
         }
 
     ///
@@ -176,12 +176,12 @@ pub mod Sys.Env {
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Env) + IO = handle(f)()
 
     def getPropHelper(name: String): Option[String] \ IO =
-            try {
-                let result = System.getProperty(name);
-                Object.toOption(result)
-            } catch {
-                case _: Exception => None
-            }
+        try {
+            let result = System.getProperty(name);
+            Object.toOption(result)
+        } catch {
+            case _: Exception => None
+        }
 
     def getEnvHelper(iter: JIterator[Entry[String, String]], m: Map[String, String]): Map[String, String] \ IO =
         if (iter.hasNext())

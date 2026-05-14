@@ -91,14 +91,14 @@ pub def on(f: (b, b) -> c \ ef1, g: a -> b \ ef2, x: a, y: a): c \ { ef1, ef2 } 
 ///
 pub def fst(p: (a, b)): a =
     let (x, _) = p;
-        x
+    x
 
 ///
 /// Returns the second component of `t`.
 ///
 pub def snd(p: (a, b)): b =
     let (_, y) = p;
-        y
+    y
 
 ///
 /// Returns the pair `p` with the components swapped.
@@ -106,7 +106,7 @@ pub def snd(p: (a, b)): b =
 ///
 pub def swap(p: (a, b)): (b, a) =
     let (x, y) = p;
-        (y, x)
+    (y, x)
 
 ///
 /// Forwards function composition. Applies the function on the left first.
@@ -134,7 +134,7 @@ pub def ||>(x: (a, b), f: a -> (b -> c \ ef)): c \ ef = f(fst(x), snd(x))
 ///
 /// Given a value `x` and a function `f` returns `x`.
 ///
-pub def !>( x: a, f: a -> Unit \ ef): a \ ef = f(x); x
+pub def !>(x: a, f: a -> Unit \ ef): a \ ef = f(x); x
 
 ///
 /// Coerces the given value `x`.
@@ -157,9 +157,9 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 ///
 pub def bug!(m: String): a = unsafe IO {
     System.err.println("*".repeat(80));
-    System.err.println("**") ;
-    System.err.println("**  BUG: ${m}") ;
-    System.err.println("**") ;
+    System.err.println("**");
+    System.err.println("**  BUG: ${m}");
+    System.err.println("**");
     System.err.println("*".repeat(80));
     System.err.println("");
     ?panic
@@ -200,7 +200,7 @@ pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
 ///
 pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] =
     match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
-        case Reflect.Purity.Pure => Purity.Pure(unchecked_cast (f as a -> b \ {}))
+        case Reflect.Purity.Pure   => Purity.Pure(unchecked_cast(f as a -> b \ {}))
         case Reflect.Purity.Impure => Purity.Impure(f)
     }
 
@@ -212,7 +212,7 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] =
 ///
 pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] =
     match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
-        case Reflect.Purity.Pure   => Purity2.Pure(unchecked_cast (f as a -> b -> c \ {}))
+        case Reflect.Purity.Pure   => Purity2.Pure(unchecked_cast(f as a -> b -> c \ {}))
         case Reflect.Purity.Impure => Purity2.Impure(f)
     }
 
@@ -224,6 +224,6 @@ pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] =
 ///
 pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] =
     match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
-        case Reflect.Purity.Pure   => Purity3.Pure(unchecked_cast (f as a -> b -> c -> d \ {}))
+        case Reflect.Purity.Pure   => Purity3.Pure(unchecked_cast(f as a -> b -> c -> d \ {}))
         case Reflect.Purity.Impure => Purity3.Impure(f)
     }
