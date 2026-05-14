@@ -1,9 +1,9 @@
 ///
 /// We introduce type aliases to model the class hierarchy.
 ///
-type alias Class = String       // e.g. "Rectangle"
-type alias Interface = String   // e.g. "Shape"
-type alias Method = String      // e.g. "draw"
+type alias Class = String // e.g. "Rectangle"
+type alias Interface = String // e.g. "Shape"
+type alias Method = String // e.g. "draw"
 
 ///
 /// We compute all methods available on a type and use a provenance query
@@ -49,7 +49,6 @@ pub def main(): Unit \ IO =
             }
         }
     }
-
 
 ///
 /// Returns the database of class relationships and method declarations.

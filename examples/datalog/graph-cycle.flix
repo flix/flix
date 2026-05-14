@@ -6,11 +6,11 @@ def cycle(edges: List[(t, t)]): Option[Vector[t]] with Order[t] =
     let pr = #{
         Path(x, y) :- Edge(x, y).
         Path(x, z) :- Path(x, y), Edge(y, z).
-        Cycle(x)   :- Path(x, x).
+        Cycle(x) :- Path(x, x).
     };
     let result = query db, pr select x from Cycle(x);
     match Vector.head(result) {
-        case None    => None
+        case None => None
         case Some(x) =>
             let p = pquery db, pr select Cycle(x) with {Edge};
             let l = Vector.flatMap(ematch Edge(src, dst) -> Vector#{src, dst}, p);

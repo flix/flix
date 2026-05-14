@@ -134,7 +134,7 @@ pub mod Fixpoint3.ProvenanceReconstruct {
     def filterAndFlattenProof(p: ProofTree[r], filter: PredSym -> Bool): Vector[(PredSym, Vector[Boxed])] \ r = region rc {
         let res = MutList.empty(rc);
         def recurse(workList: List[ProofTree[r]]) = match workList {
-            case Nil                              => ()
+            case Nil => ()
             case ProofTree.EDB(pred, fact) :: tail =>
                 if (filter(pred)) { MutList.push((pred, fact), res) };
                 recurse(tail)
@@ -435,7 +435,7 @@ pub mod Fixpoint3.ProvenanceReconstruct {
         let (filterAsList, _) = ((Nil, 0), terms)
             ||> Vector.foldLeft(
                 match (acc, i) -> t -> match t {
-                    case BodyTerm.Wild     => (acc, i + 1)
+                    case BodyTerm.Wild => (acc, i + 1)
                     case BodyTerm.Var(v) => match Map.get(v, varSymToVal) {
                         case None      => (acc, i + 1)
                         case Some(val) => ((i, val) :: acc, i + 1)
@@ -461,7 +461,7 @@ pub mod Fixpoint3.ProvenanceReconstruct {
                 // We need to keep the order and positions for `registerVars`.
                 // We do not care about what `_` has been assigned to.
                     case BodyTerm.Wild => Some(VarSym.VarSym("_"))
-                    case _             => None
+                    case _ => None
                 }
             )
 

@@ -204,12 +204,13 @@ pub mod Fixpoint3.Phase.Compiler {
                     case Some(loopPar) =>
                         MutList.push(loopPar, loopBody);
                         MutList.push(constructMerges(idb, predicates), loopBody);
-                        let loopTest = idb
-                            |> Set.toVector
-                            |> Vector.map(
-                                relSym ->
-                                    BoolExp.IsEmpty(Predicate.getRelSymAsType(relSym, Delta, predicates))
-                            );
+                        let loopTest =
+                            idb
+                                |> Set.toVector
+                                |> Vector.map(
+                                    relSym ->
+                                        BoolExp.IsEmpty(Predicate.getRelSymAsType(relSym, Delta, predicates))
+                                );
                         let untilBody = RamStmt.Seq(MutList.toVector(loopBody));
                         let fixpoint = RamStmt.Until(loopTest, untilBody);
                         MutList.push(fixpoint, stmts)
@@ -405,7 +406,7 @@ pub mod Fixpoint3.Phase.Compiler {
     ///
     def compileHeadTerm(env: Map[VarSym, RamTerm], ty: Type, term: HeadTerm): RamTerm = match term {
         case HeadTerm.Var(var) => getOrCrash(Map.get(var, env))
-        case HeadTerm.Lit(v)   => RamTerm.Lit(v, ty)
+        case HeadTerm.Lit(v) => RamTerm.Lit(v, ty)
         case HeadTerm.App1(f, v) =>
             let t = getOrCrash(Map.get(v, env));
             RamTerm.App1(f, t, ty)
@@ -493,12 +494,12 @@ pub mod Fixpoint3.Phase.Compiler {
                         let varsWithIndexes = Vector.mapWithIndex(i -> var -> (var, i), boundVars);
                         (acc, varsWithIndexes)
                             ||> Vector.foldRight(match (var, i) -> Map.insertWith(_ -> old -> old, var, RamTerm.RowLoad(rowVar, i, getType(typeId, i, typeInfo), funcRelSym)))
-                    case Guard0(_)                               => acc
-                    case Guard1(_, _)                            => acc
-                    case Guard2(_, _, _)                         => acc
-                    case Guard3(_, _, _, _)                      => acc
-                    case Guard4(_, _, _, _, _)                   => acc
-                    case Guard5(_, _, _, _, _, _)                => acc
+                    case Guard0(_) => acc
+                    case Guard1(_, _) => acc
+                    case Guard2(_, _, _) => acc
+                    case Guard3(_, _, _, _) => acc
+                    case Guard4(_, _, _, _, _) => acc
+                    case Guard5(_, _, _, _, _, _) => acc
                 }
         };
         let res = Vector.foldLeft(innerFunc, Map#{}, body);
@@ -533,17 +534,17 @@ pub mod Fixpoint3.Phase.Compiler {
     def isImpossible(body: Vector[(BodyPredicate, RowVar)]): Bool =
         Vector.exists(
             match (atom, _) -> match atom {
-                case BodyAtom(_, _, _, _, _)  => false
-                case Functional(_, _, _)      => false
+                case BodyAtom(_, _, _, _, _) => false
+                case Functional(_, _, _) => false
                 case Guard0(f) =>
                     if (f())
                         false
                     else
                         true
-                case Guard1(_, _)             => false
-                case Guard2(_, _, _)          => false
-                case Guard3(_, _, _, _)       => false
-                case Guard4(_, _, _, _, _)    => false
+                case Guard1(_, _) => false
+                case Guard2(_, _, _) => false
+                case Guard3(_, _, _, _) => false
+                case Guard4(_, _, _, _, _) => false
                 case Guard5(_, _, _, _, _, _) => false
             },
             body

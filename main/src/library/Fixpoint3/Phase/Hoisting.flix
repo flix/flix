@@ -110,13 +110,12 @@ pub mod Fixpoint3.Phase.Hoisting {
                                 // `load` must have been registered by `unifyEqualitiesStmt`.
                                 let rep = getOrCrash(MutDisjointSets.find(load, equalitySets));
                                 match Map.get(rep, innerAcc) {
-                                    case Some(RamTerm.Lit(v, _)) =>
-                                        {
-                                            if (v != val) { MutSet.add(fst(rep), impossible) }
-                                        };
-                                        innerAcc
+                                    case Some(RamTerm.Lit(v, _)) => {
+                                        if (v != val) { MutSet.add(fst(rep), impossible) }
+                                    };
+                                    innerAcc
                                     case Some(_) => bug!("In Fixpoint.Phase.Hoisting.hoistProgram: termMap contains non-literals before hoistStmt!")
-                                    case None    => Map.insert(rep, RamTerm.Lit(val, ty), innerAcc)
+                                    case None => Map.insert(rep, RamTerm.Lit(val, ty), innerAcc)
                                 }
                             }
                         )
@@ -267,10 +266,11 @@ pub mod Fixpoint3.Phase.Hoisting {
                             // but not without `rowVar`.
                             let hoistedToHere = getBoolsHoistedToHere(rowVar, termMap, termMapWithCur, equalitySets, idToBool);
                             let combined = List.toVector(knownEqualities ::: intraEqualities ::: hoistedToHere);
-                            let newOp = if (Vector.length(combined) != 0)
-                                RelOp.Query(rowVar, relSym, combined, -1, t, hoistedBody)
-                            else
-                                RelOp.Search(rowVar, relSym, t, hoistedBody);
+                            let newOp =
+                                if (Vector.length(combined) != 0)
+                                    RelOp.Query(rowVar, relSym, combined, -1, t, hoistedBody)
+                                else
+                                    RelOp.Search(rowVar, relSym, t, hoistedBody);
                             Some(newOp)
                     }
                 }
@@ -467,11 +467,11 @@ pub mod Fixpoint3.Phase.Hoisting {
         let termVarsOf = termVariablesOf(termMap, equalitySets);
         let getRepVar = getRepRowVar(termMap, equalitySets);
         match term {
-            case RamTerm.Lit(_, _)                    => Set#{}
-            case RamTerm.ProvMax(vec)                 => Vector.foldLeft(acc -> match (rv, _) -> Set.insert(rv, acc), Set#{}, vec)
-            case RamTerm.RowLoad(rv, i, _, _)         => getRepVar(rv, i)
+            case RamTerm.Lit(_, _) => Set#{}
+            case RamTerm.ProvMax(vec) => Vector.foldLeft(acc -> match (rv, _) -> Set.insert(rv, acc), Set#{}, vec)
+            case RamTerm.RowLoad(rv, i, _, _) => getRepVar(rv, i)
             case RamTerm.Meet(_, t1, (rv, relSym), _) => Set.union(termVarsOf(t1), getRepVar(rv, arityOfNonLat(relSym)))
-            case RamTerm.App1(_, t1, _)               => termVarsOf(t1)
+            case RamTerm.App1(_, t1, _) => termVarsOf(t1)
             case RamTerm.App2(_, t1, t2, _) =>
                 Vector#{t1, t2} |> Vector.foldRight(t -> acc -> termVarsOf(t) `Set.union` acc, Set#{})
             case RamTerm.App3(_, t1, t2, t3, _) =>

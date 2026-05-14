@@ -402,10 +402,10 @@ pub mod Fixpoint3.Phase.Lowering {
                 let representingRowVar = getAnyMeetRowVar(term);
                 let pos = computeLatticeMeetPos(representingRowVar, idToIndex, meetWithMap);
                 ExecutableRam.RamTerm.LoadLatVar(pos, ty)
-            case Ram.RamTerm.App1(f, t1, ty)                 => ExecutableRam.RamTerm.App1(f, lowerT(t1), ty)
-            case Ram.RamTerm.App2(f, t1, t2, ty)             => ExecutableRam.RamTerm.App2(f, lowerT(t1), lowerT(t2), ty)
-            case Ram.RamTerm.App3(f, t1, t2, t3, ty)         => ExecutableRam.RamTerm.App3(f, lowerT(t1), lowerT(t2), lowerT(t3), ty)
-            case Ram.RamTerm.App4(f, t1, t2, t3, t4, ty)     => ExecutableRam.RamTerm.App4(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), ty)
+            case Ram.RamTerm.App1(f, t1, ty) => ExecutableRam.RamTerm.App1(f, lowerT(t1), ty)
+            case Ram.RamTerm.App2(f, t1, t2, ty) => ExecutableRam.RamTerm.App2(f, lowerT(t1), lowerT(t2), ty)
+            case Ram.RamTerm.App3(f, t1, t2, t3, ty) => ExecutableRam.RamTerm.App3(f, lowerT(t1), lowerT(t2), lowerT(t3), ty)
+            case Ram.RamTerm.App4(f, t1, t2, t3, t4, ty) => ExecutableRam.RamTerm.App4(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), ty)
             case Ram.RamTerm.App5(f, t1, t2, t3, t4, t5, ty) => ExecutableRam.RamTerm.App5(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), lowerT(t5), ty)
         }
 
@@ -486,11 +486,11 @@ pub mod Fixpoint3.Phase.Lowering {
                     case Denotation.Latticenal(_, leq, _, _) => leq
                 };
                 Some(ExecutableRam.BoolExp.Leq(box, leq, lowerRowVar(rv, idToIndex)))
-            case Ram.BoolExp.Eq(term1, term2)                             => Some(ExecutableRam.BoolExp.Eq(lowerT(term1), lowerT(term2)))
-            case Ram.BoolExp.Guard1(f, term1)                             => Some(ExecutableRam.BoolExp.Guard1(f, lowerT(term1)))
-            case Ram.BoolExp.Guard2(f, term1, term2)                      => Some(ExecutableRam.BoolExp.Guard2(f, lowerT(term1), lowerT(term2)))
-            case Ram.BoolExp.Guard3(f, term1, term2, term3)               => Some(ExecutableRam.BoolExp.Guard3(f, lowerT(term1), lowerT(term2), lowerT(term3)))
-            case Ram.BoolExp.Guard4(f, term1, term2, term3, term4)        => Some(ExecutableRam.BoolExp.Guard4(f, lowerT(term1), lowerT(term2), lowerT(term3), lowerT(term4)))
+            case Ram.BoolExp.Eq(term1, term2) => Some(ExecutableRam.BoolExp.Eq(lowerT(term1), lowerT(term2)))
+            case Ram.BoolExp.Guard1(f, term1) => Some(ExecutableRam.BoolExp.Guard1(f, lowerT(term1)))
+            case Ram.BoolExp.Guard2(f, term1, term2) => Some(ExecutableRam.BoolExp.Guard2(f, lowerT(term1), lowerT(term2)))
+            case Ram.BoolExp.Guard3(f, term1, term2, term3) => Some(ExecutableRam.BoolExp.Guard3(f, lowerT(term1), lowerT(term2), lowerT(term3)))
+            case Ram.BoolExp.Guard4(f, term1, term2, term3, term4) => Some(ExecutableRam.BoolExp.Guard4(f, lowerT(term1), lowerT(term2), lowerT(term3), lowerT(term4)))
             case Ram.BoolExp.Guard5(f, term1, term2, term3, term4, term5) => Some(ExecutableRam.BoolExp.Guard5(f, lowerT(term1), lowerT(term2), lowerT(term3), lowerT(term4), lowerT(term5)))
         }
 

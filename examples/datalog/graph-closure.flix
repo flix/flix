@@ -2,7 +2,7 @@
 /// Returns the transitive closure of the given set of `edges`,  i.e. all pairs
 /// of vertices `(src, dst)` where there is a path between `src` and `dst`.
 ///
-def closure(edges: List[(t, t)]): Set[(t, t )] with Order[t] =
+def closure(edges: List[(t, t)]): Set[(t, t)] with Order[t] =
     let db = inject edges into Edge/2;
     let pr = #{
         Path(x, y) :- Edge(x, y).

@@ -80,22 +80,21 @@ pub mod Fixpoint3.Phase.IndexSelection.AutomaticIndexSelection {
     def maximalPath(from_: Vertex, matching: Matching): List[Edge] = region rc {
         let allPaths = MutMap.empty(rc);
         def f(u: Vertex): Unit \ rc = match MutMap.get(u, allPaths) {
-            case None =>
-                Map.rangeQueryWith(
-                    edge -> fst(edge) <=> u,
-                    edge -> _ -> {
-                        let (u0, v0) = edge;
-                        f(v0); // Compute the longest path of v0 and store in allPaths
-                        let largest = l1 -> l2 -> if (List.length(l1) <= List.length(l2)) l2 else l1;
-                        MutMap.putWith(
-                            largest,
-                            u0,
-                            edge :: Option.getWithDefault(List.empty(), MutMap.get(v0, allPaths)),
-                            allPaths
-                        )
-                    },
-                    matching
-                )
+            case None => Map.rangeQueryWith(
+                edge -> fst(edge) <=> u,
+                edge -> _ -> {
+                    let (u0, v0) = edge;
+                    f(v0); // Compute the longest path of v0 and store in allPaths
+                    let largest = l1 -> l2 -> if (List.length(l1) <= List.length(l2)) l2 else l1;
+                    MutMap.putWith(
+                        largest,
+                        u0,
+                        edge :: Option.getWithDefault(List.empty(), MutMap.get(v0, allPaths)),
+                        allPaths
+                    )
+                },
+                matching
+            )
             case _ => ()
         };
         f(from_);
