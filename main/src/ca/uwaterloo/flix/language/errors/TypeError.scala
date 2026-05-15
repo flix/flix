@@ -44,6 +44,7 @@ sealed trait TypeError extends CompilationMessage {
     case _: TypeError.MismatchedEffects => true
     case _: TypeError.NonPublicDefaultHandler => true
     case _: TypeError.UnusedEffectInSignature => true
+    case _: TypeError.UnusedHandlerEffect => true
     case _ => false
   }
 }
@@ -1022,6 +1023,29 @@ object TypeError {
          |""".stripMargin
     }
   }
+
+  case class UnusedHandlerEffect(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation, sourceLoc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6219
+
+    def summary: String = s"handler effect '${handledEff.name}' is unused"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""${highlight(loc, s"handler effect '${magenta(handledEff.name)}' is unused", fmt)}
+         |
+         |${highlight(sigLoc, s"'${magenta(handledEff.name)}' missing from the signature", fmt)}
+         |
+         |this effect is also not used by any expression in the 'run' block:
+         |${highlight(sourceLoc, s"'${magenta(handledEff.name)}' is not used by an expression", fmt)}
+         |
+         |${underline("Possible fixes:")}
+         |  (a) Remove the handler for '${magenta(handledEff.name)}'.
+         |  (b) Add '${magenta(handledEff.name)}' to the effect type of the expression inside the 'run' block.
+         |  (c) Subtract '${magenta(handledEff.name)}' from the other effects in the signature.
+         |""".stripMargin
+    }
+  }
+
   /**
     * Returns the constructors of the given class sorted by parameter count.
     */

@@ -40,9 +40,7 @@ import scala.util.Random
   */
 object EffectProvenance {
 
-  /** Builds an effect conflict graph from given constraints. Then analyzes the
-    * effect conflict graph and returns a list of effect conflicts.
-    *
+  /**
     * Returns a list of effect conflicts if any are found, or None if no good
     * effect error could be made. A conflict is: a path from an effect to a
     * differing effect. E.g. IO -> ... -> {}. This is the main entry point for
@@ -83,7 +81,7 @@ object EffectProvenance {
     val res = sources.map(a => (a, initialSub(a, Map.empty))
     ).flatMap {
       case (c, (Left(ze), m)) =>
-        val (errs, unused) = doStuff(c, constrs0.filterNot(_ == c), ze, m, s, handledEffs, contexts)
+        val (errs, unused) = findConflictsFromSource(c, constrs0.filterNot(_ == c), ze, m, s, handledEffs, contexts)
         s = unused
         errs
       case (_, (Right(err), _)) => err
@@ -100,6 +98,9 @@ object EffectProvenance {
     if (r.isEmpty) None else Some(r)
   }
 
+  /** Reorders the front of the work queue so that sink constraints are processed after non-sinks.
+    * If the front element is a sink and the second is not, their positions are swapped.
+    */
   private def sortSinks(workQueue: Queue[TypeConstraint]): Queue[TypeConstraint] = {
     if (workQueue.size >= 2) {
       val (tmp, wq1) = workQueue.dequeue
@@ -120,6 +121,9 @@ object EffectProvenance {
     deconstructType(t, cons, concat, Nil)
   }
 
+  /** Like [[consTypeArgs]], but skips the right-hand side of `Difference` types.
+    * This means subtracted (e.g. handled) effects are excluded from the result.
+    */
   private def consUsedTypeArgs(t: Type): List[Type] = t match {
     case Type.Apply(tpe1, tpe2, _) => t.typeConstructor match {
       case Some(TypeConstructor.Difference) => consUsedTypeArgs(t.typeArguments.head)
@@ -128,13 +132,25 @@ object EffectProvenance {
     }
     case x => consTypeArgs(x)
   }
-  /**
-    * main algorithm that finds errors
-    * TODO rename function
+  /** Traces effect flow from `initial` through `constrs0` using BFS, generating
+    * `EffConflicted` errors for every path that reaches a sink constraint (i.e. a
+    * function signature that the accumulated effects violate).
     *
-    * @return a list of errors and a set of unhandled effects
+    * The inner helper `doStuffHelper` drives the BFS: it extends the work queue
+    * via `findNext`, sorts sinks to the back via `sortSinks`, tries to unify the
+    * next constraint with `applySubs`, and calls `mkErrors` when unification fails
+    * (indicating a genuine conflict).
+    *
+    * @param initial     the source constraint that seeds the traversal
+    * @param constrs0    the remaining constraints to search through
+    * @param initialSub  the starting Zhegalkin substitution derived from `initial`
+    * @param idMap       mapping from `Type` to integer ids used in Zhegalkin expressions
+    * @param unused      set of effect types not yet accounted for by any path
+    * @param handledEffs set of effect types that are handled (subtracted) somewhere
+    * @param contexts    handler contexts for generating unhandled-effect errors
+    * @return a pair of (list of conflicts found, updated set of unused effects)
     */
-  private def doStuff(initial: TypeConstraint, constrs0: List[TypeConstraint], initialSub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], idMap: Map[Type, Int], unused: Set[Type], handledEffs: Set[Type], contexts: List[HandlerContext])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): (List[EffConflicted], Set[Type]) = {
+  private def findConflictsFromSource(initial: TypeConstraint, constrs0: List[TypeConstraint], initialSub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], idMap: Map[Type, Int], unused: Set[Type], handledEffs: Set[Type], contexts: List[HandlerContext])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): (List[EffConflicted], Set[Type]) = {
     var s = unused
     s = initial match {
       case TypeConstraint.Equality(_, tpe2, _) =>
@@ -142,7 +158,7 @@ object EffectProvenance {
       case _ => s
     }
 
-    def doStuffHelper(visited: List[TypeConstraint], unvisited: List[TypeConstraint], workQueue: Queue[TypeConstraint], sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], m: Map[Type, Int])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): List[EffConflicted] = {
+    def loop(visited: List[TypeConstraint], unvisited: List[TypeConstraint], workQueue: Queue[TypeConstraint], sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], m: Map[Type, Int])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): List[EffConflicted] = {
       val (workQueue1, unvisited2) = findNext(visited, unvisited, workQueue, idMap)
       val workQueue2 = sortSinks(workQueue1)
       try {
@@ -150,7 +166,7 @@ object EffectProvenance {
         val (newSub, newMap) = applySubs(x, sub, m)
         newSub match {
           case Some(ns) =>
-            if (isSink(visited.head)) Nil else doStuffHelper(x :: visited, unvisited2, q, ns, newMap)
+            if (isSink(visited.head)) Nil else loop(x :: visited, unvisited2, q, ns, newMap)
           case None =>
             val (errs, nu) = mkErrors(initial, x, s, handledEffs, contexts)
             s = nu
@@ -161,14 +177,18 @@ object EffectProvenance {
       }
     }
 
-    (doStuffHelper(List(initial), constrs0, Queue.empty, initialSub, idMap), s)
+    (loop(List(initial), constrs0, Queue.empty, initialSub, idMap), s)
   }
 
+  /** Extracts the two sides of an `Equality` constraint, returning `None` for other constraint kinds.  */
   private def extractTypes(constr: TypeConstraint): Option[(Type, Type)] = constr match {
     case TypeConstraint.Equality(consTpe1, consTpe2, _) => Some((consTpe1, consTpe2))
     case _ => None
   }
 
+  /** Deduplicates source constraints whose right-hand side contains identical effect arguments.
+    * Keeps the first occurrence and drops later duplicates.
+    */
   private def filterOutDuplicateSources(sources: List[TypeConstraint]): List[TypeConstraint] = {
     sources.foldLeft(List.empty[TypeConstraint]) {
       case (acc, t@TypeConstraint.Equality(_, tpe2, _)) =>
@@ -183,12 +203,16 @@ object EffectProvenance {
     }
   }
 
+  /** Returns the effects present in `tpe1` but absent in `tpe2`, ignoring subtracted effects in both. */
   private def findDiffInTypes(tpe1: Type, tpe2: Type): List[Type] = {
     val x = consUsedTypeArgs(tpe1)
     val y = consUsedTypeArgs(tpe2)
     x.diff(y)
   }
 
+  /** Walks constraints to find one whose provenance is `Source` or `ExpectType` and which
+    * mentions `start`. Recurses through intermediate equality constraints to trace back the origin.
+    */
   private def searchForSource(start: Type, constrs0: List[TypeConstraint]): Option[TypeConstraint] = {
     findType(start, constrs0).foldLeft(None: Option[TypeConstraint])((acc, t) =>
       if (acc.isDefined) acc else
@@ -211,16 +235,13 @@ object EffectProvenance {
     case _ => false
   }
 
+  /** Returns `true` iff `constr` is an `ExpectEffect` constraint */
   private def isSink(constr: TypeConstraint): Boolean = constr match {
     case TypeConstraint.Equality(_, _, prov) => prov match {
       case Provenance.ExpectEffect(_, _, _) => true
       case _ => false
     }
     case _ => false
-  }
-
-  private def handleFailure(constrs0: List[TypeConstraint]): List[EffConflicted] = {
-    Nil
   }
 
   /**
@@ -243,6 +264,15 @@ object EffectProvenance {
     case _ => Nil
   }
 
+  /** Produces `UnhandledEffect` errors when `source` is the `run` constraint of a
+    * known handler context and the effects inside the `run` block are not fully
+    * covered by the handled effects.
+    *
+    * @param source   the constraint that originates the effect flow (expected to be a `run` constraint)
+    * @param sink     the function-signature constraint that the effects flow into
+    * @param contexts handler contexts describing what each `run` block handles
+    * @return a list of `EffConflicted` errors for each unhandled effect
+    */
   private def mkUnhandledError(source: TypeConstraint, sink: TypeConstraint, contexts: List[HandlerContext]): List[EffConflicted] = source match {
     case TypeConstraint.Equality(_, _, prov) => contexts.find(a => a.runConstraint == source).map {
       case HandlerContext(inRun, handled, _, _, handlerConstraint) => sink match {
@@ -300,7 +330,7 @@ object EffectProvenance {
           s = s.diff(handledEffs)
           if (tpe1 == sourceTpe)
             contexts.find(c => c.inRun == sourceTpe).map(c =>
-              List(EffConflicted(TypeError.UnusedEffectInSignature(typeToSym(c.handler).head, c.handler.loc)))
+              List(EffConflicted(TypeError.UnusedHandlerEffect(typeToSym(c.handler).head, c.handler.loc, tpe1.loc, source.loc)))
             ).getOrElse(Nil)
           else {
             val errs = prov match {
@@ -365,10 +395,10 @@ object EffectProvenance {
   }
 
   /**
-    * converts given type constraint to a Zheglakin expression, then applies the given substitution, SVE is then applied to the result
+    * converts given type constraint to a Zhegalkin expression, then applies the given substitution, SVE is then applied to the result
     */
   private def applySubs(current: TypeConstraint, sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], idMap: Map[Type, Int])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): (Option[BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]]], Map[Type, Int]) = {
-    constraintToZhegalkin(current, idMap, sub) match {
+    constraintToZhegalkin(current, idMap) match {
       case (Some((x, y)), nm) =>
         val sx = sub.apply(x)
         val sy = sub.apply(y)
@@ -383,11 +413,11 @@ object EffectProvenance {
   }
 
   /**
-    * converts a single type constraint to a Zheglakin expression and applies SVE on it
+    * converts a single type constraint to a Zhegalkin expression and applies SVE on it
     * if the type constraint has both a sink and a source, then it will produce an error
     */
   private def initialSub(source: TypeConstraint, idMap: Map[Type, Int])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): (Either[BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], List[EffConflicted]], Map[Type, Int]) = {
-    constraintToZhegalkin(source, idMap, BoolSubstitution.empty) match {
+    constraintToZhegalkin(source, idMap) match {
       case (Some((x, y)), nm) =>
         try {
           (Left(SveAlgorithm.sveAll(List((x, y)))), nm)
@@ -407,6 +437,8 @@ object EffectProvenance {
 
   /**
     * finds the next type constraints to be used in the algorithm and puts them into the workQueue
+    *
+    * i.e. finds all adjacent constraints
     *
     * @param visited   visited type constraints
     * @param unvisited unvisited type constraints: if an unvisited type constraint has a type in common with a visited one it will be added to the workQueue
@@ -472,7 +504,7 @@ object EffectProvenance {
     * @param constr TypeConstraint
     * @param idMap  used for id's of variables and constants in the Zhegalkin expressions
     */
-  private def constraintToZhegalkin(constr: TypeConstraint, idMap: Map[Type, Int], sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): (Option[(ZhegalkinExpr[CofiniteIntSet], ZhegalkinExpr[CofiniteIntSet])], Map[Type, Int]) = {
+  private def constraintToZhegalkin(constr: TypeConstraint, idMap: Map[Type, Int])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): (Option[(ZhegalkinExpr[CofiniteIntSet], ZhegalkinExpr[CofiniteIntSet])], Map[Type, Int]) = {
     extractTypes(constr) match {
       case Some((tpe1, tpe2)) =>
         typeToZhegalkin(tpe1, idMap) match {
@@ -509,6 +541,9 @@ object EffectProvenance {
     }
   }
 
+  /** Placeholder for a future greedy permutation strategy over the id map.
+    * Currently returns `m` unchanged regardless of the substitution.
+    */
   private def greedyPermutation(sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], m: Map[Type, Int]): Map[Type, Int] = sub match {
     case BoolSubstitution(_) => m
     case _ => m
@@ -584,6 +619,12 @@ object EffectProvenance {
     case _ => false
   }
 
+  /** TODO remove this function and use HandlerContext instead
+    * Collects all effect types that are subtracted (handled) on the right-hand
+    * side of `constr`. Recursively inspects `Complement`, `Union`,
+    * `Intersection`, `SymmetricDiff`, and `Difference` type constructors;
+    * for `Difference` the right-hand argument is the handled set.
+    */
   private def findHandled(constr: TypeConstraint): Set[Type] = constr match {
     case TypeConstraint.Equality(_, tpe, _) =>
       def a(t: Type): Set[Type] = t match {
@@ -613,6 +654,10 @@ object EffectProvenance {
     case _ => false
   }
 
+  /** Flattens `tpe` into a list of `EffSymOrRigidVar` tokens.
+    * Effect constants become `Eff(sym)`, type variables become `RigidVar(sym)`,
+    * `Union` applications are recursed into, and everything else yields `Nil`.
+    */
   private def typeToSym(tpe: Type): List[EffSymOrRigidVar] = tpe match {
     case Type.Var(sym, _) => List(RigidVar(sym))
     case Type.Cst(tc, _) => tc match {
@@ -625,6 +670,13 @@ object EffectProvenance {
     case _ => Nil
   }
 
+  /** Splits a large `Equality` constraint into smaller ones to keep Zhegalkin
+    * expressions manageable. When the right-hand side contains more than five
+    * effect type arguments, the compound type is decomposed into a chain of
+    * fresh intermediate equality constraints connected by `Match` provenance.
+    * Constraints with five or fewer arguments, and all non-`Equality` constraints,
+    * are returned unchanged (or as `Nil` for non-equality kinds).
+    */
   private def simplifyConstraint(constr: TypeConstraint)(implicit scope: RegionScope, flix: Flix): List[TypeConstraint] = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
       val tc = (t: Type) => t.typeConstructor match {
@@ -672,6 +724,18 @@ object EffectProvenance {
     case _ => Nil
   }
 
+  /** Builds a `HandlerContext` from a `Handler` provenance constraint.
+    *
+    * The right-hand side of a handler constraint encodes the type as
+    * `(inRun - handled) ∪ handlerEffect`. This function extracts those
+    * components and searches `constrs0` for the source constraint that
+    * introduced `inRun`, returning a fully populated `HandlerContext` when
+    * found or `None` otherwise.
+    *
+    * @param constr   the equality constraint to inspect
+    * @param constrs0 the full constraint list used for source lookup
+    * @return a `HandlerContext` if one could be made, otherwise `None`
+    */
   private def visitHandlers(constr: TypeConstraint, constrs0: List[TypeConstraint]): Option[HandlerContext] = constr match {
     case TypeConstraint.Equality(_, handled, Provenance.Handler(_, _, _)) =>
       // we get the type of (evar - handled effect) + effect of handler
@@ -686,7 +750,6 @@ object EffectProvenance {
         case inRun :: hr :: Nil =>
           searchForSource(inRun, constrs0.filter(_ != constr)).flatMap {
             case source@TypeConstraint.Equality(_, tpe2, _) =>
-              println(tpe2)
               Some(HandlerContext(tpe2, tpe2, hr, source, constr))
             case _ => None
           }
@@ -696,6 +759,14 @@ object EffectProvenance {
     case _ => None
   }
 
+  /** Groups together all information needed to reason about a single effect handler.
+    *
+    * @param inRun             the effect type of the body of the `run` block
+    * @param handled           the effect type that the handler absorbs
+    * @param handler           the effect type of the handler itself
+    * @param runConstraint     the constraint that introduced `inRun` as the `run`-body effect
+    * @param handlerConstraint the `Handler`-provenance constraint that describes this handler
+    */
   private case class HandlerContext(inRun: Type, handled: Type, handler: Type, runConstraint: TypeConstraint, handlerConstraint: TypeConstraint)
 }
 
