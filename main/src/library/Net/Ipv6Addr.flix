@@ -157,12 +157,7 @@ pub mod Net.Ipv6Addr {
     def parseIpv6List(l: List[String]): Option[List[Int8]] =
         l
             |> List.map(g -> String.splitAt(2, g))
-            |> List.map(
-                b -> {
-                    let (b1, b2) = b;
-                    b1 :: b2 :: Nil
-                }
-            )
+            |> List.map(match (b1, b2) -> b1 :: b2 :: Nil)
             |> List.flatten
             |> List.traverse(byteStringToInt8)
 

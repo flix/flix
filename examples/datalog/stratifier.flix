@@ -26,12 +26,12 @@ mod Stratifier {
             case BodyAtom.Positive(Atom.Atom(ps)) => (true, ps),
             case BodyAtom.Negative(Atom.Atom(ps)) => (false, ps)
         };
-        b |> map(unfoldBodyAtom) |> map(pna -> match pna {case (pn, a) => (a0, pn, a)})
+        b |> map(unfoldBodyAtom) |> map(match (pn, a) -> (a0, pn, a))
 
     pub def ullman(p: Program, numberOfPredicates: Int32): Option[Map[PredicateSymbol, Int32]] =
         let pg: PrecedenceGraph = convertProgram(p);
-        let (pos, neg) = partition(e -> match e {case (_, b, _) => b}, pg);
-        let removeBool = triple -> match triple {case (a, _, b) => (a, b)};
+        let (pos, neg) = partition(match (_, b, _) -> b, pg);
+        let removeBool = match (a, _, b) -> (a, b);
         let facts = inject map(removeBool, pos), map(removeBool, neg) into PositiveDependencyEdge/2, NegativeDependencyEdge/2;
         let rules = #{
             Stratum(pd; 0) :- PositiveDependencyEdge(pd, _).
