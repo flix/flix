@@ -132,6 +132,7 @@ object EffectProvenance {
     }
     case x => consTypeArgs(x)
   }
+
   /** Traces effect flow from `initial` through `constrs0` using BFS, generating
     * `EffConflicted` errors for every path that reaches a sink constraint (i.e. a
     * function signature that the accumulated effects violate).
@@ -180,7 +181,7 @@ object EffectProvenance {
     (loop(List(initial), constrs0, Queue.empty, initialSub, idMap), s)
   }
 
-  /** Extracts the two sides of an `Equality` constraint, returning `None` for other constraint kinds.  */
+  /** Extracts the two sides of an `Equality` constraint, returning `None` for other constraint kinds. */
   private def extractTypes(constr: TypeConstraint): Option[(Type, Type)] = constr match {
     case TypeConstraint.Equality(consTpe1, consTpe2, _) => Some((consTpe1, consTpe2))
     case _ => None
@@ -246,7 +247,8 @@ object EffectProvenance {
 
   /**
     * tries to make errors for mismatches in handled effects and the signature
-    * @param sink type constraint of the signature/sink
+    *
+    * @param sink     type constraint of the signature/sink
     * @param contexts handler contexts
     */
   private def mkHandlerMismatch(sink: TypeConstraint, contexts: List[HandlerContext]): List[EffConflicted] = sink match {
@@ -317,7 +319,7 @@ object EffectProvenance {
         consUsedTypeArgs(xs).filterNot(x =>
           // an effect that is handled is not a source off an error
           contexts.exists(c => c.handled == x && consTypeArgs(c.inRun).contains(x))
-           // neither is an effect that is in the sink
+            // neither is an effect that is in the sink
             || consTypeArgs(tpe1).contains(x)
             // flexible variables are never sources of an error
             || isFlexible(x)
@@ -369,8 +371,14 @@ object EffectProvenance {
                   case _ => Nil
                 }
                 case Type.Apply(_, _, _) =>
+                  // TODO refactor to use filtered
                   val notInDef = findDiffInTypes(sourceTpe, expected)
-                  notInDef.foldLeft(List.empty[Type])((acc, x) => if (acc.contains(x) || isFlexible(x) || isPure(x) || handledEffs.contains(x)) acc else x :: acc).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(expected), typeToSym(x).head, sinkString(tpe1), expected.loc, source.loc)))
+                  notInDef.foldLeft(List.empty[Type])((acc, x) => if (acc.contains(x)
+                    || isFlexible(x)
+                    || isPure(x)
+                    || contexts.exists(c => c.handled == x && consTypeArgs(c.inRun).contains(x))
+                  ) acc else x :: acc)
+                    .map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(expected), typeToSym(x).head, sinkString(tpe1), expected.loc, source.loc)))
                 case _ => Nil
               }
               case Provenance.ExpectArgument(expected, _, sym, _, _) => sym match {
@@ -390,7 +398,7 @@ object EffectProvenance {
 
     }).getOrElse(Nil)
     val unhs = mkUnhandledError(source, sink, contexts)
-    val hs = mkHandlerMismatch(sink,contexts)
+    val hs = mkHandlerMismatch(sink, contexts)
     (hs ++ unhs ++ b, s)
   }
 
