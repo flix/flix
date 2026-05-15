@@ -9,8 +9,8 @@
 ///
 /// We introduce type aliases to model the package domain.
 ///
-type alias Package = String    // e.g. "react"
-type alias Version = Int32     // e.g. 3 (simplified semver)
+type alias Package = String // e.g. "react"
+type alias Version = Int32 // e.g. 3 (simplified semver)
 
 ///
 /// We detect missing dependencies for a root package and use
@@ -54,13 +54,13 @@ def main(): Unit \ IO =
     // Query all missing dependencies.
     println("Missing dependencies:");
     let missing = query db, pr select (pkg, pkgVer, dep, minVer) from Missing(pkg, pkgVer, dep, minVer);
-    foreach((pkg, pkgVer, dep, minVer) <- missing) {
+    foreach ((pkg, pkgVer, dep, minVer) <- missing) {
         println("  ${pkg}@${pkgVer} requires ${dep} >= ${minVer} (MISSING)");
 
         // Use pquery to trace why pkg@pkgVer was needed.
         let chain = pquery db, pr select Resolved(pkg, pkgVer) with {Dependency};
         println("  Dependency chain:");
-        foreach(fact <- chain) {
+        foreach (fact <- chain) {
             ematch fact {
                 case Dependency(fromPkg, fromVer, toPkg, toMinVer) =>
                     println("    ${fromPkg}@${fromVer} requires ${toPkg} >= ${toMinVer}")
@@ -101,7 +101,7 @@ def database(): #{ Published(Package, Version), Dependency(Package, Version, Pac
     Dependency("next", 14, "react", 18).
     Dependency("next", 14, "postcss", 8).
     Dependency("next", 14, "next-themes", 1).
-    Dependency("postcss", 8, "autoprefixer", 11).      // only @9, @10 exist
+    Dependency("postcss", 8, "autoprefixer", 11). // only @9, @10 exist
     Dependency("next-themes", 1, "string-formatter", 1).
-    Dependency("string-formatter", 1, "left-pad", 1).  // left-pad unpublished!
+    Dependency("string-formatter", 1, "left-pad", 1). // left-pad unpublished!
 }

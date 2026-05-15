@@ -57,7 +57,7 @@ pub mod Fixpoint3.Ast.Datalog {
                 let factSyms = facts |> Vector.map(predSymsOf) |> Monoid.fold;
                 let ruleSyms = rules |> Vector.map(predSymsOf) |> Monoid.fold;
                 factSyms ++ ruleSyms
-            case Datalog.Model(m)     => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
+            case Datalog.Model(m) => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
             case Datalog.Join(v1, v2) => predSymsOf(v1) ++ predSymsOf(v2)
             case Datalog.Provenance(rules, model) =>
                 let ruleSyms = rules |> Vector.map(predSymsOf) |> Monoid.fold;
@@ -271,12 +271,12 @@ pub mod Fixpoint3.Ast.Datalog {
                         case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
                     }
                 case BodyPredicate.Functional(boundVars, _, freeVars) => "<loop>(${boundVars}, ${freeVars})"
-                case BodyPredicate.Guard0(_)                          => "<clo>()"
-                case BodyPredicate.Guard1(_, v)                       => "<clo>(${v})"
-                case BodyPredicate.Guard2(_, v1, v2)                  => "<clo>(${v1}, ${v2})"
-                case BodyPredicate.Guard3(_, v1, v2, v3)              => "<clo>(${v1}, ${v2}, ${v3})"
-                case BodyPredicate.Guard4(_, v1, v2, v3, v4)          => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-                case BodyPredicate.Guard5(_, v1, v2, v3, v4, v5)      => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+                case BodyPredicate.Guard0(_) => "<clo>()"
+                case BodyPredicate.Guard1(_, v) => "<clo>(${v})"
+                case BodyPredicate.Guard2(_, v1, v2) => "<clo>(${v1}, ${v2})"
+                case BodyPredicate.Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
+                case BodyPredicate.Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+                case BodyPredicate.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
             }
     }
 
