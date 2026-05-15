@@ -39,16 +39,6 @@ object Diagnostic {
     Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil, relatedInformation)
   }
 
-  def fromWithLoc(m: CompilationMessage, loc: SourceLocation, root: Option[TypedAst.Root]): Diagnostic = {
-    val range = Range.from(loc)
-    val severity = Some(DiagnosticSeverity.Error)
-    val code = m.kind.toString
-    val summary = m.summary
-    val fullMessage = m.messageWithLoc(AnsiTerminalFormatter)(root)
-    val relatedInformation = m.locs.map(l => DiagnosticRelatedInformation(Location.from(l), m.summary))
-    Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil, relatedInformation)
-  }
-
   def from(codeHint: CodeHint): Diagnostic = {
     val range = Range.from(codeHint.loc)
     val severity = Some(DiagnosticSeverity.from(codeHint.severity))
