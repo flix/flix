@@ -207,11 +207,9 @@ pub mod Fixpoint3.Solver {
             Datalog(pFacts, Vector.empty())
         case Model(db) =>
             Map.rangeQuery(
-                ramSym -> match ramSym {
-                    case RelSym.Symbol(predSym, _, _) => match predSym <=> p {
-                        case Comparison.EqualTo => Comparison.EqualTo
-                        case cmp                => cmp
-                    }
+                match RelSym.Symbol(predSym, _, _) -> match predSym <=> p {
+                    case Comparison.EqualTo => Comparison.EqualTo
+                    case cmp                => cmp
                 },
                 db
             )
@@ -776,11 +774,9 @@ pub mod Fixpoint3.Solver {
         }
         case Model(db) => region rc {
             let pFacts = MutList.empty(rc);
-            let qquery = ramSym -> match ramSym {
-                case RelSym.Symbol(predSym, _, _) => match predSym <=> p {
-                    case Comparison.EqualTo => Comparison.EqualTo
-                    case cmp                => cmp
-                }
+            let qquery = match RelSym.Symbol(predSym, _, _) -> match predSym <=> p {
+                case Comparison.EqualTo => Comparison.EqualTo
+                case cmp                => cmp
             };
             db
                 |> Map.rangeQueryWith(
