@@ -311,7 +311,7 @@ pub mod RichString {
     pub def joinWith(f: a -> RichString \ ef, sep: RichString, xs: t[a]): RichString \ (ef + Foldable.Aef[t]) with Foldable[t] =
         let l = Foldable.toList(xs);
         match l {
-            case Nil      => empty()
+            case Nil => empty()
             case x :: Nil => f(x)
             case x :: rest =>
                 List.foldLeft((acc, elem) -> acc + sep + f(elem), f(x), rest)
