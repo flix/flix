@@ -293,7 +293,7 @@ object PrettyPrinter {
     val ruleDoc = Doc.setLayout(layoutOfChildren(rest),
       if (bodyIsPreserved && bodyOnSameLine) sigPadded <+> text("=") <+> body
       else if (bodyIsPreserved)              sigPadded <+> text("=") <> nest(4, hardline <> body)
-      else                                    sigPadded <+> text("=") <> nest(4, line <> body)
+      else                                   sigPadded <+> text("=") <> nest(4, line <> body)
     )
 
     prepend(annDoc, ruleDoc)
@@ -418,7 +418,7 @@ object PrettyPrinter {
       case Some(BracketSplit(header, open, body, close, tail)) =>
         val headerDoc  = defaultHeaderJoin(header)
         val tailDoc    = defaultHeaderJoin(tail)
-        if (layoutOfChildren(body) == Layout.SingleLine) {
+        if (parensSameLine(filterEmpty(tree.children)) && layoutOfChildren(body) == Layout.SingleLine) {
           val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
           Doc.setLayout(Layout.MultiLine,
             headerDoc <+> text(open) <> bodyDoc <> text(close) <> nest(4, hardline <> tailDoc)
@@ -1756,7 +1756,7 @@ object PrettyPrinter {
         val tailStart = tail.headOption.flatMap(leftMostToken)
         val isBlock = tailStart.exists(t => t.kind == TokenKind.CurlyL || t.kind == TokenKind.ParenL)
         val tailSep = if (isBlock) space <> tailDoc else nest(4, line <> tailDoc)
-        if (layoutOfChildren(body) == Layout.SingleLine) {
+        if (parensSameLine(tree.children) && layoutOfChildren(body) == Layout.SingleLine) {
           val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
           Doc.setLayout(Layout.MultiLine,
             headerDoc <+> text(open) <> bodyDoc <> text(close) <> tailSep
@@ -2064,7 +2064,7 @@ object PrettyPrinter {
             }
           }
           if (hasSameLineComment) {
-            acc = acc <> gap <> text(token.text) <> space
+            acc = acc <> gap <> text(token.text)
             prevReplEndsWithLine = false
           } else {
             acc = acc <> gap <> replDoc
@@ -2293,6 +2293,15 @@ object PrettyPrinter {
         else Layout.MultiLine
       case _ =>
         if (tree.loc.isSingleLine) Layout.SingleLine else Layout.MultiLine
+    }
+  }
+
+  private def parensSameLine(children: Array[SyntaxTree.Child]): Boolean = {
+    val openTok = children.collectFirst { case t: Token if t.kind == TokenKind.ParenL => t }
+    val closeTok = children.reverse.collectFirst { case t: Token if t.kind == TokenKind.ParenR => t }
+    (openTok, closeTok) match {
+      case (Some(o), Some(c)) => o.start.lineOneIndexed == c.end.lineOneIndexed
+      case _                  => true
     }
   }
 
