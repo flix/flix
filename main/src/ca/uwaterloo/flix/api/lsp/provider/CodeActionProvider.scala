@@ -64,8 +64,7 @@ object CodeActionProvider {
       List(CodeAction(
         title = "Change {} to IO",
         kind = CodeActionKind.QuickFix,
-        // As of right now, having multiple diagnostics does not seem to do much, and the location provided is ignored.
-        diagnostics = List(Diagnostic.from(te, Some(root)), Diagnostic.fromWithLoc(te, loc2, Some(root))),
+        diagnostics = List(Diagnostic.from(te, Some(root))),
         isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "IO"))))),
         command = None
@@ -75,7 +74,7 @@ object CodeActionProvider {
       List(CodeAction(
         title = "Add \\ IO to effect set in signature",
         kind = CodeActionKind.QuickFix,
-        diagnostics = List(Diagnostic.from(te, Some(root)), Diagnostic.fromWithLoc(te, loc2, Some(root))),
+        diagnostics = List(Diagnostic.from(te, Some(root))),
         isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ IO "))))),
         command = None
@@ -85,7 +84,7 @@ object CodeActionProvider {
       List(CodeAction(
         title = f"Change {} to ${sym.name}",
         kind = CodeActionKind.QuickFix,
-        diagnostics = List(Diagnostic.fromWithLoc(te, loc, Some(root)), Diagnostic.fromWithLoc(te, loc2, Some(root))),
+        diagnostics = List(Diagnostic.from(te, Some(root))),
         isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), sym.name))))),
         command = None
@@ -95,7 +94,7 @@ object CodeActionProvider {
       List(CodeAction(
         title = f"Add \\ ${sym.name} to effect set in signature",
         kind = CodeActionKind.QuickFix,
-        diagnostics = List(Diagnostic.fromWithLoc(te, loc, Some(root)), Diagnostic.fromWithLoc(te, loc2, Some(root))),
+        diagnostics = List(Diagnostic.from(te, Some(root))),
         isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), f" \\ ${sym.name} "))))),
         command = None
@@ -105,7 +104,7 @@ object CodeActionProvider {
       List(CodeAction(
         title = f"Add ${usedSym.name} to effect set in signature",
         kind = CodeActionKind.QuickFix,
-        diagnostics = List(Diagnostic.fromWithLoc(te, loc, Some(root)), Diagnostic.fromWithLoc(te, loc2, Some(root))),
+        diagnostics = List(Diagnostic.from(te, Some(root))),
         isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), f"${effectsToString(syms)} + ${usedSym.name}"))))),
         command = None
@@ -139,6 +138,10 @@ object CodeActionProvider {
   }
 
 
+  /**
+    * Returns the effect set as a string.
+    * Same function as in `TypeError` but without the surrounding quotes.
+    */
   private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
     case x :: Nil => s"${x.name}"
     case xs => xs.map(_.name).mkString("{", ", ", "}")
