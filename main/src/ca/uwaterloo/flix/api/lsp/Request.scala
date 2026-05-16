@@ -451,7 +451,7 @@ object Request {
     * Attempts to parse the `uri` from the given JSON value `v`.
     */
   private def parseUri(v: JValue): Result[String, String] = {
-    v \\ "uri" match {
+    v \ "uri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
     }
