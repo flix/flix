@@ -17,13 +17,12 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
-import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, Position, Range, TextEdit, WorkspaceEdit}
+import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Diagnostic, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, EffSymOrRigidVar}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.errors.{CodeHint, ParseError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
