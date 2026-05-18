@@ -350,7 +350,7 @@ mod ShortestPath {
                         case 10 =>
                             let shortestPathFound =
                                 v == Vector#{0, 1, 2, 3, 10} or v == Vector#{0, 1, 2, 6, 10} or v == Vector#{0, 4, 5, 6, 10} or v == Vector#{0, 7, 5, 6, 10} or v == Vector#{0, 7, 8, 6, 10} or v == Vector#{0, 7, 8, 9, 10};
-                                shortestPathFound
+                            shortestPathFound
                         case _ => unreachable!()
                     }
                 )

@@ -85,10 +85,10 @@ def main(): Unit \ IO =
             :: "              └─┘    "
             :: Nil;
 
-        println(graphString |> String.intercalate(String.lineSeparator()));
-        println("The graph above has the components below with edges between them");
+    println(graphString |> String.intercalate(String.lineSeparator()));
+    println("The graph above has the components below with edges between them");
 
-        def pad(s) = ToString.toString(s) |> String.padLeft(15, ' ');
-        result
-            |> Vector.map(match (c1, c2) -> "${pad(c1)} <--> ${c2}")
-            |> Vector.forEach(println)
+    def pad(s) = ToString.toString(s) |> String.padLeft(15, ' ');
+    result
+        |> Vector.map(match (c1, c2) -> "${pad(c1)} <--> ${c2}")
+        |> Vector.forEach(println)
