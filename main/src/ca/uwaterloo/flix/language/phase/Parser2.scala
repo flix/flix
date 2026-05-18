@@ -82,17 +82,18 @@ object Parser2 {
 
     /**
       * The Parsing events emitted during parsing. Note that this is a flat collection that later
-      * gets turned into a [[SyntaxTree.Tree]] by [[buildTree]].
+      * gets turned into a [[SyntaxTree.Tree]] by [[buildTree]]. Declared `var` so [[restore]] can
+      * swap in a cloned buffer captured by [[snapshot]] during speculative parsing.
       */
-    val events: ArrayBuffer[Event] = ArrayBuffer.empty
+    var events: ArrayBuffer[Event] = ArrayBuffer.empty
 
     /**
       * Errors reside both within the produced `Tree` but are also kept here. This is done to avoid
       * crawling the tree for errors. Note that there is data-duplication, but not in the happy
       * case. An alternative could be to collect errors as part of [[buildTree]] and return them in
-      * a list there.
+      * a list there. Declared `var` for the same reason as [[events]].
       */
-    val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
+    var errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
 
     /** True when the parser is currently inside a block expression (`{ ... }`). */
     var inBlock: Boolean = false
@@ -502,37 +503,31 @@ object Parser2 {
   /**
     * Saves the current parser state as a tuple that can be passed to [[restore]].
     *
-    * The snapshot captures all mutable fields of [[State]]:
-    *   - `position` — which token we are currently looking at
-    *   - `fuel`     — the loop-guard counter
-    *   - `eventsLen` / `errorsLen` — current lengths of the two [[ArrayBuffer]]s
-    *   - `inBlock`  — whether the parser is currently inside a block expression
+    * Captures every mutable field of [[State]]: `position`, `fuel`, `inBlock`, and clones
+    * of the `events` and `errors` buffers. Together with [[restore]] this is the foundation
+    * for speculative ("what-if") parsing - see [[speculate]].
     *
-    * This is the foundation for speculative ("what-if") parsing: take a snapshot,
-    * attempt a parse, check whether the result is sensible, then always [[restore]]
-    * to the snapshot so the caller can re-parse cleanly (with or without error recovery).
-    *
-    * Safety note: [[openBefore]] uses [[scala.collection.mutable.ArrayBuffer.insert]], which
-    * shifts event indices. The snapshot is still safe as long as every [[Mark.Closed]] passed
-    * to [[openBefore]] during the speculative session was itself created *after* the snapshot
-    * was taken — i.e. its [[Mark.Closed.index]] >= `eventsLen`. This holds for all type
-    * parsing (the only current use-site), because [[Type.ttype]] creates fresh marks.
+    * The buffers are cloned (rather than recording their lengths) so that any mutation
+    * performed by speculative code - including [[openBefore]]'s `ArrayBuffer.insert`, which
+    * shifts later entries - is fully discarded on rollback. A length-based rollback would
+    * corrupt the tree if a speculative `openBefore` shifted events past the snapshot point.
     */
-  private def snapshot()(implicit s: State): (Int, Int, Int, Int, Boolean) =
-    (s.position, s.fuel, s.events.length, s.errors.length, s.inBlock)
+  private def snapshot()(implicit s: State)
+      : (Int, Int, ArrayBuffer[Event], ArrayBuffer[CompilationMessage], Boolean) =
+    (s.position, s.fuel, s.events.clone(), s.errors.clone(), s.inBlock)
 
   /**
-    * Rolls the parser back to a previously saved [[snapshot]], discarding every event
-    * and error produced since the snapshot was taken.
+    * Rolls the parser back to a previously saved [[snapshot]] by swapping in the cloned
+    * `events` and `errors` buffers and restoring the other state fields.
     */
-  private def restore(snap: (Int, Int, Int, Int, Boolean))(implicit s: State): Unit = {
-    val (position, fuel, eventsLen, errorsLen, inBlock) = snap
+  private def restore(snap: (Int, Int, ArrayBuffer[Event], ArrayBuffer[CompilationMessage], Boolean))
+                     (implicit s: State): Unit = {
+    val (position, fuel, events, errors, inBlock) = snap
     s.position = position
     s.fuel     = fuel
+    s.events   = events
+    s.errors   = errors
     s.inBlock  = inBlock
-    // Discard speculative events and errors
-    s.events.dropRightInPlace(s.events.length - eventsLen)
-    s.errors.dropRightInPlace(s.errors.length - errorsLen)
   }
 
   /**
@@ -548,23 +543,30 @@ object Parser2 {
     * Typical usage pattern:
     * {{{
     *   if (speculate { Type.ttype(); at(TokenKind.Equal) }) {
-    *     // Hypothesis confirmed — re-parse for real, injecting the targeted error.
+    *     // Hypothesis confirmed - re-parse for real, injecting the targeted error.
     *     closeWithError(open(), ParseError.MissingBackslash(sctx, currentSourceLocation()))
     *     val effectMark = open()
     *     Type.ttype()
     *     close(effectMark, TreeKind.Type.Effect)
     *   } else {
-    *     // Hypothesis rejected — fall back to the generic error.
+    *     // Hypothesis rejected - fall back to the generic error.
     *     expect(TokenKind.Equal)
     *   }
     * }}}
     */
   private def speculate(f: => Boolean)(implicit s: State): Boolean = {
     val snap = snapshot()
-    val result = f
-    val noOfErrors = s.errors.length
-    restore(snap)
-    result && noOfErrors == s.errors.length
+    val errsBefore = s.errors.length
+    var noNewErrors = true
+    val result =
+      try {
+        val r = f
+        noNewErrors = s.errors.length == errsBefore
+        r
+      } finally {
+        restore(snap)
+      }
+    result && noNewErrors
   }
 
   /** Returns the distance to the first non-comment token after lookahead. */
