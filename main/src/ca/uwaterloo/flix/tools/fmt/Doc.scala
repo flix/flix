@@ -23,8 +23,10 @@ import scala.annotation.tailrec
   * flixfmt does not compute layout decisions based on a width constraint.
   */
 sealed trait Layout
+
 object Layout {
   case object SingleLine extends Layout
+
   case object MultiLine extends Layout
 }
 
@@ -37,7 +39,9 @@ object Layout {
   */
 sealed trait Doc {
   def <>(right: Doc): Doc = Doc.Concat(this, right)
+
   def <+>(right: Doc): Doc = this <> Doc.space <> right
+
   def <|>(right: Doc): Doc = this <> Doc.line <> right
 }
 
@@ -46,9 +50,9 @@ sealed trait Doc {
   * rendering function for the [[Doc]] algebra.
   *
   *   1. Wadler core the basic compositional combinators.
-  *   2. Leijen position-aware extensions.
-  *   3. Layout-mode constructors, layout invariant.
-  *   4. Fixed line break.
+  *      2. Leijen position-aware extensions.
+  *      3. Layout-mode constructors, layout invariant.
+  *      4. Fixed line break.
   */
 object Doc {
 
@@ -104,15 +108,25 @@ object Doc {
 
 
   def text(str: String): Doc = Text(str)
+
   def line: Doc = Line
+
   def hardline: Doc = HardLine
+
   def space: Doc = Text(" ")
+
   def empty: Doc = Empty
+
   def nest(level: Int, doc: Doc): Doc = Nest(level, doc)
+
   def nestAbsolute(level: Int, doc: Doc): Doc = NestAbsolute(level, doc)
+
   def align(doc: Doc): Doc = Align(doc)
+
   def column(f: Int => Doc): Doc = Column(f)
+
   def setLayout(layout: Layout, doc: Doc): Doc = SetLayout(layout, doc)
+
   def layoutChoice(singleLine: Doc, multiLine: Doc): Doc = LayoutChoice(singleLine, multiLine)
 
   /**
@@ -139,9 +153,9 @@ object Doc {
 
   /** Right fold over `docs` with `f`. */
   private def folddoc(f: (Doc, Doc) => Doc, docs: List[Doc]): Doc = docs match {
-    case Nil      => Empty
+    case Nil => Empty
     case x :: Nil => x
-    case x :: xs  => f(x, folddoc(f, xs))
+    case x :: xs => f(x, folddoc(f, xs))
   }
 
   /** Renders `doc` to a string using the default layout mode `MultiLine`. */
@@ -212,13 +226,13 @@ object Doc {
     case (i, l, Nest(j, x)) :: z =>
       l match {
         case Layout.SingleLine => render(sb, k, (i, l, x) :: z)
-        case Layout.MultiLine  => render(sb, k, (i + j, l, x) :: z)
+        case Layout.MultiLine => render(sb, k, (i + j, l, x) :: z)
       }
 
     case (i, l, Align(x)) :: z =>
       l match {
         case Layout.SingleLine => render(sb, k, (i, l, x) :: z)
-        case Layout.MultiLine  => render(sb, k, (k, l, x) :: z)
+        case Layout.MultiLine => render(sb, k, (k, l, x) :: z)
       }
 
     case (i, l, Column(f)) :: z =>
@@ -227,7 +241,7 @@ object Doc {
     case (i, l, LayoutChoice(s, m)) :: z =>
       l match {
         case Layout.SingleLine => render(sb, k, (i, l, s) :: z)
-        case Layout.MultiLine  => render(sb, k, (i, l, m) :: z)
+        case Layout.MultiLine => render(sb, k, (i, l, m) :: z)
       }
 
     case (i, _, SetLayout(newLayout, x)) :: z =>
