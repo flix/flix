@@ -103,6 +103,7 @@ object Renderer {
                                     tvars: Long,
                                     evars: Long,
                                     dominantPhase: String,
+                                    allocBytes: Long,
                                     nanos: Long,
                                     pctCpu: Double,
                                     pctWall: Double,
@@ -137,6 +138,7 @@ object Renderer {
         tvars         = s.tvars,
         evars         = s.evars,
         dominantPhase = s.dominantPhase.getOrElse("?"),
+        allocBytes    = s.allocBytes,
         nanos         = s.totalNanos,
         pctCpu        = pctWall / parallelism,
         pctWall       = pctWall,
@@ -172,6 +174,7 @@ object Renderer {
         tvars         = m.totalTvars,
         evars         = m.totalEvars,
         dominantPhase = m.dominantPhase.getOrElse("?"),
+        allocBytes    = m.totalAllocBytes,
         nanos         = m.totalNanos,
         pctCpu        = pctWall / parallelism,
         pctWall       = pctWall,
@@ -388,6 +391,7 @@ final class Renderer {
     if (layout.showPhase) {
       sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
     }
+    sb.append(' '); sb.append(sortableColumn(lpad("alloc", 5), Sort.Alloc, activeSort))
     sb.append(' '); sb.append(sortableColumn(lpad("time", 9), Sort.Time, activeSort))
     sb.append(' '); sb.append(plainHeader(lpad("%cpu", 6)))
     sb.append(' '); sb.append(plainHeader(lpad("%wall", 6)))
@@ -464,9 +468,11 @@ final class Renderer {
       sb.append(' ')
       sb.append(rpad(truncate(cells.dominantPhase, 10), 10))
     }
+    val allocField = lpad(formatBytes(cells.allocBytes), 5)
     val timeField = lpad(formatMillis(cells.nanos), 9)
     val cpuField  = f"${cells.pctCpu}%5.1f%%"
     val wallField = f"${cells.pctWall}%5.1f%%"
+    sb.append(' '); sb.append(allocField)
     sb.append(' '); sb.append(if (cells.aggregate) timeField else styleTime(timeField, cells.nanos))
     sb.append(' '); sb.append(if (cells.aggregate) cpuField else stylePctCpu(cpuField, cells.pctCpu))
     sb.append(' '); sb.append(if (cells.aggregate) wallField else stylePctWall(wallField, cells.pctWall))

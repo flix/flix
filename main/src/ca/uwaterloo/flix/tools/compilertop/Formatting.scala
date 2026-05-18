@@ -61,20 +61,29 @@ object Formatting {
   }
 
   /**
-    * Formats a byte count compactly into at most 5 characters: `NB`, `N.NKB`,
-    * `NNNKB`, `N.NMB`, or `NNNMB`. Uses one decimal place under 10 of the
-    * higher unit so small values keep precision while large ones stay narrow.
+    * Formats a byte count compactly into at most 5 characters: `NB`, `NKB`,
+    * `NNNKB`, `NMB`, `NNNMB`, or `NGB`. Always integer — sacrifices precision
+    * below 10 of each unit so the digit width stays uniform across rows. A
+    * mixed integer / one-decimal scheme made `9.0MB` read visually wider than
+    * `14MB` despite being the smaller value.
+    *
+    * If a rounded value lands exactly on the next unit boundary (e.g. 1023KB
+    * + 512B rounds to 1024KB), the surrounding `if` falls through to the
+    * higher unit so the suffix character stays at index 4.
     */
   def formatBytes(bytes: Long): String = {
-    val Kib = 1024.0
-    val Mib = 1024.0 * 1024.0
-    if (bytes < 1024L) s"${bytes}B"
-    else if (bytes < 1024L * 1024L) {
-      val kb = bytes / Kib
-      if (kb < 10.0) f"$kb%.1fKB" else f"${kb.round}%dKB"
-    } else {
-      val mb = bytes / Mib
-      if (mb < 10.0) f"$mb%.1fMB" else f"${mb.round}%dMB"
+    val Kib = 1024L
+    val Mib = Kib * Kib
+    val Gib = Kib * Mib
+    if (bytes < Kib) s"${bytes}B"
+    else {
+      val kb = math.round(bytes.toDouble / Kib)
+      if (kb < Kib) s"${kb}KB"
+      else {
+        val mb = math.round(bytes.toDouble / Mib)
+        if (mb < Kib) s"${mb}MB"
+        else s"${math.round(bytes.toDouble / Gib)}GB"
+      }
     }
   }
 

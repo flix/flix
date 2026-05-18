@@ -43,8 +43,8 @@ object Layout {
   /** Floor on the location column width when the terminal is narrow. */
   private val MinLocWidth: Int = 20
 
-  /** Fixed-width contribution of `time + %cpu + %wall` columns and their separators. */
-  private val FixedTailWidth: Int = 9 + 1 + 6 + 1 + 6 // time(9) + %cpu(6) + %wall(6) with two separators between
+  /** Fixed-width contribution of `alloc + time + %cpu + %wall` columns and their separators. */
+  private val FixedTailWidth: Int = 5 + 1 + 9 + 1 + 6 + 1 + 6 // alloc(5) + time(9) + %cpu(6) + %wall(6) with three separators between
 
   /** Width contribution of the optional LOC column (separator + width). */
   private val LocColWidth: Int = 1 + 4
