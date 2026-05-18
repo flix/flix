@@ -91,6 +91,8 @@ object Model {
     case object Cls     extends Sort { val key = 'c' }
     /** Largest total `.class` byte size first — surfaces defs whose bodies compile to bulky bytecode. */
     case object Size    extends Sort { val key = 's' }
+    /** Most heap bytes allocated by the compiler while processing this def — surfaces compiler-side data-structure blow-up (e.g. unification trails, IR duplication) independent of wall time. */
+    case object Alloc   extends Sort { val key = 'l' }
     /** Most type constraints first — surfaces type-checking-heavy defs. The key is `n` (not `c`, which is taken by [[Cls]]). */
     case object Cns     extends Sort { val key = 'n' }
     /** Most type variables first — surfaces broadly polymorphic defs. */
@@ -99,7 +101,7 @@ object Model {
     case object Evars   extends Sort { val key = 'e' }
 
     /** All sort values. */
-    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Cns, Tvars, Evars)
+    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
 
     /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
@@ -121,13 +123,15 @@ object Model {
     * @param totalLocLines  summed source-line counts across the module's defs.
     * @param byPhase        phase → summed nanoseconds across the module's defs.
     * @param byPhaseCount   phase → summed track-call counts across the module's defs.
+    * @param byPhaseAlloc   phase → summed compiler-side allocation bytes across the module's defs. Lets the frontend/backend filter re-project module allocation the same way it re-projects module time.
     * @param totalCns       summed Typer constraint counts across the module's defs.
     * @param totalTvars     summed `Kind.Star` type-variable counts across the module's defs.
     * @param totalEvars     summed `Kind.Eff`  effect-variable counts across the module's defs.
     * @param totalInlined   summed inliner call-site inline counts across the module's defs.
     * @param totalClassBytes summed bytecode byte size of emitted `.class` files across the module's defs.
+    * @param totalAllocBytes summed compiler-side heap allocation bytes across the module's defs.
     */
-  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long) {
+  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)

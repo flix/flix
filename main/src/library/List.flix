@@ -61,7 +61,7 @@ pub mod List {
         @Terminates @Tailrec
         pub def compare(l1: List[a], l2: List[a]): Comparison = match (l1, l2) {
             case (_ :: _, Nil) => Comparison.GreaterThan
-            case (Nil, Nil)    => Comparison.EqualTo
+            case (Nil, Nil) => Comparison.EqualTo
             case (Nil, _ :: _) => Comparison.LessThan
             case (z :: zs, w :: ws) =>
                 let cmp = z <=> w;
