@@ -213,8 +213,10 @@ pub mod Reducible {
         pub def dropWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
             def step(acc, a) = {
                 let (c, xs) = acc;
-                if (c and f(a)) (true, xs)
-                else            (false, a :: xs)
+                if (c and f(a))
+                    (true, xs)
+                else
+                    (false, a :: xs)
             };
             Reducible.foldLeft(step, (true, Nil), t) |> snd |> List.reverse
 
@@ -224,8 +226,10 @@ pub mod Reducible {
         pub def takeWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
             def step(acc, a) = {
                 let (c, xs) = acc;
-                if (c and f(a)) (true, a :: xs)
-                else            (false, xs)
+                if (c and f(a))
+                    (true, a :: xs)
+                else
+                    (false, xs)
             };
             Reducible.foldLeft(step, (true, Nil), t) |> snd |> List.reverse
 
