@@ -61,23 +61,23 @@ def exampleGraph(): Set[(String, String)] =
             :: "       │ dalte ├───┤quater │                   "
             :: "       └───────┘   └───────┘                   "
             :: Nil;
-        // The graph as a set of links.
-        Set#{
-            ("semel", "bis"),
-            ("semel", "quincy"),
-            ("semel", "clote"),
-            ("bis", "ter"),
-            ("ter", "olfe"),
-            ("ter", "quincy"),
-            ("ter", "icsi"),
-            ("icsi", "mamuk"),
-            ("mamuk", "quincy"),
-            ("mamuk", "clote"),
-            ("mamuk", "quater"),
-            ("mamuk", "dalte"),
-            ("clote", "quincy"),
-            ("dalte", "quater")
-        }
+    // The graph as a set of links.
+    Set#{
+        ("semel", "bis"),
+        ("semel", "quincy"),
+        ("semel", "clote"),
+        ("bis", "ter"),
+        ("ter", "olfe"),
+        ("ter", "quincy"),
+        ("ter", "icsi"),
+        ("icsi", "mamuk"),
+        ("mamuk", "quincy"),
+        ("mamuk", "clote"),
+        ("mamuk", "quater"),
+        ("mamuk", "dalte"),
+        ("clote", "quincy"),
+        ("dalte", "quater")
+    }
 
 ///
 /// Test which of the stations are safely and unsafely connected from `bis`.
