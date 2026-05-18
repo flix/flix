@@ -235,7 +235,7 @@ pub mod GetOpt {
                 case (_, _, rest)                                   => (OptionKind.UnreqOpt("--${xstr}"), rest)
             }
             case Err(GetOptionFailure.Ambiguous(options)) => (errAmbig(options, optStr), tokens)
-            case Err(GetOptionFailure.NotFound)           => (OptionKind.UnreqOpt("--${xstr}"), tokens)
+            case Err(GetOptionFailure.NotFound) => (OptionKind.UnreqOpt("--${xstr}"), tokens)
         }
 
     /// Returns the "left view" of String `s`.
@@ -266,9 +266,9 @@ pub mod GetOpt {
                 case (ArgDescr.OptArg(f, _), "", rest)      => (decodeArg(f(None), optStr), rest)
                 case (ArgDescr.OptArg(f, _), str, rest)     => (decodeArg(f(Some(str)), optStr), rest)
             }
-            case Err(GetOptionFailure.Ambiguous(options))     => (errAmbig(options, optStr), tokens)
+            case Err(GetOptionFailure.Ambiguous(options)) => (errAmbig(options, optStr), tokens)
             case Err(GetOptionFailure.NotFound) if xstr == "" => (OptionKind.UnreqOpt(optStr), tokens)
-            case Err(GetOptionFailure.NotFound)               => (OptionKind.UnreqOpt(optStr), "-${xstr}" :: tokens)
+            case Err(GetOptionFailure.NotFound) => (OptionKind.UnreqOpt(optStr), "-${xstr}" :: tokens)
         }
 
     ///
