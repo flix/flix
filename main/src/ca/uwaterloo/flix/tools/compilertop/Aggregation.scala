@@ -28,9 +28,10 @@ object Aggregation {
 
   /** True if `phase` should be accounted for under the current `f`. */
   def matchesFilter(phase: String, f: PhaseFilter): Boolean = f match {
-    case PhaseFilter.All      => true
-    case PhaseFilter.Frontend => FrontendPhases.contains(phase)
-    case PhaseFilter.Backend  => phase != "?" && !FrontendPhases.contains(phase)
+    case PhaseFilter.All           => true
+    case PhaseFilter.Frontend      => FrontendPhases.contains(phase)
+    case PhaseFilter.Backend       => phase != "?" && !FrontendPhases.contains(phase)
+    case PhaseFilter.Custom(phases) => phases.contains(phase)
   }
 
   /**

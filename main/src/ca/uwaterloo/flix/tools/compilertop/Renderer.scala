@@ -43,10 +43,13 @@ import scala.collection.mutable
   *                        [[Renderer.TotalPhases]] for the progress bar.
   * @param activeFilter    user-toggled phase filter (drives the legend).
   * @param activeSort      user-toggled sort key (drives header underlines).
+  * @param activeView      active screen — main dashboard or picker overlay.
   * @param layout          column layout produced by [[Layout.compute]].
   * @param visible         def-table rows, already filtered / sorted / trimmed.
   * @param modules         module-table rows, already aggregated / sorted /
   *                        trimmed.
+  * @param pickerFrontend  sorted phase names rendered in the picker's left column.
+  * @param pickerBackend   sorted phase names rendered in the picker's right column.
   */
 final case class FrameState(parallelism: Int,
                             isDone: Boolean,
@@ -57,9 +60,12 @@ final case class FrameState(parallelism: Int,
                             phaseTimersSize: Int,
                             activeFilter: PhaseFilter,
                             activeSort: Sort,
+                            activeView: View,
                             layout: Layout,
                             visible: Vector[DefnStats],
-                            modules: Vector[ModuleStats])
+                            modules: Vector[ModuleStats],
+                            pickerFrontend: Vector[String],
+                            pickerBackend: Vector[String])
 
 object Renderer {
 
@@ -207,7 +213,9 @@ final class Renderer {
   def render(state: FrameState): String = {
     // Active-threads sparkline: history of thread-pool occupancy. Stops
     // updating once compilation is done so the bar reflects the work, not
-    // a long tail of zero-occupancy samples while waiting for `q`.
+    // a long tail of zero-occupancy samples while waiting for `q`. Driven
+    // on every tick regardless of view, so flipping between Main and Picker
+    // doesn't leave a gap in the sparkline.
     if (!state.isDone) {
       threadsHistory.enqueue(state.activeThreads.toDouble)
       while (threadsHistory.size > SparkWidth) threadsHistory.dequeue()
@@ -222,6 +230,19 @@ final class Renderer {
     renderStats(sb, state)
     sb.append('\n')
 
+    state.activeView match {
+      case View.Main =>
+        renderMainBody(sb, state)
+      case p: View.Picker =>
+        renderPicker(sb, state, p)
+    }
+
+    sb.append(EndSync)
+    sb.toString
+  }
+
+  /** Renders the regular def + module tables (the body of the main view). */
+  private def renderMainBody(sb: StringBuilder, state: FrameState): Unit = {
     val safeElapsed = state.elapsed.max(1L).toDouble
     val defRows: Vector[Row] = state.visible.map(s => DefnRow(s, safeElapsed, state.parallelism))
     val modRows: Vector[Row] = state.modules.map(m => ModuleRow(m, safeElapsed, state.parallelism))
@@ -238,9 +259,85 @@ final class Renderer {
       renderHeaderRow(sb, rpad("Module (hot)", modWidth), withLocation = false, state.layout, state.activeSort)
       renderTable(sb, modRows, state.layout)
     }
+  }
 
-    sb.append(EndSync)
-    sb.toString
+  /**
+    * Renders the picker overlay: two side-by-side lists of phase names with
+    * `[x]` / `[ ]` checkboxes and a footer of key hints. The cursor row is
+    * bold yellow; the focused column's title is also bold yellow so it's
+    * obvious where ↑ / ↓ will move. Cancelling discards the working
+    * selection; committing replaces the active filter with
+    * [[PhaseFilter.Custom]].
+    */
+  private def renderPicker(sb: StringBuilder, state: FrameState, p: View.Picker): Unit = {
+    val rows = state.pickerFrontend.size.max(state.pickerBackend.size)
+    val frontendColWidth = pickerColumnWidth(state.pickerFrontend)
+    val backendColWidth = pickerColumnWidth(state.pickerBackend)
+    val gap = "  "
+
+    sb.append(' ')
+    sb.append(pickerColumnTitle("Frontend phases", frontendColWidth, p.column == PickerColumn.Frontend))
+    sb.append(gap)
+    sb.append(pickerColumnTitle("Backend phases", backendColWidth, p.column == PickerColumn.Backend))
+    sb.append('\n')
+
+    sb.append(' ')
+    sb.append(dim("─" * frontendColWidth))
+    sb.append(gap)
+    sb.append(dim("─" * backendColWidth))
+    sb.append('\n')
+
+    for (i <- 0 until rows) {
+      sb.append(' ')
+      appendPickerCell(sb, state.pickerFrontend, i, p.selected, frontendColWidth, p.column == PickerColumn.Frontend && p.frontendCursor == i)
+      sb.append(gap)
+      appendPickerCell(sb, state.pickerBackend, i, p.selected, backendColWidth, p.column == PickerColumn.Backend && p.backendCursor == i)
+      sb.append('\n')
+    }
+
+    sb.append('\n')
+    sb.append("  ")
+    sb.append(dim("↑/↓ move   ←/→ switch list   space toggle   a all   n none   enter apply   esc cancel"))
+    sb.append('\n')
+    sb.append("  ")
+    sb.append(dim(s"selected: ${p.selected.size}"))
+    sb.append('\n')
+  }
+
+  /** Returns the rendered width of a picker column: `[x] PhaseName` for the longest phase, or 0 if empty. */
+  private def pickerColumnWidth(phases: Vector[String]): Int = {
+    val maxName = if (phases.isEmpty) 0 else phases.iterator.map(_.length).max
+    // "[x] " prefix (4 chars) + max phase name.
+    4 + maxName
+  }
+
+  /** Renders a picker column title: bold yellow when focused, bold cyan otherwise. Right-padded to `width`. */
+  private def pickerColumnTitle(label: String, width: Int, focused: Boolean): String = {
+    val padded = rpad(label, width)
+    val c = if (focused) Yellow else Cyan
+    s"$BoldCode$c$padded$Reset"
+  }
+
+  /**
+    * Renders one row in a picker column. Out-of-range rows render as `width`
+    * spaces (so the two columns stay aligned even when one is taller). The
+    * cursor row is bold yellow; selected entries get a green `[x]` marker;
+    * unselected get a dim `[ ]`.
+    */
+  private def appendPickerCell(sb: StringBuilder, phases: Vector[String], i: Int, selected: Set[String], width: Int, isCursor: Boolean): Unit = {
+    if (i >= phases.size) {
+      sb.append(" " * width)
+      return
+    }
+    val name = phases(i)
+    val checked = selected.contains(name)
+    val marker = if (checked) green("[x]") else dim("[ ]")
+    val padding = " " * (width - 4 - name.length).max(0)
+    val nameStyled = if (isCursor) s"$BoldCode$Yellow$name$Reset" else name
+    sb.append(marker)
+    sb.append(' ')
+    sb.append(nameStyled)
+    sb.append(padding)
   }
 
   /**
@@ -282,29 +379,52 @@ final class Renderer {
   }
 
   /**
-    * Renders the `[a|f|b]` legend with the active filter highlighted in
-    * bold yellow. Always visible so the user sees the available toggles
+    * Renders the `[a|f|b|custom]` legend with the active filter highlighted
+    * in bold yellow. Always visible so the user sees the available toggles
     * whether the filter is active or not. Driven entirely by
     * [[PhaseFilter.all]]: adding a new filter is a one-line change in
     * [[Model]] and the legend follows automatically.
+    *
+    * Match-by-type rather than equality so that
+    * `PhaseFilter.Custom(non-empty)` lights up under the legend's
+    * `Custom(Set.empty)` sentinel.
     */
   private def renderFilterLegend(active: PhaseFilter): String = {
-    val entries = PhaseFilter.all.map(f => filterLegendEntry(f, f == active))
+    def isActiveType(f: PhaseFilter): Boolean = (f, active) match {
+      case (PhaseFilter.All, PhaseFilter.All)                 => true
+      case (PhaseFilter.Frontend, PhaseFilter.Frontend)       => true
+      case (PhaseFilter.Backend, PhaseFilter.Backend)         => true
+      case (_: PhaseFilter.Custom, _: PhaseFilter.Custom)     => true
+      case _ => false
+    }
+    val entries = PhaseFilter.all.map(f => filterLegendEntry(f, isActiveType(f), active))
     s"${dim("[")}${entries.mkString(dim("|"))}${dim("]")}"
   }
 
   /**
     * Renders one filter-legend entry: the keystroke letter is underlined.
     * The whole word is bold yellow when this is the active filter, dim
-    * otherwise. Underline state is toggled surgically so the inactive
-    * dim styling and the active bold+yellow styling pass through unchanged
-    * on the remaining letters.
+    * otherwise. When the filter is [[PhaseFilter.Custom]] and active, the
+    * legend appends `(N)` with the selection size so the user can see at a
+    * glance whether the custom set is empty without re-opening the picker.
+    *
+    * The keystroke is matched by [[PhaseFilter.key]] rather than `label.head`:
+    * `Custom`'s underlined letter is `u`, not the leading `c`.
     */
-  private def filterLegendEntry(f: PhaseFilter, active: Boolean): String = {
-    val key = f.key.toString
-    val rest = f.label.tail
-    if (active) s"$BoldCode$Yellow$UnderlineCode$key$NoUnderlineCode$rest$Reset"
-    else        s"$DimCode$UnderlineCode$key$NoUnderlineCode$rest$Reset"
+  private def filterLegendEntry(f: PhaseFilter, active: Boolean, activeFilter: PhaseFilter): String = {
+    val label = f.label
+    val keyIdx = label.indexOf(f.key)
+    val before = if (keyIdx > 0) label.take(keyIdx) else ""
+    val key = if (keyIdx >= 0) label.slice(keyIdx, keyIdx + 1) else label.take(1)
+    val after = if (keyIdx >= 0) label.drop(keyIdx + 1) else label.drop(1)
+    // Show the working size only on the *active* Custom — the legend's
+    // Custom sentinel is always empty, so we read the count off the live filter.
+    val suffix = (f, activeFilter) match {
+      case (_: PhaseFilter.Custom, c: PhaseFilter.Custom) if active => s"(${c.selected.size})"
+      case _ => ""
+    }
+    if (active) s"$BoldCode$Yellow$before$UnderlineCode$key$NoUnderlineCode$after$suffix$Reset"
+    else        s"$DimCode$before$UnderlineCode$key$NoUnderlineCode$after$Reset"
   }
 
   /**

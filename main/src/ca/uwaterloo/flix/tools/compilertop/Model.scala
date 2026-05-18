@@ -24,26 +24,43 @@ object Model {
 
   /**
     * Restricts which phases' time the dashboard accounts for. Toggled
-    * interactively via the input thread (`f` / `b` / `a`). The split tracks
-    * `Flix.check` (frontend) vs the phases that follow in `Flix.compile`'s
-    * `codeGen` (backend) — see [[FrontendPhases]].
+    * interactively via the input thread (`f` / `b` / `a`, plus `u` to open
+    * the custom-selection picker). The split tracks `Flix.check` (frontend)
+    * vs the phases that follow in `Flix.compile`'s `codeGen` (backend) — see
+    * [[FrontendPhases]].
     *
-    * `label` is the legend word; `key` is the keystroke that selects this
-    * filter (by convention the first character of `label`). The renderer
-    * derives the legend from these fields and the input loop dispatches via
-    * [[PhaseFilter.fromKey]] — neither encodes the mapping inline.
+    * `label` is the legend word; `key` is the keystroke. By convention
+    * `key = label.head` for All / Frontend / Backend; [[Custom]] uses `'u'`
+    * because `'c'` is already taken by [[Sort.Cls]] (the input loop fans
+    * every key into both ADTs, so a shared letter would change both).
     */
   sealed trait PhaseFilter {
     def label: String
-    final def key: Char = label.head
+    def key: Char
   }
   object PhaseFilter {
-    case object All      extends PhaseFilter { val label = "all" }
-    case object Frontend extends PhaseFilter { val label = "frontend" }
-    case object Backend  extends PhaseFilter { val label = "backend" }
+    case object All      extends PhaseFilter { val label = "all";      val key = 'a' }
+    case object Frontend extends PhaseFilter { val label = "frontend"; val key = 'f' }
+    case object Backend  extends PhaseFilter { val label = "backend";  val key = 'b' }
 
-    /** All filter values in legend display order. */
-    val all: List[PhaseFilter] = List(All, Frontend, Backend)
+    /**
+      * User-curated subset of phases. The renderer treats the underlined
+      * keystroke as `u` (not the first letter of the label) — see [[key]].
+      * `selected` is empty by default; the input loop replaces the whole
+      * filter atomically when the picker is committed.
+      */
+    final case class Custom(selected: Set[String]) extends PhaseFilter {
+      val label = "custom"
+      val key = 'u'
+    }
+
+    /**
+      * Filter constructors in legend display order. The [[Custom]] entry is
+      * a sentinel used only for the legend's keystroke / label — the active
+      * filter (with its real `selected` set) lives in
+      * [[CompilerTop]]'s `filter` atomic.
+      */
+    val all: List[PhaseFilter] = List(All, Frontend, Backend, Custom(Set.empty))
 
     /** The filter whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[PhaseFilter] = all.find(_.key == c.toLower)
@@ -62,6 +79,24 @@ object Model {
     "Reader", "Lexer", "Parser2", "Weeder2", "Desugar", "Namer", "Resolver",
     "Kinder", "Deriver", "Typer", "EntryPoints", "Instances", "PredDeps",
     "Stratifier", "PatMatch", "Redundancy", "Safety", "Terminator", "Dependencies",
+  )
+
+  /**
+    * Phase-name strings that count as "backend" — phases that run inside
+    * `Flix.compile`'s `codeGen` pipeline. Strings must match the literals each
+    * phase passes to `flix.phase("…")` / `flix.phaseNew("…")`. Verified against
+    * the instrumentation table in [[Profiler]]'s scaladoc.
+    *
+    * Disjoint from [[FrontendPhases]]; together they enumerate the universe of
+    * named phases the custom-filter picker can list. Phases not in either set
+    * (and not the fallback `"?"`) are ignored by the picker — but kept in the
+    * profiler snapshot — so a renamed phase shows up as a missing entry in
+    * the picker rather than silently disappearing from the dashboard.
+    */
+  val BackendPhases: Set[String] = Set(
+    "TreeShaker1", "Monomorpher", "LambdaDrop", "Optimizer", "OccurrenceAnalyzer",
+    "Inliner", "Simplifier", "ClosureConv", "LambdaLift", "TreeShaker2",
+    "EffectBinder", "TailPos", "Eraser", "Reducer", "CodeGen",
   )
 
   /**
@@ -135,5 +170,43 @@ object Model {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
+  }
+
+  /**
+    * Which of [[FrontendPhases]] / [[BackendPhases]] the cursor is focused
+    * on in the picker view. Left/right arrows toggle focus; up/down move
+    * the cursor inside the focused list.
+    */
+  sealed trait PickerColumn
+  object PickerColumn {
+    case object Frontend extends PickerColumn
+    case object Backend  extends PickerColumn
+  }
+
+  /**
+    * Active screen for the TUI. CompilerTop swaps the [[View]] reference on
+    * `u` (enter picker), Enter / Esc (leave picker), and the renderer
+    * dispatches one frame layout vs the other from a single field on
+    * [[Renderer.FrameState]].
+    *
+    * The picker keeps its working selection on the `View` itself rather than
+    * mutating the active `PhaseFilter.Custom`. Esc therefore discards the
+    * draft cleanly and the dashboard's column-set doesn't shift while the
+    * user is curating.
+    */
+  sealed trait View
+  object View {
+    case object Main extends View
+
+    /**
+      * Picker screen state.
+      *
+      * @param column   which list the cursor is inside
+      * @param frontendCursor 0-based row in the sorted Frontend list
+      * @param backendCursor  0-based row in the sorted Backend list
+      * @param selected the working set of phase names — committed to
+      *                 [[PhaseFilter.Custom.selected]] on Enter, discarded on Esc
+      */
+    final case class Picker(column: PickerColumn, frontendCursor: Int, backendCursor: Int, selected: Set[String]) extends View
   }
 }

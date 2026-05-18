@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.tools.compilertop.Ansi.*
 import ca.uwaterloo.flix.tools.compilertop.Formatting.*
 import ca.uwaterloo.flix.tools.compilertop.Model.*
 import org.jline.terminal.{Attributes, Terminal, TerminalBuilder}
+import org.jline.utils.NonBlockingReader
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
@@ -108,6 +109,24 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
   private val sort = new AtomicReference[Sort](Sort.Time)
 
   /**
+    * Active screen. [[View.Main]] is the regular dashboard; [[View.Picker]]
+    * overlays a two-column phase-selector replacing the def / module tables.
+    * Written by the input thread, read by the renderer thread; [[buildFrameState]]
+    * snapshots once per frame so a swap mid-render isn't observable.
+    */
+  private val view = new AtomicReference[View](View.Main)
+
+  /**
+    * Sorted phase lists shown in the picker. Frozen at construction so the
+    * cursor index is meaningful across frames; new phase names that the
+    * compiler introduces later simply aren't pickable until a Flix recompile
+    * (which is also when the renamed phase would land in
+    * [[Model.FrontendPhases]] / [[Model.BackendPhases]] anyway).
+    */
+  private val pickerFrontend: Vector[String] = FrontendPhases.toVector.sorted
+  private val pickerBackend: Vector[String] = BackendPhases.toVector.sorted
+
+  /**
     * Counted down by the input thread when the user presses `q` (only after
     * [[completed]] is set). [[stop]] awaits it before tearing the renderer
     * down so the user can keep toggling the filter post-compile.
@@ -182,13 +201,23 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     * Input-thread body: reads keypresses with a [[InputPollMs]] timeout so
     * shutdown is responsive to `running.get() == false`.
     *
-    *   - `f` / `F` → filter to frontend phases
-    *   - `b` / `B` → filter to backend phases
-    *   - `a` / `A` → reset to all phases
-    *   - `q` / `Q` / Ctrl-C / EOF → if compilation has completed, signal
-    *     [[stop]] to finish teardown; otherwise ignored (pressing `q`
-    *     mid-compile must not abort the build).
-    *   - Any other key is ignored.
+    * The dispatch depends on the active [[View]]:
+    *
+    *   - **Main view**:
+    *     - `f` / `F`, `b` / `B`, `a` / `A` → set the phase filter
+    *     - `u` / `U` → open the picker (seeded from the current custom
+    *       selection, or empty if the active filter isn't [[PhaseFilter.Custom]])
+    *     - any sort key (`t`, `h`, `m`, …) → set the sort
+    *     - `q` / `Q` / Ctrl-C / EOF → quit if compilation has completed
+    *   - **Picker view**:
+    *     - ↑ / ↓ → move cursor in the focused list
+    *     - ← / → → switch focus between the Frontend and Backend lists
+    *     - space → toggle inclusion of the highlighted phase
+    *     - Enter → commit the working selection as [[PhaseFilter.Custom]] and
+    *       return to main
+    *     - Esc → discard the working selection and return to main
+    *     - `q` / `Q` / Ctrl-C / EOF → same as Esc before compilation completes;
+    *       quits afterwards (same rule as main view)
     */
   private def inputLoop(): Unit = {
     if (terminal == null) return
@@ -199,22 +228,155 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
         catch { case _: InterruptedException => return; case _: Throwable => -1 }
       c match {
         case -2 => // timeout — loop and re-check `running`
-        case -1 | 3 | 'q' | 'Q' =>
+        case -1 | 3 =>
+          // EOF / Ctrl-C: from any view, treat as quit when compilation is done.
           if (completed.get()) {
             quitLatch.countDown()
             return
           }
+        case 27 =>
+          // Escape (also the prefix byte of CSI sequences). Try to read the
+          // continuation bytes with a very short timeout; a lone Esc keypress
+          // has no follow-up and falls through to the `cancelPicker` branch.
+          handleEscape(r)
         case ch if ch > 0 =>
-          // Dispatch via the Sort / PhaseFilter ADTs so the key ↔ value
-          // mapping lives in one place ([[Model.Sort.fromKey]],
-          // [[Model.PhaseFilter.fromKey]]) rather than being duplicated
-          // across this match and the renderer's header / legend code.
           val char = ch.toChar
-          Sort.fromKey(char).foreach(sort.set)
-          PhaseFilter.fromKey(char).foreach(filter.set)
+          view.get() match {
+            case View.Main =>
+              handleMainKey(char)
+            case p: View.Picker =>
+              handlePickerKey(p, char)
+          }
         case _ => // ignored
       }
     }
+  }
+
+  /**
+    * Reads the bytes following an Esc to decide whether the user pressed Esc
+    * itself or one of the arrow keys. Arrow keys are encoded as either
+    * `Esc [ A/B/C/D` (normal cursor mode, xterm default) or `Esc O A/B/C/D`
+    * (application cursor mode — what some terminals send after enabling
+    * DECCKM). We accept both.
+    *
+    * Only a real timeout on the continuation read (`b1 == -2`) cancels the
+    * picker — a byte we didn't recognize is treated as a stray sequence
+    * and ignored, so a half-recognized arrow key never kicks the user out
+    * of the picker. The continuation timeout is 200 ms because on Windows
+    * the bytes after `Esc` can arrive noticeably after the `Esc` byte
+    * itself (JLine's native console reader delivers them in separate
+    * reads), and 50 ms was eating real arrow-key presses.
+    */
+  private def handleEscape(r: NonBlockingReader): Unit = {
+    val EscapeContinuationMs: Long = 200L
+    val ReadExpired = -2
+    val b1 =
+      try r.read(EscapeContinuationMs)
+      catch { case _: Throwable => -1 }
+    if (b1 == ReadExpired) {
+      // Confirmed lone Esc — cancel the picker if open; ignored in main view.
+      view.get() match {
+        case _: View.Picker => view.set(View.Main)
+        case _ => // main: ignored
+      }
+      return
+    }
+    if (b1 != '[' && b1 != 'O') return // stray byte after Esc: ignore in any view
+    val b2 =
+      try r.read(EscapeContinuationMs)
+      catch { case _: Throwable => -1 }
+    view.get() match {
+      case p: View.Picker => b2 match {
+        case 'A' => view.compareAndSet(p, movePickerCursor(p, -1))
+        case 'B' => view.compareAndSet(p, movePickerCursor(p, +1))
+        case 'C' => view.compareAndSet(p, p.copy(column = PickerColumn.Backend))
+        case 'D' => view.compareAndSet(p, p.copy(column = PickerColumn.Frontend))
+        case _   => // unknown CSI: ignore
+      }
+      case _ => // main view: arrows ignored
+    }
+  }
+
+  /** Main-view key dispatch (filter, sort, quit, picker entry). */
+  private def handleMainKey(char: Char): Unit = char match {
+    case 'q' | 'Q' =>
+      if (completed.get()) {
+        quitLatch.countDown()
+      }
+    case 'u' | 'U' =>
+      // Seed the picker from the current custom selection so re-opening
+      // resumes where the user left off; on first open, default to *all*
+      // phases checked so the user deselects what they don't want rather
+      // than hunting through both lists to opt in.
+      val seed = filter.get() match {
+        case PhaseFilter.Custom(sel) => sel
+        case _ => FrontendPhases ++ BackendPhases
+      }
+      view.set(View.Picker(PickerColumn.Frontend, frontendCursor = 0, backendCursor = 0, selected = seed))
+    case _ =>
+      // Dispatch via the Sort / PhaseFilter ADTs so the key ↔ value mapping
+      // lives in one place ([[Model.Sort.fromKey]], [[Model.PhaseFilter.fromKey]])
+      // rather than being duplicated across this match and the renderer's
+      // header / legend code. The legend lookup `PhaseFilter.fromKey('u')` would
+      // match `PhaseFilter.Custom(Set.empty)` — handled above so we never
+      // overwrite an in-progress selection.
+      Sort.fromKey(char).foreach(sort.set)
+      PhaseFilter.fromKey(char).foreach {
+        case _: PhaseFilter.Custom => // handled by the 'u' branch above
+        case f => filter.set(f)
+      }
+  }
+
+  /** Picker-view key dispatch (toggle, commit, cancel, quit-after-done). */
+  private def handlePickerKey(p: View.Picker, char: Char): Unit = char match {
+    case 'q' | 'Q' =>
+      if (completed.get()) {
+        quitLatch.countDown()
+      } else {
+        view.set(View.Main)
+      }
+    case ' ' =>
+      currentPickerPhase(p).foreach { phase =>
+        val next = if (p.selected.contains(phase)) p.selected - phase else p.selected + phase
+        view.compareAndSet(p, p.copy(selected = next))
+      }
+    case 'a' | 'A' =>
+      // Add every phase from the focused column to the working selection.
+      // Scoped to the focused column so the user can build asymmetric sets
+      // (e.g. "all frontend, only one backend phase") in a couple of strokes.
+      view.compareAndSet(p, p.copy(selected = p.selected ++ phasesInColumn(p.column)))
+    case 'n' | 'N' =>
+      // Drop every phase from the focused column out of the working selection.
+      // Mnemonic: "none". Doesn't touch the other column.
+      view.compareAndSet(p, p.copy(selected = p.selected -- phasesInColumn(p.column)))
+    case '\r' | '\n' =>
+      filter.set(PhaseFilter.Custom(p.selected))
+      view.set(View.Main)
+    case _ => // any other plain key in the picker is ignored
+  }
+
+  /** The full phase set for the given picker column. */
+  private def phasesInColumn(col: PickerColumn): Set[String] = col match {
+    case PickerColumn.Frontend => FrontendPhases
+    case PickerColumn.Backend  => BackendPhases
+  }
+
+  /** Returns the phase name under the picker cursor, or None if its list is empty. */
+  private def currentPickerPhase(p: View.Picker): Option[String] = p.column match {
+    case PickerColumn.Frontend =>
+      if (pickerFrontend.isEmpty) None else Some(pickerFrontend(p.frontendCursor.min(pickerFrontend.size - 1).max(0)))
+    case PickerColumn.Backend =>
+      if (pickerBackend.isEmpty) None else Some(pickerBackend(p.backendCursor.min(pickerBackend.size - 1).max(0)))
+  }
+
+  /** Moves the cursor of the focused list by `delta`, clamped to the list bounds. */
+  private def movePickerCursor(p: View.Picker, delta: Int): View.Picker = p.column match {
+    case PickerColumn.Frontend =>
+      val n = pickerFrontend.size
+      if (n == 0) p else p.copy(frontendCursor = ((p.frontendCursor + delta) % n + n) % n)
+    case PickerColumn.Backend =>
+      val n = pickerBackend.size
+      if (n == 0) p else p.copy(backendCursor = ((p.backendCursor + delta) % n + n) % n)
   }
 
   /**
@@ -299,14 +461,24 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
 
     val activeFilter = filter.get()
     val activeSort = sort.get()
+    val activeView = view.get()
 
     // The mono / opt / cls columns only render under the backend view (the
     // phases that populate them only fire in the backend pipeline). The cns /
     // tv / ev columns only render under the frontend view (constraint
-    // generation is purely a Typer concern). Layout itself doesn't know about
-    // PhaseFilter; we hand it booleans.
-    val showCounts = activeFilter == PhaseFilter.Backend
-    val showCns    = activeFilter == PhaseFilter.Frontend
+    // generation is purely a Typer concern). For Custom we mirror the same
+    // rule: show backend-specific columns only when the selection is purely
+    // backend, frontend-specific only when purely frontend, neither when
+    // mixed. Layout itself doesn't know about PhaseFilter; we hand it booleans.
+    val (showCounts, showCns) = activeFilter match {
+      case PhaseFilter.All           => (false, false)
+      case PhaseFilter.Frontend      => (false, true)
+      case PhaseFilter.Backend       => (true, false)
+      case PhaseFilter.Custom(sel)   =>
+        val anyFrontend = sel.exists(FrontendPhases.contains)
+        val anyBackend  = sel.exists(BackendPhases.contains)
+        (anyBackend && !anyFrontend, anyFrontend && !anyBackend)
+    }
     // Compute the column layout based on the current terminal width,
     // reserving 2 columns for the 1-space left and right table padding.
     val layout = Layout.compute((terminalCols() - 2).max(1), showCounts, showCns)
@@ -315,7 +487,7 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val visible = snap.take(defN)
     val modules = aggregateByModule(snap, activeSort).take(moduleN)
 
-    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, layout, visible, modules)
+    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules, pickerFrontend, pickerBackend)
   }
 
 }
