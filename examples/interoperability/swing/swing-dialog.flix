@@ -32,7 +32,7 @@ def mkButton(content: String, onClick: ActionEvent -> Unit \ ef): JButton \ IO =
     button
 }
 
-def showDialog(title: { title = String }, content: { content = String }, frame: JFrame): Unit \ IO = {
+def showDialog(title: {title = String}, content: {content = String}, frame: JFrame): Unit \ IO = {
     JOptionPane.showConfirmDialog(frame, content#content, title#title, JOptionPane.YES_NO_CANCEL_OPTION);
     ()
 }

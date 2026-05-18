@@ -668,7 +668,7 @@ pub mod Nec {
     ///
     pub def zipWith(f: (a, b) -> c \ ef, c1: Nec[a], c2: Nec[b]): Nec[c] \ ef =
         def loop(nec1: Nec[a], nec2: Nec[b], k: Nec[c] -> Nec[c] \ ef) = match (viewLeft(nec1), viewLeft(nec2)) {
-            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))     => { let a = f(x, y); k(singleton(a)) }
+            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y)) => { let a = f(x, y); k(singleton(a)) }
             case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _)) => { let a = f(x, y); k(singleton(a)) }
             case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y)) => { let a = f(x, y); k(singleton(a)) }
             case (ViewLeft.SomeLeft(x, rs), ViewLeft.SomeLeft(y, qs)) => {

@@ -73,14 +73,14 @@ pub mod Debug {
     pub def stringify(x: a): String = unsafe IO {
         use Reflect.JvmValue;
         match Reflect.reflectValue(x) {
-            case JvmValue.JvmBool(b)    => if (b) "true" else "false"
-            case JvmValue.JvmChar(c)    => "'" + escape("${(c: Char)}") + "'"
+            case JvmValue.JvmBool(b) => if (b) "true" else "false"
+            case JvmValue.JvmChar(c) => "'" + escape("${(c: Char)}") + "'"
             case JvmValue.JvmFloat32(y) => Float.toString(y) + "f32"
             case JvmValue.JvmFloat64(y) => Double.toString(y)
-            case JvmValue.JvmInt8(y)    => Byte.toString(y) + "i8"
-            case JvmValue.JvmInt16(y)   => Short.toString(y) + "i16"
-            case JvmValue.JvmInt32(y)   => Integer.toString(y)
-            case JvmValue.JvmInt64(y)   => Long.toString(y) + "i64"
+            case JvmValue.JvmInt8(y) => Byte.toString(y) + "i8"
+            case JvmValue.JvmInt16(y) => Short.toString(y) + "i16"
+            case JvmValue.JvmInt32(y) => Integer.toString(y)
+            case JvmValue.JvmInt64(y) => Long.toString(y) + "i64"
             case JvmValue.JvmObject(obj) =>
                 if (Objects.isNull(obj)) {
                     "null"
