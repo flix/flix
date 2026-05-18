@@ -144,18 +144,14 @@ object Doc {
     case x :: xs  => f(x, folddoc(f, xs))
   }
 
-  /**
-    * Renders `doc` to a string using the default layout mode `MultiLine`.
-    */
+  /** Renders `doc` to a string using the default layout mode `MultiLine`. */
   def pretty(doc: Doc): String = {
     val sb = new StringBuilder
     render(sb, 0, List((0, Layout.MultiLine, doc)))
     sb.toString()
   }
 
-  /**
-    * Renders `doc` to a string under the given top-level `layout` mode.
-    */
+  /** Renders `doc` to a string under the given top-level `layout` mode. */
   def pretty(layout: Layout, doc: Doc): String = {
     val sb = new StringBuilder
     render(sb, 0, List((0, layout, doc)))
@@ -170,17 +166,16 @@ object Doc {
   }
 
   /**
-    * The rendering algorithm: a single, tail-recursive pass over the document
-    * tree.
-    **
+    * The rendering algorithm: a single, tail-recursive pass over the document tree.
+    *
     * At each step the head of the worklist is consumed and dispatched on by
     * constructor. There is no backtracking, no lookahead and no width
     * decision as with Wadler's algorithm. All layout decisions have already been
-    * encoded into the document via [[SetLayout]] / [[LayoutChoice]].
+    * encoded into the document via [[SetLayout]] and [[LayoutChoice]].
     *
     * @param sb   the StringBuilder accumulating the output
     * @param k    the current output column
-    * @param docs the worklist of `(indentation, layout, document)` triples
+    * @param docs the worklist of `(indentation, layout, document)` tuples to process
     */
   @tailrec
   private def render(sb: StringBuilder, k: Int, docs: List[(Int, Layout, Doc)]): Unit = docs match {
