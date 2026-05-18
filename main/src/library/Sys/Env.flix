@@ -19,8 +19,9 @@ pub mod Sys.Env {
     use Sys.Env
 
     import dev.flix.runtime.Global
-    import java.lang.Exception
+    import java.lang.NullPointerException
     import java.lang.Runtime
+    import java.lang.SecurityException
     import java.lang.System
     import java.io.{File => JFile}
     import java.util.{Iterator => JIterator}
@@ -130,7 +131,7 @@ pub mod Sys.Env {
                     let iter: JIterator[Entry[String, String]] = unsafe IO as rc { System.getenv().entrySet().iterator() };
                     k(getEnvHelper(iter, Map.empty()))
                 } catch {
-                    case _: Exception => k(Map.empty())
+                    case _: SecurityException => k(Map.empty())
                 }
             }
 
@@ -139,7 +140,8 @@ pub mod Sys.Env {
                     let result = System.getenv(name);
                     k(Object.toOption(result))
                 } catch {
-                    case _: Exception => k(None)
+                    case _: SecurityException    => k(None)
+                    case _: NullPointerException => k(None)
                 }
 
             def getProp(name, k)              = k(getPropHelper(name))
@@ -180,7 +182,8 @@ pub mod Sys.Env {
             let result = System.getProperty(name);
             Object.toOption(result)
         } catch {
-            case _: Exception => None
+            case _: SecurityException    => None
+            case _: NullPointerException => None
         }
 
     def getEnvHelper(iter: JIterator[Entry[String, String]], m: Map[String, String]): Map[String, String] \ IO =
