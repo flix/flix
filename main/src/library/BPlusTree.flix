@@ -748,7 +748,7 @@ pub mod BPlusTree {
                         checkRemaining(Iterator.next(i1), Iterator.next(i2))
                 }
                 case (Some(_), None) => false
-                case (None, _)       => true
+                case (None, _) => true
             };
             checkRemaining(Iterator.next(i1), Iterator.next(i2))
         }

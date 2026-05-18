@@ -44,12 +44,12 @@ pub mod DelayList {
         /// Compares `l1` and `l2` lexicographically.
         ///
         pub def compare(l1: DelayList[a], l2: DelayList[a]): Comparison = match (l1, l2) {
-            case (DelayList.ENil, DelayList.ENil)           => Comparison.EqualTo
-            case (_, DelayList.ENil)                        => Comparison.GreaterThan
-            case (DelayList.ENil, _)                        => Comparison.LessThan
+            case (DelayList.ENil, DelayList.ENil) => Comparison.EqualTo
+            case (_, DelayList.ENil) => Comparison.GreaterThan
+            case (DelayList.ENil, _) => Comparison.LessThan
             case (DelayList.LList(xs), DelayList.LList(ys)) => (force xs) <=> (force ys)
-            case (_, DelayList.LList(ys))                   => l1 <=> (force ys)
-            case (DelayList.LList(xs), _)                   => (force xs) <=> l2
+            case (_, DelayList.LList(ys)) => l1 <=> (force ys)
+            case (DelayList.LList(xs), _) => (force xs) <=> l2
             case (DelayList.ECons(x, xs), DelayList.ECons(y, ys)) =>
                 let cmp = x <=> y;
                 if (cmp == Comparison.EqualTo) xs <=> ys else cmp
@@ -492,7 +492,7 @@ pub mod DelayList {
     ///
     def mapWithIndexE(f: (Int32, a) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         def loop(ll, i, k) = match ll {
-            case ENil      => k(ENil)
+            case ENil => k(ENil)
             case ECons(x, xs) =>
                 let x1 = f(i, x);
                 loop(xs, i + 1, ks -> k(ECons(x1, ks)))
@@ -538,7 +538,7 @@ pub mod DelayList {
     ///
     def flatMapE(f: a -> DelayList[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         def loop(ll, k) = match ll {
-            case ENil      => k(ENil)
+            case ENil => k(ENil)
             case ECons(x, xs) =>
                 let xs1 = f(x);
                 loop(xs, ks -> k(append(xs1, ks)))
@@ -761,7 +761,7 @@ pub mod DelayList {
     @Lazy
     def filterMapL(f: a -> Option[b], l: DelayList[a]): DelayList[b] =
         def loop(ll) = match ll {
-            case ENil      => ENil
+            case ENil => ENil
             case ECons(x, xs) =>
                 match f(x) {
                     case None    => loop(xs)
@@ -786,7 +786,7 @@ pub mod DelayList {
     ///
     def filterMapE(f: a -> Option[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         def loop(ll, k) = match ll {
-            case ENil      => k(ENil)
+            case ENil => k(ENil)
             case ECons(x, xs) => match f(x) {
                 case None    => loop(xs, k)
                 case Some(v) => loop(xs, ks -> k(ECons(v, ks)))
@@ -837,7 +837,7 @@ pub mod DelayList {
     ///
     @Experimental
     pub def findMap(f: a -> Option[b] \ ef, l: DelayList[a]): Option[b] \ ef = match l {
-        case ENil      => None
+        case ENil => None
         case ECons(x, xs) => match f(x) {
             case None    => findMap(f, xs)
             case Some(v) => Some(v)
@@ -889,7 +889,7 @@ pub mod DelayList {
     @Experimental
     pub def partition(f: a -> Bool \ ef, l: DelayList[a]): (DelayList[a], DelayList[a]) \ ef =
         def loop(ll, k) = match ll {
-            case ENil      => k((ENil, ENil))
+            case ENil => k((ENil, ENil))
             case ECons(x, xs) =>
                 if (f(x))
                     loop(xs, match (ks, ls) -> k((ECons(x, ks), ls)))
@@ -929,7 +929,7 @@ pub mod DelayList {
     ///
     @Lazy
     def spanL(f: a -> Bool, l: DelayList[a]): (DelayList[a], DelayList[a]) = match l {
-        case ENil      => (ENil, ENil)
+        case ENil => (ENil, ENil)
         case ECons(x, xs) =>
             if (f(x))
                 let t = lazy spanL(f, xs);
@@ -953,7 +953,7 @@ pub mod DelayList {
     ///
     def spanE(f: a -> Bool \ ef, l: DelayList[a]): (DelayList[a], DelayList[a]) \ ef =
         def loop(ll, k) = match ll {
-            case ENil      => k((ENil, ENil))
+            case ENil => k((ENil, ENil))
             case ECons(x, xs) =>
                 if (f(x))
                     loop(xs, match (ks, ls) -> k((ECons(x, ks), ls)))

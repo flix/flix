@@ -848,7 +848,7 @@ mod Fs.FsLayer {
                         else
                             Err(IoError(ErrorKind.Conflict, "Conflict on '${file}': expected mtime ${oldTime}, found ${curTime}"))
                     case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
-                    case Err(e)                              => Err(e)
+                    case Err(e) => Err(e)
                 }
         }
 
@@ -884,7 +884,7 @@ mod Fs.FsLayer {
                 else
                     Err(IoError(ErrorKind.ChecksumMismatch, "Checksum mismatch for '${file}': expected ${String.trim(expected)}, got ${actual}"))
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
-            case Err(e)                              => Err(e)
+            case Err(e) => Err(e)
         }
 
     ///
@@ -1013,7 +1013,7 @@ mod Fs.FsLayer {
     ): Result[IoError, a] \ ef1 + ef2 =
         match doSize(file) {
             case Err(IoError(ErrorKind.NotFound, _)) => doAction()
-            case Err(e)                              => Err(e)
+            case Err(e) => Err(e)
             case Ok(sz) =>
                 if (toBytes(sz) < toBytes(maxSize))
                     doAction()
