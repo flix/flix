@@ -182,7 +182,7 @@ object TypeError {
     * @param loc    the location of the function explicitly declared as defEffSym.
     * @param loc2   the location where the other effect is used.
     */
-  case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, formattedString: String, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
+  case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6216
 
     def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as '${defEffSyms}'"
@@ -195,7 +195,7 @@ object TypeError {
         case head :: tail => s"${magenta(head.name)}, " + formatEffs(tail)
       }
       val defString = s"{${magenta(formatEffs(defEffSyms))}}"
-      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function expected to return '${magenta(formattedString)}'.
+      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function expected to return '${magenta(formatEffs(defEffSyms))}'.
          |
          |${highlight(loc, s"function expected to return '$defString'", fmt)}
          |

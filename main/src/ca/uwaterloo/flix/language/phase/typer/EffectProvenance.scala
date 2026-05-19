@@ -314,7 +314,6 @@ object EffectProvenance {
     }
     val b = a.map({ case (sourceTpe, sProv) =>
       val sourceSyms = typeToSym(sourceTpe)
-      val sinkString = (sink: Type) => s"${EffSymOrRigidVar.format(consUsedTypeArgs(sink).flatMap(typeToSym))}"
       val filtered = (xs: Type, tpe1: Type) => {
         consUsedTypeArgs(xs).filterNot(x =>
           // an effect that is handled is not a source off an error
@@ -338,7 +337,7 @@ object EffectProvenance {
             val errs = prov match {
               case Provenance.ExpectEffect(expected, _, _) => expected match {
                 case Type.Var(sym, _) =>
-                  filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), typeToSym(x).head, sinkString(tpe1), expected.loc, source.loc)))
+                  filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), typeToSym(x).head, expected.loc, source.loc)))
                 case Type.Cst(tc, loc) => tc match {
                   case TypeConstructor.Pure =>
                     def mkPureEffErr(sourceEff: Type): EffConflicted = {
@@ -361,12 +360,12 @@ object EffectProvenance {
                     case Type.Cst(tc2, _) => tc2 match {
                       // source effects that are pure do not constitute an error
                       case TypeConstructor.Pure => Nil
-                      case _ => List(EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), sourceSyms.head, sinkString(tpe1), loc, source.loc)))
+                      case _ => List(EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), sourceSyms.head, loc, source.loc)))
                     }
                     case Type.Apply(_, _, _) =>
                       // filter out any source effect that is handled or is in the function signature, then create an error
-                      filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), typeToSym(x).head, sinkString(tpe1), loc, source.loc)))
-                    case _ => List(EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), sourceSyms.head, sinkString(tpe1), loc, source.loc)))
+                      filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), typeToSym(x).head, loc, source.loc)))
+                    case _ => List(EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym)), sourceSyms.head, loc, source.loc)))
                   }
                   case _ => Nil
                 }
@@ -378,7 +377,7 @@ object EffectProvenance {
                     || isPure(x)
                     || contexts.exists(c => c.handled == x && consTypeArgs(c.inRun).contains(x))
                   ) acc else x :: acc)
-                    .map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(expected), typeToSym(x).head, sinkString(tpe1), expected.loc, source.loc)))
+                    .map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(expected), typeToSym(x).head, expected.loc, source.loc)))
                 case _ => Nil
               }
               case Provenance.ExpectArgument(expected, _, sym, _, _) => sym match {
@@ -387,7 +386,7 @@ object EffectProvenance {
               }
               // wild edge case involving regions and pipes
               case Provenance.Match(_, _, _) => {
-                filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(tpe1), typeToSym(x).head, sinkString(tpe1), prov.loc, x.loc)))
+                filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(tpe1), typeToSym(x).head, prov.loc, x.loc)))
               }
               case _ => Nil
             }
