@@ -199,7 +199,7 @@ object TypeError {
       val defString = s"{${magenta(formatEffs(defEffSyms))}}"
       s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function expected to return '${magenta(formatEffs(defEffSyms))}'.
          |
-         |${highlight(loc, s"function expected to return '$defString'", fmt)}
+         |${highlight(loc1, s"function expected to return '$defString'", fmt)}
          |
          |${highlight(loc2, s"'${magenta(usedEffSym.name)}' used here", fmt)}
          |

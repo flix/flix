@@ -39,7 +39,7 @@ import scala.util.Random
   */
 object EffectProvenance {
 
-  type ZhMap = Map[TypeConstraint, (ZhegalkinExpr[CofiniteIntSet], ZhegalkinExpr[CofiniteIntSet])]
+  private type ZhMap = Map[TypeConstraint, (ZhegalkinExpr[CofiniteIntSet], ZhegalkinExpr[CofiniteIntSet])]
 
   /**
     * Returns a list of effect conflicts if any are found, or None if no good
@@ -99,20 +99,20 @@ object EffectProvenance {
       case _ => None
     }
     // check for edge cases where a single constraint has both a sink and a source
-    val singles = newConstrs.filterNot(pureSource).flatMap(initialSub(_, Map.empty) match {
+    val singles = newConstrs.flatMap(initialSub(_, initialZhegalkins) match {
       case Right(effErr) => Some(effErr)
       case Left(_) => None
     }).flatten
     // create errors for unhandled effects
     val unused = s.map(x => EffConflicted(TypeError.UnusedEffectInSignature(typeToSym(x).head, x.loc))).toList
     val r = unused ++ res ++ singles
-    if (r.isEmpty) None else Some(r)
+    if (r.isEmpty) None else Some(r.distinct)
   }
 
   /** Reorders the front of the work queue so that sink constraints are processed after non-sinks.
     * If the front element is a sink and the second is not, their positions are swapped.
     */
-  private def sortSinks(workQueue: Queue[TypeConstraint]): Queue[TypeConstraint] = {
+  private def deferSinks(workQueue: Queue[TypeConstraint]): Queue[TypeConstraint] = {
     if (workQueue.size >= 2) {
       val (tmp, wq1) = workQueue.dequeue
       if (isSink(tmp)) {
@@ -172,7 +172,7 @@ object EffectProvenance {
 
     def loop(visited: List[TypeConstraint], unvisited: List[TypeConstraint], workQueue: Queue[TypeConstraint], sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): List[EffConflicted] = {
       val (workQueue1, unvisited2) = findNext(visited, unvisited, workQueue, idMap)
-      val workQueue2 = sortSinks(workQueue1)
+      val workQueue2 = deferSinks(workQueue1)
       try {
         val (x, q) = workQueue2.dequeue
         val newSub = applySubs(x, sub, zhMap)
@@ -411,9 +411,9 @@ object EffectProvenance {
   }
 
   /**
-    * converts given type constraint to a Zhegalkin expression, then applies the given substitution, SVE is then applied to the result
+    * applies the given substitution to the type constraint, then SVE is applied to the result
     */
-  private def applySubs(current: TypeConstraint, sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], zhMap: ZhMap)(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): Option[BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]]] = {
+  private def applySubs(current: TypeConstraint, sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], zhMap: ZhMap)(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]]): Option[BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]]] = {
     zhMap.get(current) match {
       case Some((x, y)) =>
         val sx = sub.apply(x)
