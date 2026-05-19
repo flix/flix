@@ -44,6 +44,7 @@ sealed trait TypeError extends CompilationMessage {
     case _: TypeError.MismatchedEffects => true
     case _: TypeError.NonPublicDefaultHandler => true
     case _: TypeError.UnusedEffectInSignature => true
+    case _: TypeError.UnusedHandlerEffect => true
     case _ => false
   }
 }
@@ -64,10 +65,7 @@ object TypeError {
   case class ArgumentGivenWrongEffect(expected: List[EffSymOrRigidVar], actual: List[EffSymOrRigidVar], loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6218
 
-    private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
-      case x :: Nil => s"'${x.name}'"
-      case xs => xs.map(_.name).mkString("'{", ", ", "}'")
-    }
+    private def effectsToString(effs: List[EffSymOrRigidVar]): String = EffSymOrRigidVar.format(effs)
 
     def summary: String =
       s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
@@ -199,9 +197,9 @@ object TypeError {
         case head :: tail => s"${magenta(head.name)}, " + formatEffs(tail)
       }
       val defString = s"{${magenta(formatEffs(defEffSyms))}}"
-      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
+      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function expected to return '${magenta(formatEffs(defEffSyms))}'.
          |
-         |${highlight(loc1, s"function declared as '$defString'", fmt)}
+         |${highlight(loc1, s"function expected to return '$defString'", fmt)}
          |
          |${highlight(loc2, s"'${magenta(usedEffSym.name)}' used here", fmt)}
          |
@@ -323,6 +321,25 @@ object TypeError {
          |
          |Available fields:
          |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    */
+  case class HandledEffectAppearsInSignature(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6217
+
+    def summary: String = s"handled effect '${handledEff.name}', reappears in signature"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""handled effect among expected effects in signature:
+         |${highlight(loc, s"handled effect: '${magenta(handledEff.name)}'", fmt)}
+         |${highlight(sigLoc, "also appears in the signature", fmt)}
+         |
+         |${underline("Solution:")} To fix this remove '${(magenta(handledEff.name))}' from the signature
+         |or subtract it from the other effect(s)
          |""".stripMargin
     }
   }
@@ -905,6 +922,46 @@ object TypeError {
   }
 
   /**
+    * An unhandled effect error.
+    *
+    * Occurs when an effect used inside a `run` expression is neither:
+    *   (a) handled by a handler
+    *   (b) declared in the enclosing function's effect signature.
+    *
+    * @param unhandled  The effect symbol or rigid variable that is unhandled.
+    * @param signature  The effect symbol or rigid variable representing the signature.
+    * @param uLoc       The source location of the unhandled effect use.
+    * @param handlerLoc The source location of the `run` expression's handler block.
+    * @param sigLoc     The source location of the enclosing function's effect signature.
+    */
+  case class UnhandledEffect(unhandled: EffSymOrRigidVar, signature: EffSymOrRigidVar, uLoc: SourceLocation, handlerLoc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7796
+
+    def loc: SourceLocation = uLoc
+
+    def summary: String = s"Unhandled effect: '${unhandled.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unhandled effect: '${magenta(unhandled.name)}'.
+         |
+         |${highlight(uLoc, s"effect '${magenta(unhandled.name)}' is not handled", fmt)}
+         |
+         |The effect is not handled by a handler:
+         |${highlight(handlerLoc, "", fmt)}
+         |
+         |And is not declared in the function signature:
+         |${highlight(sigLoc, s"'${magenta(unhandled.name)}' missing from signature", fmt)}
+         |
+         |${underline("Possible fixes:")}
+         |
+         |  (a) Add a handler for '${magenta(unhandled.name)}', or
+         |  (b) Add '${magenta(unhandled.name)}' to the enclosing function's effect signature.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Unresolved constructor type error.
     * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
     */
@@ -972,6 +1029,29 @@ object TypeError {
          |""".stripMargin
     }
   }
+
+  case class UnusedHandlerEffect(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation, sourceLoc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6219
+
+    def summary: String = s"handler effect '${handledEff.name}' is unused"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""${highlight(loc, s"handler effect '${magenta(handledEff.name)}' is unused", fmt)}
+         |
+         |${highlight(sigLoc, s"'${magenta(handledEff.name)}' missing from the signature", fmt)}
+         |
+         |this effect is also not used by any expression in the 'run' block:
+         |${highlight(sourceLoc, s"'${magenta(handledEff.name)}' is not used by an expression", fmt)}
+         |
+         |${underline("Possible fixes:")}
+         |  (a) Remove the handler for '${magenta(handledEff.name)}'.
+         |  (b) Add '${magenta(handledEff.name)}' to the effect type of the expression inside the 'run' block.
+         |  (c) Subtract '${magenta(handledEff.name)}' from the other effects in the signature.
+         |""".stripMargin
+    }
+  }
+
   /**
     * Returns the constructors of the given class sorted by parameter count.
     */

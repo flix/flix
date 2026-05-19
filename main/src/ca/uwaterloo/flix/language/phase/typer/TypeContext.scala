@@ -116,6 +116,11 @@ class TypeContext {
     currentScopeConstraints.add(constr)
   }
 
+  def unifyHandler(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
+    val constr = TypeConstraint.Equality(tpe1, tpe2, Provenance.Handler(tpe1, tpe2, loc))
+    currentScopeConstraints.add(constr)
+  }
+
   /**
     * Generates constraints unifying the given types.
     *
