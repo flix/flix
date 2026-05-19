@@ -3,18 +3,18 @@
 def main(): Unit \ IO =
     let p = #{
         // Parts and the components they depend on.
-        PartDepends("Car",       "Chassis").
-        PartDepends("Car",       "Engine").
-        PartDepends("Engine",    "Piston").
-        PartDepends("Engine",    "Ignition").
+        PartDepends("Car", "Chassis").
+        PartDepends("Car", "Engine").
+        PartDepends("Engine", "Piston").
+        PartDepends("Engine", "Ignition").
 
         // The time required to assemble a part from its components.
-        AssemblyTime("Car",     7).
-        AssemblyTime("Engine",  2).
+        AssemblyTime("Car", 7).
+        AssemblyTime("Engine", 2).
 
         // The expected delivery date for certain components.
-        DeliveryDate("Chassis";  2).
-        DeliveryDate("Piston";   1).
+        DeliveryDate("Chassis"; 2).
+        DeliveryDate("Piston"; 1).
         DeliveryDate("Ignition"; 7).
 
         // A part is ready when it is delivered.

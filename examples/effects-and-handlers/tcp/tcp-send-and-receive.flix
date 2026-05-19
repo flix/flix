@@ -29,7 +29,7 @@ def main(): Unit \ { TcpBind, TcpConnect, TcpAccept, IO } = region rc {
                             let recvBuf = Array.repeat(rc, 1024, (0i8: Int8));
                             match Readable.read(recvBuf, serverSide) {
                                 case Err(err) => println("Read error: ${err}")
-                                case Ok(n)    =>
+                                case Ok(n) =>
                                     let bytes = Array.slice(rc, start = 0, end = n, recvBuf);
                                     let received = String.fromBytes(Array.toVector(bytes));
                                     println("Server received: ${received}")
