@@ -107,7 +107,7 @@ mod BPlusTree.Node {
                 sameElementsFromLeaf(j1 + 1, m1, j2 + 1, m2)
             else
                 false
-        case _            => false
+        case _ => false
     }
 
     ///

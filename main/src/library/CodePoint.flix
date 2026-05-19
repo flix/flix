@@ -24,8 +24,7 @@
 pub mod CodePoint {
 
     import java.lang.Character
-    import java.lang.Exception
-    import java.lang.Throwable
+    import java.lang.IllegalArgumentException
 
     ///
     /// Returns the minimum integer value of a Unicode code point.
@@ -196,7 +195,7 @@ pub mod CodePoint {
         try {
             Character.getName(cp) |> Object.toOption
         } catch {
-            case _: Exception => None
+            case _: IllegalArgumentException => None
         }
 
     ///
@@ -236,7 +235,7 @@ pub mod CodePoint {
             Array.toVector(arr) |> Vector.takeLeft(size) |> Some
         }
     } catch {
-        case _: Throwable => None
+        case _: IllegalArgumentException => None
     }
 
     ///
@@ -253,7 +252,7 @@ pub mod CodePoint {
                 None
         }
     } catch {
-        case _: Exception => None
+        case _: IllegalArgumentException => None
     }
 
     ///
@@ -270,7 +269,7 @@ pub mod CodePoint {
                 None
         }
     } catch {
-        case _: Exception => None
+        case _: IllegalArgumentException => None
     }
 
     ///
@@ -280,7 +279,7 @@ pub mod CodePoint {
         try {
             Character.toString(cp)
         } catch {
-            case _: Exception => ""
+            case _: IllegalArgumentException => ""
         }
 
     ///

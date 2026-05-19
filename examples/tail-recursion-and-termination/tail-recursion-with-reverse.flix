@@ -5,7 +5,6 @@
 /// local defs are implicitly checked for termination as well.
 /// The `@Tailrec` annotation on the local def `loop` additionally
 /// verifies that every self-recursive call is in tail position.
-
 @Terminates
 pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
     @Tailrec

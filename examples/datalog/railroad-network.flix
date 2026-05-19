@@ -45,36 +45,36 @@ def safeConnects(src: n, links: f[(n, n)]): {safe = Vector[n], unsafe1 = Vector[
 def exampleGraph(): Set[(String, String)] =
     // Visual representation of the graph.
     let _graphString =
-        "             ┌───────┐   ┌───────┐             " ::
-        "     ┌───────┤ semel ├───┤  bis  │             " ::
-        "     │       └───┬───┘   └───┬───┘             " ::
-        "     │           │           │                 " ::
-        " ┌───┴───┐   ┌───┴───┐   ┌───┴───┐   ┌───────┐ " ::
-        " │ clote ├───┤quincy ├───┤  ter  ├───┤ olfe  │ " ::
-        " └───┬───┘   └───┬───┘   └───┬───┘   └───────┘ " ::
-        "     │           │           │                 " ::
-        "     │       ┌───┴───┐   ┌───┴───┐             " ::
-        "     └───────┤ mamuk ├───┤ icsi  │             " ::
-        "             └┬─────┬┘   └───────┘             " ::
-        "              │     │                          " ::
-        "       ┌──────┴┐   ┌┴──────┐                   " ::
-        "       │ dalte ├───┤quater │                   " ::
-        "       └───────┘   └───────┘                   " ::
-        Nil;
+        "             ┌───────┐   ┌───────┐             "
+            :: "     ┌───────┤ semel ├───┤  bis  │             "
+            :: "     │       └───┬───┘   └───┬───┘             "
+            :: "     │           │           │                 "
+            :: " ┌───┴───┐   ┌───┴───┐   ┌───┴───┐   ┌───────┐ "
+            :: " │ clote ├───┤quincy ├───┤  ter  ├───┤ olfe  │ "
+            :: " └───┬───┘   └───┬───┘   └───┬───┘   └───────┘ "
+            :: "     │           │           │                 "
+            :: "     │       ┌───┴───┐   ┌───┴───┐             "
+            :: "     └───────┤ mamuk ├───┤ icsi  │             "
+            :: "             └┬─────┬┘   └───────┘             "
+            :: "              │     │                          "
+            :: "       ┌──────┴┐   ┌┴──────┐                   "
+            :: "       │ dalte ├───┤quater │                   "
+            :: "       └───────┘   └───────┘                   "
+            :: Nil;
     // The graph as a set of links.
     Set#{
-        ("semel", "bis"   ),
+        ("semel", "bis"),
         ("semel", "quincy"),
-        ("semel", "clote" ),
-        ("bis"  , "ter"   ),
-        ("ter"  , "olfe"  ),
-        ("ter"  , "quincy"),
-        ("ter"  , "icsi"  ),
-        ("icsi" , "mamuk" ),
+        ("semel", "clote"),
+        ("bis", "ter"),
+        ("ter", "olfe"),
+        ("ter", "quincy"),
+        ("ter", "icsi"),
+        ("icsi", "mamuk"),
         ("mamuk", "quincy"),
-        ("mamuk", "clote" ),
+        ("mamuk", "clote"),
         ("mamuk", "quater"),
-        ("mamuk", "dalte" ),
+        ("mamuk", "dalte"),
         ("clote", "quincy"),
         ("dalte", "quater")
     }
@@ -82,10 +82,12 @@ def exampleGraph(): Set[(String, String)] =
 ///
 /// Test which of the stations are safely and unsafely connected from `bis`.
 ///
-def test(): Unit \ IO = Env.handle(() -> {
-    let rec = safeConnects("bis", exampleGraph());
-    println("Safe:");
-    rec#safe |> Vector.sort |> Vector.forEach(println);
-    println("Unsafe:");
-    rec#unsafe1 |> Vector.sort |> Vector.forEach(println)
-})()
+def test(): Unit \ IO = Env.handle(
+    () -> {
+        let rec = safeConnects("bis", exampleGraph());
+        println("Safe:");
+        rec#safe |> Vector.sort |> Vector.forEach(println);
+        println("Unsafe:");
+        rec#unsafe1 |> Vector.sort |> Vector.forEach(println)
+    }
+)()

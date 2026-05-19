@@ -163,7 +163,7 @@ mod Fs.MemoryOverlay {
         use Fs.Size.bytes;
         let norm = normalize(path);
         match Map.get(norm, o->files) {
-            case Some(OverlayEntry.TextEntry(s))   => Some(Ok(Fs.FsLayer.estimateStringBytes(s)))
+            case Some(OverlayEntry.TextEntry(s)) => Some(Ok(Fs.FsLayer.estimateStringBytes(s)))
             case Some(OverlayEntry.BinaryEntry(b)) => Some(Ok(bytes(Int32.toInt64(Vector.length(b)))))
             case None =>
                 if (isWhiteout(path, o))
@@ -176,7 +176,7 @@ mod Fs.MemoryOverlay {
     pub def tryRead(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, String]] \ r =
         let norm = normalize(path);
         match Map.get(norm, o->files) {
-            case Some(OverlayEntry.TextEntry(s))   => Some(Ok(s))
+            case Some(OverlayEntry.TextEntry(s)) => Some(Ok(s))
             case Some(OverlayEntry.BinaryEntry(b)) => Some(Ok(String.fromBytes(b)))
             case None =>
                 if (isWhiteout(path, o))
@@ -198,7 +198,7 @@ mod Fs.MemoryOverlay {
         let norm = normalize(path);
         match Map.get(norm, o->files) {
             case Some(OverlayEntry.BinaryEntry(b)) => Some(Ok(b))
-            case Some(OverlayEntry.TextEntry(s))   => Some(Ok(String.toBytes(s)))
+            case Some(OverlayEntry.TextEntry(s)) => Some(Ok(String.toBytes(s)))
             case None =>
                 if (isWhiteout(path, o))
                     Some(notFound(path))

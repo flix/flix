@@ -870,7 +870,7 @@ pub mod Chain {
     pub def compare(c1: Chain[a], c2: Chain[a]): Comparison with Order[a] =
         def loop(cc1, cc2) = match (cc1, cc2) {
             case (SomeLeft(_, _), NoneLeft) => Comparison.GreaterThan
-            case (NoneLeft, NoneLeft)       => Comparison.EqualTo
+            case (NoneLeft, NoneLeft) => Comparison.EqualTo
             case (NoneLeft, SomeLeft(_, _)) => Comparison.LessThan
             case (SomeLeft(l, ls), SomeLeft(r, rs)) =>
                 match (l <=> r) {
