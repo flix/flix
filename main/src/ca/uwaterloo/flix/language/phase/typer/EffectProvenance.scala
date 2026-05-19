@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.ast.shared.EffSymOrRigidVar.{Eff, RigidVar}
 import ca.uwaterloo.flix.language.ast.shared.{EffSymOrRigidVar, RegionScope, VarText}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.errors.TypeError.UnhandledEffect
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.{EffConflicted, Provenance}
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution, BoolUnificationException, CofiniteIntSet, SveAlgorithm}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{ZhegalkinAlgebra, ZhegalkinExpr}
@@ -39,6 +38,8 @@ import scala.util.Random
   * some effect flowing into another (conflicting) effect.
   */
 object EffectProvenance {
+
+  type ZhMap = Map[TypeConstraint, (ZhegalkinExpr[CofiniteIntSet], ZhegalkinExpr[CofiniteIntSet])]
 
   /**
     * Returns a list of effect conflicts if any are found, or None if no good
@@ -64,7 +65,9 @@ object EffectProvenance {
       }
       case _ => false
     }
+
     val sources = filterOutDuplicateSources(sources0)
+
     val contexts = constrs0.filter {
       case TypeConstraint.Equality(_, _, Provenance.Handler(_, _, _)) => true
       case _ => false
@@ -77,20 +80,28 @@ object EffectProvenance {
       }
       case (acc, _) => acc
     }
+
     val handledEffs = constrs0.foldLeft(Set.empty[Type])((acc, x) => findHandled(x) ++ acc)
-    val res = sources.map(a => (a, initialSub(a, Map.empty))
+
+    val (initialZhegalkins, idMap) = constrs0.foldLeft((Map.empty: ZhMap, Map.empty[Type, Int]))(
+      (acc, x) => constraintToZhegalkin(x, acc._2) match {
+        case (Some((z1, z2)), nm) => (acc._1 + (x -> (z1, z2)), nm)
+        case _ => acc
+      })
+
+    val res = sources.map(a => (a, initialSub(a, initialZhegalkins))
     ).flatMap {
-      case (c, (Left(ze), m)) =>
-        val (errs, unused) = findConflictsFromSource(c, constrs0.filterNot(_ == c), ze, m, s, handledEffs, contexts)
+      case (c, Left(ze)) =>
+        val (errs, unused) = findConflictsFromSource(c, constrs0.filterNot(_ == c), ze, idMap, s, handledEffs, contexts, initialZhegalkins)
         s = unused
         errs
-      case (_, (Right(err), _)) => err
+      case (_, Right(err)) => err
       case _ => None
     }
     // check for edge cases where a single constraint has both a sink and a source
     val singles = newConstrs.filterNot(pureSource).flatMap(initialSub(_, Map.empty) match {
-      case (Right(effErr), _) => Some(effErr)
-      case (Left(_), _) => None
+      case Right(effErr) => Some(effErr)
+      case Left(_) => None
     }).flatten
     // create errors for unhandled effects
     val unused = s.map(x => EffConflicted(TypeError.UnusedEffectInSignature(typeToSym(x).head, x.loc))).toList
@@ -151,7 +162,7 @@ object EffectProvenance {
     * @param contexts    handler contexts for generating unhandled-effect errors
     * @return a pair of (list of conflicts found, updated set of unused effects)
     */
-  private def findConflictsFromSource(initial: TypeConstraint, constrs0: List[TypeConstraint], initialSub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], idMap: Map[Type, Int], unused: Set[Type], handledEffs: Set[Type], contexts: List[HandlerContext])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): (List[EffConflicted], Set[Type]) = {
+  private def findConflictsFromSource(initial: TypeConstraint, constrs0: List[TypeConstraint], initialSub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], idMap: Map[Type, Int], unused: Set[Type], handledEffs: Set[Type], contexts: List[HandlerContext], zhMap: ZhMap)(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): (List[EffConflicted], Set[Type]) = {
     var s = unused
     s = initial match {
       case TypeConstraint.Equality(_, tpe2, _) =>
@@ -159,15 +170,15 @@ object EffectProvenance {
       case _ => s
     }
 
-    def loop(visited: List[TypeConstraint], unvisited: List[TypeConstraint], workQueue: Queue[TypeConstraint], sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], m: Map[Type, Int])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): List[EffConflicted] = {
+    def loop(visited: List[TypeConstraint], unvisited: List[TypeConstraint], workQueue: Queue[TypeConstraint], sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): List[EffConflicted] = {
       val (workQueue1, unvisited2) = findNext(visited, unvisited, workQueue, idMap)
       val workQueue2 = sortSinks(workQueue1)
       try {
         val (x, q) = workQueue2.dequeue
-        val (newSub, newMap) = applySubs(x, sub, m)
+        val newSub = applySubs(x, sub, zhMap)
         newSub match {
           case Some(ns) =>
-            if (isSink(visited.head)) Nil else loop(x :: visited, unvisited2, q, ns, newMap)
+            if (isSink(visited.head)) Nil else loop(x :: visited, unvisited2, q, ns)
           case None =>
             val (errs, nu) = mkErrors(initial, x, s, handledEffs, contexts)
             s = nu
@@ -178,7 +189,7 @@ object EffectProvenance {
       }
     }
 
-    (loop(List(initial), constrs0, Queue.empty, initialSub, idMap), s)
+    (loop(List(initial), constrs0, Queue.empty, initialSub), s)
   }
 
   /** Extracts the two sides of an `Equality` constraint, returning `None` for other constraint kinds. */
@@ -336,26 +347,9 @@ object EffectProvenance {
           else {
             val errs = prov match {
               case Provenance.ExpectEffect(expected, _, _) => expected match {
-                case Type.Var(sym, _) =>
-                  filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), typeToSym(x).head, expected.loc, source.loc)))
+                case Type.Var(sym, _) => filtered(sourceTpe, tpe1).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), typeToSym(x).head, expected.loc, source.loc)))
                 case Type.Cst(tc, loc) => tc match {
-                  case TypeConstructor.Pure =>
-                    def mkPureEffErr(sourceEff: Type): EffConflicted = {
-                      // we make a specific error if the source effect is IO
-                      val isIO = typeToSym(sourceEff) match {
-                        case Eff(symbol) :: Nil => symbol == Symbol.IO
-                        case _ => false
-                      }
-                      val err: TypeError = (loc.isReal, isIO) match {
-                        case (true, true) => TypeError.ExplicitlyPureFunctionUsesIO(loc, sProv.loc)
-                        case (true, false) => TypeError.ExplicitlyPureFunctionUsesEffect(typeToSym(sourceEff).head, loc, sProv.loc)
-                        case (false, true) => TypeError.ImplicitlyPureFunctionUsesIO(prov.loc, sProv.loc)
-                        case (false, false) => TypeError.ImplicitlyPureFunctionUsesEffect(typeToSym(sourceEff).head, prov.loc, sProv.loc)
-                      }
-                      EffConflicted(err)
-                    }
-
-                    filtered(sourceTpe, tpe1).map(mkPureEffErr)
+                  case TypeConstructor.Pure => filtered(sourceTpe, tpe1).map(mkPureErrors(_, sProv, loc, prov))
                   case TypeConstructor.Effect(sym, _) => sourceTpe match {
                     case Type.Cst(tc2, _) => tc2 match {
                       // source effects that are pure do not constitute an error
@@ -372,12 +366,12 @@ object EffectProvenance {
                 case Type.Apply(_, _, _) =>
                   // TODO refactor to use filtered
                   val notInDef = findDiffInTypes(sourceTpe, expected)
-                  notInDef.foldLeft(List.empty[Type])((acc, x) => if (acc.contains(x)
-                    || isFlexible(x)
-                    || isPure(x)
-                    || contexts.exists(c => c.handled == x && consTypeArgs(c.inRun).contains(x))
-                  ) acc else x :: acc)
-                    .map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(expected), typeToSym(x).head, expected.loc, source.loc)))
+                  notInDef.foldLeft(List.empty[Type])((acc, x) =>
+                    if (acc.contains(x)
+                      || isFlexible(x)
+                      || isPure(x)
+                      || contexts.exists(c => c.handled == x && consTypeArgs(c.inRun).contains(x))
+                    ) acc else x :: acc).map(x => EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(typeToSym(expected), typeToSym(x).head, expected.loc, source.loc)))
                 case _ => Nil
               }
               case Provenance.ExpectArgument(expected, _, sym, _, _) => sym match {
@@ -401,21 +395,36 @@ object EffectProvenance {
     (hs ++ unhs ++ b, s)
   }
 
+  private def mkPureErrors(sourceEff: Type, sProv: Provenance, sigLoc: SourceLocation, prov: Provenance): EffConflicted = {
+    // we make a specific error if the source effect is IO
+    val isIO = typeToSym(sourceEff) match {
+      case Eff(symbol) :: Nil => symbol == Symbol.IO
+      case _ => false
+    }
+    val err: TypeError = (sigLoc.isReal, isIO) match {
+      case (true, true) => TypeError.ExplicitlyPureFunctionUsesIO(sigLoc, sProv.loc)
+      case (true, false) => TypeError.ExplicitlyPureFunctionUsesEffect(typeToSym(sourceEff).head, sigLoc, sProv.loc)
+      case (false, true) => TypeError.ImplicitlyPureFunctionUsesIO(prov.loc, sProv.loc)
+      case (false, false) => TypeError.ImplicitlyPureFunctionUsesEffect(typeToSym(sourceEff).head, prov.loc, sProv.loc)
+    }
+    EffConflicted(err)
+  }
+
   /**
     * converts given type constraint to a Zhegalkin expression, then applies the given substitution, SVE is then applied to the result
     */
-  private def applySubs(current: TypeConstraint, sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], idMap: Map[Type, Int])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): (Option[BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]]], Map[Type, Int]) = {
-    constraintToZhegalkin(current, idMap) match {
-      case (Some((x, y)), nm) =>
+  private def applySubs(current: TypeConstraint, sub: BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], zhMap: ZhMap)(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): Option[BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]]] = {
+    zhMap.get(current) match {
+      case Some((x, y)) =>
         val sx = sub.apply(x)
         val sy = sub.apply(y)
         try {
           val newSub = SveAlgorithm.sveAll(List((sx, sy)))
-          (Some(sub ++ newSub), nm)
+          Some(sub ++ newSub)
         } catch {
-          case _: BoolUnificationException => (None, nm)
+          case _: BoolUnificationException => None
         }
-      case (_, nm) => (None, nm)
+      case _ => None
     }
   }
 
@@ -423,22 +432,22 @@ object EffectProvenance {
     * converts a single type constraint to a Zhegalkin expression and applies SVE on it
     * if the type constraint has both a sink and a source, then it will produce an error
     */
-  private def initialSub(source: TypeConstraint, idMap: Map[Type, Int])(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): (Either[BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], List[EffConflicted]], Map[Type, Int]) = {
-    constraintToZhegalkin(source, idMap) match {
-      case (Some((x, y)), nm) =>
+  private def initialSub(source: TypeConstraint, zhMap: ZhMap)(implicit alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]], scope: RegionScope, renv: RigidityEnv): Either[BoolSubstitution[ZhegalkinExpr[CofiniteIntSet]], List[EffConflicted]] = {
+    zhMap.get(source) match {
+      case Some((x, y)) =>
         try {
-          (Left(SveAlgorithm.sveAll(List((x, y)))), nm)
+          Left(SveAlgorithm.sveAll(List((x, y))))
         } catch {
           // sometimes a singular constraint has the sink on the left hand side and source on the right side
           case _: BoolUnificationException => source match {
             case TypeConstraint.Equality(tpe1, tpe2, prov) =>
               val newSource = TypeConstraint.Equality(tpe2, tpe2, prov)
               val newSink = TypeConstraint.Equality(tpe1, tpe1, prov)
-              (Right(mkErrors(newSource, newSink, Set.empty[Type], Set.empty, Nil)._1), nm)
-            case _ => (Right(Nil), nm)
+              Right(mkErrors(newSource, newSink, Set.empty[Type], Set.empty, Nil)._1)
+            case _ => Right(Nil)
           }
         }
-      case (None, nm) => (Right(Nil), nm) // Could not generate errors
+      case None => Right(Nil) // Could not generate errors
     }
   }
 
