@@ -18,119 +18,154 @@ package ca.uwaterloo.flix.tools.fmt
 import scala.annotation.tailrec
 
 /**
-  * The layout mode under which a [[Doc]] is rendered.
+  * A `Doc` is an abstract, composable description of a formatted document.
   *
-  * flixfmt does not compute layout decisions based on a width constraint.
-  */
-sealed trait Layout
-
-object Layout {
-  case object SingleLine extends Layout
-
-  case object MultiLine extends Layout
-}
-
-/**
-  * A `Doc` is the algebraic representation of a formatted document.
+  * You build a `Doc` from the combinators and build a string from a `Doc` by calling [[pretty]].
   *
-  *   - `<>`  concatenation of two documents with nothing in between.
-  *   - `<+>` concatenation with a space.
-  *   - `<|>` concatenation with a soft line break.
+  * Unlike the Wadler and Leijen pretty-printers it is derived from, flixfmt makes
+  * no layout decision from a width constraint. Every choice between a
+  * single-line and a multi-line rendering is encoded explicitly in the
+  * document itself via [[Doc.Layout]], [[Doc.LayoutChoice]] and
+  * [[Doc.SetLayout]]. This means that the rendering algorithm is a single pass.
   */
 sealed trait Doc {
+
+  /** Concatenates `this` and `right` with nothing in between. */
   def <>(right: Doc): Doc = Doc.Concat(this, right)
 
+  /** Concatenates `this` and `right` separated by a single space. */
   def <+>(right: Doc): Doc = this <> Doc.space <> right
 
+  /** Concatenates `this` and `right` separated by a soft line break ([[Doc.line]]). */
   def <|>(right: Doc): Doc = this <> Doc.line <> right
 }
 
 /**
-  * Constructors, smart constructors, derived combinators and the [[pretty]]
-  * rendering function for the [[Doc]] algebra.
+  * The [[Doc]] algebra: its constructors, smart constructors, derived
+  * combinators and the [[pretty]] renderer.
   *
-  *   1. Wadler core the basic compositional combinators.
-  *      2. Leijen position-aware extensions.
-  *      3. Layout-mode constructors, layout invariant.
-  *      4. Fixed line break.
+  * The constructors form four layers:
+  *
+  *   1. Wadler core           — [[Empty]], [[Text]], [[Concat]], [[Line]], [[Nest]].
+  *   2. Leijen position-aware — [[Align]], [[Column]], [[NestAbsolute]].
+  *   3. Layout-mode           — [[LayoutChoice]], [[SetLayout]] (see [[Layout]]).
+  *   4. Fixed break           — [[HardLine]]
+  *
+  * References:
+  *
+  *   - Wadler, "A prettier printer":
+  *     https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf
+  *   - Leijen, the `pprint` library (position aware extensions):
+  *     https://github.com/haskell-prettyprinter/prettyprinter
+  *     https://web.archive.org/web/20060620042006/http://www.cs.uu.nl/~daan/download/pprint/pprint.html
+  *   - Lyngby and Due, "A Formatter for Futhark" (layout mode approach without a width constraint):
+  *     https://futhark-lang.org/student-projects/therese-william-project.pdf
   */
 object Doc {
 
-  /** The empty document; the identity for [[Concat]]. */
+  /**
+    * The mode under which a [[Doc]] is rendered.
+    *
+    * flixfmt never derives this from a width constraint: the mode is fixed by
+    * [[SetLayout]] and chosen between by [[LayoutChoice]]. In `SingleLine`
+    * mode every [[Line]] is a space and in `MultiLine` mode every [[Line]] is a
+    * newline followed by the prevailing indentation.
+    */
+  sealed trait Layout
+
+  object Layout {
+    case object SingleLine extends Layout
+
+    case object MultiLine extends Layout
+  }
+
+  /** The empty document; the identity for [[Concat]] (see [[empty]]). */
   case object Empty extends Doc
 
-  /** A literal string. */
+  /** The literal string `str` (see [[text]]). */
   case class Text(str: String) extends Doc
 
-  /** Concatenation of `left` followed by `right`. */
+  /** `left` immediately followed by `right` (see the [[Doc.<>]] operator). */
   case class Concat(left: Doc, right: Doc) extends Doc
 
-  /**
-    * A soft line break: a single space in `SingleLine` mode, and a newline followed by the prevailing indentation in `MultiLine` mode.
-    */
+  /** A soft line break (see [[line]]). */
   case object Line extends Doc
 
-  /**
-    * `doc` rendered with the indentation level increased by `level` columns.
-    */
+  /** `doc` indented by `level` extra columns (see [[nest]]). */
   case class Nest(level: Int, doc: Doc) extends Doc
 
-  /**
-    * `doc` rendered with its indentation level set to the *current* output column rather than the lexical nesting level.
-    */
+  /** `doc` indented to the current output column (see [[align]]). */
   private case class Align(doc: Doc) extends Doc
 
-  /**
-    * A document whose content is determined by the current column,
-    * `f` is  applied to the renderer's current column position and the resulting [[Doc]] is rendered in its place.
-    */
+  /** Content computed from the current output column (see [[column]]). */
   private case class Column(f: Int => Doc) extends Doc
 
-  /**
-    * `doc` rendered with its indentation level set to the *absolute* column
-    * `level`, regardless of the surrounding nesting context.
-    */
+  /** `doc` indented to the absolute column `level` (see [[nestAbsolute]]). */
   private case class NestAbsolute(level: Int, doc: Doc) extends Doc
 
-  /**
-    * Two alternative documents: `singleLine` is selected when the prevailing
-    * layout mode is `SingleLine`, `multiLine` when it is `MultiLine`.
-    */
+  /** Picks `singleLine` or `multiLine` by layout mode (see [[layoutChoice]]). */
   case class LayoutChoice(singleLine: Doc, multiLine: Doc) extends Doc
 
-  /**
-    * `doc` rendered under the fixed layout mode `layout`, regardless of the surrounding layout.
-    */
+  /** `doc` rendered under a fixed layout mode (see [[setLayout]]). */
   case class SetLayout(layout: Layout, doc: Doc) extends Doc
 
-  /** A line break that produces a newline regardless of the layout mode. */
+  /** A hard line break (see [[hardline]]). */
   case object HardLine extends Doc
 
-
+  /**
+    * A document consisting of the literal string `str`.
+    *
+    * `str` should not contain newlines; use [[line]] or [[hardline]] for
+    * breaks so that indentation is tracked correctly.
+    */
   def text(str: String): Doc = Text(str)
 
+  /**
+    * A soft line break: a single space in `SingleLine` mode, and a newline
+    * followed by the prevailing indentation in `MultiLine` mode.
+    */
   def line: Doc = Line
 
+  /** A line break that is always a newline plus indentation, regardless of layout mode. */
   def hardline: Doc = HardLine
 
+  /** A single space. */
   def space: Doc = Text(" ")
 
+  /** The empty document; the identity for [[Doc.Concat]]. */
   def empty: Doc = Empty
 
+  /** `doc` with the indentation level increased by `level` columns (in `MultiLine` mode). */
   def nest(level: Int, doc: Doc): Doc = Nest(level, doc)
 
+  /**
+    * `doc` with its indentation level set to the absolute column `level`,
+    * regardless of the surrounding nesting context.
+    */
   def nestAbsolute(level: Int, doc: Doc): Doc = NestAbsolute(level, doc)
 
+  /**
+    * `doc` with its indentation level set to the *current* output column
+    * rather than the lexical nesting level.
+    */
   def align(doc: Doc): Doc = Align(doc)
 
+  /**
+    * A document whose content depends on the current output column: `f` is
+    * applied to that column and the resulting [[Doc]] is rendered in its place.
+    */
   def column(f: Int => Doc): Doc = Column(f)
 
+  /** `doc` rendered under the fixed layout mode `layout`, regardless of the surrounding layout. */
   def setLayout(layout: Layout, doc: Doc): Doc = SetLayout(layout, doc)
 
+  /** Renders `singleLine` in `SingleLine` mode and `multiLine` in `MultiLine` mode. */
   def layoutChoice(singleLine: Doc, multiLine: Doc): Doc = LayoutChoice(singleLine, multiLine)
 
   /**
-    * Renders `doc` and, in `MultiLine` mode, pads it with spaces so the content occupies at least `width` columns.
+    * Renders `doc` and, in `MultiLine` mode, pads it with spaces so the
+    * content occupies at least `width` columns.
+    *
     * see https://hackage.haskell.org/package/ansi-wl-pprint-0.6.9/docs/Text-PrettyPrint-ANSI-Leijen.html
     */
   def fill(width: Int, doc: Doc): Doc =
@@ -172,7 +207,7 @@ object Doc {
     sb.toString()
   }
 
-  /** Trims trailing spaces from the end of the buffer. Avoids unnecessary whitespaces at the end. */
+  /** Trims trailing spaces from the end of the buffer, avoiding trailing whitespace on a line. */
   private def trimTrailing(sb: StringBuilder): Unit = {
     var i = sb.length - 1
     while (i >= 0 && sb.charAt(i) == ' ') i -= 1
@@ -184,7 +219,7 @@ object Doc {
     *
     * At each step the head of the worklist is consumed and dispatched on by
     * constructor. There is no backtracking, no lookahead and no width
-    * decision as with Wadler's algorithm. All layout decisions have already been
+    * decision as in Wadler's algorithm: all layout decisions have already been
     * encoded into the document via [[SetLayout]] and [[LayoutChoice]].
     *
     * @param sb   the StringBuilder accumulating the output
