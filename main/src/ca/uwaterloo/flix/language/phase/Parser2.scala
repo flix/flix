@@ -82,17 +82,18 @@ object Parser2 {
 
     /**
       * The Parsing events emitted during parsing. Note that this is a flat collection that later
-      * gets turned into a [[SyntaxTree.Tree]] by [[buildTree]].
+      * gets turned into a [[SyntaxTree.Tree]] by [[buildTree]]. Declared `var` so [[restore]] can
+      * swap in a cloned buffer captured by [[snapshot]] during speculative parsing.
       */
-    val events: ArrayBuffer[Event] = ArrayBuffer.empty
+    var events: ArrayBuffer[Event] = ArrayBuffer.empty
 
     /**
       * Errors reside both within the produced `Tree` but are also kept here. This is done to avoid
       * crawling the tree for errors. Note that there is data-duplication, but not in the happy
       * case. An alternative could be to collect errors as part of [[buildTree]] and return them in
-      * a list there.
+      * a list there. Declared `var` for the same reason as [[events]].
       */
-    val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
+    var errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
 
     /** True when the parser is currently inside a block expression (`{ ... }`). */
     var inBlock: Boolean = false
@@ -497,6 +498,75 @@ object Parser2 {
       }
     }
     false
+  }
+
+  /**
+    * Saves the current parser state as a tuple that can be passed to [[restore]].
+    *
+    * Captures every mutable field of [[State]]: `position`, `fuel`, `inBlock`, and clones
+    * of the `events` and `errors` buffers. Together with [[restore]] this is the foundation
+    * for speculative ("what-if") parsing - see [[speculate]].
+    *
+    * The buffers are cloned (rather than recording their lengths) so that any mutation
+    * performed by speculative code - including [[openBefore]]'s `ArrayBuffer.insert`, which
+    * shifts later entries - is fully discarded on rollback. A length-based rollback would
+    * corrupt the tree if a speculative `openBefore` shifted events past the snapshot point.
+    */
+  private def snapshot()(implicit s: State)
+      : (Int, Int, ArrayBuffer[Event], ArrayBuffer[CompilationMessage], Boolean) =
+    (s.position, s.fuel, s.events.clone(), s.errors.clone(), s.inBlock)
+
+  /**
+    * Rolls the parser back to a previously saved [[snapshot]] by swapping in the cloned
+    * `events` and `errors` buffers and restoring the other state fields.
+    */
+  private def restore(snap: (Int, Int, ArrayBuffer[Event], ArrayBuffer[CompilationMessage], Boolean))
+                     (implicit s: State): Unit = {
+    val (position, fuel, events, errors, inBlock) = snap
+    s.position = position
+    s.fuel     = fuel
+    s.events   = events
+    s.errors   = errors
+    s.inBlock  = inBlock
+  }
+
+  /**
+    * Runs `f` speculatively and always restores the parser to the
+    * state it had before the call, regardless of whether `f` succeeded.
+    *
+    * Returns whatever `f` returns, which the caller uses to decide what to do next.
+    *
+    * Because the parser is always rolled back, calling code must re-parse the same
+    * tokens for real if the speculation succeeds. This two-pass cost is trivial
+    * compared to the benefit of generating precise, actionable error messages.
+    *
+    * Typical usage pattern:
+    * {{{
+    *   if (speculate { Type.ttype(); at(TokenKind.Equal) }) {
+    *     // Hypothesis confirmed - re-parse for real, injecting the targeted error.
+    *     closeWithError(open(), ParseError.MissingBackslash(sctx, currentSourceLocation()))
+    *     val effectMark = open()
+    *     Type.ttype()
+    *     close(effectMark, TreeKind.Type.Effect)
+    *   } else {
+    *     // Hypothesis rejected - fall back to the generic error.
+    *     expect(TokenKind.Equal)
+    *   }
+    * }}}
+    */
+  private def speculate(f: => Boolean)(implicit s: State): Boolean = {
+    val snap = snapshot()
+    val errsBefore = s.errors.length
+    var noNewErrors = true
+    val result =
+      try {
+        val r = f
+        noNewErrors = s.errors.length == errsBefore
+        r
+      } finally {
+        restore(snap)
+      }
+    result && noNewErrors
   }
 
   /** Returns the distance to the first non-comment token after lookahead. */
@@ -1066,8 +1136,7 @@ object Parser2 {
       }
       parameters()
       expect(TokenKind.Colon)
-      Type.typeAndEffect()
-
+      Type.typeAndEffect(isFollow = t => t == TokenKind.Equal || t == TokenKind.KeywordWith || t == TokenKind.KeywordWhere)
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -1090,7 +1159,7 @@ object Parser2 {
       }
       parameters()
       expect(TokenKind.Colon)
-      Type.typeAndEffect()
+      Type.typeAndEffect(isFollow = t => t == TokenKind.Equal || t == TokenKind.KeywordWith || t == TokenKind.KeywordWhere)
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -1109,7 +1178,7 @@ object Parser2 {
       if (eat(TokenKind.Equal)) {
         Expr.statement()
       } else {
-        expect(TokenKind.Equal) // Produce an error for missing '='.
+        expect(TokenKind.Equal)
       }
 
       val treeKind = if (declKind == TokenKind.KeywordRedef) TreeKind.Decl.Redef else TreeKind.Decl.Def
@@ -3402,7 +3471,7 @@ object Parser2 {
   }
 
   private object Type {
-    def typeAndEffect()(implicit s: State): Mark.Closed = {
+    def typeAndEffect(isFollow: TokenKind => Boolean = _ => false)(implicit s: State): Mark.Closed = {
       val lhs = ttype()
       if (eat(TokenKind.Backslash)) {
         val mark = open()
@@ -3413,11 +3482,17 @@ object Parser2 {
         val mark = open()
         ttype()
         close(mark, TreeKind.Type.Effect)
+      } else if (nth(0).isFirstInType && speculate { ttype(); isFollow(nth(0)) }) {
+        val errorLoc = mkSourceLocation(previousSourceLocation().end, currentSourceLocation().start)
+        closeWithError(open(), ParseError.MissingBackslash(SyntacticContext.Unknown, errorLoc))
+        val effectMark = open()
+        ttype()
+        close(effectMark, TreeKind.Type.Effect)
       } else lhs
     }
 
     def ttype(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
-      if (left == TokenKind.ArrowThinRWhitespace) return typeAndEffect()
+      if (left == TokenKind.ArrowThinRWhitespace) return typeAndEffect(isFollow = t => !t.isFirstInType)
       var lhs = typeDelimited()
       // Handle Type argument application.
       while (at(TokenKind.BracketL)) {

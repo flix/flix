@@ -323,6 +323,37 @@ object ParseError {
   }
 
   /**
+    * An error raised to indicate that a Backslash is missing before an effect type.
+    *
+    * This is detected by speculative parsing: after a return type is parsed, if the next
+    * token can start a type and speculatively parsing it leads to '=', the user most likely
+    * forgot the '\' separator between the return type and the effect.
+    *
+    * Example:
+    * {{{
+    *   def f(): Unit IO = ()   // forgot '\'
+    *   def f(): Unit \ IO = () // correct
+    * }}}
+    *
+    * @param sctx The syntactic context.
+    * @param loc  The source location of the effect type that was found without a preceding '\'.
+    */
+  case class MissingBackslash(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E1624
+    def summary: String = "Missing '\\' before effect type."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Missing ${red("\\")} before effect type.
+         |
+         |${src(loc, "Insert '\\' before this effect type")}
+         |Hint: In Flix the return type and effect are separated by '\\', e.g. ${cyan("Int32 \\\\ IO")}.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that a Thick Right Arrow was expected, but got a Thin Right Arrow
     *
     * @param sctx      The syntactic context.
@@ -428,4 +459,3 @@ object ParseError {
     case i :: tail => s"$i, ${prettyJoin(tail)}"
   }
 }
-

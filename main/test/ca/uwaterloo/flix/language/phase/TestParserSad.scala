@@ -662,4 +662,113 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val error = check(input, Options.TestWithLibNix)
     expectError[ParseError.MissingBinaryOperator](error)
   }
+
+  test("MissingBackslash.01") {
+    val input =
+      """
+        |def f(): Unit IO = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBackslash](result)
+  }
+
+  test("MissingBackslash.02") {
+    val input =
+      """
+        |def f(): Unit {IO} = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBackslash](result)
+  }
+
+  test("MissingBackslash.03") {
+    val input =
+      """
+        |def f(): Unit ef = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBackslash](result)
+  }
+
+  test("MissingBackslash.04") {
+    val input =
+      """
+        |def f(): a -> a IO = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBackslash](result)
+  }
+
+  test("MissingBackslash.05") {
+    val input =
+      """
+        |def f(): (a -> a IO) \\ IO = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBackslash](result)
+  }
+
+  test("MissingBackslash.Negative.01") {
+    val input =
+      """
+        |def f(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[ParseError.MissingBackslash](result)
+  }
+
+  test("MissingBackslash.Negative.02") {
+    val input =
+      """
+        |def f(): Unit \\ {} = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[ParseError.MissingBackslash](result)
+  }
+
+  test("MissingBackslash.Negative.03") {
+    // Missing '=' entirely
+    val input =
+      """
+        |def f(): Unit
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[ParseError.MissingBackslash](result)
+  }
+
+  test("MissingBackslash.Negative.04") {
+    // Successfully parses '{num+1}' as a type but does not find '=' after '}', so the speculation fails.
+    // The user most likely meant: def inc(num: Int32): Int32 = num+1
+    val input =
+      """
+        |def inc(num: Int32): Int32 {num+1}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[ParseError.MissingBackslash](result)
+    expectError[ParseError.UnexpectedToken](result)
+  }
+
+  test("MissingBackslash.Negative.05") {
+    // {num+num}: both sides are type variables, but there is no '=' after '}',
+    // so the speculation correctly rejects.
+    val input =
+      """
+        |def f(num: Int32): Int32 {num+num}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[ParseError.MissingBackslash](result)
+    expectError[ParseError.UnexpectedToken](result)
+  }
+
+  test("MissingBackslash.Negative.06") {
+    // {num+1}: gets parsed but gives errors,
+    // so the speculation correctly rejects.
+    val input =
+      """
+        |def inc(n: Int32): Int32 {n+1} = n+1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[ParseError.MissingBackslash](result)
+    expectError[ParseError.UnexpectedToken](result)
+  }
 }
