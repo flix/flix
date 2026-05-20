@@ -328,7 +328,7 @@ object TypeError {
   /**
     */
   case class HandledEffectAppearsInSignature(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E6217
+    def code: ErrorCode = ErrorCode.E6220
 
     def summary: String = s"handled effect '${handledEff.name}', reappears in signature"
 
