@@ -62,7 +62,7 @@ class FormatterTest extends AnyFunSuite {
   /**
     * A sample program for testing
     *
-    * @param path the path to the sample file, used for error messages and as the virtual path in the Flix instance
+    * @param path    the path to the sample file, used for error messages and as the virtual path in the Flix instance
     * @param content the original source code of the sample, used as the input for the first parse and for stability checks
     * @param reparse a function that takes a source string and returns the parsed SyntaxTree and WeededAst
     *                after substituting the source for the samples path in the Flix instance and running `check`.
@@ -233,7 +233,7 @@ class FormatterTest extends AnyFunSuite {
       val isFixedPoint = formatted == sample.content
       assert(isFixedPoint,
         s"Standard library is not preserved by the formatter (f(p(l)) != l) " +
-        s"for ${sample.path}:\n${firstDivergence(sample.content, formatted)}")
+          s"for ${sample.path}:\n${firstDivergence(sample.content, formatted)}")
     }
   }
 
@@ -271,7 +271,7 @@ class FormatterTest extends AnyFunSuite {
     * Finds the syntaxTree for the given URI in the root if it exists.
     *
     * @param root the syntax tree root to search
-    * @param uri the file URI to find the syntax tree for
+    * @param uri  the file URI to find the syntax tree for
     * @return an option containing the syntax tree if found, or None if not found
     */
   private def findTreeAt(root: SyntaxTree.Root, uri: String): Option[SyntaxTree.Tree] = {
@@ -283,7 +283,7 @@ class FormatterTest extends AnyFunSuite {
     * Finds the weeded compilation unit for the given URI in the root if it exists.
     *
     * @param root the weeded AST root to search
-    * @param uri the file URI to find the weeded compilation unit for
+    * @param uri  the file URI to find the weeded compilation unit for
     * @return an option containing the weeded compilation unit if found, or None if not found
     */
   private def findWeededUnit(root: WeededAst.Root, uri: String): Option[WeededAst.CompilationUnit] = {
