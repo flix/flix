@@ -42,16 +42,6 @@ import scala.jdk.CollectionConverters.*
 @Ignore
 class FormatterTest extends AnyFunSuite {
 
-  // ---------------------------------------------------------------------------
-  // Sample.
-  //
-  // A program in the test corpus, paired with a function that re-parses an
-  // alternative source under the same path. The `reparse` function is responsible
-  // for restoring the host Flix instance afterward. Stdlib and example samples
-  // differ only in what their `reparse` does; the tests don't care which kind
-  // they're iterating over.
-  // ---------------------------------------------------------------------------
-
   /**
     * A reparse either yields a SyntaxTree or WeededAst for the given source.
     * This union type is used to define the `reparse` function in `Sample` as a single function that can be used for both
