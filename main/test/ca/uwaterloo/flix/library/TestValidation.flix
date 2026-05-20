@@ -319,7 +319,6 @@ mod TestValidation {
     def failure01(): Unit \ Assert =
         assertEq(expected = Failure(singleton("err")), (Validation.failure("err"): Validation[String, Int32]))
 
-
     /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
