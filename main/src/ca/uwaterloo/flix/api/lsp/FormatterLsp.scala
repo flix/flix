@@ -26,9 +26,9 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 /**
-  * A formatter for Flix syntax trees.
+  * The FormatterLsp object provides functionality to format Flix source files using the [[PrettyPrinter]].
   */
-object Formatter {
+object FormatterLsp {
 
   /**
     * Formats the given syntax tree.

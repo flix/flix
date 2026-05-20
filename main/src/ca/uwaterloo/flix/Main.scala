@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.Main.Command.PlainLsp
-import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, Formatter as LspFormatter}
+import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, FormatterLsp as LspFormatter}
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext

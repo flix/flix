@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider
+package ca.uwaterloo.flix.tools.fmt
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{FormattingOptions, Position, FormatterLsp, TextEdit, Range}
+import ca.uwaterloo.flix.language.ast.SyntaxTree
 
-import scala.annotation.unused
-
-object FormattingProvider {
-
-  def formatDocument(uri: String, @unused options: FormattingOptions)(implicit @unused flix: Flix): List[TextEdit] = {
-    val parsedAst = flix.getParsedAst
-    FormatterLsp.format(parsedAst, uri)
-  }
+/**
+  * Stub. The actual pretty-printer implementation is added in a follow-up branch.
+  */
+object PrettyPrinter {
+  def format(tree: SyntaxTree.Tree): String = ""
 }
