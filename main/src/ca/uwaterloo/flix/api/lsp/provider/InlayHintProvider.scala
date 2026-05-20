@@ -68,11 +68,9 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors).distinct ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
     } else {
-      val hints = List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
-      // Remove duplicate inlay hints
-      hints.distinct
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors).distinct ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
     }
   }
 
