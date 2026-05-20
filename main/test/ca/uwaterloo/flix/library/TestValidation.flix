@@ -308,6 +308,19 @@ mod TestValidation {
         assertEq(expected = Success(248), (Success(123): Validation[Int32, Int32]) |> Validation.map(x -> x + 1) |> Validation.map(x -> x * 2))
 
     /////////////////////////////////////////////////////////////////////////////
+    // Validation constructors                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def success01(): Unit \ Assert =
+        assertEq(expected = Success("hello"), Validation.success("hello"))
+
+    @Test
+    def failure01(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("err")), (Validation.failure("err"): Validation[String, Int32]))
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
