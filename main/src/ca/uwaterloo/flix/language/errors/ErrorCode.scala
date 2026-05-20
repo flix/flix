@@ -63,6 +63,7 @@ object ErrorCode {
   case object E1452 extends ErrorCode
   case object E1467 extends ErrorCode
   case object E1512 extends ErrorCode
+  case object E1541 extends ErrorCode
   case object E1563 extends ErrorCode
   case object E1578 extends ErrorCode
   case object E1625 extends ErrorCode
@@ -138,6 +139,7 @@ object ErrorCode {
   case object E3685 extends ErrorCode
   case object E3692 extends ErrorCode
   case object E3736 extends ErrorCode
+  case object E3741 extends ErrorCode
   case object E3783 extends ErrorCode
   case object E3795 extends ErrorCode
   case object E3796 extends ErrorCode
@@ -204,6 +206,7 @@ object ErrorCode {
   case object E6217 extends ErrorCode
   case object E6218 extends ErrorCode
   case object E6247 extends ErrorCode
+  case object E6285 extends ErrorCode
   case object E6289 extends ErrorCode
   case object E6358 extends ErrorCode
   case object E6392 extends ErrorCode
@@ -270,6 +273,7 @@ object ErrorCode {
   case object E9245 extends ErrorCode
   case object E9281 extends ErrorCode
   case object E9356 extends ErrorCode
+  case object E9364 extends ErrorCode
   case object E9394 extends ErrorCode
   case object E9407 extends ErrorCode
   case object E9467 extends ErrorCode
