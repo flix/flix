@@ -16,36 +16,52 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.PredicateCompletion
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.api.lsp.{Consumer, Range, Visitor}
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.{Name, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
-object PredicateCompleter extends Completer {
+object PredicateCompleter {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[PredicateCompletion] = {
+  def getCompletions(uri: String, range: Range)(implicit root: Root, flix: Flix): Iterable[PredicateCompletion] = {
+
     //
     // Find all predicates together with their type and source location.
     //
-    val predsWithTypeAndLoc = index.predTypes
+    var predsWithTypeAndLoc: Set[(Name.Pred, Type)] = Set.empty
+
+    object PredConsumer extends Consumer {
+      override def consumePredicate(p: TypedAst.Predicate): Unit = p match {
+        case TypedAst.Predicate.Head.Atom(name, _, _, tpe, _) => predsWithTypeAndLoc += ((name, tpe))
+        case TypedAst.Predicate.Body.Atom(name, _, _, _, _, tpe, _) => predsWithTypeAndLoc += ((name, tpe))
+        case _ => ()
+      }
+    }
 
     //
     // Select all predicate symbols that occur in the same file.
     //
-    for (
-      (pred, arityAndLocs) <- predsWithTypeAndLoc.m;
-      (tpe, loc) <- arityAndLocs;
-      if loc.source.name == context.uri
-    ) yield Completion.PredicateCompletion(pred.name, arityOf(tpe), FormatType.formatType(tpe))
+    Visitor.visitRoot(root, PredConsumer, FileAcceptor(uri))
+
+    predsWithTypeAndLoc.map {
+      case (predName, tpe) =>
+      Completion.PredicateCompletion(predName.name, range, Priority.Lower(0), arityOf(tpe), FormatType.formatType(tpe))
+    }
   }
 
   /**
-    * Returns the arity of the given predicate type `tpe`
+    * Returns the arity of the given predicate type `tpe`.
+    *
+    * The arity might not always be known. If so, we return 1.
     */
   private def arityOf(tpe: Type): Int = {
-    // We know that a Relation or Lattice has exactly one type argument.
-    tpe.typeArguments.head.typeConstructor match {
-      case Some(TypeConstructor.Tuple(l)) => l
+    tpe.typeArguments match {
+      case targ :: Nil => targ.typeConstructor match {
+        case Some(TypeConstructor.Tuple(l)) => l
+        case _ => 1
+      }
       case _ => 1
     }
   }

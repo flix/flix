@@ -1,6 +1,10 @@
 name: Community Build
 
-on: [pull_request]
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [master]
 
 permissions:
   contents: read
@@ -16,19 +20,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
       - name: Build Flix JAR
-        run: ./gradlew jar
+        run: ./mill flix.assembly
       - name: Upload Flix JAR
         uses: actions/upload-artifact@v4
         with:
           name: flix-jar
-          path: build/libs/flix.jar
+          path: out/flix/assembly.dest/out.jar
 
   # Spawn a separate job per community build
   community-build:
@@ -36,17 +40,21 @@ jobs:
     strategy:
       # collect all the failures
       fail-fast: false
-      # run them one at a time
-      max-parallel: 1
       matrix:
         repo:
+          - "flix/chalk"
+          - "flix/datalog2"
+          - "flix/test-pkg-trust-plain"
+          - "flix/test-pkg-trust-unchecked-cast"
           - "JonathanStarup/Flix-ANSI-Terminal"
-          - "flix/museum"
-          - "jaschdoc/flix-parsers"
+          - "JonathanStarup/ListSet"
+          - "JonathanStarup/talpin1992-in-flix"
+          - "magnus-madsen/bibblitz"
+          - "jaschdoc/flix-test-pkg-trust-transitive-plain"
+          - "jaschdoc/flix-test-pkg-trust-transitive-java"
           - "mlutze/flix-json"
           - "mlutze/flixball"
-          - "stephentetley/charset-locale"
-          - "stephentetley/flix-either"
+          - "rywiese/scope-graphs"
           - "stephentetley/flix-htmldoc"
           - "stephentetley/flix-pretty"
     runs-on: ubuntu-latest
@@ -57,7 +65,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - name: Check out project head
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ matrix.repo }}
       - name: Download Flix JAR
@@ -68,4 +76,4 @@ jobs:
         timeout-minutes: 10
         run: |
           # Build the project.
-          java -jar flix.jar build --github-token ${{ github.token }}
+          java -jar out.jar build --github-token ${{ secrets.GITHUB_TOKEN }}

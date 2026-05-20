@@ -1,22 +1,63 @@
+import java.lang.System
+import java.lang.IndexOutOfBoundsException
+
 ///
 /// Static denotes the region of global lifetime.
 ///
 pub type alias Static = IO
 
 ///
+/// A type alias used while we transition to a proper `Heap` effect.
+///
+type alias Heap[h: Eff] = h
+
+///
 /// An enum that holds type information where a witness is not available.
 ///
-pub enum Proxy[_] {
+pub enum Proxy[_: Type] {
     case Proxy
 }
 
 ///
-/// The Generic IO Effect.
+/// An enum that holds effect information where a witness is not available.
 ///
-/// The `IO` effect is the most general effect of any
-/// operation that interacts with the environment.
+pub enum ProxyEff[_: Eff] {
+    case Proxy
+}
+
+///
+/// An enum that holds type-level Bool information where a witness is not available.
+///
+pub enum ProxyBool[_: Bool] {
+    case Proxy
+}
+
+///
+/// The uninterpretable Chan effect.
+///
+/// The `Chan` effect represents the global region of channels.
+///
+/// The `Chan` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Chan
+
+///
+/// The uninterpretable IO effect.
+///
+/// The `IO` effect represents the actions not described by any other effect.
+///
+/// The `IO` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff IO
+
+///
+/// The uninterpretable `NonDet` effect.
+///
+/// The `NonDet` effect represents one or more non-deterministic actions.
+///
+/// The `NonDet` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff NonDet
 
 ///
 /// The pure identity function.
@@ -50,14 +91,14 @@ pub def on(f: (b, b) -> c \ ef1, g: a -> b \ ef2, x: a, y: a): c \ { ef1, ef2 } 
 ///
 pub def fst(p: (a, b)): a =
     let (x, _) = p;
-        x
+    x
 
 ///
 /// Returns the second component of `t`.
 ///
 pub def snd(p: (a, b)): b =
     let (_, y) = p;
-        y
+    y
 
 ///
 /// Returns the pair `p` with the components swapped.
@@ -65,7 +106,7 @@ pub def snd(p: (a, b)): b =
 ///
 pub def swap(p: (a, b)): (b, a) =
     let (x, y) = p;
-        (y, x)
+    (y, x)
 
 ///
 /// Forwards function composition. Applies the function on the left first.
@@ -93,7 +134,7 @@ pub def ||>(x: (a, b), f: a -> (b -> c \ ef)): c \ ef = f(fst(x), snd(x))
 ///
 /// Given a value `x` and a function `f` returns `x`.
 ///
-pub def !>( x: a, f: a -> Unit \ ef): a \ ef = f(x); x
+pub def !>(x: a, f: a -> Unit \ ef): a \ ef = f(x); x
 
 ///
 /// Coerces the given value `x`.
@@ -104,9 +145,7 @@ pub def coerce(x: t): Coerce.Out[t] with Coerce[t] = Coerce.coerce(x)
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =
-    import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
-    import java.io.PrintStream.println(String): Unit \ IO;
-    x |> ToString.toString |> println(getOut())
+    System.out.println(x |> ToString.toString)
 
 ///
 /// Touches the given region capability `rc`.
@@ -116,19 +155,15 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a = masked_cast({
-    import static java_get_field java.lang.System.err: ##java.io.PrintStream \ {} as getErr;
-    import java.io.PrintStream.println(String): Unit \ IO;
-    import java.lang.String.repeat(Int32): ##java.lang.String \ {};
-    let prt = println(getErr());
-    prt(repeat("*", 80));
-    prt("**") ;
-    prt("**  BUG: ${m}") ;
-    prt("**") ;
-    prt(repeat("*", 80));
-    prt("");
+pub def bug!(m: String): a = unsafe IO {
+    System.err.println("*".repeat(80));
+    System.err.println("**");
+    System.err.println("**  BUG: ${m}");
+    System.err.println("**");
+    System.err.println("*".repeat(80));
+    System.err.println("");
     ?panic
-})
+}
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
@@ -136,14 +171,10 @@ pub def bug!(m: String): a = masked_cast({
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
 
 ///
-/// Prints the argument unless it is ().
+/// Throws an `IndexOutOfBoundsException` with the given message `m`.
 ///
-@Internal
-pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
-    typematch x {
-        case _: Unit => ()
-        case _: _    => println(x)
-    }
+pub def indexOutOfBounds!(m: String): a = unsafe IO {
+    throw new IndexOutOfBoundsException(m)
 }
 
 pub enum Purity[a: Type, b: Type, ef: Eff] {
@@ -167,10 +198,11 @@ pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
-    case g: a -> b \ {} => Purity.Pure(g)
-    case _: _           => Purity.Impure(f)
-}
+pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] =
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity.Pure(unchecked_cast(f as a -> b \ {}))
+        case Reflect.Purity.Impure => Purity.Impure(f)
+    }
 
 ///
 /// Returns `Purity2.Pure(g)` if `f` has no effects.
@@ -178,10 +210,11 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
-    case g: a -> b -> c \ {} => Purity2.Pure(g)
-    case _: _                => Purity2.Impure(f)
-}
+pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] =
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity2.Pure(unchecked_cast(f as a -> b -> c \ {}))
+        case Reflect.Purity.Impure => Purity2.Impure(f)
+    }
 
 ///
 /// Returns `Purity3.Pure(g)` if `f` has no effects.
@@ -189,7 +222,8 @@ pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] = typematch f {
-    case g: a -> b -> c -> d \ {} => Purity3.Pure(g)
-    case _: _                     => Purity3.Impure(f)
-}
+pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] =
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity3.Pure(unchecked_cast(f as a -> b -> c -> d \ {}))
+        case Reflect.Purity.Impure => Purity3.Impure(f)
+    }

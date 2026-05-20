@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Paul Butcher, Lukas Rønn, Magnus Madsen
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,57 +17,26 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.TextEdit
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.Decl
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
-import ca.uwaterloo.flix.language.ast.Symbol
-import java.lang.reflect.{Constructor, Executable, Method}
+
+import scala.annotation.tailrec
 
 object CompletionUtils {
 
-  /**
-    * returns a triple from a java executable (method/constructor) instance, providing information the make the specific completion.
-    * clazz is the clazz in string form used for the completion.
-    * aliasSuggestion is used to suggest an alias for the function if applicable.
-    */
-  def getExecutableCompletionInfo(exec: Executable, clazz: String, aliasSuggestion: Option[String], context: CompletionContext): (String, String, TextEdit) = {
-    val typesString = exec.getParameters.map(param => convertJavaClassToFlixType(param.getType)).mkString("(", ", ", ")")
-    val finalAliasSuggestion = aliasSuggestion match {
-      case Some(aliasSuggestion) => s" as $${0:$aliasSuggestion}"
-      case None => ""
-    }
-    // Get the name of the function if it is not a constructor.
-    val name = if (exec.isInstanceOf[Constructor[_ <: Object]]) "" else s".${exec.getName}"
-    // So for constructors we do not have a return type method but we know it is the declaring class.
-    val returnType = exec match {
-      case method: Method => method.getReturnType
-      case _ => exec.getDeclaringClass
-    }
-    val label = s"$clazz$name$typesString"
-    val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
-    (label, Priority.high(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
-  }
-
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
-  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
+  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
 
-  def getLabelForEnumTags(name: String, cas: TypedAst.Case, arity: Int)(implicit flix: Flix): String = {
-    arity match {
-      case 0 => name
-      case 1 => s"$name(${FormatType.formatType(cas.tpe)})"
-      case _ => s"$name${FormatType.formatType(cas.tpe)}"
-    }
-  }
-
-  def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _, _) =>
+  def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
       val args = if (isUnitFunction(fparams))
         Nil
       else
         fparams.map {
-          fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+          fparam => s"${fparam.bnd.sym.text}: ${FormatType.formatType(fparam.tpe)}"
         }
 
       val retTpe = FormatType.formatType(retTpe0)
@@ -76,19 +46,17 @@ object CompletionUtils {
         case p => raw" \ " + FormatType.formatType(p)
       }
 
-      s"$name(${args.mkString(", ")}): $retTpe$eff"
+      s"(${args.mkString(", ")}): $retTpe$eff"
   }
 
   /**
     * Generate a snippet which represents calling a function.
-    * Drops the last one or two arguments in the event that the function is in a pipeline
-    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
     */
-  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
+  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
-    val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
-      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
+    val args = fparams.zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
     }
     if (functionIsUnit)
       s"$name()"
@@ -99,25 +67,18 @@ object CompletionUtils {
   }
 
   /**
-    * Helper function for deciding if a snippet can be generated.
-    * Returns false if there are too few arguments.
+    * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
     */
-  def canApplySnippet(fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): Boolean = {
+  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
-    if (paramsToDrop > fparams.length || (functionIsUnit && paramsToDrop > 0)) false else true
-  }
-
-  /**
-    * Calculates how many params to drops in the event that the function is in a pipeline
-    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
-    */
-  private def paramsToDrop(implicit context: CompletionContext): Int = {
-    context.previousWord match {
-      case "||>" => 2
-      case "|>" | "!>" => 1
-      case _ => 0
-    }
+    val args = fparams.zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
+    } :+ s"$${${fparams.length + 1}:resume}"
+    if (functionIsUnit)
+      s"$name($${1:resume}) = "
+    else
+      s"$name(${args.mkString(", ")}) = "
   }
 
   /**
@@ -140,86 +101,256 @@ object CompletionUtils {
   }
 
   /**
-    * Returns a class object if the string is a class or removing the last "part" makes it a class
+    * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
+    * Currently, we will only offer them if at least three characters have been typed.
     */
-  def classFromDotSeperatedString(clazz: String): Option[(Class[_], String)] = {
-    // If the last charachter is . then this drops that
-    // I.e if we have java.lang.String. this converts to java.lang.String
-    // while if it does not end with . it is unchanged
-    val clazz1 = clazz.split('.').mkString(".")
-    // If we are typing the method/field to import we drop that
-    val clazz2 = clazz.split('.').dropRight(1).mkString(".")
-    classFromString(clazz1).orElse(classFromString(clazz2))
+  def shouldComplete(word: String): Boolean = word.length >= 3
+
+  /**
+    * Returns `true` if the query is a fuzzy match for the key.
+    * After splitting query and key by camel case, every query segment must be a prefix of some key segment in order.
+    * Works for camelCase and UpperCamelCase.
+    *
+    * Example:
+    *   - fuzzyMatch("fBT",  "fooBarTest") = true
+    *   - fuzzyMatch("fBrT", "fooBarTest") = false
+    *   - fuzzyMatch("fTB",  "fooBarTest") = false
+    *
+    * @param query The query string, usually from the user input.
+    * @param key   The key string, usually from the completion item.
+    */
+  def fuzzyMatch(query: String, key: String): Boolean = {
+    @tailrec
+    def matchSegments(query: List[String], key: List[String]): Boolean = (query, key) match {
+      case (Nil, _) => true
+      case (_, Nil) => false
+      case (qHead :: qTail, kHead :: kTail) =>
+        if (kHead.startsWith(qHead))
+          matchSegments(qTail, kTail)
+        else
+          matchSegments(query, kTail)
+    }
+
+    matchSegments(splitByCamelCase(query), splitByCamelCase(key))
   }
 
   /**
-    * Return a class object if the class exists
+    * Splits a string by camel case.
+    *
+    * Example: "fooBarTest" -> List("foo", "Bar", "Test")
     */
-  def classFromString(clazz: String): Option[(Class[_], String)] = {
-    try {
-      Some((java.lang.Class.forName(clazz), clazz))
-    }
-    catch {
-      case _: ClassNotFoundException => None
+  private def splitByCamelCase(input: String): List[String] = {
+    input.split("(?=[A-Z])").toList
+  }
+
+  /**
+    * Checks if the namespace and ident from the error matches the qualified name.
+    * We require a full match on the namespace and a fuzzy match on the ident.
+    *
+    * Example:
+    * matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
+    */
+  def matchesQualifiedName(targetNamespace: List[String], targetIdent: String, qn: Name.QName): Boolean = {
+    targetNamespace == qn.namespace.parts && fuzzyMatch(qn.ident.name, targetIdent)
+  }
+
+  /**
+    * Format type params in the right form to be displayed in the list of completions
+    * e.g. "[a, b, c]"
+    */
+  def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
+    tparams match {
+      case Nil => ""
+      case _ => tparams.map(_.name).mkString("[", ", ", "]")
     }
   }
 
   /**
-    * Converts a Java Class Object into a string representing the type in flix syntax.
-    * I.e. java.lang.String => String, byte => Int8, java.lang.Object[] => Array[##java.lang.Object, false].
+    * Format types in the right form to be displayed in the list of completions
+    * e.g. "(Int32, String)"
     */
-  def convertJavaClassToFlixType(clazz: Class[_]): String = {
-    if (clazz.isArray()) {
-      s"Array[${convertJavaClassToFlixType(clazz.getComponentType())}, Static]"
+  def formatTypes(tpes: List[Type])(implicit flix: Flix): String =
+    tpes match {
+      case Nil => ""
+      case _ => tpes.map(FormatType.formatType(_)).mkString("(", ", ", ")")
     }
-    else {
-      clazz.getName() match {
-        case "byte" => "Int8"
-        case "short" => "Int16"
-        case "int" => "Int32"
-        case "long" => "Int64"
-        case "float" => "Float32"
-        case "double" => "Float64"
-        case "boolean" => "Bool"
-        case "char" => "Char"
-        case "java.lang.String" => "String"
-        case "java.math.BigInteger" => "BigInt"
-        case "java.math.BigDecimal" => "BigDecimal"
-        case "java.util.function.IntFunction" => "Int32 => ##java.lang.Object"
-        case "java.util.function.IntUnaryOperator" => "Int32 => Int32"
-        case "void" => "Unit"
-        case other => s"##$other"
-      }
+
+  /**
+    * Format type params in the right form to be inserted as a snippet
+    * e.g. "[${1:a}, ${2:b}, ${3:c}]"
+    */
+  def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
+    tparams match {
+      case Nil => ""
+      case _ => tparams.zipWithIndex.map {
+        case (tparam, idx) => "$" + s"{${idx + 1}:${tparam.name}}"
+      }.mkString("[", ", ", "]")
     }
   }
 
-  def getNestedModules(word: String)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {
-    ModuleSymFragment.parseModuleSym(word) match {
-      case ModuleSymFragment.Complete(modSym) =>
-        root.modules.getOrElse(modSym, Nil).collect {
-          case sym: Symbol.ModuleSym => sym
+  /**
+    * Format types in the right form to be inserted as a snippet
+    * e.g. "(${1:Int32}, ${2:String})"
+    */
+  def formatTypesSnippet(tpes: List[Type])(implicit flix: Flix): String =
+    tpes match {
+      case Nil => ""
+      case _ => tpes.zipWithIndex.map {
+        case (tpe, idx) => "$" + s"{${idx + 1}:?${FormatType.formatType(tpe)}}"
+      }.mkString("(", ", ", ")")
+    }
+
+
+  /**
+    * Checks if the given class is public.
+    */
+  def isAvailable(decl: Decl): Boolean = decl.mod.isPublic
+
+  /**
+    * Checks if the given def is public.
+    */
+  def isAvailable(defn: TypedAst.Def): Boolean = isAvailable(defn.spec)
+
+  /**
+    * Checks if the given sig is public.
+    */
+  def isAvailable(sig: TypedAst.Sig): Boolean = isAvailable(sig.spec)
+
+  /**
+    * Checks if the given op is public.
+    */
+  def isAvailable(op: TypedAst.Op): Boolean = isAvailable(op.spec)
+
+  /**
+    * Checks if the def of the given symbol is public.
+    */
+  def isAvailable(defn: Symbol.DefnSym)(implicit root: TypedAst.Root): Boolean = root.defs.get(defn).exists(isAvailable)
+
+  /**
+    * Checks if the trait of the given symbol is public.
+    */
+  def isAvailable(trt: Symbol.TraitSym)(implicit root: TypedAst.Root): Boolean = root.traits.get(trt).exists(isAvailable)
+
+  /**
+    * Checks if the effect of the given symbol is public.
+    */
+  def isAvailable(eff: Symbol.EffSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isAvailable)
+
+  /**
+    * Checks if the enum of the given symbol is public.
+    */
+  def isAvailable(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isAvailable)
+
+  /**
+    * Replaces the given symbol with a variable named by the given `newText`.
+    */
+  private def replaceText(oldSym: Symbol, tpe: Type, newText: String)(implicit flix: Flix): Type = {
+    implicit val scope: RegionScope = RegionScope.Top
+    tpe match {
+      case Type.Var(sym, loc) if oldSym == sym => Type.Var(sym.withText(VarText.SourceText(newText)), loc)
+      case Type.Var(_, _) => tpe
+      case Type.Cst(_, _) => tpe
+
+      case Type.Apply(tpe1, tpe2, loc) =>
+        val t1 = replaceText(oldSym, tpe1, newText)
+        val t2 = replaceText(oldSym, tpe2, newText)
+        Type.Apply(t1, t2, loc)
+
+      case Type.Alias(cst, args0, tpe0, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          val t = replaceText(oldSym, tpe0, newText)
+          Type.Alias(cst, args, t, loc)
         }
-      case ModuleSymFragment.Partial(modSym, suffix) =>
-        root.modules.getOrElse(modSym, Nil).collect {
-          case sym: Symbol.ModuleSym if matches(sym, suffix) => sym
+
+      case Type.AssocType(cst, args0, kind, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          Type.AssocType(cst, args, kind, loc)
         }
-      case _ => Nil
+
+      // Jvm types should not be exposed to the user.
+      case t: Type.JvmToType => t
+      case t: Type.JvmToEff => t
+      case t: Type.UnresolvedJvmType => t
     }
   }
 
   /**
-   * Returns `true` if the given module `sym` matches the given `suffix`.
-   *
-   * (Aaa.Bbb.Ccc, Cc) => true
-   * (Aaa.Bbb.Ccc, Dd) => false
-   * (/, Cc)           => true
-   */
-  private def matches(sym: Symbol.ModuleSym, suffix: String): Boolean = {
-    if (sym.isRoot) {
-      true
-    } else {
-      sym.ns.last.startsWith(suffix) // We know that ns cannot be empty because it is not the root.
-    }
+    * Formats the given type `tpe`.
+    */
+  private def fmtType(tpe: Type, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    val replaced = holes.foldLeft(tpe) { case (t, (sym, hole)) => replaceText(sym, t, hole) }
+    FormatType.formatType(replaced)
   }
 
+  /**
+    * Formats the given associated type `assoc`.
+    */
+  private def fmtAssocType(assoc: TypedAst.AssocTypeSig, holes: Map[Symbol, String]): String = {
+    s"    type ${assoc.sym.name} = ${holes(assoc.sym)}"
+  }
+
+  /**
+    * Formats the given formal parameters in `spec`.
+    */
+  private def fmtFormalParams(spec: TypedAst.Spec, holes: Map[Symbol, String])(implicit flix: Flix): String =
+    spec.fparams.map(fparam => s"${fparam.bnd.sym.text}: ${fmtType(fparam.tpe, holes)}").mkString(", ")
+
+  /**
+    * Formats the given signature `sig`.
+    */
+  private def fmtSignature(sig: TypedAst.Sig, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    val fparams = fmtFormalParams(sig.spec, holes)
+    val retTpe = fmtType(sig.spec.retTpe, holes)
+    val eff = sig.spec.eff match {
+      case Type.Cst(TypeConstructor.Pure, _) => ""
+      case e => raw" \ " + fmtType(e, holes)
+    }
+    s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
+  }
+
+  def fmtInstanceSnippet(trt: TypedAst.Trait, qualified: Boolean)(implicit flix: Flix): String = {
+    val instanceHole = "${1:t}"
+    val holes: Map[Symbol, String] = {
+      (trt.tparam.sym -> instanceHole) +:
+        trt.assocs.zipWithIndex.map { case (a, i) => a.sym -> s"$$${i + 2}" }
+    }.toMap
+
+    val traitName = if (qualified) trt.sym.toString else trt.sym.name
+    val signatures = trt.sigs.filter(_.exp.isEmpty)
+
+    val body = {
+      trt.assocs.map(a => fmtAssocType(a, holes)) ++
+        signatures.map(s => fmtSignature(s, holes))
+    }.mkString("\n\n")
+
+    s"$traitName[$instanceHole] {\n\n$body\n\n}\n"
+  }
+
+  /**
+    * Checks if the sym and the given qualified name matches.
+    *
+    * @param sym       The symbol to check, usually from root.
+    * @param qn        The qualified name to check, usually from user input.
+    * @param qualified Whether the qualified name is qualified.
+    */
+  def matchesName(sym: QualifiedSym, qn: Name.QName, qualified: Boolean): Boolean = {
+    if (qualified) {
+      matchesQualifiedName(sym.namespace, sym.name, qn)
+    } else
+      fuzzyMatch(qn.ident.name, sym.name)
+  }
+
+  /**
+    * Formats the given Op
+    */
+  def fmtOp(op: TypedAst.Op): String = {
+    val fparamsString = (op.spec.fparams.collect { case p if p.tpe != Type.Unit => p.bnd.sym.text } :+ "k").mkString(", ")
+    s"    def ${op.sym.name}($fparamsString) = ???"
+  }
 }

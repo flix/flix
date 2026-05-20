@@ -8,14 +8,50 @@
 
 We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for more information about Flix. 
 
-[![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/flix/Lobby)
+[![Build and Tests](https://img.shields.io/github/actions/workflow/status/flix/flix/compiler-build-and-test.yaml?label=build%20and%20tests&branch=master)](https://github.com/flix/flix/actions/workflows/compiler-build-and-test.yaml)
+[![Community Build](https://img.shields.io/github/actions/workflow/status/flix/flix/community-build.yaml?label=community%20build&branch=master)](https://github.com/flix/flix/actions/workflows/community-build.yaml)
+[![Release](https://img.shields.io/github/v/release/flix/flix?label=release)](https://github.com/flix/flix/releases)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](https://github.com/flix/flix/blob/master/LICENSE.md)
+[![Zulip](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://flix.zulipchat.com/)
 
 ## Example
-<p align="center" >
-    <img src="https://raw.githubusercontent.com/flix/flix/master/docs/example.png" height="627px" 
-    alt="Example Flix Program" 
-    title="Example Flix Program">
-</p>
+
+```flix
+///
+/// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
+///
+enum Expression {
+    // A variable expression. A variable is represented by an integer. 
+    case Var(Int32),
+
+    // A lambda abstracation expression. A variable is represented by an integer.
+    case Abs(Int32, Expression),
+
+    // A function application expression.
+    case App(Expression, Expression),
+}
+
+///
+/// Performs alpha conversion by introducing fresh variables for all variables in the given expression `e0`.
+///
+def alpha(e0: Expression, m: Map[Int32, Int32]): Expression = match e0 {
+    case Var(x) =>
+        // Check if we need to rename the variable.
+        match Map.get(x, m) {
+            case None => Var(x)
+            case Some(y) => Var(y)
+        }
+
+    case Abs(x, e) =>
+        // Generate a fresh variable name for `x`.
+        let y = freshVar();
+        Abs(y, alpha(e, Map.insert(x, y, m)))
+
+    case App(e1, e2) =>
+        // Recursively perform alpha conversion on each expression.
+        App(alpha(e1, m), alpha(e2, m))
+}
+```
 
 ## Building
 

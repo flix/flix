@@ -14,125 +14,111 @@
  * limitations under the License.
  */
 
-///
-/// The Set type.
-///
-/// A set is currently represented internally as a red-black tree.
-///
-pub enum Set[t] with Sendable {
-    case Set(RedBlackTree[t, Unit])
-}
+pub mod Set {
 
-instance Eq[Set[a]] with Eq[a] {
-    pub def eq(s1: Set[a], s2: Set[a]): Bool =
-        Set.toList(s1) == Set.toList(s2)
-}
+    ///
+    /// The Set type.
+    ///
+    /// A set is currently represented internally as a red-black tree.
+    ///
+    pub enum Set[t] {
+        case Set(RedBlackTree[t, Unit])
+    }
 
-instance Order[Set[a]] with Order[a] {
-    pub def compare(s1: Set[a], s2: Set[a]): Comparison =
-        Set.toList(s1) <=> Set.toList(s2)
+    instance Eq[Set[a]] with Eq[a] {
+        pub def eq(s1: Set[a], s2: Set[a]): Bool =
+            Set.toList(s1) == Set.toList(s2)
+    }
 
-}
+    instance Order[Set[a]] with Order[a] {
+        pub def compare(s1: Set[a], s2: Set[a]): Comparison =
+            Set.toList(s1) <=> Set.toList(s2)
 
-instance Hash[Set[a]] with Hash[a] {
-    pub def hash(s: Set[a]): Int32 =
-        Set.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), s)
-}
+    }
 
-instance ToString[Set[a]] with ToString[a] {
-    pub def toString(s: Set[a]): String = Set.toString(s)
-}
+    instance Hash[Set[a]] with Hash[a] {
+        pub def hash(s: Set[a]): Int32 =
+            Set.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), s)
+    }
 
-instance LowerBound[Set[a]] {
-    pub def minValue(): Set[a] = Set.empty()
-}
+    instance Formattable[Set[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
 
-instance PartialOrder[Set[a]] with Order[a] {
-    pub def lessEqual(s1: Set[a], s2: Set[a]): Bool = s1 `Set.isSubsetOf` s2
-}
+        pub def format(x: Set[a]): RichString \ Formattable.Aef[a] =
+            RichString.fromString("Set#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), Set.toList(x)) + RichString.fromString("}")
+    }
 
-instance JoinLattice[Set[a]] with Order[a] {
-    pub def leastUpperBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.union` s2
-}
+    instance ToString[Set[a]] with ToString[a] {
+        pub def toString(s: Set[a]): String = Set.toString(s)
+    }
 
-instance MeetLattice[Set[a]] with Order[a] {
-    pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.intersection` s2
-}
+    instance LowerBound[Set[a]] {
+        pub def minValue(): Set[a] = Set.empty()
+    }
 
-instance Foldable[Set] {
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRightWithCont(f, s, s1)
-}
+    instance PartialOrder[Set[a]] with Order[a] {
+        pub def lessEqual(s1: Set[a], s2: Set[a]): Bool = s1 `Set.isSubsetOf` s2
+    }
 
-instance UnorderedFoldable[Set] {
-    pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with CommutativeMonoid[b] = Set.foldMap(f, s)
-    override pub def isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
-    override pub def exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
-    override pub def forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
+    instance JoinLattice[Set[a]] with Order[a] {
+        pub def leastUpperBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.union` s2
+    }
 
-    @ParallelWhenPure
-    override pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
-}
+    instance MeetLattice[Set[a]] with Order[a] {
+        pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.intersection` s2
+    }
 
-instance SemiGroup[Set[a]] with Order[a] {
-    pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
-}
+    instance Foldable[Set] {
+        pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
+        pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
+        redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+        redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
+        redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
+    }
 
-instance CommutativeSemiGroup[Set[a]] with Order[a]
+    instance UnorderedFoldable[Set] {
+        pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with CommutativeMonoid[b] = Set.foldMap(f, s)
+        redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+        redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
+        redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
 
-instance Monoid[Set[a]] with Order[a] {
-    pub def empty(): Set[a] = Set.empty()
-}
+        @ParallelWhenPure
+        redef count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
+    }
 
-instance CommutativeMonoid[Set[a]] with Order[a]
+    instance SemiGroup[Set[a]] with Order[a] {
+        pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x, y)
+    }
 
-instance Collectable[Set[a]] with Order[a] {
-    type Elm = a
-    pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } = Iterator.toSet(iter)
-}
+    instance CommutativeSemiGroup[Set[a]] with Order[a]
 
-instance Iterable[Set[a]] {
-    type Elm = a
-    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
-}
+    instance Monoid[Set[a]] with Order[a] {
+        pub def empty(): Set[a] = Set.empty()
+    }
 
-instance ToJava[Set[a]] with Order[a] {
-    type Out = ##java.util.Set
-    type Aef = IO
-    pub def toJava(s: Set[a]): ##java.util.Set \ IO = Adaptor.toSet(s)
-}
+    instance CommutativeMonoid[Set[a]] with Order[a]
 
-instance FromJava[Set[a]] with Order[a] {
-    type In = ##java.util.Set
-    pub def fromJava(s: ##java.util.Set): Set[a] = Adaptor.fromSet(s)
-}
+    instance Collectable[Set[a]] with Order[a] {
+        type Elm = a
+        pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } = Iterator.toSet(iter)
+    }
 
-mod Set {
+    instance Iterable[Set[a]] {
+        type Elm = a
+        pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
+    }
+
+    instance ForEach[Set[a]] {
+        type Elm = a
+        pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef = Set.forEach(f, s)
+    }
 
     ///
     /// Returns a string representation of the given set `s`.
     ///
     pub def toString(s: Set[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Set#{", sb);
-        forEachWithIndex((i, x) -> {
-            if (i == 0)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!(", ${x}", sb)
-        }, s);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Set#{" + (Set.iterator(rc, s) |> Iterator.join(", ")) + "}"
     }
-
-    ///
-    /// Returns the number of threads to use for parallel evaluation.
-    ///
-    def threads(): Int32 =
-        // Note: We use a multiple of the number of physical cores for better performance.
-        let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
 
     ///
     /// Determines whether to use parallel evaluation.
@@ -141,11 +127,11 @@ mod Set {
     ///
     def useParallelEvaluation(s: Set[a]): Bool =
         let Set(t) = s;
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
-    /// Returns the size of `s`.
+    /// Returns the number of elements in `s`.
     ///
     pub def size(s: Set[a]): Int32 =
         let Set(t) = s;
@@ -236,7 +222,7 @@ mod Set {
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
-                    let o = RedBlackTree.parMinimumBy(threads() - 1, h, t);
+                    let o = RedBlackTree.parMinimumBy(h, t);
                     Option.map(fst, o)
                 else
                     min()
@@ -267,7 +253,7 @@ mod Set {
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
-                    let o = RedBlackTree.parMaximumBy(threads() - 1, h, t);
+                    let o = RedBlackTree.parMaximumBy(h, t);
                     Option.map(fst, o)
                 else
                     max()
@@ -327,23 +313,13 @@ mod Set {
         RedBlackTree.foldRight((k, _, c) -> f(k, c), s, t)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `s` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, s: Set[a]): b \ ef =
-        let Set(t) = s;
-        RedBlackTree.foldRightWithCont((k, _, c) -> f(k, c), z, t)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
 
     ///
-    /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `s` is the empty set.
     ///
@@ -352,7 +328,7 @@ mod Set {
         RedBlackTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), t) |> Option.map(fst)
 
     ///
-    /// Applies `f` to all elements in `s` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `s` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `s` is the empty set.
     ///
@@ -372,34 +348,10 @@ mod Set {
                 if (useParallelEvaluation(s))
                     let h = (k, _) -> g(k);
                     let Set(t) = s;
-                    RedBlackTree.parCount(threads() - 1, h, t)
+                    RedBlackTree.parCount(h, t)
                 else
                     foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
             case Purity.Impure(g) => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
-        }
-
-    ///
-    /// Returns the sum of all elements in the set `s`.
-    ///
-    pub def sum(s: Set[Int32]): Int32 =
-        Foldable.sum(s)
-
-    ///
-    /// Returns the sum of all elements in the set `s` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def sumWith(f: a -> Int32 \ ef, s: Set[a]): Int32 \ ef =
-        let Set(t) = s;
-        def sw() = RedBlackTree.sumWith((k, _) -> f(k), t);
-        match purityOf(f) {
-            case Purity.Pure(g) =>
-                if (useParallelEvaluation(s))
-                    RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t)
-                else
-                    sw()
-            case Purity.Impure(_) => sw()
         }
 
     ///
@@ -501,13 +453,16 @@ mod Set {
     /// `s2` contains all elements of `s` that do not satisfy the predicate `f`.
     ///
     pub def partition(f: a -> Bool \ ef, s: Set[a]): (Set[a], Set[a]) \ ef with Order[a] =
-        foldLeft((acc, x) ->
-            let (a, b) = acc;
-            if (f(x))
-                (insert(x, a), b)
-            else
-                (a, insert(x, b)), (empty(), empty()),
-            s)
+        foldLeft(
+            (acc, x) ->
+                let (a, b) = acc;
+                if (f(x))
+                    (insert(x, a), b)
+                else
+                    (a, insert(x, b)),
+            (empty(), empty()),
+            s
+        )
 
     ///
     /// Returns the set `s` as a list.
@@ -519,12 +474,12 @@ mod Set {
     /// Returns the set `s` as an array.
     ///
     pub def toArray(rc: Region[r], s: Set[a]): Array[a, r] \ r = match size(s) {
-        case 0  => Array#{} @ rc
+        case 0 => Array#{} @ rc
         case sz =>
             let a = Array.empty(rc, sz);
             Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
             a
-        }
+    }
 
     ///
     /// Returns the set `s` as a vector.
@@ -539,7 +494,7 @@ mod Set {
     /// Returns the set `s` as a chain.
     ///
     pub def toChain(s: Set[a]): Chain[a] =
-        foldLeft((acc, x) -> Chain.snoc(acc, x), Chain.empty(), s)
+        foldLeft(Chain.snoc, Chain.empty(), s)
 
     ///
     /// Returns the association set `s` as a map.
@@ -555,20 +510,6 @@ mod Set {
     ///
     pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
         Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
-
-    ///
-    /// Returns `s` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], s: Set[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), s);
-        d
-
-    ///
-    /// Returns the set `s` as a `MutSet`.
-    ///
-    pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ r =
-        MutSet.MutSet(rc, ref s @ rc)
 
     ///
     /// Applies `f` to every element of `s`.
@@ -593,8 +534,8 @@ mod Set {
     ///
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): Set[a] \ ef with Order[a] =
         def loop(sst, s) = match f(sst) {
-            case None         => s
-            case Some(a, st1) => loop(st1, insert(a, s))
+            case None           => s
+            case Some((a, st1)) => loop(st1, insert(a, s))
         };
         loop(st, empty())
 
@@ -614,10 +555,18 @@ mod Set {
         loop(empty())
 
     ///
-    /// Returns the set `s` as a `DelayList`.
+    /// Build a set by applying `f` to the initial value `x`.
     ///
-    pub def toDelayList(s: Set[a]): DelayList[a] =
-        foldRight((x, acc) -> DelayList.ECons(x, acc), DelayList.ENil, s)
+    /// `f` should return `Some(a1)` to signal a new set element `a1` (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of building the set.
+    ///
+    pub def iterate(f: a -> Option[a] \ ef, x: a): Set[a] \ ef with Order[a] =
+        def loop(st, s) = match f(st) {
+            case None     => s
+            case Some(a1) => loop(a1, insert(a1, s))
+        };
+        loop(x, empty())
 
     ///
     /// Returns an iterator over `s`.
@@ -625,12 +574,6 @@ mod Set {
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r =
         let Set(t) = s;
         RedBlackTree.iterator(rc, t) |> Iterator.map(fst)
-
-    ///
-    /// Returns an iterator over `s` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], s: Set[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, s) |> Iterator.zipWithIndex
 
     ///
     /// Returns the concatenation of the string representation

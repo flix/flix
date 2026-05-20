@@ -22,32 +22,7 @@ instance UpperBound[Bool] {
     pub def maxValue(): Bool = true
 }
 
-mod Bool {
-
-    ///
-    /// Alias for logical conjunction.
-    ///
-    pub def ∧(x: Bool, y: Bool): Bool = x and y
-
-    ///
-    /// Alias for logical disjunction.
-    ///
-    pub def ∨(x: Bool, y: Bool): Bool = x or y
-
-    ///
-    /// Alias for logical implication.
-    ///
-    pub def →(x: Bool, y: Bool): Bool = not x ∨ y
-
-    ///
-    /// Alias for logical bi-implication.
-    ///
-    pub def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
-
-    ///
-    /// Alias for exclusive or.
-    ///
-    pub def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ not (x ∧ y)
+pub mod Bool {
 
     ///
     /// Returns `true` if `x` implies `y` logically holds.
@@ -58,5 +33,10 @@ mod Bool {
     /// Returns true if `x` implies `y` and vise versa.
     ///
     pub def <==>(x: Bool, y: Bool): Bool = x == y
+
+    ///
+    /// Calls `f` if `cond` is true.
+    ///
+    pub def runIf(f: Unit -> Unit \ ef, cond: Bool): Unit \ ef = if (cond) { f() }
 
 }

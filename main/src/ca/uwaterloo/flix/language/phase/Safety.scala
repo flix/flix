@@ -1,606 +1,604 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation, Polarity}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.shared.Fixity
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.language.errors.SafetyError.*
+import ca.uwaterloo.flix.util.{JvmUtils, ParOps}
 
 import java.math.BigInteger
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-/**
-  * Performs safety and well-formedness checks on:
-  *
-  *  - Datalog constraints.
-  *  - New object expressions.
-  *  - CheckedCast expressions.
-  *  - UncheckedCast expressions.
-  *  - TypeMatch expressions.
-  */
+/** Checks safety and well-formedness not captured by the type system. */
 object Safety {
 
-  /**
-    * Performs safety and well-formedness checks on the given AST `root`.
-    */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, SafetyError] = flix.phase("Safety") {
-    //
-    // Collect all errors.
-    //
-    val classSigErrs = ParOps.parMap(root.traits.values.flatMap(_.sigs))(visitSig).flatten
-    val defErrs = ParOps.parMap(root.defs.values)(visitDef).flatten
-    val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
-    val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
-    val entryPointErrs = ParOps.parMap(root.reachable)(visitEntryPoint(_)(root)).flatten
-    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ entryPointErrs ++ visitSendable(root)
+  /** Checks the safety and well-formedness of `root`. */
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[SafetyError]) = flix.phaseNew("Safety") {
+    implicit val sctx: SharedContext = SharedContext.mk()
+    implicit val _r: Root = root
 
-    //
-    // Check if any errors were found.
-    //
-    Validation.toSuccessOrSoftFailure(root, errors)
-  }(DebugValidation())
+    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn))))
+    val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
+    val uses = changeSet.updateStaleValueLists(root.uses, oldRoot.uses, (uoi1: UseOrImport, uoi2: UseOrImport) => uoi1 == uoi2)(ParOps.parMapValueList(_)(visitUseOrImport))
 
-  /**
-    * Checks that no type parameters for types that implement `Sendable` of kind `Region`
-    */
-  private def visitSendable(root: Root): List[SafetyError] = {
-    val sendableClass = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
-
-    root.instances.getOrElse(sendableClass, Nil) flatMap {
-      case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
-        if (tpe.typeArguments.exists(_.kind == Kind.Eff))
-          List(SafetyError.IllegalSendableInstance(tpe, loc))
-        else
-          Nil
-    }
+    (root.copy(defs = defs, traits = traits, instances = instances, uses = uses), sctx.errors.asScala.toList)
   }
 
-  /**
-    * Performs safety and well-formedness checks on the given signature `sig`.
-    */
-  private def visitSig(sig: Sig)(implicit flix: Flix): List[SafetyError] = {
-    val renv = sig.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
-      case (acc, e) => acc.markRigid(e)
-    }
-    sig.exp match {
-      case Some(exp) => visitExp(exp, renv)
-      case None => Nil
-    }
+  /** Checks the safety and well-formedness of `defn`. */
+  private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root, flix: Flix): Def = {
+    implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
+    checkSpecPermissions(defn.spec)
+    visitExp(defn.exp)
+    defn
   }
 
-  /**
-    * Performs safety and well-formedness checks on the given definition `def0`.
-    */
-  private def visitDef(def0: Def)(implicit flix: Flix): List[SafetyError] = {
-    val exportErrs = if (def0.spec.ann.isExport) visitExportDef(def0) else Nil
-    val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
-      case (acc, e) => acc.markRigid(e)
-    }
-    val expErrs = visitExp(def0.exp, renv)
-    exportErrs ++ expErrs
+  /** Checks the safety and well-formedness of `trt`. */
+  private def visitTrait(trt: Trait)(implicit sctx: SharedContext, root: Root, flix: Flix): Trait = {
+    trt.assocs.foreach(as => as.tpe.foreach(t => checkIOPermissions(t.effects, as.loc)))
+    trt.sigs.foreach(visitSig)
+    trt
   }
 
+  /** Checks the safety and well-formedness of `inst`. */
+  private def visitInstance(inst: TypedAst.Instance)(implicit sctx: SharedContext, root: Root, flix: Flix): TypedAst.Instance = {
+    inst.assocs.foreach(as => checkIOPermissions(as.tpe.effects, as.loc))
+    inst.econstrs.foreach { constr =>
+      checkIOPermissions(constr.tpe1.effects, constr.loc)
+      checkIOPermissions(constr.tpe2.effects, constr.loc)
+    }
+    inst.defs.foreach(visitDef)
+    inst
+  }
+
+  /** Checks the safety and well-formedness of `sig`. */
+  private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = {
+    implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
+    checkSpecPermissions(sig.spec)
+    sig.exp.foreach(visitExp(_))
+  }
+
+
+
   /**
-    * Checks that every every reachable function entry point has a valid
-    * signature and that exported functions are valid.
+    * Checks the safety and well-formedness of `exp0`.
     *
-    * A signature is valid if there is a single argument of type `Unit` and if it is pure or has the IO effect.
+    *   - [[Expr.Handler]] are not defined for primitive effects.
+    *   - JVM operations and casts are allowed by the relevant [[SecurityContext]].
+    *   - [[Expr.UncheckedCast]] are not impossible.
+    *   - [[Expr.Throw]] only throws exceptions.
+    *   - [[Expr.NewObject]] are valid (see [[checkObjectImplementation]]).
+    *   - [[Expr.FixpointConstraintSet]] are valid (see [[checkConstraint]]).
     */
-  private def visitEntryPoint(sym: Symbol.DefnSym)(implicit root: Root): List[SafetyError] = {
-    if (!root.reachable.contains(sym)) {
-      // The function is not an entry point. No restrictions.
-      Nil
-    } else {
-      val defn = root.defs(sym)
-      // Note that exported defs have different rules
-      if (defn.spec.ann.isExport) {
-        Nil
-      } else if (hasUnitParameter(defn) && isPureOrIO(defn)) {
-        Nil
-      } else {
-        SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
+  private def visitExp(exp0: Expr)(implicit renv: RigidityEnv, sctx: SharedContext, root: Root, flix: Flix): Unit = exp0 match {
+    case Expr.Cst(_, _, _) =>
+      ()
+
+    case Expr.Var(_, _, _) =>
+      ()
+
+    case Expr.Hole(_, _, _, _, _) =>
+      ()
+
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.OpenAs(_, exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Use(_, _, exp, _) =>
+      visitExp(exp)
+
+    case Expr.Lambda(_, exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.ApplyDef(_, exps, _, _, _, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ApplyOp(_, exps, _, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.Unary(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.Binary(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.Region(_, _, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foreach(visitExp)
+      visitExp(exp)
+
+    case Expr.Discard(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Match(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach { rule =>
+        rule.guard.foreach(visitExp)
+        visitExp(rule.exp)
       }
+
+    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach(rule => visitExp(rule.exp))
+
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach(r => visitExp(r.exp))
+
+    case Expr.Tag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ExtTag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.Tuple(elms, _, _, _) =>
+      elms.foreach(visitExp)
+
+    case Expr.RecordSelect(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.RecordExtend(_, value, rest, _, _, _) =>
+      visitExp(value)
+      visitExp(rest)
+
+    case Expr.RecordRestrict(_, rest, _, _, _) =>
+      visitExp(rest)
+
+    case Expr.ArrayLit(elms, exp, _, _, _) =>
+      elms.foreach(visitExp)
+      visitExp(exp)
+
+    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+
+    case Expr.ArrayLoad(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.ArrayLength(base, _, _) =>
+      visitExp(base)
+
+    case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      fields.foreach { case (_, exp) => visitExp(exp) }
+      region.foreach(visitExp)
+
+    case Expr.StructGet(e, _, _, _, _) =>
+      visitExp(e)
+
+    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.VectorLit(elms, _, _, _) =>
+      elms.foreach(visitExp)
+
+    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.VectorLength(exp, _) =>
+      visitExp(exp)
+
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.InstanceOf(exp, _, _) =>
+      visitExp(exp)
+
+    case cast@Expr.CheckedCast(castType, exp, _, _, _) =>
+      castType match {
+        case CheckedCastType.TypeCast => checkCheckedTypeCast(cast)
+        case CheckedCastType.EffectCast => ()
+      }
+      visitExp(exp)
+
+    case cast@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
+      verifyUncheckedCast(cast)
+      checkPermissions(loc.security, loc)
+      visitExp(exp)
+
+    case Expr.Unsafe(exp, _, _, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      visitExp(exp)
+
+
+    case Expr.TryCatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach { case CatchRule(bnd, clazz, e, loc) =>
+        checkPermissions(loc.security, loc)
+        checkCatchClass(clazz, bnd.sym.loc)
+        visitExp(e)
+      }
+
+    case Expr.Throw(exp, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      visitExp(exp)
+      checkThrow(exp)
+
+    case Expr.Handler(symUse, rules, _, _, _, _, _) =>
+      // Check for [[PrimitiveEffectInRunWith]]
+      if (Symbol.isPrimitiveEff(symUse.sym)) {
+        sctx.errors.add(PrimitiveEffectInRunWith(symUse.sym, symUse.qname.loc))
+      }
+      rules.foreach(rule => visitExp(rule.exp))
+
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.InvokeConstructor(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      args.foreach(visitExp)
+
+    case Expr.InvokeSuperConstructor(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      args.foreach(visitExp)
+
+    case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      visitExp(exp)
+      args.foreach(visitExp)
+
+    case Expr.InvokeSuperMethod(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      args.foreach(visitExp)
+
+    case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      args.foreach(visitExp)
+
+    case Expr.GetField(_, exp, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      visitExp(exp)
+
+    case Expr.PutField(_, exp1, exp2, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.GetStaticField(_, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+
+    case Expr.PutStaticField(_, exp, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      visitExp(exp)
+
+    case newObject@Expr.NewObject(_, _, _, _, constructors, methods, loc) =>
+      checkPermissions(loc.security, loc)
+      checkObjectImplementation(newObject)
+      constructors.foreach(c => visitExp(c.exp))
+      methods.foreach(method => visitExp(method.exp))
+
+    case Expr.NewChannel(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.GetChannel(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.PutChannel(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.SelectChannel(rules, default, _, _, _) =>
+      rules.foreach {
+        case SelectChannelRule(_, chan, body, _) =>
+          visitExp(chan)
+          visitExp(body)
+      }
+      default.map(visitExp).getOrElse(Nil)
+
+    case Expr.Spawn(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.ParYield(frags, exp, _, _, _) =>
+      frags.foreach(fragment => visitExp(fragment.exp))
+      visitExp(exp)
+
+    case Expr.Lazy(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Force(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.FixpointConstraintSet(cs, _, _) =>
+      cs.foreach(checkConstraint)
+
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.FixpointQueryWithProvenance(exps, Predicate.Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+      exps.foreach(visitExp)
+      terms.foreach(visitExp)
+
+    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
+      exps.foreach(visitExp)
+      visitExp(queryExp)
+      selects.foreach(visitExp)
+      where.foreach(visitExp)
+
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.Error(_, _, _) =>
+      ()
+
+  }
+
+  /** Emits an error if `useOrImport` is an [[UseOrImport.Import]] and its security context does not permit it. */
+  private def visitUseOrImport(useOrImport: UseOrImport)(implicit sctx: SharedContext): UseOrImport = useOrImport match {
+    case UseOrImport.Use(_, _, _) =>
+      useOrImport
+
+    case UseOrImport.Import(_, _, loc) =>
+      checkPermissions(loc.security, loc)
+      useOrImport
+  }
+
+  /** Emits an error if `ctx` is not [[SecurityContext.Unrestricted]]. */
+  private def checkPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    ctx match {
+      case SecurityContext.Unrestricted => ()
+
+      case SecurityContext.Plain =>
+        sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+
+      case SecurityContext.Paranoid =>
+        sctx.errors.add(SafetyError.Forbidden(ctx, loc))
     }
   }
 
   /**
-    * Checks that the function is able to be exported.
+    * Emits an error if `IO` is prohibited w.r.t. the security context of `spec`.
     *
-    * The function should be public, use a Java-valid name, be non-polymoprhic,
-    * use exportable types, and use non-algebraic effects
+    * @see [[checkIOPermissions]]
     */
-  private def visitExportDef(defn: Def): List[SafetyError] = {
-    val nonRoot = if (isInRootNamespace(defn)) List(SafetyError.IllegalExportNamespace(defn.sym.loc)) else Nil
-    val pub = if (isPub(defn)) Nil else List(SafetyError.NonPublicExport(defn.sym.loc))
-    val name = if (validJavaName(defn.sym)) Nil else List(SafetyError.IllegalExportName(defn.sym.loc))
-    val types = if (isPolymorphic(defn)) {
-      List(SafetyError.IllegalExportPolymorphism(defn.spec.loc))
-    } else {
-      checkExportableTypes(defn)
+  private def checkSpecPermissions(spec: Spec)(implicit sctx: SharedContext): Unit = {
+    spec.econstrs.foreach { constr =>
+      checkIOPermissions(constr.tpe1.effects, constr.loc)
+      checkIOPermissions(constr.tpe2.effects, constr.loc)
     }
-    val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
-    nonRoot ++ pub ++ name ++ types ++ effect
+    spec.fparams.foreach(fp => checkIOPermissions(fp.tpe.effects, fp.tpe.loc))
+    checkIOPermissions(spec.eff.effects, spec.eff.loc)
+    checkIOPermissions(spec.retTpe.effects, spec.retTpe.loc)
+  }
+
+  /** Emits an error if `effects` contains [[Symbol.IO]] and the security context of `loc` is [[SecurityContext.Paranoid]] */
+  private def checkIOPermissions(effects: Set[Symbol.EffSym], loc: SourceLocation)(implicit sctx: SharedContext): Unit = loc.security match {
+    case SecurityContext.Unrestricted =>
+      ()
+
+    case SecurityContext.Plain =>
+      ()
+
+    case SecurityContext.Paranoid =>
+      if (effects.contains(Symbol.IO)) {
+        sctx.errors.add(SafetyError.Forbidden(loc.security, loc))
+      }
+  }
+
+  /** Checks if `cast` is legal. */
+  private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = cast match {
+    case Expr.CheckedCast(_, exp, tpe, _, loc) =>
+      // Attempt to unpack any associated type in the types
+      val from = eraseKnownAssociatedTypes(exp.tpe)
+      val to = eraseKnownAssociatedTypes(tpe)
+      (Type.eraseAliases(from).baseType, Type.eraseAliases(to).baseType) match {
+
+        // Allow casting Null to a Java type.
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigInt, _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigDecimal, _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Regex, _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Array, _)) => ()
+
+        // Allow casting one Java type to another if there is a subtype relationship.
+        case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(left)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+
+        // Similar, but for String.
+        case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(classOf[String])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+
+        // Similar, but for Regex.
+        case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+
+        // Similar, but for BigInt.
+        case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(classOf[BigInteger])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+
+        // Similar, but for BigDecimal.
+        case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(classOf[java.math.BigDecimal])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+
+        // Similar, but for Arrays.
+        case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(classOf[Array[Object]])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+
+        // Disallow casting a type variable.
+        case (src@Type.Var(_, _), _) =>
+          sctx.errors.add(IllegalCheckedCastFromVar(src, to, loc))
+
+        // Disallow casting a type variable (symmetric case)
+        case (_, dst@Type.Var(_, _)) =>
+          sctx.errors.add(IllegalCheckedCastToVar(from, dst, loc))
+
+        // Disallow casting a Java type to any other type.
+        case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
+          sctx.errors.add(IllegalCheckedCastToNonJava(clazz, to, loc))
+
+        // Disallow casting a Java type to any other type (symmetric case).
+        case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
+          sctx.errors.add(IllegalCheckedCastFromNonJava(from, clazz, loc))
+
+        // Disallow all other casts.
+        case _ => sctx.errors.add(IllegalCheckedCast(from, to, loc))
+      }
   }
 
   /**
-    * Returns `true` if the given `defn` has a single `Unit` parameter.
-    */
-  private def hasUnitParameter(defn: Def): Boolean = {
-    defn.spec.fparams match {
-      case fparam :: Nil =>
-        // Case 1: A single parameter. Must be Unit.
-        fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
-      case _ =>
-        // Case 2: Multiple parameters.
-        false
-    }
-  }
-
-  /**
-    * Returns `true` if the given `defn` is in the root namespace.
-    */
-  private def isInRootNamespace(defn: Def): Boolean = {
-    defn.sym.namespace.isEmpty
-  }
-
-  /**
-    * Returns `true` if the given `defn` has the public modifier.
-    */
-  private def isPub(defn: Def): Boolean = {
-    defn.spec.mod.isPublic
-  }
-
-  /**
-    * Returns `true` if the given `defn` has a polymorphic type.
-    */
-  private def isPolymorphic(defn: Def): Boolean = {
-    defn.spec.tparams.nonEmpty
-  }
-
-  /**
-    * Returns `Nil` if the given `defn` has exportable types according to
-    * [[isExportableType]], otherwise a list of the found errors is returned.
-    */
-  private def checkExportableTypes(defn: Def): List[SafetyError] = {
-    val types = defn.spec.fparams.map(_.tpe) :+ defn.spec.retTpe
-    types.flatMap{ t =>
-      if (isExportableType(t)) Nil
-      else List(SafetyError.IllegalExportType(t, t.loc))
-    }
-  }
-
-  /**
-    * Returns `true` if the given `tpe` is supported in exported signatures.
+    * Returns `tpe0` where known associated types and effects have been erased (i.e. replaced by their actual types).
     *
-    * Currently this is only types that are immune to erasure, i.e. the
-    * primitive java types and Object.
-    *
-    * Note that signatures should be exportable as-is, this means that even
-    * though the signature contains `MyAlias[Bool]` where
-    * `type alias MyAlias[t] = t`, it uses flix-specific type information which
-    * is not allowed.
+    * Only erases associated types and effects for monomorphic (i.e. concrete known types).
     */
-  private def isExportableType(tpe: Type): Boolean = tpe.typeConstructor match {
-    case None => false
-    case Some(cst) => cst match {
-      case TypeConstructor.Bool => true
-      case TypeConstructor.Char => true
-      case TypeConstructor.Float32 => true
-      case TypeConstructor.Float64 => true
-      case TypeConstructor.Int8 => true
-      case TypeConstructor.Int16 => true
-      case TypeConstructor.Int32 => true
-      case TypeConstructor.Int64 => true
-      case TypeConstructor.Native(clazz) if clazz == classOf[Object] => true
-      // Error is accepted to avoid cascading errors
-      case TypeConstructor.Error(_, _) => true
-      case _ => false
-    }
-  }
+  private def eraseKnownAssociatedTypes(tpe0: Type)(implicit root: Root): Type = tpe0 match {
+    case Type.Var(_, _) => tpe0
 
-  /**
-    * Returns `true` if given `defn` has a name that is directly valid in Java.
-    */
-  private def validJavaName(sym: Symbol.DefnSym): Boolean = {
-    sym.name.matches("[a-z][a-zA-Z0-9]*")
-  }
+    case Type.Cst(_, _) => tpe0
 
-  /**
-    * Returns `true` if the given `defn` is pure or has the IO effect.
-    */
-  private def isPureOrIO(defn: Def): Boolean = {
-    defn.spec.eff match {
-      case Type.Pure => true
-      case Type.IO => true
-      case _ => false
-    }
-  }
+    case Type.Apply(tpe1, tpe2, loc) =>
+      Type.Apply(eraseKnownAssociatedTypes(tpe1), eraseKnownAssociatedTypes(tpe2), loc)
 
-  /**
-    * Performs safety and well-formedness checks on the given expression `exp0`.
-    */
-  private def visitExp(e0: Expr, renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = {
+    case Type.Alias(symUse, args, tpe, loc) =>
+      Type.Alias(symUse, args.map(eraseKnownAssociatedTypes), eraseKnownAssociatedTypes(tpe), loc)
 
-    /**
-      * Local visitor.
-      */
-    def visit(exp0: Expr): List[SafetyError] = exp0 match {
-      case Expr.Cst(_, _, _) => Nil
+    case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), arg, kind, loc) =>
+      val tpe = eraseKnownAssociatedTypes(arg)
+      val optConcreteType = tryEraseAssocType(sym, tpe)
+      // Optionally return the concrete type, falling back to the erased type in the argument.
+      optConcreteType.getOrElse(Type.AssocType(symUse, tpe, kind, loc))
 
-      case Expr.Var(_, _, _) => Nil
+    case Type.JvmToType(tpe, loc) =>
+      Type.JvmToType(eraseKnownAssociatedTypes(tpe), loc)
 
-      case Expr.Def(_, _, _) => Nil
+    case Type.JvmToEff(tpe, loc) =>
+      Type.JvmToEff(eraseKnownAssociatedTypes(tpe), loc)
 
-      case Expr.Sig(_, _, _) => Nil
-
-      case Expr.Hole(_, _, _) => Nil
-
-      case Expr.HoleWithExp(exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.OpenAs(_, exp, _, _) =>
-        visit(exp)
-
-      case Expr.Use(_, _, exp, _) =>
-        visit(exp)
-
-      case Expr.Lambda(_, exp, _, _) =>
-        visit(exp)
-
-      case Expr.Apply(exp, exps, _, _, _) =>
-        visit(exp) ++ exps.flatMap(visit)
-
-      case Expr.Unary(_, exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.Binary(_, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.Let(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.Region(_, _) =>
-        Nil
-
-      case Expr.Scope(_, _, exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-        visit(exp1) ++ visit(exp2) ++ visit(exp3)
-
-      case Expr.Stm(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.Discard(exp, _, _) =>
-        visit(exp)
-
-      case Expr.Match(exp, rules, _, _, _) =>
-        visit(exp) ++
-          rules.flatMap { case MatchRule(_, g, e) => g.toList.flatMap(visit) ++ visit(e) }
-
-      case Expr.TypeMatch(exp, rules, _, _, _) =>
-        // check whether the last case in the type match looks like `...: _`
-        val missingDefault = rules.last match {
-          case TypeMatchRule(_, tpe, _) => tpe match {
-            case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
-            case _ => List(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
-          }
-        }
-        visit(exp) ++ missingDefault ++
-          rules.flatMap { case TypeMatchRule(_, _, e) => visit(e) }
-
-      case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
-        visit(exp) ++
-          rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp) }
-
-      case Expr.Tag(_, exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.RestrictableTag(_, exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.Tuple(elms, _, _, _) =>
-        elms.flatMap(visit)
-
-      case Expr.RecordEmpty(_, _) => Nil
-
-      case Expr.RecordSelect(exp, _, _, _, _) =>
-        visit(exp)
-
-      case Expr.RecordExtend(_, value, rest, _, _, _) =>
-        visit(value) ++ visit(rest)
-
-      case Expr.RecordRestrict(_, rest, _, _, _) =>
-        visit(rest)
-
-      case Expr.ArrayLit(elms, exp, _, _, _) =>
-        elms.flatMap(visit) ++ visit(exp)
-
-      case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
-        visit(exp1) ++ visit(exp2) ++ visit(exp3)
-
-      case Expr.ArrayLoad(base, index, _, _, _) =>
-        visit(base) ++ visit(index)
-
-      case Expr.ArrayLength(base, _, _) =>
-        visit(base)
-
-      case Expr.ArrayStore(base, index, elm, _, _) =>
-        visit(base) ++ visit(index) ++ visit(elm)
-
-      case Expr.VectorLit(elms, _, _, _) =>
-        elms.flatMap(visit)
-
-      case Expr.VectorLoad(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.VectorLength(exp, _) =>
-        visit(exp)
-
-      case Expr.Ref(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.Deref(exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.Assign(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.Ascribe(exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.InstanceOf(exp, _, _) =>
-        visit(exp)
-
-      case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
-        cast match {
-          case CheckedCastType.TypeCast =>
-            val from = Type.eraseAliases(exp.tpe)
-            val to = Type.eraseAliases(tpe)
-            val errors = verifyCheckedTypeCast(from, to, loc)
-            visit(exp) ++ errors
-
-          case CheckedCastType.EffectCast =>
-            val from = Type.eraseAliases(exp.eff)
-            val to = Type.eraseAliases(eff)
-            visit(exp)
-        }
-
-      case e@Expr.UncheckedCast(exp, _, _, _, _, _) =>
-        val errors = verifyUncheckedCast(e)
-        visit(exp) ++ errors
-
-      case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.Without(exp, _, _, _, _) =>
-        visit(exp)
-
-      case Expr.TryCatch(exp, rules, _, _, _) =>
-        visit(exp) ++
-          rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
-
-      case Expr.TryWith(exp, _, rules, _, _, _) =>
-        visit(exp) ++
-          rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
-
-      case Expr.Do(_, exps, _, _, _) =>
-        exps.flatMap(visit)
-
-      case Expr.InvokeConstructor(_, args, _, _, _) =>
-        args.flatMap(visit)
-
-      case Expr.InvokeMethod(_, exp, args, _, _, _) =>
-        visit(exp) ++ args.flatMap(visit)
-
-      case Expr.InvokeStaticMethod(_, args, _, _, _) =>
-        args.flatMap(visit)
-
-      case Expr.GetField(_, exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.PutField(_, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.GetStaticField(_, _, _, _) =>
-        Nil
-
-      case Expr.PutStaticField(_, exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
-        val erasedType = Type.eraseAliases(tpe)
-        checkObjectImplementation(clazz, erasedType, methods, loc) ++
-          methods.flatMap {
-            case JvmMethod(_, _, exp, _, _, _) => visit(exp)
-          }
-
-      case Expr.NewChannel(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.GetChannel(exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.PutChannel(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.SelectChannel(rules, default, _, _, _) =>
-        rules.flatMap { case SelectChannelRule(_, chan, body) => visit(chan) ++
-          visit(body)
-        } ++
-          default.map(visit).getOrElse(Nil)
-
-      case Expr.Spawn(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.ParYield(frags, exp, _, _, _) =>
-        frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ++ visit(exp)
-
-      case Expr.Lazy(exp, _, _) =>
-        visit(exp)
-
-      case Expr.Force(exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.FixpointConstraintSet(cs, _, _) =>
-        cs.flatMap(checkConstraint(_, renv))
-
-      case Expr.FixpointLambda(_, exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.FixpointSolve(exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.FixpointFilter(_, exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.FixpointInject(exp, _, _, _, _) =>
-        visit(exp)
-
-      case Expr.FixpointProject(_, exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.Error(_, _, _) =>
-        Nil
-
-    }
-
-    visit(e0)
+    case Type.UnresolvedJvmType(member, loc) =>
+      Type.UnresolvedJvmType(member.map(eraseKnownAssociatedTypes), loc)
 
   }
 
-  /**
-    * Checks if the given type cast is legal.
-    */
-  private def verifyCheckedTypeCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
-    (from.baseType, to.baseType) match {
+  /** Returns the monomorphic / concrete associated type of `sym0` from trait instance on `tpe0` if it exists. */
+  private def tryEraseAssocType(sym0: Symbol.AssocTypeSym, tpe0: Type)(implicit root: Root): Option[Type] = {
+    root.eqEnv.getAssocDef(sym0, tpe0).map(_.ret).filter(isMonomorphicType)
+  }
 
-      // Allow casting Null to a Java type.
-      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => Nil
-      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigInt, _)) => Nil
-      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigDecimal, _)) => Nil
-      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => Nil
-      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Regex, _)) => Nil
-      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Array, _)) => Nil
-
-      // Allow casting one Java type to another if there is a sub-type relationship.
-      case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(left)) Nil else IllegalCheckedCast(from, to, loc) :: Nil
-
-      // Similar, but for String.
-      case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
-
-      // Similar, but for Regex.
-      case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
-
-      // Similar, but for BigInt.
-      case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[BigInteger])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
-
-      // Similar, but for BigDecimal.
-      case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
-
-      // Similar, but for Arrays.
-      case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[Array[Object]])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
-
-      // Disallow casting a type variable.
-      case (src@Type.Var(_, _), _) =>
-        IllegalCheckedCastFromVar(src, to, loc) :: Nil
-
-      // Disallow casting a type variable (symmetric case)
-      case (_, dst@Type.Var(_, _)) =>
-        IllegalCheckedCastToVar(from, dst, loc) :: Nil
-
-      // Disallow casting a Java type to any other type.
-      case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
-        IllegalCheckedCastToNonJava(clazz, to, loc) :: Nil
-
-      // Disallow casting a Java type to any other type (symmetric case).
-      case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        IllegalCheckedCastFromNonJava(from, clazz, loc) :: Nil
-
-      // Disallow all other casts.
-      case _ => IllegalCheckedCast(from, to, loc) :: Nil
-    }
+  /** Returns `true` iff all types in `tpe0` are monomorphic (i.e. there are no type variables). */
+  private def isMonomorphicType(tpe0: Type): Boolean = tpe0 match {
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => true
+    case Type.Apply(tpe1, tpe2, _) => isMonomorphicType(tpe1) && isMonomorphicType(tpe2)
+    case Type.Alias(_, args, tpe, _) => args.forall(isMonomorphicType) && isMonomorphicType(tpe)
+    case Type.AssocType(_, arg, _, _) => isMonomorphicType(arg)
+    case Type.JvmToType(tpe, _) => isMonomorphicType(tpe)
+    case Type.JvmToEff(tpe, _) => isMonomorphicType(tpe)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.forall(isMonomorphicType)
   }
 
   /**
     * Checks if there are any impossible casts, i.e. casts that always fail.
     *
-    * - No primitive type can be cast to a reference type and vice-versa.
-    * - No Bool type can be cast to a non-Bool type  and vice-versa.
+    *   - No primitive type can be cast to a reference type and vice-versa.
+    *   - No Bool type can be cast to a non-Bool type and vice-versa.
     */
-  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleUncheckedCast] = {
-    val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
-    val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
+  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
+    case Expr.UncheckedCast(exp, declaredType, _, _, _, loc) =>
+      val from = exp.tpe
+      val to = declaredType
+      val primitives = List(
+        Type.Unit, Type.Bool, Type.Char,
+        Type.Float32, Type.Float64, Type.Int8,
+        Type.Int16, Type.Int32, Type.Int64,
+        Type.Str, Type.Regex, Type.BigInt, Type.BigDecimal
+      )
 
-    val primitives = {
-      Type.Unit :: Type.Bool :: Type.Char ::
-        Type.Float32 :: Type.Float64 :: Type.Int8 ::
-        Type.Int16 :: Type.Int32 :: Type.Int64 ::
-        Type.Str :: Type.Regex :: Type.BigInt :: Type.BigDecimal :: Nil
-    }
+      (Type.eraseAliases(from).baseType, to.map(Type.eraseAliases).map(_.baseType)) match {
+        // Allow all null casts.
+        case (Type.Null, _) => ()
 
-    (tpe1, tpe2) match {
-      // Allow casts where one side is a type variable.
-      case (Type.Var(_, _), _) => Nil
-      case (_, Some(Type.Var(_, _))) => Nil
+        // Allow casts where one side is a type variable.
+        case (Type.Var(_, _), _) => ()
+        case (_, Some(Type.Var(_, _))) => ()
 
-      // Allow casts between Java types.
-      case (Type.Cst(TypeConstructor.Native(_), _), _) => Nil
-      case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
+        // Allow casts between Java types.
+        case (Type.Cst(TypeConstructor.Native(_), _), _) => ()
+        case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => ()
 
-      // Disallow casting a Boolean to another primitive type.
-      case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
-        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        // Disallow casting a Boolean to another primitive type.
+        case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
+          sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-      // Disallow casting a Boolean to another primitive type (symmetric case).
-      case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
-        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        // Disallow casting a Boolean to another primitive type (symmetric case).
+        case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
+          sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-      // Disallowing casting a non-primitive type to a primitive type.
-      case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
-        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        // Disallowing casting a non-primitive type to a primitive type.
+        case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
+          sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-      // Disallowing casting a non-primitive type to a primitive type (symmetric case).
-      case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
-        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        // Disallowing casting a non-primitive type to a primitive type (symmetric case).
+        case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
+          sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-      case _ => Nil
-    }
+        case _ => ()
+      }
   }
 
-  /**
-    * Performs safety and well-formedness checks on the given constraint `c0`.
-    */
-  private def checkConstraint(c0: Constraint, renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = {
-    //
+  /** Checks the safety and well-formedness of `c`. */
+  private def checkConstraint(c: Constraint)(implicit renv: RigidityEnv, sctx: SharedContext, root: Root, flix: Flix): Unit = {
     // Compute the set of positively defined variable symbols in the constraint.
-    //
-    val posVars = positivelyDefinedVariables(c0)
+    val posVars = positivelyDefinedVariables(c)
 
-    // The variables that are used in a non-fixed lattice position
-    val latVars0 = nonFixedLatticeVariablesOf(c0)
+    // The variables that are used in a non-fixed lattice position.
+    val latVars0 = nonFixedLatticeVariablesOf(c)
 
-    // the variables that are used in a fixed position
-    val fixedLatVars0 = fixedLatticeVariablesOf(c0)
+    // The variables that are used in a fixed position.
+    val fixedLatVars0 = fixedLatticeVariablesOf(c)
 
     // The variables that are used in lattice position, either fixed or non-fixed.
     val latVars = latVars0 union fixedLatVars0
@@ -611,329 +609,265 @@ object Safety {
     // The lattice variables that cannot be used relationally in the head.
     val unsafeLatVars = latVars -- safeLatVars
 
-    //
     // Compute the quantified variables in the constraint.
-    //
     // A lexically bound variable does not appear in this set and is never free.
-    //
-    val quantVars = c0.cparams.map(_.sym).toSet
+    val quantVars = c.cparams.map(_.bnd.sym).toSet
 
-    //
     // Check that all negative atoms only use positively defined variable symbols
     // and that lattice variables are not used in relational position.
-    //
-    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars, renv))
+    c.body.foreach(checkBodyPredicate(_, posVars, quantVars, latVars))
 
-    //
     // Check that the free relational variables in the head atom are not lattice variables.
-    //
-    val err2 = checkHeadPredicate(c0.head, unsafeLatVars)
+    checkHeadPredicate(c.head, unsafeLatVars)
 
-    //
-    // Check that patterns in atom body are legal
-    //
-    val err3 = c0.body.flatMap(s => checkBodyPattern(s))
-
-    err1 ++ err2 ++ err3
+    // Check that patterns in atom body are legal.
+    c.body.foreach(s => checkBodyPattern(s))
   }
 
-  /**
-    * Performs safety check on the pattern of an atom body.
-    */
-  private def checkBodyPattern(p0: Predicate.Body): List[SafetyError] = p0 match {
+  /** Checks that `p` only contains [[Pattern.Var]], [[Pattern.Wild]], and [[Pattern.Cst]]. */
+  private def checkBodyPattern(p: Predicate.Body)(implicit sctx: SharedContext): Unit = p match {
     case Predicate.Body.Atom(_, _, _, _, terms, _, loc) =>
-      terms.foldLeft[List[SafetyError]](Nil)((acc, term) => term match {
-        case Pattern.Var(_, _, _) => acc
-        case Pattern.Wild(_, _) => acc
-        case Pattern.Cst(_, _, _) => acc
-        case _ => IllegalPatternInBodyAtom(loc) :: acc
-      })
-    case _ => Nil
+      terms.foreach {
+        case Pattern.Var(_, _, _) => ()
+        case Pattern.Wild(_, _) => ()
+        case Pattern.Cst(_, _, _) => ()
+        case _ => sctx.errors.add(IllegalPatternInBodyAtom(loc))
+      }
+    case _ => ()
   }
 
   /**
-    * Performs safety and well-formedness checks on the given body predicate `p0`
-    * with the given positively defined variable symbols `posVars`.
+    * Checks that `p` is well-formed.
+    *
+    * @param posVars   the positively bound variables.
+    * @param quantVars the quantified variables, not bound by lexical scope.
+    * @param latVars   the variables in lattice position.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = p0 match {
+  private def checkBodyPredicate(p: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym])(implicit renv: RigidityEnv, sctx: SharedContext, root: Root, flix: Flix): Unit = p match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
-      // check for non-positively bound negative variables.
-      val err1 = polarity match {
-        case Polarity.Positive => Nil
+      // Check for non-positively bound negative variables.
+      polarity match {
+        case Polarity.Positive => ()
         case Polarity.Negative =>
           // Compute the free variables in the terms which are *not* bound by the lexical scope.
-          val freeVars = terms.flatMap(freeVarsOf).toSet intersect quantVars
-          val wildcardNegErrors = visitPats(terms, loc)
+          val freeVars = terms.flatMap(freeVarsOf).toSet.intersect(quantVars)
+          terms.foreach(visitPat(_, loc))
 
           // Check if any free variables are not positively bound.
-          val variableNegErrors = ((freeVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
-          wildcardNegErrors ++ variableNegErrors
+          (freeVars -- posVars).foreach(mkIllegalNonPositivelyBoundVariableError(_, loc))
       }
-      // check for relational use of lattice variables. We still look at fixed
-      // atoms since latVars (which means that they occur non-fixed) cannot be
-      // in another fixed atom.
+      // Check for relational use of lattice variables. We still look at fixed atoms since latVars
+      // (which means that they occur non-fixed) cannot be in another fixed atom.
       val relTerms = den match {
         case Denotation.Relational => terms
         case Denotation.Latticenal => terms.dropRight(1)
       }
-      val err2 = relTerms.flatMap(freeVarsOf).filter(latVars.contains).map(
-        s => IllegalRelationalUseOfLatticeVar(s, loc)
-      )
-
-      // Combine the messages
-      err1 ++ err2
+      val relVars = relTerms.flatMap(freeVarsOf).toSet
+      relVars.intersect(latVars).map(IllegalRelationalUseOfLatticeVar(_, loc)).foreach(sctx.errors.add)
 
     case Predicate.Body.Functional(_, exp, loc) =>
-      // check for non-positively in variables (free variables in exp).
-      val inVars = freeVars(exp).keySet intersect quantVars
-      val err1 = ((inVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
+      // Check for non-positively in variables (free variables in exp).
+      val inVars = freeVars(exp).keySet.intersect(quantVars)
+      (inVars -- posVars).toList.foreach(mkIllegalNonPositivelyBoundVariableError(_, loc))
+      visitExp(exp)
 
-      err1 ::: visitExp(exp, renv)
-
-    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv)
+    case Predicate.Body.Guard(exp, _) =>
+      visitExp(exp)
 
   }
 
-  /**
-    * Creates an error for a non-positively bound variable, dependent on `sym.isWild`.
-    *
-    * @param loc the location of the atom containing the terms.
-    */
-  private def makeIllegalNonPositivelyBoundVariableError(sym: Symbol.VarSym, loc: SourceLocation): SafetyError =
-    if (sym.isWild) IllegalNegativelyBoundWildVar(sym, loc) else IllegalNonPositivelyBoundVar(sym, loc)
+  /** Returns a non-positively bound variable error, depending on `sym.isWild`. */
+  private def mkIllegalNonPositivelyBoundVariableError(sym: Symbol.VarSym, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    if (sym.isWild)
+      sctx.errors.add(IllegalNegativelyBoundWildVar(sym, loc))
+    else
+      sctx.errors.add(IllegalNonPositivelyBoundVar(sym, loc))
+  }
 
-  /**
-    * Returns all the positively defined variable symbols in the given constraint `c0`.
-    */
-  private def positivelyDefinedVariables(c0: Constraint): Set[Symbol.VarSym] =
-    c0.body.flatMap(positivelyDefinedVariables).toSet
+  /** Returns all the free and positively defined variable symbols in the given constraint `c`. */
+  private def positivelyDefinedVariables(c: Constraint): Set[Symbol.VarSym] =
+    c.body.flatMap(positivelyDefinedVariables).toSet
 
-  /**
-    * Returns all positively defined variable symbols in the given body predicate `p0`.
-    */
-  private def positivelyDefinedVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
-    case Predicate.Body.Atom(_, _, polarity, _, terms, _, _) => polarity match {
-      case Polarity.Positive =>
-        // Case 1: A positive atom positively defines all its free variables.
-        terms.flatMap(freeVarsOf).toSet
-      case Polarity.Negative =>
-        // Case 2: A negative atom does not positively define any variables.
-        Set.empty
-    }
-
-    case Predicate.Body.Functional(_, _, _) =>
-      // A functional does not positively bind any variables. Not even its outVars.
+  /** Returns all free and positively defined variable symbols in the given body predicate `p`. */
+  private def positivelyDefinedVariables(p: Predicate.Body): Set[Symbol.VarSym] = p match {
+    case Predicate.Body.Atom(_, _, Polarity.Positive, _, terms, _, _) =>
+      terms.flatMap(freeVarsOf).toSet
+    case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _, _) =>
       Set.empty
-
-    case Predicate.Body.Guard(_, _) => Set.empty
-
+    case Predicate.Body.Functional(_, _, _) =>
+      // Functional does not positively bind any variables. Not even its outVars.
+      Set.empty
+    case Predicate.Body.Guard(_, _) =>
+      Set.empty
   }
 
-  /**
-    * Computes the free variables that occur in lattice position in
-    * atoms that are marked with fix.
-    */
-  private def fixedLatticeVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
-    c0.body.flatMap(fixedLatticenalVariablesOf).toSet
+  /** Returns the free lattice variables of `c` that are marked with fix. */
+  private def fixedLatticeVariablesOf(c: Constraint): Set[Symbol.VarSym] =
+    c.body.flatMap(fixedLatticenalVariablesOf).toSet
 
-  /**
-    * Computes the lattice variables of `p0` if it is a fixed atom.
-    */
-  private def fixedLatticenalVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
+  /** Returns the free lattice variables of `p` that are marked with fix. */
+  private def fixedLatticenalVariablesOf(p: Predicate.Body): Set[Symbol.VarSym] = p match {
     case Body.Atom(_, Denotation.Latticenal, _, Fixity.Fixed, terms, _, _) =>
       terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
-
     case _ => Set.empty
   }
 
-  /**
-    * Computes the free variables that occur in a lattice position in
-    * atoms that are not marked with fix.
-    */
-  private def nonFixedLatticeVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
-    c0.body.flatMap(latticenalVariablesOf).toSet
+  /** Returns the free lattice variables of `c` that are not marked with fix. */
+  private def nonFixedLatticeVariablesOf(c: Constraint): Set[Symbol.VarSym] =
+    c.body.flatMap(latticeVariablesOf).toSet
 
-  /**
-    * Computes the lattice variables of `p0` if it is not a fixed atom.
-    */
-  private def latticenalVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
+  /** Returns the free lattice variables of `p` that are not marked with fix. */
+  private def latticeVariablesOf(p: Predicate.Body): Set[Symbol.VarSym] = p match {
     case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, terms, _, _) =>
       terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
-
     case _ => Set.empty
   }
 
-  /**
-    * Checks for `IllegalRelationalUseOfLatticeVariable` in the given `head` predicate.
-    */
-  private def checkHeadPredicate(head: Predicate.Head, latVars: Set[Symbol.VarSym]): List[SafetyError] = head match {
+  /** Checks that the free relational variables in `head` does not include `latVars`. */
+  private def checkHeadPredicate(head: Predicate.Head, latVars: Set[Symbol.VarSym])(implicit sctx: SharedContext): Unit = head match {
     case Predicate.Head.Atom(_, Denotation.Latticenal, terms, _, loc) =>
-      // Check the relational terms ("the keys").
-      checkTerms(terms.dropRight(1), latVars, loc)
+      val relationalTerms = terms.dropRight(1)
+      checkTerms(relationalTerms, latVars, loc)
     case Predicate.Head.Atom(_, Denotation.Relational, terms, _, loc) =>
-      // Check every term.
       checkTerms(terms, latVars, loc)
   }
 
-  /**
-    * Checks that the free variables of the terms does not contain any of the variables in `latVars`.
-    * If they do contain a lattice variable then a `IllegalRelationalUseOfLatticeVariable` is created.
-    */
-  private def checkTerms(terms: List[Expr], latVars: Set[Symbol.VarSym], loc: SourceLocation): List[SafetyError] = {
-    // Compute the free variables in all terms.
-    val allVars = terms.foldLeft(Set.empty[Symbol.VarSym])({
-      case (acc, term) => acc ++ freeVars(term).keys
-    })
+  /** Checks that the free variables in `exps` does not include `latVars`. */
+  private def checkTerms(exps: List[Expr], latVars: Set[Symbol.VarSym], loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    val allFreeVars = exps.flatMap(t => freeVars(t).keys).toSet
 
-    // Compute the lattice variables that are illegally used in the terms.
-    allVars.intersect(latVars).toList.map(sym => IllegalRelationalUseOfLatticeVar(sym, loc))
+    // Compute the lattice variables that are illegally used in the exps.
+    allFreeVars.intersect(latVars).toList.map(IllegalRelationalUseOfLatticeVar(_, loc)).foreach(sctx.errors.add)
+  }
+
+  /** Checks that `pat` contains no wildcards. */
+  private def visitPat(pat0: Pattern, loc: SourceLocation)(implicit sctx: SharedContext): Unit = pat0 match {
+    case Pattern.Wild(_, _) => sctx.errors.add(IllegalNegativelyBoundWildCard(loc))
+    case Pattern.Var(_, _, _) => ()
+    case Pattern.Cst(_, _, _) => ()
+    case Pattern.Tag(_, pats, _, _) => pats.foreach(visitPat(_, loc))
+    case Pattern.Tuple(elms, _, _) => elms.foreach(visitPat(_, loc))
+    case Pattern.Record(pats, pat, _, _) =>
+      pats.map(_.pat).foreach(visitPat(_, loc))
+      visitPat(pat, loc)
+    case Pattern.Error(_, _) => ()
   }
 
   /**
-    * Returns an error for each occurrence of wildcards in each term.
+    * Checks that `clazz` is [[java.lang.Throwable]] or a subclass.
     *
-    * @param loc the location of the atom containing the terms.
+    * @param clazz the Java class specified in the catch clause
+    * @param loc   the location of the catch parameter.
     */
-  private def visitPats(terms: List[Pattern], loc: SourceLocation): List[SafetyError] = {
-    terms.flatMap(visitPat(_, loc))
-  }
+  private def checkCatchClass(clazz: Class[?], loc: SourceLocation)(implicit sctx: SharedContext): Unit =
+    if (!isThrowable(clazz)) {
+      sctx.errors.add(IllegalCatchType(clazz, loc))
+    }
 
-  /**
-    * Returns an error for each occurrence of wildcards.
-    *
-    * @param loc the location of the atom containing the term.
-    */
+  /** Returns `true` if `clazz` is [[java.lang.Throwable]] or a subclass of it. */
+  private def isThrowable(clazz: Class[?]): Boolean =
+    classOf[Throwable].isAssignableFrom(clazz)
+
+  /** Checks that the type of the argument to `throw` is [[java.lang.Throwable]] or a subclass. */
+  private def checkThrow(exp: Expr)(implicit sctx: SharedContext, flix: Flix): Unit =
+    if (!isThrowableType(exp.tpe)) sctx.errors.add(IllegalThrowType(exp.tpe, exp.loc))
+
+  /** Returns `true` if `tpe` is [[java.lang.Throwable]] or a subclass of it. */
   @tailrec
-  private def visitPat(term: Pattern, loc: SourceLocation): List[SafetyError] = term match {
-    case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildCard(loc))
-    case Pattern.Var(_, _, _) => Nil
-    case Pattern.Cst(_, _, _) => Nil
-    case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
-    case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
-    case Pattern.Record(pats, pat, _, _) => visitRecordPattern(pats, pat, loc)
-    case Pattern.RecordEmpty(_, _) => Nil
-    case Pattern.Error(_, _) => Nil
+  private def isThrowableType(tpe0: Type): Boolean = tpe0 match {
+    case Type.Cst(TypeConstructor.Native(clazz), _) => isThrowable(clazz)
+    case Type.Alias(_, _, tpe, _) => isThrowableType(tpe)
+    case _ => false
   }
 
   /**
-    * Helper function for [[visitPat]].
+    * Checks that `newObject` correctly implements its class. `newObject` contains `methods` that
+    * are supposed to implement `clazz`.
+    *
+    * The conditions are that:
+    *   - `clazz` must be an interface or have a non-private constructor without arguments (unless user-defined constructors are provided).
+    *   - `clazz` must be public.
+    *   - Each constructor body must be exactly a `super(...)` call.
+    *   - There can be at most one constructor.
+    *   - `methods` must take the object itself (`this`) as the first argument.
+    *   - `methods` must include all required signatures (e.g. abstract methods).
+    *   - `methods` must not include non-existing methods.
+    *   - `methods` must not let control effects escape.
     */
-  private def visitRecordPattern(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation): List[SafetyError] = {
-    visitPats(pats.map(_.pat), loc) ++ visitPat(pat, loc)
+  private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
+    case Expr.NewObject(_, clazz, tpe0, _, cs, methods, loc) =>
+      val tpe = Type.eraseAliases(tpe0)
+      // `clazz` must be an interface or have a non-private constructor without arguments
+      // (unless user-defined constructors are provided).
+      if (!clazz.isInterface && cs.isEmpty && !hasNonPrivateZeroArgConstructor(clazz)) {
+        sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
+      }
+
+      // Each constructor body must be exactly a `super(...)` call.
+      cs.foreach {
+        case JvmConstructor(exp, _, _, constructorLoc) =>
+          exp match {
+            case _: Expr.InvokeSuperConstructor => () // OK
+            case _ => sctx.errors.add(NewObjectConstructorMissingSuperCall(clazz, constructorLoc))
+          }
+      }
+
+      // There can be at most one constructor.
+      if (cs.length > 1) {
+        sctx.errors.add(NewObjectTooManyConstructors(clazz, loc))
+      }
+
+      // `clazz` must be public.
+      if (!isPublicClass(clazz)) {
+        sctx.errors.add(NewObjectNonPublicClass(clazz, loc))
+      }
+
+      // `methods` must take the object itself (`this`) as the first argument.
+      methods.foreach {
+        case JvmMethod(_, ident, fparams, _, _, _, methodLoc) =>
+          val firstParam = fparams.head
+          firstParam.tpe match {
+            case t if Type.classFromFlixType(Type.eraseAliases(t)).contains(clazz) =>
+              ()
+            case Type.Unit =>
+              // Unit arguments are likely inserted by the compiler.
+              sctx.errors.add(NewObjectMissingThisArg(clazz, ident.name, methodLoc))
+            case _ =>
+              sctx.errors.add(NewObjectIllegalThisType(clazz, firstParam.tpe, ident.name, methodLoc))
+          }
+      }
+
+      // Check for missing abstract method implementations (by name + arity).
+      val flixMethodNameAndArity = methods.map {
+        case JvmMethod(_, ident, fparams, _, _, _, _) => (ident.name, fparams.tail.length)
+      }.toSet
+
+      val javaMethods = JvmUtils.getInstanceMethods(clazz)
+      val objectMethodNameAndArity = JvmUtils.getInstanceMethods(classOf[Object])
+        .map(m => (m.getName, m.getParameterCount)).toSet
+
+      val unimplementedMethods = javaMethods.filter { m =>
+        isAbstractMethod(m) &&
+        !objectMethodNameAndArity.contains((m.getName, m.getParameterCount)) &&
+        !flixMethodNameAndArity.contains((m.getName, m.getParameterCount))
+      }
+      unimplementedMethods.foreach(m => sctx.errors.add(NewObjectMissingMethod(clazz, m, loc)))
+
+      // Check for undefined methods (Flix methods not matching any Java method).
+      val javaMethodNameAndArity = javaMethods.map(m => (m.getName, m.getParameterCount)).toSet
+      val undefinedMethods = methods.filter {
+        case JvmMethod(_, ident, fparams, _, _, _, _) =>
+          !javaMethodNameAndArity.contains((ident.name, fparams.tail.length))
+      }
+      undefinedMethods.foreach(m => sctx.errors.add(NewObjectUndefinedMethod(clazz, m.ident.name, m.loc)))
+
+      // `methods` must not let control effects escape.
+      val controlEffecting = methods.filter(m => hasControlEffects(m.eff))
+      controlEffecting.map(m => SafetyError.IllegalMethodEffect(m.eff, m.loc)).foreach(sctx.errors.add)
   }
 
-  /**
-   * Ensures that the Java type in a catch clause is Throwable or a subclass.
-   *
-   * @param clazz the Java class specified in the catch clause
-   * @param loc   the location of the catch parameter.
-   */
-  private def checkCatchClass(clazz: java.lang.Class[_], loc: SourceLocation): List[SafetyError] = {
-    if (!classOf[Throwable].isAssignableFrom(clazz)) {
-      List(IllegalCatchType(loc))
-    } else {
-      List.empty
-    }
-  }
-
-  /**
-    * Ensures that `methods` fully implement `clazz`
-    */
-  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[SafetyError] = {
-    //
-    // Check that `clazz` doesn't have a non-default constructor
-    //
-    val constructorErrors = if (clazz.isInterface) {
-      // Case 1: Interface. No need for a constructor.
-      List.empty
-    } else {
-      // Case 2: Class. Must have a non-private zero argument constructor.
-      if (hasNonPrivateZeroArgConstructor(clazz))
-        List.empty
-      else
-        List(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
-    }
-
-    //
-    // Check that `clazz` is public
-    //
-    val visibilityErrors = if (!isPublicClass(clazz))
-      List(NewObjectNonPublicClass(clazz, loc))
-    else
-      List.empty
-
-    //
-    // Check that the first argument looks like "this"
-    //
-    val thisErrors = methods.flatMap {
-      case JvmMethod(ident, fparams, _, _, _, methodLoc) =>
-        // Check that the declared type of `this` matches the type of the class or interface.
-        val fparam = fparams.head
-        val thisType = Type.eraseAliases(fparam.tpe)
-        thisType match {
-          case `tpe` => None
-          case Type.Unit => Some(NewObjectMissingThisArg(clazz, ident.name, methodLoc))
-          case _ => Some(NewObjectIllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
-        }
-    }
-
-    val flixMethods = getFlixMethodSignatures(methods)
-    val implemented = flixMethods.keySet
-
-    val javaMethods = getJavaMethodSignatures(clazz)
-    val objectMethods = getJavaMethodSignatures(classOf[Object]).keySet
-    val canImplement = javaMethods.keySet
-    val mustImplement = canImplement.filter(m => isAbstractMethod(javaMethods(m)) && !objectMethods.contains(m))
-
-    //
-    // Check that there are no unimplemented methods.
-    //
-    val unimplemented = mustImplement diff implemented
-    val unimplementedErrors = unimplemented.map(m => NewObjectMissingMethod(clazz, javaMethods(m), loc))
-
-    //
-    // Check that there are no methods that aren't in the interface
-    //
-    val extra = implemented diff canImplement
-    val extraErrors = extra.map(m => NewObjectUnreachableMethod(clazz, m.name, flixMethods(m).loc))
-
-    constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
-  }
-
-  /**
-    * Represents the signature of a method, used to compare Java signatures against Flix signatures.
-    */
-  private case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
-
-  /**
-    * Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
-    */
-  private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
-    methods.foldLeft(Map.empty[MethodSignature, JvmMethod]) {
-      case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _)) =>
-        // Drop the first formal parameter (which always represents `this`)
-        val paramTypes = fparams.tail.map(_.tpe)
-        val signature = MethodSignature(ident.name, paramTypes.map(t => Type.eraseAliases(t)), Type.eraseAliases(retTpe))
-        acc + (signature -> m)
-    }
-  }
-
-  /**
-    * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
-    */
-  private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = clazz.getMethods.toList.filterNot(isStaticMethod)
-    methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
-      case (acc, m) =>
-        val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
-        acc + (signature -> m)
-    }
-  }
-
-  /**
-    * Return true if the given `clazz` has a non-private zero argument constructor.
-    */
-  private def hasNonPrivateZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
+  /** Return `true` if `clazz` has a non-private constructor with zero arguments. */
+  private def hasNonPrivateZeroArgConstructor(clazz: Class[?]): Boolean = {
     try {
       val constructor = clazz.getDeclaredConstructor()
       !java.lang.reflect.Modifier.isPrivate(constructor.getModifiers)
@@ -942,22 +876,32 @@ object Safety {
     }
   }
 
-  /**
-    * Returns `true` if the given class `c` is public.
-    */
-  private def isPublicClass(c: java.lang.Class[_]): Boolean =
+  /** Returns `true` if `c` is public. */
+  private def isPublicClass(c: Class[?]): Boolean =
     java.lang.reflect.Modifier.isPublic(c.getModifiers)
 
-  /**
-    * Return `true` if the given method `m` is abstract.
-    */
+  /** Return `true` if `m` is abstract. */
   private def isAbstractMethod(m: java.lang.reflect.Method): Boolean =
     java.lang.reflect.Modifier.isAbstract(m.getModifiers)
 
+  /** Returns `true` if `eff` includes control effects (e.g. Console). */
+  private def hasControlEffects(eff: Type): Boolean = {
+    // TODO: This is unsound and incomplete because it ignores type variables, associated types, etc.
+    !eff.effects.forall(Symbol.isPrimitiveEff)
+  }
+
+  /** Companion object for [[SharedContext]] */
+  private object SharedContext {
+
+    /** Returns a fresh shared context. */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
   /**
-    * Returns `true` if the given method `m` is static.
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the [[SafetyError]]s in the AST, if any.
     */
-  private def isStaticMethod(m: java.lang.reflect.Method): Boolean =
-    java.lang.reflect.Modifier.isStatic(m.getModifiers)
+  private case class SharedContext(errors: ConcurrentLinkedQueue[SafetyError])
 
 }

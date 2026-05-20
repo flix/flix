@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -34,7 +34,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def g(): Int32 = A.f()
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
@@ -49,7 +49,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
@@ -64,10 +64,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
          |
          |mod B {
-         |  def g(): A.Color = A/Color.Red
+         |  def g(): A.Color = A.Color.Red
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
@@ -85,11 +85,64 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleStruct.01") {
+  test("InaccessibleRestrictableEnum.01") {
+    val input =
+      s"""
+         |mod A {
+         |  restrictable enum Color[a] {
+         |    case Blu
+         |    case Red
+         |  }
+         |}
+         |
+         |mod B {
+         |  def g(): A.Color[a] = A.Color[a].Red
+         |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleRestrictableEnum](result)
+  }
+
+  test("InaccessibleRestrictableEnum.02") {
+    val input =
+      s"""
+         |mod A {
+         |  def f(): A.B.C.Color[a] = A.B.C.Color[a].Blu
+         |
+         |  mod B.C {
+         |    restrictable enum Color[a] {
+         |      case Blu
+         |      case Red
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleRestrictableEnum](result)
+  }
+
+  test("InaccessibleRestrictableEnum.03") {
+    val input =
+      s"""
+         |mod A {
+         |  restrictable enum Color[a] {
+         |    case Blu
+         |    case Red
+         |  }
+         |}
+         |
+         |def g(): A.Color[a] = A.Color[a].Red
+         |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleRestrictableEnum](result)
+  }
+
+  test("InaccessibleStruct.01") {
     val input =
       s"""
          |mod A{
@@ -101,12 +154,12 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |mod B {
          |    def g(): A.S = ???
          |}
-         |"""
-    val result = compile(input, Options.TestWithLibNix)
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
-  ignore("InaccessibleStruct.02") {
+  test("InaccessibleStruct.02") {
     val input =
       s"""
          |mod A {
@@ -117,7 +170,31 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleStruct](result)
+  }
+
+  // this test is temporarily ignored because it recovers and proceeds
+  // to fail in future unimplemented phases
+  test("InaccessibleStruct.03") {
+    val input =
+      s"""
+         |mod A{
+         |    struct S[r] {
+         |        a: Int32
+         |    }
+         |}
+         |
+         |mod B {
+         |    def g(): Unit = {
+         |        region rc {
+         |            new A.S @ rc { a = 3 };
+         |            ()
+         |        }
+         |    }
+         |}
+         """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
@@ -135,7 +212,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    def g(): A.Color = ???
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
@@ -153,11 +230,11 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleType.03") {
+  test("InaccessibleType.03") {
     val input =
       s"""
          |mod A {
@@ -169,7 +246,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
@@ -184,7 +261,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def g(): A.Color = 123
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTypeAlias](result)
   }
 
@@ -199,7 +276,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTypeAlias](result)
   }
 
@@ -216,7 +293,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def g(x: a): Int32 with A.Show[a] = ???
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
@@ -233,7 +310,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
@@ -248,7 +325,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    instance N.C[Int32]
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
@@ -263,7 +340,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    trait D[a] with N.C[a]
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
@@ -278,7 +355,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    instance N.C[Int32]
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.SealedTrait](result)
   }
 
@@ -293,7 +370,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.SealedTrait](result)
   }
 
@@ -308,7 +385,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.SealedTrait](result)
   }
 
@@ -320,7 +397,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
@@ -333,7 +410,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
@@ -347,7 +424,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
@@ -364,7 +441,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
@@ -382,11 +459,11 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  ignore("CyclicTypeAliases.06") {
+  test("CyclicTypeAliases.06") {
     val input =
       s"""
          |struct S[t, r] {
@@ -399,13 +476,13 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
   test("UndefinedName.01") {
     val input = "def f(): Int32 = x"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -416,11 +493,23 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def f(x: Int32, y: Int32): Int32 = x + y + z
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedName.03") {
+    val input =
+      """
+        |import java.util.Objects
+        |import java.lang.Object
+        |
+        |pub def check(): Bool \ IO = Objects.isNull((x: Object))
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedUse.01") {
     val input =
       s"""
          |mod A {
@@ -434,51 +523,40 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    def g(): Int32 = f(1)
          |}
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedNameUnrecoverable](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedUse](result)
   }
 
   test("UndefinedEffect.01") {
     val input =
       """
-        |def f(): Unit = try () with E {
+        |def f(): Unit = run () with handler E {
         |    def op() = ()
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedEffect](result)
   }
+
+ test("UndefinedEffect.02") {
+   val input =
+     """
+       |def f(): Unit = run () with handler Ef
+       |""".stripMargin
+   val result = check(input, Options.TestWithLibNix)
+   expectError[ResolutionError.UndefinedEffect](result)
+ }
 
   test("UndefinedOp.01") {
     val input =
       """
-        |def f(): Unit = do E.op()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedOp](result)
-  }
-
-  test("UndefinedOp.02") {
-    val input =
-      """
         |eff E
         |
-        |def f(): Unit = do E.op()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedOp](result)
-  }
-
-  test("UndefinedOp.03") {
-    val input =
-      """
-        |eff E
-        |
-        |def f(): Unit = try () with E {
+        |def f(): Unit = run () with handler E {
         |    def op() = ()
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedOp](result)
   }
 
@@ -487,7 +565,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |instance C[Int32]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
@@ -496,7 +574,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |def f(x: a): a with C[a] = x
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
@@ -507,7 +585,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def f(x: a): a with K[a], U[a] = x
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
@@ -518,274 +596,334 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |instance K[a] with U[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
   test("UndefinedJvmConstructor.01") {
     val input =
-      raw"""
+      """
+           |import java.io.File
+           |
            |def foo(): Unit =
-           |    import java_new java.io.File(): ##java.io.File \ IO as _;
+           |    let _ = new File();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.02") {
     val input =
       raw"""
-           |def foo(): Unit =
-           |    import java_new java.io.File(Int32): ##java.io.File \ IO as _;
+           |import java.io.File
+           |
+           |def foo(): Unit \ IO =
+           |    let _ = new File(0);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.03") {
     val input =
       raw"""
-           |def foo(): Unit =
-           |    import java_new java.lang.String(Bool): ##java.lang.String \ IO as _;
+           |import java.lang.String
+           |
+           |def foo(): Unit \ IO =
+           |    let _ = new String(true);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.04") {
     val input =
       raw"""
-           |def foo(): Unit =
-           |    import java_new java.lang.String(Bool, Char, String): ##java.lang.String \ IO as _;
+           |import java.lang.String
+           |
+           |def foo(): Unit \ IO =
+           |    let _ = new String(true, 'a', "test");
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
-  test("UndefinedJvmClass.01") {
+  test("UndefinedJvmImport.01") {
+    val input =
+      raw"""
+           |import foo.bar.Baz
+           |def foo(): Unit =
+           |    let _ = unsafe new Baz();
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmImport](result)
+  }
+
+  test("UndefinedJvmImport.02") {
+    val input =
+      raw"""
+           |import foo.bar.Baz
+           |def foo(): Unit =
+           |    let obj = unsafe new Baz();
+           |    let _ = unsafe obj.f();
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmImport](result)
+  }
+
+  test("UndefinedJvmImport.03") {
+    val input =
+      raw"""
+           |import foo.bar.Baz
+           |def foo(): Unit =
+           |    let _ = unsafe Baz.f();
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmImport](result)
+  }
+
+  test("UndefinedNew.01") {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import java_new foo.bar.Baz(): Unit \ IO as newObject;
+           |    let _ = new NotImported();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedNew](result)
   }
 
-  test("UndefinedJvmClass.02") {
+  test("UndefinedNew.02") {
     val input =
       raw"""
+           |import java.io.File
            |def foo(): Unit =
-           |    import foo.bar.Baz.f(): Unit \ IO;
+           |    let _ = new Filr("path");
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("UndefinedJvmClass.03") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import static foo.bar.Baz.f(): Unit \ IO;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("UndefinedJvmClass.04") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_get_field foo.bar.Baz.f: Unit \ IO as getF;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("UndefinedJvmClass.05") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_set_field foo.bar.Baz.f: Unit \ IO as setF;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("UndefinedJvmClass.06") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import static java_get_field foo.bar.Baz.f: Unit \ IO as getF;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("UndefinedJvmClass.07") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import static java_set_field foo.bar.Baz.f: Unit \ IO as setF;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedNew](result)
   }
 
   test("UndefinedJvmMethod.01") {
     val input =
       raw"""
+           |import java.lang.String
+           |
            |def foo(): Unit =
-           |    import java.lang.String.getFoo(): ##java.lang.String \ IO;
+           |    let o = new String();
+           |    let _ = o.getFoo();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.02") {
     val input =
       raw"""
+           |import java.lang.String
+           |
            |def foo(): Unit =
-           |    import java.lang.String.charAt(): ##java.lang.String \ IO;
+           |    let o = new String();
+           |    let _ = o.charAt();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.03") {
     val input =
       raw"""
+           |import java.lang.String
+           |
            |def foo(): Unit =
-           |    import java.lang.String.charAt(Int32, Int32): ##java.lang.String \ IO;
+           |    let o = new String();
+           |    let _ = o.charAt(0, 1);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.04") {
     val input =
       raw"""
+           |import java.lang.String
+           |
            |def foo(): Unit =
-           |    import java.lang.String.isEmpty(Bool): Bool \ IO;
+           |    let o = new String();
+           |    let _ = o.isEmpty(true);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.05") {
     val input =
       raw"""
+           |import java.lang.String
+           |
            |def foo(): Unit =
-           |    import static java.lang.String.isEmpty(): Bool \ IO;
+           |    let _ = String.isEmpty();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.StaticMethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.06") {
     val input =
       raw"""
+           |import java.lang.String
+           |
            |def foo(): Unit =
-           |    import java.lang.String.valueOf(Bool): ##java.lang.String \ IO;
+           |    let o = new String();
+           |    let _ = o.valueOf(false);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
   }
 
-  test("MismatchingReturnType.01") {
+  test("UndefinedJvmMethod.07") {
     val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java.lang.String.hashCode(): Unit \ IO as _;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
-  }
-
-  test("MismatchingReturnType.02") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
-  }
-
-  test("MismatchingReturnType.03") {
-    val input =
-      raw"""
-           |type alias AliasedReturnType = ##java.util.Iterator
-           |def foo(): Unit =
-           |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
+      """
+        |import java.util.Arrays
+        |def foo(): String \ IO = {
+        |    Arrays.deepToString(Array#{} @ Static)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
   }
 
   test("UndefinedJvmField.01") {
     val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
-           |    ()
-           |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
+      """
+        |import java.lang.Object
+        |def foo(obj: Object): String \ IO = {
+        |    obj.stringField
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.FieldNotFound](result)
   }
 
   test("UndefinedJvmField.02") {
     val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_set_field java.lang.Character.foo: ##java.lang.Character \ IO as setFoo;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
+      """
+        |import java.lang.Object
+        |def foo(obj: Object): String \ IO = {
+        |    obj.coolField.stringField
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.FieldNotFound](result)
   }
 
   test("UndefinedJvmField.03") {
     val input =
-      raw"""
-           |def foo(): Unit =
-           |    import static java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
+      """
+        |import java.lang.Object
+        |def foo(obj: Object): String \ IO = {
+        |    (obj.coolField).stringField
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.FieldNotFound](result)
   }
 
-  test("UndefinedJvmField.04") {
+  test("MismatchingType.01") {
     val input =
       raw"""
+           |import java.lang.String
+           |
            |def foo(): Unit =
-           |    import static java_set_field java.lang.Character.foo: Unit \ IO as setFoo;
+           |    let o = new String();
+           |    let _ : Unit = o.hashCode();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("MismatchingType.02") {
+    val input =
+      raw"""
+           |import java.lang.String
+           |import java.lang.Object
+           |import java.util.Iterator
+           |
+           |def foo(): Unit =
+           |    let o = new String();
+           |    let _ : Iterator[Object] = o.subSequence(4, -1);
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("MismatchingType.03") {
+    val input =
+      raw"""
+           |import java.lang.String
+           |import java.lang.Object
+           |import java.util.Iterator
+           |
+           |type alias AliasedReturnType = Iterator[Object]
+           |
+           |def foo(): Unit =
+           |    let o = new String();
+           |    let _ : AliasedReturnType = o.subSequence(-1, 18);
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+
+  test("UndefinedJvmStaticField.01") {
+    val input =
+      raw"""
+           |import java.lang.Math
+           |
+           |def foo(): Unit = Math.Foo
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmStaticField](result)
+  }
+
+  test("UndefinedJvmStaticField.02") {
+    val input =
+      raw"""
+           |import java.lang.Math
+           |
+           |def foo(): Unit = Math.Abs
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmStaticField](result)
+  }
+
+  test("UndefinedJvmStaticField.03") {
+    val input =
+      raw"""
+           |import java.lang.Math
+           |import java.io.File
+           |
+           |def foo(): Unit = File.PI
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
   test("UndefinedTag.01") {
@@ -798,7 +936,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): A = A.Qux
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -814,7 +952,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def f(): B = B.Qux(1 + 2)
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -832,13 +970,13 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UndefinedType.01") {
     val input = "def x(): Foo = 42"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -848,7 +986,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def foo(bar: Baz, baz: Baz): Qux = bar
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -859,7 +997,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def f(): Int32 = Foo.Bar
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -870,7 +1008,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def f(): Int32 = Foo/Bar.Qux(true)
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -879,7 +1017,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |def f(): Unit \ E = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -888,14 +1026,14 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |def f(x: a -> b \ E): Unit = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
 
   test("CyclicTraitHierarchy.01") {
     val input = "trait A[a] with A[a]"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
@@ -905,7 +1043,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait A[a] with B[a]
         |trait B[a] with A[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
@@ -916,7 +1054,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait B[a] with C[a]
         |trait C[a] with A[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
@@ -926,7 +1064,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait A[a] with A[a], B[a]
         |trait B[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
@@ -937,7 +1075,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait B[a] with A[a], C[a]
         |trait C[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
@@ -946,7 +1084,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |enum E with Eq, Eq
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.DuplicateDerivation](result)
   }
 
@@ -955,7 +1093,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |enum E with ToString, Order, ToString
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.DuplicateDerivation](result)
   }
 
@@ -965,7 +1103,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |type alias T[a] = a
         |type alias S = T
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -975,7 +1113,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |type alias T[a, b] = (a, b)
         |type alias S = T[Int32]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -986,7 +1124,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def f(x: T): Int32 = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -998,7 +1136,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def f(x: E[T]): Int32 = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -1011,8 +1149,68 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def f(x: C.T): String = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UnderAppliedAssocType](result)
+  }
+
+  test("IllegalRawJavaType.List") {
+    val input =
+      """
+        |import java.util.List
+        |def f(): List = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalRawJavaType](result)
+  }
+
+  test("IllegalRawJavaType.LinkedList") {
+    val input =
+      """
+        |import java.util.LinkedList
+        |def f(): LinkedList = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalRawJavaType](result)
+  }
+
+  test("IllegalRawJavaType.ArrayList") {
+    val input =
+      """
+        |import java.util.ArrayList
+        |def f(): ArrayList = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalRawJavaType](result)
+  }
+
+  test("IllegalRawJavaType.Map") {
+    val input =
+      """
+        |import java.util.Map
+        |def f(): Map = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalRawJavaType](result)
+  }
+
+  test("IllegalRawJavaType.HashMap") {
+    val input =
+      """
+        |import java.util.HashMap
+        |def f(): HashMap = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalRawJavaType](result)
+  }
+
+  test("IllegalRawJavaType.TreeMap") {
+    val input =
+      """
+        |import java.util.TreeMap
+        |def f(): TreeMap = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalRawJavaType](result)
   }
 
   test("UndefinedAssocType.01") {
@@ -1024,19 +1222,40 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    type T[String] = Int32
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedAssocType](result)
   }
 
-  test("IllegalType.01") {
+  test("UndefinedAssocType.02") {
     val input =
       """
-        |def isThisThingNull(x: a): Bool =
-        |    import static java.util.Objects.isNull(a): Bool \ Pure;
-        |    isNull(x)
+        |trait C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |    type U = Int32
+        |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalType](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
+  test("UndefinedAssocType.03") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    type U: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T = Int32
+        |    type V = Bool
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedAssocType](result)
   }
 
   test("IllegalNonJavaType.01") {
@@ -1045,7 +1264,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    new Int32 {}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
   }
 
@@ -1055,7 +1274,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    new String {}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
   }
 
@@ -1067,7 +1286,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    new T {}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
   }
 
@@ -1081,7 +1300,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1095,7 +1314,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1110,7 +1329,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
@@ -1124,7 +1343,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -1139,7 +1358,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |  def foo(): X = ???
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1156,7 +1375,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |  }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1168,7 +1387,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |  def foo(): StringBuffer = ???
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1182,7 +1401,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |  }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1192,43 +1411,43 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def f(): Int32 =
         |    par (_ <- let b = 5; b) yield b
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedTypeVar.Def.01") {
     val input = "def f[a: Type](): b = 123"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Def.02") {
     val input = "def f[a: Type](x: b): Int = 123"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Def.03") {
     val input = "def f[a: Type, b: Type, c: Type](x: Option[d]): Int = 123"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Instance.01") {
     val input = "instance C[a] with C[b]"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Instance.02") {
     val input = "instance C[(a, b)] with D[c]"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Instance.03") {
     val input = "instance C[(a, b)] with D[a], D[b], D[c]"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
@@ -1238,7 +1457,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait A[a]
         |trait B[a] with A[b]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
@@ -1249,19 +1468,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait B[a]
         |trait C[a] with A[a], B[b]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
-  test("UndefinedTypeVar.Expression.01") {
+  test("UndefinedTypeVar.Where.01") {
+    // https://github.com/flix/flix/issues/8409
     val input =
       """
-        |def f(): Bool = typematch () {
-        |    case _: a => true
-        |    case _: _ => false
+        |trait Trait[t] {
+        |    type Tpe: Type
         |}
+        |
+        |def foo(): Unit where Trait.Tpe[a] ~ Int32 =
+        |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
@@ -1273,7 +1495,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def f(): Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1286,7 +1508,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def g(): Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1299,7 +1521,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def g(x: {y = Bool}): Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1314,7 +1536,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def h(): a
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1329,7 +1551,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def h(): a
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1342,7 +1564,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def f(x: C.T[a]): String
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1351,7 +1573,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |type alias T = _
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
   }
 
@@ -1360,7 +1582,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |type alias T = _ -> _
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
   }
 
@@ -1371,7 +1593,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    case C(_)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
   }
 
@@ -1381,65 +1603,8 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |enum E[_]
         |def foo(): String = unchecked_cast(123 as E[_])
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("IllegalWildType.05") {
-    val input =
-      """
-        |def foo(): String \ IO = {
-        |    import java.util.Arrays.deepToString(Array[_, _], Int32): String \ IO;
-        |    deepToString(Array#{} @ Static)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("IllegalWildType.06") {
-    val input =
-      """
-        |def foo(): String \ IO = {
-        |    import java.util.Arrays.deepToString(Array[Int32, Static], Int32): _ \ IO;
-        |    deepToString(Array#{} @ Static)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("UndefinedName.ForEachYield.01") {
-    val input =
-      """
-        |def foo(): List[String] =
-        |    foreach (x <- "1" :: "2" :: Nil; if y != "0")
-        |        yield x
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.ForEachYield.02") {
-    val input =
-      """
-        |def foo(): List[String] =
-        |    foreach (x <- "1" :: "2" :: Nil)
-        |        yield y
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.ForEachYield.03") {
-    val input =
-      """
-        |def foo(): List[(String, Int32)] =
-        |    foreach (x <- "1" :: "2" :: Nil; if y > 0; y <- 0 :: 1 :: Nil)
-        |        yield (x, y)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedKind.01") {
@@ -1447,7 +1612,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |trait C[a: Blah]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedKind](result)
   }
 
@@ -1456,7 +1621,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |enum E[a: Blah]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedKind](result)
   }
 
@@ -1465,7 +1630,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |def f[a: Blah](x: a): String = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedKind](result)
   }
 
@@ -1481,7 +1646,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    type T = Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.DuplicateAssocTypeDef](result)
   }
 
@@ -1495,7 +1660,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |instance C[String] {
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingAssocTypeDef](result)
   }
 
@@ -1513,7 +1678,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingAssocTypeDef](result)
   }
 
@@ -1526,7 +1691,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def foo(): C.T[String] = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
@@ -1541,37 +1706,483 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    type T[String] = C.T[String]
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
-  test("Test.InvalidOpParamCount.Do.01") {
+  test("Test.MismatchedOpArity.Handler.01") {
     val input =
       """
         |eff E {
-        |    pub def op(x: String): Unit
-        |}
-        |
-        |def foo(): Unit \ E = do E.op("hello", "world")
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
-  }
-
-  test("Test.InvalidOpParamCount.Handler.01") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(x: String): Unit
+        |    def op(x: String): Unit
         |}
         |
         |def foo(): Unit = {
-        |    try checked_ecast(()) with E {
+        |    run checked_ecast(()) with handler E {
         |        def op(x, y, cont) = ()
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedOpArity](result)
+  }
+
+  test("Test.MismatchedOpArity.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedOpArity](result)
+  }
+
+  test("Test.MismatchedTagPatternArity.01") {
+    val input =
+      """
+        |enum List[t] {
+        |    case Nil
+        |    case Cons(t, List[t])
+        |}
+        |
+        |def foo(l: List[Int32]): Int32 = {
+        |    match l {
+        |      case Nil => 42
+        |      case Cons(_) => 42
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedTagPatternArity](result)
+  }
+
+  test("Test.MismatchedTagPatternArity.02") {
+    val input =
+      """
+        |enum List[t] {
+        |    case Nil
+        |    case Cons(t, List[t])
+        |}
+        |
+        |def foo(l: List[Int32]): Int32 = {
+        |    match l {
+        |      case Nil => 42
+        |      case Cons(x, _xs, _bonus) => x
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedTagPatternArity](result)
+  }
+
+  test("ResolutionError.UndefinedStruct.01") {
+    val input =
+      """
+        |def f(): Unit = {
+        |    region rc {
+        |        new UndefinedStruct @ rc { };
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStruct](result)
+  }
+
+  test("ResolutionError.UndefinedStruct.02") {
+    val input =
+      """
+        |mod M {
+        |    struct S1[r] {}
+        |    def f(): Unit = {
+        |        region rc {
+        |            new UndefinedStruct @ rc { };
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStruct](result)
+  }
+
+  test("ResolutionError.UndefinedStruct.03") {
+    val input =
+      """
+        |mod M {
+        |    struct S1[r] {}
+        |    def f(): Unit = {
+        |        region rc {
+        |            new UndefinedStruct @ rc { };
+        |            new S1 @ rc { };
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStruct](result)
+  }
+
+  // A bug was introduced into the kinder when it was refactored, so this test fails, but
+  // will reenable it once my next struct kinder support pr is merged
+  test("ResoutionError.MissingStructField.01") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { }
+        |    def f(s: S[r]): Unit = {
+        |        s->missingField;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStructField](result)
+  }
+
+  test("ResolutionError.MissingStructField.02") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { }
+        |    def f(s: S[r]): Unit = {
+        |        s->missingField = 3;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStructField](result)
+  }
+
+  test("ResolutionError.MissingStructField.03") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { field1: Int32 }
+        |    def f(s: S[r]): Unit = {
+        |        s->missingField = 3;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStructField](result)
+  }
+
+  test("ResolutionError.TooFewFields.01") {
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32
+        |}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc { }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingStructFieldInNew](result)
+  }
+
+  test("ResolutionError.TooFewFields.02") {
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32
+        |}
+        |struct S2[r] { }
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc { }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingStructFieldInNew](result)
+  }
+
+  test("ResolutionError.TooFewFields.03") {
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32,
+        |    b: Int32,
+        |    c: Int32
+        |}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc { a = 4, c = 2 }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingStructFieldInNew](result)
+  }
+
+  test("ResolutionError.TooManyFields.01") {
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32
+        |}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc { a = 4, b = "hello" }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructFieldInNew](result)
+  }
+
+  test("ResolutionError.TooManyFields.02") {
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32
+        |    b: Int32
+        |    c: Int32
+        |}
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc {b = 4, c = 3, a = 2, extra = 5}
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructFieldInNew](result)
+  }
+
+  test("ResolutionError.TooManyFields.03") {
+    val input =
+      """
+        |struct S[r] { }
+        |def f(rc: Region): S[r] = {
+        |    new S @ rc {a = 3}
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructFieldInNew](result)
+  }
+
+  test("ResolutionError.MutateImmutableField.01") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] {f: Int32}
+        |    def f(rc: Region): Unit = {
+        |        new S @ rc {f = 3};
+        |        s->f = 2;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ImmutableField](result)
+  }
+
+  test("ResolutionError.MutateImmutableField.02") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] {f1: Int32, mut f2: Int32, f3: Int32}
+        |    def f(rc: Region): Unit = {
+        |        new S @ rc {f1 = 3, f2 = 4, f3 = 5};
+        |        s->f2 = 2;
+        |        s->f1 = 2;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ImmutableField](result)
+  }
+
+  test("ResolutionError.MutateImmutableField.03") {
+    val input =
+      """
+        |mod S {
+        |    struct S[v, r] {f: Int32, mut f2: v}
+        |    def f(rc: Region): Unit = {
+        |        new S @ rc {f = 3, f2 = new S @ rc {f = 4, f2 = 5}};
+        |        s->f2->f = 2;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ImmutableField](result)
+  }
+
+  test("ResolutionError.MissingHandlerDef.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run {
+        |      E.op()
+        |    } with handler E {
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingHandlerDef](result)
+  }
+
+  test("ResolutionError.MissingHandlerDef.02") {
+    val input =
+      """
+        |eff E {
+        |    def op1(): Unit
+        |    def op2(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run {
+        |      E.op1()
+        |    } with handler E {
+        |      def op1(k): Unit = k()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingHandlerDef](result)
+  }
+
+  test("ResolutionError.MissingHandlerDef.03") {
+    val input =
+      """
+        |eff E {
+        |    def op1(): Unit
+        |    def op2(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run {
+        |      E.op1()
+        |    } with handler E
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingHandlerDef](result)
+  }
+
+
+  test("ResolutionError.Regression.01") {
+    // Ensures we catch errors in arguments even if the function is not resolvable.
+    // See https://github.com/flix/flix/issues/10047
+    val input =
+      """
+        |def foo(): Unit = {
+        |    bar(
+        |       baz     // ERROR
+        |    )
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("IllegalSuperCall.01") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): Unit = {
+        |    super();
+        |    ()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSuperCall](result)
+  }
+
+  test("IllegalSuperCall.02") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): String = super.toString()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSuperCall](result)
+  }
+
+  test("IllegalSuperCall.03") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): Object \ IO =
+        |    new Object {
+        |        def toString(_this: Object): String \ IO =
+        |            let g = () -> super.toString();
+        |            g()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSuperCall](result)
+  }
+
+  test("IllegalSuperCall.04") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): Object \ IO =
+        |    new Object {
+        |        def hashCode(_this: Object): Int32 \ IO =
+        |            let g = () -> {
+        |                let h = () -> super.hashCode();
+        |                h()
+        |            };
+        |            g()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSuperCall](result)
+  }
+
+  test("IllegalSuperCall.05") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): Object \ IO =
+        |    new Object {
+        |        def new(): Object \ IO =
+        |            let g = () -> super();
+        |            g()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSuperCall](result)
+  }
+
+  test("UndefinedJvmAnnotation.01") {
+    val input =
+      raw"""
+           |import java.io.Serializable
+           |def foo(): Serializable \ IO =
+           |    new Serializable {
+           |        @NonExistentAnnotation
+           |        def toString(_this: Serializable): String = "hello"
+           |    }
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedJvmAnnotation](result)
+  }
+
+  test("IllegalNonJavaAnnotation.01") {
+    val input =
+      raw"""
+           |import java.io.Serializable
+           |import java.lang.String
+           |def foo(): Serializable \ IO =
+           |    new Serializable {
+           |        @String
+           |        def toString(_this: Serializable): String = "hello"
+           |    }
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.IllegalNonJavaAnnotation](result)
   }
 }

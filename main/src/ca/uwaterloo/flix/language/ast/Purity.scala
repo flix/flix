@@ -23,9 +23,9 @@ sealed trait Purity
 /**
   * Represents the purity of an expression.
   *
-  * - Pure expressions are treated as mathematical functions.
-  * - Impure expressions can use mutation or interact with the system.
-  * - Control-Impure expressions can do all the above but also use unhandled
+  *   - Pure expressions are treated as mathematical functions.
+  *   - Impure expressions can use mutation or interact with the system.
+  *   - Control-Impure expressions can do all the above but also use unhandled
   *   algebraic effects.
   *
   * In terms of the set of expressions that is allowed under each effect the
@@ -36,13 +36,13 @@ object Purity {
 
   /**
     * Represents a pure expression (i.e. an expression that cannot have
-    * side-effects).
+    * side effects).
     */
   case object Pure extends Purity
 
   /**
     * Represents an impure expression (i.e. an expression that could potentially
-    * have side-effects).
+    * have side effects).
     */
   case object Impure extends Purity
 
@@ -53,7 +53,7 @@ object Purity {
   case object ControlImpure extends Purity
 
   /**
-    * Returns true if `p` is is a purity that does not allows algebraic effects.
+    * Returns true if `p` is a purity that does not allow algebraic effects.
     */
   def isControlPure(p: Purity): Boolean = p match {
     case Pure => true
@@ -62,7 +62,7 @@ object Purity {
   }
 
   /**
-    * Returns true if `p` is is a purity that allows algebraic effects.
+    * Returns true if `p` is a purity that allow algebraic effects.
     */
   def isControlImpure(p: Purity): Boolean = p match {
     case Pure => false
@@ -71,7 +71,7 @@ object Purity {
   }
 
   /**
-    * Returns true if p is pure (has no side effects).
+    * Returns true if `p` is pure (has no side effects).
     */
   def isPure(p: Purity): Boolean = p match {
     case Pure => true
@@ -107,22 +107,22 @@ object Purity {
     *
     * Returns [[Pure]] if empty.
     */
-  def combineAll(p: List[Purity]): Purity = {
+  def combineAll(p: Iterable[Purity]): Purity = {
     p.foldLeft(Pure: Purity)(combine)
   }
 
   /**
     * Returns the purity of the given formula `eff`. Returns [[Pure]] for the
-    * effect constant of [[TypeConstructor.Pure]], returns [[Impure]] for the
-    * effect constant of [[Symbol.IO]], and [[ControlImpure]] otherwise.
+    * effect constant of [[TypeConstructor.Pure]], returns [[Impure]] for an
+    * effect only containing primitive effects, and [[ControlImpure]] otherwise.
     *
     * Assumes that the given type is a well-formed formula without variables,
     * aliases, or associated types.
     */
-  def fromType(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
+  def fromType(eff: Type)(implicit universe: Set[Symbol.EffSym]): Purity = {
     evaluateFormula(eff) match {
       case set if set.isEmpty => Purity.Pure
-      case set if set.sizeIs == 1 && set.contains(Symbol.IO) => Purity.Impure
+      case set if set.forall(Symbol.isPrimitiveEff) => Purity.Impure
       case _ => Purity.ControlImpure
     }
   }
@@ -131,7 +131,8 @@ object Purity {
     * Returns the set of effects described by the formula `f`.
     *
     * Assumes that `f` only contains well-formed [[TypeConstructor.Union]],
-    * [[TypeConstructor.Intersection]], and [[TypeConstructor.Complement]] of
+    * [[TypeConstructor.Intersection]], [[TypeConstructor.Difference]], and
+    * [[TypeConstructor.Complement]] of
     * [[TypeConstructor.Pure]], [[TypeConstructor.Univ]], and
     * [[TypeConstructor.Effect]].
     *
@@ -143,8 +144,8 @@ object Purity {
     * Print + IO == {Print, IO}
     * Univ & (!Print) == !Print
     */
-  private def evaluateFormula(f: Type)(implicit universe: Set[Symbol.EffectSym]): Set[Symbol.EffectSym] = f match {
-    case Type.Cst(TypeConstructor.Effect(sym), _) =>
+  private def evaluateFormula(f: Type)(implicit universe: Set[Symbol.EffSym]): Set[Symbol.EffSym] = f match {
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) =>
       Set(sym)
     case Type.Cst(TypeConstructor.Pure, _) =>
       Set.empty
@@ -158,6 +159,15 @@ object Purity {
       val t1 = evaluateFormula(tpe1)
       val t2 = evaluateFormula(tpe2)
       t1.intersect(t2)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, _) =>
+      val t1 = evaluateFormula(tpe1)
+      val t2 = evaluateFormula(tpe2)
+      t1.diff(t2)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), tpe1, _), tpe2, _) =>
+      val t1 = evaluateFormula(tpe1)
+      val t2 = evaluateFormula(tpe2)
+      // a ⊕ b = (a ∪ b) - (a ∩ b)
+      t1.union(t2).diff(t1.intersect(t2))
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe, _) =>
       val t = evaluateFormula(tpe)
       universe.diff(t)
@@ -170,6 +180,12 @@ object Purity {
     case Type.Alias(_, _, _, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
     case Type.AssocType(_, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.JvmToType(_, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.JvmToEff(_, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.UnresolvedJvmType(_, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
   }
 

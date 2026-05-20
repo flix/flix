@@ -27,4 +27,32 @@ object MapOps {
       case (k, v) => (k, f(v))
     }
   }
+
+  /**
+    * Applies `f` to each of the keys and values in the given map.
+    */
+  def mapValuesWithKey[K, V1, V2](m: Map[K, V1])(f: (K, V1) => V2): Map[K, V2] = {
+    m.map {
+      case (k, v) => (k, f(k, v))
+    }
+  }
+
+  /**
+    * Combines the two maps with the given function.
+    *
+    * If a key is present in only one of the maps, then that map's value is used.
+    * If a key is present in both maps, the function is used to combine the respective values.
+    */
+  def unionWith[K, V](m1: Map[K, V], m2: Map[K, V])(f: (V, V) => V): Map[K, V] = {
+    val keys = m1.keySet ++ m2.keySet
+    keys.map {
+      case key =>
+        (m1.get(key), m2.get(key)) match {
+          case (None, None) => throw new AssertionError("unexpected unknown key")
+          case (Some(value), None) => key -> value
+          case (None, Some(value)) => key -> value
+          case (Some(value1), Some(value2)) => key -> f(value1, value2)
+        }
+    }.toMap
+  }
 }

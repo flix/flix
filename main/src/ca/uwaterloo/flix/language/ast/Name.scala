@@ -27,12 +27,11 @@ object Name {
     * Returns the given string `fqn` as a qualified name.
     */
   def mkQName(fqn: String, loc: SourceLocation = SourceLocation.Unknown): QName = {
-    if (!fqn.contains('.'))
+    val split = fqn.split('.')
+    if (split.length == 1)
       return QName(Name.RootNS, Ident(fqn, loc), loc)
-
-    val index = fqn.indexOf('.')
-    val parts = fqn.substring(0, index).split('/').toList
-    val name = fqn.substring(index + 1, fqn.length)
+    val parts = split.init.toList
+    val name = split.last
     mkQName(parts, name, loc)
   }
 
@@ -64,6 +63,16 @@ object Name {
   }
 
   /**
+    * Builds an unlocated name from the given namespace parts.
+    *
+    * The source location of each part is Unknown, but the source location of the entire NName is known.
+    */
+  def mkUnlocatedNNameWithLoc(parts: List[String], loc: SourceLocation): NName = {
+    val idents = parts.map(Ident(_, SourceLocation.Unknown))
+    NName(idents, loc)
+  }
+
+  /**
     * Returns true if the given string represents a wildcard name.
     */
   def isWild(name: String): Boolean = name.startsWith("_")
@@ -83,7 +92,7 @@ object Name {
     /**
       * Returns `true` if `this` identifier is uppercase.
       */
-    def isUpper: Boolean = name.charAt(0).isUpper
+    def isUpper: Boolean = name.nonEmpty && name.charAt(0).isUpper
 
     /**
       * Returns `true` if `this` identifier is lowercase.
@@ -127,6 +136,21 @@ object Name {
     def parts: List[String] = idents.map(_.name)
 
     /**
+      * Returns if the namespace is empty.
+      */
+    def isEmpty: Boolean = idents.isEmpty
+
+    /**
+      * Returns if the namespace is non-empty.
+      */
+    def nonEmpty: Boolean = idents.nonEmpty
+
+    /**
+      * Returns all prefixes of `this` namespace.
+      */
+    def prefixes: List[Name.NName] = idents.inits.map(ids => NName(ids, loc)).toList.reverse
+
+    /**
       * Returns `true` if `this` namespace equals `that`.
       */
     override def equals(o: scala.Any): Boolean = o match {
@@ -148,15 +172,22 @@ object Name {
   /**
     * Qualified Name.
     *
-    * @param namespace the namespace
-    * @param ident     the identifier.
-    * @param loc       the source location of the qualified name.
+    * @param namespace    the namespace
+    * @param ident        the identifier.
+    * @param loc          the source location of the qualified name.
+    *
+    * Note that the ident could be empty if there is a trailing dot.
+    *
+    * Example:
+    *   - "A.B.Color" -> namespace = ["A", "B"], ident = "Color"
+    *   - "A.B." -> namespace = ["A", "B"], ident = ""
     */
   case class QName(namespace: NName, ident: Ident, loc: SourceLocation) {
     /**
       * Returns `true` if this name is unqualified (i.e. has no namespace).
       */
     def isUnqualified: Boolean = namespace.isRoot
+
 
     /**
       * Human readable representation.

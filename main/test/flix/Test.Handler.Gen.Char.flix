@@ -1,18 +1,20 @@
 mod Test.Handler.Gen.Char {
 
+    use Assert.assertEq;
+
     eff Gen {
-        pub def gen(): Char
+        def gen(): Char
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        discard Gen.gen(); generator()
 
     def sample(limit: Char): List[Char] =
         region rc {
-            let counter = ref 'a' @ rc;
-            try {
+            let counter = Ref.fresh(rc, 'a');
+            run {
                 generator(); Nil
-            } with Gen {
+            } with handler Gen {
                 def gen(k) =
                     let i = getAndInc(counter);
                     if (i == limit) Nil else i :: k(i)
@@ -50,7 +52,7 @@ mod Test.Handler.Gen.Char {
     }
 
     def getAndInc(r: Ref[Char, r]): Char \ r =
-        let c = deref r;
+        let c = Ref.get(r);
         Ref.put(next(c), r);
         c
 
@@ -58,39 +60,39 @@ mod Test.Handler.Gen.Char {
         List.unfold(i -> if (i >= b) None else Some((i, next(i))), a)
 
     @Test
-    def testSample01(): Bool =
-        Assert.eq(Nil, sample('a'))
+    def testSample01(): Unit \ Assert =
+        assertEq(expected = Nil, sample('a'))
 
     @Test
-    def testSample02(): Bool =
-        Assert.eq('a' :: Nil, sample('b'))
+    def testSample02(): Unit \ Assert =
+        assertEq(expected = 'a' :: Nil, sample('b'))
 
     @Test
-    def testSample03(): Bool =
-        Assert.eq('a' :: 'b' :: Nil, sample('c'))
+    def testSample03(): Unit \ Assert =
+        assertEq(expected = 'a' :: 'b' :: Nil, sample('c'))
 
     @Test
-    def testSample04(): Bool =
-        Assert.eq('a' :: 'b' :: 'c' :: Nil, sample('d'))
+    def testSample04(): Unit \ Assert =
+        assertEq(expected = 'a' :: 'b' :: 'c' :: Nil, sample('d'))
 
     @Test
-    def testSample05(): Bool =
-        Assert.eq('a' :: 'b' :: 'c' :: 'd' :: Nil, sample('e'))
+    def testSample05(): Unit \ Assert =
+        assertEq(expected = 'a' :: 'b' :: 'c' :: 'd' :: Nil, sample('e'))
 
     @Test
-    def testSample06(): Bool =
-        Assert.eq('a' :: 'b' :: 'c' :: 'd' :: 'e' :: Nil, sample('f'))
+    def testSample06(): Unit \ Assert =
+        assertEq(expected = 'a' :: 'b' :: 'c' :: 'd' :: 'e' :: Nil, sample('f'))
 
     @Test
-    def testSample07(): Bool =
-        Assert.eq('a' :: 'b' :: 'c' :: 'd' :: 'e' :: 'f' :: Nil, sample('g'))
+    def testSample07(): Unit \ Assert =
+        assertEq(expected = 'a' :: 'b' :: 'c' :: 'd' :: 'e' :: 'f' :: Nil, sample('g'))
 
     @Test
-    def testSample08(): Bool =
-        Assert.eq(range('a', 'k'), sample('k'))
+    def testSample08(): Unit \ Assert =
+        assertEq(expected = range('a', 'k'), sample('k'))
 
     @Test
-    def testSample09(): Bool =
-        Assert.eq(range('a', 'z'), sample('z'))
+    def testSample09(): Unit \ Assert =
+        assertEq(expected = range('a', 'z'), sample('z'))
 
 }

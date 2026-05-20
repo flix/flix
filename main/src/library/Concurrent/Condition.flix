@@ -14,63 +14,51 @@
  * limitations under the License.
  */
 
-mod Concurrent {
+pub mod Concurrent.Condition {
+
+    import java.lang.IllegalMonitorStateException
+    import java.util.concurrent.locks.{Condition => JCondition}
 
     ///
     /// A wrapper around a Java Condition.
     ///
-    @Internal
-    pub enum Condition(##java.util.concurrent.locks.Condition)
+    pub enum Condition(JCondition)
 
-    mod Condition {
-        // TODO NS-REFACTOR these imports can be removed
-        use Concurrent.Condition;
-        use Concurrent.Condition.Condition;
+    ///
+    /// Causes the current thread to wait until it is signalled or interrupted.
+    ///
+    pub def await(condition: Condition): Unit \ IO =
+        let Condition(c) = condition;
+        c.await()
 
-        ///
-        /// Causes the current thread to wait until it is signalled or interrupted.
-        ///
-        @Internal
-        pub def await(condition: Condition): Unit \ IO =
-            import java.util.concurrent.locks.Condition.await(): Unit \ IO;
-            let Condition(c) = condition;
-            await(c)
+    ///
+    /// Causes the current thread to wait until it is signalled or interrupted, or the specified waiting
+    /// time(nanos) elapses. The method returns an estimate of the number of nanoseconds remaining to wait
+    /// given the supplied nanosTimeout value upon return, or a value less than or equal to zero if it timed out.
+    ///
+    pub def awaitTimeout(condition: Condition, timeout: Int64): Int64 \ IO =
+        let Condition(c) = condition;
+        c.awaitNanos(timeout)
 
-        ///
-        /// Causes the current thread to wait until it is signalled or interrupted, or the specified waiting
-        /// time(nanos) elapses. The method returns an estimate of the number of nanoseconds remaining to wait
-        /// given the supplied nanosTimeout value upon return, or a value less than or equal to zero if it timed out.
-        ///
-        @Internal
-        pub def awaitTimeout(condition: Condition, timeout: Int64): Int64 \ IO =
-            import java.util.concurrent.locks.Condition.awaitNanos(Int64): Int64 \ IO;
-            let Condition(c) = condition;
-            awaitNanos(c, timeout)
+    ///
+    /// Wakes up one waiting thread.
+    ///
+    pub def signal(condition: Condition): Result[IllegalMonitorStateException, Unit] \ IO =
+        let Condition(c) = condition;
+        try {
+            Ok(c.signal())
+        } catch {
+            case e: IllegalMonitorStateException => Err(e)
+        }
 
-        ///
-        /// Wakes up one waiting thread.
-        ///
-        @Internal
-        pub def signal(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
-            import java.util.concurrent.locks.Condition.signal(): Unit \ IO;
-            let Condition(c) = condition;
-            try {
-                Ok(signal(c))
-            } catch {
-                case e: ##java.lang.IllegalMonitorStateException => Err(e)
-            }
-
-        ///
-        /// Wakes up all waiting threads.
-        ///
-        @Internal
-        pub def signalAll(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
-            import java.util.concurrent.locks.Condition.signalAll(): Unit \ IO;
-            let Condition(c) = condition;
-            try {
-                Ok(signalAll(c))
-            } catch {
-                case e: ##java.lang.IllegalMonitorStateException => Err(e)
-            }
-    }
+    ///
+    /// Wakes up all waiting threads.
+    ///
+    pub def signalAll(condition: Condition): Result[IllegalMonitorStateException, Unit] \ IO =
+        let Condition(c) = condition;
+        try {
+            Ok(c.signalAll())
+        } catch {
+            case e: IllegalMonitorStateException => Err(e)
+        }
 }

@@ -1,27 +1,30 @@
 mod TestCoerce {
 
-    @Test
-    pub def testCoerceBox01(): Bool =
-        Coerce.coerce(Box.Box(21)) == 21
-
-    pub def testCoerceBox02(): Bool =
-        Coerce.coerce(Box.Box(42)) == 42
+    use Assert.assertEq;
 
     @Test
-    pub def testCoercePolyBox01(): Bool =
-        Coerce.coerce(PolyBox.PolyBox(true)) == true
+    pub def testCoerceBox01(): Unit \ Assert =
+        assertEq(expected = 21, Coerce.coerce(Box.Box(21)))
 
     @Test
-    pub def testCoercePolyBox02(): Bool =
-        Coerce.coerce(PolyBox.PolyBox(false)) == false
+    pub def testCoerceBox02(): Unit \ Assert =
+        assertEq(expected = 42, Coerce.coerce(Box.Box(42)))
 
     @Test
-    pub def testCoercePolyBox03(): Bool =
-        Coerce.coerce(PolyBox.PolyBox(42)) == 42
+    pub def testCoercePolyBox01(): Unit \ Assert =
+        assertEq(expected = true, Coerce.coerce(PolyBox.PolyBox(true)))
 
     @Test
-    pub def testCoercePolyBox04(): Bool =
-        Coerce.coerce(PolyBox.PolyBox("Hello World")) == "Hello World"
+    pub def testCoercePolyBox02(): Unit \ Assert =
+        assertEq(expected = false, Coerce.coerce(PolyBox.PolyBox(false)))
+
+    @Test
+    pub def testCoercePolyBox03(): Unit \ Assert =
+        assertEq(expected = 42, Coerce.coerce(PolyBox.PolyBox(42)))
+
+    @Test
+    pub def testCoercePolyBox04(): Unit \ Assert =
+        assertEq(expected = "Hello World", Coerce.coerce(PolyBox.PolyBox("Hello World")))
 
     enum Box {
         case Box(Int32)

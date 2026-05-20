@@ -16,17 +16,18 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind}
-import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
+import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind, TypedAst}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for parser errors.
   */
 sealed trait ParseError extends CompilationMessage {
-  val kind = "Parse Error"
-  val sctx: SyntacticContext
+  def kind: CompilationMessageKind = CompilationMessageKind.ParseError
+  def sctx: SyntacticContext
+  def loc: SourceLocation
 }
 
 object ParseError {
@@ -70,20 +71,24 @@ object ParseError {
       def display(fmt: Formatter): String = fmt.cyan("<expression>")
     }
 
+    case object ExtMatchRule extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<ext-match-rule>")
+    }
+
+    case object ExtPattern extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<ext-pattern>")
+    }
+
+    case object ExtTag extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<ext-tag>")
+    }
+
     case object FixpointConstraint extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("<fixpoint-constraint>")
     }
 
     case object ForFragment extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("<for-generator>")
-    }
-
-    case object JavaImport extends NamedTokenSet {
-      def display(fmt: Formatter): String = fmt.cyan("<java-import>")
-    }
-
-    case object JvmOp extends NamedTokenSet {
-      def display(fmt: Formatter): String = fmt.cyan("<jvm-op>")
     }
 
     case object KeyValuePair extends NamedTokenSet {
@@ -140,16 +145,19 @@ object ParseError {
     * @param hint          Optional hint with more details about the error.
     * @param loc           The source location.
     */
-  case class Malformed(namedTokenSet: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($sctx)"
+  case class Malformed(namedTokenSet: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+
+    def code: ErrorCode = ErrorCode.E6063
 
     def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
 
-    def message(fmt: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s""">> Malformed ${fmt.red(namedTokenSet.display(fmt))}.
+      s""">> Malformed ${red(namedTokenSet.display(formatter))}.
          |
-         |${fmt.code(loc, s"Here")}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
@@ -160,16 +168,18 @@ object ParseError {
     * @param sctx The syntactic context.
     * @param loc  The source location.
     */
-  case class MisplacedComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($sctx)"
+  case class MisplacedComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+
+    def code: ErrorCode = ErrorCode.E6176
 
     def summary: String = s"Misplaced comment(s)."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       s""">> Misplaced comment(s).
          |
-         |${code(loc, s"Here")}
+         |${src(loc, s"Here")}
          |Hint: Place comments on their own line.
          |""".stripMargin
     }
@@ -181,39 +191,43 @@ object ParseError {
     * @param sctx The syntactic context.
     * @param loc  The source location.
     */
-  case class MisplacedDocComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($sctx)"
+  case class MisplacedDocComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+
+    def code: ErrorCode = ErrorCode.E6289
 
     def summary: String = s"Misplaced doc-comment(s)."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       s""">> Misplaced doc-comment(s).
          |
-         |${code(loc, s"Here")}
+         |${src(loc, s"Here")}
          |Hint: doc-comments must annotate declarations.
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that a scoped expression is missing a scope.
+    * An error raised to indicate that a regioned expression is missing a region.
     *
-    * @param token Name of the expression missing a scope. See [[TokenKind.display]].
+    * @param token Name of the expression missing a region. See [[TokenKind.display]].
     * @param sctx  The syntactic context.
     * @param loc   The source location.
     */
-  case class MissingScope(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($sctx)"
+  case class MissingRegion(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
-    def summary: String = s"Expected scope on ${token.display}."
+    def code: ErrorCode = ErrorCode.E6392
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Expected ${red("scope")} on ${cyan(token.display)}.
+    def summary: String = s"Expected region on ${token.display}."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected ${red("region")} on ${cyan(token.display)}.
          |
-         |${code(loc, s"Here")}
-         |Hint: Add a scope using `@ <scope>`
+         |${src(loc, s"Here")}
+         |Hint: Add a region using `@ <region>`
          |""".stripMargin
     }
   }
@@ -226,16 +240,19 @@ object ParseError {
     * @param hint     Optional hint with more details about the error
     * @param loc      The source location.
     */
-  case class NeedAtleastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($sctx)"
+  case class NeedAtleastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+
+    def code: ErrorCode = ErrorCode.E6405
 
     def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
 
-    def message(fmt: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s""">> Expected at least one ${expected.display(fmt)}.
+      s""">> Expected at least one ${expected.display(formatter)}.
          |
-         |${fmt.code(loc, s"Here")}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
@@ -247,16 +264,124 @@ object ParseError {
     * @param sctx      The syntactic context.
     * @param loc       The source location.
     */
-  case class TrailingSeparator(separator: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($sctx)"
+  case class TrailingSeparator(separator: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+
+    def code: ErrorCode = ErrorCode.E6518
 
     def summary: String = s"Trailing ${separator.display}."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       s""">> Trailing ${red(separator.display)}.
          |
-         |${code(loc, s"Here")}
+         |${src(loc, s"Here")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a Thick Right Arrow was expected, but got an Equal.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class ExpectedArrowThickRGotEqual(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E8652
+    def summary: String = s"Expected '=>' got '='"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected '=>' got '='
+         |
+         |${src(loc, s"Use '=>' instead of '='")}
+         |""".stripMargin
+    }
+
+  }
+
+  /**
+    * An error raised to indicate that a Backslash was expected, but got a Slash.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class ExpectedBackslashGotSlash(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E3795
+    def summary: String = s"Expected '\\' got '/'"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected '\\' got '/'
+         |
+         |${src(loc, s"Use '\\' instead of '/'")}
+         |""".stripMargin
+    }
+
+  }
+
+  /**
+    * An error raised to indicate that a Thick Right Arrow was expected, but got a Thin Right Arrow
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class ExpectedArrowThickRGotArrowThinR(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E3169
+    def summary: String = s"Expected '=>' got '->'"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected '=>' got '->'
+         |
+         |${src(loc, s"Use '=>' instead of '->'")}
+         |""".stripMargin
+    }
+
+  }
+
+
+  /**
+    * An error raised to indicate that a semicolon was expected.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    * @param found     The token that was found instead.
+    */
+  case class ExpectedSemicolon(sctx: SyntacticContext, loc: SourceLocation, found: TokenKind) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E3190
+
+    def summary: String = s"Expected ';' but found '$found'"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected ';' but found '$found'
+         |
+         |${src(loc, s"Expected ';' here")}
+         |""".stripMargin
+    }
+
+  }
+
+  /**
+    * An error raised to indicate a binary operator is missing between two expressions.
+    *
+    * @param sctx The syntactic context.
+    * @param loc  The source location.
+    */
+  case class MissingBinaryOperator(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E9061
+    def summary: String = s"Missing operator between expressions."
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Missing operator between expressions.
+         |
+         |${src(loc, s"Expected an operator here")}
          |""".stripMargin
     }
   }
@@ -270,8 +395,10 @@ object ParseError {
     * @param hint     Optional hint with more details about the error
     * @param loc      The source location.
     */
-  case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($sctx)"
+  case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext = SyntacticContext.Unknown, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+
+    def code: ErrorCode = ErrorCode.E6629
 
     def summary: String = {
       val expectedStr = s"Expected ${expected.display(Formatter.NoFormatter)}"
@@ -279,13 +406,14 @@ object ParseError {
       s"$expectedStr$actualStr."
     }
 
-    def message(fmt: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      val expectedStr = s"Expected ${expected.display(fmt)}"
-      val actualStr = actual.map(a => s" before ${fmt.red(a.display)}").getOrElse("")
+      val expectedStr = s"Expected ${expected.display(formatter)}"
+      val actualStr = actual.map(a => s" before ${red(a.display)}").getOrElse("")
       s""">> $expectedStr$actualStr.
          |
-         |${fmt.code(loc, s"Here")}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
@@ -298,24 +426,6 @@ object ParseError {
     case i1 :: i2 :: Nil => s"$i1 or $i2"
     case i1 :: Nil => s"$i1"
     case i :: tail => s"$i, ${prettyJoin(tail)}"
-  }
-
-  /**
-    * A __legacy__ error used to support the previous parser.
-    * TODO: Remove this with the previous parser.
-    */
-  case class Legacy(message: String, sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($sctx)"
-
-    def summary: String = message
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> $message
-         |
-         |${code(loc, s"Here")}
-         |""".stripMargin
-    }
   }
 }
 

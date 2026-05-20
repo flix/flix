@@ -1,15 +1,29 @@
 mod Test.Equality.Char {
 
-    @test
-    def testEqChar01(): Bool = 'a' == 'a'
+    use Assert.{assertEq, assertNeq}
 
-    @test
-    def testEqChar02(): Bool = 'z' == 'z'
+    @Test
+    def testEqChar01(): Unit \ Assert =
+        assertEq(expected = 'a', 'a')
 
-    @test
-    def testNeqChar01(): Bool = 'a' != 'b'
+    @Test
+    def testEqChar02(): Unit \ Assert =
+        assertEq(expected = 'z', 'z')
 
-    @test
-    def testNeqChar02(): Bool = 'z' != 'w'
+    @Test
+    def testEqChar03(): Unit \ Assert =
+        assertEq(expected = 'A', 'A')
+
+    @Test
+    def testNeqChar01(): Unit \ Assert =
+        assertNeq(unexpected = 'a', 'b')
+
+    @Test
+    def testNeqChar02(): Unit \ Assert =
+        assertNeq(unexpected = 'z', 'w')
+
+    @Test
+    def testNeqChar03(): Unit \ Assert =
+        assertNeq(unexpected = 'a', 'A')
 
 }

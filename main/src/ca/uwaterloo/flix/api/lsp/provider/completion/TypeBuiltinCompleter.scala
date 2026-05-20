@@ -15,71 +15,48 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Index, InsertTextFormat, TextEdit}
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeBuiltinCompletion
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.api.lsp.Range
 
-object TypeBuiltinCompleter extends Completer {
-
-  /* This list is manually maintained. If a new built-in type is added, it must be extended.
-   * Built-in types are typically described in TypeConstructor, Namer and Resolver.
-   */
-  private val BuiltinTypeNames: List[String] = List(
-    "Unit",
-    "Bool",
-    "Char",
-    "Float64",
-    "BigDecimal",
-    "Int32",
-    "Int64",
-    "BigInt",
-    "String"
-  )
-
-  /* Built-in types with hardcoded low priority */
-  private val LowPriorityBuiltinTypeNames: List[String] = List(
-    "Int8",
-    "Int16",
-    "Float32"
-  )
-
-  /* Built-in types with type parameters */
-  private val BuiltinTypeNamesWithTypeParameters: List[(String, List[String])] = List(
-    ("Array", List("a", "r")),
-    ("Vector", List("a")),
-    ("Ref", List("a", "r")),
-    ("Sender", List("t", "r")),
-    ("Receiver", List("t", "r")),
-    ("Lazy", List("t"))
-  )
+object TypeBuiltinCompleter {
+  private def polycompletion(name: String, params: List[String], range: Range, p: Priority): Completion = {
+    val edit = params.zipWithIndex.map { case (param, i) => s"$${${i + 1}:$param}"}.mkString(s"$name[", ", ", "]")
+    val finalName = params.mkString(s"$name[", ", ", "]")
+    Completion.TypeBuiltinPolyCompletion(finalName, edit, range, p)
+  }
 
   /**
     * Returns a List of Completion for builtin types.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[TypeBuiltinCompletion] = {
-    val builtinTypes = BuiltinTypeNames.map { name =>
-      val internalPriority = Priority.high _
-      Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),
-        InsertTextFormat.PlainText)
-    }
-
-    val lowPriorityBuiltinTypes = LowPriorityBuiltinTypeNames.map { name =>
-      val internalPriority = Priority.low _
-      Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),
-        InsertTextFormat.PlainText)
-    }
-
-    val builtinTypesWithParams = BuiltinTypeNamesWithTypeParameters.map {
-      case (name, tparams) =>
-        val internalPriority = Priority.boost _
-        val fmtTparams = tparams.zipWithIndex.map { case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
-        val finalName = s"$name[${tparams.mkString(", ")}]"
-        Completion.TypeBuiltinCompletion(finalName, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context),
-          TextEdit(context.range, s"$name[$fmtTparams]"), insertTextFormat = InsertTextFormat.Snippet)
-    }
-
-    builtinTypes ++ lowPriorityBuiltinTypes ++ builtinTypesWithParams
-  }
+  def getCompletions(range: Range): Iterable[Completion] =
+    List(
+      // A
+      polycompletion("Array"   , List("a", "r")    , range,  Priority.Medium(0)),
+      // B
+      Completion.TypeBuiltinCompletion("BigDecimal", range, Priority.Low(0)),
+      Completion.TypeBuiltinCompletion("BigInt"    , range, Priority.High(0)),
+      Completion.TypeBuiltinCompletion("Bool"      , range, Priority.Higher(0)),
+      // C
+      Completion.TypeBuiltinCompletion("Char"      , range, Priority.Medium(0)),
+      // F
+      Completion.TypeBuiltinCompletion("Float32"   , range, Priority.High(0)),
+      Completion.TypeBuiltinCompletion("Float64"   , range, Priority.Low(0)),
+      // I
+      Completion.TypeBuiltinCompletion("Int16"     , range, Priority.Low(0)),
+      Completion.TypeBuiltinCompletion("Int32"     , range, Priority.Higher(0)),
+      Completion.TypeBuiltinCompletion("Int64"     , range, Priority.High(0)),
+      Completion.TypeBuiltinCompletion("Int8"      , range, Priority.Lower(0)),
+      // L
+      polycompletion("Lazy"    , List("t")         , range, Priority.Medium(0)),
+      // R
+      polycompletion("Receiver", List("t")         , range, Priority.Low(0)),
+      polycompletion("Region"  , List("r")         , range, Priority.High(0)),
+      // S
+      polycompletion("Sender"  , List("t")         , range, Priority.Low(0)),
+      Completion.TypeBuiltinCompletion("String"    , range, Priority.High(0)),
+      // U
+      Completion.TypeBuiltinCompletion("Unit"      , range, Priority.Medium(0)),
+      // V
+      polycompletion("Vector"  , List("a")         , range, Priority.High(0)),
+      Completion.TypeBuiltinCompletion("Void"      , range, Priority.Low(0)),
+    )
 }

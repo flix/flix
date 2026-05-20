@@ -1,28 +1,30 @@
 mod Test.Exp.Match.Wild {
 
-    @test
-    def testWild01(): Bool = match () {
-        case _ => true
+    use Assert.{success, fail}
+
+    @Test
+    def wild01(): Unit \ Assert = match () {
+        case _ => success("matched wildcard")
     }
 
-    @test
-    def testWild02(): Bool = match 123 {
-        case 0 => false
-        case 1 => false
-        case _ => true
+    @Test
+    def wild02(): Unit \ Assert = match 123 {
+        case 0 => fail("unexpected match on 0")
+        case 1 => fail("unexpected match on 1")
+        case _ => success("matched wildcard")
     }
 
-    @test
-    def testWild03(): Bool = match None {
-        case Some(_) => false
-        case _       => true
+    @Test
+    def wild03(): Unit \ Assert = match None {
+        case Some(_) => fail("unexpected match on Some")
+        case _       => success("matched wildcard")
     }
 
-    @test
-    def testWild04(): Bool = match Some(Ok(123)) {
-        case Some(Err(_)) => false
-        case Some(Ok(_))  => true
-        case _            => false
+    @Test
+    def wild04(): Unit \ Assert = match Some(Ok(123)) {
+        case Some(Err(_)) => fail("unexpected match on Some(Err(_))")
+        case Some(Ok(_))  => success("matched Some(Ok(_))")
+        case _            => fail("unexpected match on wildcard")
     }
 
 }

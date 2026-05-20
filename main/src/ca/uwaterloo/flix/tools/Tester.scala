@@ -76,7 +76,7 @@ object Tester {
 
       // Import formatter.
       val formatter = flix.getFormatter
-      import formatter._
+      import formatter.*
 
       // Initialize the terminal.
       implicit val terminal: Terminal = TerminalBuilder
@@ -105,7 +105,7 @@ object Tester {
 
           case TestEvent.Success(sym, elapsed) =>
             passed = passed + 1
-            writer.println(s"  ${bgGreen(" PASS ")} $sym ${brightBlack(elapsed.fmt)}")
+            writer.println(s"  ${bgGreen(" PASS ")} $sym ${elapsed.fmt}")
             terminal.flush()
 
           case TestEvent.Failure(sym, output, elapsed) =>
@@ -128,7 +128,7 @@ object Tester {
               writer.println()
               for ((sym, output) <- failed; if output.nonEmpty) {
                 writer.println(s"  ${bgRed(" FAIL ")} $sym")
-                writer.println(s"         ${sym.loc.source.name}:${sym.loc.beginLine}")
+                writer.println(s"         ${sym.loc.source.name}:${sym.loc.startLine}")
                 for (line <- output) {
                   writer.println(s"    $line")
                 }
@@ -143,12 +143,12 @@ object Tester {
               s"Passed: ${green(passed.toString)}, " +
                 s"Failed: ${red(failed.length.toString)}. " +
                 s"Skipped: ${yellow(skipped.toString)}. " +
-                s"Elapsed: ${brightBlack(elapsed.fmt)}."
+                s"Elapsed: ${elapsed.fmt}."
             )
             terminal.flush()
             finished = true
 
-          case _ => // nop
+          case null => () // tester have not started yet, retry
         }
       }
     }
@@ -236,27 +236,27 @@ object Tester {
     */
   class TeeOutputStream(out: OutputStream, branch: OutputStream) extends PrintStream(out) {
 
-    override def write(b: Array[Byte]) = synchronized {
+    override def write(b: Array[Byte]): Unit = synchronized {
       super.write(b)
       branch.write(b)
     }
 
-    override def write(b: Array[Byte], off: Int, len: Int) = synchronized {
+    override def write(b: Array[Byte], off: Int, len: Int): Unit = synchronized {
       super.write(b, off, len)
       branch.write(b, off, len)
     }
 
-    override def write(b: Int) = synchronized {
+    override def write(b: Int): Unit = synchronized {
       super.write(b)
       branch.write(b)
     }
 
-    override def flush() = synchronized {
+    override def flush(): Unit = synchronized {
       super.flush()
       branch.flush()
     }
 
-    override def close() = synchronized {
+    override def close(): Unit = synchronized {
       try {
         super.close()
       } finally {

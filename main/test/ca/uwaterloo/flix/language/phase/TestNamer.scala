@@ -17,59 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.NameError
+import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestNamer extends AnyFunSuite with TestUtils {
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.01") {
-    val input =
-      """
-        |import java.lang.StringBuffer
-        |import java.lang.StringBuffer
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.02") {
-    val input =
-      """
-        |import java.lang.{StringBuffer => StringThingy}
-        |import java.lang.{StringBuffer => StringThingy}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.03") {
-    val input =
-      """
-        |mod A {
-        |    import java.lang.StringBuffer
-        |    import java.lang.StringBuffer
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.04") {
-    val input =
-      """
-        |mod A {
-        |    import java.lang.{StringBuffer => StringThingy}
-        |    import java.lang.{StringBuilder => StringThingy}
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
 
   test("DuplicateLowerName.01") {
     val input =
@@ -77,7 +29,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |def f(): Int = 42
          |def f(): Int = 21
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -88,7 +40,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |def f(): Int = 21
          |def f(): Int = 11
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -99,7 +51,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |def f(x: Int): Int = 21
          |def f(x: Int): Int = 11
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -110,7 +62,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |def f(x: Int): Int = 21
          |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -119,13 +71,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A {
          |  def f(): Int = 42
-         |}
-         |
-         |mod A {
          |  def f(): Int = 21
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -134,17 +83,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A.B.C {
          |  def f(): Int = 42
-         |}
-         |
-         |mod A {
-         |  mod B {
-         |    mod C {
-         |      def f(): Int = 21
-         |    }
-         |  }
+         |  def f(): Int = 21
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -156,7 +98,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |    pub def f(x: a): Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -169,7 +111,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |    pub def f(x: Int): a
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -184,7 +126,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  pub def f(): Int = 21
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -203,7 +145,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -220,7 +162,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -235,7 +177,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |    pub def f(): Unit
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -247,7 +189,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |    pub def f(): Unit
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -257,7 +199,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |type alias USD = Int
          |type alias USD = Int
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -268,7 +210,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |type alias USD = Int
          |type alias USD = Int
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -277,13 +219,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A {
          |  type alias USD = Int
-         |}
-         |
-         |mod A {
          |  type alias USD = Int
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -295,7 +234,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  case A
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -308,7 +247,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  case A
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -317,15 +256,12 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A {
          |  type alias USD = Int
-         |}
-         |
-         |mod A {
          |  enum USD {
          |    case B
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -339,7 +275,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  case B
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -356,7 +292,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  case C
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -367,15 +303,12 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  enum USD {
          |    case A
          |  }
-         |}
-         |
-         |mod A {
          |  enum USD {
          |    case B
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -385,7 +318,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |type alias USD = Int
          |trait USD[a]
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -396,7 +329,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |type alias USD = Int
          |trait USD[a]
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -405,13 +338,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A {
          |  type alias USD = Int
-         |}
-         |
-         |mod A {
          |  trait USD[a]
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -423,7 +353,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |}
          |trait USD[a]
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -438,7 +368,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |}
          |trait USD[a]
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -449,13 +379,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  enum USD {
          |    case A
          |  }
-         |}
-         |
-         |mod A {
          |  trait USD[a]
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -465,7 +392,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |trait USD[a]
          |trait USD[a]
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -476,7 +403,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |trait USD[a]
          |trait USD[a]
          """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -485,13 +412,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |mod A {
          |  trait USD[a]
-         |}
-         |
-         |mod A {
          |  trait USD[a]
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -501,7 +425,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |enum E
         |eff E
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -511,18 +435,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |trait C[a]
         |eff C
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.21") {
-    val input =
-      """
-        |import java.sql.Statement
-        |enum Statement
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -532,81 +445,188 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |enum Statement
         |type alias Statement = Int
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.23") {
-    val input =
-      """
-        |use A.Statement
-        |enum Statement
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.24") {
-    val input =
-      """
-        |mod A {
-        |    import java.sql.Statement
-        |    enum Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.25") {
-    val input =
-      """
-        |mod A {
-        |    use B.Statement
-        |    import java.sql.Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.26") {
-    val input =
-      """
-        |enum Statement
-        |mod A {
-        |    use B.Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.27") {
-    val input =
-      """
-        |enum Statement
-        |mod A {
-        |    import B.Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  ignore("DuplicateUpperName.28") {
+  test("DuplicateUpperName.28") {
     val input =
       """
         |struct S[r] {}
         |enum S {}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.29") {
+    val input =
+      """
+        |enum S {case S}
+        |enum S {}
+        |def main(): Unit = {
+        |    discard S.S
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.30") {
+    val input =
+      """
+        |enum S {}
+        |enum S {case S}
+        |def main(): Unit = {
+        |    discard S.S
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.Tag.01") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Red
+        |}
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.Tag.02") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu,
+        |  case Red
+        |}
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.Tag.03") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu,
+        |  case Red
+        |  case Blu
+        |}
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.Tag.04") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu,
+        |  case Blu,
+        |  case Ylw
+        |}
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateModule.01") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B { pub def foo(): Int32 = 1 }
+         |    mod B { pub def bar(): Int32 = 2 }
+         |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateModule](result)
+  }
+
+  test("DuplicateModule.02") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B.C { pub def foo(): Int32 = 1 }
+         |    mod B {
+         |        mod C { pub def bar(): Int32 = 2 }
+         |    }
+         |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateModule](result)
+  }
+
+  test("DuplicateModule.03") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B { pub def f(): Int32 = 1 }
+         |    mod B { pub def g(): Int32 = 2 }
+         |    mod B { pub def h(): Int32 = 3 }
+         |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateModule](result)
+  }
+
+  test("DuplicateModule.04") {
+    val input =
+      s"""
+         |mod A { pub def f(): Int32 = 1 }
+         |mod A { pub def g(): Int32 = 2 }
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateModule](result)
+  }
+
+  test("DuplicateModule.05") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B { pub def f(): Int32 = 1 }
+         |    mod C { pub def g(): Int32 = 2 }
+         |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.DuplicateModule](result)
+  }
+
+  test("IllegalReservedName.Enum.01") {
+    val input =
+      """pub enum Int32 {
+        |  case Value,
+        |}
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
+  }
+
+  test("IllegalReservedName.Alias.01") {
+    val input =
+      """type alias Float32[k] = (k,k)
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
+  }
+
+  test("IllegalReservedName.Struct.01") {
+    val input =
+      """struct Float64 {}
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
+  }
+
+  test("IllegalReservedName.Trait.01") {
+    val input =
+      """trait String[s] { def f(x: s): s }
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
   }
 
   test("SuspiciousTypeVarName.01") {
@@ -614,7 +634,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |def f(_x: List[unit]): Unit = ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -623,7 +643,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |def f(_x: List[Result[Unit, bool]]): Unit = ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -632,7 +652,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |def f(): List[char] = ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -643,7 +663,81 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |    case X(string)
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.SuspiciousTypeVarName](result)
+  }
+
+  test("CompanionMustBeFirst.Enum.01") {
+    val input =
+      """
+        |mod A.B {
+        |    def f(): Int32 = 123
+        |    enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBeFirst](result)
+  }
+
+  test("CompanionMustBeFirst.Struct.01") {
+    val input =
+      """
+        |mod A.B {
+        |    def f(): Int32 = 123
+        |    struct B { x: Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBeFirst](result)
+  }
+
+  test("CompanionMustBeFirst.Effect.01") {
+    val input =
+      """
+        |mod A.B {
+        |    def f(): Int32 = 123
+        |    eff B { def op(): Unit }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBeFirst](result)
+  }
+
+  test("CompanionMustBeFirst.Trait.01") {
+    val input =
+      """
+        |mod A.B {
+        |    def f(): Int32 = 123
+        |    trait B[a]
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBeFirst](result)
+  }
+
+  test("CompanionIsFirst.Enum.01") {
+    val input =
+      """
+        |mod A.B {
+        |    enum B { case B }
+        |    def f(): Int32 = 123
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.CompanionMustBeFirst](result)
+  }
+
+  test("Regression.01") {
+    // See https://github.com/flix/flix/issues/10116
+    // We ensure that duplicate names do not cause unrelated resolution errors
+    // We use the whole standard library to maximize diversity of resolutions.
+    val input =
+      """
+        |def foo(): Unit = ()
+        |def foo(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[NameError.DuplicateLowerName](result)
+    rejectError[ResolutionError.UndefinedUse](result)
   }
 }

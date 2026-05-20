@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.dbg
 
+
 import scala.annotation.tailrec
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 
 sealed trait Doc
 
@@ -35,7 +36,7 @@ object Doc {
     /**
       * Concatenates two docs.
       */
-    def ::(d: Doc): Doc = Doc.::(d, this.d)
+    def |::(d: Doc): Doc = Doc.|::(d, this.d)
 
     /**
       * Concatenates two docs with a space.
@@ -51,9 +52,9 @@ object Doc {
     def \:(d: Doc): Doc = Doc.\:(d, this.d)
   }
 
-  private case object Nil extends Doc
+  private case object DNil extends Doc
 
-  private case class Cons(d1: Doc, d2: Doc) extends Doc
+  private case class DCons(d1: Doc, d2: Doc) extends Doc
 
   private case class Text(s: String) extends Doc
 
@@ -68,7 +69,7 @@ object Doc {
   private case class Indentation(i: Int) extends Indent
 
   private def indentI(i: Indent): Int = i match {
-    case Indentation(i) => i
+    case Indentation(n) => n
   }
 
   def indentationLevel(i: Int): Indent = Indentation(i)
@@ -76,12 +77,12 @@ object Doc {
   /**
     * Concatenates two docs.
     */
-  def ::(d1: Doc, d2: Doc): Doc = Cons(d1, d2)
+  def |::(d1: Doc, d2: Doc): Doc = DCons(d1, d2)
 
   /**
     * The empty document.
     */
-  def empty: Doc = Nil
+  def empty: Doc = DNil
 
   /**
     * The document of the string `s`.
@@ -110,7 +111,18 @@ object Doc {
     * This data exists as a simpler format that [[Doc]] is translated into
     * before computing a string.
     */
-  private sealed trait SDoc
+  private sealed trait SDoc {
+    def reverse: SDoc = SDoc.reverseAux(this, SNil)
+  }
+
+  private object SDoc {
+    @tailrec
+    def reverseAux(l: SDoc, acc: SDoc): SDoc = l match {
+      case SNil => acc
+      case SText(s, d) => reverseAux(d, SText(s, acc))
+      case SLine(i, d) => reverseAux(d, SLine(i, acc))
+    }
+  }
 
   private case object SNil extends SDoc
 
@@ -154,9 +166,9 @@ object Doc {
   @tailrec
   private def fits(w: Int, l: List[(Int, Mode, Doc)]): Boolean = l match {
     case _ if w < 0 => false
-    case immutable.Nil => true
-    case (_, _, Nil) :: z => fits(w, z)
-    case (i, m, Cons(x, y)) :: z =>
+    case Nil => true
+    case (_, _, DNil) :: z => fits(w, z)
+    case (i, m, DCons(x, y)) :: z =>
       fits(w, (i, m, x) :: (i, m, y) :: z)
     case (i, m, Nest(j, x)) :: z => fits(w, (i + j, m, x) :: z)
     case (_, _, Text(s)) :: z => fits(w - s.length, z)
@@ -173,26 +185,26 @@ object Doc {
     * @param k used width
     */
   @tailrec
-  private def format(w: Int, k: Int, l: List[(Int, Mode, Doc)], cont: SDoc => SDoc): SDoc = l match {
-    case immutable.Nil =>
-      cont(SNil)
-    case (_, _, Nil) :: z =>
-      format(w, k, z, cont)
-    case (i, m, Cons(x, y)) :: z =>
-      format(w, k, (i, m, x) :: (i, m, y) :: z, cont)
+  private def format(w: Int, k: Int, l: List[(Int, Mode, Doc)], acc: SDoc): SDoc = l match {
+    case Nil =>
+      acc
+    case (_, _, DNil) :: z =>
+      format(w, k, z, acc)
+    case (i, m, DCons(x, y)) :: z =>
+      format(w, k, (i, m, x) :: (i, m, y) :: z, acc)
     case (i, m, Nest(j, x)) :: z =>
-      format(w, k, (i + j, m, x) :: z, cont)
+      format(w, k, (i + j, m, x) :: z, acc)
     case (_, _, Text(s)) :: z =>
-      format(w, k + s.length, z, v1 => cont(SText(s, v1)))
+      format(w, k + s.length, z, SText(s, acc))
     case (_, MFlat, Break(s)) :: z =>
-      format(w, k + s.length, z, v1 => cont(SText(s, v1)))
+      format(w, k + s.length, z, SText(s, acc))
     case (i, MBreak, Break(_)) :: z =>
-      format(w, i, z, v1 => cont(SLine(i, v1)))
+      format(w, i, z, SLine(i, acc))
     case (i, _, Group(x)) :: z =>
       if (fits(w - k, (i, MFlat, x) :: z)) {
-        format(w, k, (i, MFlat, x) :: z, cont)
+        format(w, k, (i, MFlat, x) :: z, acc)
       } else {
-        format(w, k, (i, MBreak, x) :: z, cont)
+        format(w, k, (i, MBreak, x) :: z, acc)
       }
   }
 
@@ -205,7 +217,7 @@ object Doc {
     * @param i the width of each indentation level
     */
   def pretty(w: Int, d: Doc)(implicit i: Indent): String =
-    sdocToString(format(w, 0, List((0, MBreak, d)), x => x))
+    sdocToString(format(w, 0, List((0, MBreak, d)), SNil).reverse)
 
   // aux
 
@@ -213,58 +225,64 @@ object Doc {
     * Concatenates two docs with a space.
     */
   def +:(d1: Doc, d2: Doc): Doc =
-    d1 :: text(" ") :: d2
+    d1 |:: text(" ") |:: d2
 
   /**
     * Concatenates two docs with a space _or_ an ungrouped newline.
     */
   def +\:(d1: Doc, d2: Doc): Doc =
-    d1 :: breakWith(" ") :: d2
+    d1 |:: breakWith(" ") |:: d2
 
   /** Concatenates two docs with an ungrouped optional newline. */
   def \:(d1: Doc, d2: Doc): Doc =
-    d1 :: breakWith("") :: d2
-
-  /**
-    * Concatenates two docs with a space _or_ a grouped optional newline with
-    * indentation.
-    * `d2` is included in the group.
-    */
-  def groupBreakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
-    d1 :: group(nest(breakWith(" ") :: d2))
+    d1 |:: breakWith("") |:: d2
 
   /**
     * Prefix `d` with a space, or an indented newline if space is needed.
     */
   def breakIndent(d: Doc)(implicit i: Indent): Doc =
-    nest(breakWith(" ") :: d)
+    nest(breakWith(" ") |:: d)
 
   /**
-    * Right fold of `d` with `f`.
+    * Fold of `d` with `f`.
     */
-  def fold(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
-    case immutable.Nil => empty
-    case x :: immutable.Nil => x
-    case x :: xs => f(x, fold(f, xs))
+  def fold(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = {
+    // foldRight is used to avoid right-leaning doc trees.
+    foldLeft({case (x, y) => f(y, x)}, d.reverse)
+  }
+
+  /**
+    * Left fold of `d` with `f`.
+    */
+  private def foldLeft(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
+    case Nil => empty
+    case x :: Nil => x
+    case x :: xs => foldLeftHelper(x, f, xs)
+  }
+
+  @tailrec
+  private def foldLeftHelper(z: Doc, f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
+    case x :: xs => foldLeftHelper(f(z, x), f, xs)
+    case Nil => z
   }
 
   /**
     * Inserts the separator between elements of `d`.
     */
   def sep(sep: Doc, d: List[Doc]): Doc =
-    fold(_ :: sep :: _, d)
+    fold(_ |:: sep |:: _, d)
 
   /**
     * Insert a comma with an ungrouped optional newline.
     */
   def commaSep(d: List[Doc]): Doc =
-    sep(text(",") :: breakWith(" "), d)
+    sep(text(",") |:: breakWith(" "), d)
 
   /**
     * Insert a semicolon with an ungrouped optional newline.
     */
   def semiSep(d: List[Doc]): Doc =
-    sep(text(";") :: breakWith(" "), d)
+    sep(text(";") |:: breakWith(" "), d)
 
   /**
     * Insert a semicolon and a space _or_ an ungrouped newline.
@@ -276,7 +294,7 @@ object Doc {
     * Enclose `x` with `l` and `r` with ungrouped newlines inside `l` and `r`.
     */
   def enclose(l: String, x: Doc, r: String)(implicit i: Indent): Doc = {
-    text(l) :: nest(breakWith("") :: x) \: text(r)
+    text(l) |:: nest(breakWith("") |:: x) \: text(r)
   }
 
   /**
@@ -284,12 +302,6 @@ object Doc {
     */
   def parens(x: Doc)(implicit i: Indent): Doc =
     group(enclose("(", x, ")"))
-
-  /**
-    * Enclose `x` with `(..)` with ungrouped newlines inside.
-    */
-  def parensOpen(x: Doc)(implicit i: Indent): Doc =
-    enclose("(", x, ")")
 
   /**
     * Enclose `x` with `{..}` with grouped newlines inside.
@@ -312,8 +324,8 @@ object Doc {
     * }}}
     */
   def curlyTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
-    case immutable.Nil => text("{}")
-    case immutable.::(d, immutable.Nil) => group(curly(d))
+    case Nil => text("{}")
+    case d :: Nil => group(curly(d))
     case _ => group(curly(commaSep(xs)))
   }
 
@@ -332,8 +344,8 @@ object Doc {
     * }}}
     */
   def squareTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
-    case immutable.Nil => text("[]")
-    case immutable.::(d, immutable.Nil) => square(d)
+    case Nil => text("[]")
+    case d :: Nil => square(d)
     case _ => square(commaSep(xs))
   }
 
@@ -352,8 +364,8 @@ object Doc {
     * }}}
     */
   def doubleSquareTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
-    case immutable.Nil => text("[||]")
-    case immutable.::(d, immutable.Nil) => doubleSquare(d)
+    case Nil => text("[||]")
+    case d :: Nil => doubleSquare(d)
     case _ => doubleSquare(commaSep(xs))
   }
 
@@ -366,8 +378,8 @@ object Doc {
     * }}}
     */
   def tuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
-    case immutable.Nil => text("()")
-    case immutable.::(d, immutable.Nil) => parens(d)
+    case Nil => text("()")
+    case d :: Nil => parens(d)
     case _ => parens(commaSep(xs))
   }
 
@@ -380,8 +392,8 @@ object Doc {
     * }}}
     */
   def tuplish(xs: List[Doc])(implicit i: Indent): Doc = xs match {
-    case immutable.Nil => text("()")
-    case immutable.::(d, immutable.Nil) => d
+    case Nil => text("()")
+    case d :: Nil => d
     case _ => tuple(xs)
   }
 

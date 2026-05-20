@@ -17,310 +17,448 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.BroadEqualityConstraint
-import ca.uwaterloo.flix.language.ast.TypeConstructor.JvmMethod
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.DocAst.Type.JvmConstructor
-import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
-
-import java.lang.reflect.{Method, Constructor};
 
 /**
   * A common super-type for type errors.
   */
-sealed trait TypeError extends CompilationMessage with Recoverable {
-  val kind: String = "Type Error"
+sealed trait TypeError extends CompilationMessage {
+  val kind: CompilationMessageKind = CompilationMessageKind.TypeError
+
+  def isEffError: Boolean = this match {
+    case _: TypeError.ArgumentGivenWrongEffect => true
+    case _: TypeError.DefaultHandlerNotInModule => true
+    case _: TypeError.DuplicateDefaultHandler => true
+    case _: TypeError.EffectfulFunctionUsesOtherEffect => true
+    case _: TypeError.ExplicitlyPureFunctionUsesEffect => true
+    case _: TypeError.ExplicitlyPureFunctionUsesIO => true
+    case _: TypeError.IllegalDefaultHandlerSignature => true
+    case _: TypeError.ImplicitlyPureFunctionUsesEffect => true
+    case _: TypeError.ImplicitlyPureFunctionUsesIO => true
+    case _: TypeError.MismatchedEffects => true
+    case _: TypeError.NonPublicDefaultHandler => true
+    case _: TypeError.UnusedEffectInSignature => true
+    case _ => false
+  }
 }
 
 object TypeError {
 
   /**
-    * Irreducible associated type error
+    * An error raised when a function argument has an incompatible effect with what the function signature requires.
     *
-    * @param sym the associated type symbol.
-    * @param tpe the argument to the associated type
-    * @param loc the location where the error occurred.
+    * For example, passing an argument with effect 'IO' to a function that expects a pure argument.
+    *
+    * @param expected the list of effects declared in the function signature
+    * @param actual   the list of effects present on the argument at the call site
+    * @param loc      the source location of the call site (where the argument is passed)
+    * @param loc2     the source location of the function signature (where the expected effect is declared)
+    * @param loc3     the source location of the argument definition (where the actual effect originates)
     */
-  case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    private val assocType: Type = Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), tpe, Kind.Wild, SourceLocation.Unknown)
+  case class ArgumentGivenWrongEffect(expected: List[EffSymOrRigidVar], actual: List[EffSymOrRigidVar], loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6218
 
-    def summary: String = s"Irreducible associated type: ${formatType(assocType)}"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Irreducible associated type: ${formatType(assocType)}
-         |
-         |${code(loc, "irreducible associated type.")}
-         |""".stripMargin
+    private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
+      case x :: Nil => s"'${x.name}'"
+      case xs => xs.map(_.name).mkString("'{", ", ", "}'")
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Tip: Add an equality constraint to the function."
-    })
-  }
+    def summary: String =
+      s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
 
-  /**
-   * Java constructor not found type error.
-   *
-   * @param tpes    the types of the arguments.
-   * @param methods a list of possible candidate constructors on the type of the receiver object.
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
-  case class ConstructorNotFound(clazz: Class[_], tpes: List[Type], constructors: List[JvmConstructor], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment, e.g., list possible constructors
-    def summary: String = s"Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found.
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched effect(s): expected ${magenta(effectsToString(expected))}, but got ${red(effectsToString(actual))}.
          |
-         |${code(loc, s"Java '${clazz.getName}' constructor not found")}
+         |${highlight(loc2, s"function expected argument with effect(s) ${magenta(effectsToString(expected))}", fmt)}
+         |
+         |${highlight(loc, s"function argument with effect(s) ${red(effectsToString(actual))} was passed", fmt)}
+         |
+         |${highlight(loc3, s"the culprit", fmt)}
+         |
+         |${underline("Explanation:")} A function with effect(s) ${magenta(effectsToString(expected))} cannot accept an argument
+         |that carries effect(s) ${red(effectsToString(actual))}. Either:
+         |
+         |  (a) Change the argument to use effect(s) ${magenta(effectsToString(expected))}, or
+         |  (b) Update the function signature to accept effect(s) ${red(effectsToString(actual))}.
          |""".stripMargin
     }
   }
 
   /**
-   * Java method not found type error.
-   *
-   * @param tpe0    the type of the receiver object.
-   * @param tpes    the types of the arguments.
-   * @param methods a list of possible candidate methods on the type of the receiver object.
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
-  case class MethodNotFound(methodName: String, tpe0: Type, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment, e.g., list possible methods
-    def summary: String = s"Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")}) not found."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) not found.
-         |
-         |${code(loc, s"Java method '${methodName}' not found")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-   * Static Java method not found type error.
-   *
-   * @param clazz   the Java class expected to contain the static method
-   * @param tpes    the types of the arguments.
-   * @param methods a list of possible candidate methods in the class.
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
-  case class StaticMethodNotFound(clazz: Class[_], methodName: String, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment, e.g., list possible methods
-    def summary: String = s"Static Java method '$methodName' from class ${clazz.getName} with arguments types (${tpes.mkString(", ")}) not found."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")}) not found.
-         |
-         |${code(loc, s"Static Java method '${methodName}' not found")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-   * Java ambiguous constructor type error.
-   *
-   * @param tpes    the types of the arguments.
-   * @param constructors a list of possible candidate constructors on the type of the receiver object.
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
-  case class AmbiguousConstructor(clazz: Class[_], tpes: List[Type], constructors: List[Constructor[_]], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment with candidate constructors formatting
-    def summary: String = s"Ambiguous Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")})."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      def constructorToStr(c: Constructor[_]) = {
-        s"${c.getName}(${c.getParameterTypes.map(t => t.getName).mkString(", ")})"
-      }
-      s"""${line(kind, source.name)}
-         |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) is ambiguous.
-         | Possible candidate constructors:
-         |  ${constructors.map(m => constructorToStr(m)).mkString(", ")}
-         |
-         |${code(loc, s"Ambiguous Java '${clazz.getName}' constructor")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-   * Java ambiguous method type error.
-   *
-   * @param tpe0    the type of the receiver object.
-   * @param tpes    the types of the arguments.
-   * @param methods a list of possible candidate methods on the type of the receiver object.
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
-  case class AmbiguousMethod(methodName: String, tpe0: Type, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment with candidate methods formatting
-    def summary: String = s"Ambiguous Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")})."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      def methodToStr(m: Method) = {
-        s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})"
-      }
-      s""">> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) is ambiguous.
-         | Possible candidate methods:
-         |  ${methods.map(m => methodToStr(m)).mkString(", ")}
-         |
-         |${code(loc, s"Ambiguous Java method '${methodName}'")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-   * Java ambiguous static method type error.
-   *
-   * @param clazz   the Java class expected to contain the static method
-   * @param tpes    the types of the arguments.
-   * @param methods a list of possible candidate methods in the class
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
-  case class AmbiguousStaticMethod(clazz: Class[_], methodName: String, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment with candidate methods formatting
-    def summary: String = s"Ambiguous static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")})."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      def methodToStr(m: Method) = {
-        s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})"
-      }
-      s""">> Static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")}) is ambiguous.
-         | Possible candidate static methods:
-         |  ${methods.map(m => methodToStr(m)).mkString(", ")}
-         |
-         |${code(loc, s"Ambiguous static Java method '${methodName}'")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-   * Unresolved constructor type error.
-   * This is a dummy error used in java constructor type reconstruction for invokeConstructor2.
-   */
-  case class UnresolvedConstructor(loc: SourceLocation) extends TypeError with Recoverable {
-    def summary: String = s"Unresolved constructor"
-    def message(formatter: Formatter): String = s"Unresolved constructor"
-  }
-
-  /**
-   * Unresolved method type error.
-   * This is a dummy error used in java method type reconstruction for invokeMethod2.
-   */
-  case class UnresolvedMethod(loc: SourceLocation) extends TypeError with Recoverable {
-    def summary: String = s"Unresolved method"
-
-    def message(formatter: Formatter): String = s"Unresolved method"
-  }
-
-
-  /**
-    * Mismatched Arity.
+    * Java constructor not found type error.
     *
-    * @param tpe1 the first type.
-    * @param tpe2 the second type.
+    * @param tpes the types of the arguments.
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MismatchedArity(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the types '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
+  case class ConstructorNotFound(clazz: Class[?], tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6025
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unable to unify the types: '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
+    def summary: String = s"Constructor not found: '${clazz.getName}' with arguments (${tpes.mkString(", ")})."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Constructor not found: '${red(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
          |
-         |${code(loc, "mismatched arity of types.")}
+         |${highlight(loc, "cannot find constructor", fmt)}
          |
+         |Available constructors:
+         |${getConstructorsByArgs(clazz).map(c => s"  - ${formatConstructor(clazz, c)}").mkString("\n")}
+         |
+         |${underline("Explanation:")} No Java constructor matches the given argument types.
+         |Ensure that the argument types match exactly; Flix does not perform
+         |automatic boxing or unboxing of primitive types.
          |""".stripMargin
     }
   }
 
   /**
-    * Mismatched Pure and Effectful Arrows.
+    * An error raised to indicate that a default handler is not in the companion module of its effect.
     *
-    * @param baseType1 the first boolean formula.
-    * @param baseType2 the second boolean formula.
-    * @param fullType1 the first full type in which the first boolean formula occurs.
-    * @param fullType2 the second full type in which the second boolean formula occurs.
-    * @param renv      the rigidity environment.
-    * @param loc       the location where the error occurred.
+    * @param handlerSym the symbol of the default handler.
+    * @param loc        the location of the default handler.
     */
-  case class MismatchedArrowEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Mismatched Pure and Effectful Functions."
+  case class DefaultHandlerNotInModule(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E0621
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Mismatched Pure and Effectful Functions.
+    def summary: String = s"Misplaced default handler: '${handlerSym.name}' must be in the companion module of its effect."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Misplaced default handler: '${red(handlerSym.name)}' must be in the companion module of its effect.
          |
-         |${code(loc, "mismatched pure and effectful functions.")}
+         |${highlight(loc, "must be in companion module", fmt)}
          |
-         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |${underline("Explanation:")} A default handler must be defined inside the companion
+         |module of the effect it handles. For example:
+         |
+         |  pub eff E {
+         |      pub def op(): Unit
+         |  }
+         |
+         |  mod E {
+         |      @DefaultHandler
+         |      pub def runWithIO(f: Unit -> a \\ ef): a \\ (ef - E) + IO = ...
+         |  }
          |""".stripMargin
     }
   }
 
   /**
-    * Mismatched Boolean Formulas.
+    * An error raised to indicate that there are multiple default handlers for the same effect.
     *
-    * @param baseType1 the first boolean formula.
-    * @param baseType2 the second boolean formula.
-    * @param fullType1 the first full type in which the first boolean formula occurs.
-    * @param fullType2 the second full type in which the second boolean formula occurs.
-    * @param renv      the rigidity environment.
-    * @param loc       the location where the error occurred.
+    * @param sym  the symbol of the effect.
+    * @param loc1 the location of the first default handler.
+    * @param loc2 the location of the second default handler.
     */
-  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the Boolean formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
+  case class DuplicateDefaultHandler(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E0734
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unable to unify the Boolean formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
+    def summary: String = s"Duplicate default handler for effect '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Duplicate default handler for effect '${red(sym.name)}'.
          |
-         |${code(loc, "mismatched Boolean formulas.")}
+         |${highlight(loc1, "first occurrence", fmt)}
          |
-         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |${highlight(loc2, "duplicate", fmt)}
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = loc1
+  }
+
+  /**
+    * An error raised when an effect is used in a function where it is not a part of the set of declared effects.
+    *
+    * @param defEffSyms the symbol(s) the effect(s) in the function definition
+    * @param usedEffSym the symbol of the effect causing the error
+    * @param loc1    the location of the function explicitly declared as defEffSym.
+    * @param loc2   the location where the other effect is used.
+    */
+  case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6216
+
+    def loc: SourceLocation = loc2
+
+    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as '${defEffSyms}'"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      def formatEffs(syms: List[EffSymOrRigidVar]): String = syms match {
+        case Nil => ""
+        case end :: Nil => s"${magenta(end.name)}"
+        case head :: tail => s"${magenta(head.name)}, " + formatEffs(tail)
+      }
+      val defString = s"{${magenta(formatEffs(defEffSyms))}}"
+      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
+         |
+         |${highlight(loc1, s"function declared as '$defString'", fmt)}
+         |
+         |${highlight(loc2, s"'${magenta(usedEffSym.name)}' used here", fmt)}
+         |
+         |${underline("Explanation:")} The function is explicitly declared as '$defString',
+         |meaning it may not perform other effects. Since '${magenta(usedEffSym.name)}' is another effect,
+         |it cannot be used in this function. To fix this, either add ${(magenta(usedEffSym.name))} to $defString
+         |or remove the use of '${magenta(usedEffSym.name)}' inside the function.
          |""".stripMargin
     }
   }
 
   /**
-    * Mismatched Case Set Formulas.
+    * An error raised when an effect is used in a function that is explicitly declared Pure.
     *
-    * @param baseType1 the first case set formula.
-    * @param baseType2 the second case set formula.
-    * @param fullType1 the first full type in which the first case set formula occurs.
-    * @param fullType2 the second full type in which the second case set formula occurs.
-    * @param renv      the rigidity environment.
+    * @param effSym the symbol of the effect causing the error
+    * @param loc1    the location of the function explicitly declared as {}.
+    * @param loc2   the location where the effect is used.
+    */
+  case class ExplicitlyPureFunctionUsesEffect(effSym: EffSymOrRigidVar, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6215
+
+    def loc: SourceLocation = loc2
+
+    def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected effect '${magenta(effSym.name)}' in {} function.
+         |
+         |${highlight(loc1, "function declared {}", fmt)}
+         |
+         |${highlight(loc2, s"'${magenta(effSym.name)}' used here", fmt)}
+         |
+         |${underline("Explanation:")} The function is explicitly declared as {},
+         |meaning it may not perform any effects. Since '${magenta(effSym.name)}' is an effect,
+         |it cannot be used in this function. To fix this, either change the signature to {${magenta(effSym.name)}}
+         |or remove the use of '${magenta(effSym.name)}' inside the function.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when IO is used in a function that is explicitly declared Pure.
+    *
+    * @param loc1  the location of the function explicitly declared as {}.
+    * @param loc2 the location where IO is used.
+    */
+  case class ExplicitlyPureFunctionUsesIO(loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6214
+
+    def loc: SourceLocation = loc2
+
+    def summary: String = s"Unexpected effect 'IO' in {} function"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected effect '${magenta("IO")}' in {} function.
+         |
+         |${highlight(loc1, "function declared {}", fmt)}
+         |
+         |${highlight(loc2, s"'${magenta("IO")}' used here", fmt)}
+         |
+         |${underline("Explanation:")} The function is explicitly declared as {},
+         |meaning it may not perform any effects. Since '${magenta("IO")}' is an effect,
+         |it cannot be used in this function. To fix this, either change the signature to {${magenta("IO")}}
+         |or remove the use of '${magenta("IO")}' inside the function.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Extra label error.
+    *
+    * @param label      the name of the extra label.
+    * @param labelType  the type of the extra label.
+    * @param recordType the record type where the label is missing.
+    * @param renv       the rigidity environment.
+    * @param loc        the location where the error occurred.
+    */
+  case class ExtraLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7574
+
+    def summary: String = s"Extra label '$label' of type '$labelType'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
+         |
+         |${highlight(loc, "extra label.", fmt)}
+         |
+         |The record type:
+         |
+         |  ${cyan(formatType(recordType, Some(renv)))}
+         |
+         |contains the extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Java field not found type error.
+    *
+    * @param base      the source location of the receiver expression.
+    * @param fieldName the name of the field.
+    * @param tpe       the type of the receiver object.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedCaseSets(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the case set formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
+  case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6247
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unable to unify the case set formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
+    def summary: String = s"Field not found: '${fieldName.name}' on type '${formatType(tpe)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      val availableFields = Type.classFromFlixType(tpe).map(getFieldsByName).getOrElse(Nil)
+      s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
          |
-         |${code(loc, "mismatched case set formulas.")}
+         |${highlight(loc, "cannot find field", fmt)}
          |
-         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |Available fields:
+         |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the signature of a default handler is illegal.
+    *
+    * @param effSym     the symbol of the effect.
+    * @param handlerSym the symbol of the handler.
+    * @param loc        the location of the default handler.
+    */
+  case class IllegalDefaultHandlerSignature(effSym: Symbol.EffSym, handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E0847
+
+    def summary: String = s"Invalid signature for default handler of effect '${effSym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Invalid signature for default handler of effect '${red(effSym.name)}'.
+         |
+         |${highlight(loc, "invalid signature", fmt)}
+         |
+         |Expected signature:
+         |
+         |  pub def ${handlerSym.name}(f: Unit -> a \\ ef): a \\ (ef - ${effSym.name}) + IO
+         |
+         |${underline("Explanation:")} A default handler must:
+         |
+         |  (a) Take a single thunk argument of type 'Unit -> a \\ ef'.
+         |  (b) Return a value of type 'a' with effect '(ef - ${effSym.name}) + IO'.
+         |
+         |That is, a default handler must handle the effect (i.e. remove it from
+         |the effect set) and it may only introduce the 'IO' effect.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when IO is used in a function that is inferred to be Pure.
+    *
+    * @param effSym   the symbol of the effect causing the error
+    * @param emptyLoc the location of the function inferred to be Pure (empty space right before '=').
+    * @param loc      the location where the effect is used.
+    */
+  case class ImplicitlyPureFunctionUsesEffect(effSym: EffSymOrRigidVar, emptyLoc: SourceLocation, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E5252
+
+    def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect '${magenta(effSym.name)}' in {} function.
+         |
+         |${highlight(emptyLoc, "function is inferred to be {}", formatter)}
+         |
+         |${highlight(loc, s"'${magenta(effSym.name)}' used here", formatter)}
+         |
+         |${underline("Explanation:")} Functions without an explicit effect annotation are
+         |inferred to be {}, meaning they may not perform effects. Since '${magenta(effSym.name)}'
+         |is an effect, it cannot be used in this function. To fix this,
+         |either add the explicit effect annotation in the signature {${magenta(effSym.name)}}
+         |or remove the use of '${magenta(effSym.name)}' inside the function.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when IO is used in a function that is inferred to be Pure.
+    *
+    * @param emptyLoc the location of the function inferred to be Pure (empty space right before '=').
+    * @param loc      the location where the IO is used.
+    */
+  case class ImplicitlyPureFunctionUsesIO(emptyLoc: SourceLocation, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E8752
+
+    def summary: String = s"Unexpected effect 'IO' in {} function"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect '${magenta("IO")}' in {} function.
+         |
+         |${highlight(emptyLoc, "function is inferred to be {}", formatter)}
+         |
+         |${highlight(loc, s"'${magenta("IO")}' used here", formatter)}
+         |
+         |${underline("Explanation:")} Functions without an explicit effect annotation are
+         |inferred to be {}, meaning they may not perform effects. Since '${magenta("IO")}'
+         |is an effect, it cannot be used in this function. To fix this,
+         |either add the explicit effect annotation in the signature {${magenta("IO")}}
+         |or remove the use of '${magenta("IO")}' inside the function.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Java method not found type error.
+    *
+    * @param methodName the name of the method.
+    * @param tpe        the type of the receiver object.
+    * @param tpes       the types of the arguments.
+    * @param loc        the location where the error occurred.
+    */
+  case class MethodNotFound(methodName: Name.Ident, tpe: Type, tpes: List[Type], loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6136
+
+    def summary: String = s"Method not found: '${methodName.name}' on type '${formatType(tpe)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Method not found: '${red(methodName.name)}' on type '${magenta(formatType(tpe))}' with arguments (${cyan(tpes.mkString(", "))}).
+         |
+         |${highlight(loc, "cannot find method", fmt)}
+         |
+         |${underline("Explanation:")} No Java method matches the given name and argument types.
+         |Ensure that the argument types match exactly; Flix does not perform
+         |automatic boxing or unboxing of primitive types.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a default handler is not public.
+    *
+    * @param handlerSym the symbol of the handler.
+    * @param loc        the location of the handler.
+    */
+  case class NonPublicDefaultHandler(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E1738
+
+    def summary: String = s"Non-public default handler: '${handlerSym.name}' must be declared 'pub'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Non-public default handler: '${red(handlerSym.name)}' must be declared '${cyan("pub")}'.
+         |
+         |${highlight(loc, "non-public default handler.", fmt)}
          |""".stripMargin
     }
   }
@@ -336,16 +474,74 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6469
+
     def summary: String = s"Unable to unify the effect formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unable to unify the effect formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unable to unify the effect formulas: '${red(formatType(baseType1, Some(renv), minimizeEffs = true))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true))}'.
          |
-         |${code(loc, "mismatched effect formulas.")}
+         |${highlight(loc, "mismatched effect formulas.", fmt)}
          |
          |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true))}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Mismatched Predicate Arity.
+    *
+    * @param pred   the predicate label.
+    * @param arity1 the first arity.
+    * @param arity2 the second arity.
+    * @param loc1   the location where the predicate is used with the first arity.
+    * @param loc2   the location where the predicate is used with the second arity.
+    * @param loc    the location where the unification error occurred.
+    */
+  case class MismatchedPredicateArity(pred: Name.Pred, arity1: Int, arity2: Int, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6572
+
+    def summary: String = s"Mismatched predicate arity: '${pred.name}/$arity1' and '${pred.name}/$arity2'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched predicate arity: '${cyan(pred.name)}/${red(arity1.toString)}' and '${cyan(pred.name)}/${red(arity2.toString)}'.
+         |
+         |${highlight(loc1, s"here '${pred.name}' has arity $arity1.", fmt)}
+         |
+         |${highlight(loc2, s"here '${pred.name}' has arity $arity2.", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Mismatched Predicate Denotation.
+    *
+    * @param pred the predicate label.
+    * @param den1 the first denotation.
+    * @param den2 the second denotation.
+    * @param loc1 the location where the predicate is used with the first denotation.
+    * @param loc2 the location where the predicate is used with the second denotation.
+    * @param loc  the location where the unification error occurred.
+    */
+  case class MismatchedPredicateDenotation(pred: Name.Pred, den1: Denotation, den2: Denotation, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6683
+
+    def summary: String = s"Mismatched predicate denotation for '${pred.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      def pretty(den: Denotation): String = den match {
+        case Denotation.Relational => "relation"
+        case Denotation.Latticenal => "lattice"
+      }
+      s""">> Mismatched predicate denotation for '${cyan(pred.name)}'.
+         |
+         |${highlight(loc1, s"here '${pred.name}' is a ${magenta(pretty(den1))}.", fmt)}
+         |
+         |${highlight(loc2, s"here '${pred.name}' is a ${magenta(pretty(den2))}.", fmt)}
          |""".stripMargin
     }
   }
@@ -361,16 +557,20 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv))}' and '${formatType(fullType2, Some(renv))}'."
+    def code: ErrorCode = ErrorCode.E6794
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(fullType1), SymbolSet.symbolsOf(fullType2))
+
+    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb)}' and '${formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv), minimizeEffs = true, amb = amb))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true, amb = amb))}'.
          |
-         |${code(loc, "mismatched types.")}
+         |${highlight(loc, "mismatched types.", fmt)}
          |
-         |Type One: ${formatType(fullType1, Some(renv))}
-         |Type Two: ${formatType(fullType2, Some(renv))}
+         |Type One: ${cyan(formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb))}
          |""".stripMargin
     }
   }
@@ -384,14 +584,21 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MissingInstance(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"No instance of the '$trt' class for the type '${formatType(tpe, Some(renv))}'."
+    def code: ErrorCode = ErrorCode.E6805
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> No instance of the '${cyan(trt.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
+    def summary: String = s"Missing instance: '${trt.name}' for type '${formatType(tpe, Some(renv))}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Missing instance: '${cyan(trt.name)}' for type '${red(formatType(tpe, Some(renv)))}'.
          |
-         |${code(loc, s"missing instance")}
+         |${highlight(loc, "missing instance", fmt)}
          |
+         |${underline("Explanation:")} The type '${formatType(tpe, Some(renv))}' does not have an
+         |instance of the '${trt.name}' trait. To fix this, either:
+         |
+         |  (a) Define an instance of '${trt.name}' for '${formatType(tpe, Some(renv))}', or
+         |  (b) Use 'with' to derive an instance, if the trait supports derivation.
          |""".stripMargin
     }
   }
@@ -399,22 +606,23 @@ object TypeError {
   /**
     * Missing trait instance for a function type.
     *
-    * @param trt  the class of the instance.
+    * @param trt  the trait of the instance.
     * @param tpe  the type of the instance.
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
   case class MissingInstanceArrow(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"No instance of the '$trt' class for the function type '${formatType(tpe, Some(renv))}'."
+    def code: ErrorCode = ErrorCode.E6916
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> No instance of the '${cyan(trt.toString)}' class for the ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
+    def summary: String = s"Missing instance: '${trt.name}' for function type '${formatType(tpe, Some(renv))}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Missing instance: '${cyan(trt.name)}' for ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
          |
-         |>> Did you forget to apply the function to all of its arguments?
+         |${highlight(loc, "missing instance", fmt)}
          |
-         |${code(loc, s"missing instance")}
-         |
+         |${underline("Hint:")} Did you forget to apply the function to all of its arguments?
          |""".stripMargin
     }
   }
@@ -427,19 +635,18 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MissingInstanceEq(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7027
+
     def summary: String = s"Equality is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Eq."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Equality is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Eq.
          |
-         |${code(loc, s"missing Eq instance")}
+         |${highlight(loc, s"missing Eq instance", fmt)}
          |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define equality on '${formatType(tpe, Some(renv))}', either:
+         |${underline("Explanation:")}
+         |To define equality on '${formatType(tpe, Some(renv))}', either:
          |
          |  (a) define an instance of Eq for '${formatType(tpe, Some(renv))}', or
          |  (b) use 'with' to derive an instance of Eq for '${formatType(tpe, Some(renv))}', for example:.
@@ -447,9 +654,8 @@ object TypeError {
          |  enum Color with Eq {
          |    case Red, Green, Blue
          |  }
-         |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -460,19 +666,18 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MissingInstanceOrder(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7138
+
     def summary: String = s"Order is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Order."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Order is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Order.
          |
-         |${code(loc, s"missing Order instance")}
+         |${highlight(loc, s"missing Order instance", fmt)}
          |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define an order on '${formatType(tpe, Some(renv))}', either:
+         |${underline("Explanation:")}
+         |To define an order on '${formatType(tpe, Some(renv))}', either:
          |
          |  (a) define an instance of Order for '${formatType(tpe, Some(renv))}', or
          |  (b) use 'with' to derive an instance of Order for '${formatType(tpe, Some(renv))}', for example:.
@@ -483,40 +688,7 @@ object TypeError {
          |
          |Note: To derive Order you must also derive Eq.
          |""".stripMargin
-    })
-  }
-
-  /**
-    * Missing `Sendable` instance.
-    *
-    * @param tpe  the type of the instance.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
-    */
-  case class MissingInstanceSendable(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Sendable is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of Sendable."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Sendable is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Sendable.
-         |
-         |${code(loc, s"missing Sendable instance")}
-         |
-         |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""To mark '${formatType(tpe, Some(renv))}' as sendable, either:
-         |
-         |  (a) define an instance of Sendable for '${formatType(tpe, Some(renv))}', or
-         |  (b) use 'with' to derive an instance of Sendable for '${formatType(tpe, Some(renv))}', for example:.
-         |
-         |  enum Color with Sendable {
-         |    case Red, Green, Blue
-         |  }
-         |
-         |""".stripMargin
-    })
   }
 
   /**
@@ -527,19 +699,18 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MissingInstanceToString(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7249
+
     def summary: String = s"ToString is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of ToString."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> ToString is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of ToString.
          |
-         |${code(loc, s"missing ToString instance")}
+         |${highlight(loc, s"missing ToString instance", fmt)}
          |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define a string representation of '${formatType(tpe, Some(renv))}', either:
+         |${underline("Explanation:")}
+         |To define a string representation of '${formatType(tpe, Some(renv))}', either:
          |
          |  (a) define an instance of ToString for '${formatType(tpe, Some(renv))}', or
          |  (b) use 'with' to derive an instance of ToString for '${formatType(tpe, Some(renv))}', for example:.
@@ -547,153 +718,86 @@ object TypeError {
          |  enum Color with ToString {
          |    case Red, Green, Blue
          |  }
-         |
          |""".stripMargin
-    })
+    }
   }
 
   /**
-    * Unexpected non-record type error.
+    * Missing trait constraint.
     *
-    * @param tpe  the unexpected non-record type.
+    * @param trt  the trait of the constraint.
+    * @param tpe  the type of the constraint.
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class NonRecordType(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unexpected non-record type '$tpe'."
+  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E8243
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unexpected non-record type: '${red(formatType(tpe, Some(renv)))}'.
+    def summary: String = s"Missing trait constraint: '$trt' for type '${formatType(tpe, Some(renv))}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Missing trait constraint: '${magenta(trt.toString)}' for type '${red(formatType(tpe, Some(renv)))}'.
          |
-         |${code(loc, "unexpected non-record type.")}
+         |${highlight(loc, "missing trait constraint", fmt)}
+         |""".stripMargin
+    }
+  }
+
+
+  /**
+    * Non-unit type used in statement position.
+    *
+    * @param tpe the actual type.
+    * @param loc the location where the error occurred.
+    */
+  case class NonUnitStatement(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E8354
+
+    def summary: String = s"Non-unit statement: has type '${formatType(tpe)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Non-unit statement: has type '${red(formatType(tpe))}'.
+         |
+         |${highlight(loc, "non-unit type", fmt)}
+         |
+         |${underline("Suggestion:")} Use 'discard' to ignore the result. Instead of:
+         |
+         |  expr;
+         |  ...
+         |
+         |use:
+         |
+         |  discard expr;
+         |  ...
          |""".stripMargin
     }
   }
 
   /**
-    * Unexpected non-schema type error.
+    * Static Java method not found type error.
     *
-    * @param tpe  the unexpected non-schema type.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
+    * @param clazz      the Java class expected to contain the static method.
+    * @param methodName the name of the method.
+    * @param tpes       the types of the arguments.
+    * @param renv       the rigidity environment.
+    * @param loc        the location where the error occurred.
     */
-  case class NonSchemaType(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unexpected non-schema type '$tpe'."
+  case class StaticMethodNotFound(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6358
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unexpected non-schema type: '${red(formatType(tpe, Some(renv)))}'.
-         |
-         |${code(loc, "unexpected non-schema type.")}
-         |
-         |""".stripMargin
-    }
-  }
+    def summary: String = s"Static method not found: '${methodName.name}' in class '${clazz.getName}'."
 
-  /**
-    * Occurs Check.
-    *
-    * @param baseVar   the base type variable.
-    * @param baseType  the base type.
-    * @param fullType1 the first full type.
-    * @param fullType2 the second full type.
-    * @param renv      the rigidity environment.
-    * @param loc       the location where the error occurred.
-    */
-  case class OccursCheck(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unable to unify the type variable '${red(formatType(baseVar, Some(renv)))}' with the type '${red(formatType(baseType, Some(renv)))}'.
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
          |
-         |>> The type variable occurs recursively within the type.
+         |${highlight(loc, "cannot find static method", fmt)}
          |
-         |${code(loc, "mismatched types.")}
-         |
-         |Type One: ${formatType(fullType1, Some(renv))}
-         |Type Two: ${formatType(fullType2, Some(renv))}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Over-applied Function.
-    *
-    * @param excessArgument the type of the excess argument.
-    * @param loc            the location where the error occurred.
-    */
-  case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Over-applied function. Excess argument of type: '${red(formatType(excessArgument))}'.
-         |
-         |${code(loc, "over-applied function.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Unexpected type, but a checked type cast might work.
-    *
-    * @param expected the expected type.
-    * @param inferred the inferred type.
-    * @param renv     the rigidity environment.
-    * @param loc      the location of the inferred type.
-    */
-  case class PossibleCheckedTypeCast(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
-         |
-         |${code(loc, "expression has unexpected type.")}
-         |
-         |'${formatType(expected, Some(renv))}' appears to be assignable from '${formatType(inferred, Some(renv))}'.
-         |Consider using 'checked_cast'?
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some(
-      s"""Flix does not support sub-typing nor sub-effecting.
-         |
-         |Nevertheless, 'checked_cast' is way to use sub-typing in a safe manner, for example:
-         |
-         |    let s = "Hello World";
-         |    let o: ##java.lang.Object = checked_cast(s);
-         |""".stripMargin
-    )
-  }
-
-  /**
-    * An error indicating that a region variable escapes its scope.
-    *
-    * @param rvar the region variable.
-    * @param tpe  the type wherein the region variable escapes.
-    * @param loc  the location where the error occurred.
-    */
-  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
-    def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> The region variable '${red(formatType(rvar))}' escapes its scope.
-         |
-         |${code(loc, "region variable escapes.")}
-         |
-         |The escaping expression has type:
-         |
-         |  ${red(formatType(tpe))}
-         |
-         |which contains the region variable.
-         |
-         |The region variable was declared here:
-         |
-         |${code(rvar.loc, "region variable declared here.")}
+         |${underline("Explanation:")} No static Java method matches the given name and argument types.
+         |Ensure that the argument types match exactly; Flix does not perform
+         |automatic boxing or unboxing of primitive types.
          |""".stripMargin
     }
   }
@@ -703,17 +807,18 @@ object TypeError {
     *
     * @param loc the location where the error occurred.
     */
-  case class TooComplex(loc: SourceLocation) extends TypeError {
-    def summary: String = s"Type inference too complex."
+  case class TooComplex(msg: String, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7352
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> ${red("Type inference failed due to too complex unification.")}'.
+    def summary: String = s"Type inference too complex: $msg"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Type inference too complex: ${red(msg)}.
          |
-         |Try to break your function into smaller functions.
+         |${highlight(loc, "complex type inference", fmt)}
          |
-         |${code(loc, "too complex constraints")}
-         |
+         |${underline("Suggestion:")} Break your function into smaller functions.
          |""".stripMargin
     }
   }
@@ -728,64 +833,21 @@ object TypeError {
     * @param loc        the location where the error occurred.
     */
   case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Missing label '$label' of type '$labelType'."
+    def code: ErrorCode = ErrorCode.E7463
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Missing label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
+    def summary: String = s"Missing label: '${label.name}' of type '${formatType(labelType, Some(renv))}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Missing label: '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
          |
-         |${code(loc, "missing label.")}
+         |${highlight(loc, "missing label", fmt)}
          |
          |The record type:
          |
-         |  ${formatType(recordType, Some(renv))}
+         |  ${cyan(formatType(recordType, Some(renv)))}
          |
          |does not contain the label '${red(label.name)}' of type ${cyan(formatType(labelType, Some(renv)))}.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Undefined predicate error.
-    *
-    * @param pred       the missing predicate.
-    * @param predType   the type of the missing predicate.
-    * @param schemaType the schema type where the predicate is missing.
-    * @param renv       the rigidity environment.
-    * @param loc        the location where the error occurred.
-    */
-  case class UndefinedPred(pred: Name.Pred, predType: Type, schemaType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Missing predicate '${pred.name}' of type '$predType'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Missing predicate '${red(pred.name)}' of type '${cyan(formatType(predType, Some(renv)))}'.
-         |
-         |${code(loc, "missing predicate.")}
-         |
-         |The schema type:
-         |
-         |  ${formatType(schemaType, Some(renv))}
-         |
-         |does not contain the predicate '${red(pred.name)}' of type ${cyan(formatType(predType, Some(renv)))}.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Under-applied Function.
-    *
-    * @param missingArgument the type of the missing argument.
-    * @param loc             the location where the error occurred.
-    */
-  case class UnderApplied(missingArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Under-applied function. Missing argument of type: '${formatType(missingArgument)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Under-applied function. Missing argument of type: '${red(formatType(missingArgument))}'.
-         |
-         |${code(loc, "under-applied function.")}
          |""".stripMargin
     }
   }
@@ -800,38 +862,20 @@ object TypeError {
     * @param loc      the location where the error occurred.
     */
   case class UnexpectedArg(sym: Symbol, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'."
+    def code: ErrorCode = ErrorCode.E7685
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'.
-         |
-         |${code(loc, s"expected: '${cyan(formatType(expected, Some(renv)))}'")}
-         |
-         |The function '${magenta(sym.toString)}' expects its ${Grammar.ordinal(ith)} argument to be of type '${formatType(expected, Some(renv))}'.
-         |
-         |Expected: ${formatType(expected, Some(renv))}
-         |  Actual: ${formatType(actual, Some(renv))}
-         |""".stripMargin
-    }
-  }
+    def summary: String = s"Unexpected argument: expected '${formatType(expected, Some(renv))}', got '${formatType(actual, Some(renv))}'."
 
-  /**
-    * Unexpected Effect.
-    *
-    * @param expected the expected type.
-    * @param inferred the inferred type.
-    * @param renv     the rigidity environment.
-    * @param loc      the location of the inferred type.
-    */
-  case class UnexpectedEffect(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected argument: expected '${cyan(formatType(expected, Some(renv)))}', got '${red(formatType(actual, Some(renv)))}'.
          |
-         |${code(loc, "expression has unexpected type.")}
+         |${highlight(loc, "unexpected argument type", fmt)}
+         |
+         |The function '${magenta(sym.toString)}' expects its ${Grammar.ordinal(ith)} argument to be of type '${cyan(formatType(expected, Some(renv)))}'.
+         |
+         |Expected: ${cyan(formatType(expected, Some(renv)))}
+         |  Actual: ${red(formatType(actual, Some(renv)))}
          |""".stripMargin
     }
   }
@@ -845,58 +889,126 @@ object TypeError {
     * @param loc      the location of the inferred type.
     */
   case class UnexpectedType(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
+    def code: ErrorCode = ErrorCode.E7796
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(expected), SymbolSet.symbolsOf(inferred))
+
+    def summary: String = s"Unexpected type: expected '${formatType(expected, Some(renv), amb = amb)}', found '${formatType(inferred, Some(renv), amb = amb)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected type: expected '${cyan(formatType(expected, Some(renv), amb = amb))}', found '${red(formatType(inferred, Some(renv), amb = amb))}'.
          |
-         |${code(loc, "expression has unexpected type.")}
+         |${highlight(loc, "unexpected type", fmt)}
          |""".stripMargin
     }
   }
 
   /**
-    * Unsupported equality error.
-    *
-    * @param econstr the unsupported equality constraint.
-    * @param loc     the location where the error occurred.
+    * Unresolved constructor type error.
+    * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
     */
-  case class UnsupportedEquality(econstr: BroadEqualityConstraint, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unsupported type equality: ${formatEqualityConstraint(econstr)}"
+  case class UnresolvedConstructor(loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7807
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unsupported type equality: ${formatEqualityConstraint(econstr)}
-         |
-         |${code(loc, "unsupported type equality.")}
-         |""".stripMargin
-    }
+    def summary: String = s"Unresolved constructor"
 
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Tip: Add an equality constraint to the function."
-    })
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = s"Unresolved constructor"
   }
 
   /**
-    * Missing trait constraint.
-    *
-    * @param trt  the trait of the constraint.
-    * @param tpe  the type of the constraint.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
+    * Unresolved field type error.
+    * This is a dummy error used in Java field type reconstruction for GetField.
     */
-  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
-    def summary: String = s"No constraint of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'"
+  case class UnresolvedField(loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7918
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> No constraint of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
+    def summary: String = s"Unresolved field"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = s"Unresolved field"
+  }
+
+  /**
+    * Unresolved method type error.
+    * This is a dummy error used in Java method type reconstruction for InvokeMethod.
+    */
+  case class UnresolvedMethod(loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E8029
+
+    def summary: String = s"Unresolved method"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = s"Unresolved method"
+  }
+
+  /**
+    * Unresolved method type error.
+    * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod.
+    */
+  case class UnresolvedStaticMethod(loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E8132
+
+    def summary: String = s"Unresolved static method"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = s"Unresolved static method"
+  }
+
+  /**
+    * An error raised when an effect declared in a function signature is unused.
+    *
+    * @param unusedEff the symbol of the unused effect in the function signature
+    * @param loc    the location of the unused effect in the function signature.
+    */
+  case class UnusedEffectInSignature(unusedEff: EffSymOrRigidVar, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6217
+
+    def summary: String = s"Unused effect '${unusedEff.name}'"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""${highlight(loc, s"Unused effect: '${magenta(unusedEff.name)}'", fmt)}
          |
-         |${code(loc, s"missing constraint")}
-         |
+         |${underline("Explanation:")} To fix this, either remove '${(magenta(unusedEff.name))}' from the signature
+         |or use the effect in the function body
          |""".stripMargin
     }
+  }
+  /**
+    * Returns the constructors of the given class sorted by parameter count.
+    */
+  private def getConstructorsByArgs(clazz: Class[?]): List[java.lang.reflect.Constructor[?]] = {
+    clazz.getConstructors.sortBy(_.getParameterTypes.length).toList
+  }
+
+  /**
+    * Returns the fields of the given class sorted by name.
+    */
+  private def getFieldsByName(clazz: Class[?]): List[java.lang.reflect.Field] = {
+    clazz.getFields.sortBy(_.getName).toList
+  }
+
+  /**
+    * Returns a formatted string representation of a Java constructor.
+    */
+  private def formatConstructor(clazz: Class[?], c: java.lang.reflect.Constructor[?]): String = {
+    val params = c.getParameterTypes.map(formatJavaType).mkString(", ")
+    s"${clazz.getSimpleName}($params)"
+  }
+
+  /**
+    * Returns a formatted string representation of a Java field.
+    */
+  private def formatField(f: java.lang.reflect.Field): String = {
+    s"${f.getName}: ${formatJavaType(f.getType)}"
+  }
+
+  /**
+    * Returns the Flix-style string representation of a Java type.
+    */
+  private def formatJavaType(tpe: Class[?]): String = {
+    if (tpe.isPrimitive || tpe.isArray)
+      Type.getFlixType(tpe).toString
+    else
+      tpe.getName
   }
 
 }

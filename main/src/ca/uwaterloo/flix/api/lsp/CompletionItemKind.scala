@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
+
 /**
   * Represents a `CompletionItemKind` in LSP.
   */
@@ -45,6 +47,34 @@ sealed trait CompletionItemKind {
     case CompletionItemKind.Event => 23
     case CompletionItemKind.Operator => 24
     case CompletionItemKind.TypeParameter => 25
+  }
+
+  def toLsp4j : lsp4j.CompletionItemKind = this match {
+    case CompletionItemKind.Text => lsp4j.CompletionItemKind.Text
+    case CompletionItemKind.Method => lsp4j.CompletionItemKind.Method
+    case CompletionItemKind.Function => lsp4j.CompletionItemKind.Function
+    case CompletionItemKind.Constructor => lsp4j.CompletionItemKind.Constructor
+    case CompletionItemKind.Field => lsp4j.CompletionItemKind.Field
+    case CompletionItemKind.Variable => lsp4j.CompletionItemKind.Variable
+    case CompletionItemKind.Class => lsp4j.CompletionItemKind.Class
+    case CompletionItemKind.Interface => lsp4j.CompletionItemKind.Interface
+    case CompletionItemKind.Module => lsp4j.CompletionItemKind.Module
+    case CompletionItemKind.Property => lsp4j.CompletionItemKind.Property
+    case CompletionItemKind.Unit => lsp4j.CompletionItemKind.Unit
+    case CompletionItemKind.Value => lsp4j.CompletionItemKind.Value
+    case CompletionItemKind.Enum => lsp4j.CompletionItemKind.Enum
+    case CompletionItemKind.Keyword => lsp4j.CompletionItemKind.Keyword
+    case CompletionItemKind.Snippet => lsp4j.CompletionItemKind.Snippet
+    case CompletionItemKind.Color => lsp4j.CompletionItemKind.Color
+    case CompletionItemKind.File => lsp4j.CompletionItemKind.File
+    case CompletionItemKind.Reference => lsp4j.CompletionItemKind.Reference
+    case CompletionItemKind.Folder => lsp4j.CompletionItemKind.Folder
+    case CompletionItemKind.EnumMember => lsp4j.CompletionItemKind.EnumMember
+    case CompletionItemKind.Constant => lsp4j.CompletionItemKind.Constant
+    case CompletionItemKind.Struct => lsp4j.CompletionItemKind.Struct
+    case CompletionItemKind.Event => lsp4j.CompletionItemKind.Event
+    case CompletionItemKind.Operator => lsp4j.CompletionItemKind.Operator
+    case CompletionItemKind.TypeParameter => lsp4j.CompletionItemKind.TypeParameter
   }
 }
 

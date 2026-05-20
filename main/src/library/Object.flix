@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-mod Object {
+pub mod Object {
+
+    import java.util.Objects
+    import java.lang.Object
 
     ///
     /// Returns `true` if the given value `x` is `null`.
     ///
+    @Inline
     pub def isNull(x: a): Bool =
-        typematch x {
-            case _: Bool => false
-            case _: Char => false
-            case _: Float32 => false
-            case _: Float64 => false
-            case _: Int8 => false
-            case _: Int16 => false
-            case _: Int32 => false
-            case _: Int64 => false
-            case _: _ =>
-                import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
-                isNull(unchecked_cast(x as ##java.lang.Object))
+        match Reflect.reflectValue(x) {
+            case Reflect.JvmValue.JvmObject(obj) => Objects.isNull(obj)
+            case _                               => false
         }
 
     ///

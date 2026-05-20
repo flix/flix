@@ -1,121 +1,123 @@
 mod Test.Handler.OneShot.String {
 
+    use Assert.{assertEq, assertTrue};
+
     eff Ask {
-        pub def ask(x: String): String
+        def ask(x: String): String
     }
 
     @Test
-    def testLinear01(): Bool =
-        def f1() = do Ask.ask("a");
-        let result = try {
+    def testLinear01(): Unit \ Assert =
+        def f1() = Ask.ask("a");
+        let result = run {
             f1()
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
     @Test
-    def testLinear02(): Bool =
-        def f1() = do Ask.ask("a");
+    def testLinear02(): Unit \ Assert =
+        def f1() = Ask.ask("a");
         def f2() = f1();
-        let result = try {
+        let result = run {
             f2()
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
     @Test
-    def testLinear03(): Bool =
-        def f1() = do Ask.ask("a");
+    def testLinear03(): Unit \ Assert =
+        def f1() = Ask.ask("a");
         def f2() = f1();
         def f3() = f2();
-        let result = try {
+        let result = run {
             f3()
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
     @Test
-    def testRecursiveLetRec01(): Bool =
-        def f() = do Ask.ask("a");
+    def testRecursiveLetRec01(): Unit \ Assert =
+        def f() = Ask.ask("a");
         def r(x) = if (x == 0) f() else r(x - 1);
-        let result = try {
+        let result = run {
             r(0)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
     @Test
-    def testRecursiveLetRec02(): Bool =
-        def f() = do Ask.ask("a");
+    def testRecursiveLetRec02(): Unit \ Assert =
+        def f() = Ask.ask("a");
         def r(x) = if (x == 0) f() else r(x - 1);
-        let result = try {
+        let result = run {
             r(1)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
     @Test
-    def testRecursiveLetRec03(): Bool =
-        def f1() = do Ask.ask("a");
+    def testRecursiveLetRec03(): Unit \ Assert =
+        def f1() = Ask.ask("a");
         def r(x) = if (x == 0) f1() else r(x - 1);
-        let result = try {
+        let result = run {
             r(10)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
     @Test
-    def testMutualRecursive01(): Bool =
-        let result = try {
+    def testMutualRecursive01(): Unit \ Assert =
+        let result = run {
             mutual1(0)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
     @Test
-    def testMutualRecursive02(): Bool =
-        let result = try {
+    def testMutualRecursive02(): Unit \ Assert =
+        let result = run {
             mutual1(1)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
     @Test
-    def testMutualRecursive03(): Bool =
-        let result = try {
+    def testMutualRecursive03(): Unit \ Assert =
+        let result = run {
             mutual1(2)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
     @Test
-    def testMutualRecursive04(): Bool =
-        let result = try {
+    def testMutualRecursive04(): Unit \ Assert =
+        let result = run {
             mutual1(3)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
     @Test
-    def testMutualRecursive05(): Bool =
-        let result = try {
+    def testMutualRecursive05(): Unit \ Assert =
+        let result = run {
             mutual1(10)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = k(next(x))
         };
-        Assert.eq("b", result)
+        assertEq(expected = "b", result)
 
-    def f(): String \ Ask = do Ask.ask("a")
+    def f(): String \ Ask = Ask.ask("a")
 
     def mutual1(x: Int32): String \ Ask =
         if (x == 0) f() else mutual2(x - 1)

@@ -1,25 +1,10 @@
-/*
- * Copyright 2021 Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestGetOpt {
 
     use GetOpt.{OptionDescr}
     use GetOpt.ArgDescr.{NoArg, ReqArg, OptArg}
     use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder}
     use GetOpt.{getOpt}
+    use Assert.{assertEq, assertTrue, fail}
 
     // Preliminary code to define options...
 
@@ -63,342 +48,515 @@ mod TestGetOpt {
         ::  {optionIds = 'h':: Nil,         optionNames = "height" :: Nil,              argDescriptor = ReqArg(height, "HEIGHT"),   explanation = "image HEIGHT" }
         :: Nil
 
-    def assertSuccessWith(x: Validation[e, a], test: a -> Bool): Bool  = match x {
-        case Validation.Success(x1) => test(x1)
-        case Validation.Failure(_) => false
-    }
-
-    def assertFailureWith(x: Validation[e, a], test: Nec[e] -> Bool): Bool  = match x {
-        case Validation.Success(_) => false
-        case Validation.Failure(es) => test(es)
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // No command line arguments                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testNoArgs01(): Bool  =
+    @Test
+    def testNoArgs01(): Unit \ Assert =
         let args = Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            x#options == Nil and x#nonOptions == Nil
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // Non-options                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testNonOptions01(): Bool  =
+    @Test
+    def testNonOptions01(): Unit \ Assert =
         let args = "non_option1" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            x#options == Nil and x#nonOptions == "non_option1" :: Nil
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Nil, x#options);
+                assertEq(expected = "non_option1" :: Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testNonOptions02(): Bool  =
+    @Test
+    def testNonOptions02(): Unit \ Assert =
         let args = "non_option1" :: "non_option2" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            x#options == Nil and x#nonOptions == "non_option1" :: "non_option2" :: Nil
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Nil, x#options);
+                assertEq(expected = "non_option1" :: "non_option2" :: Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // Single char options                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testCharArgs01(): Bool  =
+    @Test
+    def testCharArgs01(): Unit \ Assert =
         let args = "-X" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testCharArgs02(): Bool  =
+    @Test
+    def testCharArgs02(): Unit \ Assert =
         let args = "-Xc" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(None) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testCharArgs03(): Bool  =
+    @Test
+    def testCharArgs03(): Unit \ Assert =
         let args = "-XcBlue" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testCharArgs04(): Bool  =
+    @Test
+    def testCharArgs04(): Unit \ Assert =
         let args = "-X" :: "-c" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(None) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testCharArgs05(): Bool  =
+    @Test
+    def testCharArgs05(): Unit \ Assert =
         let args = "-X" :: "-cBlue" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testCharArgs06(): Bool  =
+    @Test
+    def testCharArgs06(): Unit \ Assert =
         let args = "-X" :: "-cBlue" :: "non_option1" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == "non_option1" :: Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil, x#options);
+                assertEq(expected = "non_option1" :: Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testCharArgs07(): Bool  =
+    @Test
+    def testCharArgs07(): Unit \ Assert =
         let args = "-X" :: "-cBlue" :: "-w1024" :: "-h768" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testCharArgs08(): Bool  =
+    @Test
+    def testCharArgs08(): Unit \ Assert =
         let args = "-X" :: "-cBlue" :: "-w1024" :: "-h768" :: "non_option1" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x#nonOptions == "non_option1" :: Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil, x#options);
+                assertEq(expected = "non_option1" :: Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testCharArgs09(): Bool  =
+    @Test
+    def testCharArgs09(): Unit \ Assert =
         // "-m" not defined
         let args = "-m" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
-    @test
-    def testCharArgs10(): Bool  =
+    @Test
+    def testCharArgs10(): Unit \ Assert =
         // "-m" not defined
         let args = "-Xm" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
-    @test
-    def testCharArgs11(): Bool  =
+    @Test
+    def testCharArgs11(): Unit \ Assert =
         // "-m" not defined
         let args = "-X" :: "-m" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // String / name options                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testStringArgs01(): Bool  =
+    @Test
+    def testStringArgs01(): Unit \ Assert =
         let args = "--hires" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testStringArgs02(): Bool  =
+    @Test
+    def testStringArgs02(): Unit \ Assert =
         let args = "--hires" :: "--colour" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(None) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testStringArgs03(): Bool  =
+    @Test
+    def testStringArgs03(): Unit \ Assert =
         let args = "--hires" :: "--colour=Blue" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testStringArgs04(): Bool  =
+    @Test
+    def testStringArgs04(): Unit \ Assert =
         // Alternative spelling
         let args = "--hires" :: "--color" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(None) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testStringArgs05(): Bool  =
+    @Test
+    def testStringArgs05(): Unit \ Assert =
         // Alternative spelling
         let args = "--hires" :: "--color=Blue" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testStringArgs06(): Bool  =
+    @Test
+    def testStringArgs06(): Unit \ Assert =
         let args = "--hires" :: "--colour=Blue" :: "non_option1" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == "non_option1" :: Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil, x#options);
+                assertEq(expected = "non_option1" :: Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testStringArgs07(): Bool  =
+    @Test
+    def testStringArgs07(): Unit \ Assert =
         let args = "--hires" :: "--colour=Blue" :: "--width=1024" :: "--height=768" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testStringArgs08(): Bool  =
+    @Test
+    def testStringArgs08(): Unit \ Assert =
         let args = "--hires" :: "--colour=Blue" :: "--width=1024" :: "--height=768" :: "non_option1" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x#nonOptions == "non_option1" :: Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil, x#options);
+                assertEq(expected = "non_option1" :: Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testStringArgs09(): Bool  =
+    @Test
+    def testStringArgs09(): Unit \ Assert =
         // "--multiple" not defined
         let args = "--multiple" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
-    @test
-    def testStringArgs10(): Bool  =
+    @Test
+    def testStringArgs10(): Unit \ Assert =
         // "--multiple" not defined
         let args = "--hires" :: "--multiple" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
-    @test
-    def testStringArgs11(): Bool  =
+    @Test
+    def testStringArgs11(): Unit \ Assert =
         // "--multiple" not defined
         let args = "--hires" :: "--multiple" :: "test_option1" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // Mixed short and name options                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testMixedArgs01(): Bool  =
+    @Test
+    def testMixedArgs01(): Unit \ Assert =
         let args = "--hires" :: "-c" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(None) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testMixedArgs02(): Bool  =
+    @Test
+    def testMixedArgs02(): Unit \ Assert =
         let args = "-X" :: "--colour" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(None) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testMixedArgs03(): Bool  =
+    @Test
+    def testMixedArgs03(): Unit \ Assert =
         let args = "--hires" :: "-cBlue" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testMixedArgs04(): Bool  =
+    @Test
+    def testMixedArgs04(): Unit \ Assert =
         // Alternative spelling
         let args = "-X" :: "--color" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(None) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testMixedArgs05(): Bool  =
+    @Test
+    def testMixedArgs05(): Unit \ Assert =
         // Alternative spelling
         let args = "-X" :: "--color=Blue" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testMixedArgs06(): Bool  =
+    @Test
+    def testMixedArgs06(): Unit \ Assert =
         let args = "-X" :: "--colour=Blue" :: "non_option1" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == "non_option1" :: Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil, x#options);
+                assertEq(expected = "non_option1" :: Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testMixedArgs07(): Bool  =
+    @Test
+    def testMixedArgs07(): Unit \ Assert =
         let args = "-X" :: "--colour=Blue" :: "-w1024" :: "-h768" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testMixedArgs08(): Bool  =
+    @Test
+    def testMixedArgs08(): Unit \ Assert =
         let args = "-X" :: "-cBlue" :: "--width=1024" :: "--height=768" :: "non_option1" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x#nonOptions == "non_option1" :: Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil, x#options);
+                assertEq(expected = "non_option1" :: Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testMixedArgs09(): Bool  =
+    @Test
+    def testMixedArgs09(): Unit \ Assert =
         // "-m" not defined
         let args = "--hires" :: "-m" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
-    @test
-    def testMixedArgs10(): Bool  =
+    @Test
+    def testMixedArgs10(): Unit \ Assert =
         // "--multiple" not defined
         let args = "-X" :: "--multiple" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
-    @test
-    def testMixedArgs11(): Bool  =
+    @Test
+    def testMixedArgs11(): Unit \ Assert =
         // "--multiple" not defined
         let args = "-X" :: "--multiple" :: "test_option1" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // Prefix of long option                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testPrefixArgs01(): Bool  =
+    @Test
+    def testPrefixArgs01(): Unit \ Assert =
         // Fail: Could be "hires" or "height"
         let args = "--h=1000" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
-    @test
-    def testPrefixArgs02(): Bool  =
+    @Test
+    def testPrefixArgs02(): Unit \ Assert =
         // Success: Could be only be "hires"
         let args = "--hi" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testPrefixArgs03(): Bool  =
+    @Test
+    def testPrefixArgs03(): Unit \ Assert =
         // Success: Could be only be "height"
         let args = "--he=1200" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.Height(1200) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.Height(1200) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testPrefixArgs04(): Bool  =
+    @Test
+    def testPrefixArgs04(): Unit \ Assert =
         // Success: Could be only be "height"
         let args = "--hi" :: "--he=1200" :: "test_option1" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.HiRes :: Flag.Height(1200) :: Nil) and (x#nonOptions == "test_option1" :: Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.HiRes :: Flag.Height(1200) :: Nil, x#options);
+                assertEq(expected = "test_option1" :: Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // Decoding option args                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testDecodeArgs01(): Bool  =
+    @Test
+    def testDecodeArgs01(): Unit \ Assert =
         let args = "--width=1400" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.Width(1400) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.Width(1400) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testDecodeArgs02(): Bool  =
+    @Test
+    def testDecodeArgs02(): Unit \ Assert =
         let args = "--width=fourteen_thousand" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
-    @test
-    def testDecodeArgs03(): Bool  =
+    @Test
+    def testDecodeArgs03(): Unit \ Assert =
         let args = "--width=1400" :: "--height=1000" :: Nil;
-        getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x#options == Flag.Width(1400) :: Flag.Height(1000) :: Nil) and (x#nonOptions == Nil)
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(x) => {
+                assertEq(expected = Flag.Width(1400) :: Flag.Height(1000) :: Nil, x#options);
+                assertEq(expected = Nil, x#nonOptions)
+            }
+            case Validation.Failure(_) => fail("Expected success but got failure")
+        }
 
-    @test
-    def testDecodeArgs04(): Bool  =
+    @Test
+    def testDecodeArgs04(): Unit \ Assert =
         let args = "--width=fourteen_hundred" :: "--height=1000" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
-    @test
-    def testDecodeArgs05(): Bool  =
+    @Test
+    def testDecodeArgs05(): Unit \ Assert =
         let args = "--width=1400" :: "--height=one_thousand" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 1
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 1, Nec.length(es))
+        }
 
-    @test
-    def testDecodeArgs06(): Bool  =
+    @Test
+    def testDecodeArgs06(): Unit \ Assert =
         let args = "--width=fourteen_hundred" :: "--height=one_thousand" :: Nil;
-        getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nec.length(x) == 2
+        match getOpt(Permute, options(), args) {
+            case Validation.Success(_) => fail("Expected failure but got success")
+            case Validation.Failure(es) => assertEq(expected = 2, Nec.length(es))
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // Preprocess                                                              //
@@ -406,61 +564,61 @@ mod TestGetOpt {
 
     def squote(): String = "'"
 
-    @test
-    def preprocess01(): Bool  =
+    @Test
+    def preprocess01(): Unit \ Assert =
         let args = Nil;
-        GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
-            == Nil
+        let result = GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args);
+        assertEq(expected = Nil, result)
 
-    @test
-    def preprocess02(): Bool  =
+    @Test
+    def preprocess02(): Unit \ Assert =
         let args = String.split({regex = "\\s+"}, "--version");
-        GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
-            == "--version" :: Nil
+        let result = GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args);
+        assertEq(expected = "--version" :: Nil, result)
 
 
-    @test
-    def preprocess03(): Bool  =
+    @Test
+    def preprocess03(): Unit \ Assert =
         let args = String.split({regex = "\\s+"}, "--editor=vi");
-        GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
-            == "--editor=vi" :: Nil
+        let result = GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args);
+        assertEq(expected = "--editor=vi" :: Nil, result)
 
-    @test
-    def preprocess04(): Bool  =
+    @Test
+    def preprocess04(): Unit \ Assert =
         // Note - not quoted...
         let args = String.split({regex = "\\s+"}, "--editor=vs code");
-        GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
-            == "--editor=vs" :: "code" :: Nil
+        let result = GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args);
+        assertEq(expected = "--editor=vs" :: "code" :: Nil, result)
 
-    @test
-    def preprocess05(): Bool  =
+    @Test
+    def preprocess05(): Unit \ Assert =
         // Note - not quoted...
         let args = String.split({regex = "\\s+"}, "--editor='vs code'");
-        GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
-            == "--editor='vs code'" :: Nil
+        let result = GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args);
+        assertEq(expected = "--editor='vs code'" :: Nil, result)
 
-    @test
-    def preprocess06(): Bool  =
+    @Test
+    def preprocess06(): Unit \ Assert =
         let args = String.split({regex = "\\s+"}, "--editor='vs code'");
-        GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = true}, args)
-            == "--editor=vs code" :: Nil
+        let result = GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = true}, args);
+        assertEq(expected = "--editor=vs code" :: Nil, result)
 
-    @test
-    def preprocess07(): Bool  =
+    @Test
+    def preprocess07(): Unit \ Assert =
         let args = String.split({regex = "\\s+"}, "--version --editor='vs code'");
-        GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
-            == "--version" :: "--editor='vs code'" :: Nil
+        let result = GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args);
+        assertEq(expected = "--version" :: "--editor='vs code'" :: Nil, result)
 
-    @test
-    def preprocess08(): Bool  =
+    @Test
+    def preprocess08(): Unit \ Assert =
         let args = String.split({regex = "\\s+"}, "--version --editor='vs code' 'D:/my file1.txt'");
-        GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
-            == "--version" :: "--editor='vs code'" :: "'D:/my file1.txt'" :: Nil
+        let result = GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args);
+        assertEq(expected = "--version" :: "--editor='vs code'" :: "'D:/my file1.txt'" :: Nil, result)
 
-    @test
-    def preprocess09(): Bool  =
+    @Test
+    def preprocess09(): Unit \ Assert =
         let args = String.split({regex = "\\s+"}, "--version --editor='vs code' 'D:/my file1.txt'");
-        GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = true}, args)
-            == "--version" :: "--editor=vs code" :: "D:/my file1.txt" :: Nil
+        let result = GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = true}, args);
+        assertEq(expected = "--version" :: "--editor=vs code" :: "D:/my file1.txt" :: Nil, result)
 
 }

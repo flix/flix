@@ -15,95 +15,52 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
-sealed trait LexerError extends CompilationMessage with Recoverable {
-  val kind = "Lexer Error"
+sealed trait LexerError extends CompilationMessage {
+  val kind: CompilationMessageKind = CompilationMessageKind.LexerError
 }
 
 object LexerError {
 
   /**
-    * An error raised when block-comments are nested too deep.
+    * An error raised when a digit is expected in a number (e.g. `1.` or `1.2e`).
     *
-    * @param loc The location of the opening "\*".
+    * @param loc The location where a digit is expected.
     */
-  case class BlockCommentTooDeep(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Block-comment nested too deep."
+  case class ExpectedDigit(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E3736
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Block-comment nested too deep.
+    def summary: String = "Expected digit (0-9)."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected digit (0-9).
          |
-         |${code(loc, "This is nested too deep.")}
-         |
+         |${src(loc, "expected digit")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised when more than one decimal dot is found in a number.
-    * For instance `123.456.78f32`.
+    * An error raised when a hexadecimal digit is expected in a number (e.g. `0x` or `0xFF_`).
     *
-    * @param loc The location of the double dotted number literal.
+    * @param loc The location where a hexadecimal digit is expected.
     */
-  case class DoubleDottedNumber(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Number has two decimal dots."
+  case class ExpectedHexDigit(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E3849
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Number has two decimal dots.
+    def summary: String = "Expected hexadecimal digit (0-9, a-f, A-F)."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected hexadecimal digit (0-9, a-f, A-F).
          |
-         |${code(loc, "Second decimal dot is here.")}
-         |
+         |${src(loc, "expected hexadecimal digit")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised when more than one `e` (used for scientific notation) is found in a number.
-    *
-    * @param loc The location of the double e number literal.
-    */
-  case class DoubleEInNumber(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Number has two scientific notation indicators."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Number has two scientific notation indicators.
-         |
-         |${code(loc, "Second 'e' is here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised when a number contains a sequence of underscores.
-    *
-    * @param loc The location of the number literal.
-    */
-  case class DoubleUnderscoreInNumber(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Number has sequence of '_'"
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Number has sequence of '_'.
-         |
-         |${code(loc, "Ending here")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -112,239 +69,285 @@ object LexerError {
     *
     * @param loc The location of the '.'.
     */
-  case class FreeDot(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"'.' has leading whitespace."
+  case class FreeDot(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E3952
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> '.' has leading whitespace.
+    def summary: String = "Unexpected whitespace before '.'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected whitespace before '.'.
          |
-         |${code(loc, "here")}
-         |
+         |${src(loc, "unexpected whitespace")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised when a number ends on an underscore.
+    * An error raised when a hexadecimal number suffix is unrecognized.
     *
-    * @param loc The location of the number literal.
+    * @param loc The location of the start of the suffix.
     */
-  case class TrailingUnderscoreInNumber(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Number ends on a '_'."
+  case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4063
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Number ends on a '_'.
+    def summary: String = "Unexpected hexadecimal number suffix."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected hexadecimal number suffix.
          |
-         |${code(loc, "Here")}
+         |${src(loc, "unexpected suffix")}
          |
+         |${underline("Explanation:")} Hexadecimal literals require a valid type suffix.
+         |
+         |  Type      Suffix    Example
+         |  Int8      i8        let x: Int8 = 0xFFi8
+         |  Int16     i16       let x: Int16 = 0xFFi16
+         |  Int32     i32       let x: Int32 = 0xFFi32
+         |  Int64     i64       let x: Int64 = 0xFFi64
+         |  BigInt    ii        let x: BigInt = 0xFFii
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised when the digits of a hex literal starts with an '_'
+    * An error raised when a number suffix is unrecognized.
     *
-    * @param loc The location of the number literal.
+    * @param loc The location of the start of the suffix.
     */
-  case class HexLiteralStartsOnUnderscore(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Hex literal starts on a '_'."
+  case class IncorrectNumberSuffix(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4176
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Hex literal starts on a '_'.
+    def summary: String = "Unexpected number suffix."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected number suffix.
          |
-         |${code(loc, "Here")}
+         |${src(loc, "unexpected suffix")}
          |
+         |${underline("Explanation:")} Numeric literals require a valid type suffix.
+         |
+         |  Type        Suffix    Example
+         |  Int8        i8        let x: Int8 = 123i8
+         |  Int16       i16       let x: Int16 = 123i16
+         |  Int32       i32       let x: Int32 = 123i32
+         |  Int64       i64       let x: Int64 = 123i64
+         |  BigInt      ii        let x: BigInt = 123ii
+         |  Float32     f32       let x: Float32 = 1.0f32
+         |  Float64     f64       let x: Float64 = 1.0f64
+         |  BigDecimal  ff        let x: BigDecimal = 1.0ff
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised when block-comments are nested too deep.
+    * An error raised when an integer suffix is put on a decimal number.
     *
-    * @param loc The location of the opening "${".
+    * @param loc The location of the start of the suffix.
     */
-  case class StringInterpolationTooDeep(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"String interpolation nested too deep."
+  case class IntegerSuffixOnFloat(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4289
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> String interpolation nested too deep.
+    def summary: String = "Unexpected integer suffix on decimal number."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected integer suffix on decimal number.
          |
-         |${code(loc, "This is nested too deep.")}
+         |${src(loc, "integer suffix not allowed here")}
          |
+         |${underline("Explanation:")} Decimal numbers require a float suffix.
+         |
+         |  Type        Suffix    Example
+         |  Float32     f32       let x: Float32 = 1.0f32
+         |  Float64     f64       let x: Float64 = 1.0f64
+         |  BigDecimal  ff        let x: BigDecimal = 1.0ff
          |""".stripMargin
     }
+  }
 
-    override def explain(formatter: Formatter): Option[String] = None
+  /**
+    * An error raised when a hexadecimal number is malformed.
+    *
+    * @param loc The location of `found`.
+    */
+  case class MalformedHexNumber(found: Char, loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4392
+
+    def summary: String = s"Malformed hexadecimal number: unexpected '${showChar(found)}'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Malformed hexadecimal number: unexpected '${red(showChar(found))}'.
+         |
+         |${src(loc, "unexpected character")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a number is malformed.
+    *
+    * @param loc The location of `found`.
+    */
+  case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4405
+
+    def summary: String = s"Malformed number: unexpected '${showChar(found)}'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Malformed number: unexpected '${red(showChar(found))}'.
+         |
+         |${src(loc, "unexpected character")}
+         |""".stripMargin
+    }
   }
 
   /**
     * An error raised when an unexpected character, such as €, is encountered.
     *
-    * @param s   the problematic character.
-    * @param loc the location of char.
+    * @param loc The location of `found`.
     */
-  case class UnexpectedChar(s: String, loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Unexpected character '$s'."
+  case class UnexpectedChar(found: Char, loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4518
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unexpected character '${red(s)}'.
+    def summary: String = s"Unexpected character '${showChar(found)}'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected character '${red(showChar(found))}'.
          |
-         |${code(loc, "Unexpected character.")}
-         |
+         |${src(loc, "unexpected character")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
     * An error raised when an unterminated block comment is encountered.
     *
-    * @param loc The location of the opening "/ *".
+    * @param loc The location of the block comment.
     */
-  case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Unterminated block-comment."
+  case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4629
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Missing '*/' in block-comment.
+    def summary: String = "Unterminated block comment."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unterminated block comment.
          |
-         |${code(loc, "Block-comment starts here.")}
-         |
+         |${src(loc, "missing closing '*/'")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
     * An error raised when an unterminated built-in function is encountered.
     *
-    * @param loc The location of the opening "$".
+    * @param loc The location of the built-in.
     */
-  case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Unterminated built-in."
+  case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4736
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Missing '$$' in built-in.
+    def summary: String = "Unterminated built-in."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unterminated built-in.
          |
-         |${code(loc, "Built-in starts here.")}
-         |
+         |${src(loc, "missing closing '%%'")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised when an unterminated char is encountered.
+    * An error raised when an unterminated character literal is encountered.
     *
-    * @param loc The location of the opening `'`.
+    * @param loc The location of the character literal.
     */
-  case class UnterminatedChar(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Unterminated char."
+  case class UnterminatedChar(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4843
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Missing `'` in char.
+    def summary: String = "Unterminated character literal."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unterminated character literal.
          |
-         |${code(loc, "Char starts here")}
-         |
+         |${src(loc, "missing closing `'`")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised when an unterminated infix function is encountered.
-    *
-    * @param loc The location of the opening '&#96;'.
-    */
-  case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Unterminated infix function."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Missing '`' in infix function.
-         |
-         |${code(loc, "Infix function starts here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
     * An error raised when an unterminated regex is encountered.
     *
-    * @param loc The location of the opening `"`.
+    * @param loc The location of the regex.
     */
-  case class UnterminatedRegex(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Unterminated regex."
+  case class UnterminatedRegex(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4956
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Missing `"` in regex.
+    def summary: String = "Unterminated regex literal."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unterminated regex literal.
          |
-         |${code(loc, "Regex starts here")}
-         |
+         |${src(loc, "missing closing `\"`")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
     * An error raised when an unterminated string is encountered.
     *
-    * @param loc The location of the opening `"`.
+    * @param loc The location of the string.
     */
-  case class UnterminatedString(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Unterminated string."
+  case class UnterminatedString(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E5067
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Missing '"' in string.
+    def summary: String = "Unterminated string literal."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unterminated string literal.
          |
-         |${code(loc, "String starts here.")}
-         |
+         |${src(loc, "missing closing `\"`")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised when an unterminated string is encountered.
+    * An error raised when an unterminated string interpolation is encountered.
     *
     * @param loc The location of the opening `{`.
     */
-  case class UnterminatedStringInterpolation(loc: SourceLocation) extends LexerError with Recoverable {
-    override def summary: String = s"Unterminated string interpolation."
+  case class UnterminatedStringInterpolation(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E5178
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Missing '}' in string interpolation.
+    def summary: String = "Unterminated string interpolation."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unterminated string interpolation.
          |
-         |${code(loc, "Interpolation starts here.")}
-         |
+         |${src(loc, "missing closing `}`")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
+
+  /** Returns an ASCII printable version of `c`. */
+  private def showChar(c: Char): String = {
+    c match {
+      case '\r' => "\\r"
+      case '\n' => "\\n"
+      case '\t' => "\\t"
+      case _ if 32 <= c.toInt && c.toInt <= 126 => c.toString
+      case _ => s"\\u${c.toHexString.toUpperCase}"
+    }
+  }
+
 }

@@ -23,7 +23,7 @@ import scala.collection.mutable
 
 object LocalResource {
 
-  val RootPath = "main"
+  private val RootPath = "main"
 
   private val cache = mutable.Map.empty[String, String]
 

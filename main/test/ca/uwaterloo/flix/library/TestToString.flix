@@ -1,370 +1,406 @@
-/*
- *  Copyright 2020 Matthew Lutze
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestToString {
 
-    use ToString.toString
+    use ToString.toString;
+    use Assert.assertEq;
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def unitToString01(): Bool = toString(()) == "()"
+    @Test
+    def unitToString01(): Unit \ Assert =
+        assertEq(expected = "()", toString(()))
 
     /////////////////////////////////////////////////////////////////////////////
     // Bool                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def boolToString01(): Bool = toString(false) == "false"
+    @Test
+    def boolToString01(): Unit \ Assert =
+        assertEq(expected = "false", toString(false))
 
-    @test
-    def boolToString02(): Bool = toString(true) == "true"
+    @Test
+    def boolToString02(): Unit \ Assert =
+        assertEq(expected = "true", toString(true))
 
     /////////////////////////////////////////////////////////////////////////////
     // Char                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def charToString01(): Bool = toString('a') == "a"
+    @Test
+    def charToString01(): Unit \ Assert =
+        assertEq(expected = "a", toString('a'))
 
-    @test
-    def charToString02(): Bool = toString('A') == "A"
+    @Test
+    def charToString02(): Unit \ Assert =
+        assertEq(expected = "A", toString('A'))
 
-    @test
-    def charToString03(): Bool = toString(' ') == " "
+    @Test
+    def charToString03(): Unit \ Assert =
+        assertEq(expected = " ", toString(' '))
 
-    @test
-    def charToString04(): Bool = toString('+') == "+"
+    @Test
+    def charToString04(): Unit \ Assert =
+        assertEq(expected = "+", toString('+'))
 
     /////////////////////////////////////////////////////////////////////////////
     // Float32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def float32ToString01(): Bool = toString(0.0f32) == "0.0"
+    @Test
+    def float32ToString01(): Unit \ Assert =
+        assertEq(expected = "0.0", toString(0.0f32))
 
-    @test
-    def float32ToString02(): Bool = toString(1.0f32) == "1.0"
+    @Test
+    def float32ToString02(): Unit \ Assert =
+        assertEq(expected = "1.0", toString(1.0f32))
 
-    @test
-    def float32ToString03(): Bool = toString(-1.0f32) == "-1.0"
+    @Test
+    def float32ToString03(): Unit \ Assert =
+        assertEq(expected = "-1.0", toString(-1.0f32))
 
-    @test
-    def float32ToString04(): Bool = toString(3.14f32) == "3.14"
+    @Test
+    def float32ToString04(): Unit \ Assert =
+        assertEq(expected = "3.14", toString(3.14f32))
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def float64ToString01(): Bool = toString(0.0f64) == "0.0"
+    @Test
+    def float64ToString01(): Unit \ Assert =
+        assertEq(expected = "0.0", toString(0.0f64))
 
-    @test
-    def float64ToString02(): Bool = toString(1.0f64) == "1.0"
+    @Test
+    def float64ToString02(): Unit \ Assert =
+        assertEq(expected = "1.0", toString(1.0f64))
 
-    @test
-    def float64ToString03(): Bool = toString(-1.0f64) == "-1.0"
+    @Test
+    def float64ToString03(): Unit \ Assert =
+        assertEq(expected = "-1.0", toString(-1.0f64))
 
-    @test
-    def float64ToString04(): Bool = toString(3.14f64) == "3.14"
+    @Test
+    def float64ToString04(): Unit \ Assert =
+        assertEq(expected = "3.14", toString(3.14f64))
 
     /////////////////////////////////////////////////////////////////////////////
     // BigDecimal                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bigDecimalToString01(): Bool = toString(0.0ff) == "0.0"
+    @Test
+    def bigDecimalToString01(): Unit \ Assert =
+        assertEq(expected = "0.0", toString(0.0ff))
 
-    @test
-    def bigDecimalToString02(): Bool = toString(1.0ff) == "1.0"
+    @Test
+    def bigDecimalToString02(): Unit \ Assert =
+        assertEq(expected = "1.0", toString(1.0ff))
 
-    @test
-    def bigDecimalToString03(): Bool = toString(-1.0ff) == "-1.0"
+    @Test
+    def bigDecimalToString03(): Unit \ Assert =
+        assertEq(expected = "-1.0", toString(-1.0ff))
 
-    @test
-    def bigDecimalToString04(): Bool = toString(3.14ff) == "3.14"
+    @Test
+    def bigDecimalToString04(): Unit \ Assert =
+        assertEq(expected = "3.14", toString(3.14ff))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int8ToString01(): Bool = toString(0i8) == "0"
+    @Test
+    def int8ToString01(): Unit \ Assert =
+        assertEq(expected = "0", toString(0i8))
 
-    @test
-    def int8ToString02(): Bool = toString(1i8) == "1"
+    @Test
+    def int8ToString02(): Unit \ Assert =
+        assertEq(expected = "1", toString(1i8))
 
-    @test
-    def int8ToString03(): Bool = toString(-128i8) == "-128"
+    @Test
+    def int8ToString03(): Unit \ Assert =
+        assertEq(expected = "-128", toString(-128i8))
 
-    @test
-    def int8ToString04(): Bool = toString(127i8) == "127"
+    @Test
+    def int8ToString04(): Unit \ Assert =
+        assertEq(expected = "127", toString(127i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int16ToString01(): Bool = toString(0i16) == "0"
+    @Test
+    def int16ToString01(): Unit \ Assert =
+        assertEq(expected = "0", toString(0i16))
 
-    @test
-    def int16ToString02(): Bool = toString(1i16) == "1"
+    @Test
+    def int16ToString02(): Unit \ Assert =
+        assertEq(expected = "1", toString(1i16))
 
-    @test
-    def int16ToString03(): Bool = toString(-32768i16) == "-32768"
+    @Test
+    def int16ToString03(): Unit \ Assert =
+        assertEq(expected = "-32768", toString(-32768i16))
 
-    @test
-    def int16ToString04(): Bool = toString(32767i16) == "32767"
+    @Test
+    def int16ToString04(): Unit \ Assert =
+        assertEq(expected = "32767", toString(32767i16))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int32ToString01(): Bool = toString(0) == "0"
+    @Test
+    def int32ToString01(): Unit \ Assert =
+        assertEq(expected = "0", toString(0))
 
-    @test
-    def int32ToString02(): Bool = toString(1) == "1"
+    @Test
+    def int32ToString02(): Unit \ Assert =
+        assertEq(expected = "1", toString(1))
 
-    @test
-    def int32ToString03(): Bool = toString(-2147483648) == "-2147483648"
+    @Test
+    def int32ToString03(): Unit \ Assert =
+        assertEq(expected = "-2147483648", toString(-2147483648))
 
-    @test
-    def int32ToString04(): Bool = toString(2147483647) == "2147483647"
+    @Test
+    def int32ToString04(): Unit \ Assert =
+        assertEq(expected = "2147483647", toString(2147483647))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int64ToString01(): Bool = toString(0i64) == "0"
+    @Test
+    def int64ToString01(): Unit \ Assert =
+        assertEq(expected = "0", toString(0i64))
 
-    @test
-    def int64ToString02(): Bool = toString(1i64) == "1"
+    @Test
+    def int64ToString02(): Unit \ Assert =
+        assertEq(expected = "1", toString(1i64))
 
-    @test
-    def int64ToString03(): Bool = toString(-9223372036854775808i64) == "-9223372036854775808"
+    @Test
+    def int64ToString03(): Unit \ Assert =
+        assertEq(expected = "-9223372036854775808", toString(-9223372036854775808i64))
 
-    @test
-    def int64ToString04(): Bool = toString(9223372036854775807i64) == "9223372036854775807"
+    @Test
+    def int64ToString04(): Unit \ Assert =
+        assertEq(expected = "9223372036854775807", toString(9223372036854775807i64))
 
     /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def stringToString01(): Bool = toString("") == ""
+    @Test
+    def stringToString01(): Unit \ Assert =
+        assertEq(expected = "", toString(""))
 
-    @test
-    def stringToString02(): Bool = toString("a") == "a"
+    @Test
+    def stringToString02(): Unit \ Assert =
+        assertEq(expected = "a", toString("a"))
 
-    @test
-    def stringToString03(): Bool = toString(".") == "."
+    @Test
+    def stringToString03(): Unit \ Assert =
+        assertEq(expected = ".", toString("."))
 
-    @test
-    def stringToString04(): Bool = toString(".#)!933") == ".#)!933"
+    @Test
+    def stringToString04(): Unit \ Assert =
+        assertEq(expected = ".#)!933", toString(".#)!933"))
 
     /////////////////////////////////////////////////////////////////////////////
     // BigInt                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bigIntToString01(): Bool = toString(0ii) == "0"
+    @Test
+    def bigIntToString01(): Unit \ Assert =
+        assertEq(expected = "0", toString(0ii))
 
-    @test
-    def bigIntToString02(): Bool = toString(1ii) == "1"
+    @Test
+    def bigIntToString02(): Unit \ Assert =
+        assertEq(expected = "1", toString(1ii))
 
-    @test
-    def bigIntToString03(): Bool = toString(-3498457932459234592873452983453245ii) == "-3498457932459234592873452983453245"
+    @Test
+    def bigIntToString03(): Unit \ Assert =
+        assertEq(expected = "-3498457932459234592873452983453245", toString(-3498457932459234592873452983453245ii))
 
-    @test
-    def bigIntToString04(): Bool = toString(3498457932459234592873452983453245ii) == "3498457932459234592873452983453245"
+    @Test
+    def bigIntToString04(): Unit \ Assert =
+        assertEq(expected = "3498457932459234592873452983453245", toString(3498457932459234592873452983453245ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple2                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple2ToString01(): Bool = toString((1, 1)) == "(1, 1)"
+    @Test
+    def tuple2ToString01(): Unit \ Assert =
+        assertEq(expected = "(1, 1)", toString((1, 1)))
 
-    @test
-    def tuple2ToString02(): Bool = toString((1, Some(2))) == "(1, Some(2))"
+    @Test
+    def tuple2ToString02(): Unit \ Assert =
+        assertEq(expected = "(1, Some(2))", toString((1, Some(2))))
 
-    @test
-    def tuple2ToString03(): Bool = toString((true, 1)) == "(true, 1)"
+    @Test
+    def tuple2ToString03(): Unit \ Assert =
+        assertEq(expected = "(true, 1)", toString((true, 1)))
 
-    @test
-    def tuple2ToString04(): Bool = toString(((1, 2), 91)) == "((1, 2), 91)"
+    @Test
+    def tuple2ToString04(): Unit \ Assert =
+        assertEq(expected = "((1, 2), 91)", toString(((1, 2), 91)))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple3                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple3ToString01(): Bool = toString((1, 1, 82)) == "(1, 1, 82)"
+    @Test
+    def tuple3ToString01(): Unit \ Assert =
+        assertEq(expected = "(1, 1, 82)", toString((1, 1, 82)))
 
-    @test
-    def tuple3ToString02(): Bool = toString((1, Some(2), 3)) == "(1, Some(2), 3)"
+    @Test
+    def tuple3ToString02(): Unit \ Assert =
+        assertEq(expected = "(1, Some(2), 3)", toString((1, Some(2), 3)))
 
-    @test
-    def tuple3ToString03(): Bool = toString((true, 1, false)) == "(true, 1, false)"
+    @Test
+    def tuple3ToString03(): Unit \ Assert =
+        assertEq(expected = "(true, 1, false)", toString((true, 1, false)))
 
-    @test
-    def tuple3ToString04(): Bool = toString(((1, 2), 91, true)) == "((1, 2), 91, true)"
+    @Test
+    def tuple3ToString04(): Unit \ Assert =
+        assertEq(expected = "((1, 2), 91, true)", toString(((1, 2), 91, true)))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple4                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple4ToString01(): Bool =
-        toString((1, 1, 2, 3)) == "(1, 1, 2, 3)"
+    @Test
+    def tuple4ToString01(): Unit \ Assert =
+        assertEq(expected = "(1, 1, 2, 3)", toString((1, 1, 2, 3)))
 
-    @test
-    def tuple4ToString02(): Bool =
-        toString((1, Some(2), true, false)) == "(1, Some(2), true, false)"
+    @Test
+    def tuple4ToString02(): Unit \ Assert =
+        assertEq(expected = "(1, Some(2), true, false)", toString((1, Some(2), true, false)))
 
-    @test
-    def tuple4ToString03(): Bool =
-        toString((true, 1, 97, 2)) == "(true, 1, 97, 2)"
+    @Test
+    def tuple4ToString03(): Unit \ Assert =
+        assertEq(expected = "(true, 1, 97, 2)", toString((true, 1, 97, 2)))
 
-    @test
-    def tuple4ToString04(): Bool =
-        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4)) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4)"
+    @Test
+    def tuple4ToString04(): Unit \ Assert =
+        assertEq(expected = "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4)", toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4)))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple5                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple5ToString01(): Bool =
-        toString((1, 1, 2, 3, 9)) == "(1, 1, 2, 3, 9)"
+    @Test
+    def tuple5ToString01(): Unit \ Assert =
+        assertEq(expected = "(1, 1, 2, 3, 9)", toString((1, 1, 2, 3, 9)))
 
-    @test
-    def tuple5ToString02(): Bool =
-        toString((1, Some(2), true, false, true)) == "(1, Some(2), true, false, true)"
+    @Test
+    def tuple5ToString02(): Unit \ Assert =
+        assertEq(expected = "(1, Some(2), true, false, true)", toString((1, Some(2), true, false, true)))
 
-    @test
-    def tuple5ToString03(): Bool =
-        toString((true, 1, 97, 2, 9)) == "(true, 1, 97, 2, 9)"
+    @Test
+    def tuple5ToString03(): Unit \ Assert =
+        assertEq(expected = "(true, 1, 97, 2, 9)", toString((true, 1, 97, 2, 9)))
 
-    @test
-    def tuple5ToString04(): Bool =
-        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5))"
+    @Test
+    def tuple5ToString04(): Unit \ Assert =
+        assertEq(expected = "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5))", toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5))))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple6                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple6ToString01(): Bool =
-        toString((1, 1, 2, 3, 9, 42)) == "(1, 1, 2, 3, 9, 42)"
+    @Test
+    def tuple6ToString01(): Unit \ Assert =
+        assertEq(expected = "(1, 1, 2, 3, 9, 42)", toString((1, 1, 2, 3, 9, 42)))
 
-    @test
-    def tuple6ToString02(): Bool =
-        toString((1, Some(2), true, false, true, 0)) == "(1, Some(2), true, false, true, 0)"
+    @Test
+    def tuple6ToString02(): Unit \ Assert =
+        assertEq(expected = "(1, Some(2), true, false, true, 0)", toString((1, Some(2), true, false, true, 0)))
 
-    @test
-    def tuple6ToString03(): Bool =
-        toString((true, 1, 97, 2, 9, false)) == "(true, 1, 97, 2, 9, false)"
+    @Test
+    def tuple6ToString03(): Unit \ Assert =
+        assertEq(expected = "(true, 1, 97, 2, 9, false)", toString((true, 1, 97, 2, 9, false)))
 
-    @test
-    def tuple6ToString04(): Bool =
-        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9))"
+    @Test
+    def tuple6ToString04(): Unit \ Assert =
+        assertEq(expected = "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9))", toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9))))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple7                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple7ToString01(): Bool =
-        toString((1, 1, 2, 3, 9, 42, 2)) == "(1, 1, 2, 3, 9, 42, 2)"
+    @Test
+    def tuple7ToString01(): Unit \ Assert =
+        assertEq(expected = "(1, 1, 2, 3, 9, 42, 2)", toString((1, 1, 2, 3, 9, 42, 2)))
 
-    @test
-    def tuple7ToString02(): Bool =
-        toString((1, Some(2), true, false, true, 0, false)) == "(1, Some(2), true, false, true, 0, false)"
+    @Test
+    def tuple7ToString02(): Unit \ Assert =
+        assertEq(expected = "(1, Some(2), true, false, true, 0, false)", toString((1, Some(2), true, false, true, 0, false)))
 
-    @test
-    def tuple7ToString03(): Bool =
-        toString((true, 1, 97, 2, 9, false, Some(42))) == "(true, 1, 97, 2, 9, false, Some(42))"
+    @Test
+    def tuple7ToString03(): Unit \ Assert =
+        assertEq(expected = "(true, 1, 97, 2, 9, false, Some(42))", toString((true, 1, 97, 2, 9, false, Some(42))))
 
-    @test
-    def tuple7ToString04(): Bool =
-        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1))"
+    @Test
+    def tuple7ToString04(): Unit \ Assert =
+        assertEq(expected = "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1))", toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1))))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple8                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple8ToString01(): Bool =
-        toString((1, 1, 2, 3, 9, 42, 2, 0)) == "(1, 1, 2, 3, 9, 42, 2, 0)"
+    @Test
+    def tuple8ToString01(): Unit \ Assert =
+        assertEq(expected = "(1, 1, 2, 3, 9, 42, 2, 0)", toString((1, 1, 2, 3, 9, 42, 2, 0)))
 
-    @test
-    def tuple8ToString02(): Bool =
-        toString((1, Some(2), true, false, true, 0, false, Some(true))) == "(1, Some(2), true, false, true, 0, false, Some(true))"
+    @Test
+    def tuple8ToString02(): Unit \ Assert =
+        assertEq(expected = "(1, Some(2), true, false, true, 0, false, Some(true))", toString((1, Some(2), true, false, true, 0, false, Some(true))))
 
-    @test
-    def tuple8ToString03(): Bool =
-        toString((true, 1, 97, 2, 9, false, Some(42), 1i64)) == "(true, 1, 97, 2, 9, false, Some(42), 1)"
+    @Test
+    def tuple8ToString03(): Unit \ Assert =
+        assertEq(expected = "(true, 1, 97, 2, 9, false, Some(42), 1)", toString((true, 1, 97, 2, 9, false, Some(42), 1i64)))
 
-    @test
-    def tuple8ToString04(): Bool =
-        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42))"
+    @Test
+    def tuple8ToString04(): Unit \ Assert =
+        assertEq(expected = "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42))", toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42))))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple9                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple9ToString01(): Bool =
-        toString((1, 1, 2, 3, 9, 42, 2, 0, 9)) == "(1, 1, 2, 3, 9, 42, 2, 0, 9)"
+    @Test
+    def tuple9ToString01(): Unit \ Assert =
+        assertEq(expected = "(1, 1, 2, 3, 9, 42, 2, 0, 9)", toString((1, 1, 2, 3, 9, 42, 2, 0, 9)))
 
-    @test
-    def tuple9ToString02(): Bool =
-        toString((1, Some(2), true, false, true, 0, false, Some(true), 1)) == "(1, Some(2), true, false, true, 0, false, Some(true), 1)"
+    @Test
+    def tuple9ToString02(): Unit \ Assert =
+        assertEq(expected = "(1, Some(2), true, false, true, 0, false, Some(true), 1)", toString((1, Some(2), true, false, true, 0, false, Some(true), 1)))
 
-    @test
-    def tuple9ToString03(): Bool =
-        toString((true, 1, 97, 2, 9, false, Some(42), 1i64, 432i32)) == "(true, 1, 97, 2, 9, false, Some(42), 1, 432)"
+    @Test
+    def tuple9ToString03(): Unit \ Assert =
+        assertEq(expected = "(true, 1, 97, 2, 9, false, Some(42), 1, 432)", toString((true, 1, 97, 2, 9, false, Some(42), 1i64, 432i32)))
 
-    @test
-    def tuple9ToString04(): Bool =
-        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false))"
+    @Test
+    def tuple9ToString04(): Unit \ Assert =
+        assertEq(expected = "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false))", toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false))))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple10                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple10ToString01(): Bool =
-        toString((1, 1, 2, 3, 9, 42, 2, 0, 9, 342)) == "(1, 1, 2, 3, 9, 42, 2, 0, 9, 342)"
+    @Test
+    def tuple10ToString01(): Unit \ Assert =
+        assertEq(expected = "(1, 1, 2, 3, 9, 42, 2, 0, 9, 342)", toString((1, 1, 2, 3, 9, 42, 2, 0, 9, 342)))
 
-    @test
-    def tuple10ToString02(): Bool =
-        toString((1, Some(2), true, false, true, 0, false, Some(true), 1, 1337)) == "(1, Some(2), true, false, true, 0, false, Some(true), 1, 1337)"
+    @Test
+    def tuple10ToString02(): Unit \ Assert =
+        assertEq(expected = "(1, Some(2), true, false, true, 0, false, Some(true), 1, 1337)", toString((1, Some(2), true, false, true, 0, false, Some(true), 1, 1337)))
 
-    @test
-    def tuple10ToString03(): Bool =
-        toString((true, 1, 97, 2, 9, false, Some(42), 1i64, 432i32, Some(false))) == "(true, 1, 97, 2, 9, false, Some(42), 1, 432, Some(false))"
+    @Test
+    def tuple10ToString03(): Unit \ Assert =
+        assertEq(expected = "(true, 1, 97, 2, 9, false, Some(42), 1, 432, Some(false))", toString((true, 1, 97, 2, 9, false, Some(42), 1i64, 432i32, Some(false))))
 
-    @test
-    def tuple10ToString04(): Bool =
-        toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false, true))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false, true))"
+    @Test
+    def tuple10ToString04(): Unit \ Assert =
+        assertEq(expected = "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false, true))", toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false, true))))
 
 }

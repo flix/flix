@@ -1,45 +1,43 @@
-/*
- * Copyright 2023 Jakob Schneider Villumsen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+mod Test.Exp.UncheckedTypeCast {
 
- mod Test.Exp.UncheckedTypeCast {
+    import java.lang.Integer
+    import java.lang.Object
+    import java.io.Serializable
+    import java.lang.StringBuilder
+    import java.lang.Error
 
-    @test
-    def testUncheckedTypeCast01(): ##java.lang.Object = unchecked_cast(null as ##java.lang.Object)
+    @CompileTest
+    def testUncheckedTypeCast01(): Object = unchecked_cast(null as Object)
 
-    @test
-    def testUncheckedTypeCast02(): ##java.lang.String = unchecked_cast(null as ##java.lang.String)
+    @CompileTest
+    def testUncheckedTypeCast02(): String = unchecked_cast(null as String)
 
-    @test
-    def testUncheckedTypeCast03(): ##java.lang.Integer = unchecked_cast(null as ##java.lang.Integer)
+    @CompileTest
+    def testUncheckedTypeCast03(): Integer = unchecked_cast(null as Integer)
 
-    @test
-    def testUncheckedTypeCast04(): ##java.io.Serializable = unchecked_cast(null as ##java.io.Serializable)
+    @CompileTest
+    def testUncheckedTypeCast04(): Serializable = unchecked_cast(null as Serializable)
 
-    @test
-    def testUncheckedTypeCast05(): ##java.io.Serializable = region rc {
+    @CompileTest
+    def testUncheckedTypeCast05(): Serializable = region rc {
         let _ = rc;
-        import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
-        unchecked_cast(mkSb() as ##java.io.Serializable)
+        let sb = unchecked_cast ((new StringBuilder(): _ \ IO) as _ \ rc);
+        unchecked_cast(sb as Serializable)
     }
 
-    @test
-    def testUncheckedTypeCast06(): ##java.lang.Object = region rc {
+    @CompileTest
+    def testUncheckedTypeCast06(): Object = region rc {
         let _ = rc;
-        import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
-        unchecked_cast(mkSb() as ##java.lang.Object)
+        let sb = unchecked_cast ((new StringBuilder(): _ \ IO) as _ \ rc);
+        unchecked_cast(sb as Object)
     }
+
+    def castToString(x: a): String =
+        unchecked_cast(x as String)
+
+    @CompileTest
+    def testUncheckedTypeCast07(): Bool =
+        // Test that cast from primitive types to object types doesn't cause compile time crash.
+        if (-3 < 10) true else castToString(42) == ""
 
 }

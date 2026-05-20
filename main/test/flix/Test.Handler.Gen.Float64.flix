@@ -1,18 +1,20 @@
 mod Test.Handler.Gen.Float64 {
 
+    use Assert.assertEq;
+
     eff Gen {
-        pub def gen(): Float64
+        def gen(): Float64
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        discard Gen.gen(); generator()
 
     def sample(limit: Float64): List[Float64] =
         region rc {
-            let counter = ref 0.0f64 @ rc;
-            try {
+            let counter = Ref.fresh(rc, 0.0f64);
+            run {
                 generator(); Nil
-            } with Gen {
+            } with handler Gen {
                 def gen(k) =
                     let i = getAndInc(counter);
                     if (i == limit) Nil else i :: k(i)
@@ -20,7 +22,7 @@ mod Test.Handler.Gen.Float64 {
         }
 
     def getAndInc(r: Ref[Float64, r]): Float64 \ r =
-        let i = deref r;
+        let i = Ref.get(r);
         Ref.put(i + 1.0f64, r);
         i
 
@@ -28,39 +30,39 @@ mod Test.Handler.Gen.Float64 {
         List.unfold(i -> if (i >= b) None else Some((i, i + 1.0f64)), a)
 
     @Test
-    def testSample01(): Bool =
-        Assert.eq(Nil, sample(0.0f64))
+    def testSample01(): Unit \ Assert =
+        assertEq(expected = Nil, sample(0.0f64))
 
     @Test
-    def testSample02(): Bool =
-        Assert.eq(0.0f64 :: Nil, sample(1.0f64))
+    def testSample02(): Unit \ Assert =
+        assertEq(expected = 0.0f64 :: Nil, sample(1.0f64))
 
     @Test
-    def testSample03(): Bool =
-        Assert.eq(0.0f64 :: 1.0f64 :: Nil, sample(2.0f64))
+    def testSample03(): Unit \ Assert =
+        assertEq(expected = 0.0f64 :: 1.0f64 :: Nil, sample(2.0f64))
 
     @Test
-    def testSample04(): Bool =
-        Assert.eq(0.0f64 :: 1.0f64 :: 2.0f64 :: Nil, sample(3.0f64))
+    def testSample04(): Unit \ Assert =
+        assertEq(expected = 0.0f64 :: 1.0f64 :: 2.0f64 :: Nil, sample(3.0f64))
 
     @Test
-    def testSample05(): Bool =
-        Assert.eq(0.0f64 :: 1.0f64 :: 2.0f64 :: 3.0f64 :: Nil, sample(4.0f64))
+    def testSample05(): Unit \ Assert =
+        assertEq(expected = 0.0f64 :: 1.0f64 :: 2.0f64 :: 3.0f64 :: Nil, sample(4.0f64))
 
     @Test
-    def testSample06(): Bool =
-        Assert.eq(0.0f64 :: 1.0f64 :: 2.0f64 :: 3.0f64 :: 4.0f64 :: Nil, sample(5.0f64))
+    def testSample06(): Unit \ Assert =
+        assertEq(expected = 0.0f64 :: 1.0f64 :: 2.0f64 :: 3.0f64 :: 4.0f64 :: Nil, sample(5.0f64))
 
     @Test
-    def testSample07(): Bool =
-        Assert.eq(0.0f64 :: 1.0f64 :: 2.0f64 :: 3.0f64 :: 4.0f64 :: 5.0f64 :: Nil, sample(6.0f64))
+    def testSample07(): Unit \ Assert =
+        assertEq(expected = 0.0f64 :: 1.0f64 :: 2.0f64 :: 3.0f64 :: 4.0f64 :: 5.0f64 :: Nil, sample(6.0f64))
 
     @Test
-    def testSample08(): Bool =
-        Assert.eq(range(0.0f64, 10.0f64), sample(10.0f64))
+    def testSample08(): Unit \ Assert =
+        assertEq(expected = range(0.0f64, 10.0f64), sample(10.0f64))
 
     @Test
-    def testSample09(): Bool =
-        Assert.eq(range(0.0f64, 100.0f64), sample(100.0f64))
+    def testSample09(): Unit \ Assert =
+        assertEq(expected = range(0.0f64, 100.0f64), sample(100.0f64))
 
 }

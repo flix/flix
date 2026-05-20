@@ -15,24 +15,56 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix, Version}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST._
+import org.json4s.JsonAST.*
+import org.json4s.jvalue2monadic
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
-import org.json4s.native.JsonMethods._
+import org.json4s.native.JsonMethods.*
 
 import java.io.IOException
-import java.net.InetSocketAddress
+import java.net.{BindException, InetSocketAddress}
 import java.nio.file.{Files, Paths}
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
+
+/**
+  * Companion object of [[SocketServer]].
+  */
+object SocketServer {
+
+  /**
+    * Attempts to start a [[SocketServer]] on the given port.
+    *
+    * Retries until the port is free.
+    */
+  def listen(port: Int): Unit = {
+    var successfulRun: Boolean = false
+    while (!successfulRun) {
+      try {
+        val socketServer = new SocketServer(port)
+        socketServer.run()
+        successfulRun = true
+      } catch {
+        case ex: BindException =>
+          Console.println(ex.getMessage)
+          Console.println("Retrying in 10 seconds.")
+          Thread.sleep(10_000)
+      }
+    }
+  }
+
+}
 
 /**
   * A WebSocket server implementation that receives and evaluates Flix programs.
@@ -160,9 +192,9 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       logSourceCode(input)
 
       // Compile the program.
-      flix.addSourceCode("<input>", input)
+      flix.addVirtualPath(CompilerConstants.VirtualPlaygroundFile, input)(SecurityContext.Plain)
 
-      flix.compile().toHardResult match {
+      flix.compile().toResult match {
         case Result.Ok(compilationResult) =>
           // Compilation was successful.
 
@@ -170,19 +202,18 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
           compilationResult.getMain match {
             case None =>
               // The main function was not present. Just report successful compilation.
-              Ok("Compilation was successful. No main function to run.", compilationResult.totalTime, 0L)
+              Ok(("Compilation was successful. No main function to run.", compilationResult.totalTime, 0L))
             case Some(main) =>
               // Evaluate the main function and get the result as a string.
-              val timer = new Timer({
-                val (_, stdOut, stdErr) = SafeExec.execute(() => main(Array.empty))
-                stdOut + stdErr
-              })
-              Ok(timer.getResult, compilationResult.totalTime, timer.getElapsed)
+              val t = System.nanoTime()
+              val (_, stdOut, stdErr) = SafeExec.execute(() => main(Array.empty))
+              val e = System.nanoTime() - t
+              Ok((stdOut + stdErr, compilationResult.totalTime, e))
           }
 
         case Result.Err(errors) =>
-          // Compilation failed. Retrieve and format the first error message.
-          Err(errors.head.get.messageWithLoc(flix.getFormatter))
+          // Compilation failed. Format and return all the errors.
+          Err(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None))
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)

@@ -15,9 +15,12 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.{Asset, Project}
 import ca.uwaterloo.flix.util.Formatter
 
+import java.io.IOException
 import java.net.URL
 
 sealed trait PackageError {
@@ -40,17 +43,12 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class NoReleasesFound(project: Project) extends PackageError {
-    override def message(f: Formatter): String =
-      s"""No releases found for project ${f.bold(project.toString)}.
-         |""".stripMargin
-  }
-
-  case class ProjectNotFound(url: URL, project: Project) extends PackageError {
+  case class ProjectNotFound(url: URL, project: Project, exception: IOException) extends PackageError {
     override def message(f: Formatter): String =
       s"""An I/O error occurred while trying to read the following url:
          |${f.cyan(url.toString)}
          |Project: ${f.bold(project.toString)}
+         |Error: ${f.red(exception.getMessage)}
          |""".stripMargin
   }
 
@@ -66,10 +64,11 @@ object PackageError {
     override def message(f: Formatter): String =
       s"""A download error occurred while downloading ${f.bold(asset.name)}
          |${
-         message match {
-           case Some(e) => e
-           case None => ""
-         }}
+        message match {
+          case Some(e) => e
+          case None => ""
+        }
+      }
          |""".stripMargin
   }
 
@@ -109,4 +108,65 @@ object PackageError {
     override def message(f: Formatter): String = e.message(f)
   }
 
+  /**
+    * An error raised when the dependency graph itself is inconsistent w.r.t. security contexts.
+    *
+    * @param manifest   the manifest that declares [[dependency]].
+    * @param dependency the dependency that requires a higher security level than what is allowed by the declaring manifest.
+    * @param sctx       the maximum allowed security context.
+    */
+  case class DepGraphSecurityError(manifest: Manifest, dependency: FlixDependency, sctx: SecurityContext) extends PackageError {
+    // TODO: Show the offending original dependency/-ies (from origin manifest)
+    // TODO: Maybe collect list of errors that can all be displayed in a single error message.
+    override def message(f: Formatter): String = {
+      s"""${f.underline("Found security violation in the dependency graph:")}
+         |  Dependency '$dependency' of package ${manifest.name} requires security context '${dependency.sctx}' but context '$sctx' was given.
+         |
+         |  There are several possible actions:
+         |    - Remove the offending dependency
+         |    - Use a different dependency.
+         |    - Increase security level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when the dependency graph itself is inconsistent w.r.t. security contexts.
+    *
+    * @param manifest the dependency that requires a stronger security context than what is allowed by the declaring manifest.
+    * @param sctx     the maximum allowed security level.
+    */
+  case class IllegalJavaDependencyForSctx(manifest: Manifest, dependency: Dependency, sctx: SecurityContext) extends PackageError {
+    // TODO: Show the offending original dependency/-ies (from origin manifest)
+    // TODO: Maybe collect list of errors that can all be displayed in a single error message.
+    override def message(f: Formatter): String = {
+      s"""${f.underline("Found security violation in the dependency graph:")}
+         |  Project '${manifest.name}' declares Java dependency '$dependency' which requires security context '${SecurityContext.Unrestricted}' but only $sctx was given.
+         |
+         |  There are several possible actions:
+         |    - Remove the offending dependency
+         |    - Use a different dependency.
+         |    - Increase security level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the version number declared in `manifest`
+    * does not match the targeted version in `dependency`.
+    *
+    * @param manifest   the manifest which [[dependency]] resolves to.
+    * @param dependency a valid flix dependency.
+    */
+  case class MismatchedVersions(manifest: Manifest, dependency: FlixDependency) extends PackageError {
+    override def message(f: Formatter): String = {
+      s"""Mismatched versions:
+         |  Dependency ${dependency.identifier} required version ${dependency.version}
+         |  but the manifest declared version ${manifest.version}
+         |
+         |  Required: ${dependency.version}
+         |  Declared: ${manifest.version}
+         |""".stripMargin
+    }
+  }
 }

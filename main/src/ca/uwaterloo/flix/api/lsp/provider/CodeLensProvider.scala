@@ -15,20 +15,20 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range, ResponseStatus}
+import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Range, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject, JString}
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 object CodeLensProvider {
 
   /**
     * Processes a codelens request.
     */
-  def processCodeLens(uri: String)(implicit root: Root): JObject = {
+  def processCodeLens(uri: String)(implicit root: Root): List[CodeLens] = {
     val codeLenses = getRunCodeLenses(uri) ::: getTestCodeLenses(uri)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
+    codeLenses
   }
 
   /**
@@ -75,8 +75,8 @@ object CodeLensProvider {
   /**
     * Returns `true` if the given `spec` is an entry point.
     */
-  private def isEntryPoint(s: Spec): Boolean = s.fparams match {
-    case fparam :: Nil => isUnitType(fparam.tpe) && isPublic(s)
+  private def isEntryPoint(spec: Spec): Boolean = spec.fparams match {
+    case fparam :: Nil => isUnitType(fparam.tpe) && isPublic(spec) && isMonomorphic(spec)
     case _ => false
   }
 
@@ -94,11 +94,16 @@ object CodeLensProvider {
   }
 
   /**
-    * Returns `true` if the given `defn` is marked as public
+    * Returns `true` if the given `spec` is public.
     */
   private def isPublic(spec: Spec): Boolean = {
     spec.mod.isPublic
   }
+
+  /**
+    * Returns `true` if the given `spec` is monomorphic.
+    */
+  private def isMonomorphic(spec: Spec): Boolean = spec.tparams.isEmpty
 
   /**
     * Returns `true` if the given source location `loc` matches the given `uri`.

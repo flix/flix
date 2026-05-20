@@ -65,8 +65,7 @@ case class SemVer(major: Int, minor: Int, patch: Int) {
     */
   def minorUpdate(versions: List[SemVer]): Option[SemVer] =
     versions.filter(v =>
-      v.major == major
-        && v.minor > minor
+      v.major == major && v.minor > minor
     ).maxOption
 
   /**
@@ -89,8 +88,6 @@ case class SemVer(major: Int, minor: Int, patch: Int) {
     */
   def patchUpdate(versions: List[SemVer]): Option[SemVer] =
     versions.filter(v =>
-      v.major == major
-        && v.minor == minor
-        && v.patch > patch
+      v.major == major && v.minor == minor && v.patch > patch
     ).maxOption
 }

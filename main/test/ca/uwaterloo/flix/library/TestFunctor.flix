@@ -1,143 +1,134 @@
-/*
- *  Copyright 2021 Stephen Tetley
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestFunctor {
 
-    use Functor.{map, ignore}
-    use Functor.{<$>, <$$>, <$, $>}
+    use Assert.{assertEq};
+    use Functor.{map, ignore};
+    use Functor.{<$>, <$$>, <$, $>};
 
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def map01(): Bool =
-        map(x -> x + 1, None) == None
+    @Test
+    def map01(): Unit \ Assert =
+        assertEq(expected = None, map(x -> x + 1, None))
 
-    @test
-    def map02(): Bool =
-        map(x -> x + 1, Some(1)) == Some(2)
+    @Test
+    def map02(): Unit \ Assert =
+        assertEq(expected = Some(2), map(x -> x + 1, Some(1)))
 
-    @test
-    def map03(): Bool =
-        map(x -> x + 1, Nil) == Nil
+    @Test
+    def map03(): Unit \ Assert =
+        assertEq(expected = Nil, map(x -> x + 1, Nil))
 
-    @test
-    def map04(): Bool =
-        map(x -> x + 1, 1 :: Nil) == 2 :: Nil
+    @Test
+    def map04(): Unit \ Assert =
+        assertEq(expected = 2 :: Nil, map(x -> x + 1, 1 :: Nil))
 
-    @test
-    def map05(): Bool =
-        map(x -> x + 1, 1 :: 2 :: Nil) == 2 :: 3 :: Nil
+    @Test
+    def map05(): Unit \ Assert =
+        assertEq(expected = 2 :: 3 :: Nil, map(x -> x + 1, 1 :: 2 :: Nil))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // replace                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def replace01(): Bool =
-        Functor.replace(None, 'A') == None
+    @Test
+    def replace01(): Unit \ Assert =
+        assertEq(expected = None, Functor.replace(None, 'A'))
 
-    @test
-    def replace02(): Bool =
-        Functor.replace(Some(1), 'A') == Some('A')
+    @Test
+    def replace02(): Unit \ Assert =
+        assertEq(expected = Some('A'), Functor.replace(Some(1), 'A'))
 
-    @test
-    def replace03(): Bool =
-        Functor.replace(Nil, 'A') == Nil
+    @Test
+    def replace03(): Unit \ Assert =
+        assertEq(expected = Nil, Functor.replace(Nil, 'A'))
 
-    @test
-    def replace04(): Bool =
-        Functor.replace(1 :: Nil, 'A') == 'A' :: Nil
+    @Test
+    def replace04(): Unit \ Assert =
+        assertEq(expected = 'A' :: Nil, Functor.replace(1 :: Nil, 'A'))
 
-    @test
-    def replace05(): Bool =
-        Functor.replace(1 :: 2 :: Nil, 'A') == 'A' :: 'A' :: Nil
+    @Test
+    def replace05(): Unit \ Assert =
+        assertEq(expected = 'A' :: 'A' :: Nil, Functor.replace(1 :: 2 :: Nil, 'A'))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // ignore                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def ignore01(): Bool =
-        ignore(None) == None
+    @Test
+    def ignore01(): Unit \ Assert =
+        assertEq(expected = None, ignore(None))
 
-    @test
-    def ignore02(): Bool =
-        ignore(Some(1)) == Some(())
+    @Test
+    def ignore02(): Unit \ Assert =
+        assertEq(expected = Some(()), ignore(Some(1)))
 
-    @test
-    def ignore03(): Bool =
-        ignore(Nil) == Nil
+    @Test
+    def ignore03(): Unit \ Assert =
+        assertEq(expected = Nil, ignore(Nil))
 
-    @test
-    def ignore04(): Bool =
-        ignore(1 :: Nil) == () :: Nil
+    @Test
+    def ignore04(): Unit \ Assert =
+        assertEq(expected = () :: Nil, ignore(1 :: Nil))
 
-    @test
-    def ignore05(): Bool =
-        ignore(1 :: 2 :: Nil) == () :: () :: Nil
+    @Test
+    def ignore05(): Unit \ Assert =
+        assertEq(expected = () :: () :: Nil, ignore(1 :: 2 :: Nil))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // symMap (<$>)                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def symMap01(): Bool =
-        (x -> x + 1) <$> None == None
+    @Test
+    def symMap01(): Unit \ Assert =
+        assertEq(expected = None, (x -> x + 1) <$> None)
 
-    @test
-    def symMap02(): Bool =
-        (x -> x + 1) <$> Some(1) == Some(2)
+    @Test
+    def symMap02(): Unit \ Assert =
+        assertEq(expected = Some(2), (x -> x + 1) <$> Some(1))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // symFlippedMap (<$$>)                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def symFilppedMap01(): Bool =
-        None <$$> (x -> x + 1) == None
+    @Test
+    def symFlippedMap01(): Unit \ Assert =
+        assertEq(expected = None, None <$$> (x -> x + 1))
 
-    @test
-    def symFlippedMap02(): Bool =
-        Some(1) <$$> (x -> x + 1) == Some(2)
+    @Test
+    def symFlippedMap02(): Unit \ Assert =
+        assertEq(expected = Some(2), Some(1) <$$> (x -> x + 1))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // symAs (<$)                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def symAs01(): Bool =
-        () <$ None == None
+    @Test
+    def symAs01(): Unit \ Assert =
+        assertEq(expected = None, () <$ None)
 
-    @test
-    def symAs02(): Bool =
-        () <$ Some(1) == Some(())
+    @Test
+    def symAs02(): Unit \ Assert =
+        assertEq(expected = Some(()), () <$ Some(1))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // symFlippedAs ($>)                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def symFlippedAs01(): Bool =
-        None $> () == None
+    @Test
+    def symFlippedAs01(): Unit \ Assert =
+        assertEq(expected = None, None $> ())
 
-    @test
-    def symFlippedAs02(): Bool =
-        Some(1) $> () == Some(())
+    @Test
+    def symFlippedAs02(): Unit \ Assert =
+        assertEq(expected = Some(()), Some(1) $> ())
 
 }

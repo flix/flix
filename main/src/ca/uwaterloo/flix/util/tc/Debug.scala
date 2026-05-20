@@ -16,13 +16,18 @@
 package ca.uwaterloo.flix.util.tc
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 
-/**
-  * Type class for values that can be debugged.
-  */
+/** Trait for values logged to disk. */
 trait Debug[-A] {
-  /**
-    * Returns a string representation of `a`.
-    */
-  def emit(name: String, a: A)(implicit flix: Flix): Unit
+  def hasAst: Boolean = true
+
+  /** Appends the phase name to the phases file and emits the debug information. */
+  def output(name: String, a: A)(implicit flix: Flix): Unit = {
+    AstPrinter.appendPhaseToDisk(name, hasAst)
+    emit(name, a)
+  }
+
+  /** Emit the debug information of `a` to disk. */
+  protected def emit(name: String, a: A)(implicit flix: Flix): Unit
 }

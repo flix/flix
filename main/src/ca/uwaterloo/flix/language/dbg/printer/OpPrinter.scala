@@ -16,11 +16,13 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.SemanticOp._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.SemanticOp.*
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.Mutability
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr
-import ca.uwaterloo.flix.language.dbg.DocAst.Expr._
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
+import ca.uwaterloo.flix.util.collection.ListOps
 
 object OpPrinter {
 
@@ -160,32 +162,46 @@ object OpPrinter {
          Int16Op.Shr |
          Int32Op.Shr |
          Int64Op.Shr => shr
+    case ReflectOp.ReflectEff => "reflectEff"
+    case ReflectOp.ReflectType => "reflectType"
+    case ReflectOp.ReflectValue => "reflectValue"
+    case ObjectOp.RefEq => "==="
+    case ObjectOp.Ordinal => "ordinal"
   }
 
   /**
     * Returns the [[DocAst.Expr]] representation of `op`.
     */
-  def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type): Expr = (op, ds) match {
-    case (AtomicOp.Region, Nil) => Region
-    case (AtomicOp.RecordEmpty, Nil) => RecordEmpty
+  def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type, eff: DocAst.Type): Expr = (op, ds) match {
     case (AtomicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
     case (AtomicOp.HoleError(sym), Nil) => HoleError(sym)
     case (AtomicOp.MatchError, Nil) => MatchError
+    case (AtomicOp.CastError(_, _), Nil) => CastError
     case (AtomicOp.Unary(sop), List(d)) => Unary(OpPrinter.print(sop), d)
     case (AtomicOp.Binary(sop), List(d1, d2)) => Binary(d1, OpPrinter.print(sop), d2)
     case (AtomicOp.Is(sym), List(d)) => Is(sym, d)
-    case (AtomicOp.Tag(sym), List(d)) => Tag(sym, List(d))
-    case (AtomicOp.Untag(sym), List(d)) => Untag(sym, d)
+    case (AtomicOp.Tag(sym), _) => Tag(sym, ds)
+    case (AtomicOp.Untag(_, idx), List(d)) => Untag(d, idx)
     case (AtomicOp.InstanceOf(clazz), List(d)) => InstanceOf(d, clazz)
-    case (AtomicOp.Cast, List(d)) => Cast(d, tpe)
+    case (AtomicOp.Cast, List(d)) => UncheckedCast(d, Some(tpe), Some(eff))
     case (AtomicOp.Unbox, List(d)) => Unbox(d, tpe)
     case (AtomicOp.Box, List(d)) => Box(d)
     case (AtomicOp.Index(idx), List(d)) => Index(idx, d)
     case (AtomicOp.RecordSelect(label), List(d)) => RecordSelect(label, d)
     case (AtomicOp.RecordRestrict(label), List(d)) => RecordRestrict(label, d)
-    case (AtomicOp.Ref, List(d)) => Ref(d)
-    case (AtomicOp.Deref, List(d)) => Deref(d)
     case (AtomicOp.ArrayLength, List(d)) => ArrayLength(d)
+    case (AtomicOp.StructNew(sym, Mutability.Mutable, fields), d :: rs) =>
+      ListOps.zipOption(fields, rs) match {
+        case None => Expr.Unknown
+        case Some(fs) => Expr.StructNew(sym, fs, Some(d))
+      }
+    case (AtomicOp.StructNew(sym, Mutability.Immutable, fields), rs) =>
+      ListOps.zipOption(fields, rs) match {
+        case None => Expr.Unknown
+        case Some(fs) => Expr.StructNew(sym, fs, None)
+      }
+    case (AtomicOp.StructGet(field), List(d)) => Expr.StructGet(d, field)
+    case (AtomicOp.StructPut(field), List(d1, d2)) => Expr.StructPut(d1, field, d2)
     case (AtomicOp.Lazy, List(d)) => Lazy(d)
     case (AtomicOp.Force, List(d)) => Force(d)
     case (AtomicOp.GetField(field), List(d)) => JavaGetField(field, d)
@@ -194,17 +210,18 @@ object OpPrinter {
     case (AtomicOp.Tuple, _) => Tuple(ds)
     case (AtomicOp.ArrayLit, _) => ArrayLit(ds)
     case (AtomicOp.InvokeConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
+    case (AtomicOp.InvokeSuperConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
     case (AtomicOp.InvokeStaticMethod(method), _) => JavaInvokeStaticMethod(method, ds)
     case (AtomicOp.RecordExtend(label), List(d1, d2)) => RecordExtend(label, d1, d2)
-    case (AtomicOp.Assign, List(d1, d2)) => Assign(d1, d2)
     case (AtomicOp.ArrayNew, List(d1, d2)) => ArrayNew(d1, d2)
     case (AtomicOp.ArrayLoad, List(d1, d2)) => ArrayLoad(d1, d2)
     case (AtomicOp.Spawn, List(d1, d2)) => Spawn(d1, d2)
     case (AtomicOp.PutField(field), List(d1, d2)) => JavaPutField(field, d1, d2)
     case (AtomicOp.ArrayStore, List(d1, d2, d3)) => ArrayStore(d1, d2, d3)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
+    case (AtomicOp.InvokeSuperMethod(method, _), d :: rs) => JavaInvokeMethod(method, d, rs)
     // fall back if non other applies
-    case (op, ds) => App(Meta(op.toString), ds)
+    case (op1, ds1) => App(Meta(op1.toString), ds1)
   }
 
 }

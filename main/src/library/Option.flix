@@ -14,147 +14,163 @@
  * limitations under the License.
  */
 
-///
-/// The Option type.
-///
-/// An option represents an optional value.
-/// The constructor `None` represents an absent value,
-/// whereas the constructor `Some(v)` represents the value `v`.
-///
-pub enum Option[t] with Eq, Order, ToString, Sendable {
-    case None,
-    case Some(t)
-}
+pub mod Option {
 
-instance LowerBound[Option[t]] {
-    pub def minValue(_: Unit): Option[t] = None
-}
-
-instance PartialOrder[Option[t]] with PartialOrder[t] {
-    pub def lessEqual(x: Option[t], y: Option[t]): Bool = match (x,y) {
-       case (None, _)           => true
-       case (Some(a), Some(b))  => PartialOrder.lessEqual(a,b)
-       case _                   => false
-   }
-}
-
-instance JoinLattice[Option[t]] with JoinLattice[t] {
-    pub def leastUpperBound(x: Option[t], y: Option[t]): Option[t] = match (x,y) {
-       case (None, _)           => y
-       case (_, None)           => x
-       case (Some(a), Some(b))  => Some(JoinLattice.leastUpperBound(a,b))
-   }
-}
-
-instance MeetLattice[Option[t]] with MeetLattice[t] {
-    pub def greatestLowerBound(x: Option[t], y: Option[t]): Option[t] = match (x,y) {
-       case (None, _)           => None
-       case (_, None)           => None
-       case (Some(a), Some(b))  => Some(MeetLattice.greatestLowerBound(a, b))
-   }
-}
-
-instance Hash[Option[a]] with Hash[a] {
-    pub def hash(o: Option[a]): Int32 = match o {
-        case None    => 1046527
-        case Some(y) => 919 * Hash.hash(y)
+    ///
+    /// The Option type.
+    ///
+    /// An option represents an optional value.
+    /// The constructor `None` represents an absent value,
+    /// whereas the constructor `Some(v)` represents the value `v`.
+    ///
+    pub enum Option[t] with Eq, Order, ToString {
+        case None
+        case Some(t)
     }
-}
 
-instance Functor[Option] {
-    pub def map(f: a -> b \ ef, o: Option[a]): Option[b] \ ef = Option.map(f, o)
-}
-
-instance Applicative[Option] {
-    pub def point(x: a) : Option[a] = Option.point(x)
-
-    pub def ap(f: Option[a -> b \ ef], x: Option[a]) : Option[b] \ ef = Option.ap(f, x)
-
-    // Same as the default implementation using `map` and `ap` but with less indirection.
-    override pub def map2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.map2(f, x1, x2)
-    override pub def map3(f: t1 -> t2 -> t3 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ ef = Option.map3(f, x1, x2, x3)
-    override pub def map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ ef = Option.map4(f, x1, x2, x3, x4)
-    override pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ ef = Option.map5(f, x1, x2, x3, x4, x5)
-}
-
-instance Monad[Option] {
-    pub def flatMap(f: a -> Option[b] \ ef, x : Option[a]) : Option[b] \ ef = Option.flatMap(f, x)
-}
-
-instance MonadZero[Option] {
-    pub def empty(): Option[a] = None
-}
-
-instance MonadZip[Option] {
-    pub def zipWith(f: (a, b) -> c \ ef, ma: Option[a], mb: Option[b]): Option[c] \ ef = Applicative.map2(f, ma, mb)
-    pub override def zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.map2((x, y) -> (x, y), ma, mb)
-
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, x: Option[a], y: Option[b]): f[Option[c]] \ ef with Applicative[f] =
-        use Functor.{<$>};
-        match (x, y) {
-            case (Some(x1), Some(y1)) => Some <$> f(x1, y1)
-            case (_, _)               => Applicative.point(None)
-        }
-}
-
-instance Foldable[Option] {
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldLeft(f, s, o)
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRight(f, o, s)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRightWithCont(f, o, s)
-}
-
-instance UnorderedFoldable[Option] {
-    pub def foldMap(f: a -> b \ ef, o: Option[a]): b \ ef with CommutativeMonoid[b] = Option.foldMap(f, o)
-}
-
-instance Traversable[Option] {
-    pub def traverse(f: a -> m[b] \ ef, t: Option[a]): m[Option[b]] \ ef with Applicative[m] =
-        use Applicative.{point};
-        use Functor.{map};
-        match t {
-            case None => point(None)
-            case Some(a) => f(a) |> map(Some)
-        }
-
-    pub override def sequence(t: Option[m[a]]): m[Option[a]] with Applicative[m] =
-        use Applicative.{point};
-        use Functor.{map};
-        match t {
-            case Some(ma) => map(Some, ma)
-            case None => point(None)
-        }
-
-}
-
-instance Filterable[Option] {
-    pub def filterMap(f: a -> Option[b] \ ef, o: Option[a]): Option[b] \ ef = Option.flatMap(f, o)
-    pub override def filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = Option.filter(f, o)
-}
-
-instance Witherable[Option]
-
-instance SemiGroup[Option[a]] with SemiGroup[a] {
-    pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
-        case (a, None)              => a
-        case (None, b)              => b
-        case (Some(x1), Some(y1))   => Some(SemiGroup.combine(x1, y1))
+    instance LowerBound[Option[t]] {
+        pub def minValue(_: Unit): Option[t] = None
     }
-}
 
-instance CommutativeSemiGroup[Option[a]] with CommutativeSemiGroup[a]
+    instance PartialOrder[Option[t]] with PartialOrder[t] {
+        pub def lessEqual(x: Option[t], y: Option[t]): Bool = match (x, y) {
+            case (None, _)          => true
+            case (Some(a), Some(b)) => PartialOrder.lessEqual(a, b)
+            case _                  => false
+        }
+    }
 
-instance Monoid[Option[a]] with Monoid[a] {
-    pub def empty(): Option[a] = None
-}
+    instance JoinLattice[Option[t]] with JoinLattice[t] {
+        pub def leastUpperBound(x: Option[t], y: Option[t]): Option[t] = match (x, y) {
+            case (None, _)          => y
+            case (_, None)          => x
+            case (Some(a), Some(b)) => Some(JoinLattice.leastUpperBound(a, b))
+        }
+    }
 
-instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
+    instance MeetLattice[Option[t]] with MeetLattice[t] {
+        pub def greatestLowerBound(x: Option[t], y: Option[t]): Option[t] = match (x, y) {
+            case (None, _)          => None
+            case (_, None)          => None
+            case (Some(a), Some(b)) => Some(MeetLattice.greatestLowerBound(a, b))
+        }
+    }
 
-instance Iterable[Option[a]] {
-    type Elm = a
-    pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = Option.iterator(rc, o)
-}
+    instance Hash[Option[a]] with Hash[a] {
+        pub def hash(o: Option[a]): Int32 = match o {
+            case None    => 1046527
+            case Some(y) => 919 * Hash.hash(y)
+        }
+    }
 
-mod Option {
+    instance Functor[Option] {
+        pub def map(f: a -> b \ ef, o: Option[a]): Option[b] \ ef = Option.map(f, o)
+    }
+
+    instance Applicative[Option] {
+        pub def point(x: a): Option[a] = Option.point(x)
+
+        pub def ap(f: Option[a -> b \ ef], x: Option[a]): Option[b] \ ef = Option.ap(f, x)
+
+        // Same as the default implementation using `map` and `ap` but with less indirection.
+        redef map2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.map2(f, x1, x2)
+        redef map3(f: t1 -> t2 -> t3 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ ef = Option.map3(f, x1, x2, x3)
+        redef map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ ef = Option.map4(f, x1, x2, x3, x4)
+        redef map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ ef = Option.map5(f, x1, x2, x3, x4, x5)
+    }
+
+    instance Monad[Option] {
+        pub def flatMap(f: a -> Option[b] \ ef, x: Option[a]): Option[b] \ ef = Option.flatMap(f, x)
+    }
+
+    instance MonadZero[Option] {
+        pub def empty(): Option[a] = None
+    }
+
+    instance MonadZip[Option] {
+        pub def zipWith(f: (a, b) -> c \ ef, ma: Option[a], mb: Option[b]): Option[c] \ ef = Applicative.map2(f, ma, mb)
+        redef zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.map2((x, y) -> (x, y), ma, mb)
+
+        pub def zipWithA(f: (a, b) -> f[c] \ ef, x: Option[a], y: Option[b]): f[Option[c]] \ ef with Applicative[f] =
+            use Functor.{<$>};
+            match (x, y) {
+                case (Some(x1), Some(y1)) => Some <$> f(x1, y1)
+                case (_, _)               => Applicative.point(None)
+            }
+    }
+
+    instance Foldable[Option] {
+        pub def foldLeft(f: (b, a) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldLeft(f, s, o)
+        pub def foldRight(f: (a, b) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRight(f, o, s)
+        redef isEmpty(o: Option[a]): Bool = Option.isEmpty(o)
+        redef forAll(f: a -> Bool \ ef, o: Option[a]): Bool \ ef = Option.forAll(f, o)
+        redef exists(f: a -> Bool \ ef, o: Option[a]): Bool \ ef = Option.exists(f, o)
+    }
+
+    instance UnorderedFoldable[Option] {
+        pub def foldMap(f: a -> b \ ef, o: Option[a]): b \ ef with CommutativeMonoid[b] = Option.foldMap(f, o)
+    }
+
+    instance Traversable[Option] {
+        pub def traverse(f: a -> m[b] \ ef, t: Option[a]): m[Option[b]] \ ef with Applicative[m] =
+            use Applicative.{point};
+            use Functor.{map};
+            match t {
+                case None    => point(None)
+                case Some(a) => f(a) |> map(Some)
+            }
+
+        redef sequence(t: Option[m[a]]): m[Option[a]] with Applicative[m] =
+            use Applicative.{point};
+            use Functor.{map};
+            match t {
+                case Some(ma) => map(Some, ma)
+                case None     => point(None)
+            }
+
+    }
+
+    instance Filterable[Option] {
+        pub def filterMap(f: a -> Option[b] \ ef, o: Option[a]): Option[b] \ ef = Option.flatMap(f, o)
+        redef filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = Option.filter(f, o)
+    }
+
+    instance Witherable[Option]
+
+    instance SemiGroup[Option[a]] with SemiGroup[a] {
+        pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
+            case (a, None)            => a
+            case (None, b)            => b
+            case (Some(x1), Some(y1)) => Some(SemiGroup.combine(x1, y1))
+        }
+    }
+
+    instance CommutativeSemiGroup[Option[a]] with CommutativeSemiGroup[a]
+
+    instance Monoid[Option[a]] with Monoid[a] {
+        pub def empty(): Option[a] = None
+    }
+
+    instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
+
+    instance Iterable[Option[a]] {
+        type Elm = a
+        pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = Option.iterator(rc, o)
+    }
+
+    instance ForEach[Option[a]] {
+        type Elm = a
+        pub def forEach(f: a -> Unit \ ef, o: Option[a]): Unit \ ef = Option.forEach(f, o)
+    }
+
+    instance Formattable[Option[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
+
+        pub def format(x: Option[a]): RichString \ Formattable.Aef[a] = match x {
+            case None    => RichString.fromString("None")
+            case Some(v) => RichString.fromString("Some(") + Formattable.format(v) + RichString.fromString(")")
+        }
+    }
 
     ///
     /// Returns the empty option variant `None`.
@@ -180,6 +196,22 @@ mod Option {
     pub def getWithDefault(d: a, o: Option[a]): a = match o {
         case None    => d
         case Some(v) => v
+    }
+
+    ///
+    /// Returns `v` if `o` is `Some(v)`. Otherwise aborts with a stack trace.
+    ///
+    pub def getOrAbort(o: Option[a]): a \ Abort = match o {
+        case None    => Abort.abortWithTrace("Option.getOrAbort(): called on None")
+        case Some(v) => v
+    }
+
+    ///
+    /// Aborts with a stack trace if `o` is `None`.
+    ///
+    pub def orAbort(o: Option[a]): Unit \ Abort = match o {
+        case None    => Abort.abortWithTrace("Option.orAbort(): called on None")
+        case Some(_) => ()
     }
 
     ///
@@ -235,19 +267,20 @@ mod Option {
     ///
     /// Returns `Some(x)`.
     ///
-    pub def point(x: a) : Option[a] = Some(x)
+    pub def point(x: a): Option[a] = Some(x)
 
     ///
     /// If both arguments are `Some`, return a `Some` containing the result of applying the function inside
     /// `f` to the value inside `x`. Otherwise return `None`.
     ///
-    pub def ap(f: Option[a -> b \ ef], x: Option[a]) : Option[b] \ ef =
+    pub def ap(f: Option[a -> b \ ef], x: Option[a]): Option[b] \ ef =
         match f {
-            case None    => None
-            case Some(g) => match x {
-                case None    => None
-                case Some(y) => Some(g(y))
-            }
+            case None => None
+            case Some(g) =>
+                match x {
+                    case None    => None
+                    case Some(y) => Some(g(y))
+                }
         }
 
     ///
@@ -318,16 +351,6 @@ mod Option {
     }
 
     ///
-    /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
-    ///
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, o: Option[a], z: b): b \ ef = match o {
-        case None    => z
-        case Some(v) => f(v, constant(z))
-    }
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, o: Option[a]): b \ ef with Monoid[b] =
@@ -338,9 +361,9 @@ mod Option {
     ///
     pub def sequence(l: List[Option[a]]): Option[List[a]] =
         def loop(ll, k) = match ll {
-            case Nil            => k(Nil)
-            case None :: _      => None
-            case Some(x) :: xs  => loop(xs, ks -> k(x :: ks))
+            case Nil           => k(Nil)
+            case None :: _     => None
+            case Some(x) :: xs => loop(xs, ks -> k(x :: ks))
         };
         loop(l, ks -> Some(ks))
 
@@ -349,26 +372,28 @@ mod Option {
     ///
     pub def traverse(f: a -> Option[b] \ ef, l: List[a]): Option[List[b]] \ ef =
         def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs => match f(x) {
-                case None    => None
-                case Some(y) => loop(xs, ys -> k(y :: ys))
-            }
+            case Nil => k(Nil)
+            case x :: xs =>
+                match f(x) {
+                    case None    => None
+                    case Some(y) => loop(xs, ys -> k(y :: ys))
+                }
         };
         loop(l, ks -> Some(ks))
 
     ///
     /// Returns `Some()` if each of `f(l_i)` is `Some(_)`. Otherwise returns `None`.
     ///
-    /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
+    /// This function is the "forgetful" version of `traverse`, use it when you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
     pub def traverseX(f: a -> Option[b] \ ef, l: List[a]): Option[Unit] \ ef = match l {
-        case Nil     => Some()
-        case x :: xs => match f(x) {
-            case None    => None
-            case Some(_) => traverseX(f, xs)
-        }
+        case Nil => Some()
+        case x :: xs =>
+            match f(x) {
+                case None    => None
+                case Some(_) => traverseX(f, xs)
+            }
     }
 
     ///
@@ -382,11 +407,12 @@ mod Option {
     /// `Some(f(...f(f(s, x1), x2)..., xn))`.
     ///
     pub def foldLeftM(f: (b, a) -> Option[b] \ ef, s: b, l: List[a]): Option[b] \ ef = match l {
-        case Nil     => Some(s)
-        case x :: xs => match f(s, x) {
-            case Some(s1) => foldLeftM(f, s1, xs)
-            case None     => None
-        }
+        case Nil => Some(s)
+        case x :: xs =>
+            match f(s, x) {
+                case Some(s1) => foldLeftM(f, s1, xs)
+                case None     => None
+            }
     }
 
     ///
@@ -396,16 +422,20 @@ mod Option {
     /// If at any step applying `f` fails (i.e. it produces a `None` value) the traversal
     /// of `l` is short-circuited and `None` is returned.
     ///
-    /// If `f` is successfully applied to al elements in `l` the result is of the form:
+    /// If `f` is successfully applied to all elements in `l` the result is of the form:
     /// `Some(f(x1, ...f(xn-1, f(xn, s))...))`.
     ///
     pub def foldRightM(f: (a, b) -> Option[b] \ ef, s: b, l: List[a]): Option[b] \ ef =
         def loop(ll, k) = match ll {
-            case Nil     => k(s)
-            case x :: xs => loop(xs, s1 -> match f(x, s1) {
-                case Some(s2) => k(s2)
-                case None     => None
-            })
+            case Nil => k(s)
+            case x :: xs =>
+                loop(
+                    xs,
+                    s1 -> match f(x, s1) {
+                        case Some(s2) => k(s2)
+                        case None     => None
+                    }
+                )
         };
         loop(l, s1 -> checked_ecast(Some(s1)))
 
@@ -541,7 +571,7 @@ mod Option {
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o7` are `None`.
     ///
-    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7]): Option[u] \ ef=
+    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7]): Option[u] \ ef =
         ap(map6(f, o1, o2, o3, o4, o5, o6), o7)
 
     ///
@@ -575,11 +605,5 @@ mod Option {
         case None    => Iterator.empty(rc)
         case Some(x) => Iterator.singleton(rc, x)
     }
-
-    ///
-    /// Returns an iterator over `o` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], o: Option[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, o) |> Iterator.zipWithIndex
 
 }

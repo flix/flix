@@ -1,11 +1,16 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
-import ca.uwaterloo.flix.language.phase.unification.UnificationCache
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
+
+import java.nio.file.Path
 
 /**
   * A collection of internal utilities to measure the performance of the Flix compiler itself.
@@ -151,13 +156,18 @@ object BenchmarkCompilerOld {
 
       // Benchmark frontend or entire compiler?
       if (frontend) {
-        val root = flix.check().toHardFailure.unsafeGet
+        val (optRoot, errors) = flix.check()
+        if (errors.nonEmpty) {
+          println(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
+          System.exit(1)
+        }
+        val root = optRoot.get
         val totalLines = root.sources.foldLeft(0) {
           case (acc, (_, sl)) => acc + sl.endLine
         }
         Run(totalLines, flix.getTotalTime)
       } else {
-        val compilationResult = flix.compile().toHardFailure.unsafeGet
+        val compilationResult = flix.compile().unsafeGet
         Run(compilationResult.getTotalLines, compilationResult.totalTime)
       }
     }
@@ -227,8 +237,10 @@ object BenchmarkCompilerOld {
     * Returns a Flix object configured with the benchmark program.
     */
   private def newFlix(o: Options): Flix = {
+    // Clear caches
+    EffUnification3.Algebra.Cache.clearCaches()
+
     val flix = new Flix()
-    flushCaches()
 
     flix.setOptions(opts = o.copy(incremental = false, loadClassFiles = false))
 
@@ -238,34 +250,13 @@ object BenchmarkCompilerOld {
   }
 
   /**
-    * Flushes (clears) all caches.
-    */
-  private def flushCaches(): Unit = {
-    UnificationCache.GlobalBool.clear()
-    UnificationCache.GlobalBdd.clear()
-  }
-
-  /**
     * Adds test code to the benchmarking suite.
     */
   private def addInputs(flix: Flix): Unit = {
-    flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
-    flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
-    flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
-    flix.addSourceCode("TestDelayList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"))
-    flix.addSourceCode("TestList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
-    flix.addSourceCode("TestMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
-    flix.addSourceCode("TestMutDeque.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"))
-    flix.addSourceCode("TestMutList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"))
-    flix.addSourceCode("TestMutMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutMap.flix"))
-    flix.addSourceCode("TestMutSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutSet.flix"))
-    flix.addSourceCode("TestNel.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestNel.flix"))
-    flix.addSourceCode("TestOption.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"))
-    flix.addSourceCode("TestPrelude.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
-    flix.addSourceCode("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
-    flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
-    flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
-}
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+    flix.addVirtualPath(Path.of("Test.Exp.Fixpoint.PQuery.flix"), LocalResource.get("/test/flix/Test.Exp.Fixpoint.PQuery.flix"))
+    flix.addVirtualPath(Path.of("Test.Exp.Fixpoint.PSolve.flix"), LocalResource.get("/test/flix/Test.Exp.Fixpoint.PSolve.flix"))
+  }
 
   case object SummaryStatistics {
     /**

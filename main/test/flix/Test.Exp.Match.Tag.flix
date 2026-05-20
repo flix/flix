@@ -1,98 +1,100 @@
 mod Test.Exp.Match.Tag {
 
-    @test
-    def testMatchOption01(): Bool = match None {
-        case None    => true
-        case Some(_) => false
+    use Assert.{success, fail}
+
+    @Test
+    def matchOption01(): Unit \ Assert = match None {
+        case None    => success("matched None")
+        case Some(_) => fail("unexpected match on Some")
     }
 
-    @test
-    def testMatchOption02(): Bool = match None {
-        case Some(_) => false
-        case None    => true
+    @Test
+    def matchOption02(): Unit \ Assert = match None {
+        case Some(_) => fail("unexpected match on Some")
+        case None    => success("matched None")
     }
 
-    @test
-    def testMatchOption03(): Bool = match Some(123) {
-        case None    => false
-        case Some(_) => true
+    @Test
+    def matchOption03(): Unit \ Assert = match Some(123) {
+        case None    => fail("unexpected match on None")
+        case Some(_) => success("matched Some")
     }
 
-    @test
-    def testMatchOption04(): Bool = match Some(123) {
-        case Some(_) => true
-        case None    => false
+    @Test
+    def matchOption04(): Unit \ Assert = match Some(123) {
+        case Some(_) => success("matched Some")
+        case None    => fail("unexpected match on None")
     }
 
-    @test
-    def testMatchResult01(): Bool = match Ok(123) {
-        case Ok(_)  => true
-        case Err(_) => false
+    @Test
+    def matchResult01(): Unit \ Assert = match Ok(123) {
+        case Ok(_)  => success("matched Ok")
+        case Err(_) => fail("unexpected match on Err")
     }
 
-    @test
-    def testMatchResult02(): Bool = match Ok(123) {
-        case Err(_) => false
-        case Ok(_)  => true
+    @Test
+    def matchResult02(): Unit \ Assert = match Ok(123) {
+        case Err(_) => fail("unexpected match on Err")
+        case Ok(_)  => success("matched Ok")
     }
 
-    @test
-    def testMatchResult03(): Bool = match Err(123) {
-        case Ok(_)  => false
-        case Err(_) => true
+    @Test
+    def matchResult03(): Unit \ Assert = match Err(123) {
+        case Ok(_)  => fail("unexpected match on Ok")
+        case Err(_) => success("matched Err")
     }
 
-    @test
-    def testMatchResult04(): Bool = match Err(123) {
-        case Err(_) => true
-        case Ok(_)  => false
+    @Test
+    def matchResult04(): Unit \ Assert = match Err(123) {
+        case Err(_) => success("matched Err")
+        case Ok(_)  => fail("unexpected match on Ok")
     }
 
-    @test
-    def testMatchNested01(): Bool = match None {
-        case None           => true
-        case Some(None)     => false
-        case Some(Some(_))  => false
+    @Test
+    def matchNested01(): Unit \ Assert = match None {
+        case None           => success("matched None")
+        case Some(None)     => fail("unexpected match on Some(None)")
+        case Some(Some(_))  => fail("unexpected match on Some(Some(_))")
     }
 
-    @test
-    def testMatchNested02(): Bool = match Some(None) {
-        case None           => false
-        case Some(None)     => true
-        case Some(Some(_))  => false
+    @Test
+    def matchNested02(): Unit \ Assert = match Some(None) {
+        case None           => fail("unexpected match on None")
+        case Some(None)     => success("matched Some(None)")
+        case Some(Some(_))  => fail("unexpected match on Some(Some(_))")
     }
 
-    @test
-    def testMatchNested03(): Bool = match Some(Some(123)) {
-        case None           => false
-        case Some(None)     => false
-        case Some(Some(_))  => true
+    @Test
+    def matchNested03(): Unit \ Assert = match Some(Some(123)) {
+        case None           => fail("unexpected match on None")
+        case Some(None)     => fail("unexpected match on Some(None)")
+        case Some(Some(_))  => success("matched Some(Some(_))")
     }
 
-    @test
-    def testMatchNested04(): Bool = match None {
-        case None         => true
-        case Some(Ok(_))  => false
-        case Some(Err(_)) => false
+    @Test
+    def matchNested04(): Unit \ Assert = match None {
+        case None         => success("matched None")
+        case Some(Ok(_))  => fail("unexpected match on Some(Ok(_))")
+        case Some(Err(_)) => fail("unexpected match on Some(Err(_))")
     }
 
-    @test
-    def testMatchNested05(): Bool = match Some(Ok(123)) {
-        case None         => false
-        case Some(Ok(_))  => true
-        case Some(Err(_)) => false
+    @Test
+    def matchNested05(): Unit \ Assert = match Some(Ok(123)) {
+        case None         => fail("unexpected match on None")
+        case Some(Ok(_))  => success("matched Some(Ok(_))")
+        case Some(Err(_)) => fail("unexpected match on Some(Err(_))")
     }
 
-    @test
-    def testMatchNested06(): Bool = match Some(Err(123)) {
-        case None         => false
-        case Some(Ok(_))  => false
-        case Some(Err(_)) => true
+    @Test
+    def matchNested06(): Unit \ Assert = match Some(Err(123)) {
+        case None         => fail("unexpected match on None")
+        case Some(Ok(_))  => fail("unexpected match on Some(Ok(_))")
+        case Some(Err(_)) => success("matched Some(Err(_))")
     }
 
-    @test
-    def testMatchTopLevel01(): Bool = match (Option.Some(1)) {
-        case Option.None    => false
-        case Option.Some(_) => true
+    @Test
+    def matchTopLevel01(): Unit \ Assert = match (Option.Some(1)) {
+        case Option.None    => fail("unexpected match on Option.None")
+        case Option.Some(_) => success("matched Option.Some")
     }
 }

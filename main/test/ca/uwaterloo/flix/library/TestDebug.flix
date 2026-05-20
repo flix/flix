@@ -1,235 +1,134 @@
 mod TestDebug {
     use Debug.stringify;
+    use Assert.{assertEq, assertTrue, fail};
 
     /////////////////////////////////////////////////////////////////////////////
     // stringify                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testUnitStringify01(): Bool = stringify(()) == "()"
+    @Test
+    def testBoolStringify01(): Unit \ Assert = assertEq(expected = "true", stringify(true))
 
+    @Test
+    def testBoolStringify02(): Unit \ Assert = assertEq(expected = "false", stringify(false))
 
-    @test
-    def testBoolStringify01(): Bool = stringify(true) == "true"
 
-    @test
-    def testBoolStringify02(): Bool = stringify(false) == "false"
+    @Test
+    def testCharStringify01(): Unit \ Assert = assertEq(expected = "\'a\'", stringify('a'))
 
+    @Test
+    def testCharStringify02(): Unit \ Assert = assertEq(expected = "\'\u2194\'", stringify('\u2194'))
 
-    @test
-    def testCharStringify01(): Bool = stringify('a') == "\'a\'"
+    @Test
+    def testCharStringify03(): Unit \ Assert = assertEq(expected = "\'\\t\'", stringify('\t'))
 
-    @test
-    def testCharStringify02(): Bool = stringify('\u2194') == "\'\u2194\'"
 
-    @test
-    def testCharStringify03(): Bool = stringify('\t') == "\'\\t\'"
+    @Test
+    def testFloat32Stringify01(): Unit \ Assert = assertEq(expected = "21.42f32", stringify(21.42f32))
 
 
-    @test
-    def testFloat32Stringify01(): Bool = stringify(21.42f32) == "21.42f32"
+    @Test
+    def testInt8Stringify01(): Unit \ Assert = assertEq(expected = "42i8", stringify(42i8))
 
 
-    @test
-    def testInt8Stringify01(): Bool = stringify(42i8) == "42i8"
+    @Test
+    def testInt16Stringify01(): Unit \ Assert = assertEq(expected = "42i16", stringify(42i16))
 
 
-    @test
-    def testInt16Stringify01(): Bool = stringify(42i16) == "42i16"
+    @Test
+    def testInt32Stringify01(): Unit \ Assert = assertEq(expected = "42", stringify(42i32))
 
 
-    @test
-    def testInt32Stringify01(): Bool = stringify(42i32) == "42"
+    @Test
+    def testInt64Stringify01(): Unit \ Assert = assertEq(expected = "42i64", stringify(42i64))
 
 
-    @test
-    def testInt64Stringify01(): Bool = stringify(42i64) == "42i64"
+    @Test
+    def testBigIntStringify01(): Unit \ Assert = assertEq(expected = "42ii", stringify(42ii))
 
 
-    @test
-    def testBigIntStringify01(): Bool = stringify(42ii) == "42ii"
+    @Test
+    def testStringStringify01(): Unit \ Assert = assertEq(expected = "\"Hello World!\"", stringify("Hello World!"))
 
+    @Test
+    def testStringStringify02(): Unit \ Assert = assertEq(expected = "\"one\\ttwo\"", stringify("one\ttwo"))
 
-    @test
-    def testStringStringify01(): Bool = stringify("Hello World!") == "\"Hello World!\""
+    @Test
+    def testStringStringify03(): Unit \ Assert = assertEq(expected = "\"\u0000\"", stringify("\u0000"))
 
-    @test
-    def testStringStringify02(): Bool = stringify("one\ttwo") == "\"one\\ttwo\""
+    @Test
+    def testStringStringify05(): Unit \ Assert = assertEq(
+        expected = "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\${" + "\%{" + "\u1234" + "\u0000" + "\"",
+        stringify("\n\r\\\"\'\t\${\%{\u1234\u0000")
+    )
 
-    @test
-    def testStringStringify03(): Bool = stringify("\u0000") == "\"\u0000\""
+    @Test
+    def testArrayOfBoolStringify01(): Unit \ {Assert, IO} = assertEq(expected = "[true, false]", stringify(Array#{true, false} @ Static))
 
-    @test
-    def testStringStringify05(): Bool = stringify("\n\r\\\"\'\t\${\%{\u1234\u0000") ==
-        "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\${" + "\%{" + "\u1234" + "\u0000" + "\""
 
-    @test
-    def testArrayOfUnitStringify01(): Bool \ IO = stringify(Array#{(), ()} @ Static) == "[(), ()]"
+    @Test
+    def testArrayOfCharStringify01(): Unit \ {Assert, IO} = assertEq(expected = "[a, b, c]", stringify(Array#{'a', 'b', 'c'} @ Static))
 
 
-    @test
-    def testArrayOfBoolStringify01(): Bool \ IO = stringify(Array#{true, false} @ Static) == "[true, false]"
+    @Test
+    def testArrayOfFloat32Stringify01(): Unit \ {Assert, IO} = assertEq(expected = "[21.42, 98.6]", stringify(Array#{21.42f32, 98.6f32} @ Static))
 
 
-    @test
-    def testArrayOfCharStringify01(): Bool \ IO = stringify(Array#{'a', 'b', 'c'} @ Static) == "[a, b, c]"
+    @Test
+    def testArrayOfInt8Stringify01(): Unit \ {Assert, IO} = assertEq(expected = "[42, 43]", stringify(Array#{42i8, 43i8} @ Static))
 
 
-    @test
-    def testArrayOfFloat32Stringify01(): Bool \ IO = stringify(Array#{21.42f32, 98.6f32} @ Static) == "[21.42, 98.6]"
+    @Test
+    def testArrayOfInt16Stringify01(): Unit \ {Assert, IO} = assertEq(expected = "[42, 43]", stringify(Array#{42i16, 43i16} @ Static))
 
 
-    @test
-    def testArrayOfInt8Stringify01(): Bool \ IO = stringify(Array#{42i8, 43i8} @ Static) == "[42, 43]"
+    @Test
+    def testArrayOfInt32Stringify01(): Unit \ {Assert, IO} = assertEq(expected = "[42, 43]", stringify(Array#{42i32, 43i32} @ Static))
 
 
-    @test
-    def testArrayOfInt16Stringify01(): Bool \ IO = stringify(Array#{42i16, 43i16} @ Static) == "[42, 43]"
+    @Test
+    def testArrayOfInt64Stringify01(): Unit \ {Assert, IO} = assertEq(expected = "[42, 43]", stringify(Array#{42i64, 43i64} @ Static))
 
 
-    @test
-    def testArrayOfInt32Stringify01(): Bool \ IO = stringify(Array#{42i32, 43i32} @ Static) == "[42, 43]"
+    @Test
+    def testArrayOfBigIntStringify01(): Unit \ {Assert, IO} = assertEq(expected = "[42, 43]", stringify(Array#{42ii, 43ii} @ Static))
 
 
-    @test
-    def testArrayOfInt64Stringify01(): Bool \ IO = stringify(Array#{42i64, 43i64} @ Static) == "[42, 43]"
+    @Test
+    def testArrayOfStringStringify01(): Unit \ {Assert, IO} = assertEq(expected = "[Hello, World!]", stringify(Array#{"Hello", "World!"} @ Static))
 
 
-    @test
-    def testArrayOfBigIntStringify01(): Bool \ IO = stringify(Array#{42ii, 43ii} @ Static) == "[42, 43]"
+    @Test
+    def testArrayOfArrayOfIntStringify01(): Unit \ {Assert, IO} = assertEq(expected = "[[1, 2], [3, 4]]", stringify(Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static))
 
 
-    @test
-    def testArrayOfStringStringify01(): Bool \ IO = stringify(Array#{"Hello", "World!"} @ Static) == "[Hello, World!]"
+    @Test
+    def testArrayOfArrayOfArrayOfIntStringify01(): Unit \ {Assert, IO} = assertEq(expected = "[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]", stringify(Array#{Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static, Array#{Array#{5, 6} @ Static, Array#{7, 8} @ Static} @ Static} @ Static))
 
 
-    @test
-    def testArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static) == "[[1, 2], [3, 4]]"
 
-
-    @test
-    def testArrayOfArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static, Array#{Array#{5, 6} @ Static, Array#{7, 8} @ Static} @ Static} @ Static) == "[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]"
-
-
-    @test
-    def testTupleStringify01(): Bool = stringify((true, 'a', "Hello World!")) == "(true, a, Hello World!)"
-
-    @test
-    def testTupleStringify02(): Bool = stringify((false, 2, ())) == "(false, 2, ())"
-
-
-    pub enum Suit {
-        case Hearts, Diamonds, Clubs, Spades
-    }
-
-    pub enum Rank {
-        case N(Int32), Jack, Queen, King, Ace
-    }
-
-    pub enum Card {
-        case Card(Suit, Rank)
-    }
-
-    @test
-    def testEnumStringify01(): Bool = stringify(Card.Card(Suit.Hearts, Rank.N(5)))  == "Card((Hearts(()), N(5)))"
-
-
-    pub enum Poly[a, b] {
-        case NoneOfThem,
-        case This(a)
-        case That(b)
-        case Both(a, b)
-    }
-
-    @test
-    def testPolyStringify01(): Bool = stringify(Poly.NoneOfThem) == "NoneOfThem(())"
-
-    @test
-    def testPolyStringify02(): Bool = stringify(Poly.This(123)) == "This(123)"
-
-    @test
-    def testPolyStringify03(): Bool = stringify(Poly.That("Hello World!")) == "That(Hello World!)"
-
-    @test
-    def testPolyStringify04(): Bool = stringify(Poly.Both(123, "Hello World!")) == "Both((123, Hello World!))"
-
-    @test
-    def testRecordStringify01(): Bool = stringify({label = (1, 2)}) == "{label = (1, 2)}"
-
-    @test
-    def testRecordStringify02(): Bool = {
-        let s = stringify({something = (), other = true});
-        s == "{something = (), other = true}" or s == "{other = true, something = ()}"
-    }
-
-    @test
-    def testRecordStringify03(): Bool = {
-        let s = stringify({something = {}, other = {single = 8}});
-        s == "{something = {}, other = {single = 8}}" or s == "{other = {single = 8}, something = {}}"
-    }
-
-    @test
-    def testFunctionStringify01(): Bool = {
-        def f(x: Int32): Int32 = x;
-        let s = stringify(f);
-        s == "Int32 -> Obj"
-    }
-
-    def toIntFunction(x: a, g: a -> Int32): Int32 = g(x)
-
-    @test
-    def testFunctionStringify02(): Bool = {
-        let s = stringify(toIntFunction(true));
-        s == "Obj -> Obj"
-    }
-
-    def thunkFunction(x: a): String -> a = _ -> x
-
-    @test
-    def testFunctionStringify03(): Bool = {
-        let s = stringify((thunkFunction(42), thunkFunction('a')));
-        s == "(Obj -> Obj, Obj -> Obj)"
-    }
-
-     @test
-     def testNullStringify01(): Bool = {
+     @Test
+     def testNullStringify01(): Unit \ Assert = {
          let s = stringify(null);
-         s == "null"
+         assertEq(expected = "null", s)
      }
 
-     @test
-     def testNullStringify02(): Bool = {
+     @Test
+     def testNullStringify02(): Unit \ Assert = {
          let s = stringify((checked_cast(null): String));
-         s == "null"
+         assertEq(expected = "null", s)
      }
 
-     @test
-     def testNullStringify03(): Bool = {
+     @Test
+     def testNullStringify03(): Unit \ Assert = {
          let s = stringify((checked_cast(null): BigInt));
-         s == "null"
+         assertEq(expected = "null", s)
      }
 
-    @test
-    def testNullStringify04(): Bool = {
-        let s = stringify(Poly.This((checked_cast(null): String)));
-        s == "This(null)"
-    }
-
-    @test
-    def testNullStringify05(): Bool = {
-        let s = stringify((null, 42));
-        s == "(null, 42)"
-    }
-
-    @test
-    def testNullStringify06(): Bool = region rc {
+    @Test
+    def testNullStringify06(): Unit \ Assert = region rc {
         let s = stringify(Array#{(checked_cast(null): String), "42"} @ rc);
-        s == "[null, 42]"
+        assertEq(expected = "[null, 42]", s)
     }
 
-    @test
-    def testNullStringify07(): Bool = {
-        let s = stringify({label = (checked_cast(null): String)});
-        s == "{label = null}"
-    }
 }

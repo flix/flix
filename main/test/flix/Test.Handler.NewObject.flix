@@ -1,76 +1,77 @@
 mod Test.Handler.NewObject {
 
+    use Assert.assertEq;
+
     import java.lang.Runnable
 
+    use Assert.assertEq;
+
     eff Ask {
-        pub def ask(x: Int32): Unit
+        def ask(x: Int32): Unit
     }
 
     eff Gen {
-        pub def gen(): Int32
+        def gen(): Int32
     }
 
     def newAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { rc } =
-            try {
-              do Ask.ask(42)
-            } with Ask {
+        def $run(_this: Runnable): Unit \ { rc } =
+            run {
+              Ask.ask(42)
+            } with handler Ask {
                 def ask(x, _) = Ref.put(x, r)
             }
     }
 
     def newGenRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { rc } =
-            try {
-              Ref.put(do Gen.gen(), r)
-            } with Gen {
+        def $run(_this: Runnable): Unit \ { rc } =
+            run {
+              Ref.put(Gen.gen(), r)
+            } with handler Gen {
                 def gen(k) = k(42)
             }
     }
 
     def newGenAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { rc } =
-            try {
-                do Ask.ask(
-                    try {
-                        do Gen.gen()
-                    } with Gen {
+        def $run(_this: Runnable): Unit \ { rc } =
+            run {
+                Ask.ask(
+                    run {
+                        Gen.gen()
+                    } with handler Gen {
                         def gen(k) = k(42)
                     }
                 )
-            } with Ask {
+            } with handler Ask {
                 def ask(x, _) = Ref.put(x + x, r)
             }
     }
 
     @Test
-    def testRunnable01(): Bool \ IO =
-        import java.lang.Runnable.run(): Unit \ IO;
+    def testRunnable01(): Unit \ Assert + IO =
         region rc {
             let r = Ref.fresh(rc, 0);
-            run(newAskRunnable(r));
+            newAskRunnable(r).$run();
             let result = Ref.get(r);
-            Assert.eq(42, result)
+            assertEq(expected = 42, result)
         }
 
     @Test
-    def testRunnable02(): Bool \ IO =
-        import java.lang.Runnable.run(): Unit \ IO;
+    def testRunnable02(): Unit \ Assert + IO =
         region rc {
             let r = Ref.fresh(rc, 0);
-            run(newGenRunnable(r));
+            newGenRunnable(r).$run();
             let result = Ref.get(r);
-            Assert.eq(42, result)
+            assertEq(expected = 42, result)
         }
 
     @Test
-    def testRunnable03(): Bool \ IO =
-        import java.lang.Runnable.run(): Unit \ IO;
+    def testRunnable03(): Unit \ Assert + IO =
         region rc {
             let r = Ref.fresh(rc, 0);
-            run(newGenAskRunnable(r));
+            newGenAskRunnable(r).$run();
             let result = Ref.get(r);
-            Assert.eq(84, result)
+            assertEq(expected = 84, result)
         }
 
 }

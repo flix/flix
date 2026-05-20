@@ -127,12 +127,19 @@ case class CaseSetSubstitution(m: Map[Int, SetFormula]) {
     val map = m.map {
       case (k0, v0) =>
         val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown)) match {
-          case VarOrCase.Var(sym) => sym
-          case VarOrCase.Case(sym) => throw InternalCompilerException("unexpected substituted case", SourceLocation.Unknown)
+          case VarOrCase.Var(varSym) => varSym
+          case VarOrCase.Case(_) => throw InternalCompilerException("unexpected substituted case", SourceLocation.Unknown)
         }
         val v = SetFormula.toCaseType(v0, sym, env, SourceLocation.Unknown)
         (k, v)
     }
     Substitution(map)
+  }
+
+  /**
+    * Check that the domains of `this` and `that` substitutions are disjoint.
+    */
+  def isDisjointDomain(that: CaseSetSubstitution): Boolean = {
+    this.m.keySet.intersect(that.m.keySet).isEmpty
   }
 }

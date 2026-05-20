@@ -22,8 +22,12 @@ instance UpperBound[Int32] {
     pub def maxValue(): Int32 = Int32.maxValue()
 }
 
-mod Int32 {
-    import java.math.BigDecimal;
+pub mod Int32 {
+
+    import java.lang.Integer
+    import java.lang.NumberFormatException
+    import java.math.BigDecimal
+    import java.math.BigInteger
 
     ///
     /// Returns the number of bits used to represent an `Int32`.
@@ -55,9 +59,12 @@ mod Int32 {
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
     pub def abs(x: Int32): Int32 = {
-        if      (x >= 0)            x
-        else if (x == minValue())   -1
-        else                        -x
+        if (x >= 0)
+            x
+        else if (x == minValue())
+            -1
+        else
+            -x
     }
 
     ///
@@ -68,7 +75,7 @@ mod Int32 {
         if (n == 0i32)
             0i32
         else
-            $INT32_REM$($INT32_REM$(x, n) + n, n)
+            %%INT32_REM%%(%%INT32_REM%%(x, n) + n, n)
 
     ///
     /// Returns the remainder of `x / n`.
@@ -80,18 +87,23 @@ mod Int32 {
         if (n == 0i32)
             0i32
         else
-            $INT32_REM$(x, n)
+            %%INT32_REM%%(x, n)
 
     ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int32, y: Int32): Int32 = {
-        if      (x >= 0 and y >= 0)                      abs(x - y)
-        else if (x < 0 and y < 0)                        abs(x - y)
-        else if (x == minValue() or y == minValue())    -1
-        else if (minValue() + abs(x) + abs(y) >= 0)     -1
-        else                                            abs(x - y)
+        if (x >= 0 and y >= 0)
+            abs(x - y)
+        else if (x < 0 and y < 0)
+            abs(x - y)
+        else if (x == minValue() or y == minValue())
+            -1
+        else if (minValue() + abs(x) + abs(y) >= 0)
+            -1
+        else
+            abs(x - y)
     }
 
     ///
@@ -99,9 +111,12 @@ mod Int32 {
     /// The sign of x - y.
     ///
     pub def compare(x: Int32, y: Int32): Int32 = {
-        if      (x == y)    0
-        else if (x < y)     -1
-        else                1
+        if (x == y)
+            0
+        else if (x < y)
+            -1
+        else
+            1
     }
 
     ///
@@ -111,9 +126,9 @@ mod Int32 {
     pub def signum(x: Int32): Int32 = compare(x, 0)
 
     ///
-    /// Returns `b` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(b: Int32, n: Int32): Int32 = $INT32_EXP$(b, n)
+    pub def pow(base: {base = Int32}, n: Int32): Int32 = %%INT32_EXP%%(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `dist`.
@@ -131,20 +146,23 @@ mod Int32 {
     /// representation of `x`.
     ///
     pub def bitCount(x: Int32): Int32 = {
-        if      (x == 0)         0
-        else if (x `remainder` 2 != 0) bitCount(logicalRightShift(dist = 1, x)) + 1
-        else                           bitCount(logicalRightShift(dist = 1, x))
+        if (x == 0)
+            0
+        else if (x `remainder` 2 != 0)
+            bitCount(logicalRightShift(dist = 1, x)) + 1
+        else
+            bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` right by `dist` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int32): Int32 =
         bitwiseOr(logicalRightShift(dist = dist#dist, x), leftShift(x, -dist#dist))
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` left by `dist` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int32): Int32 =
@@ -154,13 +172,13 @@ mod Int32 {
     /// Returns the value obtained by reversing the bits in the
     /// two's complement binary representation of `x`.
     ///
-    pub def reverse(x: Int32): Int32 = reverseHelper(x, 0, size()-1)
+    pub def reverse(x: Int32): Int32 = reverseHelper(x, 0, size() - 1)
 
     ///
     /// Helper function for `reverse`.
     ///
     def reverseHelper(x: Int32, l: Int32, r: Int32): Int32 =
-        if (l >= r) x else reverseHelper(swap(x, l, r), l+1, r-1)
+        if (l >= r) x else reverseHelper(swap(x, l, r), l + 1, r - 1)
 
     ///
     /// Helper function for `reverse`.
@@ -168,7 +186,7 @@ mod Int32 {
     def swap(x: Int32, l: Int32, r: Int32): Int32 = match (getBit(pos = l, x), getBit(pos = r, x)) {
         case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
         case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
-        case _ => x
+        case _      => x
     }
 
     ///
@@ -195,11 +213,16 @@ mod Int32 {
     /// Otherwise recursively check the next bit in the same way.
     ///
     def oneBitPositionHelper(x: Int32, position: Int32, delta: Int32): Int32 = {
-        if      (position < 0)                   -1
-        else if (position > size() - 1)          -1
-        else if (getBit(pos = position, x) == 1) position
-        else if (delta == 0)                     -1
-        else                                     oneBitPositionHelper(x, position + delta, delta)
+        if (position < 0)
+            -1
+        else if (position > size() - 1)
+            -1
+        else if (getBit(pos = position, x) == 1)
+            position
+        else if (delta == 0)
+            -1
+        else
+            oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -244,7 +267,7 @@ mod Int32 {
 
     ///
     /// Returns the bit of `x` at position `pos` (either 0 or 1).
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int32): Int32 =
@@ -252,21 +275,21 @@ mod Int32 {
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def setBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseOr(x, leftShift(1, pos#pos))
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def clearBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseAnd(x, bitwiseNot(leftShift(1, pos#pos)))
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def flipBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseXor(x, leftShift(1, pos#pos))
@@ -285,32 +308,32 @@ mod Int32 {
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
-    pub def leftShift(x: Int32, y: Int32): Int32 = $INT32_SHL$(x, y)
+    pub def leftShift(x: Int32, y: Int32): Int32 = %%INT32_SHL%%(x, y)
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
-    pub def rightShift(x: Int32, y: Int32): Int32 = $INT32_SHR$(x, y)
+    pub def rightShift(x: Int32, y: Int32): Int32 = %%INT32_SHR%%(x, y)
 
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
-    pub def bitwiseAnd(x: Int32, y: Int32): Int32 = $INT32_AND$(x, y)
+    pub def bitwiseAnd(x: Int32, y: Int32): Int32 = %%INT32_AND%%(x, y)
 
     ///
     /// Returns the bitwise NOT of `x`.
     ///
-    pub def bitwiseNot(x: Int32): Int32 = $INT32_NOT$(x)
+    pub def bitwiseNot(x: Int32): Int32 = %%INT32_NOT%%(x)
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
-    pub def bitwiseOr(x: Int32, y: Int32): Int32 = $INT32_OR$(x, y)
+    pub def bitwiseOr(x: Int32, y: Int32): Int32 = %%INT32_OR%%(x, y)
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
-    pub def bitwiseXor(x: Int32, y: Int32): Int32 = $INT32_XOR$(x, y)
+    pub def bitwiseXor(x: Int32, y: Int32): Int32 = %%INT32_XOR%%(x, y)
 
     ///
     /// Returns the factorial of `x`.
@@ -337,11 +360,9 @@ mod Int32 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int32] = try {
-        import java.lang.String.strip(): String \ {};
-        import static java.lang.Integer.parseInt(String): Int32 \ {};
-        Some(s |> strip |> parseInt)
+        Some(Integer.parseInt(s.strip()))
     } catch {
-        case _: ##java.lang.NumberFormatException => None
+        case _: NumberFormatException => None
     }
 
     ///
@@ -351,11 +372,9 @@ mod Int32 {
     ///
     pub def parse(radix: Int32, s: String): Result[String, Int32] =
         try {
-            import java.lang.String.strip(): String \ {};
-            import static java.lang.Integer.parseInt(String, Int32): Int32 \ {};
-            Ok(parseInt(strip(s), radix))
+            Ok(Integer.parseInt(s.strip(), radix))
         } catch {
-            case _: ##java.lang.NumberFormatException => Err("Int32.parse")
+            case _: NumberFormatException => Err("Int32.parse")
         }
 
     ///
@@ -367,12 +386,10 @@ mod Int32 {
     /// (i.e. -128 to 127).
     ///
     pub def tryToInt8(x: Int32): Option[Int8] =
-        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
-        import java.lang.Integer.byteValue(): Int8 \ {};
         if (x < Int8.toInt32(Int8.minValue()) or x > Int8.toInt32(Int8.maxValue()))
             None
         else
-            Some(valueOf(x) |> byteValue)
+            Some(Integer.valueOf(x).byteValue())
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -383,12 +400,10 @@ mod Int32 {
     /// (i.e. -32768 to 32767).
     ///
     pub def tryToInt16(x: Int32): Option[Int16] =
-        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
-        import java.lang.Integer.shortValue(): Int16 \ {};
         if (x < Int16.toInt32(Int16.minValue()) or x > Int16.toInt32(Int16.maxValue()))
             None
         else
-            Some(valueOf(x) |> shortValue)
+            Some(Integer.valueOf(x).shortValue())
 
     ///
     /// Convert `x` to a Int64.
@@ -396,9 +411,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int32): Int64 =
-        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
-        import java.lang.Integer.longValue(): Int64 \ {};
-        (valueOf(x) |> longValue)
+        Integer.valueOf(x).longValue()
 
     ///
     /// Convert `x` to a BigInt.
@@ -406,10 +419,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int32): BigInt =
-        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {} as i16ValueOf;
-        import java.lang.Integer.longValue(): Int64 \ {};
-        import static java.math.BigInteger.valueOf(Int64): BigInt \ {} as asBigInt;
-        (i16ValueOf(x) |> longValue |> asBigInt)
+        BigInteger.valueOf(Integer.valueOf(x).longValue())
 
     ///
     /// Convert `x` to an Float32.
@@ -417,9 +427,7 @@ mod Int32 {
     /// The numeric value of `x` may lose precision.
     ///
     pub def toFloat32(x: Int32): Float32 =
-        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
-        import java.lang.Integer.floatValue(): Float32 \ {};
-        (valueOf(x) |> floatValue)
+        Integer.valueOf(x).floatValue()
 
     ///
     /// Convert `x` to a Float64.
@@ -427,9 +435,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int32): Float64 =
-        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
-        import java.lang.Integer.doubleValue(): Float64 \ {};
-        (valueOf(x) |> doubleValue)
+        Integer.valueOf(x).doubleValue()
 
     ///
     /// Convert `x` to a BigDecimal.
@@ -437,19 +443,18 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int32): BigDecimal =
-        unsafe new BigDecimal(x)
+        new BigDecimal(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.
     ///
     def clamp(min: {min = Int32}, max: {max = Int32}, x: Int32): Int32 =
         if (x < min#min)
-             min#min
+            min#min
+        else if (x > max#max)
+            max#max
         else
-            if (x > max#max)
-                max#max
-            else
-                x
+            x
 
     ///
     /// Convert `x` to an `Int8`.
@@ -457,12 +462,9 @@ mod Int32 {
     /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int32): Int8 =
-        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
-        import java.lang.Integer.byteValue(): Int8 \ {};
         let mini32 = Int8.toInt32(min#min);
         let maxi32 = Int8.toInt32(max#max);
-        (valueOf(clamp(min = mini32, max = maxi32, x)) |> byteValue)
-
+        Integer.valueOf(clamp(min = mini32, max = maxi32, x)).byteValue()
 
     ///
     /// Convert `x` to an `Int16`.
@@ -470,30 +472,50 @@ mod Int32 {
     /// Returns `x` clamped within the Int16 range `min` to `max`.
     ///
     pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: Int32): Int16 =
-        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
-        import java.lang.Integer.shortValue(): Int16 \ {};
         let mini32 = Int16.toInt32(min#min);
         let maxi32 = Int16.toInt32(max#max);
-        (valueOf(clamp(min = mini32, max = maxi32, x)) |> shortValue)
+        Integer.valueOf(clamp(min = mini32, max = maxi32, x)).shortValue()
 
     ///
-    /// Get the primitive Int32 value from its object representation (i.e. ##java.lang.Integer).
+    /// Convert `x` to an Int8 by truncation.
+    ///
+    /// Discards all but the lowest 8 bits.
+    ///
+    pub def truncateToInt8(x: Int32): Int8 =
+        Integer.valueOf(x).byteValue()
+
+    ///
+    /// Convert `x` to an Int16 by truncation.
+    ///
+    /// Discards all but the lowest 16 bits.
+    ///
+    pub def truncateToInt16(x: Int32): Int16 =
+        Integer.valueOf(x).shortValue()
+
+    ///
+    /// Convert `x` to a Char by truncation.
+    ///
+    /// Discards all but the lowest 16 bits.
+    ///
+    pub def truncateToChar(x: Int32): Char =
+        unchecked_cast(Integer.valueOf(x).shortValue() as Char)
+
+    ///
+    /// Get the primitive Int32 value from its object representation (i.e. Integer).
     ///
     /// This function is expected to be used when marshaling Int32s from Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Integer`.
+    /// code you should not need to use `Integer`.
     ///
-    pub def intValue(i: ##java.lang.Integer): Int32 =
-        import java.lang.Integer.intValue(): Int32 \ {};
-        intValue(i)
+    pub def intValue(i: Integer): Int32 =
+        i.intValue()
 
     ///
-    /// Convert an Int32 value to its object representation (i.e. ##java.lang.Integer).
+    /// Convert an Int32 value to its object representation (i.e. Integer).
     ///
     /// This function is expected to be used when marshaling Int32s to Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Integer`.
+    /// code you should not need to use `Integer`.
     ///
-    pub def valueOf(i: Int32): ##java.lang.Integer =
-        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
-        valueOf(i)
+    pub def valueOf(i: Int32): Integer =
+        Integer.valueOf(i)
 
 }

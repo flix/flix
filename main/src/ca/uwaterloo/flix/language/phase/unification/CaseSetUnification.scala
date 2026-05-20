@@ -16,11 +16,9 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.unification.SetFormula._
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.Bimap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
+import ca.uwaterloo.flix.language.phase.unification.SetFormula.*
 
 import scala.collection.immutable.SortedSet
 
@@ -29,44 +27,76 @@ object CaseSetUnification {
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit scope: RegionScope, flix: Flix): Option[Substitution] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
     if (tpe1 eq tpe2) {
-      return Ok(Substitution.empty)
+      return Some(Substitution.empty)
     }
 
-    ///
-    /// Get rid of of trivial variable cases.
-    ///
-    (tpe1, tpe2) match {
-      case (t1@Type.Var(x, _), t2) if renv0.isFlexible(x) && !t2.typeVars.contains(t1) =>
-        return Ok(Substitution.singleton(x, t2))
-
-      case (t1, t2@Type.Var(x, _)) if renv0.isFlexible(x) && !t1.typeVars.contains(t2) =>
-        return Ok(Substitution.singleton(x, t1))
-
-      case _ => // nop
-    }
-
-    ///
-    /// Run the expensive boolean unification algorithm.
-    ///
     val (env, univ) = mkEnv(List(tpe1, tpe2), cases)
     val input1 = fromCaseType(tpe1, env, univ)
     val input2 = fromCaseType(tpe2, env, univ)
     val renv = liftRigidityEnv(renv0, env)
 
-    booleanUnification(input1, input2, renv, univ, enumSym, env).map {
-      case subst => subst.toTypeSubstitution(enumSym, env)
+    ///
+    /// Try get rid of trivial cases.
+    /// If failed, then run the expensive boolean unification algorithm.
+    ///
+    tryFastUnify(input1, input2, renv)
+      .orElse(booleanUnification(input1, input2, renv, univ)).map {
+        case subst => subst.toTypeSubstitution(enumSym, env)
+      }
+  }
+
+  /**
+    * Attempts a fast structural unification of two set formulas.
+    *
+    * Returns substitution if they can be unified without conflict,
+    * otherwise returns [[None]].
+    *
+    *   - A variable can unify with a formula if it is flexible and
+    *     does not occur in that formula.
+    *   - Constants unify only if equal.
+    *   - Negations unify if their subformulas unify.
+    *   - Conjunctions and disjunctions unify if both sides
+    *     unify under disjoint substitutions domains.
+    */
+  private def tryFastUnify(tpe1: SetFormula, tpe2: SetFormula, renv: Set[Int]): Option[CaseSetSubstitution] = {
+    (tpe1, tpe2) match {
+      case (SetFormula.Var(x), t2) if !renv.contains(x) && !t2.freeVars.contains(x) =>
+        Some(CaseSetSubstitution.singleton(x, t2))
+
+      case (t1, SetFormula.Var(x)) if !renv.contains(x) && !t1.freeVars.contains(x) =>
+        Some(CaseSetSubstitution.singleton(x, t1))
+
+      case (SetFormula.Cst(x), SetFormula.Cst(y)) if x == y =>
+        Some(CaseSetSubstitution.empty)
+
+      case (SetFormula.Not(x), SetFormula.Not(y)) =>
+        tryFastUnify(x, y, renv)
+
+      case (SetFormula.And(x1, y1), SetFormula.And(x2, y2)) =>
+        for {
+          subst1 <- tryFastUnify(x1, x2, renv)
+          subst2 <- tryFastUnify(y1, y2, renv) if subst2.isDisjointDomain(subst1)
+        } yield subst1 ++ subst2
+
+      case (SetFormula.Or(x1, y1), SetFormula.Or(x2, y2)) =>
+        for {
+          subst1 <- tryFastUnify(x1, x2, renv)
+          subst2 <- tryFastUnify(y1, y2, renv) if subst2.isDisjointDomain(subst1)
+        } yield subst1 ++ subst2
+
+      case _ => None
     }
   }
 
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification(tpe1: SetFormula, tpe2: SetFormula, renv: Set[Int], univ: Set[Int], sym: Symbol.RestrictableEnumSym, env: Bimap[VarOrCase, Int])(implicit flix: Flix): Result[CaseSetSubstitution, UnificationError] = {
+  private def booleanUnification(tpe1: SetFormula, tpe2: SetFormula, renv: Set[Int], univ: Set[Int])(implicit flix: Flix): Option[CaseSetSubstitution] = {
     // The boolean expression we want to show is 0.
     val query = minimize(mkEq(tpe1, tpe2)(univ))(univ)
 
@@ -93,33 +123,11 @@ object CaseSetUnification {
       //      }
       //    }
 
-      Ok(subst)
+      Some(subst)
     } catch {
       case SetUnificationException =>
-        val t1 = toCaseType(tpe1, sym, env, SourceLocation.Unknown)
-        val t2 = toCaseType(tpe2, sym, env, SourceLocation.Unknown)
-        Err(UnificationError.MismatchedCaseSets(t1, t2))
+        None
     }
-  }
-
-  /**
-    * A heuristic used to determine the order in which to eliminate variable.
-    *
-    * Semantically the order of variables is immaterial. Changing the order may
-    * yield different unifiers, but they are all equivalent. However, changing
-    * the can lead to significant speed-ups / slow-downs.
-    *
-    * We make the following observation:
-    *
-    * We want to have synthetic variables (i.e. fresh variables introduced during
-    * type inference) expressed in terms of real variables (i.e. variables that
-    * actually occur in the source code). We can ensure this by eliminating the
-    * synthetic variables first.
-    */
-  private def computeVariableOrder(l: List[Type.Var]): List[Type.Var] = {
-    val realVars = l.filter(_.sym.isReal)
-    val synthVars = l.filterNot(_.sym.isReal)
-    synthVars ::: realVars
   }
 
   /**
@@ -156,6 +164,12 @@ object CaseSetUnification {
     mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
   /**
+    * Translate [[Xor]] using the equation: a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b)
+    */
+  private def elimXor(xor: Xor)(implicit univ: Set[Int]): SetFormula =
+    mkAnd(mkOr(xor.f1, xor.f2), mkNot(mkOr(xor.f1, xor.f2)))
+
+  /**
     * An atom is a constant or a variable.
     */
   private sealed trait Atom
@@ -184,8 +198,8 @@ object CaseSetUnification {
 
   /**
     * A DNF formula is either:
-    * - a union of intersections of literals.
-    * - the universal set
+    *   - a union of intersections of literals.
+    *   - the universal set
     */
   private sealed trait Dnf
 
@@ -195,12 +209,12 @@ object CaseSetUnification {
     /**
       * The bottom value is an empty union.
       */
-    val Empty = Union(Set())
+    val Empty: Union = Union(Set())
 
     /**
       * The top value is an empty intersection.
       */
-    val All = Union(Set(Set()))
+    val All: Union = Union(Set(Set()))
   }
 
   /**
@@ -235,12 +249,12 @@ object CaseSetUnification {
   private def nnf(t: SetFormula)(implicit univ: Set[Int]): Nnf = t match {
     case Cst(syms) =>
       val lits: Set[Nnf] = syms.map(sym => Nnf.Singleton(Literal.Positive(Atom.Case(sym))))
-      lits.reduceLeftOption(Nnf.Union).getOrElse(Nnf.Empty)
+      lits.reduceLeftOption(Nnf.Union.apply).getOrElse(Nnf.Empty)
     case Var(sym) => Nnf.Singleton(Literal.Positive(Atom.Var(sym)))
     case Not(tpe) => nnfNot(tpe)
     case Or(tpe1, tpe2) => Nnf.Union(nnf(tpe1), nnf(tpe2))
     case And(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
-    case _ => throw InternalCompilerException(s"unexpected type: $t", SourceLocation.Unknown)
+    case xor: Xor => nnf(elimXor(xor))
   }
 
   /**
@@ -249,7 +263,7 @@ object CaseSetUnification {
   private def nnfNot(t: SetFormula)(implicit univ: Set[Int]): Nnf = t match {
     case Cst(syms) =>
       val lits: Set[Nnf] = syms.map(sym => Nnf.Singleton(Literal.Negative(Atom.Case(sym))))
-      lits.reduceLeftOption(Nnf.Intersection).getOrElse(Nnf.All)
+      lits.reduceLeftOption(Nnf.Intersection.apply).getOrElse(Nnf.All)
     case Var(sym) => Nnf.Singleton(Literal.Negative(Atom.Var(sym)))
     case Not(tpe) => nnf(tpe)
     case Or(tpe1, tpe2) => Nnf.Intersection(
@@ -260,7 +274,7 @@ object CaseSetUnification {
       nnf(mkNot(tpe1)),
       nnf(mkNot(tpe2))
     )
-    case _ => throw InternalCompilerException(s"unexpected type: $t", SourceLocation.Unknown)
+    case xor: Xor => nnf(mkNot(elimXor(xor)))
   }
 
   /**

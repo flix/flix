@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.Ast.Constant
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr
 
 object ConstantPrinter {
@@ -39,6 +39,8 @@ object ConstantPrinter {
     case Constant.BigInt(lit) => Expr.AsIs(s"${lit}ii")
     case Constant.Str(lit) => Expr.AsIs("\"\"\"" + lit + "\"\"\"")
     case Constant.Regex(lit) => Expr.Regex(lit)
+    case Constant.RecordEmpty => Expr.RecordEmpty
+    case Constant.Static => Expr.AsIs("Static")
   }
 
 }

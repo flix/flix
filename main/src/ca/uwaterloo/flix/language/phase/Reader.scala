@@ -16,13 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Bootstrap, Flix}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
-import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.util.{StreamOps, Validation}
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, StreamOps}
 
 import java.nio.file.{Files, Path}
 import java.util.zip.ZipFile
@@ -37,60 +36,68 @@ object Reader {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
-    flix.phase("Reader") {
+  def run(inputs: List[Input], availableClasses: AvailableClasses)(implicit flix: Flix): (ReadAst.Root, List[CompilationMessage]) =
+    flix.phaseNew("Reader") {
 
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
-          case Input.Text(_, text, stable) =>
-            val src = Source(input, text.toCharArray, stable)
-            result += (src -> ())
-
-          case Input.TxtFile(path) =>
+          case Input.RealFile(path, _) =>
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)
-            val arr = str.toCharArray
-            val src = Source(input, arr, stable = false)
+            val src = Source.fromString(input, str)
             result += (src -> ())
 
-          case Input.PkgFile(path) =>
-            for (src <- unpack(path)) {
+          case Input.VirtualFile(_, text, _) =>
+            val src = Source.fromString(input, text)
+            result += (src -> ())
+
+          case Input.VirtualUri(_, text, _) =>
+            val src = Source.fromString(input, text)
+            result += (src -> ())
+
+          case Input.PkgFile(path, sctx) =>
+            for (src <- unpack(path)(sctx, flix)) {
               result += (src -> ())
             }
+
+          case Input.FileInPackage(_, _, _, _) => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
+
+          case Input.Unknown => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
         }
       }
 
       val sources = result.toMap
-      Validation.success(ReadAst.Root(sources, names))
-    }(DebugValidation()(DebugNoOp()))
+      (ReadAst.Root(sources, availableClasses), List.empty)
+    }(DebugNoOp())
 
   /**
     * Returns a list of sources extracted from the given flix package at path `p`.
     */
-  private def unpack(p: Path)(implicit flix: Flix): List[Source] = {
+  private def unpack(p: Path)(implicit sctx: SecurityContext, flix: Flix): List[Source] = {
     // Check that the path is a flix package.
-    if (!Bootstrap.isPkgFile(p))
-      throw new RuntimeException(s"The path '$p' is not a flix package.")
-
-    // Open the zip file.
-    Using(new ZipFile(p.toFile)) { zip =>
-      // Collect all source and test files.
-      val result = mutable.ListBuffer.empty[Source]
-      val iterator = zip.entries()
-      while (iterator.hasMoreElements) {
-        val entry = iterator.nextElement()
-        val name = entry.getName
-        if (name.endsWith(".flix")) {
-          val fullName = p.getFileName.toString + ":" + name
-          val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
-          val str = new String(bytes, flix.defaultCharset)
-          val arr = str.toCharArray
-          result += Source(Ast.Input.Text(fullName, str, stable = false), arr, stable = false)
-        }
-      }
-      result.toList
-    }.get // TODO Return a Result instead, see https://github.com/flix/flix/issues/3132
+    flix.isValidFpkgFile(p) match {
+      case Result.Err(_) => throw new RuntimeException(s"The path '$p' is not a flix package.")
+      case Result.Ok(()) =>
+        // Open the zip file.
+        Using(new ZipFile(p.toFile)) { zip =>
+          // Collect all source and test files.
+          val result = mutable.ArrayBuffer.empty[Source]
+          val iterator = zip.entries()
+          while (iterator.hasMoreElements) {
+            val entry = iterator.nextElement()
+            val name = entry.getName
+            if (name.endsWith(".flix")) {
+              val virtualPath = p.getFileName.toString + ":" + name
+              val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
+              val str = new String(bytes, flix.defaultCharset)
+              val input = Input.FileInPackage(p, virtualPath, str, sctx)
+              result += Source.fromString(input, str)
+            }
+          }
+          result.toList
+        }.get // TODO Return a Result instead, see https://github.com/flix/flix/issues/3132
+    }
   }
 
 }

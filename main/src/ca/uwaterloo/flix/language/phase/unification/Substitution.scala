@@ -15,9 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -58,44 +57,46 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     * Applies `this` substitution to the given type `tpe0`.
     */
   def apply(tpe0: Type): Type = {
-    // NB: The order of cases has been determined by code coverage analysis.
-    def visit(t: Type): Type =
-      t match {
-        case x: Type.Var => m.getOrElse(x.sym, x)
-        case Type.Cst(tc, _) => t
-        case Type.Apply(t1, t2, loc) =>
-          val y = visit(t2)
-          visit(t1) match {
-            // Simplify boolean equations.
-            case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => Type.mkUnion(x, y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => Type.mkIntersection(x, y, loc)
-
-            // Simplify boolean equations.
-            case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
-
-            // Simplify set expressions
-            case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
-
-            // Else just apply
-            case x => Type.Apply(x, y, loc)
-          }
-        case Type.Alias(sym, args0, tpe0, loc) =>
-          val args = args0.map(visit)
-          val tpe = visit(tpe0)
-          Type.Alias(sym, args, tpe, loc)
-        case Type.AssocType(cst, args0, kind, loc) =>
-          val args = args0.map(visit)
-          Type.AssocType(cst, args, kind, loc)
-      }
-
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
-    if (isEmpty) tpe0 else visit(tpe0)
+    if (isEmpty) tpe0 else visitType(tpe0)
   }
+
+  private def visitType(t: Type): Type = t match {
+    // NB: The order of cases has been determined by code coverage analysis.
+    case x: Type.Var => m.getOrElse(x.sym, x)
+
+    case Type.Cst(_, _) => t
+
+    case app@Type.Apply(t1, t2, loc) =>
+      // Note: While we could perform simplifications here,
+      // experimental results have shown that it is not worth it.
+      val x = visitType(t1)
+      val y = visitType(t2)
+      // Performance: Reuse t, if possible.
+      app.renew(x, y, loc)
+
+    case Type.Alias(sym, args0, tpe0, loc) =>
+      val args = args0.map(visitType)
+      val tpe = visitType(tpe0)
+      Type.Alias(sym, args, tpe, loc)
+
+    case Type.AssocType(cst, args0, kind, loc) =>
+      val args = args0.map(visitType)
+      Type.AssocType(cst, args, kind, loc)
+
+    case Type.JvmToType(tpe0, loc) =>
+      val tpe = visitType(tpe0)
+      Type.JvmToType(tpe, loc)
+
+    case Type.JvmToEff(tpe0, loc) =>
+      val tpe = visitType(tpe0)
+      Type.JvmToEff(tpe, loc)
+
+    case Type.UnresolvedJvmType(member0, loc) =>
+      val member = member0.map(visitType)
+      Type.UnresolvedJvmType(member, loc)
+  }
+
 
   /**
     * Applies `this` substitution to the given types `ts`.
@@ -105,7 +106,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   /**
     * Applies `this` substitution to the given type constraint `tc`.
     */
-  def apply(tc: Ast.TypeConstraint): Ast.TypeConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
+  def apply(tc: TraitConstraint): TraitConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
 
   /**
     * Applies `this` substitution to the given type scheme `sc`.
@@ -123,31 +124,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   /**
     * Applies `this` substitution to the given equality constraint.
     */
-  def apply(ec: Ast.EqualityConstraint): Ast.EqualityConstraint = if (isEmpty) ec else ec match {
-    case Ast.EqualityConstraint(cst, t1, t2, loc) => Ast.EqualityConstraint(cst, apply(t1), apply(t2), loc)
+  def apply(ec: EqualityConstraint): EqualityConstraint = if (isEmpty) ec else ec match {
+    case EqualityConstraint(cst, t1, t2, loc) => EqualityConstraint(cst, apply(t1), apply(t2), loc)
   }
-
-  /**
-    * Applies `this` substitution to the given equality constraint.
-    */
-  def apply(ec: Ast.BroadEqualityConstraint): Ast.BroadEqualityConstraint = if (isEmpty) ec else ec match {
-    case Ast.BroadEqualityConstraint(t1, t2) => Ast.BroadEqualityConstraint(apply(t1), apply(t2))
-  }
-
-  /**
-    * Applies `this` substitution to the given provenance.
-    */
-  def apply(prov: TypeConstraint.Provenance): TypeConstraint.Provenance = prov match {
-    case Provenance.ExpectType(expected, actual, loc) => Provenance.ExpectType(apply(expected), apply(actual), loc)
-    case Provenance.ExpectEffect(expected, actual, loc) => Provenance.ExpectEffect(apply(expected), apply(actual), loc)
-    case Provenance.ExpectArgument(expected, actual, sym, num, loc) => Provenance.ExpectArgument(apply(expected), apply(actual), sym, num, loc)
-    case Provenance.Match(tpe1, tpe2, loc) => Provenance.Match(apply(tpe1), apply(tpe2), loc)
-  }
-
-  /**
-    * Removes the binding for the given type variable `tvar` (if it exists).
-    */
-  def unbind(tvar: Symbol.KindedTypeVarSym): Substitution = Substitution(m - tvar)
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
@@ -180,28 +159,27 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
     // Case 3: Merge the two substitutions.
 
-    // NB: Use of mutability improve performance.
-    import scala.collection.mutable
-    val newTypeMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
-
     // Add all bindings in `that`. (Applying the current substitution).
-    for ((x, t) <- that.m) {
-      // minimize case set formulas if present
-      val tpe = x.kind match {
-        case Kind.CaseSet(sym) => SetFormula.minimizeType(this.apply(t), sym, sym.universe, SourceLocation.Unknown)
-        case Kind.Eff => TypeMinimization.minimizeType(this.apply(t))
-        case _ => this.apply(t)
+    var result = that.m
+    for ((x, tpe) <- that.m) {
+      val t = this.apply(tpe)
+      if (!(t eq tpe)) {
+        result = result.updated(x, t)
       }
-      newTypeMap.update(x, tpe)
     }
 
     // Add all bindings in `this` that are not in `that`.
-    for ((x, t) <- this.m) {
+    for ((x, tpe) <- this.m) {
       if (!that.m.contains(x)) {
-        newTypeMap.update(x, t)
+        result = result.updated(x, tpe)
       }
     }
 
-    Substitution(newTypeMap.toMap)
+    Substitution(result)
   }
+
+  /**
+    * Returns the size of the largest type in this substitution.
+    */
+  def maxSize: Int = m.values.map(_.size).maxOption.getOrElse(0)
 }

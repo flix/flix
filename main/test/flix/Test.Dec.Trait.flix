@@ -154,17 +154,17 @@ mod Test.Dec.Trait {
         instance C[Int32] {
             pub def f(): Int32 = 0
 
-            override pub def h(): Int32 = 1
+            redef h(): Int32 = 1
         }
 
-        @test
-        def testSigOverride01(): Bool = Test.Dec.Trait.Test13.C.f() == 0
+        @CompileTest
+        def testSigRedef01(): Bool = Test.Dec.Trait.Test13.C.f() == 0
 
-        @test
-        def testSigOverride02(): Bool = Test.Dec.Trait.Test13.C.g() == 0
+        @CompileTest
+        def testSigRedef02(): Bool = Test.Dec.Trait.Test13.C.g() == 0
 
-        @test
-        def testSigOverride03(): Bool = Test.Dec.Trait.Test13.C.h() == 1
+        @CompileTest
+        def testSigRedef03(): Bool = Test.Dec.Trait.Test13.C.h() == 1
     }
 
     mod Test14 {
@@ -207,6 +207,4 @@ mod Test.Dec.Trait {
         }
     }
 
-    @test
-    def empty(): Bool = true
 }

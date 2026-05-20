@@ -1,86 +1,93 @@
 mod Test.Exp.Concurrency.Spawn {
 
-    @test
-    def testSpawn01(): Unit \ IO = region rc { spawn () @ rc }
+    import java.lang.NullPointerException
+    import java.lang.{Thread => JThread}
 
-    @test
-    def testSpawn02(): Unit \ IO = region rc { spawn true @ rc }
+    use Assert.assertTrue
 
-    @test
-    def testSpawn03(): Unit \ IO = region rc { spawn 'a' @ rc }
+    @Test
+    def testSpawn01(): Unit = region rc { spawn () @ rc }
 
-    @test
-    def testSpawn04(): Unit \ IO = region rc { spawn 1.0f32 + 2.0f32 @ rc }
+    @Test
+    def testSpawn02(): Unit = region rc { spawn true @ rc }
 
-    @test
-    def testSpawn05(): Unit \ IO = region rc { spawn 1.0f64 + 2.0f64 @ rc }
+    @Test
+    def testSpawn03(): Unit = region rc { spawn 'a' @ rc }
 
-    @test
-    def testSpawn06(): Unit \ IO = region rc { spawn 1i8 + 2i8 @ rc }
+    @Test
+    def testSpawn04(): Unit = region rc { spawn 1.0f32 + 2.0f32 @ rc }
 
-    @test
-    def testSpawn07(): Unit \ IO = region rc { spawn 1i16 + 2i16 @ rc }
+    @Test
+    def testSpawn05(): Unit = region rc { spawn 1.0f64 + 2.0f64 @ rc }
 
-    @test
-    def testSpawn08(): Unit \ IO = region rc { spawn 1i32 + 2i32 @ rc }
+    @Test
+    def testSpawn06(): Unit = region rc { spawn 1i8 + 2i8 @ rc }
 
-    @test
-    def testSpawn09(): Unit \ IO = region rc { spawn 1i64 + 2i64 @ rc }
+    @Test
+    def testSpawn07(): Unit = region rc { spawn 1i16 + 2i16 @ rc }
 
-    @test
-    def testSpawn10(): Unit \ IO = region rc { spawn 1ii + 2ii @ rc }
+    @Test
+    def testSpawn08(): Unit = region rc { spawn 1i32 + 2i32 @ rc }
 
-    @test
-    def testSpawn11(): Unit \ IO = region rc { spawn "Hello World!" @ rc }
+    @Test
+    def testSpawn09(): Unit = region rc { spawn 1i64 + 2i64 @ rc }
 
-    @test
-    def testSpawn12(): Unit \ IO = region rc { spawn (123, 456) @ rc }
+    @Test
+    def testSpawn10(): Unit = region rc { spawn 1ii + 2ii @ rc }
 
-    @test
-    def testSpawn13(): Unit \ IO = region rc { spawn None @ rc }
+    @Test
+    def testSpawn11(): Unit = region rc { spawn "Hello World!" @ rc }
 
-    @test
-    def testSpawn14(): Unit \ IO = region rc { spawn Some(42) @ rc }
+    @Test
+    def testSpawn12(): Unit = region rc { spawn (123, 456) @ rc }
 
-    @test
-    def testSpawn15(): Unit \ IO = region rc { spawn Ok(42) @ rc }
+    @Test
+    def testSpawn13(): Unit = region rc { spawn None @ rc }
 
-    @test
-    def testSpawn16(): Unit \ IO = region rc { spawn Err(42) @ rc }
+    @Test
+    def testSpawn14(): Unit = region rc { spawn Some(42) @ rc }
 
-    @test
-    def testSpawn17(): Unit \ IO = region rc { spawn spawn 123 @ rc @ rc }
+    @Test
+    def testSpawn15(): Unit = region rc { spawn Ok(42) @ rc }
 
-    @test
-    def testSpawn18(): Unit \ IO = region rc { spawn spawn spawn 123 @ rc @ rc @ rc }
+    @Test
+    def testSpawn16(): Unit = region rc { spawn Err(42) @ rc }
 
-    @test
-    def testExceptionsInChildThread01(): Bool \ IO =
-        try {
+    @Test
+    def testSpawn17(): Unit = region rc { spawn spawn 123 @ rc @ rc }
+
+    @Test
+    def testSpawn18(): Unit = region rc { spawn spawn spawn 123 @ rc @ rc @ rc }
+
+    @Test
+    def testExceptionsInChildThread01(): Unit \ (Assert + IO) =
+        let r = try {
             region rc {
                 spawn {
-                    spawn { String.concat(checked_cast(null), "foo") } @ rc
+                    spawn { println(String.concat(checked_cast(null), "foo")) } @ rc
                 } @ rc;
-                Thread.sleep(Time.Duration.fromSeconds(1));
+                JThread.sleep(1_000i64);
                 false
             }
         } catch {
-            case _: ##java.lang.NullPointerException => true
-        }
+            case _: NullPointerException => true
+        };
+        assertTrue(r)
 
 
-    @test
-    def testExceptionsInChildThread02(): Bool \ IO = region rc {
+    @Test
+    def testExceptionsInChildThread02(): Unit \ (Assert + IO) = region rc {
         spawn {
             spawn {
                 try {
-                    String.concat(checked_cast(null), "foo")
+                    println(String.concat(checked_cast(null), "foo"))
                 } catch {
-                    case _: ##java.lang.NullPointerException => ""
+                    case _: NullPointerException => ()
                 }
             } @ rc
         } @ rc;
-        Thread.sleep(Time.Duration.fromSeconds(1));
-        true
+        JThread.sleep(1_000i64);
+        assertTrue(true)
     }
+
 }

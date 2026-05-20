@@ -34,7 +34,7 @@ object KindUnification {
       for {
         kind1 <- unify(k11, k21)
         kind2 <- unify(k12, k22)
-      } yield Kind.Arrow(kind1, kind2)
+      } yield Kind.mkArrow(kind1, kind2)
 
     // Wild ~ k = k
     case (Kind.Wild, k) =>
@@ -55,13 +55,4 @@ object KindUnification {
     // else fail
     case _ => None
   }
-
-  /**
-    * Returns true iff the two kinds can be unified.
-    */
-  def unifiesWith(k1: Kind, k2: Kind): Boolean = unify(k1, k2) match {
-    case None => false
-    case Some(_) => true
-  }
-
 }

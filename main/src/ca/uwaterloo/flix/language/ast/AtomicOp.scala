@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Mutability
+
 import java.lang.reflect.{Constructor, Field, Method}
 
 /**
@@ -30,25 +32,27 @@ object AtomicOp {
 
   case class Binary(sop: SemanticOp.BinaryOp) extends AtomicOp
 
-  case object Region extends AtomicOp
-
   case class Is(sym: Symbol.CaseSym) extends AtomicOp
 
   case class Tag(sym: Symbol.CaseSym) extends AtomicOp
 
-  case class Untag(sym: Symbol.CaseSym) extends AtomicOp
+  case class Untag(sym: Symbol.CaseSym, idx: Int) extends AtomicOp
 
   case class Index(idx: Int) extends AtomicOp
 
   case object Tuple extends AtomicOp
-
-  case object RecordEmpty extends AtomicOp
 
   case class RecordSelect(label: Name.Label) extends AtomicOp
 
   case class RecordExtend(label: Name.Label) extends AtomicOp
 
   case class RecordRestrict(label: Name.Label) extends AtomicOp
+
+  case class ExtIs(label: Name.Label) extends AtomicOp
+
+  case class ExtTag(label: Name.Label) extends AtomicOp
+
+  case class ExtUntag(label: Name.Label, idx: Int) extends AtomicOp
 
   case object ArrayLit extends AtomicOp
 
@@ -60,13 +64,13 @@ object AtomicOp {
 
   case object ArrayLength extends AtomicOp
 
-  case object Ref extends AtomicOp
+  case class StructNew(sym: Symbol.StructSym, mutability: Mutability, fields: List[Symbol.StructFieldSym]) extends AtomicOp
 
-  case object Deref extends AtomicOp
+  case class StructGet(sym: Symbol.StructFieldSym) extends AtomicOp
 
-  case object Assign extends AtomicOp
+  case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
 
-  case class InstanceOf(clazz: Class[_]) extends AtomicOp
+  case class InstanceOf(clazz: Class[?]) extends AtomicOp
 
   case object Cast extends AtomicOp
 
@@ -74,9 +78,13 @@ object AtomicOp {
 
   case object Box extends AtomicOp
 
-  case class InvokeConstructor(constructor: Constructor[_]) extends AtomicOp
+  case class InvokeConstructor(constructor: Constructor[?]) extends AtomicOp
+
+  case class InvokeSuperConstructor(constructor: Constructor[?]) extends AtomicOp
 
   case class InvokeMethod(method: Method) extends AtomicOp
+
+  case class InvokeSuperMethod(method: Method, className: String) extends AtomicOp
 
   case class InvokeStaticMethod(method: Method) extends AtomicOp
 
@@ -88,6 +96,8 @@ object AtomicOp {
 
   case class PutStaticField(field: Field) extends AtomicOp
 
+  case object Throw extends AtomicOp
+
   case object Spawn extends AtomicOp
 
   case object Lazy extends AtomicOp
@@ -97,5 +107,7 @@ object AtomicOp {
   case class HoleError(sym: Symbol.HoleSym) extends AtomicOp
 
   case object MatchError extends AtomicOp
+
+  case class CastError(from: String, to: String) extends AtomicOp
 
 }

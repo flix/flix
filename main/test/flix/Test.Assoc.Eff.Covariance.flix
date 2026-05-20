@@ -16,13 +16,13 @@ mod Test.Assoc.Eff.Covariance {
     instance Functor[List] {
         type Eff = {} // Accessing an immutable list is pure.
 
-        pub def map(f: a -> b \ ef, x: List[a]): List[b] \ ef = checked_ecast(???)
+        pub def map(f: a -> b \ ef, x: List[a]): List[b] \ ef = ???
     }
 
     instance Functor[MutList[r]] {
         type Eff = r // Accessing a mutable list has an effect in its region.
 
-        pub def map(f: a -> b \ ef, x: MutList[r, a]): MutList[r, b] \ (ef + r) = checked_ecast(???)
+        pub def map(f: a -> b \ ef, x: MutList[r, a]): MutList[r, b] \ (ef + r) = ???
     }
 
 }

@@ -58,7 +58,7 @@ object FormatSignature {
     // Case 2: Some list of parameters. Format each and join them: `foo(x: Int32, y: Bool)`
     case fparams =>
       val formattedArgs = fparams.map {
-        case TypedAst.FormalParam(sym, _, tpe, _, _) => s"${sym.text}: ${FormatType.formatType(tpe)}"
+        case TypedAst.FormalParam(bnd, tpe, _, _, _) => s"${bnd.sym.text}: ${FormatType.formatType(tpe)}"
       }
       formattedArgs.mkString(", ")
 
@@ -70,6 +70,6 @@ object FormatSignature {
   private def formatResultTypeAndEff(tpe: Type, eff: Type)(implicit flix: Flix): String = eff match {
     case Type.Cst(TypeConstructor.Pure, _) => FormatType.formatType(tpe)
     case Type.Cst(TypeConstructor.Univ, _) => s"${FormatType.formatType(tpe)} \\ IO"
-    case eff => s"${FormatType.formatType(tpe)} \\ ${FormatType.formatType(eff)}"
+    case otherEff => s"${FormatType.formatType(tpe)} \\ ${FormatType.formatType(otherEff)}"
   }
 }

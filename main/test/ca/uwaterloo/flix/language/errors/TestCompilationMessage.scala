@@ -1,44 +1,45 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestCompilationMessage extends AnyFunSuite with TestUtils {
 
-
   test("TestCompilationMessage") {
     val expected =
-      s"""-- ${TestCompilationMessage.kind} -------------------------------------------------- ${TestCompilationMessage.source.name}
+      s"""-- ${TestCompilationMessage.kind} [E9999] -------------------------------------------------- ${TestCompilationMessage.source.name}
          |
          |>> ${TestCompilationMessage.summary}
          |
-         |${NoFormatter.code(TestCompilationMessage.loc, "The code is highlighted here")}
+         |${highlight(TestCompilationMessage.loc, "The code is highlighted here", NoFormatter)(None)}
          |
          |""".stripMargin
 
-    val actual = TestCompilationMessage.messageWithLoc(NoFormatter)
+    val actual = TestCompilationMessage.messageWithLoc(NoFormatter)(None)
 
-    assert(expected == actual)
+    assert(actual.replace("\r\n", "\n") == expected.replace("\r\n", "\n"))
   }
 
 
   private case object TestCompilationMessage extends CompilationMessage {
+    override def code: ErrorCode = ErrorCode.E9999
 
-    override def kind: String = "Test Error"
+    override def kind: CompilationMessageKind = CompilationMessageKind.TestError
 
     override def loc: SourceLocation = SourceLocation.Unknown
 
     override def summary: String = "This is the summary."
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
+    override def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> $summary
          |
-         |${code(loc, "The code is highlighted here")}
+         |${highlight(loc, "The code is highlighted here", fmt)}
          |
          |""".stripMargin
     }

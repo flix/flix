@@ -18,6 +18,7 @@ sealed trait SetFormula {
     case SetFormula.Not(f) => f.freeVars
     case SetFormula.And(f1, f2) => f1.freeVars ++ f2.freeVars
     case SetFormula.Or(f1, f2) => f1.freeVars ++ f2.freeVars
+    case SetFormula.Xor(f1, f2) => f1.freeVars ++ f2.freeVars
   }
 
   /**
@@ -31,6 +32,7 @@ sealed trait SetFormula {
     case SetFormula.Not(t) => t.size
     case SetFormula.And(t1, t2) => t1.size + t2.size + 1
     case SetFormula.Or(t1, t2) => t1.size + t2.size + 1
+    case SetFormula.Xor(t1, t2) => t1.size + t2.size + 1
   }
 
   /**
@@ -45,6 +47,7 @@ sealed trait SetFormula {
     }
     case SetFormula.And(f1, f2) => s"($f1 ∩ $f2)"
     case SetFormula.Or(f1, f2) => s"($f1 ∪ $f2)"
+    case SetFormula.Xor(f1, f2) => s"($f1 ⊕ $f2)"
   }
 
 }
@@ -60,6 +63,8 @@ object SetFormula {
   case class And(f1: SetFormula, f2: SetFormula) extends SetFormula
 
   case class Or(f1: SetFormula, f2: SetFormula) extends SetFormula
+
+  case class Xor(f1: SetFormula, f2: SetFormula) extends SetFormula
 
   /**
     * Represents the empty set.
@@ -134,6 +139,23 @@ object SetFormula {
   }
 
   /**
+    * Returns the symmetric difference of the two set formulas `tpe1` and `tpe2`.
+    */
+  def mkXor(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
+    case (SetFormula.Cst(s1), x2) if s1.isEmpty =>
+      x2
+
+    case (x1, SetFormula.Cst(s2)) if s2.isEmpty =>
+      x1
+
+    case (SetFormula.Cst(s1), SetFormula.Cst(s2)) =>
+      // a ⊕ b = (a ∪ b) - (a ∩ b)
+      SetFormula.Cst(s1.union(s2).diff(s1.intersect(s2)))
+
+    case _ => SetFormula.Xor(f1, f2)
+  }
+
+  /**
     * Returns a minimized, equivalent formula of `f`.
     *
     * Currently works by building the exponential form based on [[table]]
@@ -178,33 +200,7 @@ object SetFormula {
       }
   }
 
-  /**
-    * Returns a minimized type based on SetFormula minimization.
-    */
-  def minimizeType(tpe: Type, sym: Symbol.RestrictableEnumSym, univ: SortedSet[Symbol.RestrictableCaseSym], loc: SourceLocation): Type = {
-    val (m, setFormulaUniv) = mkEnv(List(tpe), univ)
-    val setFormula = fromCaseType(tpe, m, setFormulaUniv)
-    val minimizedSetFormula = minimize(setFormula)(setFormulaUniv)
-    toCaseType(minimizedSetFormula, sym, m, loc)
-  }
-
   private def applySubst(f: SetFormula, m: Map[Int, SetFormula])(implicit univ: Set[Int]): SetFormula = SetFormula.map(f)(m)(univ)
-
-  /**
-    * Substitutes all variables in `f` using the substitution map `m`.
-    *
-    * The map `m` must bind each free variable in `f` to a (new) variable.
-    */
-  def substitute(f: SetFormula, m: Map[Int, Int]): SetFormula = f match {
-    case Cst(s) => Cst(s)
-    case Var(x) => m.get(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.", SourceLocation.Unknown)
-      case Some(y) => Var(y)
-    }
-    case Not(f1) => Not(substitute(f1, m))
-    case And(f1, f2) => And(substitute(f1, m), substitute(f2, m))
-    case Or(f1, f2) => Or(substitute(f1, m), substitute(f2, m))
-  }
 
   /**
     * Runs the function `fn` on all the variables in the formula.
@@ -215,14 +211,15 @@ object SetFormula {
     case Not(f1) => mkNot(map(f1)(fn))
     case And(f1, f2) => mkAnd(map(f1)(fn), map(f2)(fn))
     case Or(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
+    case Xor(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
   }
 
   /**
     * Creates an environment for mapping between proper types and formulas.
     */
   def mkEnv(ts: List[Type], univ: SortedSet[Symbol.RestrictableCaseSym]): (Bimap[VarOrCase, Int], Set[Int]) = {
-    val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var)
-    val cases = (univ.toSet ++ ts.flatMap(_.cases)).map(VarOrCase.Case)
+    val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var.apply)
+    val cases = (univ.toSet ++ ts.flatMap(_.cases)).map(VarOrCase.Case.apply)
     // TODO RESTR-VARS do I even need the ts part here?
 
     val forward = (vars ++ cases).zipWithIndex.toMap[VarOrCase, Int]
@@ -232,7 +229,7 @@ object SetFormula {
       case sym => forward(VarOrCase.Case(sym))
     }
 
-    (Bimap(forward, backward), newUniv.toSet)
+    (Bimap(forward, backward), newUniv)
   }
 
   /**
@@ -258,7 +255,7 @@ object SetFormula {
     }
     case Type.Cst(TypeConstructor.CaseSet(syms, _), _) =>
       val cases = syms.toSet
-        .map(VarOrCase.Case) // convert to case
+        .map(VarOrCase.Case.apply) // convert to case
         .map(m.getForward) // lookup in the map
         .map(_.getOrElse(throw InternalCompilerException(s"Unexpected unbound case", SourceLocation.Unknown)))
 
@@ -269,6 +266,8 @@ object SetFormula {
       And(fromCaseType(tpe1, m, univ), fromCaseType(tpe2, m, univ))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(_), _), tpe1, _), tpe2, _) =>
       Or(fromCaseType(tpe1, m, univ), fromCaseType(tpe2, m, univ))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseSymmetricDiff(_), _), tpe1, _), tpe2, _) =>
+      Xor(fromCaseType(tpe1, m, univ), fromCaseType(tpe2, m, univ))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
@@ -292,6 +291,7 @@ object SetFormula {
     case Not(f1) => Type.mkCaseComplement(toCaseType(f1, enumSym, m, loc), enumSym, loc)
     case And(t1, t2) => Type.mkCaseIntersection(toCaseType(t1, enumSym, m, loc), toCaseType(t2, enumSym, m, loc), enumSym, loc)
     case Or(t1, t2) => Type.mkCaseUnion(toCaseType(t1, enumSym, m, loc), toCaseType(t2, enumSym, m, loc), enumSym, loc)
+    case Xor(t1, t2) => Type.mkCaseXor(toCaseType(t1, enumSym, m, loc), toCaseType(t2, enumSym, m, loc), enumSym, loc)
   }
 
   /**
@@ -403,7 +403,7 @@ object SetFormula {
         val (m, setFormulaUniv) = mkEnv(List(tpe), SortedSet.from(enm.cases.keys))
         val setFormula = fromCaseType(tpe, m, setFormulaUniv)
         val (lower, upper) = boundsAnalysis(setFormula)(setFormulaUniv)
-        Some(cstToType(lower, m), cstToType(upper, m))
+        Some((cstToType(lower, m), cstToType(upper, m)))
       case _ => None
     }
   }

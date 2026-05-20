@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.errors.TypeError
 
 
 /**
@@ -24,43 +25,22 @@ import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
 sealed trait TypeConstraint {
 
   /**
-    * The index indicates the order in which constraints will be evaluated.
-    * A constraint with a lower index is reduced first if possible.
+    * Returns the sum of the sizes of all the types in this constraint.
     */
-  lazy val index: (Int, Int, Int) = this match {
-    case TypeConstraint.Equality(_: Type.Var, Type.Pure, _) => (0, 0, 0)
-    case TypeConstraint.Equality(Type.Pure, _: Type.Var, _) => (0, 0, 0)
-    case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
-    case TypeConstraint.EqJvmConstructor(_, _, _, _) => (1, 0, 0)
-    case TypeConstraint.EqJvmMethod(_, _, _, _, _) => (1, 0, 0)
-    case TypeConstraint.EqStaticJvmMethod(_, _, _, _, _) => (1, 0, 0)
-    case TypeConstraint.Purification(_, _, _, _, _) => (0, 0, 0)
-    case TypeConstraint.Equality(tpe1, tpe2, _) =>
-      val tvars = tpe1.typeVars ++ tpe2.typeVars
-      val effTvars = tvars.filter(_.kind == Kind.Eff)
-      (1, effTvars.size, tvars.size)
-    case TypeConstraint.Trait(_, _, _) => (2, 0, 0)
+  def size: Int = this match {
+    case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.size + tpe2.size
+    case TypeConstraint.Trait(_, tpe, _) => tpe.size
+    case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
+    case TypeConstraint.Conflicted(tpe1, tpe2, _) => tpe1.size + tpe2.size
+    case TypeConstraint.EffConflicted(_) => 0
   }
 
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
-    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => s"${mvar.baseType} ~ ${Type.getFlixType(clazz)}[$tpes" // temporary
-    case TypeConstraint.EqJvmMethod(mvar, tpe, methodName, tpes, _) => s"${mvar.baseType} ~ $tpe.${methodName.name}(${tpes.mkString(",")})"
-    case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes, _) => s"${mvar.baseType} ~ ${clazz.getName}.${methodName.name}(${tpes.mkString(",")}"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
-  }
-
-  /**
-    * Returns the number of type variables in the constraint.
-    */
-  def numVars: Int = this match {
-    case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
-    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => tpes.foldLeft(1) { (acc, tpe) => acc + tpe.typeVars.size }
-    case TypeConstraint.EqJvmMethod(mvar, tpe, _, tpes, _) => tpes.foldLeft(1 + tpe.typeVars.size) { (acc, tpe) => acc + tpe.typeVars.size }
-    case TypeConstraint.EqStaticJvmMethod(mvar, clazz, _, tpes, _) => tpes.foldLeft(1) { (acc, tpe) => acc + tpe.typeVars.size } // to check
-    case TypeConstraint.Trait(_, tpe, _) => tpe.typeVars.size
-    case TypeConstraint.Purification(_, eff1, eff2, _, _) => eff1.typeVars.size + eff2.typeVars.size
+    case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"$tpe1 ≁ $tpe2"
+    case TypeConstraint.EffConflicted(err) => err.toString
   }
 
   def loc: SourceLocation
@@ -79,30 +59,6 @@ object TypeConstraint {
   }
 
   /**
-   * A constraint indicating the equivalence between a Java constructor's type and a class with its arguments.
-   * Where mvar must have kind JvmConstructorOrMethod -> Type.
-   */
-  case class EqJvmConstructor(cvar: Type.Var, clazz: Class[_], tpes: List[Type], prov: Provenance) extends TypeConstraint {
-    def loc: SourceLocation = prov.loc
-  }
-
-  /**
-   * A constraint indicating the equivalence between a Java method's type and a method signature, i.e., a type, method name and list of arguments.
-   * Where mvar must have kind JvmConstructorOrMethod -> Type.
-   */
-  case class EqJvmMethod(mvar: Type.Var, tpe0: Type, methodName: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
-    def loc: SourceLocation = prov.loc
-  }
-
-  /**
-   * A constraint indicating the equivalence between a static Java method's type and a method signature, i.e., a type, method name and list of arguments.
-   * Where mvar must have kind JvmConstructorOrMethod -> Type.
-   */
-  case class EqStaticJvmMethod(mvar: Type.Var, clazz: Class[_], methodName: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
-    def loc: SourceLocation = prov.loc
-  }
-
-  /**
     * A constraint indicating that the given type is a member of the given trait.
     * {{{
     *   sym[tpe]
@@ -112,8 +68,8 @@ object TypeConstraint {
 
   /**
     * A constraint indicating that:
-    * - `eff1` is equivalent to `eff2` when the region `sym` is purified in `eff2`, and
-    * - the nested constraints all hold
+    *   - `eff1` is equivalent to `eff2` when the region `sym` is purified in `eff2`, and
+    *   - the nested constraints all hold
     *
     * This constraint arises when exiting a region.
     * All nested constraints must be resolved before determining the equality of `eff1` and `eff2`,
@@ -123,8 +79,19 @@ object TypeConstraint {
     *   eff1 ~ eff2[sym ↦ Pure] ∧ nested
     * }}}
     */
-  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, prov: Provenance, nested: List[TypeConstraint]) extends TypeConstraint {
+  case class Purification(sym: Symbol.RegionSym, eff1: Type, eff2: Type, prov: Provenance, nested: List[TypeConstraint]) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
+  }
+
+  /**
+    * A type constraint indicating that `tpe1` and `tpe2` cannot be unified.
+    */
+  case class Conflicted(tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
+    def loc: SourceLocation = prov.loc
+  }
+
+  case class EffConflicted(error: TypeError) extends TypeConstraint {
+    def loc: SourceLocation = error.loc
   }
 
   sealed trait Provenance {
@@ -152,5 +119,21 @@ object TypeConstraint {
       * The constraint indicates that the types must match.
       */
     case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
+
+    /**
+      * The constraint indicates that the left effect is a variable representing the source effect on the right.
+      */
+    case class Source(eff1: Type.Var, eff2: Type, loc: SourceLocation) extends Provenance
+
+    /**
+      * The constraint indicates that the type is used in the first part of a statement (must be unit).
+      */
+    case class NonUnitStatement(actual: Type, loc: SourceLocation) extends Provenance
+
+    /**
+      * Indicates the conflict arose from a timeout
+      */
+    // TODO this is an abuse of provenance. We should instead have a separate "conflict reason" type.
+    case class Timeout(msg: String, loc: SourceLocation) extends Provenance
   }
 }

@@ -1,340 +1,272 @@
-/*
- *  Copyright 2023 Stephen Tetley
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestToJava {
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toJavaObject                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    use Assert.{assertEq, assertTrue};
 
-    @test
-    def toJavaObject01(): Bool =
-        let x = ToJava.toJavaObject(0);
-        typematch x {
-            case _: ##java.lang.Object => true
-            case _: _ => false
-        }
-
-    @test
-    def toJavaObject02(): Bool =
-        let x = ToJava.toJavaObject("hello world!");
-        typematch x {
-            case _: ##java.lang.Object => true
-            case _: _ => false
-        }
+    import java.util.{List => JList}
+    import java.util.{Map => JMap}
+    import java.util.{Set => JSet}
+    import java.lang.Object
 
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def int8ToJava01(): Bool =
+    @Test
+    def int8ToJava01(): Unit \ Assert =
         let i = ToJava.toJava(0i8);
-        Int8.byteValue(i) == 0i8
+        assertEq(expected = 0i8, Int8.byteValue(i))
 
-    @test
-    def int8ToJava02(): Bool =
+    @Test
+    def int8ToJava02(): Unit \ Assert =
         let i = ToJava.toJava(100i8);
-        Int8.byteValue(i) == 100i8
+        assertEq(expected = 100i8, Int8.byteValue(i))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def int16ToJava01(): Bool =
+    @Test
+    def int16ToJava01(): Unit \ Assert =
         let i = ToJava.toJava(0i16);
-        Int16.shortValue(i) == 0i16
+        assertEq(expected = 0i16, Int16.shortValue(i))
 
-    @test
-    def int16ToJava02(): Bool =
+    @Test
+    def int16ToJava02(): Unit \ Assert =
         let i = ToJava.toJava(100i16);
-        Int16.shortValue(i) == 100i16
+        assertEq(expected = 100i16, Int16.shortValue(i))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def int32ToJava01(): Bool =
+    @Test
+    def int32ToJava01(): Unit \ Assert =
         let i = ToJava.toJava(0);
-        Int32.intValue(i) == 0
+        assertEq(expected = 0, Int32.intValue(i))
 
-    @test
-    def int32ToJava02(): Bool =
+    @Test
+    def int32ToJava02(): Unit \ Assert =
         let i = ToJava.toJava(100);
-        Int32.intValue(i) == 100
+        assertEq(expected = 100, Int32.intValue(i))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def int64ToJava01(): Bool =
+    @Test
+    def int64ToJava01(): Unit \ Assert =
         let i = ToJava.toJava(0i64);
-        Int64.longValue(i) == 0i64
+        assertEq(expected = 0i64, Int64.longValue(i))
 
-    @test
-    def int64ToJava02(): Bool =
+    @Test
+    def int64ToJava02(): Unit \ Assert =
         let i = ToJava.toJava(100i64);
-        Int64.longValue(i) == 100i64
+        assertEq(expected = 100i64, Int64.longValue(i))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Float32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def float32ToJava01(): Bool =
+    @Test
+    def float32ToJava01(): Unit \ Assert =
         let d = ToJava.toJava(0.0f32);
-        Float32.floatValue(d) == 0.0f32
+        assertEq(expected = 0.0f32, Float32.floatValue(d))
 
-    @test
-    def float32ToJava02(): Bool =
+    @Test
+    def float32ToJava02(): Unit \ Assert =
         let d = ToJava.toJava(100.0f32);
-        Float32.floatValue(d) == 100.0f32
+        assertEq(expected = 100.0f32, Float32.floatValue(d))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def float64ToJava01(): Bool =
+    @Test
+    def float64ToJava01(): Unit \ Assert =
         let d = ToJava.toJava(0.0f64);
-        Float64.doubleValue(d) == 0.0f64
+        assertEq(expected = 0.0f64, Float64.doubleValue(d))
 
-    @test
-    def float64ToJava02(): Bool =
+    @Test
+    def float64ToJava02(): Unit \ Assert =
         let d = ToJava.toJava(100.0f64);
-        Float64.doubleValue(d) == 100.0f64
+        assertEq(expected = 100.0f64, Float64.doubleValue(d))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // BigInt                                                                  //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def bigIntToJava01(): Bool =
+    @Test
+    def bigIntToJava01(): Unit \ Assert =
         let i = ToJava.toJava(0ii);
-        i == 0ii
+        assertEq(expected = 0ii, i)
 
-    @test
-    def bigIntToJava02(): Bool =
+    @Test
+    def bigIntToJava02(): Unit \ Assert =
         let i = ToJava.toJava(100ii);
-        i == 100ii
+        assertEq(expected = 100ii, i)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // BigDecimal                                                              //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def bigDecimalToJava01(): Bool =
+    @Test
+    def bigDecimalToJava01(): Unit \ Assert =
         let d = ToJava.toJava(0.0ff);
-        d == 0.0ff
+        assertEq(expected = 0.0ff, d)
 
-    @test
-    def bigDecimalToJava02(): Bool =
+    @Test
+    def bigDecimalToJava02(): Unit \ Assert =
         let d = ToJava.toJava(100.0ff);
-        d == 100.0ff
+        assertEq(expected = 100.0ff, d)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Char                                                                    //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def charToJava01(): Bool =
+    @Test
+    def charToJava01(): Unit \ Assert =
         let c = ToJava.toJava('0');
-        Char.charValue(c) == '0'
+        assertEq(expected = '0', Char.charValue(c))
 
-    @test
-    def charToJava02(): Bool =
+    @Test
+    def charToJava02(): Unit \ Assert =
         let c = ToJava.toJava('a');
-        Char.charValue(c) == 'a'
+        assertEq(expected = 'a', Char.charValue(c))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def stringToJava01(): Bool =
+    @Test
+    def stringToJava01(): Unit \ Assert =
         let s = ToJava.toJava("");
-        s == ""
+        assertEq(expected = "", s)
 
-    @test
-    def stringToJava02(): Bool =
+    @Test
+    def stringToJava02(): Unit \ Assert =
         let s = ToJava.toJava("hello world!");
-        s == "hello world!"
+        assertEq(expected = "hello world!", s)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Chain                                                                   //
     /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def chainToJava01(): Unit \ {Assert, IO} =
+        let l: JList[String] = ToJava.toJava((Chain.empty() : Chain[String]));
+        assertTrue(JList.of().equals(l))
 
-    @test
-    def chainToJava01(): Bool \ IO =
-        import static java.util.List.of(): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava((Chain.empty() : Chain[String]));
-        equals(of(), checked_cast(l))
+    @Test
+    def chainToJava02(): Unit \ {Assert, IO} =
+        let l: JList[String] = ToJava.toJava(Chain.singleton("one"));
+        assertTrue(JList.of("one").equals(l))
 
-    @test
-    def chainToJava02(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava(Chain.singleton("one"));
-        equals(of(checked_cast("one")), checked_cast(l))
+    @Test
+    def chainToJava03(): Unit \ {Assert, IO} =
+        let l: JList[String] = ToJava.toJava(Chain.cons("one", Chain.singleton("two")));
+        assertTrue(JList.of("one", "two").equals(l))
 
-    @test
-    def chainToJava03(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava(Chain.cons("one", Chain.singleton("two")));
-        equals(of(checked_cast("one"), checked_cast("two")), checked_cast(l))
 
     /////////////////////////////////////////////////////////////////////////////
-    // List                                                                     //
+    // List                                                                    //
     /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def listToJava01(): Unit \ {Assert, IO} =
+        let l: JList[String] = ToJava.toJava((Nil : List[String]));
+        assertTrue(JList.of().equals(l))
 
-    @test
-    def listToJava01(): Bool \ IO =
-        import static java.util.List.of(): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava((Nil : List[String]));
-        equals(of(), checked_cast(l))
+    @Test
+    def listToJava02(): Unit \ {Assert, IO} =
+        let l: JList[String] = ToJava.toJava(List#{"one"});
+        assertTrue(JList.of("one").equals(l))
 
-    @test
-    def listToJava02(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava(List#{"one"});
-        equals(of(checked_cast("one")), checked_cast(l))
+    @Test
+    def listToJava03(): Unit \ {Assert, IO} =
+        let l: JList[String] = ToJava.toJava(List#{"one", "two"});
+        assertTrue(JList.of("one", "two").equals(l))
 
-    @test
-    def listToJava03(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava(List#{"one", "two"});
-        equals(of(checked_cast("one"), checked_cast("two")), checked_cast(l))
 
     /////////////////////////////////////////////////////////////////////////////
     // Map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def mapToJava01(): Unit \ {Assert, IO} =
+        let m: JMap[String, String] = ToJava.toJava((Map#{} : Map[String, String]));
+        assertTrue(JMap.of().equals(m))
 
-    @test
-    def mapToJava01(): Bool \ IO =
-        import static java.util.Map.of(): ##java.util.Map \ {};
-        import java.util.Map.equals(##java.lang.Object): Bool \ {};
-        let m: ##java.util.Map = ToJava.toJava((Map#{} : Map[String, String]));
-        equals(of(), checked_cast(m))
+    @Test
+    def mapToJava02(): Unit \ {Assert, IO} =
+        let m: JMap[String, String] = ToJava.toJava(Map#{"a" => "one"});
+        assertTrue(JMap.of("a", "one").equals(m))
 
-    @test
-    def mapToJava02(): Bool \ IO =
-        import static java.util.Map.of(##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
-        import java.util.Map.equals(##java.lang.Object): Bool \ {};
-        let m: ##java.util.Map = ToJava.toJava(Map#{"a" => "one"});
-        equals(of(checked_cast("a"), checked_cast("one")), checked_cast(m))
+    @Test
+    def mapToJava03(): Unit \ {Assert, IO} =
+        let m: JMap[String, String] = ToJava.toJava(Map#{"a" => "one", "b" => "two"});
+        assertTrue(JMap.of("a", "one", "b", "two").equals(m))
 
-    @test
-    def mapToJava03(): Bool \ IO =
-        import static java.util.Map.of(##java.lang.Object, ##java.lang.Object, ##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
-        import java.util.Map.equals(##java.lang.Object): Bool \ {};
-        let m: ##java.util.Map = ToJava.toJava(Map#{"a" => "one", "b" => "two"});
-        equals(of(checked_cast("a"), checked_cast("one"), checked_cast("b"), checked_cast("two")), checked_cast(m))
 
     /////////////////////////////////////////////////////////////////////////////
     // Nec                                                                     //
     /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def necToJava01(): Unit \ {Assert, IO} =
+        let l: JList[String] = ToJava.toJava(Nec.singleton("one"));
+        assertTrue(JList.of("one").equals(l))
 
-    @test
-    def necToJava01(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava(Nec.singleton("one"));
-        equals(of(checked_cast("one")), checked_cast(l))
+    @Test
+    def necToJava02(): Unit \ {Assert, IO} =
+        let l: JList[String] = ToJava.toJava(Nec.cons("one", Nec.singleton("two")));
+        assertTrue(JList.of("one", "two").equals(l))
 
-    @test
-    def necToJava02(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava(Nec.cons("one", Nec.singleton("two")));
-        equals(of(checked_cast("one"), checked_cast("two")), checked_cast(l))
 
     /////////////////////////////////////////////////////////////////////////////
     // Nel                                                                     //
     /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def nelToJava01(): Unit \ {Assert, IO} =
+        let l: JList[String] = ToJava.toJava(Nel.singleton("one"));
+        assertTrue(JList.of("one").equals(l))
 
-    @test
-    def nelToJava01(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava(Nel.singleton("one"));
-        equals(of(checked_cast("one")), checked_cast(l))
+    @Test
+    def nelToJava02(): Unit \ {Assert, IO} =
+        let l: JList[String] = ToJava.toJava(Nel.cons("one", Nel.singleton("two")));
+        assertTrue(JList.of("one", "two").equals(l))
 
-    @test
-    def nelToJava02(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava(Nel.cons("one", Nel.singleton("two")));
-        equals(of(checked_cast("one"), checked_cast("two")), checked_cast(l))
 
     /////////////////////////////////////////////////////////////////////////////
     // Set                                                                     //
     /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def setToJava01(): Unit \ {Assert, IO} =
+        let s: JSet[String] = ToJava.toJava((Set#{} : Set[String]));
+        assertTrue(JSet.of().equals(s))
 
-    @test
-    def setToJava01(): Bool \ IO =
-        import static java.util.Set.of(): ##java.util.Set \ {};
-        import java.util.Set.equals(##java.lang.Object): Bool \ {};
-        let s: ##java.util.Set = ToJava.toJava((Set#{} : Set[String]));
-        equals(of(), checked_cast(s))
+    @Test
+    def setToJava02(): Unit \ {Assert, IO} =
+        let s: JSet[String] = ToJava.toJava(Set#{"one"});
+        assertTrue(JSet.of("one").equals(s))
 
-    @test
-    def setToJava02(): Bool \ IO =
-        import static java.util.Set.of(##java.lang.Object): ##java.util.Set \ {};
-        import java.util.Set.equals(##java.lang.Object): Bool \ {};
-        let s: ##java.util.Set = ToJava.toJava(Set#{"one"});
-        equals(of(checked_cast("one")), checked_cast(s))
+    @Test
+    def setToJava03(): Unit \ {Assert, IO} =
+        let s: JSet[String] = ToJava.toJava(Set#{"one", "two"});
+        assertTrue(JSet.of("one", "two").equals(s))
 
-    @test
-    def setToJava03(): Bool \ IO =
-        import static java.util.Set.of(##java.lang.Object, ##java.lang.Object): ##java.util.Set \ {};
-        import java.util.Set.equals(##java.lang.Object): Bool \ {};
-        let s: ##java.util.Set = ToJava.toJava(Set#{"one", "two"});
-        equals(of(checked_cast("one"), checked_cast("two")), checked_cast(s))
 
     /////////////////////////////////////////////////////////////////////////////
     // Vector                                                                  //
     /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def vectorToJava01(): Unit \ {Assert, IO} =
+        let v: JList[String] = ToJava.toJava((Vector#{} : Vector[String]));
+        assertTrue(JList.of().equals(v))
 
-    @test
-    def vectorToJava01(): Bool \ IO =
-        import static java.util.List.of(): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let v: ##java.util.List = ToJava.toJava((Vector#{} : Vector[String]));
-        equals(of(), checked_cast(v))
+    @Test
+    def vectorToJava02(): Unit \ {Assert, IO} =
+        let v: JList[String] = ToJava.toJava(Vector#{"one"});
+        assertTrue(JList.of("one").equals(v))
 
-    @test
-    def vectorToJava02(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let v: ##java.util.List = ToJava.toJava(Vector#{"one"});
-        equals(of(checked_cast("one")), checked_cast(v))
-
-    @test
-    def vectorToJava03(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
-        import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let v: ##java.util.List = ToJava.toJava(Vector#{"one", "two"});
-        equals(of(checked_cast("one"), checked_cast("two")), checked_cast(v))
+    @Test
+    def vectorToJava03(): Unit \ {Assert, IO} =
+        let v: JList[String] = ToJava.toJava(Vector#{"one", "two"});
+        assertTrue(JList.of("one", "two").equals(v))
 
 }

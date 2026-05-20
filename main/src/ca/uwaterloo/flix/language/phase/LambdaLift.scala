@@ -17,40 +17,66 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, SimpleType, Purity, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 object LambdaLift {
+
+  // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
+  private implicit val S: RegionScope = RegionScope.Top
 
   /**
     * Performs lambda lifting on the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
-    implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue())
+    implicit val sctx: SharedContext = SharedContext.mk()
 
-    val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val defs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
     // Add lifted defs from the shared context to the existing defs.
-    val newDefs = ctx.liftedDefs.asScala.foldLeft(defs) {
+    val newDefs = sctx.liftedDefs.asScala.foldLeft(defs) {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    val structs = Map.empty[Symbol.StructSym, LiftedAst.Struct]
-
-    LiftedAst.Root(newDefs, structs, effects, root.entryPoint, root.reachable, root.sources)
+    LiftedAst.Root(newDefs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
-  private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
-    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, purity, loc) =>
+  private def visitDef(def0: SimplifiedAst.Def)(implicit sctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
+    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, _, loc) =>
       val fs = fparams.map(visitFormalParam)
-      val e = visitExp(exp)(sym, ctx, flix)
-      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, purity, loc)
+      val e = visitExp(exp)(sym, Map.empty, sctx, flix)
+      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, loc)
+  }
+
+  private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
+    case SimplifiedAst.Enum(ann, mod, sym, tparams0, cases0, loc) =>
+      val tparams = tparams0.map(param => LiftedAst.TypeParam(param.name, param.sym, param.loc))
+      val cases = MapOps.mapValues(cases0)(visitEnumCase)
+      LiftedAst.Enum(ann, mod, sym, tparams, cases, loc)
+  }
+
+  private def visitEnumCase(caze: SimplifiedAst.Case): LiftedAst.Case = caze match {
+    case SimplifiedAst.Case(sym, tpes, loc) => LiftedAst.Case(sym, tpes, loc)
+  }
+
+  private def visitStruct(struct0: SimplifiedAst.Struct): LiftedAst.Struct = struct0 match {
+    case SimplifiedAst.Struct(ann, mod, sym, tparams0, fields0, loc) =>
+      val tparams = tparams0.map(param => LiftedAst.TypeParam(param.name, param.sym, param.loc))
+      val fields = fields0.map(visitStructField)
+      LiftedAst.Struct(ann, mod, sym, tparams, fields, loc)
+  }
+
+  private def visitStructField(field: SimplifiedAst.StructField): LiftedAst.StructField = field match {
+    case SimplifiedAst.StructField(sym, tpe, loc) => LiftedAst.StructField(sym, tpe, loc)
   }
 
   private def visitEffect(effect: SimplifiedAst.Effect): LiftedAst.Effect = effect match {
@@ -65,14 +91,14 @@ object LambdaLift {
       LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
-  private def visitExp(e: SimplifiedAst.Expr)(implicit sym0: Symbol.DefnSym, ctx: SharedContext, flix: Flix): LiftedAst.Expr = e match {
+  private def visitExp(e: SimplifiedAst.Expr)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.Expr = e match {
     case SimplifiedAst.Expr.Cst(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
     case SimplifiedAst.Expr.Var(sym, tpe, loc) => LiftedAst.Expr.Var(sym, tpe, loc)
 
     case SimplifiedAst.Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
       val arrowTpe = tpe match {
-        case t: MonoType.Arrow => t
+        case t: SimpleType.Arrow => t
         case _ => throw InternalCompilerException(s"Lambda has unexpected type: $tpe", loc)
       }
 
@@ -83,12 +109,12 @@ object LambdaLift {
       val freshSymbol = Symbol.freshDefnSym(sym0)
 
       // Construct annotations and modifiers for the fresh definition.
-      val ann = Ast.Annotations.Empty
-      val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
+      val ann = Annotations.Empty
+      val mod = Modifiers(Modifier.Synthetic :: Nil)
 
       // Construct the closure parameters
       val cs = if (cparams.isEmpty) {
-        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc))
+        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), SimpleType.Unit, loc))
       } else cparams.map(visitFormalParam)
 
       // Construct the formal parameters.
@@ -96,33 +122,45 @@ object LambdaLift {
 
       // Construct a new definition.
       val defTpe = arrowTpe.result
-      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, liftedExp.purity, loc)
+      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, loc)
 
       // Add the new definition to the map of lifted definitions.
-      ctx.liftedDefs.add(freshSymbol -> defn)
+      sctx.liftedDefs.add(freshSymbol -> defn)
 
       // Construct the closure args.
       val closureArgs = if (freeVars.isEmpty)
-        List(LiftedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc))
+        List(LiftedAst.Expr.Cst(Constant.Unit, SimpleType.Unit, loc))
       else freeVars.map {
-        case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expr.Var(sym, tpe, sym.loc)
+        case SimplifiedAst.FreeVar(sym, fvTpe) => LiftedAst.Expr.Var(sym, fvTpe, sym.loc)
       }
 
       // Construct the closure expression.
       LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, arrowTpe, Purity.Pure, loc)
 
     case SimplifiedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      val es = exps map visitExp
+      val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      val es = exps map visitExp
-      LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
+    case SimplifiedAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
     case SimplifiedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
-      val es = exps map visitExp
+      val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
+
+    case SimplifiedAst.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      val newDefnSym = liftedLocalDefs.get(sym)
+      newDefnSym match {
+        case Some(defnSym) => LiftedAst.Expr.ApplyDef(defnSym, es, tpe, purity, loc)
+        case None => throw InternalCompilerException(s"unable to find lifted def for local def $sym", loc)
+      }
+
+    case SimplifiedAst.Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      LiftedAst.Expr.ApplyOp(sym, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
@@ -130,10 +168,10 @@ object LambdaLift {
       val e3 = visitExp(exp3)
       LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
+    case SimplifiedAst.Expr.Stm(exps, exp, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      LiftedAst.Expr.Stm(es, e, tpe, purity, loc)
 
     case SimplifiedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -145,32 +183,36 @@ object LambdaLift {
     case SimplifiedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
       LiftedAst.Expr.JumpTo(sym, tpe, purity, loc)
 
+    case SimplifiedAst.Expr.Switch(exp, enumSym, cases, defaultExp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val cs = cases.map { case (sym, br) => sym -> visitExp(br) }
+      val d = visitExp(defaultExp)
+      LiftedAst.Expr.Switch(e, enumSym, cs, d, tpe, purity, loc)
+
     case SimplifiedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       LiftedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.LetRec(varSym, exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      e1 match {
-        case LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(defSym), closureArgs, _, _, _) =>
-          val index = closureArgs.indexWhere {
-            case LiftedAst.Expr.Var(sym, _, _) => varSym == sym
-            case _ => false
-          }
-          if (index == -1) {
-            // function never calls itself
-            LiftedAst.Expr.Let(varSym, e1, e2, tpe, purity, loc)
-          } else
-            LiftedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
+    case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
+      val freshDefnSym = Symbol.freshDefnSym(sym0)
+      val updatedLiftedLocalDefs = liftedLocalDefs + (sym -> freshDefnSym)
+      // It is **very important** we add the mapping `sym -> freshDefnSym` to liftedLocalDefs
+      // before visiting the body since exp1 may contain recursive calls to `sym`
+      // so they need to be substituted for `freshDefnSym` in `exp1` which
+      // `visitExp` handles for us.
+      val body = visitExp(exp1)(sym0, updatedLiftedLocalDefs, sctx, flix)
+      val ann = Annotations.Empty
+      val mod = Modifiers(Modifier.Synthetic :: Nil)
+      val fps = fparams.map(visitFormalParam)
+      val defTpe = exp1.tpe
+      val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, List.empty, fps, body, defTpe, loc.asSynthetic)
+      sctx.liftedDefs.add(freshDefnSym -> liftedDef)
+      visitExp(exp2)(sym0, updatedLiftedLocalDefs, sctx, flix) // LocalDef node is erased here
 
-        case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.", loc)
-      }
-
-    case SimplifiedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
+    case SimplifiedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
-      LiftedAst.Expr.Scope(sym, e, tpe, purity, loc)
+      LiftedAst.Expr.Region(sym, e, tpe, purity, loc)
 
     case SimplifiedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -181,40 +223,39 @@ object LambdaLift {
       }
       LiftedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case SimplifiedAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
-        case SimplifiedAst.HandlerRule(sym, fparams, body) =>
+        case SimplifiedAst.HandlerRule(symUse, fparams, body) =>
           val fps = fparams.map(visitFormalParam)
           val b = visitExp(body)
-          LiftedAst.HandlerRule(sym, fps, b)
+          LiftedAst.HandlerRule(symUse, fps, b)
       }
-      LiftedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+      LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.Do(op, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExp)
-      LiftedAst.Expr.Do(op, es, tpe, purity, loc)
-
-    case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+    case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+      val constructors = constructors0.map(visitJvmConstructor)
       val methods = methods0.map(visitJvmMethod)
-      LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
-
-    case SimplifiedAst.Expr.Def(_, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
+      LiftedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
 
     case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
-    case SimplifiedAst.Expr.Apply(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
   }
 
-  private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, ctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
-    case SimplifiedAst.JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
+  private def visitJvmConstructor(constructor: SimplifiedAst.JvmConstructor)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmConstructor = constructor match {
+    case SimplifiedAst.JvmConstructor(exp, retTpe, purity, loc) =>
+      LiftedAst.JvmConstructor(visitExp(exp), retTpe, purity, loc)
+  }
+
+  private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
+    case SimplifiedAst.JvmMethod(ann, ident, fparams0, exp, retTpe, purity, loc) =>
       val fparams = fparams0 map visitFormalParam
-      LiftedAst.JvmMethod(ident, fparams, visitExp(exp), retTpe, purity, loc)
+      LiftedAst.JvmMethod(ann, ident, fparams, visitExp(exp), retTpe, purity, loc)
   }
 
 
   private def visitFormalParam(fparam: SimplifiedAst.FormalParam): LiftedAst.FormalParam = fparam match {
-    case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+    case SimplifiedAst.FormalParam(sym, tpe, loc) => LiftedAst.FormalParam(sym, tpe, loc)
   }
 
   /**
@@ -223,5 +264,13 @@ object LambdaLift {
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     */
   private case class SharedContext(liftedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, LiftedAst.Def)])
+
+  private object SharedContext {
+
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue())
+  }
 
 }

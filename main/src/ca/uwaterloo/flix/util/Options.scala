@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.SubEffectLevel.toInt
 
 import java.nio.file.Path
 
@@ -27,41 +26,33 @@ object Options {
     */
   val Default: Options = Options(
     lib = LibLevel.All,
+    build = Build.Development,
+    compilerTop = false,
     entryPoint = None,
-    explain = false,
     githubToken = None,
     installDeps = false,
     incremental = true,
     json = false,
-    output = None,
+    outputJvm = false,
+    outputPath = Path.of("./build/"),
     progress = false,
-    test = false,
-    target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     assumeYes = false,
-    xnoverify = false,
-    xbddthreshold = None,
-    xnoboolcache = false,
-    xnoboolspecialcases = false,
-    xnoboolunif = false,
-    xnooptimizer = false,
     xprintphases = false,
-    xnoqmc = false,
-    xdeprecated = false,
+    xnodeprecated = false,
     xsummary = false,
-    xfuzzer = false,
-    xprinttyper = None,
-    xverifyeffects = false,
-    xsubeffecting = SubEffectLevel.Nothing,
+    xsubeffecting = Set.empty,
     XPerfN = None,
-    XPerfFrontend = false
+    XPerfFrontend = false,
+    XPerfPar = false,
+    xchaosMonkey = false
   )
 
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, xnodeprecated = true, xchaosMonkey = true)
 
   /**
     * Default test options with the standard library.
@@ -82,73 +73,62 @@ object Options {
 /**
   * General Flix options.
   *
-  * @param lib                 selects the level of libraries to include.
-  * @param entryPoint          specifies the main entry point.
-  * @param explain             enables additional explanations.
-  * @param githubToken         the API key to use for GitHub dependency resolution.
-  * @param incremental         enables incremental compilation.
-  * @param installDeps         enables automatic installation of dependencies.
-  * @param json                enable json output.
-  * @param output              the optional output directory where to place JVM bytecode.
-  * @param progress            print progress during compilation.
-  * @param test                enables test mode.
-  * @param target              the target JVM.
-  * @param threads             selects the number of threads to use.
-  * @param loadClassFiles      loads the generated class files into the JVM.
-  * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
-  * @param xbddthreshold       the threshold for when to use BDDs for SVE.
-  * @param xnoboolcache        disable Boolean caches.
-  * @param xnoboolspecialcases disable Boolean unification shortcuts.
-  * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
-  * @param xprintphases        prints all ASTs to the build folder after each phase.
-  * @param xsummary            prints a summary of the compiled modules.
-  * @param xdeprecated         enables deprecated features.
-  * @param xfuzzer             enables compiler fuzzing.
+  * @param lib            selects the level of libraries to include.
+  * @param build          selects development or production mode.
+  * @param compilerTop    shows a live TUI of where the compiler spends its time.
+  * @param entryPoint     specifies the main entry point.
+  * @param githubToken    the API key to use for GitHub dependency resolution.
+  * @param incremental    enables incremental compilation.
+  * @param installDeps    enables automatic installation of dependencies.
+  * @param json           enable json output.
+  * @param outputJvm      Enable JVM bytecode output.
+  * @param outputPath     The path to the output folder.
+  * @param progress       print progress during compilation.
+  * @param threads        selects the number of threads to use.
+  * @param loadClassFiles loads the generated class files into the JVM.
+  * @param assumeYes      run non-interactively and assume answer to all prompts is yes.
   */
 case class Options(lib: LibLevel,
+                   build: Build,
+                   compilerTop: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
-                   explain: Boolean,
                    githubToken: Option[String],
                    incremental: Boolean,
                    installDeps: Boolean,
                    json: Boolean,
                    progress: Boolean,
-                   output: Option[Path],
-                   target: JvmTarget,
-                   test: Boolean,
+                   outputJvm: Boolean,
+                   outputPath: Path,
                    threads: Int,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
-                   xnoverify: Boolean,
-                   xbddthreshold: Option[Int],
-                   xnoboolcache: Boolean,
-                   xnoboolspecialcases: Boolean,
-                   xnoboolunif: Boolean,
-                   xnoqmc: Boolean,
-                   xnooptimizer: Boolean,
                    xprintphases: Boolean,
-                   xdeprecated: Boolean,
+                   xnodeprecated: Boolean,
                    xsummary: Boolean,
-                   xfuzzer: Boolean,
-                   xprinttyper: Option[String],
-                   xverifyeffects: Boolean,
-                   xsubeffecting: SubEffectLevel,
+                   xsubeffecting: Set[Subeffecting],
                    XPerfFrontend: Boolean,
+                   XPerfPar: Boolean,
                    XPerfN: Option[Int],
+                   xchaosMonkey: Boolean
                   )
 
 /**
-  * An option to control the version of emitted JVM bytecode.
+  * An option to control whether to run in development or production mode.
   */
-sealed trait JvmTarget
+sealed trait Build
 
-object JvmTarget {
+object Build {
+  /**
+    * Run in development mode.
+    */
+  case object Development extends Build
 
   /**
-    * Emit bytecode for Java 21.
+    * Run in production mode.
+    *
+    * Running the compiler in production mode disables certain features that are allowed during development.
     */
-  object Version21 extends JvmTarget
-
+  case object Production extends Build
 }
 
 sealed trait LibLevel
@@ -172,43 +152,23 @@ object LibLevel {
 
 }
 
-/**
-  * Compare [[LibLevel]]s based on how much sub-effecting they allow.
-  */
-sealed trait SubEffectLevel extends Ordered[SubEffectLevel] {
-  override def compare(that: SubEffectLevel): Int = toInt(this).compare(toInt(that))
-}
+sealed trait Subeffecting
 
-object SubEffectLevel {
+object Subeffecting {
 
   /**
-    * Do not use sub-effecting anywhere.
+    * Enable sub-effecting for module-level definitions.
     */
-  case object Nothing extends SubEffectLevel
+  case object ModDefs extends Subeffecting
 
   /**
-    * Allow sub-effecting on lambdas.
+    * Enable sub-effecting for instance-level defs.
     */
-  case object Lambdas extends SubEffectLevel
+  case object InsDefs extends Subeffecting
 
   /**
-    * Allow sub-effecting on lambdas and instance def bodies
+    * Enable sub-effecting for lambda expressions.
     */
-  case object LambdasAndInstances extends SubEffectLevel
-
-  /**
-    * Allow sub-effecting on lambdas and def bodies
-    */
-  case object LambdasAndDefs extends SubEffectLevel
-
-  /**
-    * Returns an integer where a larger number means more sub-effecting.
-    */
-  def toInt(level: SubEffectLevel): Int = level match {
-    case Nothing => 0
-    case Lambdas => 1
-    case LambdasAndInstances => 2
-    case LambdasAndDefs => 3
-  }
+  case object Lambdas extends Subeffecting
 
 }

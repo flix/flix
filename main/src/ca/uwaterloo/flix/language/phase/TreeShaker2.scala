@@ -17,29 +17,24 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.LiftedAst.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 
 /**
   * The Tree Shaking phase removes all unused function definitions.
   *
   * A function is considered reachable if it:
-  *
-  * (a) The main function is always reachable.
-  * (b) A function marked with @benchmark or @test is reachable.
-  * (c) Appears in a function which itself is reachable.
-  *
+  *   - Is an entry point (main / tests / exports).
+  *   - Appears in a function which itself is reachable.
+  *   - Is an instance of a trait whose signature(s) appear in a reachable function.
   */
 object TreeShaker2 {
 
-  /**
-    * Performs tree shaking on the given AST `root`.
-    */
+  /** Performs tree shaking on `root`. */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker2") {
-    // Compute the symbols that are always reachable.
-    val initReach = root.reachable
+    val initReach = root.entryPoints
 
     // Compute the symbols that are transitively reachable.
     val allReachable = ParOps.parReach(initReach, visitSym(_, root))
@@ -49,21 +44,16 @@ object TreeShaker2 {
       case (sym, _) => allReachable.contains(sym)
     }
 
-    // Reassemble the AST.
     root.copy(defs = newDefs)
   }
 
-  /**
-    * Returns the symbols reachable from the given symbol `sym`.
-    */
+  /** Returns the symbols reachable from `sym`. */
   private def visitSym(sym: Symbol.DefnSym, root: Root): Set[Symbol.DefnSym] = root.defs.get(sym) match {
     case None => Set.empty
     case Some(defn) => visitExp(defn.exp)
   }
 
-  /**
-    * Returns the function symbols reachable from the given expression `e0`.
-    */
+  /** Returns the function symbols reachable from `e0`. */
   private def visitExp(e0: Expr): Set[Symbol.DefnSym] = e0 match {
     case Expr.Cst(_, _, _) =>
       Set.empty
@@ -74,11 +64,14 @@ object TreeShaker2 {
     case Expr.ApplyAtomic(op, exps, _, _, _) =>
       visitAtomicOp(op) ++ visitExps(exps)
 
-    case Expr.ApplyClo(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(sym, exps, _, _, _) =>
       Set(sym) ++ visitExps(exps)
+
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      visitExps(exps)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
@@ -89,43 +82,37 @@ object TreeShaker2 {
     case Expr.JumpTo(_, _, _, _) =>
       Set.empty
 
+    case Expr.Switch(exp, _, cases, defaultExp, _, _, _) =>
+      visitExp(exp) ++ visitExps(cases.map(_._2)) ++ visitExp(defaultExp)
+
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foldRight(visitExp(exp))((e, acc) => visitExp(e) ++ acc)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expr.Scope(_, exp, _, _, _) =>
+    case Expr.Region(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expr.TryWith(exp, _, rules, _, _, _) =>
+    case Expr.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expr.Do(_, exps, _, _, _) =>
-      visitExps(exps)
-
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      visitExps(methods.map(_.clo))
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      visitExps(constructors.map(_.clo) ++ methods.map(_.clo))
 
   }
 
-  /**
-    * Returns the function symbols reachable from the given [[AtomicOp]] `op`.
-    */
+  /** Returns the function symbols reachable from `op`. */
   private def visitAtomicOp(op: AtomicOp): Set[Symbol.DefnSym] = op match {
     case AtomicOp.Closure(sym) => Set(sym)
     case _ => Set.empty
   }
 
-  /**
-    * Returns the function symbols reachable from `es`.
-    */
-  private def visitExps(es: List[Expr]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
+  /** Returns the function symbols reachable from `es`. */
+  private def visitExps(es: List[Expr]): Set[Symbol.DefnSym] =
+    es.map(visitExp).fold(Set())(_ ++ _)
 
 }

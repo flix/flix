@@ -1,221 +1,295 @@
 mod Test.Exp.Binary.Spaceship {
+
+    use Assert.assertEq
     use Comparison.{EqualTo, GreaterThan, LessThan}
 
-    @test
-    def testBinarySpaceship01(): Bool = (() <=> ()) == EqualTo
-
-    @test
-    def testBinarySpaceship02(): Bool = (true <=> true) == EqualTo
-
-    @test
-    def testBinarySpaceship03(): Bool = (true <=> false) == GreaterThan
-
-    @test
-    def testBinarySpaceship04(): Bool = (false <=> true) == LessThan
-
-    @test
-    def testBinarySpaceship05(): Bool = (true <=> true) == EqualTo
-
-    @test
-    def testBinarySpaceship06(): Bool = ('a' <=> 'a') == EqualTo
-
-    @test
-    def testBinarySpaceship07(): Bool = ('a' <=> 'z') == LessThan
-
-    @test
-    def testBinarySpaceship08(): Bool = ('z' <=> 'a') == GreaterThan
-
-    @test
-    def testBinarySpaceship09(): Bool = (21.42f32 <=> 21.42f32) == EqualTo
-
-    @test
-    def testBinarySpaceship10(): Bool = (123.456f32 <=> 456.789f32) == LessThan
-
-    @test
-    def testBinarySpaceship11(): Bool = (456.789f32 <=> 123.456f32) == GreaterThan
-
-    @test
-    def testBinarySpaceship12(): Bool = (21.42f64 <=> 21.42f64) == EqualTo
-
-    @test
-    def testBinarySpaceship13(): Bool = (123.456f64 <=> 456.789f64) == LessThan
-
-    @test
-    def testBinarySpaceship14(): Bool = (456.789f64 <=> 123.456f64) == GreaterThan
-
-    @test
-    def testBinarySpaceship15(): Bool = (123i8 <=> 123i8) == EqualTo
-
-    @test
-    def testBinarySpaceship16(): Bool = (123i8 <=> 127i8) == LessThan
-
-    @test
-    def testBinarySpaceship17(): Bool = (127i8 <=> 123i8) == GreaterThan
-
-    @test
-    def testBinarySpaceship18(): Bool = (21i16 <=> 21i16) == EqualTo
-
-    @test
-    def testBinarySpaceship19(): Bool = (21i16 <=> 42i16) == LessThan
-
-    @test
-    def testBinarySpaceship20(): Bool = (42i16 <=> 21i16) == GreaterThan
-
-    @test
-    def testBinarySpaceship21(): Bool = (21i32 <=> 21i32) == EqualTo
-
-    @test
-    def testBinarySpaceship22(): Bool = (21i32 <=> 42i32) == LessThan
-
-    @test
-    def testBinarySpaceship23(): Bool = (42i32 <=> 21i32) == GreaterThan
-
-    @test
-    def testBinarySpaceship24(): Bool = (21i64 <=> 21i64) == EqualTo
-
-    @test
-    def testBinarySpaceship25(): Bool = (21i64 <=> 42i64) == LessThan
-
-    @test
-    def testBinarySpaceship26(): Bool = (42i64 <=> 21i64) == GreaterThan
-
-    @test
-    def testBinarySpaceship27(): Bool = (21ii <=> 21ii) == EqualTo
-
-    @test
-    def testBinarySpaceship28(): Bool = (21ii <=> 42ii) == LessThan
-
-    @test
-    def testBinarySpaceship29(): Bool = (42ii <=> 21ii) == GreaterThan
-
-    @test
-    def testBinarySpaceship30(): Bool = ("hello" <=> "hello") == EqualTo
-
-    @test
-    def testBinarySpaceship31(): Bool = ("hello" <=> "world") == LessThan
-
-    @test
-    def testBinarySpaceship32(): Bool = ("world" <=> "hello") == GreaterThan
-
-    @test
-    def testBinarySpaceship33(): Bool = ((None: Option[Unit]) <=> None) == EqualTo
-
-    @test
-    def testBinarySpaceship34(): Bool = (Some(123) <=> Some(123)) == EqualTo
-
-    @test
-    def testBinarySpaceship35(): Bool = ((None: Option[Int32]) <=> Some(123)) == LessThan
-
-    @test
-    def testBinarySpaceship36(): Bool = (Some(123) <=> None) == GreaterThan
-
-    @test
-    def testBinarySpaceship37(): Bool = ((Ok(123): Result[Unit, _]) <=> Ok(123)) == EqualTo
-
-    @test
-    def testBinarySpaceship38(): Bool = ((Ok(123): Result[Unit, _]) <=> Ok(456)) == LessThan
-
-    @test
-    def testBinarySpaceship39(): Bool = ((Ok(456): Result[Unit, _]) <=> Ok(123)) == GreaterThan
-
-    @test
-    def testBinarySpaceship40(): Bool = ((Err(123): Result[_, Unit]) <=> Err(123)) == EqualTo
-
-    @test
-    def testBinarySpaceship41(): Bool = ((Err(123): Result[_, Unit]) <=> Err(456)) == LessThan
-
-    @test
-    def testBinarySpaceship42(): Bool = ((Err(456): Result[_, Unit]) <=> Err(123)) == GreaterThan
-
-    @test
-    def testBinarySpaceship43(): Bool = (Ok(123) <=> Err(123)) == LessThan
-
-    @test
-    def testBinarySpaceship44(): Bool = (Err(123) <=> Ok(123)) == GreaterThan
-
-    @test
-    def testBinarySpaceship45(): Bool = ((None: Option[Result[Unit, _]]) <=> Some(Ok(123))) == LessThan
-
-    @test
-    def testBinarySpaceship46(): Bool = ((Some(Ok(123)): Option[Result[Unit, _]]) <=> None) == GreaterThan
-
-    @test
-    def testBinarySpaceship47(): Bool = ((Some(Ok(123)): Option[Result[Unit, _]]) <=> Some(Ok(123))) == EqualTo
-
-    @test
-    def testBinarySpaceship48(): Bool = ((Some(Ok(123)): Option[Result[Unit, _]]) <=> Some(Ok(456))) == LessThan
-
-    @test
-    def testBinarySpaceship49(): Bool = ((Some(Ok(456)): Option[Result[Unit, _]]) <=> Some(Ok(123))) == GreaterThan
-
-    @test
-    def testBinarySpaceship50(): Bool = (Some(Ok(123)) <=> Some(Err("hello"))) == LessThan
-
-    @test
-    def testBinarySpaceship51(): Bool = (Some(Err("hello")) <=> Some(Ok(123))) == GreaterThan
-
-    @test
-    def testBinarySpaceship52(): Bool = ((Some(Ok(None)): Option[Result[Unit, Option[Unit]]]) <=> Some(Ok(None))) == EqualTo
-
-    @test
-    def testBinarySpaceship53(): Bool = ((Some(Ok(None)): Option[Result[Unit, Option[Int32]]]) <=> Some(Ok(Some(123)))) == LessThan
-
-    @test
-    def testBinarySpaceship54(): Bool = ((Some(Ok(Some(123))): Option[Result[Unit, Option[Int32]]]) <=> Some(Ok(None))) == GreaterThan
-
-    @test
-    def testBinarySpaceship55(): Bool = ((111, 222) <=> (111, 222)) == EqualTo
-
-    @test
-    def testBinarySpaceship56(): Bool = ((111, 111) <=> (111, 222)) == LessThan
-
-    @test
-    def testBinarySpaceship57(): Bool = ((111, 222) <=> (111, 111)) == GreaterThan
-
-    @test
-    def testBinarySpaceship58(): Bool = ((111, 111) <=> (222, 111)) == LessThan
-
-    @test
-    def testBinarySpaceship59(): Bool = ((222, 111) <=> (111, 111)) == GreaterThan
-
-    @test
-    def testBinarySpaceship60(): Bool = ((1, 2, 3) <=> (1, 2, 3)) == EqualTo
-
-    @test
-    def testBinarySpaceship61(): Bool = ((1, 2, 3) <=> (1, 2, 4)) == LessThan
-
-    @test
-    def testBinarySpaceship62(): Bool = ((1, 2, 4) <=> (1, 2, 3)) == GreaterThan
-
-    @test
-    def testBinarySpaceship63(): Bool = ((1, 0, 3) <=> (1, 2, 3)) == LessThan
-
-    @test
-    def testBinarySpaceship64(): Bool = ((1, 2, 3) <=> (1, 0, 3)) == GreaterThan
-
-    @test
-    def testBinarySpaceship65(): Bool = ((1, 2, 3) <=> (4, 2, 3)) == LessThan
-
-    @test
-    def testBinarySpaceship66(): Bool = ((4, 2, 3) <=> (1, 2, 3)) == GreaterThan
-
-    @test
-    def testBinarySpaceship67(): Bool = (Color.Red <=> Color.Red) == EqualTo
-
-    @test
-    def testBinarySpaceship68(): Bool = (Color.Blu <=> Color.Blu) == EqualTo
-
-    @test
-    def testBinarySpaceship69(): Bool = (Color.Red <=> Color.Blu) == LessThan
-
-    @test
-    def testBinarySpaceship70(): Bool = (Color.Blu <=> Color.Red) == GreaterThan
-
-    @test
-    def testBinarySpaceship71(): Bool = (Some(Color.Red) <=> Some(Color.Blu)) == LessThan
-
-    @test
-    def testBinarySpaceship72(): Bool = (Some(Color.Blu) <=> Some(Color.Red)) == GreaterThan
+    @Test
+    def testBinarySpaceship01(): Unit \ Assert =
+        assertEq(expected = EqualTo, () <=> ())
+
+    @Test
+    def testBinarySpaceship02(): Unit \ Assert =
+        assertEq(expected = EqualTo, true <=> true)
+
+    @Test
+    def testBinarySpaceship03(): Unit \ Assert =
+        assertEq(expected = GreaterThan, true <=> false)
+
+    @Test
+    def testBinarySpaceship04(): Unit \ Assert =
+        assertEq(expected = LessThan, false <=> true)
+
+    @Test
+    def testBinarySpaceship05(): Unit \ Assert =
+        assertEq(expected = EqualTo, true <=> true)
+
+    @Test
+    def testBinarySpaceship06(): Unit \ Assert =
+        assertEq(expected = EqualTo, 'a' <=> 'a')
+
+    @Test
+    def testBinarySpaceship07(): Unit \ Assert =
+        assertEq(expected = LessThan, 'a' <=> 'z')
+
+    @Test
+    def testBinarySpaceship08(): Unit \ Assert =
+        assertEq(expected = GreaterThan, 'z' <=> 'a')
+
+    @Test
+    def testBinarySpaceship09(): Unit \ Assert =
+        assertEq(expected = EqualTo, 21.42f32 <=> 21.42f32)
+
+    @Test
+    def testBinarySpaceship10(): Unit \ Assert =
+        assertEq(expected = LessThan, 123.456f32 <=> 456.789f32)
+
+    @Test
+    def testBinarySpaceship11(): Unit \ Assert =
+        assertEq(expected = GreaterThan, 456.789f32 <=> 123.456f32)
+
+    @Test
+    def testBinarySpaceship12(): Unit \ Assert =
+        assertEq(expected = EqualTo, 21.42f64 <=> 21.42f64)
+
+    @Test
+    def testBinarySpaceship13(): Unit \ Assert =
+        assertEq(expected = LessThan, 123.456f64 <=> 456.789f64)
+
+    @Test
+    def testBinarySpaceship14(): Unit \ Assert =
+        assertEq(expected = GreaterThan, 456.789f64 <=> 123.456f64)
+
+    @Test
+    def testBinarySpaceship15(): Unit \ Assert =
+        assertEq(expected = EqualTo, 123i8 <=> 123i8)
+
+    @Test
+    def testBinarySpaceship16(): Unit \ Assert =
+        assertEq(expected = LessThan, 123i8 <=> 127i8)
+
+    @Test
+    def testBinarySpaceship17(): Unit \ Assert =
+        assertEq(expected = GreaterThan, 127i8 <=> 123i8)
+
+    @Test
+    def testBinarySpaceship18(): Unit \ Assert =
+        assertEq(expected = EqualTo, 21i16 <=> 21i16)
+
+    @Test
+    def testBinarySpaceship19(): Unit \ Assert =
+        assertEq(expected = LessThan, 21i16 <=> 42i16)
+
+    @Test
+    def testBinarySpaceship20(): Unit \ Assert =
+        assertEq(expected = GreaterThan, 42i16 <=> 21i16)
+
+    @Test
+    def testBinarySpaceship21(): Unit \ Assert =
+        assertEq(expected = EqualTo, 21i32 <=> 21i32)
+
+    @Test
+    def testBinarySpaceship22(): Unit \ Assert =
+        assertEq(expected = LessThan, 21i32 <=> 42i32)
+
+    @Test
+    def testBinarySpaceship23(): Unit \ Assert =
+        assertEq(expected = GreaterThan, 42i32 <=> 21i32)
+
+    @Test
+    def testBinarySpaceship24(): Unit \ Assert =
+        assertEq(expected = EqualTo, 21i64 <=> 21i64)
+
+    @Test
+    def testBinarySpaceship25(): Unit \ Assert =
+        assertEq(expected = LessThan, 21i64 <=> 42i64)
+
+    @Test
+    def testBinarySpaceship26(): Unit \ Assert =
+        assertEq(expected = GreaterThan, 42i64 <=> 21i64)
+
+    @Test
+    def testBinarySpaceship27(): Unit \ Assert =
+        assertEq(expected = EqualTo, 21ii <=> 21ii)
+
+    @Test
+    def testBinarySpaceship28(): Unit \ Assert =
+        assertEq(expected = LessThan, 21ii <=> 42ii)
+
+    @Test
+    def testBinarySpaceship29(): Unit \ Assert =
+        assertEq(expected = GreaterThan, 42ii <=> 21ii)
+
+    @Test
+    def testBinarySpaceship30(): Unit \ Assert =
+        assertEq(expected = EqualTo, "hello" <=> "hello")
+
+    @Test
+    def testBinarySpaceship31(): Unit \ Assert =
+        assertEq(expected = LessThan, "hello" <=> "world")
+
+    @Test
+    def testBinarySpaceship32(): Unit \ Assert =
+        assertEq(expected = GreaterThan, "world" <=> "hello")
+
+    @Test
+    def testBinarySpaceship33(): Unit \ Assert =
+        assertEq(expected = EqualTo, (None: Option[Unit]) <=> None)
+
+    @Test
+    def testBinarySpaceship34(): Unit \ Assert =
+        assertEq(expected = EqualTo, Some(123) <=> Some(123))
+
+    @Test
+    def testBinarySpaceship35(): Unit \ Assert =
+        assertEq(expected = LessThan, (None: Option[Int32]) <=> Some(123))
+
+    @Test
+    def testBinarySpaceship36(): Unit \ Assert =
+        assertEq(expected = GreaterThan, Some(123) <=> None)
+
+    @Test
+    def testBinarySpaceship37(): Unit \ Assert =
+        assertEq(expected = EqualTo, (Ok(123): Result[Unit, _]) <=> Ok(123))
+
+    @Test
+    def testBinarySpaceship38(): Unit \ Assert =
+        assertEq(expected = LessThan, (Ok(123): Result[Unit, _]) <=> Ok(456))
+
+    @Test
+    def testBinarySpaceship39(): Unit \ Assert =
+        assertEq(expected = GreaterThan, (Ok(456): Result[Unit, _]) <=> Ok(123))
+
+    @Test
+    def testBinarySpaceship40(): Unit \ Assert =
+        assertEq(expected = EqualTo, (Err(123): Result[_, Unit]) <=> Err(123))
+
+    @Test
+    def testBinarySpaceship41(): Unit \ Assert =
+        assertEq(expected = LessThan, (Err(123): Result[_, Unit]) <=> Err(456))
+
+    @Test
+    def testBinarySpaceship42(): Unit \ Assert =
+        assertEq(expected = GreaterThan, (Err(456): Result[_, Unit]) <=> Err(123))
+
+    @Test
+    def testBinarySpaceship43(): Unit \ Assert =
+        assertEq(expected = LessThan, Ok(123) <=> Err(123))
+
+    @Test
+    def testBinarySpaceship44(): Unit \ Assert =
+        assertEq(expected = GreaterThan, Err(123) <=> Ok(123))
+
+    @Test
+    def testBinarySpaceship45(): Unit \ Assert =
+        assertEq(expected = LessThan, (None: Option[Result[Unit, _]]) <=> Some(Ok(123)))
+
+    @Test
+    def testBinarySpaceship46(): Unit \ Assert =
+        assertEq(expected = GreaterThan, (Some(Ok(123)): Option[Result[Unit, _]]) <=> None)
+
+    @Test
+    def testBinarySpaceship47(): Unit \ Assert =
+        assertEq(expected = EqualTo, (Some(Ok(123)): Option[Result[Unit, _]]) <=> Some(Ok(123)))
+
+    @Test
+    def testBinarySpaceship48(): Unit \ Assert =
+        assertEq(expected = LessThan, (Some(Ok(123)): Option[Result[Unit, _]]) <=> Some(Ok(456)))
+
+    @Test
+    def testBinarySpaceship49(): Unit \ Assert =
+        assertEq(expected = GreaterThan, (Some(Ok(456)): Option[Result[Unit, _]]) <=> Some(Ok(123)))
+
+    @Test
+    def testBinarySpaceship50(): Unit \ Assert =
+        assertEq(expected = LessThan, Some(Ok(123)) <=> Some(Err("hello")))
+
+    @Test
+    def testBinarySpaceship51(): Unit \ Assert =
+        assertEq(expected = GreaterThan, Some(Err("hello")) <=> Some(Ok(123)))
+
+    @Test
+    def testBinarySpaceship52(): Unit \ Assert =
+        assertEq(expected = EqualTo, (Some(Ok(None)): Option[Result[Unit, Option[Unit]]]) <=> Some(Ok(None)))
+
+    @Test
+    def testBinarySpaceship53(): Unit \ Assert =
+        assertEq(expected = LessThan, (Some(Ok(None)): Option[Result[Unit, Option[Int32]]]) <=> Some(Ok(Some(123))))
+
+    @Test
+    def testBinarySpaceship54(): Unit \ Assert =
+        assertEq(expected = GreaterThan, (Some(Ok(Some(123))): Option[Result[Unit, Option[Int32]]]) <=> Some(Ok(None)))
+
+    @Test
+    def testBinarySpaceship55(): Unit \ Assert =
+        assertEq(expected = EqualTo, (111, 222) <=> (111, 222))
+
+    @Test
+    def testBinarySpaceship56(): Unit \ Assert =
+        assertEq(expected = LessThan, (111, 111) <=> (111, 222))
+
+    @Test
+    def testBinarySpaceship57(): Unit \ Assert =
+        assertEq(expected = GreaterThan, (111, 222) <=> (111, 111))
+
+    @Test
+    def testBinarySpaceship58(): Unit \ Assert =
+        assertEq(expected = LessThan, (111, 111) <=> (222, 111))
+
+    @Test
+    def testBinarySpaceship59(): Unit \ Assert =
+        assertEq(expected = GreaterThan, (222, 111) <=> (111, 111))
+
+    @Test
+    def testBinarySpaceship60(): Unit \ Assert =
+        assertEq(expected = EqualTo, (1, 2, 3) <=> (1, 2, 3))
+
+    @Test
+    def testBinarySpaceship61(): Unit \ Assert =
+        assertEq(expected = LessThan, (1, 2, 3) <=> (1, 2, 4))
+
+    @Test
+    def testBinarySpaceship62(): Unit \ Assert =
+        assertEq(expected = GreaterThan, (1, 2, 4) <=> (1, 2, 3))
+
+    @Test
+    def testBinarySpaceship63(): Unit \ Assert =
+        assertEq(expected = LessThan, (1, 0, 3) <=> (1, 2, 3))
+
+    @Test
+    def testBinarySpaceship64(): Unit \ Assert =
+        assertEq(expected = GreaterThan, (1, 2, 3) <=> (1, 0, 3))
+
+    @Test
+    def testBinarySpaceship65(): Unit \ Assert =
+        assertEq(expected = LessThan, (1, 2, 3) <=> (4, 2, 3))
+
+    @Test
+    def testBinarySpaceship66(): Unit \ Assert =
+        assertEq(expected = GreaterThan, (4, 2, 3) <=> (1, 2, 3))
+
+    @Test
+    def testBinarySpaceship67(): Unit \ Assert =
+        assertEq(expected = EqualTo, Color.Red <=> Color.Red)
+
+    @Test
+    def testBinarySpaceship68(): Unit \ Assert =
+        assertEq(expected = EqualTo, Color.Blu <=> Color.Blu)
+
+    @Test
+    def testBinarySpaceship69(): Unit \ Assert =
+        assertEq(expected = LessThan, Color.Red <=> Color.Blu)
+
+    @Test
+    def testBinarySpaceship70(): Unit \ Assert =
+        assertEq(expected = GreaterThan, Color.Blu <=> Color.Red)
+
+    @Test
+    def testBinarySpaceship71(): Unit \ Assert =
+        assertEq(expected = LessThan, Some(Color.Red) <=> Some(Color.Blu))
+
+    @Test
+    def testBinarySpaceship72(): Unit \ Assert =
+        assertEq(expected = GreaterThan, Some(Color.Blu) <=> Some(Color.Red))
 
     enum Color {
         case Red,

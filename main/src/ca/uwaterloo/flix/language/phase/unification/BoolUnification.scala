@@ -15,130 +15,126 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution, SveAlgorithm}
+import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Bimap
+
+import scala.collection.immutable.SortedSet
 
 /**
- * An implementation of Boolean Unification is for the `Bool` kind.
- */
+  * An implementation of Boolean Unification is for the `Bool` kind.
+  */
 object BoolUnification {
 
   /**
-   * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
-   */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-
-    // TODO: Levels
-    // We cannot enforce that all variables should belong to the same level.
-    // Consider the equation X^1 and Y^1 ~ Z^0 or W^2 with levels indicated by superscripts.
-    // The minimum level is 0, so we could set the level of X, Y, Z, and W to 0, but this is incorrect.
-    // The reason is that there is the following unifier:
-    //
-    // w -> (w ∨ ¬z) ∧ (z ∨ (x ∧ y))
-    // x ->	x ∨ z
-    // y -> y ∨ z
-    // z -> z
-    //
-    // which satisfies the levels!
-    //
-    // It is not yet clear how to enforce this, hence we unsoundly do not
-    //
-
+    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+    */
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv): Option[Substitution] = {
     // Give up early if either type contains an associated type.
     if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
-      return Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2))))
+      return None
     }
 
     // Check for Type.Error
     (tpe1, tpe2) match {
-      case (Type.Cst(TypeConstructor.Error(_, _), _), _) => return Ok((Substitution.empty, Nil))
-      case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => return Ok((Substitution.empty, Nil))
+      case (Type.Cst(TypeConstructor.Error(_, _), _), _) => return Some(Substitution.empty)
+      case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => return Some(Substitution.empty)
       case _ => // fallthrough
     }
 
-    implicit val alg: BoolAlg[BoolFormula] = new SimpleBoolFormulaAlgClassic
-
-    val result = lookupOrSolve(tpe1, tpe2, renv0)
-    result.map(subst => (subst, Nil))
+    lookupOrSolve(tpe1, tpe2, renv0)
   }
 
 
   /**
-   * Lookup the unifier of `tpe1` and `tpe2` or solve them.
-   */
-  private def lookupOrSolve[F](tpe1: Type, tpe2: Type, renv0: RigidityEnv)
-                              (implicit flix: Flix, alg: BoolAlg[F]): Result[Substitution, UnificationError] = {
+    * Lookup the unifier of `tpe1` and `tpe2` or solve them.
+    */
+  private def lookupOrSolve(tpe1: Type, tpe2: Type, renv0: RigidityEnv): Option[Substitution] = {
+    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.BoolFormulaAlg
+
     //
     // Translate the types into formulas.
     //
-    val env = alg.getEnv(List(tpe1, tpe2))
-    val f1 = alg.fromType(tpe1, env)
-    val f2 = alg.fromType(tpe2, env)
+    val env = getEnv(List(tpe1, tpe2))
+    val f1 = fromType(tpe1, env)
+    val f2 = fromType(tpe2, env)
 
-    val renv = alg.liftRigidityEnv(renv0, env)
+    val renv = liftRigidityEnv(renv0, env)
 
     //
     // Run the expensive Boolean unification algorithm.
     //
-    booleanUnification(f1, f2, renv) match {
-      case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
-      case Some(subst) => subst.toTypeSubstitution(env).toOk
+    SveAlgorithm.unify(f1, f2, renv) map {
+      case subst => toTypeSubstitution(subst, env)
     }
   }
 
   /**
-   * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
-   */
-  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])
-                                   (implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
-    // The boolean expression we want to show is 0.
-    val query = alg.mkXor(tpe1, tpe2)
+    * Returns an environment built from the given types mapping between type variables and formula variables.
+    *
+    * This environment should be used in the functions [[toType]] and [[fromType]].
+    */
+  private def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
+    // Compute the variables in `tpe`.
+    val tvars =
+      fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
+        .toList
 
-    // Compute the variables in the query.
-    val typeVars = alg.freeVars(query).toList
-
-    // Compute the flexible variables.
-    val flexibleTypeVars = typeVars.filterNot(renv.contains)
-
-    // Determine the order in which to eliminate the variables.
-    val freeVars = computeVariableOrder(flexibleTypeVars)
-
-    // Eliminate all variables.
-    try {
-      Some(successiveVariableElimination(query, freeVars))
-    } catch {
-      case _: BoolUnificationException => None
+    // Construct a bi-directional map from type variables to indices.
+    // The idea is that the first variable becomes x0, the next x1, and so forth.
+    tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
+      case (macc, (sym, x)) => macc + (sym -> x)
     }
   }
 
   /**
-   * Determine the variable order.
-   */
-  private def computeVariableOrder(l: List[Int]): List[Int] = l
-
-  /**
-   * Performs success variable elimination on the given boolean expression `f`.
-   *
-   * `flexvs` is the list of remaining flexible variables in the expression.
-   */
-  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolAlg[F]): BoolSubstitution[F] = flexvs match {
-    case Nil =>
-      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!alg.satisfiable(f))
-        BoolSubstitution.empty
-      else
-        throw BoolUnificationException()
-
-    case x :: xs =>
-      val t0 = BoolSubstitution.singleton(x, alg.mkFalse)(f)
-      val t1 = BoolSubstitution.singleton(x, alg.mkTrue)(f)
-      val se = successiveVariableElimination(alg.mkAnd(t0, t1), xs)
-
-      val f1 = alg.minimize(alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1)))))
-      val st = BoolSubstitution.singleton(x, f1)
-      st ++ se
+    * Returns a rigidity environment on formulas that is equivalent to the given one on types.
+    */
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[Symbol.KindedTypeVarSym, Int]): SortedSet[Int] = {
+    renv.s.flatMap {
+      case tvar => env.getForward(tvar)
+    }
   }
 
+  /**
+    * Converts this formula substitution into a type substitution
+    */
+  def toTypeSubstitution(s: BoolSubstitution[BoolFormula], env: Bimap[Symbol.KindedTypeVarSym, Int]): Substitution = {
+    val map = s.m.map {
+      case (k0, v0) =>
+        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown))
+        val v = toType(v0, env)
+        (k, v)
+    }
+    Substitution(map)
+  }
+
+  /**
+    * Converts the given type t into a formula.
+    */
+  private def fromType[F](t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlg[F]): F = Type.eraseTopAliases(t) match {
+    case Type.Var(sym, _) => env.getForward(sym) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
+      case Some(x) => alg.mkVar(x)
+    }
+    case Type.True => alg.mkTop
+    case Type.False => alg.mkBot
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => alg.mkNot(fromType(tpe1, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => alg.mkAnd(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => alg.mkOr(fromType(tpe1, env), fromType(tpe2, env))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
+  }
+
+  private def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
+    case BoolFormula.True => Type.True
+    case BoolFormula.False => Type.False
+    case BoolFormula.And(f1, f2) => Type.mkAnd(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
+    case BoolFormula.Or(f1, f2) => Type.mkOr(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
+    case BoolFormula.Not(f1) => Type.mkNot(toType(f1, env), SourceLocation.Unknown)
+    case BoolFormula.Var(id) => env.getBackward(id) match {
+      case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
+      case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
+    }
+  }
 }

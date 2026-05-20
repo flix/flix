@@ -16,40 +16,32 @@
 package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
-import scala.jdk.CollectionConverters._
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import org.scalatest.DoNotDiscover
+
+import scala.jdk.CollectionConverters.*
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 
+@DoNotDiscover
 class FuzzDeleteLines extends AnyFunSuite with TestUtils {
   /**
     * Number of variants to make for each file. Each variant has a single line deleted.
     */
-  private val N = 10
-
-  test("simple-card-game") {
-    val filepath = Paths.get("examples/simple-card-game.flix")
-    val lines = Files.lines(filepath)
-    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
-  }
-
-  test("using-channels-and-select") {
-    val filepath = Paths.get("examples/using-channels-and-select.flix")
-    val lines = Files.lines(filepath)
-    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
-  }
+  private val N = 30
 
   test("the-ast-typing-problem-with-polymorphic-records") {
-    val filepath = Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")
+    val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val lines = Files.lines(filepath)
-    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
+    compileAllLinesExceptOne(lines)
   }
 
   test("ford-fulkerson") {
-    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val filepath = Paths.get("examples/datalog/ford-fulkerson.flix")
     val lines = Files.lines(filepath)
-    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
+    compileAllLinesExceptOne(lines)
   }
 
   /**
@@ -57,7 +49,7 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
     * For example, in a file with 100 lines and N = 10 we make variants without line 1, 10, 20, and so on.
     * The program may not be valid: We just care that it does not crash the compiler.
     */
-  private def compileAllLinesExceptOne(name: String, stream: java.util.stream.Stream[String]): Unit = {
+  private def compileAllLinesExceptOne(stream: java.util.stream.Stream[String]): Unit = {
     val lines = stream.iterator().asScala.toList
     val numLines = lines.length
     val NFixed = N.min(numLines)
@@ -69,7 +61,8 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
       val iStepped = Math.min(i * step, numLines)
       val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.drop(1)).mkString("\n")
-      flix.addSourceCode(s"$name-delete-line-$i", src)
+      // We use the same name for all inputs to simulate editing a file
+      flix.addVirtualPath(CompilerConstants.VirtualTestFile, src)(SecurityContext.Unrestricted)
       flix.compile() // We simply care that this does not crash.
     }
   }

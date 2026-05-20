@@ -14,40 +14,48 @@
  * limitations under the License.
  */
 
-///
-/// The Result type.
-///
-/// A result represents a successful value or an error value.
-/// The constructor `Ok(v)` represents the successful value `v`,
-/// whereas the constructor `Err(v)` represents the error value `v`.
-///
-@MustUse
-pub enum Result[e, t] with Eq, Order, ToString, Sendable {
-    case Ok(t),
-    case Err(e)
-}
+pub mod Result {
 
-instance Hash[Result[e, t]] with Hash[e], Hash[t] {
-    pub def hash(r: Result[e, t]): Int32 = match r {
-        case Ok(v)  => 5381 + 113 * Hash.hash(v)
-        case Err(v) => 5351 + 97 * Hash.hash(v)
+    ///
+    /// The Result type.
+    ///
+    /// A result represents a successful value or an error value.
+    /// The constructor `Ok(v)` represents the successful value `v`,
+    /// whereas the constructor `Err(v)` represents the error value `v`.
+    ///
+    pub enum Result[e, t] with Eq, Order, ToString {
+        case Ok(t)
+        case Err(e)
     }
-}
 
-instance Functor[Result[e]] {
-    pub def map(f: a -> b \ ef, x: Result[e, a]): Result[e, b] \ ef = Result.map(f, x)
-}
+    instance Hash[Result[e, t]] with Hash[e], Hash[t] {
+        pub def hash(r: Result[e, t]): Int32 = match r {
+            case Ok(v)  => 5381 + 113 * Hash.hash(v)
+            case Err(v) => 5351 + 97 * Hash.hash(v)
+        }
+    }
 
-instance Applicative[Result[e]] {
-    pub def point(a: a) : Result[e, a] = Ok(a)
-    pub def ap(f: Result[e, a -> b \ ef], x: Result[e, a]): Result[e, b] \ ef = Result.ap(f, x)
-}
+    instance Functor[Result[e]] {
+        pub def map(f: a -> b \ ef, x: Result[e, a]): Result[e, b] \ ef = Result.map(f, x)
+    }
 
-instance Monad[Result[e]] {
-    pub def flatMap(f: a -> Result[e, b] \ ef, x : Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
-}
+    instance Applicative[Result[e]] {
+        pub def point(a: a): Result[e, a] = Ok(a)
+        pub def ap(f: Result[e, a -> b \ ef], x: Result[e, a]): Result[e, b] \ ef = Result.ap(f, x)
+    }
 
-mod Result {
+    instance Monad[Result[e]] {
+        pub def flatMap(f: a -> Result[e, b] \ ef, x: Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
+    }
+
+    instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
+        type Aef = Formattable.Aef[e] + Formattable.Aef[t]
+
+        pub def format(x: Result[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
+            case Ok(v)  => RichString.fromString("Ok(") + Formattable.format(v) + RichString.fromString(")")
+            case Err(e) => RichString.fromString("Err(") + Formattable.format(e) + RichString.fromString(")")
+        }
+    }
 
     ///
     /// Returns `true` iff `r` is `Ok(v)`.
@@ -71,6 +79,22 @@ mod Result {
     pub def getWithDefault(d: t, r: Result[e, t]): t = match r {
         case Ok(v)  => v
         case Err(_) => d
+    }
+
+    ///
+    /// Returns `v` if `r` is `Ok(v)`. Otherwise aborts with a stack trace.
+    ///
+    pub def getOrAbort(r: Result[e, t]): t \ Abort = match r {
+        case Ok(v)  => v
+        case Err(_) => Abort.abortWithTrace("Result.getOrAbort(): called on Err")
+    }
+
+    ///
+    /// Aborts with a stack trace if `r` is `Err`.
+    ///
+    pub def orAbort(r: Result[e, t]): Unit \ Abort = match r {
+        case Ok(_)  => ()
+        case Err(_) => Abort.abortWithTrace("Result.orAbort(): called on Err")
     }
 
     ///
@@ -122,7 +146,6 @@ mod Result {
         case Err(w) => Err(f(w))
     }
 
-
     ///
     /// Returns `f(v)` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
@@ -151,7 +174,7 @@ mod Result {
     /// Returns `v` if `r` is `Ok(v)` else `0`.
     ///
     pub def sum(r: Result[e, Int32]): Int32 =
-        foldLeft((acc, x) -> acc + x, 0, r)
+        foldLeft((+), 0, r)
 
     ///
     /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
@@ -186,16 +209,6 @@ mod Result {
     }
 
     ///
-    /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
-    ///
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (t, Unit -> a \ ef) -> a \ ef, z: a, r: Result[e, t]): a \ ef = match r {
-        case Ok(v)  => f(v, constant(z))
-        case Err(_) => z
-    }
-
-    ///
     /// Returns `Ok(v1 :: v2 :: ... :: vn)` if each of `l_i` is `Ok(v_i)`.
     /// Otherwise returns the first `Err` encountered.
     ///
@@ -208,12 +221,12 @@ mod Result {
         loop(l, ks -> Ok(ks))
 
     ///
-    /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Ok(v_i)`.
+    /// Returns `Ok(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Ok(v_i)`.
     /// Otherwise returns the first `Err` encountered.
     ///
     pub def traverse(f: a -> Result[e, b] \ ef, l: List[a]): Result[e, List[b]] \ ef =
         def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
+            case Nil => k(Nil)
             case x :: xs => match f(x) {
                 case Ok(y)  => loop(xs, ks -> k(y :: ks))
                 case Err(e) => Err(e)
@@ -222,13 +235,13 @@ mod Result {
         loop(l, ks -> Ok(ks))
 
     ///
-    /// Returns `Ok()` if each of `f(l_i)` is `Ok(_)`. Otherwise returns `None`.
+    /// Returns `Ok()` if each of `f(l_i)` is `Ok(_)`. Otherwise returns the first `Err`.
     ///
-    /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
+    /// This function is the "forgetful" version of `traverse`, use it when you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
     pub def traverseX(f: a -> Result[e, b] \ ef, l: List[a]): Result[e, Unit] \ ef = match l {
-        case Nil     => Ok()
+        case Nil => Ok()
         case x :: xs => match f(x) {
             case Ok(_)  => traverseX(f, xs)
             case Err(e) => Err(e)
@@ -246,7 +259,7 @@ mod Result {
     /// `Ok(f(...f(f(s, x1), x2)..., xn))`.
     ///
     pub def foldLeftM(f: (b, a) -> Result[e, b] \ ef, s: b, l: List[a]): Result[e, b] \ ef = match l {
-        case Nil     => Ok(s)
+        case Nil => Ok(s)
         case x :: xs => match f(s, x) {
             case Ok(s1) => foldLeftM(f, s1, xs)
             case Err(e) => Err(e)
@@ -265,11 +278,14 @@ mod Result {
     ///
     pub def foldRightM(f: (a, b) -> Result[e, b] \ ef, s: b, l: List[a]): Result[e, b] \ ef =
         def loop(ll, k) = match ll {
-            case Nil     => k(s)
-            case x :: xs => loop(xs, s1 -> match f(x, s1) {
-                case Ok(s2) => k(s2)
-                case Err(e) => Err(e)
-            })
+            case Nil => k(s)
+            case x :: xs => loop(
+                xs,
+                s1 -> match f(x, s1) {
+                    case Ok(s2) => k(s2)
+                    case Err(e) => Err(e)
+                }
+            )
         };
         loop(l, s1 -> checked_ecast(Ok(s1)))
 
@@ -290,7 +306,7 @@ mod Result {
     }
 
     ///
-    /// Returns a singleton map with the mapping `k -> v` if `o` is `Ok((k, v))`. Otherwise returns the empty map.
+    /// Returns a singleton map with the mapping `k -> v` if `r` is `Ok((k, v))`. Otherwise returns the empty map.
     ///
     pub def toMap(r: Result[e, (k, v)]): Map[k, v] with Order[k] = match r {
         case Ok((k, v)) => Map.singleton(k, v)
@@ -316,7 +332,7 @@ mod Result {
     /// `Failure(Nec.singleton(t))` if `r` is `Err(t)`.
     ///
     pub def toValidation(r: Result[e, t]): Validation[e, t] = match r {
-        case Ok(v) => Validation.Success(v)
+        case Ok(v)  => Validation.Success(v)
         case Err(t) => Validation.Failure(Nec.singleton(t))
     }
 
@@ -333,7 +349,7 @@ mod Result {
     ///
     pub def ap(r1: Result[e, t -> u \ ef], r2: Result[e, t]): Result[e, u] \ ef = match r1 {
         case Err(e) => Err(e)
-        case Ok(f)  => match r2 {
+        case Ok(f) => match r2 {
             case Ok(a)  => Ok(f(a))
             case Err(e) => Err(e)
         }
@@ -384,7 +400,7 @@ mod Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r7` are `Err(e)`.
     ///
-    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7]): Result[e, u] \ ef=
+    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7]): Result[e, u] \ ef =
         ap(map6(f, r1, r2, r3, r4, r5, r6), r7)
 
     ///
@@ -418,26 +434,5 @@ mod Result {
         case Err(_) => Iterator.empty(rc)
         case Ok(x)  => Iterator.singleton(rc, x)
     }
-
-    ///
-    /// Returns an iterator over `r` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], r: Result[e, t]): Iterator[(Int32, t), r, r] \ r =
-        iterator(rc, r) |> Iterator.zipWithIndex
-
-    ///
-    /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
-    ///
-    /// If `f` throws a Java `Exception`, `Err(e)` is returned
-    /// where `e` is the error message.
-    ///
-    pub def tryCatch(f: Unit -> a \ ef): Result[String, a] \ ef =
-        try {
-            Ok(f())
-        } catch {
-            case e: ##java.lang.Exception =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Err(getMessage(checked_cast(e)))
-        }
 
 }

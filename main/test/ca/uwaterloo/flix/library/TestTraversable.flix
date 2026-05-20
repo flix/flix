@@ -1,22 +1,7 @@
-/*
- * Copyright 2021 Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestTraversable {
 
     use Traversable.{sequence, traverse, mapAccumLeft}
+    use Assert.{assertEq, assertEqWithMsg}
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -26,410 +11,410 @@ mod TestTraversable {
     // Just test `for` on List - `for` will work for every Traversable with a
     // properly defined `traverse` method.
 
-    @test
-    def for01(): Bool =
+    @Test
+    def for01(): Unit \ Assert =
         let xs: List[Int32] = Nil;
-        Traversable.for(xs, x -> Some(x+1)) == Some(Nil)
+        assertEq(expected = Some(Nil), Traversable.for(xs, x -> Some(x+1)))
 
-    @test
-    def for02(): Bool =
+    @Test
+    def for02(): Unit \ Assert =
         let xs: List[Int32] = 1 :: Nil;
-        Traversable.for(xs, x -> Some(x+1)) == Some(2 :: Nil)
+        assertEq(expected = Some(2 :: Nil), Traversable.for(xs, x -> Some(x+1)))
 
-    @test
-    def for03(): Bool =
+    @Test
+    def for03(): Unit \ Assert =
         let xs: List[Int32] = 1 :: 2 :: Nil;
-        Traversable.for(xs, x -> Some(x+1)) == Some(2 :: 3 :: Nil)
+        assertEq(expected = Some(2 :: 3 :: Nil), Traversable.for(xs, x -> Some(x+1)))
 
-    @test
-    def for04(): Bool =
+    @Test
+    def for04(): Unit \ Assert =
         let xs: List[Int32] = Nil;
-        Traversable.for(xs, _ -> (None: Option[Int32])) == Some(Nil)
+        assertEq(expected = Some(Nil), Traversable.for(xs, _ -> (None: Option[Int32])))
 
-    @test
-    def for05(): Bool =
+    @Test
+    def for05(): Unit \ Assert =
         let xs: List[Int32] = 1 :: Nil;
-        Traversable.for(xs, _ -> (None: Option[Int32])) == None
+        assertEq(expected = None, Traversable.for(xs, _ -> (None: Option[Int32])))
 
-    @test
-    def for06(): Bool =
+    @Test
+    def for06(): Unit \ Assert =
         let xs: List[Int32] = 1 :: 2 :: Nil;
-        Traversable.for(xs, _ -> (None: Option[Int32])) == None
+        assertEq(expected = None, Traversable.for(xs, _ -> (None: Option[Int32])))
 
     /////////////////////////////////////////////////////////////////////////////
     // sequenceOption                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequenceOption01(): Bool =
+    @Test
+    def sequenceOption01(): Unit \ Assert =
         let o: Option[Option[Int32]] = None;
-        sequence(o) == Some(None)
+        assertEq(expected = Some(None), sequence(o))
 
-    @test
-    def sequenceOption02(): Bool =
+    @Test
+    def sequenceOption02(): Unit \ Assert =
         let o: Option[Option[Int32]] = Some(None);
-        sequence(o) == None
+        assertEq(expected = None, sequence(o))
 
-    @test
-    def sequenceOption03(): Bool =
+    @Test
+    def sequenceOption03(): Unit \ Assert =
         let o: Option[Option[Int32]] = Some(Some(1));
-        sequence(o) == Some(Some(1))
+        assertEq(expected = Some(Some(1)), sequence(o))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverseOption                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def traverseOption01(): Bool =
+    @Test
+    def traverseOption01(): Unit \ Assert =
         let o: Option[Int32] = None;
-        traverse(x -> Some(x+1), o) == Some(None)
+        assertEq(expected = Some(None), traverse(x -> Some(x+1), o))
 
-    @test
-    def traverseOption02(): Bool =
+    @Test
+    def traverseOption02(): Unit \ Assert =
         let o: Option[Int32] = Some(1);
-        traverse(x -> Some(x+1), o) == Some(Some(2))
+        assertEq(expected = Some(Some(2)), traverse(x -> Some(x+1), o))
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftOption                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapAccumLeftOption01(): Bool =
+    @Test
+    def mapAccumLeftOption01(): Unit \ Assert =
         let o: Option[Int32] = None;
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, o) == (10, None)
+        assertEq(expected = (10, None), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, o))
 
-    @test
-    def mapAccumLeftOption02(): Bool =
+    @Test
+    def mapAccumLeftOption02(): Unit \ Assert =
         let o: Option[Int32] = Some(1);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, o) == (11, Some(11))
+        assertEq(expected = (11, Some(11)), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, o))
 
     /////////////////////////////////////////////////////////////////////////////
     // sequenceList                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequenceList01(): Bool =
+    @Test
+    def sequenceList01(): Unit \ Assert =
         let xs: List[Option[Int32]] = Nil;
-        sequence(xs) == Some(Nil)
+        assertEq(expected = Some(Nil), sequence(xs))
 
-    @test
-    def sequenceList02(): Bool =
+    @Test
+    def sequenceList02(): Unit \ Assert =
         let xs: List[Option[Int32]] = None :: Nil;
-        sequence(xs) == None
+        assertEq(expected = None, sequence(xs))
 
-    @test
-    def sequenceList03(): Bool =
+    @Test
+    def sequenceList03(): Unit \ Assert =
         let xs = Some(1) :: Nil;
-        sequence(xs) == Some(1 :: Nil)
+        assertEq(expected = Some(1 :: Nil), sequence(xs))
 
-    @test
-    def sequenceList04(): Bool =
+    @Test
+    def sequenceList04(): Unit \ Assert =
         let xs = Some(1) :: None :: Nil;
-        sequence(xs) == None
+        assertEq(expected = None, sequence(xs))
 
-    @test
-    def sequenceList05(): Bool =
+    @Test
+    def sequenceList05(): Unit \ Assert =
         let xs = Some(1) :: Some(2) :: Nil;
-        sequence(xs) == Some(1 :: 2 :: Nil)
+        assertEq(expected = Some(1 :: 2 :: Nil), sequence(xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverseList                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def traverseList01(): Bool =
+    @Test
+    def traverseList01(): Unit \ Assert =
         let xs: List[Int32] = Nil;
-        traverse(x -> Some(x+1), xs) == Some(Nil)
+        assertEq(expected = Some(Nil), traverse(x -> Some(x+1), xs))
 
-    @test
-    def traverseList02(): Bool =
+    @Test
+    def traverseList02(): Unit \ Assert =
         let xs: List[Int32] = 1 :: Nil;
-        traverse(x -> Some(x+1), xs) == Some(2 :: Nil)
+        assertEq(expected = Some(2 :: Nil), traverse(x -> Some(x+1), xs))
 
-    @test
-    def traverseList03(): Bool =
+    @Test
+    def traverseList03(): Unit \ Assert =
         let xs: List[Int32] = 1 :: 2 :: Nil;
-        traverse(x -> Some(x+1), xs) == Some(2 :: 3 :: Nil)
+        assertEq(expected = Some(2 :: 3 :: Nil), traverse(x -> Some(x+1), xs))
 
-    @test
-    def traverseList04(): Bool =
+    @Test
+    def traverseList04(): Unit \ Assert =
         let xs: List[Int32] = Nil;
-        traverse(_ -> (None: Option[Int32]), xs) == Some(Nil)
+        assertEq(expected = Some(Nil), traverse(_ -> (None: Option[Int32]), xs))
 
-    @test
-    def traverseList05(): Bool =
+    @Test
+    def traverseList05(): Unit \ Assert =
         let xs: List[Int32] = 1 :: Nil;
-        traverse(_ -> (None: Option[Int32]), xs) == None
+        assertEq(expected = None, traverse(_ -> (None: Option[Int32]), xs))
 
-    @test
-    def traverseList06(): Bool =
+    @Test
+    def traverseList06(): Unit \ Assert =
         let xs: List[Int32] = 1 :: 2 :: Nil;
-        traverse(_ -> (None: Option[Int32]), xs) == None
+        assertEq(expected = None, traverse(_ -> (None: Option[Int32]), xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftList                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapAccumLeftList01(): Bool =
+    @Test
+    def mapAccumLeftList01(): Unit \ Assert =
         let xs: List[Int32] = Nil;
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (10, Nil)
+        assertEq(expected = (10, Nil), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
-    @test
-    def mapAccumLeftList02(): Bool =
+    @Test
+    def mapAccumLeftList02(): Unit \ Assert =
         let xs: List[Int32] = 1 :: Nil;
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (11, 11 :: Nil)
+        assertEq(expected = (11, 11 :: Nil), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
-    @test
-    def mapAccumLeftList03(): Bool =
+    @Test
+    def mapAccumLeftList03(): Unit \ Assert =
         let xs: List[Int32] = 1 :: 2 :: Nil;
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (12, 11 :: 13 :: Nil)
+        assertEq(expected = (12, 11 :: 13 :: Nil), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
-    @test
-    def mapAccumLeftList04(): Bool =
+    @Test
+    def mapAccumLeftList04(): Unit \ Assert =
         let xs: List[Int32] = 1 :: 2 :: 3 :: Nil;
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (13, 11 :: 13 :: 15 :: Nil)
+        assertEq(expected = (13, 11 :: 13 :: 15 :: Nil), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // sequenceNel.Nel                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequenceNel01(): Bool =
+    @Test
+    def sequenceNel01(): Unit \ Assert =
         let xs: Nel[Option[Int32]] = Nel.singleton(None);
-        sequence(xs) == None
+        assertEq(expected = None, sequence(xs))
 
-    @test
-    def sequenceNel02(): Bool =
+    @Test
+    def sequenceNel02(): Unit \ Assert =
         let xs: Nel[Option[Int32]] = Nel.singleton(Some(1));
-        sequence(xs) == Some(Nel.singleton(1))
+        assertEq(expected = Some(Nel.singleton(1)), sequence(xs))
 
-    @test
-    def sequenceNel03(): Bool =
+    @Test
+    def sequenceNel03(): Unit \ Assert =
         let xs = Nel.Nel(Some(1), Some(2) :: Nil);
-        sequence(xs) == Some(Nel.Nel(1, 2 :: Nil))
+        assertEq(expected = Some(Nel.Nel(1, 2 :: Nil)), sequence(xs))
 
-    @test
-    def sequenceNel04(): Bool =
+    @Test
+    def sequenceNel04(): Unit \ Assert =
         let xs = Nel.Nel(Some(1), Some(2) :: Some(3) :: Nil);
-        sequence(xs) == Some(Nel.Nel(1, 2 :: 3 :: Nil))
+        assertEq(expected = Some(Nel.Nel(1, 2 :: 3 :: Nil)), sequence(xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverseNel.Nel                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def traverseNel01(): Bool =
+    @Test
+    def traverseNel01(): Unit \ Assert =
         let xs: Nel[Int32] = Nel.Nel(1, Nil);
-        traverse(x -> Some(x+1), xs) == Some(Nel.Nel(2, Nil))
+        assertEq(expected = Some(Nel.Nel(2, Nil)), traverse(x -> Some(x+1), xs))
 
-    @test
-    def traverseNel02(): Bool =
+    @Test
+    def traverseNel02(): Unit \ Assert =
         let xs: Nel[Int32] = Nel.Nel(1, 2 :: Nil);
-        traverse(x -> Some(x+1), xs) == Some(Nel.Nel(2, 3 :: Nil))
+        assertEq(expected = Some(Nel.Nel(2, 3 :: Nil)), traverse(x -> Some(x+1), xs))
 
-    @test
-    def traverseNel03(): Bool =
+    @Test
+    def traverseNel03(): Unit \ Assert =
         let xs: Nel[Int32] = Nel.Nel(1, Nil);
-        traverse(_ -> (None: Option[Int32]), xs) == None
+        assertEq(expected = None, traverse(_ -> (None: Option[Int32]), xs))
 
-    @test
-    def traverseNel04(): Bool =
+    @Test
+    def traverseNel04(): Unit \ Assert =
         let xs: Nel[Int32] = Nel.Nel(1, 2 :: Nil);
-        traverse(_ -> (None: Option[Int32]), xs) == None
+        assertEq(expected = None, traverse(_ -> (None: Option[Int32]), xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftNel.Nel                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapAccumLeftNel01(): Bool =
+    @Test
+    def mapAccumLeftNel01(): Unit \ Assert =
         let xs: Nel[Int32] = Nel.Nel(1, Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (11, Nel.Nel(11, Nil))
+        assertEq(expected = (11, Nel.Nel(11, Nil)), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
-    @test
-    def mapAccumLeftNel02(): Bool =
+    @Test
+    def mapAccumLeftNel02(): Unit \ Assert =
         let xs: Nel[Int32] = Nel.Nel(1, 2 :: Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (12, Nel.Nel(11, 13 :: Nil))
+        assertEq(expected = (12, Nel.Nel(11, 13 :: Nil)), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
-    @test
-    def mapAccumLeftNel03(): Bool =
+    @Test
+    def mapAccumLeftNel03(): Unit \ Assert =
         let xs: Nel[Int32] = Nel.Nel(1, 2 :: 3 :: Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (13, Nel.Nel(11, 13 :: 15 :: Nil))
+        assertEq(expected = (13, Nel.Nel(11, 13 :: 15 :: Nil)), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // sequenceChain                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequenceChain01(): Bool =
+    @Test
+    def sequenceChain01(): Unit \ Assert =
         let xs: Chain[Option[Int32]] = Chain.empty();
-        sequence(xs) == Some(Chain.empty())
+        assertEq(expected = Some(Chain.empty()), sequence(xs))
 
-    @test
-    def sequenceChain02(): Bool =
+    @Test
+    def sequenceChain02(): Unit \ Assert =
         let xs: Chain[Option[Int32]] = Chain.singleton(None);
-        sequence(xs) == None
+        assertEq(expected = None, sequence(xs))
 
-    @test
-    def sequenceChain03(): Bool =
+    @Test
+    def sequenceChain03(): Unit \ Assert =
         let xs = Chain.singleton(Some(1));
-        sequence(xs) == Some(Chain.singleton(1))
+        assertEq(expected = Some(Chain.singleton(1)), sequence(xs))
 
-    @test
-    def sequenceChain04(): Bool =
+    @Test
+    def sequenceChain04(): Unit \ Assert =
         let xs = List.toChain(Some(1) :: None :: Nil);
-        sequence(xs) == None
+        assertEq(expected = None, sequence(xs))
 
-    @test
-    def sequenceChain05(): Bool =
+    @Test
+    def sequenceChain05(): Unit \ Assert =
         let xs = List.toChain(Some(1) :: Some(2) :: Nil);
-        sequence(xs) == Some(List.toChain(1 :: 2 :: Nil))
+        assertEq(expected = Some(List.toChain(1 :: 2 :: Nil)), sequence(xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverseChain                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def traverseChain01(): Bool =
+    @Test
+    def traverseChain01(): Unit \ Assert =
         let xs: Chain[Int32] = Chain.empty();
-        traverse(x -> Some(x+1), xs) == Some(Chain.empty())
+        assertEq(expected = Some(Chain.empty()), traverse(x -> Some(x+1), xs))
 
-    @test
-    def traverseChain02(): Bool =
+    @Test
+    def traverseChain02(): Unit \ Assert =
         let xs: Chain[Int32] = Chain.singleton(1);
-        traverse(x -> Some(x+1), xs) == Some(Chain.singleton(2))
+        assertEq(expected = Some(Chain.singleton(2)), traverse(x -> Some(x+1), xs))
 
-    @test
-    def traverseChain03(): Bool =
+    @Test
+    def traverseChain03(): Unit \ Assert =
         let xs: Chain[Int32] = List.toChain(1 :: 2 :: Nil);
-        traverse(x -> Some(x+1), xs) == Some(List.toChain(2 :: 3 :: Nil))
+        assertEq(expected = Some(List.toChain(2 :: 3 :: Nil)), traverse(x -> Some(x+1), xs))
 
-    @test
-    def traverseChain04(): Bool =
+    @Test
+    def traverseChain04(): Unit \ Assert =
         let xs: Chain[Int32] = Chain.empty();
-        traverse(_ -> (None: Option[Int32]), xs) == Some(Chain.empty())
+        assertEq(expected = Some(Chain.empty()), traverse(_ -> (None: Option[Int32]), xs))
 
-    @test
-    def traverseChain05(): Bool =
+    @Test
+    def traverseChain05(): Unit \ Assert =
         let xs: Chain[Int32] = Chain.singleton(1);
-        traverse(_ -> (None: Option[Int32]), xs) == None
+        assertEq(expected = None, traverse(_ -> (None: Option[Int32]), xs))
 
-    @test
-    def traverseChain06(): Bool =
+    @Test
+    def traverseChain06(): Unit \ Assert =
         let xs: Chain[Int32] = List.toChain(1 :: 2 :: Nil);
-        traverse(_ -> (None: Option[Int32]), xs) == None
+        assertEq(expected = None, traverse(_ -> (None: Option[Int32]), xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftChain                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapAccumLeftChain01(): Bool =
+    @Test
+    def mapAccumLeftChain01(): Unit \ Assert =
         let xs: Chain[Int32] = Chain.empty();
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (10, Chain.empty())
+        assertEq(expected = (10, Chain.empty()), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
-    @test
-    def mapAccumLeftChain02(): Bool =
+    @Test
+    def mapAccumLeftChain02(): Unit \ Assert =
         let xs: Chain[Int32] = Chain.singleton(1);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (11, Chain.singleton(11))
+        assertEq(expected = (11, Chain.singleton(11)), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
-    @test
-    def mapAccumLeftChain03(): Bool =
+    @Test
+    def mapAccumLeftChain03(): Unit \ Assert =
         let xs: Chain[Int32] = List.toChain(1 :: 2 :: Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (12, List.toChain(11 :: 13 :: Nil))
+        assertEq(expected = (12, List.toChain(11 :: 13 :: Nil)), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
-    @test
-    def mapAccumLeftChain04(): Bool =
+    @Test
+    def mapAccumLeftChain04(): Unit \ Assert =
         let xs: Chain[Int32] = List.toChain(1 :: 2 :: 3 :: Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (13, List.toChain(11 :: 13 :: 15 :: Nil))
+        assertEq(expected = (13, List.toChain(11 :: 13 :: 15 :: Nil)), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // sequenceMap                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequenceMap01(): Bool =
+    @Test
+    def sequenceMap01(): Unit \ Assert =
         let m: Map[Int32, Option[Int32]] = Map#{};
-        sequence(m) == Some(Map#{})
+        assertEq(expected = Some(Map#{}), sequence(m))
 
-    @test
-    def sequenceMap02(): Bool =
+    @Test
+    def sequenceMap02(): Unit \ Assert =
         let m: Map[Int32, Option[Int32]] = Map#{1 => None};
-        sequence(m) == None
+        assertEq(expected = None, sequence(m))
 
-    @test
-    def sequenceMap03(): Bool =
+    @Test
+    def sequenceMap03(): Unit \ Assert =
         let m = Map#{1 => Some(1)};
-        sequence(m) == Some(Map#{1 => 1})
+        assertEq(expected = Some(Map#{1 => 1}), sequence(m))
 
-    @test
-    def sequenceMap04(): Bool =
+    @Test
+    def sequenceMap04(): Unit \ Assert =
         let m = Map#{1 => Some(1), 2 => None};
-        sequence(m) == None
+        assertEq(expected = None, sequence(m))
 
-    @test
-    def sequenceMap05(): Bool =
+    @Test
+    def sequenceMap05(): Unit \ Assert =
         let m = Map#{1 => Some(1), 2 => Some(2)};
-        sequence(m) == Some(Map#{1 => 1, 2 => 2})
+        assertEq(expected = Some(Map#{1 => 1, 2 => 2}), sequence(m))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverseMap                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def traverseMap01(): Bool =
+    @Test
+    def traverseMap01(): Unit \ Assert =
         let m: Map[Int32, Int32] = Map#{};
-        traverse(x -> Some(x+1), m) == Some(Map#{})
+        assertEq(expected = Some(Map#{}), traverse(x -> Some(x+1), m))
 
-    @test
-    def traverseMap02(): Bool =
+    @Test
+    def traverseMap02(): Unit \ Assert =
         let m: Map[Int32, Int32] = Map#{1 => 1};
-        traverse(x -> Some(x+1), m) == Some(Map#{1 => 2})
+        assertEq(expected = Some(Map#{1 => 2}), traverse(x -> Some(x+1), m))
 
-    @test
-    def traverseMap03(): Bool =
+    @Test
+    def traverseMap03(): Unit \ Assert =
         let m: Map[Int32, Int32] = Map#{1 => 1, 2 => 2};
-        traverse(x -> Some(x+1), m) == Some(Map#{1 => 2, 2 => 3})
+        assertEq(expected = Some(Map#{1 => 2, 2 => 3}), traverse(x -> Some(x+1), m))
 
-    @test
-    def traverseMap04(): Bool =
+    @Test
+    def traverseMap04(): Unit \ Assert =
         let m: Map[Int32, Int32] = Map#{};
-        traverse(_ -> (None: Option[Int32]), m) == Some(Map#{})
+        assertEq(expected = Some(Map#{}), traverse(_ -> (None: Option[Int32]), m))
 
-    @test
-    def traverseMap05(): Bool =
+    @Test
+    def traverseMap05(): Unit \ Assert =
         let m: Map[Int32, Int32] = Map#{1 => 1};
-        traverse(_ -> (None: Option[Int32]), m) == None
+        assertEq(expected = None, traverse(_ -> (None: Option[Int32]), m))
 
-    @test
-    def traverseMap06(): Bool =
+    @Test
+    def traverseMap06(): Unit \ Assert =
         let m: Map[Int32, Int32] = Map#{1 => 1, 2 => 2};
-        traverse(_ -> (None: Option[Int32]), m) == None
+        assertEq(expected = None, traverse(_ -> (None: Option[Int32]), m))
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftMap                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapAccumLeftMap01(): Bool =
+    @Test
+    def mapAccumLeftMap01(): Unit \ Assert =
         let m: Map[Int32, Int32] = Map#{};
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (10, Map#{})
+        assertEq(expected = (10, Map#{}), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m))
 
-    @test
-    def mapAccumLeftMap02(): Bool =
+    @Test
+    def mapAccumLeftMap02(): Unit \ Assert =
         let m: Map[Int32, Int32] = Map#{1 => 1};
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (11, Map#{1 => 11})
+        assertEq(expected = (11, Map#{1 => 11}), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m))
 
-    @test
-    def mapAccumLeftMap03(): Bool =
+    @Test
+    def mapAccumLeftMap03(): Unit \ Assert =
         let m: Map[Int32, Int32]  = Map#{1 => 1, 2 => 2};
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (12, Map#{1 => 11, 2 => 13})
+        assertEq(expected = (12, Map#{1 => 11, 2 => 13}), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m))
 
-    @test
-    def mapAccumLeftMap04(): Bool =
+    @Test
+    def mapAccumLeftMap04(): Unit \ Assert =
         let m: Map[Int32, Int32]  = Map#{1 => 1, 2 => 2, 3 => 3};
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (13, Map#{1 => 11, 2 => 13, 3 => 15})
+        assertEq(expected = (13, Map#{1 => 11, 2 => 13, 3 => 15}), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m))
 
     /////////////////////////////////////////////////////////////////////////////
     /// Helper for RedBlackTree                                                //
@@ -442,87 +427,87 @@ mod TestTraversable {
     // sequenceRedBlackTree                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequenceRedBlackTree01(): Bool =
+    @Test
+    def sequenceRedBlackTree01(): Unit \ Assert =
         let t: RedBlackTree[Int32, Option[Int32]] = RedBlackTree.empty();
-        sequence(t) == Some(RedBlackTree.empty())
+        assertEqWithMsg(expected = Some(RedBlackTree.empty()), sequence(t), "sequenceRedBlackTree01")
 
-    @test
-    def sequenceRedBlackTree02(): Bool =
+    @Test
+    def sequenceRedBlackTree02(): Unit \ Assert =
         let t: RedBlackTree[Int32, Option[Int32]] = toRedBlackTree((1, None) :: Nil);
-        sequence(t) == None
+        assertEqWithMsg(expected = None, sequence(t), "sequenceRedBlackTree02")
 
-    @test
-    def sequenceRedBlackTree03(): Bool =
+    @Test
+    def sequenceRedBlackTree03(): Unit \ Assert =
         let t = toRedBlackTree((1, Some(1)) :: Nil);
-        sequence(t) == Some(toRedBlackTree((1, 1) :: Nil))
+        assertEqWithMsg(expected = Some(toRedBlackTree((1, 1) :: Nil)), sequence(t), "sequenceRedBlackTree03")
 
-    @test
-    def sequenceRedBlackTree04(): Bool =
+    @Test
+    def sequenceRedBlackTree04(): Unit \ Assert =
         let t = toRedBlackTree((1, Some(1)) :: (2, None) :: Nil);
-        sequence(t) == None
+        assertEqWithMsg(expected = None, sequence(t), "sequenceRedBlackTree04")
 
-    @test
-    def sequenceRedBlackTree05(): Bool =
+    @Test
+    def sequenceRedBlackTree05(): Unit \ Assert =
         let t = toRedBlackTree((1, Some(1)) :: (2, Some(2)) :: Nil);
-        sequence(t) == Some(toRedBlackTree((1, 1) :: (2, 2) :: Nil))
+        assertEqWithMsg(expected = Some(toRedBlackTree((1, 1) :: (2, 2) :: Nil)), sequence(t), "sequenceRedBlackTree05")
 
     /////////////////////////////////////////////////////////////////////////////
     // traverseRedBlackTree                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def traverseRedBlackTree01(): Bool =
+    @Test
+    def traverseRedBlackTree01(): Unit \ Assert =
         let t: RedBlackTree[Int32, Int32] = RedBlackTree.empty();
-        traverse(x -> Some(x+1), t) == Some(RedBlackTree.empty())
+        assertEqWithMsg(expected = Some(RedBlackTree.empty()), traverse(x -> Some(x+1), t), "traverseRedBlackTree01")
 
-    @test
-    def traverseRedBlackTree02(): Bool =
+    @Test
+    def traverseRedBlackTree02(): Unit \ Assert =
         let t: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: Nil);
-        traverse(x -> Some(x+1), t) == Some(toRedBlackTree((1, 2) :: Nil))
+        assertEqWithMsg(expected = Some(toRedBlackTree((1, 2) :: Nil)), traverse(x -> Some(x+1), t), "traverseRedBlackTree02")
 
-    @test
-    def traverseRedBlackTree03(): Bool =
+    @Test
+    def traverseRedBlackTree03(): Unit \ Assert =
         let t: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
-        traverse(x -> Some(x+1), t) == Some(toRedBlackTree((1, 2) :: (2, 3) :: Nil))
+        assertEqWithMsg(expected = Some(toRedBlackTree((1, 2) :: (2, 3) :: Nil)), traverse(x -> Some(x+1), t), "traverseRedBlackTree03")
 
-    @test
-    def traverseRedBlackTree04(): Bool =
+    @Test
+    def traverseRedBlackTree04(): Unit \ Assert =
         let t: RedBlackTree[Int32, Int32] = RedBlackTree.empty();
-        traverse(_ -> (None: Option[Int32]), t) == Some(RedBlackTree.empty())
+        assertEqWithMsg(expected = Some(RedBlackTree.empty()), traverse(_ -> (None: Option[Int32]), t), "traverseRedBlackTree04")
 
-    @test
-    def traverseRedBlackTree05(): Bool =
+    @Test
+    def traverseRedBlackTree05(): Unit \ Assert =
         let t: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1):: Nil);
-        traverse(_ -> (None: Option[Int32]), t) == None
+        assertEqWithMsg(expected = None, traverse(_ -> (None: Option[Int32]), t), "traverseRedBlackTree05")
 
-    @test
-    def traverseRedBlackTree06(): Bool =
+    @Test
+    def traverseRedBlackTree06(): Unit \ Assert =
         let t: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
-        traverse(_ -> (None: Option[Int32]), t) == None
+        assertEqWithMsg(expected = None, traverse(_ -> (None: Option[Int32]), t), "traverseRedBlackTree06")
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftRedBlackTree                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapAccumLeftRedBlackTree01(): Bool =
+    @Test
+    def mapAccumLeftRedBlackTree01(): Unit \ Assert =
         let m: RedBlackTree[Int32, Int32] = RedBlackTree.empty();
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (10, RedBlackTree.empty())
+        assertEqWithMsg(expected = (10, RedBlackTree.empty()), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m), "mapAccumLeftRedBlackTree01")
 
-    @test
-    def mapAccumLeftRedBlackTree02(): Bool =
+    @Test
+    def mapAccumLeftRedBlackTree02(): Unit \ Assert =
         let m: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (11, toRedBlackTree((1, 11) :: Nil))
+        assertEqWithMsg(expected = (11, toRedBlackTree((1, 11) :: Nil)), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m), "mapAccumLeftRedBlackTree02")
 
-    @test
-    def mapAccumLeftRedBlackTree03(): Bool =
+    @Test
+    def mapAccumLeftRedBlackTree03(): Unit \ Assert =
         let m: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (12, toRedBlackTree((1, 11) :: (2, 13) :: Nil))
+        assertEqWithMsg(expected = (12, toRedBlackTree((1, 11) :: (2, 13) :: Nil)), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m), "mapAccumLeftRedBlackTree03")
 
-    @test
-    def mapAccumLeftRedBlackTree04(): Bool =
+    @Test
+    def mapAccumLeftRedBlackTree04(): Unit \ Assert =
         let m: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: (3, 3) :: Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (13, toRedBlackTree((1, 11) :: (2, 13) :: (3, 15) :: Nil))
+        assertEqWithMsg(expected = (13, toRedBlackTree((1, 11) :: (2, 13) :: (3, 15) :: Nil)), mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m), "mapAccumLeftRedBlackTree04")
 
 }

@@ -1,113 +1,149 @@
 mod Test.Exp.Effect {
 
-    // no test annotations for now
-    // just making it public for redundancy purposes
-    // @test
-    pub def handleEff01(): Bool = {
-        try true with Fail {
+    use Assert.assertTrue
+
+    @Test
+    def handleEff01(): Unit \ Assert = assertTrue({
+        run true with handler Fail {
             def fail(_, _cont) = false
         }
-    }
+    })
 
-    // @test
-    pub def handleEff02(): Unit = {
-        try () with Fail {
+    @CompileTest
+    def handleEff02(): Unit = {
+        run () with handler Fail {
             def fail(_, cont) = cont()
         }
     }
 
-    // @test
-    pub def perform01(): Unit \ Fail = {
-        do Test.Exp.Effect.Fail.fail(":(")
+    @CompileTest
+    def perform01(): Unit \ Fail = {
+        Fail.fail(":(")
     }
 
-    // @test
-    pub def perform02(): Bool = {
-        try {
-            do Test.Exp.Effect.Console.println("hi");
-            do Test.Exp.Effect.Console.println("bye");
+    @Test
+    def perform02(): Unit \ Assert = assertTrue({
+        run {
+            Console.println("hi");
+            Console.println("bye");
             true
-        } with Console {
+        } with handler Console {
             def println(_, cont) = cont()
         }
-    }
+    })
 
-    // @test
-    pub def handlePerform01(): Unit = {
-        try do Test.Exp.Effect.Fail.fail("rats") with Fail {
+    @CompileTest
+    def handlePerform01(): Unit = {
+        run Fail.fail("rats") with handler Fail {
             def fail(_, _cont) = ()
         }
     }
 
-    // @test
-    pub def handlePerform02(): Bool = {
-        try {
-            let _ = do Test.Exp.Effect.Console.println("It was the best of times");
+    @Test
+    def handlePerform02(): Unit \ Assert = assertTrue({
+        run {
+            let _ = Console.println("It was the best of times");
             true
-        } with Console {
+        } with handler Console {
             def println(_, cont) = cont()
         }
-    }
+    })
 
-    pub def without01(): Bool = true without Fail
 
-    pub def without02(): Bool = true without {Fail, Console}
+    @CompileTest
+    def singleEffect(): Bool \ Fail = ???
 
-    pub def singleEffect(): Bool \ Fail = checked_ecast(???)
+    @CompileTest
+    def complementEffect(): Bool \ ~Fail = ???
 
-    pub def complementEffect(): Bool \ ~Fail = checked_ecast(???)
+    @CompileTest
+    def unionEffect(): Bool \ Fail + Fail = ???
 
-    pub def unionEffect(): Bool \ Fail + Fail = checked_ecast(???)
+    @CompileTest
+    def intersectionEffect(): Bool \ Fail & Fail = ???
 
-    pub def intersectionEffect(): Bool \ Fail & Fail = checked_ecast(???)
+    @CompileTest
+    def differenceEffect(): Bool \ Fail - Fail = ???
 
-    pub def differenceEffect(): Bool \ Fail - Fail = ???
+    @CompileTest
+    def singlePolyEffect(): Bool \ ef1 = ???
 
-    pub def singlePolyEffect(): Bool \ ef1 = checked_ecast(???)
+    @CompileTest
+    def complementPolyEffect(): Bool \ ~ef1 = ???
 
-    pub def complementPolyEffect(): Bool \ ~ef1 = checked_ecast(???)
+    @CompileTest
+    def unionPolyEffect(): Bool \ ef1 + ef2 = ???
 
-    pub def unionPolyEffect(): Bool \ ef1 + ef2 = checked_ecast(???)
+    @CompileTest
+    def intersectionPolyEffect(): Bool \ ef1 & ef2 = ???
 
-    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = checked_ecast(???)
+    @CompileTest
+    def differencePolyEffect(): Bool \ ef1 - ef2 = ???
 
-    pub def differencePolyEffect(): Bool \ ef1 - ef2 = checked_ecast(???)
+    @CompileTest
+    def effectSet01(): Bool \ { Fail } = ???
 
-    pub def effectSet01(): Bool \ { Fail } = checked_ecast(???)
+    @CompileTest
+    def effectSet02(): Bool \ { Fail, Fail } = ???
 
-    pub def effectSet02(): Bool \ { Fail, Fail } = checked_ecast(???)
+    @CompileTest
+    def effectSet03(): Bool \ { Fail, Fail, Console } = ???
 
-    pub def effectSet03(): Bool \ { Fail, Fail, Console } = checked_ecast(???)
+    @CompileTest
+    def effectSet04(): Bool \ {} = ???
 
-    pub def effectSet04(): Bool \ {} = ???
+    @CompileTest
+    def polyEffectSet01[ef: Eff](): Bool \ ef = ???
 
-    pub def polyEffectSet01[ef: Eff](): Bool \ ef = checked_ecast(???)
+    @CompileTest
+    def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = ???
 
-    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = checked_ecast(???)
+    @CompileTest
+    def arrowWithEffect01(f: a -> b \ {}): Bool = ???
 
-    pub def arrowWithEffect01(f: a -> b \ {}): Bool = ???
+    @CompileTest
+    def arrowWithEffect02(f: a -> b \ ef - Fail): Bool = ???
 
-    pub def arrowWithEffect02(f: a -> b \ ef - Fail): Bool = ???
+    @CompileTest
+    def arrowWithEffect03(f: a -> b \ Console + (ef - Fail)): Bool = ???
 
-    pub def arrowWithEffect03(f: a -> b \ Console + (ef - Fail)): Bool = ???
+    @CompileTest
+    def enumWithEffect01(f: Do[{}]): Bool = ???
 
-    pub def enumWithEffect01(f: Do[{}]): Bool = ???
+    @CompileTest
+    def enumWithEffect02(f: Do[{ef}]): Bool = ???
 
-    pub def enumWithEffect02(f: Do[{ef}]): Bool = ???
+    @CompileTest
+    def enumWithEffect03(f: Do[{ef, Fail}]): Bool = ???
 
-    pub def enumWithEffect03(f: Do[{ef, Fail}]): Bool = ???
+    @CompileTest
+    def enumWithEffect04(f: Do[ef - Fail]): Bool = ???
 
-    pub def enumWithEffect04(f: Do[ef - Fail]): Bool = ???
-
-    pub def enumWithEffect05(f: Do[Console + (ef - Fail)]): Bool = ???
+    @CompileTest
+    def enumWithEffect05(f: Do[Console + (ef - Fail)]): Bool = ???
 
     eff Fail {
-        pub def fail(x: String): Unit
+        def fail(x: String): Unit
     }
 
     eff Console {
-        pub def println(x: String): Unit
+        def println(x: String): Unit
     }
 
     pub enum Do[ef: Eff](Unit -> Unit \ ef)
+
+    pub eff A
+
+    pub eff B
+
+    pub eff C
+
+    @CompileTest
+    def f(): Unit \ {A, B, C} - {B} + {C} = ???
+
+    @CompileTest
+    def g(): Unit \ ({A, B, C} - {B}) + {C} = f()
+
+    @CompileTest
+    def h(): Unit \ {A, C} = f()
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher, Lukas Rønn
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,53 +15,45 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority, priorityBoostForTypes}
-import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
-import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Enum
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
-object EnumCompleter extends Completer {
-
-  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EnumCompletion] = {
-    val enumsInModule = getEnumSymsInModule(ctx)
-    getEnumCompletions(enumsInModule, ctx)
-  }
-
-  private def getEnumSymsInModule(ctx: CompletionContext)(implicit root: TypedAst.Root): List[Symbol.EnumSym] = {
-    val modFragment = ModuleSymFragment.parseModuleSym(ctx.word)
-
-    modFragment match {
-      case ModuleSymFragment.Complete(modSym) => root.modules.getOrElse(modSym, Nil).collect {
-        case sym: EnumSym => sym
+object EnumCompleter {
+  /**
+    * Returns a List of Completion for enums.
+    * Whether the returned completions are qualified is based on whether the name in the error is qualified.
+    * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
+    */
+  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, withTypeParameters: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    if (qn.namespace.nonEmpty)
+      root.enums.values.collect {
+        case enum if CompletionUtils.isAvailable(enum) && CompletionUtils.matchesName(enum.sym, qn, qualified = true) =>
+          val priority = Priority.Lower(0)
+          EnumCompletion(enum, range, priority, ap, qualified = true, inScope = true, withTypeParameters = withTypeParameters)
       }
-      case ModuleSymFragment.Partial(modSym, suffix) => root.modules.getOrElse(modSym, Nil).collect {
-        case sym: EnumSym if matches(sym, suffix) => sym
-      }
-    }
+    else
+      root.enums.values.collect({
+        case enum if CompletionUtils.isAvailable(enum) && CompletionUtils.matchesName(enum.sym, qn, qualified = false) =>
+          val s = inScope(enum, scp)
+          val priority = if (s) Priority.High(0) else Priority.Lower(0)
+          EnumCompletion(enum, range, priority, ap, qualified = false, inScope = s, withTypeParameters = withTypeParameters)
+      })
   }
 
   /**
-    * Returns `true` if the given enum `sym` matches the given `suffix`.
-    *
-    * (Color, "Col") => true
-    * (Color, "Li")  => false
+    * Checks if the definition is in scope.
+    * If we can find the definition in the scope or the definition is in the root namespace, it is in scope.
     */
-  private def matches(sym: EnumSym, suffix: String): Boolean = {
-    sym.name.startsWith(suffix)
+  private def inScope(decl: TypedAst.Enum, scope: LocalScope): Boolean = {
+    val thisName = decl.sym.toString
+    val isResolved = scope.m.values.exists(_.exists {
+      case Resolution.Declaration(Enum(_, _, _, thatName, _, _, _, _)) => thisName == thatName.toString
+      case _ => false
+    })
+    val isRoot = decl.sym.namespace.isEmpty
+    isRoot || isResolved
   }
-
-  private def getEnumCompletions(enums: List[Symbol.EnumSym], ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
-    enums.map(sym => getEnumCompletion(root.enums(sym), ctx))
-  }
-
-  private def getEnumCompletion(decl: TypedAst.Enum, ctx: CompletionContext): EnumCompletion = {
-    val sym = decl.sym
-    val name = decl.sym.name
-    val internalPriority = getInternalPriority(decl.loc, decl.sym.namespace)(ctx)
-    Completion.EnumCompletion(sym, formatTParams(decl.tparams), priorityBoostForTypes(internalPriority(name))(ctx),
-      TextEdit(ctx.range, s"${sym.toString}${formatTParamsSnippet(decl.tparams)}"), Some(decl.doc.text))
-  }
-
 }

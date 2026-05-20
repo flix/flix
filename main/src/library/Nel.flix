@@ -14,129 +14,133 @@
  * limitations under the License.
  */
 
-///
-/// The NonEmptyList type.
-///
-pub enum Nel[a] with Sendable {
-    case Nel(a, List[a])
-}
+pub mod Nel {
+    use Math.Shuffle
 
-instance ToString[Nel[a]] with ToString[a] {
-    pub def toString(l: Nel[a]): String = Nel.toString(l)
-}
-
-instance Hash[Nel[a]] with Hash[a] {
-    pub def hash(l: Nel[a]): Int32 = match l {
-        case Nel.Nel(x, xs) => Hash.hash(xs) `Hash.combine` Hash.hash(x)
-    }
-}
-
-instance Eq[Nel[a]] with Eq[a] {
-    pub def eq(l1: Nel[a], l2: Nel[a]): Bool = match (l1, l2) {
-        case (Nel.Nel(x, xs), Nel.Nel(y, ys)) => x == y and xs == ys
-    }
-}
-
-instance Order[Nel[a]] with Order[a] {
     ///
-    /// Compares `l1` and `l2` lexicographically.
+    /// The NonEmptyList type.
     ///
-    pub def compare(l1: Nel[a], l2: Nel[a]): Comparison = match (l1, l2) {
-        case (Nel.Nel(x, xs), Nel.Nel(y, ys)) =>
-            let cmp = x <=> y;
-            if (cmp == Comparison.EqualTo) xs <=> ys else cmp
+    pub enum Nel[a] {
+        case Nel(a, List[a])
     }
-}
 
-instance Functor[Nel] {
-    pub def map(f: a -> b \ ef, l: Nel[a]): Nel[b] \ ef = Nel.map(f, l)
-}
+    instance Formattable[Nel[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
 
-instance Applicative[Nel] {
-    pub def point(x: a): Nel[a] = Nel.singleton(x)
-    pub def ap(f: Nel[a -> b \ ef], x: Nel[a]): Nel[b] \ ef = Nel.ap(f, x)
-}
+        pub def format(x: Nel[a]): RichString \ Formattable.Aef[a] =
+            RichString.fromString("Nel#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
+    }
 
-instance Monad[Nel] {
-    pub def flatMap(f: a -> Nel[b] \ ef, x : Nel[a]) : Nel[b] \ ef = Nel.flatMap(f, x)
-}
+    instance ToString[Nel[a]] with ToString[a] {
+        pub def toString(l: Nel[a]): String = Nel.toString(l)
+    }
 
-instance MonadZip[Nel] {
-    pub def zipWith(f: (a, b) -> c \ ef, xs: Nel[a], ys: Nel[b]): Nel[c] \ ef = Nel.zipWith(f, xs, ys)
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nel[a], ys: Nel[b]): f[Nel[c]] \ ef with Applicative[f] = Nel.zipWithA(f, xs, ys)
-    pub override def zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
-    pub override def unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
-}
+    instance Hash[Nel[a]] with Hash[a] {
+        pub def hash(l: Nel[a]): Int32 = match l {
+            case Nel.Nel(x, xs) => Hash.hash(xs) `Hash.combine` Hash.hash(x)
+        }
+    }
 
-instance Foldable[Nel] {
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRightWithCont(f, s, l)
-}
+    instance Eq[Nel[a]] with Eq[a] {
+        pub def eq(l1: Nel[a], l2: Nel[a]): Bool = match (l1, l2) {
+            case (Nel.Nel(x, xs), Nel.Nel(y, ys)) => x == y and xs == ys
+        }
+    }
 
-instance UnorderedFoldable[Nel] {
-    pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
-    override pub def isEmpty(_: Nel[a]): Bool = false
-    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
-    override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
-}
+    instance Order[Nel[a]] with Order[a] {
+        ///
+        /// Compares `l1` and `l2` lexicographically.
+        ///
+        pub def compare(l1: Nel[a], l2: Nel[a]): Comparison = match (l1, l2) {
+            case (Nel.Nel(x, xs), Nel.Nel(y, ys)) =>
+                let cmp = x <=> y;
+                if (cmp == Comparison.EqualTo) xs <=> ys else cmp
+        }
+    }
 
-instance Traversable[Nel] {
-    pub def traverse(f: a -> m[b] \ ef, t: Nel[a]): m[Nel[b]] \ ef with Applicative[m] = Nel.traverse(f, t)
-    pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
-}
+    instance Functor[Nel] {
+        pub def map(f: a -> b \ ef, l: Nel[a]): Nel[b] \ ef = Nel.map(f, l)
+    }
 
-instance Reducible[Nel] {
-    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)
-    override pub def head(l: Nel[a]): a = Nel.head(l)
-    override pub def last(l: Nel[a]): a = Nel.last(l)
-    override pub def init(l: Nel[a]): List[a] = Nel.init(l)
-    override pub def tail(l: Nel[a]): List[a] = Nel.tail(l)
-    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
-    override pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
-    override pub def findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
-    override pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
-    override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
-    override pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
-    override pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
-    override pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
-    override pub def toVector(l: Nel[a]): Vector[a] = Nel.toVector(l)
-    override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
-}
+    instance Applicative[Nel] {
+        pub def point(x: a): Nel[a] = Nel.singleton(x)
+        pub def ap(f: Nel[a -> b \ ef], x: Nel[a]): Nel[b] \ ef = Nel.ap(f, x)
+    }
 
-instance SemiGroup[Nel[a]] {
-    pub def combine(x: Nel[a], y: Nel[a]): Nel[a] = Nel.append(x, y)
-}
+    instance Monad[Nel] {
+        pub def flatMap(f: a -> Nel[b] \ ef, x: Nel[a]): Nel[b] \ ef = Nel.flatMap(f, x)
+    }
 
-instance Iterable[Nel[a]] {
-    type Elm = a
-    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
-}
+    instance MonadZip[Nel] {
+        pub def zipWith(f: (a, b) -> c \ ef, xs: Nel[a], ys: Nel[b]): Nel[c] \ ef = Nel.zipWith(f, xs, ys)
+        pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nel[a], ys: Nel[b]): f[Nel[c]] \ ef with Applicative[f] = Nel.zipWithA(f, xs, ys)
+        redef zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
+        redef unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
+    }
 
-instance ToJava[Nel[a]] {
-    type Out = ##java.util.List
-    type Aef = IO
-    pub def toJava(l: Nel[a]): ##java.util.List \ IO = Adaptor.toList(l)
-}
+    instance Foldable[Nel] {
+        pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldLeft(f, s, l)
+        pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRight(f, s, l)
+        redef head(l: Nel[a]): Option[a] = Some(Nel.head(l))
+        redef isEmpty(_: Nel[a]): Bool = false
+        redef memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
+        redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+        redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+    }
 
-mod Nel {
+    instance UnorderedFoldable[Nel] {
+        pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
+        redef isEmpty(_: Nel[a]): Bool = false
+        redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+        redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+        redef memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
+    }
+
+    instance Traversable[Nel] {
+        pub def traverse(f: a -> m[b] \ ef, t: Nel[a]): m[Nel[b]] \ ef with Applicative[m] = Nel.traverse(f, t)
+        redef sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
+    }
+
+    instance Reducible[Nel] {
+        pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ { ef1, ef2 } = Nel.reduceLeftTo(f, g, l)
+        pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ { ef1, ef2 } = Nel.reduceRightTo(f, g, l)
+        redef head(l: Nel[a]): a = Nel.head(l)
+        redef last(l: Nel[a]): a = Nel.last(l)
+        redef init(l: Nel[a]): List[a] = Nel.init(l)
+        redef tail(l: Nel[a]): List[a] = Nel.tail(l)
+        redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+        redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+        redef find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
+        redef findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
+        redef findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
+        redef memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
+        redef dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
+        redef takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
+        redef toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
+        redef toVector(l: Nel[a]): Vector[a] = Nel.toVector(l)
+        redef toList(l: Nel[a]): List[a] = Nel.toList(l)
+    }
+
+    instance SemiGroup[Nel[a]] {
+        pub def combine(x: Nel[a], y: Nel[a]): Nel[a] = Nel.append(x, y)
+    }
+
+    instance Iterable[Nel[a]] {
+        type Elm = a
+        pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
+    }
+
+    instance ForEach[Nel[a]] {
+        type Elm = a
+        pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = Nel.forEach(f, l)
+    }
 
     ///
     /// Returns a string representation of the given non-empty list `l`.
     ///
-    pub def toString(l: Nel[a]): String with ToString[a] = region rc {
+    pub def toString(l: Nel[a]): String with ToString[a] = {
         let Nel(x, xs) = l;
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Nel(${x}, ", sb);
-
-        let list = List.toString(xs);
-        StringBuilder.appendString!(list, sb);
-        StringBuilder.appendString!(")", sb);
-
-        StringBuilder.toString(sb)
+        "Nel(${x}, ${xs})"
     }
 
     ///
@@ -166,11 +170,29 @@ mod Nel {
     }
 
     ///
+    /// Returns the element at position `i` in the non-empty list `l`.
+    ///
+    /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, l: Nel[a]): a =
+        match nth(i, l) {
+            case Some(x) => x
+            case None    => indexOutOfBounds!("index ${i} is out of bounds for Nel of length ${length(l)}")
+        }
+
+    ///
+    /// Optionally returns the element at position `i` in the non-empty list `l`.
+    ///
+    pub def nth(i: Int32, l: Nel[a]): Option[a] = match l {
+        case Nel(x, xs) => if (i == 0) Some(x) else List.nth(i - 1, xs)
+    }
+
+    ///
     /// Returns all elements in `l` without the last element.
     ///
     pub def init(l: Nel[a]): List[a] = match l {
         case Nel(_, Nil) => Nil
-        case Nel(x, xs)   => match List.reverse(xs) {
+        case Nel(x, xs) => match List.reverse(xs) {
             case Nil     => x :: Nil
             case _ :: ys => x :: List.reverse(ys)
         }
@@ -184,11 +206,16 @@ mod Nel {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: Nel[a]): Int32 = match l {
         case Nel(_, xs) => 1 + List.length(xs)
     }
+
+    ///
+    /// Returns the number of elements in `l`.
+    ///
+    pub def size(l: Nel[a]): Int32 = length(l)
 
     ///
     /// Returns `l2` appended to `l1`.
@@ -229,6 +256,11 @@ mod Nel {
         reduceLeft(Order.maxBy(cmp), l)
 
     ///
+    /// Returns a range of all valid indices of the non-empty list `l`.
+    ///
+    pub def indices(l: Nel[a]): Range[Int32] = Range.Range(0, length(l))
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = findLeft(f, l)
@@ -262,7 +294,7 @@ mod Nel {
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
     ///
-    /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
+    /// That is, the result is of the form: `f(0, x0) :: f(1, x1) :: ...`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: Nel[a]): Nel[b] \ ef =
         let Nel(x, xs) = l;
@@ -276,15 +308,14 @@ mod Nel {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: Nel[a -> b \ ef], l: Nel[a]) : Nel[b] \ ef =
+    pub def ap(f: Nel[a -> b \ ef], l: Nel[a]): Nel[b] \ ef =
         // Note - loop has been worker-wrapper transformed to represent the list of
         // functions as head (f1) and tail (fs) so we never have an empty list to deal with.
         def loop(f1, fs, k) = match fs {
-            case Nil      => k(map(f1, l))
+            case Nil => k(map(f1, l))
             case f2 :: rs =>
                 let ks1 = map(f1, l);
-                loop(f2, rs, ks2 ->
-                  k(append(ks1, ks2)))
+                loop(f2, rs, ks2 -> k(append(ks1, ks2)))
         };
         match f {
             case Nel(f1, Nil) => map(f1, l)
@@ -324,7 +355,7 @@ mod Nel {
     pub def permutations(l: Nel[a]): Nel[List[a]] = match l {
         case Nel(x, xs) => match List.permutations(x :: xs) {
             case y :: ys => Nel(y, ys)
-            case Nil => unreachable!()
+            case Nil     => unreachable!()
         }
     }
 
@@ -336,7 +367,7 @@ mod Nel {
     pub def subsequences(l: Nel[a]): Nel[List[a]] = match l {
         case Nel(x, xs) => match List.subsequences(x :: xs) {
             case y :: ys => Nel(y, ys)
-            case Nil => unreachable!()
+            case Nil     => unreachable!()
         }
     }
 
@@ -344,8 +375,8 @@ mod Nel {
     /// Returns `l` with `a` inserted between every two adjacent elements.
     ///
     pub def intersperse(a: a, l: Nel[a]): Nel[a] = match l {
-        case Nel(x, Nil)  => Nel(x, Nil)
-        case Nel(x, xs)   => Nel(x, a :: List.intersperse(a, xs))
+        case Nel(x, Nil) => Nel(x, Nil)
+        case Nel(x, xs)  => Nel(x, a :: List.intersperse(a, xs))
     }
 
     ///
@@ -372,16 +403,6 @@ mod Nel {
     }
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: Nel[a]): b \ ef = match l {
-        case Nel(x, xs) => f(x, _ -> List.foldRightWithCont(f, z, xs))
-    }
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with Monoid[b] =
@@ -392,7 +413,7 @@ mod Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = match l {
+    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ { ef1, ef2 } = match l {
         case Nel(x, xs) => List.foldLeft(f, g(x), xs)
     }
 
@@ -401,20 +422,20 @@ mod Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} =
+    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ { ef1, ef2 } =
         def loop(ll, k) = match ll {
             case x :: Nil => k(g(x))
             case x :: xs  => loop(xs, ks -> k(f(x, ks)))
             case _        => unreachable!()
         };
         let Nel(x, xs) = l;
-        loop(x :: xs, eidentity)
+        loop(x :: xs, z -> checked_ecast(z))
 
     ///
     /// Applies `combine` to all elements in `l` until a single value is obtained.
     ///
     pub def reduce(l: Nel[a]): a with SemiGroup[a] = match l {
-        case Nel(x, xs) => Foldable.foldLeft((acc, y) -> SemiGroup.combine(acc, y), x, xs)
+        case Nel(x, xs) => Foldable.foldLeft(SemiGroup.combine, x, xs)
     }
 
     ///
@@ -429,7 +450,7 @@ mod Nel {
     ///
     /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.
     ///
-    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
+    /// That is, the result is of the form: `f(x1, ...f(xn-2, f(xn-1, xn))...)`
     ///
     pub def reduceRight(f: (a, a) -> a \ ef, l: Nel[a]): a \ ef = match l {
         case Nel(x, xs) => match List.reduceRight(f, x :: xs) {
@@ -495,7 +516,7 @@ mod Nel {
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
-    pub def zip(l1: Nel[a], l2: Nel[b]): Nel[(a,b)] = match (l1, l2) {
+    pub def zip(l1: Nel[a], l2: Nel[b]): Nel[(a, b)] = match (l1, l2) {
         case (Nel(x, xs), Nel(y, ys)) => Nel((x, y), List.zip(xs, ys))
     }
 
@@ -541,8 +562,6 @@ mod Nel {
             case (Nel(x, l1), Nel(y, l2)) => ((c, cs) -> Nel(c, cs)) <$> f(x, y) <*> List.zipWithA(f, l1, l2)
         }
 
-
-
     ///
     /// Returns `l` as a normal list.
     ///
@@ -564,14 +583,6 @@ mod Nel {
         forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
         Array.toVector(arr)
     }
-
-    ///
-    /// Returns `l` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), l);
-        d
 
     ///
     /// Applies `f` to every element of `l`.
@@ -596,7 +607,7 @@ mod Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: Nel[a]): Nel[a] with Order[a] = region rc {
-        let list = toArray(rc, l) !> Array.sort! |> Array.toList;
+        let list = toArray(rc, l) !> Array.sort |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -612,7 +623,7 @@ mod Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region rc {
-        let list = toArray(rc, l) !> Array.sortBy!(f) |> Array.toList;
+        let list = toArray(rc, l) !> Array.sortBy(f) |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -627,8 +638,8 @@ mod Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region rc {
-        let list = toArray(rc, l) !> Array.sortWith!(cmp) |> Array.toList;
+    pub def sortWith(cmp: (a, a) -> Comparison, l: Nel[a]): Nel[a] = region rc {
+        let list = toArray(rc, l) !> Array.sortWith(cmp) |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -639,14 +650,8 @@ mod Nel {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r =
-       let Nel(x, xs) = l;
-       List.iterator(rc, x :: xs)
-
-    ///
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], l: Nel[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, l) |> Iterator.zipWithIndex
+        let Nel(x, xs) = l;
+        List.iterator(rc, x :: xs)
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
@@ -705,8 +710,73 @@ mod Nel {
     ///
     /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: Nel[a]): Option[Nel[a]] \ IO = region rc {
-        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toNel
+    pub def shuffle(l: Nel[a]): Option[Nel[a]] \ Shuffle = region rc {
+        toArray(rc, l) !> Array.shuffle |> Array.toNel
     }
+
+    ///
+    /// Build a non-empty list by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(a, st1)` to signal a new element `a` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of building the list.
+    ///
+    /// The first element is produced from the initial seed, so the result is always non-empty
+    /// only if `f(st)` returns `Some`. Returns `None` if `f(st)` immediately returns `None`.
+    ///
+    pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): Option[Nel[a]] \ ef =
+        match f(st) {
+            case None => None
+            case Some((a, st1)) =>
+                @Tailrec
+                def loop(sst, acc) = match f(sst) {
+                    case None           => acc
+                    case Some((b, st2)) => loop(st2, b :: acc)
+                };
+                Some(Nel(a, List.reverse(loop(st1, Nil))))
+        }
+
+    ///
+    /// Build a non-empty list by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(a)` to signal a new element `a`.
+    ///
+    /// `next` should return `None` to signal the end of building the list.
+    ///
+    /// Returns `None` if `next` immediately returns `None`.
+    ///
+    pub def unfoldWithIter(next: Unit -> Option[a] \ ef): Option[Nel[a]] \ ef =
+        match next() {
+            case None => None
+            case Some(a) =>
+                @Tailrec
+                def loop(acc) = match next() {
+                    case None    => acc
+                    case Some(x) => loop(x :: acc)
+                };
+                Some(Nel(a, List.reverse(loop(Nil))))
+        }
+
+    ///
+    /// Build a non-empty list by applying `f` to the initial value `x`.
+    ///
+    /// `f` should return `Some(a1)` to signal a new element `a1` (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of building the list.
+    ///
+    /// Returns `None` if `f(x)` immediately returns `None`.
+    ///
+    pub def iterate(f: a -> Option[a] \ ef, x: a): Option[Nel[a]] \ ef =
+        match f(x) {
+            case None => None
+            case Some(a1) =>
+                @Tailrec
+                def loop(st, acc) = match f(st) {
+                    case None     => acc
+                    case Some(a2) => loop(a2, a2 :: acc)
+                };
+                Some(Nel(a1, List.reverse(loop(a1, Nil))))
+        }
 
 }

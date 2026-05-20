@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.util.collection.Chain
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, unused}
 import scala.collection.mutable.ArrayBuffer
+import scala.util.{Failure, Success, Try}
 
 /**
   * A result either holds a value ([[Result.Ok]]) or holds an error ([[Result.Err]]).
@@ -34,7 +35,7 @@ sealed trait Result[+T, +E] {
     *
     * @throws IllegalStateException if `this` result does not hold a value.
     */
-  final def get: T = this match {
+  final def unsafeGet: T = this match {
     case Result.Ok(t) => t
     case Result.Err(e) => throw new IllegalStateException(s"Result is Err($e).")
   }
@@ -67,8 +68,8 @@ sealed trait Result[+T, +E] {
     * Returns `this` result as a [[Validation]].
     */
   final def toValidation: Validation[T, E] = this match {
-    case Result.Ok(t) => Validation.success(t)
-    case Result.Err(e) => Validation.HardFailure(Chain(e))
+    case Result.Ok(t) => Validation.Success(t)
+    case Result.Err(e) => Validation.Failure(Chain(e))
   }
 
   /**
@@ -83,7 +84,7 @@ sealed trait Result[+T, +E] {
     * Required for pattern-matching in for-patterns.
     * Doesn't actually filter anything.
     */
-  final def withFilter(f: T => Boolean): Result[T, E] = this
+  final def withFilter(@unused f: T => Boolean): Result[T, E] = this
 }
 
 object Result {
@@ -97,6 +98,18 @@ object Result {
     * A result that holds an error.
     */
   case class Err[T, E](e: E) extends Result[T, E]
+
+  /**
+    * Applies the given function `f` to value of `res` wrapping it in [[Result.Ok]].
+    */
+  def mapN[T, U, E](res: Result[T, E])(f: T => U): Result[U, E] =
+    res.map(f)
+
+  /**
+    * Applies the given function `f` to values of the results wrapping it in [[Result.Ok]].
+    */
+  def mapN[T1, T2, U, E](res1: Result[T1, E], res2: Result[T2, E])(f: (T1, T2) => U): Result[U, E] =
+    res1.flatMap(r1 => res2.map(r2 => f(r1, r2)))
 
   /**
     * Evaluates the given results from left to right collecting the values into a list.
@@ -151,37 +164,10 @@ object Result {
   }
 
   /**
-    * Applies f to each element in the list and flattens the results.
-    *
-    * Fails at the first error found, or returns the new list.
+    * Returns `t` try as a [[Result]].
     */
-  def flatTraverse[T, S, E](xs: Iterable[T])(f: T => Result[List[S], E]): Result[List[S], E] = {
-    val res = ArrayBuffer.empty[S]
-
-    for (x <- xs) {
-      f(x) match {
-        // Case 1: Ok. Add to the list.
-        case Ok(ok) => res.addAll(ok)
-        // Case 2: Error. Short-circuit.
-        case Err(err) => return Err(err)
-      }
-    }
-
-    Ok(res.toList)
+  def fromTry[A](t: Try[A]): Result[A, Throwable] = t match {
+    case Success(v) => Result.Ok(v)
+    case Failure(e) => Result.Err(e)
   }
-
-  /**
-    * Adds an implicit `toOk` method.
-    */
-  implicit class ToOk[+T](val t: T) {
-    def toOk[U >: T, E]: Result[U, E] = Ok(t)
-  }
-
-  /**
-    * Adds an implicit `toErr` method.
-    */
-  implicit class ToErr[+E](val e: E) {
-    def toErr[T, F >: E]: Result[T, F] = Err(e)
-  }
-
 }

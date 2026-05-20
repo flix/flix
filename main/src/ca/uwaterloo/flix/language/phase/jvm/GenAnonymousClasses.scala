@@ -17,154 +17,200 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType}
+import ca.uwaterloo.flix.language.ast.JvmAst.*
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
-import ca.uwaterloo.flix.util.ParOps
-import org.objectweb.asm
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
+import ca.uwaterloo.flix.util.InternalCompilerException
+import org.objectweb.asm.{MethodVisitor, Opcodes}
 
-/**
-  * Generates bytecode for anonymous classes (created through NewObject)
-  */
+/** Generates bytecode for anonymous classes (created through NewObject). */
 object GenAnonymousClasses {
 
-  /**
-    * Returns the set of anonymous classes for the given set of objects
-    */
-  def gen(objs: List[AnonClass])(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    //
-    // Generate an anonymous class for each object and collect the results in a map.
-    //
-    ParOps.parAgg(objs, Map.empty[JvmName, JvmClass])({
-      case (macc, obj) =>
-        val className = JvmName(RootPackage, obj.name)
-        flix.subtask(className.toInternalName, sample = true)
-
-        macc + (className -> JvmClass(className, genByteCode(className, obj)))
-    }, _ ++ _)
+  /** Returns the generated classes of `objs`. */
+  def gen(objs: List[AnonClass])(implicit root: Root, flix: Flix): List[JvmClass] = {
+    for (obj <- objs) yield {
+      val className = JvmName(RootPackage, obj.name)
+      JvmClass(className, genByteCode(className, obj))
+    }
   }
 
-  /**
-    * Returns the bytecode for the anonoymous class
-    */
-  private def genByteCode(className: JvmName, obj: AnonClass)(implicit flix: Flix): Array[Byte] = {
-    val visitor = AsmOps.mkClassWriter()
-
+  private def genByteCode(className: JvmName, obj: AnonClass)(implicit root: Root, flix: Flix): Array[Byte] = {
     val superClass = if (obj.clazz.isInterface)
-      BackendObjType.JavaObject.jvmName.toInternalName
+      JvmName.Object
     else
-      asm.Type.getInternalName(obj.clazz)
+      JvmName.ofClass(obj.clazz)
 
     val interfaces = if (obj.clazz.isInterface)
-      Array(asm.Type.getInternalName(obj.clazz))
+      List(JvmName.ofClass(obj.clazz))
     else
-      Array[String]()
+      Nil
 
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
-      superClass, interfaces)
+    val cm = ClassMaker.mkClass(className, IsFinal, superClass = superClass, interfaces = interfaces)
 
-    val currentClass = JvmType.Reference(className)
-    compileConstructor(superClass, visitor)
+    // Generate constructor: if user-defined constructors exist, invoke the first one; otherwise default no-arg super().
+    // Safety guarantees there is at most one constructor.
+    if (obj.constructors.nonEmpty) {
+      val c = obj.constructors.head
+      c.exp match {
+        case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), _, _, _, _) =>
+          // Super-only: no closure field needed, parameterized <init>
+          val argTypes = constructor.getParameterTypes.toList.map(javaClassToBackendType)
+          cm.mkConstructor(ClassMaker.ConstructorMethod(className, argTypes), IsPublic, constructorInsWithSuperCall(superClass, constructor)(_))
+        case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", c.loc)
+      }
+    } else {
+      cm.mkConstructor(ClassMaker.ConstructorMethod(className, Nil), IsPublic, constructorIns(superClass)(_))
+    }
 
-    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(currentClass, m, s"clo$i", visitor, obj) }
+    for ((m, i) <- obj.methods.zipWithIndex) {
+      val abstractClass = erasedArrowType(m.fparams.map(_.tpe), m.tpe)
+      // Create the field that will store the closure implementing the body of the method.
+      val cloField = ClassMaker.InstanceField(className, s"clo$i", abstractClass.toTpe)
+      cm.mkField(cloField, IsPublic, NotFinal, NotVolatile)
+      // Use the Java interface's erased method signature for the JVM descriptor.
+      // This ensures the generated method matches the interface even when the user
+      // declares generic parameter types (e.g., String instead of Object).
+      val javaMethod = findJavaMethod(obj.clazz, m.ident.name, m.fparams.tail.length)
+      val actualArgs = javaMethod match {
+        case Some(jm) => jm.getParameterTypes.toList.map(javaClassToBackendType)
+        case None => m.fparams.tail.map(_.tpe).map(BackendType.toBackendType)
+      }
+      val actualres = javaMethod match {
+        case Some(jm) if jm.getReturnType == java.lang.Void.TYPE => VoidableType.Void
+        case Some(jm) => javaClassToBackendType(jm.getReturnType)
+        case None => if (m.tpe == SimpleType.Unit) VoidableType.Void else BackendType.toBackendType(m.tpe)
+      }
+      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, m)(_, root))
+    }
 
-    visitor.visitEnd()
-    visitor.toByteArray
+    // Generate bridge methods for super method calls.
+    val superMethods = obj.superMethods
+    for (method <- superMethods) {
+      val bridgeName = s"super$$${method.getName}"
+      val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
+      val returnTpe = if (method.getReturnType == java.lang.Void.TYPE) VoidableType.Void else javaClassToBackendType(method.getReturnType)
+      val descriptor = MethodDescriptor(paramTypes, returnTpe)
+      cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
+    }
+
+    cm.closeClassMaker()
+  }
+
+  private def constructorIns(superClass: JvmName)(implicit mv: MethodVisitor): Unit = {
+    import BytecodeInstructions.*
+    ALOAD(0)
+    INVOKESPECIAL(ClassMaker.ConstructorMethod(superClass, Nil))
+    RETURN()
+  }
+
+  /** Creates constructor bytecode that forwards parameters directly to the super constructor. */
+  private def constructorInsWithSuperCall(superClass: JvmName, constructor: java.lang.reflect.Constructor[?])(implicit mv: MethodVisitor): Unit = {
+    import BytecodeInstructions.*
+    val paramTypes = constructor.getParameterTypes.toList.map(javaClassToBackendType)
+    // ALOAD 0 (this)
+    thisLoad()
+    // Load each <init> parameter (starting at slot 1)
+    withNames(1, paramTypes) { case (_, args) =>
+      for (arg <- args) arg.load()
+    }
+    // INVOKESPECIAL superClass.<init>(paramTypes...)
+    INVOKESPECIAL(ClassMaker.ConstructorMethod(superClass, paramTypes))
+    RETURN()
+  }
+
+  /** Finds the Java method matching the given name and parameter count on `clazz`. */
+  private def findJavaMethod(clazz: Class[?], name: String, arity: Int): Option[java.lang.reflect.Method] = {
+    clazz.getMethods.find(m => m.getName == name && m.getParameterCount == arity)
+  }
+
+  /** Maps a Java `Class[?]` to a `BackendType`. */
+  private def javaClassToBackendType(clazz: Class[?]): BackendType = {
+    if      (clazz == java.lang.Boolean.TYPE)   BackendType.Bool
+    else if (clazz == java.lang.Byte.TYPE)      BackendType.Int8
+    else if (clazz == java.lang.Short.TYPE)     BackendType.Int16
+    else if (clazz == java.lang.Integer.TYPE)   BackendType.Int32
+    else if (clazz == java.lang.Long.TYPE)      BackendType.Int64
+    else if (clazz == java.lang.Float.TYPE)     BackendType.Float32
+    else if (clazz == java.lang.Double.TYPE)    BackendType.Float64
+    else if (clazz == java.lang.Character.TYPE) BackendType.Char
+    else if (clazz.isArray)                     BackendType.Array(javaClassToBackendType(clazz.getComponentType))
+    else BackendType.Reference(BackendObjType.Native(JvmName.ofClass(clazz)))
+  }
+
+  /** Returns the erased abstract arrow class for the given parameter types and return type. */
+  private def erasedArrowType(paramTypes: List[SimpleType], retTpe: SimpleType): BackendObjType.AbstractArrow = {
+    val boxedResult = BackendType.Object
+    BackendObjType.AbstractArrow(paramTypes.map(BackendType.toErasedBackendType), boxedResult)
   }
 
   /**
-    * Constructor of the class
-    */
-  private def compileConstructor(superClass: String, visitor: ClassWriter): Unit = {
-    val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
-
-    // Invoke the superclass constructor
-    constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, superClass, JvmName.ConstructorMethod,
-      MethodDescriptor.NothingToVoid.toDescriptor, false)
-
-    constructor.visitInsn(RETURN)
-
-    constructor.visitMaxs(999, 999)
-    constructor.visitEnd()
-  }
-
-  /**
-    * Returns a JVM type descriptor for the given `MonoType`
+    * Generates bytecode for a bridge method that delegates to the superclass via `INVOKESPECIAL`.
     *
-    * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
-    */
-  private def getDescriptorHacked(tpe: MonoType): String = tpe match {
-    case MonoType.Array(t) => s"[${JvmOps.getJvmType(t).toDescriptor}"
-    case MonoType.Unit => JvmType.Void.toDescriptor
-    case _ => JvmOps.getJvmType(tpe).toDescriptor
-  }
-
-  /**
-    * Returns a JVM method descriptor for the given parameters and return types
+    * This is needed because Flix closures run in a separate class from the anonymous class, so they
+    * cannot issue `INVOKESPECIAL` on the anonymous class's superclass — the JVM restricts that
+    * instruction to the class that owns the method. We work around this by generating a public
+    * bridge method on the anonymous class itself. The closure calls the bridge via `INVOKEVIRTUAL`,
+    * and the bridge forwards to the superclass via `INVOKESPECIAL`.
     *
-    * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
+    * For example, given `new Object { def hashCode(_this: ...) = super.hashCode() }`, we generate:
+    * {{{
+    *   public int super$hashCode() {
+    *       ALOAD 0
+    *       INVOKESPECIAL java/lang/Object.hashCode ()I
+    *       IRETURN
+    *   }
+    * }}}
     */
-  private def getMethodDescriptorHacked(paramTypes: List[MonoType], retType: MonoType): String = {
-    val resultDescriptor = getDescriptorHacked(retType)
-    val argumentDescriptor = paramTypes.map(getDescriptorHacked).mkString
-    s"($argumentDescriptor)$resultDescriptor"
+  private def superBridgeIns(superClass: JvmName, method: java.lang.reflect.Method)(implicit mv: MethodVisitor): Unit = {
+    val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
+    val returnTpe = javaClassToBackendType(method.getReturnType)
+    val descriptor = MethodDescriptor(paramTypes, if (method.getReturnType == java.lang.Void.TYPE) VoidableType.Void else returnTpe)
+
+    // ALOAD 0 (this)
+    thisLoad()
+    // Load each parameter (starting at slot 1)
+    withNames(1, paramTypes) { case (_, args) =>
+      for (arg <- args) arg.load()
+    }
+    // INVOKESPECIAL superClass.methodName(descriptor)
+    INVOKESPECIAL(superClass, method.getName, descriptor)
+
+    // Return
+    if (method.getReturnType == java.lang.Void.TYPE) {
+      RETURN()
+    } else {
+      xReturn(returnTpe)
+    }
   }
 
-  /**
-    * Method
-    */
-  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter, obj: AnonClass): Unit = method match {
-    case JvmMethod(ident, fparams, _, tpe, _, loc) =>
-      val args = fparams.map(_.tpe)
-      val boxedResult = MonoType.Object
-      val arrowType = MonoType.Arrow(args, boxedResult)
-      val closureAbstractClass = JvmOps.getClosureAbstractClassType(arrowType)
-      val functionInterface = JvmOps.getFunctionInterfaceType(arrowType)
+  /** Creates code to read the arguments, load it into the `cloField` closure, call that function, and returns. */
+  private def methodIns(abstractClass: BackendObjType.AbstractArrow, cloField: ClassMaker.InstanceField, m: JvmMethod)(implicit mv: MethodVisitor, root: Root): Unit = {
+    val functionAbstractClass = abstractClass.superClass
+    val returnType = BackendType.toBackendType(m.tpe)
 
-      // Create the field that will store the closure implementing the body of the method
-      AsmOps.compileField(classVisitor, cloName, closureAbstractClass, isStatic = false, isPrivate = false, isVolatile = false)
+    thisLoad()
+    GETFIELD(cloField)
+    INVOKEVIRTUAL(abstractClass.GetUniqueThreadClosureMethod)
+    // Load the actual arguments into the erased closure arguments.
+    withNames(0, m.fparams.map(_.tpe).map(BackendType.toBackendType)) {
+      case (_, args) =>
+        for ((arg, i) <- args.zipWithIndex) {
+          DUP()
+          arg.load()
+          PUTFIELD(functionAbstractClass.ArgField(i))
+        }
+    }
+    // Invoke the closure.
+    BackendObjType.Result.unwindSuspensionFreeThunkToType(returnType, s"in anonymous class method ${m.ident.name}", m.loc)
 
-      // Drop the first formal parameter (which always represents `this`)
-      val paramTypes = fparams.tail.map(_.tpe)
-      val methodVisitor = classVisitor.visitMethod(ACC_PUBLIC, ident.name, getMethodDescriptorHacked(paramTypes, tpe), null, null)
-
-      // Retrieve the closure that implements this method
-      methodVisitor.visitVarInsn(ALOAD, 0)
-      methodVisitor.visitFieldInsn(GETFIELD, currentClass.name.toInternalName, cloName, closureAbstractClass.toDescriptor)
-
-      methodVisitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName,
-        AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
-
-      // Push arguments onto the stack
-      var offset = 0
-      fparams.zipWithIndex.foreach { case (arg, i) =>
-        methodVisitor.visitInsn(DUP)
-        val argType = JvmOps.getJvmType(arg.tpe)
-        methodVisitor.visitVarInsn(AsmOps.getLoadInstruction(argType), offset)
-        offset += AsmOps.getStackSize(argType)
-        methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
-          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-      }
-
-      // Invoke the closure
-      BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), s"in anonymous class method ${ident.name} of ${obj.clazz.getSimpleName}", loc)(new BytecodeInstructions.F(methodVisitor))
-
-      tpe match {
-        case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
-        case _ => AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
-      }
-
-      val returnInstruction = tpe match {
-        case MonoType.Unit => RETURN
-        case MonoType.Array(_) => ARETURN
-        case _ => AsmOps.getReturnInstruction(JvmOps.getJvmType(tpe))
-      }
-      methodVisitor.visitInsn(returnInstruction)
-
-      methodVisitor.visitMaxs(999, 999)
-      methodVisitor.visitEnd()
+    m.tpe match {
+      case SimpleType.Unit => RETURN()
+      case _ => xReturn(returnType)
+    }
   }
+
 }

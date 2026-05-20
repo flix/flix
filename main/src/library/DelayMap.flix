@@ -14,68 +14,81 @@
  * limitations under the License.
  */
 
-pub enum DelayMap[k, v] with Sendable {
-    case DMap(RedBlackTree[k, Lazy[v]])
-}
+pub mod DelayMap {
 
-instance Eq[DelayMap[k, v]] with Eq[k], Eq[v] {
-    pub def eq(m1: DelayMap[k, v], m2: DelayMap[k, v]): Bool =
-        DelayMap.toList(m1) == DelayMap.toList(m2)
-}
+    import java.lang.Runtime
 
-instance Order[DelayMap[k, v]] with Order[k], Order[v] {
-    pub def compare(x: DelayMap[k, v], y: DelayMap[k, v]): Comparison =
-        DelayMap.toList(x) <=> DelayMap.toList(y)
-}
+    pub enum DelayMap[k, v] {
+        case DMap(RedBlackTree[k, Lazy[v]])
+    }
 
-instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: DelayMap[k, v]): String = DelayMap.toString(m)
-}
+    instance Eq[DelayMap[k, v]] with Eq[k], Eq[v] {
+        pub def eq(m1: DelayMap[k, v], m2: DelayMap[k, v]): Bool =
+            DelayMap.toList(m1) == DelayMap.toList(m2)
+    }
 
-instance Functor[DelayMap[k]] {
-    pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef = DelayMap.map(f, m)
-}
+    instance Order[DelayMap[k, v]] with Order[k], Order[v] {
+        pub def compare(x: DelayMap[k, v], y: DelayMap[k, v]): Comparison =
+            DelayMap.toList(x) <=> DelayMap.toList(y)
+    }
 
-instance Foldable[DelayMap[k]] {
-    pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
-    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRightWithCont(f, s, m)
+    instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
+        pub def toString(m: DelayMap[k, v]): String = DelayMap.toString(m)
+    }
 
-}
+    instance Indexable[DelayMap[k, v]] with Order[k] {
+        type Idx = k
+        type Elm = v
+        type Aef = KeyNotFound
+        pub def get(t: DelayMap[k, v], i: k): v \ KeyNotFound = match DelayMap.get(i, t) {
+            case Some(v) => v
+            case None    => KeyNotFound.keyNotFound("key not found")
+        }
+    }
 
-instance Iterable[DelayMap[k, v]] {
-    type Elm = (k, v)
-    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), r, r] \ r =
-        DelayMap.iterator(rc, m)
-}
+    instance Functor[DelayMap[k]] {
+        pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef = DelayMap.map(f, m)
+    }
 
-mod DelayMap {
+    instance Foldable[DelayMap[k]] {
+        pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
+        pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
+        redef isEmpty(m: DelayMap[k, v]): Bool = DelayMap.isEmpty(m)
+
+    }
+
+    instance Iterable[DelayMap[k, v]] {
+        type Elm = (k, v)
+        pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), r, r] \ r =
+            DelayMap.iterator(rc, m)
+    }
+
+    instance ForEach[DelayMap[k, v]] {
+        type Elm = (k, v)
+        pub def forEach(f: ((k, v)) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = DelayMap.forEach(k -> v -> f((k, v)), m)
+    }
 
     ///
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
     @Experimental
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.empty(rc);
-        let _ = parallelForce(m);
-        StringBuilder.appendString!("DelayMap#{", sb);
-        forEachWithIndex((i, k, v) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${k} => ${v}", sb)
-            else
-                StringBuilder.appendString!(", ${k} => ${v}", sb)
-            }, m);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "DelayMap#{" + (DelayMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
     }
 
     ///
     /// Returns the number of threads to use for parallel evaluation.
     ///
-    def threads(): Int32 =
+    /// # SAFETY:
+    /// This accesses the runtime environment, which is an effect.
+    /// It is assumed that this function is only used in contexts
+    /// where this effect is not observable outside of the DelayMap module.
+    ///
+    def threads(): Int32 = {
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
+        multiplier * Runtime.getRuntime().availableProcessors()
+    }
 
     ///
     /// Determines whether to use parallel evaluation.
@@ -84,7 +97,7 @@ mod DelayMap {
     ///
     def useParallelEvaluation(m: DelayMap[k, v]): Bool =
         let DMap(t) = m;
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -166,7 +179,7 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
                     let DMap(t) = m;
-                    RedBlackTree.parCount(threads() - 1, h, t)
+                    RedBlackTree.parCount(h, t)
                 else
                     c()
             case Purity2.Impure(_) => c()
@@ -189,8 +202,8 @@ mod DelayMap {
     pub def minimumKey(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
         match RedBlackTree.minimumKey(t) {
-            case None       => None
-            case Some(k, v) => Some(k, force v)
+            case None         => None
+            case Some((k, v)) => Some((k, force v))
         }
 
     ///
@@ -208,10 +221,10 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
+                    let res = RedBlackTree.parMinimumBy(h, t);
                     match res {
-                        case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case None         => None
+                        case Some((k, v)) => Some((k, force v))
                     }
                 else
                     min()
@@ -241,10 +254,10 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
+                    let res = RedBlackTree.parMinimumBy(h, t);
                     match res {
-                        case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case None         => None
+                        case Some((k, v)) => Some((k, force v))
                     }
                 else
                     min()
@@ -260,8 +273,8 @@ mod DelayMap {
     pub def maximumKey(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
         match RedBlackTree.maximumKey(t) {
-            case None       => None
-            case Some(k, v) => Some(k, force v)
+            case None         => None
+            case Some((k, v)) => Some((k, force v))
         }
 
     ///
@@ -279,10 +292,10 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
+                    let res = RedBlackTree.parMaximumBy(h, t);
                     match res {
-                        case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case None         => None
+                        case Some((k, v)) => Some((k, force v))
                     }
                 else
                     max()
@@ -313,10 +326,10 @@ mod DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
+                    let res = RedBlackTree.parMaximumBy(h, t);
                     match res {
-                        case None       => None
-                        case Some(k, v) => Some(k, force v)
+                        case None         => None
+                        case Some((k, v)) => Some((k, force v))
                     }
                 else
                     max()
@@ -381,9 +394,9 @@ mod DelayMap {
     def insertWithKeyE(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         let DMap(t) = m;
         let f1 = (k1, v1, v2) -> {
-                let x = f(k1, force v1, force v2);
-                lazy x
-            };
+            let x = f(k1, force v1, force v2);
+            lazy x
+        };
         DMap(RedBlackTree.insertWith(f1, k, lazy v, t))
 
     ///
@@ -427,9 +440,9 @@ mod DelayMap {
     ///
     def mapWithKeyE(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         let g = (k, v) -> {
-                let x1 = f(k, force v);
-                lazy x1
-            };
+            let x1 = f(k, force v);
+            lazy x1
+        };
         let _ = parallelForce(m);
         let DMap(t) = m;
         DMap(RedBlackTree.mapWithKey(g, t))
@@ -466,7 +479,7 @@ mod DelayMap {
                         par (
                             _ <- parLoop((n - 2) / 2, a); // We divide the rest of the threads as follows:
                             _ <- parLoop((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
-                            _ <- force v                  // that we distribute over the two spanned threads.
+                            _ <- force v // that we distribute over the two spanned threads.
                         ) yield ()
                     case _ => ()
                 }
@@ -543,9 +556,9 @@ mod DelayMap {
         let DMap(xs) = m1;
         let DMap(ys) = m2;
         let f1 = (k, v1, v2) -> {
-                let x = f(k, force v1, force v2);
-                lazy x
-            };
+            let x = f(k, force v1, force v2);
+            lazy x
+        };
         if (blackHeight(xs) < blackHeight(ys))
             let _ = parallelForce(m1);
             DMap(foldRight((k, v, acc) -> insertWith(f1, k, v, acc), ys, xs))
@@ -596,30 +609,7 @@ mod DelayMap {
         RedBlackTree.foldRight(f1, s, t)
 
     ///
-    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    @Experimental
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, z: b, m: DelayMap[k, v]): b \ ef =
-        foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
-
-    ///
-    /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
-    /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
-    ///
-    @Experimental
-    pub def foldRightWithKeyCont(f: (k, v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef =
-        let _ = parallelForce(m);
-        let DMap(t) = m;
-        let f1 = (k1, v1, c) -> f(k1, force v1, c);
-        RedBlackTree.foldRightWithCont(f1, s, t)
-
-    ///
-    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
     ///
@@ -630,7 +620,7 @@ mod DelayMap {
         reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
     ///
@@ -650,7 +640,7 @@ mod DelayMap {
         }
 
     ///
-    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
     ///
@@ -661,7 +651,7 @@ mod DelayMap {
         reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
     ///
@@ -765,25 +755,11 @@ mod DelayMap {
         Map.Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
-    /// Returns `m` as a mutable map.
-    ///
-    @Experimental @Parallel
-    pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, ref toMap(m) @ rc)
-
-    ///
     /// Returns the map `m` as a set of key-value pairs.
     ///
     @Experimental
     pub def toSet(m: DelayMap[k, v]): Set[(k, v)] with Order[k], Order[v] =
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
-
-    ///
-    /// Returns the map `m` as a `DelayList` of key-value pairs.
-    ///
-    @Experimental
-    pub def toDelayList(m: DelayMap[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> DelayList.ECons((k, v), acc), DelayList.ENil, m)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.
@@ -792,14 +768,6 @@ mod DelayMap {
     pub def iterator(rc: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r, r] \ r =
         let DMap(t) = m;
         RedBlackTree.iterator(rc, t) |> Iterator.map(match (k, v) -> (k, force v))
-
-    ///
-    /// Returns the map `m` as a MutDeque of key-value pairs.
-    ///
-    @Experimental
-    pub def toMutDeque(rc: Region[r], m: DelayMap[k, v]): MutDeque[(k, v), r] \ r =
-        let m1 = DelayMap.toMap(m);
-        Map.toMutDeque(rc, m1)
 
     ///
     /// Applies `f` to every `(key, value)` of `m`.
@@ -817,9 +785,9 @@ mod DelayMap {
     ///
     @Experimental
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = region rc {
-       let ix = ref 0 @ rc;
-       let f1 = (k, v) -> { let i =  deref ix; f(i, k, v); Ref.put(i + 1, ix) };
-       forEach(f1, m)
+        let ix = Ref.fresh(rc, 0);
+        let f1 = (k, v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
+        forEach(f1, m)
     }
 
     ///
@@ -853,7 +821,7 @@ mod DelayMap {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
-                    RedBlackTree.parSumWith(threads() - 1, h, t)
+                    RedBlackTree.parSumWith(h, t)
                 else
                     sw()
             case Purity2.Impure(_) => sw()

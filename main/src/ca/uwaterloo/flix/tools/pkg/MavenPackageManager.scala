@@ -19,10 +19,10 @@ import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import java.io.PrintStream
-import coursier._
+import coursier.{Dependency as CoursierDependency, Fetch, Resolve}
 import coursier.cache.{Cache, FileCache}
 import coursier.util.Task
 
@@ -30,20 +30,20 @@ import java.nio.file.{Files, Path, Paths}
 
 object MavenPackageManager {
 
-  val FolderName = "cache"
+  val DirName = "cache"
   private val scalaVersion = "2.13"
 
   /**
     * Installs all MavenDependencies for a Manifest including transitive
-    * dependencies using coursier in the /lib/cache folder of `path`.
-    * Returns a list of paths to the downloadet .jars.
+    * dependencies using coursier in the /lib/cache directory of `path`.
+    * Returns a list of paths to the downloaded .jars.
     */
   def installAll(manifests: List[Manifest], path: Path)(implicit formatter: Formatter, out: PrintStream): Result[List[Path], PackageError] = {
     out.println("Resolving Maven dependencies...")
 
     val depStrings = manifests.flatMap(manifest => getMavenDependencyStrings(manifest))
 
-    val libPath = Bootstrap.getLibraryDirectory(path).resolve(FolderName)
+    val libPath = Bootstrap.getLibraryDirectory(path).resolve(DirName)
     val cacheString = libPath.toString
     Files.createDirectories(Paths.get(cacheString))
 
@@ -69,7 +69,7 @@ object MavenPackageManager {
           val message = e.getMessage.replaceAll("[^a-zA-Z0-9:. ]", "/").split('/').apply(0)
           return Err(PackageError.CoursierError(message))
       }
-      l.toOk
+      Ok(l)
     }
   }
 
@@ -77,7 +77,7 @@ object MavenPackageManager {
     * Finds the MavenDependencies for a Manifest
     * and converts them to Strings.
     */
-  def getMavenDependencyStrings(manifest: Manifest): List[String] = {
+  private def getMavenDependencyStrings(manifest: Manifest): List[String] = {
     manifest.dependencies.collect {
       case dep: MavenDependency => dep
     }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.versionTag}")
@@ -86,7 +86,7 @@ object MavenPackageManager {
   /**
     * Creates Coursier dependencies from a list of Strings
     */
-  private def createCoursierDependencies(depString: String): Result[Dependency, PackageError] =
+  private def createCoursierDependencies(depString: String): Result[CoursierDependency, PackageError] =
     coursier.parse.DependencyParser.dependency(depString, scalaVersion) match {
       case Left(error) => throw InternalCompilerException(s"Coursier error: $error", SourceLocation.Unknown)
       case Right(cDep) => Ok(cDep)

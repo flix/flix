@@ -16,61 +16,119 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
+import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.nio.file.{Files, Path, Paths}
-import scala.jdk.CollectionConverters._
+import java.nio.file.{Path, Paths}
 
 class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
   /**
     * A global Flix instance that is used if incremental compilation is enabled.
     */
-  var flix = new Flix()
+  var Flix: Flix = mkFlix()
 
-  def mkTestDir(path: String)(implicit options: Options): Unit = {
-    val iter = Files.walk(Paths.get(path), 1)
-      .iterator().asScala
-      .filter(p => Files.isRegularFile(p) && p.toString.endsWith(".flix"))
-      .toList.sorted
+  /**
+    * Returns a new fresh Flix instance with default options.
+    */
+  private def mkFlix(): Flix = {
+    val flix = new Flix()
 
-    for (p <- iter) {
-      mkTest(p.toString)
+    flix.addListener {
+      case FlixEvent.AfterTailPos(root) =>
+        TypeVerifier.verify(root)(flix)
+      case _ => // nop
+    }
+
+    flix.addListener {
+      case FlixEvent.AfterTyper(root) =>
+        EffectVerifier.verify(root)(flix)
+      case _ => // nop
+    }
+
+    flix
+  }
+
+  /**
+    * Runs all tests in all files in the directory located at `path`.
+    *
+    * In contrast to [[mkTestDir]], this function compiles all files
+    * together so files can depend on each other.
+    *
+    * Subdirectories are excluded.
+    *
+    */
+  def mkTestDirCollected(path: String, name: String)(implicit options: Options): Unit = {
+    val files = FileOps.getFlixFilesIn(Paths.get(path), 1)
+    test(name)(compileAndRun(files))
+  }
+
+  /**
+    * Runs all tests in all files in the directory located at `path`.
+    *
+    * This function compiles each file separately, so files cannot depend
+    * each other. If that is a requirement use [[mkTestDirCollected]] instead.
+    *
+    * If `prelude` is specified, it is always included.
+    *
+    * Subdirectories are excluded.
+    *
+    */
+  def mkTestDir(path: String, prelude: Option[String] = None)(implicit options: Options): Unit = {
+    val files = FileOps.getFlixFilesIn(Paths.get(path), 1)
+    for (p <- files) {
+      mkTest(p.toString, prelude)
     }
   }
 
-  def mkTest(path: String)(implicit options: Options): Unit = {
+  /**
+    * Runs all the tests in the file located at `path`.
+    */
+  def mkTest(path: String, prelude: Option[String])(implicit options: Options): Unit = {
     val p = Paths.get(path)
-    val n = p.getFileName.toString
-    test(n)(compileAndRun(p))
+    val n = p.toString
+    val ps = prelude match {
+      case None => List(p)
+      case Some(p2) => List(p, Paths.get(p2))
+    }
+    test(n)(compileAndRun(ps))
   }
 
-  private def compileAndRun(path: Path)(implicit options: Options): Unit = {
+  private def compileAndRun(paths: List[Path])(implicit options: Options): Unit = {
     // Construct a new fresh Flix object if incremental compilation is disabled.
     if (!incremental) {
-      flix = new Flix()
+      Flix = mkFlix()
     }
 
     // Set options.
-    flix.setOptions(options)
+    Flix.setOptions(options)
+
+    // Default security context.
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
 
     // Add the given path.
-    flix.addFlix(path)
+    for (p <- paths) {
+      Flix.addFile(p)
+    }
 
     try {
       // Compile and Evaluate the program to obtain the compilationResult.
-      flix.compile().toHardResult match {
+      Flix.compile().toResult match {
         case Result.Ok(compilationResult) =>
           runTests(compilationResult)
         case Result.Err(errors) =>
-          val es = errors.map(_.messageWithLoc(flix.getFormatter)).mkString("\n")
-          fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
+          fail(CompilationMessage.formatAll(errors.toList)(Flix.getFormatter, None))
       }
     } finally {
       // Remove the source path.
-      flix.remFlix(path)
+      for (p <- paths) {
+        Flix.remFile(p)
+      }
     }
   }
 
@@ -90,10 +148,12 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
             // Evaluate the function.
             val result = run()
             // Expect the true value, if boolean.
-            if (result.isInstanceOf[java.lang.Boolean]) {
-              if (result != true) {
-                fail("Expected true, but got false.")
-              }
+            result match {
+              case res: java.lang.Boolean =>
+                if (!res.booleanValue()) {
+                  fail("Expected true, but got false.")
+                }
+              case _ => // nop
             }
           }
         }

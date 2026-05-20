@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, RegionScope}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -27,11 +28,14 @@ import scala.collection.mutable
 
 object ClosureConv {
 
+  // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
+  private implicit val S: RegionScope = RegionScope.Top
+
   /**
     * Performs closure conversion on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("ClosureConv") {
-    val newDefs = ParOps.parMapValues(root.defs)(visitDef)
+    val newDefs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
 
     root.copy(defs = newDefs)
   }
@@ -51,43 +55,28 @@ object ClosureConv {
 
     case Expr.Var(_, _, _) => exp0
 
-    case Expr.Def(sym, tpe, loc) =>
-      //
-      // Special Case: A def expression occurs outside of an `Apply` expression.
-      //
-
-      //
-      // We must create a closure that references the definition symbol.
-      //
-      // The closure has no free variables since it is a reference to a top-level function.
-      //
-      // This case happens if the programmers writes e.g.:
-      //
-      // let m = List.map; ...
-      //
-      Expr.ApplyAtomic(AtomicOp.Closure(sym), List.empty, tpe, Purity.Pure, loc)
-
     case Expr.Lambda(fparams, exp, tpe, loc) =>
       //
       // Main case: Convert a lambda expression to a lambda closure.
       //
       mkLambdaClosure(fparams, exp, tpe, loc)
 
-    case Expr.Apply(exp, exps, tpe, purity, loc) => exp match {
-      case Expr.Def(sym, _, _) =>
-        //
-        // Special Case: Direct call to a known function symbol.
-        //
-        val es = exps.map(visitExp)
-        Expr.ApplyDef(sym, es, tpe, purity, loc)
-      case _ =>
-        //
-        // General Case: Call to closure.
-        //
-        val e = visitExp(exp)
-        val es = exps.map(visitExp)
-        Expr.ApplyClo(e, es, tpe, purity, loc)
-    }
+    case Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.ApplyClo(e1, e2, tpe, purity, loc)
+
+    case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyDef(sym, es, tpe, purity, loc)
+
+    case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
+
+    case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyOp(sym, es, tpe, purity, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
@@ -99,10 +88,10 @@ object ClosureConv {
       val e3 = visitExp(exp3)
       Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-    case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Stm(e1, e2, tpe, purity, loc)
+    case Expr.Stm(exps, exp, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      Expr.Stm(es, e, tpe, purity, loc)
 
     case Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -114,14 +103,19 @@ object ClosureConv {
     case Expr.JumpTo(sym, tpe, purity, loc) =>
       Expr.JumpTo(sym, tpe, purity, loc)
 
+    case Expr.Switch(exp, enumSym, cases, defaultExp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val cs = cases.map { case (sym, br) => sym -> visitExp(br) }
+      val d = visitExp(defaultExp)
+      Expr.Switch(e, enumSym, cs, d, tpe, purity, loc)
+
     case Expr.Let(sym, e1, e2, tpe, purity, loc) =>
       Expr.Let(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
-    case Expr.LetRec(sym, e1, e2, tpe, purity, loc) =>
-      Expr.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
+    case e: Expr.LocalDef => visitLocalDef(e)
 
-    case Expr.Scope(sym, e, tpe, purity, loc) =>
-      Expr.Scope(sym, visitExp(e), tpe, purity, loc)
+    case Expr.Region(sym, e, tpe, purity, loc) =>
+      Expr.Region(sym, visitExp(e), tpe, purity, loc)
 
     case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -132,38 +126,42 @@ object ClosureConv {
       }
       Expr.TryCatch(e, rs, tpe, purity, loc)
 
-    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       // Lift the body and all the rule expressions
       val expLoc = exp.loc.asSynthetic
-      val freshSym = Symbol.freshVarSym("_closureConv", Ast.BoundBy.FormalParam, expLoc)
-      val fp = FormalParam(freshSym, Ast.Modifiers.Empty, MonoType.Unit, expLoc)
-      val e = mkLambdaClosure(List(fp), exp, MonoType.Arrow(List(MonoType.Unit), tpe), expLoc)
+      val freshSym = Symbol.freshVarSym("_closureConv", BoundBy.FormalParam, expLoc)
+      val fp = FormalParam(freshSym, SimpleType.Unit, expLoc)
+      val e = mkLambdaClosure(List(fp), exp, SimpleType.mkArrow(List(SimpleType.Unit), tpe), expLoc)
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
-          val cloType = MonoType.Arrow(fparams.map(_.tpe), body.tpe)
+          val cloType = SimpleType.mkArrow(fparams.map(_.tpe), body.tpe)
           val clo = mkLambdaClosure(fparams, body, cloType, opUse.loc)
           HandlerRule(opUse, fparams, clo)
       }
-      Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+      Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-    case Expr.Do(op, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExp)
-      Expr.Do(op, es, tpe, purity, loc)
-
-    case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
-      val methods = methods0 map {
-        case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
-          val cloType = MonoType.Arrow(fparams.map(_.tpe), retTpe)
-          val clo = mkLambdaClosure(fparams, exp, cloType, loc)
-          JvmMethod(ident, fparams, clo, retTpe, purity, loc)
+    case Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+      val constructors = constructors0 map {
+        case JvmConstructor(exp, retTpe, constructorPurity, constructorLoc) =>
+          exp match {
+            // A super call must occur directly inside <init>, so we cannot extract it into a closure.
+            // Just visit the args without wrapping in a closure.
+            case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(_), _, _, _, _) =>
+              val e = visitExp(exp)
+              JvmConstructor(e, retTpe, constructorPurity, constructorLoc)
+            case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructorLoc)
+          }
       }
-      Expr.NewObject(name, clazz, tpe, purity, methods, loc)
+      val methods = methods0 map {
+        case JvmMethod(ann, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+          val cloType = SimpleType.mkArrow(fparams.map(_.tpe), retTpe)
+          val clo = mkLambdaClosure(fparams, exp, cloType, methodLoc)
+          JvmMethod(ann, ident, fparams, clo, retTpe, methodPurity, methodLoc)
+      }
+      Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
 
     case Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
-
-    case Expr.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
   }
 
   /**
@@ -171,7 +169,7 @@ object ClosureConv {
     *
     * `exp` is visited inside this function and should not be visited before.
     */
-  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
+  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: SimpleType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
     // Step 1: Compute the free variables in the lambda expression.
     //         (Remove the variables bound by the lambda itself).
     val fvs = filterBoundParams(freeVars(exp), fparams).toList
@@ -195,7 +193,7 @@ object ClosureConv {
       case FreeVar(oldSym, ptpe) =>
         val newSym = Symbol.freshVarSym(oldSym)
         subst += (oldSym -> newSym)
-        FormalParam(newSym, Ast.Modifiers.Empty, ptpe, loc)
+        FormalParam(newSym, ptpe, loc)
     }
     (fparams, subst.toMap)
   }
@@ -212,13 +210,20 @@ object ClosureConv {
 
     case Expr.Var(sym, tpe, _) => SortedSet(FreeVar(sym, tpe))
 
-    case Expr.Def(_, _, _) => SortedSet.empty
-
     case Expr.Lambda(args, body, _, _) =>
       filterBoundParams(freeVars(body), args)
 
-    case Expr.Apply(exp, args, _, _, _) =>
-      freeVars(exp) ++ freeVarsExps(args)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expr.ApplyDef(_, exps, _, _, _) =>
+      freeVarsExps(exps)
+
+    case Expr.ApplyLocalDef(_, exps, _, _, _) =>
+      freeVarsExps(exps)
+
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      freeVarsExps(exps)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       freeVarsExps(exps)
@@ -226,8 +231,8 @@ object ClosureConv {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foldRight(freeVars(exp))((e, acc) => freeVars(e) ++ acc)
 
     case Expr.Branch(exp, branches, _, _, _) =>
       freeVars(exp) ++ (branches flatMap {
@@ -236,37 +241,43 @@ object ClosureConv {
 
     case Expr.JumpTo(_, _, _, _) => SortedSet.empty
 
+    case Expr.Switch(exp, _, cases, defaultExp, _, _, _) =>
+      freeVars(exp) ++ cases.foldLeft(freeVars(defaultExp)) {
+        case (acc, (_, body)) => acc ++ freeVars(body)
+      }
+
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
       filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
 
-    case Expr.LetRec(sym, exp1, exp2, _, _, _) =>
-      filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
+      val bound = sym :: fparams.map(_.sym)
+      filterBoundVars(freeVars(exp1), bound) ++
+        filterBoundVar(freeVars(exp2), sym)
 
-    case Expr.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
+    case Expr.Region(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
     case Expr.TryCatch(exp, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
-      case (acc, CatchRule(sym, _, exp)) =>
-        acc ++ filterBoundVar(freeVars(exp), sym)
+      case (acc, CatchRule(sym, _, body)) =>
+        acc ++ filterBoundVar(freeVars(body), sym)
     }
 
-    case Expr.TryWith(exp, _, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
-      case (acc, HandlerRule(_, fparams, exp)) =>
-        acc ++ filterBoundParams(freeVars(exp), fparams)
+    case Expr.RunWith(exp, _, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
+      case (acc, HandlerRule(_, fparams, body)) =>
+        acc ++ filterBoundParams(freeVars(body), fparams)
     }
 
-    case Expr.Do(_, exps, _, _, _) => freeVarsExps(exps)
-
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foldLeft(SortedSet.empty[FreeVar]) {
-        case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      val constructorFvs = constructors.foldLeft(SortedSet.empty[FreeVar]) {
+        case (acc, JvmConstructor(exp, _, _, _)) =>
+          acc ++ freeVars(exp)
+      }
+      methods.foldLeft(constructorFvs) {
+        case (acc, JvmMethod(_, _, fparams, exp, _, _, _)) =>
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
 
     case Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
-
-    case Expr.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
   }
 
   /**
@@ -286,12 +297,18 @@ object ClosureConv {
     }
 
   /**
+    * Returns `fvs` without all the variable symbols in the symbols `bound`.
+    */
+  private def filterBoundVars(fvs: SortedSet[FreeVar], bound: List[Symbol.VarSym]): SortedSet[FreeVar] =
+    fvs.filter {
+      case FreeVar(sym, _) => !bound.contains(sym)
+    }
+
+  /**
     * Returns `fvs` without all the variable symbols in the formal parameters `bound`.
     */
   private def filterBoundParams(fvs: SortedSet[FreeVar], bound: List[FormalParam]): SortedSet[FreeVar] =
-    fvs.filter {
-      case FreeVar(sym, _) => !bound.exists(fparam => sym == fparam.sym)
-    }
+    filterBoundVars(fvs, bound.map(_.sym))
 
   /**
     * Applies the given substitution map `subst` to the given expression `e`.
@@ -306,34 +323,37 @@ object ClosureConv {
         case Some(newSym) => Expr.Var(newSym, tpe, loc)
       }
 
-      case Expr.Def(_, _, _) => e
-
       case Expr.Lambda(fparams, exp, tpe, loc) =>
         val fs = fparams.map(visitFormalParam)
         val e = visitExp(exp)
         Expr.Lambda(fs, e, tpe, loc)
 
       case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-        val es = exps map visitExp
+        val es = exps.map(visitExp)
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
       case Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp)
         Expr.LambdaClosure(cparams, fparams, freeVars, e, tpe, loc)
 
-      case Expr.ApplyClo(exp, args, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val as = args map visitExp
-        Expr.ApplyClo(e, as, tpe, purity, loc)
+      case Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expr.ApplyClo(e1, e2, tpe, purity, loc)
 
-      case Expr.ApplyDef(sym, args, tpe, purity, loc) =>
-        val as = args map visitExp
-        Expr.ApplyDef(sym, as, tpe, purity, loc)
+      case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        Expr.ApplyDef(sym, es, tpe, purity, loc)
 
-      case Expr.Apply(exp, args, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val as = args map visitExp
-        Expr.Apply(e, as, tpe, purity, loc)
+      case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+        // We do not substitute any local def symbol
+        // since it will be lifted to top level in LambdaLift.
+        val es = exps.map(visitExp)
+        Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
+
+      case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        Expr.ApplyOp(sym, es, tpe, purity, loc)
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
@@ -341,10 +361,10 @@ object ClosureConv {
         val e3 = visitExp(exp3)
         Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-      case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expr.Stm(e1, e2, tpe, purity, loc)
+      case Expr.Stm(exps, exp, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        val e = visitExp(exp)
+        Expr.Stm(es, e, tpe, purity, loc)
 
       case Expr.Branch(exp, branches, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -356,22 +376,30 @@ object ClosureConv {
       case Expr.JumpTo(sym, tpe, purity, loc) =>
         Expr.JumpTo(sym, tpe, purity, loc)
 
+      case Expr.Switch(exp, enumSym, cases, defaultExp, tpe, purity, loc) =>
+        val e = visitExp(exp)
+        val cs = cases.map { case (sym, br) => sym -> visitExp(br) }
+        val d = visitExp(defaultExp)
+        Expr.Switch(e, enumSym, cs, d, tpe, purity, loc)
+
       case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expr.Let(newSym, e1, e2, tpe, purity, loc)
 
-      case Expr.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
-        val newSym = subst.getOrElse(sym, sym)
+      case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
+        // We never substitute a LocalDef symbol, since it is never free
+        // and it will be lifted to top level later.
+        val fps = fparams.map(visitFormalParam)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        Expr.LetRec(newSym, e1, e2, tpe, purity, loc)
+        Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
 
-      case Expr.Scope(sym, exp, tpe, purity, loc) =>
+      case Expr.Region(sym, exp, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)
         val e = visitExp(exp)
-        Expr.Scope(newSym, e, tpe, purity, loc)
+        Expr.Region(newSym, e, tpe, purity, loc)
 
       case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -382,7 +410,7 @@ object ClosureConv {
         }
         Expr.TryCatch(e, rs, tpe, purity, loc)
 
-      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      case Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
         // TODO AE do we need to do something here?
         val e = visitExp(exp)
         val rs = rules map {
@@ -391,33 +419,256 @@ object ClosureConv {
             val b = visitExp(body)
             HandlerRule(sym, fs, b)
         }
-        Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+        Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-      case Expr.Do(op, exps, tpe, purity, loc) =>
-        val es = exps.map(visitExp)
-        Expr.Do(op, es, tpe, purity, loc)
-
-      case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+      case Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+        val constructors = constructors0.map(visitJvmConstructor)
         val methods = methods0.map(visitJvmMethod)
-        Expr.NewObject(name, clazz, tpe, purity, methods, loc)
+        Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
 
     }
 
     def visitFormalParam(fparam: FormalParam): FormalParam = fparam match {
-      case FormalParam(sym, mod, tpe, loc) =>
+      case FormalParam(sym, tpe, loc) =>
         subst.get(sym) match {
-          case None => FormalParam(sym, mod, tpe, loc)
-          case Some(newSym) => FormalParam(newSym, mod, tpe, loc)
+          case None => FormalParam(sym, tpe, loc)
+          case Some(newSym) => FormalParam(newSym, tpe, loc)
         }
     }
 
+    def visitJvmConstructor(constructor: JvmConstructor)(implicit flix: Flix): JvmConstructor = constructor match {
+      case JvmConstructor(exp, retTpe, purity, loc) =>
+        JvmConstructor(applySubst(exp, subst), retTpe, purity, loc)
+    }
+
     def visitJvmMethod(method: JvmMethod)(implicit flix: Flix): JvmMethod = method match {
-      case JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
+      case JvmMethod(ann, ident, fparams0, exp, retTpe, purity, loc) =>
         val fparams = fparams0.map(visitFormalParam)
-        JvmMethod(ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
+        JvmMethod(ann, ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
     }
 
     visitExp(e0)
+  }
+
+  /**
+    * Performs closure conversion on a [[Expr.LocalDef]].
+    * Adds any captured variables to the list of formal parameters and rewrites any
+    * [[Expr.ApplyLocalDef]] to include the captured variables or, in the case of a recursive call,
+    * the list of new formal parameters.
+    *
+    * E.g.,
+    *
+    * {{{
+    *   def f(): Int32 = {
+    *       let a = 1;
+    *       let b = 2;
+    *       let c = 3;
+    *       def g(l) = if (l == 4) a + b + c + l else g(4);
+    *       g(4)
+    *   }
+    * }}}
+    *
+    * becomes
+    *
+    * {{{
+    *   def f(): Int32 = {
+    *       let a = 1;
+    *       let b = 2;
+    *       let c = 3;
+    *       def g(x, y, z, l) = if (l == 4) x + y + z + l else g(x, y, z, 4);
+    *       g(a, b, c, 4)
+    *   }
+    * }}}
+    */
+  private def visitLocalDef(expr0: Expr.LocalDef)(implicit flix: Flix): Expr.LocalDef = expr0 match {
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
+      // Step 1: Compute the free variables in the body expression.
+      //         (Remove the variables bound by the function itself).
+      val bound = sym :: fparams.map(_.sym)
+      val fvs = filterBoundVars(freeVars(exp1), bound).toList
+
+      // Step 2: Convert the free variables into a new parameter list and substitution.
+      val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
+
+      // Step 3: Rewrite every recursive call to include free vars and then replace
+      //         every occurrence of the free vars with their substitution.
+      //         (This is equivalent to applying the substitution first and then
+      //          rewriting after with the variables in `cloParams` but conceptually,
+      //          this is simpler, since we first rewrite the AST with the same variables
+      //          that already exist, and then afterwards perform renaming, replacing
+      //          all occurrences at once.
+      //          E.g., `def f(x) = f(x + y)` becomes `def f(q, x) = f(q, x + q)`.
+      //                 Substitute first, then rewrite (with `cloParams`): `f(x + y)` --> `f(x + q)`    --> `f(q, x + q)`.
+      //                 Rewrite first, then substitute                   : `f(x + y)` --> `f(y, x + y)` --> `f(q, x + q)`.
+      //          So the result is the same.)
+      val e1 = visitExp(applySubst(rewriteApplyLocalDef(exp1, sym, fvs), subst))
+
+      // Step 4: Rewrite every ApplyLocalDef node to include free vars.
+      val e2 = visitExp(rewriteApplyLocalDef(exp2, sym, fvs))
+
+      // Step 5: Update the definition to include the new parameter list
+      val fps = cloParams ++ fparams
+      Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
+  }
+
+  /**
+    * Rewrites any [[Expr.ApplyLocalDef]] node related to `sym0` to also apply with the captured variables in `freeVars`.
+    *
+    * Note that it is up to the caller to provide the correct variables, e.g., in the example below
+    * it is the caller's responsibility to provide `x, y, z` at the recursive call site and `a, b, c` at the outer call site.
+    * This function only performs the rewrite.
+    *
+    * If this function is called from [[visitExp]] then it is highly likely you want to call this before calling [[visitExp]]
+    * recursively on some subexpression. This is because any lambda that captures a local def will then automatically pick
+    * up the new free variables added to an `ApplyLocalDef` node and will then handle capturing them correctly.
+    *
+    * E.g.,
+    *
+    * {{{
+    *   def f(): Int32 = {
+    *       let a = 1;
+    *       let b = 2;
+    *       let c = 3;
+    *       def g(l) = if (l == 4) a + b + c + l else g(4);
+    *       g(4)
+    *   }
+    * }}}
+    *
+    * becomes
+    *
+    * {{{
+    *   def f(): Int32 = {
+    *       let a = 1;
+    *       let b = 2;
+    *       let c = 3;
+    *       def g(x, y, z, l) = if (l == 4) x + y + z + l else g(x, y, z, 4);
+    *       g(a, b, c, 4)
+    *   }
+    * }}}
+    *
+    */
+  private def rewriteApplyLocalDef(expr00: Expr, sym0: Symbol.VarSym, freeVars: List[FreeVar]): Expr = {
+    def visit(expr0: Expr): Expr = expr0 match {
+      case Expr.Cst(_, _, _) => expr0
+
+      case Expr.Var(_, _, _) => expr0
+
+      case Expr.Lambda(fparams, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expr.Lambda(fparams, e, tpe, loc)
+
+      case Expr.LambdaClosure(cparams, fparams, cloFreeVars, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expr.LambdaClosure(cparams, fparams, cloFreeVars, e, tpe, loc)
+
+      case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        Expr.ApplyAtomic(op, es, tpe, purity, loc)
+
+      case Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expr.ApplyClo(e1, e2, tpe, purity, loc)
+
+      case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        Expr.ApplyDef(sym, es, tpe, purity, loc)
+
+      case Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+        // Step 1: Rewrite recursively
+        val es = exps.map(visit)
+
+        // Step 2: If we are at an application of sym0 which we want
+        //         to rewrite, then do the rewrite.
+        if (sym == sym0) {
+          // This is the important rewrite!
+          // Add all the free vars of the local def at `sym0`
+          // as arguments to the function call.
+          val all = freeVars.map(fv => Expr.Var(fv.sym, fv.tpe, loc.asSynthetic)) ++ es
+          Expr.ApplyLocalDef(sym, all, tpe, purity, loc)
+        } else {
+          // Otherwise, we are not interested in rewriting this node,
+          // so just use the recursively rewritten arguments `es`.
+          Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
+        }
+
+      case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        Expr.ApplyOp(sym, es, tpe, purity, loc)
+
+      case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val e3 = visit(exp3)
+        Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+
+      case Expr.Stm(exps, exp, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        val e = visit(exp)
+        Expr.Stm(es, e, tpe, purity, loc)
+
+      case Expr.Branch(exp, branches, tpe, purity, loc) =>
+        val e = visit(exp)
+        val bs = branches.map {
+          case (s, e1) => s -> visit(e1)
+        }
+        Expr.Branch(e, bs, tpe, purity, loc)
+
+      case Expr.JumpTo(_, _, _, _) => expr0
+
+      case Expr.Switch(exp, enumSym, cases, defaultExp, tpe, purity, loc) =>
+        val e = visit(exp)
+        val cs = cases.map { case (sym, body) => sym -> visit(body) }
+        val d = visit(defaultExp)
+        Expr.Switch(e, enumSym, cs, d, tpe, purity, loc)
+
+      case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expr.Let(sym, e1, e2, tpe, purity, loc)
+
+      case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expr.LocalDef(sym, fparams, e1, e2, tpe, purity, loc)
+
+      case Expr.Region(sym, exp, tpe, purity, loc) =>
+        val e = visit(exp)
+        Expr.Region(sym, e, tpe, purity, loc)
+
+      case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
+        val e = visit(exp)
+        val rs = rules.map {
+          case CatchRule(sym, clazz, exp1) =>
+            val e1 = visit(exp1)
+            CatchRule(sym, clazz, e1)
+        }
+        Expr.TryCatch(e, rs, tpe, purity, loc)
+
+      case Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
+        val e = visit(exp)
+        val rs = rules.map {
+          case HandlerRule(op, fparams, exp1) =>
+            val e1 = visit(exp1)
+            HandlerRule(op, fparams, e1)
+        }
+        Expr.RunWith(e, effUse, rs, tpe, purity, loc)
+
+      case Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+        val cs = constructors.map {
+          case JvmConstructor(exp, retTpe, constructorPurity, constructorLoc) =>
+            val e = visit(exp)
+            JvmConstructor(e, retTpe, constructorPurity, constructorLoc)
+        }
+        val ms = methods.map {
+          case JvmMethod(ann, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+            val e = visit(exp)
+            JvmMethod(ann, ident, fparams, e, retTpe, methodPurity, methodLoc)
+        }
+        Expr.NewObject(name, clazz, tpe, purity, cs, ms, loc)
+    }
+
+    visit(expr00)
   }
 
 }

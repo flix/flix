@@ -13,6 +13,4 @@ mod Test.Kind.Instance {
         instance CStar1[EStarToStar[a]] with CStarToStar[a]
     }
 
-    @test
-    def empty(): Bool = true
 }

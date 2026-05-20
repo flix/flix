@@ -10,7 +10,7 @@
 
 ## Flix-specific
 
-- Type class instances declarations should appear just below a type declaration.
+- Trait instances declarations should appear just below a type declaration.
   - Instances should appear in the order: Eq, Order, ToString.
 - Argument lists should have the subject last to support `|>`.
 - Avoids casts.
@@ -44,6 +44,10 @@
   - Variable-like nodes
   - Constant-like nodes
   - Compound nodes
+- Avoid overloading and default parameters
+- Implicit parameters should:
+  - have a specific type (`FooEnv`, not `Map[String, Int]`)
+  - only be used when the parameter does not change (or very rarely changes) in recursive calls
 
 ### Naming
 - Common methods are `visitExp`, `visitExps`, `visitPat`, etc.

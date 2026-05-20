@@ -1,53 +1,55 @@
 mod Test.Handler.Ask.Int32 {
 
+    use Assert.assertEq;
+
     eff Ask {
-        pub def ask(x: Int32): Unit
+        def ask(x: Int32): Unit
     }
 
     def generator(x: Int32): Unit \ Ask =
-        do Ask.ask(x); generator(x + 1)
+        Ask.ask(x); generator(x + 1)
 
     def sample(limit: Int32): List[Int32] =
-        try {
+        run {
             generator(0); Nil
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = if (x == limit) Nil else x :: k()
         }
 
     @Test
-    def testSample01(): Bool =
-        Assert.eq(Nil, sample(0))
+    def testSample01(): Unit \ Assert =
+        assertEq(expected = Nil, sample(0))
 
     @Test
-    def testSample02(): Bool =
-        Assert.eq(0 :: Nil, sample(1))
+    def testSample02(): Unit \ Assert =
+        assertEq(expected = 0 :: Nil, sample(1))
 
     @Test
-    def testSample03(): Bool =
-        Assert.eq(0 :: 1 :: Nil, sample(2))
+    def testSample03(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: Nil, sample(2))
 
     @Test
-    def testSample04(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: Nil, sample(3))
+    def testSample04(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: 2 :: Nil, sample(3))
 
     @Test
-    def testSample05(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: 3 :: Nil, sample(4))
+    def testSample05(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: 2 :: 3 :: Nil, sample(4))
 
     @Test
-    def testSample06(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: 3 :: 4 :: Nil, sample(5))
+    def testSample06(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: 2 :: 3 :: 4 :: Nil, sample(5))
 
     @Test
-    def testSample07(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil, sample(6))
+    def testSample07(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil, sample(6))
 
     @Test
-    def testSample08(): Bool =
-        Assert.eq(List.range(0, 10), sample(10))
+    def testSample08(): Unit \ Assert =
+        assertEq(expected = List.range(0, 10), sample(10))
 
     @Test
-    def testSample09(): Bool =
-        Assert.eq(List.range(0, 100), sample(100))
+    def testSample09(): Unit \ Assert =
+        assertEq(expected = List.range(0, 100), sample(100))
 
 }

@@ -14,35 +14,39 @@
  *  limitations under the License.
  */
 
-///
-/// A trait for zipping Monads, typically container monads like `List`.
-///
-/// A minimal implementation must define `zipWith` and `zipWithA`.
-///
-trait MonadZip[m: Type -> Type] with Monad[m] {
+mod MonadZip {
 
     ///
-    /// Returns single monad where the element (or elements) of `ma` and `mb` are combined
-    /// with the function `f`.
+    /// A trait for zipping Monads, typically container monads like `List`.
     ///
-    pub def zipWith(f: (a, b) -> c \ ef, ma: m[a], mb: m[b]): m[c] \ ef
+    /// A minimal implementation must define `zipWith` and `zipWithA`.
+    ///
+    trait MonadZip[m: Type -> Type] with Monad[m] {
 
-    ///
-    /// Returns single monad where the element (or elements) of `ma` and `mb` are combined
-    /// as pairs.
-    ///
-    pub def zip(ma: m[a], mb: m[b]): m[(a, b)] = MonadZip.zipWith((x, y) -> (x, y), ma, mb)
+        ///
+        /// Returns single monad where the element (or elements) of `ma` and `mb` are combined
+        /// with the function `f`.
+        ///
+        pub def zipWith(f: (a, b) -> c \ ef, ma: m[a], mb: m[b]): m[c] \ ef
 
-    ///
-    /// Returns a pair of monads, the first containing the element (or elements) of the left part of `mx`
-    /// the second containing the element (or elements) of the right part of `mx`.
-    ///
-    pub def unzip(mx: m[(a, b)]): (m[a], m[b]) = (Functor.map(fst, mx), Functor.map(snd, mx))
+        ///
+        /// Returns single monad where the element (or elements) of `ma` and `mb` are combined
+        /// as pairs.
+        ///
+        pub def zip(ma: m[a], mb: m[b]): m[(a, b)] = MonadZip.zipWith((x, y) -> (x, y), ma, mb)
 
-    ///
-    /// Generalized version of `zipWith` where `f` zips an applicative functor across the
-    /// (monadic) containers `ma` and `mb`.
-    ///
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, ma: m[a], mb: m[b]): f[m[c]] \ ef with Applicative[f]
+        ///
+        /// Returns a pair of monads, the first containing the element (or elements) of the left part of `mx`
+        /// the second containing the element (or elements) of the right part of `mx`.
+        ///
+        pub def unzip(mx: m[(a, b)]): (m[a], m[b]) = (Functor.map(fst, mx), Functor.map(snd, mx))
+
+        ///
+        /// Generalized version of `zipWith` where `f` zips an applicative functor across the
+        /// (monadic) containers `ma` and `mb`.
+        ///
+        pub def zipWithA(f: (a, b) -> f[c] \ ef, ma: m[a], mb: m[b]): f[m[c]] \ ef with Applicative[f]
+
+    }
 
 }

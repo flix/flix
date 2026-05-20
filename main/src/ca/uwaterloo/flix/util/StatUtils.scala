@@ -20,6 +20,14 @@ package ca.uwaterloo.flix.util
 object StatUtils {
 
   /**
+    * Returns the minimum of `xs`, or `numeric.zero` if empty.
+    */
+  def minimum[T](xs: Seq[T])(implicit numeric: Numeric[T]): T = {
+    if (xs.isEmpty) numeric.zero
+    else xs.min
+  }
+
+  /**
     * Returns the average of `xs`.
     */
   def average[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double = {

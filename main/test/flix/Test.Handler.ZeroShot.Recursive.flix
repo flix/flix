@@ -1,52 +1,54 @@
 mod Test.Handler.ZeroShot.Recursive {
 
-    eff Throw {
-        pub def throw(): Unit
+    use Assert.{assertEq, assertTrue};
+
+    eff Exc {
+        def raise(): Unit
     }
 
     @Test
-    def testRecursiveTryWith01(): Bool =
-        def r(x) = try {
-            if (x == 0) 0 else { let _ = r(x - 1); do Throw.throw(); unreachable!() }
-        } with Throw {
-            def throw(_k) = 42
+    def testRecursiveTryWith01(): Unit \ Assert =
+        def r(x) = run {
+            if (x == 0) 0 else { let _ = r(x - 1); Exc.raise(); unreachable!() }
+        } with handler Exc {
+            def raise(_k) = 42
         };
-        Assert.eq(0, r(0))
+        assertEq(expected = 0, r(0))
 
     @Test
-    def testRecursiveTryWith02(): Bool =
-        def r(x) = try {
-            if (x == 0) 0 else { let _ = r(x - 1); do Throw.throw(); unreachable!() }
-        } with Throw {
-            def throw(_k) = 42
+    def testRecursiveTryWith02(): Unit \ Assert =
+        def r(x) = run {
+            if (x == 0) 0 else { let _ = r(x - 1); Exc.raise(); unreachable!() }
+        } with handler Exc {
+            def raise(_k) = 42
         };
-        Assert.eq(42, r(1))
+        assertEq(expected = 42, r(1))
 
     @Test
-    def testRecursiveTryWith03(): Bool =
-        def r(x) = try {
-            if (x == 0) 0 else { let _ = r(x - 1); do Throw.throw(); unreachable!() }
-        } with Throw {
-            def throw(_k) = 42
+    def testRecursiveTryWith03(): Unit \ Assert =
+        def r(x) = run {
+            if (x == 0) 0 else { let _ = r(x - 1); Exc.raise(); unreachable!() }
+        } with handler Exc {
+            def raise(_k) = 42
         };
-        Assert.eq(42, r(2))
+        assertEq(expected = 42, r(2))
 
     @Test
-    def testRecursiveTryWith04(): Bool =
-        def r(x) = try {
-            if (x == 0) 0 else { let _ = r(x - 1); do Throw.throw(); unreachable!() }
-        } with Throw {
-            def throw(_k) = 42
+    def testRecursiveTryWith04(): Unit \ Assert =
+        def r(x) = run {
+            if (x == 0) 0 else { let _ = r(x - 1); Exc.raise(); unreachable!() }
+        } with handler Exc {
+            def raise(_k) = 42
         };
-        Assert.eq(42, r(3))
+        assertEq(expected = 42, r(3))
 
     @Test
-    def testRecursiveTryWith05(): Bool =
-        def r(x) = try {
-            if (x == 0) 0 else { let _ = r(x - 1); do Throw.throw(); unreachable!() }
-        } with Throw {
-            def throw(_k) = 42
+    def testRecursiveTryWith05(): Unit \ Assert =
+        def r(x) = run {
+            if (x == 0) 0 else { let _ = r(x - 1); Exc.raise(); unreachable!() }
+        } with handler Exc {
+            def raise(_k) = 42
         };
-        Assert.eq(42, r(10))
+        assertEq(expected = 42, r(10))
 
 }

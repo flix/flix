@@ -1,5 +1,160 @@
 # Changelog
 
+Version 0.72.0:
+- Compiler: Improved effect error messages (thanks Alexander and Samuel!)
+
+Version 0.71.0:
+- Compiler: Significantly improved Java interoperability for generic/polymorphic types (thanks Magnus!)
+- Compiler: Improved pattern match compilation with ordinal dispatch and tableswitch (thanks Magnus!)
+- Compiler: Various bytecode optimizations for improved runtime performance (thanks Magnus!)
+- Compiler: Added partial semicolon inference (thanks Mikkel!)
+
+Version 0.70.0:
+- Library: Introduced new `Fs` file system effects (thanks Magnus!)
+- Library: Introduced new `Http` and `Https` effects (thanks Magnus!)
+- Library: Various extensions to the standard library (thanks Magnus!)
+- Library: Added lots of new examples (thanks Magnus!)
+- Compiler: Reworked some redundancy checks (thanks Magnus!)
+- Compiler: Improved detection of file changes (thanks Magnus!)
+- VSCode: Improved detection of file changes (thanks Magnus!)
+
+Version 0.69.3:
+- Library: Introduce `Fs` effects (thanks Magnus!)
+
+Version 0.69.2:
+- Library: Restructure core effects (thanks Magnus!)
+
+Version 0.69.1:
+- Library: Add `Abort.abortWithTrace` (thanks Magnus!)
+
+Version 0.69.0:
+- Compiler: Added tail recursion and termination checker (thanks Magnus!)
+- Compiler: Improved Java interoperability for new object creation (thanks Magnus!)
+- Compiler: Improved resilient parsing (thanks Mikkel!)
+- VSCode: Added inlay hints for missing effects (thanks Alexander and Samuel!)
+- VSCode: Added support for magic def completions on primitives (thanks Magnus!)
+
+Version 0.68.0:
+- Compiler: Added syntax highlighting to error messages (thanks Magnus!)
+- Compiler: Significantly improved error messages across the board (thanks Magnus!)
+- Compiler: Improved support for monomorphization (thanks Casper!)
+
+Version 0.67.2:
+- Library: Minor fixes (thanks Casper, Daniel, Magnus, Matt, Patrick!)
+
+Version 0.67.1:
+- Compiler: Simplified command-line arguments (thanks Magnus!)
+
+Version 0.67.0:
+- Language: Added support for `@DefaultHandler`s (thanks Neo!)
+- Language: Added support for if-statements (thanks Casper!)
+- Language: Reworked `unsafe` block (thanks Magnus!)
+- Library: Added `Formattable` trait (thanks Magnus!)
+- Library: Improved `RichString` data type (thanks Magnus!)
+
+Version 0.66.2:
+- LSP: Added infrastructure for code formatting (thanks Din!)
+
+Version 0.66.1:
+- Compiler: Fixed build to target Java 21 (thanks Magnus!)
+
+Version 0.66.0:
+- Package Manager: Added support for security trust levels (thanks Jakob!)
+
+Version 0.65.0:
+- Compiler: Added `MagicDefCompleter` (thanks Magnus!)
+- Library: Added `MutHashSet` (thanks Magnus!)
+- Library: Added `MutHashMap` (thanks Magnus!)
+
+Version 0.64.0:
+- Language: Added support for `Debug.dprintln` (thanks Magnus!)
+- Language: Added support for debug string interpolations (thanks Magnus!)
+- Compiler: Improved lexer performance (thanks Jonathan!)
+
+Version 0.63.1:
+- Compiler: Fixed a bug in the package manager (thanks Jakob!)
+
+Version 0.63.0:
+- Library: Added more colorful asserts (thanks Magnus!)
+- Compiler: Significantly reduced memory usage of backend (thanks Magnus!)
+- Compiler: Improved parsing of numbers (thanks Jonathan!)
+
+Version 0.62.0:
+- Library: Added `Assert` module (thanks Neo and Magnus!)
+- Library: Added `RichString` module (thanks Magnus!)
+
+Version 0.61.1:
+- Compiler: Improve type error messages (thanks Magnus!)
+
+Version 0.61.0:
+- Compiler: Reworked `foreach` to use the `ForEach` trait (thanks Ry!)
+- Library: Added completely new Datalog engine with much improved performance (thanks Adam and Casper!)
+- Library: Added algebraic effects for networking (thanks Cade!)
+- Library: Added `Readable`, `Writable`, and `Peekable` traits (thanks Ry!)
+
+Version 0.60.0:
+- Compiler: Introduced brand new inliner (thanks Jakob!)
+- Compiler: Improved JVM bytecode generation (thanks Jonathan and Jakob!)
+- LSP: Improved context-aware auto-completion (thanks Chenhao!)
+
+Version 0.59.0:
+- LSP: Improved handler completions (thanks Chenhao!)
+
+Version 0.58.1:
+- Compiler: Fixed a crash in type and effect inference (thanks Magnus!)
+- Compiler: Fixed a crash in plain LSP provider (thanks Chenhao!)
+
+Version 0.58.0:
+- Compiler: Added support for plain LSP (thanks Chenhao!)
+- Compiler: Significantly improved performance of type inference (thanks Magnus!)
+
+Version 0.57.1:
+- Compiler: Extend list of semantic tokens (thanks Chenhao!)
+
+Version 0.57.0:
+- Compiler: Added new type inference implementation (thanks Matt!)
+- Compiler: Improved incremental compilation (thanks Chenhao!)
+- LSP: Improved dot autocompletion (thanks Chenhao!)
+
+Version 0.56.0:
+- Language: Added support for first-class handlers (thanks Jonathan!)
+- Library: Extended the `Process` effect (thanks Maxim!)
+- Compiler: Improved support for incremental compilation (thanks Magnus!)
+
+Version 0.55.0:
+- Compiler: Introduced fuzzy match for LSP completions (thanks Chenhao!)
+- Compiler: Improved performance of LSP API (thanks Alexander!)
+
+Version 0.54.0:
+- Compiler: Improved auto-completion suggestions (thanks Chenhao!)
+- Compiler: Added `AutoImportCompleter` (thanks Chenhao!)
+- Compiler: Added `AutoUseCompleter` (thanks Chenhao!)
+- Compiler: Added `LocalScopeCompleter` (thanks Chenhao!)
+- Compiler: Reworked compilation of enums (thanks Jonathan!)
+
+Version 0.53.0:
+- Language: Added support for algebraic effects (thanks everyone!)
+- Library: Added algebraic effects: Console, FileRead, FileWrite, Http, ... (thanks Holger and Magnus!)
+- Compiler: Reworked and extended the HoverProvider (thanks Alexander!)
+- Compiler: Reworked and extended the HighlightProvider (thanks Alexander!)
+- Compiler: Added magic match completions (thanks Chenhao!)
+
+Version 0.52.0:
+- Compiler: Improved compilation of recursive functions, leading to significant speed-ups (thanks Jakob!)
+
+Version 0.51.0:
+- Language: Added support for mutable structs (thanks Joseph!)
+- Language: Added support for `Indexable` and `IndexableMut` (thanks Jonathan!)
+- Compiler: Improved keyword completion (thanks Alexander!)
+
+Version 0.50.0:
+- Language: Introduced `redef` as a short-hand to redefine functions in trait instances (thanks Jakob!)
+- Compiler: Significantly improved performance of auto-complete (thanks Magnus!)
+
+Version 0.49.0:
+- Language: Significantly improved Java interoperability (thanks Chanattan!)
+- Language: Added support for `throw` for Java interoperability (thanks Joseph!)
+
 Version 0.48.0:
 - Compiler: Added support for resilient lexing and parsing (thanks Herluf!)
 
@@ -17,7 +172,7 @@ Version 0.46.0:
 - Compiler: Reduced memory usage of types and source locations (thanks Magnus!)
 
 Version 0.45.0:
-- Compiler: Added support for the `build-fatjar` command (thanks Chanattan Sok!)
+- Compiler: Added support for the `build-fatjar` command (thanks Chanattan!)
 - Compiler: Added support for the `outdated` command (thanks Holger!)
 - Library: Added `Coerce` type class (thanks Magnus!)
 - Library: Added `purityOf` functions (thanks Jakob!)

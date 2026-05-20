@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.util.collection
 
 import scala.annotation.tailrec
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * A linear data structure that allows fast concatenation.
@@ -97,8 +97,8 @@ sealed trait Chain[+A] {
     // since it calls the equals method which
     // depends on foreach.
     case _: Chain.Empty.type => ()
-    case c: Chain.Link[A] => c.l.foreach(f); c.r.foreach(f)
-    case c: Chain.Proxy[A] => c.xs.foreach(f)
+    case c: Chain.Link[_] => c.l.foreach(f); c.r.foreach(f)
+    case c: Chain.Proxy[_] => c.xs.foreach(f)
   }
 
   /**
@@ -114,7 +114,7 @@ sealed trait Chain[+A] {
     * Returns `this` as a [[List]].
     */
   final def toList: List[A] = {
-    val buf = new ListBuffer[A]
+    val buf = new ArrayBuffer[A]
     this.foreach(buf.addOne)
     buf.toList
   }
@@ -127,8 +127,7 @@ sealed trait Chain[+A] {
     this.foreach { x =>
       sb.addAll(x.toString); sb.addAll(sep)
     }
-    sb.dropRight(sep.length)
-    sb.mkString
+    sb.toString().dropRight(sep.length)
   }
 
   final override def hashCode(): Int = this.toList.hashCode()

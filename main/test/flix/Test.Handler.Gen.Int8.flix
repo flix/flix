@@ -1,18 +1,20 @@
 mod Test.Handler.Gen.Int8 {
 
+    use Assert.assertEq;
+
     eff Gen {
-        pub def gen(): Int8
+        def gen(): Int8
     }
 
     def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+        discard Gen.gen(); generator()
 
     def sample(limit: Int8): List[Int8] =
         region rc {
-            let counter = ref 0i8 @ rc;
-            try {
+            let counter = Ref.fresh(rc, 0i8);
+            run {
                 generator(); Nil
-            } with Gen {
+            } with handler Gen {
                 def gen(k) =
                     let i = getAndInc(counter);
                     if (i == limit) Nil else i :: k(i)
@@ -20,7 +22,7 @@ mod Test.Handler.Gen.Int8 {
         }
 
     def getAndInc(r: Ref[Int8, r]): Int8 \ r =
-        let i = deref r;
+        let i = Ref.get(r);
         Ref.put(i + 1i8, r);
         i
 
@@ -28,39 +30,39 @@ mod Test.Handler.Gen.Int8 {
         List.unfold(i -> if (i >= b) None else Some((i, i + 1i8)), a)
 
     @Test
-    def testSample01(): Bool =
-        Assert.eq(Nil, sample(0i8))
+    def testSample01(): Unit \ Assert =
+        assertEq(expected = Nil, sample(0i8))
 
     @Test
-    def testSample02(): Bool =
-        Assert.eq(0i8 :: Nil, sample(1i8))
+    def testSample02(): Unit \ Assert =
+        assertEq(expected = 0i8 :: Nil, sample(1i8))
 
     @Test
-    def testSample03(): Bool =
-        Assert.eq(0i8 :: 1i8 :: Nil, sample(2i8))
+    def testSample03(): Unit \ Assert =
+        assertEq(expected = 0i8 :: 1i8 :: Nil, sample(2i8))
 
     @Test
-    def testSample04(): Bool =
-        Assert.eq(0i8 :: 1i8 :: 2i8 :: Nil, sample(3i8))
+    def testSample04(): Unit \ Assert =
+        assertEq(expected = 0i8 :: 1i8 :: 2i8 :: Nil, sample(3i8))
 
     @Test
-    def testSample05(): Bool =
-        Assert.eq(0i8 :: 1i8 :: 2i8 :: 3i8 :: Nil, sample(4i8))
+    def testSample05(): Unit \ Assert =
+        assertEq(expected = 0i8 :: 1i8 :: 2i8 :: 3i8 :: Nil, sample(4i8))
 
     @Test
-    def testSample06(): Bool =
-        Assert.eq(0i8 :: 1i8 :: 2i8 :: 3i8 :: 4i8 :: Nil, sample(5i8))
+    def testSample06(): Unit \ Assert =
+        assertEq(expected = 0i8 :: 1i8 :: 2i8 :: 3i8 :: 4i8 :: Nil, sample(5i8))
 
     @Test
-    def testSample07(): Bool =
-        Assert.eq(0i8 :: 1i8 :: 2i8 :: 3i8 :: 4i8 :: 5i8 :: Nil, sample(6i8))
+    def testSample07(): Unit \ Assert =
+        assertEq(expected = 0i8 :: 1i8 :: 2i8 :: 3i8 :: 4i8 :: 5i8 :: Nil, sample(6i8))
 
     @Test
-    def testSample08(): Bool =
-        Assert.eq(range(0i8, 10i8), sample(10i8))
+    def testSample08(): Unit \ Assert =
+        assertEq(expected = range(0i8, 10i8), sample(10i8))
 
     @Test
-    def testSample09(): Bool =
-        Assert.eq(range(0i8, 100i8), sample(100i8))
+    def testSample09(): Unit \ Assert =
+        assertEq(expected = range(0i8, 100i8), sample(100i8))
 
 }

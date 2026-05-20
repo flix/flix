@@ -1,56 +1,51 @@
 mod A {
     pub def f(): Bool = true
-}
+    pub def g(): Bool = true
 
-mod A.B {
-    pub def f(): Bool = true
-}
-
-mod A.B.C {
-    pub def f(): Bool = true
-}
-
-mod A {
     mod B {
+        pub def f(): Bool = true
+        pub def g(): Bool = true
+
         mod C {
+            pub def f(): Bool = true
             pub def g(): Bool = true
         }
-        pub def g(): Bool = true
     }
-    pub def g(): Bool = true
 }
 
 mod X {
+    pub def f(): Bool = true
+
     mod Y {
+        pub def f(): Bool = X.f()
+
         mod Z {
             pub def f(): Bool = X.Y.f()
         }
-        pub def f(): Bool = X.f()
     }
-    pub def f(): Bool = true
 }
 
 mod Test.Dec.Mod {
 
-    @test
+    @CompileTest
     def testMod01(): Bool = A.f()
 
-    @test
+    @CompileTest
     def testMod02(): Bool = A.B.f()
 
-    @test
+    @CompileTest
     def testMod03(): Bool = A.B.C.f()
 
-    @test
+    @CompileTest
     def testMod04(): Bool = A.g()
 
-    @test
+    @CompileTest
     def testMod05(): Bool = A.B.g()
 
-    @test
+    @CompileTest
     def testMod06(): Bool = A.B.C.g()
 
-    @test
+    @CompileTest
     def testMod07(): Bool = X.Y.Z.f()
 
 }

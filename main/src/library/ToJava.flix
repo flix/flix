@@ -14,72 +14,119 @@
  *  limitations under the License.
  */
 
-///
-/// A trait for marshaling values to Java objects.
-///
-pub trait ToJava[t: Type] {
-    type Out[t]: Type
-    type Aef[t]: Eff = {}
-    pub def toJava(t: t): ToJava.Out[t] \ ToJava.Aef[t]
-}
+pub mod ToJava {
 
-mod ToJava {
+    import java.lang.Byte
+    import java.lang.Character
+    import java.lang.Double
+    import java.lang.Float
+    import java.lang.Integer
+    import java.lang.Long
+    import java.lang.Short
+    import java.math.BigInteger
+    import java.util.{List => JList}
+    import java.util.{Map => JMap}
+    import java.util.{Set => JSet}
 
     ///
-    /// Marshal a type that supports `ToJava` to its respective to `ToJava.Out` type
-    /// and upcast it to a `java.lang.Object`
+    /// A trait for marshaling values to Java objects.
     ///
-    pub def toJavaObject(t: t): ##java.lang.Object \ ToJava.Aef[t] with ToJava[t] =
-        unchecked_cast(ToJava.toJava(t) as ##java.lang.Object)
+    pub trait ToJava[t: Type] {
+        type Out[t]: Type
+        type Aef[t]: Eff = {}
+        pub def toJava(t: t): ToJava.Out[t] \ ToJava.Aef[t]
+    }
 
-}
+    instance ToJava[Int8] {
+        type Out = Byte
+        pub def toJava(i: Int8): Byte = Int8.valueOf(i)
+    }
 
-instance ToJava[Int8] {
-    type Out = ##java.lang.Byte
-    pub def toJava(i: Int8): ##java.lang.Byte = Int8.valueOf(i)
-}
+    instance ToJava[Int16] {
+        type Out = Short
+        pub def toJava(i: Int16): Short = Int16.valueOf(i)
+    }
 
-instance ToJava[Int16] {
-    type Out = ##java.lang.Short
-    pub def toJava(i: Int16): ##java.lang.Short = Int16.valueOf(i)
-}
+    instance ToJava[Int32] {
+        type Out = Integer
+        pub def toJava(i: Int32): Integer = Int32.valueOf(i)
+    }
 
-instance ToJava[Int32] {
-    type Out = ##java.lang.Integer
-    pub def toJava(i: Int32): ##java.lang.Integer = Int32.valueOf(i)
-}
+    instance ToJava[Int64] {
+        type Out = Long
+        pub def toJava(i: Int64): Long = Int64.valueOf(i)
+    }
 
-instance ToJava[Int64] {
-    type Out = ##java.lang.Long
-    pub def toJava(i: Int64): ##java.lang.Long = Int64.valueOf(i)
-}
+    instance ToJava[Float32] {
+        type Out = Float
+        pub def toJava(d: Float32): Float = Float32.valueOf(d)
+    }
 
-instance ToJava[Float32] {
-    type Out = ##java.lang.Float
-    pub def toJava(d: Float32): ##java.lang.Float = Float32.valueOf(d)
-}
+    instance ToJava[Float64] {
+        type Out = Double
+        pub def toJava(d: Float64): Double = Float64.valueOf(d)
+    }
 
-instance ToJava[Float64] {
-    type Out = ##java.lang.Double
-    pub def toJava(d: Float64): ##java.lang.Double = Float64.valueOf(d)
-}
+    instance ToJava[BigInt] {
+        type Out = BigInteger
+        pub def toJava(i: BigInt): BigInteger = i
+    }
 
-instance ToJava[BigInt] {
-    type Out = ##java.math.BigInteger
-    pub def toJava(i: BigInt): ##java.math.BigInteger = i
-}
+    instance ToJava[BigDecimal] {
+        type Out = BigDecimal
+        pub def toJava(d: BigDecimal): BigDecimal = d
+    }
 
-instance ToJava[BigDecimal] {
-    type Out = ##java.math.BigDecimal
-    pub def toJava(d: BigDecimal): ##java.math.BigDecimal = d
-}
+    instance ToJava[Char] {
+        type Out = Character
+        pub def toJava(c: Char): Character = Char.valueOf(c)
+    }
 
-instance ToJava[Char] {
-    type Out = ##java.lang.Character
-    pub def toJava(c: Char): ##java.lang.Character = Char.valueOf(c)
-}
+    instance ToJava[String] {
+        type Out = String
+        pub def toJava(s: String): String = s
+    }
 
-instance ToJava[String] {
-    type Out = ##java.lang.String
-    pub def toJava(s: String): ##java.lang.String = s
+    instance ToJava[List[a]] {
+        type Out = JList[a]
+        type Aef = IO
+        pub def toJava(l: List[a]): JList[a] \ IO = Adaptor.toList(l)
+    }
+
+    instance ToJava[Chain[a]] {
+        type Out = JList[a]
+        type Aef = IO
+        pub def toJava(c: Chain[a]): JList[a] \ IO = Adaptor.toList(c)
+    }
+
+    instance ToJava[Vector[a]] {
+        type Out = JList[a]
+        type Aef = IO
+        pub def toJava(v: Vector[a]): JList[a] \ IO = Adaptor.toList(v)
+    }
+
+    instance ToJava[Nel[a]] {
+        type Out = JList[a]
+        type Aef = IO
+        pub def toJava(l: Nel[a]): JList[a] \ IO = Adaptor.toList(l)
+    }
+
+    instance ToJava[Nec[a]] {
+        type Out = JList[a]
+        type Aef = IO
+        pub def toJava(l: Nec[a]): JList[a] \ IO = Adaptor.toList(l)
+    }
+
+    instance ToJava[Set[a]] with Order[a] {
+        type Out = JSet[a]
+        type Aef = IO
+        pub def toJava(s: Set[a]): JSet[a] \ IO = Adaptor.toSet(s)
+    }
+
+    instance ToJava[Map[k, v]] with Order[k] {
+        type Out = JMap[k, v]
+        type Aef = IO
+        pub def toJava(m: Map[k, v]): JMap[k, v] \ IO = Adaptor.toMap(m)
+    }
+
 }

@@ -16,16 +16,12 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.completion._
+import ca.uwaterloo.flix.api.lsp.*
+import ca.uwaterloo.flix.api.lsp.provider.completion.*
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
-import ca.uwaterloo.flix.language.fmt.FormatScheme
-import ca.uwaterloo.flix.language.phase.Lexer
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL._
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.{SyntacticContext, TraitUsageKind}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
 
 /**
   * CompletionProvider
@@ -35,243 +31,119 @@ import org.json4s.JsonDSL._
   * https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
   *
   * This list is not displayed to the user as-is, the client always both sorts and filters the list (or at least,
-  * VSCode does). Therefore we always need to provide both filterText (currently copied from label) and sortText.
+  * VSCode does). Therefore, we always need to provide both filterText (currently copied from label) and sortText.
   *
   * Note that we use textEdit rather than insertText to avoid relying on VSCode's tokenisation, so we can ensure that
   * we're consistent with Flix's parser.
   */
 object CompletionProvider {
 
-  //
-  // To ensure that completions are displayed "most useful" first, we precede sortText with a number. Priorities
-  // differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
-  // are boosted if the cursor is preceded by a ":")
-  //
-  // 1: High: completions which are only available within a very specific context
-  // 2: Boost: completions which are normally low priority, but the context makes them more likely
-  // 4: Snippet: snippets are relatively high priority because they're rare, and to be useful at all they need to be available
-  // 5: Local: local variables
-  // 7: Normal: completions that are relevant within no particular context
-  // 9: Low: completions that are unlikely to be relevant unless within a specific context
-  //
-  object Priority {
-    def high(name: String): String = "1" + name
-
-    def boost(name: String): String = "2" + name
-
-    def snippet(name: String): String = "4" + name
-
-    def local(name: String): String = "5" + name
-
-    def normal(name: String): String = "7" + name
-
-    def low(name: String): String = "9" + name
-  }
-
   /**
-    * Process a completion request.
+    * Returns all completions in the given `uri` at the given position `pos`.
     */
-  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): JObject = {
-    val holeCompletions = getHoleExpCompletions(pos, uri, index, root)
-    // If we are currently on a hole the only useful completion is a hole completion.
-    if (holeCompletions.nonEmpty) {
-      return ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = false, holeCompletions).toJSON)
-    }
+  def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
+    if (currentErrors.isEmpty)
+      HoleCompleter.getHoleCompletion(uri, pos).toList
+    else
+      errorsAt(uri, pos, currentErrors).flatMap {
+        case err: WeederError.UndefinedAnnotation =>
+          ExprSnippetCompleter.generateDefaultHandlerSnippet("@DefaultHandler template", Range.from(err.loc)) ::
+            AnnotationCompleter.getAnnotations(err.name, Range.from(err.loc))
 
-    //
-    // To the best of my knowledge, completions should never be Nil. It could only happen if source was None
-    // (what would having no source even mean?) or if the position represented by pos was invalid with respect
-    // to the source (which would imply a bug in VSCode?).
-    //
-    val completions = source.flatMap(getContext(_, uri, pos, currentErrors)) match {
-      case None => Nil
-      case Some(context) =>
-        // Get all completions
-        val completions = getCompletions()(context, flix, index, root)
-        completions.map(comp => comp.toCompletionItem(context))
-    }
+        case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
-    ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
-  }
+        case err: ResolutionError.UndefinedTag =>
+          val ap = err.ap
+          val scp = err.scp
+          val qn = err.qn
+          val range = Range.from(err.loc)
+          EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
+            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            ModuleCompleter.getCompletions(qn, range, ap, scp)
 
-  /**
-    * Gets completions for when the cursor position is on a hole expression with an expression
-    */
-  private def getHoleExpCompletions(pos: Position, uri: String, index: Index, root: TypedAst.Root)(implicit flix: Flix): Iterable[CompletionItem] = {
-    val entity = index.query(uri, pos)
-    entity match {
-      case Some(Entity.Exp(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), targetType, _, loc))) =>
-        HoleCompletion.candidates(sourceType, targetType, root)
-          .map(root.defs(_))
-          .filter(_.spec.mod.isPublic)
-          .zipWithIndex
-          .map { case (decl, idx) => holeDefCompletion(f"$idx%09d", loc, sym, decl) }
-      case _ => Nil
-    }
-  }
+        case err: ResolutionError.UndefinedName =>
+          val ap = err.ap
+          val scp = err.scp
+          val ident = err.qn.ident.name
+          val qn = err.qn
+          val range = Range.from(err.loc)
+          AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
+            LocalScopeCompleter.getCompletionsExpr(range, scp) ++
+            KeywordCompleter.getExprKeywords(Some(err.qn), range) ++
+            DefCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
+            EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
+            OpCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            SignatureCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, scp) ++
+            ModuleCompleter.getCompletions(qn, range, ap, scp)
 
-  /**
-    * Creates a completion item from a hole with expression and a def.
-    */
-  private def holeDefCompletion(priority: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def)(implicit flix: Flix): CompletionItem = {
-    val name = decl.sym.toString
-    val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
-      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
-    } ::: sym.text :: Nil
-    val params = args.mkString(", ")
-    val snippet = s"$name($params)"
-    CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      filterText = Some(s"${sym.text}?$name"),
-      sortText = priority,
-      textEdit = TextEdit(Range.from(loc), snippet),
-      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-      documentation = Some(decl.spec.doc.text),
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Function)
-  }
+        case err: ResolutionError.UndefinedType =>
+          val ap = err.ap
+          val scp = err.scp
+          val ident = err.qn.ident.name
+          val qn = err.qn
+          val range = Range.from(err.loc)
+          TypeBuiltinCompleter.getCompletions(range) ++
+            AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
+            LocalScopeCompleter.getCompletionsType(range, scp) ++
+            EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = true) ++
+            StructCompleter.getCompletions(qn, range, ap, scp) ++
+            EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
+            TypeAliasCompleter.getCompletions(qn, range, ap, scp) ++
+            ModuleCompleter.getCompletions(qn, range, ap, scp)
 
-  private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
-    context.sctx match {
-      //
-      // Expressions.
-      //
-      case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
-      case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
-      case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
+        case err: ResolutionError.UndefinedEffect => EffectCompleter.getCompletions(err.qn, Range.from(err.loc), err.ap, err.scp, inHandler = true)
+        case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err.name, Range.from(err.loc))
+        case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err.clazz, err.field) ++ InvokeStaticMethodCompleter.getCompletions(err.clazz, err.field)
+        case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err.qn.ident.name, Range.from(err.loc))
+        case err: ResolutionError.UndefinedOp => HandlerCompleter.getCompletions(err.op, Range.from(err.loc))
+        case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
+        case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err.qn, err.traitUseKind, Range.from(err.loc), err.ap, err.scp)
+        case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
-      //
-      // Declarations.
-      //
-      case SyntacticContext.Decl.Trait => KeywordOtherCompleter.getCompletions(context)
-      case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
-      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context)
-      case _: SyntacticContext.Decl => KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
+        case err: TypeError.FieldNotFound =>
+          MagicMatchCompleter.getCompletions(err.tpe, Range.from(err.loc), err.base) ++
+            MagicDefCompleter.getCompletions(err.fieldName, err.tpe, Range.from(err.loc), err.base, root) ++
+            InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
 
-      //
-      // Imports.
-      //
-      case SyntacticContext.Import => ImportCompleter.getCompletions(context)
+        case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
 
-      //
-      // Types.
-      //
-      case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions(context)
-      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(context) ++ EffSymCompleter.getCompletions(context)
+        case err: ParseError => getSyntacticCompletions(uri, err)
 
-      //
-      // Patterns.
-      //
-      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(context) ++
-        EnumCompleter.getCompletions(context) ++ EnumTagCompleter.getCompletions(context)
-
-      //
-      // Uses.
-      //
-      case SyntacticContext.Use => UseCompleter.getCompletions(context)
-
-      //
-      // With.
-      //
-      case SyntacticContext.WithClause =>
-        // A with context could also be just a type context.
-        TypeCompleter.getCompletions(context) ++ WithCompleter.getCompletions(context)
-
-      //
-      // Fallthrough.
-      //
-      case SyntacticContext.Unknown =>
-        KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
-    }
-  }
-
-  /**
-    * Characters that constitute a word.
-    */
-  private def isWordChar(c: Char) = isLetter(c) || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined
-
-  /**
-    * Characters that may appear in a word.
-    */
-  private def isLetter(c: Char) = c match {
-      case c if c >= 'a' && c <= 'z' => true
-      case c if c >= 'A' && c <= 'Z' => true
-      case c if c >= '0' && c <= '9' => true
-      // We also include some special symbols. This is more permissive than the lexer, but that's OK.
-      case '_' => true
-      case '!' => true
-      case '@' => true
-      case '/' => true
-      case '.' => true
-      case '#' => true
-      case _ => false
-    }
-
-  /**
-    * Returns the word at the end of a string, discarding trailing whitespace first
-    */
-  private def getLastWord(s: String): String = {
-    s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
-  }
-
-  /**
-    * Returns the second-to-last word at the end of a string, *not* discarding
-    * trailing whitespace first.
-    */
-  private def getSecondLastWord(s: String): String = {
-    s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
-  }
-
-  /**
-    * Find context from the source, and cursor position within it.
-    */
-  private def getContext(source: String, uri: String, pos: Position, errors: List[CompilationMessage]): Option[CompletionContext] = {
-    val x = pos.character - 1
-    val y = pos.line - 1
-    val lines = source.linesWithSeparators.toList
-    for (line <- lines.slice(y, y + 1).headOption) yield {
-      val (prefix, suffix) = line.splitAt(x)
-      val wordStart = prefix.reverse.takeWhile(isWordChar).reverse
-      val wordEnd = suffix.takeWhile(isWordChar)
-      val word = wordStart + wordEnd
-      val start = x - wordStart.length
-      val end = x + wordEnd.length
-      val prevWord = getSecondLastWord(prefix)
-      val previousWord = if (prevWord.nonEmpty) {
-        prevWord
-      } else lines.slice(y - 1, y).headOption match {
-        case None => ""
-        case Some(s) => getLastWord(s)
+        case _ => Nil
       }
-      val range = Range(Position(y, start), Position(y, end))
-      val sctx = getSyntacticContext(uri, pos, errors)
-      CompletionContext(uri, pos, range, sctx, word, previousWord, prefix, errors)
+  }
+
+  /**
+    * Returns completions based on the syntactic context.
+    */
+  private def getSyntacticCompletions(uri: String, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = {
+    val range: Range = Range.from(e.loc)
+    if (range.isEmpty)
+      Nil
+    else e.sctx match {
+      // Expressions.
+      case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
+      case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(None, range)
+
+      // Declarations.
+      case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords(range)
+      case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords(range)
+      case SyntacticContext.Decl.Instance => KeywordCompleter.getInstanceKeywords(range)
+      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords(range) ++ ExprSnippetCompleter.getCompletions(range)
+      case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords(range)
+      case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords(range)
+      case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords(range)
+
+      case SyntacticContext.Unknown => Nil
     }
   }
 
   /**
-    * Optionally returns the syntactic context from the given list of errors.
-    *
-    * We have to check that the syntax error occurs after the position of the completion.
+    * Filters the list of errors to only those that occur at the given position.
     */
-  private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
-    errors.filter({
-      case err => pos.line <= err.loc.beginLine
-    }).map({
-      // We can have multiple errors, so we rank them, and pick the highest priority.
-      case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
-      case ResolutionError.UndefinedJvmClass(_, _, _) => (1, SyntacticContext.Import)
-      case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
-      case ResolutionError.UndefinedNameUnrecoverable(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
-      case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
-      case ResolutionError.UndefinedTag(_, _, _) => (1, SyntacticContext.Pat.OtherPat)
-      case ResolutionError.UndefinedOp(_, _) => (1, SyntacticContext.Expr.Do)
-      case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
-      case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
-      case err: ParseError => (5, err.sctx)
-      case _ => (999, SyntacticContext.Unknown)
-    }).minByOption(_._1) match {
-      case None => SyntacticContext.Unknown
-      case Some((_, sctx)) => sctx
-    }
-
+  private def errorsAt(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] =
+    errors.filter(err => uri == err.loc.source.name && pos.line <= err.loc.startLine)
 }

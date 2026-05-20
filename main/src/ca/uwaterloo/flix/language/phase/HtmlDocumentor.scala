@@ -17,16 +17,18 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
+import org.commonmark.ext.gfm.tables.TablesExtension
+import org.commonmark.parser.Parser
+import org.commonmark.renderer.html.HtmlRenderer
 
 import java.io.IOException
-import java.nio.file.{Files, Path, Paths}
-import com.github.rjeschke.txtmark
-
 import java.net.URLEncoder
+import java.nio.file.{Files, Path, Paths}
 import scala.annotation.tailrec
 
 /**
@@ -37,41 +39,41 @@ object HtmlDocumentor {
   /**
     * The "Pseudo-name" of the root namespace displayed on the pages.
     */
-  val RootNS: String = "Prelude"
+  private val RootNS: String = "Prelude"
   /**
     * The "Pseudo-name" of the root namespace used for its file name.
     */
-  val RootFileName: String = "index"
+  private val RootFileName: String = "index"
 
   /**
     * The directory where to write the ouput.
     */
-  val OutputDirectory: Path = Paths.get("./build/doc")
+  private def OutputDirectory(implicit flix: Flix): Path = flix.options.outputPath.resolve("doc/")
 
   /**
-    * The path to the the stylesheet, relative to the resources folder.
+    * The path to the stylesheet, relative to the resources folder.
     */
-  val Stylesheet: String = "/doc/styles.css"
+  private val Stylesheet: String = "/doc/styles.css"
 
   /**
-    * The path to the the favicon, relative to the resources folder.
+    * The path to the favicon, relative to the resources folder.
     */
-  val FavIcon: String = "/doc/favicon.png"
+  private val FavIcon: String = "/doc/favicon.png"
 
   /**
-    * The path to the the script, relative to the resources folder.
+    * The path to the `index.js` script, relative to the resources folder.
     */
-  val Script: String = "/doc/index.js"
+  private val Script: String = "/doc/index.js"
 
   /**
-    * The path to the the icon directory, relative to the resources folder.
+    * The path to the icon directory, relative to the resources folder.
     */
-  val Icons: String = "/doc/icons"
+  private val Icons: String = "/doc/icons"
 
   /**
     * The root of the link to each file of the standard library.
     */
-  val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
+  private val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
   def run(root: TypedAst.Root, packageModules: PackageModules)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
@@ -79,65 +81,86 @@ object HtmlDocumentor {
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
     visitMod(pairedModulesRoot)
+
     writeAssets()
   }
 
   /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
+    *
+    * Returns a list of the names of the generated files.
     */
-  private def visitMod(mod: Module)(implicit flix: Flix): Unit = {
+  private def visitMod(mod: Module)(implicit flix: Flix): List[String] = {
     val out = documentModule(mod)
     writeDocFile(mod.fileName, out)
 
-    mod.submodules.foreach(visitMod)
-    mod.traits.foreach(visitTrait)
-    mod.effects.foreach(visitEffect)
-    mod.enums.foreach(visitEnum)
+    val generatedPages = List(mod.fileName) :::
+      mod.submodules.flatMap(visitMod) :::
+      mod.traits.flatMap(visitTrait) :::
+      mod.effects.flatMap(visitEffect) :::
+      mod.enums.flatMap(visitEnum)
+
+    generatedPages
   }
 
   /**
     * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
+    *
+    * Returns a list of the names of the generated files.
     */
-  private def visitTrait(trt: Trait)(implicit flix: Flix): Unit = {
+  private def visitTrait(trt: Trait)(implicit flix: Flix): List[String] = {
     val out = documentTrait(trt)
     writeDocFile(trt.fileName, out)
 
-    trt.companionMod.foreach { mod =>
-      mod.submodules.foreach(visitMod)
-      mod.traits.foreach(visitTrait)
-      mod.effects.foreach(visitEffect)
-      mod.enums.foreach(visitEnum)
-    }
+    val generatedPages = List(trt.fileName) :::
+      trt.companionMod.map { mod =>
+        mod.submodules.flatMap(visitMod) :::
+          mod.traits.flatMap(visitTrait) :::
+          mod.effects.flatMap(visitEffect) :::
+          mod.enums.flatMap(visitEnum)
+      }.getOrElse(Nil)
+
+    generatedPages
   }
 
   /**
     * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
+    *
+    * Returns a list of the names of the generated files.
     */
-  private def visitEffect(eff: Effect)(implicit flix: Flix): Unit = {
+  private def visitEffect(eff: Effect)(implicit flix: Flix): List[String] = {
     val out = documentEffect(eff)
     writeDocFile(eff.fileName, out)
 
-    eff.companionMod.foreach { mod =>
-      mod.submodules.foreach(visitMod)
-      mod.traits.foreach(visitTrait)
-      mod.effects.foreach(visitEffect)
-      mod.enums.foreach(visitEnum)
-    }
+    val generatedPages = List(eff.fileName) :::
+      eff.companionMod.map { mod =>
+        mod.submodules.flatMap(visitMod) :::
+          mod.traits.flatMap(visitTrait) :::
+          mod.effects.flatMap(visitEffect) :::
+          mod.enums.flatMap(visitEnum)
+      }.getOrElse(Nil)
+
+    generatedPages
   }
 
   /**
     * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
+    *
+    * Returns a list of the names of the generated files.
     */
-  private def visitEnum(enm: Enum)(implicit flix: Flix): Unit = {
+  private def visitEnum(enm: Enum)(implicit flix: Flix): List[String] = {
     val out = documentEnum(enm)
     writeDocFile(enm.fileName, out)
 
-    enm.companionMod.foreach { mod =>
-      mod.submodules.foreach(visitMod)
-      mod.traits.foreach(visitTrait)
-      mod.effects.foreach(visitEffect)
-      mod.enums.foreach(visitEnum)
-    }
+    val generatedPages = List(enm.fileName) :::
+      enm.companionMod.map { mod =>
+        mod.submodules.flatMap(visitMod)
+        mod.traits.flatMap(visitTrait)
+        mod.effects.flatMap(visitEffect)
+        mod.enums.flatMap(visitEnum)
+      }.getOrElse(Nil)
+
+    generatedPages
   }
 
   /**
@@ -173,17 +196,17 @@ object HtmlDocumentor {
   /**
     * Get the shortest name of the effect symbol, e.g. 'StdOut'.
     */
-  private def effectName(sym: Symbol.EffectSym): String = sym.name
+  private def effectName(sym: Symbol.EffSym): String = sym.name
 
   /**
     * Get the fully qualified name of the effect symbol, e.g. 'System.StdOut'.
     */
-  private def effectQualifiedName(sym: Symbol.EffectSym): String = sym.toString
+  private def effectQualifiedName(sym: Symbol.EffSym): String = sym.toString
 
   /**
     * Get the file name of the effect symbol, e.g. 'System.StdOut.html'.
     */
-  private def effectFileName(sym: Symbol.EffectSym): String = s"${sym.toString}.html"
+  private def effectFileName(sym: Symbol.EffSym): String = s"${sym.toString}.html"
 
   /**
     * Get the shortest name of the enum symbol, e.g. 'StdOut'.
@@ -213,7 +236,7 @@ object HtmlDocumentor {
       */
     def visitMod(moduleSym: Symbol.ModuleSym, parent: Option[Symbol.ModuleSym]): Module = {
       val mod = root.modules(moduleSym)
-      val uses = root.uses.getOrElse(moduleSym, Nil)
+      val uses = root.uses.get(moduleSym)
 
       var submodules: List[Symbol.ModuleSym] = Nil
       var traits: List[Trait] = Nil
@@ -221,11 +244,11 @@ object HtmlDocumentor {
       var enums: List[Enum] = Nil
       var typeAliases: List[TypedAst.TypeAlias] = Nil
       var defs: List[TypedAst.Def] = Nil
-      mod.foreach {
+      mod.children.foreach {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
         case sym: Symbol.TraitSym =>
           traits = mkTrait(sym, moduleSym, root) :: traits
-        case sym: Symbol.EffectSym =>
+        case sym: Symbol.EffSym =>
           effects = mkEffect(sym, moduleSym, root) :: effects
         case sym: Symbol.EnumSym =>
           enums = mkEnum(sym, moduleSym, root) :: enums
@@ -236,6 +259,7 @@ object HtmlDocumentor {
 
       Module(
         moduleSym,
+        mod.doc,
         parent,
         uses,
         submodules.map(visitMod(_, Some(moduleSym))),
@@ -258,16 +282,16 @@ object HtmlDocumentor {
     val decl = root.traits(sym)
 
     val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)
-    val instances = root.instances.getOrElse(sym, Nil)
+    val instances = root.instances.get(sym)
 
     Trait(decl, sigs, defs, instances, parent, None)
   }
 
   /**
-    * Extracts all relevant information about the given `EffectSym` from the root, into a `HtmlDocumentor.Effect`,
+    * Extracts all relevant information about the given `EffSym` from the root, into a `HtmlDocumentor.Effect`,
     * * leaving the companion module unpopulated.
     */
-  private def mkEffect(sym: Symbol.EffectSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Effect = {
+  private def mkEffect(sym: Symbol.EffSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Effect = {
     Effect(root.effects(sym), parent, None)
   }
 
@@ -291,7 +315,7 @@ object HtmlDocumentor {
       case _ => false
     }
 
-    val allInstances = root.instances.values.flatten
+    val allInstances = root.instances.values
     val instances = allInstances.filter(i => enumMatchesInstance(sym, i.tpe)).toList
 
     Enum(root.enums(sym), instances, parent, None)
@@ -312,19 +336,20 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterContents(mod: Module, packageModules: PackageModules): Module = mod match {
-    case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
       val included = packageModules.contains(sym)
       if (included) {
         Module(
           sym,
+          doc,
           parent,
           uses,
           submodules.map(m => filterContents(m, PackageModules.All)),
-          traits.filter(c => c.decl.mod.isPublic && !c.decl.ann.isInternal).map(c => filterTrait(c)),
-          effects.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEffect(e)),
-          enums.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEnum(e)),
-          typeAliases.filter(t => t.mod.isPublic && !t.ann.isInternal),
-          defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
+          traits.filter(c => c.decl.mod.isPublic).map(c => filterTrait(c)),
+          effects.filter(e => e.decl.mod.isPublic).map(e => filterEffect(e)),
+          enums.filter(e => e.decl.mod.isPublic).map(e => filterEnum(e)),
+          typeAliases.filter(t => t.mod.isPublic),
+          defs.filter(d => d.spec.mod.isPublic),
         )
       } else {
         // Keep the 'spine' of the tree if a module further down is included
@@ -335,6 +360,7 @@ object HtmlDocumentor {
 
         Module(
           sym,
+          doc,
           parent,
           Nil,
           sm.map(m => filterContents(m, packageModules)),
@@ -366,12 +392,12 @@ object HtmlDocumentor {
           superTraits,
           assocs,
           Nil,
-          laws.filter(l => l.spec.mod.isPublic && !l.spec.ann.isInternal),
+          laws.filter(l => l.spec.mod.isPublic),
           loc
         ),
-        signatures.filter(s => s.spec.mod.isPublic && !s.spec.ann.isInternal),
-        defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
-        instances.filter(i => !i.ann.isInternal),
+        signatures.filter(s => s.spec.mod.isPublic),
+        defs.filter(d => d.spec.mod.isPublic),
+        instances,
         parent,
         None
       )
@@ -386,9 +412,9 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterEffect(eff: Effect): Effect = eff match {
-    case Effect(eff, parent, _) =>
+    case Effect(e, parent, _) =>
       Effect(
-        eff,
+        e,
         parent,
         None,
       )
@@ -402,9 +428,9 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterEnum(enm: Enum): Enum = enm match {
-    case Enum(enm, instances, parent, _) =>
+    case Enum(e, instances, parent, _) =>
       Enum(
-        enm,
+        e,
         instances,
         parent,
         None,
@@ -424,7 +450,7 @@ object HtmlDocumentor {
       * Recursively walks the module tree removing empty modules.
       */
     def visitMod(mod: Module): Option[Module] = mod match {
-      case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+      case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
         val filteredSubMods = submodules.flatMap(visitMod)
 
         val isEmpty =
@@ -439,6 +465,7 @@ object HtmlDocumentor {
         else Some(
           Module(
             sym,
+            doc,
             parent,
             uses,
             filteredSubMods,
@@ -454,6 +481,7 @@ object HtmlDocumentor {
     visitMod(mod)
       .getOrElse(Module(
         mod.sym,
+        mod.doc,
         None,
         Nil,
         Nil,
@@ -469,7 +497,7 @@ object HtmlDocumentor {
     * Get the given module tree, but with all companion modules paired to their respective items.
     */
   private def pairModules(mod: Module): Module = mod match {
-    case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
 
       val visitedSubmodules = submodules.map(pairModules)
 
@@ -496,6 +524,7 @@ object HtmlDocumentor {
 
       Module(
         sym,
+        doc,
         parent,
         uses,
         filteredSubmodules,
@@ -519,15 +548,12 @@ object HtmlDocumentor {
     val sortedTypeAliases = mod.typeAliases.sortBy(_.sym.name)
     val sortedDefs = mod.defs.sortBy(_.sym.name)
 
-    sb.append(mkHead(mod.qualifiedName))
+    sb.append(mkHead(mod.qualifiedName, mod.fileName))
     sb.append("<body class='no-script'>")
 
-    docThemeToggle()
+    docHeader()
 
-    docSideBar { () =>
-      mod.parent.map {
-        mod => sb.append(s"<a class='back' href='${escUrl(moduleFileName(mod))}'>${moduleName(mod)}</a>")
-      }
+    docSideBar(mod.parent) { () =>
       docSubModules(mod)
       docSideBarSection(
         "Traits",
@@ -558,6 +584,7 @@ object HtmlDocumentor {
 
     sb.append("<main>")
     sb.append(s"<h1>${esc(mod.qualifiedName)}</h1>")
+    modDoc(mod.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedDefs, docDef)
     sb.append("</main>")
@@ -585,13 +612,12 @@ object HtmlDocumentor {
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(trt.qualifiedName))
+    sb.append(mkHead(trt.qualifiedName, trt.fileName))
     sb.append("<body class='no-script'>")
 
-    docThemeToggle()
+    docHeader()
 
-    docSideBar { () =>
-      sb.append(s"<a class='back' href='${escUrl(moduleFileName(trt.parent))}'>${moduleName(trt.parent)}</a>")
+    docSideBar(Some(trt.parent)) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Signatures",
@@ -633,14 +659,14 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(trt.qualifiedName)}</h1>")
 
-    sb.append(s"<div class='box'>")
+    sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(trt.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>trait</span> ")
     sb.append(s"<span class='name'>${esc(trt.name)}</span>")
     docTypeParams(List(trt.decl.tparam))
-    docTypeConstraints(trt.decl.superTraits)
+    docTraitConstraints(trt.decl.superTraits)
     sb.append("</code>")
     docActions(None, trt.decl.loc)
     sb.append("</div>")
@@ -677,13 +703,12 @@ object HtmlDocumentor {
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(eff.qualifiedName))
+    sb.append(mkHead(eff.qualifiedName, eff.fileName))
     sb.append("<body class='no-script'>")
 
-    docThemeToggle()
+    docHeader()
 
-    docSideBar { () =>
-      sb.append(s"<a class='back' href='${escUrl(moduleFileName(eff.parent))}'>${moduleName(eff.parent)}</a>")
+    docSideBar(Some(eff.parent)) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Operations",
@@ -719,7 +744,7 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(eff.qualifiedName)}</h1>")
 
-    sb.append(s"<div class='box' id='eff-${esc(eff.name)}'>")
+    sb.append(s"<div class='box'  id='main-box'>")
     docAnnotations(eff.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
@@ -758,13 +783,12 @@ object HtmlDocumentor {
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(enm.qualifiedName))
+    sb.append(mkHead(enm.qualifiedName, enm.fileName))
     sb.append("<body class='no-script'>")
 
-    docThemeToggle()
+    docHeader()
 
-    docSideBar { () =>
-      sb.append(s"<a class='back' href='${escUrl(moduleFileName(enm.parent))}'>${moduleName(enm.parent)}</a>")
+    docSideBar(Some(enm.parent)) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Traits",
@@ -796,7 +820,7 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(enm.qualifiedName)}</h1>")
 
-    sb.append(s"<div class='box' id='enum-${esc(enm.name)}'>")
+    sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(enm.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
@@ -825,35 +849,62 @@ object HtmlDocumentor {
   /**
     * Generates the string representing the head of the HTML document.
     */
-  private def mkHead(name: String): String = {
+  private def mkHead(name: String, fileName: String): String = {
     s"""<!doctype html><html lang='en'>
        |<head>
        |<meta charset='utf-8'>
        |<meta name='viewport' content='width=device-width,initial-scale=1'>
        |<meta name='description' content='API documentation for ${esc(name)}| The Flix Programming Language'>
        |<meta name='keywords' content='Flix, Programming, Language, API, Documentation, ${esc(name)}'>
+       |<base href='${fileName}'>
        |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
+       |<link href='https://fonts.googleapis.com/css?family=Open+Sans&display=swap' rel='stylesheet'>
        |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
-       |<script defer src='index.js'></script>
+       |<script type='module' src='./index.js'></script>
        |<title>Flix | ${esc(name)}</title>
        |</head>
     """.stripMargin
   }
 
   /**
-    * Generate the theme toggle button.
+    * Generate the page header.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docThemeToggle()(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<button id='theme-toggle' disabled aria-label='Toggle theme' aria-describedby='no-script'>")
-    sb.append("<span>Toggle theme.</span>")
-    sb.append("<span role='tooltip' id='no-script'>Requires JavaScript</span>")
+  private def docHeader()(implicit sb: StringBuilder): Unit = {
+    sb.append("<header>")
+
+    sb.append("<div class='flix'>")
+    sb.append("<h2><a href='index.html'>flix</a></h2>")
+    sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
+    sb.append("</div>")
+
+    sb.append("<div class='spacer' role='presentation'></div>")
+
+    sb.append("<button id='theme-toggle' class='toggle' aria-label='Toggle Theme'>")
+    sb.append("<span class='dark icon'>")
+    inlineIcon("darkMode")
+    sb.append("</span>")
+    sb.append("<span class='light icon'>")
+    inlineIcon("lightMode")
+    sb.append("</span>")
     sb.append("</button>")
+
+    sb.append("<div id='menu-toggle' class='toggle'>")
+    sb.append("<input type='checkbox' aria-label='Toggle Navigation Menu'>")
+    sb.append("<span class='open icon'>")
+    inlineIcon("menu")
+    sb.append("</span>")
+    sb.append("<span class='close icon'>")
+    inlineIcon("close")
+    sb.append("</span>")
+    sb.append("</div>")
+
+    sb.append("</header>")
   }
 
   /**
@@ -861,17 +912,15 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSideBar(docContents: () => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSideBar(parent: Option[Symbol.ModuleSym])(docContents: () => Unit)(implicit sb: StringBuilder): Unit = {
     sb.append("<nav>")
-    sb.append("<input type='checkbox' id='menu-toggle' aria-label='Show/hide sidebar menu'>")
-    sb.append("<label for='menu-toggle'>Toggle the menu</label>")
-    sb.append("<div>")
-    sb.append("<div class='flix'>")
-    sb.append("<h2><a href='index.html'>flix</a></h2>")
-    sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
-    sb.append("</div>")
+    parent.map { p =>
+      sb.append(s"<a class='back' href='${escUrl(moduleFileName(p))}'>")
+      inlineIcon("back")
+      sb.append(moduleName(p))
+      sb.append("</a>")
+    }
     docContents()
-    sb.append("</div>")
     sb.append("</nav>")
   }
 
@@ -887,7 +936,7 @@ object HtmlDocumentor {
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
     *               Note that they will each be wrapped in an `<li>` tag.
     */
-  private def docSideBarSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSideBarSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
@@ -902,7 +951,7 @@ object HtmlDocumentor {
     sb.append("</ul>")
   }
 
-  private def docSubModules(parentMod: Module)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSubModules(parentMod: Module)(implicit sb: StringBuilder): Unit = {
     val subItems: List[Item] =
       parentMod.submodules ++
         parentMod.traits ++
@@ -937,7 +986,7 @@ object HtmlDocumentor {
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
     */
-  private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
@@ -961,7 +1010,7 @@ object HtmlDocumentor {
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
     */
-  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
@@ -985,7 +1034,7 @@ object HtmlDocumentor {
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
     */
-  private def docCollapsableSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docCollapsableSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
@@ -1013,7 +1062,7 @@ object HtmlDocumentor {
     sb.append(" = ")
     docType(ta.tpe)
     sb.append("</code>")
-    docActions(Some(s"ta-${esc(ta.sym.name)}"), ta.loc)
+    docActions(Some(s"ta-${ta.sym.name}"), ta.loc)
     sb.append("</div>")
     docDoc(ta.doc)
     sb.append("</div>")
@@ -1026,7 +1075,7 @@ object HtmlDocumentor {
     */
   private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
-    docSpec(defn.sym.name, defn.spec, Some(s"def-${esc(defn.sym.name)}"))
+    docSpec(defn.sym.name, defn.spec, defn.loc, Some(s"def-${esc(defn.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -1037,7 +1086,7 @@ object HtmlDocumentor {
     */
   private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
-    docSpec(sig.sym.name, sig.spec, Some(s"sig-${esc(sig.sym.name)}"))
+    docSpec(sig.sym.name, sig.spec, sig.loc, Some(s"sig-${esc(sig.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -1048,7 +1097,7 @@ object HtmlDocumentor {
     */
   private def docOp(op: TypedAst.Op)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='op-${esc(op.sym.name)}'>")
-    docSpec(op.sym.name, op.spec, Some(s"op-${esc(op.sym.name)}"))
+    docSpec(op.sym.name, op.spec, op.loc, Some(s"op-${esc(op.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -1058,7 +1107,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(name: String, spec: TypedAst.Spec, linkId: Option[String])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
@@ -1068,10 +1117,10 @@ object HtmlDocumentor {
     sb.append(": ")
     docType(spec.retTpe)
     docEffectType(spec.eff)
-    docTypeConstraints(spec.tconstrs)
+    docTraitConstraints(spec.tconstrs)
     docEqualityConstraints(spec.econstrs)
     sb.append("</code>")
-    docActions(linkId, spec.loc)
+    docActions(linkId, loc)
     sb.append("</div>")
     docDoc(spec.doc)
   }
@@ -1111,7 +1160,7 @@ object HtmlDocumentor {
     sb.append("[")
     docType(instance.tpe)
     sb.append("]")
-    docTypeConstraints(instance.tconstrs)
+    docTraitConstraints(instance.tconstrs)
     sb.append("</code>")
     docActions(None, instance.loc)
     sb.append("</div>")
@@ -1120,21 +1169,21 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given list of `TypeConstraint`s, `tconsts`.
+    * Documents the given list of `TraitConstraint`s, `tconsts`.
     * E.g. "with Functor[m]".
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
     * If `tconsts` is empty, nothing will be generated.
     */
-  private def docTypeConstraints(tconsts: List[Ast.TypeConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTraitConstraints(tconsts: List[TraitConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (tconsts.isEmpty) {
       return
     }
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(tconsts.sortBy(_.loc)) { t =>
-      docTraitName(t.head.sym)
+      docTraitName(t.symUse.sym)
       sb.append("[")
       docType(t.arg)
       sb.append("]")
@@ -1145,7 +1194,7 @@ object HtmlDocumentor {
   /**
     * Document the name of the given trait symbol, creating a link to the trait's documentation.
     */
-  private def docTraitName(sym: Symbol.TraitSym)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTraitName(sym: Symbol.TraitSym)(implicit sb: StringBuilder): Unit = {
     sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
     sb.append(esc(sym.name))
     sb.append("</a>")
@@ -1159,40 +1208,47 @@ object HtmlDocumentor {
     *
     * If `econsts` is empty, nothing will be generated.
     */
-  private def docEqualityConstraints(econsts: List[Ast.EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docEqualityConstraints(econsts: List[TypedAst.EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (econsts.isEmpty) {
       return
     }
 
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
-      docTraitName(e.cst.sym.trt)
-      sb.append(".")
-      sb.append(esc(e.cst.sym.name))
-      sb.append("[")
-      docType(e.tpe1)
-      sb.append("] ~ ")
-      docType(e.tpe2)
+      e.tpe1 match {
+        case Type.AssocType(cst, arg, _, _) =>
+          docTraitName(cst.sym.trt)
+          sb.append(".")
+          sb.append(esc(cst.sym.name))
+          sb.append("[")
+          docType(arg)
+          sb.append("] ~ ")
+          docType(e.tpe2)
+        case _ =>
+          docType(e.tpe1)
+          sb.append(" ~ ")
+          docType(e.tpe2)
+      }
     }
     sb.append("</span>")
   }
 
   /**
     * Documents the given `Derivations`s, `derives`.
-    * E.g. "with Sendable".
+    * E.g. "with ToString".
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
     * If `derives` contains no elements, nothing will be generated.
     */
-  private def docDerivations(derives: Ast.Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDerivations(derives: Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (derives.traits.isEmpty) {
       return
     }
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(derives.traits.sortBy(_.loc)) { t =>
-      docTraitName(t.trt)
+      docTraitName(t.sym)
     }
     sb.append("</span>")
   }
@@ -1209,17 +1265,13 @@ object HtmlDocumentor {
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
 
-      SimpleType.fromWellKindedType(c.tpe) match {
-        case SimpleType.Unit => // Nothing
-        case SimpleType.Tuple(elms) =>
+      c.tpes.map(DisplayType.fromWellKindedType(_)) match {
+        case Nil => // Nothing
+        case elms =>
           sb.append("(")
           docList(elms) { t =>
-            sb.append(s"<span class='type'>${esc(FormatType.formatSimpleType(t))}</span>")
+            sb.append(s"<span class='type'>${esc(FormatType.formatDisplayType(t))}</span>")
           }
-          sb.append(")")
-        case _ =>
-          sb.append("(")
-          docType(c.tpe)
           sb.append(")")
       }
 
@@ -1257,12 +1309,12 @@ object HtmlDocumentor {
   private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
     fparams match {
-      case List(TypedAst.FormalParam(_, _, Type.Cst(TypeConstructor.Unit, _), _, _)) =>
+      case List(TypedAst.FormalParam(_, Type.Cst(TypeConstructor.Unit, _), _, _, _)) =>
       // For a function declared with zero formal parameters,
       // the compiler will introduce a single parameter of the unit type
       case _ =>
         docList(fparams.sortBy(_.loc)) { p =>
-          sb.append(s"<span><span>${esc(p.sym.text)}</span>: ")
+          sb.append(s"<span><span>${esc(p.bnd.sym.text)}</span>: ")
           docType(p.tpe)
           sb.append("</span>")
         }
@@ -1275,7 +1327,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docAnnotations(anns: Ast.Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docAnnotations(anns: Annotations)(implicit sb: StringBuilder): Unit = {
     if (anns.annotations.isEmpty) {
       return
     }
@@ -1291,8 +1343,8 @@ object HtmlDocumentor {
     * Appends a 'copy link' button the the given `StringBuilder`.
     * This creates a link to the given ID on the current URL.
     */
-  private def docLink(id: String)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<a href='#${escUrl(id)}' class='copy-link' aria-label='Link'>")
+  private def docLink(id: String)(implicit sb: StringBuilder): Unit = {
+    sb.append(s"<a href='#${escUrl(id)}' class='copy-link' title='Link To Element'>")
     inlineIcon("link")
     sb.append("</a> ")
   }
@@ -1302,7 +1354,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSourceLocation(loc: SourceLocation)(implicit sb: StringBuilder): Unit = {
     sb.append(s"<a class='source' target='_blank' rel='nofollow' href='${createLink(loc)}'>Source</a>")
   }
 
@@ -1327,24 +1379,34 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDoc(doc: Doc)(implicit sb: StringBuilder): Unit = {
+    renderDoc(doc, "doc")
+  }
+
+  /**
+    * Renders a module-level [[Doc]] using the `mod-doc` CSS class.
+    *
+    * Module-level documentation uses its own class so it can carry distinct
+    * typography from item-level docs (e.g. larger font, different family).
+    */
+  private def modDoc(doc: Doc)(implicit sb: StringBuilder): Unit = {
+    renderDoc(doc, "mod-doc")
+  }
+
+  private def renderDoc(doc: Doc, cls: String)(implicit sb: StringBuilder): Unit = {
     val text = doc.text
     if (text.isBlank) {
       return
     }
 
-    val escaped = esc(text)
+    val extensions = java.util.List.of(TablesExtension.create())
+    val parser = Parser.builder().extensions(extensions).build()
+    val node = parser.parse(text)
+    val renderer = HtmlRenderer.builder().extensions(extensions).escapeHtml(true).build()
+    val html = renderer.render(node)
 
-    val config =
-      txtmark.Configuration.builder()
-        .build()
-    val parsed = txtmark.Processor.process(escaped, config)
-
-    // Since both esc and process escapes the & character, it needs to be unescaped once
-    val unescaped = parsed.replace("&amp;", "&")
-
-    sb.append("<div class='doc'>")
-    sb.append(unescaped)
+    sb.append(s"<div class='$cls'>")
+    sb.append(html)
     sb.append("</div>")
   }
 
@@ -1364,7 +1426,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docKind(kind: Kind)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docKind(kind: Kind)(implicit sb: StringBuilder): Unit = {
     sb.append("<span class='kind'>")
     sb.append(esc(kind.toString))
     sb.append("</span>")
@@ -1380,13 +1442,13 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEffectType(eff: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    val simpleEff = SimpleType.fromWellKindedType(eff)
-    simpleEff match {
-      case SimpleType.Pure => // No op
+    val displayEff = DisplayType.fromWellKindedType(eff)
+    displayEff match {
+      case DisplayType.Pure => // No op
       case _ =>
         sb.append(" \\ ")
         sb.append("<span class='effect'>")
-        sb.append(esc(FormatType.formatSimpleType(simpleEff)))
+        sb.append(esc(FormatType.formatDisplayType(displayEff)))
         sb.append("</span>")
     }
   }
@@ -1394,7 +1456,7 @@ object HtmlDocumentor {
   /**
     * Runs the given `docElt` on each element of `list`, separated by the string: ", " (comma + space)
     */
-  private def docList[T](list: List[T])(docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docList[T](list: List[T])(docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     for ((e, i) <- list.zipWithIndex) {
       docElt(e)
       if (i < list.length - 1) {
@@ -1406,7 +1468,7 @@ object HtmlDocumentor {
   /**
     * Make a copy of the static assets into the output directory.
     */
-  private def writeAssets(): Unit = {
+  private def writeAssets()(implicit flix: Flix): Unit = {
     val stylesheet = readResource(Stylesheet)
     writeFile("styles.css", stylesheet)
 
@@ -1429,14 +1491,14 @@ object HtmlDocumentor {
   /**
     * Write the documentation output string into the output directory with the given `name`.
     */
-  private def writeDocFile(name: String, output: String): Unit = {
+  private def writeDocFile(name: String, output: String)(implicit flix: Flix): Unit = {
     writeFile(s"$name", output.getBytes)
   }
 
   /**
     * Write the file to the output directory with the given file name.
     */
-  private def writeFile(name: String, output: Array[Byte]): Unit = {
+  private def writeFile(name: String, output: Array[Byte])(implicit flix: Flix): Unit = {
     val path = OutputDirectory.resolve(name)
     try {
       Files.createDirectories(OutputDirectory)
@@ -1470,7 +1532,8 @@ object HtmlDocumentor {
     */
   private def createLink(loc: SourceLocation): String = {
     // TODO make it also work for local user code
-    s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.beginLine}-L${loc.endLine}"
+    val path = loc.source.name.split("[\\\\/]").map(escUrl).mkString("/")
+    s"$LibraryGitHub$path#L${loc.startLine}-L${loc.endLine}"
   }
 
   /**
@@ -1501,8 +1564,9 @@ object HtmlDocumentor {
     * A representation of a module that's easier to work with while generating documentation.
     */
   private case class Module(sym: Symbol.ModuleSym,
+                            doc: Doc,
                             parent: Option[Symbol.ModuleSym],
-                            uses: List[Ast.UseOrImport],
+                            uses: List[UseOrImport],
                             submodules: List[Module],
                             traits: List[Trait],
                             effects: List[Effect],

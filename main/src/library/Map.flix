@@ -14,134 +14,129 @@
  * limitations under the License.
  */
 
-///
-/// The Map type.
-///
-/// A map is currently represented internally as a red-black tree.
-///
-pub enum Map[k, v] with Sendable {
-    case Map(RedBlackTree[k, v])
-}
+pub mod Map {
 
-instance Eq[Map[k, v]] with Eq[k], Eq[v] {
-    pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
-        Map.toList(m1) == Map.toList(m2)
-}
+    ///
+    /// The Map type.
+    ///
+    /// A map is currently represented internally as a red-black tree.
+    ///
+    pub enum Map[k, v] {
+        case Map(RedBlackTree[k, v])
+    }
 
-instance Order[Map[k, v]] with Order[k], Order[v] {
-    pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
-        Map.toList(x) <=> Map.toList(y)
-}
+    instance Eq[Map[k, v]] with Eq[k], Eq[v] {
+        pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
+            Map.toList(m1) == Map.toList(m2)
+    }
 
-instance ToString[Map[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: Map[k, v]): String = Map.toString(m)
-}
+    instance Order[Map[k, v]] with Order[k], Order[v] {
+        pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
+            Map.toList(x) <=> Map.toList(y)
+    }
 
-instance Hash[Map[k, v]] with Hash[k], Hash[v] {
-    pub def hash(m: Map[k, v]): Int32 =
-        Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m)
-}
+    instance Formattable[Map[k, v]] with Formattable[k], Formattable[v] {
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v]
 
-instance Functor[Map[k]] {
-    pub def map(f: v1 -> v2 \ ef, m: Map[k, v1]): Map[k, v2] \ ef = Map.map(f, m)
-}
+        pub def format(x: Map[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
+            let pairs = Map.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(v));
+            RichString.fromString("Map#{") + RichString.joinWith(identity, RichString.fromString(", "), pairs) + RichString.fromString("}")
+    }
 
-instance Foldable[Map[k]] {
-    pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
-    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRightWithCont(f, s, m)
-}
+    instance ToString[Map[k, v]] with ToString[k], ToString[v] {
+        pub def toString(m: Map[k, v]): String = Map.toString(m)
+    }
 
-instance UnorderedFoldable[Map[k]] {
-    pub def foldMap(f: v -> b \ ef, m: Map[k, v]): b \ ef with CommutativeMonoid[b] = Map.foldMap(f, m)
-    override pub def isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
-    override pub def exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
-    override pub def forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
-}
+    instance Hash[Map[k, v]] with Hash[k], Hash[v] {
+        pub def hash(m: Map[k, v]): Int32 =
+            Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m)
+    }
 
-instance Traversable[Map[k]] {
-    pub def traverse(f: a -> m[b] \ ef, t: Map[k, a]): m[Map[k, b]] \ ef with Applicative[m] = Map.traverse(f, t)
-    pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
-}
+    instance Indexable[Map[k, v]] with Order[k] {
+        type Idx = k
+        type Elm = v
+        type Aef = KeyNotFound
+        pub def get(t: Map[k, v], i: k): v \ KeyNotFound = match Map.get(i, t) {
+            case Some(v) => v
+            case None    => KeyNotFound.keyNotFound("key not found")
+        }
+    }
 
-instance Filterable[Map[k]] with Order[k] {
-    pub def filterMap(f: a -> Option[b] \ ef, m: Map[k, a]): Map[k, b] \ ef = Map.filterMap(f, m)
-    pub override def filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
-}
+    instance Functor[Map[k]] {
+        pub def map(f: v1 -> v2 \ ef, m: Map[k, v1]): Map[k, v2] \ ef = Map.map(f, m)
+    }
 
-instance Witherable[Map[k]] with Order[k]
+    instance Foldable[Map[k]] {
+        pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
+        pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
+        redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
+    }
 
-instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
-    pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
-}
+    instance UnorderedFoldable[Map[k]] {
+        pub def foldMap(f: v -> b \ ef, m: Map[k, v]): b \ ef with CommutativeMonoid[b] = Map.foldMap(f, m)
+        redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
+        redef exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
+        redef forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
+    }
 
-instance CommutativeSemiGroup[Map[k,v]] with Order[k], CommutativeSemiGroup[v]
+    instance Traversable[Map[k]] {
+        pub def traverse(f: a -> m[b] \ ef, t: Map[k, a]): m[Map[k, b]] \ ef with Applicative[m] = Map.traverse(f, t)
+        redef sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
+    }
 
-instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
-    pub def empty(): Map[k, v] = Map.empty()
-}
+    instance Filterable[Map[k]] with Order[k] {
+        pub def filterMap(f: a -> Option[b] \ ef, m: Map[k, a]): Map[k, b] \ ef = Map.filterMap(f, m)
+        redef filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
+    }
 
-instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
+    instance Witherable[Map[k]] with Order[k]
 
-instance LowerBound[Map[k, v]] {
-    pub def minValue(): Map[k, v] = Map.empty()
-}
+    instance SemiGroup[Map[k, v]] with Order[k], SemiGroup[v] {
+        pub def combine(x: Map[k, v], y: Map[k, v]): Map[k, v] = Map.unionWith(SemiGroup.combine, x, y)
+    }
 
-instance PartialOrder[Map[k, v]] with Order[k], Eq[v] {
-    pub def lessEqual(m1: Map[k, v], m2: Map[k, v]): Bool = m1 `Map.isSubmapOf` m2
-}
+    instance CommutativeSemiGroup[Map[k, v]] with Order[k], CommutativeSemiGroup[v]
 
-instance JoinLattice[Map[k, v]] with Order[k], Eq[v], JoinLattice[v] {
-    pub def leastUpperBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
-        Map.unionWith(JoinLattice.leastUpperBound, m1, m2)
-}
+    instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
+        pub def empty(): Map[k, v] = Map.empty()
+    }
 
-instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
-    pub def greatestLowerBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
-        Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
-}
+    instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
 
-instance Iterable[Map[k, v]] {
-    type Elm = (k, v)
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
-}
+    instance LowerBound[Map[k, v]] {
+        pub def minValue(): Map[k, v] = Map.empty()
+    }
 
-instance ToJava[Map[k, v]] with Order[k] {
-    type Out = ##java.util.Map
-    type Aef = IO
-    pub def toJava(m: Map[k, v]): ##java.util.Map \ IO = Adaptor.toMap(m)
-}
+    instance PartialOrder[Map[k, v]] with Order[k], Eq[v] {
+        pub def lessEqual(m1: Map[k, v], m2: Map[k, v]): Bool = m1 `Map.isSubmapOf` m2
+    }
 
-instance FromJava[Map[k, v]] with Order[k] {
-    type In = ##java.util.Map
-    pub def fromJava(m: ##java.util.Map): Map[k, v] = Adaptor.fromMap(m)
-}
+    instance JoinLattice[Map[k, v]] with Order[k], Eq[v], JoinLattice[v] {
+        pub def leastUpperBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+            Map.unionWith(JoinLattice.leastUpperBound, m1, m2)
+    }
 
-mod Map {
+    instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
+        pub def greatestLowerBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+            Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
+    }
+
+    instance Iterable[Map[k, v]] {
+        type Elm = (k, v)
+        pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
+    }
+
+    instance ForEach[Map[k, v]] {
+        type Elm = (k, v)
+        pub def forEach(f: ((k, v)) -> Unit \ ef, t: Map[k, v]): Unit \ ef = Map.forEach(k -> v -> f((k, v)), t)
+    }
 
     ///
     /// Returns a string representation of the given map `m`.
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString!("Map#{", sb);
-        forEachWithIndex((i, k, v) -> {
-            if (i < 1)
-                StringBuilder.appendString!("${k} => ${v}", sb)
-            else
-                StringBuilder.appendString!(", ${k} => ${v}", sb)
-            }, m);
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
+        "Map#{" + (Map.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
     }
-
-    ///
-    /// Returns the number of threads to use for parallel evaluation.
-    ///
-    def threads(): Int32 =
-        // Note: We use a multiple of the number of physical cores for better performance.
-        let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
 
     ///
     /// Determines whether to use parallel evaluation.
@@ -150,11 +145,11 @@ mod Map {
     ///
     def useParallelEvaluation(m: Map[k, v]): Bool =
         let Map(t) = m;
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
-    /// Returns the size of `m`.
+    /// Returns the number of keys in `m`.
     ///
     pub def size(m: Map[k, v]): Int32 =
         let Map(xs) = m;
@@ -203,6 +198,17 @@ mod Map {
     pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(d, get(k, m))
 
     ///
+    /// Returns the value associated with key `k` in map `m`.
+    ///
+    /// Aborts if the key is not present.
+    ///
+    pub def getOrAbort(k: k, m: Map[k, v]): v \ Abort with Order[k] =
+        match Map.get(k, m) {
+            case None    => Abort.abortWithTrace("Map.getOrAbort(): key not found")
+            case Some(v) => v
+        }
+
+    ///
     /// Returns `true` if and only if `m` contains the key `k`.
     ///
     pub def memberOf(k: k, m: Map[k, v]): Bool with Order[k] =
@@ -233,7 +239,7 @@ mod Map {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
-                    RedBlackTree.parMinimumBy(threads() - 1, h, t)
+                    RedBlackTree.parMinimumBy(h, t)
                 else
                     min()
             case Purity2.Impure(_) => min()
@@ -263,7 +269,7 @@ mod Map {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
-                    RedBlackTree.parMinimumBy(threads() - 1, h, t)
+                    RedBlackTree.parMinimumBy(h, t)
                 else
                     min()
             case Purity2.Impure(_) => min()
@@ -293,7 +299,7 @@ mod Map {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
-                    RedBlackTree.parMaximumBy(threads() - 1, h, t)
+                    RedBlackTree.parMaximumBy(h, t)
                 else
                     max()
             case Purity2.Impure(_) => max()
@@ -323,7 +329,7 @@ mod Map {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
-                    RedBlackTree.parMaximumBy(threads() - 1, h, t)
+                    RedBlackTree.parMaximumBy(h, t)
                 else
                     max()
             case Purity2.Impure(_) => max()
@@ -520,25 +526,6 @@ mod Map {
         RedBlackTree.foldRight(f, s, t)
 
     ///
-    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, z: b, m: Map[k, v]): b \ ef =
-        foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
-
-    ///
-    /// Applies `f` to a start value `z` and all key-value pairs in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
-    /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithKeyCont(f: (k, v, Unit -> b \ ef) -> b \ ef, z: b, m: Map[k, v]): b \ ef =
-        let Map(t) = m;
-        RedBlackTree.foldRightWithCont(f, z, t)
-
-    ///
     /// Returns the result of mapping each key-value pair and combining the results.
     ///
     pub def foldMapWithKey(f: (k, v) -> b \ ef, m: Map[k, v]): b \ ef with Monoid[b] =
@@ -551,7 +538,7 @@ mod Map {
         foldMapWithKey(_ -> f, m)
 
     ///
-    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
     ///
@@ -561,7 +548,7 @@ mod Map {
         reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
     ///
@@ -572,7 +559,7 @@ mod Map {
         RedBlackTree.reduceLeft(f, t)
 
     ///
-    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
     ///
@@ -582,7 +569,7 @@ mod Map {
         reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
     ///
@@ -604,23 +591,11 @@ mod Map {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let Map(t) = m;
-                    RedBlackTree.parCount(threads() - 1, g, t)
+                    RedBlackTree.parCount(g, t)
                 else
                     c()
             case Purity2.Impure(_) => c()
         }
-
-    ///
-    /// Returns the sum of all keys in the map `m`.
-    ///
-    pub def sumKeys(m: Map[Int32, v]): Int32 =
-        sumWith((k, _) -> k, m)
-
-    ///
-    /// Returns the sum of all values in the map `m`.
-    ///
-    pub def sumValues(m: Map[k, Int32]): Int32 =
-        sumWith((_, v) -> v, m)
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
@@ -634,7 +609,7 @@ mod Map {
         match purityOf2(f) {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parSumWith(threads() - 1, g, t)
+                    RedBlackTree.parSumWith(g, t)
                 else
                     sw()
             case Purity2.Impure(_) => sw()
@@ -654,7 +629,7 @@ mod Map {
         match purityOf2(f) {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parExists(threads() - 1, g, t)
+                    RedBlackTree.parExists(g, t)
                 else
                     e()
             case Purity2.Impure(_) => e()
@@ -674,7 +649,7 @@ mod Map {
         match purityOf2(f) {
             case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parForAll(threads() - 1, g, t)
+                    RedBlackTree.parForAll(g, t)
                 else
                     fa()
             case Purity2.Impure(_) => fa()
@@ -753,15 +728,18 @@ mod Map {
     ///
     pub def differenceWithKey(f: (k, v, v) -> Option[v] \ ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] \ ef with Order[k] =
         let diff = filterWithKey((k, _) -> not memberOf(k, m2), m1);
-        let g = (k, v, acc) -> if (memberOf(k, m1))
-                                match get(k, m1) {
-                                    case Some(v1) => match f(k, v1, v) {
-                                        case None => acc
-                                        case Some(w) => insert(k, w, acc)
-                                    }
-                                    case None => unreachable!()
-                                }
-                             else acc;
+        let g = (k, v, acc) ->
+            if (memberOf(k, m1))
+                match get(k, m1) {
+                    case Some(v1) =>
+                        match f(k, v1, v) {
+                            case None    => acc
+                            case Some(w) => insert(k, w, acc)
+                        }
+                    case None => unreachable!()
+                }
+            else
+                acc;
         foldRightWithKey(g, diff, m2)
 
     ///
@@ -775,12 +753,6 @@ mod Map {
         Map.foldLeftWithKey(f, empty(), m)
 
     ///
-    /// Returns `m` as a mutable map.
-    ///
-    pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, ref m @ rc)
-
-    ///
     /// Returns the map `m` as a list of key-value pairs.
     ///
     pub def toList(m: Map[k, v]): List[(k, v)] =
@@ -790,12 +762,12 @@ mod Map {
     /// Returns the map `m` as an array.
     ///
     pub def toArray(rc: Region[r], m: Map[k, v]): Array[(k, v), r] \ r = match size(m) {
-        case 0  => Array#{} @ rc
+        case 0 => Array#{} @ rc
         case sz =>
             let a = Array.empty(rc, sz);
             forEachWithIndex((i, k, v) -> Array.put((k, v), i, a), m);
             a
-        }
+    }
 
     ///
     /// Returns the map `m` as a vector.
@@ -813,30 +785,16 @@ mod Map {
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
 
     ///
-    /// Returns the map `m` as a `DelayList` of key-value pairs.
-    ///
-    pub def toDelayList(m: Map[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> DelayList.ECons((k, v), acc), DelayList.ENil, m)
-
-    ///
     /// Returns the map `m` as a chain of key-value pairs.
     ///
     pub def toChain(m: Map[a, b]): Chain[(a, b)] with Order[a] =
-        foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k,v)), Chain.empty(), m)
+        foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k, v)), Chain.empty(), m)
 
     ///
     /// Returns a MultiMap where key `k` is mapped to the singleton set containing `v`.
     ///
     pub def toMultiMap(m: Map[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         MultiMap.MultiMap(Map.map(Set.singleton, m))
-
-    ///
-    /// Returns `m` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
-        d
 
     ///
     /// Applies `f` to every `(key, value)` of `m`.
@@ -862,8 +820,8 @@ mod Map {
     ///
     pub def unfold(f: s -> Option[(k, v, s)] \ ef, st: s): Map[k, v] \ ef with Order[k] =
         def loop(sst, m) = match f(sst) {
-            case None            => m
-            case Some(k, v, st1) => loop(st1, insert(k, v, m))
+            case None              => m
+            case Some((k, v, st1)) => loop(st1, insert(k, v, m))
         };
         loop(st, empty())
 
@@ -877,10 +835,24 @@ mod Map {
     ///
     pub def unfoldWithIter(next: Unit -> Option[(k, v)] \ ef): Map[k, v] \ ef with Order[k] =
         def loop(m) = match next() {
-            case None       => m
-            case Some(k, v) => loop(insert(k, v, m))
+            case None         => m
+            case Some((k, v)) => loop(insert(k, v, m))
         };
         loop(empty())
+
+    ///
+    /// Build a map by applying `f` to the initial key-value pair `(k, v)`.
+    ///
+    /// `f` should return `Some(k1, v1)` to signal a new key-value pair (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of building the map.
+    ///
+    pub def iterate(f: (k, v) -> Option[(k, v)] \ ef, k: k, v: v): Map[k, v] \ ef with Order[k] =
+        def loop(ck, cv, m) = match f(ck, cv) {
+            case None           => m
+            case Some((k1, v1)) => loop(k1, v1, insert(k1, v1, m))
+        };
+        loop(k, v, empty())
 
     ///
     /// Returns the set of tuples `(k, v)` where `v` is a value in `t` and `k => t`.
@@ -922,14 +894,6 @@ mod Map {
     ///
     pub def iteratorValues(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r =
         iterator(rc, m) |> Iterator.map(snd)
-
-    ///
-    /// Returns `m` as a `DelayMap`.
-    ///
-    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] =
-        let Map(t) = m;
-        let f = (_, v) -> lazy v;
-        DelayMap.DMap(RedBlackTree.mapWithKey(f, t))
 
     ///
     /// Returns the result of running all the actions in the map `m`.

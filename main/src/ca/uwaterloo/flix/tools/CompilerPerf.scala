@@ -16,12 +16,15 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.UnificationCache
-import ca.uwaterloo.flix.util.StatUtils.{average, median}
-import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.phase.unification.EffUnification3
+import ca.uwaterloo.flix.util.StatUtils.{minimum, average, median}
+import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
 import org.json4s.JValue
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
 
 import java.nio.file.Path
@@ -74,24 +77,24 @@ object CompilerPerf {
       |
       |    plt.savefig('speedupWithPar.json.png')
       |
-      |with open('speedupWithInc.json', 'r') as file:
+      |with open('incrementalism.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
       |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
-      |    yvalues = list(map(lambda obj: obj['speedup'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['ratio'], data['results']))
       |
       |    fig, ax = plt.subplots()
       |    bars = ax.bar(xvalues, yvalues)
       |
-      |    ax.set_title(f'Incremental Speedup ({threads} threads)')
-      |    ax.set_ylabel('Speedup')
+      |    ax.set_title(f'Incrementalism (1.0x is best) ({threads} threads)')
+      |    ax.set_ylabel('Incremental Ratio')
       |    ax.bar_label(bars, fmt='\n%.1fx')
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(bottom=0.30)
-      |    plt.ylim(1, 10)
+      |    plt.ylim(0.0, 1.1)
       |
-      |    plt.savefig('speedupWithInc.json.png')
+      |    plt.savefig('incrementalism.json.png')
       |
       |with open('throughput.json', 'r') as file:
       |    data = json.load(file)
@@ -210,14 +213,17 @@ object CompilerPerf {
   /**
     * Run compiler performance experiments.
     */
-  def run(o: Options): Unit = {
+  def run(opts: Options): Unit = {
+    // Options
+    val o = opts.copy(progress = false, loadClassFiles = false)
+
     // The number of iterations.
     val N = o.XPerfN.getOrElse(DefaultN)
 
     // Run the experiments.
-    val baseline = aggregate(perfBaseLine(N, o))
+    val baseline = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLine(N, o))
     val baselineWithPar = aggregate(perfBaseLineWithPar(N, o))
-    val baselineWithParInc = aggregate(perfBaseLineWithParInc(N, o))
+    val baselineWithParInc = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLineWithParInc(N, o))
 
     // Find the number of lines of source code.
     val lines = baselineWithPar.lines.toLong
@@ -244,9 +250,7 @@ object CompilerPerf {
     val mdn = median(throughputs.map(_.toLong)).toInt
 
     // Best observed throughput.
-    val maxObservedThroughput = throughput(lines,
-      Math.min(baseline.times.min,
-        Math.min(baselineWithPar.times.min, baselineWithParInc.times.min)))
+    val maxObservedThroughput = throughput(lines, minimum(baseline.times ::: baselineWithPar.times ::: baselineWithParInc.times))
 
     // Timestamp (in seconds) when the experiment was run.
     val timestamp = System.currentTimeMillis() / 1000
@@ -264,42 +268,44 @@ object CompilerPerf {
     // Speedup
     //
     val speedupPar =
-    ("timestamp" -> timestamp) ~
-      ("minThreads" -> MinThreads) ~
-      ("maxThreads" -> MaxThreads) ~
-      ("incremental" -> false) ~
-      ("lines" -> lines) ~
-      ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
-        case ((phase, times1), (_, times2)) =>
-          ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
-      })
-    writeFile("speedupWithPar.json", speedupPar)
+      ("timestamp" -> timestamp) ~
+        ("minThreads" -> MinThreads) ~
+        ("maxThreads" -> MaxThreads) ~
+        ("incremental" -> false) ~
+        ("lines" -> lines) ~
+        ("results" -> ListOps.zipTruncate(baseline.phases, baselineWithPar.phases).map {
+          case ((phase, times1), (_, times2)) =>
+            ("phase" -> phase) ~ ("speedup" -> combine(ListOps.zip(times1, times2).map(p => p._1.toDouble / p._2.toDouble)))
+        })
+    writeFile("speedupWithPar.json", speedupPar, o)
 
-    // Note: Baseline is withPar.
-    val speedupInc =
+    //
+    // Incrementalism
+    //
+    val incrementalism =
       ("timestamp" -> timestamp) ~
         ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
-        ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
+        ("results" -> ListOps.zipTruncate(baselineWithPar.phases, baselineWithParInc.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
+            ("phase" -> phase) ~ ("ratio" -> combine(ListOps.zip(times1, times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
         })
-    writeFile("speedupWithInc.json", speedupInc)
+    writeFile("incrementalism.json", incrementalism, o)
 
-    ///
-    /// Throughput
-    ///
+    //
+    // Throughput
+    //
     val throughoutBaseLine =
-    ("timestamp" -> timestamp) ~
-      ("threads" -> MinThreads) ~
-      ("incremental" -> false) ~
-      ("lines" -> lines) ~
-      ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-      ("results" -> baseline.times.zipWithIndex.map({
-        case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
-      }))
-    writeFile("throughput.json", throughoutBaseLine)
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MinThreads) ~
+        ("incremental" -> false) ~
+        ("lines" -> lines) ~
+        ("plot" -> ("maxy" -> maxObservedThroughput)) ~
+        ("results" -> baseline.times.zipWithIndex.map({
+          case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+        }))
+    writeFile("throughput.json", throughoutBaseLine, o)
 
     val throughputPar =
       ("timestamp" -> timestamp) ~
@@ -310,7 +316,7 @@ object CompilerPerf {
         ("results" -> baselineWithPar.times.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeFile("throughputWithPar.json", throughputPar)
+    writeFile("throughputWithPar.json", throughputPar, o)
 
     val throughputParInc =
       ("timestamp" -> timestamp) ~
@@ -321,20 +327,20 @@ object CompilerPerf {
         ("results" -> baselineWithParInc.times.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeFile("throughputWithParInc.json", throughputParInc)
+    writeFile("throughputWithParInc.json", throughputParInc, o)
 
     //
     // Time
     //
     val timeBaseline =
-    ("timestamp" -> timestamp) ~
-      ("threads" -> MinThreads) ~
-      ("incremental" -> false) ~
-      ("lines" -> lines) ~
-      ("results" -> baseline.phases.map {
-        case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
-      })
-    writeFile("time.json", timeBaseline)
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MinThreads) ~
+        ("incremental" -> false) ~
+        ("lines" -> lines) ~
+        ("results" -> baseline.phases.map {
+          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+        })
+    writeFile("time.json", timeBaseline, o)
 
     val timeWithPar =
       ("timestamp" -> timestamp) ~
@@ -344,7 +350,7 @@ object CompilerPerf {
         ("results" -> baselineWithPar.phases.map {
           case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
         })
-    writeFile("timeWithPar.json", timeWithPar)
+    writeFile("timeWithPar.json", timeWithPar, o)
 
     val timeWithParInc =
       ("timestamp" -> timestamp) ~
@@ -354,24 +360,24 @@ object CompilerPerf {
         ("results" -> baselineWithParInc.phases.map {
           case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
         })
-    writeFile("timeWithParInc.json", timeWithParInc)
+    writeFile("timeWithParInc.json", timeWithParInc, o)
 
     //
     // Summary
     //
     val summaryJSON =
-    ("timestamp" -> timestamp) ~
-      ("threads" -> MaxThreads) ~
-      ("lines" -> lines) ~
-      ("iterations" -> N) ~
-      ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MaxThreads) ~
+        ("lines" -> lines) ~
+        ("iterations" -> N) ~
+        ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
-    writeFile("summary.json", s)
+    writeFile("summary.json", s, o)
 
     //
     // Python Plot
     //
-    FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
+    FileOps.writeString(o.outputPath.resolve("perf/").resolve("plots.py"), Python)
 
     println("~~~~ Flix Compiler Performance ~~~~")
     println()
@@ -389,10 +395,8 @@ object CompilerPerf {
   private def perfBaseLine(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
-      flushCaches()
-
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MinThreads, incremental = false, progress = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MinThreads, incremental = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -405,10 +409,8 @@ object CompilerPerf {
   private def perfBaseLineWithPar(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
-      flushCaches()
-
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MaxThreads, incremental = false, progress = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MaxThreads, incremental = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -419,13 +421,18 @@ object CompilerPerf {
     * Runs Flix with n threads and incrementally.
     */
   private def perfBaseLineWithParInc(N: Int, o: Options): IndexedSeq[Run] = {
-    // Note: The Flix object is created _once_.
+    // We create on single Flix object.
     val flix: Flix = new Flix()
-    flix.setOptions(o.copy(threads = MaxThreads, incremental = true, loadClassFiles = false))
-    (0 until N).map { _ =>
-      flushCaches()
+    flix.setOptions(o.copy(threads = MaxThreads, incremental = true))
 
-      addInputs(flix)
+    // We add all inputs.
+    addInputs(flix)
+
+    // We compile once.
+    runSingle(flix)
+
+    // And then we perform N incremental compilations with no changes to the input.
+    (0 until N).map { _ =>
       runSingle(flix)
     }
   }
@@ -434,15 +441,22 @@ object CompilerPerf {
     * Runs Flix once.
     */
   private def runSingle(flix: Flix): Run = {
-    val frontendOnly = flix.options.XPerfFrontend
+    // Clear caches.
+    EffUnification3.Algebra.Cache.clearCaches()
 
+    val frontendOnly = flix.options.XPerfFrontend
     val totalLines =
       if (frontendOnly) {
-        flix.check().toHardFailure.unsafeGet.sources.foldLeft(0) {
+        val (optRoot, errors) = flix.check()
+        if (errors.nonEmpty) {
+          println(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
+          System.exit(1)
+        }
+        optRoot.get.sources.foldLeft(0) {
           case (acc, (_, sl)) => acc + sl.endLine
         }
       } else {
-        flix.compile().toHardFailure.unsafeGet.getTotalLines
+        flix.compile().unsafeGet.getTotalLines
       }
 
     val phases = flix.phaseTimers.map {
@@ -458,7 +472,7 @@ object CompilerPerf {
     */
   private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
-      throw InternalCompilerException("'l' must be non-empty.", SourceLocation.Unknown)
+      return Runs(0, Nil, Nil)
     }
 
     val lines = l.head.lines
@@ -467,7 +481,7 @@ object CompilerPerf {
 
     val phaseMatrix = l.map(_.phases.map(_._2))
     val transposedMatrix = phaseMatrix.transpose.map(_.toList).toList
-    val transposedWithPhases = phases.zip(transposedMatrix)
+    val transposedWithPhases = ListOps.zip(phases, transposedMatrix)
 
     Runs(lines, times, transposedWithPhases)
   }
@@ -475,7 +489,10 @@ object CompilerPerf {
   /**
     * Returns the throughput per second.
     */
-  private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
+  private def throughput(lines: Long, time: Long): Int = {
+    if (time == 0L) -1
+    else ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
+  }
 
   /**
     * Returns the given time `l` in milliseconds.
@@ -483,40 +500,33 @@ object CompilerPerf {
   private def milliseconds(l: Double): Double = l / 1_000_000.0
 
   /**
-    * Flushes (clears) all caches.
-    */
-  private def flushCaches(): Unit = {
-    UnificationCache.GlobalBool.clear()
-    UnificationCache.GlobalBdd.clear()
-  }
-
-  /**
     * Adds test code to the benchmarking suite.
     */
   private def addInputs(flix: Flix): Unit = {
-    flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
-    flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
-    flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
-    flix.addSourceCode("TestDelayList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"))
-    flix.addSourceCode("TestList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
-    flix.addSourceCode("TestMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
-    flix.addSourceCode("TestMutDeque.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"))
-    flix.addSourceCode("TestMutList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"))
-    flix.addSourceCode("TestMutMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutMap.flix"))
-    flix.addSourceCode("TestMutSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutSet.flix"))
-    flix.addSourceCode("TestNel.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestNel.flix"))
-    flix.addSourceCode("TestOption.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"))
-    flix.addSourceCode("TestPrelude.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
-    flix.addSourceCode("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
-    flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
-    flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+    flix.addVirtualPath(Path.of("TestArray.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
+    flix.addVirtualPath(Path.of("TestChain.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
+    flix.addVirtualPath(Path.of("TestIterator.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
+    flix.addVirtualPath(Path.of("TestDelayList.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"))
+    flix.addVirtualPath(Path.of("TestList.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
+    flix.addVirtualPath(Path.of("TestMap.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
+    flix.addVirtualPath(Path.of("TestMutDeque.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"))
+    flix.addVirtualPath(Path.of("TestMutList.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"))
+    flix.addVirtualPath(Path.of("TestMutMap.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutMap.flix"))
+    flix.addVirtualPath(Path.of("TestMutSet.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutSet.flix"))
+    flix.addVirtualPath(Path.of("TestNel.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestNel.flix"))
+    flix.addVirtualPath(Path.of("TestOption.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"))
+    flix.addVirtualPath(Path.of("TestPrelude.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
+    flix.addVirtualPath(Path.of("TestResult.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
+    flix.addVirtualPath(Path.of("TestSet.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
+    flix.addVirtualPath(Path.of("TestValidation.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
   }
 
   /**
     * Writes the given `json` to the given `file`.
     */
-  private def writeFile(file: String, json: JValue): Unit = {
-    val directory = Path.of("./build/").resolve("perf/")
+  private def writeFile(file: String, json: JValue, opts: Options): Unit = {
+    val directory = opts.outputPath.resolve("perf/")
     val filePath = directory.resolve(s"$file")
     FileOps.writeJSON(filePath, json)
   }

@@ -1,0 +1,15 @@
+name: Compiler Performance
+on: workflow_dispatch
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EXTERNAL_HOST }}
+          username: gh
+          password: ${{ secrets.EXTERNAL_PASS }}
+          port: 22
+          script: /home/gh/run.sh ${{ github.ref_name }}

@@ -16,14 +16,18 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast._
-import ConstraintGen.{visitExp, visitPattern}
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, PredicateAndArity, RegionScope, TraitConstraint}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.{visitExp, visitPattern}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object SchemaConstraintGen {
 
   def visitFixpointConstraintSet(e: KindedAst.Expr.FixpointConstraintSet)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointConstraintSet(cs, tvar, loc) =>
         val constraintTypes = cs.map(visitConstraint)
@@ -37,11 +41,12 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointLambda(e: KindedAst.Expr.FixpointLambda)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
 
         def mkRowExtend(pparam: KindedAst.PredicateParam, restRow: Type): Type = pparam match {
-          case KindedAst.PredicateParam(pred, tpe, loc) => Type.mkSchemaRowExtend(pred, tpe, restRow, tpe.loc)
+          case KindedAst.PredicateParam(pred, paramTpe, _) => Type.mkSchemaRowExtend(pred, paramTpe, restRow, paramTpe.loc)
         }
 
         def mkFullRow(baseRow: Type): Type = pparams.foldRight(baseRow)(mkRowExtend)
@@ -59,6 +64,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointMerge(e: KindedAst.Expr.FixpointMerge)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
         //
@@ -75,103 +81,120 @@ object SchemaConstraintGen {
     }
   }
 
-  def visitFixpointSolve(e: KindedAst.Expr.FixpointSolve)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointQueryWithProvenance(e: KindedAst.Expr.FixpointQueryWithProvenance)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: RegionScope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointSolve(exp, loc) =>
-        //
-        //  exp : #{...}
-        //  ---------------
-        //  solve exp : tpe
-        //
-        val (tpe, eff) = visitExp(exp)
-        c.unifyType(tpe, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
-        val resEff = eff
-        val resTpe = tpe
+      case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc1) =>
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val selectRow = visitHeadPredicate(select)
+        val (withRow, resultRow) = mkSchemaRowPair(withh, loc1)
+        c.unifyAllTypes(Type.mkSchema(withRow, loc1) :: Type.mkSchema(selectRow, loc1) :: tpes, loc1)
+        val resTpe = Type.mkVector(Type.mkExtensible(resultRow, loc1), loc1)
+        val resEff = Type.mkUnion(effs, loc1)
+        c.unifyType(tvar, resTpe, loc1)
         (resTpe, resEff)
     }
   }
 
-
-  def visitFixpointFilter(e: KindedAst.Expr.FixpointFilter)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointQueryWithSelect(e: KindedAst.Expr.FixpointQueryWithSelect)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: RegionScope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
+      case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tvar, loc) =>
         //
-        //  exp1 : tpe    exp2 : #{ P : a  | b }
-        //  -------------------------------------------
-        //  project P exp2 : #{ P : a | c }
+        //  exp = exps[0] <+> exps[1] <+> ... (exp is conceptual; it does not actually exist)
         //
-        val freshPredicateTypeVar = Type.freshVar(Kind.Predicate, loc)
-        val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
-        val freshResultSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
-
-        val (tpe, eff) = visitExp(exp)
-        c.unifyType(tpe, Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, freshRestSchemaTypeVar, loc), loc), loc)
-        c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, freshResultSchemaTypeVar, loc), loc), loc)
+        //  exp: freshRestSchemaVar
+        //  queryExp: #{$freshRelOrLat(α₁, α₂, ...) | freshRestSchemaVar }
+        //  --------------------------------------------------------------------
+        //  FixpointQueryWithSelect(exps, queryExp, ...) : Vector[(α₁, α₂, ...)]
+        //
+        val predArity = selects.length
+        val freshRelOrLat = Type.freshVar(Kind.mkArrowTo(predArity, Kind.Predicate), loc)
+        val freshTermVars = List.range(0, predArity).map(_ => Type.freshVar(Kind.Star, loc))
+        val tuple = Type.mkTuplish(freshTermVars, loc)
+        val freshRestSchemaVar = Type.freshVar(Kind.SchemaRow, loc)
+        val expectedSchemaType = Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkApply(freshRelOrLat, freshTermVars, loc), freshRestSchemaVar, loc), loc)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val (tpe, eff) = visitExp(queryExp)
+        c.unifyAllTypes(Type.mkSchema(freshRestSchemaVar, loc) :: tpes, loc)
+        c.unifyType(tpe, expectedSchemaType, loc)
+        c.unifyType(tvar, Type.mkVector(tuple, loc), loc)
         val resTpe = tvar
-        val resEff = eff
+        val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
     }
   }
 
-  def visitFixpointInject(e: KindedAst.Expr.FixpointInject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointSolveWithProject(e: KindedAst.Expr.FixpointSolveWithProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: RegionScope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointInject(exp, pred, tvar, evar, loc) =>
+      case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, _, tvar, loc) =>
         //
-        //  exp : F[freshElmType] where F is Foldable
-        //  -------------------------------------------
-        //  project exp into A: #{A(freshElmType) | freshRestSchemaType}
+        //  exp = exps₁ <+> exps₂ <+> ... <+> expsₘ
         //
-        val freshTypeConstructorVar = Type.freshVar(Kind.Star ->: Kind.Star, loc)
-        val freshElmTypeVar = Type.freshVar(Kind.Star, loc)
-        val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
+        //  exp : #{ P₁, P₂, ..., Pₖ, Pₖ₊₁, ..., Pₙ | b }    optPreds: P₁ ::  P₂ :: ... :: Pₖ :: Nil
+        //  ---------------
+        //  solve exp project P₁, P₂, ... : #{ P₁, P₂, ..., Pₖ | c }
+        //
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val freshSchemaRow = Type.freshVar(Kind.SchemaRow, loc)
+        c.unifyAllTypes(Type.mkSchema(freshSchemaRow, loc) :: tpes, loc)
+        val resultSchemaRow = optPreds match {
+          case Some(preds) =>
+            val (fullSchemaRow, resultSchemaRow) = mkSchemaRowPair(preds, loc)
+            c.unifyType(freshSchemaRow, fullSchemaRow, loc)
+            resultSchemaRow
+          case None => freshSchemaRow
+        }
+        c.unifyType(tvar, Type.mkSchema(resultSchemaRow, loc), loc)
+        val resTpe = tvar
+        val resEff = Type.mkUnion(effs, loc)
+        (resTpe, resEff)
 
-        // Require Order and Foldable instances.
-        val orderSym = PredefinedTraits.lookupTraitSym("Order", root)
-        val foldableSym = PredefinedTraits.lookupTraitSym("Foldable", root)
-        val order = Ast.TypeConstraint(Ast.TypeConstraint.Head(orderSym, loc), freshElmTypeVar, loc)
-        val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
+    }
+  }
 
-        c.addClassConstraints(List(order, foldable), loc)
+  def visitFixpointInjectInto(e: KindedAst.Expr.FixpointInjectInto)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: RegionScope = c.getScope
+    e match {
+      case KindedAst.Expr.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc) =>
+        predsAndArities.zip(exps).foreach {
+          case (PredicateAndArity(pred, arity), exp) =>
+            //
+            //  exp : F[(α₁, α₂, ...)] where F is Foldable
+            //  -------------------------------------------
+            //  project exp into A(_, _, ...): #{A(α₁, α₂, ...) | freshRestSchemaType}
+            //
+            val freshTypeConstructorVar = Type.freshVar(Kind.Star ->: Kind.Star, loc)
+            val freshElmTypeVars = List.range(0, arity).map(_ => Type.freshVar(Kind.Star, loc))
+            val tuple = Type.mkTuplish(freshElmTypeVars, loc)
+            val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
 
-        val aefSym = new Symbol.AssocTypeSym(foldableSym, "Aef", loc)
-        val aefTpe = Type.AssocType(Ast.AssocTypeConstructor(aefSym, loc), freshTypeConstructorVar, Kind.Eff, loc)
+            // Require Order and Foldable instances.
+            val orderSym = PredefinedTraits.lookupTraitSym("Order", root)
+            val foldableSym = PredefinedTraits.lookupTraitSym("Foldable", root)
+            val order = TraitConstraint(TraitSymUse(orderSym, loc), tuple, loc)
+            val foldable = TraitConstraint(TraitSymUse(foldableSym, loc), freshTypeConstructorVar, loc)
 
-        val (tpe, eff) = visitExp(exp)
-        c.unifyType(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc), loc)
-        c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
-        c.unifyType(evar, Type.mkUnion(eff, aefTpe, loc), loc)
+            c.addClassConstraints(List(order, foldable), loc)
+
+            val aefSym = new Symbol.AssocTypeSym(foldableSym, "Aef", loc)
+            val aefTpe = Type.AssocType(AssocTypeSymUse(aefSym, loc), freshTypeConstructorVar, Kind.Eff, loc)
+
+            val (tpe, eff) = visitExp(exp)
+            c.unifyType(tpe, Type.mkApply(freshTypeConstructorVar, List(tuple), loc), loc)
+            c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(freshElmTypeVars, loc), freshRestSchemaTypeVar, loc), loc), loc)
+            c.unifyType(evar, Type.mkUnion(eff, aefTpe, loc), loc)
+        }
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
     }
   }
 
-  def visitFixpointProject(e: KindedAst.Expr.FixpointProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    e match {
-      case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
-        //
-        //  exp1: {$Result(freshRelOrLat, freshTupleVar) | freshRestSchemaVar }
-        //  exp2: freshRestSchemaVar
-        //  --------------------------------------------------------------------
-        //  FixpointQuery pred, exp1, exp2 : Array[freshTupleVar]
-        //
-        val freshRelOrLat = Type.freshVar(Kind.Star ->: Kind.Predicate, loc)
-        val freshTupleVar = Type.freshVar(Kind.Star, loc)
-        val freshRestSchemaVar = Type.freshVar(Kind.SchemaRow, loc)
-        val expectedSchemaType = Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar, loc), freshRestSchemaVar, loc), loc)
-        val (tpe1, eff1) = visitExp(exp1)
-        val (tpe2, eff2) = visitExp(exp2)
-        c.unifyType(tpe1, expectedSchemaType, loc)
-        c.unifyType(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc)
-        c.unifyType(tvar, Type.mkVector(freshTupleVar, loc), loc)
-        val resTpe = tvar
-        val resEff = Type.mkUnion(eff1, eff2, loc)
-        (resTpe, resEff)
-    }
-  }
-
   private def visitConstraint(con0: KindedAst.Constraint)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-    val KindedAst.Constraint(cparams, head0, body0, loc) = con0
+    implicit val scope: RegionScope = c.getScope
+    val KindedAst.Constraint(_, head0, body0, loc) = con0
     //
     //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
     //  -----------------------------------
@@ -191,13 +214,14 @@ object SchemaConstraintGen {
     * Infers the type of the given head predicate.
     */
   private def visitHeadPredicate(head: KindedAst.Predicate.Head)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+    implicit val scope: RegionScope = c.getScope
     head match {
       case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
         // Adds additional type constraints if the denotation is a lattice.
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val (termTypes, termEffs) = terms.map(visitExp(_)).unzip
         c.unifyType(Type.Pure, Type.mkUnion(termEffs, loc), loc)
-        c.unifyType(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
+        c.unifyType(tvar, mkRelationOrLatticeType(den, termTypes, loc), loc)
         val tconstrs = getTermTraitConstraints(den, termTypes, root, loc)
         c.addClassConstraints(tconstrs, loc)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
@@ -209,18 +233,19 @@ object SchemaConstraintGen {
     * Infers the type of the given body predicate.
     */
   private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+    implicit val scope: RegionScope = c.getScope
     body0 match {
-      case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
+      case KindedAst.Predicate.Body.Atom(pred, den, _, _, terms, tvar, loc) =>
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val termTypes = terms.map(visitPattern)
-        c.unifyType(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
+        c.unifyType(tvar, mkRelationOrLatticeType(den, termTypes, loc), loc)
         val tconstrs = getTermTraitConstraints(den, termTypes, root, loc)
         c.addClassConstraints(tconstrs, loc)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
         resTpe
 
-      case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
-        val tupleType = Type.mkTuplish(outVars.map(_.tvar), loc)
+      case KindedAst.Predicate.Body.Functional(syms, exp, loc) =>
+        val tupleType = Type.mkTuplish(syms.map(_.tvar), loc)
         val expectedType = Type.mkVector(tupleType, loc)
         val (tpe, eff) = visitExp(exp)
         c.unifyType(expectedType, tpe, loc)
@@ -238,9 +263,9 @@ object SchemaConstraintGen {
   }
 
   /**
-    * Returns the relation or lattice type of `name` with the term types `ts`.
+    * Returns the relation or lattice type with the term types `ts`.
     */
-  private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation)(implicit flix: Flix): Type = den match {
+  private def mkRelationOrLatticeType(den: Denotation, ts: List[Type], loc: SourceLocation): Type = den match {
     case Denotation.Relational => Type.mkRelation(ts, loc)
     case Denotation.Latticenal => Type.mkLattice(ts, loc)
   }
@@ -248,7 +273,7 @@ object SchemaConstraintGen {
   /**
     * Returns the trait constraints for the given term types `ts` with the given denotation `den`.
     */
-  private def getTermTraitConstraints(den: Ast.Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = den match {
+  private def getTermTraitConstraints(den: Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[TraitConstraint] = den match {
     case Denotation.Relational =>
       ts.flatMap(mkTraitConstraintsForRelationalTerm(_, root, loc))
     case Denotation.Latticenal =>
@@ -258,18 +283,18 @@ object SchemaConstraintGen {
   /**
     * Constructs the trait constraints for the given relational term type `tpe`.
     */
-  private def mkTraitConstraintsForRelationalTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
+  private def mkTraitConstraintsForRelationalTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[TraitConstraint] = {
     val traits = List(
       PredefinedTraits.lookupTraitSym("Eq", root),
       PredefinedTraits.lookupTraitSym("Order", root),
     )
-    traits.map(trt => Ast.TypeConstraint(Ast.TypeConstraint.Head(trt, loc), tpe, loc))
+    traits.map(trt => TraitConstraint(TraitSymUse(trt, loc), tpe, loc))
   }
 
   /**
     * Constructs the trait constraints for the given lattice term type `tpe`.
     */
-  private def mkTraitConstraintsForLatticeTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
+  private def mkTraitConstraintsForLatticeTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[TraitConstraint] = {
     val traits = List(
       PredefinedTraits.lookupTraitSym("Eq", root),
       PredefinedTraits.lookupTraitSym("Order", root),
@@ -278,9 +303,20 @@ object SchemaConstraintGen {
       PredefinedTraits.lookupTraitSym("JoinLattice", root),
       PredefinedTraits.lookupTraitSym("MeetLattice", root),
     )
-    traits.map(trt => Ast.TypeConstraint(Ast.TypeConstraint.Head(trt, loc), tpe, loc))
+    traits.map(trt => TraitConstraint(TraitSymUse(trt, loc), tpe, loc))
   }
 
+  /**
+    * Returns a pair of open schema rows each consisting of predicate names in `predicates`.
+    */
+  private def mkSchemaRowPair(predicates: List[Name.Pred], loc: SourceLocation)(implicit c: TypeContext, flix: Flix): (Type, Type) = {
+    implicit val scope: RegionScope = c.getScope
+    predicates.foldRight((mkAnySchemaRowType(loc), mkAnySchemaRowType(loc))) {
+      case (pred, (acc1, acc2)) =>
+        val fresh = Type.freshVar(Kind.Predicate, loc)
+        (Type.mkSchemaRowExtend(pred, fresh, acc1, loc), Type.mkSchemaRowExtend(pred, fresh, acc2, loc))
+    }
+  }
 
-  private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
+  private def mkAnySchemaRowType(loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
 }

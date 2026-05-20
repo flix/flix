@@ -14,33 +14,24 @@
  * limitations under the License.
  */
 
-mod Concurrent {
-  ///
-  /// A wrapper around a Java CyclicBarrier
-  ///
-  @Internal
-  pub enum CyclicBarrier(##java.util.concurrent.CyclicBarrier)
-}
+pub mod Concurrent.CyclicBarrier {
+    import java.util.concurrent.{CyclicBarrier => JCyclicBarrier}
 
-mod Concurrent.CyclicBarrier {
-    // TODO NS-REFACTOR can remove these
-    use Concurrent.CyclicBarrier
-    use Concurrent.CyclicBarrier.CyclicBarrier
-    import java.util.concurrent.{CyclicBarrier => JCyclicBarrier};
+    ///
+    /// A wrapper around a Java CyclicBarrier.
+    ///
+    pub enum CyclicBarrier(JCyclicBarrier)
 
-  ///
-  /// Create a new CyclicBarrier which will wait for `parties` threads
-  ///
-  @Internal
-  pub def newCyclicBarrier(parties: Int32): CyclicBarrier \ IO =
-    CyclicBarrier(new JCyclicBarrier(parties))
+    ///
+    /// Create a new CyclicBarrier which will wait for `parties` threads
+    ///
+    pub def newCyclicBarrier(parties: Int32): CyclicBarrier \ IO =
+        CyclicBarrier(new JCyclicBarrier(parties))
 
-  ///
-  /// Waits until all parties have invoked `await` on this barrier
-  ///
-  @Internal
-  pub def awaitBarrier(barrier: CyclicBarrier): Int32 \ IO =
-    import java.util.concurrent.CyclicBarrier.await(): Int32 \ IO;
-    let CyclicBarrier(b) = barrier;
-    await(b)
+    ///
+    /// Waits until all parties have invoked `await` on this barrier
+    ///
+    pub def awaitBarrier(barrier: CyclicBarrier): Int32 \ IO =
+        let CyclicBarrier(b) = barrier;
+        b.await()
 }

@@ -1,262 +1,219 @@
-/*
- * Copyright 2020 Esben Bjerre
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 mod TestMutMap {
-    use MutMap.MutMap
+
+    use Assert.{assertEq, assertTrue, assertFalse};
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toString01(): Bool = region rc {
+    @Test
+    def toString01(): Unit \ Assert = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
-        MutMap.toString(m) == "MutMap#{}"
+        assertEq(expected = "MutMap#{}", MutMap.toString(m))
     }
 
-    @test
-    def toString02(): Bool = region rc {
+    @Test
+    def toString02(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, 101, m);
-        MutMap.toString(m) == "MutMap#{1 => 101}"
+        MutMap.put(1, 101, m);
+        assertEq(expected = "MutMap#{1 => 101}", MutMap.toString(m))
     }
 
-    @test
-    def toString03(): Bool = region rc {
+    @Test
+    def toString03(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, 101, m);
-        MutMap.put!(2, 102, m);
-        MutMap.put!(3, 103, m);
-        MutMap.put!(4, 104, m);
-        MutMap.put!(5, 105, m);
-        MutMap.toString(m) == "MutMap#{1 => 101, 2 => 102, 3 => 103, 4 => 104, 5 => 105}"
+        MutMap.put(1, 101, m);
+        MutMap.put(2, 102, m);
+        MutMap.put(3, 103, m);
+        MutMap.put(4, 104, m);
+        MutMap.put(5, 105, m);
+        assertEq(expected = "MutMap#{1 => 101, 2 => 102, 3 => 103, 4 => 104, 5 => 105}", MutMap.toString(m))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sameElements01(): Bool = region rc {
+    @Test
+    def sameElements01(): Unit \ Assert = region rc {
         let m1 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
         let m2 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
-        MutMap.sameElements(m1, m2)
+        assertTrue(MutMap.sameElements(m1, m2))
     }
 
-    @test
-    def sameElements02(): Bool = region rc {
+    @Test
+    def sameElements02(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, "a", m);
+        MutMap.put(1, "a", m);
 
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, "a", m2);
+        MutMap.put(1, "a", m2);
 
-        MutMap.sameElements(m, m2)
+        assertTrue(MutMap.sameElements(m, m2))
     }
 
-    @test
-    def sameElements03(): Bool = region rc {
+    @Test
+    def sameElements03(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, "a", m);
-        MutMap.put!(1, "b", m);
+        MutMap.put(1, "a", m);
+        MutMap.put(1, "b", m);
 
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, "a", m2);
+        MutMap.put(1, "a", m2);
 
-        not MutMap.sameElements(m, m2)
+        assertFalse(MutMap.sameElements(m, m2))
     }
 
-    @test
-    def sameElements04(): Bool = region rc {
+    @Test
+    def sameElements04(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, "a", m);
-        MutMap.put!(2, "b", m);
+        MutMap.put(1, "a", m);
+        MutMap.put(2, "b", m);
 
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, "a", m2);
+        MutMap.put(1, "a", m2);
 
-        not MutMap.sameElements(m, m2)
+        assertFalse(MutMap.sameElements(m, m2))
     }
 
-    @test
-    def sameElements05(): Bool = region rc {
+    @Test
+    def sameElements05(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(1, "a", m);
+        MutMap.put(1, "a", m);
 
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, "a", m2);
-        MutMap.put!(2, "b", m2);
+        MutMap.put(1, "a", m2);
+        MutMap.put(2, "b", m2);
 
-        not MutMap.sameElements(m, m2)
+        assertFalse(MutMap.sameElements(m, m2))
     }
 
-    @test
-    def sameElements06(): Bool = region rc {
+    @Test
+    def sameElements06(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        MutMap.put!(2, "b", m);
-        MutMap.put!(3, "c", m);
-        MutMap.put!(1, "a", m);
+        MutMap.put(2, "b", m);
+        MutMap.put(3, "c", m);
+        MutMap.put(1, "a", m);
 
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, "a", m2);
-        MutMap.put!(2, "b", m2);
-        MutMap.put!(3, "c", m2);
+        MutMap.put(1, "a", m2);
+        MutMap.put(2, "b", m2);
+        MutMap.put(3, "c", m2);
 
-        MutMap.sameElements(m, m2)
+        assertTrue(MutMap.sameElements(m, m2))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // mergeWithKey                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def merge01(): Bool = region rc {
+    @Test
+    def mergeWithKey01(): Unit \ Assert = region rc {
         let m1 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
         let m2 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
-        MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
-        MutMap.isEmpty(m2)
+        MutMap.mergeWithKey((_, v, _) -> v, m1, m2);
+        assertTrue(MutMap.isEmpty(m2))
     }
 
-    @test
-    def merge02(): Bool = region rc {
+    @Test
+    def mergeWithKey02(): Unit \ Assert = region rc {
         let m1 = MutMap.empty(rc);
         let m2 = MutMap.empty(rc);
-        MutMap.put!(1, 0, m1);
-        MutMap.put!(2, 0, m2);
-        MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
-        MutMap.memberOf(1, m2) and MutMap.memberOf(2, m2)
+        MutMap.put(1, 0, m1);
+        MutMap.put(2, 0, m2);
+        MutMap.mergeWithKey((_, v, _) -> v, m1, m2);
+        assertTrue(MutMap.memberOf(1, m2));
+        assertTrue(MutMap.memberOf(2, m2))
     }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // sumValues                                                               //
+    // getOrAbort                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumValues01(): Bool = region rc {
-        MutMap.empty(rc) |> MutMap.sumValues == 0
+    @Test
+    def getOrAbort01(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 42, m);
+        let r = run {
+            MutMap.getOrAbort(1, m)
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(42), r)
     }
 
-    @test
-    def sumValues02(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1}) |>
-            MutMap.sumValues == 1
+    @Test
+    def getOrAbort02(): Unit \ Assert = region rc {
+        let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
+        let r = run {
+            MutMap.getOrAbort(1, m)
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
     }
-
-    @test
-    def sumValues03(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3}) |>
-            MutMap.sumValues == 6
-    }
-
-    @test
-    def sumValues04(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3}) |>
-            MutMap.sumValues == 3
-    }
-
-    @test
-    def sumValues05(): Bool = region rc {
-        Map.toMutMap(rc, Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4}) |>
-            MutMap.sumValues == -10
-    }
-
-    @test
-    def sumValues06(): Bool = region rc {
-        Map.toMutMap(rc, Map#{10 => 10, -10 => -10}) |>
-            MutMap.sumValues == 0
-    }
-
 
     /////////////////////////////////////////////////////////////////////////////
-    // sumKeys                                                                 //
+    // putAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumKeys01(): Bool = region rc {
-        MutMap.empty(rc) |> MutMap.sumKeys == 0
+    @Test
+    def putAll01(): Unit \ Assert = region rc {
+        let m1 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
+        let m2 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
+        MutMap.putAll(MutMap.toList(m1), m2);
+        assertTrue(MutMap.isEmpty(m2))
     }
 
-    @test
-    def sumKeys02(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1}) |>
-            MutMap.sumKeys == 1
+    @Test
+    def putAll02(): Unit \ Assert = region rc {
+        let m1 = MutMap.empty(rc);
+        let m2 = MutMap.empty(rc);
+        MutMap.put(1, 101, m1);
+        MutMap.put(1, 101, m1);
+        MutMap.putAll(MutMap.toList(m1), m2);
+        assertTrue(MutMap.sameElements(m1, m2))
     }
 
-    @test
-    def sumKeys03(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3}) |>
-            MutMap.sumKeys == 6
+    @Test
+    def putAll03(): Unit \ Assert = region rc {
+        let m1 = MutMap.empty(rc);
+        let m2 = MutMap.empty(rc);
+        MutMap.put(1, 10, m1);
+        MutMap.put(2, 20, m1);
+        MutMap.putAll(MutMap.toList(m1), m2);
+        assertEq(expected = 30, MutMap.foldLeft((acc, v) -> acc + v, 0, m2))
     }
 
-    @test
-    def sumKeys04(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3}) |>
-            MutMap.sumKeys == 3
+    @Test
+    def putAll04(): Unit \ Assert = region rc {
+        let m1 = MutMap.empty(rc);
+        let m2 = MutMap.empty(rc);
+        MutMap.put(1, 10, m1);
+        MutMap.put(2, 20, m1);
+        MutMap.put(3, 30, m1);
+        MutMap.putAll(MutMap.toList(m1), m2);
+        assertEq(expected = 60, MutMap.foldLeft((acc, v) -> acc + v, 0, m2))
     }
 
-    @test
-    def sumKeys05(): Bool = region rc {
-        Map.toMutMap(rc, Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4}) |>
-            MutMap.sumKeys == -12
+    @Test
+    def putAll05(): Unit \ Assert = region rc {
+        let m1 = MutMap.empty(rc);
+        MutMap.put("a", 1, m1);
+        MutMap.put("b", 2, m1);
+        MutMap.put("c", 3, m1);
+
+        let m2 = MutMap.empty(rc);
+        MutMap.putAll(MutMap.toList(m1), m2);
+        assertEq(expected = ("a", 1) :: ("b", 2) :: ("c", 3) :: Nil, MutMap.toList(m2))
     }
 
-    @test
-    def sumKeys06(): Bool = region rc {
-        Map.toMutMap(rc, Map#{10 => 10, -10 => -10}) |>
-            MutMap.sumKeys == 0
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sumWith                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def sumWith01(): Bool = region rc {
-        MutMap.empty(rc) |> MutMap.sumWith((k, v) -> k + v) == 0
-    }
-
-    @test
-    def sumWith02(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1}) |>
-            MutMap.sumWith((k, v) -> k + v) == 2
-    }
-
-    @test
-    def sumWith03(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3}) |>
-            MutMap.sumWith((k, v) -> k + v) == 12
-    }
-
-    @test
-    def sumWith04(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3}) |>
-            MutMap.sumWith((k, v) -> k + v) == 6
-    }
-
-    @test
-    def sumWith05(): Bool = region rc {
-        Map.toMutMap(rc, Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4}) |>
-            MutMap.sumWith((k, v) -> k + v) == -20
-    }
-
-    @test
-    def sumWith06(): Bool = region rc {
-        Map.toMutMap(rc, Map#{10 => 10, -10 => -10}) |>
-            MutMap.sumWith((k, v) -> k + v) == 0
+    @Test
+    def putAll06(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 10, m);
+        MutMap.putAll((2, 20) :: (3, 30) :: Nil, m);
+        assertEq(expected = 3, MutMap.size(m));
+        assertEq(expected = Some(10), MutMap.get(1, m));
+        assertEq(expected = Some(20), MutMap.get(2, m));
+        assertEq(expected = Some(30), MutMap.get(3, m))
     }
 
 
@@ -264,24 +221,30 @@ mod TestMutMap {
     // joinKeys                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinKeys01(): Bool = region rc {
-        (MutMap.empty(rc): MutMap[Int32, Int32, _]) |> MutMap.joinKeys(",") == ""
+    @Test
+    def joinKeys01(): Unit \ Assert = region rc {
+        assertEq(expected = "", (MutMap.empty(rc): MutMap[Int32, Int32, _]) |> MutMap.joinKeys(","))
     }
 
-    @test
-    def joinKeys02(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1}) |> MutMap.joinKeys(",") == "1"
+    @Test
+    def joinKeys02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 1)}, m);
+        assertEq(expected = "1", MutMap.joinKeys(",", m))
     }
 
-    @test
-    def joinKeys03(): Bool = region rc {
-        Map.toMutMap(rc, Map#{0 => 1, 1 => 2, 2 => 2}) |> MutMap.joinKeys(",") == "0,1,2"
+    @Test
+    def joinKeys03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(0, 1), (1, 2), (2, 2)}, m);
+        assertEq(expected = "0,1,2", MutMap.joinKeys(",", m))
     }
 
-    @test
-    def joinKeys04(): Bool = region rc {
-        Map.toMutMap(rc, Map#{"0" => 1, "1" => 2, "2" => 2}) |> MutMap.joinKeys(",") == "0,1,2"
+    @Test
+    def joinKeys04(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{("0", 1), ("1", 2), ("2", 2)}, m);
+        assertEq(expected = "0,1,2", MutMap.joinKeys(",", m))
     }
 
 
@@ -289,24 +252,30 @@ mod TestMutMap {
     // joinValues                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinValues01(): Bool = region rc {
-        (MutMap.empty(rc): MutMap[Int32, Int32, _]) |> MutMap.joinValues(",") == ""
+    @Test
+    def joinValues01(): Unit \ Assert = region rc {
+        assertEq(expected = "", (MutMap.empty(rc): MutMap[Int32, Int32, _]) |> MutMap.joinValues(","))
     }
 
-    @test
-    def joinValues02(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1}) |> MutMap.joinValues(",") == "1"
+    @Test
+    def joinValues02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 1)}, m);
+        assertEq(expected = "1", MutMap.joinValues(",", m))
     }
 
-    @test
-    def joinValues03(): Bool = region rc {
-        Map.toMutMap(rc, Map#{0 => 1, 1 => 2, 2 => 2}) |> MutMap.joinValues(",") == "1,2,2"
+    @Test
+    def joinValues03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(0, 1), (1, 2), (2, 2)}, m);
+        assertEq(expected = "1,2,2", MutMap.joinValues(",", m))
     }
 
-    @test
-    def joinValues04(): Bool = region rc {
-        Map.toMutMap(rc, Map#{0 => "1", 1 => "2", 2 => "2"}) |> MutMap.joinValues(",") == "1,2,2"
+    @Test
+    def joinValues04(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(0, "1"), (1, "2"), (2, "2")}, m);
+        assertEq(expected = "1,2,2", MutMap.joinValues(",", m))
     }
 
 
@@ -314,256 +283,283 @@ mod TestMutMap {
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinWith01(): Bool = region rc {
-        (MutMap.empty(rc): MutMap[Int32, Int32, _]) |>
-            MutMap.joinWith((k, v) -> "${k} => ${v}", ",") == ""
+    @Test
+    def joinWith01(): Unit \ Assert = region rc {
+        assertEq(expected = "", (MutMap.empty(rc): MutMap[Int32, Int32, _]) |>
+            MutMap.joinWith((k, v) -> "${k} => ${v}", ","))
     }
 
-    @test
-    def joinWith02(): Bool = region rc {
-        Map.toMutMap(rc, Map#{1 => 1}) |>
-            MutMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "1 => 1"
+    @Test
+    def joinWith02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 1)}, m);
+        assertEq(expected = "1 => 1", MutMap.joinWith((k, v) -> "${k} => ${v}", ", ", m))
     }
 
-    @test
-    def joinWith03(): Bool = region rc {
-        Map.toMutMap(rc, Map#{0 => 1, 1 => 2, 2 => 2}) |>
-            MutMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
+    @Test
+    def joinWith03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(0, 1), (1, 2), (2, 2)}, m);
+        assertEq(expected = "0 => 1, 1 => 2, 2 => 2", MutMap.joinWith((k, v) -> "${k} => ${v}", ", ", m))
     }
 
-    @test
-    def joinWith04(): Bool = region rc {
-        Map.toMutMap(rc, Map#{0 => "1", 1 => "2", 2 => "2"}) |>
-            MutMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
+    @Test
+    def joinWith04(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(0, "1"), (1, "2"), (2, "2")}, m);
+        assertEq(expected = "0 => 1, 1 => 2, 2 => 2", MutMap.joinWith((k, v) -> "${k} => ${v}", ", ", m))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMutDeque01(): Bool = region rc {
-        let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
-        let d1 = MutMap.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-
-        d1 `MutDeque.sameElements` d2
-    }
-
-    @test
-    def toMutDeque02(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2});
-        let d1 = MutMap.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((1, 2), d2);
-
-        d1 `MutDeque.sameElements` d2
-    }
-
-    @test
-    def toMutDeque03(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
-        let d1 = MutMap.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((3, 4), d2);
-        MutDeque.pushBack((5, 6), d2);
-        MutDeque.pushFront((1, 2), d2);
-
-        d1 `MutDeque.sameElements` d2
-    }
-
-    @test
-    def toMutDeque04(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
-        let d1 = MutMap.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront((3, 'c'), d2);
-        MutDeque.pushFront((2, 'b'), d2);
-        MutDeque.pushFront((1, 'a'), d2);
-
-        d1 `MutDeque.sameElements` d2
-    }
-
-
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toList01(): Bool = region rc {
+    @Test
+    def toList01(): Unit \ Assert = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
-        MutMap.toList(m) == (List#{} : List[(Int32, Int32)])
+        assertEq(expected = (List#{} : List[(Int32, Int32)]), MutMap.toList(m))
     }
 
-    @test
-    def toList02(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2});
-        MutMap.toList(m) == List#{(1, 2)}
+    @Test
+    def toList02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 2)}, m);
+        assertEq(expected = List#{(1, 2)}, MutMap.toList(m))
     }
 
-    @test
-    def toList03(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
-        MutMap.toList(m) == List#{(1, 2), (3, 4), (5, 6)}
+    @Test
+    def toList03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 2), (3, 4), (5, 6)}, m);
+        assertEq(expected = List#{(1, 2), (3, 4), (5, 6)}, MutMap.toList(m))
     }
 
-    @test
-    def toList04(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
-        MutMap.toList(m) == List#{(1, 'a'), (2, 'b'), (3, 'c')}
+    @Test
+    def toList04(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 'a'), (2, 'b'), (3, 'c')}, m);
+        assertEq(expected = List#{(1, 'a'), (2, 'b'), (3, 'c')}, MutMap.toList(m))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toVector01(): Bool = region rc {
+    @Test
+    def toVector01(): Unit \ Assert = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
-        MutMap.toVector(m) == (Vector#{} : Vector[(Int32, Int32)])
+        assertEq(expected = (Vector#{} : Vector[(Int32, Int32)]), MutMap.toVector(m))
     }
 
-    @test
-    def toVector02(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2});
-        MutMap.toVector(m) == Vector#{(1, 2)}
+    @Test
+    def toVector02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 2)}, m);
+        assertEq(expected = Vector#{(1, 2)}, MutMap.toVector(m))
     }
 
-    @test
-    def toVector03(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
-        MutMap.toVector(m) == Vector#{(1, 2), (3, 4), (5, 6)}
+    @Test
+    def toVector03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 2), (3, 4), (5, 6)}, m);
+        assertEq(expected = Vector#{(1, 2), (3, 4), (5, 6)}, MutMap.toVector(m))
     }
 
-    @test
-    def toVector04(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
-        MutMap.toVector(m) == Vector#{(1, 'a'), (2, 'b'), (3, 'c')}
+    @Test
+    def toVector04(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 'a'), (2, 'b'), (3, 'c')}, m);
+        assertEq(expected = Vector#{(1, 'a'), (2, 'b'), (3, 'c')}, MutMap.toVector(m))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArray01(): Bool = region rc {
+    @Test
+    def toArray01(): Unit \ Assert = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
-        Array.sameElements(MutMap.toArray(rc, m), Array#{} @ rc)
+        assertTrue(Array.sameElements(MutMap.toArray(rc, m), Array#{} @ rc))
     }
 
-    @test
-    def toArray02(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2});
-        Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 2)} @ rc)
+    @Test
+    def toArray02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 2)}, m);
+        assertTrue(Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 2)} @ rc))
     }
 
-    @test
-    def toArray03(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
-        Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 2), (3, 4), (5, 6)} @ rc)
+    @Test
+    def toArray03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 2), (3, 4), (5, 6)}, m);
+        assertTrue(Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 2), (3, 4), (5, 6)} @ rc))
     }
 
-    @test
-    def toArray04(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
-        Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 'a'), (2, 'b'), (3, 'c')} @ rc)
+    @Test
+    def toArray04(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 'a'), (2, 'b'), (3, 'c')}, m);
+        assertTrue(Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 'a'), (2, 'b'), (3, 'c')} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toSet01(): Bool = region rc {
+    @Test
+    def toSet01(): Unit \ Assert = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
-        MutMap.toSet(m) == (Set#{} : Set[(Int32, Int32)])
+        assertEq(expected = (Set#{} : Set[(Int32, Int32)]), MutMap.toSet(m))
     }
 
-    @test
-    def toSet02(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2});
-        MutMap.toSet(m) == Set#{(1, 2)}
+    @Test
+    def toSet02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 2)}, m);
+        assertEq(expected = Set#{(1, 2)}, MutMap.toSet(m))
     }
 
-    @test
-    def toSet03(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
-        MutMap.toSet(m) == Set#{(1, 2), (3, 4), (5, 6)}
+    @Test
+    def toSet03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 2), (3, 4), (5, 6)}, m);
+        assertEq(expected = Set#{(1, 2), (3, 4), (5, 6)}, MutMap.toSet(m))
     }
 
-    @test
-    def toSet04(): Bool = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
-        MutMap.toSet(m) == Set#{(1, 'a'), (2, 'b'), (3, 'c')}
+    @Test
+    def toSet04(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putAll(List#{(1, 'a'), (2, 'b'), (3, 'c')}, m);
+        assertEq(expected = Set#{(1, 'a'), (2, 'b'), (3, 'c')}, MutMap.toSet(m))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEach01(): Bool = region rc {
+    @Test
+    def forEach01(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
-        21 == deref ri
+        assertEq(expected = 21, Ref.get(ri))
     }
 
-    @test
-    def forEach02(): Bool = region rc {
+    @Test
+    def forEach02(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
-        MutMap.put!(0, 100, m);
+        let ri = Ref.fresh(rc, 21);
+        MutMap.put(0, 100, m);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
-        100 == deref ri
+        assertEq(expected = 100, Ref.get(ri))
     }
 
-    @test
-    def forEach03(): Bool = region rc {
+    @Test
+    def forEach03(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
-        MutMap.put!(0, 100, m);
-        MutMap.put!(1, 101, m);
-        MutMap.put!(2, 102, m);
+        let ri = Ref.fresh(rc, 21);
+        MutMap.put(0, 100, m);
+        MutMap.put(1, 101, m);
+        MutMap.put(2, 102, m);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
-        104 == deref ri
+        assertEq(expected = 104, Ref.get(ri))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEachWithIndex01(): Bool = region rc {
+    @Test
+    def forEachWithIndex01(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
-        21 == deref ri
+        assertEq(expected = 21, Ref.get(ri))
     }
 
-    @test
-    def forEachWithIndex02(): Bool = region rc {
+    @Test
+    def forEachWithIndex02(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
-        MutMap.put!(0, 100, m);
+        let ri = Ref.fresh(rc, 21);
+        MutMap.put(0, 100, m);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
-        0 == deref ri
+        assertEq(expected = 0, Ref.get(ri))
     }
 
-    @test
-    def forEachWithIndex03(): Bool = region rc {
+    @Test
+    def forEachWithIndex03(): Unit \ Assert = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
-        MutMap.put!(0, 100, m);
-        MutMap.put!(1, 101, m);
-        MutMap.put!(2, 102, m);
+        let ri = Ref.fresh(rc, 21);
+        MutMap.put(0, 100, m);
+        MutMap.put(1, 101, m);
+        MutMap.put(2, 102, m);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
-        2 == deref ri
+        assertEq(expected = 2, Ref.get(ri))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // putWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def putWith01(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putWith((x, y) -> x + y, 1, 10, m);
+        assertEq(expected = Some(10), MutMap.get(1, m))
+    }
+
+    @Test
+    def putWith02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 5, m);
+        MutMap.putWith((x, y) -> x + y, 1, 10, m);
+        assertEq(expected = Some(15), MutMap.get(1, m))
+    }
+
+    @Test
+    def putWith03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 5, m);
+        MutMap.put(2, 10, m);
+        MutMap.putWith((x, y) -> x + y, 1, 3, m);
+        assertEq(expected = 2, MutMap.size(m));
+        assertEq(expected = Some(8), MutMap.get(1, m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // putWithKey                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def putWithKey01(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putWithKey((k, x, y) -> k + x + y, 1, 10, m);
+        // Key doesn't exist, so inserts 1 => 10 (function not applied)
+        assertEq(expected = Some(10), MutMap.get(1, m))
+    }
+
+    @Test
+    def putWithKey02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 5, m);
+        MutMap.putWithKey((k, x, y) -> k + x + y, 1, 10, m);
+        assertEq(expected = Some(16), MutMap.get(1, m))
+    }
+
+    @Test
+    def putWithKey03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 5, m);
+        MutMap.put(2, 10, m);
+        MutMap.putWithKey((k, x, y) -> k + x + y, 2, 3, m);
+        assertEq(expected = 2, MutMap.size(m));
+        assertEq(expected = Some(15), MutMap.get(2, m))
     }
 
 }
+

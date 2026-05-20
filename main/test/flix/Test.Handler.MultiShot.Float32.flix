@@ -1,121 +1,123 @@
 mod Test.Handler.MultiShot.Float32 {
 
+    use Assert.{assertEq, assertTrue};
+
     eff AskTell {
-        pub def askTell(x: Float32): Float32
+        def askTell(x: Float32): Float32
     }
 
     @Test
-    def testLinear01(): Bool =
-        def f1() = do AskTell.askTell(42.0f32);
-        let result = try {
+    def testLinear01(): Unit \ Assert =
+        def f1() = AskTell.askTell(42.0f32);
+        let result = run {
             f1()
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
     @Test
-    def testLinear02(): Bool =
-        def f1() = do AskTell.askTell(42.0f32);
+    def testLinear02(): Unit \ Assert =
+        def f1() = AskTell.askTell(42.0f32);
         def f2() = f1();
-        let result = try {
+        let result = run {
             f2()
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
     @Test
-    def testLinear03(): Bool =
-        def f1() = do AskTell.askTell(42.0f32);
+    def testLinear03(): Unit \ Assert =
+        def f1() = AskTell.askTell(42.0f32);
         def f2() = f1();
         def f3() = f2();
-        let result = try {
+        let result = run {
             f3()
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
     @Test
-    def testRecursiveLetRec01(): Bool =
-        def f() = do AskTell.askTell(42.0f32);
+    def testRecursiveLetRec01(): Unit \ Assert =
+        def f() = AskTell.askTell(42.0f32);
         def r(x) = if (x == 0) f() else r(x - 1);
-        let result = try {
+        let result = run {
             r(0)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
     @Test
-    def testRecursiveLetRec02(): Bool =
-        def f() = do AskTell.askTell(42.0f32);
+    def testRecursiveLetRec02(): Unit \ Assert =
+        def f() = AskTell.askTell(42.0f32);
         def r(x) = if (x == 0) f() else r(x - 1);
-        let result = try {
+        let result = run {
             r(1)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
     @Test
-    def testRecursiveLetRec03(): Bool =
-        def f1() = do AskTell.askTell(42.0f32);
+    def testRecursiveLetRec03(): Unit \ Assert =
+        def f1() = AskTell.askTell(42.0f32);
         def r(x) = if (x == 0) f1() else r(x - 1);
-        let result = try {
+        let result = run {
             r(10)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
     @Test
-    def testMutualRecursive01(): Bool =
-        let result = try {
+    def testMutualRecursive01(): Unit \ Assert =
+        let result = run {
             mutual1(0)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
     @Test
-    def testMutualRecursive02(): Bool =
-        let result = try {
+    def testMutualRecursive02(): Unit \ Assert =
+        let result = run {
             mutual1(1)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
     @Test
-    def testMutualRecursive03(): Bool =
-        let result = try {
+    def testMutualRecursive03(): Unit \ Assert =
+        let result = run {
             mutual1(2)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
     @Test
-    def testMutualRecursive04(): Bool =
-        let result = try {
+    def testMutualRecursive04(): Unit \ Assert =
+        let result = run {
             mutual1(3)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
     @Test
-    def testMutualRecursive05(): Bool =
-        let result = try {
+    def testMutualRecursive05(): Unit \ Assert =
+        let result = run {
             mutual1(10)
-        } with AskTell {
+        } with handler AskTell {
             def askTell(x, k) = k(x) + k(x)
         };
-        Assert.eq(84.0f32, result)
+        assertEq(expected = 84.0f32, result)
 
-    def f(): Float32 \ AskTell = do AskTell.askTell(42.0f32)
+    def f(): Float32 \ AskTell = AskTell.askTell(42.0f32)
 
     def mutual1(x: Int32): Float32 \ AskTell =
         if (x == 0) f() else mutual2(x - 1)
