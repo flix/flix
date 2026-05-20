@@ -684,7 +684,7 @@ object GenExpression {
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
         NEW(tupleType.jvmName)
         DUP()
-        exps.foreach(compileExpr)
+        exps.foreach((e) => compileExpr(e))
         INVOKESPECIAL(tupleType.Constructor)
 
       case AtomicOp.RecordSelect(field) =>
@@ -822,7 +822,7 @@ object GenExpression {
         }
         NEW(structType.jvmName)
         DUP()
-        fieldExps.foreach(compileExpr)
+        fieldExps.foreach((e) => compileExpr(e))
         INVOKESPECIAL(structType.Constructor)
 
       case AtomicOp.StructGet(field) =>
@@ -1313,7 +1313,7 @@ object GenExpression {
         PUTFIELD(Suspension.EffSymField)
         DUP()
         // --- eff op ---
-        exps.foreach(compileExpr)
+        exps.foreach((e) => compileExpr(e))
         mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2)
         // --------------
         PUTFIELD(Suspension.EffOpField)
