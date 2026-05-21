@@ -39,7 +39,7 @@ class TestFormatterStability extends TestFormatterCommon {
       val isFixedPoint = formatted == sample.content
       assert(isFixedPoint,
         s"Standard library is not preserved by the formatter (f(p(l)) != l) " +
-        s"for ${sample.path}:\n${firstDivergence(sample.content, formatted)}")
+          s"for ${sample.path}:\n${firstDivergence(sample.content, formatted)}")
     }
   }
 
