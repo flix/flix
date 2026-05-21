@@ -38,7 +38,7 @@ object InlayHintProvider {
 
   /**
     * Returns a list of inlay hints for the given URI and range.
-    *
+    *effectErrorsHints
     * @param uri   The URI of the file.
     * @param range The range within the file to get inlay hints for.
     * @param root  The root of the typed AST.
@@ -68,20 +68,25 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors).distinct ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
     } else {
-      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors).distinct ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
     }
   }
 
   /**
     * Returns a list of inlay hints from a given list of CompilationMessage(s),
-    * specifically containing explicitly and implicitly pure functions using IO, errors.
     */
   private def getInlayHintsFromErrors(errors: List[CompilationMessage]): List[InlayHint] = {
     errors.foldLeft(List(): List[InlayHint]) {
-      case (acc, TypeError.ExplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.start), "IO", "IO", Range.from(loc)) :: acc
-      case (acc, TypeError.ImplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.end), " \\ IO ", " \\ IO ", Range.from(loc)) :: acc
+      case (acc, TypeError.ExplicitlyPureFunctionUsesIO(loc, _)) =>
+        val hint = mkIOHint(Position.from(loc.start), "IO", "IO", Range.from(loc))
+        if (acc.contains(hint)) acc else hint :: acc
+
+      case (acc, TypeError.ImplicitlyPureFunctionUsesIO(loc, _)) =>
+        val hint = mkIOHint(Position.from(loc.end), " \\ IO ", " \\ IO ", Range.from(loc))
+        if (acc.contains(hint)) acc else hint :: acc
+
       case (acc, _) => acc
     }
   }
