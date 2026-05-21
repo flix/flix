@@ -1001,10 +1001,14 @@ object Namer {
       val e = visitExp(exp)
       NamedAst.Expr.ArrayLength(e, loc)
 
-    case DesugaredAst.Expr.StructNew(qname, exps, regionOpt, loc) =>
-      val e = visitExp(regionOpt)
-      val es = exps.map(visitStructField)
-      NamedAst.Expr.StructNew(qname, es, Some(e), loc)
+    case DesugaredAst.Expr.AmbiguousNew(tpe, region0, fields0, constructors, methods, loc) =>
+      val t = visitType(tpe)
+      val region = region0.map(visitExp)
+      val fields = fields0.map(visitStructField)
+      val cs = constructors.map(visitJvmConstructor)
+      val ms = methods.map(visitJvmMethod)
+      val name = s"Anon$$${flix.genSym.freshId()}"
+      NamedAst.Expr.AmbiguousNew(name, t, region, fields, cs, ms, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val e = visitExp(exp)
@@ -1093,13 +1097,6 @@ object Namer {
     case DesugaredAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.GetField(e, name, loc)
-
-    case DesugaredAst.Expr.NewObject(tpe, constructors, methods, loc) =>
-      val t = visitType(tpe)
-      val cs = constructors.map(visitJvmConstructor)
-      val ms = methods.map(visitJvmMethod)
-      val name = s"Anon$$${flix.genSym.freshId()}"
-      NamedAst.Expr.NewObject(name, t, cs, ms, loc)
 
     case DesugaredAst.Expr.NewChannel(exp, loc) =>
       val e = visitExp(exp)
