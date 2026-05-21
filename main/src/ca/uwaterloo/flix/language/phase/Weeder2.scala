@@ -933,8 +933,7 @@ object Weeder2 {
         case TreeKind.Expr.InvokeSuperConstructor => visitInvokeSuperConstructorExpr(tree)
         case TreeKind.Expr.InvokeMethod => visitInvokeMethodExpr(tree)
         case TreeKind.Expr.InvokeSuperMethod => visitInvokeSuperMethodExpr(tree)
-        case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
-        case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
+        case TreeKind.Expr.AmbiguousNew => visitAmbiguousNewExpr(tree)
         case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
         case TreeKind.Expr.StructPut => visitStructPutExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
@@ -2057,12 +2056,21 @@ object Weeder2 {
       }
     }
 
-    private def visitNewObjectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.NewObject)
-      val constructors = pickAll(TreeKind.Expr.JvmConstructor, tree)
-      val methods = pickAll(TreeKind.Expr.JvmMethod, tree)
-      mapN(Types.pickType(tree), traverse(constructors)(visitJvmConstructor), traverse(methods)(visitJvmMethod)) {
-        (tpe, constructors, methods) => Expr.NewObject(tpe, constructors, methods, tree.loc)
+    private def visitAmbiguousNewExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.AmbiguousNew)
+      val fieldTrees = pickAll(TreeKind.Expr.LiteralStructFieldFragment, tree)
+      val constructorTrees = pickAll(TreeKind.Expr.JvmConstructor, tree)
+      val methodTrees = pickAll(TreeKind.Expr.JvmMethod, tree)
+      val regionTree = tryPick(TreeKind.Expr.Expr, tree)
+      mapN(
+        Types.pickType(tree),
+        traverseOpt(regionTree)(Exprs.visitExpr),
+        traverse(fieldTrees)(visitNewStructField),
+        traverse(constructorTrees)(visitJvmConstructor),
+        traverse(methodTrees)(visitJvmMethod)
+      ) {
+        (tpe, region, fields, constructors, methods) =>
+          Expr.AmbiguousNew(tpe, region, fields, constructors, methods, tree.loc)
       }
     }
 
@@ -2125,22 +2133,6 @@ object Weeder2 {
         Types.tryPickEffect(tree),
       ) {
         (expr, tpe, eff) => JvmConstructor(expr, tpe, eff, tree.loc)
-      }
-    }
-
-    private def visitNewStructExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.NewStruct)
-      val fields = pickAll(TreeKind.Expr.LiteralStructFieldFragment, tree)
-      flatMapN(Types.pickType(tree), traverse(fields)(visitNewStructField), pickExpr(tree)) {
-        (tpe, fields, region) =>
-          tpe match {
-            case WeededAst.Type.Ambiguous(qname, _) =>
-              Validation.Success(Expr.StructNew(qname, fields, region, tree.loc))
-            case _ =>
-              val error = IllegalQualifiedName(tree.loc)
-              sctx.errors.add(error)
-              Validation.Success(Expr.Error(error))
-          }
       }
     }
 

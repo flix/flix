@@ -635,10 +635,13 @@ object Desugar {
       val e3 = visitExp(exp3)
       Expr.ArrayStore(e1, e2, e3, loc)
 
-    case WeededAst.Expr.StructNew(name, fields0, region0, loc) =>
+    case WeededAst.Expr.AmbiguousNew(tpe, region0, fields0, constructors, methods, loc) =>
+      val t = visitType(tpe)
+      val region = region0.map(visitExp)
       val fields = fields0.map(field => (field._1, visitExp(field._2)))
-      val region = visitExp(region0)
-      Expr.StructNew(name, fields, region, loc)
+      val cs = constructors.map(visitJvmConstructor)
+      val ms = methods.map(visitJvmMethod)
+      Expr.AmbiguousNew(t, region, fields, cs, ms, loc)
 
     case WeededAst.Expr.StructGet(e, name, loc) =>
       Expr.StructGet(visitExp(e), name, loc)
@@ -737,12 +740,6 @@ object Desugar {
     case WeededAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)
       Expr.GetField(e, name, loc)
-
-    case WeededAst.Expr.NewObject(tpe, constructors, methods, loc) =>
-      val t = visitType(tpe)
-      val cs = constructors.map(visitJvmConstructor)
-      val ms = methods.map(visitJvmMethod)
-      Expr.NewObject(t, cs, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
       DesugaredAst.Expr.Cst(Constant.Static, loc)
