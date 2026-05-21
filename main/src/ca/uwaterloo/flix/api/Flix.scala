@@ -102,6 +102,11 @@ class Flix {
   def getParsedAst: SyntaxTree.Root = cachedParserCst
 
   /**
+    * Returns the weeded ast.
+    */
+  def getWeededAst: WeededAst.Root = cachedWeederAst
+
+  /**
     * A cache of error messages for incremental compilation.
     */
   private var cachedErrors: List[CompilationMessage] = Nil
