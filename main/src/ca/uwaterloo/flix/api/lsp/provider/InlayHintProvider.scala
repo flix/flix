@@ -38,7 +38,7 @@ object InlayHintProvider {
 
   /**
     * Returns a list of inlay hints for the given URI and range.
-    *effectErrorsHints
+    *
     * @param uri   The URI of the file.
     * @param range The range within the file to get inlay hints for.
     * @param root  The root of the typed AST.
