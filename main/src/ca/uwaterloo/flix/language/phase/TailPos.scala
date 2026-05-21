@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Purity
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.shared.ExpPosition
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
@@ -91,6 +92,17 @@ object TailPos {
       // Check whether this is a self recursive call.
       if (defn.sym != sym) {
         // Mark expression as tail position.
+        Expr.ApplyDef(sym, exps, ExpPosition.Tail, tpe, purity, loc)
+      } else if (!Purity.isControlPure(defn.exp.purity)) {
+        // Self-recursive tail call in a control-impure function. Do NOT rewrite to
+        // ApplySelfTail: that optimization mutates the enclosing function object's
+        // arg/pc/lparam fields and jumps to the entry label. When the function may
+        // suspend, the function object is captured (via `copy`) as a continuation
+        // Frame in `newFrame`. Multi-shot resumption re-invokes that same Frame
+        // instance, so the mutations performed by the first resume corrupt the
+        // snapshot used by subsequent resumes -- in particular, setting pc back to 0
+        // makes the next resume miss its suspension point entirely. See issue
+        // https://github.com/flix/flix/issues/12765.
         Expr.ApplyDef(sym, exps, ExpPosition.Tail, tpe, purity, loc)
       } else {
         // Self recursive tail call.
