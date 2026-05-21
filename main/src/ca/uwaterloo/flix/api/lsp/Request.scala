@@ -170,7 +170,7 @@ object Request {
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
-    val srcRes: Result[String, String] = json \\ "src" match {
+    val srcRes: Result[String, String] = json \ "src" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected src: '$s'.")
     }
@@ -195,7 +195,7 @@ object Request {
     * Tries to parse the given `json` value as a [[AddPkg]] request.
     */
   def parseAddPkg(json: json4s.JValue): Result[Request, String] = {
-    val base64Res: Result[String, String] = json \\ "base64" match {
+    val base64Res: Result[String, String] = json \ "base64" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected base64: '$s'.")
     }
@@ -305,7 +305,7 @@ object Request {
     for {
       id <- parseId(json)
       uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
+      pos <- Position.parse(json \ "position")
     } yield Request.Complete(id, uri, pos)
   }
 
@@ -316,7 +316,7 @@ object Request {
     for {
       id <- parseId(json)
       uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
+      pos <- Position.parse(json \ "position")
     } yield Request.Goto(id, uri, pos)
   }
 
@@ -327,7 +327,7 @@ object Request {
     for {
       id <- parseId(json)
       uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
+      pos <- Position.parse(json \ "position")
     } yield Request.Implementation(id, uri, pos)
   }
 
@@ -338,7 +338,7 @@ object Request {
     for {
       id <- parseId(json)
       uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
+      pos <- Position.parse(json \ "position")
     } yield Request.Highlight(id, uri, pos)
   }
 
@@ -349,7 +349,7 @@ object Request {
     for {
       id <- parseId(json)
       uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
+      pos <- Position.parse(json \ "position")
     } yield Request.Hover(id, uri, pos)
   }
 
@@ -361,7 +361,7 @@ object Request {
       id <- parseId(json)
       newName <- parseString("newName", json)
       uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
+      pos <- Position.parse(json \ "position")
     } yield Request.Rename(id, newName, uri, pos)
   }
 
@@ -372,7 +372,7 @@ object Request {
     for {
       id <- parseId(json)
       uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
+      pos <- Position.parse(json \ "position")
     } yield Request.Uses(id, uri, pos)
   }
 
@@ -413,7 +413,7 @@ object Request {
     for {
       id <- parseId(json)
       uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
+      pos <- Position.parse(json \ "position")
     } yield Request.Signature(id, uri, pos)
   }
 
@@ -424,7 +424,7 @@ object Request {
     for {
       id <- parseId(json)
       uri <- parseUri(json)
-      range <- Range.parse(json \\ "range")
+      range <- Range.parse(json \ "range")
     } yield Request.InlayHint(id, uri, range)
   }
 
@@ -441,7 +441,7 @@ object Request {
     * Attempts to parse the `id` from the given JSON value `v`.
     */
   private def parseId(v: JValue): Result[String, String] = {
-    v \\ "id" match {
+    v \ "id" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected id: '$s'.")
     }
@@ -461,7 +461,7 @@ object Request {
     * Attempts to parse the given `key` as a String from the given JSON value `v`.
     */
   private def parseString(k: String, v: JValue): Result[String, String] = {
-    v \\ k match {
+    v \ k match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected $k: '$s'.")
     }
