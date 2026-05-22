@@ -2,7 +2,9 @@ package ca.uwaterloo.flix.tools.fmt
 
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.tools.fmt.Doc.{align, empty, hardStack, hardline, line, nest, pretty, space, text}
+import ca.uwaterloo.flix.tools.fmt.Doc.{align, empty, hardStack, hardline, line, nest, pretty, space, text, Layout}
+
+import scala.annotation.tailrec
 
 object PrettyPrinter {
 
@@ -47,7 +49,7 @@ object PrettyPrinter {
     case TreeKind.Expr.Block                    => prettyBlock(tree)
     case TreeKind.Expr.Statement                => prettyStatement(tree)
     case TreeKind.Expr.LetMatch                 => prettyLetMatch(tree)
-    case TreeKind.Expr.NewObject                => prettyNewObject(tree)
+    case TreeKind.Expr.AmbiguousNew             => prettyAmbiguousNew(tree)
     case TreeKind.Expr.InvokeConstructor        => prettyNewKeyword(tree)
     case TreeKind.Expr.JvmMethod                => prettyDef(tree)
     case TreeKind.Expr.Match                    => prettyMatch(tree)
@@ -114,7 +116,6 @@ object PrettyPrinter {
     case TreeKind.Expr.ForFragmentGuard         => prettyForFragment(tree)
     case TreeKind.CaseBody                      => prettyCaseBody(tree)
     case TreeKind.Expr.Tuple                    => prettyCommaBracket(tree)
-    case TreeKind.Expr.NewStruct                => prettyCommaBracket(tree)
     case TreeKind.Type.Tuple                    => prettyCommaBracket(tree)
     case TreeKind.Type.ArgumentList             => prettyCommaBracket(tree)
     case TreeKind.Type.EffectSet                => prettySpacedCommaBracket(tree)
@@ -473,6 +474,30 @@ object PrettyPrinter {
     children.filter {
       case t: Tree if t.children.isEmpty => false
       case _ => true
+    }
+
+  /** True if `child` is a [[Token]] of the given `kind`. */
+  private def isToken(child: SyntaxTree.Child, kind: TokenKind): Boolean =
+    child match {
+      case t: Token => t.kind == kind
+      case _        => false
+    }
+
+  /**
+    * Splits `children` at the first token of `kind` into the children before
+    * it, the token itself, and the children after it. `None` if no such token
+    * occurs.
+    */
+  private def splitAtToken(
+    children: Array[SyntaxTree.Child],
+    kind: TokenKind
+  ): Option[(Array[SyntaxTree.Child], Token, Array[SyntaxTree.Child])] =
+    children.span(c => !isToken(c, kind)) match {
+      case (before, after) =>
+        after.headOption match {
+          case Some(sep: Token) => Some((before, sep, after.tail))
+          case _                => None
+        }
     }
 
   /**
@@ -1339,32 +1364,24 @@ object PrettyPrinter {
   private def prettyDef(tree: Tree): Doc = {
     val (annDoc, rest) = extractAnnAndDoc(tree)
 
-    val eqIndex = rest.indexWhere {
-      case token: Token if token.kind == TokenKind.Equal => true
-      case _ => false
+    splitAtToken(rest, TokenKind.Equal) match {
+      case None =>
+        prepend(annDoc, buildSig(rest))
+      case Some((signatureParts, equalityToken, bodyParts)) =>
+        val sig  = buildSig(signatureParts)
+        val body = bodyParts.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+
+        val bodyIsPreserved = bodyParts.exists(isPreservedBodyKind)
+        val bodyOnSameLine  = bodyStartsOnSameLineAs(equalityToken, bodyParts)
+
+        val defDoc = Doc.setLayout(layoutOfChildren(rest),
+          if (bodyIsPreserved && bodyOnSameLine) sig <+> text("=") <+> body
+          else if (bodyIsPreserved)              sig <+> text("=") <> nest(4, hardline <> body)
+          else                                   sig <+> text("=") <> nest(4, line <> body)
+        )
+
+        prepend(annDoc, defDoc)
     }
-
-    if (eqIndex < 0) return prepend(annDoc, buildSig(rest))
-
-    val sigParts  = rest.take(eqIndex)
-    val bodyParts = rest.drop(eqIndex + 1)
-
-    val sig = buildSig(sigParts)
-
-    val body = bodyParts.map(prettyChild)
-      .reduceLeftOption(_ <> _)
-      .getOrElse(empty)
-
-    val bodyIsPreserved = bodyParts.exists(isPreservedBodyKind)
-    val bodyOnSameLine  = bodyStartsOnSameLineAs(rest(eqIndex), bodyParts)
-
-    val defDoc = Doc.setLayout(layoutOfChildren(rest),
-      if (bodyIsPreserved && bodyOnSameLine) sig <+> text("=") <+> body
-      else if (bodyIsPreserved)              sig <+> text("=") <> nest(4, hardline <> body)
-      else                                    sig <+> text("=") <> nest(4, line <> body)
-    )
-
-    prepend(annDoc, defDoc)
   }
 
   private def bodyStartsOnSameLineAs(eqChild: SyntaxTree.Child, bodyParts: Array[SyntaxTree.Child]): Boolean = {
@@ -1550,38 +1567,33 @@ object PrettyPrinter {
     */
   private def prettyRightAssocChain(tree: Tree, opKind: TokenKind): Doc = {
     val initial = filterEmpty(tree.children)
-    val operands = scala.collection.mutable.ArrayBuffer.empty[SyntaxTree.Child]
-    val operators = scala.collection.mutable.ArrayBuffer.empty[SyntaxTree.Child]
 
-    operands += initial(0)
-    operators += initial(1)
-
-    var current: SyntaxTree.Child = initial(2)
-    var continue = true
-    while (continue) {
+    // Flatten the right-leaning Binary spine into parallel operand/operator
+    // lists. `operands` always holds exactly one more element than `operators`.
+    @tailrec
+    def collect(
+      current: SyntaxTree.Child,
+      operands: List[SyntaxTree.Child],
+      operators: List[SyntaxTree.Child]
+    ): (List[SyntaxTree.Child], List[SyntaxTree.Child]) =
       unwrapExpr(current) match {
         case t: Tree if t.kind == TreeKind.Expr.Binary =>
           val cs = filterEmpty(t.children)
-          if (cs.length == 3 && leftMostToken(cs(1)).map(_.kind).contains(opKind)) {
-            operands += cs(0)
-            operators += cs(1)
-            current = cs(2)
-          } else {
-            operands += current
-            continue = false
-          }
+          if (cs.length == 3 && leftMostToken(cs(1)).map(_.kind).contains(opKind))
+            collect(cs(2), operands :+ cs(0), operators :+ cs(1))
+          else
+            (operands :+ current, operators)
         case _ =>
-          operands += current
-          continue = false
+          (operands :+ current, operators)
       }
-    }
 
-    val firstDoc = prettyChild(operands(0))
-    val chainTail = operators.indices.foldLeft(empty: Doc) { case (acc, i) =>
-      val opDoc = prettyChild(operators(i))
-      val operandDoc = prettyChild(operands(i + 1))
-      val sep = if (endsWithComment(operators(i))) hardline else space
-      acc <> line <> opDoc <> sep <> operandDoc
+    val (operands, operators) = collect(initial(2), List(initial(0)), List(initial(1)))
+
+    val firstDoc = prettyChild(operands.head)
+    val chainTail = operators.zip(operands.tail).foldLeft(empty: Doc) {
+      case (acc, (op, operand)) =>
+        val sep = if (endsWithComment(op)) hardline else space
+        acc <> line <> prettyChild(op) <> sep <> prettyChild(operand)
     }
 
     localLayout(tree) {
@@ -1706,39 +1718,33 @@ object PrettyPrinter {
     * @param children the children to join
     * @return the joined document
     */
-  private def joinSemiPreservingBlanks(children: Array[SyntaxTree.Child]): Doc = {
-    if (children.isEmpty) return empty
-    var i = 0
-    var acc: Doc = empty
-    var prev: Option[SyntaxTree.Child] = None
-    while (i < children.length) {
-      children(i) match {
-        case token: Token if token.kind == TokenKind.Semi =>
-          val nextOpt = if (i + 1 < children.length) Some(children(i + 1)) else None
-          val hasSameLineComment = nextOpt.flatMap(leftMostToken).exists { t =>
-            isCommentKind(t.kind) && t.start.lineOneIndexed == token.end.lineOneIndexed
-          }
-          val gap = if (prev.exists(endsWithComment)) hardline else empty
-          if (hasSameLineComment) {
-            acc = acc <> gap <> text(";") <> space
-          } else {
-            val extraBlank = nextOpt.exists(next => hadBlankLineBetween(token, next))
-            val lineSep = if (extraBlank) line <> Doc.layoutChoice(empty, hardline) else line
-            acc = acc <> gap <> text(";") <> lineSep
-          }
-          prev = Some(token)
-          i += 1
-        case child =>
-          val gap = if (prev.exists(endsWithComment)) {
-            if (hadBlankLineBetween(prev.get, child)) hardline <> hardline else hardline
-          } else empty
-          acc = acc <> gap <> prettyChild(child)
-          prev = Some(child)
-          i += 1
-      }
-    }
-    acc
-  }
+  private def joinSemiPreservingBlanks(children: Array[SyntaxTree.Child]): Doc =
+    children.indices.foldLeft((empty: Doc, Option.empty[SyntaxTree.Child])) {
+      case ((acc, prev), i) =>
+        val child = children(i)
+        child match {
+          case token: Token if token.kind == TokenKind.Semi =>
+            val nextOpt = if (i + 1 < children.length) Some(children(i + 1)) else None
+            val hasSameLineComment = nextOpt.flatMap(leftMostToken).exists { t =>
+              isCommentKind(t.kind) && t.start.lineOneIndexed == token.end.lineOneIndexed
+            }
+            val gap = if (prev.exists(endsWithComment)) hardline else empty
+            val semiDoc =
+              if (hasSameLineComment) text(";") <> space
+              else {
+                val extraBlank = nextOpt.exists(next => hadBlankLineBetween(token, next))
+                val lineSep = if (extraBlank) line <> Doc.layoutChoice(empty, hardline) else line
+                text(";") <> lineSep
+              }
+            (acc <> gap <> semiDoc, Some(child))
+          case _ =>
+            val gap =
+              if (prev.exists(endsWithComment))
+                if (hadBlankLineBetween(prev.get, child)) hardline <> hardline else hardline
+              else empty
+            (acc <> gap <> prettyChild(child), Some(child))
+        }
+    }._1
 
   /**
     * Formatting for foreach expressions.
@@ -1827,6 +1833,22 @@ object PrettyPrinter {
             line <> text(close) <> suffix
         }
     }
+
+  /**
+    * Formatting for `new` expressions left ambiguous by the parser.
+    * A `@` token marks a struct literal (`new S @ rc { f = e }`); its absence
+    * marks an anonymous object (`new T { def ... }`).
+    *
+    * @param tree the ambiguous new expression tree
+    * @return the formatted new expression as Doc
+    */
+  private def prettyAmbiguousNew(tree: Tree): Doc = {
+    val isStructLiteral = tree.children.exists {
+      case t: Token => t.kind == TokenKind.At
+      case _        => false
+    }
+    if (isStructLiteral) prettyCommaBracket(tree) else prettyNewObject(tree)
+  }
 
   /**
     * Formatting for apply expressions.
@@ -2355,8 +2377,7 @@ object PrettyPrinter {
     TreeKind.Expr.RecordOperation,
     TreeKind.Expr.Unsafe,
     TreeKind.Expr.FixpointConstraintSet,
-    TreeKind.Expr.NewStruct,
-    TreeKind.Expr.NewObject
+    TreeKind.Expr.AmbiguousNew
   )
 
   private val ForcedMultiLineKinds: Set[TreeKind] = Set(
