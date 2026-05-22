@@ -56,6 +56,23 @@ mod TestValidation {
         assertEq(expected = Failure(singleton(42)), Applicative.ap(Success(x -> x + 1), Failure(singleton(42))))
 
     /////////////////////////////////////////////////////////////////////////////
+    // success                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def success01(): Unit \ Assert =
+        assertEq(expected = Success("hello"), Validation.success("hello"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // failure                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def failure01(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("err")), (Validation.failure("err"): Validation[String, Int32]))
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -306,18 +323,6 @@ mod TestValidation {
     @Test
     def map04(): Unit \ Assert =
         assertEq(expected = Success(248), (Success(123): Validation[Int32, Int32]) |> Validation.map(x -> x + 1) |> Validation.map(x -> x * 2))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Validation constructors                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def success01(): Unit \ Assert =
-        assertEq(expected = Success("hello"), Validation.success("hello"))
-
-    @Test
-    def failure01(): Unit \ Assert =
-        assertEq(expected = Failure(singleton("err")), (Validation.failure("err"): Validation[String, Int32]))
 
     /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
