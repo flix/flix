@@ -657,6 +657,23 @@ pub mod BPlusTree {
         Node.insertIntoLeaf(k, v, leaf, stamp, t)
     }
 
+    pub def putAll(kvs: f[(k, v)], t: BPlusTree[k, v, r]): Unit \ r + Foldable.Aef[f] with Order[k], Foldable[f] =
+        Foldable.forEach(match (k, v) -> put(k, v, t), kvs)
+
+
+    pub def forEachWithIndex(f: Int32 -> k -> v -> Unit \ ef, t: BPlusTree[k, v, r]): Unit \ ef + r = {
+        let minLeaf = Node.leftMostLeafUnconditional(t->root);
+        Node.traverseRightUnconditionalWithIndex(f, 0, 0, minLeaf)
+    }
+
+    pub def getOrAbort(k: k, t: BPlusTree[k, v, r]): v \ Abort + r with Order[k] = {
+        let (leaf, stamp) = findLeaf(k, t);
+        match Node.get(k, stamp, leaf, t) {
+            case None => Abort.abortWithTrace("BPlusTree.getOrAbort(): key not found")
+            case Some(v) => v
+        }
+    }
+
     ///
     /// Returns `true` if and only if `t` is the empty tree.
     ///

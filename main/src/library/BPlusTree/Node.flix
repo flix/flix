@@ -1290,4 +1290,17 @@ mod BPlusTree.Node {
             case None => ()
         }
     }
+
+    pub def traverseRightUnconditionalWithIndex(
+        f: Int32 -> k -> v -> Unit \ ef,
+        i: Int32,
+        index0: Int32,
+        node0: Node[k, v, r]
+    ): Unit \ ef + r = match seek(index0, node0) {
+        case Some((index, node)) => {
+            getKeyAndValueAt(index, node) ||> f(i);
+            traverseRightUnconditionalWithIndex(f, i + 1, index + 1, node)
+        }
+        case None => ()
+    }
 }
