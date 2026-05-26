@@ -1291,6 +1291,12 @@ mod BPlusTree.Node {
         }
     }
 
+    ///
+    /// Apply `f` to all mappings in `node` and all nodes to the right of `node`,
+    /// passing an index `i` as the first argument to `f`.
+    ///
+    /// Not thread-safe: Traverses the live leaf chain.
+    ///
     pub def traverseRightUnconditionalWithIndex(
         f: Int32 -> k -> v -> Unit \ ef,
         i: Int32,
