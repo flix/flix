@@ -405,29 +405,31 @@ object HashType {
   private def hashRestrictableCaseSym(sym0: Symbol.RestrictableCaseSym): Array[Byte] = {
     val h1 = hashRestrictableEnumSym(sym0.enumSym)
     val h2 = hashString(sym0.name)
-    val h3 = hashInt(???)
+    val h3 = hashInt(83)
     hashBytes(h1.appendedAll(h2).appendedAll(h3))
   }
 
   private def hashRegionSym(sym0: Symbol.RegionSym): Array[Byte] = {
     // N.B.: Do *not* hash id of sym0, since it's non-deterministic.
     val h1 = hashString(sym0.text)
-    val h2 = hashInt(???)
+    val h2 = hashInt(84)
     hashBytes(h1.appendedAll(h2))
   }
 
   private def hashVarText(text0: VarText): Array[Byte] = text0 match {
-    case VarText.Absent => hashInt(???)
+    case VarText.Absent =>
+      hashInt(85)
+
     case VarText.SourceText(s) =>
       val h1 = hashString(s)
-      val h2 = hashInt(???)
+      val h2 = hashInt(86)
       hashBytes(h1.appendedAll(h2))
   }
 
   private def hashTraitSym(sym0: Symbol.TraitSym): Array[Byte] = {
     val h1 = sym0.namespace.flatMap(hashString).toArray
     val h2 = hashString(sym0.name)
-    val h3 = hashInt(???)
+    val h3 = hashInt(87)
     hashBytes(h1.appendedAll(h2).appendedAll(h3))
   }
 
