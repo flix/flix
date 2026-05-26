@@ -374,7 +374,12 @@ object HashType {
     hashBytes(h1.appendedAll(h2).appendedAll(h3))
   }
 
-  private def hashEnumSym(sym0: Symbol.EnumSym): Array[Byte] = ???
+  private def hashEnumSym(sym0: Symbol.EnumSym): Array[Byte] = {
+    val h1 = sym0.namespace.flatMap(hashString).toArray
+    val h2 = hashString(sym0.text)
+    val h3 = hashInt(79)
+    hashBytes(h1.appendedAll(h2).appendedAll(h3))
+  }
 
   private def hashStructSym(sym0: Symbol.StructSym): Array[Byte] = ???
 
