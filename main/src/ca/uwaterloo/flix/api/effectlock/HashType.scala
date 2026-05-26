@@ -367,7 +367,12 @@ object HashType {
     hashBytes(h1.appendedAll(h2).appendedAll(h3).appendedAll(h4))
   }
 
-  private def hashAssocTypeSym(sym0: Symbol.AssocTypeSym): Array[Byte] = ???
+  private def hashAssocTypeSym(sym0: Symbol.AssocTypeSym): Array[Byte] = {
+    val h1 = hashTraitSym(sym0.trt)
+    val h2 = hashString(sym0.name)
+    val h3 = hashInt(78)
+    hashBytes(h1.appendedAll(h2).appendedAll(h3))
+  }
 
   private def hashEnumSym(sym0: Symbol.EnumSym): Array[Byte] = ???
 
@@ -387,6 +392,13 @@ object HashType {
       val h1 = hashString(s)
       val h2 = hashInt(???)
       hashBytes(h1.appendedAll(h2))
+  }
+
+  private def hashTraitSym(sym0: Symbol.TraitSym): Array[Byte] = {
+    val h1 = sym0.namespace.flatMap(hashString).toArray
+    val h2 = hashString(sym0.name)
+    val h3 = hashInt(???)
+    hashBytes(h1.appendedAll(h2).appendedAll(h3))
   }
 
   private def hashInt(n: Int): Array[Byte] = {
