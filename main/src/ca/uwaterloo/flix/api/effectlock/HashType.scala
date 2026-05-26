@@ -381,7 +381,12 @@ object HashType {
     hashBytes(h1.appendedAll(h2).appendedAll(h3))
   }
 
-  private def hashStructSym(sym0: Symbol.StructSym): Array[Byte] = ???
+  private def hashStructSym(sym0: Symbol.StructSym): Array[Byte] = {
+    val h1 = sym0.namespace.flatMap(hashString).toArray
+    val h2 = hashString(sym0.text)
+    val h3 = hashInt(80)
+    hashBytes(h1.appendedAll(h2).appendedAll(h3))
+  }
 
   private def hashRestrictableEnumSym(sym0: Symbol.RestrictableEnumSym): Array[Byte] = ???
 
