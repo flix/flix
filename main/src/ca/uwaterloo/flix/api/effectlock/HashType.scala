@@ -24,8 +24,39 @@ import java.nio.charset.StandardCharsets
 import java.nio.{ByteBuffer, ByteOrder}
 import java.security.MessageDigest
 
+/**
+  * Computes a cryptographically secure hash of a type.
+  *
+  * The function is injective, one-way, collision-resistant, and deterministic.
+  *
+  * Conceptually, the hash for a type is computed by recursively hashing each part of
+  * its constructor, then hashing the concatenation of the results and the hash of a unique
+  * id that represents the type constructor itself, e.g.,
+  * `Hash(Type(arg_1, ..., arg_n)) = hash(hash(arg_1), ... hash(arg_n), hash(type constructor id))`.
+  * The type constructor id is necessary to make sure distinct AST nodes map to distinct values, e.g.,
+  * that an enum symbol and a struct symbol hash to distinct values when they both just consist of a namespace and
+  * an identifier.
+  *
+  * Importantly, after computing all sub-hashes, the results are flattened into one buffer instead of folded
+  * and the type constructor id is always appended to the end of this buffer.
+  *
+  * Internally, it uses SHA256 as the basic hash function.
+  *
+  * Security comes from collision resistance.
+  * Thus, suppose the task is to find a collision and consider the hash `Hash(Type(arg_1, ..., arg_n))`.
+  * By equality, it expands to
+  * `hash(hash(arg_1), ... hash(arg_n), hash(type constructor id))`
+  * and due to the implementation using SHA256, it further expands to
+  * `SHA256(SHA256(arg_1), ... SHA256(arg_n), SHA256(type constructor id))`.
+  * Thus, finding a collision for `H` is equivalent to finding a collision for SHA256.
+  */
 object HashType {
 
+  /**
+    * Returns the hash of `tpe0`.
+    *
+    * @see [[HashType]]
+    */
   def hashType(tpe0: Type): Array[Byte] = hashErasedType(eraseAliases(tpe0))
 
   private def hashErasedType(tpe0: Type): Array[Byte] = tpe0 match {
