@@ -388,7 +388,12 @@ object HashType {
     hashBytes(h1.appendedAll(h2).appendedAll(h3))
   }
 
-  private def hashRestrictableEnumSym(sym0: Symbol.RestrictableEnumSym): Array[Byte] = ???
+  private def hashRestrictableEnumSym(sym0: Symbol.RestrictableEnumSym): Array[Byte] = {
+    val h1 = sym0.namespace.flatMap(hashString).toArray
+    val h2 = hashString(sym0.name)
+    val h3 = hashInt(81)
+    hashBytes(h1.appendedAll(h2).appendedAll(h3))
+  }
 
   private def hashEffSym(sym0: Symbol.EffSym): Array[Byte] = ???
 
