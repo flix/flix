@@ -404,7 +404,12 @@ object HashType {
     hashBytes(h1.appendedAll(h2).appendedAll(h3))
   }
 
-  private def hashRegionSym(sym0: Symbol.RegionSym): Array[Byte] = ???
+  private def hashRegionSym(sym0: Symbol.RegionSym): Array[Byte] = {
+    // N.B.: Do *not* hash id of sym0, since it's non-deterministic.
+    val h1 = hashString(sym0.text)
+    val h2 = hashInt(???)
+    hashBytes(h1.appendedAll(h2))
+  }
 
   private def hashVarText(text0: VarText): Array[Byte] = text0 match {
     case VarText.Absent => hashInt(???)
