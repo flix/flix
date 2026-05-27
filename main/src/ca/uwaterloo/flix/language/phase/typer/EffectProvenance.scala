@@ -90,7 +90,7 @@ object EffectProvenance {
 
     // remove handled effects from the set of unused effects
     s = s.diff(contexts.foldLeft(Set.empty[Type])((acc, x) => acc + x.handled))
-    val (initialZhegalkins, idMap) = constrs0.foldLeft((Map.empty: ZhMap, Map.empty[Type, Int]))(
+    val (initialZhegalkins, idMap) = newConstrs.foldLeft((Map.empty: ZhMap, Map.empty[Type, Int]))(
       (acc, x) => constraintToZhegalkin(x, acc._2) match {
         case (Some((z1, z2)), nm) => (acc._1 + (x -> (z1, z2)), nm)
         case _ => acc
