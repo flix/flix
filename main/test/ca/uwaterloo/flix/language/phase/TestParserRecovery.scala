@@ -1079,6 +1079,28 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("AmbiguousNew.01") {
+    val input =
+      """
+        |struct S[r] { x: Int32 }
+        |def main(): Unit = region rc { let _ = new S @ rc; () }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("AmbiguousNew.02") {
+    val input =
+      """
+        |struct S[r] { x: Int32 }
+        |def main(): Unit = region rc { let _ = new S @ rc { 123 }; () }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
   /**
     * Asserts that validation contains a defined entry point.
     */
