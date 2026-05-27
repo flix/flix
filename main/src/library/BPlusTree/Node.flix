@@ -75,21 +75,10 @@ mod BPlusTree.Node {
     }
 
     ///
-    /// Returns the next in-bounds `(index, node)` while traversing right.
-    ///
-    def seek(index: Int32, node: Node[k, v, r]): Option[(Int32, Node[k, v, r])] \ r =
-        if (index < node->size)
-            Some((index, node))
-        else
-            match node->next {
-                case None       => None
-                case Some(next) => seek(0, next)
-            }
-
-    ///
     /// Compares two leaf chains from left to right in lockstep.
     ///
-    /// The input nodes must be leaves.
+    /// The input nodes must be leaves, and the two chains must have equal total length
+    /// (guaranteed by the size check in `BPlusTree.sameElements`).
     ///
     /// Not thread-safe: Reads the live leaf chains of both inputs.
     ///
@@ -98,16 +87,27 @@ mod BPlusTree.Node {
         n1: Node[k, v, r1],
         i2: Int32,
         n2: Node[k, v, r2]
-    ): Bool \ r1 + r2 with Order[k], Eq[v] = match (seek(i1, n1), seek(i2, n2)) {
-        case (None, None) => true
-        case (Some((j1, m1)), Some((j2, m2))) =>
-            let (k1, v1) = getKeyAndValueAt(j1, m1);
-            let (k2, v2) = getKeyAndValueAt(j2, m2);
+    ): Bool \ r1 + r2 with Order[k], Eq[v] = {
+        if (i1 >= n1->size)
+            match n1->next {
+                case Some(next) => sameElementsFromLeaf(0, next, i2, n2)
+                // Chain 1 is exhausted. Elements are consumed from both chains in lockstep
+                // and the chains have equal length, so chain 2 is exhausted as well.
+                case None       => true
+            }
+        else if (i2 >= n2->size)
+            match n2->next {
+                case Some(next) => sameElementsFromLeaf(i1, n1, 0, next)
+                case None       => false
+            }
+        else {
+            let (k1, v1) = getKeyAndValueAt(i1, n1);
+            let (k2, v2) = getKeyAndValueAt(i2, n2);
             if (k1 == k2 and v1 == v2)
-                sameElementsFromLeaf(j1 + 1, m1, j2 + 1, m2)
+                sameElementsFromLeaf(i1 + 1, n1, i2 + 1, n2)
             else
                 false
-        case _ => false
+        }
     }
 
     ///
@@ -121,12 +121,14 @@ mod BPlusTree.Node {
         f: k -> v -> v \ ef,
         i: Int32,
         n: Node[k, v, r]
-    ): Unit \ r + ef with Order[k] = match seek(i, n) {
-        case None => ()
-        case Some((index, node)) => {
-            let v1 = getKeyAndValueAt(index, node) ||> f;
-            Array.put(v1, index, node->values);
-            transformWithKeyFromLeaf(f, index + 1, node)
+    ): Unit \ r + ef with Order[k] = {
+        if (i < n->size) {
+            let v1 = getKeyAndValueAt(i, n) ||> f;
+            Array.put(v1, i, n->values);
+            transformWithKeyFromLeaf(f, i + 1, n)
+        } else match n->next {
+            case None => ()
+            case Some(next) => transformWithKeyFromLeaf(f, 0, next)
         }
     }
 
@@ -142,11 +144,13 @@ mod BPlusTree.Node {
         acc: b,
         index: Int32,
         node: Node[k, v, r]
-    ): b \ ef + r = match seek(index, node) {
-        case None => acc
-        case Some((i, n)) => {
-            let (k, v) = getKeyAndValueAt(i, n);
-            foldLeftWithKeyFromLeaf(f, f(acc, k, v), i + 1, n)
+    ): b \ ef + r = {
+        if (index < node->size) {
+            let (k, v) = getKeyAndValueAt(index, node);
+            foldLeftWithKeyFromLeaf(f, f(acc, k, v), index + 1, node)
+        } else match node->next {
+            case None => acc
+            case Some(next) => foldLeftWithKeyFromLeaf(f, acc, 0, next)
         }
     }
 
@@ -1358,13 +1362,15 @@ mod BPlusTree.Node {
     pub def traverseRightUnconditionalWithIndex(
         f: Int32 -> k -> v -> Unit \ ef,
         i: Int32,
-        index0: Int32,
-        node0: Node[k, v, r]
-    ): Unit \ ef + r = match seek(index0, node0) {
-        case Some((index, node)) => {
+        index: Int32,
+        node: Node[k, v, r]
+    ): Unit \ ef + r = {
+        if (index < node->size) {
             getKeyAndValueAt(index, node) ||> f(i);
             traverseRightUnconditionalWithIndex(f, i + 1, index + 1, node)
+        } else match node->next {
+            case None => ()
+            case Some(next) => traverseRightUnconditionalWithIndex(f, i, 0, next)
         }
-        case None => ()
     }
 }
