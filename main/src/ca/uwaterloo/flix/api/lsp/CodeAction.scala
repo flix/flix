@@ -28,7 +28,7 @@ import scala.jdk.CollectionConverters.*
   *
   * @param title          A short, human-readable, title for this code action.
   * @param kind           The kind of the code action. Used to filter code actions.
-  * @param diagnostic     The diagnostics that this code action resolves.
+  * @param diagnostics     The diagnostics that this code action resolves.
   * @param isPreferred    Marks this as a preferred action. Preferred actions are used by the
   *                       `auto fix` command and can be targeted by keybindings.
   * @param disabledReason If `Some`, marks that the code action cannot currently be applied.
@@ -40,7 +40,7 @@ import scala.jdk.CollectionConverters.*
   */
 case class CodeAction(title: String,
                       kind: CodeActionKind,
-                      diagnostic: Option[Diagnostic] = None,
+                      diagnostics: List[Diagnostic] = Nil,
                       isPreferred: Boolean = false,
                       disabledReason: Option[String] = None,
                       edit: Option[WorkspaceEdit],
@@ -49,7 +49,7 @@ case class CodeAction(title: String,
   def toJSON: JValue =
     ("title" -> title) ~
       ("kind" -> kind.toJSON) ~
-      ("diagnostic" -> diagnostic.map(_.toJSON)) ~
+      ("diagnostics" -> diagnostics.map(_.toJSON)) ~
       ("isPreferred" -> isPreferred) ~
       ("disabled" -> disabledReason.map("reason" -> _)) ~
       ("edit" -> edit.map(_.toJSON)) ~
@@ -59,7 +59,7 @@ case class CodeAction(title: String,
     val c = new lsp4j.CodeAction()
     c.setTitle(title)
     c.setKind(kind.toLsp4j)
-    diagnostic.foreach(d => c.setDiagnostics(List(d.toLsp4j).asJava))
+    diagnostics.foreach(d => c.setDiagnostics(List(d.toLsp4j).asJava))
     c.setIsPreferred(isPreferred)
     disabledReason.foreach(reason => c.setDisabled(new lsp4j.CodeActionDisabled(reason)))
     edit.foreach(e => c.setEdit(e.toLsp4j))

@@ -665,6 +665,37 @@ pub mod BPlusTree {
     }
 
     ///
+    /// Updates the tree `t` with all mappings `k => v` in `kvs`, replacing any existing mappings.
+    ///
+    /// Thread-safe.
+    ///
+    pub def putAll(kvs: f[(k, v)], t: BPlusTree[k, v, r]): Unit \ r + Foldable.Aef[f] with Order[k], Foldable[f] =
+        Foldable.forEach(match (k, v) -> put(k, v, t), kvs)
+
+    ///
+    /// Applies `f` to all mappings `k => v` in `t`, passing an index as the first argument.
+    ///
+    /// Not thread-safe: Traverses the live leaf chain of `t`.
+    ///
+    pub def forEachWithIndex(f: Int32 -> k -> v -> Unit \ ef, t: BPlusTree[k, v, r]): Unit \ ef + r = {
+        let minLeaf = Node.leftMostLeafUnconditional(t->root);
+        Node.traverseRightUnconditionalWithIndex(f, 0, 0, minLeaf)
+    }
+
+    ///
+    /// Returns `v` if `k => v` is in `t`. Aborts with a trace message if `k` is not in `t`.
+    ///
+    /// Thread-safe.
+    ///
+    pub def getOrAbort(k: k, t: BPlusTree[k, v, r]): v \ Abort + r with Order[k] = {
+        let (leaf, stamp) = findLeaf(k, t);
+        match Node.get(k, stamp, leaf, t) {
+            case None => Abort.abortWithTrace("BPlusTree.getOrAbort(): key not found")
+            case Some(v) => v
+        }
+    }
+
+    ///
     /// Returns `true` if and only if `t` is the empty tree.
     ///
     /// Thread-safe.
