@@ -61,7 +61,7 @@ mod TestValidation {
 
     @Test
     def success01(): Unit \ Assert =
-        assertEq(expected = Success("hello"), Validation.success("hello"))
+        assertEq(expected = Success("hello"), (Validation.success("hello"): Validation[Int32, String]))
 
     /////////////////////////////////////////////////////////////////////////////
     // failure                                                                 //
