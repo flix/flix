@@ -108,6 +108,14 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
   private val sort = new AtomicReference[Sort](Sort.Time)
 
   /**
+    * Active top-level view (tables vs. help screen). Written by the input
+    * thread on `?` / `Esc`, read by the renderer thread. Default is
+    * [[View.Main]]. Compilation keeps running regardless of which view is
+    * showing; toggling does not interfere with the build.
+    */
+  private val view = new AtomicReference[View](View.Main)
+
+  /**
     * Counted down by the input thread when the user presses `q` (only after
     * [[completed]] is set). [[stop]] awaits it before tearing the renderer
     * down so the user can keep toggling the filter post-compile.
@@ -185,6 +193,8 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     *   - `f` / `F` → filter to frontend phases
     *   - `b` / `B` → filter to backend phases
     *   - `a` / `A` → reset to all phases
+    *   - `?`       → toggle the help view (column / keystroke legend).
+    *   - Esc (`27`) → return to the main view (no-op if already there).
     *   - `q` / `Q` / Ctrl-C / EOF → if compilation has completed, signal
     *     [[stop]] to finish teardown; otherwise ignored (pressing `q`
     *     mid-compile must not abort the build).
@@ -204,6 +214,10 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
             quitLatch.countDown()
             return
           }
+        case 27 => // Esc — close help (no-op if main view is already active).
+          view.set(View.Main)
+        case '?' =>
+          view.updateAndGet(v => if (v == View.Help) View.Main else View.Help)
         case ch if ch > 0 =>
           // Dispatch via the Sort / PhaseFilter ADTs so the key ↔ value
           // mapping lives in one place ([[Model.Sort.fromKey]],
@@ -315,7 +329,7 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val visible = snap.take(defN)
     val modules = aggregateByModule(snap, activeSort).take(moduleN)
 
-    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, layout, visible, modules)
+    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, view.get(), layout, visible, modules)
   }
 
 }

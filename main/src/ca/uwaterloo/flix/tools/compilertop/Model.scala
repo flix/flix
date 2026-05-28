@@ -23,6 +23,22 @@ package ca.uwaterloo.flix.tools.compilertop
 object Model {
 
   /**
+    * Which top-level screen the renderer should draw. Toggled by `?` /
+    * `Esc` in the input thread. The dashboard and stats lines render the
+    * same in either view; only the body below them changes.
+    *
+    *   - [[View.Main]]: the def + module tables (default).
+    *   - [[View.Help]]: a static legend explaining each column and
+    *     keystroke, so the user doesn't have to guess what e.g. `tv` or
+    *     `rnd` mean.
+    */
+  sealed trait View
+  object View {
+    case object Main extends View
+    case object Help extends View
+  }
+
+  /**
     * Restricts which phases' time the dashboard accounts for. Toggled
     * interactively via the input thread (`f` / `b` / `a`). The split tracks
     * `Flix.check` (frontend) vs the phases that follow in `Flix.compile`'s

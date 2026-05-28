@@ -43,6 +43,7 @@ import scala.collection.mutable
   *                        [[Renderer.TotalPhases]] for the progress bar.
   * @param activeFilter    user-toggled phase filter (drives the legend).
   * @param activeSort      user-toggled sort key (drives header underlines).
+  * @param activeView      user-toggled top-level view: tables or help.
   * @param layout          column layout produced by [[Layout.compute]].
   * @param visible         def-table rows, already filtered / sorted / trimmed.
   * @param modules         module-table rows, already aggregated / sorted /
@@ -57,6 +58,7 @@ final case class FrameState(parallelism: Int,
                             phaseTimersSize: Int,
                             activeFilter: PhaseFilter,
                             activeSort: Sort,
+                            activeView: View,
                             layout: Layout,
                             visible: Vector[DefnStats],
                             modules: Vector[ModuleStats])
@@ -222,6 +224,17 @@ final class Renderer {
     renderStats(sb, state)
     sb.append('\n')
 
+    state.activeView match {
+      case View.Main => renderTables(sb, state)
+      case View.Help => renderHelp(sb)
+    }
+
+    sb.append(EndSync)
+    sb.toString
+  }
+
+  /** Renders the def + module tables (the default body of the main view). */
+  private def renderTables(sb: StringBuilder, state: FrameState): Unit = {
     val safeElapsed = state.elapsed.max(1L).toDouble
     val defRows: Vector[Row] = state.visible.map(s => DefnRow(s, safeElapsed, state.parallelism))
     val modRows: Vector[Row] = state.modules.map(m => ModuleRow(m, safeElapsed, state.parallelism))
@@ -238,9 +251,6 @@ final class Renderer {
       renderHeaderRow(sb, rpad("Module (hot)", modWidth), withLocation = false, state.layout, state.activeSort)
       renderTable(sb, modRows, state.layout)
     }
-
-    sb.append(EndSync)
-    sb.toString
   }
 
   /**
@@ -428,6 +438,57 @@ final class Renderer {
     sb.append('\n')
     sb.append(" " * pad)
     sb.append(dim(msg))
+    sb.append('\n')
+  }
+
+  /**
+    * Renders the help screen: a static legend explaining each table column
+    * and every keystroke the input loop understands. The dashboard + stats
+    * lines are still drawn above this body, so compilation progress remains
+    * visible while the user reads.
+    *
+    * The text is literal rather than derived from the [[Sort]] / [[PhaseFilter]]
+    * ADTs — the description strings carry context that does not belong in
+    * those data types. Add a row here when you add a new column or
+    * keystroke; the input loop is the single source of truth for what
+    * actually works.
+    */
+  private def renderHelp(sb: StringBuilder): Unit = {
+    // The three groups mirror how Layout / the table renderer gate columns:
+    // common columns are always shown; frontend columns only appear under
+    // the `frontend` filter; backend columns only under the `backend` filter.
+    sb.append("  "); sb.append(bold(cyan("Common Cols"))); sb.append('\n')
+    appendHelpCol(sb, "Def",      "fully qualified def name; color = hotness (ms/source-line); '*' marks the def currently compiling")
+    appendHelpCol(sb, "location", "source file:line of the def")
+    appendHelpCol(sb, "LOC",      "source-line span of the def body")
+    appendHelpCol(sb, "phase",    "phase that consumed the most time for this def")
+    appendHelpCol(sb, "alloc",    "compiler-side heap bytes allocated processing this def")
+    appendHelpCol(sb, "time",     "wall-clock time spent on this def")
+    appendHelpCol(sb, "%cpu",     "time / (elapsed × threads) — this def's share of total compute")
+    appendHelpCol(sb, "%wall",    "time / elapsed — upper bound on wall-clock savings if removed")
+    sb.append('\n')
+
+    sb.append("  "); sb.append(bold(cyan("Frontend Cols"))); sb.append('\n')
+    appendHelpCol(sb, "cns",      "type constraints (Typer)")
+    appendHelpCol(sb, "tv",       "type variables (Kind.Star)")
+    appendHelpCol(sb, "ev",       "effect variables (Kind.Eff)")
+    sb.append('\n')
+
+    sb.append("  "); sb.append(bold(cyan("Backend Cols"))); sb.append('\n')
+    appendHelpCol(sb, "mono",     "monomorphic instances created (Monomorpher)")
+    appendHelpCol(sb, "opt",      "optimizer fixed-point re-visits (Optimizer + LambdaDrop)")
+    appendHelpCol(sb, "inl",      "times inlined at a call site")
+    appendHelpCol(sb, "rnd",      "last Optimizer round in which the def changed; '-' if never observed")
+    appendHelpCol(sb, "cls",      ".class files emitted (CodeGen)")
+    appendHelpCol(sb, "size",     "total bytecode size of emitted .class files")
+  }
+
+  /** Appends one column-description row. */
+  private def appendHelpCol(sb: StringBuilder, name: String, desc: String): Unit = {
+    sb.append("    ")
+    sb.append(rpad(name, 10))
+    sb.append("  ")
+    sb.append(dim(desc))
     sb.append('\n')
   }
 
