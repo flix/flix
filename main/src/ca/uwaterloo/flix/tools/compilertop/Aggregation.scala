@@ -69,6 +69,7 @@ object Aggregation {
     case Sort.Time    => s.totalNanos.toDouble
     case Sort.Hotness => Formatting.hotnessMsPerLine(s.totalNanos, lineCount(s.loc))
     case Sort.Mono  => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
+    case Sort.Depth => if (s.maxDepth < 0) Double.NegativeInfinity else s.maxDepth.toDouble
     case Sort.Opt   => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
     case Sort.Inl   => s.inlined.toDouble
     case Sort.Cls   => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
@@ -84,6 +85,7 @@ object Aggregation {
     case Sort.Time    => m.totalNanos.toDouble
     case Sort.Hotness => Formatting.hotnessMsPerLine(m.totalNanos, m.totalLines)
     case Sort.Mono  => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
+    case Sort.Depth => if (m.maxDepth < 0) Double.NegativeInfinity else m.maxDepth.toDouble
     case Sort.Opt   => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
     case Sort.Inl   => m.totalInlined.toDouble
     case Sort.Cls   => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
@@ -125,7 +127,11 @@ object Aggregation {
       val totalInlined = defs.iterator.map(_.inlined).sum
       val totalClassBytes = defs.iterator.map(_.classBytes).sum
       val totalAllocBytes = defs.iterator.map(_.allocBytes).sum
-      ModuleStats(mod, totalNanos, totalCallCount, totalLines, byPhase, byPhaseCount, byPhaseAlloc, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes, totalAllocBytes)
+      // `max` of all-(-1)s is `-1`, propagating the per-def "never observed"
+      // sentinel up. Otherwise the module shows the deepest BFS wave any of
+      // its defs sits at.
+      val maxDepth = defs.iterator.map(_.maxDepth).maxOption.getOrElse(-1)
+      ModuleStats(mod, totalNanos, totalCallCount, totalLines, byPhase, byPhaseCount, byPhaseAlloc, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes, totalAllocBytes, maxDepth)
     }.toVector.sortBy(m => -moduleSortKey(m, srt))
   }
 }

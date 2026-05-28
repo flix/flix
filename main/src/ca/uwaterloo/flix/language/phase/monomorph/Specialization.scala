@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.monomorph
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Instance, StructField}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
@@ -321,6 +321,15 @@ object Specialization {
     implicit val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = mkInstanceMap(root.instances)
     implicit val ctx: Context = new Context()
 
+    // Tracks the max BFS wave-depth at which each source `DefnSym` has been processed.
+    // Wave 0 is the seed pass over non-parametric defs; each subsequent iteration of the
+    // queue-drain loop increments the wave. Reported to subscribers via
+    // `FlixEvent.MonomorphizationDepth` after the loop completes.
+    val depthBySourceSym = new java.util.concurrent.ConcurrentHashMap[Symbol.DefnSym, Integer]()
+    def recordDepth(sym: Symbol.DefnSym, wave: Int): Unit = {
+      depthBySourceSym.merge(sym, wave, (a, b) => if (a >= b) a else b)
+    }
+
     // Collect all non-parametric function definitions.
     val nonParametricDefns = root.defs.filter {
       case (_, defn) => defn.spec.tparams.isEmpty
@@ -331,6 +340,7 @@ object Specialization {
     // This will enqueue additional functions for specialization.
     ParOps.parMap(nonParametricDefns) {
       case (sym, defn) => flix.profile(defn.sym, defn.loc) {
+        recordDepth(defn.sym, 0)
         // We use an empty substitution because the defs are non-parametric.
         // It's important that non-parametric functions keep their symbol to not
         // invalidate the set of entryPoints functions.
@@ -342,17 +352,28 @@ object Specialization {
 
     // Perform function specialization until the queue is empty.
     // Perform specialization in parallel along the frontier, i.e. each frontier is done in parallel.
+    var wave = 0
     while (ctx.nonEmptySpecializationQueue) {
+      wave += 1
       // Extract a function from the queue and specializes it w.r.t. its substitution.
       val queue = ctx.dequeueAllSpecializations
       ParOps.parMap(queue) {
         case (freshSym, defn, subst) => flix.profile(defn.sym, defn.loc) {
+          recordDepth(defn.sym, wave)
           val specializedDefn = specializeDef(freshSym, defn, subst)
           val loweredDefn = Lowering.lowerDef(specializedDefn)
           ctx.addSpecializedDef(freshSym, loweredDefn)
         }
       }
     }
+
+    // Hand the final per-source-sym depth map to the profiler. Converted from the Java
+    // ConcurrentHashMap[DefnSym, Integer] into the Scala Map[DefnSym, Int] the event expects.
+    val depthSnapshot: Map[Symbol.DefnSym, Int] = {
+      import scala.jdk.CollectionConverters.*
+      depthBySourceSym.asScala.iterator.map { case (s, d) => s -> d.intValue() }.toMap
+    }
+    flix.emitEvent(FlixEvent.MonomorphizationDepth(depthSnapshot))
 
     val effects = ParOps.parMapValues(root.effects) {
       case TypedAst.Effect(doc, ann, mod, sym, targs, ops0, loc) =>

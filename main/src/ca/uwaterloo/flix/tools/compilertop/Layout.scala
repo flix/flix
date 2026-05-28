@@ -48,8 +48,8 @@ object Layout {
 
   /** Width contribution of the optional lines column (separator + width). */
   private val LinesColWidth: Int = 1 + 5
-  /** Width contribution of the optional mono / opt / inl / cls / size per-phase count columns (4 × 4-char + 1 × 5-char, with separators). */
-  private val CountsColWidth: Int = 4 * (1 + 4) + (1 + 5)
+  /** Width contribution of the optional mono / dep / opt / inl / cls / size per-phase count columns (5 × 4-char + 1 × 5-char, with separators). */
+  private val CountsColWidth: Int = 5 * (1 + 4) + (1 + 5)
   /** Width contribution of the optional cns column (separator + 5-char numeric field). */
   private val CnsColWidth: Int = 1 + 5
   /** Width contribution of the optional tvars column (separator + 4-char numeric field). */
@@ -67,7 +67,7 @@ object Layout {
   /**
     * Picks a [[Layout]] for the given terminal width by trying tiers in
     * descending feature order. The caller gates the optional count-style
-    * columns by passing `showCounts` (mono / opt / inl / cls / size) and
+    * columns by passing `showCounts` (mono / dep / opt / inl / cls / size) and
     * `showCns` (cns / tv / ev) — Layout itself doesn't know which UI mode
     * they correspond to. When a flag is false the column is hidden and the
     * reclaimed width expands the sym / location text columns instead.
@@ -117,7 +117,7 @@ object Layout {
     if (cols >= noPhase)
       return fillTier(LinesColWidth + extraColsW + tail, showLines = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = false)
 
-    // Tier: drop phase + the optional counts (mono/opt/inl/cls/size or cns/tv/ev).
+    // Tier: drop phase + the optional counts (mono/dep/opt/inl/cls/size or cns/tv/ev).
     val noPhaseNoExtras = textWidth(DefaultSymWidth, DefaultLocWidth) + LinesColWidth + tail
     if (cols >= noPhaseNoExtras)
       return fillTier(LinesColWidth + tail, showLines = true, showCountsOut = false, showCnsOut = false, showPhase = false)
