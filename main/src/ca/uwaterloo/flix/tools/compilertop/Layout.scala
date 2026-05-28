@@ -17,20 +17,20 @@ package ca.uwaterloo.flix.tools.compilertop
 
 /**
   * Column layout for the per-frame table render. Computed from the current
-  * terminal width: when the terminal is narrow, the optional LOC / counts
+  * terminal width: when the terminal is narrow, the optional lines / counts
   * / cns / phase columns are dropped in that order (lowest-signal first).
   * When the terminal is wide, the surplus is distributed between the
   * DefnSym and location columns proportionally to their default widths.
   *
   * @param symWidth    width of the DefnSym column.
   * @param locWidth    width of the location column.
-  * @param showLOC     whether to render the LOC column.
+  * @param showLines   whether to render the lines column.
   * @param showCounts  whether to render the mono / opt / cls per-phase count columns.
   * @param showCns     whether to render the cns / tv / ev columns.
   * @param showPhase   whether to render the dominant-phase column.
   * @param totalWidth  total rendered width of the row, less leading/trailing pad.
   */
-final case class Layout(symWidth: Int, locWidth: Int, showLOC: Boolean, showCounts: Boolean, showCns: Boolean, showPhase: Boolean, totalWidth: Int)
+final case class Layout(symWidth: Int, locWidth: Int, showLines: Boolean, showCounts: Boolean, showCns: Boolean, showPhase: Boolean, totalWidth: Int)
 
 object Layout {
 
@@ -46,8 +46,8 @@ object Layout {
   /** Fixed-width contribution of `alloc + time + %cpu + %wall` columns and their separators. */
   private val FixedTailWidth: Int = 5 + 1 + 9 + 1 + 6 + 1 + 6 // alloc(5) + time(9) + %cpu(6) + %wall(6) with three separators between
 
-  /** Width contribution of the optional LOC column (separator + width). */
-  private val LocColWidth: Int = 1 + 4
+  /** Width contribution of the optional lines column (separator + width). */
+  private val LinesColWidth: Int = 1 + 5
   /** Width contribution of the optional mono / opt / inl / cls / size per-phase count columns (4 × 4-char + 1 × 5-char, with separators). */
   private val CountsColWidth: Int = 4 * (1 + 4) + (1 + 5)
   /** Width contribution of the optional cns column (separator + 5-char numeric field). */
@@ -89,49 +89,49 @@ object Layout {
 
     /**
       * Returns a [[Layout]] for `tierFixed` chars of non-text columns
-      * (LOC / counts / phase / tail) plus a sym + loc text section that
+      * (lines / counts / phase / tail) plus a sym + loc text section that
       * expands to fill any surplus over [[DefaultSymWidth]] /
       * [[DefaultLocWidth]]. The resulting `totalWidth` equals `cols`
       * exactly, so the divider and rows fill the terminal regardless of
       * which tier we landed in.
       */
-    def fillTier(tierFixed: Int, showLOC: Boolean, showCountsOut: Boolean, showCnsOut: Boolean, showPhase: Boolean): Layout = {
+    def fillTier(tierFixed: Int, showLines: Boolean, showCountsOut: Boolean, showCnsOut: Boolean, showPhase: Boolean): Layout = {
       val baseText = textWidth(DefaultSymWidth, DefaultLocWidth)
       val extra = (cols - (baseText + tierFixed)).max(0)
       val extraSym = extra * 46 / 100
       val extraLoc = extra - extraSym
       val symW = DefaultSymWidth + extraSym
       val locW = DefaultLocWidth + extraLoc
-      Layout(symW, locW, showLOC = showLOC, showCounts = showCountsOut, showCns = showCnsOut, showPhase = showPhase,
+      Layout(symW, locW, showLines = showLines, showCounts = showCountsOut, showCns = showCnsOut, showPhase = showPhase,
         totalWidth = textWidth(symW, locW) + tierFixed)
     }
 
     // Try tiers in descending feature order. Each tier expands sym/loc
     // into whatever width is left over after its fixed columns.
-    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + extraColsW + PhaseColWidth + tail
+    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LinesColWidth + extraColsW + PhaseColWidth + tail
     if (cols >= full)
-      return fillTier(LocColWidth + extraColsW + PhaseColWidth + tail, showLOC = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = true)
+      return fillTier(LinesColWidth + extraColsW + PhaseColWidth + tail, showLines = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = true)
 
     // Tier: drop phase.
-    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + extraColsW + tail
+    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LinesColWidth + extraColsW + tail
     if (cols >= noPhase)
-      return fillTier(LocColWidth + extraColsW + tail, showLOC = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = false)
+      return fillTier(LinesColWidth + extraColsW + tail, showLines = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = false)
 
     // Tier: drop phase + the optional counts (mono/opt/inl/cls/size or cns/tv/ev).
-    val noPhaseNoExtras = textWidth(DefaultSymWidth, DefaultLocWidth) + LocColWidth + tail
+    val noPhaseNoExtras = textWidth(DefaultSymWidth, DefaultLocWidth) + LinesColWidth + tail
     if (cols >= noPhaseNoExtras)
-      return fillTier(LocColWidth + tail, showLOC = true, showCountsOut = false, showCnsOut = false, showPhase = false)
+      return fillTier(LinesColWidth + tail, showLines = true, showCountsOut = false, showCnsOut = false, showPhase = false)
 
-    // Tier: drop phase + extras + LOC.
+    // Tier: drop phase + extras + lines.
     val noOptional = textWidth(DefaultSymWidth, DefaultLocWidth) + tail
     if (cols >= noOptional)
-      return fillTier(tail, showLOC = false, showCountsOut = false, showCnsOut = false, showPhase = false)
+      return fillTier(tail, showLines = false, showCountsOut = false, showCnsOut = false, showPhase = false)
 
     // Even minimum tier doesn't fit; shrink sym/locWidth to floors.
     val available = (cols - tail).max(MinSymWidth + 1 + MinLocWidth)
     val symW = MinSymWidth.max(available * 46 / 100)
     val locW = MinLocWidth.max(available - 1 - symW)
-    Layout(symW, locW, showLOC = false, showCounts = false, showCns = false, showPhase = false,
+    Layout(symW, locW, showLines = false, showCounts = false, showCns = false, showPhase = false,
       textWidth(symW, locW) + tail)
   }
 }

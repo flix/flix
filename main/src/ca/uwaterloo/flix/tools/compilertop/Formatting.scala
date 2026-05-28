@@ -34,14 +34,14 @@ object Formatting {
   }
 
   /**
-    * Returns ms-per-source-line for the given `nanos / locLines` pair, or 0
-    * when `locLines <= 0` (synthetic defs with no real source span — the
+    * Returns ms-per-source-line for the given `nanos / lines` pair, or 0
+    * when `lines <= 0` (synthetic defs with no real source span — the
     * denominator would be meaningless). Single source of truth for the
     * "hotness" metric used by both the hotness sort key and the threshold-
     * based row coloring.
     */
-  def hotnessMsPerLine(nanos: Long, locLines: Int): Double =
-    if (locLines <= 0) 0.0 else (nanos / 1_000_000L).toDouble / locLines
+  def hotnessMsPerLine(nanos: Long, lines: Int): Double =
+    if (lines <= 0) 0.0 else (nanos / 1_000_000L).toDouble / lines
 
   // -- Formatting helpers -------------------------------------------------
 
@@ -50,7 +50,7 @@ object Formatting {
     if (!loc.isReal) "?" else s"${loc.source.name}:${loc.startLine}"
 
   /** Returns the inclusive line span of `loc`, or 0 if synthetic. */
-  def locLineCount(loc: SourceLocation): Int =
+  def lineCount(loc: SourceLocation): Int =
     if (!loc.isReal) 0 else (loc.endLine - loc.startLine + 1).max(0)
 
   /** Formats a nanosecond duration as `Nms` or `N.Ns` (≥10s). */
