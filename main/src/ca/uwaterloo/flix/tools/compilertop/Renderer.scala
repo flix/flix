@@ -115,8 +115,9 @@ object Renderer {
     * A renderable table row. The numeric trailing columns are uniform
     * across def and module rows ([[RowCells]] / [[Renderer.appendNumericFields]]);
     * only the contents of the leading [[Layout.nameWidth]]-wide cell
-    * differs — def rows pack `sym + marker + (file:line)` into it, module
-    * rows fill it with just the module name.
+    * differs — def rows pack `sym + (file:line)` into it (bolded when the
+    * sym is currently being compiled), module rows fill it with just the
+    * module name.
     */
   private sealed trait Row {
     /** The trailing numeric columns for this row, ready for [[Renderer.appendNumericFields]]. */
@@ -125,7 +126,7 @@ object Renderer {
     def appendFirstCell(sb: StringBuilder, layout: Layout): Unit
   }
 
-  /** Def-table row: hotness-colored sym, active marker, parenthesized location — all in one merged cell. */
+  /** Def-table row: hotness-colored sym (bold if currently being compiled), parenthesized location — all in one merged cell. */
   private final case class DefnRow(s: DefnStats, safeElapsed: Double, parallelism: Int) extends Row {
     private val lines = lineCount(s.loc)
 
@@ -150,13 +151,17 @@ object Renderer {
     }
 
     /**
-      * Appends a single merged cell: hotness-colored sym, optional `*` active
-      * marker glued to the name, then a dim parenthesized `(file:line)`. If
-      * the cell can't fit the full pair, the location is truncated from the
-      * front first (`…flix:128`); only when even a minimal `…:N` location
-      * won't leave room for the sym does the sym itself get truncated.
-      * Synthetic defs (no real source location) render bare — no parens —
-      * since `(?)` is just noise.
+      * Appends a single merged cell: hotness-colored sym (bolded if the def
+      * is currently being compiled), then a dim parenthesized `(file:line)`.
+      * If the cell can't fit the full pair, the location is truncated from
+      * the front first (`…flix:128`); only when even a minimal `…:N`
+      * location won't leave room for the sym does the sym itself get
+      * truncated. Synthetic defs (no real source location) render bare — no
+      * parens — since `(?)` is just noise.
+      *
+      * Bold composes with the hotness color so a currently-running def that
+      * is also very hot renders as bold red, amplifying the signal instead
+      * of fighting it.
       *
       * Decision (what to display) is separated from emission (how to lay it
       * out): the truncation ladder picks a `(nameVisible, locVisible)` pair,
@@ -167,28 +172,26 @@ object Renderer {
     def appendFirstCell(sb: StringBuilder, layout: Layout): Unit = {
       val width     = layout.nameWidth
       val name      = s.sym.name
-      val markerLen = if (s.isActive) 1 else 0
-      val marker    = if (s.isActive) yellow("*") else ""
       val ChromeLen = 3  // " (" + ")"
       val MinLocLen = 5  // minimum useful tail of a location, e.g. "…:128"
 
       val (nameVisible, locVisible) =
-        if (!s.loc.isReal) (truncate(name, width - markerLen), "")
+        if (!s.loc.isReal) (truncate(name, width), "")
         else {
           val locStr = formatLocation(s.loc)
-          val ideal  = name.length + markerLen + ChromeLen + locStr.length
+          val ideal  = name.length + ChromeLen + locStr.length
           if (ideal <= width) (name, locStr)
-          else if (name.length + markerLen + ChromeLen + MinLocLen <= width)
-            (name, truncateFront(locStr, width - name.length - markerLen - ChromeLen))
+          else if (name.length + ChromeLen + MinLocLen <= width)
+            (name, truncateFront(locStr, width - name.length - ChromeLen))
           else
-            (truncate(name, width - markerLen - ChromeLen - MinLocLen), truncateFront(locStr, MinLocLen))
+            (truncate(name, width - ChromeLen - MinLocLen), truncateFront(locStr, MinLocLen))
         }
 
       val suffix = if (locVisible.isEmpty) "" else s" ($locVisible)"
-      sb.append(styleSym(nameVisible, s.totalNanos, lines))
-      sb.append(marker)
+      val styled = styleSym(nameVisible, s.totalNanos, lines)
+      sb.append(if (s.isActive) bold(styled) else styled)
       if (suffix.nonEmpty) sb.append(dim(suffix))
-      sb.append(" " * (width - nameVisible.length - markerLen - suffix.length))
+      sb.append(" " * (width - nameVisible.length - suffix.length))
     }
   }
 
