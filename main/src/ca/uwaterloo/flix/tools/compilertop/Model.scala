@@ -87,6 +87,8 @@ object Model {
     case object Opt     extends Sort { val key = 'o' }
     /** Most times inlined at a call site first — surfaces small leaf defs that get duplicated everywhere. */
     case object Inl     extends Sort { val key = 'i' }
+    /** Highest last-changed Optimizer round first — surfaces defs that are still mutating at the end of the fixed point. Distinct from [[Opt]], which counts re-visits and conflates "revisited but stable" with "revisited and still changing". Defs never observed to change (lastChangedRound = -1) sink to the bottom. */
+    case object LastChange extends Sort { val key = 'r' }
     /** Most class files emitted first — surfaces JVM fan-out from polymorphism / closures. */
     case object Cls     extends Sort { val key = 'c' }
     /** Largest total `.class` byte size first — surfaces defs whose bodies compile to bulky bytecode. */
@@ -101,7 +103,7 @@ object Model {
     case object Evars   extends Sort { val key = 'e' }
 
     /** All sort values. */
-    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
+    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, LastChange, Cls, Size, Alloc, Cns, Tvars, Evars)
 
     /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
@@ -130,8 +132,9 @@ object Model {
     * @param totalInlined   summed inliner call-site inline counts across the module's defs.
     * @param totalClassBytes summed bytecode byte size of emitted `.class` files across the module's defs.
     * @param totalAllocBytes summed compiler-side heap allocation bytes across the module's defs.
+    * @param maxLastChangedRound max across the module's defs of [[Profiler.DefnStats.lastChangedRound]]. `-1` when no def in the module entered the optimizer. The module ranks by its slowest-to-converge def, mirroring the def-level sort.
     */
-  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
+  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long, maxLastChangedRound: Int) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)

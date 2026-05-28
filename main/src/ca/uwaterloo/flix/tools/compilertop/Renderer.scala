@@ -98,6 +98,7 @@ object Renderer {
   private final case class RowCells(locLines: Int,
                                     byPhaseCount: Map[String, Long],
                                     inlined: Long,
+                                    lastChangedRound: Int,
                                     classBytes: Long,
                                     cns: Long,
                                     tvars: Long,
@@ -130,19 +131,20 @@ object Renderer {
     val cells: RowCells = {
       val pctWall = 100.0 * s.totalNanos / safeElapsed
       RowCells(
-        locLines      = locLines,
-        byPhaseCount  = s.byPhaseCount,
-        inlined       = s.inlined,
-        classBytes    = s.classBytes,
-        cns           = s.cns,
-        tvars         = s.tvars,
-        evars         = s.evars,
-        dominantPhase = s.dominantPhase.getOrElse("?"),
-        allocBytes    = s.allocBytes,
-        nanos         = s.totalNanos,
-        pctCpu        = pctWall / parallelism,
-        pctWall       = pctWall,
-        aggregate     = false,
+        locLines         = locLines,
+        byPhaseCount     = s.byPhaseCount,
+        inlined          = s.inlined,
+        lastChangedRound = s.lastChangedRound,
+        classBytes       = s.classBytes,
+        cns              = s.cns,
+        tvars            = s.tvars,
+        evars            = s.evars,
+        dominantPhase    = s.dominantPhase.getOrElse("?"),
+        allocBytes       = s.allocBytes,
+        nanos            = s.totalNanos,
+        pctCpu           = pctWall / parallelism,
+        pctWall          = pctWall,
+        aggregate        = false,
       )
     }
 
@@ -166,19 +168,20 @@ object Renderer {
     val cells: RowCells = {
       val pctWall = 100.0 * m.totalNanos / safeElapsed
       RowCells(
-        locLines      = m.totalLocLines,
-        byPhaseCount  = m.byPhaseCount,
-        inlined       = m.totalInlined,
-        classBytes    = m.totalClassBytes,
-        cns           = m.totalCns,
-        tvars         = m.totalTvars,
-        evars         = m.totalEvars,
-        dominantPhase = m.dominantPhase.getOrElse("?"),
-        allocBytes    = m.totalAllocBytes,
-        nanos         = m.totalNanos,
-        pctCpu        = pctWall / parallelism,
-        pctWall       = pctWall,
-        aggregate     = true,
+        locLines         = m.totalLocLines,
+        byPhaseCount     = m.byPhaseCount,
+        inlined          = m.totalInlined,
+        lastChangedRound = m.maxLastChangedRound,
+        classBytes       = m.totalClassBytes,
+        cns              = m.totalCns,
+        tvars            = m.totalTvars,
+        evars            = m.totalEvars,
+        dominantPhase    = m.dominantPhase.getOrElse("?"),
+        allocBytes       = m.totalAllocBytes,
+        nanos            = m.totalNanos,
+        pctCpu           = pctWall / parallelism,
+        pctWall          = pctWall,
+        aggregate        = true,
       )
     }
 
@@ -380,6 +383,7 @@ final class Renderer {
       sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono, activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,  activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("inl",  4), Sort.Inl,  activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("rnd",  4), Sort.LastChange, activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,  activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("size", 5), Sort.Size, activeSort))
     }
@@ -453,9 +457,14 @@ final class Renderer {
       val mono = sumPhaseCounts(cells.byPhaseCount, MonoCountPhases)
       val opt  = sumPhaseCounts(cells.byPhaseCount, OptCountPhases)
       val cls  = sumPhaseCounts(cells.byPhaseCount, ClsCountPhases)
+      // `-1` is the "never observed" sentinel from Profiler — render as `-`
+      // rather than a number so it visually sinks alongside other unscored
+      // cells. Rounds are 0..MaxOptimizerRounds-1, single-digit in practice.
+      val lcrStr = if (cells.lastChangedRound < 0) "-" else cells.lastChangedRound.toString
       sb.append(' '); sb.append(lpad(mono.toString, 4))
       sb.append(' '); sb.append(lpad(opt.toString, 4))
       sb.append(' '); sb.append(lpad(cells.inlined.toString, 4))
+      sb.append(' '); sb.append(lpad(lcrStr, 4))
       sb.append(' '); sb.append(lpad(cls.toString, 4))
       sb.append(' '); sb.append(lpad(formatBytes(cells.classBytes), 5))
     }

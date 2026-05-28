@@ -61,6 +61,19 @@ object FlixEvent {
   case class NewConstraintsDef(sym: Symbol.DefnSym, tconstrs: List[TypeConstraint]) extends FlixEvent
 
   /**
+    * An event that is fired after each completed round of the Optimizer fixed-point loop.
+    * `round` is the 0-based iteration index; `delta` is the set of defs whose bodies were
+    * actually modified during the round (i.e. the workset returned by `Inliner.run`, not
+    * the set of defs that will be re-analyzed next round — those happen to coincide because
+    * the inliner marks `sym0` changed at every transformation site inside `sym0`'s body).
+    *
+    * Used by the profiler to record the last round at which each def mutated, surfacing
+    * defs that are still churning at the end of the fixed point versus those that
+    * converged early.
+    */
+  case class OptimizerRoundCompleted(round: Int, delta: Set[Symbol.DefnSym]) extends FlixEvent
+
+  /**
    * An event that is fired when a new system of Boolean equation is about to be solved.
    */
   case class SolveEffEquations(econstrs: List[Equation]) extends FlixEvent
