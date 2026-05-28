@@ -43,6 +43,7 @@ import scala.collection.mutable
   *                        [[Renderer.TotalPhases]] for the progress bar.
   * @param activeFilter    user-toggled phase filter (drives the legend).
   * @param activeSort      user-toggled sort key (drives header underlines).
+  * @param activeView      user-toggled top-level view: tables or help.
   * @param layout          column layout produced by [[Layout.compute]].
   * @param visible         def-table rows, already filtered / sorted / trimmed.
   * @param modules         module-table rows, already aggregated / sorted /
@@ -57,6 +58,7 @@ final case class FrameState(parallelism: Int,
                             phaseTimersSize: Int,
                             activeFilter: PhaseFilter,
                             activeSort: Sort,
+                            activeView: View,
                             layout: Layout,
                             visible: Vector[DefnStats],
                             modules: Vector[ModuleStats])
@@ -95,7 +97,7 @@ object Renderer {
     *                  warning colors, since aggregating across defs almost
     *                  always trips the thresholds. False for def rows.
     */
-  private final case class RowCells(locLines: Int,
+  private final case class RowCells(lines: Int,
                                     byPhaseCount: Map[String, Long],
                                     inlined: Long,
                                     classBytes: Long,
@@ -124,13 +126,13 @@ object Renderer {
 
   /** Def-table row: hotness-colored sym, active marker, location column. */
   private final case class DefnRow(s: DefnStats, safeElapsed: Double, parallelism: Int) extends Row {
-    private val locLines = locLineCount(s.loc)
+    private val lines = lineCount(s.loc)
 
     /** Numeric cells for this def, with `aggregate = false` so warning colors apply. */
     val cells: RowCells = {
       val pctWall = 100.0 * s.totalNanos / safeElapsed
       RowCells(
-        locLines      = locLines,
+        lines         = lines,
         byPhaseCount  = s.byPhaseCount,
         inlined       = s.inlined,
         classBytes    = s.classBytes,
@@ -152,7 +154,7 @@ object Renderer {
       val nameText = truncate(s.sym.name, nameMax)
       val locField = rpad(truncate(formatLocation(s.loc), layout.locWidth), layout.locWidth)
       val marker   = if (s.isActive) yellow("*") else " "
-      sb.append(styleSym(nameText, s.totalNanos, locLines))
+      sb.append(styleSym(nameText, s.totalNanos, lines))
       sb.append(marker)
       sb.append(" " * (nameMax - nameText.length))
       sb.append(' ')
@@ -166,7 +168,7 @@ object Renderer {
     val cells: RowCells = {
       val pctWall = 100.0 * m.totalNanos / safeElapsed
       RowCells(
-        locLines      = m.totalLocLines,
+        lines         = m.totalLines,
         byPhaseCount  = m.byPhaseCount,
         inlined       = m.totalInlined,
         classBytes    = m.totalClassBytes,
@@ -222,12 +224,23 @@ final class Renderer {
     renderStats(sb, state)
     sb.append('\n')
 
+    state.activeView match {
+      case View.Main => renderTables(sb, state)
+      case View.Help => renderHelp(sb)
+    }
+
+    sb.append(EndSync)
+    sb.toString
+  }
+
+  /** Renders the def + module tables (the default body of the main view). */
+  private def renderTables(sb: StringBuilder, state: FrameState): Unit = {
     val safeElapsed = state.elapsed.max(1L).toDouble
     val defRows: Vector[Row] = state.visible.map(s => DefnRow(s, safeElapsed, state.parallelism))
     val modRows: Vector[Row] = state.modules.map(m => ModuleRow(m, safeElapsed, state.parallelism))
 
     // Def table: header, then rows or a centered placeholder if empty.
-    renderHeaderRow(sb, rpad("Def (hot)", state.layout.symWidth), withLocation = true, state.layout, state.activeSort)
+    renderHeaderRow(sb, rpad("def (hot)", state.layout.symWidth), withLocation = true, state.layout, state.activeSort)
     if (defRows.isEmpty) renderEmptyPlaceholder(sb, "(no timings yet)", state.layout)
     else renderTable(sb, defRows, state.layout)
 
@@ -235,12 +248,9 @@ final class Renderer {
     if (modRows.nonEmpty) {
       val modWidth = state.layout.symWidth + 1 + state.layout.locWidth
       sb.append('\n')
-      renderHeaderRow(sb, rpad("Module (hot)", modWidth), withLocation = false, state.layout, state.activeSort)
+      renderHeaderRow(sb, rpad("module (hot)", modWidth), withLocation = false, state.layout, state.activeSort)
       renderTable(sb, modRows, state.layout)
     }
-
-    sb.append(EndSync)
-    sb.toString
   }
 
   /**
@@ -335,6 +345,9 @@ final class Renderer {
     sb.append(styleHeap(heapUsedField, heapRatio))
     sb.append(dim(" / "))
     sb.append(heapMaxField)
+    // Align under the `[all|frontend|backend]` legend on the dashboard line above.
+    sb.append("     ")
+    sb.append(color("? for help", Gray))
     sb.append('\n')
   }
 
@@ -361,8 +374,8 @@ final class Renderer {
     * "(h̲ot)" annotation marks the hotness sort key. The active column is
     * rendered bold yellow; the rest bold cyan.
     *
-    * Two callers — `Def (hot)` + a `"location"` column for the def table,
-    * `Module (hot)` (single wide column, no location) for the module table.
+    * Two callers — `def (hot)` + a `"location"` column for the def table,
+    * `module (hot)` (single wide column, no location) for the module table.
     */
   private def buildHeader(leading: String, withLocation: Boolean, layout: Layout, activeSort: Sort): String = {
     val sb = new StringBuilder
@@ -373,8 +386,8 @@ final class Renderer {
       sb.append(' ')
       sb.append(plainHeader(rpad("location", layout.locWidth)))
     }
-    if (layout.showLOC) {
-      sb.append(' '); sb.append(plainHeader(lpad("LOC", 4)))
+    if (layout.showLines) {
+      sb.append(' '); sb.append(plainHeader(lpad("lines", 5)))
     }
     if (layout.showCounts) {
       sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono, activeSort))
@@ -432,6 +445,56 @@ final class Renderer {
   }
 
   /**
+    * Renders the help screen: a static legend explaining each table column
+    * and every keystroke the input loop understands. The dashboard + stats
+    * lines are still drawn above this body, so compilation progress remains
+    * visible while the user reads.
+    *
+    * The text is literal rather than derived from the [[Sort]] / [[PhaseFilter]]
+    * ADTs — the description strings carry context that does not belong in
+    * those data types. Add a row here when you add a new column or
+    * keystroke; the input loop is the single source of truth for what
+    * actually works.
+    */
+  private def renderHelp(sb: StringBuilder): Unit = {
+    // The three groups mirror how Layout / the table renderer gate columns:
+    // common columns are always shown; frontend columns only appear under
+    // the `frontend` filter; backend columns only under the `backend` filter.
+    sb.append("  "); sb.append(bold(cyan("Common columns"))); sb.append('\n')
+    appendHelpCol(sb, "def",      "fully qualified def name; color = hotness (ms/source-line); '*' marks the def currently compiling")
+    appendHelpCol(sb, "location", "source file:line of the def")
+    appendHelpCol(sb, "lines",    "source-line span of the def body")
+    appendHelpCol(sb, "phase",    "phase that consumed the most time for this def")
+    appendHelpCol(sb, "alloc",    "compiler-side heap bytes allocated processing this def")
+    appendHelpCol(sb, "time",     "wall-clock time spent on this def")
+    appendHelpCol(sb, "%cpu",     "time / (elapsed × threads) — this def's share of total compute")
+    appendHelpCol(sb, "%wall",    "time / elapsed — upper bound on wall-clock savings if removed")
+    sb.append('\n')
+
+    sb.append("  "); sb.append(bold(cyan("Frontend columns"))); sb.append('\n')
+    appendHelpCol(sb, "cns",      "type constraints (Typer)")
+    appendHelpCol(sb, "tv",       "type variables (Kind.Star)")
+    appendHelpCol(sb, "ev",       "effect variables (Kind.Eff)")
+    sb.append('\n')
+
+    sb.append("  "); sb.append(bold(cyan("Backend columns"))); sb.append('\n')
+    appendHelpCol(sb, "mono",     "monomorphic instances created (Monomorpher)")
+    appendHelpCol(sb, "opt",      "optimizer fixed-point re-visits (Optimizer + LambdaDrop)")
+    appendHelpCol(sb, "inl",      "times inlined at a call site")
+    appendHelpCol(sb, "cls",      ".class files emitted (CodeGen)")
+    appendHelpCol(sb, "size",     "total bytecode size of emitted .class files")
+  }
+
+  /** Appends one column-description row. */
+  private def appendHelpCol(sb: StringBuilder, name: String, desc: String): Unit = {
+    sb.append("    ")
+    sb.append(rpad(name, 10))
+    sb.append("  ")
+    sb.append(dim(desc))
+    sb.append('\n')
+  }
+
+  /**
     * Appends the trailing numeric columns (LOC, mono / opt / cls, cns,
     * phase, time, %cpu, %wall) for one row, honoring the layout's
     * visibility flags. Always emits a leading separator before each column
@@ -444,10 +507,10 @@ final class Renderer {
     * plain in both tables.
     */
   private def appendNumericFields(sb: StringBuilder, cells: RowCells, layout: Layout): Unit = {
-    if (layout.showLOC) {
+    if (layout.showLines) {
       sb.append(' ')
-      val locStr = if (cells.locLines > 0) cells.locLines.toString else "-"
-      sb.append(lpad(locStr, 4))
+      val linesStr = if (cells.lines > 0) cells.lines.toString else "-"
+      sb.append(lpad(linesStr, 5))
     }
     if (layout.showCounts) {
       val mono = sumPhaseCounts(cells.byPhaseCount, MonoCountPhases)

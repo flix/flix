@@ -63,6 +63,16 @@ pub mod Validation {
     }
 
     ///
+    /// Returns `Success(t)`.
+    ///
+    pub def success(t: t): Validation[e, t] = Success(t)
+
+    ///
+    /// Returns `Failure(Nec.singleton(err))`.
+    ///
+    pub def failure(err: e): Validation[e, t] = Failure(Nec.singleton(err))
+
+    ///
     /// Applies the function in `v1` to the value in `v2`.
     ///
     pub def ap(v1: Validation[e, t -> u \ ef], v2: Validation[e, t]): Validation[e, u] \ ef = match (v1, v2) {

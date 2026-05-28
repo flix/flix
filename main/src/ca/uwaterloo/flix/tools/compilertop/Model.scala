@@ -23,6 +23,22 @@ package ca.uwaterloo.flix.tools.compilertop
 object Model {
 
   /**
+    * Which top-level screen the renderer should draw. Toggled by `?` /
+    * `Esc` in the input thread. The dashboard and stats lines render the
+    * same in either view; only the body below them changes.
+    *
+    *   - [[View.Main]]: the def + module tables (default).
+    *   - [[View.Help]]: a static legend explaining each column and
+    *     keystroke, so the user doesn't have to guess what e.g. `tv` or
+    *     `rnd` mean.
+    */
+  sealed trait View
+  object View {
+    case object Main extends View
+    case object Help extends View
+  }
+
+  /**
     * Restricts which phases' time the dashboard accounts for. Toggled
     * interactively via the input thread (`f` / `b` / `a`). The split tracks
     * `Flix.check` (frontend) vs the phases that follow in `Flix.compile`'s
@@ -120,7 +136,7 @@ object Model {
     * @param module         dot-joined namespace (or `(root)` when empty).
     * @param totalNanos     summed wall-clock time across the module's defs.
     * @param totalCallCount summed `track` call counts across the module's defs.
-    * @param totalLocLines  summed source-line counts across the module's defs.
+    * @param totalLines     summed source-line counts across the module's defs.
     * @param byPhase        phase → summed nanoseconds across the module's defs.
     * @param byPhaseCount   phase → summed track-call counts across the module's defs.
     * @param byPhaseAlloc   phase → summed compiler-side allocation bytes across the module's defs. Lets the frontend/backend filter re-project module allocation the same way it re-projects module time.
@@ -131,7 +147,7 @@ object Model {
     * @param totalClassBytes summed bytecode byte size of emitted `.class` files across the module's defs.
     * @param totalAllocBytes summed compiler-side heap allocation bytes across the module's defs.
     */
-  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
+  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
