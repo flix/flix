@@ -19,29 +19,32 @@ package ca.uwaterloo.flix.tools.compilertop
   * Column layout for the per-frame table render. Computed from the current
   * terminal width: when the terminal is narrow, the optional lines / counts
   * / cns / phase columns are dropped in that order (lowest-signal first).
-  * When the terminal is wide, the surplus is distributed between the
-  * DefnSym and location columns proportionally to their default widths.
+  * When the terminal is wide, the surplus expands the merged name column
+  * directly. The name column holds the def name + its source location in
+  * parens on def rows, and the module name on module rows.
   *
-  * @param symWidth    width of the DefnSym column.
-  * @param locWidth    width of the location column.
+  * @param nameWidth   width of the merged name column (def + `(file:line)` on def rows, module name on module rows).
   * @param showLines   whether to render the lines column.
   * @param showCounts  whether to render the mono / opt / cls per-phase count columns.
   * @param showCns     whether to render the cns / tv / ev columns.
   * @param showPhase   whether to render the dominant-phase column.
   * @param totalWidth  total rendered width of the row, less leading/trailing pad.
   */
-final case class Layout(symWidth: Int, locWidth: Int, showLines: Boolean, showCounts: Boolean, showCns: Boolean, showPhase: Boolean, totalWidth: Int)
+final case class Layout(nameWidth: Int, showLines: Boolean, showCounts: Boolean, showCns: Boolean, showPhase: Boolean, totalWidth: Int)
 
 object Layout {
 
-  /** Default width of the DefnSym column when the terminal is wide enough. */
-  private val DefaultSymWidth: Int = 24
-  /** Default width of the location column when the terminal is wide enough. */
-  private val DefaultLocWidth: Int = 28
-  /** Floor on the DefnSym column width when the terminal is narrow. */
-  private val MinSymWidth: Int = 16
-  /** Floor on the location column width when the terminal is narrow. */
-  private val MinLocWidth: Int = 20
+  /**
+    * Default width of the merged name column. Sized to comfortably fit the
+    * common case of `Module.def (File.flix:NNN)` without truncation; longer
+    * names trim the location from the front first, then the sym from the
+    * back. Smaller than the previous `sym (24) + 1 + loc (28) = 53` budget
+    * because most defs use a fraction of that — the freed width lets
+    * optional columns (phase / counts / lines) survive at narrower terminals.
+    */
+  private val DefaultNameWidth: Int = 44
+  /** Floor on the merged name column width when the terminal is narrow. */
+  private val MinNameWidth: Int = 30
 
   /** Fixed-width contribution of `alloc + time + %cpu + %wall` columns and their separators. */
   private val FixedTailWidth: Int = 5 + 1 + 9 + 1 + 6 + 1 + 6 // alloc(5) + time(9) + %cpu(6) + %wall(6) with three separators between
@@ -70,7 +73,7 @@ object Layout {
     * columns by passing `showCounts` (mono / opt / inl / cls / size) and
     * `showCns` (cns / tv / ev) — Layout itself doesn't know which UI mode
     * they correspond to. When a flag is false the column is hidden and the
-    * reclaimed width expands the sym / location text columns instead.
+    * reclaimed width expands the name column instead.
     *
     * At most one of `showCounts` and `showCns` is true under the current
     * UI gating, but the algorithm accepts any combination — both false
@@ -79,8 +82,6 @@ object Layout {
   def compute(cols: Int, showCounts: Boolean, showCns: Boolean): Layout = {
     // Width contribution of the "fixed" half: separator before time + tail.
     val tail = 1 + FixedTailWidth
-    // Width of just the text section (sym + 1 + location) at default sizes.
-    def textWidth(symW: Int, locW: Int): Int = symW + 1 + locW
 
     val countsW = if (showCounts) CountsColWidth else 0
     val cnsW = if (showCns) FrontendColsWidth else 0
@@ -89,49 +90,42 @@ object Layout {
 
     /**
       * Returns a [[Layout]] for `tierFixed` chars of non-text columns
-      * (lines / counts / phase / tail) plus a sym + loc text section that
-      * expands to fill any surplus over [[DefaultSymWidth]] /
-      * [[DefaultLocWidth]]. The resulting `totalWidth` equals `cols`
-      * exactly, so the divider and rows fill the terminal regardless of
-      * which tier we landed in.
+      * (lines / counts / phase / tail) plus a name column that expands to
+      * fill any surplus over [[DefaultNameWidth]]. The resulting
+      * `totalWidth` equals `cols` exactly, so the divider and rows fill
+      * the terminal regardless of which tier we landed in.
       */
     def fillTier(tierFixed: Int, showLines: Boolean, showCountsOut: Boolean, showCnsOut: Boolean, showPhase: Boolean): Layout = {
-      val baseText = textWidth(DefaultSymWidth, DefaultLocWidth)
-      val extra = (cols - (baseText + tierFixed)).max(0)
-      val extraSym = extra * 46 / 100
-      val extraLoc = extra - extraSym
-      val symW = DefaultSymWidth + extraSym
-      val locW = DefaultLocWidth + extraLoc
-      Layout(symW, locW, showLines = showLines, showCounts = showCountsOut, showCns = showCnsOut, showPhase = showPhase,
-        totalWidth = textWidth(symW, locW) + tierFixed)
+      val extra = (cols - (DefaultNameWidth + tierFixed)).max(0)
+      val nameW = DefaultNameWidth + extra
+      Layout(nameW, showLines = showLines, showCounts = showCountsOut, showCns = showCnsOut, showPhase = showPhase,
+        totalWidth = nameW + tierFixed)
     }
 
-    // Try tiers in descending feature order. Each tier expands sym/loc
-    // into whatever width is left over after its fixed columns.
-    val full = textWidth(DefaultSymWidth, DefaultLocWidth) + LinesColWidth + extraColsW + PhaseColWidth + tail
+    // Try tiers in descending feature order. Each tier expands name into
+    // whatever width is left over after its fixed columns.
+    val full = DefaultNameWidth + LinesColWidth + extraColsW + PhaseColWidth + tail
     if (cols >= full)
       return fillTier(LinesColWidth + extraColsW + PhaseColWidth + tail, showLines = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = true)
 
     // Tier: drop phase.
-    val noPhase = textWidth(DefaultSymWidth, DefaultLocWidth) + LinesColWidth + extraColsW + tail
+    val noPhase = DefaultNameWidth + LinesColWidth + extraColsW + tail
     if (cols >= noPhase)
       return fillTier(LinesColWidth + extraColsW + tail, showLines = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = false)
 
     // Tier: drop phase + the optional counts (mono/opt/inl/cls/size or cns/tv/ev).
-    val noPhaseNoExtras = textWidth(DefaultSymWidth, DefaultLocWidth) + LinesColWidth + tail
+    val noPhaseNoExtras = DefaultNameWidth + LinesColWidth + tail
     if (cols >= noPhaseNoExtras)
       return fillTier(LinesColWidth + tail, showLines = true, showCountsOut = false, showCnsOut = false, showPhase = false)
 
     // Tier: drop phase + extras + lines.
-    val noOptional = textWidth(DefaultSymWidth, DefaultLocWidth) + tail
+    val noOptional = DefaultNameWidth + tail
     if (cols >= noOptional)
       return fillTier(tail, showLines = false, showCountsOut = false, showCnsOut = false, showPhase = false)
 
-    // Even minimum tier doesn't fit; shrink sym/locWidth to floors.
-    val available = (cols - tail).max(MinSymWidth + 1 + MinLocWidth)
-    val symW = MinSymWidth.max(available * 46 / 100)
-    val locW = MinLocWidth.max(available - 1 - symW)
-    Layout(symW, locW, showLines = false, showCounts = false, showCns = false, showPhase = false,
-      textWidth(symW, locW) + tail)
+    // Even minimum tier doesn't fit; shrink name to its floor.
+    val nameW = (cols - tail).max(MinNameWidth)
+    Layout(nameW, showLines = false, showCounts = false, showCns = false, showPhase = false,
+      totalWidth = nameW + tail)
   }
 }
