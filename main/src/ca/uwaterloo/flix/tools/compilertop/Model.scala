@@ -107,6 +107,8 @@ object Model {
     case object Cls     extends Sort { val key = 'c' }
     /** Largest total `.class` byte size first — surfaces defs whose bodies compile to bulky bytecode. */
     case object Size    extends Sort { val key = 's' }
+    /** Highest post-Optimizer / pre-Optimizer body-size ratio first — surfaces defs whose bodies the inliner bloated relative to their starting size. Distinct from [[Size]] (final absolute size) and [[Inl]] (inline-event count). Defs whose pre or post node count is unknown (sentinel `-1`) sink to the bottom. */
+    case object Growth  extends Sort { val key = 'g' }
     /** Most heap bytes allocated by the compiler while processing this def — surfaces compiler-side data-structure blow-up (e.g. unification trails, IR duplication) independent of wall time. */
     case object Alloc   extends Sort { val key = 'l' }
     /** Most type constraints first — surfaces type-checking-heavy defs. The key is `n` (not `c`, which is taken by [[Cls]]). */
@@ -117,7 +119,7 @@ object Model {
     case object Evars   extends Sort { val key = 'e' }
 
     /** All sort values. */
-    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
+    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Growth, Alloc, Cns, Tvars, Evars)
 
     /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
@@ -146,8 +148,10 @@ object Model {
     * @param totalInlined   summed inliner call-site inline counts across the module's defs.
     * @param totalClassBytes summed bytecode byte size of emitted `.class` files across the module's defs.
     * @param totalAllocBytes summed compiler-side heap allocation bytes across the module's defs.
+    * @param totalPreNodes  summed [[MonoAst.Expr]] node counts before the first Optimizer round across the module's defs that were observed. Defs with the `-1` "never observed" sentinel are excluded from the sum so a single unobserved def does not poison the module rollup.
+    * @param totalPostNodes summed [[MonoAst.Expr]] node counts after the last Optimizer round across the module's defs that were observed. Same convention as [[totalPreNodes]].
     */
-  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
+  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long, totalPreNodes: Long, totalPostNodes: Long) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)

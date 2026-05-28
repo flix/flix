@@ -87,6 +87,23 @@ object Formatting {
     }
   }
 
+  /**
+    * Formats the post/pre body-size ratio for the `grow` column in at most
+    * 4 characters. `-` for "never observed" (Profiler's `-1` sentinel) or a
+    * non-positive pre. Ratios below 10 carry one decimal (`1.0x`, `1.5x`,
+    * `9.9x`); ratios ≥ 10 round to integer (`10x`, `999x`). A ratio above
+    * `999` is theoretical for stdlib but renders as the rounded integer
+    * regardless, even if it overflows the column.
+    */
+  def formatGrowth(preNodes: Long, postNodes: Long): String = {
+    if (preNodes <= 0L || postNodes < 0L) "-"
+    else {
+      val ratio = postNodes.toDouble / preNodes.toDouble
+      if (ratio < 10.0) f"$ratio%.1fx"
+      else s"${math.round(ratio)}x"
+    }
+  }
+
   /** Returns `s` truncated to `width` characters, with a trailing ellipsis when shortened. */
   def truncate(s: String, width: Int): String =
     if (s.length <= width) s else s.take(width - 1) + "…"

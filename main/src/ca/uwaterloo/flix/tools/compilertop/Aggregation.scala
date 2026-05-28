@@ -73,11 +73,27 @@ object Aggregation {
     case Sort.Inl   => s.inlined.toDouble
     case Sort.Cls   => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
     case Sort.Size  => s.classBytes.toDouble
+    case Sort.Growth => growthRatio(s.preNodes, s.postNodes)
     case Sort.Alloc => s.allocBytes.toDouble
     case Sort.Cns   => s.cns.toDouble
     case Sort.Tvars => s.tvars.toDouble
     case Sort.Evars => s.evars.toDouble
   }
+
+  /**
+    * Returns the post/pre body-size ratio used for the `grow` sort. `pre <= 0` or `post < 0`
+    * marks the def as unobserved (Profiler's `-1` sentinel, or a degenerate empty body), and
+    * sorts to the bottom via `NegativeInfinity` rather than to the top via a div-by-zero
+    * blowup.
+    */
+  def growthRatio(preNodes: Int, postNodes: Int): Double =
+    if (preNodes <= 0 || postNodes < 0) Double.NegativeInfinity
+    else postNodes.toDouble / preNodes.toDouble
+
+  /** Module-level analogue of [[growthRatio]] over the summed pre/post node counts. */
+  def moduleGrowthRatio(totalPreNodes: Long, totalPostNodes: Long): Double =
+    if (totalPreNodes <= 0L || totalPostNodes < 0L) Double.NegativeInfinity
+    else totalPostNodes.toDouble / totalPreNodes.toDouble
 
   /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
   def moduleSortKey(m: ModuleStats, srt: Sort): Double = srt match {
@@ -88,6 +104,7 @@ object Aggregation {
     case Sort.Inl   => m.totalInlined.toDouble
     case Sort.Cls   => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
     case Sort.Size  => m.totalClassBytes.toDouble
+    case Sort.Growth => moduleGrowthRatio(m.totalPreNodes, m.totalPostNodes)
     case Sort.Alloc => m.totalAllocBytes.toDouble
     case Sort.Cns   => m.totalCns.toDouble
     case Sort.Tvars => m.totalTvars.toDouble
@@ -125,7 +142,13 @@ object Aggregation {
       val totalInlined = defs.iterator.map(_.inlined).sum
       val totalClassBytes = defs.iterator.map(_.classBytes).sum
       val totalAllocBytes = defs.iterator.map(_.allocBytes).sum
-      ModuleStats(mod, totalNanos, totalCallCount, totalLines, byPhase, byPhaseCount, byPhaseAlloc, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes, totalAllocBytes)
+      // Skip defs whose pre/post snapshot is the `-1` "never observed" sentinel
+      // (e.g. a def never reached the Optimizer phase). A single unobserved def
+      // in the module would otherwise drag the sum below zero and poison the
+      // ratio.
+      val totalPreNodes  = defs.iterator.map(_.preNodes).filter(_ >= 0).map(_.toLong).sum
+      val totalPostNodes = defs.iterator.map(_.postNodes).filter(_ >= 0).map(_.toLong).sum
+      ModuleStats(mod, totalNanos, totalCallCount, totalLines, byPhase, byPhaseCount, byPhaseAlloc, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes, totalAllocBytes, totalPreNodes, totalPostNodes)
     }.toVector.sortBy(m => -moduleSortKey(m, srt))
   }
 }
