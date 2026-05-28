@@ -287,7 +287,7 @@ final class Renderer {
       sb.append(dim("single-threaded"))
     }
     sb.append("   ")
-    sb.append(renderFilterLegend(state.activeFilter))
+    sb.append(renderFilterLegend(state.activeFilter, state.activeView))
     sb.append('\n')
   }
 
@@ -297,9 +297,13 @@ final class Renderer {
     * whether the filter is active or not. Driven entirely by
     * [[PhaseFilter.all]]: adding a new filter is a one-line change in
     * [[Model]] and the legend follows automatically.
+    *
+    * In help view none of the three entries is highlighted — the help tip
+    * carries the "active mode" signal instead, so the legend reflects
+    * "press a/f/b to leave help" rather than "you are currently filtering".
     */
-  private def renderFilterLegend(active: PhaseFilter): String = {
-    val entries = PhaseFilter.all.map(f => filterLegendEntry(f, f == active))
+  private def renderFilterLegend(active: PhaseFilter, view: View): String = {
+    val entries = PhaseFilter.all.map(f => filterLegendEntry(f, view == View.Main && f == active))
     s"${dim("[")}${entries.mkString(dim("|"))}${dim("]")}"
   }
 
@@ -346,8 +350,17 @@ final class Renderer {
     sb.append(dim(" / "))
     sb.append(heapMaxField)
     // Align under the `[all|frontend|backend]` legend on the dashboard line above.
+    // When help is the active view, the tip carries the "active mode" signal
+    // (bold yellow) — the filter legend goes plain because no filter is
+    // currently being applied to a visible table. The "?" itself is underlined
+    // to match the keystroke-underline convention used in the column headers
+    // and the filter legend.
     sb.append("     ")
-    sb.append(color("? for help", Gray))
+    val tipText = s"$UnderlineCode?$NoUnderlineCode for help"
+    val tipStyled =
+      if (state.activeView == View.Help) bold(color(tipText, Yellow))
+      else color(tipText, Gray)
+    sb.append(tipStyled)
     sb.append('\n')
   }
 
@@ -461,28 +474,28 @@ final class Renderer {
     // common columns are always shown; frontend columns only appear under
     // the `frontend` filter; backend columns only under the `backend` filter.
     sb.append("  "); sb.append(bold(cyan("Common columns"))); sb.append('\n')
-    appendHelpCol(sb, "def",      "fully qualified def name; color = hotness (ms/source-line); '*' marks the def currently compiling")
-    appendHelpCol(sb, "location", "source file:line of the def")
-    appendHelpCol(sb, "lines",    "source-line span of the def body")
-    appendHelpCol(sb, "phase",    "phase that consumed the most time for this def")
-    appendHelpCol(sb, "alloc",    "compiler-side heap bytes allocated processing this def")
-    appendHelpCol(sb, "time",     "wall-clock time spent on this def")
-    appendHelpCol(sb, "%cpu",     "time / (elapsed × threads) — this def's share of total compute")
-    appendHelpCol(sb, "%wall",    "time / elapsed — upper bound on wall-clock savings if removed")
+    appendHelpCol(sb, "def",      "the fully qualified name of the def")
+    appendHelpCol(sb, "location", "the source file and line number of the def")
+    appendHelpCol(sb, "lines",    "the number of source-code lines spanned by the def's signature and body")
+    appendHelpCol(sb, "phase",    "the compiler phase that consumed the most wall-clock time for the def")
+    appendHelpCol(sb, "alloc",    "the amount of memory the compiler allocated while processing the def")
+    appendHelpCol(sb, "time",     "the cumulative wall-clock time spent compiling the def")
+    appendHelpCol(sb, "%cpu",     "the def's share of total CPU time, computed as time / (elapsed × threads)")
+    appendHelpCol(sb, "%wall",    "the def's share of wall-clock time (time / elapsed); upper bound on savings if removed")
     sb.append('\n')
 
     sb.append("  "); sb.append(bold(cyan("Frontend columns"))); sb.append('\n')
-    appendHelpCol(sb, "cns",      "type constraints (Typer)")
-    appendHelpCol(sb, "tv",       "type variables (Kind.Star)")
-    appendHelpCol(sb, "ev",       "effect variables (Kind.Eff)")
+    appendHelpCol(sb, "cns",      "the number of type constraints generated during type inference")
+    appendHelpCol(sb, "tv",       "the number of type variables in the def's constraint system")
+    appendHelpCol(sb, "ev",       "the number of effect variables in the def's constraint system")
     sb.append('\n')
 
     sb.append("  "); sb.append(bold(cyan("Backend columns"))); sb.append('\n')
-    appendHelpCol(sb, "mono",     "monomorphic instances created (Monomorpher)")
-    appendHelpCol(sb, "opt",      "optimizer fixed-point re-visits (Optimizer + LambdaDrop)")
-    appendHelpCol(sb, "inl",      "times inlined at a call site")
-    appendHelpCol(sb, "cls",      ".class files emitted (CodeGen)")
-    appendHelpCol(sb, "size",     "total bytecode size of emitted .class files")
+    appendHelpCol(sb, "mono",     "the number of monomorphic copies created during monomorphization")
+    appendHelpCol(sb, "opt",      "the number of optimizer fixed-point re-visits across Optimizer and LambdaDrop")
+    appendHelpCol(sb, "inl",      "the number of times the def was inlined at a call site")
+    appendHelpCol(sb, "cls",      "the number of .class files emitted for the def")
+    appendHelpCol(sb, "size",     "the total bytecode size of all .class files emitted for the def")
   }
 
   /** Appends one column-description row. */

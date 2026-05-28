@@ -214,7 +214,8 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
             quitLatch.countDown()
             return
           }
-        case 27 => // Esc — close help (no-op if main view is already active).
+        case 27 => // Esc — return to the "all" view: filter All, main view.
+          filter.set(PhaseFilter.All)
           view.set(View.Main)
         case '?' =>
           view.updateAndGet(v => if (v == View.Help) View.Main else View.Help)
@@ -223,9 +224,16 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
           // mapping lives in one place ([[Model.Sort.fromKey]],
           // [[Model.PhaseFilter.fromKey]]) rather than being duplicated
           // across this match and the renderer's header / legend code.
+          //
+          // Pressing a filter key from the help view also returns to the main
+          // view so the user can see the filter take effect — otherwise the
+          // toggle happens invisibly behind the help screen.
           val char = ch.toChar
           Sort.fromKey(char).foreach(sort.set)
-          PhaseFilter.fromKey(char).foreach(filter.set)
+          PhaseFilter.fromKey(char).foreach { f =>
+            filter.set(f)
+            view.set(View.Main)
+          }
         case _ => // ignored
       }
     }
