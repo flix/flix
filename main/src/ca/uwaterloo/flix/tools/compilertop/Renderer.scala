@@ -106,6 +106,7 @@ object Renderer {
                                     evars: Long,
                                     dominantPhase: String,
                                     allocBytes: Long,
+                                    maxDepth: Int,
                                     nanos: Long,
                                     pctCpu: Double,
                                     pctWall: Double,
@@ -141,6 +142,7 @@ object Renderer {
         evars         = s.evars,
         dominantPhase = s.dominantPhase.getOrElse("?"),
         allocBytes    = s.allocBytes,
+        maxDepth      = s.maxDepth,
         nanos         = s.totalNanos,
         pctCpu        = pctWall / parallelism,
         pctWall       = pctWall,
@@ -177,6 +179,7 @@ object Renderer {
         evars         = m.totalEvars,
         dominantPhase = m.dominantPhase.getOrElse("?"),
         allocBytes    = m.totalAllocBytes,
+        maxDepth      = m.maxDepth,
         nanos         = m.totalNanos,
         pctCpu        = pctWall / parallelism,
         pctWall       = pctWall,
@@ -403,11 +406,12 @@ final class Renderer {
       sb.append(' '); sb.append(plainHeader(lpad("lines", 5)))
     }
     if (layout.showCounts) {
-      sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono, activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,  activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("inl",  4), Sort.Inl,  activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,  activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("size", 5), Sort.Size, activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono,  activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("dep",  4), Sort.Depth, activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,   activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("inl",  4), Sort.Inl,   activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,   activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("size", 5), Sort.Size,  activeSort))
     }
     if (layout.showCns) {
       sb.append(' '); sb.append(sortableColumn(lpad("cns", 5), Sort.Cns,   activeSort))
@@ -492,6 +496,7 @@ final class Renderer {
 
     sb.append("  "); sb.append(bold(cyan("Backend columns"))); sb.append('\n')
     appendHelpCol(sb, "mono",     "the number of monomorphic copies created during monomorphization")
+    appendHelpCol(sb, "dep",      "the maximum Monomorpher BFS wave-depth at which any specialization of this source sym was processed (0 = non-parametric seed)")
     appendHelpCol(sb, "opt",      "the number of optimizer fixed-point re-visits across Optimizer and LambdaDrop")
     appendHelpCol(sb, "inl",      "the number of times the def was inlined at a call site")
     appendHelpCol(sb, "cls",      "the number of .class files emitted for the def")
@@ -529,7 +534,11 @@ final class Renderer {
       val mono = sumPhaseCounts(cells.byPhaseCount, MonoCountPhases)
       val opt  = sumPhaseCounts(cells.byPhaseCount, OptCountPhases)
       val cls  = sumPhaseCounts(cells.byPhaseCount, ClsCountPhases)
+      // `-1` is the Profiler "never observed" sentinel — render as `-` so
+      // defs that didn't reach the Monomorpher don't render as `-1`.
+      val depStr = if (cells.maxDepth < 0) "-" else cells.maxDepth.toString
       sb.append(' '); sb.append(lpad(mono.toString, 4))
+      sb.append(' '); sb.append(lpad(depStr, 4))
       sb.append(' '); sb.append(lpad(opt.toString, 4))
       sb.append(' '); sb.append(lpad(cells.inlined.toString, 4))
       sb.append(' '); sb.append(lpad(cls.toString, 4))

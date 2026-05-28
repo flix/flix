@@ -93,9 +93,10 @@ object Profiler {
     * @param inlined      number of times this def was inlined at a call site by the inliner across all optimizer rounds.
     * @param classBytes   total bytes of generated `.class` files attributed to this def (function class + any closure classes).
     * @param allocBytes   total compiler-side heap allocation (Hotspot per-thread allocated bytes) summed across `track` calls for this sym. 0 when the JVM doesn't support [[com.sun.management.ThreadMXBean.getThreadAllocatedBytes]].
+    * @param maxDepth     max BFS wave-depth in the Monomorpher at which any specialization of this source sym was processed. Wave 0 = non-parametric seed; subsequent waves are queue-drain iterations. `-1` if the def never reached the Monomorpher (e.g. removed earlier, or compiled with a different pipeline).
     * @param loc          the source location of the def's body, used to compute LOC.
     */
-  final case class DefnStats(sym: Symbol.DefnSym, isActive: Boolean, callCount: Int, totalNanos: Long, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], cns: Long, tvars: Long, evars: Long, inlined: Long, classBytes: Long, allocBytes: Long, loc: SourceLocation) {
+  final case class DefnStats(sym: Symbol.DefnSym, isActive: Boolean, callCount: Int, totalNanos: Long, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], cns: Long, tvars: Long, evars: Long, inlined: Long, classBytes: Long, allocBytes: Long, maxDepth: Int, loc: SourceLocation) {
     /** Returns the phase that consumed the most time, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
@@ -116,9 +117,10 @@ object Profiler {
     * @param inlined       accumulator: number of times this def was inlined at a call site by the inliner.
     * @param classBytes    accumulator: summed `.class` byte length of every class emitted for this def.
     * @param allocBytes    accumulator: summed Hotspot per-thread allocation deltas across `track` calls for this sym. Captures compiler-side heap pressure, independent of wall time.
+    * @param maxDepth      max BFS wave-depth in the Monomorpher at which any specialization of this source sym was processed. Set from `FlixEvent.MonomorphizationDepth` via `updateAndGet(max)` so a future re-emission can only raise it. Initialized to `-1` so defs that never enter the Monomorpher stay distinguishable from "depth 0 (non-parametric seed)".
     * @param loc           set on first `track` call; carries the def-body span so we can show LOC.
     */
-  private final case class Counters(inProgress: AtomicInteger, callCount: AtomicInteger, totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], perPhaseCount: ConcurrentHashMap[String, AtomicLong], perPhaseAlloc: ConcurrentHashMap[String, AtomicLong], constraints: AtomicLong, tvars: AtomicLong, evars: AtomicLong, inlined: AtomicLong, classBytes: AtomicLong, allocBytes: AtomicLong, loc: AtomicReference[SourceLocation])
+  private final case class Counters(inProgress: AtomicInteger, callCount: AtomicInteger, totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], perPhaseCount: ConcurrentHashMap[String, AtomicLong], perPhaseAlloc: ConcurrentHashMap[String, AtomicLong], constraints: AtomicLong, tvars: AtomicLong, evars: AtomicLong, inlined: AtomicLong, classBytes: AtomicLong, allocBytes: AtomicLong, maxDepth: AtomicInteger, loc: AtomicReference[SourceLocation])
 
   /**
     * Composite map key for per-`DefnSym` accumulators.
@@ -210,10 +212,13 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
     }
 
   /**
-    * Subscribes the profiler to compiler events emitted via `Flix.emitEvent`.
-    * Today only [[FlixEvent.NewConstraintsDef]] is consumed — Typer fires it
-    * once per def with the post-generation constraint list, which gives us
-    * a clean per-def `cns` reading without instrumenting any inner loops.
+    * Subscribes the profiler to compiler events emitted via `Flix.emitEvent`. Each handler
+    * latches its reading onto the per-source-sym [[Counters]] via [[countersFor]]:
+    *
+    *   - [[FlixEvent.NewConstraintsDef]]      set `cns` / `tvars` / `evars` (replaces, not adds).
+    *   - [[FlixEvent.InlinedDef]]             increment `inlined`.
+    *   - [[FlixEvent.EmittedClass]]           add to `classBytes`.
+    *   - [[FlixEvent.MonomorphizationDepth]]  raise `maxDepth` to the per-sym entry via `max`.
     */
   override def notify(e: FlixEvent): Unit = e match {
     case FlixEvent.NewConstraintsDef(sym, tconstrs) =>
@@ -230,6 +235,14 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       countersFor(sym).inlined.incrementAndGet()
     case FlixEvent.EmittedClass(sym, bytes) =>
       countersFor(sym).classBytes.addAndGet(bytes.toLong)
+    case FlixEvent.MonomorphizationDepth(depthBySourceSym) =>
+      // `updateAndGet(max)`: the Monomorpher emits this once per compile but using max keeps
+      // attribution correct under incremental rebuilds (where a fresh compile follows a partial
+      // earlier one) and never accidentally lowers a previously-recorded depth.
+      depthBySourceSym.foreach { case (sym, d) =>
+        val c = countersFor(sym)
+        c.maxDepth.updateAndGet(prev => math.max(prev, d))
+      }
     case _ => ()
   }
 
@@ -289,7 +302,8 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       val loc = Option(c.loc.get()).getOrElse(key.loc)
       Profiler.DefnStats(key.sym, isActive = c.inProgress.get() > 0,
         c.callCount.get(), c.totalNanos.get(), byPhase, byPhaseCount, byPhaseAlloc,
-        c.constraints.get(), c.tvars.get(), c.evars.get(), c.inlined.get(), c.classBytes.get(), c.allocBytes.get(), loc)
+        c.constraints.get(), c.tvars.get(), c.evars.get(), c.inlined.get(), c.classBytes.get(), c.allocBytes.get(),
+        c.maxDepth.get(), loc)
     }.toVector
   }
 
@@ -311,6 +325,7 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       inlined = new AtomicLong(0L),
       classBytes = new AtomicLong(0L),
       allocBytes = new AtomicLong(0L),
+      maxDepth = new AtomicInteger(-1),
       loc = new AtomicReference[SourceLocation](null)
     ))
 

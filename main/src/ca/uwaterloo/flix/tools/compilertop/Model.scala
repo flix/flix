@@ -99,6 +99,8 @@ object Model {
     case object Hotness extends Sort { val key = 'h' }
     /** Most monomorphic instances first — surfaces generic-explosion hotspots. */
     case object Mono    extends Sort { val key = 'm' }
+    /** Deepest Monomorpher BFS wave first — surfaces source syms whose specializations sit deep inside a chain of generic calls. Orthogonal to [[Mono]] (which counts breadth of instantiations regardless of depth): a small generic combinator can have low `mono` and high `dep` if it is reached only through a long generic-call chain. `-1` for defs that never reached the Monomorpher; those sink to the bottom. */
+    case object Depth   extends Sort { val key = 'd' }
     /** Most optimizer fixed-point re-visits first — surfaces inliner / occurrence-analyzer thrashing. */
     case object Opt     extends Sort { val key = 'o' }
     /** Most times inlined at a call site first — surfaces small leaf defs that get duplicated everywhere. */
@@ -117,7 +119,7 @@ object Model {
     case object Evars   extends Sort { val key = 'e' }
 
     /** All sort values. */
-    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
+    val all: List[Sort] = List(Time, Hotness, Mono, Depth, Opt, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
 
     /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
@@ -146,8 +148,9 @@ object Model {
     * @param totalInlined   summed inliner call-site inline counts across the module's defs.
     * @param totalClassBytes summed bytecode byte size of emitted `.class` files across the module's defs.
     * @param totalAllocBytes summed compiler-side heap allocation bytes across the module's defs.
+    * @param maxDepth       max across the module's defs of [[Profiler.DefnStats.maxDepth]] — the deepest Monomorpher BFS wave any def in the module sits at. `-1` when no def in the module reached the Monomorpher. Module ranks by its deepest-chain def, mirroring the def-level sort.
     */
-  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
+  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long, maxDepth: Int) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)

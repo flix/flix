@@ -56,6 +56,20 @@ object FlixEvent {
   case class InlinedDef(sym: Symbol.DefnSym) extends FlixEvent
 
   /**
+    * An event that is fired once at the end of the Monomorpher's specialization loop, carrying a
+    * map from each source [[Symbol.DefnSym]] to the max BFS wave-depth at which any specialization
+    * of it was processed.
+    *
+    *   - Non-parametric defs sit at depth `0` (the seed wave that opens the loop).
+    *   - A specialization enqueued from a wave-`N` def is processed at wave `N + 1`.
+    *
+    * Captures the *depth* of the specialization fan-out — orthogonal to the breadth surfaced by
+    * the existing `mono` column, which counts instantiations regardless of how deep into the
+    * generic-call chain they were triggered.
+    */
+  case class MonomorphizationDepth(depthBySourceSym: Map[Symbol.DefnSym, Int]) extends FlixEvent
+
+  /**
     * An event that is fired when new type constraints are collected for the given def symbol `sym`.
     */
   case class NewConstraintsDef(sym: Symbol.DefnSym, tconstrs: List[TypeConstraint]) extends FlixEvent
