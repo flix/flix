@@ -56,6 +56,22 @@ mod TestValidation {
         assertEq(expected = Failure(singleton(42)), Applicative.ap(Success(x -> x + 1), Failure(singleton(42))))
 
     /////////////////////////////////////////////////////////////////////////////
+    // success                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def success01(): Unit \ Assert =
+        assertEq(expected = Success("hello"), (Validation.success("hello"): Validation[Int32, String]))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // failure                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def failure01(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("err")), (Validation.failure("err"): Validation[String, Int32]))
+
+    /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
