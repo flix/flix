@@ -91,6 +91,15 @@ object Formatting {
   def truncate(s: String, width: Int): String =
     if (s.length <= width) s else s.take(width - 1) + "…"
 
+  /**
+    * Returns `s` truncated to `width` characters, with a *leading* ellipsis
+    * when shortened. Mirror of [[truncate]] for fields where the tail carries
+    * the signal — e.g. a source location like `…flix:128` reads better than
+    * `Foo.fl…` when the budget can't fit the whole `Foo.flix:128`.
+    */
+  def truncateFront(s: String, width: Int): String =
+    if (s.length <= width) s else "…" + s.takeRight(width - 1)
+
   /** Left-pads `s` with spaces to width `w`. */
   def lpad(s: String, w: Int): String =
     if (s.length >= w) s else " " * (w - s.length) + s
