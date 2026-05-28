@@ -62,27 +62,34 @@ object Formatting {
 
   /**
     * Formats a byte count compactly into at most 5 characters: `NB`, `NKB`,
-    * `NNNKB`, `NMB`, `NNNMB`, or `NGB`. Always integer — sacrifices precision
-    * below 10 of each unit so the digit width stays uniform across rows. A
-    * mixed integer / one-decimal scheme made `9.0MB` read visually wider than
-    * `14MB` despite being the smaller value.
+    * `NNNKB`, `NMB`, `NNNMB`, `NGB`, `NNNGB`, or `NTB`. Always integer —
+    * sacrifices precision below 10 of each unit so the digit width stays
+    * uniform across rows. A mixed integer / one-decimal scheme made `9.0MB`
+    * read visually wider than `14MB` despite being the smaller value.
     *
-    * If a rounded value lands exactly on the next unit boundary (e.g. 1023KB
-    * + 512B rounds to 1024KB), the surrounding `if` falls through to the
-    * higher unit so the suffix character stays at index 4.
+    * Units roll over at 1000 (not 1024) so the formatted string never exceeds
+    * 5 characters. E.g. a rounded `1023KB` becomes `1MB` rather than the
+    * 6-char `1023KB` it would be under exact-power-of-two rollover — which
+    * would overflow the 5-char column it sits in and wrap the row.
     */
   def formatBytes(bytes: Long): String = {
     val Kib = 1024L
     val Mib = Kib * Kib
     val Gib = Kib * Mib
+    val Tib = Kib * Gib
+    val UnitMax = 1000L
     if (bytes < Kib) s"${bytes}B"
     else {
       val kb = math.round(bytes.toDouble / Kib)
-      if (kb < Kib) s"${kb}KB"
+      if (kb < UnitMax) s"${kb}KB"
       else {
         val mb = math.round(bytes.toDouble / Mib)
-        if (mb < Kib) s"${mb}MB"
-        else s"${math.round(bytes.toDouble / Gib)}GB"
+        if (mb < UnitMax) s"${mb}MB"
+        else {
+          val gb = math.round(bytes.toDouble / Gib)
+          if (gb < UnitMax) s"${gb}GB"
+          else s"${math.round(bytes.toDouble / Tib)}TB"
+        }
       }
     }
   }
