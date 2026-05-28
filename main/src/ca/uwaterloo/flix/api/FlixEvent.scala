@@ -61,6 +61,18 @@ object FlixEvent {
   case class NewConstraintsDef(sym: Symbol.DefnSym, tconstrs: List[TypeConstraint]) extends FlixEvent
 
   /**
+    * An event that is fired once at the end of `Optimizer.run`, after the fixed-point loop completes.
+    * Carries per-def AST-node counts for the def bodies *before* the first Optimizer round
+    * (`preNodes`) and *after* the last round (`postNodes`). Lets a downstream consumer compute the
+    * inliner-induced size growth ratio (`postNodes / preNodes`) per def without re-walking the AST.
+    *
+    * `preNodes` covers every def in the pre-loop `root`; `postNodes` covers every def in the
+    * post-loop `currentRoot`. Defs introduced or eliminated during the loop appear in only one of
+    * the two maps.
+    */
+  case class OptimizerBodySizes(preNodes: Map[Symbol.DefnSym, Int], postNodes: Map[Symbol.DefnSym, Int]) extends FlixEvent
+
+  /**
    * An event that is fired when a new system of Boolean equation is about to be solved.
    */
   case class SolveEffEquations(econstrs: List[Equation]) extends FlixEvent

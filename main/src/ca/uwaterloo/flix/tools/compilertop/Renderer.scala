@@ -106,6 +106,8 @@ object Renderer {
                                     evars: Long,
                                     dominantPhase: String,
                                     allocBytes: Long,
+                                    preNodes: Long,
+                                    postNodes: Long,
                                     nanos: Long,
                                     pctCpu: Double,
                                     pctWall: Double,
@@ -141,6 +143,8 @@ object Renderer {
         evars         = s.evars,
         dominantPhase = s.dominantPhase.getOrElse("?"),
         allocBytes    = s.allocBytes,
+        preNodes      = s.preNodes.toLong,
+        postNodes     = s.postNodes.toLong,
         nanos         = s.totalNanos,
         pctCpu        = pctWall / parallelism,
         pctWall       = pctWall,
@@ -177,6 +181,8 @@ object Renderer {
         evars         = m.totalEvars,
         dominantPhase = m.dominantPhase.getOrElse("?"),
         allocBytes    = m.totalAllocBytes,
+        preNodes      = m.totalPreNodes,
+        postNodes     = m.totalPostNodes,
         nanos         = m.totalNanos,
         pctCpu        = pctWall / parallelism,
         pctWall       = pctWall,
@@ -403,11 +409,12 @@ final class Renderer {
       sb.append(' '); sb.append(plainHeader(lpad("lines", 5)))
     }
     if (layout.showCounts) {
-      sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono, activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,  activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("inl",  4), Sort.Inl,  activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,  activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("size", 5), Sort.Size, activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono,   activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,    activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("inl",  4), Sort.Inl,    activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,    activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("size", 5), Sort.Size,   activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("grow", 4), Sort.Growth, activeSort))
     }
     if (layout.showCns) {
       sb.append(' '); sb.append(sortableColumn(lpad("cns", 5), Sort.Cns,   activeSort))
@@ -496,6 +503,7 @@ final class Renderer {
     appendHelpCol(sb, "inl",      "the number of times the def was inlined at a call site")
     appendHelpCol(sb, "cls",      "the number of .class files emitted for the def")
     appendHelpCol(sb, "size",     "the total bytecode size of all .class files emitted for the def")
+    appendHelpCol(sb, "grow",     "the ratio of the def's body size after the Optimizer to its size before the Optimizer (inliner-induced growth)")
   }
 
   /** Appends one column-description row. */
@@ -534,6 +542,7 @@ final class Renderer {
       sb.append(' '); sb.append(lpad(cells.inlined.toString, 4))
       sb.append(' '); sb.append(lpad(cls.toString, 4))
       sb.append(' '); sb.append(lpad(formatBytes(cells.classBytes), 5))
+      sb.append(' '); sb.append(lpad(formatGrowth(cells.preNodes, cells.postNodes), 4))
     }
     if (layout.showCns) {
       sb.append(' '); sb.append(lpad(cells.cns.toString, 5))

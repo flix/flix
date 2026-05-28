@@ -93,9 +93,11 @@ object Profiler {
     * @param inlined      number of times this def was inlined at a call site by the inliner across all optimizer rounds.
     * @param classBytes   total bytes of generated `.class` files attributed to this def (function class + any closure classes).
     * @param allocBytes   total compiler-side heap allocation (Hotspot per-thread allocated bytes) summed across `track` calls for this sym. 0 when the JVM doesn't support [[com.sun.management.ThreadMXBean.getThreadAllocatedBytes]].
+    * @param preNodes     [[MonoAst.Expr]] node count for this def's body *before* the first Optimizer round, or `-1` when the def was never observed (e.g. introduced post-Optimizer, or compiled without Optimizer).
+    * @param postNodes    [[MonoAst.Expr]] node count for this def's body *after* the last Optimizer round, or `-1` when not observed (e.g. dead-code-eliminated during the loop, or never reached Optimizer).
     * @param loc          the source location of the def's body, used to compute LOC.
     */
-  final case class DefnStats(sym: Symbol.DefnSym, isActive: Boolean, callCount: Int, totalNanos: Long, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], cns: Long, tvars: Long, evars: Long, inlined: Long, classBytes: Long, allocBytes: Long, loc: SourceLocation) {
+  final case class DefnStats(sym: Symbol.DefnSym, isActive: Boolean, callCount: Int, totalNanos: Long, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], cns: Long, tvars: Long, evars: Long, inlined: Long, classBytes: Long, allocBytes: Long, preNodes: Int, postNodes: Int, loc: SourceLocation) {
     /** Returns the phase that consumed the most time, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
@@ -116,9 +118,11 @@ object Profiler {
     * @param inlined       accumulator: number of times this def was inlined at a call site by the inliner.
     * @param classBytes    accumulator: summed `.class` byte length of every class emitted for this def.
     * @param allocBytes    accumulator: summed Hotspot per-thread allocation deltas across `track` calls for this sym. Captures compiler-side heap pressure, independent of wall time.
+    * @param preNodes      `MonoAst.Expr` node count for this def's body before the first Optimizer round. Set (not accumulated) on receipt of `OptimizerBodySizes`. Initialized to `-1` so defs that never enter the optimizer (or that have not yet reached it) stay distinguishable from "had 0 nodes pre-optimizer".
+    * @param postNodes     `MonoAst.Expr` node count for this def's body after the last Optimizer round. Same conventions as [[preNodes]].
     * @param loc           set on first `track` call; carries the def-body span so we can show LOC.
     */
-  private final case class Counters(inProgress: AtomicInteger, callCount: AtomicInteger, totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], perPhaseCount: ConcurrentHashMap[String, AtomicLong], perPhaseAlloc: ConcurrentHashMap[String, AtomicLong], constraints: AtomicLong, tvars: AtomicLong, evars: AtomicLong, inlined: AtomicLong, classBytes: AtomicLong, allocBytes: AtomicLong, loc: AtomicReference[SourceLocation])
+  private final case class Counters(inProgress: AtomicInteger, callCount: AtomicInteger, totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], perPhaseCount: ConcurrentHashMap[String, AtomicLong], perPhaseAlloc: ConcurrentHashMap[String, AtomicLong], constraints: AtomicLong, tvars: AtomicLong, evars: AtomicLong, inlined: AtomicLong, classBytes: AtomicLong, allocBytes: AtomicLong, preNodes: AtomicInteger, postNodes: AtomicInteger, loc: AtomicReference[SourceLocation])
 
   /**
     * Composite map key for per-`DefnSym` accumulators.
@@ -211,9 +215,14 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
 
   /**
     * Subscribes the profiler to compiler events emitted via `Flix.emitEvent`.
-    * Today only [[FlixEvent.NewConstraintsDef]] is consumed — Typer fires it
-    * once per def with the post-generation constraint list, which gives us
-    * a clean per-def `cns` reading without instrumenting any inner loops.
+    * Each handler latches its reading onto the per-source-sym [[Counters]] via
+    * [[countersFor]]:
+    *
+    *   - [[FlixEvent.NewConstraintsDef]]  set `cns` / `tvars` / `evars` (replaces, not adds).
+    *   - [[FlixEvent.InlinedDef]]         increment `inlined`.
+    *   - [[FlixEvent.EmittedClass]]       add to `classBytes`.
+    *   - [[FlixEvent.OptimizerBodySizes]] set per-def `preNodes` / `postNodes` from the two
+    *     full-pipeline maps in one shot.
     */
   override def notify(e: FlixEvent): Unit = e match {
     case FlixEvent.NewConstraintsDef(sym, tconstrs) =>
@@ -230,6 +239,12 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       countersFor(sym).inlined.incrementAndGet()
     case FlixEvent.EmittedClass(sym, bytes) =>
       countersFor(sym).classBytes.addAndGet(bytes.toLong)
+    case FlixEvent.OptimizerBodySizes(preNodes, postNodes) =>
+      // Set, not accumulate: each compile yields one pre/post snapshot per def.
+      // `countersFor` strips the fresh id via `sourceOf` so the size attribution
+      // rolls up to the source sym, matching the `inlined` / `classBytes` convention.
+      preNodes.foreach { case (sym, n) => countersFor(sym).preNodes.set(n) }
+      postNodes.foreach { case (sym, n) => countersFor(sym).postNodes.set(n) }
     case _ => ()
   }
 
@@ -289,7 +304,8 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       val loc = Option(c.loc.get()).getOrElse(key.loc)
       Profiler.DefnStats(key.sym, isActive = c.inProgress.get() > 0,
         c.callCount.get(), c.totalNanos.get(), byPhase, byPhaseCount, byPhaseAlloc,
-        c.constraints.get(), c.tvars.get(), c.evars.get(), c.inlined.get(), c.classBytes.get(), c.allocBytes.get(), loc)
+        c.constraints.get(), c.tvars.get(), c.evars.get(), c.inlined.get(), c.classBytes.get(), c.allocBytes.get(),
+        c.preNodes.get(), c.postNodes.get(), loc)
     }.toVector
   }
 
@@ -311,6 +327,8 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       inlined = new AtomicLong(0L),
       classBytes = new AtomicLong(0L),
       allocBytes = new AtomicLong(0L),
+      preNodes = new AtomicInteger(-1),
+      postNodes = new AtomicInteger(-1),
       loc = new AtomicReference[SourceLocation](null)
     ))
 
