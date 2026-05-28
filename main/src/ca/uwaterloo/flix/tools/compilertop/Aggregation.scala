@@ -71,6 +71,7 @@ object Aggregation {
     case Sort.Mono  => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
     case Sort.Opt   => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
     case Sort.Inl   => s.inlined.toDouble
+    case Sort.LastChange => s.lastChangedRound.toDouble
     case Sort.Cls   => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
     case Sort.Size  => s.classBytes.toDouble
     case Sort.Alloc => s.allocBytes.toDouble
@@ -86,6 +87,7 @@ object Aggregation {
     case Sort.Mono  => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
     case Sort.Opt   => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
     case Sort.Inl   => m.totalInlined.toDouble
+    case Sort.LastChange => m.maxLastChangedRound.toDouble
     case Sort.Cls   => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
     case Sort.Size  => m.totalClassBytes.toDouble
     case Sort.Alloc => m.totalAllocBytes.toDouble
@@ -125,7 +127,11 @@ object Aggregation {
       val totalInlined = defs.iterator.map(_.inlined).sum
       val totalClassBytes = defs.iterator.map(_.classBytes).sum
       val totalAllocBytes = defs.iterator.map(_.allocBytes).sum
-      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase, byPhaseCount, byPhaseAlloc, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes, totalAllocBytes)
+      // `-1` is the per-def "never observed" sentinel; the module rollup
+      // preserves that sentinel only when *every* def in the module
+      // converged outside the optimizer, since `max` of all-(-1)s is `-1`.
+      val maxLastChangedRound = defs.iterator.map(_.lastChangedRound).maxOption.getOrElse(-1)
+      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase, byPhaseCount, byPhaseAlloc, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes, totalAllocBytes, maxLastChangedRound)
     }.toVector.sortBy(m => -moduleSortKey(m, srt))
   }
 }

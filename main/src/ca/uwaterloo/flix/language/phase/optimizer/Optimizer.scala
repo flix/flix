@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.optimizer
 
-import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.MonoAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 
@@ -27,12 +27,13 @@ object Optimizer {
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var currentRoot = root
     var currentDelta = currentRoot.defs.keys.toSet
-    for (_ <- 0 until CompilerConstants.MaxOptimizerRounds) {
+    for (round <- 0 until CompilerConstants.MaxOptimizerRounds) {
       if (currentDelta.nonEmpty) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(currentRoot, currentDelta)
         val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer)
         currentRoot = newRoot
         currentDelta = newDelta
+        flix.emitEvent(FlixEvent.OptimizerRoundCompleted(round, newDelta))
       }
     }
     currentRoot
