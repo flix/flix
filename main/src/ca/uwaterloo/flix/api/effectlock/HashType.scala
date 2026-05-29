@@ -65,8 +65,8 @@ object HashType {
       val h2 = hashInt(0)
       hashBytes(h1.appendedAll(h2))
 
-    case Type.Cst(tc, _) =>
-      val h1 = hashTypeConstructor(tc)
+    case Type.Cst(tc, loc) =>
+      val h1 = hashTypeConstructor(tc)(loc)
       val h2 = hashInt(1)
       hashBytes(h1.appendedAll(h2))
 
@@ -89,7 +89,7 @@ object HashType {
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("Unexpected Java type", loc)
   }
 
-  private def hashTypeConstructor(tc0: TypeConstructor): Array[Byte] = tc0 match {
+  private def hashTypeConstructor(tc0: TypeConstructor)(implicit loc0: SourceLocation): Array[Byte] = tc0 match {
     case TypeConstructor.Void =>
       hashInt(4)
 
@@ -299,25 +299,25 @@ object HashType {
       hashInt(61)
 
     case TypeConstructor.ArrowWithoutEffect(arity) =>
-      throw InternalCompilerException(s"Unexpected type constructor: ArrowWithoutEffect($arity)", SourceLocation.Unknown)
+      throw InternalCompilerException(s"Unexpected type constructor: ArrowWithoutEffect($arity)", loc0)
 
     case TypeConstructor.JvmConstructor(_) =>
-      throw InternalCompilerException("Unexpected type constructor: JvmConstructor", SourceLocation.Unknown)
+      throw InternalCompilerException("Unexpected type constructor: JvmConstructor", loc0)
 
     case TypeConstructor.JvmMethod(_) =>
-      throw InternalCompilerException("Unexpected type constructor: JvmMethod", SourceLocation.Unknown)
+      throw InternalCompilerException("Unexpected type constructor: JvmMethod", loc0)
 
     case TypeConstructor.JvmField(_) =>
-      throw InternalCompilerException("Unexpected type constructor: JvmField", SourceLocation.Unknown)
+      throw InternalCompilerException("Unexpected type constructor: JvmField", loc0)
 
     case TypeConstructor.ArrayWithoutRegion =>
-      throw InternalCompilerException("Unexpected type constructor: ArrayWithoutRegion", SourceLocation.Unknown)
+      throw InternalCompilerException("Unexpected type constructor: ArrayWithoutRegion", loc0)
 
     case TypeConstructor.RegionWithoutRegion =>
-      throw InternalCompilerException("Unexpected type constructor: RegionWithoutRegion", SourceLocation.Unknown)
+      throw InternalCompilerException("Unexpected type constructor: RegionWithoutRegion", loc0)
 
     case TypeConstructor.Error(_, _) =>
-      throw InternalCompilerException("Unexpected type constructor: Error", SourceLocation.Unknown)
+      throw InternalCompilerException("Unexpected type constructor: Error", loc0)
 
   }
 
