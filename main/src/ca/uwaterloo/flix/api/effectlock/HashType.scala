@@ -143,12 +143,8 @@ object HashType {
       val h2 = hashInt(20)
       hashBytes(h1.appendedAll(h2))
 
-    case TypeConstructor.ArrowWithoutEffect(arity) =>
-      val h1 = hashInt(arity)
-      val h2 = hashInt(21)
-      hashBytes(h1.appendedAll(h2))
-
     case TypeConstructor.RecordRowEmpty =>
+      // TODO: Fix hashInts call from here
       hashInt(22)
 
     case TypeConstructor.RecordRowExtend(label) =>
@@ -207,9 +203,6 @@ object HashType {
 
     case TypeConstructor.Array =>
       hashInt(36)
-
-    case TypeConstructor.ArrayWithoutRegion =>
-      hashInt(37)
 
     case TypeConstructor.Vector =>
       hashInt(38)
@@ -305,8 +298,8 @@ object HashType {
     case TypeConstructor.RegionToStar =>
       hashInt(61)
 
-    case TypeConstructor.RegionWithoutRegion =>
-      hashInt(62)
+    case TypeConstructor.ArrowWithoutEffect(arity) =>
+      throw InternalCompilerException(s"Unexpected type constructor: ArrowWithoutEffect($arity)", SourceLocation.Unknown)
 
     case TypeConstructor.JvmConstructor(_) =>
       throw InternalCompilerException("Unexpected type constructor: JvmConstructor", SourceLocation.Unknown)
@@ -317,8 +310,14 @@ object HashType {
     case TypeConstructor.JvmField(_) =>
       throw InternalCompilerException("Unexpected type constructor: JvmField", SourceLocation.Unknown)
 
+    case TypeConstructor.ArrayWithoutRegion =>
+      throw InternalCompilerException("Unexpected type constructor: ArrayWithoutRegion", SourceLocation.Unknown)
+
+    case TypeConstructor.RegionWithoutRegion =>
+      throw InternalCompilerException("Unexpected type constructor: RegionWithoutRegion", SourceLocation.Unknown)
+
     case TypeConstructor.Error(_, _) =>
-      throw InternalCompilerException("Unexpected Error type constructor", SourceLocation.Unknown)
+      throw InternalCompilerException("Unexpected type constructor: Error", SourceLocation.Unknown)
 
   }
 
