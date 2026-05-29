@@ -135,7 +135,6 @@ object Model {
     *
     * @param module         dot-joined namespace (or `(root)` when empty).
     * @param totalNanos     summed wall-clock time across the module's defs.
-    * @param totalCallCount summed `track` call counts across the module's defs.
     * @param totalLines     summed source-line counts across the module's defs.
     * @param byPhase        phase → summed nanoseconds across the module's defs.
     * @param byPhaseCount   phase → summed track-call counts across the module's defs.
@@ -147,7 +146,7 @@ object Model {
     * @param totalClassBytes summed bytecode byte size of emitted `.class` files across the module's defs.
     * @param totalAllocBytes summed compiler-side heap allocation bytes across the module's defs.
     */
-  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
+  final case class ModuleStats(module: String, totalNanos: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
