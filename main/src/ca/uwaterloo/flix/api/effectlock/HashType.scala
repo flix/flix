@@ -354,9 +354,6 @@ object HashType {
     case Kind.Predicate =>
       hashInt(70)
 
-    case Kind.Jvm =>
-      hashInt(71)
-
     case Kind.CaseSet(sym) =>
       val h1 = hashRestrictableEnumSym(sym)
       val h2 = hashInt(72)
@@ -368,8 +365,11 @@ object HashType {
       val h3 = hashInt(73)
       hashBytes(h1.appendedAll(h2).appendedAll(h3))
 
+    case Kind.Jvm =>
+      throw InternalCompilerException("Unexpected kind: Jvm", SourceLocation.Unknown)
+
     case Kind.Error =>
-      throw InternalCompilerException("Unexpected Error kind", SourceLocation.Unknown)
+      throw InternalCompilerException("Unexpected kind: Error", SourceLocation.Unknown)
 
   }
 
