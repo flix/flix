@@ -66,7 +66,6 @@ object Aggregation {
     case Sort.Time    => s.totalNanos.toDouble
     case Sort.Hotness => Formatting.hotnessMsPerLine(s.totalNanos, lineCount(s.loc))
     case Sort.Mono  => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
-    case Sort.Opt   => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
     case Sort.Inl   => s.inlined.toDouble
     case Sort.Cls   => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
     case Sort.Size  => s.classBytes.toDouble
@@ -81,7 +80,6 @@ object Aggregation {
     case Sort.Time    => m.totalNanos.toDouble
     case Sort.Hotness => Formatting.hotnessMsPerLine(m.totalNanos, m.totalLines)
     case Sort.Mono  => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
-    case Sort.Opt   => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
     case Sort.Inl   => m.totalInlined.toDouble
     case Sort.Cls   => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
     case Sort.Size  => m.totalClassBytes.toDouble

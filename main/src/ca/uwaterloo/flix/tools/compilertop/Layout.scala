@@ -25,7 +25,7 @@ package ca.uwaterloo.flix.tools.compilertop
   *
   * @param nameWidth   width of the merged name column (def + `(file:line)` on def rows, module name on module rows).
   * @param showLines   whether to render the lines column.
-  * @param showCounts  whether to render the mono / opt / cls per-phase count columns.
+  * @param showCounts  whether to render the mono / inl / cls per-phase count columns.
   * @param showCns     whether to render the cns / tv / ev columns.
   * @param showPhase   whether to render the dominant-phase column.
   * @param totalWidth  total rendered width of the row, less leading/trailing pad.
@@ -51,8 +51,8 @@ object Layout {
 
   /** Width contribution of the optional lines column (separator + width). */
   private val LinesColWidth: Int = 1 + 5
-  /** Width contribution of the optional mono / opt / inl / cls / size per-phase count columns (4 × 4-char + 1 × 5-char, with separators). */
-  private val CountsColWidth: Int = 4 * (1 + 4) + (1 + 5)
+  /** Width contribution of the optional mono / inl / cls / size per-phase count columns (3 × 4-char + 1 × 5-char, with separators). */
+  private val CountsColWidth: Int = 3 * (1 + 4) + (1 + 5)
   /** Width contribution of the optional cns column (separator + 5-char numeric field). */
   private val CnsColWidth: Int = 1 + 5
   /** Width contribution of the optional tvars column (separator + 4-char numeric field). */
@@ -70,7 +70,7 @@ object Layout {
   /**
     * Picks a [[Layout]] for the given terminal width by trying tiers in
     * descending feature order. The caller gates the optional count-style
-    * columns by passing `showCounts` (mono / opt / inl / cls / size) and
+    * columns by passing `showCounts` (mono / inl / cls / size) and
     * `showCns` (cns / tv / ev) — Layout itself doesn't know which UI mode
     * they correspond to. When a flag is false the column is hidden and the
     * reclaimed width expands the name column instead.
@@ -113,7 +113,7 @@ object Layout {
     if (cols >= noPhase)
       return fillTier(LinesColWidth + extraColsW + tail, showLines = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = false)
 
-    // Tier: drop phase + the optional counts (mono/opt/inl/cls/size or cns/tv/ev).
+    // Tier: drop phase + the optional counts (mono/inl/cls/size or cns/tv/ev).
     val noPhaseNoExtras = DefaultNameWidth + LinesColWidth + tail
     if (cols >= noPhaseNoExtras)
       return fillTier(LinesColWidth + tail, showLines = true, showCountsOut = false, showCnsOut = false, showPhase = false)
