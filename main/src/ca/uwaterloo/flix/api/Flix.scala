@@ -595,7 +595,9 @@ class Flix {
     shutdownForkJoinPool()
 
     // Reset the progress bar.
-    progressBar.complete()
+    if (options.progress) {
+      progressBar.complete()
+    }
 
     // Stop the live compiler profiler TUI only if there are errors and no
     // `codeGen` will follow. On the success path, leave it running so
@@ -692,7 +694,9 @@ class Flix {
     shutdownForkJoinPool()
 
     // Reset the progress bar.
-    progressBar.complete()
+    if (options.progress) {
+      progressBar.complete()
+    }
 
     // Stop the live compiler profiler TUI, if it is running.
     compilerTop.foreach(_.stop())
