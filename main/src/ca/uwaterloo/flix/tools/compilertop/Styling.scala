@@ -55,13 +55,17 @@ object Styling {
   /**
     * Colors the sym name based on its hotness (ms-per-source-line) — surfaces
     * small defs that consume time disproportionate to their body size. Defs
-    * with no real source span (`locLines <= 0`) are left unstyled because the
+    * with no real source span (`lines <= 0`) are left unstyled because the
     * denominator is meaningless; [[hotnessMsPerLine]] returns 0 for them so
     * they fall below the yellow threshold and pass through unchanged.
+    *
+    * Bold is deliberately NOT used here — the renderer reserves it as the
+    * "currently being compiled" signal on def-row first cells, so bold
+    * composes naturally with red/yellow when a hot def is also active.
     */
-  def styleSym(name: String, nanos: Long, locLines: Int): String = {
-    val msPerLine = Formatting.hotnessMsPerLine(nanos, locLines)
-    if (msPerLine >= HotnessRedThresholdMsPerLine) bold(red(name))
+  def styleSym(name: String, nanos: Long, lines: Int): String = {
+    val msPerLine = Formatting.hotnessMsPerLine(nanos, lines)
+    if (msPerLine >= HotnessRedThresholdMsPerLine) red(name)
     else if (msPerLine >= HotnessYellowThresholdMsPerLine) yellow(name)
     else name
   }
