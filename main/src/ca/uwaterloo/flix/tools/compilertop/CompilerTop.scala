@@ -322,7 +322,7 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val activeFilter = filter.get()
     val activeSort = sort.get()
 
-    // The mono / opt / cls columns only render under the backend view (the
+    // The mono / inl / cls columns only render under the backend view (the
     // phases that populate them only fire in the backend pipeline). The cns /
     // tv / ev columns only render under the frontend view (constraint
     // generation is purely a Typer concern). Layout itself doesn't know about

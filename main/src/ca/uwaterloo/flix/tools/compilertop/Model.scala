@@ -99,8 +99,6 @@ object Model {
     case object Hotness extends Sort { val key = 'h' }
     /** Most monomorphic instances first — surfaces generic-explosion hotspots. */
     case object Mono    extends Sort { val key = 'm' }
-    /** Most optimizer fixed-point re-visits first — surfaces inliner / occurrence-analyzer thrashing. */
-    case object Opt     extends Sort { val key = 'o' }
     /** Most times inlined at a call site first — surfaces small leaf defs that get duplicated everywhere. */
     case object Inl     extends Sort { val key = 'i' }
     /** Most class files emitted first — surfaces JVM fan-out from polymorphism / closures. */
@@ -117,7 +115,7 @@ object Model {
     case object Evars   extends Sort { val key = 'e' }
 
     /** All sort values. */
-    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
+    val all: List[Sort] = List(Time, Hotness, Mono, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
 
     /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
@@ -125,8 +123,6 @@ object Model {
 
   /** Phases whose `track` count maps to the `mono` column — number of monomorphic instances created. */
   val MonoCountPhases: Set[String] = Set("Monomorpher")
-  /** Phases whose `track` count maps to the `opt` column — optimizer fixed-point re-visits. */
-  val OptCountPhases: Set[String] = Set("Optimizer", "LambdaDrop")
   /** Phases whose `track` count maps to the `cls` column — class files emitted post-specialization. */
   val ClsCountPhases: Set[String] = Set("CodeGen")
 

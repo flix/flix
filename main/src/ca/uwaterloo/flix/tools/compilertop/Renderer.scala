@@ -413,7 +413,7 @@ final class Renderer {
 
   /**
     * Builds a table column header from a pre-padded leading-column label.
-    * Each sortable column underlines its [[Sort.key]] letter (`m̲ono`, `o̲pt`,
+    * Each sortable column underlines its [[Sort.key]] letter (`m̲ono`, `i̲nl`,
     * `c̲ls`, `t̲ime`, …) and the leading "(h̲ot)" annotation marks the hotness
     * sort key. The active column is rendered bold yellow; the rest bold cyan.
     *
@@ -430,7 +430,6 @@ final class Renderer {
     }
     if (layout.showCounts) {
       sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono, activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,  activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("inl",  4), Sort.Inl,  activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,  activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("size", 5), Sort.Size, activeSort))
@@ -517,7 +516,6 @@ final class Renderer {
 
     sb.append("  "); sb.append(bold(cyan("Backend columns"))); sb.append('\n')
     appendHelpCol(sb, "mono",     "the number of monomorphic copies created during monomorphization")
-    appendHelpCol(sb, "opt",      "the number of optimizer fixed-point re-visits across Optimizer and LambdaDrop")
     appendHelpCol(sb, "inl",      "the number of times the def was inlined at a call site")
     appendHelpCol(sb, "cls",      "the number of .class files emitted for the def")
     appendHelpCol(sb, "size",     "the total bytecode size of all .class files emitted for the def")
@@ -533,7 +531,7 @@ final class Renderer {
   }
 
   /**
-    * Appends the trailing numeric columns (LOC, mono / opt / cls, cns,
+    * Appends the trailing numeric columns (LOC, mono / inl / cls, cns,
     * phase, time, %cpu, %wall) for one row, honoring the layout's
     * visibility flags. Always emits a leading separator before each column
     * it writes.
@@ -541,7 +539,7 @@ final class Renderer {
     * [[RowCells.aggregate]] skips all warning colors on `time` / `%cpu` /
     * `%wall`. The `style*` thresholds are calibrated for individual defs;
     * at module scale, sums-across-defs trip the thresholds unconditionally
-    * and the colors become noise. Counts (mono / opt / cls / cns) render
+    * and the colors become noise. Counts (mono / inl / cls / cns) render
     * plain in both tables.
     */
   private def appendNumericFields(sb: StringBuilder, cells: RowCells, layout: Layout): Unit = {
@@ -552,10 +550,8 @@ final class Renderer {
     }
     if (layout.showCounts) {
       val mono = sumPhaseCounts(cells.byPhaseCount, MonoCountPhases)
-      val opt  = sumPhaseCounts(cells.byPhaseCount, OptCountPhases)
       val cls  = sumPhaseCounts(cells.byPhaseCount, ClsCountPhases)
       sb.append(' '); sb.append(lpad(mono.toString, 4))
-      sb.append(' '); sb.append(lpad(opt.toString, 4))
       sb.append(' '); sb.append(lpad(cells.inlined.toString, 4))
       sb.append(' '); sb.append(lpad(cls.toString, 4))
       sb.append(' '); sb.append(lpad(formatBytes(cells.classBytes), 5))
