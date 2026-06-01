@@ -413,7 +413,7 @@ final class Renderer {
 
   /**
     * Builds a table column header from a pre-padded leading-column label.
-    * Each sortable column underlines its [[Sort.key]] letter (`m̲ono`, `o̲pt`,
+    * Each sortable column underlines its [[Sort.key]] letter (`m̲ono`, `i̲nl`,
     * `c̲ls`, `t̲ime`, …) and the leading "(h̲ot)" annotation marks the hotness
     * sort key. The active column is rendered bold yellow; the rest bold cyan.
     *
