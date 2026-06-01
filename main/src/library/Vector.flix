@@ -1037,8 +1037,7 @@ pub mod Vector {
     ///
     pub def partition(f: a -> Bool \ ef, v: Vector[a]): (Vector[a], Vector[a]) \ ef =
         let step = {
-            (x, acc) ->
-                let (a1, a2) = acc;
+            x -> match (a1, a2) ->
                 if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), v);
@@ -1259,9 +1258,9 @@ pub mod Vector {
         let len = length(v);
         let arr = Array.empty(rc, len);
         let brr = Array.empty(rc, len);
+
         forEachWithIndex(
-            (i, x) -> {
-                let (l, r) = x;
+            i -> match (l, r) -> {
                 Array.put(l, i, arr);
                 Array.put(r, i, brr)
             },

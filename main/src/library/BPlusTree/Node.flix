@@ -262,8 +262,7 @@ mod BPlusTree.Node {
             let lastChildWorks = assertNodeInvariant(unwrapNode(Vector.last(children)), arity, isRightMost, if (size == 0) shouldBeBiggerThan else Vector.last(keys), search);
             let zippedWithoutFirst = Vector.filter(match (index, _) -> index != 0, Vector.mapWithIndex(i -> x -> (i, x), toLength(children, size - 1)));
             let middleChildrenWorks = Vector.forAll(
-                pair ->
-                    let (i, p) = pair;
+                match (i, p) ->
                     assertNodeInvariant(p, arity, false, Some(Vector.get(i - 1, keys)), search),
                 zippedWithoutFirst
             );
