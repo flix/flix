@@ -34,14 +34,14 @@ object Formatting {
   }
 
   /**
-    * Returns ms-per-source-line for the given `nanos / locLines` pair, or 0
-    * when `locLines <= 0` (synthetic defs with no real source span — the
+    * Returns ms-per-source-line for the given `nanos / lines` pair, or 0
+    * when `lines <= 0` (synthetic defs with no real source span — the
     * denominator would be meaningless). Single source of truth for the
     * "hotness" metric used by both the hotness sort key and the threshold-
     * based row coloring.
     */
-  def hotnessMsPerLine(nanos: Long, locLines: Int): Double =
-    if (locLines <= 0) 0.0 else (nanos / 1_000_000L).toDouble / locLines
+  def hotnessMsPerLine(nanos: Long, lines: Int): Double =
+    if (lines <= 0) 0.0 else (nanos / 1_000_000L).toDouble / lines
 
   // -- Formatting helpers -------------------------------------------------
 
@@ -50,7 +50,7 @@ object Formatting {
     if (!loc.isReal) "?" else s"${loc.source.name}:${loc.startLine}"
 
   /** Returns the inclusive line span of `loc`, or 0 if synthetic. */
-  def locLineCount(loc: SourceLocation): Int =
+  def lineCount(loc: SourceLocation): Int =
     if (!loc.isReal) 0 else (loc.endLine - loc.startLine + 1).max(0)
 
   /** Formats a nanosecond duration as `Nms` or `N.Ns` (≥10s). */
@@ -61,26 +61,51 @@ object Formatting {
   }
 
   /**
-    * Formats a byte count compactly into at most 5 characters: `NB`, `N.NKB`,
-    * `NNNKB`, `N.NMB`, or `NNNMB`. Uses one decimal place under 10 of the
-    * higher unit so small values keep precision while large ones stay narrow.
+    * Formats a byte count compactly into at most 5 characters: `NB`, `NKB`,
+    * `NNNKB`, `NMB`, `NNNMB`, `NGB`, `NNNGB`, or `NTB`. Always integer —
+    * sacrifices precision below 10 of each unit so the digit width stays
+    * uniform across rows. A mixed integer / one-decimal scheme made `9.0MB`
+    * read visually wider than `14MB` despite being the smaller value.
+    *
+    * Units roll over at 1000 (not 1024) so the formatted string never exceeds
+    * 5 characters. E.g. a rounded `1023KB` becomes `1MB` rather than the
+    * 6-char `1023KB` it would be under exact-power-of-two rollover — which
+    * would overflow the 5-char column it sits in and wrap the row.
     */
   def formatBytes(bytes: Long): String = {
-    val Kib = 1024.0
-    val Mib = 1024.0 * 1024.0
-    if (bytes < 1024L) s"${bytes}B"
-    else if (bytes < 1024L * 1024L) {
-      val kb = bytes / Kib
-      if (kb < 10.0) f"$kb%.1fKB" else f"${kb.round}%dKB"
-    } else {
-      val mb = bytes / Mib
-      if (mb < 10.0) f"$mb%.1fMB" else f"${mb.round}%dMB"
+    val Kib = 1024L
+    val Mib = Kib * Kib
+    val Gib = Kib * Mib
+    val Tib = Kib * Gib
+    val UnitMax = 1000L
+    if (bytes < Kib) s"${bytes}B"
+    else {
+      val kb = math.round(bytes.toDouble / Kib)
+      if (kb < UnitMax) s"${kb}KB"
+      else {
+        val mb = math.round(bytes.toDouble / Mib)
+        if (mb < UnitMax) s"${mb}MB"
+        else {
+          val gb = math.round(bytes.toDouble / Gib)
+          if (gb < UnitMax) s"${gb}GB"
+          else s"${math.round(bytes.toDouble / Tib)}TB"
+        }
+      }
     }
   }
 
   /** Returns `s` truncated to `width` characters, with a trailing ellipsis when shortened. */
   def truncate(s: String, width: Int): String =
     if (s.length <= width) s else s.take(width - 1) + "…"
+
+  /**
+    * Returns `s` truncated to `width` characters, with a *leading* ellipsis
+    * when shortened. Mirror of [[truncate]] for fields where the tail carries
+    * the signal — e.g. a source location like `…flix:128` reads better than
+    * `Foo.fl…` when the budget can't fit the whole `Foo.flix:128`.
+    */
+  def truncateFront(s: String, width: Int): String =
+    if (s.length <= width) s else "…" + s.takeRight(width - 1)
 
   /** Left-pads `s` with spaces to width `w`. */
   def lpad(s: String, w: Int): String =

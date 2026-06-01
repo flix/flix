@@ -23,6 +23,22 @@ package ca.uwaterloo.flix.tools.compilertop
 object Model {
 
   /**
+    * Which top-level screen the renderer should draw. Toggled by `?` /
+    * `Esc` in the input thread. The dashboard and stats lines render the
+    * same in either view; only the body below them changes.
+    *
+    *   - [[View.Main]]: the def + module tables (default).
+    *   - [[View.Help]]: a static legend explaining each column and
+    *     keystroke, so the user doesn't have to guess what e.g. `tv` or
+    *     `rnd` mean.
+    */
+  sealed trait View
+  object View {
+    case object Main extends View
+    case object Help extends View
+  }
+
+  /**
     * Restricts which phases' time the dashboard accounts for. Toggled
     * interactively via the input thread (`f` / `b` / `a`). The split tracks
     * `Flix.check` (frontend) vs the phases that follow in `Flix.compile`'s
@@ -91,6 +107,8 @@ object Model {
     case object Cls     extends Sort { val key = 'c' }
     /** Largest total `.class` byte size first — surfaces defs whose bodies compile to bulky bytecode. */
     case object Size    extends Sort { val key = 's' }
+    /** Most heap bytes allocated by the compiler while processing this def — surfaces compiler-side data-structure blow-up (e.g. unification trails, IR duplication) independent of wall time. */
+    case object Alloc   extends Sort { val key = 'l' }
     /** Most type constraints first — surfaces type-checking-heavy defs. The key is `n` (not `c`, which is taken by [[Cls]]). */
     case object Cns     extends Sort { val key = 'n' }
     /** Most type variables first — surfaces broadly polymorphic defs. */
@@ -99,7 +117,7 @@ object Model {
     case object Evars   extends Sort { val key = 'e' }
 
     /** All sort values. */
-    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Cns, Tvars, Evars)
+    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
 
     /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
@@ -117,17 +135,18 @@ object Model {
     *
     * @param module         dot-joined namespace (or `(root)` when empty).
     * @param totalNanos     summed wall-clock time across the module's defs.
-    * @param totalCallCount summed `track` call counts across the module's defs.
-    * @param totalLocLines  summed source-line counts across the module's defs.
+    * @param totalLines     summed source-line counts across the module's defs.
     * @param byPhase        phase → summed nanoseconds across the module's defs.
     * @param byPhaseCount   phase → summed track-call counts across the module's defs.
+    * @param byPhaseAlloc   phase → summed compiler-side allocation bytes across the module's defs. Lets the frontend/backend filter re-project module allocation the same way it re-projects module time.
     * @param totalCns       summed Typer constraint counts across the module's defs.
     * @param totalTvars     summed `Kind.Star` type-variable counts across the module's defs.
     * @param totalEvars     summed `Kind.Eff`  effect-variable counts across the module's defs.
     * @param totalInlined   summed inliner call-site inline counts across the module's defs.
     * @param totalClassBytes summed bytecode byte size of emitted `.class` files across the module's defs.
+    * @param totalAllocBytes summed compiler-side heap allocation bytes across the module's defs.
     */
-  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long) {
+  final case class ModuleStats(module: String, totalNanos: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)

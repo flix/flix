@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.compilertop
 
-import ca.uwaterloo.flix.tools.compilertop.Formatting.locLineCount
+import ca.uwaterloo.flix.tools.compilertop.Formatting.lineCount
 import ca.uwaterloo.flix.tools.compilertop.Model.*
 import ca.uwaterloo.flix.tools.compilertop.Profiler.DefnStats
 
@@ -36,9 +36,8 @@ object Aggregation {
   /**
     * Projects each [[DefnStats]] through the active filter: keep only the
     * `byPhase` and `byPhaseCount` entries whose phase matches, and recompute
-    * `totalNanos` and `callCount` as the sum over the kept phases. Module
-    * aggregation re-rolls from these filtered defs, so module rows track
-    * the filter automatically.
+    * `totalNanos` as the sum over the kept phases. Module aggregation re-rolls
+    * from these filtered defs, so module rows track the filter automatically.
     *
     * `loc` isn't per-phase and passes through unchanged.
     */
@@ -47,10 +46,10 @@ object Aggregation {
     snap.map { s =>
       val keptPhases = s.byPhase.filter { case (p, _) => matchesFilter(p, f) }
       val keptCounts = s.byPhaseCount.filter { case (p, _) => matchesFilter(p, f) }
+      val keptAlloc  = s.byPhaseAlloc.filter { case (p, _) => matchesFilter(p, f) }
       val keptTotal = keptPhases.values.sum
-      // Sum of per-phase counts cannot overflow Int in any realistic build.
-      val keptCount = keptCounts.values.sum.toInt
-      s.copy(totalNanos = keptTotal, callCount = keptCount, byPhase = keptPhases, byPhaseCount = keptCounts)
+      val keptAllocTotal = keptAlloc.values.sum
+      s.copy(totalNanos = keptTotal, byPhase = keptPhases, byPhaseCount = keptCounts, byPhaseAlloc = keptAlloc, allocBytes = keptAllocTotal)
     }
   }
 
@@ -65,12 +64,13 @@ object Aggregation {
     */
   def defSortKey(s: DefnStats, srt: Sort): Double = srt match {
     case Sort.Time    => s.totalNanos.toDouble
-    case Sort.Hotness => Formatting.hotnessMsPerLine(s.totalNanos, locLineCount(s.loc))
+    case Sort.Hotness => Formatting.hotnessMsPerLine(s.totalNanos, lineCount(s.loc))
     case Sort.Mono  => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
     case Sort.Opt   => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
     case Sort.Inl   => s.inlined.toDouble
     case Sort.Cls   => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
     case Sort.Size  => s.classBytes.toDouble
+    case Sort.Alloc => s.allocBytes.toDouble
     case Sort.Cns   => s.cns.toDouble
     case Sort.Tvars => s.tvars.toDouble
     case Sort.Evars => s.evars.toDouble
@@ -79,12 +79,13 @@ object Aggregation {
   /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
   def moduleSortKey(m: ModuleStats, srt: Sort): Double = srt match {
     case Sort.Time    => m.totalNanos.toDouble
-    case Sort.Hotness => Formatting.hotnessMsPerLine(m.totalNanos, m.totalLocLines)
+    case Sort.Hotness => Formatting.hotnessMsPerLine(m.totalNanos, m.totalLines)
     case Sort.Mono  => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
     case Sort.Opt   => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
     case Sort.Inl   => m.totalInlined.toDouble
     case Sort.Cls   => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
     case Sort.Size  => m.totalClassBytes.toDouble
+    case Sort.Alloc => m.totalAllocBytes.toDouble
     case Sort.Cns   => m.totalCns.toDouble
     case Sort.Tvars => m.totalTvars.toDouble
     case Sort.Evars => m.totalEvars.toDouble
@@ -98,8 +99,7 @@ object Aggregation {
     }
     groups.iterator.map { case (mod, defs) =>
       val totalNanos = defs.iterator.map(_.totalNanos).sum
-      val totalCallCount = defs.iterator.map(_.callCount.toLong).sum
-      val totalLocLines = defs.iterator.map(s => locLineCount(s.loc)).sum
+      val totalLines = defs.iterator.map(s => lineCount(s.loc)).sum
       val byPhase = defs.foldLeft(Map.empty[String, Long]) { (acc, d) =>
         d.byPhase.foldLeft(acc) { case (m, (phase, n)) =>
           m.updated(phase, m.getOrElse(phase, 0L) + n)
@@ -110,12 +110,18 @@ object Aggregation {
           m.updated(phase, m.getOrElse(phase, 0L) + n)
         }
       }
+      val byPhaseAlloc = defs.foldLeft(Map.empty[String, Long]) { (acc, d) =>
+        d.byPhaseAlloc.foldLeft(acc) { case (m, (phase, n)) =>
+          m.updated(phase, m.getOrElse(phase, 0L) + n)
+        }
+      }
       val totalCns = defs.iterator.map(_.cns).sum
       val totalTvars = defs.iterator.map(_.tvars.toLong).sum
       val totalEvars = defs.iterator.map(_.evars.toLong).sum
       val totalInlined = defs.iterator.map(_.inlined).sum
       val totalClassBytes = defs.iterator.map(_.classBytes).sum
-      ModuleStats(mod, totalNanos, totalCallCount, totalLocLines, byPhase, byPhaseCount, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes)
+      val totalAllocBytes = defs.iterator.map(_.allocBytes).sum
+      ModuleStats(mod, totalNanos, totalLines, byPhase, byPhaseCount, byPhaseAlloc, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes, totalAllocBytes)
     }.toVector.sortBy(m => -moduleSortKey(m, srt))
   }
 }

@@ -107,7 +107,7 @@ mod BPlusTree.Node {
                 sameElementsFromLeaf(j1 + 1, m1, j2 + 1, m2)
             else
                 false
-        case _            => false
+        case _ => false
     }
 
     ///
@@ -1346,5 +1346,24 @@ mod BPlusTree.Node {
                 case Some(next) => traverseRightUnconditionalInc(f, index - node->size, stepSize, next)
                 case None       => ()
             }
+    }
+
+    ///
+    /// Apply `f` to all mappings in `node` and all nodes to the right of `node`,
+    /// passing an index `i` as the first argument to `f`.
+    ///
+    /// Not thread-safe: Traverses the live leaf chain.
+    ///
+    pub def traverseRightUnconditionalWithIndex(
+        f: Int32 -> k -> v -> Unit \ ef,
+        i: Int32,
+        index0: Int32,
+        node0: Node[k, v, r]
+    ): Unit \ ef + r = match seek(index0, node0) {
+        case Some((index, node)) => {
+            getKeyAndValueAt(index, node) ||> f(i);
+            traverseRightUnconditionalWithIndex(f, i + 1, index + 1, node)
+        }
+        case None => ()
     }
 }
