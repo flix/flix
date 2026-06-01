@@ -76,12 +76,23 @@ object InlayHintProvider {
 
   /**
     * Returns a list of inlay hints from a given list of CompilationMessage(s),
-    * specifically containing explicitly and implicitly pure functions using IO, errors.
     */
   private def getInlayHintsFromErrors(errors: List[CompilationMessage]): List[InlayHint] = {
     errors.foldLeft(List(): List[InlayHint]) {
-      case (acc, TypeError.ExplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.start), "IO", "IO", Range.from(loc)) :: acc
-      case (acc, TypeError.ImplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.end), " \\ IO ", " \\ IO ", Range.from(loc)) :: acc
+      case (acc, TypeError.ExplicitlyPureFunctionUsesIO(loc, _)) =>
+        val hint = mkIOHint(Position.from(loc.start), "IO", "IO", Range.from(loc))
+        // If an inlay hint is already in the accumulator, don't add it. Duplicate hints occur because
+        // error location is different if there are more than one occurrence of this error,
+        // but the fix will remain the same.
+        if (acc.contains(hint)) acc else hint :: acc
+
+      case (acc, TypeError.ImplicitlyPureFunctionUsesIO(loc, _)) =>
+        val hint = mkIOHint(Position.from(loc.end), " \\ IO ", " \\ IO ", Range.from(loc))
+        // If an inlay hint is already in the accumulator, don't add it. Duplicate hints occur because
+        // error location is different if there are more than one occurrence of this error,
+        // but the fix will remain the same.
+        if (acc.contains(hint)) acc else hint :: acc
+
       case (acc, _) => acc
     }
   }

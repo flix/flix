@@ -4,17 +4,17 @@
 
 /// Types of untrusted data sources.
 pub enum SourceType with Eq, Order, ToString {
-    case UserInput      // Form fields, query parameters
-    case Network        // HTTP requests, socket data
+    case UserInput // Form fields, query parameters
+    case Network // HTTP requests, socket data
 }
 
 /// Types of sensitive sinks.
 pub enum SinkType with Eq, Order, ToString {
-    case SqlQuery       // SQL injection risk
+    case SqlQuery // SQL injection risk
 }
 
-type alias Variable = String      // e.g. "username"
-type alias Location = Int32       // e.g. 42
+type alias Variable = String // e.g. "username"
+type alias Location = Int32 // e.g. 42
 
 ///
 /// We compute all SQL injection vulnerabilities by tracking tainted data

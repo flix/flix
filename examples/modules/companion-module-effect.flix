@@ -11,5 +11,5 @@ def main(): Unit \ IO =
     run {
         StdOut.println(42)
     } with handler StdOut {
-        def printStr(s, k) = {println(s); k()}
+        def printStr(s, k) = { println(s); k() }
     }

@@ -481,6 +481,110 @@ object ResolutionError {
   }
 
   /**
+    * An error raised when a Java class is instantiated with struct-style fields.
+    *
+    * @param name the qualified name being instantiated.
+    * @param loc  the location where the error occurred.
+    */
+  case class NewObjectWithStructFields(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3741
+
+    def summary: String = s"'${name.toString}' is a Java class. A new Java object expression cannot have struct fields."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> '${red(name.toString)}' is a Java class, not a struct.
+         |
+         |A new Java object expression cannot have struct fields.
+         |
+         |${highlight(loc, "unexpected struct fields", fmt)}
+         |
+         |${underline("Explanation:")} To implement a Java interface or extend a class, use:
+         |
+         |  new ${name.toString} { def method(...) = ... }
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a Java class is instantiated with a struct-style region.
+    *
+    * @param name the qualified name being instantiated.
+    * @param loc  the location where the error occurred.
+    */
+  case class NewObjectWithStructRegion(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E9364
+
+    def summary: String = s"'${name.toString}' is a Java class. A new Java object expression cannot have a region."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> '${red(name.toString)}' is a Java class, not a struct.
+         |
+         |A new Java object expression cannot have a region.
+         |
+         |${highlight(loc, "unexpected struct region", fmt)}
+         |
+         |${underline("Explanation:")} To implement a Java interface or extend a class, use:
+         |
+         |  new ${name.toString} { def method(...) = ... }
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a Flix struct is instantiated with JVM-style constructors.
+    *
+    * @param name the qualified name being instantiated.
+    * @param loc  the location where the error occurred.
+    */
+  case class NewStructWithObjectConstructors(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E6285
+
+    def summary: String = s"'${name.toString}' is a struct. A new struct expression must use struct syntax with a region and fields."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> '${red(name.toString)}' is a struct, not a Java class.
+         |
+         |A new struct expression cannot have JVM constructors.
+         |
+         |${highlight(loc, "unexpected JVM constructor", fmt)}
+         |
+         |${underline("Explanation:")} To create a struct, use:
+         |
+         |  new ${name.toString} @ region { field = value, ... }
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a Flix struct is instantiated with JVM-style methods.
+    *
+    * @param name the qualified name being instantiated.
+    * @param loc  the location where the error occurred.
+    */
+  case class NewStructWithObjectMethods(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E1541
+
+    def summary: String = s"'${name.toString}' is a struct. A new struct expression must use struct syntax with a region and fields."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> '${red(name.toString)}' is a struct, not a Java class.
+         |
+         |A new struct expression cannot have JVM methods.
+         |
+         |${highlight(loc, "unexpected JVM method", fmt)}
+         |
+         |${underline("Explanation:")} To create a struct, use:
+         |
+         |  new ${name.toString} @ region { field = value, ... }
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error indicating the number of effect operation parameters does not match the expected number.
     *
     * @param op       the effect operation symbol.

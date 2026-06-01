@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{FormattingOptions, Position, Formatter, TextEdit, Range}
+import ca.uwaterloo.flix.api.lsp.{FormattingOptions, Position, FormatterLsp, TextEdit, Range}
 
 import scala.annotation.unused
 
@@ -24,7 +24,6 @@ object FormattingProvider {
 
   def formatDocument(uri: String, @unused options: FormattingOptions)(implicit @unused flix: Flix): List[TextEdit] = {
     val parsedAst = flix.getParsedAst
-    val formattedSource = Formatter.format(parsedAst, uri)
-    formattedSource
+    FormatterLsp.format(parsedAst, uri)
   }
 }

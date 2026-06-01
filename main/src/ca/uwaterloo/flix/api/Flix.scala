@@ -21,12 +21,13 @@ import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityC
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
-import ca.uwaterloo.flix.language.phase.jvm.{JvmBackend, JvmLoader, JvmWriter}
+import ca.uwaterloo.flix.language.phase.jvm.{CodeGen, JvmLoader, JvmWriter}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
+import ca.uwaterloo.flix.tools.compilertop.{CompilerTop, Profiler}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
@@ -101,6 +102,11 @@ class Flix {
   def getParsedAst: SyntaxTree.Root = cachedParserCst
 
   /**
+    * Returns the weeded ast.
+    */
+  def getWeededAst: WeededAst.Root = cachedWeederAst
+
+  /**
     * A cache of error messages for incremental compilation.
     */
   private var cachedErrors: List[CompilationMessage] = Nil
@@ -115,16 +121,16 @@ class Flix {
     * by [[setOptions]] when the compiler profiler is enabled; absent on the
     * default path so [[profile]] is a no-op with no measurement overhead.
     */
-  private var profiler: Option[CompilerProfiler] = None
+  private var profiler: Option[Profiler] = None
 
   /** The live compiler profiler TUI, if it has been started. */
   private var compilerTop: Option[CompilerTop] = None
 
   /** Returns the currently installed profiler, or `None`. */
-  def getProfiler: Option[CompilerProfiler] = profiler
+  def getProfiler: Option[Profiler] = profiler
 
   /** Installs (or removes, when `None`) the profiler that backs [[profile]]. */
-  def setProfiler(p: Option[CompilerProfiler]): Unit = profiler = p
+  def setProfiler(p: Option[Profiler]): Unit = profiler = p
 
   /**
     * Records the time spent running `thunk` against `sym`, attributed to
@@ -437,8 +443,11 @@ class Flix {
       throw new IllegalArgumentException("'opts' must be non-null.")
     options = opts
     if (opts.compilerTop && compilerTop.isEmpty) {
-      val p = new CompilerProfiler(() => getCurrentPhaseName)
+      val p = new Profiler(() => getCurrentPhaseName)
       setProfiler(Some(p))
+      // The profiler subscribes to compiler events (e.g. NewConstraintsDef)
+      // to track signals that are awkward to thread through `track()`.
+      addListener(p)
       val t = new CompilerTop(this, p)
       t.start()
       compilerTop = Some(t)
@@ -677,7 +686,7 @@ class Flix {
     eraserAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     // Generate JVM classes.
-    val bytecodeAst = JvmBackend.run(reducerAst)
+    val bytecodeAst = CodeGen.run(reducerAst)
     reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     val totalTime = flix.getTotalTime
