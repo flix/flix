@@ -153,6 +153,10 @@ object LambdaDrop {
       visitExp(exp1)
       visitExp(exp2)
 
+    case Expr.LetSeq(bindings, body, _, _, _) =>
+      bindings.foreach { case (_, exp) => visitExp(exp) }
+      visitExp(body)
+
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
@@ -276,6 +280,10 @@ object LambdaDrop {
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
       Expr.Let(sym, e1, e2, tpe, eff, occur, loc)
+
+    case Expr.LetSeq(bindings, body, tpe, eff, loc) =>
+      val rewrittenBindings = bindings.map { case (sym, exp) => (sym, rewriteExp(exp)) }
+      Expr.LetSeq(rewrittenBindings, rewriteExp(body), tpe, eff, loc)
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
       val e1 = rewriteExp(exp1)

@@ -418,6 +418,20 @@ object Terminator {
           val e2 = visitExp(extContexts, exp2, pos)
           Expr.Let(bnd, e1, e2, tpe, eff, loc)
 
+        case Expr.LetSeq(bindings, body, tpe, eff, loc) =>
+          var ctxs = contexts
+          val visitedBindings = bindings.map { case (bnd, exp) =>
+            val e = visitExp(ctxs, exp, ApplyPosition.NonTail)
+            ctxs = exp match {
+              case Expr.Var(sym, _, _) =>
+                ctxs.map(ctx => ctx.copy(env = ctx.env.propagateAlias(from = sym, to = bnd.sym)))
+              case _ => ctxs
+            }
+            (bnd, e)
+          }
+          val visitedBody = visitExp(ctxs, body, pos)
+          Expr.LetSeq(visitedBindings, visitedBody, tpe, eff, loc)
+
         // --- LocalDef: push new context, visit body with extended list ---
         case Expr.LocalDef(ann, bnd, fparams0, exp1, exp2, tpe, eff, loc) =>
           val isTerminates = ann.isTerminates

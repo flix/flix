@@ -157,6 +157,10 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.Let(sym, e1, e2, tpe, eff, loc)
 
+    case Expr.LetSeq(bindings, body, tpe, eff, loc) =>
+      val visitedBindings = bindings.map { case (sym, exp) => (sym, visitExp(exp)) }
+      Expr.LetSeq(visitedBindings, visitExp(body), tpe, eff, loc)
+
     case Expr.LocalDef(ann, sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)

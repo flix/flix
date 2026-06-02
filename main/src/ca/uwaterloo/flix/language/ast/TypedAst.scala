@@ -139,6 +139,8 @@ object TypedAst {
 
     case class Let(bnd: Binder, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class LetSeq(bindings: List[(Binder, Expr)], body: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class LocalDef(ann: Annotations, bnd: Binder, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Region(bnd: Binder, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr

@@ -53,6 +53,7 @@ object TypedAstOps {
     case Expr.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.LetSeq(bindings, body, _, _, _) => bindings.foldLeft(sigSymsOf(body)) { case (acc, (_, exp)) => sigSymsOf(exp) ++ acc }
     case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Region(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
@@ -200,6 +201,9 @@ object TypedAstOps {
 
     case Expr.Let(bnd, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - bnd.sym
+
+    case Expr.LetSeq(bindings, body, _, _, _) =>
+      bindings.foldRight(freeVars(body)) { case ((bnd, exp), acc) => freeVars(exp) ++ (acc - bnd.sym) }
 
     case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       val bound = sym :: fparams.map(_.bnd.sym)

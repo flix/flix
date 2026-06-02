@@ -134,6 +134,16 @@ object OccurrenceAnalyzer {
           (Expr.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
         }
 
+      case Expr.LetSeq(bindings, body, tpe, eff, loc) =>
+        val (visitedBody, bodyCtx) = visitExp(body)
+        var ctx = bodyCtx
+        val visitedBindings = bindings.reverseIterator.map { case (sym, exp) =>
+          val (e, expCtx) = visitExp(exp)
+          ctx = combineSeq(expCtx, ctx).removeVar(sym)
+          (sym, e)
+        }.toList.reverse
+        (Expr.LetSeq(visitedBindings, visitedBody, tpe, eff, loc), ctx)
+
       case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur0, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val ctx2 = ctx1.map {

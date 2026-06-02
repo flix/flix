@@ -378,6 +378,10 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
+      case Expr.LetSeq(bindings, body, _, _, _) =>
+        bindings.foreach { case (bnd, exp) => visitBinder(bnd); visitExpr(exp) }
+        visitExpr(body)
+
       case Expr.LocalDef(_, bnd, fparams, exp1, exp2, _, _, _) =>
         visitBinder(bnd)
         fparams.foreach(visitFormalParam)

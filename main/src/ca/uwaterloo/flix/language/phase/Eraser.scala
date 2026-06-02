@@ -231,6 +231,8 @@ object Eraser {
       ErasedAst.Expr.Switch(e, specializedEnum.sym, cs, d, visitType(tpe), purity, loc)
     case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
       ErasedAst.Expr.Let(sym, visitExp(exp1), visitExp(exp2), loc)
+    case ReducedAst.Expr.LetSeq(bindings, body, loc) =>
+      ErasedAst.Expr.LetSeq(bindings.map { case (sym, exp) => (sym, visitExp(exp)) }, visitExp(body), loc)
     case ReducedAst.Expr.Stm(exps, exp, loc) =>
       ErasedAst.Expr.Stm(exps.map(visitExp), visitExp(exp), loc)
     case ReducedAst.Expr.Region(sym, exp, tpe, purity, loc) =>

@@ -188,6 +188,12 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
+    case MonoAst.Expr.LetSeq(bindings, body, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      val p = simplifyEffect(eff)
+      val simplifiedBindings = bindings.map { case (sym, exp) => (sym, visitExp(exp)) }
+      SimplifiedAst.Expr.LetSeq(simplifiedBindings, visitExp(body), t, p, loc)
+
     case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
       val fps = fparams.map(visitFormalParam)
       val e1 = visitExp(exp1)

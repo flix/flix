@@ -189,6 +189,12 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.LetSeq(bindings, body, tpe, eff, _) =>
+      bindings.foreach { case (bnd, exp) => visitBinder(bnd); visitExp(exp) }
+      visitExp(body)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.LocalDef(_, bnd, fparams, exp1, exp2, tpe, eff, _) =>
       visitBinder(bnd)
       fparams.foreach(visitFormalParam)

@@ -451,6 +451,13 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, bnd.sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
+    case Expr.LetSeq(bindings, body, _, _, _) =>
+      bindings.foldLeft(visitExp(body)) { case (acc, (bnd, exp)) =>
+        val o = getSemanticTokenType(bnd.sym, exp.tpe)
+        val t = SemanticToken(o, Nil, bnd.sym.loc)
+        Iterator(t) ++ visitExp(exp) ++ acc
+      }
+
     case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(

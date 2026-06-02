@@ -194,6 +194,10 @@ object LambdaLift {
       val e2 = visitExp(exp2)
       LiftedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
 
+    case SimplifiedAst.Expr.LetSeq(bindings, body, tpe, purity, loc) =>
+      val liftedBindings = bindings.map { case (sym, exp) => (sym, visitExp(exp)) }
+      LiftedAst.Expr.LetSeq(liftedBindings, visitExp(body), tpe, purity, loc)
+
     case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
       val freshDefnSym = Symbol.freshDefnSym(sym0)
       val updatedLiftedLocalDefs = liftedLocalDefs + (sym -> freshDefnSym)

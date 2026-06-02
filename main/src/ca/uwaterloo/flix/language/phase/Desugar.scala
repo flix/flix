@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.annotation.tailrec
 
@@ -588,6 +589,9 @@ object Desugar {
 
     case WeededAst.Expr.LetMatch(pat, tpe, exp1, exp2, loc) =>
       desugarLetMatch(pat, tpe, exp1, exp2, loc)
+
+    case WeededAst.Expr.LetSeq(bindings, body, loc) =>
+      desugarLetSeq(bindings, body, loc)
 
     case WeededAst.Expr.ExtTag(label, exps, loc) =>
       val es = visitExps(exps)
@@ -1220,6 +1224,155 @@ object Desugar {
         DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc0)
     }
   }
+
+  /**
+    * Rewrites a flat sequence of let bindings into an expression that avoids O(N) tree depth.
+    *
+    * Non-tag bindings (Var, Tuple, Record, Wild, Cst) are flattened into a single flat
+    * [[DesugaredAst.Expr.LetSeq]] node via [[flattenLetPattern]].
+    *
+    * Tag bindings use the original Match-with-continuation approach to preserve the type-checker's
+    * constraint provenance (which affects error diagnostics). Each Tag binding acts as a "barrier"
+    * that wraps the remaining bindings inside a [[DesugaredAst.Expr.Match]].
+    *
+    * The algorithm processes bindings left-to-right, accumulating flat entries until a Tag is
+    * encountered, then flushing the accumulator and switching to the Match-wrapping strategy.
+    * The final result has O(1) depth per run of non-tag bindings and one nesting level per tag
+    * binding in the sequence.
+    */
+  private def desugarLetSeq(bindings0: List[(WeededAst.Pattern, Option[WeededAst.Type], WeededAst.Expr)], body0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val visitedBody = visitExp(body0)
+
+    // Group consecutive bindings into runs of flat-able entries and individual Tag bindings.
+    sealed trait Chunk
+    case class FlatChunk(entries: List[(Name.Ident, DesugaredAst.Expr)]) extends Chunk
+    case class TagChunk(pat: DesugaredAst.Pattern.Tag, e: DesugaredAst.Expr) extends Chunk
+
+    val chunks = collection.mutable.ArrayBuffer.empty[Chunk]
+    val flatAcc = collection.mutable.ArrayBuffer.empty[(Name.Ident, DesugaredAst.Expr)]
+
+    for ((pat, tpe, exp) <- bindings0) {
+      val e = withAscription(visitExp(exp), tpe.map(visitType))
+      visitPattern(pat) match {
+        case tagPat: DesugaredAst.Pattern.Tag =>
+          if (flatAcc.nonEmpty) {
+            chunks += FlatChunk(flatAcc.toList)
+            flatAcc.clear()
+          }
+          chunks += TagChunk(tagPat, e)
+        case visitedPat =>
+          flatAcc ++= flattenLetPattern(visitedPat, e, loc0)
+      }
+    }
+    if (flatAcc.nonEmpty) chunks += FlatChunk(flatAcc.toList)
+
+    // Build the result expression right-to-left: each Tag wraps the continuation.
+    var acc: DesugaredAst.Expr = visitedBody
+    for (chunk <- chunks.reverseIterator) {
+      acc = chunk match {
+        case FlatChunk(entries) => DesugaredAst.Expr.LetSeq(entries, acc, loc0)
+        case TagChunk(tagPat, e) => DesugaredAst.Expr.Match(e, List(DesugaredAst.MatchRule(tagPat, None, acc, loc0)), loc0)
+      }
+    }
+    acc
+  }
+
+  /**
+    * Flattens an irrefutable pattern binding into a list of simple (Name.Ident, Expr) pairs.
+    *
+    * A simple [[DesugaredAst.Pattern.Var]] produces one entry binding the identifier to `exp0`.
+    * A complex pattern introduces a fresh temporary binding for `exp0` and then a series of
+    * depth-1 Match expressions — one per bound variable in the pattern — that each extract a
+    * single variable from the temporary. Nested sub-patterns recurse on PATTERN depth (which is
+    * small and bounded), not on the expression chain length (which may be 5000+).
+    */
+  private def flattenLetPattern(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): List[(Name.Ident, DesugaredAst.Expr)] = {
+    import DesugaredAst.Pattern
+    pat0 match {
+      case Pattern.Var(ident, _) =>
+        List((ident, exp0))
+
+      case Pattern.Wild(_) | Pattern.Cst(_, _) | Pattern.Error(_) =>
+        // No variable bound; evaluate the expression for its side effects.
+        // Use a _-prefixed name so the redundancy checker treats it as intentionally unused.
+        List((mkLetDiscardIdent(loc0), exp0))
+
+      case Pattern.Tuple(pats, _) =>
+        val tmp = mkLetTmpIdent(loc0)
+        val tmpExpr = mkIdentExpr(tmp, loc0)
+        val patList = pats.toList
+        val subBindings = patList.zipWithIndex.flatMap { case (p, i) =>
+          val freshI = mkLetTmpIdent(loc0)
+          val wildPats = patList.indices.map(j =>
+            if (j == i) Pattern.Var(freshI, loc0) else Pattern.Wild(loc0)
+          ).toList
+          val extractPat = Pattern.Tuple(Nel(wildPats.head, wildPats.tail), loc0)
+          val extractExpr = Expr.Match(tmpExpr, List(DesugaredAst.MatchRule(extractPat, None, mkIdentExpr(freshI, loc0), loc0)), loc0)
+          flattenLetPattern(p, extractExpr, loc0)
+        }
+        (tmp, exp0) :: subBindings
+
+      case Pattern.Tag(qname, pats, _) =>
+        val tmp = mkLetTmpIdent(loc0)
+        val tmpExpr = mkIdentExpr(tmp, loc0)
+        val subBindings = pats.zipWithIndex.flatMap { case (p, i) =>
+          val freshI = mkLetTmpIdent(loc0)
+          // Use full patterns (not Wild) at each position so the type checker sees all field types.
+          // Non-target positions use _-prefixed names to suppress unused-variable errors.
+          val fullPats = pats.indices.map(j =>
+            if (j == i) Pattern.Var(freshI, loc0) else Pattern.Var(mkLetDiscardIdent(loc0), loc0)
+          ).toList
+          val extractPat = Pattern.Tag(qname, fullPats, loc0)
+          val extractExpr = Expr.Match(tmpExpr, List(DesugaredAst.MatchRule(extractPat, None, mkIdentExpr(freshI, loc0), loc0)), loc0)
+          flattenLetPattern(p, extractExpr, loc0)
+        }
+        (tmp, exp0) :: subBindings
+
+      case Pattern.Record(fields, rest, _) =>
+        val tmp = mkLetTmpIdent(loc0)
+        val tmpExpr = mkIdentExpr(tmp, loc0)
+        // Use a Match per field (not RecordSelect) so duplicate field names resolve correctly.
+        // Wild at non-target positions avoids unused-variable errors.
+        val fieldBindings = fields.zipWithIndex.flatMap { case (Pattern.Record.RecordLabelPattern(label, patOpt, fieldLoc), i) =>
+          val targetVar = mkLetTmpIdent(loc0)
+          val extractFields = fields.zipWithIndex.map { case (Pattern.Record.RecordLabelPattern(lbl, _, fl), j) =>
+            if (j == i) Pattern.Record.RecordLabelPattern(lbl, Some(Pattern.Var(targetVar, fl)), fl)
+            else Pattern.Record.RecordLabelPattern(lbl, Some(Pattern.Wild(fl)), fl)
+          }
+          val extractPat = Pattern.Record(extractFields, Pattern.Wild(loc0), loc0)
+          val extractExpr = Expr.Match(tmpExpr, List(DesugaredAst.MatchRule(extractPat, None, mkIdentExpr(targetVar, loc0), loc0)), loc0)
+          patOpt match {
+            case None =>
+              List((Name.Ident(label.name, fieldLoc), extractExpr))
+            case Some(p) =>
+              flattenLetPattern(p, extractExpr, fieldLoc)
+          }
+        }
+        val restBindings = rest match {
+          case Pattern.Wild(_) => Nil
+          case Pattern.Var(ident, _) =>
+            // Extract the record rest via a depth-1 match using all listed fields as wilds.
+            val allWildFields = fields.map { case Pattern.Record.RecordLabelPattern(label, _, fieldLoc) =>
+              Pattern.Record.RecordLabelPattern(label, Some(Pattern.Wild(fieldLoc)), fieldLoc)
+            }
+            val restPat = Pattern.Record(allWildFields, Pattern.Var(ident, loc0), loc0)
+            val restExpr = Expr.Match(tmpExpr, List(DesugaredAst.MatchRule(restPat, None, mkIdentExpr(ident, loc0), loc0)), loc0)
+            List((ident, restExpr))
+          case other =>
+            flattenLetPattern(other, tmpExpr, loc0)
+        }
+        (tmp, exp0) :: fieldBindings ++ restBindings
+    }
+  }
+
+  private def mkLetTmpIdent(loc: SourceLocation)(implicit flix: Flix): Name.Ident =
+    Name.Ident("letVar" + Flix.Delimiter + flix.genSym.freshId(), loc.asSynthetic)
+
+  private def mkLetDiscardIdent(loc: SourceLocation)(implicit flix: Flix): Name.Ident =
+    Name.Ident("_letDiscardVar" + Flix.Delimiter + flix.genSym.freshId(), loc.asSynthetic)
+
+  private def mkIdentExpr(ident: Name.Ident, loc: SourceLocation): Expr =
+    Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc.asSynthetic)
 
   /**
     * Rewrites empty tuples to [[Constant.Unit]] and eliminate single-element tuples.

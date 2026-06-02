@@ -265,6 +265,12 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.Let(bnd.sym, e1, e2, t, eff, Occur.Unknown, loc)
 
+    case TypedAst.Expr.LetSeq(bindings, body, tpe, eff, loc) =>
+      val loweredBindings = bindings.map { case (bnd, exp) => (bnd.sym, lowerExp(exp)) }
+      val loweredBody = lowerExp(body)
+      val t = lowerType(tpe)
+      MonoAst.Expr.LetSeq(loweredBindings, loweredBody, t, eff, loc)
+
     case TypedAst.Expr.LocalDef(_, bnd, fparams, exp1, exp2, tpe, eff, loc) =>
       val fps = fparams.map(lowerFormalParam)
       val e1 = lowerExp(exp1)
@@ -2159,6 +2165,11 @@ object Lowering {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       MonoAst.Expr.Let(s, e1, e2, tpe, eff, occur, loc)
+
+    case MonoAst.Expr.LetSeq(bindings, body, tpe, eff, loc) =>
+      val substBindings = bindings.map { case (sym, exp) => (subst.getOrElse(sym, sym), substExp(exp, subst)) }
+      val substBody = substExp(body, subst)
+      MonoAst.Expr.LetSeq(substBindings, substBody, tpe, eff, loc)
 
     case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
       val s = subst.getOrElse(sym, sym)

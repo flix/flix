@@ -280,7 +280,11 @@ object SyntaxTree {
 
       case object LambdaMatch extends Expr
 
+      case object LetBinding extends Expr
+
       case object LetMatch extends Expr
+
+      case object LetSeq extends Expr
 
       case object Literal extends Expr
 

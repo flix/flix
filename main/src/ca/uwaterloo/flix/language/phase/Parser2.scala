@@ -2214,14 +2214,59 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordLet))
       val mark = open()
+      letBinding()
+      while (at(TokenKind.Semi) && nth(1) == TokenKind.KeywordLet) {
+        eat(TokenKind.Semi)
+        letBinding()
+      }
+      // Eat the semicolon so that `statement()` starts at the first body expression.
+      // All leading `let`s are consumed above, so `statement()` will not re-enter
+      // the let-binding loop.
+      if (eat(TokenKind.Semi)) {
+        statement()
+      } else {
+        val loc = SourceLocation.point(true, s.src, previousSourceLocation().end)
+        closeWithError(open(), ParseError.ExpectedSemicolon(sctx, loc, nth(0)))
+      }
+      close(mark, TreeKind.Expr.LetSeq)
+    }
+
+    private def letBinding()(implicit s: State): Unit = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      val b = open()
       expect(TokenKind.KeywordLet)
       Pattern.pattern()
       if (eat(TokenKind.Colon)) {
         Type.ttype()
       }
       expect(TokenKind.Equal)
-      statement(rhsIsOptional = false)
-      close(mark, TreeKind.Expr.LetMatch)
+      letBoundValue()
+      close(b, TreeKind.Expr.LetBinding)
+    }
+
+    /**
+      * Parses the value expression on the right-hand side of a let binding.
+      * Mirrors the same-line [[ParseError.MissingBinaryOperator]] detection that
+      * [[statement]] performs after parsing an expression, so that code like
+      * `let x = foo()   bar()` still produces the expected parse error.
+      */
+    private def letBoundValue()(implicit s: State): Unit = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      var exprMark = expression()
+      if (nth(0).canFollowBinaryOperator && s.inBlock) {
+        val isNewLine = previousSourceLocation().end.lineOneIndexed != currentSourceLocation().start.lineOneIndexed
+        if (!isNewLine) {
+          // Same line: wrap with a Binary(OperatorError) node so the Weeder can
+          // emit MissingBinaryOperator and recover gracefully.
+          val mark = openBefore(exprMark)
+          val markOp = open()
+          close(open(), TreeKind.OperatorError)
+          close(markOp, TreeKind.Operator)
+          expression()
+          val lhs = close(mark, TreeKind.Expr.Binary)
+          close(openBefore(lhs), TreeKind.Expr.Expr)
+        }
+      }
     }
 
     private def localDefExpr()(implicit s: State): Mark.Closed = {

@@ -547,6 +547,13 @@ object TypeVerifier {
       val letBoundType = visitExpr(exp1)
       visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
 
+    case Expr.LetSeq(bindings, body, _) =>
+      var curEnv = env
+      bindings.foreach { case (sym, exp) =>
+        curEnv = curEnv + (sym -> visitExpr(exp)(root, curEnv, lenv))
+      }
+      visitExpr(body)(root, curEnv, lenv)
+
     case Expr.Stm(exps, exp, _) =>
       // Visit `exps` to check types inside.
       exps.foreach(visitExpr)

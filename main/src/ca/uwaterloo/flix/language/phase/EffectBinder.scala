@@ -197,6 +197,15 @@ object EffectBinder {
       val e = ReducedAst.Expr.Let(sym, e1, e2, loc)
       bindBinders(binders, e)
 
+    case LiftedAst.Expr.LetSeq(bindings, body, _, _, loc) =>
+      val processedBindings = bindings.map { case (sym, exp) =>
+        val binders = mutable.ArrayBuffer.empty[Binder]
+        val e = visitExprInnerWithBinders(binders)(exp)
+        (sym, bindBinders(binders, e))
+      }
+      val processedBody = visitExpr(body)
+      ReducedAst.Expr.LetSeq(processedBindings, processedBody, loc)
+
     case LiftedAst.Expr.Stm(exps, exp, _, _, loc) =>
       // Each exp is processed with visitExpr (its own binder scope) to preserve
       // evaluation order. Shared binders would hoist bindings from later exps
@@ -298,6 +307,13 @@ object EffectBinder {
       binders.addOne(LetBinder(sym, e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
 
+    case LiftedAst.Expr.LetSeq(bindings, body, _, _, loc) =>
+      bindings.foreach { case (sym, exp) =>
+        val e = visitExprInnerWithBinders(binders)(exp)
+        binders.addOne(LetBinder(sym, e, loc))
+      }
+      visitExprInnerWithBinders(binders)(body)
+
     case LiftedAst.Expr.Stm(exps, exp, _, _, loc) =>
       exps.foreach { e =>
         val e1 = visitExprInnerWithBinders(binders)(e)
@@ -366,6 +382,9 @@ object EffectBinder {
       case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
         binders.addOne(LetBinder(sym, exp1, loc))
         bind(exp2)
+      case ReducedAst.Expr.LetSeq(bindings, body, loc) =>
+        bindings.foreach { case (sym, exp) => binders.addOne(LetBinder(sym, exp, loc)) }
+        bind(body)
       case ReducedAst.Expr.Stm(exps, exp, loc) =>
         exps.foreach(e1 => binders.addOne(NonBinder(e1, loc)))
         bind(exp)

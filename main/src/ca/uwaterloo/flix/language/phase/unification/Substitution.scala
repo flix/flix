@@ -67,13 +67,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
     case Type.Cst(_, _) => t
 
-    case app@Type.Apply(t1, t2, loc) =>
-      // Note: While we could perform simplifications here,
-      // experimental results have shown that it is not worth it.
-      val x = visitType(t1)
-      val y = visitType(t2)
-      // Performance: Reuse t, if possible.
-      app.renew(x, y, loc)
+    case _: Type.Apply =>
+      // Iterative bottom-up substitution to avoid stack overflow on deeply nested types.
+      visitApplyIterative(t)
 
     case Type.Alias(sym, args0, tpe0, loc) =>
       val args = args0.map(visitType)
@@ -97,6 +93,34 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       Type.UnresolvedJvmType(member, loc)
   }
 
+
+  /**
+    * Iterative bottom-up substitution for Apply trees to avoid JVM stack overflow.
+    * Each work item is Left(t) = substitute t, Right(app) = rebuild after 2 children done.
+    */
+  private def visitApplyIterative(t0: Type): Type = {
+    var work: List[Either[Type, Type.Apply]] = List(Left(t0))
+    var results: List[Type] = Nil
+    while (work.nonEmpty) {
+      work.head match {
+        case Left(t) =>
+          work = work.tail
+          t match {
+            case app: Type.Apply =>
+              work = Left(app.tpe1) :: Left(app.tpe2) :: Right(app) :: work
+            case nonApply =>
+              results = visitType(nonApply) :: results
+          }
+        case Right(app) =>
+          work = work.tail
+          val y = results.head
+          val x = results.tail.head
+          results = results.drop(2)
+          results = app.renew(x, y, app.loc) :: results
+      }
+    }
+    results.head
+  }
 
   /**
     * Applies `this` substitution to the given types `ts`.

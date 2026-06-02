@@ -900,6 +900,17 @@ object Resolver {
       val e2 = resolveExp(exp2, scp)
       ResolvedAst.Expr.Let(sym, e1, e2, loc)
 
+    case NamedAst.Expr.LetSeq(bindings, body, loc) =>
+      // Thread scope: each binding's symbol is in scope for subsequent bindings and the body.
+      var scp = scp0
+      val resolvedBindings = bindings.map { case (sym, exp) =>
+        val e = resolveExp(exp, scp)
+        scp = scp ++ mkVarScp(sym)
+        (sym, e)
+      }
+      val resolvedBody = resolveExp(body, scp)
+      ResolvedAst.Expr.LetSeq(resolvedBindings, resolvedBody, loc)
+
     case NamedAst.Expr.LocalDef(ann, sym, fparams0, exp1, exp2, loc) =>
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
       val scp1 = scp0 ++ mkLocalDefScp(ann, sym, fparams) ++ mkFormalParamScp(fparams)
