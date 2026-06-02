@@ -55,8 +55,12 @@ object FormatterLsp {
     findTreeBasedOnUri(root, uri).map(treeToTextEdits).getOrElse(Nil)
 
   private def treeToTextEdits(tree: SyntaxTree.Tree): List[TextEdit] = {
-    val formatted = PrettyPrinter.format(tree)
-    List(TextEdit(Range(Position(1, 1), Position(Int.MaxValue, 1)), formatted))
+    PrettyPrinter.format(tree) match {
+      case Some(formatted) =>
+        List(TextEdit(Range(Position(1, 1), Position(Int.MaxValue, 1)), formatted))
+      case None =>
+        Nil
+    }
   }
 
   /**

@@ -25,7 +25,7 @@ import org.scalatest.Ignore
   * The standard library and the `examples` programs are maintained in a
   * canonical formatted form. Formatting them must reproduce the same output.
   */
-@Ignore
+//@Ignore
 class TestFormatterStability extends TestFormatterCommon {
 
   /**
@@ -35,7 +35,7 @@ class TestFormatterStability extends TestFormatterCommon {
     */
   private def checkStability(samples: List[Sample]): Unit = {
     for (sample <- samples) {
-      val formatted = PrettyPrinter.format(sample.reparse(sample.content).tree)
+      val formatted = formatOrFail(sample.reparse(sample.content).tree)
       val isFixedPoint = formatted == sample.content
       assert(isFixedPoint,
         s"Standard library is not preserved by the formatter (f(p(l)) != l) " +

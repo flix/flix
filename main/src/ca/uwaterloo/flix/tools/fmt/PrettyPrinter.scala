@@ -11,10 +11,30 @@ object PrettyPrinter {
   /** The number of spaces of indentation added at each nesting level. */
   private val Indent: Int = 4
 
-  def format(tree: Tree): String = {
-    val result = Doc.pretty(traverse(tree))
-    if (result.endsWith("\n")) result else result + "\n"
+  /**
+    * Formats `tree`, returning the formatted source.
+    *
+    * Returns `None` if `tree` contains a [[TreeKind.ErrorTree]], i.e. the source
+    * did not parse cleanly. The original source is left untouched in this case.
+    */
+  def format(tree: Tree): Option[String] = {
+    if (containsErrors(tree)) {
+      None
+    } else {
+      val result = Doc.pretty(traverse(tree))
+      Some(if (result.endsWith("\n")) result else result + "\n")
+    }
   }
+
+  /** Returns `true` if `tree` or any of its descendants is a [[TreeKind.ErrorTree]]. */
+  private def containsErrors(tree: Tree): Boolean = tree.kind match {
+    case _: TreeKind.ErrorTree => true
+    case _ => tree.children.exists {
+      case t: Tree => containsErrors(t)
+      case _ => false
+    }
+  }
+
   private def traverse(tree: Tree): Doc = {
     if (tree.children.isEmpty) empty else formatTree(tree)
   }
