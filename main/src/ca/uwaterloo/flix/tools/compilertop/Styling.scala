@@ -35,6 +35,8 @@ object Styling {
   private val HeapYellowThresholdRatio:        Double = 0.7
   private val HotnessRedThresholdMsPerLine:    Double = 25.0
   private val HotnessYellowThresholdMsPerLine: Double = 15.0
+  private val ModuleHotnessRedThresholdMsPerLine:    Double = 4.0
+  private val ModuleHotnessYellowThresholdMsPerLine: Double = 2.0
   private val PctCpuRedThreshold:              Double = 5.0
   private val PctCpuYellowThreshold:           Double = 1.0
   private val PctWallRedThreshold:             Double = 15.0
@@ -67,6 +69,21 @@ object Styling {
     val msPerLine = Formatting.hotnessMsPerLine(nanos, lines)
     if (msPerLine >= HotnessRedThresholdMsPerLine) red(name)
     else if (msPerLine >= HotnessYellowThresholdMsPerLine) yellow(name)
+    else name
+  }
+
+  /**
+    * Module-row analogue of [[styleSym]]: colors a module name by its
+    * aggregate hotness (summed ms / summed source lines). Uses the same
+    * absolute two-tier red/yellow scheme but with much lower cutoffs —
+    * averaging a module's cost over all its lines dilutes the per-line
+    * figure, so it never approaches the per-def thresholds. Calibrated so
+    * the densest modules light up while the bulk stay plain.
+    */
+  def styleModule(name: String, nanos: Long, lines: Int): String = {
+    val msPerLine = Formatting.hotnessMsPerLine(nanos, lines)
+    if (msPerLine >= ModuleHotnessRedThresholdMsPerLine) red(name)
+    else if (msPerLine >= ModuleHotnessYellowThresholdMsPerLine) yellow(name)
     else name
   }
 
