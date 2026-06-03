@@ -277,9 +277,7 @@ pub mod MutHashSet {
     ///
     pub def toMap(s: MutHashSet[(a, b), r]): Map[a, b] \ r with Order[a] =
         foldLeft(
-            (acc, pair) -> match pair {
-                case (k, v) => Map.insert(k, v, acc)
-            },
+            acc -> match (k, v) -> Map.insert(k, v, acc),
             Map.empty(),
             s
         )
