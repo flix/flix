@@ -43,11 +43,15 @@ import scala.collection.mutable
   *                        [[Renderer.TotalPhases]] for the progress bar.
   * @param activeFilter    user-toggled phase filter (drives the legend).
   * @param activeSort      user-toggled sort key (drives header underlines).
-  * @param activeView      user-toggled top-level view: tables or help.
+  * @param activeView      user-toggled top-level view: defs table, modules
+  *                        table, or help. Only the active table's rows are
+  *                        populated below.
   * @param layout          column layout produced by [[Layout.compute]].
   * @param visible         def-table rows, already filtered / sorted / trimmed.
+  *                        Empty when [[activeView]] is [[Model.View.Modules]].
   * @param modules         module-table rows, already aggregated / sorted /
-  *                        trimmed.
+  *                        trimmed. Empty unless [[activeView]] is
+  *                        [[Model.View.Modules]].
   */
 final case class FrameState(parallelism: Int,
                             isDone: Boolean,
@@ -257,31 +261,33 @@ final class Renderer {
     sb.append('\n')
 
     state.activeView match {
-      case View.Main => renderTables(sb, state)
-      case View.Help => renderHelp(sb)
+      case View.Defs    => renderDefTable(sb, state)
+      case View.Modules => renderModuleTable(sb, state)
+      case View.Help    => renderHelp(sb)
     }
 
     sb.append(EndSync)
     sb.toString
   }
 
-  /** Renders the def + module tables (the default body of the main view). */
-  private def renderTables(sb: StringBuilder, state: FrameState): Unit = {
+  /** Renders the per-def table (the body of the defs view). */
+  private def renderDefTable(sb: StringBuilder, state: FrameState): Unit = {
     val safeElapsed = state.elapsed.max(1L).toDouble
     val defRows: Vector[Row] = state.visible.map(s => DefnRow(s, safeElapsed, state.parallelism))
-    val modRows: Vector[Row] = state.modules.map(m => ModuleRow(m, safeElapsed, state.parallelism))
 
-    // Def table: header, then rows or a centered placeholder if empty.
     renderHeaderRow(sb, "def (hot)", state.layout, state.activeSort)
     if (defRows.isEmpty) renderEmptyPlaceholder(sb, "(no timings yet)", state.layout)
     else renderTable(sb, defRows, state.layout)
+  }
 
-    // Module table: only when non-empty, separated by a blank line.
-    if (modRows.nonEmpty) {
-      sb.append('\n')
-      renderHeaderRow(sb, "module (hot)", state.layout, state.activeSort)
-      renderTable(sb, modRows, state.layout)
-    }
+  /** Renders the per-module aggregate table (the body of the modules view). */
+  private def renderModuleTable(sb: StringBuilder, state: FrameState): Unit = {
+    val safeElapsed = state.elapsed.max(1L).toDouble
+    val modRows: Vector[Row] = state.modules.map(m => ModuleRow(m, safeElapsed, state.parallelism))
+
+    renderHeaderRow(sb, "mod (hot)", state.layout, state.activeSort)
+    if (modRows.isEmpty) renderEmptyPlaceholder(sb, "(no modules yet)", state.layout)
+    else renderTable(sb, modRows, state.layout)
   }
 
   /**
@@ -334,7 +340,7 @@ final class Renderer {
     * "press a/f/b to leave help" rather than "you are currently filtering".
     */
   private def renderFilterLegend(active: PhaseFilter, view: View): String = {
-    val entries = PhaseFilter.all.map(f => filterLegendEntry(f, view == View.Main && f == active))
+    val entries = PhaseFilter.all.map(f => filterLegendEntry(f, view != View.Help && f == active))
     s"${dim("[")}${entries.mkString(dim("|"))}${dim("]")}"
   }
 
@@ -398,7 +404,7 @@ final class Renderer {
   /**
     * Prints the parametrized header row + the divider underneath it. The
     * `label` argument is the raw first-column label — `"def (hot)"` for the
-    * def table, `"module (hot)"` for the module table — and gets padded to
+    * def table, `"mod (hot)"` for the module table — and gets padded to
     * [[Layout.nameWidth]] here. The location now sits inside the def cells
     * in parens, so the header doesn't have a separate `"location"` column.
     */
@@ -417,7 +423,7 @@ final class Renderer {
     * `c̲ls`, `t̲ime`, …) and the leading "(h̲ot)" annotation marks the hotness
     * sort key. The active column is rendered bold yellow; the rest bold cyan.
     *
-    * Two callers — `def (hot)` for the def table, `module (hot)` for the
+    * Two callers — `def (hot)` for the def table, `mod (hot)` for the
     * module table. Both pad their leading label to [[Layout.nameWidth]].
     */
   private def buildHeader(leading: String, layout: Layout, activeSort: Sort): String = {
@@ -499,13 +505,13 @@ final class Renderer {
     // common columns are always shown; frontend columns only appear under
     // the `frontend` filter; backend columns only under the `backend` filter.
     sb.append("  "); sb.append(bold(cyan("Common columns"))); sb.append('\n')
-    appendHelpCol(sb, "def",      "the fully qualified name of the def, followed by its source location (file:line) in parens")
+    appendHelpCol(sb, "def",      "the fully qualified name of the def, with its source location (file:line) in parens")
     appendHelpCol(sb, "lines",    "the number of source-code lines spanned by the def's signature and body")
     appendHelpCol(sb, "phase",    "the compiler phase that consumed the most wall-clock time for the def")
     appendHelpCol(sb, "alloc",    "the amount of memory the compiler allocated while processing the def")
     appendHelpCol(sb, "time",     "the cumulative wall-clock time spent compiling the def")
     appendHelpCol(sb, "%cpu",     "the def's share of total CPU time, computed as time / (elapsed × threads)")
-    appendHelpCol(sb, "%wall",    "the def's share of wall-clock time (time / elapsed); upper bound on savings if removed")
+    appendHelpCol(sb, "%wall",    "the def's share of wall-clock time (time / elapsed); max savings if removed")
     sb.append('\n')
 
     sb.append("  "); sb.append(bold(cyan("Frontend columns"))); sb.append('\n')
@@ -519,6 +525,12 @@ final class Renderer {
     appendHelpCol(sb, "inl",      "the number of times the def was inlined at a call site")
     appendHelpCol(sb, "cls",      "the number of .class files emitted for the def")
     appendHelpCol(sb, "size",     "the total bytecode size of all .class files emitted for the def")
+    sb.append('\n')
+
+    sb.append("  "); sb.append(bold(cyan("Navigation"))); sb.append('\n')
+    appendHelpCol(sb, "Tab",      "switch between the per-def and per-module tables")
+    appendHelpCol(sb, "a/f/b",    "filter to all / frontend / backend phases")
+    appendHelpCol(sb, "?",        "toggle this help screen; Esc returns to the defs table")
   }
 
   /** Appends one column-description row. */

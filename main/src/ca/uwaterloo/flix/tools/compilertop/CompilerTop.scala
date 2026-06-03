@@ -41,21 +41,18 @@ object CompilerTop {
 
 
   /**
-    * Fixed-overhead rows: blank + 2 dashboard/stats lines + blank + 2 def-chrome +
-    * 1 blank-before-modules + 2 module-chrome + 1 cursor-parking row.
+    * Fixed-overhead rows: blank + 2 dashboard/stats lines + blank +
+    * 2 table-chrome (header + divider) + 1 cursor-parking row. Only one
+    * table is visible at a time now, so there is no second-table chrome to
+    * reserve.
     */
-  private val ChromeRows: Int = 10
+  private val ChromeRows: Int = 7
 
   /** Reserved breathing room above and below the rendered view. */
   private val RowMargin: Int = 2
 
-  /** Floor on the total data-row budget. */
-  private val MinDataRows: Int = 8
-
-  /** Floor on the def-table row count. */
-  private val MinDefN: Int = 5
-  /** Floor on the module-table row count. */
-  private val MinModuleN: Int = 3
+  /** Floor on the table's data-row budget. */
+  private val MinTableRows: Int = 8
 
 }
 
@@ -108,12 +105,13 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
   private val sort = new AtomicReference[Sort](Sort.Time)
 
   /**
-    * Active top-level view (tables vs. help screen). Written by the input
-    * thread on `?` / `Esc`, read by the renderer thread. Default is
-    * [[View.Main]]. Compilation keeps running regardless of which view is
-    * showing; toggling does not interfere with the build.
+    * Active top-level view (defs table / modules table / help screen).
+    * Written by the input thread on `Tab` / `?` / `Esc`, read by the
+    * renderer thread. Default is [[View.Defs]]. Compilation keeps running
+    * regardless of which view is showing; toggling does not interfere with
+    * the build.
     */
-  private val view = new AtomicReference[View](View.Main)
+  private val view = new AtomicReference[View](View.Defs)
 
   /**
     * Counted down by the input thread when the user presses `q` (only after
@@ -193,8 +191,10 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     *   - `f` / `F` → filter to frontend phases
     *   - `b` / `B` → filter to backend phases
     *   - `a` / `A` → reset to all phases
+    *   - Tab (`9`) → flip between the defs and modules tables (from help,
+    *     lands on the defs table).
     *   - `?`       → toggle the help view (column / keystroke legend).
-    *   - Esc (`27`) → return to the main view (no-op if already there).
+    *   - Esc (`27`) → return to the defs view (no-op if already there).
     *   - `q` / `Q` / Ctrl-C / EOF → if compilation has completed, signal
     *     [[stop]] to finish teardown; otherwise ignored (pressing `q`
     *     mid-compile must not abort the build).
@@ -214,25 +214,28 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
             quitLatch.countDown()
             return
           }
-        case 27 => // Esc — return to the "all" view: filter All, main view.
+        case 9 => // Tab — flip the table; from help, land on the defs table.
+          view.updateAndGet(v => if (v == View.Help) View.Defs else v.toggledTable)
+        case 27 => // Esc — return to the "all" view: filter All, defs view.
           filter.set(PhaseFilter.All)
-          view.set(View.Main)
+          view.set(View.Defs)
         case '?' =>
-          view.updateAndGet(v => if (v == View.Help) View.Main else View.Help)
+          view.updateAndGet(v => if (v == View.Help) View.Defs else View.Help)
         case ch if ch > 0 =>
           // Dispatch via the Sort / PhaseFilter ADTs so the key ↔ value
           // mapping lives in one place ([[Model.Sort.fromKey]],
           // [[Model.PhaseFilter.fromKey]]) rather than being duplicated
           // across this match and the renderer's header / legend code.
           //
-          // Pressing a filter key from the help view also returns to the main
-          // view so the user can see the filter take effect — otherwise the
-          // toggle happens invisibly behind the help screen.
+          // Pressing a filter key from the help view also leaves help (onto
+          // the defs table) so the user can see the filter take effect —
+          // otherwise the toggle happens invisibly behind the help screen.
+          // From a table view the current table is preserved.
           val char = ch.toChar
           Sort.fromKey(char).foreach(sort.set)
           PhaseFilter.fromKey(char).foreach { f =>
             filter.set(f)
-            view.set(View.Main)
+            view.updateAndGet(v => if (v == View.Help) View.Defs else v)
           }
         case _ => // ignored
       }
@@ -312,13 +315,13 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val currentPhase = if (isDone) "done" else flix.getCurrentPhaseName.getOrElse("starting")
     val phaseTimersSize = flix.phaseTimers.size
 
-    // Budget rows for the two tables based on the current terminal height,
-    // reserving an extra `RowMargin` rows so the view never quite touches
-    // the top or bottom edge of the terminal.
-    val dataRows = (terminalRows() - ChromeRows - RowMargin).max(MinDataRows)
-    val moduleN = (dataRows / 3).max(MinModuleN)
-    val defN = (dataRows - moduleN).max(MinDefN)
+    // Budget rows for the single visible table based on the current terminal
+    // height, reserving an extra `RowMargin` rows so the view never quite
+    // touches the top or bottom edge of the terminal. Only one table shows at
+    // a time, so it gets the whole budget.
+    val tableRows = (terminalRows() - ChromeRows - RowMargin).max(MinTableRows)
 
+    val activeView = view.get()
     val activeFilter = filter.get()
     val activeSort = sort.get()
 
@@ -333,11 +336,14 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     // reserving 2 columns for the 1-space left and right table padding.
     val layout = Layout.compute((terminalCols() - 2).max(1), showCounts, showCns)
 
+    // Only build the rows the active view actually renders: the def list when
+    // on Defs / Help, the module aggregate when on Modules. `snap` is computed
+    // either way since module aggregation rolls up from it.
     val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(s => -defSortKey(s, activeSort))
-    val visible = snap.take(defN)
-    val modules = aggregateByModule(snap, activeSort).take(moduleN)
+    val visible = if (activeView == View.Modules) Vector.empty else snap.take(tableRows)
+    val modules = if (activeView == View.Modules) aggregateByModule(snap, activeSort).take(tableRows) else Vector.empty
 
-    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, view.get(), layout, visible, modules)
+    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules)
   }
 
 }

@@ -23,19 +23,34 @@ package ca.uwaterloo.flix.tools.compilertop
 object Model {
 
   /**
-    * Which top-level screen the renderer should draw. Toggled by `?` /
-    * `Esc` in the input thread. The dashboard and stats lines render the
-    * same in either view; only the body below them changes.
+    * Which top-level screen the renderer should draw. Switched by `Tab`
+    * (flip table), `?` (help), and `Esc` (back to defs) in the input thread.
+    * The dashboard and stats lines render the same in every view; only the
+    * body below them changes.
     *
-    *   - [[View.Main]]: the def + module tables (default).
+    *   - [[View.Defs]]: the per-def table (default), full terminal height.
+    *   - [[View.Modules]]: the per-module aggregate table, full terminal
+    *     height. `Tab` flips between [[View.Defs]] and this.
     *   - [[View.Help]]: a static legend explaining each column and
     *     keystroke, so the user doesn't have to guess what e.g. `tv` or
     *     `rnd` mean.
     */
-  sealed trait View
+  sealed trait View {
+    /**
+      * The other table view — `Tab` flips [[View.Defs]] ↔ [[View.Modules]].
+      * From [[View.Help]] there is no "other table", so it maps to itself;
+      * the input loop special-cases leaving help separately.
+      */
+    final def toggledTable: View = this match {
+      case View.Defs    => View.Modules
+      case View.Modules => View.Defs
+      case View.Help    => View.Help
+    }
+  }
   object View {
-    case object Main extends View
-    case object Help extends View
+    case object Defs    extends View
+    case object Modules extends View
+    case object Help    extends View
   }
 
   /**
