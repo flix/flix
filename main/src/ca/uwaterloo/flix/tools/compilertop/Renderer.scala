@@ -221,9 +221,16 @@ object Renderer {
       )
     }
 
-    /** Appends the module name, padded to span the merged def-row name column. */
+    /**
+      * Appends the module name, hotness-colored (ms-per-line over the module's
+      * summed time / lines) and padded to span the merged def-row name column.
+      * Styling is applied to the visible text only, then padded by visible
+      * width so the ANSI codes don't throw off column alignment.
+      */
     def appendFirstCell(sb: StringBuilder, layout: Layout): Unit = {
-      sb.append(rpad(truncate(m.module, layout.nameWidth), layout.nameWidth))
+      val name = truncate(m.module, layout.nameWidth)
+      sb.append(styleModule(name, m.totalNanos, m.totalLines))
+      sb.append(" " * (layout.nameWidth - name.length))
     }
   }
 }
