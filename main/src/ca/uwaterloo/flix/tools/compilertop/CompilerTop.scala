@@ -48,8 +48,13 @@ object CompilerTop {
     */
   private val ChromeRows: Int = 7
 
-  /** Reserved breathing room above and below the rendered view. */
-  private val RowMargin: Int = 2
+  /**
+    * Reserved breathing room below the rendered view, on top of the
+    * cursor-parking row already counted in [[ChromeRows]]. Just one cosmetic
+    * blank line — the parking row alone is enough to prevent the terminal
+    * from scrolling.
+    */
+  private val RowMargin: Int = 1
 
   /** Floor on the table's data-row budget. */
   private val MinTableRows: Int = 8
