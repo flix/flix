@@ -202,6 +202,10 @@ object Typer {
     implicit val scope: RegionScope = RegionScope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
+    // Snapshot the solver-work counter so the delta across this def's typing
+    // is attributed to it (each def is typed on a single thread). Backs `rpv`.
+    val swc = SolverMetrics.counters
+    val swReduces0 = swc.reduces
     val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
@@ -214,6 +218,8 @@ object Typer {
     val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, econstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
+    // Attribute the constraint-solver work done above to this def (backs `rpv`).
+    flix.emitEvent(FlixEvent.SolverWorkDef(defn.sym, swc.reduces - swReduces0))
     checkSpecAssocTypes(defn.spec, tconstrs0, traitEnv)
     TypeReconstruction.visitDef(defn, subst)
   }
