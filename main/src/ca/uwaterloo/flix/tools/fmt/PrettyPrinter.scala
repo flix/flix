@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools.fmt
 
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.tools.fmt.Doc.{align, empty, hardStack, hardline, line, nest, pretty, space, text, Layout}
+import ca.uwaterloo.flix.tools.fmt.Doc.{empty, hardStack, hardline, line, nest, pretty, space, text, Layout}
 
 import scala.annotation.tailrec
 
@@ -286,7 +286,7 @@ object PrettyPrinter {
 
   private def prettyHandler(tree: Tree): Doc =
     prettyBracket(tree, filterEmpty(tree.children),
-      headerJoin = cs => spaceJoin(cs, Set.empty),
+      headerJoin = children => spaceJoin(children, Set.empty),
       formatBody = alignedHandlerBody,
       flatPad = space)
 
@@ -316,10 +316,7 @@ object PrettyPrinter {
         val bodyOnSameLine = bodyStartsOnSameLineAs(eqToken, bodyParts)
 
         val ruleDoc = Doc.setLayout(layoutOfChildren(rest),
-          if (bodyIsPreserved && bodyOnSameLine) sigPadded <+> text("=") <+> body
-          else if (bodyIsPreserved) sigPadded <+> text("=") <> nest(Indent, hardline <> body)
-          else sigPadded <+> text("=") <> nest(Indent, line <> body)
-        )
+          attachBody(sigPadded <+> text("="), body, bodyIsPreserved, bodyOnSameLine))
 
         prepend(annDoc, ruleDoc)
     }
@@ -335,11 +332,7 @@ object PrettyPrinter {
       case t: Tree if t.kind == TreeKind.Expr.RunWithRuleFragment => alignedRunWithRule(t, maxWidth)
       case other => prettyChild(other)
     }
-    val pairs = filtered.zip(docs)
-    pairs.sliding(2).foldLeft(pairs.head._2) {
-      case (acc, Array((prev, _), (next, nextDoc))) => acc <> structuralGap(prev, next) <> nextDoc
-      case (acc, _) => acc
-    }
+    joinDocsWithGap(filtered, docs)
   }
 
   private def prettyIfThenElse(tree: Tree): Doc = {
@@ -394,9 +387,7 @@ object PrettyPrinter {
           val bodyIsPreserved = body.headOption.exists(isPreservedBodyKind)
           val bodyOnSameLine = bodyStartsOnSameLineAs(arrowToken, body)
           localLayout(tree) {
-            if (bodyIsPreserved && bodyOnSameLine) headerDoc <+> bodyDoc
-            else if (bodyIsPreserved) headerDoc <> nest(Indent, hardline <> bodyDoc)
-            else headerDoc <> nest(Indent, line <> bodyDoc)
+            attachBody(headerDoc, bodyDoc, bodyIsPreserved, bodyOnSameLine)
           }
         }
     }
@@ -405,13 +396,27 @@ object PrettyPrinter {
   private def prettyMatchRuleFragment(tree: Tree): Doc =
     prettyArrowRuleFragment(tree, arrowPatternHeaderJoin(tree.kind))
 
-  private def prettyParYield(tree: Tree): Doc =
-    splitAtBracket(filterEmpty(tree.children)) match {
+  /**
+    * Formatting for comprehension-like constructs whose generators live inside a
+    * bracket pair and are separated by `;` (par-yield, monadic/applicative for).
+    *
+    * The body is laid out on a single line (with `; ` separators, the close
+    * bracket pulled onto a fresh line) when it fits on one source line; otherwise
+    * each generator goes on its own line. When `requireParensSameLine` is set,
+    * the compact form is additionally suppressed unless the bracket pair itself
+    * occupied a single source line.
+    */
+  private def prettyComprehension(tree: Tree, requireParensSameLine: Boolean): Doc = {
+    val children = filterEmpty(tree.children)
+    splitAtBracket(children) match {
       case None => prettyFallback(tree)
       case Some(BracketSplit(header, open, body, close, tail)) =>
         val headerDoc = defaultHeaderJoin(header)
         val tailDoc = defaultHeaderJoin(tail)
-        if (layoutOfChildren(body) == Layout.SingleLine) {
+        val singleLine =
+          (!requireParensSameLine || parensSameLine(children)) &&
+            layoutOfChildren(body) == Layout.SingleLine
+        if (singleLine) {
           val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
           Doc.setLayout(Layout.MultiLine,
             headerDoc <+> text(open) <> bodyDoc <> text(close) <> nest(Indent, hardline <> tailDoc)
@@ -424,6 +429,10 @@ object PrettyPrinter {
           )
         }
     }
+  }
+
+  private def prettyParYield(tree: Tree): Doc =
+    prettyComprehension(tree, requireParensSameLine = false)
 
   private def prettyRestrictableChoose(tree: Tree): Doc =
     prettyBracket(tree, filterEmpty(tree.children),
@@ -431,24 +440,7 @@ object PrettyPrinter {
       formatBody = alignedMatchBody)
 
   private def prettyFor(tree: Tree): Doc =
-    splitAtBracket(filterEmpty(tree.children)) match {
-      case None => prettyFallback(tree)
-      case Some(BracketSplit(header, open, body, close, tail)) =>
-        val headerDoc = defaultHeaderJoin(header)
-        val tailDoc = defaultHeaderJoin(tail)
-        if (parensSameLine(filterEmpty(tree.children)) && layoutOfChildren(body) == Layout.SingleLine) {
-          val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
-          Doc.setLayout(Layout.MultiLine,
-            headerDoc <+> text(open) <> bodyDoc <> text(close) <> nest(Indent, hardline <> tailDoc)
-          )
-        } else {
-          val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> line))
-          val tailSuffix = if (tail.nonEmpty) space <> tailDoc else empty
-          Doc.setLayout(Layout.MultiLine,
-            headerDoc <+> text(open) <> nest(Indent, line <> bodyDoc) <> line <> text(close) <> tailSuffix
-          )
-        }
-    }
+    prettyComprehension(tree, requireParensSameLine = true)
 
   private def prettyForFragment(tree: Tree): Doc =
     joinChildren(filterEmpty(tree.children),
@@ -527,20 +519,20 @@ object PrettyPrinter {
   private def splitAtBracket(children: Array[SyntaxTree.Child]): Option[BracketSplit] = {
     bracketPairs.flatMap {
       case (openKind, closeKind, openText, closeText) =>
-        val oi = children.indexWhere {
+        val openIdx = children.indexWhere {
           case token: Token if token.kind == openKind => true
           case _ => false
         }
-        val ci = children.lastIndexWhere {
+        val closeIdx = children.lastIndexWhere {
           case token: Token if token.kind == closeKind => true
           case _ => false
         }
-        if (oi >= 0 && ci > oi) Some(BracketSplit(
-          header = children.slice(0, oi),
+        if (openIdx >= 0 && closeIdx > openIdx) Some(BracketSplit(
+          header = children.slice(0, openIdx),
           open = openText,
-          body = children.slice(oi + 1, ci),
+          body = children.slice(openIdx + 1, closeIdx),
           close = closeText,
-          tail = children.slice(ci + 1, children.length)
+          tail = children.slice(closeIdx + 1, children.length)
         ))
         else None
     }.headOption
@@ -616,7 +608,7 @@ object PrettyPrinter {
   private def prettyDeclBracket(
     tree: Tree,
     headerJoin: Array[SyntaxTree.Child] => Doc = defaultHeaderJoin,
-    formatBody: Array[SyntaxTree.Child] => Doc = cs => joinWithGap(filterEmpty(cs)),
+    formatBody: Array[SyntaxTree.Child] => Doc = children => joinWithGap(filterEmpty(children)),
     fallback: Tree => Doc = prettyFallback,
     nestLevel: Int = Indent
   ): Doc = wrapWithAnn(tree, rest => {
@@ -626,9 +618,9 @@ object PrettyPrinter {
     val closeToken = rest.reverseIterator.collectFirst {
       case t: Token if t.kind == TokenKind.CurlyR => t
     }
-    val wrappedFormatBody: Array[SyntaxTree.Child] => Doc = cs => {
-      val base = formatBody(cs)
-      val filtered = filterEmpty(cs)
+    val wrappedFormatBody: Array[SyntaxTree.Child] => Doc = bodyChildren => {
+      val base = formatBody(bodyChildren)
+      val filtered = filterEmpty(bodyChildren)
       val hasLeadingBlank = openToken.flatMap(open =>
         filtered.headOption.flatMap(leftMostToken).map(first =>
           first.start.lineOneIndexed - open.end.lineOneIndexed > 1
@@ -662,8 +654,8 @@ object PrettyPrinter {
     tree: Tree,
     children: Array[SyntaxTree.Child],
     headerJoin: Array[SyntaxTree.Child] => Doc = defaultHeaderJoin,
-    formatBody: Array[SyntaxTree.Child] => Doc = cs => joinWithGap(filterEmpty(cs)),
-    formatTail: Array[SyntaxTree.Child] => Doc = cs => if (cs.isEmpty) empty else joinWithGap(cs),
+    formatBody: Array[SyntaxTree.Child] => Doc = children => joinWithGap(filterEmpty(children)),
+    formatTail: Array[SyntaxTree.Child] => Doc = children => if (children.isEmpty) empty else joinWithGap(children),
     fallback: Tree => Doc = prettyFallback,
     flatPad: Doc = empty,
     nestLevel: Int = Indent
@@ -674,8 +666,8 @@ object PrettyPrinter {
       val tailDoc = tailContent match {
         case Doc.Empty => empty
         case _ =>
-          val ci = children.length - split.tail.length - 1
-          val closeChild = if (ci >= 0 && ci < children.length) Some(children(ci)) else None
+          val closeIdx = children.length - split.tail.length - 1
+          val closeChild = if (closeIdx >= 0 && closeIdx < children.length) Some(children(closeIdx)) else None
           bracketTail(closeChild, split.tail.headOption, tailContent)
       }
       renderBracket(tree, split, headerJoin,
@@ -797,7 +789,7 @@ object PrettyPrinter {
   }
 
   private def prettyAlignedRecord(tree: Tree, fieldKinds: Set[TreeKind]): Doc =
-    prettyBracket(tree, tree.children, formatBody = cs => alignedRecordBody(fieldKinds, cs))
+    prettyBracket(tree, tree.children, formatBody = children => alignedRecordBody(fieldKinds, children))
 
   private def prettyLiteralMap(tree: Tree): Doc =
     prettyBracket(tree, tree.children, formatBody = alignedMapBody)
@@ -827,7 +819,6 @@ object PrettyPrinter {
     if (filtered.isEmpty) return empty
     val fragments = filtered.collect { case t: Tree if t.kind == TreeKind.Expr.LiteralMapKeyValueFragment => t }
     val singleLineFragments = fragments.filter(f => effectiveLayoutOf(f) == Layout.SingleLine)
-    // Align the `=>` arrows only when there are at least two key-value pairs and every one is single-line.
     val alignArrows = fragments.length >= 2 && singleLineFragments.length == fragments.length
     val maxWidth = if (alignArrows) singleLineFragments.map(mapKeyWidth).maxOption.getOrElse(0) else 0
     filtered.foldLeft(empty) { (acc, c) =>
@@ -867,7 +858,7 @@ object PrettyPrinter {
         )
 
     trailingComments match {
-      case Some(cl) => appendTrailingCommentList(mainDoc, mainChildren.lastOption, cl)
+      case Some(commentList) => appendTrailingCommentList(mainDoc, mainChildren.lastOption, commentList)
       case None => mainDoc
     }
   })
@@ -912,13 +903,7 @@ object PrettyPrinter {
       case None => prettyFallback(tree)
       case Some(split) =>
         val bodyDoc = commaBodyJoin(split.body)
-        val tailDoc =
-          if (split.tail.isEmpty) empty
-          else {
-            val ci = tree.children.length - split.tail.length - 1
-            val closeChild = if (ci >= 0 && ci < tree.children.length) Some(tree.children(ci)) else None
-            bracketTail(closeChild, split.tail.headOption, joinWithGap(split.tail))
-          }
+        val tailDoc = tailAfterClose(tree.children, split.tail)
         val bodyStartsWithBrace = split.body.headOption.exists {
           case t: Token if t.kind == TokenKind.CurlyL => true
           case t: Tree => leftMostToken(t).exists(_.kind == TokenKind.CurlyL)
@@ -988,12 +973,7 @@ object PrettyPrinter {
       case t: Tree if t.kind == TreeKind.StructField => alignedStructField(t, maxWidth)
       case other => prettyChild(other)
     }
-    val pairs = filtered.zip(docs)
-    if (pairs.isEmpty) return empty
-    pairs.sliding(2).foldLeft(pairs.head._2) {
-      case (acc, Array((prev, _), (next, nextDoc))) => acc <> structuralGap(prev, next) <> nextDoc
-      case (acc, _) => acc
-    }
+    joinDocsWithGap(filtered, docs)
   }
 
   /**
@@ -1012,12 +992,10 @@ object PrettyPrinter {
 
   private def arrowPatternHeaderJoin(kind: TreeKind): Array[SyntaxTree.Child] => Doc = kind match {
     case TreeKind.Expr.TryCatchRuleFragment =>
-      cs => spaceJoin(cs, noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon))
+      children => spaceJoin(children, noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon))
     case TreeKind.Expr.SelectRuleFragment =>
-      // The `recv(...)` call in a select rule is a flat sequence of children
-      // (`recv`, `(`, expr, `)`), so keep the parentheses tight against it.
-      cs =>
-        spaceJoin(cs, noSpacePairs = Set.empty,
+      children =>
+        spaceJoin(children, noSpacePairs = Set.empty,
           noSpaceBefore = Set(TokenKind.ParenL, TokenKind.ParenR),
           noSpaceAfter = Set(TokenKind.ParenL))
     case _ =>
@@ -1039,12 +1017,7 @@ object PrettyPrinter {
       case t: Tree if ArrowRuleKinds.contains(t.kind) => alignedArrowRule(t, maxWidth)
       case other => prettyChild(other)
     }
-    val pairs = filtered.zip(docs)
-    if (pairs.isEmpty) return empty
-    pairs.sliding(2).foldLeft(pairs.head._2) {
-      case (acc, Array((prev, _), (next, nextDoc))) => acc <> structuralGap(prev, next) <> nextDoc
-      case (acc, _) => acc
-    }
+    joinDocsWithGap(filtered, docs)
   }
 
   private def arrowPatternWidth(rule: Tree): Int =
@@ -1079,7 +1052,7 @@ object PrettyPrinter {
     spaceJoin(filterEmpty(tree.children), Set.empty)
 
   private def prettyTryCatchRuleFragment(tree: Tree): Doc =
-    prettyArrowRuleFragment(tree, cs => spaceJoin(cs, noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon)))
+    prettyArrowRuleFragment(tree, children => spaceJoin(children, noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon)))
 
   private def prettyAscribe(tree: Tree): Doc =
     joinChildren(filterEmpty(tree.children),
@@ -1093,9 +1066,9 @@ object PrettyPrinter {
         TokenKind.KeywordAs -> (space <> text("as") <> space),
         TokenKind.Backslash -> (space <> text("\\") <> space)))
 
-  private def prettyCheckedCast(tree: Tree, kind: TokenKind, kw: String): Doc =
+  private def prettyCheckedCast(tree: Tree, kind: TokenKind, keyword: String): Doc =
     prettyKeywordParen(tree,
-      headerReplacements = Seq(kind -> text(kw)),
+      headerReplacements = Seq(kind -> text(keyword)),
       bodyReplacements = Seq(TokenKind.Backslash -> (space <> text("\\") <> space)))
 
   private def prettyKeywordParen(
@@ -1272,39 +1245,21 @@ object PrettyPrinter {
     * Formatting for declaration headers.
     * Joins children with spaces, suppressing space between an identifier and a type parameter list, and before colons.
     *
-    * @param cs the header children to join
+    * @param children the header children to join
     * @return the formatted header as Doc
     */
-  private def declHeaderJoin(cs: Array[SyntaxTree.Child]): Doc =
-    spaceJoin(cs,
+  private def declHeaderJoin(children: Array[SyntaxTree.Child]): Doc =
+    spaceJoin(children,
       noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
       noSpaceBefore = Set(TokenKind.Colon, TokenKind.BracketL, TokenKind.BracketR),
       noSpaceAfter = Set(TokenKind.BracketL))
 
-  private def instanceHeaderJoin(cs: Array[SyntaxTree.Child]): Doc = {
-    val join: Array[SyntaxTree.Child] => Doc = parts =>
+  private def instanceHeaderJoin(children: Array[SyntaxTree.Child]): Doc =
+    joinWithConstraintBreak(children, parts =>
       spaceJoin(parts,
         noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
         noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR),
-        noSpaceAfter = Set(TokenKind.BracketL))
-    val constraintIdx = cs.indexWhere {
-      case t: Tree if t.kind == TreeKind.Type.ConstraintList => true
-      case _ => false
-    }
-    val onNewLine = constraintIdx > 0 && {
-      (rightMostCodeToken(cs(constraintIdx - 1)), leftMostCodeToken(cs(constraintIdx))) match {
-        case (Some(p), Some(w)) => w.start.lineOneIndexed > p.end.lineOneIndexed
-        case _ => false
-      }
-    }
-    if (onNewLine) {
-      val before = cs.take(constraintIdx)
-      val after = cs.drop(constraintIdx)
-      join(before) <> nest(Indent, hardline <> join(after))
-    } else {
-      join(cs)
-    }
-  }
+        noSpaceAfter = Set(TokenKind.BracketL)))
 
   /**
     * Formatting for module declarations.
@@ -1315,8 +1270,8 @@ object PrettyPrinter {
     */
   private def prettyModule(tree: Tree): Doc =
     prettyDeclBracket(tree,
-      formatBody = cs => {
-        val filtered = filterEmpty(cs)
+      formatBody = children => {
+        val filtered = filterEmpty(children)
         if (filtered.isEmpty) empty
         else joinWithPreservedBlanks(filtered, hardline)
       })
@@ -1349,29 +1304,11 @@ object PrettyPrinter {
       case _ => false
     }
 
-  private def buildSig(parts: Array[SyntaxTree.Child]): Doc = {
-    val join: Array[SyntaxTree.Child] => Doc = ps =>
-      spaceJoin(ps,
+  private def buildSig(parts: Array[SyntaxTree.Child]): Doc =
+    joinWithConstraintBreak(parts, sigParts =>
+      spaceJoin(sigParts,
         noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
-        noSpaceBefore = Set(TokenKind.Colon))
-    val constraintIdx = parts.indexWhere {
-      case t: Tree if t.kind == TreeKind.Type.ConstraintList => true
-      case _ => false
-    }
-    val onNewLine = constraintIdx > 0 && {
-      (rightMostCodeToken(parts(constraintIdx - 1)), leftMostCodeToken(parts(constraintIdx))) match {
-        case (Some(p), Some(w)) => w.start.lineOneIndexed > p.end.lineOneIndexed
-        case _ => false
-      }
-    }
-    if (onNewLine) {
-      val before = parts.take(constraintIdx)
-      val after = parts.drop(constraintIdx)
-      join(before) <> nest(Indent, hardline <> join(after))
-    } else {
-      join(parts)
-    }
-  }
+        noSpaceBefore = Set(TokenKind.Colon)))
 
   /**
     * Formatting for definitions.
@@ -1393,10 +1330,7 @@ object PrettyPrinter {
         val bodyOnSameLine = bodyStartsOnSameLineAs(equalityToken, bodyParts)
 
         val defDoc = Doc.setLayout(layoutOfChildren(rest),
-          if (bodyIsPreserved && bodyOnSameLine) sig <+> text("=") <+> body
-          else if (bodyIsPreserved) sig <+> text("=") <> nest(Indent, hardline <> body)
-          else sig <+> text("=") <> nest(Indent, line <> body)
-        )
+          attachBody(sig <+> text("="), body, bodyIsPreserved, bodyOnSameLine))
 
         prepend(annDoc, defDoc)
     }
@@ -1567,8 +1501,8 @@ object PrettyPrinter {
   private def hasMatchingChainedRhs(rhs: SyntaxTree.Child, opKind: TokenKind): Boolean =
     unwrapExpr(rhs) match {
       case t: Tree if t.kind == TreeKind.Expr.Binary =>
-        val cs = filterEmpty(t.children)
-        cs.length == 3 && leftMostToken(cs(1)).map(_.kind).contains(opKind)
+        val binaryParts = filterEmpty(t.children)
+        binaryParts.length == 3 && leftMostToken(binaryParts(1)).map(_.kind).contains(opKind)
       case _ => false
     }
 
@@ -1591,9 +1525,9 @@ object PrettyPrinter {
     ): (List[SyntaxTree.Child], List[SyntaxTree.Child]) =
       unwrapExpr(current) match {
         case t: Tree if t.kind == TreeKind.Expr.Binary =>
-          val cs = filterEmpty(t.children)
-          if (cs.length == 3 && leftMostToken(cs(1)).map(_.kind).contains(opKind))
-            collect(cs(2), operands :+ cs(0), operators :+ cs(1))
+          val binaryParts = filterEmpty(t.children)
+          if (binaryParts.length == 3 && leftMostToken(binaryParts(1)).map(_.kind).contains(opKind))
+            collect(binaryParts(2), operands :+ binaryParts(0), operators :+ binaryParts(1))
           else
             (operands :+ current, operators)
         case _ =>
@@ -1878,12 +1812,12 @@ object PrettyPrinter {
     * Joins children with spaces, replacing the specified keyword token with the given keyword string and surrounding it with spaces.
     *
     * @param tree the tree to format
-    * @param kind the token kind of the keyword to replace
-    * @param kw   the keyword string to use in the output
+    * @param kind    the token kind of the keyword to replace
+    * @param keyword the keyword string to use in the output
     * @return the formatted construct as Doc
     */
-  private def keywordSpaced(tree: Tree, kind: TokenKind, kw: String): Doc =
-    joinChildren(tree.children, kind -> (text(kw) <> space))
+  private def keywordSpaced(tree: Tree, kind: TokenKind, keyword: String): Doc =
+    joinChildren(tree.children, kind -> (text(keyword) <> space))
 
   private def prettyIdent(tree: Tree): Doc = {
     val (mainChildren, trailingComments) = splitTrailingCommentList(tree.children)
@@ -1897,7 +1831,7 @@ object PrettyPrinter {
         (acc <> gap <> childDoc, Some(child))
     }._1
     trailingComments match {
-      case Some(cl) => appendTrailingCommentList(mainDoc, mainChildren.lastOption, cl)
+      case Some(commentList) => appendTrailingCommentList(mainDoc, mainChildren.lastOption, commentList)
       case None => mainDoc
     }
   }
@@ -1952,7 +1886,7 @@ object PrettyPrinter {
     */
   private def prettyParameterList(tree: Tree): Doc =
     prettyBracket(tree, tree.children,
-      formatBody = cs => joinChildren(cs, TokenKind.Comma -> (text(",") <> line)))
+      formatBody = children => joinChildren(children, TokenKind.Comma -> (text(",") <> line)))
 
   /**
     * Formatting for individual parameters.
@@ -1983,13 +1917,7 @@ object PrettyPrinter {
       splitAtBracket(filtered) match {
         case None => return text("(") <> text(")")
         case Some(BracketSplit(_, _, _, _, tail)) =>
-          val tailDoc =
-            if (tail.isEmpty) empty
-            else {
-              val ci = filtered.length - tail.length - 1
-              val closeChild = if (ci >= 0 && ci < filtered.length) Some(filtered(ci)) else None
-              bracketTail(closeChild, tail.headOption, joinWithGap(tail))
-            }
+          val tailDoc = tailAfterClose(filtered, tail)
           return text("(") <> text(")") <> tailDoc
       }
     }
@@ -2001,13 +1929,7 @@ object PrettyPrinter {
         val openDoc =
           if (header.isEmpty) text(open)
           else defaultHeaderJoin(header) <> text(open)
-        val tailDoc =
-          if (tail.isEmpty) empty
-          else {
-            val ci = filtered.length - tail.length - 1
-            val closeChild = if (ci >= 0 && ci < filtered.length) Some(filtered(ci)) else None
-            bracketTail(closeChild, tail.headOption, joinWithGap(tail))
-          }
+        val tailDoc = tailAfterClose(filtered, tail)
         val args = body.collect { case t: Tree if t.kind == TreeKind.Argument || t.kind == TreeKind.ArgumentNamed => t }
         val singleBlockArg = args.length == 1 &&
           filterEmpty(args(0).children).headOption.exists(c =>
@@ -2238,13 +2160,85 @@ object PrettyPrinter {
     }
   }
 
+  /**
+    * Attaches a body to a header, choosing how the body hangs off the header.
+    *
+    * This is the shared shape used by definitions ([[prettyDef]]), run-with
+    * rules ([[alignedRunWithRule]]) and arrow rules ([[prettyArrowRuleFragment]]):
+    *   - a body that is "preserved" (a braced/apply/if-then-else construct) and
+    *     started on the same source line stays inline after a space;
+    *   - any other preserved body hangs on a hard newline;
+    *   - everything else hangs on a soft [[line]].
+    * `head` already includes any separator token (e.g. the `=` or `=>`).
+    */
+  private def attachBody(head: Doc, body: Doc, bodyIsPreserved: Boolean, bodyOnSameLine: Boolean): Doc =
+    if (bodyIsPreserved && bodyOnSameLine) head <+> body
+    else if (bodyIsPreserved) head <> nest(Indent, hardline <> body)
+    else head <> nest(Indent, line <> body)
+
+  /**
+    * Joins `parts` with `join`, but if a [[TreeKind.Type.ConstraintList]]
+    * starts on a later source line than the preceding part, breaks before it
+    * with a hard newline and an extra indent. Shared by signatures
+    * ([[buildSig]]) and instance headers ([[instanceHeaderJoin]]).
+    */
+  private def joinWithConstraintBreak(
+    parts: Array[SyntaxTree.Child],
+    join: Array[SyntaxTree.Child] => Doc
+  ): Doc = {
+    val constraintIdx = parts.indexWhere {
+      case t: Tree if t.kind == TreeKind.Type.ConstraintList => true
+      case _ => false
+    }
+    val onNewLine = constraintIdx > 0 && {
+      (rightMostCodeToken(parts(constraintIdx - 1)), leftMostCodeToken(parts(constraintIdx))) match {
+        case (Some(p), Some(w)) => w.start.lineOneIndexed > p.end.lineOneIndexed
+        case _ => false
+      }
+    }
+    if (onNewLine) {
+      val before = parts.take(constraintIdx)
+      val after = parts.drop(constraintIdx)
+      join(before) <> nest(Indent, hardline <> join(after))
+    } else {
+      join(parts)
+    }
+  }
+
+  /**
+    * Folds already-formatted `docs` (paired positionally with their source
+    * `children`) into one document, inserting a [[structuralGap]] between each
+    * adjacent pair. Shared by the aligned bodies of matches, structs and handlers.
+    */
+  private def joinDocsWithGap(children: Array[SyntaxTree.Child], docs: Array[Doc]): Doc = {
+    val pairs = children.zip(docs)
+    if (pairs.isEmpty) empty
+    else pairs.sliding(2).foldLeft(pairs.head._2) {
+      case (acc, Array((prev, _), (next, nextDoc))) => acc <> structuralGap(prev, next) <> nextDoc
+      case (acc, _) => acc
+    }
+  }
+
+  /**
+    * Formats the children appearing after a closing bracket, attaching them to
+    * the close token with the appropriate gap (see [[bracketTail]]). Returns
+    * [[empty]] when there is no tail. Shared by case bodies and argument lists.
+    */
+  private def tailAfterClose(children: Array[SyntaxTree.Child], tail: Array[SyntaxTree.Child]): Doc =
+    if (tail.isEmpty) empty
+    else {
+      val closeIdx = children.length - tail.length - 1
+      val closeChild = if (closeIdx >= 0 && closeIdx < children.length) Some(children(closeIdx)) else None
+      bracketTail(closeChild, tail.headOption, joinWithGap(tail))
+    }
+
   private def isCommentKind(kind: TokenKind): Boolean =
     kind == TokenKind.CommentLine ||
       kind == TokenKind.CommentDoc ||
       kind == TokenKind.CommentBlock
 
-  private def defaultHeaderJoin(cs: Array[SyntaxTree.Child]): Doc =
-    cs.map(prettyChild).reduceLeftOption(_ <+> _).getOrElse(empty)
+  private def defaultHeaderJoin(children: Array[SyntaxTree.Child]): Doc =
+    children.map(prettyChild).reduceLeftOption(_ <+> _).getOrElse(empty)
 
   /**
     * Joins children with spaces, suppressing space between specified pairs of tree kinds and before specified token kinds.
