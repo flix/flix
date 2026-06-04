@@ -834,11 +834,8 @@ object Symbol {
     /**
       * Compares `this` and `that` assoc type sym.
       */
-    override def compare(that: AssocTypeSym): Int = {
-      val s1 = this.namespace.mkString(".") + "." + this.name
-      val s2 = that.namespace.mkString(".") + "." + that.name
-      s1.compare(s2)
-    }
+    override def compare(that: AssocTypeSym): Int =
+      compareQualifiedName(this.namespace, this.name, that.namespace, that.name)
 
     /**
       * Human readable representation.
@@ -873,11 +870,8 @@ object Symbol {
     /**
       * Compares `this` and `that` effect sym.
       */
-    override def compare(that: EffSym): Int = {
-      val s1 = this.namespace.mkString(".") + "." + this.name
-      val s2 = that.namespace.mkString(".") + "." + that.name
-      s1.compare(s2)
-    }
+    override def compare(that: EffSym): Int =
+      compareQualifiedName(this.namespace, this.name, that.namespace, that.name)
 
     /**
       * Human readable representation.
@@ -991,6 +985,25 @@ object Symbol {
     val namespace = split.init.toList
     val name = split.last
     Some((namespace, name))
+  }
+
+  /**
+    * Compares two qualified names — given as namespace segments plus a final name — without
+    * allocating the joined strings. Orders by namespace segments lexicographically, then by name.
+    */
+  private def compareQualifiedName(ns1: List[String], name1: String, ns2: List[String], name2: String): Int = {
+    var l1 = ns1
+    var l2 = ns2
+    while (l1.nonEmpty && l2.nonEmpty) {
+      val c = l1.head.compareTo(l2.head)
+      if (c != 0) return c
+      l1 = l1.tail
+      l2 = l2.tail
+    }
+    // Shorter namespace sorts first; equal-length namespaces fall back to the name.
+    if (l1.nonEmpty) 1
+    else if (l2.nonEmpty) -1
+    else name1.compareTo(name2)
   }
 
 }
