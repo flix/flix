@@ -23,6 +23,37 @@ package ca.uwaterloo.flix.tools.compilertop
 object Model {
 
   /**
+    * Which top-level screen the renderer should draw. Switched by `Tab`
+    * (flip table), `?` (help), and `Esc` (back to defs) in the input thread.
+    * The dashboard and stats lines render the same in every view; only the
+    * body below them changes.
+    *
+    *   - [[View.Defs]]: the per-def table (default), full terminal height.
+    *   - [[View.Modules]]: the per-module aggregate table, full terminal
+    *     height. `Tab` flips between [[View.Defs]] and this.
+    *   - [[View.Help]]: a static legend explaining each column and
+    *     keystroke, so the user doesn't have to guess what e.g. `tv` or
+    *     `rnd` mean.
+    */
+  sealed trait View {
+    /**
+      * The other table view — `Tab` flips [[View.Defs]] ↔ [[View.Modules]].
+      * From [[View.Help]] there is no "other table", so it maps to itself;
+      * the input loop special-cases leaving help separately.
+      */
+    final def toggledTable: View = this match {
+      case View.Defs    => View.Modules
+      case View.Modules => View.Defs
+      case View.Help    => View.Help
+    }
+  }
+  object View {
+    case object Defs    extends View
+    case object Modules extends View
+    case object Help    extends View
+  }
+
+  /**
     * Restricts which phases' time the dashboard accounts for. Toggled
     * interactively via the input thread (`f` / `b` / `a`). The split tracks
     * `Flix.check` (frontend) vs the phases that follow in `Flix.compile`'s
@@ -83,8 +114,6 @@ object Model {
     case object Hotness extends Sort { val key = 'h' }
     /** Most monomorphic instances first — surfaces generic-explosion hotspots. */
     case object Mono    extends Sort { val key = 'm' }
-    /** Most optimizer fixed-point re-visits first — surfaces inliner / occurrence-analyzer thrashing. */
-    case object Opt     extends Sort { val key = 'o' }
     /** Most times inlined at a call site first — surfaces small leaf defs that get duplicated everywhere. */
     case object Inl     extends Sort { val key = 'i' }
     /** Most class files emitted first — surfaces JVM fan-out from polymorphism / closures. */
@@ -101,7 +130,7 @@ object Model {
     case object Evars   extends Sort { val key = 'e' }
 
     /** All sort values. */
-    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
+    val all: List[Sort] = List(Time, Hotness, Mono, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
 
     /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
@@ -109,8 +138,6 @@ object Model {
 
   /** Phases whose `track` count maps to the `mono` column — number of monomorphic instances created. */
   val MonoCountPhases: Set[String] = Set("Monomorpher")
-  /** Phases whose `track` count maps to the `opt` column — optimizer fixed-point re-visits. */
-  val OptCountPhases: Set[String] = Set("Optimizer", "LambdaDrop")
   /** Phases whose `track` count maps to the `cls` column — class files emitted post-specialization. */
   val ClsCountPhases: Set[String] = Set("CodeGen")
 
@@ -119,8 +146,7 @@ object Model {
     *
     * @param module         dot-joined namespace (or `(root)` when empty).
     * @param totalNanos     summed wall-clock time across the module's defs.
-    * @param totalCallCount summed `track` call counts across the module's defs.
-    * @param totalLocLines  summed source-line counts across the module's defs.
+    * @param totalLines     summed source-line counts across the module's defs.
     * @param byPhase        phase → summed nanoseconds across the module's defs.
     * @param byPhaseCount   phase → summed track-call counts across the module's defs.
     * @param byPhaseAlloc   phase → summed compiler-side allocation bytes across the module's defs. Lets the frontend/backend filter re-project module allocation the same way it re-projects module time.
@@ -131,7 +157,7 @@ object Model {
     * @param totalClassBytes summed bytecode byte size of emitted `.class` files across the module's defs.
     * @param totalAllocBytes summed compiler-side heap allocation bytes across the module's defs.
     */
-  final case class ModuleStats(module: String, totalNanos: Long, totalCallCount: Long, totalLocLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
+  final case class ModuleStats(module: String, totalNanos: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)

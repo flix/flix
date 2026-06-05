@@ -43,10 +43,15 @@ import scala.collection.mutable
   *                        [[Renderer.TotalPhases]] for the progress bar.
   * @param activeFilter    user-toggled phase filter (drives the legend).
   * @param activeSort      user-toggled sort key (drives header underlines).
+  * @param activeView      user-toggled top-level view: defs table, modules
+  *                        table, or help. Only the active table's rows are
+  *                        populated below.
   * @param layout          column layout produced by [[Layout.compute]].
   * @param visible         def-table rows, already filtered / sorted / trimmed.
+  *                        Empty when [[activeView]] is [[Model.View.Modules]].
   * @param modules         module-table rows, already aggregated / sorted /
-  *                        trimmed.
+  *                        trimmed. Empty unless [[activeView]] is
+  *                        [[Model.View.Modules]].
   */
 final case class FrameState(parallelism: Int,
                             isDone: Boolean,
@@ -57,6 +62,7 @@ final case class FrameState(parallelism: Int,
                             phaseTimersSize: Int,
                             activeFilter: PhaseFilter,
                             activeSort: Sort,
+                            activeView: View,
                             layout: Layout,
                             visible: Vector[DefnStats],
                             modules: Vector[ModuleStats])
@@ -95,7 +101,7 @@ object Renderer {
     *                  warning colors, since aggregating across defs almost
     *                  always trips the thresholds. False for def rows.
     */
-  private final case class RowCells(locLines: Int,
+  private final case class RowCells(lines: Int,
                                     byPhaseCount: Map[String, Long],
                                     inlined: Long,
                                     classBytes: Long,
@@ -112,8 +118,10 @@ object Renderer {
   /**
     * A renderable table row. The numeric trailing columns are uniform
     * across def and module rows ([[RowCells]] / [[Renderer.appendNumericFields]]);
-    * only the leading "first cell" differs (sym + active marker + location
-    * for defs; a single wide module-name field for modules).
+    * only the contents of the leading [[Layout.nameWidth]]-wide cell
+    * differs — def rows pack `sym + (file:line)` into it (bolded when the
+    * sym is currently being compiled), module rows fill it with just the
+    * module name.
     */
   private sealed trait Row {
     /** The trailing numeric columns for this row, ready for [[Renderer.appendNumericFields]]. */
@@ -122,15 +130,15 @@ object Renderer {
     def appendFirstCell(sb: StringBuilder, layout: Layout): Unit
   }
 
-  /** Def-table row: hotness-colored sym, active marker, location column. */
+  /** Def-table row: hotness-colored sym (bold if currently being compiled), parenthesized location — all in one merged cell. */
   private final case class DefnRow(s: DefnStats, safeElapsed: Double, parallelism: Int) extends Row {
-    private val locLines = locLineCount(s.loc)
+    private val lines = lineCount(s.loc)
 
     /** Numeric cells for this def, with `aggregate = false` so warning colors apply. */
     val cells: RowCells = {
       val pctWall = 100.0 * s.totalNanos / safeElapsed
       RowCells(
-        locLines      = locLines,
+        lines         = lines,
         byPhaseCount  = s.byPhaseCount,
         inlined       = s.inlined,
         classBytes    = s.classBytes,
@@ -146,17 +154,48 @@ object Renderer {
       )
     }
 
-    /** Appends the sym name (hotness-colored, with `*` if active) and a dim location field. */
+    /**
+      * Appends a single merged cell: hotness-colored sym (bolded if the def
+      * is currently being compiled), then a dim parenthesized `(file:line)`.
+      * If the cell can't fit the full pair, the location is truncated from
+      * the front first (`…flix:128`); only when even a minimal `…:N`
+      * location won't leave room for the sym does the sym itself get
+      * truncated. Synthetic defs (no real source location) render bare — no
+      * parens — since `(?)` is just noise.
+      *
+      * Bold composes with the hotness color so a currently-running def that
+      * is also very hot renders as bold red, amplifying the signal instead
+      * of fighting it.
+      *
+      * Decision (what to display) is separated from emission (how to lay it
+      * out): the truncation ladder picks a `(nameVisible, locVisible)` pair,
+      * and a single emit path then formats and pads to width. Padding is
+      * always derived from visible widths, so cells fill exactly even when
+      * the location is shorter than the minimum-tail budget.
+      */
     def appendFirstCell(sb: StringBuilder, layout: Layout): Unit = {
-      val nameMax  = layout.symWidth - 1
-      val nameText = truncate(s.sym.name, nameMax)
-      val locField = rpad(truncate(formatLocation(s.loc), layout.locWidth), layout.locWidth)
-      val marker   = if (s.isActive) yellow("*") else " "
-      sb.append(styleSym(nameText, s.totalNanos, locLines))
-      sb.append(marker)
-      sb.append(" " * (nameMax - nameText.length))
-      sb.append(' ')
-      sb.append(dim(locField))
+      val width     = layout.nameWidth
+      val name      = s.sym.name
+      val ChromeLen = 3  // " (" + ")"
+      val MinLocLen = 5  // minimum useful tail of a location, e.g. "…:128"
+
+      val (nameVisible, locVisible) =
+        if (!s.loc.isReal) (truncate(name, width), "")
+        else {
+          val locStr = formatLocation(s.loc)
+          val ideal  = name.length + ChromeLen + locStr.length
+          if (ideal <= width) (name, locStr)
+          else if (name.length + ChromeLen + MinLocLen <= width)
+            (name, truncateFront(locStr, width - name.length - ChromeLen))
+          else
+            (truncate(name, width - ChromeLen - MinLocLen), truncateFront(locStr, MinLocLen))
+        }
+
+      val suffix = if (locVisible.isEmpty) "" else s" ($locVisible)"
+      val styled = styleSym(nameVisible, s.totalNanos, lines)
+      sb.append(if (s.isActive) bold(styled) else styled)
+      if (suffix.nonEmpty) sb.append(dim(suffix))
+      sb.append(" " * (width - nameVisible.length - suffix.length))
     }
   }
 
@@ -166,7 +205,7 @@ object Renderer {
     val cells: RowCells = {
       val pctWall = 100.0 * m.totalNanos / safeElapsed
       RowCells(
-        locLines      = m.totalLocLines,
+        lines         = m.totalLines,
         byPhaseCount  = m.byPhaseCount,
         inlined       = m.totalInlined,
         classBytes    = m.totalClassBytes,
@@ -182,10 +221,16 @@ object Renderer {
       )
     }
 
-    /** Appends the module name, padded to span the def-table's sym + location columns. */
+    /**
+      * Appends the module name, hotness-colored (ms-per-line over the module's
+      * summed time / lines) and padded to span the merged def-row name column.
+      * Styling is applied to the visible text only, then padded by visible
+      * width so the ANSI codes don't throw off column alignment.
+      */
     def appendFirstCell(sb: StringBuilder, layout: Layout): Unit = {
-      val modWidth = layout.symWidth + 1 + layout.locWidth
-      sb.append(rpad(truncate(m.module, modWidth), modWidth))
+      val name = truncate(m.module, layout.nameWidth)
+      sb.append(styleModule(name, m.totalNanos, m.totalLines))
+      sb.append(" " * (layout.nameWidth - name.length))
     }
   }
 }
@@ -222,25 +267,34 @@ final class Renderer {
     renderStats(sb, state)
     sb.append('\n')
 
-    val safeElapsed = state.elapsed.max(1L).toDouble
-    val defRows: Vector[Row] = state.visible.map(s => DefnRow(s, safeElapsed, state.parallelism))
-    val modRows: Vector[Row] = state.modules.map(m => ModuleRow(m, safeElapsed, state.parallelism))
-
-    // Def table: header, then rows or a centered placeholder if empty.
-    renderHeaderRow(sb, rpad("Def (hot)", state.layout.symWidth), withLocation = true, state.layout, state.activeSort)
-    if (defRows.isEmpty) renderEmptyPlaceholder(sb, "(no timings yet)", state.layout)
-    else renderTable(sb, defRows, state.layout)
-
-    // Module table: only when non-empty, separated by a blank line.
-    if (modRows.nonEmpty) {
-      val modWidth = state.layout.symWidth + 1 + state.layout.locWidth
-      sb.append('\n')
-      renderHeaderRow(sb, rpad("Module (hot)", modWidth), withLocation = false, state.layout, state.activeSort)
-      renderTable(sb, modRows, state.layout)
+    state.activeView match {
+      case View.Defs    => renderDefTable(sb, state)
+      case View.Modules => renderModuleTable(sb, state)
+      case View.Help    => renderHelp(sb)
     }
 
     sb.append(EndSync)
     sb.toString
+  }
+
+  /** Renders the per-def table (the body of the defs view). */
+  private def renderDefTable(sb: StringBuilder, state: FrameState): Unit = {
+    val safeElapsed = state.elapsed.max(1L).toDouble
+    val defRows: Vector[Row] = state.visible.map(s => DefnRow(s, safeElapsed, state.parallelism))
+
+    renderHeaderRow(sb, "def (hot)", state.layout, state.activeSort)
+    if (defRows.isEmpty) renderEmptyPlaceholder(sb, "(no timings yet)", state.layout)
+    else renderTable(sb, defRows, state.layout)
+  }
+
+  /** Renders the per-module aggregate table (the body of the modules view). */
+  private def renderModuleTable(sb: StringBuilder, state: FrameState): Unit = {
+    val safeElapsed = state.elapsed.max(1L).toDouble
+    val modRows: Vector[Row] = state.modules.map(m => ModuleRow(m, safeElapsed, state.parallelism))
+
+    renderHeaderRow(sb, "mod (hot)", state.layout, state.activeSort)
+    if (modRows.isEmpty) renderEmptyPlaceholder(sb, "(no modules yet)", state.layout)
+    else renderTable(sb, modRows, state.layout)
   }
 
   /**
@@ -277,7 +331,7 @@ final class Renderer {
       sb.append(dim("single-threaded"))
     }
     sb.append("   ")
-    sb.append(renderFilterLegend(state.activeFilter))
+    sb.append(renderFilterLegend(state.activeFilter, state.activeView))
     sb.append('\n')
   }
 
@@ -287,9 +341,13 @@ final class Renderer {
     * whether the filter is active or not. Driven entirely by
     * [[PhaseFilter.all]]: adding a new filter is a one-line change in
     * [[Model]] and the legend follows automatically.
+    *
+    * In help view none of the three entries is highlighted — the help tip
+    * carries the "active mode" signal instead, so the legend reflects
+    * "press a/f/b to leave help" rather than "you are currently filtering".
     */
-  private def renderFilterLegend(active: PhaseFilter): String = {
-    val entries = PhaseFilter.all.map(f => filterLegendEntry(f, f == active))
+  private def renderFilterLegend(active: PhaseFilter, view: View): String = {
+    val entries = PhaseFilter.all.map(f => filterLegendEntry(f, view != View.Help && f == active))
     s"${dim("[")}${entries.mkString(dim("|"))}${dim("]")}"
   }
 
@@ -335,19 +393,31 @@ final class Renderer {
     sb.append(styleHeap(heapUsedField, heapRatio))
     sb.append(dim(" / "))
     sb.append(heapMaxField)
+    // Align under the `[all|frontend|backend]` legend on the dashboard line above.
+    // When help is the active view, the tip carries the "active mode" signal
+    // (bold yellow) — the filter legend goes plain because no filter is
+    // currently being applied to a visible table. The "?" itself is underlined
+    // to match the keystroke-underline convention used in the column headers
+    // and the filter legend.
+    sb.append("     ")
+    val tipText = s"$UnderlineCode?$NoUnderlineCode for help"
+    val tipStyled =
+      if (state.activeView == View.Help) bold(color(tipText, Yellow))
+      else color(tipText, Gray)
+    sb.append(tipStyled)
     sb.append('\n')
   }
 
   /**
     * Prints the parametrized header row + the divider underneath it. The
-    * `leading` argument is a pre-padded first-column label (either
-    * `"Def (hot)"` at `symWidth` or `"Module (hot)"` at the combined
-    * sym+loc width). `withLocation` toggles the second `"location"` header,
-    * which the def table has and the module table doesn't.
+    * `label` argument is the raw first-column label — `"def (hot)"` for the
+    * def table, `"mod (hot)"` for the module table — and gets padded to
+    * [[Layout.nameWidth]] here. The location now sits inside the def cells
+    * in parens, so the header doesn't have a separate `"location"` column.
     */
-  private def renderHeaderRow(sb: StringBuilder, leading: String, withLocation: Boolean, layout: Layout, activeSort: Sort): Unit = {
+  private def renderHeaderRow(sb: StringBuilder, label: String, layout: Layout, activeSort: Sort): Unit = {
     sb.append(' ')
-    sb.append(buildHeader(leading, withLocation, layout, activeSort))
+    sb.append(buildHeader(rpad(label, layout.nameWidth), layout, activeSort))
     sb.append(' '); sb.append('\n')
     sb.append(' ')
     sb.append(dim("─" * layout.totalWidth))
@@ -355,30 +425,24 @@ final class Renderer {
   }
 
   /**
-    * Builds a table column header from a pre-padded leading-column label
-    * and a `withLocation` flag. Each sortable column underlines its
-    * [[Sort.key]] letter (`m̲ono`, `o̲pt`, `c̲ls`, `t̲ime`, …) and the leading
-    * "(h̲ot)" annotation marks the hotness sort key. The active column is
-    * rendered bold yellow; the rest bold cyan.
+    * Builds a table column header from a pre-padded leading-column label.
+    * Each sortable column underlines its [[Sort.key]] letter (`m̲ono`, `i̲nl`,
+    * `c̲ls`, `t̲ime`, …) and the leading "(h̲ot)" annotation marks the hotness
+    * sort key. The active column is rendered bold yellow; the rest bold cyan.
     *
-    * Two callers — `Def (hot)` + a `"location"` column for the def table,
-    * `Module (hot)` (single wide column, no location) for the module table.
+    * Two callers — `def (hot)` for the def table, `mod (hot)` for the
+    * module table. Both pad their leading label to [[Layout.nameWidth]].
     */
-  private def buildHeader(leading: String, withLocation: Boolean, layout: Layout, activeSort: Sort): String = {
+  private def buildHeader(leading: String, layout: Layout, activeSort: Sort): String = {
     val sb = new StringBuilder
 
     sb.append(sortableColumn(leading, Sort.Hotness, activeSort))
 
-    if (withLocation) {
-      sb.append(' ')
-      sb.append(plainHeader(rpad("location", layout.locWidth)))
-    }
-    if (layout.showLOC) {
-      sb.append(' '); sb.append(plainHeader(lpad("LOC", 4)))
+    if (layout.showLines) {
+      sb.append(' '); sb.append(plainHeader(lpad("lines", 5)))
     }
     if (layout.showCounts) {
       sb.append(' '); sb.append(sortableColumn(lpad("mono", 4), Sort.Mono, activeSort))
-      sb.append(' '); sb.append(sortableColumn(lpad("opt",  4), Sort.Opt,  activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("inl",  4), Sort.Inl,  activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("cls",  4), Sort.Cls,  activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("size", 5), Sort.Size, activeSort))
@@ -432,7 +496,61 @@ final class Renderer {
   }
 
   /**
-    * Appends the trailing numeric columns (LOC, mono / opt / cls, cns,
+    * Renders the help screen: a static legend explaining each table column
+    * and every keystroke the input loop understands. The dashboard + stats
+    * lines are still drawn above this body, so compilation progress remains
+    * visible while the user reads.
+    *
+    * The text is literal rather than derived from the [[Sort]] / [[PhaseFilter]]
+    * ADTs — the description strings carry context that does not belong in
+    * those data types. Add a row here when you add a new column or
+    * keystroke; the input loop is the single source of truth for what
+    * actually works.
+    */
+  private def renderHelp(sb: StringBuilder): Unit = {
+    // The three groups mirror how Layout / the table renderer gate columns:
+    // common columns are always shown; frontend columns only appear under
+    // the `frontend` filter; backend columns only under the `backend` filter.
+    sb.append("  "); sb.append(bold(cyan("Common columns"))); sb.append('\n')
+    appendHelpCol(sb, "def",      "the fully qualified name of the def, with its source location (file:line) in parens")
+    appendHelpCol(sb, "lines",    "the number of source-code lines spanned by the def's signature and body")
+    appendHelpCol(sb, "phase",    "the compiler phase that consumed the most wall-clock time for the def")
+    appendHelpCol(sb, "alloc",    "the amount of memory the compiler allocated while processing the def")
+    appendHelpCol(sb, "time",     "the cumulative wall-clock time spent compiling the def")
+    appendHelpCol(sb, "%cpu",     "the def's share of total CPU time, computed as time / (elapsed × threads)")
+    appendHelpCol(sb, "%wall",    "the def's share of wall-clock time (time / elapsed); max savings if removed")
+    sb.append('\n')
+
+    sb.append("  "); sb.append(bold(cyan("Frontend columns"))); sb.append('\n')
+    appendHelpCol(sb, "cns",      "the number of type constraints generated during type inference")
+    appendHelpCol(sb, "tv",       "the number of type variables in the def's constraint system")
+    appendHelpCol(sb, "ev",       "the number of effect variables in the def's constraint system")
+    sb.append('\n')
+
+    sb.append("  "); sb.append(bold(cyan("Backend columns"))); sb.append('\n')
+    appendHelpCol(sb, "mono",     "the number of monomorphic copies created during monomorphization")
+    appendHelpCol(sb, "inl",      "the number of times the def was inlined at a call site")
+    appendHelpCol(sb, "cls",      "the number of .class files emitted for the def")
+    appendHelpCol(sb, "size",     "the total bytecode size of all .class files emitted for the def")
+    sb.append('\n')
+
+    sb.append("  "); sb.append(bold(cyan("Navigation"))); sb.append('\n')
+    appendHelpCol(sb, "Tab",      "switch between the per-def and per-module tables")
+    appendHelpCol(sb, "a/f/b",    "filter to all / frontend / backend phases")
+    appendHelpCol(sb, "?",        "toggle this help screen; Esc returns to the defs table")
+  }
+
+  /** Appends one column-description row. */
+  private def appendHelpCol(sb: StringBuilder, name: String, desc: String): Unit = {
+    sb.append("    ")
+    sb.append(rpad(name, 10))
+    sb.append("  ")
+    sb.append(dim(desc))
+    sb.append('\n')
+  }
+
+  /**
+    * Appends the trailing numeric columns (LOC, mono / inl / cls, cns,
     * phase, time, %cpu, %wall) for one row, honoring the layout's
     * visibility flags. Always emits a leading separator before each column
     * it writes.
@@ -440,21 +558,19 @@ final class Renderer {
     * [[RowCells.aggregate]] skips all warning colors on `time` / `%cpu` /
     * `%wall`. The `style*` thresholds are calibrated for individual defs;
     * at module scale, sums-across-defs trip the thresholds unconditionally
-    * and the colors become noise. Counts (mono / opt / cls / cns) render
+    * and the colors become noise. Counts (mono / inl / cls / cns) render
     * plain in both tables.
     */
   private def appendNumericFields(sb: StringBuilder, cells: RowCells, layout: Layout): Unit = {
-    if (layout.showLOC) {
+    if (layout.showLines) {
       sb.append(' ')
-      val locStr = if (cells.locLines > 0) cells.locLines.toString else "-"
-      sb.append(lpad(locStr, 4))
+      val linesStr = if (cells.lines > 0) cells.lines.toString else "-"
+      sb.append(lpad(linesStr, 5))
     }
     if (layout.showCounts) {
       val mono = sumPhaseCounts(cells.byPhaseCount, MonoCountPhases)
-      val opt  = sumPhaseCounts(cells.byPhaseCount, OptCountPhases)
       val cls  = sumPhaseCounts(cells.byPhaseCount, ClsCountPhases)
       sb.append(' '); sb.append(lpad(mono.toString, 4))
-      sb.append(' '); sb.append(lpad(opt.toString, 4))
       sb.append(' '); sb.append(lpad(cells.inlined.toString, 4))
       sb.append(' '); sb.append(lpad(cls.toString, 4))
       sb.append(' '); sb.append(lpad(formatBytes(cells.classBytes), 5))

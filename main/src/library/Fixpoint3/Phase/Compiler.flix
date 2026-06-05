@@ -465,8 +465,7 @@ pub mod Fixpoint3.Phase.Compiler {
         let functionalCountBackUp = Counter.get(functionalCounter);
         let toFullSym = bodyAtom -> (Predicate.bodyAtomToRelSym(bodyAtom, Full, predicates));
         let innerFunc = {
-            acc -> atomVar ->
-                let (atom, rowVar) = atomVar;
+            acc -> match (atom, rowVar) ->
                 match atom {
                     case BodyAtom(PredSym(_, id), denotation, Polarity.Positive, _, terms) =>
                         let termsWithIndexes = Vector.mapWithIndex(i -> term -> (term, i), terms);

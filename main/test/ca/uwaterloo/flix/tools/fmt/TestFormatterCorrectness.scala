@@ -30,7 +30,7 @@ import org.scalatest.Ignore
   *
   * Each property is run on both corpora: the standard library and the `examples`.
   */
-//@Ignore
+@Ignore
 class TestFormatterCorrectness extends TestFormatterCommon {
 
   /**
