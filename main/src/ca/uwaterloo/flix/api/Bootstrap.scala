@@ -654,7 +654,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def clean(): Result[Unit, BootstrapError] = {
     // Ensure project mode
     if (optManifest.isEmpty) {
-      return Err(BootstrapError.FileError("No manifest found (flix.toml). Refusing to run 'clean' in a non-project directory."))
+      return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'clean' in a non-project directory."))
     }
 
     // Ensure `cwd` is not dangerous
@@ -773,7 +773,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
     val home = Path.of(System.getProperty("user.home"))
     if (home.normalize() == path.normalize()) {
-      return Err(BootstrapError.FileError("Refusing to run 'clean' in home directory."))
+      return Err(BootstrapError.FileError("Refusing to delete file in home directory."))
     }
     Ok(())
   }
@@ -782,7 +782,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
     val roots = FileSystems.getDefault.getRootDirectories.asScala.toList.map(_.normalize())
     if (roots.contains(path.normalize())) {
-      return Err(BootstrapError.FileError("Refusing to run 'clean' in root directory."))
+      return Err(BootstrapError.FileError("Refusing to delete file in root directory."))
     }
     Ok(())
   }
@@ -790,7 +790,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /** Returns `Err` if `path` is an ancestor of `projectPath`. */
   private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
     if (projectPath.normalize().startsWith(path.normalize())) {
-      return Err(BootstrapError.FileError(s"Refusing to run clean in ancestor of project directory: '${path.normalize()}"))
+      return Err(BootstrapError.FileError(s"Refusing to delete file in ancestor of project directory: '${path.normalize()}"))
     }
     Ok(())
   }
