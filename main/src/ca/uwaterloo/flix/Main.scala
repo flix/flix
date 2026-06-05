@@ -445,6 +445,8 @@ object Main {
             }
           }
 
+        case Command.Upgrade(pkg) => ???
+
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
@@ -537,6 +539,8 @@ object Main {
 
     case object EffLock extends Command
 
+    case class Upgrade(pkg: String) extends Command
+
     case object CompilerPerf extends Command
 
     case object CompilerMemory extends Command
@@ -624,6 +628,13 @@ object Main {
 
       cmd("eff-lock").text("  locks the current effect signatures.")
         .action((_, c) => c.copy(command = Command.EffLock))
+
+      cmd("upgrade").text("  checks for a new version of the given package and downloads it.")
+        .children(
+          arg[String]("<package id>").action((s, c) => c.copy(command = Command.Upgrade(s)))
+            .required()
+            .text("the package to upgrade. The identifier corresponds to the dependency key in the manifest.")
+        )
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")

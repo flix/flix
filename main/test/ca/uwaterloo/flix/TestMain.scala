@@ -121,6 +121,18 @@ class TestMain extends AnyFunSuite {
     assert(opts.args == Seq("arg1", "arg2"))
   }
 
+  test("upgrade") {
+    val args = Array("upgrade")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade pkg") {
+    val args = Array("upgrade", "pkg")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Upgrade("pkg"))
+  }
+
   test("--json") {
     val args = Array("--json")
     val opts = Main.parseCmdOpts(args).get
