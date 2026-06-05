@@ -31,7 +31,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result}
 
-import java.io.PrintStream
+import java.io.{InputStream, PrintStream}
 import java.nio.file.{FileSystems, Files, Path, StandardCopyOption}
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.collection.mutable
@@ -472,6 +472,18 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       ()
     }
+  }
+
+  /**
+    * Upgrades `pkgName` to the latest minor version.
+    *
+    * Assumes that `this` [[Bootstrap]] instance implies that the manifest was successfully parsed and is up to date.
+    *
+    * @param pkgName the package identifier to upgrade. The identifier is the key as it appears in the manifest file,
+    *                e.g., `github:flix/museum`
+    */
+  private def upgrade(flix: Flix, pkgName: String)(implicit formatter: Formatter, in: InputStream, out: PrintStream): Result[Unit, BootstrapError] = {
+    ???
   }
 
   /**
