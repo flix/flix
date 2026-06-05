@@ -445,7 +445,15 @@ object Main {
             }
           }
 
-        case Command.Upgrade(pkg) => ???
+        case Command.Upgrade(pkg) =>
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+              bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options.copy(progress = false))
+                bootstrap.upgrade(flix, pkg)(formatter, System.in, System.out)
+            }
+          }
 
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
