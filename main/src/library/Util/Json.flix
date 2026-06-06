@@ -18,7 +18,7 @@ pub mod Util.Json {
 
     use Util.Json.JsonError.JsonError
     use Util.Json.JsonError.JsonError.Parse
-    use Util.Json.JsonError.ParseErrorKind.{UnexpectedChar, UnexpectedEof, InvalidNumber, InvalidEscape, InvalidUnicode, DuplicateKey, MaxDepthExceeded}
+    use Util.Json.JsonError.ParseErrorKind.{DuplicateKey, InvalidEscape, InvalidNumber, InvalidUnicode, MaxDepthExceeded, UnexpectedChar, UnexpectedEof}
     use Util.Json.FromJson.FromJson
 
     ///
@@ -36,6 +36,14 @@ pub mod Util.Json {
         case JObject(Map[String, Json])
         case JString(String)
     }
+
+    ///
+    /// The maximum nesting depth (number of enclosing arrays/objects) the parser
+    /// accepts. Inputs nested deeper are rejected with `MaxDepthExceeded` rather
+    /// than overflowing the JVM stack, since the recursive-descent parser uses one
+    /// stack frame per level.
+    ///
+    def maxDepth(): Int32 = 128
 
     instance ToString[Json] {
         pub def toString(j: Json): String = toCompactString(j)
@@ -311,14 +319,6 @@ pub mod Util.Json {
             if (c == ' ' or c == '\t' or c == '\n' or c == '\r') skipWs(s, i + 1, n)
             else i
         }
-
-    ///
-    /// The maximum nesting depth (number of enclosing arrays/objects) the parser
-    /// accepts. Inputs nested deeper are rejected with `MaxDepthExceeded` rather
-    /// than overflowing the JVM stack, since the recursive-descent parser uses one
-    /// stack frame per level.
-    ///
-    def maxDepth(): Int32 = 128
 
     ///
     /// Parses a single JSON value at position `i` (skipping leading whitespace).
