@@ -147,6 +147,34 @@ mod TestJson {
     def toCompactString25(): Unit \ Assert =
         assertEq(expected = "\"a\\nb\\tc\"", Json.toCompactString(JString("a\nb\tc")))
 
+    // High-BMP and non-BMP characters (code point >= 0x20) must pass through
+    // unescaped, per RFC 8259. These exercise the >= U+8000 range, where a
+    // signed reinterpretation of the UTF-16 code unit would go negative.
+
+    @Test
+    def toCompactStringHigh1(): Unit \ Assert =
+        assertEq(expected = "\"耀\"", Json.toCompactString(JString("耀")))
+
+    @Test
+    def toCompactStringHigh2(): Unit \ Assert =
+        assertEq(expected = "\"한\"", Json.toCompactString(JString("한")))
+
+    @Test
+    def toCompactStringHigh3(): Unit \ Assert =
+        assertEq(expected = "\"￿\"", Json.toCompactString(JString("￿")))
+
+    // Non-BMP character (emoji U+1F600) encoded as a surrogate pair.
+    @Test
+    def toCompactStringHigh4(): Unit \ Assert =
+        assertEq(expected = "\"😀\"", Json.toCompactString(JString("😀")))
+
+    // Round-trip: a high-BMP character survives encode then decode unchanged.
+    @Test
+    def toCompactStringHigh5(): Unit \ Assert =
+        assertEq(
+            expected = (Ok(JString("耀")): Result[JsonError, Json.Json]),
+            Json.parse(Json.toCompactString(JString("耀"))))
+
     /////////////////////////////////////////////////////////////////////////////
     // toCompactString — arrays                                                //
     /////////////////////////////////////////////////////////////////////////////
