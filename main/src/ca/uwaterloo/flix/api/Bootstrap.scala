@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{AvailableUpdates, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result}
@@ -475,15 +475,76 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Upgrades `pkgName` to the latest minor version.
+    * Upgrades `pkgName` to the latest minor version and/or patch.
+    *
+    * Example 1 - Latest minor version if one is available:
+    * If package is version 0.1.0, and versions `1.0.0`, `0.3.1`, `0.3.0`, `0.2.0`, and `0.1.1`, then
+    * version `0.3.1` is applied.
+    * In particular, the major version is ignored.
+    *
+    * Example 2 - Latest patch version if no greater minor upgrade available:
+    * If package is version `0.2.0` and versions `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, and `0.1.0`, then
+    * version `0.2.3` is applied.
     *
     * Assumes that `this` [[Bootstrap]] instance implies that the manifest was successfully parsed and is up to date.
     *
     * @param pkgName the package identifier to upgrade. The identifier is the key as it appears in the manifest file,
     *                e.g., `github:flix/museum`
     */
-  private def upgrade(flix: Flix, pkgName: String)(implicit formatter: Formatter, in: InputStream, out: PrintStream): Result[Unit, BootstrapError] = {
+  def upgrade(flix: Flix, pkgName: String)(implicit formatter: Formatter, in: InputStream, out: PrintStream): Result[Unit, BootstrapError] = {
+    // Ensure project mode
+    val manifest = optManifest match {
+      case None => return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'upgrade' in a non-project directory."))
+      case Some(m) => m
+    }
+
+    // Ensure project path is not a system directory
+    checkForSystemPath(projectPath) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure cwd is not dangerous (system dir or outside project path)
+    val cwd = Path.of(System.getProperty("user.dir"))
+    checkForDangerousPath(cwd) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // 1. Check that 'pkgName' occurs as a key in the dependencies declared in the manifest
+    val dependency = manifest.flixDependencies.find(_.identifier == pkgName) match {
+      case None =>
+        // TODO: Maybe introduce 'UpgradeError' instead of 'GeneralError'
+        return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The package is not a declared dependency of the project."))
+      case Some(d) => d
+    }
+
+    // 2. Check for upgrades
+    val availableUpdates = FlixPackageManager.findAvailableUpdates(dependency, apiKey) match {
+      case Err(e) => return Err(BootstrapError.FlixPackageError(e))
+      case Ok(u) => u
+    }
+
+    // 3. Find latest minor version or latest patch if no greater minor version
+    val update = latestMinorOrPatch(availableUpdates) match {
+      case None => return Ok(())
+      case Some(u) => u
+    }
+
+    // 4. Download upgrade
+
+    // 5. Check for effect-safe upgrade
+
+    // 6. Write to manifest
+
+    // 7. Delete unused dependencies
+
     ???
+  }
+
+  private def latestMinorOrPatch(updates: AvailableUpdates): Option[SemVer] = updates match {
+    case AvailableUpdates(_, Some(minor), _) => Some(minor)
+    case AvailableUpdates(_, None, patch) => patch
   }
 
   /**
