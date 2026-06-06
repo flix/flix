@@ -213,6 +213,10 @@ object Typer {
 
     val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, econstrs0, traitEnv, eqEnv, root)
+    // Guarded so `typeSubstSize` (a traversal over the substitution range) is
+    // only computed when a profiler is attached — emitEvent evaluates its
+    // argument eagerly, so an unguarded call would cost on every compile.
+    if (flix.hasListeners) flix.emitEvent(FlixEvent.SubstitutionSizeDef(defn.sym, subst.root.typeSubstSize))
     constraintErrors.foreach(sctx.errors.add)
     checkSpecAssocTypes(defn.spec, tconstrs0, traitEnv)
     TypeReconstruction.visitDef(defn, subst)
