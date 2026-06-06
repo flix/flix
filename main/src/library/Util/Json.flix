@@ -76,7 +76,7 @@ pub mod Util.Json {
     ///
     pub def toCompactString(j: Json): String = region rc {
         let sb = StringBuilder.empty(rc);
-        writeCompact(j, sb);
+        write(j, 0, Style.Compact, sb);
         StringBuilder.toString(sb)
     }
 
@@ -90,7 +90,7 @@ pub mod Util.Json {
     ///
     pub def toPrettyString(indent: Int32, j: Json): String = region rc {
         let sb = StringBuilder.empty(rc);
-        writePretty(indent, 0, j, sb);
+        write(j, 0, Style.Pretty(indent), sb);
         StringBuilder.toString(sb)
     }
 
@@ -107,78 +107,77 @@ pub mod Util.Json {
         richPretty(indent, 0, j)
 
     ///
-    /// Appends the compact JSON rendering of `j` to `sb`.
+    /// Controls the layout used by `write`.
     ///
-    def writeCompact(j: Json, sb: StringBuilder[r]): Unit \ r = match j {
-        case JArray(v) =>
-            StringBuilder.append('[', sb);
-            foreach ((i, e) <- ForEach.withIndex(v)) {
-                if (i > 0) { StringBuilder.append(',', sb) };
-                writeCompact(e, sb)
-            };
-            StringBuilder.append(']', sb)
-        case JBool(b) =>
-            StringBuilder.appendString(if (b) "true" else "false", sb)
-        case JNull =>
-            StringBuilder.appendString("null", sb)
-        case JNumber(n) =>
-            StringBuilder.appendString(BigDecimal.toPlainString(n), sb)
-        case JObject(m) =>
-            StringBuilder.append('{', sb);
-            foreach ((i, (k, x)) <- ForEach.withIndex(m)) {
-                if (i > 0) { StringBuilder.append(',', sb) };
-                writeEscaped(k, sb);
-                StringBuilder.append(':', sb);
-                writeCompact(x, sb)
-            };
-            StringBuilder.append('}', sb)
-        case JString(s) =>
-            writeEscaped(s, sb)
+    /// `Compact` emits no extraneous whitespace; `Pretty(indent)` places each
+    /// element on its own line using `indent` spaces per nesting level.
+    ///
+    enum Style {
+        case Compact
+        case Pretty(Int32)
     }
 
     ///
-    /// Appends the pretty-printed JSON rendering of `j` to `sb`.
+    /// Appends the JSON rendering of `j` to `sb` using style `s`.
     ///
-    /// `indent` is the number of spaces per nesting level; `depth` is the
-    /// current nesting level (0 at the root).
+    /// `d` is the current nesting level (0 at the root); it is ignored in
+    /// `Compact` style. Empty arrays and objects always render as `[]` or `{}`.
     ///
-    def writePretty(indent: Int32, depth: Int32, j: Json, sb: StringBuilder[r]): Unit \ r = match j {
-        case JArray(v) if Vector.isEmpty(v) =>
-            StringBuilder.appendString("[]", sb)
+    def write(j: Json, d: Int32, s: Style, sb: StringBuilder[r]): Unit \ r = match j {
         case JArray(v) =>
-            StringBuilder.append('[', sb);
-            foreach ((i, e) <- ForEach.withIndex(v)) {
-                if (i > 0) { StringBuilder.append(',', sb) };
-                StringBuilder.append('\n', sb);
-                writeIndent(indent * (depth + 1), sb);
-                writePretty(indent, depth + 1, e, sb)
-            };
-            StringBuilder.append('\n', sb);
-            writeIndent(indent * depth, sb);
-            StringBuilder.append(']', sb)
+            if (Vector.isEmpty(v))
+                StringBuilder.appendString("[]", sb)
+            else {
+                StringBuilder.append('[', sb);
+                foreach ((i, e) <- ForEach.withIndex(v)) {
+                    if (i > 0) { StringBuilder.append(',', sb) };
+                    breakIndent(d + 1, s, sb);
+                    write(e, d + 1, s, sb)
+                };
+                breakIndent(d, s, sb);
+                StringBuilder.append(']', sb)
+            }
         case JBool(b) =>
             StringBuilder.appendString(if (b) "true" else "false", sb)
         case JNull =>
             StringBuilder.appendString("null", sb)
         case JNumber(n) =>
             StringBuilder.appendString(BigDecimal.toPlainString(n), sb)
-        case JObject(m) if Map.isEmpty(m) =>
-            StringBuilder.appendString("{}", sb)
         case JObject(m) =>
-            StringBuilder.append('{', sb);
-            foreach ((i, (k, x)) <- ForEach.withIndex(m)) {
-                if (i > 0) { StringBuilder.append(',', sb) };
-                StringBuilder.append('\n', sb);
-                writeIndent(indent * (depth + 1), sb);
-                writeEscaped(k, sb);
-                StringBuilder.appendString(": ", sb);
-                writePretty(indent, depth + 1, x, sb)
-            };
-            StringBuilder.append('\n', sb);
-            writeIndent(indent * depth, sb);
-            StringBuilder.append('}', sb)
-        case JString(s) =>
-            writeEscaped(s, sb)
+            if (Map.isEmpty(m))
+                StringBuilder.appendString("{}", sb)
+            else {
+                StringBuilder.append('{', sb);
+                foreach ((i, (k, x)) <- ForEach.withIndex(m)) {
+                    if (i > 0) { StringBuilder.append(',', sb) };
+                    breakIndent(d + 1, s, sb);
+                    writeEscaped(k, sb);
+                    writeColon(s, sb);
+                    write(x, d + 1, s, sb)
+                };
+                breakIndent(d, s, sb);
+                StringBuilder.append('}', sb)
+            }
+        case JString(str) =>
+            writeEscaped(str, sb)
+    }
+
+    ///
+    /// In `Pretty` style, appends a newline followed by the indentation for
+    /// nesting level `d`. In `Compact` style, does nothing.
+    ///
+    def breakIndent(d: Int32, s: Style, sb: StringBuilder[r]): Unit \ r = match s {
+        case Style.Compact     => ()
+        case Style.Pretty(ind) => StringBuilder.append('\n', sb); writeIndent(ind * d, sb)
+    }
+
+    ///
+    /// Appends the object key/value separator to `sb`: `":"` in `Compact`
+    /// style and `": "` in `Pretty` style.
+    ///
+    def writeColon(s: Style, sb: StringBuilder[r]): Unit \ r = match s {
+        case Style.Compact   => StringBuilder.append(':', sb)
+        case Style.Pretty(_) => StringBuilder.appendString(": ", sb)
     }
 
     ///
