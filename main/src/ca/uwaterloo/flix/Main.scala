@@ -451,7 +451,8 @@ object Main {
               bootstrap =>
                 val flix = new Flix().setFormatter(formatter)
                 flix.setOptions(options.copy(progress = false))
-                bootstrap.upgrade(flix, pkg)(formatter, System.in, System.out)
+                val trimmedPkgName = pkg.trim
+                bootstrap.upgrade(flix, trimmedPkgName)(formatter, System.in, System.out)
             }
           }
 
