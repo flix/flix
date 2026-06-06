@@ -21,7 +21,8 @@ mod TestJson {
     use Util.Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
     use Util.Json.JsonError.JsonError
     use Util.Json.JsonError.JsonError.{Decode, Parse}
-    use Util.Json.JsonError.ParseErrorKind.{DuplicateKey, InvalidEscape, InvalidUnicode, UnexpectedChar, UnexpectedEof}
+    use Util.Json.JsonError.ParseErrorKind
+    use Util.Json.JsonError.ParseErrorKind.{DuplicateKey, InvalidEscape, InvalidUnicode, MaxDepthExceeded, UnexpectedChar, UnexpectedEof}
     use Util.Json.JsonError.DecodeErrorKind.{MissingIndex, MissingKey, TypeMismatch}
     use Util.Json.JsonPath.JsonPath
     use Util.Json.JsonPath.JsonStep
@@ -524,6 +525,38 @@ mod TestJson {
     @Test
     def parseUnicodeValid(): Unit \ Assert =
         assertEq(expected = Ok(JString("A")), Json.parse("\"\\u0041\""))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parse — nesting depth                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    /// A `d`-deep nested array whose innermost element is `[]`, e.g. `nestedArray(2)` is `[[]]`.
+    def nestedArray(d: Int32): Json.Json =
+        if (d <= 1) JArray(Vector#{}) else JArray(Vector#{nestedArray(d - 1)})
+
+    /// Extracts the `ParseErrorKind` of a `Parse` error, ignoring its offset.
+    def parseErrKind(r: Result[JsonError, Json.Json]): Option[ParseErrorKind] = match r {
+        case Err(Parse(_, k)) => Some(k)
+        case _                => None
+    }
+
+    // Nesting at the limit (128 containers) is accepted; one level deeper is
+    // rejected with MaxDepthExceeded rather than overflowing the JVM stack.
+
+    @Test
+    def parseDepthAtLimit(): Unit \ Assert =
+        let s = "${String.repeat(128, "[")}${String.repeat(128, "]")}";
+        assertEq(expected = Ok(nestedArray(128)), Json.parse(s))
+
+    @Test
+    def parseDepthOverLimitArray(): Unit \ Assert =
+        let s = "${String.repeat(129, "[")}${String.repeat(129, "]")}";
+        assertEq(expected = Some(MaxDepthExceeded), parseErrKind(Json.parse(s)))
+
+    @Test
+    def parseDepthOverLimitObject(): Unit \ Assert =
+        let s = "${String.repeat(129, "{\"a\":")}0${String.repeat(129, "}")}";
+        assertEq(expected = Some(MaxDepthExceeded), parseErrKind(Json.parse(s)))
 
     /////////////////////////////////////////////////////////////////////////////
     // parse — arrays                                                          //

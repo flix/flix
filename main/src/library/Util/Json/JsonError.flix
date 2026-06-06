@@ -43,6 +43,7 @@ pub mod Util.Json.JsonError {
         case InvalidEscape(String)
         case InvalidNumber(String)
         case InvalidUnicode(String)
+        case MaxDepthExceeded
         case UnexpectedChar(Char)
         case UnexpectedEof
     }
@@ -63,6 +64,7 @@ pub mod Util.Json.JsonError {
             case ParseErrorKind.InvalidEscape(s)   => "invalid escape sequence '${s}'"
             case ParseErrorKind.InvalidNumber(s)   => "invalid number '${s}'"
             case ParseErrorKind.InvalidUnicode(s)  => "invalid unicode '${s}'"
+            case ParseErrorKind.MaxDepthExceeded   => "maximum nesting depth exceeded"
             case ParseErrorKind.UnexpectedChar(c)  => "unexpected character '${c}'"
             case ParseErrorKind.UnexpectedEof      => "unexpected end of input"
         }

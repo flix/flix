@@ -18,7 +18,7 @@ pub mod Util.Json {
 
     use Util.Json.JsonError.JsonError
     use Util.Json.JsonError.JsonError.Parse
-    use Util.Json.JsonError.ParseErrorKind.{UnexpectedChar, UnexpectedEof, InvalidNumber, InvalidEscape, InvalidUnicode, DuplicateKey}
+    use Util.Json.JsonError.ParseErrorKind.{UnexpectedChar, UnexpectedEof, InvalidNumber, InvalidEscape, InvalidUnicode, DuplicateKey, MaxDepthExceeded}
     use Util.Json.FromJson.FromJson
 
     ///
@@ -51,7 +51,7 @@ pub mod Util.Json {
     pub def parse(s: String): Result[JsonError, Json] =
         let n = String.length(s);
         let i0 = skipWs(s, 0, n);
-        match parseValue(s, i0, n) {
+        match parseValue(s, i0, n, 0) {
             case Err(e) => Err(e)
             case Ok((j, i1)) =>
                 let i2 = skipWs(s, i1, n);
@@ -313,16 +313,28 @@ pub mod Util.Json {
         }
 
     ///
+    /// The maximum nesting depth (number of enclosing arrays/objects) the parser
+    /// accepts. Inputs nested deeper are rejected with `MaxDepthExceeded` rather
+    /// than overflowing the JVM stack, since the recursive-descent parser uses one
+    /// stack frame per level.
+    ///
+    def maxDepth(): Int32 = 128
+
+    ///
     /// Parses a single JSON value at position `i` (skipping leading whitespace).
     ///
-    def parseValue(s: String, i: Int32, n: Int32): Result[JsonError, (Json, Int32)] =
+    /// `depth` is the number of arrays/objects already open around this value.
+    ///
+    def parseValue(s: String, i: Int32, n: Int32, depth: Int32): Result[JsonError, (Json, Int32)] =
         let j = skipWs(s, i, n);
         if (j >= n) Err(Parse(j, UnexpectedEof))
         else {
             let c = String.charAt(j, s);
             match c {
-                case '{' => parseObject(s, j, n)
-                case '[' => parseArray(s, j, n)
+                case '{' if depth >= maxDepth() => Err(Parse(j, MaxDepthExceeded))
+                case '[' if depth >= maxDepth() => Err(Parse(j, MaxDepthExceeded))
+                case '{' => parseObject(s, j, n, depth)
+                case '[' => parseArray(s, j, n, depth)
                 case 't' => parseLiteral(s, j, n, "true", JBool(true))
                 case 'f' => parseLiteral(s, j, n, "false", JBool(false))
                 case 'n' => parseLiteral(s, j, n, "null", JNull)
@@ -457,22 +469,24 @@ pub mod Util.Json {
     ///
     /// Parses a JSON array starting at `i` (which must point at the opening `[`).
     ///
-    def parseArray(s: String, i: Int32, n: Int32): Result[JsonError, (Json, Int32)] = region rc {
+    def parseArray(s: String, i: Int32, n: Int32, depth: Int32): Result[JsonError, (Json, Int32)] = region rc {
         let i1 = i + 1;
         let i2 = skipWs(s, i1, n);
         if (i2 >= n) Err(Parse(i2, UnexpectedEof))
         else if (String.charAt(i2, s) == ']') Ok((JArray(Vector#{}), i2 + 1))
         else {
             let items = MutList.empty(rc);
-            scanArrayElements(s, i2, n, items)
+            scanArrayElements(s, i2, n, items, depth + 1)
         }
     }
 
     ///
     /// Scans a comma-separated list of array elements starting at `i`.
     ///
-    def scanArrayElements(s: String, i: Int32, n: Int32, items: MutList[Json, r]): Result[JsonError, (Json, Int32)] \ r =
-        match parseValue(s, i, n) {
+    /// `depth` is the nesting depth of the elements (one deeper than the array itself).
+    ///
+    def scanArrayElements(s: String, i: Int32, n: Int32, items: MutList[Json, r], depth: Int32): Result[JsonError, (Json, Int32)] \ r =
+        match parseValue(s, i, n, depth) {
             case Err(e) => Err(e)
             case Ok((v, i1)) =>
                 MutList.push(v, items);
@@ -480,7 +494,7 @@ pub mod Util.Json {
                 if (i2 >= n) Err(Parse(i2, UnexpectedEof))
                 else {
                     let c = String.charAt(i2, s);
-                    if (c == ',') scanArrayElements(s, skipWs(s, i2 + 1, n), n, items)
+                    if (c == ',') scanArrayElements(s, skipWs(s, i2 + 1, n), n, items, depth)
                     else if (c == ']') Ok((JArray(MutList.toVector(items)), i2 + 1))
                     else Err(Parse(i2, UnexpectedChar(c)))
                 }
@@ -491,17 +505,19 @@ pub mod Util.Json {
     ///
     /// Rejects duplicate keys with `DuplicateKey(k)`.
     ///
-    def parseObject(s: String, i: Int32, n: Int32): Result[JsonError, (Json, Int32)] =
+    def parseObject(s: String, i: Int32, n: Int32, depth: Int32): Result[JsonError, (Json, Int32)] =
         let i1 = i + 1;
         let i2 = skipWs(s, i1, n);
         if (i2 >= n) Err(Parse(i2, UnexpectedEof))
         else if (String.charAt(i2, s) == '}') Ok((JObject(Map#{}), i2 + 1))
-        else scanObjectEntries(s, i2, n, Map#{})
+        else scanObjectEntries(s, i2, n, Map#{}, depth + 1)
 
     ///
     /// Scans a comma-separated list of `"key": value` entries starting at `i`.
     ///
-    def scanObjectEntries(s: String, i: Int32, n: Int32, m: Map[String, Json]): Result[JsonError, (Json, Int32)] =
+    /// `depth` is the nesting depth of the values (one deeper than the object itself).
+    ///
+    def scanObjectEntries(s: String, i: Int32, n: Int32, m: Map[String, Json], depth: Int32): Result[JsonError, (Json, Int32)] =
         match parseString(s, i, n) {
             case Err(e) => Err(e)
             case Ok((k, i1)) =>
@@ -510,7 +526,7 @@ pub mod Util.Json {
                     let i2 = skipWs(s, i1, n);
                     if (i2 >= n) Err(Parse(i2, UnexpectedEof))
                     else if (String.charAt(i2, s) != ':') Err(Parse(i2, UnexpectedChar(String.charAt(i2, s))))
-                    else match parseValue(s, i2 + 1, n) {
+                    else match parseValue(s, i2 + 1, n, depth) {
                         case Err(e) => Err(e)
                         case Ok((v, i3)) =>
                             let m1 = Map.insert(k, v, m);
@@ -518,7 +534,7 @@ pub mod Util.Json {
                             if (i4 >= n) Err(Parse(i4, UnexpectedEof))
                             else {
                                 let c = String.charAt(i4, s);
-                                if (c == ',') scanObjectEntries(s, skipWs(s, i4 + 1, n), n, m1)
+                                if (c == ',') scanObjectEntries(s, skipWs(s, i4 + 1, n), n, m1, depth)
                                 else if (c == '}') Ok((JObject(m1), i4 + 1))
                                 else Err(Parse(i4, UnexpectedChar(c)))
                             }
