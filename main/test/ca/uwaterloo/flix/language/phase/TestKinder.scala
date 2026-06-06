@@ -650,6 +650,43 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   // ---------------------------------------------------------------------------
+  // --- KindError.MismatchedArityOfEffect ---
+  // ---------------------------------------------------------------------------
+
+  test("KindError.MismatchedArityOfEffect.Def.Effect.01") {
+    val input =
+      """
+        |eff E
+        |
+        |def foo(): Unit \ E[String] = ()
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
+  }
+
+  test("KindError.MismatchedArityOfEffect.Def.Effect.02") {
+    val input =
+      """
+        |eff E
+        |
+        |def foo(): Unit \ E[String, Int32] = ()
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
+  }
+
+  test("KindError.MismatchedArityOfEffect.Def.Param.01") {
+    val input =
+      """
+        |eff E
+        |
+        |def foo(x: E[String]): Unit = ()
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
+  }
+
+  // ---------------------------------------------------------------------------
   // --- KindError.MismatchedArityOfEnum ---
   // ---------------------------------------------------------------------------
 

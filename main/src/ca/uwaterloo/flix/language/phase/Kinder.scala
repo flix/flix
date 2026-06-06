@@ -1205,7 +1205,14 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Effect(sym, k), loc)
         case None =>
-          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
+          val expectedArity = Kind.kindArgs(kind).length
+          val actualArity = Kind.kindArgs(expectedKind).length
+          val error = if (expectedArity != actualArity) {
+            KindError.MismatchedArityOfEffect(sym, expectedArity, actualArity, loc)
+          } else {
+            mkUnexpectedKindError(expectedKind, kind, loc)
+          }
+          sctx.errors.add(error)
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1572,8 +1579,8 @@ object Kinder {
     case UnkindedType.Effect(sym, _) =>
       val tyconKind = getEffectKind(root.effects(sym))
       val args = Kind.kindArgs(tyconKind)
-      // We do not truncate because partial application is not allowed here
-      ListOps.zip(tpe.typeArguments, args).foldLeft(KindEnv.empty) {
+      // We zipTruncate because the number of arguments may not match (the mismatch is reported in visitType).
+      ListOps.zipTruncate(tpe.typeArguments, args).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, root)
       }
 
