@@ -439,7 +439,13 @@ pub mod Util.Json {
         if (i + 4 > n) Err(Parse(i, UnexpectedEof))
         else {
             let hex = String.slice(start = i, end = i + 4, s);
-            match Int32.parse(16, hex) {
+            // A `\uXXXX` escape must be exactly four hex digits. We must reject any other
+            // slice up front: `Int32.parse` accepts a leading sign and surrounding whitespace,
+            // so e.g. `\u-100` would otherwise parse to a negative value and crash
+            // `StringBuilder.appendCodePoint`. Four hex digits are always in 0..0xFFFF.
+            if (not String.forAll(Char.isHexDigit, hex))
+                Err(Parse(i, InvalidUnicode(hex)))
+            else match Int32.parse(16, hex) {
                 case Ok(cp) =>
                     StringBuilder.appendCodePoint(cp, sb);
                     scanString(s, i + 4, n, sb)

@@ -21,7 +21,7 @@ mod TestJson {
     use Util.Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
     use Util.Json.JsonError.JsonError
     use Util.Json.JsonError.JsonError.{Decode, Parse}
-    use Util.Json.JsonError.ParseErrorKind.{DuplicateKey, InvalidEscape, UnexpectedChar, UnexpectedEof}
+    use Util.Json.JsonError.ParseErrorKind.{DuplicateKey, InvalidEscape, InvalidUnicode, UnexpectedChar, UnexpectedEof}
     use Util.Json.JsonError.DecodeErrorKind.{MissingIndex, MissingKey, TypeMismatch}
     use Util.Json.JsonPath.JsonPath
     use Util.Json.JsonPath.JsonStep
@@ -498,6 +498,32 @@ mod TestJson {
     @Test
     def parse18(): Unit \ Assert =
         assertEq(expected = Ok(JString("café")), Json.parse("\"café\""))
+
+    // A `\uXXXX` escape must be exactly four hex digits. A sign or whitespace
+    // in the four-character window must be rejected, not parsed by Int32.parse
+    // into an out-of-range code point (which previously crashed appendCodePoint).
+
+    @Test
+    def parseUnicodeNeg(): Unit \ Assert =
+        assertEq(
+            expected = (Err(Parse(3, InvalidUnicode("-100"))): Result[JsonError, Json.Json]),
+            Json.parse("\"\\u-100\""))
+
+    @Test
+    def parseUnicodePlus(): Unit \ Assert =
+        assertEq(
+            expected = (Err(Parse(3, InvalidUnicode("+041"))): Result[JsonError, Json.Json]),
+            Json.parse("\"\\u+041\""))
+
+    @Test
+    def parseUnicodeSpace(): Unit \ Assert =
+        assertEq(
+            expected = (Err(Parse(3, InvalidUnicode(" 041"))): Result[JsonError, Json.Json]),
+            Json.parse("\"\\u 041\""))
+
+    @Test
+    def parseUnicodeValid(): Unit \ Assert =
+        assertEq(expected = Ok(JString("A")), Json.parse("\"\\u0041\""))
 
     /////////////////////////////////////////////////////////////////////////////
     // parse — arrays                                                          //
