@@ -37,6 +37,10 @@ pub mod Util.Json {
         case JString(String)
     }
 
+    instance ToString[Json] {
+        pub def toString(j: Json): String = toCompactString(j)
+    }
+
     ///
     /// The maximum nesting depth (number of enclosing arrays/objects) the parser
     /// accepts. Inputs nested deeper are rejected with `MaxDepthExceeded` rather
@@ -44,10 +48,6 @@ pub mod Util.Json {
     /// stack frame per level.
     ///
     def maxDepth(): Int32 = 128
-
-    instance ToString[Json] {
-        pub def toString(j: Json): String = toCompactString(j)
-    }
 
     ///
     /// Parses `s` as a JSON value.
@@ -77,6 +77,17 @@ pub mod Util.Json {
         j <- parse(s);
         x <- FromJson.fromJson(j)
     ) yield x
+
+    ///
+    /// Controls the layout used by `write`.
+    ///
+    /// `Compact` emits no extraneous whitespace; `Pretty(indent)` places each
+    /// element on its own line using `indent` spaces per nesting level.
+    ///
+    enum Style {
+        case Compact
+        case Pretty(Int32)
+    }
 
     ///
     /// Returns the compact JSON rendering of `j`: a single line with
@@ -113,17 +124,6 @@ pub mod Util.Json {
     ///
     pub def toRichString(indent: Int32, j: Json): RichString =
         richPretty(indent, 0, j)
-
-    ///
-    /// Controls the layout used by `write`.
-    ///
-    /// `Compact` emits no extraneous whitespace; `Pretty(indent)` places each
-    /// element on its own line using `indent` spaces per nesting level.
-    ///
-    enum Style {
-        case Compact
-        case Pretty(Int32)
-    }
 
     ///
     /// Appends the JSON rendering of `j` to `sb` using style `s`.
