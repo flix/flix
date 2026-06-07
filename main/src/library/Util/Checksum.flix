@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-pub mod Checksum {
+pub mod Util.Checksum {
 
     import java.security.MessageDigest
 
