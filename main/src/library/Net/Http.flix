@@ -416,15 +416,15 @@ pub mod Net.Http {
     /// This is a terminal handler: it eliminates the `Http` effect entirely.
     /// Each `Http.request` call returns the next recorded outcome in sequence.
     /// If the request does not match the recorded request (by method and URL),
-    /// a bug is raised.
+    /// the computation is aborted.
     ///
-    pub def withReplay(file: String, f: Unit -> a \ ef): a \ (ef - Http) + ReadFile =
+    pub def withReplay(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {ReadFile, Abort} =
         let cassette: List[HttpInteraction] = match ReadFile.read(file) {
             case Ok(json)  => match Result.mapErr(e -> "${e}", Json.decode(json)) {
                 case Ok(interactions) => interactions
-                case Err(msg)         => bug!("Failed to parse cassette: ${msg}")
+                case Err(msg)         => Abort.abortWithTrace("Failed to parse cassette: ${msg}")
             }
-            case Err(err)  => bug!("Failed to read cassette: ${err}")
+            case Err(err)  => Abort.abortWithTrace("Failed to read cassette: ${err}")
         };
         region rc {
             // Loaded in reverse so that `pop` (which removes the last element)
@@ -439,11 +439,11 @@ pub mod Net.Http {
                         let actual = RecordedRequest.fromHttpRequest(req);
                         let RecordedRequest(a) = actual;
                         if (a#method != r#method or a#url != r#url)
-                            bug!("Replay mismatch")
+                            Abort.abortWithTrace("Replay mismatch")
                         else
                             k(RecordedOutcome.toResult(e#outcome))
                     case None =>
-                        bug!("Replay exhausted: no more recorded interactions")
+                        Abort.abortWithTrace("Replay exhausted: no more recorded interactions")
                 }
             }
         }
@@ -456,7 +456,7 @@ pub mod Net.Http {
     ///
     /// Delete the cassette file to force re-recording.
     ///
-    pub def withCassette(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {Http, ReadFile, WriteFile, Fs.FileExists} =
+    pub def withCassette(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {Http, ReadFile, WriteFile, Fs.FileExists, Abort} =
         match Fs.FileExists.exists(file) {
             case Ok(true) => withReplay(file, f)
             case _        => withRecording(file, f)

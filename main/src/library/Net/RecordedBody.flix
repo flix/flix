@@ -69,11 +69,11 @@ pub mod Net.RecordedBody {
     ///
     /// Converts a `RecordedBody` back to a live `Body`.
     ///
-    pub def toBody(body: RecordedBody): Body = match body {
+    pub def toBody(body: RecordedBody): Body \ Abort = match body {
         case RecordedBody.TextBody(s)  => Body.Text(s)
         case RecordedBody.BytesBody(b) => match Codec.decodeBase64(b) {
             case Ok(v)  => Body.Bytes(v)
-            case Err(_) => bug!("Invalid Base64 in cassette body")
+            case Err(_) => Abort.abortWithTrace("Invalid Base64 in cassette body")
         }
     }
 

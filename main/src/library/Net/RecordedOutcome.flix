@@ -102,7 +102,7 @@ pub mod Net.RecordedOutcome {
     ///
     /// Converts a `RecordedOutcome` back to a live `Result[IoError, HttpResponse]`.
     ///
-    pub def toResult(outcome: RecordedOutcome): Result[IoError, HttpResponse] =
+    pub def toResult(outcome: RecordedOutcome): Result[IoError, HttpResponse] \ Abort =
         match outcome {
             case RecordedOutcome.Success(x) =>
                 Ok(HttpResponse({
