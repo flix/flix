@@ -16,6 +16,8 @@
 
 pub mod Net.Http {
 
+    use Fs.ReadFile
+    use Fs.WriteFile
     use IoError.ErrorKind
     use IoError.IoError
     use Logger.Severity
@@ -381,23 +383,6 @@ pub mod Net.Http {
         }
 
     //
-    // Record/Replay helpers
-    //
-
-    ///
-    /// Serializes a list of interactions to a pretty-printed JSON array.
-    ///
-    def serializeCassette(interactions: List[HttpInteraction]): String =
-        Json.toPrettyString(2, ToJson.toJson(interactions))
-
-    ///
-    /// Deserializes a JSON array of interactions, or `Err` with a human-readable
-    /// message if the cassette is malformed.
-    ///
-    def deserializeCassette(s: String): Result[String, List[HttpInteraction]] =
-        Result.mapErr(e -> "${e}", Json.decode(s))
-
-    //
     // Record/Replay middleware
     //
 
@@ -406,7 +391,7 @@ pub mod Net.Http {
     /// and its outcome. When the wrapped computation completes, the recorded
     /// interactions are serialized and written to the given `file`.
     ///
-    pub def withRecording(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {Http, Fs.WriteFile} =
+    pub def withRecording(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {Http, WriteFile} =
         region rc {
             let log: MutList[HttpInteraction, rc] = MutList.empty(rc);
             let result = run { f() } with handler Http {
@@ -420,8 +405,8 @@ pub mod Net.Http {
                     k(outcome)
                 }
             };
-            let json = serializeCassette(MutList.toList(log));
-            discard Fs.WriteFile.write({str = json}, file);
+            let json = Json.toPrettyString(2, ToJson.toJson(MutList.toList(log)));
+            discard WriteFile.write({str = json}, file);
             result
         }
 
@@ -433,9 +418,9 @@ pub mod Net.Http {
     /// If the request does not match the recorded request (by method and URL),
     /// a bug is raised.
     ///
-    pub def withReplay(file: String, f: Unit -> a \ ef): a \ (ef - Http) + Fs.ReadFile =
-        let cassette = match Fs.ReadFile.read(file) {
-            case Ok(json)  => match deserializeCassette(json) {
+    pub def withReplay(file: String, f: Unit -> a \ ef): a \ (ef - Http) + ReadFile =
+        let cassette: List[HttpInteraction] = match ReadFile.read(file) {
+            case Ok(json)  => match Result.mapErr(e -> "${e}", Json.decode(json)) {
                 case Ok(interactions) => interactions
                 case Err(msg)         => bug!("Failed to parse cassette: ${msg}")
             }
@@ -471,7 +456,7 @@ pub mod Net.Http {
     ///
     /// Delete the cassette file to force re-recording.
     ///
-    pub def withCassette(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {Http, Fs.ReadFile, Fs.WriteFile, Fs.FileExists} =
+    pub def withCassette(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {Http, ReadFile, WriteFile, Fs.FileExists} =
         match Fs.FileExists.exists(file) {
             case Ok(true) => withReplay(file, f)
             case _        => withRecording(file, f)
