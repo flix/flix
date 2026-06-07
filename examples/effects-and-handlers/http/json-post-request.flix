@@ -16,8 +16,7 @@ def main(): Unit \ { Http, IO } =
     };
     let json = Json.toCompactString(ToJson.toJson(body));
     let req = HttpRequest.post("https://flix.dev/api/users", json)
-                |> HttpRequest.withContentType("application/json")
-                |> HttpRequest.withAccept("application/json");
+                |> HttpRequest.withContentType("application/json");
     match Http.send(req) {
         case Ok(resp) =>
             println("Status: ${HttpResponse.status(resp)}");
