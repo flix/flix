@@ -1,6 +1,7 @@
 mod TestCodec {
 
     use Assert.{assertEq, assertErr};
+    use Util.Codec;
 
     /////////////////////////////////////////////////////////////////////////////
     // encodeBase64                                                            //

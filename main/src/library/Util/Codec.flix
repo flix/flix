@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-pub mod Codec {
+pub mod Util.Codec {
 
     import java.lang.IllegalArgumentException
     import java.util.{Base64 => JBase64}
