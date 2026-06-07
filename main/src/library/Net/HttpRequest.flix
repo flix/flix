@@ -18,9 +18,9 @@ pub mod Net.HttpRequest {
 
     use Net.Body
     use Net.HttpLayer
+    use Net.Method
     use Net.HttpRequest
     use Net.HttpRequest.HttpRequest
-    use Net.Method
     use Time.Duration
 
     ///
