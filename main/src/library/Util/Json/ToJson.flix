@@ -104,7 +104,7 @@ pub mod Util.Json.ToJson {
     /// canonical, diff-friendly output.
     instance ToJson[Set[a]] with ToJson[a] {
         pub def toJson(s: Set[a]): Json =
-            JArray(List.toVector(List.map(ToJson.toJson, Set.toList(s))))
+            JArray(Vector.map(ToJson.toJson, Set.toVector(s)))
     }
 
     /// Object keys are encoded by `ToString.toString` of the Map's key type.
