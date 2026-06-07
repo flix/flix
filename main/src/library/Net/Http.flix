@@ -23,15 +23,11 @@ pub mod Net.Http {
     use Logger.Severity
     use Net.Http
     use Net.HttpInteraction
-    use Net.HttpInteraction.HttpInteraction
     use Net.HttpLayer
     use Net.HttpRequest
-    use Net.HttpRequest.HttpRequest
     use Net.HttpResponse
-    use Net.HttpResponse.HttpResponse
     use Net.RecordedOutcome
     use Net.RecordedRequest
-    use Net.RecordedRequest.RecordedRequest
     use Net.RetryDecision
     use Net.RetryOutcome
     use RichString.{text, bold, cyan, green, yellow, red, gray}
