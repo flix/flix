@@ -16,7 +16,7 @@
 
 pub mod Util.Json.JsonError {
 
-    use Util.Json.JsonPath.JsonPath
+    use Util.Json.JsonPath
     use Util.Json.JsonPath.JsonStep
     use Util.Json.JsonPath.{cons, fromList, steps}
 

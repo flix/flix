@@ -16,10 +16,10 @@
 
 pub mod Util.Json {
 
-    use Util.Json.JsonError.JsonError
+    use Util.Json.JsonError
     use Util.Json.JsonError.JsonError.Parse
     use Util.Json.JsonError.ParseErrorKind.{DuplicateKey, InvalidEscape, InvalidNumber, InvalidUnicode, MaxDepthExceeded, UnexpectedChar, UnexpectedEof}
-    use Util.Json.FromJson.FromJson
+    use Util.Json.FromJson
 
     ///
     /// Represents a JSON value.

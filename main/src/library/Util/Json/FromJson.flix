@@ -18,11 +18,11 @@ pub mod Util.Json.FromJson {
 
     use Util.Json
     use Util.Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
-    use Util.Json.JsonError.JsonError
+    use Util.Json.JsonError
     use Util.Json.JsonError.JsonError.Decode
     use Util.Json.JsonError.{prependStep, prependPath}
     use Util.Json.JsonError.DecodeErrorKind.{MissingIndex, MissingKey, TypeMismatch}
-    use Util.Json.JsonPath.JsonPath
+    use Util.Json.JsonPath
     use Util.Json.JsonPath.JsonStep
     use Util.Json.JsonPath.{empty, fromList, steps}
 
