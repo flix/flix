@@ -16,7 +16,7 @@
 
 pub mod Util.Json.FromJson {
 
-    use Util.Json.Json
+    use Util.Json
     use Util.Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
     use Util.Json.JsonError.JsonError
     use Util.Json.JsonError.JsonError.Decode

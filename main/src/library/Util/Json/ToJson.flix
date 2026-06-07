@@ -16,7 +16,7 @@
 
 pub mod Util.Json.ToJson {
 
-    use Util.Json.Json
+    use Util.Json
     use Util.Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
 
     ///

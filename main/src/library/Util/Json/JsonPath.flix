@@ -16,7 +16,7 @@
 
 pub mod Util.Json.JsonPath {
 
-    use Util.Json.Json
+    use Util.Json
     use Util.Json.Json.{JArray, JObject}
 
     ///
