@@ -56,11 +56,11 @@ pub mod Util.Json.FromJson {
     ///
     pub def decodeAtPath(p: JsonPath, j: Json): Result[JsonError, a] with FromJson[a] =
         match getAtPath(p, j) {
-            case Err(e)   => Err(e)
             case Ok(leaf) => match FromJson.fromJson(leaf) {
-                case Err(e) => Err(prependPath(p, e))
                 case Ok(x)  => Ok(x)
+                case Err(e) => Err(prependPath(p, e))
             }
+            case Err(e)   => Err(e)
         }
 
     ///
@@ -76,8 +76,8 @@ pub mod Util.Json.FromJson {
     pub def decodeAtPathOpt(p: JsonPath, j: Json): Result[JsonError, Option[a]] with FromJson[a] =
         match getAtPath(p, j) {
             case Ok(leaf) => match FromJson.fromJson(leaf) {
-                case Err(e) => Err(prependPath(p, e))
                 case Ok(x)  => Ok(Some(x))
+                case Err(e) => Err(prependPath(p, e))
             }
             case Err(Decode(_, MissingKey(_)))   => Ok(None)
             case Err(Decode(_, MissingIndex(_))) => Ok(None)
@@ -190,6 +190,8 @@ pub mod Util.Json.FromJson {
         Vector.traverse(
             match (i, x) -> Result.mapErr(prependStep(JsonStep.Index(i)), FromJson.fromJson(x)),
             Vector.mapWithIndex((i, x) -> (i, x), v))
+
+    // --- Instances ---
 
     instance FromJson[Json] {
         pub def fromJson(j: Json): Result[JsonError, Json] = Ok(j)
@@ -333,12 +335,8 @@ pub mod Util.Json.FromJson {
     /// path is threaded as `Index(i)` for any decode failure.
     instance FromJson[Set[a]] with FromJson[a], Order[a] {
         pub def fromJson(j: Json): Result[JsonError, Set[a]] = match j {
-            case JArray(v) =>
-                Result.map(
-                    xs -> Vector.foldLeft((acc, x) -> Set.insert(x, acc), Set#{}, xs),
-                    traverseIndexed(v)
-                )
-            case _ => Err(Decode(empty(), TypeMismatch("JArray")))
+            case JArray(v) => Result.map(Vector.toSet, traverseIndexed(v))
+            case _         => Err(Decode(empty(), TypeMismatch("JArray")))
         }
     }
 
@@ -348,16 +346,12 @@ pub mod Util.Json.FromJson {
     instance FromJson[Map[k, v]] with FromString[k], Order[k], FromJson[v] {
         pub def fromJson(j: Json): Result[JsonError, Map[k, v]] = match j {
             case JObject(m) =>
-                Map.foldLeftWithKey((acc, k, jv) -> match acc {
-                    case Err(e) => Err(e)
-                    case Ok(m1) => match FromString.fromString(k) {
-                        case None     => Err(Decode(fromList(JsonStep.Key(k) :: Nil), TypeMismatch("Map key")))
-                        case Some(kp) => match FromJson.fromJson(jv) {
-                            case Err(e2) => Err(prependStep(JsonStep.Key(k), e2))
-                            case Ok(vp)  => Ok(Map.insert(kp, vp, m1))
-                        }
-                    }
-                }, Ok(Map#{}), m)
+                Map.toList(m)
+                    |> List.traverse(match (k, jv) -> forM (
+                        kp <- Option.toOk(Decode(fromList(JsonStep.Key(k) :: Nil), TypeMismatch("Map key")), FromString.fromString(k));
+                        vp <- Result.mapErr(prependStep(JsonStep.Key(k)), FromJson.fromJson(jv))
+                    ) yield (kp, vp))
+                    |> Result.map(List.toMap)
             case _ => Err(Decode(empty(), TypeMismatch("JObject")))
         }
     }
