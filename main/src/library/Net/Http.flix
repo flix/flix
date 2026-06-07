@@ -391,7 +391,7 @@ pub mod Net.Http {
     /// and its outcome. When the wrapped computation completes, the recorded
     /// interactions are serialized and written to the given `file`.
     ///
-    pub def withRecording(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {Http, WriteFile} =
+    pub def withRecording(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {Http, WriteFile, Abort} =
         region rc {
             let log: MutList[HttpInteraction, rc] = MutList.empty(rc);
             let result = run { f() } with handler Http {
@@ -406,7 +406,10 @@ pub mod Net.Http {
                 }
             };
             let json = Json.toPrettyString(2, ToJson.toJson(MutList.toList(log)));
-            discard WriteFile.write({str = json}, file);
+            match WriteFile.write({str = json}, file) {
+                case Ok(_)  => ()
+                case Err(e) => Abort.abortWithTrace("Failed to write cassette: ${e}")
+            };
             result
         }
 
