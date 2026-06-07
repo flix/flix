@@ -20,11 +20,11 @@ instance FromJson[Uuid] {
 def main(): Unit \ { Http, IO } =
     match Http.get("https://httpbin.org/uuid") {
         case Ok(resp) => match HttpResponse.expect(resp) {
-            case Ok(ok) => match Json.decode(HttpResponse.body(ok)) {
+            case Ok(okResp) => match Json.decode(HttpResponse.body(okResp)) {
                 case Ok(Uuid.Uuid(x)) => println("UUID: ${x#uuid}")
-                case Err(e)           => println("Decode error: ${e}")
+                case Err(err)         => println("Decode error: ${err}")
             }
-            case Err(e) => println("HTTP error: ${e}")
+            case Err(err) => println("HTTP error: ${err}")
         }
         case Err(err) => println("Error: ${err}")
     }
