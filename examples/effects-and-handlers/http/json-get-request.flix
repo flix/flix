@@ -7,7 +7,7 @@ use Util.Json.JsonError
 pub enum Uuid({uuid = String})
 
 instance FromJson[Uuid] {
-    pub def fromJson(j: Json.Json): Result[JsonError, Uuid] = forM (
+    pub def fromJson(j: Json): Result[JsonError, Uuid] = forM (
         u <- FromJson.decodeAtKey("uuid", j)
     ) yield Uuid.Uuid({uuid = u})
 }
@@ -26,6 +26,5 @@ def main(): Unit \ { Http, IO } =
             }
             case Err(e) => println("HTTP error: ${e}")
         }
-        case Err(err) =>
-            println("Error: ${err}")
+        case Err(err) => println("Error: ${err}")
     }
