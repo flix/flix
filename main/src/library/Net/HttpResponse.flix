@@ -18,13 +18,13 @@ pub mod Net.HttpResponse {
 
     use IoError.ErrorKind
     use IoError.IoError
-    use Util.Json
-    use Util.Json.FromJson
-    use Util.Json.JsonError
     use Net.Body
     use Net.HttpLayer
     use Net.HttpResponse
     use Net.HttpResponse.HttpResponse
+    use Util.Json
+    use Util.Json.FromJson
+    use Util.Json.JsonError
 
     ///
     /// An HTTP response with final URL, status code, multi-valued headers, and body.

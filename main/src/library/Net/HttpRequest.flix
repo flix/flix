@@ -16,14 +16,14 @@
 
 pub mod Net.HttpRequest {
 
-    use Util.Json
-    use Util.Json.ToJson
     use Net.Body
     use Net.HttpLayer
-    use Net.Method
     use Net.HttpRequest
     use Net.HttpRequest.HttpRequest
+    use Net.Method
     use Time.Duration
+    use Util.Json
+    use Util.Json.ToJson
 
     ///
     /// An HTTP request with method, URL, multi-valued headers, and optional body.
