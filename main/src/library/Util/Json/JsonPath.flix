@@ -222,6 +222,11 @@ pub mod Util.Json.JsonPath {
         unescapeLoop(s, 0, String.length(s), sb)
     }
 
+    ///
+    /// Recursive worker for `unescapeReferenceToken`: scans `s` from index `i` to
+    /// `n`, appending decoded characters to `sb` and resolving the RFC 6901 escapes
+    /// `~0` -> `~` and `~1` -> `/`. Returns `None` on a malformed `~` escape.
+    ///
     def unescapeLoop(s: String, i: Int32, n: Int32, sb: StringBuilder[r]): Option[String] \ r =
         if (i >= n) Some(StringBuilder.toString(sb))
         else {
