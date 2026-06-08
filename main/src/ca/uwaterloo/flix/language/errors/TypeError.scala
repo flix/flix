@@ -70,7 +70,7 @@ object TypeError {
     override def locs: List[SourceLocation] = List(loc2, loc3)
 
     private def effectsToString(effs: List[EffSymOrRigidVar]): String = EffSymOrRigidVar.format(effs)
-    
+
     def summary: String =
       s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
 
@@ -197,7 +197,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      val defString = s"{${magenta(effectsToString(defEffSyms))}}"
+      val defString = s"${magenta(effectsToString(defEffSyms))}"
       s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as $defString.
          |
          |${highlight(loc1, s"function declared as $defString", fmt)}
@@ -206,7 +206,7 @@ object TypeError {
          |
          |${underline("Explanation:")} The function is explicitly declared as $defString,
          |meaning it may not perform other effects. Since '${magenta(usedEffSym.name)}' is another effect,
-         |it cannot be used in this function. To fix this, either add ${magenta(usedEffSym.name)} to $defString
+         |it cannot be used in this function. To fix this, either add '${magenta(usedEffSym.name)}' to $defString
          |or remove the use of '${magenta(usedEffSym.name)}' inside the function.
          |""".stripMargin
     }
@@ -335,11 +335,11 @@ object TypeError {
   case class HandledEffectAppearsInSignature(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6220
 
-    def summary: String = s"handled effect '${handledEff.name}', reappears in signature"
+    def summary: String = s"Handled effect '${handledEff.name}', reappears in signature"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s"""handled effect among expected effects in signature:
+      s"""Handled effect among expected effects in signature:
          |${highlight(loc, s"handled effect: '${magenta(handledEff.name)}'", fmt)}
          |${highlight(sigLoc, "also appears in the signature", fmt)}
          |
@@ -1038,7 +1038,7 @@ object TypeError {
   case class UnusedHandlerEffect(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation, sourceLoc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6219
 
-    def summary: String = s"handler effect '${handledEff.name}' is unused"
+    def summary: String = s"Handler effect '${handledEff.name}' is unused"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
