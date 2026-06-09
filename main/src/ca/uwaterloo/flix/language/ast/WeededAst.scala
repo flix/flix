@@ -122,6 +122,8 @@ object WeededAst {
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
+    case class InstanceOfMatch(exp: Expr, rules: List[InstanceOfMatchRule], loc: SourceLocation) extends Expr
+
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
     case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
@@ -169,8 +171,6 @@ object WeededAst {
     case class MapLit(exps: List[(Expr, Expr)], loc: SourceLocation) extends Expr
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Expr
-
-    case class InstanceOf(exp: Expr, clazzName: Name.Ident, loc: SourceLocation) extends Expr
 
     case class CheckedCast(cast: CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -439,6 +439,8 @@ object WeededAst {
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
   case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr, loc: SourceLocation)
+
+  case class InstanceOfMatchRule(ident: Name.Ident, tpe: Option[Type], exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 

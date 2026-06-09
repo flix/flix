@@ -138,6 +138,9 @@ object TreeShaker1 {
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.flatMap(_.guard))
 
+    case Expr.InstanceOfMatch(exp, rules, _, _, _) =>
+      visitExp(exp) ++ visitExps(rules.map(_.exp))
+
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 

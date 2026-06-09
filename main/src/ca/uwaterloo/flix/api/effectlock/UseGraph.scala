@@ -115,6 +115,9 @@ object UseGraph {
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.flatMap(_.guard))
 
+    case Expr.InstanceOfMatch(exp, rules, _, _, _) =>
+      visitExp(exp) ++ visitExps(rules.map(_.exp))
+
     case Expr.ExtMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 

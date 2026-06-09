@@ -162,6 +162,10 @@ object PredDeps {
         visitExp(b)
       }
 
+    case Expr.InstanceOfMatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach { case InstanceOfMatchRule(_, _, b, _) => visitExp(b) }
+
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach { case RestrictableChooseRule(_, body) => visitExp(body) }

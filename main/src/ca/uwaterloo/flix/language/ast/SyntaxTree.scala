@@ -266,7 +266,9 @@ object SyntaxTree {
 
       case object IfThenElse extends Expr
 
-      case object InstanceOf extends Expr
+      case object InstanceOfMatch extends Expr
+
+      case object InstanceOfMatchRuleFragment extends Expr
 
       case object Intrinsic extends Expr
 

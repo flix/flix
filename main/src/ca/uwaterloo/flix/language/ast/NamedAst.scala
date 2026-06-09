@@ -129,6 +129,8 @@ object NamedAst {
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
+    case class InstanceOfMatch(exp: Expr, rules: List[InstanceOfMatchRule], loc: SourceLocation) extends Expr
+
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
     case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
@@ -427,6 +429,8 @@ object NamedAst {
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, className: Name.Ident, exp: Expr, loc: SourceLocation)
+
+  case class InstanceOfMatchRule(sym: Symbol.VarSym, tpe: Option[Type], exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 

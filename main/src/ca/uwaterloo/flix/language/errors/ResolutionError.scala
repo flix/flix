@@ -1221,6 +1221,48 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate that an `instanceof` rule type uses a non-wildcard type argument.
+    *
+    * @param loc the location of the offending type argument.
+    */
+  case class IllegalInstanceOfTypeArgument(loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3954
+
+    def summary: String = "Type arguments in 'instanceof' patterns must be wildcards."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Type arguments in 'instanceof' patterns must be wildcards.
+         |
+         |${highlight(loc, "expected '_'", fmt)}
+         |
+         |${underline("Explanation:")} The JVM erases generics, so 'instanceof' cannot test for a specific type argument. Use '_' for each type argument.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the type of an `instanceof` rule is not a Java class.
+    *
+    * @param loc the location of the offending type.
+    */
+  case class IllegalInstanceOfType(loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3955
+
+    def summary: String = "'instanceof' rule type must be a Java class."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> '${red("instanceof")}' rule type must be a Java class.
+         |
+         |${highlight(loc, "expected a Java class", fmt)}
+         |
+         |${underline("Explanation:")} Only Java reference types can be used in 'instanceof' patterns.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an under-applied type alias.
     *
     * @param sym the type alias.

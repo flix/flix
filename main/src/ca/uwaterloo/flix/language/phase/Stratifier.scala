@@ -186,6 +186,14 @@ object Stratifier {
       val rs = rules.map(visitMatchRule)
       Expr.Match(e, rs, tpe, eff, loc)
 
+    case Expr.InstanceOfMatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map {
+        case InstanceOfMatchRule(bnd, ruleTpe, body, ruleLoc) =>
+          InstanceOfMatchRule(bnd, ruleTpe, visitExp(body), ruleLoc)
+      }
+      Expr.InstanceOfMatch(e, rs, tpe, eff, loc)
+
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)

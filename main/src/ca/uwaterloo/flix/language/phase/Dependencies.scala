@@ -226,6 +226,12 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.InstanceOfMatch(exp, rules, tpe, eff, _) =>
+      visitExp(exp)
+      rules.foreach(r => visitExp(r.exp))
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.RestrictableChoose(_, exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitRestrictableChooseRule)
