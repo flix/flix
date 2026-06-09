@@ -1,5 +1,9 @@
 # Changelog
 
+Version 0.73.0:
+- Library: Added `Util.Json` module (thanks Magnus!)
+- Compiler: Improved performance of CodeGen (thanks Magnus!)
+
 Version 0.72.0:
 - Compiler: Improved effect error messages (thanks Alexander and Samuel!)
 
