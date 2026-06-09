@@ -1,9 +1,10 @@
 mod TestGetOpt {
 
-    use GetOpt.{OptionDescr}
-    use GetOpt.ArgDescr.{NoArg, ReqArg, OptArg}
-    use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder}
-    use GetOpt.{getOpt}
+    use Util.GetOpt;
+    use Util.GetOpt.{OptionDescr}
+    use Util.GetOpt.ArgDescr.{NoArg, ReqArg, OptArg}
+    use Util.GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder}
+    use Util.GetOpt.{getOpt}
     use Assert.{assertEq, assertTrue, fail}
 
     // Preliminary code to define options...
