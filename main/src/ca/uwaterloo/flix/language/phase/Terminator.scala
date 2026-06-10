@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, SourceLocation, Symbol, Type, 
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TerminationError
 import ca.uwaterloo.flix.util.ParOps
-import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.{ListOps, OptionOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
@@ -641,7 +641,7 @@ object Terminator {
             val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
             if (e eq exp1) p else (f, e)
           }
-          val r = visitExpOpt(contexts, region0, ApplyPosition.NonTail)
+          val r = OptionOps.mapWithReuse(region0)(visitExp(contexts, _, ApplyPosition.NonTail))
           if ((fs eq fields0) && (r eq region0)) exp0 else Expr.StructNew(sym, fs, r, tpe, eff, loc)
 
         case Expr.StructGet(exp1, field, tpe, eff, loc) =>
@@ -854,14 +854,6 @@ object Terminator {
     case _                     => exp
   }
 
-  /** Visits an optional expression, reusing `opt0` when the sub-expression is unchanged. */
-  private def visitExpOpt(contexts: List[RecursionContext], opt0: Option[Expr], pos: ApplyPosition)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): Option[Expr] = opt0 match {
-    case Some(exp0) =>
-      val e = visitExp(contexts, exp0, pos)
-      if (e eq exp0) opt0 else Some(e)
-    case None => opt0
-  }
-
   /** Reports a [[TerminationError.ForbiddenExpression]] when `contexts` is non-empty. */
   private def checkForbidden(contexts: List[RecursionContext], loc: SourceLocation)(implicit sctx: SharedContext): Unit =
     contexts.lastOption.foreach(ctx => sctx.errors.add(TerminationError.ForbiddenExpression(ctx.selfSym.sym, loc)))
@@ -895,7 +887,7 @@ object Terminator {
     case MatchRule(pat, guard0, body0, loc) =>
       val extContexts = contexts.map(ctx =>
         ctx.copy(env = extendEnvFromScrutinee(ctx.env, scrutinee, pat)))
-      val guard = visitExpOpt(extContexts, guard0, ApplyPosition.NonTail)
+      val guard = OptionOps.mapWithReuse(guard0)(visitExp(extContexts, _, ApplyPosition.NonTail))
       val body = visitExp(extContexts, body0, pos)
       if ((guard eq guard0) && (body eq body0)) rule0 else MatchRule(pat, guard, body, loc)
   }
