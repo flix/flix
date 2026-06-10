@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{ChaosMonkey, Result}
 
 import scala.annotation.tailrec
@@ -51,7 +52,7 @@ object ConstraintSolver2 {
       * Transforms the constraint set by applying a one-to-one constraint function.
       */
     def map(f: TypeConstraint => TypeConstraint): Soup = {
-      val newConstrs = constrs.mapConserve(f)
+      val newConstrs = ListOps.mapWithReuse(constrs)(f)
       renew(newConstrs, tree)
     }
 
@@ -290,7 +291,7 @@ object ConstraintSolver2 {
       val purified = Type.purifyRegion(eff2, sym)
       TypeConstraint.Equality(eff1, purified, prov)
     case c@TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
-      val nested = nested0.mapConserve(purifyEmptyRegion(_, progress))
+      val nested = ListOps.mapWithReuse(nested0)(purifyEmptyRegion(_, progress))
       // Performance: Reuse this, if possible.
       if (nested eq nested0)
         c
@@ -510,15 +511,15 @@ object ConstraintSolver2 {
     val rest0a = if (eqConstrs.isEmpty) constrs0 else rest0
 
     // Apply the substitution to the remaining constraints
-    val rest1 = rest0a.mapConserve(tree0.apply)
+    val rest1 = ListOps.mapWithReuse(rest0a)(tree0.apply)
 
     // Now we separate the purification constraints and recurse on those individually
     var branches = Map.empty[Symbol.RegionSym, SubstitutionTree]
-    val rest = rest1.mapConserve {
+    val rest = ListOps.mapWithReuse(rest1) {
       // If it's a purification constraint, solve the nested constraints
       // and put the substitution in the tree
       case c@TypeConstraint.Purification(sym, eff1, eff2_0, prov, nested0) =>
-        val nested1 = nested0.mapConserve(tree0.apply)
+        val nested1 = ListOps.mapWithReuse(nested0)(tree0.apply)
         val (nested, subst2) = blockEffectUnification(nested1, progress)(scope.enter(sym), renv, flix)
         branches = branches + (sym -> subst2)
 
