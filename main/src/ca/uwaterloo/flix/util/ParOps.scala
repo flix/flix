@@ -84,10 +84,32 @@ object ParOps {
   }
 
   /**
+    * Applies the function `f` to every element of `xs` in parallel.
+    *
+    * The elements are scheduled in ascending `sortBy` order, i.e. the element with the smallest
+    * `sortBy` value is started first. Pass e.g. negated sizes to start work early on the biggest
+    * tasks and thus increase throughput.
+    */
+  def parMapWithPriority[A, B: ClassTag](xs: Iterable[A], sortBy: A => Int)(f: A => B)(implicit flix: Flix): Iterable[B] =
+    parMap(xs.toList.sortBy(sortBy))(f)
+
+  /**
     * Applies the function `f` to every value of the map `m` in parallel.
     */
   def parMapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
     parMap(m) {
+      case (k, v) => (k, f(v))
+    }.toMap
+
+  /**
+    * Applies the function `f` to every value of the map `m` in parallel.
+    *
+    * The values are scheduled in ascending `sortBy` order, i.e. the value with the smallest
+    * `sortBy` value is started first. Pass e.g. negated sizes to start work early on the biggest
+    * tasks and thus increase throughput.
+    */
+  def parMapValuesWithPriority[K, A, B](m: Map[K, A], sortBy: A => Int)(f: A => B)(implicit flix: Flix): Map[K, B] =
+    parMap(m.toList.sortBy { case (_, v) => sortBy(v) }) {
       case (k, v) => (k, f(v))
     }.toMap
 

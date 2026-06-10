@@ -53,8 +53,12 @@ object Weeder2 {
     flix.phaseNew("Weeder2") {
       implicit val sctx: SharedContext = SharedContext.mk()
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
+
+      // Schedule the biggest sources first to increase throughput.
+      def sortBy(p: (Source, SyntaxTree.Tree)): Int = -p._1.data.length
+
       // Parse each source file in parallel and join them into a WeededAst.Root
-      val refreshed = ParOps.parMap(stale) {
+      val refreshed = ParOps.parMapWithPriority(stale, sortBy) {
         case (src, tree) => mapN(weed(tree))(tree => src -> tree)
       }
 
