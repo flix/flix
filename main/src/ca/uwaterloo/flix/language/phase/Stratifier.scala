@@ -94,7 +94,7 @@ object Stratifier {
     */
   private def visitDef(def0: Def)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Def = {
     val e = visitExp(def0.exp)
-    if (e eq def0.exp) def0 else def0.copy(exp = e)
+    def0.copy(exp = e)
   }
 
   /**
@@ -402,8 +402,8 @@ object Stratifier {
     case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
       stratify(g, tpe, loc)
-      val cs = ListOps.mapWithReuse(cs0)(reorder)
-      if (cs eq cs0) exp0 else Expr.FixpointConstraintSet(cs, tpe, loc)
+      val cs = cs0.map(reorder)
+      Expr.FixpointConstraintSet(cs, tpe, loc)
 
     case Expr.FixpointLambda(_, _, tpe, _, loc) =>
       // Compute the stratification.
@@ -517,12 +517,10 @@ object Stratifier {
 
     // Order the predicates from first to last.
     val last = c0.body filter isNegativeOrLoop
+    val first = c0.body filterNot isNegativeOrLoop
 
-    if (last.isEmpty) c0
-    else {
-      val first = c0.body filterNot isNegativeOrLoop
-      c0.copy(body = first ::: last)
-    }
+    // Reassemble the constraint.
+    c0.copy(body = first ::: last)
   }
 
   /**
