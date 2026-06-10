@@ -215,8 +215,8 @@ object Terminator {
 
   /** Checks a trait's default sig implementations for termination properties. */
   private def visitTrait(trt: Trait)(implicit sctx: SharedContext, root: Root): Trait = {
-    val updatedSigs = ListOps.mapWithReuse(trt.sigs)(visitSig)
-    if (updatedSigs eq trt.sigs) trt else trt.copy(sigs = updatedSigs)
+    val updatedSigs = trt.sigs.map(visitSig)
+    trt.copy(sigs = updatedSigs)
   }
 
   /** Checks an instance's def implementations for termination properties. */
@@ -224,7 +224,7 @@ object Terminator {
     val traitSym = inst.trt.sym
     val updatedDefs = root.traits.get(traitSym) match {
       case Some(trt) =>
-        ListOps.mapWithReuse(inst.defs) { defn =>
+        inst.defs.map { defn =>
           if (defn.spec.ann.isTerminates) {
             trt.sigs.find(_.sym.name == defn.sym.text) match {
               case Some(sig) =>
@@ -234,21 +234,17 @@ object Terminator {
                 val selfSym = SelfInstanceDef(defn.sym, sig.sym)
                 val newExp = visitExp(List(RecursionContext(selfSym, fparams, SubEnv.init(fparams))), defn.exp, ApplyPosition.OtherTail)
                 val newFparams = mkDecreasingFparams(fparams, lctx.getDecreasing(selfSym))
-                if ((newExp eq defn.exp) && (newFparams eq fparams))
-                  defn
-                else
-                  defn.copy(spec = defn.spec.copy(fparams = newFparams), exp = newExp)
+                defn.copy(spec = defn.spec.copy(fparams = newFparams), exp = newExp)
               case None => visitDef(defn)
             }
           } else {
             implicit val lctx: LocalContext = LocalContext.mk()
-            val newExp = visitExp(Nil, defn.exp, ApplyPosition.OtherTail)
-            if (newExp eq defn.exp) defn else defn.copy(exp = newExp)
+            defn.copy(exp = visitExp(Nil, defn.exp, ApplyPosition.OtherTail))
           }
         }
-      case None => ListOps.mapWithReuse(inst.defs)(visitDef)
+      case None => inst.defs.map(visitDef)
     }
-    if (updatedDefs eq inst.defs) inst else inst.copy(defs = updatedDefs)
+    inst.copy(defs = updatedDefs)
   }
 
   /** Checks a trait default implementation for termination properties if annotated with @Terminates. */
@@ -261,14 +257,10 @@ object Terminator {
         val selfSym = SelfSig(sig.sym)
         val newExp = visitExp(List(RecursionContext(selfSym, fparams, SubEnv.init(fparams))), exp, ApplyPosition.OtherTail)
         val newFparams = mkDecreasingFparams(fparams, lctx.getDecreasing(selfSym))
-        if ((newExp eq exp) && (newFparams eq fparams))
-          sig
-        else
-          sig.copy(spec = sig.spec.copy(fparams = newFparams), exp = Some(newExp))
+        sig.copy(spec = sig.spec.copy(fparams = newFparams), exp = Some(newExp))
       case Some(exp) =>
         implicit val lctx: LocalContext = LocalContext.mk()
-        val newExp = visitExp(Nil, exp, ApplyPosition.OtherTail)
-        if (newExp eq exp) sig else sig.copy(exp = Some(newExp))
+        sig.copy(exp = Some(visitExp(Nil, exp, ApplyPosition.OtherTail)))
       case _ => sig
     }
   }
@@ -575,13 +567,13 @@ object Terminator {
 
         case Expr.RestrictableChoose(star, exp1, rules0, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          val rs = ListOps.mapWithReuse(rules0)(visitRestrictableChooseRule(contexts, _, pos))
-          if ((e eq exp1) && (rs eq rules0)) exp0 else Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
+          val rs = rules0.map(visitRestrictableChooseRule(contexts, _, pos))
+          Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
 
         case Expr.ExtMatch(exp1, rules0, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          val rs = ListOps.mapWithReuse(rules0)(visitExtMatchRule(contexts, _, pos))
-          if ((e eq exp1) && (rs eq rules0)) exp0 else Expr.ExtMatch(e, rs, tpe, eff, loc)
+          val rs = rules0.map(visitExtMatchRule(contexts, _, pos))
+          Expr.ExtMatch(e, rs, tpe, eff, loc)
 
         case Expr.Tag(sym, exps0, tpe, eff, loc) =>
           val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
@@ -701,8 +693,8 @@ object Terminator {
 
         case Expr.TryCatch(exp1, rules0, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, pos)
-          val rs = ListOps.mapWithReuse(rules0)(visitCatchRule(contexts, _, pos))
-          if ((e eq exp1) && (rs eq rules0)) exp0 else Expr.TryCatch(e, rs, tpe, eff, loc)
+          val rs = rules0.map(visitCatchRule(contexts, _, pos))
+          Expr.TryCatch(e, rs, tpe, eff, loc)
 
         case Expr.Throw(exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
@@ -711,8 +703,8 @@ object Terminator {
 
         case Expr.Handler(sym, rules0, tpe, eff, purity, evar, loc) =>
           checkForbidden(contexts, loc)
-          val rs = ListOps.mapWithReuse(rules0)(visitHandlerRule(contexts, _))
-          if (rs eq rules0) exp0 else Expr.Handler(sym, rs, tpe, eff, purity, evar, loc)
+          val rs = rules0.map(visitHandlerRule(contexts, _))
+          Expr.Handler(sym, rs, tpe, eff, purity, evar, loc)
 
         case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
@@ -768,8 +760,8 @@ object Terminator {
 
         case Expr.NewObject(name, clazz, tpe, eff, constructors, methods0, loc) =>
           checkForbidden(contexts, loc)
-          val ms = ListOps.mapWithReuse(methods0)(visitJvmMethod(contexts, _))
-          if (ms eq methods0) exp0 else Expr.NewObject(name, clazz, tpe, eff, constructors, ms, loc)
+          val ms = methods0.map(visitJvmMethod(contexts, _))
+          Expr.NewObject(name, clazz, tpe, eff, constructors, ms, loc)
 
         case Expr.NewChannel(exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
@@ -789,9 +781,9 @@ object Terminator {
 
         case Expr.SelectChannel(rules0, default0, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
-          val rs = ListOps.mapWithReuse(rules0)(visitSelectChannelRule(contexts, _))
-          val d = visitExpOpt(contexts, default0, ApplyPosition.NonTail)
-          if ((rs eq rules0) && (d eq default0)) exp0 else Expr.SelectChannel(rs, d, tpe, eff, loc)
+          val rs = rules0.map(visitSelectChannelRule(contexts, _))
+          val d = default0.map(visitExp(contexts, _, ApplyPosition.NonTail))
+          Expr.SelectChannel(rs, d, tpe, eff, loc)
 
         case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
@@ -801,9 +793,9 @@ object Terminator {
 
         case Expr.ParYield(frags0, exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
-          val fs = ListOps.mapWithReuse(frags0)(visitParYieldFrag(contexts, _))
+          val fs = frags0.map(visitParYieldFrag(contexts, _))
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          if ((fs eq frags0) && (e eq exp1)) exp0 else Expr.ParYield(fs, e, tpe, eff, loc)
+          Expr.ParYield(fs, e, tpe, eff, loc)
 
         case Expr.Lazy(exp1, tpe, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
@@ -912,44 +904,44 @@ object Terminator {
   /** Visits a restrictable choose rule. */
   private def visitRestrictableChooseRule(contexts: List[RecursionContext], rule0: RestrictableChooseRule, pos: ApplyPosition)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): RestrictableChooseRule = {
     val e = visitExp(contexts, rule0.exp, pos)
-    if (e eq rule0.exp) rule0 else rule0.copy(exp = e)
+    rule0.copy(exp = e)
   }
 
   /** Visits an ext match rule. */
   private def visitExtMatchRule(contexts: List[RecursionContext], rule0: ExtMatchRule, pos: ApplyPosition)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): ExtMatchRule = {
     val e = visitExp(contexts, rule0.exp, pos)
-    if (e eq rule0.exp) rule0 else rule0.copy(exp = e)
+    rule0.copy(exp = e)
   }
 
   /** Visits a catch rule. */
   private def visitCatchRule(contexts: List[RecursionContext], rule0: CatchRule, pos: ApplyPosition)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): CatchRule = {
     val e = visitExp(contexts, rule0.exp, pos)
-    if (e eq rule0.exp) rule0 else rule0.copy(exp = e)
+    rule0.copy(exp = e)
   }
 
   /** Visits a handler rule. Body starts fresh at Tail. */
   private def visitHandlerRule(contexts: List[RecursionContext], rule0: HandlerRule)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): HandlerRule = {
     val e = visitExp(contexts, rule0.exp, ApplyPosition.OtherTail)
-    if (e eq rule0.exp) rule0 else rule0.copy(exp = e)
+    rule0.copy(exp = e)
   }
 
   /** Visits a select channel rule. Bodies are NonTail. */
   private def visitSelectChannelRule(contexts: List[RecursionContext], rule0: SelectChannelRule)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): SelectChannelRule = {
     val e1 = visitExp(contexts, rule0.chan, ApplyPosition.NonTail)
     val e2 = visitExp(contexts, rule0.exp, ApplyPosition.NonTail)
-    if ((e1 eq rule0.chan) && (e2 eq rule0.exp)) rule0 else rule0.copy(chan = e1, exp = e2)
+    rule0.copy(chan = e1, exp = e2)
   }
 
   /** Visits a par yield fragment. Bodies are NonTail. */
   private def visitParYieldFrag(contexts: List[RecursionContext], frag0: ParYieldFragment)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): ParYieldFragment = {
     val e = visitExp(contexts, frag0.exp, ApplyPosition.NonTail)
-    if (e eq frag0.exp) frag0 else frag0.copy(exp = e)
+    frag0.copy(exp = e)
   }
 
   /** Visits a JVM method. Body starts fresh at Tail. */
   private def visitJvmMethod(contexts: List[RecursionContext], method0: JvmMethod)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): JvmMethod = {
     val e = visitExp(contexts, method0.exp, ApplyPosition.OtherTail)
-    if (e eq method0.exp) method0 else method0.copy(exp = e)
+    method0.copy(exp = e)
   }
 
   ////////////////////////////////////////////////////////////////////////////
