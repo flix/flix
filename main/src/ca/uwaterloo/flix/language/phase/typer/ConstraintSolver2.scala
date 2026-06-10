@@ -44,7 +44,7 @@ object ConstraintSolver2 {
       * Transforms the constraint set by applying a one-to-many constraint function.
       */
     def flatMap(f: TypeConstraint => List[TypeConstraint]): Soup = {
-      val newConstrs = flatMapConserve(constrs)(f)
+      val newConstrs = ListOps.flatMapWithReuse(constrs)(f)
       renew(newConstrs, tree)
     }
 
@@ -246,7 +246,7 @@ object ConstraintSolver2 {
       // (redU)
       val (r1, cs1) = reduce(eff1)(scope, renv, progress, eqenv, flix)
       val (r2, cs2) = reduce(eff2)(scope, renv, progress, eqenv, flix)
-      val nested = flatMapConserve(nested0)(simplify(_, progress)(scope.enter(sym), renv, eqenv, flix))
+      val nested = ListOps.flatMapWithReuse(nested0)(simplify(_, progress)(scope.enter(sym), renv, eqenv, flix))
       // Performance: Reuse this, if possible.
       if ((r1 eq eff1) && (r2 eq eff2) && (nested eq nested0) && cs1.isEmpty && cs2.isEmpty)
         constr :: Nil
@@ -370,7 +370,7 @@ object ConstraintSolver2 {
     case c: TypeConstraint.EffConflicted => List(c)
 
     case c@TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
-      val nested = flatMapConserve(nested0)(contextReduction(_, progress)(scope.enter(sym), renv0, trenv, eqenv, flix))
+      val nested = ListOps.flatMapWithReuse(nested0)(contextReduction(_, progress)(scope.enter(sym), renv0, trenv, eqenv, flix))
       // Performance: Reuse this, if possible.
       if (nested eq nested0)
         c :: Nil
@@ -677,29 +677,6 @@ object ConstraintSolver2 {
       (newConstrs, subst)
     else
       (newConstrs.map(subst.apply), subst) // apply the substitution to all constraints
-  }
-
-  /**
-    * Applies the one-to-many constraint function `f` to each constraint.
-    *
-    * Returns the original list if `f` leaves every constraint unchanged.
-    */
-  private def flatMapConserve(constrs: List[TypeConstraint])(f: TypeConstraint => List[TypeConstraint]): List[TypeConstraint] = {
-    var changed = false
-    val buf = List.newBuilder[TypeConstraint]
-    var cur = constrs
-    while (cur.nonEmpty) {
-      val constr = cur.head
-      f(constr) match {
-        // Performance: Reuse the original constraint, if possible.
-        case c :: Nil if c eq constr => buf += c
-        case cs =>
-          changed = true
-          buf ++= cs
-      }
-      cur = cur.tail
-    }
-    if (changed) buf.result() else constrs
   }
 
   /**
