@@ -48,6 +48,7 @@ case class Source(input: Input, data: Array[Char]) extends Sourceable {
 
   override def equals(o: scala.Any): Boolean = o match {
     case that: Source => this.input == that.input
+    case _ => false
   }
 
   override def hashCode(): Int = input.hashCode()
