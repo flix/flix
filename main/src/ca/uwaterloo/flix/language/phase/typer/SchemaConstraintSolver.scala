@@ -41,14 +41,14 @@ object SchemaConstraintSolver {
     //    α ∉ fv(ρ)
     // ----------------
     // α ~ ρ  =>  {α ↦ ρ}
-    case (Type.Var(sym, _), tpe) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym)(scope) =>
+    case (Type.Var(sym, _), tpe) if !Type.occurs(sym, tpe) && renv.isFlexible(sym)(scope) =>
       progress.markProgress()
       (Nil, Substitution.singleton(sym, tpe))
 
     //    α ∉ fv(ρ)
     // ----------------
     //  ρ ~ α  =>  {α ↦ ρ}
-    case (tpe, Type.Var(sym, _)) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym)(scope) =>
+    case (tpe, Type.Var(sym, _)) if !Type.occurs(sym, tpe) && renv.isFlexible(sym)(scope) =>
       progress.markProgress()
       (Nil, Substitution.singleton(sym, tpe))
 

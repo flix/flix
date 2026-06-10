@@ -610,7 +610,7 @@ object ConstraintSolver2 {
     renv.isFlexible(sym) &&
       sym.kind == tpe.kind &&
       hasIdempotentSubstitution(sym.kind) &&
-      !tpe.typeVars.exists { tvar => tvar.sym == sym } &&
+      !Type.occurs(sym, tpe) &&
       !Type.hasJvmType(tpe)
   }
 

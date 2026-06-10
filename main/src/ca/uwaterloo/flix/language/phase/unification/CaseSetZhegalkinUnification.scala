@@ -35,10 +35,10 @@ object CaseSetZhegalkinUnification {
     }
 
     (tpe1, tpe2) match {
-      case (t1@Type.Var(x, _), t2) if renv0.isFlexible(x) && !t2.typeVars.contains(t1) =>
+      case (Type.Var(x, _), t2) if renv0.isFlexible(x) && !Type.occurs(x, t2) =>
         return Some(Substitution.singleton(x, t2))
 
-      case (t1, t2@Type.Var(x, _)) if renv0.isFlexible(x) && !t1.typeVars.contains(t2) =>
+      case (t1, Type.Var(x, _)) if renv0.isFlexible(x) && !Type.occurs(x, t1) =>
         return Some(Substitution.singleton(x, t1))
 
       case _ => // nop

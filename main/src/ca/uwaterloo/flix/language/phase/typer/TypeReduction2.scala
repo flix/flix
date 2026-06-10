@@ -32,146 +32,151 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type)(implicit scope: RegionScope, renv: RigidityEnv, progress: Progress, eqenv: EqualityEnv, flix: Flix): (Type, List[TypeConstraint]) = tpe0 match {
-    case t: Type.Var => (t, Nil)
+  def reduce(tpe0: Type)(implicit scope: RegionScope, renv: RigidityEnv, progress: Progress, eqenv: EqualityEnv, flix: Flix): (Type, List[TypeConstraint]) = {
+    // Fast path: a type without aliases, associated types, or Jvm nodes cannot be reduced.
+    if (!tpe0.isReducible) return (tpe0, Nil)
 
-    case t: Type.Cst => (t, Nil)
+    tpe0 match {
+      case t: Type.Var => (t, Nil)
 
-    case Type.Apply(tpe1, tpe2, loc) =>
-      val (t1, cs1) = reduce(tpe1)
-      val (t2, cs2) = reduce(tpe2)
-      // Performance: Reuse this, if possible.
-      val tpe = if ((t1 eq tpe1) && (t2 eq tpe2))
-        tpe0
-      else
-        Type.Apply(t1, t2, loc)
-      (tpe, cs1 ::: cs2)
+      case t: Type.Cst => (t, Nil)
 
-    case Type.Alias(_, _, tpe, _) => (tpe, Nil)
+      case Type.Apply(tpe1, tpe2, loc) =>
+        val (t1, cs1) = reduce(tpe1)
+        val (t2, cs2) = reduce(tpe2)
+        // Performance: Reuse this, if possible.
+        val tpe = if ((t1 eq tpe1) && (t2 eq tpe2))
+          tpe0
+        else
+          Type.Apply(t1, t2, loc)
+        (tpe, cs1 ::: cs2)
 
-    case Type.AssocType(AssocTypeSymUse(sym, _), tpe, _, _) =>
-      val (t, cs) = reduce(tpe)
+      case Type.Alias(_, _, tpe, _) => (tpe, Nil)
 
-      // Get all the associated types from the context
-      val assocOpt = eqenv.getAssocDef(sym, t)
+      case Type.AssocType(AssocTypeSymUse(sym, _), tpe, _, _) =>
+        val (t, cs) = reduce(tpe)
 
-      // Find the instance that matches
-      val matches = assocOpt.flatMap {
-        case AssocTypeDef(tparams, assocTpe0, ret0) =>
+        // Get all the associated types from the context
+        val assocOpt = eqenv.getAssocDef(sym, t)
 
-
-          // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
-          // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
-          // then we want the substitution to include "v -> a" but NOT "a -> v".
-          val assocRenv = t.typeVars.map(_.sym).foldLeft(renv)(_.markRigid(_))
+        // Find the instance that matches
+        val matches = assocOpt.flatMap {
+          case AssocTypeDef(tparams, assocTpe0, ret0) =>
 
 
-          // Refresh the flexible variables in the instance
-          // (variables may be rigid if the instance comes from a constraint on the definition)
-          val assocVarMap = tparams.map {
-            case fromSym => fromSym -> Type.freshVar(fromSym.kind, fromSym.loc)(scope, flix)
-          }.toMap
-          val assocSubst = Substitution(assocVarMap)
-          val assocTpe = assocSubst(assocTpe0)
-          val ret = assocSubst(ret0)
+            // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
+            // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
+            // then we want the substitution to include "v -> a" but NOT "a -> v".
+            val assocRenv = t.typeVars.map(_.sym).foldLeft(renv)(_.markRigid(_))
 
-          // Instantiate all the instance constraints according to the substitution.
-          ConstraintSolver2.fullyUnify(t, assocTpe, scope, assocRenv).map {
-            case subst => subst(ret)
-          }
-      }
 
-      matches match {
-        // Case 1: No match. Can't reduce the type.
-        case None => (tpe0, cs)
+            // Refresh the flexible variables in the instance
+            // (variables may be rigid if the instance comes from a constraint on the definition)
+            val assocVarMap = tparams.map {
+              case fromSym => fromSym -> Type.freshVar(fromSym.kind, fromSym.loc)(scope, flix)
+            }.toMap
+            val assocSubst = Substitution(assocVarMap)
+            val assocTpe = assocSubst(assocTpe0)
+            val ret = assocSubst(ret0)
 
-        // Case 2: One match. Use it.
-        case Some(newTpe) =>
-          progress.markProgress()
-          (newTpe, cs)
-      }
-
-    case Type.JvmToType(tpe, loc) =>
-      val (t, cs) = reduce(tpe)
-      t match {
-        case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
-          progress.markProgress()
-          (instantiateJavaTypeWithFreshVars(constructor.getDeclaringClass, scope, loc), cs)
-
-        case Type.Cst(TypeConstructor.JvmField(field), _) =>
-          progress.markProgress()
-          (instantiateJavaTypeWithFreshVars(field.getType, scope, loc), cs)
-
-        case t1 => t1.typeConstructor match {
-          case Some(TypeConstructor.JvmMethod(method)) =>
-            progress.markProgress()
-            (resolveMethodReturnType(method, t1.typeArguments, scope, loc), cs)
-
-          case _ => (Type.JvmToType(t1, loc), cs)
+            // Instantiate all the instance constraints according to the substitution.
+            ConstraintSolver2.fullyUnify(t, assocTpe, scope, assocRenv).map {
+              case subst => subst(ret)
+            }
         }
-      }
 
-    case Type.JvmToEff(tpe, loc) =>
-      val (t, cs) = reduce(tpe)
-      t match {
-        case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
-          progress.markProgress()
-          (PrimitiveEffects.getConstructorEffs(constructor, loc), cs)
+        matches match {
+          // Case 1: No match. Can't reduce the type.
+          case None => (tpe0, cs)
 
-        case t1 => t1.typeConstructor match {
-          case Some(TypeConstructor.JvmMethod(method)) =>
+          // Case 2: One match. Use it.
+          case Some(newTpe) =>
             progress.markProgress()
-            (PrimitiveEffects.getMethodEffs(method, loc), cs)
-
-          case _ => (Type.JvmToEff(t1, loc), cs)
+            (newTpe, cs)
         }
-      }
 
-    case unresolved@Type.UnresolvedJvmType(member, loc) =>
-      member match {
-        case JvmMember.JvmConstructor(clazz, tpes) =>
-          val (reducedTpes, css) = tpes.map(reduce(_)).unzip
-          val cs = css.flatten
-          lookupConstructor(clazz, reducedTpes) match {
-            case JavaConstructorResolution.Resolved(constructor) =>
-              progress.markProgress()
-              (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), cs)
-            case _ => (unresolved, cs)
-          }
+      case Type.JvmToType(tpe, loc) =>
+        val (t, cs) = reduce(tpe)
+        t match {
+          case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
+            progress.markProgress()
+            (instantiateJavaTypeWithFreshVars(constructor.getDeclaringClass, scope, loc), cs)
 
-        case JvmMember.JvmField(_, tpe, name) =>
-          val (reducedTpe, cs) = reduce(tpe)
-          lookupField(reducedTpe, name.name) match {
-            case JavaFieldResolution.Resolved(field) =>
-              progress.markProgress()
-              (Type.Cst(TypeConstructor.JvmField(field), loc), cs)
-            case _ => (unresolved, cs)
-          }
+          case Type.Cst(TypeConstructor.JvmField(field), _) =>
+            progress.markProgress()
+            (instantiateJavaTypeWithFreshVars(field.getType, scope, loc), cs)
 
-        case JvmMember.JvmMethod(tpe, name, tpes) =>
-          val (reducedTpe, cs0) = reduce(tpe)
-          val (reducedTpes, css) = tpes.map(reduce(_)).unzip
-          val cs = cs0 ::: css.flatten
-          lookupMethod(reducedTpe, name.name, reducedTpes) match {
-            case JavaMethodResolution.Resolved(method) =>
-              val classTypeArgs = extractClassTypeArgs(method, reducedTpe, scope, loc)
-              val (tpe, cs0) = instantiateMethod(method, classTypeArgs, reducedTpes, scope, loc)
+          case t1 => t1.typeConstructor match {
+            case Some(TypeConstructor.JvmMethod(method)) =>
               progress.markProgress()
-              (tpe, cs ::: cs0)
-            case _ => (unresolved, cs)
-          }
+              (resolveMethodReturnType(method, t1.typeArguments, scope, loc), cs)
 
-        case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
-          val (reducedTpes, css) = tpes.map(reduce(_)).unzip
-          val cs = css.flatten
-          lookupStaticMethod(clazz, name.name, reducedTpes) match {
-            case JavaMethodResolution.Resolved(method) =>
-              val (tpe, cs0) = instantiateMethod(method, Nil, reducedTpes, scope, loc)
-              progress.markProgress()
-              (tpe, cs ::: cs0)
-            case _ => (unresolved, cs)
+            case _ => (Type.JvmToType(t1, loc), cs)
           }
-      }
+        }
+
+      case Type.JvmToEff(tpe, loc) =>
+        val (t, cs) = reduce(tpe)
+        t match {
+          case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
+            progress.markProgress()
+            (PrimitiveEffects.getConstructorEffs(constructor, loc), cs)
+
+          case t1 => t1.typeConstructor match {
+            case Some(TypeConstructor.JvmMethod(method)) =>
+              progress.markProgress()
+              (PrimitiveEffects.getMethodEffs(method, loc), cs)
+
+            case _ => (Type.JvmToEff(t1, loc), cs)
+          }
+        }
+
+      case unresolved@Type.UnresolvedJvmType(member, loc) =>
+        member match {
+          case JvmMember.JvmConstructor(clazz, tpes) =>
+            val (reducedTpes, css) = tpes.map(reduce(_)).unzip
+            val cs = css.flatten
+            lookupConstructor(clazz, reducedTpes) match {
+              case JavaConstructorResolution.Resolved(constructor) =>
+                progress.markProgress()
+                (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), cs)
+              case _ => (unresolved, cs)
+            }
+
+          case JvmMember.JvmField(_, tpe, name) =>
+            val (reducedTpe, cs) = reduce(tpe)
+            lookupField(reducedTpe, name.name) match {
+              case JavaFieldResolution.Resolved(field) =>
+                progress.markProgress()
+                (Type.Cst(TypeConstructor.JvmField(field), loc), cs)
+              case _ => (unresolved, cs)
+            }
+
+          case JvmMember.JvmMethod(tpe, name, tpes) =>
+            val (reducedTpe, cs0) = reduce(tpe)
+            val (reducedTpes, css) = tpes.map(reduce(_)).unzip
+            val cs = cs0 ::: css.flatten
+            lookupMethod(reducedTpe, name.name, reducedTpes) match {
+              case JavaMethodResolution.Resolved(method) =>
+                val classTypeArgs = extractClassTypeArgs(method, reducedTpe, scope, loc)
+                val (tpe, cs0) = instantiateMethod(method, classTypeArgs, reducedTpes, scope, loc)
+                progress.markProgress()
+                (tpe, cs ::: cs0)
+              case _ => (unresolved, cs)
+            }
+
+          case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
+            val (reducedTpes, css) = tpes.map(reduce(_)).unzip
+            val cs = css.flatten
+            lookupStaticMethod(clazz, name.name, reducedTpes) match {
+              case JavaMethodResolution.Resolved(method) =>
+                val (tpe, cs0) = instantiateMethod(method, Nil, reducedTpes, scope, loc)
+                progress.markProgress()
+                (tpe, cs ::: cs0)
+              case _ => (unresolved, cs)
+            }
+        }
+    }
   }
 
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */

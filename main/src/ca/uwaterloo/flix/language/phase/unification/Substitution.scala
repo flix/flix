@@ -62,47 +62,52 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     if (isEmpty) tpe0 else visitType(tpe0)
   }
 
-  private def visitType(t: Type): Type = t match {
-    // NB: The order of cases has been determined by code coverage analysis.
-    case x: Type.Var =>
-      // Performance: A non-capturing default avoids a thunk allocation per lookup.
-      val tpe = m.getOrElse(x.sym, null)
-      if (tpe == null) x else tpe
+  private def visitType(t: Type): Type = {
+    // Fast path: a type without type variables is unchanged by substitution.
+    if (t.isGround) return t
 
-    case Type.Cst(_, _) => t
+    t match {
+      // NB: The order of cases has been determined by code coverage analysis.
+      case x: Type.Var =>
+        // Performance: A non-capturing default avoids a thunk allocation per lookup.
+        val tpe = m.getOrElse(x.sym, null)
+        if (tpe == null) x else tpe
 
-    case app@Type.Apply(t1, t2, loc) =>
-      // Note: While we could perform simplifications here,
-      // experimental results have shown that it is not worth it.
-      val x = visitType(t1)
-      val y = visitType(t2)
-      // Performance: Reuse t, if possible.
-      app.renew(x, y, loc)
+      case Type.Cst(_, _) => t
 
-    case Type.Alias(sym, args0, tpe0, loc) =>
-      val args = ListOps.mapWithReuse(args0)(visitType)
-      val tpe = visitType(tpe0)
-      // Performance: Reuse t, if possible.
-      if ((args eq args0) && (tpe eq tpe0)) t else Type.Alias(sym, args, tpe, loc)
+      case app@Type.Apply(t1, t2, loc) =>
+        // Note: While we could perform simplifications here,
+        // experimental results have shown that it is not worth it.
+        val x = visitType(t1)
+        val y = visitType(t2)
+        // Performance: Reuse t, if possible.
+        app.renew(x, y, loc)
 
-    case Type.AssocType(cst, args0, kind, loc) =>
-      val args = args0.map(visitType)
-      // Performance: Reuse t, if possible.
-      if (args eq args0) t else Type.AssocType(cst, args, kind, loc)
+      case Type.Alias(sym, args0, tpe0, loc) =>
+        val args = ListOps.mapWithReuse(args0)(visitType)
+        val tpe = visitType(tpe0)
+        // Performance: Reuse t, if possible.
+        if ((args eq args0) && (tpe eq tpe0)) t else Type.Alias(sym, args, tpe, loc)
 
-    case Type.JvmToType(tpe0, loc) =>
-      val tpe = visitType(tpe0)
-      // Performance: Reuse t, if possible.
-      if (tpe eq tpe0) t else Type.JvmToType(tpe, loc)
+      case Type.AssocType(cst, args0, kind, loc) =>
+        val args = args0.map(visitType)
+        // Performance: Reuse t, if possible.
+        if (args eq args0) t else Type.AssocType(cst, args, kind, loc)
 
-    case Type.JvmToEff(tpe0, loc) =>
-      val tpe = visitType(tpe0)
-      // Performance: Reuse t, if possible.
-      if (tpe eq tpe0) t else Type.JvmToEff(tpe, loc)
+      case Type.JvmToType(tpe0, loc) =>
+        val tpe = visitType(tpe0)
+        // Performance: Reuse t, if possible.
+        if (tpe eq tpe0) t else Type.JvmToType(tpe, loc)
 
-    case Type.UnresolvedJvmType(member0, loc) =>
-      val member = member0.map(visitType)
-      Type.UnresolvedJvmType(member, loc)
+      case Type.JvmToEff(tpe0, loc) =>
+        val tpe = visitType(tpe0)
+        // Performance: Reuse t, if possible.
+        if (tpe eq tpe0) t else Type.JvmToEff(tpe, loc)
+
+      case Type.UnresolvedJvmType(member0, loc) =>
+        val member = member0.map(visitType)
+        Type.UnresolvedJvmType(member, loc)
+    }
   }
 
 

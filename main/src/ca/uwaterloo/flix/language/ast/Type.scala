@@ -44,6 +44,28 @@ sealed trait Type {
   def loc: SourceLocation
 
   /**
+    * A bitfield of structural properties of `this` type (see [[Type.Flags]]).
+    * Computed eagerly at construction in O(1) from the flags of the subterms.
+    */
+  def flags: Int
+
+  /**
+    * Returns `true` if `this` type contains no type variables.
+    *
+    * O(1) and allocation-free; prefer this over `typeVars.isEmpty`, which
+    * materializes a [[SortedSet]].
+    */
+  def isGround: Boolean = (flags & Type.Flags.HasVar) == 0
+
+  /**
+    * Returns `true` if `this` type contains a node the reducer may rewrite
+    * (see [[Type.Flags.Reducible]]).
+    *
+    * O(1) and allocation-free.
+    */
+  def isReducible: Boolean = (flags & Type.Flags.Reducible) != 0
+
+  /**
     * Returns the type variables in `this` type.
     *
     * Returns a sorted set to ensure that the compiler is deterministic.
@@ -270,6 +292,21 @@ sealed trait Type {
 object Type {
 
   /////////////////////////////////////////////////////////////////////////////
+  // Flags                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Bit values for the [[Type.flags]] bitfield.
+    */
+  object Flags {
+    /** Set if the type contains a [[Type.Var]] anywhere. */
+    final val HasVar: Int = 1
+    /** Set if the type contains a node the reducer may rewrite:
+      * Alias, AssocType, JvmToType, JvmToEff, or UnresolvedJvmType. */
+    final val Reducible: Int = 2
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Constants                                                               //
   /////////////////////////////////////////////////////////////////////////////
 
@@ -489,6 +526,8 @@ object Type {
 
     def kind: Kind = sym.kind
 
+    def flags: Int = Flags.HasVar
+
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
@@ -514,6 +553,8 @@ object Type {
   case class Cst(tc: TypeConstructor, loc: SourceLocation) extends Type with BaseType {
     def kind: Kind = tc.kind
 
+    def flags: Int = 0
+
     override def hashCode(): Int = tc.hashCode()
 
     override def equals(o: Any): Boolean = o match {
@@ -526,6 +567,9 @@ object Type {
     * A type expression that a represents a type application tpe1[tpe2].
     */
   case class Apply(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type {
+
+    val flags: Int = tpe1.flags | tpe2.flags
+
     /**
       * Returns the kind of `this` type.
       *
@@ -562,12 +606,25 @@ object Type {
     */
   case class Alias(symUse: TypeAliasSymUse, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = tpe.kind
+
+    val flags: Int = {
+      var f = Flags.Reducible | tpe.flags
+      var rest = args
+      while (rest.nonEmpty) {
+        f |= rest.head.flags
+        rest = rest.tail
+      }
+      f
+    }
   }
 
   /**
     * An associated type.
     */
   case class AssocType(symUse: AssocTypeSymUse, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType {
+
+    val flags: Int = Flags.Reducible | arg.flags
+
     override def equals(obj: Any): Boolean = obj match {
       case that: AssocType => this.symUse.sym == that.symUse.sym && this.arg == that.arg
       case _ => false
@@ -581,6 +638,8 @@ object Type {
     */
   case class JvmToType(tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Star
+
+    val flags: Int = Flags.Reducible | tpe.flags
   }
 
   /**
@@ -588,6 +647,8 @@ object Type {
     */
   case class JvmToEff(tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Eff
+
+    val flags: Int = Flags.Reducible | tpe.flags
   }
 
   /**
@@ -595,6 +656,16 @@ object Type {
     */
   case class UnresolvedJvmType(member: JvmMember, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Jvm
+
+    val flags: Int = {
+      var f = Flags.Reducible
+      var rest = member.getTypeArguments
+      while (rest.nonEmpty) {
+        f |= rest.head.flags
+        rest = rest.tail
+      }
+      f
+    }
   }
 
   /**
@@ -1284,6 +1355,26 @@ object Type {
     case JvmToType(tpe, _) => hasAssocType(tpe)
     case JvmToEff(tpe, _) => hasAssocType(tpe)
     case UnresolvedJvmType(member, _) => member.getTypeArguments.exists(hasAssocType)
+  }
+
+  /**
+    * Returns true if the type variable `sym` occurs in the given type `tpe`.
+    *
+    * Visits exactly the variables that [[Type.typeVars]] collects, but prunes
+    * subtrees whose flags show they contain no variables and allocates nothing.
+    */
+  def occurs(sym: Symbol.KindedTypeVarSym, tpe: Type): Boolean = {
+    if (tpe.isGround) return false
+    tpe match {
+      case Type.Var(sym2, _) => sym == sym2
+      case Type.Cst(_, _) => false
+      case Type.Apply(tpe1, tpe2, _) => occurs(sym, tpe1) || occurs(sym, tpe2)
+      case Type.Alias(_, args, t, _) => args.exists(occurs(sym, _)) || occurs(sym, t)
+      case Type.AssocType(_, arg, _, _) => occurs(sym, arg)
+      case Type.JvmToType(t, _) => occurs(sym, t)
+      case Type.JvmToEff(t, _) => occurs(sym, t)
+      case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.exists(occurs(sym, _))
+    }
   }
 
   /**

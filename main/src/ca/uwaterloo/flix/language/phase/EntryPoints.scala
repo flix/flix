@@ -308,7 +308,7 @@ object EntryPoints {
     */
   private def checkNoTypeVariables(defn: TypedAst.Def): Option[EntryPointError] = {
     // `tparams` lies sometimes when explicit tparams are given and _ are used.
-    val monomorphic = defn.spec.tparams.isEmpty && typesOf(defn).forall(_.typeVars.isEmpty)
+    val monomorphic = defn.spec.tparams.isEmpty && typesOf(defn).forall(_.isGround)
     if (monomorphic) None
     else Some(EntryPointError.IllegalEntryPointTypeVariables(defn.sym.loc))
   }

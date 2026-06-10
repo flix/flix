@@ -31,7 +31,7 @@ import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
   */
 class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.RegionSym, SubstitutionTree]) {
 
-  def isEmpty: Boolean = root.isEmpty && branches.forall { case (_, tree) => tree.isEmpty }
+  val isEmpty: Boolean = root.isEmpty && branches.forall { case (_, tree) => tree.isEmpty }
 
   /**
     * Applies this substitution tree to the given type constraint.
@@ -45,14 +45,14 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
     constr match {
       case eq@TypeConstraint.Equality(tpe1, tpe2, _) =>
         // Check whether the substitution has to be applied.
-        val t1 = if (tpe1.typeVars.isEmpty) tpe1 else root(tpe1)
-        val t2 = if (tpe2.typeVars.isEmpty) tpe2 else root(tpe2)
+        val t1 = if (tpe1.isGround) tpe1 else root(tpe1)
+        val t2 = if (tpe2.isGround) tpe2 else root(tpe2)
         // Performance: Reuse eq, if possible.
         eq.renew(t1, t2)
 
       case TypeConstraint.Trait(sym, tpe, loc) =>
         // Check whether the substitution has to be applied.
-        val t = if (tpe.typeVars.isEmpty) tpe else root(tpe)
+        val t = if (tpe.isGround) tpe else root(tpe)
         // Performance: Reuse this, if possible.
         if (t eq tpe)
           constr
@@ -66,8 +66,8 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
         // We use the root as a fallback (as all branches are supersets of root)
         val subtree = branches.getOrElse(sym, this)
         // Check whether the substitution has to be applied.
-        val e1 = if (eff1.typeVars.isEmpty) eff1 else root(eff1)
-        val e2 = if (eff2.typeVars.isEmpty) eff2 else subtree(eff2)
+        val e1 = if (eff1.isGround) eff1 else root(eff1)
+        val e2 = if (eff2.isGround) eff2 else subtree(eff2)
         val ns = ListOps.mapWithReuse(nested)(subtree.apply)
         // Performance: Reuse this, if possible.
         if ((e1 eq eff1) && (e2 eq eff2) && (ns eq nested))
@@ -77,8 +77,8 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
 
       case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
         // Check whether the substitution has to be applied.
-        val t1 = if (tpe1.typeVars.isEmpty) tpe1 else root(tpe1)
-        val t2 = if (tpe2.typeVars.isEmpty) tpe2 else root(tpe2)
+        val t1 = if (tpe1.isGround) tpe1 else root(tpe1)
+        val t2 = if (tpe2.isGround) tpe2 else root(tpe2)
         // Performance: Reuse this, if possible.
         if ((t1 eq tpe1) && (t2 eq tpe2))
           constr
