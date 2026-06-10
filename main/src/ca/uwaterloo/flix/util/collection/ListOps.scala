@@ -78,4 +78,14 @@ object ListOps {
       case Some(value) => value
     }
   }
+
+  /**
+    * Applies `f` to each element of `list`, returning `list` itself if `f`
+    * returns a reference-equal (`eq`) element for every entry.
+    *
+    * Unchanged suffixes are shared between the result and `list`, so callers
+    * can detect "nothing changed" with a single reference equality check.
+    */
+  def mapWithReuse[T <: AnyRef](list: List[T])(f: T => T): List[T] =
+    list.mapConserve(f)
 }
