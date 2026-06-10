@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.util
 import java.util.concurrent.{Callable, CountDownLatch, RecursiveTask}
+import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
@@ -84,12 +85,40 @@ object ParOps {
   }
 
   /**
+    * Applies the function `f` to every element of `xs` in parallel.
+    *
+    * The elements are scheduled in ascending `sortBy` order, i.e. the element with the smallest
+    * `sortBy` value is started first. Pass e.g. negated sizes to start work early on the biggest
+    * tasks and thus increase throughput.
+    */
+  def parMapWithPriority[A: ClassTag, B: ClassTag](xs: Iterable[A], sortBy: A => Int)(f: A => B)(implicit flix: Flix): Iterable[B] = {
+    val arr = xs.toArray
+    arr.sortInPlaceBy(sortBy)
+    parMap(ArraySeq.unsafeWrapArray(arr))(f)
+  }
+
+  /**
     * Applies the function `f` to every value of the map `m` in parallel.
     */
   def parMapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
     parMap(m) {
       case (k, v) => (k, f(v))
     }.toMap
+
+  /**
+    * Applies the function `f` to every value of the map `m` in parallel.
+    *
+    * The values are scheduled in ascending `sortBy` order, i.e. the value with the smallest
+    * `sortBy` value is started first. Pass e.g. negated sizes to start work early on the biggest
+    * tasks and thus increase throughput.
+    */
+  def parMapValuesWithPriority[K, A, B](m: Map[K, A], sortBy: A => Int)(f: A => B)(implicit flix: Flix): Map[K, B] = {
+    val arr = m.toArray
+    arr.sortInPlaceBy { case (_, v) => sortBy(v) }
+    parMap(ArraySeq.unsafeWrapArray(arr)) {
+      case (k, v) => (k, f(v))
+    }.toMap
+  }
 
   /**
     * Applies the function `f` to every value of the map `m` in parallel.

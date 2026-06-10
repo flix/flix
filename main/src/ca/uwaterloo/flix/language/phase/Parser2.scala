@@ -126,11 +126,11 @@ object Parser2 {
     // Compute the stale and fresh sources.
     val (stale, fresh) = changeSet.partition(tokens0, oldRoot.units)
 
-    // Sort the stale inputs by size to increase throughput (i.e. to start work early on the biggest tasks).
-    val staleByDecreasingSize = stale.toList.sortBy(p => -p._2.length)
+    // Schedule the biggest sources first to increase throughput.
+    def sortBy(p: (Source, Array[Token])): Int = -p._2.length
 
     // Parse each stale source in parallel and join them into a WeededAst.Root.
-    val (refreshed, errors) = ParOps.parMap(staleByDecreasingSize) {
+    val (refreshed, errors) = ParOps.parMapWithPriority(stale, sortBy) {
       case (src, tokens) =>
         val (tree, errors) = parse(src, tokens)
         (src -> tree, errors)

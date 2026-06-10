@@ -184,19 +184,18 @@ object Typer {
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    changeSet.updateStaleValues(root.defs, oldRoot.defs) { staleDefs =>
-      // Sort the stale defs by size to increase throughput (i.e. to start work early on the biggest tasks).
-      val staleByDecreasingSize = staleDefs.toList.sortBy { case (_, defn) => defn.loc.startLine - defn.loc.endLine }
-      ParOps.parMap(staleByDecreasingSize) {
-        case (sym, defn) => flix.profile(defn.sym, defn.loc) {
-          // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
-          // If no effect is specified, we assume the function is pure
-          val eff1 = defn.spec.eff.getOrElse(Type.Pure)
-          val enableSubeffects = shouldSubeffect(eff1, Subeffecting.ModDefs)
-          sym -> visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
-        }
-      }.toMap
-    }
+    // Schedule the biggest defs first to increase throughput.
+    def sortBy(defn: KindedAst.Def): Int = defn.loc.startLine - defn.loc.endLine
+
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValuesWithPriority(_, sortBy) {
+      case defn => flix.profile(defn.sym, defn.loc) {
+        // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
+        // If no effect is specified, we assume the function is pure
+        val eff1 = defn.spec.eff.getOrElse(Type.Pure)
+        val enableSubeffects = shouldSubeffect(eff1, Subeffecting.ModDefs)
+        visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
+      }
+    })
   }
 
   /**
@@ -282,7 +281,10 @@ object Typer {
   private def visitInstances(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): ListMap[Symbol.TraitSym, TypedAst.Instance] = {
     val instances0 = root.instances.values
 
-    val instances = ParOps.parMap(instances0)(visitInstance(_, root, traitEnv, eqEnv))
+    // Schedule the biggest instances first to increase throughput.
+    def sortBy(inst: KindedAst.Instance): Int = inst.loc.startLine - inst.loc.endLine
+
+    val instances = ParOps.parMapWithPriority(instances0, sortBy)(visitInstance(_, root, traitEnv, eqEnv))
     val mapping = instances.map {
       case instance => instance.trt.sym -> instance
     }
