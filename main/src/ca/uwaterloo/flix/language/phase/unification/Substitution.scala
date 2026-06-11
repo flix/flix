@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListOps
 
 /**
   * Companion object for the [[Substitution]] class.
@@ -76,21 +77,25 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       app.renew(x, y, loc)
 
     case Type.Alias(sym, args0, tpe0, loc) =>
-      val args = args0.map(visitType)
+      val args = ListOps.mapWithReuse(args0)(visitType)
       val tpe = visitType(tpe0)
-      Type.Alias(sym, args, tpe, loc)
+      // Performance: Reuse t, if possible.
+      if ((args eq args0) && (tpe eq tpe0)) t else Type.Alias(sym, args, tpe, loc)
 
     case Type.AssocType(cst, args0, kind, loc) =>
       val args = args0.map(visitType)
-      Type.AssocType(cst, args, kind, loc)
+      // Performance: Reuse t, if possible.
+      if (args eq args0) t else Type.AssocType(cst, args, kind, loc)
 
     case Type.JvmToType(tpe0, loc) =>
       val tpe = visitType(tpe0)
-      Type.JvmToType(tpe, loc)
+      // Performance: Reuse t, if possible.
+      if (tpe eq tpe0) t else Type.JvmToType(tpe, loc)
 
     case Type.JvmToEff(tpe0, loc) =>
       val tpe = visitType(tpe0)
-      Type.JvmToEff(tpe, loc)
+      // Performance: Reuse t, if possible.
+      if (tpe eq tpe0) t else Type.JvmToEff(tpe, loc)
 
     case Type.UnresolvedJvmType(member0, loc) =>
       val member = member0.map(visitType)
