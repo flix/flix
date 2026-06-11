@@ -18,12 +18,25 @@ package ca.uwaterloo.flix.util.collection
 /**
   * Represents an immutable list of at least size two.
   */
-case class TwoList[T](x: T, y: T, rest: List[T]) {
+case class TwoList[T <: AnyRef](x: T, y: T, rest: List[T]) {
 
   /**
     * Applies the given function `f` to every element of `this` list.
     */
-  def map[S](f: T => S): TwoList[S] = TwoList(f(x), f(y), rest.map(f))
+  def map[S <: AnyRef](f: T => S): TwoList[S] = TwoList(f(x), f(y), rest.map(f))
+
+  /**
+    * Applies the one-to-one function `f` to every element of `this` list,
+    * returning `this` itself if `f` returns a reference-equal (`eq`)
+    * element for every entry.
+    */
+  def mapWithReuse(f: T => T): TwoList[T] = {
+    val x1 = f(x)
+    val y1 = f(y)
+    val rest1 = ListOps.mapWithReuse(rest)(f)
+    // Performance: Reuse this, if possible.
+    if ((x1 eq x) && (y1 eq y) && (rest1 eq rest)) this else TwoList(x1, y1, rest1)
+  }
 
   /**
     * Returns `true` if an element in `this` list satisfies the given predicate `f`.
