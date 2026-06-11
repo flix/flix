@@ -670,29 +670,17 @@ object ConstraintSolver2 {
     */
   private def foldSubstitution(constrs: List[TypeConstraint])(f: TypeConstraint => (List[TypeConstraint], SubstitutionTree)): (List[TypeConstraint], SubstitutionTree) = {
     var subst = SubstitutionTree.empty
-    var changed = false
-    val buf = List.newBuilder[TypeConstraint]
-    var cur = constrs
-    while (cur.nonEmpty) {
-      val constr = cur.head
+    val newConstrs = ListOps.flatMapWithReuse(constrs) { constr =>
       val (cs, s) = f(subst(constr))
       if (!s.isEmpty) {
         subst = s @@ subst
       }
-      cs match {
-        // Performance: Reuse the original constraint, if possible.
-        case c :: Nil if c eq constr => buf += c
-        case _ =>
-          changed = true
-          buf ++= cs
-      }
-      cur = cur.tail
+      cs
     }
-    val newConstrs = if (changed) buf.result() else constrs
     if (subst.isEmpty)
       (newConstrs, subst)
     else
-      (newConstrs.map(subst.apply), subst) // apply the substitution to all constraints
+      (ListOps.mapWithReuse(newConstrs)(subst.apply), subst) // apply the substitution to all constraints
   }
 
   /**
