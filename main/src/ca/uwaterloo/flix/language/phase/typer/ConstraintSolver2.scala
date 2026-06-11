@@ -650,9 +650,7 @@ object ConstraintSolver2 {
     var subst = SubstitutionTree.empty
     val newConstrs = ListOps.flatMapWithReuse(constrs) { constr =>
       val (cs, s) = f(subst(constr))
-      if (!s.isEmpty) {
-        subst = s @@ subst
-      }
+      subst = s @@ subst
       cs
     }
     if (subst.isEmpty)
