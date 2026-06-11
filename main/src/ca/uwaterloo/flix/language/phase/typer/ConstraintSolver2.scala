@@ -449,16 +449,8 @@ object ConstraintSolver2 {
       case _ => (List(c), SubstitutionTree.empty)
     }
 
-    case c@TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
-      val (nested, branch) = foldSubstitution(nested0)(caseSetUnification(_, progress)(scope.enter(sym), renv, flix))
-      // Performance: Reuse this, if possible.
-      if (branch.isEmpty && (nested eq nested0)) {
-        (c :: Nil, SubstitutionTree.empty)
-      } else {
-        val tree = SubstitutionTree.oneBranch(sym, branch)
-        val cs = List(TypeConstraint.Purification(sym, eff1, eff2, prov, nested))
-        (cs, tree)
-      }
+    case c: TypeConstraint.Purification =>
+      foldSubstitutionNested(c)(caseSetUnification(_, progress)(scope.enter(c.sym), renv, flix))
 
     case c => (List(c), SubstitutionTree.empty)
   }
@@ -476,16 +468,8 @@ object ConstraintSolver2 {
         case None => (List(c), SubstitutionTree.empty)
       }
 
-    case c@TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
-      val (nested, branch) = foldSubstitution(nested0)(booleanUnification(_, progress)(scope.enter(sym), renv, flix))
-      // Performance: Reuse this, if possible.
-      if (branch.isEmpty && (nested eq nested0)) {
-        (c :: Nil, SubstitutionTree.empty)
-      } else {
-        val tree = SubstitutionTree.oneBranch(sym, branch)
-        val cs = List(TypeConstraint.Purification(sym, eff1, eff2, prov, nested))
-        (cs, tree)
-      }
+    case c: TypeConstraint.Purification =>
+      foldSubstitutionNested(c)(booleanUnification(_, progress)(scope.enter(c.sym), renv, flix))
 
     case c => (List(c), SubstitutionTree.empty)
   }
@@ -566,16 +550,8 @@ object ConstraintSolver2 {
         case (constrs, subst) => (constrs, SubstitutionTree.shallow(subst))
       }
 
-    case c@TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
-      val (nested, branch) = foldSubstitution(nested0)(recordUnification(_, progress)(scope.enter(sym), renv, eqEnv, flix))
-      // Performance: Reuse this, if possible.
-      if (branch.isEmpty && (nested eq nested0)) {
-        (c :: Nil, SubstitutionTree.empty)
-      } else {
-        val tree = SubstitutionTree.oneBranch(sym, branch)
-        val cs = List(TypeConstraint.Purification(sym, eff1, eff2, prov, nested))
-        (cs, tree)
-      }
+    case c: TypeConstraint.Purification =>
+      foldSubstitutionNested(c)(recordUnification(_, progress)(scope.enter(c.sym), renv, eqEnv, flix))
 
     case c => (List(c), SubstitutionTree.empty)
   }
@@ -589,16 +565,8 @@ object ConstraintSolver2 {
         case (constrs, subst) => (constrs, SubstitutionTree.shallow(subst))
       }
 
-    case c@TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
-      val (nested, branch) = foldSubstitution(nested0)(schemaUnification(_, progress)(scope.enter(sym), renv, eqEnv, flix))
-      // Performance: Reuse this, if possible.
-      if (branch.isEmpty && (nested eq nested0)) {
-        (c :: Nil, SubstitutionTree.empty)
-      } else {
-        val tree = SubstitutionTree.oneBranch(sym, branch)
-        val cs = List(TypeConstraint.Purification(sym, eff1, eff2, prov, nested))
-        (cs, tree)
-      }
+    case c: TypeConstraint.Purification =>
+      foldSubstitutionNested(c)(schemaUnification(_, progress)(scope.enter(c.sym), renv, eqEnv, flix))
 
     case c => (List(c), SubstitutionTree.empty)
   }
@@ -626,16 +594,8 @@ object ConstraintSolver2 {
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe1))
 
-    case c0@TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
-      val (nested, branch) = foldSubstitution(nested0)(makeSubstitution(_, progress)(scope.enter(sym), renv))
-      // Performance: Reuse this, if possible.
-      if (branch.isEmpty && (nested eq nested0)) {
-        (c0 :: Nil, SubstitutionTree.empty)
-      } else {
-        val c = TypeConstraint.Purification(sym, eff1, eff2, prov, nested)
-        val tree = SubstitutionTree.oneBranch(sym, branch)
-        (List(c), tree)
-      }
+    case c: TypeConstraint.Purification =>
+      foldSubstitutionNested(c)(makeSubstitution(_, progress)(scope.enter(c.sym), renv))
 
     case c => (List(c), SubstitutionTree.empty)
   }
@@ -661,6 +621,24 @@ object ConstraintSolver2 {
     case Kind.Bool => false
     case Kind.CaseSet(_) => false
     case _ => true
+  }
+
+  /**
+    * Applies the constraint/substitution processing function `f` to the nested
+    * constraints of the purification constraint `c`, putting the resulting
+    * substitution in a branch under the region of `c`.
+    *
+    * Performance: Returns `c` itself and the empty tree if nothing changed.
+    */
+  private def foldSubstitutionNested(c: TypeConstraint.Purification)(f: TypeConstraint => (List[TypeConstraint], SubstitutionTree)): (List[TypeConstraint], SubstitutionTree) = {
+    val (nested, branch) = foldSubstitution(c.nested)(f)
+    if (branch.isEmpty && (nested eq c.nested)) {
+      (c :: Nil, SubstitutionTree.empty)
+    } else {
+      val tree = SubstitutionTree.oneBranch(c.sym, branch)
+      val cs = List(TypeConstraint.Purification(c.sym, c.eff1, c.eff2, c.prov, nested))
+      (cs, tree)
+    }
   }
 
   /**
