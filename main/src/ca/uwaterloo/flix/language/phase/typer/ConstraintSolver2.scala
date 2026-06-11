@@ -199,6 +199,8 @@ object ConstraintSolver2 {
     if (s1 eq soup)
       s1
     else {
+      // We have heuristically determined that applying simplify twice is the
+      // optimal choice (if the first simplify made changes).
       val s2 = s1.flatMap(simplify(_, progress))
       if (s2 eq s1) s2 else s2.flatMap(simplify(_, progress))
     }
