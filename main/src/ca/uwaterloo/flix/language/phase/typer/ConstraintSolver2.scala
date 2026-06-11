@@ -85,7 +85,8 @@ object ConstraintSolver2 {
     def exhaustively(progress: Progress)(f: (Soup, Progress) => Soup): Soup = {
       val innerProgress = Progress()
       val res = f(this, innerProgress)
-      if (innerProgress.query()) {
+      // Performance: If all constraints are solved there is nothing left to iterate on.
+      if (innerProgress.query() && res.constrs.nonEmpty) {
         progress.markProgress()
         res.exhaustively(progress)(f)
       } else {
