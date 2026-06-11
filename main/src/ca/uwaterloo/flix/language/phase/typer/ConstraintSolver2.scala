@@ -163,21 +163,7 @@ object ConstraintSolver2 {
     soup
       .exhaustively(progress) {
         (soup, progress) =>
-          val s1 = soup
-            .flatMap(simplify(_, progress))
-            .flatMapSubst(makeSubstitution(_, progress))
-          // Performance: Simplification is deterministic, so if the soup is unchanged
-          // (object identity), repeating it is a no-op and can be skipped.
-          // N.B.: We cannot use `progress` to detect this, since alias unwrapping in
-          // type reduction changes constraints without marking progress.
-          val s3 =
-            if (s1 eq soup)
-              s1
-            else {
-              val s2 = s1.flatMap(simplify(_, progress))
-              if (s2 eq s1) s2 else s2.flatMap(simplify(_, progress))
-            }
-          s3
+          simplifyAndSubstitute(soup, progress)
             .flatMapSubst(recordUnification(_, progress))
             .flatMapSubst(schemaUnification(_, progress))
             .map(purifyEmptyRegion(_, progress))
@@ -186,6 +172,36 @@ object ConstraintSolver2 {
       .flatMapSubst(caseSetUnification(_, progress))
       .flatMapSubst(booleanUnification(_, progress))
       .flatMap(contextReduction(_, progress))
+  }
+
+  /**
+    * Simplifies the constraints in the soup and resolves `var ~ type` constraints
+    * into substitutions.
+    *
+    * Specifically:
+    *
+    *   1. Applies [[simplify]] to every constraint.
+    *   1. Applies [[makeSubstitution]], which turns `var ~ type` constraints into
+    *      substitutions and applies them to the remaining constraints.
+    *   1. Applies [[simplify]] up to two more times, since the substitution may
+    *      expose new simplification opportunities (e.g. a substituted type may now
+    *      be an application that can be broken down).
+    *
+    * Performance: Simplification is deterministic, so if the soup is unchanged
+    * (object identity), repeating it is a no-op and can be skipped.
+    * N.B.: We cannot use `progress` to detect this, since alias unwrapping in
+    * type reduction changes constraints without marking progress.
+    */
+  private def simplifyAndSubstitute(soup: Soup, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): Soup = {
+    val s1 = soup
+      .flatMap(simplify(_, progress))
+      .flatMapSubst(makeSubstitution(_, progress))
+    if (s1 eq soup)
+      s1
+    else {
+      val s2 = s1.flatMap(simplify(_, progress))
+      if (s2 eq s1) s2 else s2.flatMap(simplify(_, progress))
+    }
   }
 
   /**
