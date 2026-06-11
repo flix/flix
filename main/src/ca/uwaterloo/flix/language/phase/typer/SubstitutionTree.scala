@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.collection.MapOps
+import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
 
 /**
   * The substitution tree represents the substitutions that apply to different region scopes.
@@ -54,7 +54,13 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
           TypeConstraint.Equality(t1, t2, prov)
 
       case TypeConstraint.Trait(sym, tpe, loc) =>
-        TypeConstraint.Trait(sym, root(tpe), loc)
+        // Check whether the substitution has to be applied.
+        val t = if (tpe.typeVars.isEmpty) tpe else root(tpe)
+        // Performance: Reuse this, if possible.
+        if (t eq tpe)
+          constr
+        else
+          TypeConstraint.Trait(sym, t, loc)
 
       case TypeConstraint.Purification(sym, eff1, eff2, prov, nested) =>
         // Use the root substitution for the external effects.
@@ -62,7 +68,15 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
 
         // We use the root as a fallback (as all branches are supersets of root)
         val subtree = branches.getOrElse(sym, this)
-        TypeConstraint.Purification(sym, root(eff1), subtree(eff2), prov, nested.map(subtree.apply))
+        // Check whether the substitution has to be applied.
+        val e1 = if (eff1.typeVars.isEmpty) eff1 else root(eff1)
+        val e2 = if (eff2.typeVars.isEmpty) eff2 else subtree(eff2)
+        val ns = ListOps.mapWithReuse(nested)(subtree.apply)
+        // Performance: Reuse this, if possible.
+        if ((e1 eq eff1) && (e2 eq eff2) && (ns eq nested))
+          constr
+        else
+          TypeConstraint.Purification(sym, e1, e2, prov, ns)
 
       case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
         // Check whether the substitution has to be applied.

@@ -522,8 +522,8 @@ object ConstraintSolver2 {
       // If it's a purification constraint, solve the nested constraints
       // and put the substitution in the tree
       case c@TypeConstraint.Purification(sym, eff1, eff2_0, prov, nested0) =>
-        val nested1 = ListOps.mapWithReuse(nested0)(tree0.apply)
-        val (nested, subst2) = blockEffectUnification(nested1, progress)(scope.enter(sym), renv, flix)
+        // Note: `tree0` has already been applied to `nested0` by the mapping over `rest0a` above.
+        val (nested, subst2) = blockEffectUnification(nested0, progress)(scope.enter(sym), renv, flix)
         branches = branches + (sym -> subst2)
 
         // apply the inner substitution to the to-be-purified effect
