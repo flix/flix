@@ -634,6 +634,7 @@ object ConstraintSolver2 {
     */
   private def foldSubstitutionNested(c: TypeConstraint.Purification)(f: TypeConstraint => (List[TypeConstraint], SubstitutionTree)): (List[TypeConstraint], SubstitutionTree) = {
     val (nested, branch) = foldSubstitution(c.nested)(f)
+    // Performance: Reuse this, if possible.
     if ((nested eq c.nested) && branch.isEmpty) {
       (c :: Nil, SubstitutionTree.empty)
     } else {
