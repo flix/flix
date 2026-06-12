@@ -17,8 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
-import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.PreEffUnification.PreSolveResult
@@ -27,9 +26,6 @@ import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, S
 import ca.uwaterloo.flix.language.phase.unification.shared.CofiniteIntSet
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
-
-import scala.annotation.tailrec
-import scala.collection.mutable
 
 object EffUnification3 {
 
@@ -164,11 +160,11 @@ object EffUnification3 {
     case Type.Pure => SetFormula.Empty
 
     case tpe@Type.Var(_, _) =>
-      val atom = Atom.fromType(tpe)
+      val atom = EffAtom.fromType(tpe)
       val x = m.getForwardIndex(atom)
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound type variable: '$tpe'.", tpe.loc)
       atom match {
-        case Atom.VarFlex(sym) =>
+        case EffAtom.VarFlex(sym) =>
           if (sym.isSlack && !withSlack) {
             // Special Case: We have a slack variable and we want to ignore it. Return the empty set.
             SetFormula.Empty
@@ -176,27 +172,27 @@ object EffUnification3 {
             // General Case: A flexible type variable is a real Set variable.
             SetFormula.Var(x)
           }
-        case Atom.VarRigid(_) => SetFormula.Cst(x) // A rigid variable is a constant.
+        case EffAtom.VarRigid(_) => SetFormula.Cst(x) // A rigid variable is a constant.
         case _ => throw InternalCompilerException(s"Unexpected atom representation ($atom) of variable ($tpe)", tpe.loc)
       }
 
     case tpe@Type.Cst(TypeConstructor.Effect(_, _), _) =>
-      val x = m.getForwardIndex(Atom.fromType(tpe))
+      val x = m.getForwardIndex(EffAtom.fromType(tpe))
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       SetFormula.mkElemSet(x)
 
     case tpe@Type.Cst(TypeConstructor.Region(_), _) =>
-      val x = m.getForwardIndex(Atom.fromType(tpe))
+      val x = m.getForwardIndex(EffAtom.fromType(tpe))
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       SetFormula.mkElemSet(x)
 
     case tpe@Type.AssocType(_, _, _, _) =>
-      val x = m.getForwardIndex(Atom.fromType(tpe))
+      val x = m.getForwardIndex(EffAtom.fromType(tpe))
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound associated type: '$tpe'.", tpe.loc)
       SetFormula.Cst(x)
 
     case tpe@Type.Cst(TypeConstructor.Error(_, _), _) =>
-      val x = m.getForwardIndex(Atom.fromType(tpe))
+      val x = m.getForwardIndex(EffAtom.fromType(tpe))
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound error type: '$tpe'.", tpe.loc)
       SetFormula.Var(x)
 
@@ -228,7 +224,7 @@ object EffUnification3 {
       case (macc, (k, SetFormula.Var(x))) if k == x => macc
       case (macc, (k, v)) =>
         m.getBackward(k) match {
-          case Some(Atom.VarFlex(sym)) =>
+          case Some(EffAtom.VarFlex(sym)) =>
             // A proper var. Add it to the substitution.
             if (sym.isSlack && !withSlack) {
               // Special Case: The slack variable was set to the empty set.
@@ -238,7 +234,7 @@ object EffUnification3 {
               macc + (sym -> fromSetFormula(v, sym.loc))
             }
 
-          case Some(Atom.Error(_)) =>
+          case Some(EffAtom.Error(_)) =>
             // An error type. Don't add it to the substitution.
             macc
 
@@ -279,16 +275,16 @@ object EffUnification3 {
     case SetFormula.Univ => Type.Univ
     case SetFormula.Empty => Type.Pure
     case SetFormula.Cst(c) => m.getBackward(c) match {
-      case Some(atom) => Atom.toType(atom, loc)
+      case Some(atom) => EffAtom.toType(atom, loc)
       case None => throw InternalCompilerException(s"Unexpected unbound constant identifier '$c'", loc)
     }
     case SetFormula.Var(x) => m.getBackward(x) match {
-      case Some(atom) => Atom.toType(atom, loc)
+      case Some(atom) => EffAtom.toType(atom, loc)
       case None => throw InternalCompilerException(s"Unexpected unbound variable identifier '$x'", loc)
     }
     case SetFormula.ElemSet(s) =>
       val elementTypes = s.toList.map(e => m.getBackward(e) match {
-        case Some(atom) => Atom.toType(atom, loc)
+        case Some(atom) => EffAtom.toType(atom, loc)
         case None => throw InternalCompilerException(s"Unexpected unbound element identifier '$e'", loc)
       })
       Type.mkUnion(elementTypes, loc)
@@ -302,132 +298,6 @@ object EffUnification3 {
 
     case SetFormula.Xor(other) =>
       Type.mkSymmetricDiff(other.map(fromSetFormula(_, loc)), loc)
-  }
-
-  /**
-    * Atomic effects that can be represented as atoms in [[SetFormula]]. Atomic effects are
-    * variables, effects, errors, or simple associated effects, described in the grammar below.
-    *
-    * atom ::= VarFlex | VarRigid | Eff | Error | atomAssoc
-    * atomAssoc ::= Assoc atomAssoc | VarRigid
-    */
-  private[unification] sealed trait Atom extends Ordered[Atom] {
-    override def compare(that: Atom): Int = (this, that) match {
-      case (Atom.VarFlex(sym1), Atom.VarFlex(sym2)) => sym1.id - sym2.id
-      case (Atom.VarRigid(sym1), Atom.VarRigid(sym2)) => sym1.id - sym2.id
-      case (Atom.Eff(sym1), Atom.Eff(sym2)) => sym1.compare(sym2)
-      case (Atom.Region(sym1), Atom.Region(sym2)) => sym1.compare(sym2)
-      case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
-        val symCmp = sym1.compare(sym2)
-        if (symCmp != 0) symCmp else arg1.compare(arg2)
-      case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
-      case _ =>
-        def ordinal(a: Atom): Int = a match {
-          case Atom.VarFlex(_) => 0
-          case Atom.VarRigid(_) => 1
-          case Atom.Region(_) => 2
-          case Atom.Eff(_) => 3
-          case Atom.Assoc(_, _) => 4
-          case Atom.Error(_) => 5
-        }
-
-        ordinal(this) - ordinal(that)
-    }
-  }
-
-  private[unification] object Atom {
-    /** Representing a flexible variable. */
-    case class VarFlex(sym: Symbol.KindedTypeVarSym) extends Atom
-
-    /** Representing a rigid variable. */
-    case class VarRigid(sym: Symbol.KindedTypeVarSym) extends Atom
-
-    /** Representing an effect constant. */
-    case class Eff(sym: Symbol.EffSym) extends Atom
-
-    /** Represents an associated effect. */
-    case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom
-
-    /** Represents a region. */
-    case class Region(sym: Symbol.RegionSym) extends Atom
-
-    /** Represents an error type. */
-    case class Error(id: Int) extends Atom
-
-    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
-    @tailrec
-    def fromType(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): Atom = t match {
-      case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
-      case Type.Var(sym, _) => Atom.VarFlex(sym)
-      case Type.Cst(TypeConstructor.Effect(sym, _), _) => Atom.Eff(sym)
-      case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
-      case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
-      case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
-      case Type.Alias(_, _, tpe, _) => fromType(tpe)
-      case _ => throw InvalidType(t)
-    }
-
-    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
-    private def assocFromType(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): Atom = t match {
-      case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
-      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
-      case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
-      case _ => throw InvalidType(t)
-    }
-
-    /**
-      * Adds the valid [[Atom]]s that occur in `t` (according to [[Atom.fromType]]) to `acc`.
-      * Invalid or unrelated types are ignored.
-      *
-      * The validity of atoms are checked top-down, so even though `MyTrait.MyType[x]` is a valid
-      * atom where `x` is rigid, `collectAtoms(MyTrait.MyType[MyTrait.MyType[x] ∪ IO], acc)` will
-      * add nothing since the outermost associated type is not valid. This behaviour aligns with
-      * the needs of [[toSetFormula]].
-      *
-      * Examples:
-      *   - `collectAtoms(Crash ∪ ef, acc)` adds `Eff(Crash)` and `VarFlex(ef)` (if
-      *     [[RigidityEnv.isRigid]] is false for `ef`)
-      *   - `collectAtoms(Indexable.Aef[Error], acc)` adds nothing
-      */
-    def collectAtoms(t: Type, acc: mutable.HashSet[Atom])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
-      case Type.Var(sym, _) if renv.isRigid(sym) => acc += Atom.VarRigid(sym)
-      case Type.Var(sym, _) => acc += Atom.VarFlex(sym)
-      case Type.Cst(TypeConstructor.Effect(sym, _), _) => acc += Atom.Eff(sym)
-      case Type.Cst(TypeConstructor.Region(sym), _) => acc += Atom.Region(sym)
-      case Type.Cst(TypeConstructor.Error(id, _), _) => acc += Atom.Error(id)
-      case Type.Apply(tpe1, tpe2, _) =>
-        collectAtoms(tpe1, acc)
-        collectAtoms(tpe2, acc)
-      case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc)
-      case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).foreach(acc += _)
-      case _ => ()
-    }
-
-    /**
-      * Returns the [[Atom]] of `t` if it is a valid associated [[Atom]] (according to
-      * [[Atom.assocFromType]]). Invalid or unrelated types return [[None]].
-      */
-    private def getAssocAtoms(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): Option[Atom] = t match {
-      case Type.Var(sym, _) if renv.isRigid(sym) => Some(Atom.VarRigid(sym))
-      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) =>
-        getAssocAtoms(arg).map(Atom.Assoc(sym, _))
-      case Type.Alias(_, _, tpe, _) => getAssocAtoms(tpe)
-      case _ => None
-    }
-
-    /**
-      * Returns the [[Type]] represented by `atom` with location `loc`. The kind of errors and
-      * associated types are set to be [[Kind.Eff]].
-      */
-    def toType(atom: Atom, loc: SourceLocation)(implicit m: AtomBimap): Type = atom match {
-      case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)
-      case Atom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
-      case Atom.VarRigid(sym) => Type.Var(sym, loc)
-      case Atom.VarFlex(sym) => Type.Var(sym, loc)
-      case Atom.Assoc(sym, arg0) =>
-        Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
-      case Atom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
-    }
   }
 
   /**
@@ -461,13 +331,4 @@ object EffUnification3 {
       // The type is invalid. We cannot simplify it.
       tpe
   }
-
-  /**
-    * An exception used for partial functions that convert [[Type]] into [[Atom]].
-    *
-    * This exception should not leak outside this phase - it should always be caught. It is used to
-    * avoid having [[Option]] types on recursive functions.
-    */
-  private case class InvalidType(tpe: Type) extends RuntimeException
-
 }

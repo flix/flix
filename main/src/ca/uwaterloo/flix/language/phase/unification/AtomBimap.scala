@@ -18,40 +18,39 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
-import ca.uwaterloo.flix.language.phase.unification.EffUnification3.Atom
 
 import scala.collection.mutable
 
 private object AtomBimap {
 
   /**
-    * Returns an [[AtomBimap]] numbering the [[Atom]]s of `eqs` using [[Atom.collectAtoms]].
+    * Returns an [[AtomBimap]] numbering the [[EffAtom]]s of `eqs` using [[EffAtom.collectAtoms]].
     *
     * The atoms are sorted before numbering: the assignment must be deterministic across
     * runs since it determines the solving order in
     * [[ca.uwaterloo.flix.language.phase.unification.set.SetUnification]].
     */
   def fromConstraints(eqs: List[TypeConstraint.Equality])(implicit scope: RegionScope, renv: RigidityEnv): AtomBimap = {
-    val buf = mutable.HashSet.empty[Atom]
+    val buf = mutable.HashSet.empty[EffAtom]
     for (eq <- eqs) {
-      Atom.collectAtoms(eq.tpe1, buf)
-      Atom.collectAtoms(eq.tpe2, buf)
+      EffAtom.collectAtoms(eq.tpe1, buf)
+      EffAtom.collectAtoms(eq.tpe2, buf)
     }
     fromAtoms(buf)
   }
 
-  /** Returns an [[AtomBimap]] numbering the [[Atom]]s of `tpe` using [[Atom.collectAtoms]]. */
+  /** Returns an [[AtomBimap]] numbering the [[EffAtom]]s of `tpe` using [[EffAtom.collectAtoms]]. */
   def fromType(tpe: Type)(implicit scope: RegionScope, renv: RigidityEnv): AtomBimap = {
-    val buf = mutable.HashSet.empty[Atom]
-    Atom.collectAtoms(tpe, buf)
+    val buf = mutable.HashSet.empty[EffAtom]
+    EffAtom.collectAtoms(tpe, buf)
     fromAtoms(buf)
   }
 
   /** Returns an [[AtomBimap]] numbering the given atoms `0..n-1` in sorted order. */
-  private def fromAtoms(atoms: mutable.HashSet[Atom]): AtomBimap = {
+  private def fromAtoms(atoms: mutable.HashSet[EffAtom]): AtomBimap = {
     val arr = atoms.toArray
-    java.util.Arrays.sort(arr, implicitly[Ordering[Atom]])
-    var forward = Map.empty[Atom, Int]
+    java.util.Arrays.sort(arr, implicitly[Ordering[EffAtom]])
+    var forward = Map.empty[EffAtom, Int]
     var i = 0
     while (i < arr.length) {
       forward = forward.updated(arr(i), i)
@@ -62,17 +61,17 @@ private object AtomBimap {
 }
 
 /**
-  * A bidirectional mapping between [[Atom]]s and dense indices `0..n-1`.
+  * A bidirectional mapping between [[EffAtom]]s and dense indices `0..n-1`.
   *
   * Performance: The forward map is hash-based and the backward map is an array, avoiding
   * the ordered-comparison cost of sorted maps on the hot path of effect unification. The
   * index assignment itself must be deterministic; it is always derived from atoms in
   * sorted order.
   */
-private final class AtomBimap(forward: Map[Atom, Int], backward: Array[Atom]) {
+private final class AtomBimap(forward: Map[EffAtom, Int], backward: Array[EffAtom]) {
 
   /** Returns the index of `a`, or -1 if absent (allocation-free). */
-  def getForwardIndex(a: Atom): Int = forward.getOrElse(a, -1)
+  def getForwardIndex(a: EffAtom): Int = forward.getOrElse(a, -1)
 
   /**
     * Optionally returns the atom at index `i`.
@@ -80,6 +79,6 @@ private final class AtomBimap(forward: Map[Atom, Int], backward: Array[Atom]) {
     * Callers probe indices outside `0..n-1` (e.g. slack variables introduced during
     * solving) and rely on `None` for those — the bounds check is load-bearing.
     */
-  def getBackward(i: Int): Option[Atom] =
+  def getBackward(i: Int): Option[EffAtom] =
     if (i >= 0 && i < backward.length) Some(backward(i)) else None
 }
