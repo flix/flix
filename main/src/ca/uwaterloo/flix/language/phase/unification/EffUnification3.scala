@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.unification.PreEffUnification.PreSolveResult
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.language.phase.unification.shared.CofiniteIntSet
@@ -70,6 +71,33 @@ object EffUnification3 {
     // Add to implicit context.
     implicit val scopeImplicit: RegionScope = scope
     implicit val renvImplicit: RigidityEnv = renv
+
+    //
+    // Phase 0: Try to solve the system syntactically if all equations are atomic.
+    //
+    if (EnableSmartSubeffecting) {
+      PreEffUnification.preSolve(eqs) match {
+        case PreSolveResult.Solved(subst) =>
+          // The whole system was atomic and exactly solvable.
+          return Result.Ok(subst)
+        case PreSolveResult.Partial(subst0, rest) =>
+          // The atomic equations were eliminated; try to solve the (smaller) remainder
+          // exactly. On failure we redo the full system below, so that subeffecting
+          // (which may add slack to any equation) sees the original equations.
+          try {
+            val bimap0: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromConstraints(rest))
+            val equations = toEquations(rest, withSlack = false)(scope, renv, bimap0)
+            val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
+            if (unsolvedEqns.isEmpty) {
+              return Result.Ok(fromSetSubst(resultSubst)(withSlack = false, m = bimap0) @@ subst0)
+            }
+            // Otherwise we fall through and redo the full system.
+          } catch {
+            case InvalidType(_) => // We fall through.
+          }
+        case PreSolveResult.Opaque => () // Fall through to full solving.
+      }
+    }
 
     // Choose a unique number for each atom.
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromConstraints(eqs))
