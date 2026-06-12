@@ -64,7 +64,10 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
   private def visitType(t: Type): Type = t match {
     // NB: The order of cases has been determined by code coverage analysis.
-    case x: Type.Var => m.getOrElse(x.sym, x)
+    case x: Type.Var =>
+      // Performance: A non-capturing default avoids a thunk allocation per lookup.
+      val tpe = m.getOrElse(x.sym, null)
+      if (tpe == null) x else tpe
 
     case Type.Cst(_, _) => t
 
@@ -165,8 +168,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     // Case 3: Merge the two substitutions.
 
     // Add all bindings in `that`. (Applying the current substitution).
+    // Performance: `foreachEntry` avoids a tuple allocation per binding.
     var result = that.m
-    for ((x, tpe) <- that.m) {
+    that.m.foreachEntry { (x, tpe) =>
       val t = this.apply(tpe)
       if (!(t eq tpe)) {
         result = result.updated(x, t)
@@ -174,7 +178,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     }
 
     // Add all bindings in `this` that are not in `that`.
-    for ((x, tpe) <- this.m) {
+    this.m.foreachEntry { (x, tpe) =>
       if (!that.m.contains(x)) {
         result = result.updated(x, tpe)
       }

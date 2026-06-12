@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
+import ca.uwaterloo.flix.util.collection.ListOps
+
 import scala.collection.immutable.IntMap
 
 object SetSubstitution {
@@ -44,34 +46,43 @@ case class SetSubstitution(m: IntMap[SetFormula]) {
 
   /** Applies `this` substitution to `f`. Replaces [[SetFormula.Var]] according to `this`. */
   def apply(f: SetFormula): SetFormula = {
-    def visit(f0: SetFormula): SetFormula = f0 match {
-      // Maintain and exploit reference equality for performance.
-      case SetFormula.Univ => SetFormula.Univ
-
-      case SetFormula.Empty => SetFormula.Empty
-
-      case SetFormula.Cst(_) => f0
-
-      case SetFormula.ElemSet(_) => f0
-
-      case SetFormula.Var(x) => m.getOrElse(x, f0)
-
-      case SetFormula.Compl(f1) =>
-        val inner = visit(f1)
-        if (inner eq f1) f0 else SetFormula.mkCompl(inner)
-
-      case SetFormula.Inter(l) => SetFormula.Inter(l.map(visit))
-
-      case SetFormula.Union(l) => SetFormula.Union(l.map(visit))
-
-      case SetFormula.Xor(l) => SetFormula.mkXorAll(l.map(visit))
-    }
-
     if (m.isEmpty) {
       f
     } else {
       visit(f)
     }
+  }
+
+  private def visit(f0: SetFormula): SetFormula = f0 match {
+    // Maintain and exploit reference equality for performance.
+    case SetFormula.Univ => SetFormula.Univ
+
+    case SetFormula.Empty => SetFormula.Empty
+
+    case SetFormula.Cst(_) => f0
+
+    case SetFormula.ElemSet(_) => f0
+
+    case SetFormula.Var(x) =>
+      // Performance: A non-capturing default avoids a thunk allocation per lookup.
+      val t = m.getOrElse(x, null)
+      if (t == null) f0 else t
+
+    case SetFormula.Compl(f1) =>
+      val inner = visit(f1)
+      if (inner eq f1) f0 else SetFormula.mkCompl(inner)
+
+    case SetFormula.Inter(l) =>
+      val inner = l.mapWithReuse(visit)
+      if (inner eq l) f0 else SetFormula.Inter(inner)
+
+    case SetFormula.Union(l) =>
+      val inner = l.mapWithReuse(visit)
+      if (inner eq l) f0 else SetFormula.Union(inner)
+
+    case SetFormula.Xor(l) =>
+      val inner = ListOps.mapWithReuse(l)(visit)
+      if (inner eq l) f0 else SetFormula.mkXorAll(inner)
   }
 
   /** Applies `this` to both sides of `eq`. */
@@ -97,11 +108,14 @@ case class SetSubstitution(m: IntMap[SetFormula]) {
     else if (that.m.isEmpty)
       this
     else {
-      var result = IntMap.empty[SetFormula]
-
       // Add all bindings in `that` with `this` applied to the result.
+      // Performance: Start from `that.m` and only update changed bindings.
+      var result = that.m
       for ((x, f) <- that.m) {
-        result = result.updated(x, this.apply(f))
+        val t = this.apply(f)
+        if (!(t eq f)) {
+          result = result.updated(x, t)
+        }
       }
 
       // Add all bindings in `this` that are not in `that`.
