@@ -79,26 +79,24 @@ object PreEffUnification {
     while (queue.nonEmpty) {
       val eq = queue.head
       queue = queue.tail
-      var deferred = true
       if (isAtom(eq.tpe1) && isAtom(eq.tpe2)) {
         val t1 = resolve(eq.tpe1, m)
         val t2 = resolve(eq.tpe2, m)
         if (sameAtom(t1, t2)) {
-          deferred = false
+          () // The equation is trivially satisfied.
         } else {
           (t1, t2) match {
             case (_, Type.Var(sym, _)) if renv.isFlexible(sym) =>
               m = m.updated(sym, t1)
-              deferred = false
             case (Type.Var(sym, _), _) if renv.isFlexible(sym) =>
               m = m.updated(sym, t2)
-              deferred = false
             case _ =>
-              () // Atomic conflict or rigid variables: defer to the full solver.
+              // Atomic conflict or rigid variables: defer to the full solver.
+              rest += eq
           }
         }
-      }
-      if (deferred) {
+      } else {
+        // Non-atomic equation: defer to the full solver.
         rest += eq
       }
     }
