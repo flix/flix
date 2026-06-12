@@ -104,14 +104,7 @@ object PreEffUnification {
     if (m.isEmpty) {
       if (restEmpty) PreSolveResult.Solved(Substitution.empty) else PreSolveResult.Opaque
     } else {
-      // Path-compress the ranges so the substitution needs no repeated application.
-      // Performance: Ranges are resolved at insertion time, so an entry is stale only if its
-      // range variable was bound later. Skip the rebuild unless some entry needs compression.
-      val needsCompression = m.exists {
-        case (_, Type.Var(sym, _)) => m.contains(sym)
-        case _ => false
-      }
-      val subst = Substitution(if (needsCompression) m.map { case (k, v) => k -> resolve(v, m) } else m)
+      val subst = mkSubstitution(m)
       if (restEmpty) {
         PreSolveResult.Solved(subst)
       } else {
@@ -125,6 +118,22 @@ object PreEffUnification {
         PreSolveResult.Partial(subst, restEqs)
       }
     }
+  }
+
+  /**
+    * Returns a [[Substitution]] from the binding map `m` with every range path-compressed,
+    * so the substitution needs no repeated application.
+    *
+    * Performance: Ranges are resolved at insertion time, so an entry is stale only if its
+    * range variable was bound later. Skips the rebuild unless some entry needs compression.
+    */
+  private def mkSubstitution(m: Map[Symbol.KindedTypeVarSym, Type]): Substitution = {
+    val needsCompression = m.exists {
+      case (_, Type.Var(sym, _)) => m.contains(sym)
+      case _ => false
+    }
+    val compressed = if (needsCompression) m.map { case (k, v) => k -> resolve(v, m) } else m
+    Substitution(compressed)
   }
 
   /**
