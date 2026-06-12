@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.{RigidityEnv, Symbol, Type, TypeConstructo
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
   * A syntactic pre-solver for effect equations.
@@ -71,8 +72,9 @@ object PreEffUnification {
   def preSolve(eqs: List[TypeConstraint.Equality])(implicit scope: RegionScope, renv: RigidityEnv): PreSolveResult = {
     var m = Map.empty[Symbol.KindedTypeVarSym, Type]
 
-    val rest = List.newBuilder[TypeConstraint.Equality]
-    var restEmpty = true
+    // The equations that could not be eliminated and must go to the full solver.
+    val leftover = mutable.ListBuffer.empty[TypeConstraint.Equality]
+    // The equations that remain to be processed.
     var rem = eqs
     while (rem.nonEmpty) {
       val eq = rem.head
@@ -97,24 +99,23 @@ object PreEffUnification {
         }
       }
       if (deferred) {
-        rest += eq
-        restEmpty = false
+        leftover += eq
       }
     }
     if (m.isEmpty) {
-      if (restEmpty) PreSolveResult.Solved(Substitution.empty) else PreSolveResult.Opaque
+      if (leftover.isEmpty) PreSolveResult.Solved(Substitution.empty) else PreSolveResult.Opaque
     } else {
       val subst = mkSubstitution(m)
-      if (restEmpty) {
+      if (leftover.isEmpty) {
         PreSolveResult.Solved(subst)
       } else {
         // Apply the eliminations to the remaining equations.
-        val restEqs = rest.result().map { eq =>
+        val leftoverEqs = leftover.result().map { eq =>
           val t1 = subst(eq.tpe1)
           val t2 = subst(eq.tpe2)
           eq.renew(t1, t2)
         }
-        PreSolveResult.Partial(subst, restEqs)
+        PreSolveResult.Partial(subst, leftoverEqs)
       }
     }
   }
