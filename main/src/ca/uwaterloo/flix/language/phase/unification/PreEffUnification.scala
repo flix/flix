@@ -71,32 +71,6 @@ object PreEffUnification {
   def preSolve(eqs: List[TypeConstraint.Equality])(implicit scope: RegionScope, renv: RigidityEnv): PreSolveResult = {
     var m = Map.empty[Symbol.KindedTypeVarSym, Type]
 
-    // Follows variable bindings to their representative. Terminates since bindings are acyclic.
-    @tailrec
-    def resolve(t: Type): Type = t match {
-      case Type.Var(sym, _) => m.get(sym) match {
-        case Some(t2) => resolve(t2)
-        case None => t
-      }
-      case _ => t
-    }
-
-    def isAtom(t: Type): Boolean = t match {
-      case Type.Var(_, _) => true
-      case Type.Cst(TypeConstructor.Pure, _) => true
-      case Type.Cst(TypeConstructor.Effect(_, _), _) => true
-      case Type.Cst(TypeConstructor.Region(_), _) => true
-      case _ => false
-    }
-
-    def sameAtom(t1: Type, t2: Type): Boolean = (t1, t2) match {
-      case (Type.Var(s1, _), Type.Var(s2, _)) => s1 == s2
-      case (Type.Cst(TypeConstructor.Pure, _), Type.Cst(TypeConstructor.Pure, _)) => true
-      case (Type.Cst(TypeConstructor.Effect(s1, _), _), Type.Cst(TypeConstructor.Effect(s2, _), _)) => s1 == s2
-      case (Type.Cst(TypeConstructor.Region(s1), _), Type.Cst(TypeConstructor.Region(s2), _)) => s1 == s2
-      case _ => false
-    }
-
     val rest = List.newBuilder[TypeConstraint.Equality]
     var restEmpty = true
     var rem = eqs
@@ -105,8 +79,8 @@ object PreEffUnification {
       rem = rem.tail
       var deferred = true
       if (isAtom(eq.tpe1) && isAtom(eq.tpe2)) {
-        val t1 = resolve(eq.tpe1)
-        val t2 = resolve(eq.tpe2)
+        val t1 = resolve(eq.tpe1, m)
+        val t2 = resolve(eq.tpe2, m)
         if (sameAtom(t1, t2)) {
           deferred = false
         } else {
@@ -137,7 +111,7 @@ object PreEffUnification {
         case (_, Type.Var(sym, _)) => m.contains(sym)
         case _ => false
       }
-      val subst = Substitution(if (needsCompression) m.map { case (k, v) => k -> resolve(v) } else m)
+      val subst = Substitution(if (needsCompression) m.map { case (k, v) => k -> resolve(v, m) } else m)
       if (restEmpty) {
         PreSolveResult.Solved(subst)
       } else {
@@ -151,6 +125,44 @@ object PreEffUnification {
         PreSolveResult.Partial(subst, restEqs)
       }
     }
+  }
+
+  /**
+    * Returns `true` if `t` is an atom: a variable, `Pure`, an effect constant, or a region.
+    */
+  private def isAtom(t: Type): Boolean = t match {
+    case Type.Var(_, _) => true
+    case Type.Cst(TypeConstructor.Pure, _) => true
+    case Type.Cst(TypeConstructor.Effect(_, _), _) => true
+    case Type.Cst(TypeConstructor.Region(_), _) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if `t1` and `t2` are the same atom, ignoring source locations.
+    *
+    * Assumes that `t1` and `t2` satisfy [[isAtom]].
+    */
+  private def sameAtom(t1: Type, t2: Type): Boolean = (t1, t2) match {
+    case (Type.Var(s1, _), Type.Var(s2, _)) => s1 == s2
+    case (Type.Cst(TypeConstructor.Pure, _), Type.Cst(TypeConstructor.Pure, _)) => true
+    case (Type.Cst(TypeConstructor.Effect(s1, _), _), Type.Cst(TypeConstructor.Effect(s2, _), _)) => s1 == s2
+    case (Type.Cst(TypeConstructor.Region(s1), _), Type.Cst(TypeConstructor.Region(s2), _)) => s1 == s2
+    case _ => false
+  }
+
+  /**
+    * Follows variable bindings in `m` to the representative of `t`.
+    *
+    * Terminates since the bindings in `m` are acyclic.
+    */
+  @tailrec
+  private def resolve(t: Type, m: Map[Symbol.KindedTypeVarSym, Type]): Type = t match {
+    case Type.Var(sym, _) => m.get(sym) match {
+      case Some(t2) => resolve(t2, m)
+      case None => t
+    }
+    case _ => t
   }
 
 }
