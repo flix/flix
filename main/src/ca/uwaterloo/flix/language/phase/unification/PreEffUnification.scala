@@ -73,12 +73,12 @@ object PreEffUnification {
     var m = Map.empty[Symbol.KindedTypeVarSym, Type]
 
     // The equations that could not be eliminated and must go to the full solver.
-    val leftover = mutable.ListBuffer.empty[TypeConstraint.Equality]
+    val rest = mutable.ListBuffer.empty[TypeConstraint.Equality]
     // The equations that remain to be processed.
-    var rem = eqs
-    while (rem.nonEmpty) {
-      val eq = rem.head
-      rem = rem.tail
+    var queue = eqs
+    while (queue.nonEmpty) {
+      val eq = queue.head
+      queue = queue.tail
       var deferred = true
       if (isAtom(eq.tpe1) && isAtom(eq.tpe2)) {
         val t1 = resolve(eq.tpe1, m)
@@ -99,23 +99,23 @@ object PreEffUnification {
         }
       }
       if (deferred) {
-        leftover += eq
+        rest += eq
       }
     }
     if (m.isEmpty) {
-      if (leftover.isEmpty) PreSolveResult.Solved(Substitution.empty) else PreSolveResult.Opaque
+      if (rest.isEmpty) PreSolveResult.Solved(Substitution.empty) else PreSolveResult.Opaque
     } else {
       val subst = mkSubstitution(m)
-      if (leftover.isEmpty) {
+      if (rest.isEmpty) {
         PreSolveResult.Solved(subst)
       } else {
         // Apply the eliminations to the remaining equations.
-        val leftoverEqs = leftover.result().map { eq =>
+        val restEqs = rest.result().map { eq =>
           val t1 = subst(eq.tpe1)
           val t2 = subst(eq.tpe2)
           eq.renew(t1, t2)
         }
-        PreSolveResult.Partial(subst, leftoverEqs)
+        PreSolveResult.Partial(subst, restEqs)
       }
     }
   }
