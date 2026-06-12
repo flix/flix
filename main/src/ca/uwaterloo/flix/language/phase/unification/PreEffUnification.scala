@@ -112,8 +112,7 @@ object PreEffUnification {
         val restEqs = rest.result().map { eq =>
           val t1 = subst(eq.tpe1)
           val t2 = subst(eq.tpe2)
-          // Performance: Reuse eq, if possible.
-          if ((t1 eq eq.tpe1) && (t2 eq eq.tpe2)) eq else TypeConstraint.Equality(t1, t2, eq.prov)
+          eq.renew(t1, t2)
         }
         PreSolveResult.Partial(subst, restEqs)
       }

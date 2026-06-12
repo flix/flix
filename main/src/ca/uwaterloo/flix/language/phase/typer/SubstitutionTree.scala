@@ -43,15 +43,12 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
     }
 
     constr match {
-      case TypeConstraint.Equality(tpe1, tpe2, prov) =>
+      case eq@TypeConstraint.Equality(tpe1, tpe2, _) =>
         // Check whether the substitution has to be applied.
         val t1 = if (tpe1.typeVars.isEmpty) tpe1 else root(tpe1)
         val t2 = if (tpe2.typeVars.isEmpty) tpe2 else root(tpe2)
-        // Performance: Reuse this, if possible.
-        if ((t1 eq tpe1) && (t2 eq tpe2))
-          constr
-        else
-          TypeConstraint.Equality(t1, t2, prov)
+        // Performance: Reuse eq, if possible.
+        eq.renew(t1, t2)
 
       case TypeConstraint.Trait(sym, tpe, loc) =>
         // Check whether the substitution has to be applied.
