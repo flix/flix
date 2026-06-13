@@ -308,11 +308,13 @@ object Typer {
 
       val defs = defs0.map {
         defn =>
-          // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
-          // If no effect is specified, we assume the function is pure
-          val eff1 = defn.spec.eff.getOrElse(Type.Pure)
-          val open = shouldSubeffect(eff1, Subeffecting.InsDefs)
-          visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
+          flix.profile(defn.sym, defn.loc) {
+            // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
+            // If no effect is specified, we assume the function is pure
+            val eff1 = defn.spec.eff.getOrElse(Type.Pure)
+            val open = shouldSubeffect(eff1, Subeffecting.InsDefs)
+            visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
+          }
       }
       val typedEconstrs = econstrs.map(ec => TypedAst.EqualityConstraint(Type.AssocType(ec.symUse, ec.tpe1, ec.tpe2.kind, ec.loc), ec.tpe2, ec.loc))
       TypedAst.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, typedEconstrs, assocs, defs, ns, loc)

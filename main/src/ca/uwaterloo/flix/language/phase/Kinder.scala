@@ -253,7 +253,7 @@ object Kinder {
           visitEqualityConstraint(symUse, arg, tpe2, loc, kenv, root)
       }
       val assocs = assocs0.map(visitAssocTypeDef(_, kind, kenv, root))
-      val defs = defs0.map(visitDef(_, kenv, root))
+      val defs = defs0.map(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn, kenv, root)))
       KindedAst.Instance(doc, ann, mod, symUse, tparams, t, tconstrs, econstrs, assocs, defs, ns, loc)
   }
 
