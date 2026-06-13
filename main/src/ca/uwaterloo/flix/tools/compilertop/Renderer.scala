@@ -41,6 +41,8 @@ import scala.collection.mutable
   *                        `"done"`, or `"starting"`).
   * @param phaseTimersSize raw `flix.phaseTimers.size`; the renderer caps to
   *                        [[Renderer.TotalPhases]] for the progress bar.
+  * @param coverage        accounted/unaccounted phase-wall split for the
+  *                        dashboard coverage line (see [[Model.Coverage]]).
   * @param activeFilter    user-toggled phase filter (drives the legend).
   * @param activeSort      user-toggled sort key (drives header underlines).
   * @param activeView      user-toggled top-level view: defs table, modules
@@ -65,7 +67,8 @@ final case class FrameState(parallelism: Int,
                             activeView: View,
                             layout: Layout,
                             visible: Vector[DefnStats],
-                            modules: Vector[ModuleStats])
+                            modules: Vector[ModuleStats],
+                            coverage: Coverage)
 
 object Renderer {
 
@@ -265,6 +268,7 @@ final class Renderer {
 
     renderDashboard(sb, state)
     renderStats(sb, state)
+    renderCoverage(sb, state)
     sb.append('\n')
 
     state.activeView match {
@@ -407,6 +411,47 @@ final class Renderer {
     sb.append(tipStyled)
     sb.append('\n')
   }
+
+  /**
+    * Coverage line: how much sequential phase wall-clock time lives in phases
+    * the per-def table attributes nothing to. `accounted` / `unaccounted` are
+    * percentages of total phase wall time, followed by the biggest unaccounted
+    * phases by their wall share so the user can see *where* the blind spots are
+    * (e.g. `Namer`, `Instances`). The unaccounted figure is colored by
+    * magnitude. Always emits exactly one line so the table below doesn't jump
+    * as phases complete; before any phase finishes it shows a placeholder.
+    *
+    * These percentages are wall-time, deliberately kept apart from the
+    * thread-summed `time` column in the tables — see [[Model.Coverage]].
+    */
+  private def renderCoverage(sb: StringBuilder, state: FrameState): Unit = {
+    val cov = state.coverage
+    val total = cov.accountedNanos + cov.unaccountedNanos
+    sb.append("  ")
+    if (total <= 0L) {
+      sb.append(dim("coverage  (awaiting attributable phases)"))
+      sb.append('\n')
+      return
+    }
+    val unaccPct = 100.0 * cov.unaccountedNanos / total
+    val accPct = 100.0 - unaccPct
+    sb.append(dim("accounted "))
+    sb.append(f"$accPct%5.1f%%")
+    sb.append(dim("   unaccounted "))
+    sb.append(styleUnaccounted(f"$unaccPct%5.1f%%", unaccPct))
+    if (cov.uncovered.nonEmpty) {
+      val parts = cov.uncovered.iterator.take(3).map {
+        case (phase, wall) => f"$phase ${100.0 * wall / total}%.0f%%"
+      }.mkString(" · ")
+      sb.append(dim("   "))
+      sb.append(dim(truncate(parts, (state.layout.totalWidth - 36).max(12))))
+    }
+    sb.append('\n')
+  }
+
+  /** Colors the unaccounted-percentage field: green when low, yellow mid, red high. */
+  private def styleUnaccounted(s: String, pct: Double): String =
+    if (pct >= 25.0) red(s) else if (pct >= 10.0) yellow(s) else green(s)
 
   /**
     * Prints the parametrized header row + the divider underneath it. The

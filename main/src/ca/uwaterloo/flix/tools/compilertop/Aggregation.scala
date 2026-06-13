@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.compilertop
 
+import ca.uwaterloo.flix.api.PhaseTime
 import ca.uwaterloo.flix.tools.compilertop.Formatting.lineCount
 import ca.uwaterloo.flix.tools.compilertop.Model.*
 import ca.uwaterloo.flix.tools.compilertop.Profiler.DefnStats
@@ -56,6 +57,38 @@ object Aggregation {
   /** Sums `byPhaseCount` entries for the given phase set. */
   def sumPhaseCounts(byPhaseCount: Map[String, Long], phases: Set[String]): Long =
     byPhaseCount.iterator.collect { case (p, n) if phases.contains(p) => n }.sum
+
+  /**
+    * Splits attributable phase wall time into accounted vs unaccounted for the
+    * dashboard coverage line — see [[Model.Coverage]] for the semantics and
+    * the why-not-subtract-thread-time caveat.
+    *
+    * A phase is accounted if *any* def recorded time in it. Phases in
+    * [[Model.NonAttributablePhases]] are dropped entirely (they have no per-def
+    * unit), so what remains in `unaccounted` is only closeable blind spots.
+    * Phase wall times are summed by name first, since a phase can run more than
+    * once (e.g. `OccurrenceAnalyzer` / `Inliner` across optimizer rounds). The
+    * unknown-phase bucket `"?"` never appears as a real phase-timer entry, so it
+    * can't leak in.
+    */
+  def computeCoverage(snapshot: Vector[DefnStats], phaseTimers: Vector[PhaseTime]): Coverage = {
+    val accounted = snapshot.iterator.flatMap(_.byPhase.iterator.collect { case (p, n) if n > 0L => p }).toSet
+
+    val wallByPhase = phaseTimers.foldLeft(Map.empty[String, Long]) {
+      case (acc, pt) => acc.updated(pt.phase, acc.getOrElse(pt.phase, 0L) + pt.time)
+    }
+
+    var accountedNanos = 0L
+    var unaccountedNanos = 0L
+    var uncovered = List.empty[(String, Long)]
+    wallByPhase.foreach {
+      case (phase, _) if NonAttributablePhases.contains(phase) => // excluded: no per-def unit
+      case (phase, wall) =>
+        if (accounted.contains(phase)) accountedNanos += wall
+        else { unaccountedNanos += wall; uncovered ::= (phase -> wall) }
+    }
+    Coverage(accountedNanos, unaccountedNanos, uncovered.sortBy { case (_, w) => -w })
+  }
 
   /**
     * Returns the descending sort key for a def under the given sort mode.

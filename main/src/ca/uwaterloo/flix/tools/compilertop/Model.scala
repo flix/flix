@@ -96,6 +96,29 @@ object Model {
   )
 
   /**
+    * Phases that inherently have no per-`DefnSym` unit to attribute time to, so
+    * the dashboard coverage line excludes them from the accounted / unaccounted
+    * split rather than reporting their wall time as a (false) closeable blind
+    * spot. Three structural reasons, mirroring the coverage table in
+    * [[Profiler]]:
+    *
+    *   - Pre-naming passes (`Reader`, `Lexer`, `Parser2`, `Weeder2`, `Desugar`,
+    *     `Namer`) run before any `DefnSym` exists, so there is no key to attribute.
+    *   - Pure filter passes (`TreeShaker1`, `TreeShaker2`) do no per-def work.
+    *   - The `Optimizer` fixpoint wrapper does no work of its own; its time is
+    *     captured transitively through the `OccurrenceAnalyzer` / `Inliner` phases
+    *     it drives, so counting it here would be redundant.
+    *
+    * Phases that *could* be attributed but currently aren't (`Resolver`,
+    * `Deriver`, `Instances`) are deliberately NOT in this set — they are real,
+    * closeable blind spots and belong in the unaccounted tally.
+    */
+  val NonAttributablePhases: Set[String] = Set(
+    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar", "Namer",
+    "TreeShaker1", "Optimizer", "TreeShaker2",
+  )
+
+  /**
     * Selects the descending sort key applied to the def and module tables.
     * Each option surfaces a different kind of suspect, so the same def can
     * top one ranking and not another.
@@ -162,4 +185,30 @@ object Model {
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
   }
+
+  /**
+    * Phase-level wall-time reconciliation backing the dashboard coverage line.
+    *
+    * The compiler runs its phases sequentially and `Flix.phaseTimers` records
+    * each one's single-threaded wall time. A phase is *accounted* if the per-def
+    * profiler attributed any time to it, and *unaccounted* otherwise — meaning
+    * its whole wall slice is invisible in the per-def and per-module tables.
+    *
+    * This split is intentionally binary (does the table see the phase *at all*),
+    * not a measure of how complete the attribution is: a partially-instrumented
+    * phase like CodeGen still reads as accounted. Crucially, we never subtract
+    * the profiler's thread-summed nanoseconds from the single-threaded phase wall
+    * time — within a parallel phase the former can exceed the latter several-fold,
+    * so the difference is not a meaningful "unattributed" quantity.
+    *
+    * Phases in [[NonAttributablePhases]] are excluded from both figures: they have
+    * no per-def unit by construction, so the denominator here is "attributable
+    * phase wall time", and `unaccounted` therefore reflects only closeable blind
+    * spots (e.g. `Instances`, `Deriver`).
+    *
+    * @param accountedNanos   summed wall time of phases with per-def attribution.
+    * @param unaccountedNanos summed wall time of phases with none.
+    * @param uncovered        `(phase, wallNanos)` per unaccounted phase, descending by wall.
+    */
+  final case class Coverage(accountedNanos: Long, unaccountedNanos: Long, uncovered: List[(String, Long)])
 }

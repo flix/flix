@@ -41,12 +41,12 @@ object CompilerTop {
 
 
   /**
-    * Fixed-overhead rows: blank + 2 dashboard/stats lines + blank +
-    * 2 table-chrome (header + divider) + 1 cursor-parking row. Only one
+    * Fixed-overhead rows: blank + 2 dashboard/stats lines + 1 coverage line +
+    * blank + 2 table-chrome (header + divider) + 1 cursor-parking row. Only one
     * table is visible at a time now, so there is no second-table chrome to
     * reserve.
     */
-  private val ChromeRows: Int = 7
+  private val ChromeRows: Int = 8
 
   /**
     * Reserved breathing room below the rendered view, on top of the
@@ -344,11 +344,16 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     // Only build the rows the active view actually renders: the def list when
     // on Defs / Help, the module aggregate when on Modules. `snap` is computed
     // either way since module aggregation rolls up from it.
-    val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(s => -defSortKey(s, activeSort))
+    val raw = profiler.snapshot()
+    val snap = applyFilter(raw, activeFilter).sortBy(s => -defSortKey(s, activeSort))
     val visible = if (activeView == View.Modules) Vector.empty else snap.take(tableRows)
     val modules = if (activeView == View.Modules) aggregateByModule(snap, activeSort).take(tableRows) else Vector.empty
 
-    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules)
+    // Coverage is computed from the unfiltered snapshot so the accounted /
+    // unaccounted split is independent of the active phase filter.
+    val coverage = computeCoverage(raw, flix.phaseTimers.toVector)
+
+    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules, coverage)
   }
 
 }
