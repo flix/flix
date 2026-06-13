@@ -473,10 +473,12 @@ object Resolver {
     */
   private def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Def = d0 match {
     case NamedAst.Declaration.Def(sym, spec0, exp0, loc) =>
-      val spec = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
-      val scp = scp0 ++ mkSpecScp(spec)
-      val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
-      ResolvedAst.Declaration.Def(sym, spec, exp, loc)
+      flix.profile(sym, loc) {
+        val spec = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
+        val scp = scp0 ++ mkSpecScp(spec)
+        val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
+        ResolvedAst.Declaration.Def(sym, spec, exp, loc)
+      }
   }
 
   /**
