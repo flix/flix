@@ -62,6 +62,11 @@ Branch names must be prefixed with the same categories as commit messages:
 
 Example: `refactor/simplify-type-reduction`
 
+## GitHub Pull Requests
+
+- Omit the testing section from the PR description.
+- Omit the "Generated with Claude Code" line from the PR description.
+
 ## Writing Flix Code
 
 If you are unsure about Flix syntax, consult: https://doc.flix.dev/for-llms.html
