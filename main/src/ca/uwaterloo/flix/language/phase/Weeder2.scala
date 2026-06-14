@@ -3514,20 +3514,20 @@ object Weeder2 {
   private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateAndArity, CompilationMessage] = {
     val identVal = pickNameIdent(tree)
     val arityTokenVal = pickToken(TokenKind.LiteralInt, tree)
-    flatMapN(identVal, arityTokenVal) {
+    mapN(identVal, arityTokenVal) {
       case (ident, arityToken) =>
-        mapN(tryParsePredicateArity(arityToken)) {
-          case arity =>
-            PredicateAndArity(Name.mkPred(ident), arity)
-        }
+        val arity = tryParsePredicateArity(arityToken)
+        PredicateAndArity(Name.mkPred(ident), arity)
     }
   }
 
-  private def tryParsePredicateArity(token: Token): Validation[Int, CompilationMessage] = {
+  private def tryParsePredicateArity(token: Token)(implicit sctx: SharedContext): Int = {
     token.text.toIntOption match {
-      case Some(i) if i >= 1 => Success(i)
-      case Some(_) => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation()))
-      case None => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation()))
+      case Some(i) if i >= 1 => i
+      case _ =>
+        // Soft failure: report the error and fall back on an arity of 0.
+        sctx.errors.add(WeederError.IllegalPredicateArity(token.mkSourceLocation()))
+        0
     }
   }
 
