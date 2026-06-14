@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matthew Lutze
+ * Copyright 2026 YoshiRulz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,14 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
-class BenchmarkSuite extends FlixSuite(incremental = true) {
-
+class LargerExamplesSuite extends FlixSuite(incremental = true) {
   private implicit val TestOptions: Options = Options.TestWithLibAll
 
-  mkTestDirCollected("main/src/resources/benchmark", name = "BenchmarkSuite.flix", depth = 1)
-
+  mkTestDirCollected("examples/apps/langcensus", name = "langcensus")
+  mkTestDirCollected("examples/apps/tic-tac-toe", name = "tic-tac-toe")
+  mkTestDirCollected("examples/apps/weather", name = "weather")
+  mkTestDirCollected("examples/package-manager/hello-library", name = "hello-library")
+  mkTestDirCollected("examples/package-manager/hello-world", name = "hello-world")
+  mkTestDirCollected("examples/package-manager/minimal-project", name = "minimal-project")
+  mkTestDirCollected("examples/package-manager/project-with-deps", name = "project-with-deps")
 }
