@@ -349,9 +349,10 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val visible = if (activeView == View.Modules) Vector.empty else snap.take(tableRows)
     val modules = if (activeView == View.Modules) aggregateByModule(snap, activeSort).take(tableRows) else Vector.empty
 
-    // Coverage is computed from the unfiltered snapshot so the accounted /
-    // unaccounted split is independent of the active phase filter.
-    val coverage = computeCoverage(raw, flix.phaseTimers.toVector)
+    // Coverage scopes to the active phase filter (via `matchesFilter`), so the
+    // tracked figure narrows to the same phases the visible table covers: press
+    // `f`/`b` and both the rows and the coverage % follow.
+    val coverage = computeCoverage(raw, flix.phaseTimers.toVector, activeFilter)
 
     FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules, coverage)
   }

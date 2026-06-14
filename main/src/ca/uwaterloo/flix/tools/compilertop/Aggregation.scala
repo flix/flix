@@ -70,8 +70,12 @@ object Aggregation {
     * once (e.g. `OccurrenceAnalyzer` / `Inliner` across optimizer rounds). The
     * unknown-phase bucket `"?"` never appears as a real phase-timer entry, so it
     * can't leak in.
+    *
+    * Scoped to the active filter `f` via [[matchesFilter]] — the same predicate
+    * the def table uses — so the figure covers exactly the phases the visible
+    * table covers (e.g. under `Frontend` only `FrontendPhases` count).
     */
-  def computeCoverage(snapshot: Vector[DefnStats], phaseTimers: Vector[PhaseTime]): Coverage = {
+  def computeCoverage(snapshot: Vector[DefnStats], phaseTimers: Vector[PhaseTime], f: PhaseFilter): Coverage = {
     val accounted = snapshot.iterator.flatMap(_.byPhase.iterator.collect { case (p, n) if n > 0L => p }).toSet
 
     val wallByPhase = phaseTimers.foldLeft(Map.empty[String, Long]) {
@@ -81,6 +85,7 @@ object Aggregation {
     var accountedNanos = 0L
     var unaccountedNanos = 0L
     wallByPhase.foreach {
+      case (phase, _) if !matchesFilter(phase, f)              => // outside the active filter's phases
       case (phase, _) if NonAttributablePhases.contains(phase) => // excluded: no per-def unit
       case (phase, wall) =>
         if (accounted.contains(phase)) accountedNanos += wall
