@@ -344,11 +344,18 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     // Only build the rows the active view actually renders: the def list when
     // on Defs / Help, the module aggregate when on Modules. `snap` is computed
     // either way since module aggregation rolls up from it.
-    val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(s => -defSortKey(s, activeSort))
+    val raw = profiler.snapshot()
+    val snap = applyFilter(raw, activeFilter).sortBy(s => -defSortKey(s, activeSort))
     val visible = if (activeView == View.Modules) Vector.empty else snap.take(tableRows)
     val modules = if (activeView == View.Modules) aggregateByModule(snap, activeSort).take(tableRows) else Vector.empty
 
-    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules)
+    // Coverage scopes to the active phase filter (via `matchesFilter`), so the
+    // observed figure narrows to the same phases the visible table covers: press
+    // `f`/`b` and both the rows and the coverage % follow. `parallelism` divides
+    // the thread-summed per-def time into an estimated attributed wall slice.
+    val coverage = computeCoverage(raw, flix.phaseTimers.toVector, activeFilter, parallelism)
+
+    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules, coverage)
   }
 
 }

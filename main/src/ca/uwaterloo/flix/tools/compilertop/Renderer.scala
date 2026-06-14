@@ -41,6 +41,8 @@ import scala.collection.mutable
   *                        `"done"`, or `"starting"`).
   * @param phaseTimersSize raw `flix.phaseTimers.size`; the renderer caps to
   *                        [[Renderer.TotalPhases]] for the progress bar.
+  * @param coverage        accounted/unaccounted phase-wall split behind the
+  *                        stats-line `observed` figure (see [[Model.Coverage]]).
   * @param activeFilter    user-toggled phase filter (drives the legend).
   * @param activeSort      user-toggled sort key (drives header underlines).
   * @param activeView      user-toggled top-level view: defs table, modules
@@ -65,7 +67,8 @@ final case class FrameState(parallelism: Int,
                             activeView: View,
                             layout: Layout,
                             visible: Vector[DefnStats],
-                            modules: Vector[ModuleStats])
+                            modules: Vector[ModuleStats],
+                            coverage: Coverage)
 
 object Renderer {
 
@@ -365,9 +368,20 @@ final class Renderer {
     else        s"$DimCode$UnderlineCode$key$NoUnderlineCode$rest$Reset"
   }
 
+  /** Plain-text width of the observed field, fixed so the stats line never reflows. */
+  private val ObservedFieldLen: Int = "observed  --%".length
+
   /**
-    * Stats line: elapsed (right-aligned under `progress`) and heap
+    * Stats line: an `observed xx%` figure in the left gutter (under the current
+    * phase), then elapsed (right-aligned under `progress`) and heap
     * (right-aligned under `threads`).
+    *
+    * `observed` is the estimated share of *attributable* phase wall time the
+    * per-def table actually sees — see [[Model.Coverage]]. It reads `--%` until
+    * the first attributable phase finishes so the field never jumps, and is
+    * colored by magnitude (gray when healthy, then yellow, then red as coverage
+    * drops). This is wall-time, deliberately kept apart from the thread-summed
+    * `time` column in the tables.
     */
   private def renderStats(sb: StringBuilder, state: FrameState): Unit = {
     val (heapUsedMb, heapMaxMb) = state.heap
@@ -381,8 +395,18 @@ final class Renderer {
     // "heap" (4 chars) right-aligned with "threads" (7 chars) → start at ThreadsStartCol + 3.
     val heapStartCol = ThreadsStartCol + 3
 
+    val cov = state.coverage
+    val covTotal = cov.accountedNanos + cov.unaccountedNanos
+    val observedField =
+      if (covTotal <= 0L) dim("observed  --%")
+      else {
+        val pct = 100.0 * cov.accountedNanos / covTotal
+        dim("observed ") + styleObserved(f"$pct%3.0f%%", pct)
+      }
+
     sb.append("  ")
-    sb.append(" " * (elapsedStartCol - 3).max(0))
+    sb.append(observedField)
+    sb.append(" " * (elapsedStartCol - 3 - ObservedFieldLen).max(1))
     sb.append(dim("elapsed "))
     sb.append(elapsedField)
 

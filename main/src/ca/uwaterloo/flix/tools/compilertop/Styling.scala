@@ -37,6 +37,8 @@ object Styling {
   private val HotnessYellowThresholdMsPerLine: Double = 15.0
   private val ModuleHotnessRedThresholdMsPerLine:    Double = 4.0
   private val ModuleHotnessYellowThresholdMsPerLine: Double = 2.0
+  private val ObservedRedThresholdPct:         Double = 25.0
+  private val ObservedYellowThresholdPct:      Double = 50.0
   private val PctCpuRedThreshold:              Double = 5.0
   private val PctCpuYellowThreshold:           Double = 1.0
   private val PctWallRedThreshold:             Double = 15.0
@@ -116,5 +118,17 @@ object Styling {
     if (ratio >= HeapRedThresholdRatio) bold(red(formatted))
     else if (ratio >= HeapYellowThresholdRatio) yellow(formatted)
     else green(formatted)
+  }
+
+  /**
+    * Colors the dashboard `observed` percentage. Inverted from the other tiers
+    * because *high* coverage is the good outcome: a healthy figure stays the
+    * default dim/gray (no warning), dropping to yellow below the yellow cutoff
+    * and red below the red cutoff.
+    */
+  def styleObserved(formatted: String, pct: Double): String = {
+    if (pct < ObservedRedThresholdPct) red(formatted)
+    else if (pct < ObservedYellowThresholdPct) yellow(formatted)
+    else dim(formatted)
   }
 }

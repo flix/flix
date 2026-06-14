@@ -96,6 +96,29 @@ object Model {
   )
 
   /**
+    * Phases that inherently have no per-`DefnSym` unit to attribute time to, so
+    * the dashboard coverage line excludes them from the accounted / unaccounted
+    * split rather than reporting their wall time as a (false) closeable blind
+    * spot. Three structural reasons, mirroring the coverage table in
+    * [[Profiler]]:
+    *
+    *   - Pre-naming passes (`Reader`, `Lexer`, `Parser2`, `Weeder2`, `Desugar`,
+    *     `Namer`) run before any `DefnSym` exists, so there is no key to attribute.
+    *   - Pure filter passes (`TreeShaker1`, `TreeShaker2`) do no per-def work.
+    *   - The `Optimizer` fixpoint wrapper does no work of its own; its time is
+    *     captured transitively through the `OccurrenceAnalyzer` / `Inliner` phases
+    *     it drives, so counting it here would be redundant.
+    *
+    * Phases that *could* be attributed but currently aren't (`Resolver`,
+    * `Deriver`, `Instances`) are deliberately NOT in this set — they are real,
+    * closeable blind spots and belong in the unaccounted tally.
+    */
+  val NonAttributablePhases: Set[String] = Set(
+    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar", "Namer",
+    "TreeShaker1", "Optimizer", "TreeShaker2",
+  )
+
+  /**
     * Selects the descending sort key applied to the def and module tables.
     * Each option surfaces a different kind of suspect, so the same def can
     * top one ranking and not another.
@@ -162,4 +185,31 @@ object Model {
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
   }
+
+  /**
+    * Phase-level wall-time reconciliation backing the dashboard `observed` figure.
+    *
+    * `Flix.phaseTimers` records each phase's wall time. For each phase we
+    * estimate the slice the per-def table attributes by spreading its
+    * thread-summed per-def time across the available threads:
+    * `attributedWall ≈ threadSummed / parallelism`, clamped to the phase wall.
+    * `accounted` sums those estimates; `unaccounted` is the remaining wall.
+    *
+    * The estimate *optimistically assumes full parallelism*. For a saturated
+    * parallel phase (`threadSummed ≈ parallelism × wall`) it recovers the true
+    * attributed wall, so a partially-instrumented parallel phase now reads as
+    * partially covered rather than fully covered. The flip side: a sequential
+    * phase ran on one thread yet is still divided by `parallelism`, so it is
+    * under-counted and reads as a partial blind spot even when fully
+    * instrumented — the unit mix (thread-summed ÷ threads vs single-threaded
+    * wall) is only exact at the parallel extreme.
+    *
+    * Phases in [[NonAttributablePhases]] are excluded entirely: they have no
+    * per-def unit by construction, so the denominator is "attributable phase
+    * wall time".
+    *
+    * @param accountedNanos   summed estimated attributed wall across phases.
+    * @param unaccountedNanos summed remaining (unattributed) wall across phases.
+    */
+  final case class Coverage(accountedNanos: Long, unaccountedNanos: Long)
 }
