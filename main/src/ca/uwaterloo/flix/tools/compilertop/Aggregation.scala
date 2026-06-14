@@ -60,7 +60,7 @@ object Aggregation {
 
   /**
     * Splits attributable phase wall time into accounted vs unaccounted for the
-    * dashboard coverage line — see [[Model.Coverage]] for the semantics and
+    * dashboard `tracked` figure — see [[Model.Coverage]] for the semantics and
     * the why-not-subtract-thread-time caveat.
     *
     * A phase is accounted if *any* def recorded time in it. Phases in
@@ -80,14 +80,13 @@ object Aggregation {
 
     var accountedNanos = 0L
     var unaccountedNanos = 0L
-    var uncovered = List.empty[(String, Long)]
     wallByPhase.foreach {
       case (phase, _) if NonAttributablePhases.contains(phase) => // excluded: no per-def unit
       case (phase, wall) =>
         if (accounted.contains(phase)) accountedNanos += wall
-        else { unaccountedNanos += wall; uncovered ::= (phase -> wall) }
+        else unaccountedNanos += wall
     }
-    Coverage(accountedNanos, unaccountedNanos, uncovered.sortBy { case (_, w) => -w })
+    Coverage(accountedNanos, unaccountedNanos)
   }
 
   /**

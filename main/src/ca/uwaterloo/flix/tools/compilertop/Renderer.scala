@@ -41,8 +41,8 @@ import scala.collection.mutable
   *                        `"done"`, or `"starting"`).
   * @param phaseTimersSize raw `flix.phaseTimers.size`; the renderer caps to
   *                        [[Renderer.TotalPhases]] for the progress bar.
-  * @param coverage        accounted/unaccounted phase-wall split for the
-  *                        dashboard coverage line (see [[Model.Coverage]]).
+  * @param coverage        accounted/unaccounted phase-wall split behind the
+  *                        stats-line `tracked` figure (see [[Model.Coverage]]).
   * @param activeFilter    user-toggled phase filter (drives the legend).
   * @param activeSort      user-toggled sort key (drives header underlines).
   * @param activeView      user-toggled top-level view: defs table, modules
@@ -268,7 +268,6 @@ final class Renderer {
 
     renderDashboard(sb, state)
     renderStats(sb, state)
-    renderCoverage(sb, state)
     sb.append('\n')
 
     state.activeView match {
@@ -369,9 +368,20 @@ final class Renderer {
     else        s"$DimCode$UnderlineCode$key$NoUnderlineCode$rest$Reset"
   }
 
+  /** Plain-text width of the tracked field, fixed so the stats line never reflows. */
+  private val TrackedFieldLen: Int = "tracked  --%".length
+
   /**
-    * Stats line: elapsed (right-aligned under `progress`) and heap
+    * Stats line: a `tracked xx%` figure in the left gutter (under the current
+    * phase), then elapsed (right-aligned under `progress`) and heap
     * (right-aligned under `threads`).
+    *
+    * `tracked` is the share of *attributable* phase wall time the per-def table
+    * actually sees — see [[Model.Coverage]]. It reads `--%` until the first
+    * attributable phase finishes so the field never jumps, and is colored by
+    * magnitude (green high / yellow mid / red low, since high coverage is good).
+    * This is wall-time, deliberately kept apart from the thread-summed `time`
+    * column in the tables.
     */
   private def renderStats(sb: StringBuilder, state: FrameState): Unit = {
     val (heapUsedMb, heapMaxMb) = state.heap
@@ -385,8 +395,18 @@ final class Renderer {
     // "heap" (4 chars) right-aligned with "threads" (7 chars) → start at ThreadsStartCol + 3.
     val heapStartCol = ThreadsStartCol + 3
 
+    val cov = state.coverage
+    val covTotal = cov.accountedNanos + cov.unaccountedNanos
+    val trackedField =
+      if (covTotal <= 0L) dim("tracked  --%")
+      else {
+        val pct = 100.0 * cov.accountedNanos / covTotal
+        dim("tracked ") + styleTracked(f"$pct%3.0f%%", pct)
+      }
+
     sb.append("  ")
-    sb.append(" " * (elapsedStartCol - 3).max(0))
+    sb.append(trackedField)
+    sb.append(" " * (elapsedStartCol - 3 - TrackedFieldLen).max(1))
     sb.append(dim("elapsed "))
     sb.append(elapsedField)
 
@@ -397,13 +417,16 @@ final class Renderer {
     sb.append(styleHeap(heapUsedField, heapRatio))
     sb.append(dim(" / "))
     sb.append(heapMaxField)
-    // Align under the `[all|frontend|backend]` legend on the dashboard line above.
-    // When help is the active view, the tip carries the "active mode" signal
-    // (bold yellow) — the filter legend goes plain because no filter is
-    // currently being applied to a visible table. The "?" itself is underlined
-    // to match the keystroke-underline convention used in the column headers
-    // and the filter legend.
+    // Key hints, anchored to the right under the dashboard's filter legend.
+    // `<tab> to cycle` always reads gray — it's a standing hint, never the
+    // active mode. When help is the active view only the "? for help" tip
+    // carries the "active mode" signal (bold yellow); the filter legend goes
+    // plain because no filter is currently being applied to a visible table.
+    // The "?" itself is underlined to match the keystroke-underline convention
+    // used in the column headers and the filter legend.
     sb.append("     ")
+    sb.append(color("<tab> to cycle", Gray))
+    sb.append("   ")
     val tipText = s"$UnderlineCode?$NoUnderlineCode for help"
     val tipStyled =
       if (state.activeView == View.Help) bold(color(tipText, Yellow))
@@ -411,47 +434,6 @@ final class Renderer {
     sb.append(tipStyled)
     sb.append('\n')
   }
-
-  /**
-    * Coverage line: how much sequential phase wall-clock time lives in phases
-    * the per-def table attributes nothing to. `accounted` / `unaccounted` are
-    * percentages of total phase wall time, followed by the biggest unaccounted
-    * phases by their wall share so the user can see *where* the blind spots are
-    * (e.g. `Namer`, `Instances`). The unaccounted figure is colored by
-    * magnitude. Always emits exactly one line so the table below doesn't jump
-    * as phases complete; before any phase finishes it shows a placeholder.
-    *
-    * These percentages are wall-time, deliberately kept apart from the
-    * thread-summed `time` column in the tables — see [[Model.Coverage]].
-    */
-  private def renderCoverage(sb: StringBuilder, state: FrameState): Unit = {
-    val cov = state.coverage
-    val total = cov.accountedNanos + cov.unaccountedNanos
-    sb.append("  ")
-    if (total <= 0L) {
-      sb.append(dim("coverage  (awaiting attributable phases)"))
-      sb.append('\n')
-      return
-    }
-    val unaccPct = 100.0 * cov.unaccountedNanos / total
-    val accPct = 100.0 - unaccPct
-    sb.append(dim("accounted "))
-    sb.append(f"$accPct%5.1f%%")
-    sb.append(dim("   unaccounted "))
-    sb.append(styleUnaccounted(f"$unaccPct%5.1f%%", unaccPct))
-    if (cov.uncovered.nonEmpty) {
-      val parts = cov.uncovered.iterator.take(3).map {
-        case (phase, wall) => f"$phase ${100.0 * wall / total}%.0f%%"
-      }.mkString(" · ")
-      sb.append(dim("   "))
-      sb.append(dim(truncate(parts, (state.layout.totalWidth - 36).max(12))))
-    }
-    sb.append('\n')
-  }
-
-  /** Colors the unaccounted-percentage field: green when low, yellow mid, red high. */
-  private def styleUnaccounted(s: String, pct: Double): String =
-    if (pct >= 25.0) red(s) else if (pct >= 10.0) yellow(s) else green(s)
 
   /**
     * Prints the parametrized header row + the divider underneath it. The

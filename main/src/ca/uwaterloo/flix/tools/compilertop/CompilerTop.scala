@@ -41,12 +41,12 @@ object CompilerTop {
 
 
   /**
-    * Fixed-overhead rows: blank + 2 dashboard/stats lines + 1 coverage line +
-    * blank + 2 table-chrome (header + divider) + 1 cursor-parking row. Only one
+    * Fixed-overhead rows: blank + 2 dashboard/stats lines + blank +
+    * 2 table-chrome (header + divider) + 1 cursor-parking row. Only one
     * table is visible at a time now, so there is no second-table chrome to
     * reserve.
     */
-  private val ChromeRows: Int = 8
+  private val ChromeRows: Int = 7
 
   /**
     * Reserved breathing room below the rendered view, on top of the

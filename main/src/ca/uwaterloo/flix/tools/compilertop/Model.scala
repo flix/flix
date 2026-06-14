@@ -187,7 +187,7 @@ object Model {
   }
 
   /**
-    * Phase-level wall-time reconciliation backing the dashboard coverage line.
+    * Phase-level wall-time reconciliation backing the dashboard `tracked` figure.
     *
     * The compiler runs its phases sequentially and `Flix.phaseTimers` records
     * each one's single-threaded wall time. A phase is *accounted* if the per-def
@@ -208,7 +208,6 @@ object Model {
     *
     * @param accountedNanos   summed wall time of phases with per-def attribution.
     * @param unaccountedNanos summed wall time of phases with none.
-    * @param uncovered        `(phase, wallNanos)` per unaccounted phase, descending by wall.
     */
-  final case class Coverage(accountedNanos: Long, unaccountedNanos: Long, uncovered: List[(String, Long)])
+  final case class Coverage(accountedNanos: Long, unaccountedNanos: Long)
 }

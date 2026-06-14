@@ -43,6 +43,8 @@ object Styling {
   private val PctWallYellowThreshold:          Double = 5.0
   private val TimeRedThresholdMs:              Long   = 1000L
   private val TimeYellowThresholdMs:           Long   = 50L
+  private val TrackedGreenThresholdPct:        Double = 90.0
+  private val TrackedYellowThresholdPct:       Double = 75.0
 
   // -- Conditional styling -------------------------------------------------
 
@@ -116,5 +118,16 @@ object Styling {
     if (ratio >= HeapRedThresholdRatio) bold(red(formatted))
     else if (ratio >= HeapYellowThresholdRatio) yellow(formatted)
     else green(formatted)
+  }
+
+  /**
+    * Colors the dashboard `tracked` percentage. Inverted from the other tiers
+    * because *high* coverage is the good outcome: green at/above the green
+    * cutoff, yellow in the middle band, red below.
+    */
+  def styleTracked(formatted: String, pct: Double): String = {
+    if (pct >= TrackedGreenThresholdPct) green(formatted)
+    else if (pct >= TrackedYellowThresholdPct) yellow(formatted)
+    else red(formatted)
   }
 }
