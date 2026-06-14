@@ -85,7 +85,7 @@ object Renderer {
   /** Width (in characters) of the phase-progress bar. */
   private val BarWidth: Int = 12
 
-  /** Fixed width of the phase-table numeric tail: `time(9) + alloc(5) + par(5) + %cpu(6) + %wall(6) + blind(9) + %obs(6)`, each with a leading separator. */
+  /** Fixed width of the phase-table numeric tail: `time(9) + blind(9) + %obs(6) + alloc(5) + par(5) + %cpu(6) + %wall(6)`, each with a leading separator. */
   private val PhaseTailWidth: Int = (1 + 9) + (1 + 5) + (1 + 5) + (1 + 6) + (1 + 6) + (1 + 9) + (1 + 6)
 
   /** Floor on the phase-table name column when the terminal is narrow. */
@@ -313,8 +313,8 @@ final class Renderer {
 
   /**
     * Renders the per-phase aggregate table (the body of the phases view). This
-    * view has its own column set — `phase`, `time`, `alloc`, `par`, `%cpu`,
-    * `%wall`, `blind`, `%obs` — so it doesn't reuse the def / module [[Row]] /
+    * view has its own column set — `phase`, `time`, `blind`, `%obs`, `alloc`,
+    * `par`, `%cpu`, `%wall` — so it doesn't reuse the def / module [[Row]] /
     * [[buildHeader]] machinery.
     *
     *   - `time` is the phase's real wall time; `%wall` is its share of elapsed
@@ -342,12 +342,12 @@ final class Renderer {
     sb.append(' ')
     sb.append(plainHeader(rpad("phase", nameWidth)))
     sb.append(' '); sb.append(plainHeader(lpad("time",  9)))
+    sb.append(' '); sb.append(plainHeader(lpad("blind", 9)))
+    sb.append(' '); sb.append(plainHeader(lpad("%obs",  6)))
     sb.append(' '); sb.append(plainHeader(lpad("alloc", 5)))
     sb.append(' '); sb.append(plainHeader(lpad("par",   5)))
     sb.append(' '); sb.append(plainHeader(lpad("%cpu",  6)))
     sb.append(' '); sb.append(plainHeader(lpad("%wall", 6)))
-    sb.append(' '); sb.append(plainHeader(lpad("blind", 9)))
-    sb.append(' '); sb.append(plainHeader(lpad("%obs",  6)))
     sb.append(' '); sb.append('\n')
     sb.append(' ')
     sb.append(dim("─" * (nameWidth + PhaseTailWidth)))
@@ -375,12 +375,12 @@ final class Renderer {
       sb.append(' ')
       sb.append(rpad(truncate(p.phase, nameWidth), nameWidth))
       sb.append(' '); sb.append(lpad(formatMillis(p.wallNanos), 9))
+      sb.append(' '); sb.append(lpad(formatMillis(blindNanos), 9))
+      sb.append(' '); sb.append(styleObserved(f"${p.pctObserved}%5.1f%%", p.pctObserved))
       sb.append(' '); sb.append(allocField)
       sb.append(' '); sb.append(parField)
       sb.append(' '); sb.append(cpuField)
       sb.append(' '); sb.append(stylePctWall(f"$pctWall%5.1f%%", pctWall))
-      sb.append(' '); sb.append(lpad(formatMillis(blindNanos), 9))
-      sb.append(' '); sb.append(styleObserved(f"${p.pctObserved}%5.1f%%", p.pctObserved))
       sb.append(' '); sb.append('\n')
     }
   }
@@ -648,11 +648,11 @@ final class Renderer {
 
     sb.append("  "); sb.append(bold(cyan("Phase columns"))); sb.append('\n')
     appendHelpCol(sb, "time",     "the phase's real wall-clock time")
+    appendHelpCol(sb, "blind",    "the phase's wall time not attributed to any def (wall − observed)")
+    appendHelpCol(sb, "%obs",     "the share of the phase's wall time attributed to per-def tracking")
     appendHelpCol(sb, "par",      "observed effective parallelism (thread-summed time / wall); ~1 sequential, ~threads parallel")
     appendHelpCol(sb, "%cpu",     "the phase's share of CPU time (thread-summed time / (elapsed × threads))")
     appendHelpCol(sb, "%wall",    "the phase's share of wall-clock time (real phase wall / elapsed)")
-    appendHelpCol(sb, "blind",    "the phase's wall time not attributed to any def (wall − observed)")
-    appendHelpCol(sb, "%obs",     "the share of the phase's wall time attributed to per-def tracking")
     sb.append('\n')
 
     sb.append("  "); sb.append(bold(cyan("Navigation"))); sb.append('\n')
