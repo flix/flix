@@ -242,13 +242,13 @@ object Weeder2 {
 
     private def visitModuleDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Declaration.Mod = {
       expect(tree, TreeKind.Decl.Module)
+      val doc = pickDocumentation(tree)
       val annotations = pickAnnotations(tree)
       for (ann <- annotations.annotations) {
         sctx.errors.add(WeederError.IllegalAnnotation(ann.toString, ann.loc))
       }
       val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val qname = pickQName(tree)
-      val doc = pickDocumentation(tree)
       val usesAndImports = pickAllUsesAndImports(tree)
       val declarations = pickAllDeclarations(tree)
       Declaration.Mod(doc, annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
@@ -256,71 +256,69 @@ object Weeder2 {
 
     private def visitTraitDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Trait = {
       expect(tree, TreeKind.Decl.Trait)
-      val sigs = pickAll(TreeKind.Decl.Signature, tree)
-      val laws = pickAll(TreeKind.Decl.Law, tree)
-      val ann = pickAnnotations(tree)
-      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordSealed))
       val tparamsList = pick(TreeKind.TypeParameterList, tree)
-      val tparams = pickAll(TreeKind.Parameter, tparamsList)
-      if (tparams.length != 1) {
+      val tparamCount = pickAll(TreeKind.Parameter, tparamsList)
+      if (tparamCount.length != 1) {
         sctx.errors.add(IllegalNumberOfTraitParameters(tparamsList.loc))
       }
 
-      val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val ann = pickAnnotations(tree)
+      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordSealed))
+      val ident = pickNameIdent(tree)
       val tparam = Types.pickSingleParameter(tree)
       val tconstr = Types.pickConstraints(tree)
-      val sigsV = sigs.map(visitSignatureDecl)
-      val lawsV = laws.map(visitLawDecl)
       val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree).map(visitAssociatedTypeSigDecl(_, tparam))
-      Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigsV, lawsV, tree.loc)
+      val sigs = pickAll(TreeKind.Decl.Signature, tree).map(visitSignatureDecl)
+      val laws = pickAll(TreeKind.Decl.Law, tree).map(visitLawDecl)
+      Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
     }
 
     private def visitInstanceDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Declaration.Instance = {
       expect(tree, TreeKind.Decl.Instance)
       val allowedDefModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set(TokenKind.KeywordPub) else Set(TokenKind.KeywordPub, TokenKind.KeywordOverride)
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
       val clazz = pickQName(tree)
-      val doc = pickDocumentation(tree)
       val tpe = Types.pickType(tree)
       val tconstrs = Types.pickConstraints(tree)
       val econstrs = pickEqualityConstraints(tree)
+      val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree).map(visitAssociatedTypeDefDecl(_, tpe))
       val defs = pickAll(TreeKind.Decl.Def, tree).map(visitDefinitionDecl(_, allowedModifiers = allowedDefModifiers, mustBePublic = true))
       val redefs = pickAll(TreeKind.Decl.Redef, tree).map(visitRedefinitionDecl)
-      val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree).map(visitAssociatedTypeDefDecl(_, tpe))
       Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, econstrs, assocs, defs, redefs, tree.loc)
     }
 
     private def visitSignatureDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Sig = {
       expect(tree, TreeKind.Decl.Signature)
       val maybeExpression = tryPick(TreeKind.Expr.Expr, tree)
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true)
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
-      val tpe = Types.pickType(tree)
       val tparams = Types.pickKindedParameters(tree)
-      val eff = Types.tryPickEffect(tree)
-      val tconstrs = Types.pickConstraints(tree)
       val fparams = pickFormalParameters(tree)
       val expr = maybeExpression.map(Exprs.visitExpr)
+      val tpe = Types.pickType(tree)
+      val eff = Types.tryPickEffect(tree)
+      val tconstrs = Types.pickConstraints(tree)
       val econstrs = pickEqualityConstraints(tree)
       Declaration.Sig(doc, ann, mod, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
     }
 
     private def visitDefinitionDecl(tree: Tree, allowedModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub), mustBePublic: Boolean = false)(implicit sctx: SharedContext): Declaration.Def = {
       expect(tree, TreeKind.Decl.Def)
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = allowedModifiers, mustBePublic)
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
-      val ttype = Types.pickType(tree)
       val tparams = Types.pickKindedParameters(tree)
-      val tconstrs = Types.pickConstraints(tree)
-      val eff = Types.tryPickEffect(tree)
       val fparams = pickFormalParameters(tree)
       val exp = Exprs.pickExpr(tree)
+      val ttype = Types.pickType(tree)
+      val eff = Types.tryPickEffect(tree)
+      val tconstrs = Types.pickConstraints(tree)
       val constrs = pickEqualityConstraints(tree)
       Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
     }
@@ -328,32 +326,32 @@ object Weeder2 {
     private def visitRedefinitionDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Declaration.Redef = {
       expect(tree, TreeKind.Decl.Redef)
       val allowedModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set.empty else Set(TokenKind.KeywordPub)
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = allowedModifiers)
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
-      val ttype = Types.pickType(tree)
       val tparams = Types.pickKindedParameters(tree)
-      val tconstrs = Types.pickConstraints(tree)
-      val eff = Types.tryPickEffect(tree)
       val fparams = pickFormalParameters(tree)
       val exp = Exprs.pickExpr(tree)
+      val ttype = Types.pickType(tree)
+      val eff = Types.tryPickEffect(tree)
+      val tconstrs = Types.pickConstraints(tree)
       val constrs = pickEqualityConstraints(tree)
       Declaration.Redef(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
     }
 
     private def visitLawDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Def = {
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
-      val tconstrs = Types.pickConstraints(tree)
       val tparams = Types.pickKindedParameters(tree)
       val fparams = pickFormalParameters(tree)
       val expr = Exprs.pickExpr(tree)
-      val econstrs = pickEqualityConstraints(tree)
-      val eff = None
       val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
+      val eff = None
+      val tconstrs = Types.pickConstraints(tree)
+      val econstrs = pickEqualityConstraints(tree)
       // TODO: There is a `Declaration.Law` but old Weeder produces a Def
       Declaration.Def(doc, ann, mod, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
     }
@@ -362,12 +360,12 @@ object Weeder2 {
       expect(tree, TreeKind.Decl.Enum)
       val shorthandBody = tryPick(TreeKind.CaseBody, tree)
       val cases = pickAll(TreeKind.Case, tree)
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
-      val derivations = Types.pickDerivations(tree)
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
       val tparams = Types.pickParameters(tree)
+      val derivations = Types.pickDerivations(tree)
       val tpe = shorthandBody.map(Types.visitCaseType)
       val allCases = (tpe, cases.map(visitEnumCase)) match {
         // Illegal empty singleton enum (`enum A()`)
@@ -404,14 +402,14 @@ object Weeder2 {
     private def visitRestrictableEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.RestrictableEnum = {
       expect(tree, TreeKind.Decl.RestrictableEnum)
       val shorthandBody = tryPick(TreeKind.CaseBody, tree)
-      val restrictionParam = Types.visitParameter(pick(TreeKind.Parameter, tree))
       val cases = pickAll(TreeKind.Case, tree)
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
-      val derivations = Types.pickDerivations(tree)
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
+      val restrictionParam = Types.visitParameter(pick(TreeKind.Parameter, tree))
       val tparams = Types.pickParameters(tree)
+      val derivations = Types.pickDerivations(tree)
       val tpe = shorthandBody.map(Types.visitCaseType)
       val allCases = (tpe, cases.map(visitRestrictableEnumCase)) match {
         // Illegal empty singleton enum (`enum A()`)
@@ -446,10 +444,10 @@ object Weeder2 {
     private def visitStructDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Struct = {
       expect(tree, TreeKind.Decl.Struct)
       val fields = pickAll(TreeKind.StructField, tree)
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
       val tparams = Types.pickParameters(tree)
       val visitedFields = fields.map(visitStructField)
       // Ensure that each name is unique
@@ -474,23 +472,21 @@ object Weeder2 {
 
     private def visitTypeAliasDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.TypeAlias = {
       expect(tree, TreeKind.Decl.TypeAlias)
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
-      val tpe = Types.pickType(tree)
       val tparams = Types.pickParameters(tree)
+      val tpe = Types.pickType(tree)
       Declaration.TypeAlias(doc, ann, mod, ident, tparams, tpe, tree.loc)
     }
 
     private def visitAssociatedTypeSigDecl(tree: Tree, classTypeParam: TypeParam)(implicit sctx: SharedContext): Declaration.AssocTypeSig = {
       expect(tree, TreeKind.Decl.AssociatedTypeSig)
+      val doc = pickDocumentation(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
       val tparams = Types.pickParameters(tree)
-      val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
-      val tpe = Types.tryPickTypeNoWild(tree)
       val tparam = tparams match {
         // Elided: Use class type parameter
         case Nil => classTypeParam
@@ -502,16 +498,17 @@ object Weeder2 {
           sctx.errors.add(error)
           head
       }
+      val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
+      val tpe = Types.tryPickTypeNoWild(tree)
       Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, tree.loc)
     }
 
     private def visitAssociatedTypeDefDecl(tree: Tree, instType: Type)(implicit sctx: SharedContext): Declaration.AssocTypeDef = {
       expect(tree, TreeKind.Decl.AssociatedTypeDef)
+      val doc = pickDocumentation(tree)
       val mod = pickModifiers(tree, Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
       val typeArgs = Types.pickArguments(tree)
-      val tpe = Types.pickType(tree)
       val typeArg = typeArgs match {
         // Use instance type if type arguments were elided
         case Nil => instType
@@ -523,29 +520,30 @@ object Weeder2 {
           sctx.errors.add(error)
           types.head
       }
+      val tpe = Types.pickType(tree)
       Declaration.AssocTypeDef(doc, mod, ident, typeArg, tpe, tree.loc)
     }
 
     private def visitEffectDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Effect = {
       expect(tree, TreeKind.Decl.Effect)
-      val ops = pickAll(TreeKind.Decl.Op, tree)
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
       val tparams = Types.pickParameters(tree)
-      Declaration.Effect(doc, ann, mod, ident, tparams, ops.map(visitOperationDecl), tree.loc)
+      val ops = pickAll(TreeKind.Decl.Op, tree).map(visitOperationDecl)
+      Declaration.Effect(doc, ann, mod, ident, tparams, ops, tree.loc)
     }
 
     private def visitOperationDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Op = {
       expect(tree, TreeKind.Decl.Op)
+      val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
       val ident = pickNameIdent(tree)
-      val doc = pickDocumentation(tree)
+      val fparams = pickFormalParameters(tree)
       val tpe = Types.pickType(tree)
       val tconstrs = Types.pickConstraints(tree)
-      val fparams = pickFormalParameters(tree)
       Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, tree.loc)
     }
 
