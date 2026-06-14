@@ -68,8 +68,12 @@ object Weeder2 {
   }
 
   private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[CompilationUnit, CompilationMessage] = {
-    mapN(pickAllUsesAndImports(tree), Decls.pickAllDeclarations(tree)) {
-      (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
+    try {
+      mapN(pickAllUsesAndImports(tree), Decls.pickAllDeclarations(tree)) {
+        (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
+      }
+    } catch {
+      case PickException(error) => Validation.Failure(Chain(error))
     }
   }
 
@@ -3646,7 +3650,7 @@ object Weeder2 {
       case Some(t) => Validation.Success(t)
       case None =>
         val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
-        Validation.Failure(Chain(error))
+        throw PickException(error)
     }
   }
 
@@ -3660,7 +3664,7 @@ object Weeder2 {
       case Some(t) => Validation.Success(t)
       case _ =>
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
-        Validation.Failure(Chain(error))
+        throw PickException(error)
     }
   }
 
@@ -3736,5 +3740,14 @@ object Weeder2 {
     * @param errors the [[WeederError]]s or [[ParseError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[CompilationMessage])
+
+  /**
+    * An exception thrown by [[pick]] and [[pickToken]] when a required sub-tree or token is missing.
+    *
+    * This bypasses the [[Validation]] machinery: the exception is thrown deep inside weeding and
+    * caught in [[weed]], where it is converted into a [[Validation.Failure]]. It exists so that the
+    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
+    */
+  private case class PickException(error: NeedAtleastOne) extends RuntimeException
 
 }
