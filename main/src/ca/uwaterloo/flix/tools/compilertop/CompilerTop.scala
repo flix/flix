@@ -350,9 +350,10 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val modules = if (activeView == View.Modules) aggregateByModule(snap, activeSort).take(tableRows) else Vector.empty
 
     // Coverage scopes to the active phase filter (via `matchesFilter`), so the
-    // tracked figure narrows to the same phases the visible table covers: press
-    // `f`/`b` and both the rows and the coverage % follow.
-    val coverage = computeCoverage(raw, flix.phaseTimers.toVector, activeFilter)
+    // observed figure narrows to the same phases the visible table covers: press
+    // `f`/`b` and both the rows and the coverage % follow. `parallelism` divides
+    // the thread-summed per-def time into an estimated attributed wall slice.
+    val coverage = computeCoverage(raw, flix.phaseTimers.toVector, activeFilter, parallelism)
 
     FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules, coverage)
   }

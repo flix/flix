@@ -187,27 +187,29 @@ object Model {
   }
 
   /**
-    * Phase-level wall-time reconciliation backing the dashboard `tracked` figure.
+    * Phase-level wall-time reconciliation backing the dashboard `observed` figure.
     *
-    * The compiler runs its phases sequentially and `Flix.phaseTimers` records
-    * each one's single-threaded wall time. A phase is *accounted* if the per-def
-    * profiler attributed any time to it, and *unaccounted* otherwise — meaning
-    * its whole wall slice is invisible in the per-def and per-module tables.
+    * `Flix.phaseTimers` records each phase's wall time. For each phase we
+    * estimate the slice the per-def table attributes by spreading its
+    * thread-summed per-def time across the available threads:
+    * `attributedWall ≈ threadSummed / parallelism`, clamped to the phase wall.
+    * `accounted` sums those estimates; `unaccounted` is the remaining wall.
     *
-    * This split is intentionally binary (does the table see the phase *at all*),
-    * not a measure of how complete the attribution is: a partially-instrumented
-    * phase like CodeGen still reads as accounted. Crucially, we never subtract
-    * the profiler's thread-summed nanoseconds from the single-threaded phase wall
-    * time — within a parallel phase the former can exceed the latter several-fold,
-    * so the difference is not a meaningful "unattributed" quantity.
+    * The estimate *optimistically assumes full parallelism*. For a saturated
+    * parallel phase (`threadSummed ≈ parallelism × wall`) it recovers the true
+    * attributed wall, so a partially-instrumented parallel phase now reads as
+    * partially covered rather than fully covered. The flip side: a sequential
+    * phase ran on one thread yet is still divided by `parallelism`, so it is
+    * under-counted and reads as a partial blind spot even when fully
+    * instrumented — the unit mix (thread-summed ÷ threads vs single-threaded
+    * wall) is only exact at the parallel extreme.
     *
-    * Phases in [[NonAttributablePhases]] are excluded from both figures: they have
-    * no per-def unit by construction, so the denominator here is "attributable
-    * phase wall time", and `unaccounted` therefore reflects only closeable blind
-    * spots (e.g. `Instances`, `Deriver`).
+    * Phases in [[NonAttributablePhases]] are excluded entirely: they have no
+    * per-def unit by construction, so the denominator is "attributable phase
+    * wall time".
     *
-    * @param accountedNanos   summed wall time of phases with per-def attribution.
-    * @param unaccountedNanos summed wall time of phases with none.
+    * @param accountedNanos   summed estimated attributed wall across phases.
+    * @param unaccountedNanos summed remaining (unattributed) wall across phases.
     */
   final case class Coverage(accountedNanos: Long, unaccountedNanos: Long)
 }

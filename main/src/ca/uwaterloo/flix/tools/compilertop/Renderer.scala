@@ -42,7 +42,7 @@ import scala.collection.mutable
   * @param phaseTimersSize raw `flix.phaseTimers.size`; the renderer caps to
   *                        [[Renderer.TotalPhases]] for the progress bar.
   * @param coverage        accounted/unaccounted phase-wall split behind the
-  *                        stats-line `tracked` figure (see [[Model.Coverage]]).
+  *                        stats-line `observed` figure (see [[Model.Coverage]]).
   * @param activeFilter    user-toggled phase filter (drives the legend).
   * @param activeSort      user-toggled sort key (drives header underlines).
   * @param activeView      user-toggled top-level view: defs table, modules
@@ -368,20 +368,20 @@ final class Renderer {
     else        s"$DimCode$UnderlineCode$key$NoUnderlineCode$rest$Reset"
   }
 
-  /** Plain-text width of the tracked field, fixed so the stats line never reflows. */
-  private val TrackedFieldLen: Int = "tracked  --%".length
+  /** Plain-text width of the observed field, fixed so the stats line never reflows. */
+  private val ObservedFieldLen: Int = "observed  --%".length
 
   /**
-    * Stats line: a `tracked xx%` figure in the left gutter (under the current
+    * Stats line: an `observed xx%` figure in the left gutter (under the current
     * phase), then elapsed (right-aligned under `progress`) and heap
     * (right-aligned under `threads`).
     *
-    * `tracked` is the share of *attributable* phase wall time the per-def table
-    * actually sees — see [[Model.Coverage]]. It reads `--%` until the first
-    * attributable phase finishes so the field never jumps, and is colored by
-    * magnitude (green high / yellow mid / red low, since high coverage is good).
-    * This is wall-time, deliberately kept apart from the thread-summed `time`
-    * column in the tables.
+    * `observed` is the estimated share of *attributable* phase wall time the
+    * per-def table actually sees — see [[Model.Coverage]]. It reads `--%` until
+    * the first attributable phase finishes so the field never jumps, and is
+    * colored by magnitude (gray when healthy, then yellow, then red as coverage
+    * drops). This is wall-time, deliberately kept apart from the thread-summed
+    * `time` column in the tables.
     */
   private def renderStats(sb: StringBuilder, state: FrameState): Unit = {
     val (heapUsedMb, heapMaxMb) = state.heap
@@ -397,16 +397,16 @@ final class Renderer {
 
     val cov = state.coverage
     val covTotal = cov.accountedNanos + cov.unaccountedNanos
-    val trackedField =
-      if (covTotal <= 0L) dim("tracked  --%")
+    val observedField =
+      if (covTotal <= 0L) dim("observed  --%")
       else {
         val pct = 100.0 * cov.accountedNanos / covTotal
-        dim("tracked ") + styleTracked(f"$pct%3.0f%%", pct)
+        dim("observed ") + styleObserved(f"$pct%3.0f%%", pct)
       }
 
     sb.append("  ")
-    sb.append(trackedField)
-    sb.append(" " * (elapsedStartCol - 3 - TrackedFieldLen).max(1))
+    sb.append(observedField)
+    sb.append(" " * (elapsedStartCol - 3 - ObservedFieldLen).max(1))
     sb.append(dim("elapsed "))
     sb.append(elapsedField)
 
