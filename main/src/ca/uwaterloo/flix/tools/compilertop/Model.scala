@@ -30,26 +30,32 @@ object Model {
     *
     *   - [[View.Defs]]: the per-def table (default), full terminal height.
     *   - [[View.Modules]]: the per-module aggregate table, full terminal
-    *     height. `Tab` flips between [[View.Defs]] and this.
+    *     height. `Tab` cycles into this from [[View.Defs]].
+    *   - [[View.Phases]]: the per-phase aggregate table (phase name, time,
+    *     alloc, par, %cpu, %wall, blind, %observed). `Tab` cycles into this
+    *     from [[View.Modules]].
     *   - [[View.Help]]: a static legend explaining each column and
     *     keystroke, so the user doesn't have to guess what e.g. `tv` or
     *     `rnd` mean.
     */
   sealed trait View {
     /**
-      * The other table view — `Tab` flips [[View.Defs]] ↔ [[View.Modules]].
-      * From [[View.Help]] there is no "other table", so it maps to itself;
+      * The next table view in the `Tab` cycle:
+      * [[View.Defs]] → [[View.Modules]] → [[View.Phases]] → [[View.Defs]].
+      * From [[View.Help]] there is no "next table", so it maps to itself;
       * the input loop special-cases leaving help separately.
       */
     final def toggledTable: View = this match {
       case View.Defs    => View.Modules
-      case View.Modules => View.Defs
+      case View.Modules => View.Phases
+      case View.Phases  => View.Defs
       case View.Help    => View.Help
     }
   }
   object View {
     case object Defs    extends View
     case object Modules extends View
+    case object Phases  extends View
     case object Help    extends View
   }
 
@@ -184,6 +190,25 @@ object Model {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
+  }
+
+  /**
+    * A row in the per-phase aggregate table. One per phase that ran (driven by
+    * `Flix.phaseTimers`, so non-attributable phases like `Lexer` / `Parser2`
+    * appear too, with `0` observed). The renderer derives `%cpu` / `%wall`
+    * against the per-frame `elapsed` / `parallelism`, the same late-binding the
+    * def / module rows use for their percentages.
+    *
+    * @param phase               the phase name (as passed to `flix.phase(...)`).
+    * @param wallNanos           real phase wall time, summed across repeats, from `Flix.phaseTimers`.
+    * @param threadSummedNanos   thread-summed per-def time attributed to this phase (`Σ DefnStats.byPhase`).
+    * @param allocBytes          compiler-side heap bytes attributed to this phase (`Σ DefnStats.byPhaseAlloc`).
+    * @param attributedWallNanos estimated attributed wall slice: `(threadSummed / parallelism).min(wall)`, mirroring [[Coverage]].
+    */
+  final case class PhaseStats(phase: String, wallNanos: Long, threadSummedNanos: Long, allocBytes: Long, attributedWallNanos: Long) {
+    /** Share of this phase's wall time the per-def table attributes (the per-phase `observed` figure). */
+    def pctObserved: Double =
+      if (wallNanos <= 0L) 0.0 else 100.0 * attributedWallNanos / wallNanos
   }
 
   /**

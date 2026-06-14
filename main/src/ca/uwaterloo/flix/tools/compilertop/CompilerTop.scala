@@ -220,7 +220,7 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     *   - `f` / `F` → filter to frontend phases
     *   - `b` / `B` → filter to backend phases
     *   - `a` / `A` → reset to all phases
-    *   - Tab (`9`) → flip between the defs and modules tables (from help,
+    *   - Tab (`9`) → cycle the defs → modules → phases tables (from help,
     *     lands on the defs table).
     *   - `?`       → toggle the help view (column / keystroke legend).
     *   - `↑` / `↓` (CSI `ESC [ A` / `ESC [ B`) → scroll the active table up /
@@ -247,7 +247,7 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
             quitLatch.countDown()
             return
           }
-        case 9 => // Tab — flip the table; from help, land on the defs table.
+        case 9 => // Tab — cycle the table; from help, land on the defs table.
           view.updateAndGet(v => if (v == View.Help) View.Defs else v.toggledTable)
           scrollOffset.set(0)
         case 27 =>
@@ -390,6 +390,10 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val raw = profiler.snapshot()
     val snap = applyFilter(raw, activeFilter).sortBy(s => -defSortKey(s, activeSort))
     val mods = if (activeView == View.Modules) aggregateByModule(snap, activeSort) else Vector.empty
+    // Phase rows roll up from the unfiltered `raw` snapshot + phaseTimers; the
+    // active filter selects which phases show (inside aggregateByPhase) rather
+    // than re-projecting per-def time, so each phase's alloc / cpu stay correct.
+    val phaseRows = if (activeView == View.Phases) aggregateByPhase(raw, flix.phaseTimers.toVector, activeFilter, parallelism) else Vector.empty
 
     // Scroll window over the active table. `maxScroll` is published so the input
     // thread can clamp `↓`; the offset is also re-clamped here because a filter
@@ -398,6 +402,7 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val total = activeView match {
       case View.Defs    => snap.length
       case View.Modules => mods.length
+      case View.Phases  => phaseRows.length
       case View.Help    => 0
     }
     val maxOff = (total - tableRows).max(0)
@@ -406,6 +411,7 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
 
     val visible = if (activeView == View.Defs)    snap.slice(offset, offset + tableRows) else Vector.empty
     val modules = if (activeView == View.Modules) mods.slice(offset, offset + tableRows) else Vector.empty
+    val phases  = if (activeView == View.Phases)  phaseRows.slice(offset, offset + tableRows) else Vector.empty
 
     // Coverage scopes to the active phase filter (via `matchesFilter`), so the
     // observed figure narrows to the same phases the visible table covers: press
@@ -413,7 +419,7 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     // the thread-summed per-def time into an estimated attributed wall slice.
     val coverage = computeCoverage(raw, flix.phaseTimers.toVector, activeFilter, parallelism)
 
-    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules, coverage)
+    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules, phases, coverage)
   }
 
 }
