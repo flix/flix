@@ -417,16 +417,13 @@ final class Renderer {
     sb.append(styleHeap(heapUsedField, heapRatio))
     sb.append(dim(" / "))
     sb.append(heapMaxField)
-    // Key hints, anchored to the right under the dashboard's filter legend.
-    // `<tab> to cycle` always reads gray — it's a standing hint, never the
-    // active mode. When help is the active view only the "? for help" tip
-    // carries the "active mode" signal (bold yellow); the filter legend goes
-    // plain because no filter is currently being applied to a visible table.
-    // The "?" itself is underlined to match the keystroke-underline convention
-    // used in the column headers and the filter legend.
+    // Align under the `[all|frontend|backend]` legend on the dashboard line above.
+    // When help is the active view, the tip carries the "active mode" signal
+    // (bold yellow) — the filter legend goes plain because no filter is
+    // currently being applied to a visible table. The "?" itself is underlined
+    // to match the keystroke-underline convention used in the column headers
+    // and the filter legend.
     sb.append("     ")
-    sb.append(color("<tab> to cycle", Gray))
-    sb.append("   ")
     val tipText = s"$UnderlineCode?$NoUnderlineCode for help"
     val tipStyled =
       if (state.activeView == View.Help) bold(color(tipText, Yellow))
