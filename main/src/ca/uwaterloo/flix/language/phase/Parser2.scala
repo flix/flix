@@ -158,14 +158,26 @@ object Parser2 {
 
   private def buildTree()(implicit s: State): SyntaxTree.Tree = {
     val tokens = s.tokens.iterator.buffered
-    // We are using lists as stacks here (Scala does have a 'Stack', but it is backed by an
-    // ArrayDeque). Lists are fastest here though since they have constant time prepend (+:) and
-    // tail implementations. We use prepend on Event.Open and stack.tail on Event.Close.
-    var stack: List[SyntaxTree.Tree] = List.empty
+
+    // A node's children are not known until its Close event, but we want to allocate each node's
+    // `Array[Child]` exactly once, at its final size, with each child copied exactly once.
+    //
+    // To do so we keep a single shared work-stack holding, at any moment, the not-yet-collected
+    // children of every currently-open node. The children of the most recently opened node are
+    // always a contiguous suffix of `workStack`. On Open we remember where that suffix begins; on
+    // Close we copy the suffix into a right-sized array, shrink the work-stack back to the start,
+    // and push the finished node so it becomes a child of its parent.
+    //
+    // Lists are used as the remaining stacks: they have constant time prepend (+:) and tail, and
+    // their depth is only the current nesting level (small).
+    val workStack: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
+    var startStack: List[Int] = List.empty
+    var kindStack: List[TreeKind] = List.empty
     var locationStack: List[Token] = List.empty
 
-    // Pop the last event, which must be a Close, to ensure that the stack is not empty when
-    // handling event below.
+    // Drop the last event, which must be a Close. This leaves the root node unclosed so that it is
+    // never popped during the loop below; it is finalized separately afterwards, when the work-stack
+    // holds exactly the root's children.
     val lastEvent = s.events.last
     s.events.dropRightInPlace(1)
     assert(lastEvent match {
@@ -181,12 +193,15 @@ object Parser2 {
       event match {
         case Event.Open(kind) =>
           locationStack = tokens.head +: locationStack
-          stack = SyntaxTree.Tree(kind, Array.empty, SourceLocation.Unknown) +: stack
+          startStack = workStack.length +: startStack
+          kindStack = kind +: kindStack
 
         case Event.Close =>
-          val child = stack.head
+          val start = startStack.head
+          val kind = kindStack.head
           val openToken = locationStack.head
-          stack.head.loc = if (stack.head.children.length == 0)
+          val numChildren = workStack.length - start
+          val loc = if (numChildren == 0)
             // If the subtree has no children, give it a zero length position just after the last
             // token.
             mkSourceLocation(lastAdvance.end, lastAdvance.end)
@@ -194,30 +209,43 @@ object Parser2 {
             // Otherwise the source location can span from the first to the last token in the
             // subtree.
             mkSourceLocation(openToken.start, lastAdvance.end)
+          // Copy this node's children (the suffix of workStack) into a right-sized array.
+          val childArray = new Array[SyntaxTree.Child](numChildren)
+          var i = 0
+          while (i < numChildren) {
+            childArray(i) = workStack(start + i)
+            i += 1
+          }
+          workStack.dropRightInPlace(numChildren)
+          startStack = startStack.tail
+          kindStack = kindStack.tail
           locationStack = locationStack.tail
-          stack = stack.tail
-          stack.head.children = stack.head.children :+ child
+          workStack += SyntaxTree.Tree(kind, childArray, loc)
 
         case Event.Advance =>
           val token = tokens.next()
           lastAdvance = token
-          stack.head.children = stack.head.children :+ token
+          workStack += token
       }
     }
 
-    // Set source location of the root.
-    stack.last.loc = SourceLocation(
-      isReal = true,
-      s.src,
-      SourcePosition.FirstPosition,
-      tokens.head.end
+    // The root is never closed (its Close was dropped above), so its children are exactly the
+    // remaining contents of the work-stack. Finalize it here.
+    assert(startStack.length == 1)
+    val root = SyntaxTree.Tree(
+      kindStack.head,
+      workStack.toArray,
+      // Set source location of the root.
+      SourceLocation(
+        isReal = true,
+        s.src,
+        SourcePosition.FirstPosition,
+        tokens.head.end
+      )
     )
 
-    // The stack should now contain a single Source tree, and there should only be an <eof> token
-    // left.
-    assert(stack.length == 1)
     assert(tokens.next().kind == TokenKind.Eof)
-    stack.head
+    root
   }
 
   /** Get first non-comment previous position of the parser as a [[SourceLocation]]. */
