@@ -404,7 +404,7 @@ object Parser2 {
     */
   private def atAnyOpt(kinds: Set[TokenKind])(implicit s: State): Option[TokenKind] = {
     val token = nth(0)
-    Some(token).filter(kinds.contains)
+    if (kinds.contains(token)) Some(token) else None
   }
 
   /** Checks if the parser is at a token of a specific `kind` and advances past it if it is. */
@@ -689,6 +689,7 @@ object Parser2 {
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
   private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.NameMath, TokenKind.GenericOperator)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowercase)
+  private val NAME_LOWERCASE: Set[TokenKind] = Set(TokenKind.NameLowercase)
   // TODO: Static is used as a type in Prelude.flix. Static is also an expression.
   //       refactor When Static is used as a region "@ Static" to "@ static" since lowercase is
   //       a keyword.
@@ -734,7 +735,7 @@ object Parser2 {
     *             consumed.
     * @param allowTrailingDot If this is `false`, a trailing `.` will result in a parser error.
     */
-  private def nameAllowQualified(kinds: Set[TokenKind], allowTrailingDot: Boolean = false, tail: Set[TokenKind] = Set(TokenKind.NameLowercase))(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
+  private def nameAllowQualified(kinds: Set[TokenKind], allowTrailingDot: Boolean = false, tail: Set[TokenKind] = NAME_LOWERCASE)(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
 
     // Check if we are at a keyword and emit nice error if so.
@@ -1213,7 +1214,7 @@ object Parser2 {
       close(mark, if (isRestrictable) TreeKind.Decl.RestrictableEnum else TreeKind.Decl.Enum)
     }
 
-    private def FIRST_ENUM_CASE: Set[TokenKind] = Set(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma)
+    private val FIRST_ENUM_CASE: Set[TokenKind] = Set(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma)
 
     private def enumCases()(implicit s: State): Unit = {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Enum
@@ -1552,7 +1553,7 @@ object Parser2 {
           case TokenKind.Dot if nth(1) == TokenKind.NameLowercase => // Invoke method.
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
-            nameUnqualified(Set(TokenKind.NameLowercase))
+            nameUnqualified(NAME_LOWERCASE)
             // `exp.f` is a Java field lookup and `exp.f(..)` is a Java method invocation.
             if (at(TokenKind.ParenL)) {
               arguments()
@@ -1661,32 +1662,28 @@ object Parser2 {
 
     /** Returns the binary operator type of the current token if applicable. */
     private def peekBinaryOp()(implicit s: State): Option[BinaryOp] = {
-      nthToken(0) match {
-        case None => None
-        case Some(token) =>
-          token.kind match {
-            case TokenKind.AngleL => Some(BinaryOp.AngleL)
-            case TokenKind.AngleLEqual => Some(BinaryOp.AngleLEqual)
-            case TokenKind.AngleR => Some(BinaryOp.AngleR)
-            case TokenKind.AngleREqual => Some(BinaryOp.AngleREqual)
-            case TokenKind.AngledEqual => Some(BinaryOp.AngledEqual)
-            case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
-            case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
-            case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
-            case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
-            case TokenKind.KeywordAnd => Some(BinaryOp.And)
-            case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
-            case TokenKind.KeywordOr => Some(BinaryOp.Or)
-            case TokenKind.Minus => Some(BinaryOp.Minus)
-            case TokenKind.NameMath => Some(BinaryOp.NameMath)
-            case TokenKind.Plus => Some(BinaryOp.Plus)
-            case TokenKind.Slash => Some(BinaryOp.Slash)
-            case TokenKind.Star => Some(BinaryOp.Star)
-            case TokenKind.Tick => Some(BinaryOp.InfixFunction)
-            case TokenKind.ColonColonColon => Some(BinaryOp.TripleColon)
-            case TokenKind.GenericOperator => Some(BinaryOp.UserDefinedOperator)
-            case _ => None
-          }
+      nth(0) match {
+        case TokenKind.AngleL => Some(BinaryOp.AngleL)
+        case TokenKind.AngleLEqual => Some(BinaryOp.AngleLEqual)
+        case TokenKind.AngleR => Some(BinaryOp.AngleR)
+        case TokenKind.AngleREqual => Some(BinaryOp.AngleREqual)
+        case TokenKind.AngledEqual => Some(BinaryOp.AngledEqual)
+        case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
+        case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
+        case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
+        case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
+        case TokenKind.KeywordAnd => Some(BinaryOp.And)
+        case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
+        case TokenKind.KeywordOr => Some(BinaryOp.Or)
+        case TokenKind.Minus => Some(BinaryOp.Minus)
+        case TokenKind.NameMath => Some(BinaryOp.NameMath)
+        case TokenKind.Plus => Some(BinaryOp.Plus)
+        case TokenKind.Slash => Some(BinaryOp.Slash)
+        case TokenKind.Star => Some(BinaryOp.Star)
+        case TokenKind.Tick => Some(BinaryOp.InfixFunction)
+        case TokenKind.ColonColonColon => Some(BinaryOp.TripleColon)
+        case TokenKind.GenericOperator => Some(BinaryOp.UserDefinedOperator)
+        case _ => None
       }
     }
 
@@ -1741,8 +1738,8 @@ object Parser2 {
     }
 
     /** Returns the unary operator type of the current token, or `None` if the current token is not a unary operator. */
-    private def peekUnaryOp(token: Token): Option[UnaryOp] = {
-      token.kind match {
+    private def peekUnaryOp(kind: TokenKind): Option[UnaryOp] = {
+      kind match {
         case TokenKind.KeywordDiscard => Some(UnaryOp.Discard)
         case TokenKind.KeywordForce => Some(UnaryOp.Force)
         case TokenKind.KeywordLazy => Some(UnaryOp.Lazy)
@@ -2208,11 +2205,11 @@ object Parser2 {
     private def unaryExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
-      val op = nthToken(0)
+      val opKind = nth(0)
       val markOp = open()
       expectAny(FIRST_EXPR_UNARY)
       close(markOp, TreeKind.Operator)
-      expression(leftOpt = op.flatMap(peekUnaryOp))
+      expression(leftOpt = peekUnaryOp(opKind))
       close(mark, TreeKind.Expr.Unary)
     }
 
@@ -2838,7 +2835,7 @@ object Parser2 {
       assert(nth(0).isComment || at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
-      nameUnqualified(Set(TokenKind.NameLowercase))
+      nameUnqualified(NAME_LOWERCASE)
       Decl.parameters()
       expect(TokenKind.Equal)
       expression()
