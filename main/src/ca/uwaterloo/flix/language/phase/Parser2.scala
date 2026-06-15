@@ -376,7 +376,7 @@ object Parser2 {
     */
   private def atAnyOpt(kinds: Set[TokenKind])(implicit s: State): Option[TokenKind] = {
     val token = nth(0)
-    Some(token).filter(kinds.contains)
+    if (kinds.contains(token)) Some(token) else None
   }
 
   /** Checks if the parser is at a token of a specific `kind` and advances past it if it is. */
@@ -1634,32 +1634,28 @@ object Parser2 {
 
     /** Returns the binary operator type of the current token if applicable. */
     private def peekBinaryOp()(implicit s: State): Option[BinaryOp] = {
-      nthToken(0) match {
-        case None => None
-        case Some(token) =>
-          token.kind match {
-            case TokenKind.AngleL => Some(BinaryOp.AngleL)
-            case TokenKind.AngleLEqual => Some(BinaryOp.AngleLEqual)
-            case TokenKind.AngleR => Some(BinaryOp.AngleR)
-            case TokenKind.AngleREqual => Some(BinaryOp.AngleREqual)
-            case TokenKind.AngledEqual => Some(BinaryOp.AngledEqual)
-            case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
-            case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
-            case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
-            case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
-            case TokenKind.KeywordAnd => Some(BinaryOp.And)
-            case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
-            case TokenKind.KeywordOr => Some(BinaryOp.Or)
-            case TokenKind.Minus => Some(BinaryOp.Minus)
-            case TokenKind.NameMath => Some(BinaryOp.NameMath)
-            case TokenKind.Plus => Some(BinaryOp.Plus)
-            case TokenKind.Slash => Some(BinaryOp.Slash)
-            case TokenKind.Star => Some(BinaryOp.Star)
-            case TokenKind.Tick => Some(BinaryOp.InfixFunction)
-            case TokenKind.ColonColonColon => Some(BinaryOp.TripleColon)
-            case TokenKind.GenericOperator => Some(BinaryOp.UserDefinedOperator)
-            case _ => None
-          }
+      nth(0) match {
+        case TokenKind.AngleL => Some(BinaryOp.AngleL)
+        case TokenKind.AngleLEqual => Some(BinaryOp.AngleLEqual)
+        case TokenKind.AngleR => Some(BinaryOp.AngleR)
+        case TokenKind.AngleREqual => Some(BinaryOp.AngleREqual)
+        case TokenKind.AngledEqual => Some(BinaryOp.AngledEqual)
+        case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
+        case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
+        case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
+        case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
+        case TokenKind.KeywordAnd => Some(BinaryOp.And)
+        case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
+        case TokenKind.KeywordOr => Some(BinaryOp.Or)
+        case TokenKind.Minus => Some(BinaryOp.Minus)
+        case TokenKind.NameMath => Some(BinaryOp.NameMath)
+        case TokenKind.Plus => Some(BinaryOp.Plus)
+        case TokenKind.Slash => Some(BinaryOp.Slash)
+        case TokenKind.Star => Some(BinaryOp.Star)
+        case TokenKind.Tick => Some(BinaryOp.InfixFunction)
+        case TokenKind.ColonColonColon => Some(BinaryOp.TripleColon)
+        case TokenKind.GenericOperator => Some(BinaryOp.UserDefinedOperator)
+        case _ => None
       }
     }
 
@@ -1714,8 +1710,8 @@ object Parser2 {
     }
 
     /** Returns the unary operator type of the current token, or `None` if the current token is not a unary operator. */
-    private def peekUnaryOp(token: Token): Option[UnaryOp] = {
-      token.kind match {
+    private def peekUnaryOp(kind: TokenKind): Option[UnaryOp] = {
+      kind match {
         case TokenKind.KeywordDiscard => Some(UnaryOp.Discard)
         case TokenKind.KeywordForce => Some(UnaryOp.Force)
         case TokenKind.KeywordLazy => Some(UnaryOp.Lazy)
@@ -2181,11 +2177,11 @@ object Parser2 {
     private def unaryExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
-      val op = nthToken(0)
+      val opKind = nth(0)
       val markOp = open()
       expectAny(FIRST_EXPR_UNARY)
       close(markOp, TreeKind.Operator)
-      expression(leftOpt = op.flatMap(peekUnaryOp))
+      expression(leftOpt = peekUnaryOp(opKind))
       close(mark, TreeKind.Expr.Unary)
     }
 
