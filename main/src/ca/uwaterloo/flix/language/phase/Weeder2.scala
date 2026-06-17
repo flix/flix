@@ -97,30 +97,29 @@ object Weeder2 {
   private def visitUse(tree: Tree)(implicit sctx: SharedContext): Validation[List[UseOrImport], CompilationMessage] = {
     expect(tree, TreeKind.UsesOrImports.Use)
     val maybeUseMany = tryPick(TreeKind.UsesOrImports.UseMany, tree)
-    mapN(pickQName(tree)) { qname =>
-      val isTopLevelName = qname.namespace.idents.isEmpty
-      val isNotImportedByUse = maybeUseMany.isEmpty
-      val isUnqualifiedUse = isTopLevelName && isNotImportedByUse
-      if (isUnqualifiedUse) {
-        val error = UnqualifiedUse(qname, qname.loc)
-        sctx.errors.add(error)
-        List.empty
-      } else {
-        val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
-        maybeUseMany match {
-          // case: Use many.
-          case Some(useMany) =>
-            val uses = visitUseMany(useMany, nname)
-            // Issue an error if it's empty.
-            if (uses.isEmpty) {
-              val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, useMany.loc)
-              sctx.errors.add(error)
-            }
-            uses
-          // case: Use one. Use the qname.
-          case None =>
-            List(UseOrImport.Use(qname, qname.ident, qname.loc))
-        }
+    val qname = pickQName(tree)
+    val isTopLevelName = qname.namespace.idents.isEmpty
+    val isNotImportedByUse = maybeUseMany.isEmpty
+    val isUnqualifiedUse = isTopLevelName && isNotImportedByUse
+    if (isUnqualifiedUse) {
+      val error = UnqualifiedUse(qname, qname.loc)
+      sctx.errors.add(error)
+      Validation.Success(List.empty)
+    } else {
+      val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
+      maybeUseMany match {
+        // case: Use many.
+        case Some(useMany) =>
+          val uses = visitUseMany(useMany, nname)
+          // Issue an error if it's empty.
+          if (uses.isEmpty) {
+            val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, useMany.loc)
+            sctx.errors.add(error)
+          }
+          Validation.Success(uses)
+        // case: Use one. Use the qname.
+        case None =>
+          Validation.Success(List(UseOrImport.Use(qname, qname.ident, qname.loc)))
       }
     }
   }
@@ -167,24 +166,22 @@ object Weeder2 {
 
   private def visitImport(tree: Tree)(implicit sctx: SharedContext): Validation[List[UseOrImport], CompilationMessage] = {
     expect(tree, TreeKind.UsesOrImports.Import)
-    mapN(pickJavaName(tree)) {
-      jname =>
-        val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree)
-        maybeImportMany match {
-          // case: Import many.
-          case Some(importMany) =>
-            val imports = visitImportMany(importMany, jname.fqn)
-            // Issue an error if it's empty.
-            if (imports.isEmpty) {
-              val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, importMany.loc)
-              sctx.errors.add(error)
-            }
-            imports
-          // case: Import one. Use the Java name.
-          case None =>
-            val ident = Name.Ident(jname.fqn.lastOption.getOrElse(""), jname.loc)
-            List(UseOrImport.Import(jname, ident, tree.loc))
+    val jname = pickJavaName(tree)
+    val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree)
+    maybeImportMany match {
+      // case: Import many.
+      case Some(importMany) =>
+        val imports = visitImportMany(importMany, jname.fqn)
+        // Issue an error if it's empty.
+        if (imports.isEmpty) {
+          val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, importMany.loc)
+          sctx.errors.add(error)
         }
+        Validation.Success(imports)
+      // case: Import one. Use the Java name.
+      case None =>
+        val ident = Name.Ident(jname.fqn.lastOption.getOrElse(""), jname.loc)
+        Validation.Success(List(UseOrImport.Import(jname, ident, tree.loc)))
     }
   }
 
@@ -255,13 +252,13 @@ object Weeder2 {
         sctx.errors.add(WeederError.IllegalAnnotation(ann.toString, ann.loc))
       }
       val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
+      val qname = pickQName(tree)
       mapN(
         pickDocumentation(tree),
-        pickQName(tree),
         pickAllUsesAndImports(tree),
         pickAllDeclarations(tree)
       ) {
-        (doc, qname, usesAndImports, declarations) => Declaration.Mod(doc, annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
+        (doc, usesAndImports, declarations) => Declaration.Mod(doc, annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
       }
     }
 
@@ -297,16 +294,16 @@ object Weeder2 {
       val allowedDefModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set(TokenKind.KeywordPub) else Set(TokenKind.KeywordPub, TokenKind.KeywordOverride)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
+      val clazz = pickQName(tree)
       flatMapN(
         pickDocumentation(tree),
-        pickQName(tree),
         Types.pickType(tree),
         Types.pickConstraints(tree),
         pickEqualityConstraints(tree),
         traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = allowedDefModifiers, mustBePublic = true)),
         traverse(pickAll(TreeKind.Decl.Redef, tree))(visitRedefinitionDecl),
       ) {
-        (doc, clazz, tpe, tconstrs, econstrs, defs, redefs) =>
+        (doc, tpe, tconstrs, econstrs, defs, redefs) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
           mapN(traverse(assocs)(visitAssociatedTypeDefDecl(_, tpe))) {
             assocs => Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, econstrs, assocs, defs, redefs, tree.loc)
@@ -1030,12 +1027,13 @@ object Weeder2 {
 
     private def visitOpenVariantExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.OpenVariant)
-      mapN(pickQName(tree))(Expr.Open(_, tree.loc))
+      Validation.Success(Expr.Open(pickQName(tree), tree.loc))
     }
 
     private def visitOpenVariantAsExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.OpenVariantAs)
-      mapN(pickQName(tree), pickExpr(tree))((name, expr) => Expr.OpenAs(name, expr, tree.loc))
+      val name = pickQName(tree)
+      mapN(pickExpr(tree))(expr => Expr.OpenAs(name, expr, tree.loc))
     }
 
     private def visitHoleExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
@@ -1915,8 +1913,9 @@ object Weeder2 {
     private def visitHandlerExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Handler)
       val rules = pickAll(TreeKind.Expr.RunWithRuleFragment, tree)
-      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitRunWithRule)) {
-        (eff, handlers) => Expr.Handler(eff, handlers, tree.loc)
+      val eff = pickQName(tree) // This qname is an effect
+      mapN(traverse(rules)(visitRunWithRule)) {
+        handlers => Expr.Handler(eff, handlers, tree.loc)
       }
     }
 
@@ -1946,9 +1945,10 @@ object Weeder2 {
 
     private def visitTryCatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[CatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TryCatchRuleFragment)
-      mapN(pickNameIdent(tree), pickQName(tree), pickExpr(tree)) {
-        case (ident, qname, expr) if qname.isUnqualified => CatchRule(ident, qname.ident, expr, tree.loc)
-        case (ident, qname, expr) =>
+      val qname = pickQName(tree)
+      mapN(pickNameIdent(tree), pickExpr(tree)) {
+        case (ident, expr) if qname.isUnqualified => CatchRule(ident, qname.ident, expr, tree.loc)
+        case (ident, expr) =>
           val error = IllegalQualifiedName(qname.loc)
           sctx.errors.add(error)
           CatchRule(ident, qname.ident, expr, tree.loc)
@@ -2164,8 +2164,9 @@ object Weeder2 {
     private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[Result[SelectChannelRule, UnexpectedSelectChannelRuleFunction], CompilationMessage] = {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
-      mapN(pickNameIdent(tree), pickQName(tree), exprs) {
-        case (ident, qname, channel :: body :: Nil) => // Shape is correct
+      val qname = pickQName(tree)
+      mapN(pickNameIdent(tree), exprs) {
+        case (ident, channel :: body :: Nil) => // Shape is correct
           val isRecvFunction = qname.toString == "Channel.recv" || qname.toString == "recv"
           if (isRecvFunction) {
             Result.Ok(SelectChannelRule(ident, channel, body, tree.loc))
@@ -2520,8 +2521,9 @@ object Weeder2 {
     private def visitExtTagPattern(tree: SyntaxTree.Tree, seen: mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tag)
       val maybePat = tryPick(TreeKind.Pattern.TagBody, tree)
-      mapN(pickQName(tree), traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
-        (qname, maybePat) =>
+      val qname = pickQName(tree)
+      mapN(traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
+        maybePat =>
           if (!qname.isUnqualified) {
             val error = IllegalQualifiedExtPattern(qname)
             sctx.errors.add(error)
@@ -2595,8 +2597,9 @@ object Weeder2 {
     private def visitTagPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tag)
       val maybePat = tryPick(TreeKind.Pattern.TagBody, tree)
-      mapN(pickQName(tree), traverseOpt(maybePat)(visitTagTermsPat(_, seen))) {
-        (qname, maybePat) =>
+      val qname = pickQName(tree)
+      mapN(traverseOpt(maybePat)(visitTagTermsPat(_, seen))) {
+        maybePat =>
           maybePat match {
             case None => Pattern.Tag(qname, Nil, tree.loc)
             case Some(elms) => Pattern.Tag(qname, elms.toList, tree.loc)
@@ -3173,16 +3176,18 @@ object Weeder2 {
       }
       Validation.foldRight(pickAllTrees(parentTree))(Validation.Success(rest)) {
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
-          mapN(pickQName(parentTree), Types.pickArguments(tree)) {
-            (qname, targs) => Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
+          val qname = pickQName(parentTree)
+          mapN(Types.pickArguments(tree)) {
+            targs => Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
           }
 
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithTypes =>
           val types = pickAll(TreeKind.Type.Type, tree)
           val maybeLatTerm = tryPick(TreeKind.Predicate.LatticeTerm, tree)
-          mapN(pickQName(tree), traverse(types)(Types.visitType), traverseOpt(maybeLatTerm)(Types.pickType)) {
-            case (qname, tps, None) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Relational, tps, acc, tree.loc)
-            case (qname, tps, Some(t)) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Latticenal, tps :+ t, acc, tree.loc)
+          val qname = pickQName(tree)
+          mapN(traverse(types)(Types.visitType), traverseOpt(maybeLatTerm)(Types.pickType)) {
+            case (tps, None) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Relational, tps, acc, tree.loc)
+            case (tps, Some(t)) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Latticenal, tps :+ t, acc, tree.loc)
           }
 
         case (_, acc) => Validation.Success(acc)
@@ -3418,8 +3423,9 @@ object Weeder2 {
       }
 
       expect(tree, TreeKind.Type.Constraint)
-      mapN(pickQName(tree), Types.pickType(tree)) {
-        (qname, tpe) =>
+      val qname = pickQName(tree)
+      mapN(Types.pickType(tree)) {
+        tpe =>
           // Check for illegal type constraint parameter
           val (tpe1, errors) = replaceIllegalTypesWithErrors(tpe)
           errors.headOption.map(loc => sctx.errors.add(IllegalTraitConstraintParameter(loc)))
@@ -3450,8 +3456,8 @@ object Weeder2 {
     }
   }
 
-  private def pickQName(tree: Tree)(implicit sctx: SharedContext): Validation[Name.QName, CompilationMessage] = {
-    Validation.Success(visitQName(pick(TreeKind.QName, tree)))
+  private def pickQName(tree: Tree)(implicit sctx: SharedContext): Name.QName = {
+    visitQName(pick(TreeKind.QName, tree))
   }
 
   private def tryPickQName(tree: Tree)(implicit sctx: SharedContext): Option[Name.QName] = {
@@ -3491,9 +3497,9 @@ object Weeder2 {
     tryPick(TreeKind.Ident, tree).map(tokenToIdent)
   }
 
-  private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
+  private def pickJavaName(tree: Tree): Name.JavaName = {
     val qname = pick(TreeKind.QName, tree)
-    Validation.Success(Name.JavaName(pickAll(TreeKind.Ident, qname).flatMap(text), qname.loc))
+    Name.JavaName(pickAll(TreeKind.Ident, qname).flatMap(text), qname.loc)
   }
 
   private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateAndArity, CompilationMessage] = {
