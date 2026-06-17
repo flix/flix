@@ -97,30 +97,29 @@ object Weeder2 {
   private def visitUse(tree: Tree)(implicit sctx: SharedContext): Validation[List[UseOrImport], CompilationMessage] = {
     expect(tree, TreeKind.UsesOrImports.Use)
     val maybeUseMany = tryPick(TreeKind.UsesOrImports.UseMany, tree)
-    mapN(pickQName(tree)) { qname =>
-      val isTopLevelName = qname.namespace.idents.isEmpty
-      val isNotImportedByUse = maybeUseMany.isEmpty
-      val isUnqualifiedUse = isTopLevelName && isNotImportedByUse
-      if (isUnqualifiedUse) {
-        val error = UnqualifiedUse(qname, qname.loc)
-        sctx.errors.add(error)
-        List.empty
-      } else {
-        val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
-        maybeUseMany match {
-          // case: Use many.
-          case Some(useMany) =>
-            val uses = visitUseMany(useMany, nname)
-            // Issue an error if it's empty.
-            if (uses.isEmpty) {
-              val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, useMany.loc)
-              sctx.errors.add(error)
-            }
-            uses
-          // case: Use one. Use the qname.
-          case None =>
-            List(UseOrImport.Use(qname, qname.ident, qname.loc))
-        }
+    val qname = pickQName(tree)
+    val isTopLevelName = qname.namespace.idents.isEmpty
+    val isNotImportedByUse = maybeUseMany.isEmpty
+    val isUnqualifiedUse = isTopLevelName && isNotImportedByUse
+    if (isUnqualifiedUse) {
+      val error = UnqualifiedUse(qname, qname.loc)
+      sctx.errors.add(error)
+      Validation.Success(List.empty)
+    } else {
+      val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
+      maybeUseMany match {
+        // case: Use many.
+        case Some(useMany) =>
+          val uses = visitUseMany(useMany, nname)
+          // Issue an error if it's empty.
+          if (uses.isEmpty) {
+            val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, useMany.loc)
+            sctx.errors.add(error)
+          }
+          Validation.Success(uses)
+        // case: Use one. Use the qname.
+        case None =>
+          Validation.Success(List(UseOrImport.Use(qname, qname.ident, qname.loc)))
       }
     }
   }
@@ -167,24 +166,22 @@ object Weeder2 {
 
   private def visitImport(tree: Tree)(implicit sctx: SharedContext): Validation[List[UseOrImport], CompilationMessage] = {
     expect(tree, TreeKind.UsesOrImports.Import)
-    mapN(pickJavaName(tree)) {
-      jname =>
-        val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree)
-        maybeImportMany match {
-          // case: Import many.
-          case Some(importMany) =>
-            val imports = visitImportMany(importMany, jname.fqn)
-            // Issue an error if it's empty.
-            if (imports.isEmpty) {
-              val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, importMany.loc)
-              sctx.errors.add(error)
-            }
-            imports
-          // case: Import one. Use the Java name.
-          case None =>
-            val ident = Name.Ident(jname.fqn.lastOption.getOrElse(""), jname.loc)
-            List(UseOrImport.Import(jname, ident, tree.loc))
+    val jname = pickJavaName(tree)
+    val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree)
+    maybeImportMany match {
+      // case: Import many.
+      case Some(importMany) =>
+        val imports = visitImportMany(importMany, jname.fqn)
+        // Issue an error if it's empty.
+        if (imports.isEmpty) {
+          val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, importMany.loc)
+          sctx.errors.add(error)
         }
+        Validation.Success(imports)
+      // case: Import one. Use the Java name.
+      case None =>
+        val ident = Name.Ident(jname.fqn.lastOption.getOrElse(""), jname.loc)
+        Validation.Success(List(UseOrImport.Import(jname, ident, tree.loc)))
     }
   }
 
@@ -255,13 +252,13 @@ object Weeder2 {
         sctx.errors.add(WeederError.IllegalAnnotation(ann.toString, ann.loc))
       }
       val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
+      val qname = pickQName(tree)
+      val doc = pickDocumentation(tree)
       mapN(
-        pickDocumentation(tree),
-        pickQName(tree),
         pickAllUsesAndImports(tree),
         pickAllDeclarations(tree)
       ) {
-        (doc, qname, usesAndImports, declarations) => Declaration.Mod(doc, annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
+        (usesAndImports, declarations) => Declaration.Mod(doc, annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
       }
     }
 
@@ -276,15 +273,15 @@ object Weeder2 {
         sctx.errors.add(IllegalNumberOfTraitParameters(tparamsList.loc))
       }
 
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparam = Types.pickSingleParameter(tree)
       flatMapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        Types.pickSingleParameter(tree),
         Types.pickConstraints(tree),
         traverse(sigs)(visitSignatureDecl),
         traverse(laws)(visitLawDecl)
       ) {
-        (doc, ident, tparam, tconstr, sigs, laws) =>
+        (tconstr, sigs, laws) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree)
           mapN(traverse(assocs)(visitAssociatedTypeSigDecl(_, tparam))) {
             assocs => Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
@@ -297,16 +294,16 @@ object Weeder2 {
       val allowedDefModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set(TokenKind.KeywordPub) else Set(TokenKind.KeywordPub, TokenKind.KeywordOverride)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
+      val clazz = pickQName(tree)
+      val doc = pickDocumentation(tree)
       flatMapN(
-        pickDocumentation(tree),
-        pickQName(tree),
         Types.pickType(tree),
         Types.pickConstraints(tree),
         pickEqualityConstraints(tree),
         traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = allowedDefModifiers, mustBePublic = true)),
         traverse(pickAll(TreeKind.Decl.Redef, tree))(visitRedefinitionDecl),
       ) {
-        (doc, clazz, tpe, tconstrs, econstrs, defs, redefs) =>
+        (tpe, tconstrs, econstrs, defs, redefs) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
           mapN(traverse(assocs)(visitAssociatedTypeDefDecl(_, tpe))) {
             assocs => Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, econstrs, assocs, defs, redefs, tree.loc)
@@ -319,10 +316,10 @@ object Weeder2 {
       val maybeExpression = tryPick(TreeKind.Expr.Expr, tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true)
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparams = Types.pickKindedParameters(tree)
       mapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
         Types.pickType(tree),
         Types.tryPickEffect(tree),
@@ -330,7 +327,7 @@ object Weeder2 {
         pickEqualityConstraints(tree),
         traverseOpt(maybeExpression)(Exprs.visitExpr)
       ) {
-        (doc, ident, tparams, fparams, tpe, eff, tconstrs, econstrs, expr) =>
+        (fparams, tpe, eff, tconstrs, econstrs, expr) =>
           Declaration.Sig(doc, ann, mod, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
       }
     }
@@ -339,10 +336,10 @@ object Weeder2 {
       expect(tree, TreeKind.Decl.Def)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = allowedModifiers, mustBePublic)
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparams = Types.pickKindedParameters(tree)
       mapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
         Exprs.pickExpr(tree),
         Types.pickType(tree),
@@ -350,7 +347,7 @@ object Weeder2 {
         pickEqualityConstraints(tree),
         Types.tryPickEffect(tree)
       ) {
-        (doc, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+        (fparams, exp, ttype, tconstrs, constrs, eff) =>
           Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
@@ -360,10 +357,10 @@ object Weeder2 {
       val allowedModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set.empty else Set(TokenKind.KeywordPub)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = allowedModifiers)
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparams = Types.pickKindedParameters(tree)
       mapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
         Exprs.pickExpr(tree),
         Types.pickType(tree),
@@ -371,7 +368,7 @@ object Weeder2 {
         pickEqualityConstraints(tree),
         Types.tryPickEffect(tree)
       ) {
-        (doc, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+        (fparams, exp, ttype, tconstrs, constrs, eff) =>
           Declaration.Redef(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
@@ -379,16 +376,16 @@ object Weeder2 {
     private def visitLawDecl(tree: Tree)(implicit sctx: SharedContext): Validation[Declaration.Def, CompilationMessage] = {
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparams = Types.pickKindedParameters(tree)
       mapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
         Types.pickConstraints(tree),
         pickEqualityConstraints(tree),
-        Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
         Exprs.pickExpr(tree)
       ) {
-        (doc, ident, tconstrs, econstrs, tparams, fparams, expr) =>
+        (tconstrs, econstrs, fparams, expr) =>
           val eff = None
           val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           // TODO: There is a `Declaration.Law` but old Weeder produces a Def
@@ -403,14 +400,14 @@ object Weeder2 {
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val derivations = Types.pickDerivations(tree)
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
       flatMapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        Types.pickParameters(tree),
         traverseOpt(shorthandBody)(Types.visitCaseType),
         traverse(cases)(visitEnumCase)
       ) {
-        (doc, ident, tparams, tpe, cases) =>
+        (tpe, cases) =>
           val casesVal = (tpe, cases) match {
             // Illegal empty singleton enum (`enum A()`)
             case (Some(List(Type.Error(_))), Nil) =>
@@ -439,12 +436,12 @@ object Weeder2 {
     private def visitEnumCase(tree: Tree)(implicit sctx: SharedContext): Validation[Case, CompilationMessage] = {
       expect(tree, TreeKind.Case)
       val maybeType = tryPick(TreeKind.CaseBody, tree)
+      val ident = pickNameIdent(tree)
       mapN(
-        pickNameIdent(tree),
         traverseOpt(maybeType)(Types.visitCaseType),
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
-        (ident, maybeType) =>
+        maybeType =>
           val tpes = maybeType.getOrElse(Nil)
           // Make a source location that spans the name and type, excluding 'case'.
           val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
@@ -460,15 +457,14 @@ object Weeder2 {
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val derivations = Types.pickDerivations(tree)
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
       flatMapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        restrictionParam,
-        Types.pickParameters(tree),
         traverseOpt(shorthandBody)(Types.visitCaseType),
         traverse(cases)(visitRestrictableEnumCase)
       ) {
-        (doc, ident, rParam, tparams, tpe, cases) =>
+        (tpe, cases) =>
           val casesVal = (tpe, cases) match {
             // Illegal empty singleton enum (`enum A()`)
             case (Some(List(Type.Error(_))), Nil) =>
@@ -489,7 +485,7 @@ object Weeder2 {
               Validation.Success(cs)
           }
           mapN(casesVal) {
-            cases => Declaration.RestrictableEnum(doc, ann, mod, ident, rParam, tparams, derivations, cases, tree.loc)
+            cases => Declaration.RestrictableEnum(doc, ann, mod, ident, restrictionParam, tparams, derivations, cases, tree.loc)
           }
       }
     }
@@ -497,12 +493,12 @@ object Weeder2 {
     private def visitRestrictableEnumCase(tree: Tree)(implicit sctx: SharedContext): Validation[RestrictableCase, CompilationMessage] = {
       expect(tree, TreeKind.Case)
       val maybeType = tryPick(TreeKind.CaseBody, tree)
+      val ident = pickNameIdent(tree)
       mapN(
-        pickNameIdent(tree),
         traverseOpt(maybeType)(Types.visitCaseType),
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
-        (ident, maybeType) =>
+        maybeType =>
           val tpes = maybeType.getOrElse(Nil)
           RestrictableCase(ident, tpes, tree.loc)
       }
@@ -513,13 +509,13 @@ object Weeder2 {
       val fields = pickAll(TreeKind.StructField, tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
       flatMapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        Types.pickParameters(tree),
         traverse(fields)(visitStructField)
       ) {
-        (doc, ident, tparams, fields) =>
+        fields =>
           // Ensure that each name is unique
           val errors = SeqOps.getDuplicates(fields, (f: StructField) => f.name.name).map {
             case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
@@ -534,11 +530,11 @@ object Weeder2 {
     private def visitStructField(tree: Tree)(implicit sctx: SharedContext): Validation[StructField, CompilationMessage] = {
       expect(tree, TreeKind.StructField)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub, TokenKind.KeywordMut))
+      val ident = pickNameIdent(tree)
       mapN(
-        pickNameIdent(tree),
         Types.pickType(tree)
       ) {
-        (ident, ttype) =>
+        ttype =>
           // Make a source location that spans the name and type
           val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
           StructField(mod, Name.mkLabel(ident), ttype, loc)
@@ -549,13 +545,13 @@ object Weeder2 {
       expect(tree, TreeKind.Decl.TypeAlias)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, Set(TokenKind.KeywordPub))
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
       mapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        Types.pickParameters(tree),
         Types.pickType(tree)
       ) {
-        (doc, ident, tparams, tpe) =>
+        tpe =>
           Declaration.TypeAlias(doc, ann, mod, ident, tparams, tpe, tree.loc)
       }
     }
@@ -563,41 +559,37 @@ object Weeder2 {
     private def visitAssociatedTypeSigDecl(tree: Tree, classTypeParam: TypeParam)(implicit sctx: SharedContext): Validation[Declaration.AssocTypeSig, CompilationMessage] = {
       expect(tree, TreeKind.Decl.AssociatedTypeSig)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
-      flatMapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        Types.pickParameters(tree),
-      ) {
-        (doc, ident, tparams) =>
-          val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
-          val tpe = Types.tryPickTypeNoWild(tree)
-          val tparam = tparams match {
-            // Elided: Use class type parameter
-            case Nil => Validation.Success(classTypeParam)
-            // Single type parameter
-            case head :: Nil => Validation.Success(head)
-            // Multiple type parameters. Soft fail by picking the first parameter
-            case ts@head :: _ :: _ =>
-              val error = NonUnaryAssocType(ts.length, ident.loc)
-              sctx.errors.add(error)
-              Validation.Success(head)
-          }
-          mapN(tparam, tpe) {
-            (tparam, tpe) => Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, tree.loc)
-          }
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
+      val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
+      val tpe = Types.tryPickTypeNoWild(tree)
+      val tparam = tparams match {
+        // Elided: Use class type parameter
+        case Nil => Validation.Success(classTypeParam)
+        // Single type parameter
+        case head :: Nil => Validation.Success(head)
+        // Multiple type parameters. Soft fail by picking the first parameter
+        case ts@head :: _ :: _ =>
+          val error = NonUnaryAssocType(ts.length, ident.loc)
+          sctx.errors.add(error)
+          Validation.Success(head)
+      }
+      mapN(tparam, tpe) {
+        (tparam, tpe) => Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, tree.loc)
       }
     }
 
     private def visitAssociatedTypeDefDecl(tree: Tree, instType: Type)(implicit sctx: SharedContext): Validation[Declaration.AssocTypeDef, CompilationMessage] = {
       expect(tree, TreeKind.Decl.AssociatedTypeDef)
       val mod = pickModifiers(tree, Set(TokenKind.KeywordPub))
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
       flatMapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
         Types.pickArguments(tree),
         Types.pickType(tree)
       ) {
-        (doc, ident, typeArgs, tpe) =>
+        (typeArgs, tpe) =>
           val typeArg = typeArgs match {
             // Use instance type if type arguments were elided
             case Nil => Validation.Success(instType)
@@ -620,13 +612,13 @@ object Weeder2 {
       val ops = pickAll(TreeKind.Decl.Op, tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
       mapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        Types.pickParameters(tree),
         traverse(ops)(visitOperationDecl)
       ) {
-        (doc, ident, tparams, ops) =>
+        ops =>
           Declaration.Effect(doc, ann, mod, ident, tparams, ops, tree.loc)
       }
     }
@@ -635,22 +627,22 @@ object Weeder2 {
       expect(tree, TreeKind.Decl.Op)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
+      val ident = pickNameIdent(tree)
+      val doc = pickDocumentation(tree)
       mapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
         pickFormalParameters(tree),
         Types.pickType(tree),
         Types.pickConstraints(tree),
       ) {
-        (doc, ident, fparams, tpe, tconstrs) =>
+        (fparams, tpe, tconstrs) =>
           Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, tree.loc)
       }
     }
 
-    private def pickDocumentation(tree0: Tree): Validation[Doc, CompilationMessage] = {
+    private def pickDocumentation(tree0: Tree): Doc = {
       val docTree: Option[Tree] = tryPick(TreeKind.Doc, tree0).flatMap(tryPick(TreeKind.CommentList, _))
       docTree match {
-        case None => Validation.Success(Doc(List.empty, tree0.loc))
+        case None => Doc(List.empty, tree0.loc)
         case Some(tree) =>
           // Strip the `///` prefix, one optional separator space, and trailing whitespace.
           // Internal indentation is preserved so that code blocks and ASCII layout survive.
@@ -666,7 +658,7 @@ object Weeder2 {
           if (lines.lastOption.exists(_.isEmpty)) {
             lines = lines.dropRight(1)
           }
-          Validation.Success(Doc(lines, tree.loc))
+          Doc(lines, tree.loc)
       }
     }
 
@@ -775,9 +767,8 @@ object Weeder2 {
           val tokens = pickAllTokens(modTree)
           // Check if pub is missing
           if (mustBePublic && !tokens.exists(_.kind == TokenKind.KeywordPub)) {
-            mapN(pickNameIdent(tree)) {
-              ident => errors :+= IllegalNonPublicSignature(ident, ident.loc)
-            }
+            val ident = pickNameIdent(tree)
+            errors :+= IllegalNonPublicSignature(ident, ident.loc)
           }
           // Check for duplicate modifiers
           errors = errors ++ SeqOps.getDuplicates(tokens.toSeq, (t: Token) => t.kind).map(pair => {
@@ -842,22 +833,20 @@ object Weeder2 {
 
     private def visitParameter(tree: Tree, presence: Presence)(implicit sctx: SharedContext): Validation[FormalParam, CompilationMessage] = {
       expect(tree, TreeKind.Parameter)
-      flatMapN(pickNameIdent(tree)) {
-        case ident =>
-          val maybeType = tryPick(TreeKind.Type.Type, tree)
-          // Check for missing or illegal type ascription
-          (maybeType, presence) match {
-            case (None, Presence.Required) =>
-              val error = MissingTypeAscription(ident.name, tree.loc)
-              sctx.errors.add(error)
-              Validation.Success(FormalParam(ident, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
-            case (Some(_), Presence.Forbidden) =>
-              val error = IllegalFormalParamAscription(tree.loc)
-              sctx.errors.add(error)
-              Validation.Success(FormalParam(ident, None, tree.loc))
-            case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, Some(tpe), tree.loc) }
-            case (None, _) => Validation.Success(FormalParam(ident, None, tree.loc))
-          }
+      val ident = pickNameIdent(tree)
+      val maybeType = tryPick(TreeKind.Type.Type, tree)
+      // Check for missing or illegal type ascription
+      (maybeType, presence) match {
+        case (None, Presence.Required) =>
+          val error = MissingTypeAscription(ident.name, tree.loc)
+          sctx.errors.add(error)
+          Validation.Success(FormalParam(ident, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
+        case (Some(_), Presence.Forbidden) =>
+          val error = IllegalFormalParamAscription(tree.loc)
+          sctx.errors.add(error)
+          Validation.Success(FormalParam(ident, None, tree.loc))
+        case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, Some(tpe), tree.loc) }
+        case (None, _) => Validation.Success(FormalParam(ident, None, tree.loc))
       }
     }
   }
@@ -940,7 +929,7 @@ object Weeder2 {
         case TreeKind.Expr.AmbiguousNew => visitAmbiguousNewExpr(tree)
         case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
         case TreeKind.Expr.StructPut => visitStructPutExpr(tree)
-        case TreeKind.Expr.Static => visitStaticExpr(tree)
+        case TreeKind.Expr.Static => Validation.Success(visitStaticExpr(tree))
         case TreeKind.Expr.Select => visitSelectExpr(tree)
         case TreeKind.Expr.Spawn => visitSpawnExpr(tree)
         case TreeKind.Expr.ParYield => visitParYieldExpr(tree)
@@ -953,7 +942,7 @@ object Weeder2 {
         case TreeKind.Expr.FixpointQueryWithProvenance => visitFixpointQueryWithProvenanceExpr(tree)
         case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
         case TreeKind.Expr.ExtTag => visitExtTag(tree)
-        case TreeKind.Expr.Intrinsic => visitIntrinsic(tree, None)
+        case TreeKind.Expr.Intrinsic => Validation.Success(visitIntrinsic(tree, None))
         case TreeKind.ErrorTree(err) => Validation.Success(Expr.Error(err))
         case k =>
           throw InternalCompilerException(s"Expected expression, got '$k'.", tree.loc)
@@ -1030,12 +1019,13 @@ object Weeder2 {
 
     private def visitOpenVariantExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.OpenVariant)
-      mapN(pickQName(tree))(Expr.Open(_, tree.loc))
+      Validation.Success(Expr.Open(pickQName(tree), tree.loc))
     }
 
     private def visitOpenVariantAsExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.OpenVariantAs)
-      mapN(pickQName(tree), pickExpr(tree))((name, expr) => Expr.OpenAs(name, expr, tree.loc))
+      val name = pickQName(tree)
+      mapN(pickExpr(tree))(expr => Expr.OpenAs(name, expr, tree.loc))
     }
 
     private def visitHoleExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
@@ -1047,15 +1037,13 @@ object Weeder2 {
 
     private def visitHoleWithExpExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.HoleVariable)
-      mapN(pickNameIdent(tree)) {
-        ident =>
-          // Strip '?' suffix and update source location
-          val sp1 = ident.loc.start
-          val sp2 = SourcePosition.moveLeft(ident.loc.end)
-          val id = Name.Ident(ident.name.stripSuffix("?"), SourceLocation(isReal = true, ident.loc.source, sp1, sp2))
-          val expr = Expr.Ambiguous(Name.QName(Name.RootNS, id, id.loc), id.loc)
-          Expr.HoleWithExp(expr, tree.loc)
-      }
+      val ident = pickNameIdent(tree)
+      // Strip '?' suffix and update source location
+      val sp1 = ident.loc.start
+      val sp2 = SourcePosition.moveLeft(ident.loc.end)
+      val id = Name.Ident(ident.name.stripSuffix("?"), SourceLocation(isReal = true, ident.loc.source, sp1, sp2))
+      val expr = Expr.Ambiguous(Name.QName(Name.RootNS, id, id.loc), id.loc)
+      Validation.Success(Expr.HoleWithExp(expr, tree.loc))
     }
 
     private def visitExprUseExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
@@ -1094,7 +1082,9 @@ object Weeder2 {
           case TokenKind.LiteralRegex => Validation.Success(Constants.toRegex(token))
           case TokenKind.NameLowercase
                | TokenKind.NameUppercase
-               | TokenKind.NameMath => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc))
+               | TokenKind.NameMath =>
+            val ident = pickNameIdent(tree)
+            Validation.Success(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc))
           case _ =>
             val error = UnexpectedToken(expected = NamedTokenSet.Literal, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
             sctx.errors.add(error)
@@ -1111,7 +1101,7 @@ object Weeder2 {
         args =>
           val maybeIntrinsic = tryPick(TreeKind.Expr.Intrinsic, exprTree)
           maybeIntrinsic match {
-            case Some(intrinsic) => visitIntrinsic(intrinsic, Some(args))
+            case Some(intrinsic) => Validation.Success(visitIntrinsic(intrinsic, Some(args)))
             case None => mapN(visitExpr(exprTree))(Expr.Apply(_, args, tree.loc))
           }
       }
@@ -1454,14 +1444,14 @@ object Weeder2 {
           (e, Expr.Error(error))
       }
 
+      val ident = pickNameIdent(tree)
       mapN(
         exprs,
         Decls.pickFormalParameters(tree, Presence.Optional),
-        pickNameIdent(tree),
         Types.tryPickType(tree),
         Types.tryPickEffect(tree),
       ) {
-        case ((exp1, exp2), fparams, ident, declaredTpe, declaredEff) =>
+        case ((exp1, exp2), fparams, declaredTpe, declaredEff) =>
           Expr.LocalDef(ann, ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
       }
     }
@@ -1469,8 +1459,9 @@ object Weeder2 {
     private def visitRegionExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Region)
       val block = visitBlockExpr(pick(TreeKind.Expr.Block, tree))
-      mapN(pickNameIdent(tree), block) {
-        (ident, block) => Expr.Region(ident, block, tree.loc)
+      val ident = pickNameIdent(tree)
+      mapN(block) {
+        block => Expr.Region(ident, block, tree.loc)
       }
     }
 
@@ -1691,12 +1682,13 @@ object Weeder2 {
 
     private def visitExtTag(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ExtTag)
-      mapN(pickNameIdent(tree), tryPickArguments(tree)) {
-        case (ident, None) =>
+      val ident = pickNameIdent(tree)
+      mapN(tryPickArguments(tree)) {
+        case None =>
           // Nullary constructor
           Expr.ExtTag(Name.mkLabel(ident), List.empty, tree.loc)
 
-        case (ident, Some(exps)) =>
+        case Some(exps) =>
           Expr.ExtTag(Name.mkLabel(ident), exps, tree.loc)
       }
     }
@@ -1739,8 +1731,9 @@ object Weeder2 {
     }
 
     private def visitLiteralRecordField(tree: Tree)(implicit sctx: SharedContext): Validation[(Name.Label, Expr, SourceLocation), CompilationMessage] = {
-      mapN(pickNameIdent(tree), pickExpr(tree)) {
-        (ident, expr) => (Name.mkLabel(ident), expr, tree.loc)
+      val ident = pickNameIdent(tree)
+      mapN(pickExpr(tree)) {
+        expr => (Name.mkLabel(ident), expr, tree.loc)
       }
     }
 
@@ -1776,14 +1769,15 @@ object Weeder2 {
       }
       Validation.foldRight(ops)(pickExpr(tree))((op, acc) =>
         op.kind match {
-          case TreeKind.Expr.RecordOpExtend => mapN(pickExpr(op), pickNameIdent(op))(
-            (expr, id) => Expr.RecordExtend(Name.mkLabel(id), expr, acc, op.loc)
-          )
-          case TreeKind.Expr.RecordOpRestrict => mapN(pickNameIdent(op))(
-            id => Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
-          )
-          case TreeKind.Expr.RecordOpUpdate => mapN(pickExpr(op), pickNameIdent(op))(
-            (expr, id) => {
+          case TreeKind.Expr.RecordOpExtend =>
+            val id = pickNameIdent(op)
+            mapN(pickExpr(op))(expr => Expr.RecordExtend(Name.mkLabel(id), expr, acc, op.loc))
+          case TreeKind.Expr.RecordOpRestrict =>
+            val id = pickNameIdent(op)
+            Validation.Success(Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc))
+          case TreeKind.Expr.RecordOpUpdate =>
+            val id = pickNameIdent(op)
+            mapN(pickExpr(op))(expr => {
               // An update is a restrict followed by an extension
               val restricted = Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
               Expr.RecordExtend(Name.mkLabel(id), expr, restricted, op.loc)
@@ -1915,8 +1909,9 @@ object Weeder2 {
     private def visitHandlerExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Handler)
       val rules = pickAll(TreeKind.Expr.RunWithRuleFragment, tree)
-      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitRunWithRule)) {
-        (eff, handlers) => Expr.Handler(eff, handlers, tree.loc)
+      val eff = pickQName(tree) // This qname is an effect
+      mapN(traverse(rules)(visitRunWithRule)) {
+        handlers => Expr.Handler(eff, handlers, tree.loc)
       }
     }
 
@@ -1946,9 +1941,11 @@ object Weeder2 {
 
     private def visitTryCatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[CatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TryCatchRuleFragment)
-      mapN(pickNameIdent(tree), pickQName(tree), pickExpr(tree)) {
-        case (ident, qname, expr) if qname.isUnqualified => CatchRule(ident, qname.ident, expr, tree.loc)
-        case (ident, qname, expr) =>
+      val qname = pickQName(tree)
+      val ident = pickNameIdent(tree)
+      mapN(pickExpr(tree)) {
+        case expr if qname.isUnqualified => CatchRule(ident, qname.ident, expr, tree.loc)
+        case expr =>
           val error = IllegalQualifiedName(qname.loc)
           sctx.errors.add(error)
           CatchRule(ident, qname.ident, expr, tree.loc)
@@ -1962,11 +1959,11 @@ object Weeder2 {
 
     private def visitRunWithRule(tree: Tree)(implicit sctx: SharedContext): Validation[HandlerRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.RunWithRuleFragment)
+      val ident = pickNameIdent(tree)
       mapN(
-        pickNameIdent(tree),
         Decls.pickFormalParameters(tree, Presence.Forbidden),
         pickExpr(tree)
-      )((ident, fparams0, expr) => {
+      )((fparams0, expr) => {
         // `def f()` becomes `def f(_unit: Unit)` (via Decls.pickFormalParameters).
         // `def f(x)` becomes `def f(_unit: Unit, x)`.
         // `def f(x, y, ..)` is unchanged.
@@ -2033,9 +2030,9 @@ object Weeder2 {
       val baseExp = pickExpr(tree)
       val method = pickNameIdent(tree)
       val argsExps = pickRawArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
-      mapN(baseExp, method, argsExps) {
-        case (b, m, as) =>
-          val result = Expr.InvokeMethod(b, m, as, tree.loc)
+      mapN(baseExp, argsExps) {
+        case (b, as) =>
+          val result = Expr.InvokeMethod(b, method, as, tree.loc)
           result
       }
     }
@@ -2044,8 +2041,8 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.InvokeSuperMethod)
       val method = pickNameIdent(tree)
       val argsExps = pickRawArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
-      mapN(method, argsExps) {
-        case (m, as) => Expr.InvokeSuperMethod(m, as, tree.loc)
+      mapN(argsExps) {
+        as => Expr.InvokeSuperMethod(method, as, tree.loc)
       }
     }
 
@@ -2053,8 +2050,8 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.GetField)
       val baseExp = pickExpr(tree)
       val method = pickNameIdent(tree)
-      mapN(baseExp, method) {
-        case (b, m) => Expr.GetField(b, m, tree.loc)
+      mapN(baseExp) {
+        b => Expr.GetField(b, method, tree.loc)
       }
     }
 
@@ -2078,8 +2075,9 @@ object Weeder2 {
 
     private def visitStructGetExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StructGet)
-      mapN(pickExpr(tree), pickNameIdent(tree)) {
-        (expr, ident) => Expr.StructGet(expr, Name.mkLabel(ident), tree.loc)
+      val ident = pickNameIdent(tree)
+      mapN(pickExpr(tree)) {
+        expr => Expr.StructGet(expr, Name.mkLabel(ident), tree.loc)
       }
     }
 
@@ -2089,22 +2087,22 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val rhs = pickExpr(pick(TreeKind.Expr.StructPutRHS, tree))
 
-      mapN(struct, ident, rhs) {
-        (struct, ident, rhs) => Expr.StructPut(struct, Name.mkLabel(ident), rhs, tree.loc)
+      mapN(struct, rhs) {
+        (struct, rhs) => Expr.StructPut(struct, Name.mkLabel(ident), rhs, tree.loc)
       }
     }
 
     private def visitJvmMethod(tree: Tree)(implicit sctx: SharedContext): Validation[JvmMethod, CompilationMessage] = {
       expect(tree, TreeKind.Expr.JvmMethod)
       val jvmAnns = pickJvmAnnotations(tree)
+      val ident = pickNameIdent(tree)
       mapN(
-        pickNameIdent(tree),
         pickExpr(tree),
         Decls.pickFormalParameters(tree),
         Types.pickType(tree),
         Types.tryPickEffect(tree),
       ) {
-        (ident, expr, fparams, tpe, eff) => JvmMethod(jvmAnns, ident, fparams, expr, tpe, eff, tree.loc)
+        (expr, fparams, tpe, eff) => JvmMethod(jvmAnns, ident, fparams, expr, tpe, eff, tree.loc)
       }
     }
 
@@ -2138,14 +2136,15 @@ object Weeder2 {
 
     private def visitNewStructField(tree: Tree)(implicit sctx: SharedContext): Validation[(Name.Label, Expr), CompilationMessage] = {
       expect(tree, TreeKind.Expr.LiteralStructFieldFragment)
-      mapN(pickNameIdent(tree), pickExpr(tree)) {
-        (ident, expr) => (Name.mkLabel(ident), expr)
+      val ident = pickNameIdent(tree)
+      mapN(pickExpr(tree)) {
+        expr => (Name.mkLabel(ident), expr)
       }
     }
 
-    private def visitStaticExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+    private def visitStaticExpr(tree: Tree): Expr = {
       expect(tree, TreeKind.Expr.Static)
-      Validation.Success(Expr.Static(tree.loc))
+      Expr.Static(tree.loc)
     }
 
     private def visitSelectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
@@ -2164,8 +2163,10 @@ object Weeder2 {
     private def visitSelectRule(tree: Tree)(implicit sctx: SharedContext): Validation[Result[SelectChannelRule, UnexpectedSelectChannelRuleFunction], CompilationMessage] = {
       expect(tree, TreeKind.Expr.SelectRuleFragment)
       val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
-      mapN(pickNameIdent(tree), pickQName(tree), exprs) {
-        case (ident, qname, channel :: body :: Nil) => // Shape is correct
+      val qname = pickQName(tree)
+      val ident = pickNameIdent(tree)
+      mapN(exprs) {
+        case channel :: body :: Nil => // Shape is correct
           val isRecvFunction = qname.toString == "Channel.recv" || qname.toString == "recv"
           if (isRecvFunction) {
             Result.Ok(SelectChannelRule(ident, channel, body, tree.loc))
@@ -2242,16 +2243,17 @@ object Weeder2 {
       val expTrees = pickAll(TreeKind.Expr.Expr, tree)
       val predAndArityTrees = pickAll(TreeKind.PredicateAndArity, tree)
       val expsVal = traverse(expTrees)(visitExpr)
-      val predsAndAritiesVal = traverse(predAndArityTrees)(visitPredicateAndArity)
-      mapN(expsVal, predsAndAritiesVal) {
-        case (exprs, predsAndArities) if exprs.length != predsAndArities.length =>
-          // Check for mismatched arity
-          val error = MismatchedArity(exprs.length, predsAndArities.length, tree.loc)
-          sctx.errors.add(error)
-          WeededAst.Expr.Error(error)
-
-        case (exprs, predsAndArities) =>
-          Expr.FixpointInjectInto(exprs, predsAndArities, tree.loc)
+      val predsAndArities = predAndArityTrees.map(visitPredicateAndArity)
+      mapN(expsVal) {
+        exprs =>
+          if (exprs.length != predsAndArities.length) {
+            // Check for mismatched arity
+            val error = MismatchedArity(exprs.length, predsAndArities.length, tree.loc)
+            sctx.errors.add(error)
+            WeededAst.Expr.Error(error)
+          } else {
+            Expr.FixpointInjectInto(exprs, predsAndArities, tree.loc)
+          }
       }
     }
 
@@ -2303,7 +2305,7 @@ object Weeder2 {
       *   - `args = Some(Nil)` is an applied intrinsic with zero arguments (e.g. `%%EXAMPLE%%()`)
       *   - `args = Some(Cons(.., ..))` is an applied intrinsic with some arguments (e.g. `%%VECTOR_LENGTH%%(v)`)
       */
-    private def visitIntrinsic(tree: Tree, args: Option[List[Expr]])(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    private def visitIntrinsic(tree: Tree, args: Option[List[Expr]])(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.Intrinsic)
       val intrinsic = text(tree).head.stripPrefix("%%").stripSuffix("%%")
       val loc = tree.loc
@@ -2438,7 +2440,7 @@ object Weeder2 {
           sctx.errors.add(error)
           Expr.Error(error)
       }
-      Validation.Success(res)
+      res
     }
   }
 
@@ -2455,7 +2457,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Pattern)
       tree.children.headOption match {
         case Some(tree: Tree) => tree.kind match {
-          case TreeKind.Pattern.Variable => visitVariablePat(tree, seen)
+          case TreeKind.Pattern.Variable => Validation.Success(visitVariablePat(tree, seen))
           case TreeKind.Pattern.Literal => visitLiteralPat(tree)
           case TreeKind.Pattern.Tag => visitTagPat(tree, seen)
           case TreeKind.Pattern.Tuple => visitTuplePat(tree, seen)
@@ -2505,7 +2507,7 @@ object Weeder2 {
       tree.children.headOption match {
         case Some(subtree: Tree) => subtree.kind match {
           case TreeKind.Pattern.Tag => visitExtTagPattern(subtree, seen)
-          case TreeKind.Pattern.Variable => visitExtTagDefaultPattern(subtree)
+          case TreeKind.Pattern.Variable => Validation.Success(visitExtTagDefaultPattern(subtree))
           // Avoid double reporting errors by returning a success here
           case TreeKind.ErrorTree(_) => Validation.Success(ExtPattern.Error(subtree.loc))
           case _ =>
@@ -2520,8 +2522,9 @@ object Weeder2 {
     private def visitExtTagPattern(tree: SyntaxTree.Tree, seen: mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tag)
       val maybePat = tryPick(TreeKind.Pattern.TagBody, tree)
-      mapN(pickQName(tree), traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
-        (qname, maybePat) =>
+      val qname = pickQName(tree)
+      mapN(traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
+        maybePat =>
           if (!qname.isUnqualified) {
             val error = IllegalQualifiedExtPattern(qname)
             sctx.errors.add(error)
@@ -2533,9 +2536,9 @@ object Weeder2 {
       }
     }
 
-    private def visitExtTagDefaultPattern(tree: SyntaxTree.Tree)(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
+    private def visitExtTagDefaultPattern(tree: SyntaxTree.Tree)(implicit sctx: SharedContext): ExtPattern = {
       expect(tree, TreeKind.Pattern.Variable)
-      mapN(pickNameIdent(tree)) {
+      pickNameIdent(tree) match {
         case ident if ident.name == "_" =>
           ExtPattern.Default(tree.loc)
 
@@ -2546,25 +2549,22 @@ object Weeder2 {
       }
     }
 
-    private def visitVariablePat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
+    private def visitVariablePat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Pattern = {
       expect(tree, TreeKind.Pattern.Variable)
-      mapN(pickNameIdent(tree))(
-        ident => {
-          if (ident.name == "_")
-            Pattern.Wild(tree.loc)
-          else {
-            seen.get(ident.name) match {
-              case Some(other) =>
-                val error = NonLinearPattern(ident.name, other.loc, tree.loc)
-                sctx.errors.add(error)
-                Pattern.Var(ident, tree.loc)
-              case None =>
-                seen += (ident.name -> ident)
-                Pattern.Var(ident, tree.loc)
-            }
-          }
+      val ident = pickNameIdent(tree)
+      if (ident.name == "_")
+        Pattern.Wild(tree.loc)
+      else {
+        seen.get(ident.name) match {
+          case Some(other) =>
+            val error = NonLinearPattern(ident.name, other.loc, tree.loc)
+            sctx.errors.add(error)
+            Pattern.Var(ident, tree.loc)
+          case None =>
+            seen += (ident.name -> ident)
+            Pattern.Var(ident, tree.loc)
         }
-      )
+      }
     }
 
     private def visitLiteralPat(tree: Tree)(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
@@ -2595,8 +2595,9 @@ object Weeder2 {
     private def visitTagPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tag)
       val maybePat = tryPick(TreeKind.Pattern.TagBody, tree)
-      mapN(pickQName(tree), traverseOpt(maybePat)(visitTagTermsPat(_, seen))) {
-        (qname, maybePat) =>
+      val qname = pickQName(tree)
+      mapN(traverseOpt(maybePat)(visitTagTermsPat(_, seen))) {
+        maybePat =>
           maybePat match {
             case None => Pattern.Tag(qname, Nil, tree.loc)
             case Some(elms) => Pattern.Tag(qname, elms.toList, tree.loc)
@@ -2677,8 +2678,9 @@ object Weeder2 {
     private def visitRecordField(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern.Record.RecordLabelPattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.RecordFieldFragment)
       val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree)
-      mapN(pickNameIdent(tree), traverseOpt(maybePattern)(visitPattern(_, seen))) {
-        case (ident, None) =>
+      val ident = pickNameIdent(tree)
+      mapN(traverseOpt(maybePattern)(visitPattern(_, seen))) {
+        case None =>
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
@@ -2688,7 +2690,7 @@ object Weeder2 {
               sctx.errors.add(error)
               Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc)
           }
-        case (ident, pat) =>
+        case pat =>
           Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), pat, tree.loc)
       }
     }
@@ -2929,8 +2931,9 @@ object Weeder2 {
     def pickHead(tree: Tree)(implicit sctx: SharedContext): Validation[Predicate.Head.Atom, CompilationMessage] = {
       val headTree = pick(TreeKind.Predicate.Head, tree)
       val maybeTermList = tryPick(TreeKind.Predicate.TermList, headTree)
-      mapN(pickNameIdent(headTree), traverseOpt(maybeTermList)(visitTermList)) {
-        (ident, maybeTermList) =>
+      val ident = pickNameIdent(headTree)
+      mapN(traverseOpt(maybeTermList)(visitTermList)) {
+        maybeTermList =>
           maybeTermList match {
             case None =>
               Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, Nil, headTree.loc)
@@ -2968,8 +2971,9 @@ object Weeder2 {
       val fixity = if (hasToken(TokenKind.KeywordFix, tree)) Fixity.Fixed else Fixity.Loose
       val polarity = if (hasToken(TokenKind.KeywordNot, tree)) Polarity.Negative else Polarity.Positive
       val maybePatList = tryPick(TreeKind.Predicate.PatternList, tree)
-      flatMapN(pickNameIdent(tree), traverseOpt(maybePatList)(visitPatternList))(
-        (ident, maybePatList) => maybePatList match {
+      val ident = pickNameIdent(tree)
+      flatMapN(traverseOpt(maybePatList)(visitPatternList))(
+        maybePatList => maybePatList match {
           case None =>
             Validation.Success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, Nil, tree.loc))
           case Some((pats, None)) =>
@@ -3013,10 +3017,11 @@ object Weeder2 {
       expectAny(tree, List(TreeKind.Predicate.Param, TreeKind.Predicate.ParamUntyped))
       val types0 = pickAll(TreeKind.Type.Type, tree)
       val maybeLatTerm = tryPickLatticeTermType(tree)
-      mapN(pickNameIdent(tree), traverse(types0)(Types.visitType), maybeLatTerm) {
-        case (ident, Nil, _) => PredicateParam.PredicateParamUntyped(Name.mkPred(ident), tree.loc)
-        case (ident, types, None) => PredicateParam.PredicateParamWithType(Name.mkPred(ident), Denotation.Relational, types, tree.loc)
-        case (ident, types, Some(latTerm)) => PredicateParam.PredicateParamWithType(Name.mkPred(ident), Denotation.Latticenal, types :+ latTerm, tree.loc)
+      val ident = pickNameIdent(tree)
+      mapN(traverse(types0)(Types.visitType), maybeLatTerm) {
+        case (Nil, _) => PredicateParam.PredicateParamUntyped(Name.mkPred(ident), tree.loc)
+        case (types, None) => PredicateParam.PredicateParamWithType(Name.mkPred(ident), Denotation.Relational, types, tree.loc)
+        case (types, Some(latTerm)) => PredicateParam.PredicateParamWithType(Name.mkPred(ident), Denotation.Latticenal, types :+ latTerm, tree.loc)
       }
     }
 
@@ -3077,7 +3082,7 @@ object Weeder2 {
         case TreeKind.Type.Extensible => visitExtensibleType(inner)
         case TreeKind.Type.SchemaRow => visitSchemaRowType(inner)
         case TreeKind.Type.Apply => visitApplyType(inner)
-        case TreeKind.Type.Constant => visitConstantType(inner)
+        case TreeKind.Type.Constant => Validation.Success(visitConstantType(inner))
         case TreeKind.Type.Unary => visitUnaryType(inner)
         case TreeKind.Type.Binary => visitBinaryType(inner)
         case TreeKind.Type.CaseSet => Validation.Success(visitCaseSetType(inner))
@@ -3151,7 +3156,8 @@ object Weeder2 {
 
     private def visitRecordField(tree: Tree)(implicit sctx: SharedContext): Validation[(Name.Label, Type), CompilationMessage] = {
       expect(tree, TreeKind.Type.RecordFieldFragment)
-      mapN(pickNameIdent(tree), pickType(tree))((ident, tpe) => (Name.mkLabel(ident), tpe))
+      val ident = pickNameIdent(tree)
+      mapN(pickType(tree))(tpe => (Name.mkLabel(ident), tpe))
     }
 
     private def visitSchemaType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
@@ -3173,16 +3179,18 @@ object Weeder2 {
       }
       Validation.foldRight(pickAllTrees(parentTree))(Validation.Success(rest)) {
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
-          mapN(pickQName(parentTree), Types.pickArguments(tree)) {
-            (qname, targs) => Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
+          val qname = pickQName(parentTree)
+          mapN(Types.pickArguments(tree)) {
+            targs => Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
           }
 
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithTypes =>
           val types = pickAll(TreeKind.Type.Type, tree)
           val maybeLatTerm = tryPick(TreeKind.Predicate.LatticeTerm, tree)
-          mapN(pickQName(tree), traverse(types)(Types.visitType), traverseOpt(maybeLatTerm)(Types.pickType)) {
-            case (qname, tps, None) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Relational, tps, acc, tree.loc)
-            case (qname, tps, Some(t)) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Latticenal, tps :+ t, acc, tree.loc)
+          val qname = pickQName(tree)
+          mapN(traverse(types)(Types.visitType), traverseOpt(maybeLatTerm)(Types.pickType)) {
+            case (tps, None) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Relational, tps, acc, tree.loc)
+            case (tps, Some(t)) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Latticenal, tps :+ t, acc, tree.loc)
           }
 
         case (_, acc) => Validation.Success(acc)
@@ -3202,13 +3210,13 @@ object Weeder2 {
       }
     }
 
-    private def visitConstantType(tree: Tree): Validation[Type, CompilationMessage] = {
+    private def visitConstantType(tree: Tree): Type = {
       expect(tree, TreeKind.Type.Constant)
       text(tree).head match {
-        case "false" => Validation.Success(Type.False(tree.loc))
-        case "true" => Validation.Success(Type.True(tree.loc))
+        case "false" => Type.False(tree.loc)
+        case "true" => Type.True(tree.loc)
         // TODO EFF-MIGRATION create dedicated Impure type
-        case "Univ" => Validation.Success(Type.Complement(Type.Pure(tree.loc), tree.loc))
+        case "Univ" => Type.Complement(Type.Pure(tree.loc), tree.loc)
         case other => throw InternalCompilerException(s"'$other' used as Type.Constant ${tree.loc}", tree.loc)
       }
     }
@@ -3300,8 +3308,9 @@ object Weeder2 {
 
     private def visitAscribeType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.Ascribe)
-      mapN(pickType(tree), pickKind(tree)) {
-        (tpe, kind) => Type.Ascribe(tpe, kind, tree.loc)
+      val kind = pickKind(tree)
+      mapN(pickType(tree)) {
+        tpe => Type.Ascribe(tpe, kind, tree.loc)
       }
     }
 
@@ -3326,73 +3335,67 @@ object Weeder2 {
       Derivations(derivations, loc)
     }
 
-    def pickParameters(tree: Tree)(implicit sctx: SharedContext): Validation[List[TypeParam], CompilationMessage] = {
+    def pickParameters(tree: Tree)(implicit sctx: SharedContext): List[TypeParam] = {
       tryPick(TreeKind.TypeParameterList, tree) match {
-        case None => Validation.Success(Nil)
+        case None => Nil
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
-          mapN(traverse(parameters)(visitParameter)) {
-            tparams =>
-              val kinded = tparams.collect { case t: TypeParam.Kinded => t }
-              val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
-              (kinded, unkinded) match {
-                // Only unkinded type parameters
-                case (Nil, _ :: _) => tparams
-                // Only kinded type parameters
-                case (_ :: _, Nil) => tparams
-                // Some kinded and some unkinded type parameters. Give an error and keep going.
-                case (_ :: _, _ :: _) =>
-                  val error = MismatchedKindAnnotations(tparamsTree.loc)
-                  sctx.errors.add(error)
-                  tparams
-                // No type parameters. Issue an error and return an empty list.
-                case (Nil, Nil) =>
-                  val error = NeedAtleastOne(NamedTokenSet.Parameter, SyntacticContext.Decl.Type, None, tparamsTree.loc)
-                  sctx.errors.add(error)
-                  Nil
-              }
+          val tparams = parameters.map(visitParameter)
+          val kinded = tparams.collect { case t: TypeParam.Kinded => t }
+          val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
+          (kinded, unkinded) match {
+            // Only unkinded type parameters
+            case (Nil, _ :: _) => tparams
+            // Only kinded type parameters
+            case (_ :: _, Nil) => tparams
+            // Some kinded and some unkinded type parameters. Give an error and keep going.
+            case (_ :: _, _ :: _) =>
+              val error = MismatchedKindAnnotations(tparamsTree.loc)
+              sctx.errors.add(error)
+              tparams
+            // No type parameters. Issue an error and return an empty list.
+            case (Nil, Nil) =>
+              val error = NeedAtleastOne(NamedTokenSet.Parameter, SyntacticContext.Decl.Type, None, tparamsTree.loc)
+              sctx.errors.add(error)
+              Nil
           }
       }
     }
 
-    def pickKindedParameters(tree: Tree)(implicit sctx: SharedContext): Validation[List[TypeParam], CompilationMessage] = {
+    def pickKindedParameters(tree: Tree)(implicit sctx: SharedContext): List[TypeParam] = {
       tryPick(TreeKind.TypeParameterList, tree) match {
-        case None => Validation.Success(Nil)
+        case None => Nil
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
-          mapN(traverse(parameters)(visitParameter)) {
-            tparams =>
-              val kinded = tparams.collect { case t: TypeParam.Kinded => t }
-              val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
-              (kinded, unkinded) match {
-                // Only kinded type parameters
-                case (_ :: _, Nil) => tparams
-                // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
-                case (_, _ :: _) =>
-                  unkinded.foreach(t => sctx.errors.add(MissingKindAscription(t.ident.loc)))
-                  tparams
-                // Empty list. Syntax error, but recover with an empty list.
-                case (Nil, Nil) =>
-                  sctx.errors.add(EmptyTypeParamList(tparamsTree.loc))
-                  tparams
-              }
+          val tparams = parameters.map(visitParameter)
+          val kinded = tparams.collect { case t: TypeParam.Kinded => t }
+          val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
+          (kinded, unkinded) match {
+            // Only kinded type parameters
+            case (_ :: _, Nil) => tparams
+            // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
+            case (_, _ :: _) =>
+              unkinded.foreach(t => sctx.errors.add(MissingKindAscription(t.ident.loc)))
+              tparams
+            // Empty list. Syntax error, but recover with an empty list.
+            case (Nil, Nil) =>
+              sctx.errors.add(EmptyTypeParamList(tparamsTree.loc))
+              tparams
           }
       }
     }
 
-    def pickSingleParameter(tree: Tree)(implicit sctx: SharedContext): Validation[TypeParam, CompilationMessage] = {
+    def pickSingleParameter(tree: Tree)(implicit sctx: SharedContext): TypeParam = {
       val tparams = pick(TreeKind.TypeParameterList, tree)
       visitParameter(pick(TreeKind.Parameter, tparams))
     }
 
-    def visitParameter(tree: Tree)(implicit sctx: SharedContext): Validation[TypeParam, CompilationMessage] = {
+    def visitParameter(tree: Tree)(implicit sctx: SharedContext): TypeParam = {
       expect(tree, TreeKind.Parameter)
-      mapN(pickNameIdent(tree)) {
-        ident =>
-          tryPickKind(tree)
-            .map(kind => TypeParam.Kinded(ident, kind))
-            .getOrElse(TypeParam.Unkinded(ident))
-      }
+      val ident = pickNameIdent(tree)
+      tryPickKind(tree)
+        .map(kind => TypeParam.Kinded(ident, kind))
+        .getOrElse(TypeParam.Unkinded(ident))
     }
 
     def pickConstraints(tree: Tree)(implicit sctx: SharedContext): Validation[List[TraitConstraint], CompilationMessage] = {
@@ -3418,8 +3421,9 @@ object Weeder2 {
       }
 
       expect(tree, TreeKind.Type.Constraint)
-      mapN(pickQName(tree), Types.pickType(tree)) {
-        (qname, tpe) =>
+      val qname = pickQName(tree)
+      mapN(Types.pickType(tree)) {
+        tpe =>
           // Check for illegal type constraint parameter
           val (tpe1, errors) = replaceIllegalTypesWithErrors(tpe)
           errors.headOption.map(loc => sctx.errors.add(IllegalTraitConstraintParameter(loc)))
@@ -3427,31 +3431,28 @@ object Weeder2 {
       }
     }
 
-    private def visitKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
+    private def visitKind(tree: Tree)(implicit sctx: SharedContext): Kind = {
       expect(tree, TreeKind.Kind)
-      mapN(pickNameIdent(tree)) {
-        ident => {
-          val kind = Kind.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), ident.loc)
-          tryPick(TreeKind.Kind, tree)
-          tryPickKind(tree)
-            .map(Kind.Arrow(kind, _, tree.loc))
-            .getOrElse(kind)
-        }
-      }
+      val ident = pickNameIdent(tree)
+      val kind = Kind.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), ident.loc)
+      tryPick(TreeKind.Kind, tree)
+      tryPickKind(tree)
+        .map(Kind.Arrow(kind, _, tree.loc))
+        .getOrElse(kind)
     }
 
-    private def pickKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
+    private def pickKind(tree: Tree)(implicit sctx: SharedContext): Kind = {
       visitKind(pick(TreeKind.Kind, tree))
     }
 
     def tryPickKind(tree: Tree)(implicit sctx: SharedContext): Option[Kind] = {
       // Cast a missing kind to None because 'tryPick' means that it's okay not to find a kind here.
-      tryPick(TreeKind.Kind, tree).flatMap(visitKind(_).toResult.toOption)
+      tryPick(TreeKind.Kind, tree).map(visitKind)
     }
   }
 
-  private def pickQName(tree: Tree)(implicit sctx: SharedContext): Validation[Name.QName, CompilationMessage] = {
-    Validation.Success(visitQName(pick(TreeKind.QName, tree)))
+  private def pickQName(tree: Tree)(implicit sctx: SharedContext): Name.QName = {
+    visitQName(pick(TreeKind.QName, tree))
   }
 
   private def tryPickQName(tree: Tree)(implicit sctx: SharedContext): Option[Name.QName] = {
@@ -3483,26 +3484,24 @@ object Weeder2 {
     }
   }
 
-  private def pickNameIdent(tree: Tree)(implicit sctx: SharedContext): Validation[Name.Ident, CompilationMessage] = {
-    Validation.Success(tokenToIdent(pick(TreeKind.Ident, tree)))
+  private def pickNameIdent(tree: Tree)(implicit sctx: SharedContext): Name.Ident = {
+    tokenToIdent(pick(TreeKind.Ident, tree))
   }
 
   private def tryPickNameIdent(tree: Tree)(implicit sctx: SharedContext): Option[Name.Ident] = {
     tryPick(TreeKind.Ident, tree).map(tokenToIdent)
   }
 
-  private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
+  private def pickJavaName(tree: Tree): Name.JavaName = {
     val qname = pick(TreeKind.QName, tree)
-    Validation.Success(Name.JavaName(pickAll(TreeKind.Ident, qname).flatMap(text), qname.loc))
+    Name.JavaName(pickAll(TreeKind.Ident, qname).flatMap(text), qname.loc)
   }
 
-  private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateAndArity, CompilationMessage] = {
+  private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): PredicateAndArity = {
     val arityToken = pickToken(TokenKind.LiteralInt, tree)
-    mapN(pickNameIdent(tree)) {
-      ident =>
-        val arity = tryParsePredicateArity(arityToken)
-        PredicateAndArity(Name.mkPred(ident), arity)
-    }
+    val ident = pickNameIdent(tree)
+    val arity = tryParsePredicateArity(arityToken)
+    PredicateAndArity(Name.mkPred(ident), arity)
   }
 
   private def tryParsePredicateArity(token: Token)(implicit sctx: SharedContext): Int = {
