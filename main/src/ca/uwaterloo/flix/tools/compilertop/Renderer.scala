@@ -50,10 +50,13 @@ import scala.collection.mutable
   *                        populated below.
   * @param layout          column layout produced by [[Layout.compute]].
   * @param visible         def-table rows, already filtered / sorted / trimmed.
-  *                        Empty when [[activeView]] is [[Model.View.Modules]].
+  *                        Empty unless [[activeView]] is [[Model.View.Defs]].
   * @param modules         module-table rows, already aggregated / sorted /
   *                        trimmed. Empty unless [[activeView]] is
   *                        [[Model.View.Modules]].
+  * @param phases          phase-table rows, already aggregated / sorted /
+  *                        trimmed. Empty unless [[activeView]] is
+  *                        [[Model.View.Phases]].
   */
 final case class FrameState(parallelism: Int,
                             isDone: Boolean,
@@ -68,6 +71,7 @@ final case class FrameState(parallelism: Int,
                             layout: Layout,
                             visible: Vector[DefnStats],
                             modules: Vector[ModuleStats],
+                            phases: Vector[PhaseStats],
                             coverage: Coverage)
 
 object Renderer {
@@ -80,6 +84,15 @@ object Renderer {
 
   /** Width (in characters) of the phase-progress bar. */
   private val BarWidth: Int = 12
+
+  /** Width (in characters) of the per-phase wall-time bar drawn left of the `time` column. */
+  private val PhaseBarWidth: Int = 18
+
+  /** Fixed width of the phase-table numeric tail: `profile(18) + time(9) + blind(9) + %obs(6) + alloc(5) + par(5) + %cpu(6) + %wall(6)`, each with a leading separator. */
+  private val PhaseTailWidth: Int = (1 + PhaseBarWidth) + (1 + 9) + (1 + 5) + (1 + 5) + (1 + 6) + (1 + 6) + (1 + 9) + (1 + 6)
+
+  /** Floor on the phase-table name column when the terminal is narrow. */
+  private val MinPhaseNameWidth: Int = 12
 
   /** 1-indexed column where the `progress` label starts on the dashboard. */
   private lazy val ProgressStartCol: Int = 5 + MaxPhaseLen
@@ -273,6 +286,7 @@ final class Renderer {
     state.activeView match {
       case View.Defs    => renderDefTable(sb, state)
       case View.Modules => renderModuleTable(sb, state)
+      case View.Phases  => renderPhaseTable(sb, state)
       case View.Help    => renderHelp(sb)
     }
 
@@ -298,6 +312,96 @@ final class Renderer {
     renderHeaderRow(sb, "mod (hot)", state.layout, state.activeSort)
     if (modRows.isEmpty) renderEmptyPlaceholder(sb, "(no modules yet)", state.layout)
     else renderTable(sb, modRows, state.layout)
+  }
+
+  /**
+    * Renders the per-phase aggregate table (the body of the phases view). This
+    * view has its own column set — `phase`, `bar`, `time`, `blind`, `%obs`,
+    * `alloc`, `par`, `%cpu`, `%wall` — so it doesn't reuse the def / module
+    * [[Row]] / [[buildHeader]] machinery.
+    *
+    *   - `bar` is a two-tone wall-time bar scaled to the largest phase: the
+    *     observed slice in the `%wall` heat, the blind slice dim, so a phase
+    *     whose wall is entirely blind (e.g. `Lexer`) shows an all-dim bar.
+    *   - `time` is the phase's real wall time; `%wall` is its share of elapsed
+    *     (`phaseTimers` time / elapsed), so non-attributable phases (`Lexer`, …)
+    *     still show their true cost.
+    *   - `par` is the observed effective parallelism (`threadSummed / wall`):
+    *     ≈1 for a sequential phase, ≈threads for a saturated parallel one. `-`
+    *     when no per-def work is observed (the ratio is meaningless then).
+    *   - `%cpu` is the thread-summed per-def share (`threadSummed / (elapsed ×
+    *     parallelism)`), matching the def / module `%cpu` definition.
+    *   - `blind` is the wall time NOT attributed to any def (`wall − observed`),
+    *     the absolute-time complement to the `%obs` ratio; `%obs` is the
+    *     per-phase `observed` figure ([[Model.PhaseStats.pctObserved]]).
+    *
+    * Only `layout.totalWidth` is consumed (to keep the divider flush with the
+    * other tables); the def / module column flags are ignored. The name column
+    * expands to fill whatever the fixed numeric tail leaves.
+    */
+  private def renderPhaseTable(sb: StringBuilder, state: FrameState): Unit = {
+    val safeElapsed = state.elapsed.max(1L).toDouble
+    val nameWidth = (state.layout.totalWidth - PhaseTailWidth).max(MinPhaseNameWidth)
+
+    // Header: phase (left) + right-aligned numeric columns. None are sortable in
+    // this view, so every column is a plain (bold-cyan) header.
+    sb.append(' ')
+    sb.append(plainHeader(rpad("phase", nameWidth)))
+    sb.append(' '); sb.append(plainHeader(rpad("profile", PhaseBarWidth)))
+    sb.append(' '); sb.append(plainHeader(lpad("time",  9)))
+    sb.append(' '); sb.append(plainHeader(lpad("blind", 9)))
+    sb.append(' '); sb.append(plainHeader(lpad("%obs",  6)))
+    sb.append(' '); sb.append(plainHeader(lpad("alloc", 5)))
+    sb.append(' '); sb.append(plainHeader(lpad("par",   5)))
+    sb.append(' '); sb.append(plainHeader(lpad("%cpu",  6)))
+    sb.append(' '); sb.append(plainHeader(lpad("%wall", 6)))
+    sb.append(' '); sb.append('\n')
+    sb.append(' ')
+    sb.append(dim("─" * (nameWidth + PhaseTailWidth)))
+    sb.append(' '); sb.append('\n')
+
+    if (state.phases.isEmpty) {
+      renderEmptyPlaceholder(sb, "(no phases yet)", state.layout)
+      return
+    }
+
+    // Reference for the wall-time bar: the largest phase's wall time, so the
+    // top (longest) phase fills the bar and the rest scale against it. Rows are
+    // already sorted by wall descending, so this is `head`, but `maxOption`
+    // keeps it robust if that ever changes; floored at 1 to avoid a zero divide.
+    val maxWall = state.phases.iterator.map(_.wallNanos).maxOption.getOrElse(1L).max(1L)
+
+    for (p <- state.phases) {
+      val pctWall = 100.0 * p.wallNanos / safeElapsed
+      val pctCpu  = 100.0 * p.threadSummedNanos / (safeElapsed * state.parallelism)
+      // Two-tone wall-time bar, total length relative to the largest phase: the
+      // observed (attributed) slice in the %wall heat, the blind slice the same
+      // hue one shade darker, so a fully-blind phase (e.g. Parser2) renders as
+      // an all-dark bar in that phase's color.
+      val barField = stackedBar(p.attributedWallNanos.toDouble / maxWall, p.wallNanos.toDouble / maxWall, PhaseBarWidth, s => stylePctWall(s, pctWall), s => stylePctWallDim(s, pctWall))
+      // Observed effective parallelism. Meaningless when no per-def work landed
+      // in the phase (non-attributable phases), so show `-` rather than 0.0x.
+      val parField =
+        if (p.threadSummedNanos <= 0L) lpad("-", 5)
+        else lpad(f"${p.threadSummedNanos.toDouble / p.wallNanos.max(1L)}%4.1fx", 5)
+      val blindNanos = (p.wallNanos - p.attributedWallNanos).max(0L)
+      // A literally-zero alloc / %cpu reads as `-` rather than `0B` / `0.0%` —
+      // both happen for phases that do no per-def work, and the dash keeps that
+      // visually distinct from a phase that did tracked work near zero.
+      val allocField = if (p.allocBytes == 0L) lpad("-", 5) else lpad(formatBytes(p.allocBytes), 5)
+      val cpuField   = if (p.threadSummedNanos == 0L) lpad("-", 6) else stylePctCpu(f"$pctCpu%5.1f%%", pctCpu)
+      sb.append(' ')
+      sb.append(rpad(truncate(p.phase, nameWidth), nameWidth))
+      sb.append(' '); sb.append(barField)
+      sb.append(' '); sb.append(lpad(formatMillis(p.wallNanos), 9))
+      sb.append(' '); sb.append(lpad(formatMillis(blindNanos), 9))
+      sb.append(' '); sb.append(styleObserved(f"${p.pctObserved}%5.1f%%", p.pctObserved))
+      sb.append(' '); sb.append(allocField)
+      sb.append(' '); sb.append(parField)
+      sb.append(' '); sb.append(cpuField)
+      sb.append(' '); sb.append(stylePctWall(f"$pctWall%5.1f%%", pctWall))
+      sb.append(' '); sb.append('\n')
+    }
   }
 
   /**
@@ -561,8 +665,18 @@ final class Renderer {
     appendHelpCol(sb, "size",     "the total bytecode size of all .class files emitted for the def")
     sb.append('\n')
 
+    sb.append("  "); sb.append(bold(cyan("Phase columns"))); sb.append('\n')
+    appendHelpCol(sb, "profile",  "wall-time bar vs the largest phase; solid = observed (heat by %wall), darker shade = blind")
+    appendHelpCol(sb, "time",     "the phase's real wall-clock time")
+    appendHelpCol(sb, "blind",    "the phase's wall time not attributed to any def (wall − observed)")
+    appendHelpCol(sb, "%obs",     "the share of the phase's wall time attributed to per-def tracking")
+    appendHelpCol(sb, "par",      "observed effective parallelism (thread-summed time / wall); ~1 sequential, ~threads parallel")
+    appendHelpCol(sb, "%cpu",     "the phase's share of CPU time (thread-summed time / (elapsed × threads))")
+    appendHelpCol(sb, "%wall",    "the phase's share of wall-clock time (real phase wall / elapsed)")
+    sb.append('\n')
+
     sb.append("  "); sb.append(bold(cyan("Navigation"))); sb.append('\n')
-    appendHelpCol(sb, "Tab",      "switch between the per-def and per-module tables")
+    appendHelpCol(sb, "Tab",      "cycle through the per-def, per-module, and per-phase tables")
     appendHelpCol(sb, "↑/↓",      "scroll the active table up and down one row")
     appendHelpCol(sb, "a/f/b",    "filter to all / frontend / backend phases")
     appendHelpCol(sb, "?",        "toggle this help screen; Esc returns to the defs table")
@@ -620,6 +734,29 @@ final class Renderer {
     sb.append(' '); sb.append(if (cells.aggregate) timeField else styleTime(timeField, cells.nanos))
     sb.append(' '); sb.append(if (cells.aggregate) cpuField else stylePctCpu(cpuField, cells.pctCpu))
     sb.append(' '); sb.append(if (cells.aggregate) wallField else stylePctWall(wallField, cells.pctWall))
+  }
+
+  /**
+    * Renders a left-growing two-tone bar `width` cells wide: an observed run
+    * (`█`, handed to `fill` — typically the `%wall` heat), then a blind run
+    * (`▒`, handed to `blindFill` — the same hue one shade darker) for wall time
+    * not attributed to any def, then a dim `░` track. `observedFrac` and
+    * `totalFrac` are both relative to the same reference (the largest phase's
+    * wall), with `observedFrac ≤ totalFrac`, so the total filled length stays
+    * proportional to wall while the solid run shows how much of the phase the
+    * per-def tracking accounts for. The half-tone `▒` glyph makes the blind run
+    * read as a darker shade even where the dim attribute is weak. A phase that
+    * ran at all keeps at least one filled cell so it never disappears entirely.
+    * The color codes are zero-width, so the visible width is exactly `width`.
+    */
+  private def stackedBar(observedFrac: Double, totalFrac: Double, width: Int, fill: String => String, blindFill: String => String): String = {
+    val total = totalFrac.max(0.0).min(1.0)
+    val obs   = observedFrac.max(0.0).min(total)
+    val wallCells  = if (total <= 0.0) 0 else math.round(total * width).toInt.max(1).min(width)
+    val obsCells   = math.round(obs * width).toInt.min(wallCells)
+    val blindCells = wallCells - obsCells
+    val trackCells = width - wallCells
+    fill("█" * obsCells) + blindFill("▒" * blindCells) + dim("░" * trackCells)
   }
 
   /**
