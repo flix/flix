@@ -2248,16 +2248,17 @@ object Weeder2 {
       val expTrees = pickAll(TreeKind.Expr.Expr, tree)
       val predAndArityTrees = pickAll(TreeKind.PredicateAndArity, tree)
       val expsVal = traverse(expTrees)(visitExpr)
-      val predsAndAritiesVal = traverse(predAndArityTrees)(visitPredicateAndArity)
-      mapN(expsVal, predsAndAritiesVal) {
-        case (exprs, predsAndArities) if exprs.length != predsAndArities.length =>
-          // Check for mismatched arity
-          val error = MismatchedArity(exprs.length, predsAndArities.length, tree.loc)
-          sctx.errors.add(error)
-          WeededAst.Expr.Error(error)
-
-        case (exprs, predsAndArities) =>
-          Expr.FixpointInjectInto(exprs, predsAndArities, tree.loc)
+      val predsAndArities = predAndArityTrees.map(visitPredicateAndArity)
+      mapN(expsVal) {
+        exprs =>
+          if (exprs.length != predsAndArities.length) {
+            // Check for mismatched arity
+            val error = MismatchedArity(exprs.length, predsAndArities.length, tree.loc)
+            sctx.errors.add(error)
+            WeededAst.Expr.Error(error)
+          } else {
+            Expr.FixpointInjectInto(exprs, predsAndArities, tree.loc)
+          }
       }
     }
 
@@ -2461,7 +2462,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Pattern)
       tree.children.headOption match {
         case Some(tree: Tree) => tree.kind match {
-          case TreeKind.Pattern.Variable => visitVariablePat(tree, seen)
+          case TreeKind.Pattern.Variable => Validation.Success(visitVariablePat(tree, seen))
           case TreeKind.Pattern.Literal => visitLiteralPat(tree)
           case TreeKind.Pattern.Tag => visitTagPat(tree, seen)
           case TreeKind.Pattern.Tuple => visitTuplePat(tree, seen)
@@ -2511,7 +2512,7 @@ object Weeder2 {
       tree.children.headOption match {
         case Some(subtree: Tree) => subtree.kind match {
           case TreeKind.Pattern.Tag => visitExtTagPattern(subtree, seen)
-          case TreeKind.Pattern.Variable => visitExtTagDefaultPattern(subtree)
+          case TreeKind.Pattern.Variable => Validation.Success(visitExtTagDefaultPattern(subtree))
           // Avoid double reporting errors by returning a success here
           case TreeKind.ErrorTree(_) => Validation.Success(ExtPattern.Error(subtree.loc))
           case _ =>
@@ -2540,33 +2541,33 @@ object Weeder2 {
       }
     }
 
-    private def visitExtTagDefaultPattern(tree: SyntaxTree.Tree)(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
+    private def visitExtTagDefaultPattern(tree: SyntaxTree.Tree)(implicit sctx: SharedContext): ExtPattern = {
       expect(tree, TreeKind.Pattern.Variable)
       pickNameIdent(tree) match {
         case ident if ident.name == "_" =>
-          Validation.Success(ExtPattern.Default(tree.loc))
+          ExtPattern.Default(tree.loc)
 
         case ident =>
           val error = IllegalExtPattern(ident.loc)
           sctx.errors.add(error)
-          Validation.Success(ExtPattern.Error(tree.loc))
+          ExtPattern.Error(tree.loc)
       }
     }
 
-    private def visitVariablePat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
+    private def visitVariablePat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Pattern = {
       expect(tree, TreeKind.Pattern.Variable)
       val ident = pickNameIdent(tree)
       if (ident.name == "_")
-        Validation.Success(Pattern.Wild(tree.loc))
+        Pattern.Wild(tree.loc)
       else {
         seen.get(ident.name) match {
           case Some(other) =>
             val error = NonLinearPattern(ident.name, other.loc, tree.loc)
             sctx.errors.add(error)
-            Validation.Success(Pattern.Var(ident, tree.loc))
+            Pattern.Var(ident, tree.loc)
           case None =>
             seen += (ident.name -> ident)
-            Validation.Success(Pattern.Var(ident, tree.loc))
+            Pattern.Var(ident, tree.loc)
         }
       }
     }
@@ -3508,11 +3509,11 @@ object Weeder2 {
     Name.JavaName(pickAll(TreeKind.Ident, qname).flatMap(text), qname.loc)
   }
 
-  private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateAndArity, CompilationMessage] = {
+  private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): PredicateAndArity = {
     val arityToken = pickToken(TokenKind.LiteralInt, tree)
     val ident = pickNameIdent(tree)
     val arity = tryParsePredicateArity(arityToken)
-    Validation.Success(PredicateAndArity(Name.mkPred(ident), arity))
+    PredicateAndArity(Name.mkPred(ident), arity)
   }
 
   private def tryParsePredicateArity(token: Token)(implicit sctx: SharedContext): Int = {
