@@ -3313,8 +3313,9 @@ object Weeder2 {
 
     private def visitAscribeType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.Ascribe)
-      mapN(pickType(tree), pickKind(tree)) {
-        (tpe, kind) => Type.Ascribe(tpe, kind, tree.loc)
+      val kind = pickKind(tree)
+      mapN(pickType(tree)) {
+        tpe => Type.Ascribe(tpe, kind, tree.loc)
       }
     }
 
@@ -3441,25 +3442,23 @@ object Weeder2 {
       }
     }
 
-    private def visitKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
+    private def visitKind(tree: Tree)(implicit sctx: SharedContext): Kind = {
       expect(tree, TreeKind.Kind)
       val ident = pickNameIdent(tree)
       val kind = Kind.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), ident.loc)
       tryPick(TreeKind.Kind, tree)
-      Validation.Success(
-        tryPickKind(tree)
-          .map(Kind.Arrow(kind, _, tree.loc))
-          .getOrElse(kind)
-      )
+      tryPickKind(tree)
+        .map(Kind.Arrow(kind, _, tree.loc))
+        .getOrElse(kind)
     }
 
-    private def pickKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
+    private def pickKind(tree: Tree)(implicit sctx: SharedContext): Kind = {
       visitKind(pick(TreeKind.Kind, tree))
     }
 
     def tryPickKind(tree: Tree)(implicit sctx: SharedContext): Option[Kind] = {
       // Cast a missing kind to None because 'tryPick' means that it's okay not to find a kind here.
-      tryPick(TreeKind.Kind, tree).flatMap(visitKind(_).toResult.toOption)
+      tryPick(TreeKind.Kind, tree).map(visitKind)
     }
   }
 
