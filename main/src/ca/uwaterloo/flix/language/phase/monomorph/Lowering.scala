@@ -557,17 +557,17 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, eff, loc)
 
-    case TypedAst.Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+    case TypedAst.Expr.NewObject(sym, clazz, tpe, eff, constructors, methods, loc) =>
       val cs = constructors.map(lowerJvmConstructor)
       val ms = methods.map { m =>
         val thisParam = m.fparams.head
         val thisTpe = lowerType(thisParam.tpe)
         val thisRef = MonoAst.Expr.Var(thisParam.bnd.sym, thisTpe, loc)
-        implicit val lctx: LocalContext = LocalContext(Some(name), Some(thisRef))
+        implicit val lctx: LocalContext = LocalContext(Some(sym.name), Some(thisRef))
         lowerJvmMethod(m)
       }
       val t = lowerType(tpe)
-      MonoAst.Expr.NewObject(name, clazz, t, eff, cs, ms, loc)
+      MonoAst.Expr.NewObject(sym, clazz, t, eff, cs, ms, loc)
 
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)

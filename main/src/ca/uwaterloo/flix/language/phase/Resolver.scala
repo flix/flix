@@ -1041,7 +1041,7 @@ object Resolver {
       val b = resolveExp(exp, scp0)
       ResolvedAst.Expr.ArrayLength(b, loc)
 
-    case NamedAst.Expr.AmbiguousNew(anonName, tpe, region0, fields0, constructors, methods, loc) =>
+    case NamedAst.Expr.AmbiguousNew(tpe, region0, fields0, constructors, methods, loc) =>
       val qnameOpt = tpe match {
         case NamedAst.Type.Ambiguous(qname, _) => Some(qname)
         case _ => None
@@ -1050,7 +1050,7 @@ object Resolver {
       if (isStructShape)
         resolveAmbiguousNewAsStruct(qnameOpt, tpe, region0, fields0, scp0, loc)
       else
-        resolveAmbiguousNewAsObject(anonName, qnameOpt, tpe, constructors, methods, scp0, loc)
+        resolveAmbiguousNewAsObject(qnameOpt, tpe, constructors, methods, scp0, loc)
 
     case NamedAst.Expr.StructGet(exp, field0, loc) =>
       lookupStructField(field0, scp0, ns0, root) match {
@@ -1658,7 +1658,7 @@ object Resolver {
     * Resolves an ambiguous `new` expression where the body is object-shaped (JVM constructors/methods or empty).
     * The name must refer to a Java class. If it resolves to a Flix struct instead, emits `NewStructWithObjectConstructors` or `NewStructWithObjectMethods`.
     */
-  private def resolveAmbiguousNewAsObject(anonName: String, qnameOpt: Option[Name.QName], tpe: NamedAst.Type, constructors: List[NamedAst.JvmConstructor], methods: List[NamedAst.JvmMethod], scp0: LocalScope, loc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+  private def resolveAmbiguousNewAsObject(qnameOpt: Option[Name.QName], tpe: NamedAst.Type, constructors: List[NamedAst.JvmConstructor], methods: List[NamedAst.JvmMethod], scp0: LocalScope, loc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val structOpt = qnameOpt.flatMap { qname =>
       lookupStruct(qname, scp0, ns0, root) match {
         case Result.Ok(st) => Some(st)
@@ -1684,7 +1684,8 @@ object Resolver {
             val superScp = scp0.withSuperClass(Some(clazz)).withSuperTargs(targs)
             val cs = constructors.map(visitJvmConstructor(_, superScp))
             val ms = methods.map(visitJvmMethod(_, superScp))
-            ResolvedAst.Expr.NewObject(anonName, clazz, targs, cs, ms, loc)
+            val anonClassSym = Symbol.mkAnonClassSym(loc);
+            ResolvedAst.Expr.NewObject(anonClassSym, clazz, targs, cs, ms, loc)
           case None =>
             erased match {
               case _: UnkindedType.Error =>
@@ -3321,6 +3322,7 @@ object Resolver {
     case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol $sym", SourceLocation.Unknown)
     case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
+    case sym: Symbol.AnonClassSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
   }
 
   /**

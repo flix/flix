@@ -329,6 +329,15 @@ object Symbol {
   }
 
   /**
+    * Returns the anon class symbol.
+    */
+  def mkAnonClassSym(loc: SourceLocation)(implicit flix: Flix): AnonClassSym = {
+    val id = flix.genSym.freshId();
+    new AnonClassSym(id, loc);
+  }
+  
+
+  /**
     * Variable Symbol.
     *
     * @param id      the globally unique name of the symbol.
@@ -971,6 +980,35 @@ object Symbol {
       */
     override def toString: String = ns.mkString(".")
 
+  }
+
+    /**
+    * AnonClass Symbol.
+    */
+  final class AnonClassSym(val id: Int, val loc: SourceLocation) extends Symbol with Locatable {
+
+    /**
+      * Returns the name of `this` symbol.
+      */
+    def name: String = s"Anon$$${id}"
+
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: Any): Boolean = obj match {
+      case that: AnonClassSym => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(id)
+
+    /**
+      * Human-readable representation.
+      */
+    override def toString: String = name
   }
 
   /**

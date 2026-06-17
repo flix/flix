@@ -358,10 +358,10 @@ object Stratifier {
       val e = visitExp(exp)
       if (e eq exp) exp0 else Expr.PutStaticField(field, e, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+    case Expr.NewObject(sym, clazz, tpe, eff, constructors, methods, loc) =>
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      Expr.NewObject(name, clazz, tpe, eff, cs, ms, loc)
+      Expr.NewObject(sym, clazz, tpe, eff, cs, ms, loc)
 
     case Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
