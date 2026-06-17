@@ -460,12 +460,11 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
       flatMapN(
-        restrictionParam,
         Types.pickParameters(tree),
         traverseOpt(shorthandBody)(Types.visitCaseType),
         traverse(cases)(visitRestrictableEnumCase)
       ) {
-        (rParam, tparams, tpe, cases) =>
+        (tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
             // Illegal empty singleton enum (`enum A()`)
             case (Some(List(Type.Error(_))), Nil) =>
@@ -486,7 +485,7 @@ object Weeder2 {
               Validation.Success(cs)
           }
           mapN(casesVal) {
-            cases => Declaration.RestrictableEnum(doc, ann, mod, ident, rParam, tparams, derivations, cases, tree.loc)
+            cases => Declaration.RestrictableEnum(doc, ann, mod, ident, restrictionParam, tparams, derivations, cases, tree.loc)
           }
       }
     }
@@ -3313,8 +3312,9 @@ object Weeder2 {
 
     private def visitAscribeType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.Ascribe)
-      mapN(pickType(tree), pickKind(tree)) {
-        (tpe, kind) => Type.Ascribe(tpe, kind, tree.loc)
+      val kind = pickKind(tree)
+      mapN(pickType(tree)) {
+        tpe => Type.Ascribe(tpe, kind, tree.loc)
       }
     }
 
@@ -3344,27 +3344,25 @@ object Weeder2 {
         case None => Validation.Success(Nil)
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
-          mapN(traverse(parameters)(visitParameter)) {
-            tparams =>
-              val kinded = tparams.collect { case t: TypeParam.Kinded => t }
-              val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
-              (kinded, unkinded) match {
-                // Only unkinded type parameters
-                case (Nil, _ :: _) => tparams
-                // Only kinded type parameters
-                case (_ :: _, Nil) => tparams
-                // Some kinded and some unkinded type parameters. Give an error and keep going.
-                case (_ :: _, _ :: _) =>
-                  val error = MismatchedKindAnnotations(tparamsTree.loc)
-                  sctx.errors.add(error)
-                  tparams
-                // No type parameters. Issue an error and return an empty list.
-                case (Nil, Nil) =>
-                  val error = NeedAtleastOne(NamedTokenSet.Parameter, SyntacticContext.Decl.Type, None, tparamsTree.loc)
-                  sctx.errors.add(error)
-                  Nil
-              }
-          }
+          val tparams = parameters.map(visitParameter)
+          val kinded = tparams.collect { case t: TypeParam.Kinded => t }
+          val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
+          Validation.Success((kinded, unkinded) match {
+            // Only unkinded type parameters
+            case (Nil, _ :: _) => tparams
+            // Only kinded type parameters
+            case (_ :: _, Nil) => tparams
+            // Some kinded and some unkinded type parameters. Give an error and keep going.
+            case (_ :: _, _ :: _) =>
+              val error = MismatchedKindAnnotations(tparamsTree.loc)
+              sctx.errors.add(error)
+              tparams
+            // No type parameters. Issue an error and return an empty list.
+            case (Nil, Nil) =>
+              val error = NeedAtleastOne(NamedTokenSet.Parameter, SyntacticContext.Decl.Type, None, tparamsTree.loc)
+              sctx.errors.add(error)
+              Nil
+          })
       }
     }
 
@@ -3373,39 +3371,35 @@ object Weeder2 {
         case None => Validation.Success(Nil)
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
-          mapN(traverse(parameters)(visitParameter)) {
-            tparams =>
-              val kinded = tparams.collect { case t: TypeParam.Kinded => t }
-              val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
-              (kinded, unkinded) match {
-                // Only kinded type parameters
-                case (_ :: _, Nil) => tparams
-                // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
-                case (_, _ :: _) =>
-                  unkinded.foreach(t => sctx.errors.add(MissingKindAscription(t.ident.loc)))
-                  tparams
-                // Empty list. Syntax error, but recover with an empty list.
-                case (Nil, Nil) =>
-                  sctx.errors.add(EmptyTypeParamList(tparamsTree.loc))
-                  tparams
-              }
-          }
+          val tparams = parameters.map(visitParameter)
+          val kinded = tparams.collect { case t: TypeParam.Kinded => t }
+          val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
+          Validation.Success((kinded, unkinded) match {
+            // Only kinded type parameters
+            case (_ :: _, Nil) => tparams
+            // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
+            case (_, _ :: _) =>
+              unkinded.foreach(t => sctx.errors.add(MissingKindAscription(t.ident.loc)))
+              tparams
+            // Empty list. Syntax error, but recover with an empty list.
+            case (Nil, Nil) =>
+              sctx.errors.add(EmptyTypeParamList(tparamsTree.loc))
+              tparams
+          })
       }
     }
 
     def pickSingleParameter(tree: Tree)(implicit sctx: SharedContext): Validation[TypeParam, CompilationMessage] = {
       val tparams = pick(TreeKind.TypeParameterList, tree)
-      visitParameter(pick(TreeKind.Parameter, tparams))
+      Validation.Success(visitParameter(pick(TreeKind.Parameter, tparams)))
     }
 
-    def visitParameter(tree: Tree)(implicit sctx: SharedContext): Validation[TypeParam, CompilationMessage] = {
+    def visitParameter(tree: Tree)(implicit sctx: SharedContext): TypeParam = {
       expect(tree, TreeKind.Parameter)
       val ident = pickNameIdent(tree)
-      Validation.Success(
-        tryPickKind(tree)
-          .map(kind => TypeParam.Kinded(ident, kind))
-          .getOrElse(TypeParam.Unkinded(ident))
-      )
+      tryPickKind(tree)
+        .map(kind => TypeParam.Kinded(ident, kind))
+        .getOrElse(TypeParam.Unkinded(ident))
     }
 
     def pickConstraints(tree: Tree)(implicit sctx: SharedContext): Validation[List[TraitConstraint], CompilationMessage] = {
@@ -3441,25 +3435,23 @@ object Weeder2 {
       }
     }
 
-    private def visitKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
+    private def visitKind(tree: Tree)(implicit sctx: SharedContext): Kind = {
       expect(tree, TreeKind.Kind)
       val ident = pickNameIdent(tree)
       val kind = Kind.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), ident.loc)
       tryPick(TreeKind.Kind, tree)
-      Validation.Success(
-        tryPickKind(tree)
-          .map(Kind.Arrow(kind, _, tree.loc))
-          .getOrElse(kind)
-      )
+      tryPickKind(tree)
+        .map(Kind.Arrow(kind, _, tree.loc))
+        .getOrElse(kind)
     }
 
-    private def pickKind(tree: Tree)(implicit sctx: SharedContext): Validation[Kind, CompilationMessage] = {
+    private def pickKind(tree: Tree)(implicit sctx: SharedContext): Kind = {
       visitKind(pick(TreeKind.Kind, tree))
     }
 
     def tryPickKind(tree: Tree)(implicit sctx: SharedContext): Option[Kind] = {
       // Cast a missing kind to None because 'tryPick' means that it's okay not to find a kind here.
-      tryPick(TreeKind.Kind, tree).flatMap(visitKind(_).toResult.toOption)
+      tryPick(TreeKind.Kind, tree).map(visitKind)
     }
   }
 
