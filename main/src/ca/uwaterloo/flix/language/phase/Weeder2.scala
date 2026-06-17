@@ -883,7 +883,7 @@ object Weeder2 {
         case TreeKind.Expr.Hole => Validation.Success(visitHoleExpr(tree))
         case TreeKind.Expr.HoleVariable => visitHoleWithExpExpr(tree)
         case TreeKind.Expr.Use => visitExprUseExpr(tree)
-        case TreeKind.Expr.Literal => visitLiteralExpr(tree)
+        case TreeKind.Expr.Literal => Validation.Success(visitLiteralExpr(tree))
         case TreeKind.Expr.Apply => visitApplyExpr(tree)
         case TreeKind.Expr.Lambda => visitLambdaExpr(tree)
         case TreeKind.Expr.LambdaExtMatch => visitLambdaExtMatchExpr(tree)
@@ -1053,7 +1053,7 @@ object Weeder2 {
       }
     }
 
-    def visitLiteralExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    def visitLiteralExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
       // Note: This visitor is used by both expression literals and pattern literals.
       expectAny(tree, List(TreeKind.Expr.Literal, TreeKind.Pattern.Literal))
       tree.children(0) match {
@@ -1063,32 +1063,32 @@ object Weeder2 {
             val file = loc.source.name
             val line = loc.start.lineOneIndexed
             val text = token.text.stripPrefix("d\"").stripSuffix("\"")
-            Validation.Success(Expr.Cst(Constant.Str(s"[$file:$line] $text"), loc))
-          case TokenKind.KeywordNull => Validation.Success(Expr.Cst(Constant.Null, token.mkSourceLocation()))
-          case TokenKind.KeywordTrue => Validation.Success(Expr.Cst(Constant.Bool(true), token.mkSourceLocation()))
-          case TokenKind.KeywordFalse => Validation.Success(Expr.Cst(Constant.Bool(false), token.mkSourceLocation()))
-          case TokenKind.LiteralString => Validation.Success(Constants.toStringCst(token))
-          case TokenKind.LiteralChar => Validation.Success(Constants.toChar(token))
-          case TokenKind.LiteralInt => Validation.Success(Constants.toInt32(token))
-          case TokenKind.LiteralInt8 => Validation.Success(Constants.toInt8(token))
-          case TokenKind.LiteralInt16 => Validation.Success(Constants.toInt16(token))
-          case TokenKind.LiteralInt32 => Validation.Success(Constants.toInt32(token))
-          case TokenKind.LiteralInt64 => Validation.Success(Constants.toInt64(token))
-          case TokenKind.LiteralBigInt => Validation.Success(Constants.toBigInt(token))
-          case TokenKind.LiteralFloat => Validation.Success(Constants.toFloat64(token))
-          case TokenKind.LiteralFloat32 => Validation.Success(Constants.toFloat32(token))
-          case TokenKind.LiteralFloat64 => Validation.Success(Constants.toFloat64(token))
-          case TokenKind.LiteralBigDecimal => Validation.Success(Constants.toBigDecimal(token))
-          case TokenKind.LiteralRegex => Validation.Success(Constants.toRegex(token))
+            Expr.Cst(Constant.Str(s"[$file:$line] $text"), loc)
+          case TokenKind.KeywordNull => Expr.Cst(Constant.Null, token.mkSourceLocation())
+          case TokenKind.KeywordTrue => Expr.Cst(Constant.Bool(true), token.mkSourceLocation())
+          case TokenKind.KeywordFalse => Expr.Cst(Constant.Bool(false), token.mkSourceLocation())
+          case TokenKind.LiteralString => Constants.toStringCst(token)
+          case TokenKind.LiteralChar => Constants.toChar(token)
+          case TokenKind.LiteralInt => Constants.toInt32(token)
+          case TokenKind.LiteralInt8 => Constants.toInt8(token)
+          case TokenKind.LiteralInt16 => Constants.toInt16(token)
+          case TokenKind.LiteralInt32 => Constants.toInt32(token)
+          case TokenKind.LiteralInt64 => Constants.toInt64(token)
+          case TokenKind.LiteralBigInt => Constants.toBigInt(token)
+          case TokenKind.LiteralFloat => Constants.toFloat64(token)
+          case TokenKind.LiteralFloat32 => Constants.toFloat32(token)
+          case TokenKind.LiteralFloat64 => Constants.toFloat64(token)
+          case TokenKind.LiteralBigDecimal => Constants.toBigDecimal(token)
+          case TokenKind.LiteralRegex => Constants.toRegex(token)
           case TokenKind.NameLowercase
                | TokenKind.NameUppercase
                | TokenKind.NameMath =>
             val ident = pickNameIdent(tree)
-            Validation.Success(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc))
+            Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc)
           case _ =>
             val error = UnexpectedToken(expected = NamedTokenSet.Literal, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
             sctx.errors.add(error)
-            Validation.Success(Expr.Error(error))
+            Expr.Error(error)
         }
         case _ => throw InternalCompilerException(s"Literal had tree child", tree.loc)
       }
@@ -1246,7 +1246,7 @@ object Weeder2 {
               // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
               val syntheticToken = Token(lit.kind, lit.src, opToken.startIndex, lit.endIndex, lit.start, lit.end)
               val syntheticLiteral = Tree(TreeKind.Expr.Literal, Array(syntheticToken), exprTree.loc.asSynthetic)
-              visitLiteralExpr(syntheticLiteral)
+              Validation.Success(visitLiteralExpr(syntheticLiteral))
             case _ => mapN(visitExpr(exprTree))(expr => {
               opToken.text match {
                 case "discard" => Expr.Discard(expr, tree.loc)
@@ -2446,18 +2446,18 @@ object Weeder2 {
 
   private object Patterns {
     def pickPattern(tree: Tree)(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
-      visitPattern(pick(TreeKind.Pattern.Pattern, tree))
+      Validation.Success(visitPattern(pick(TreeKind.Pattern.Pattern, tree)))
     }
 
     def pickExtPattern(tree: Tree)(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
-      visitExtPattern(pick(TreeKind.Pattern.Pattern, tree))
+      Validation.Success(visitExtPattern(pick(TreeKind.Pattern.Pattern, tree)))
     }
 
-    def visitPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
+    def visitPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Pattern = {
       expect(tree, TreeKind.Pattern.Pattern)
       tree.children.headOption match {
         case Some(tree: Tree) => tree.kind match {
-          case TreeKind.Pattern.Variable => Validation.Success(visitVariablePat(tree, seen))
+          case TreeKind.Pattern.Variable => visitVariablePat(tree, seen)
           case TreeKind.Pattern.Literal => visitLiteralPat(tree)
           case TreeKind.Pattern.Tag => visitTagPat(tree, seen)
           case TreeKind.Pattern.Tuple => visitTuplePat(tree, seen)
@@ -2465,11 +2465,11 @@ object Weeder2 {
           case TreeKind.Pattern.Unary => visitUnaryPat(tree)
           case TreeKind.Pattern.FCons => visitFConsPat(tree, seen)
           // Avoid double reporting errors by returning a success here
-          case TreeKind.ErrorTree(_) => Validation.Success(Pattern.Error(tree.loc))
+          case TreeKind.ErrorTree(_) => Pattern.Error(tree.loc)
           case _ =>
             val error = UnexpectedToken(NamedTokenSet.Pattern, actual = None, SyntacticContext.Unknown, loc = tree.loc)
             sctx.errors.add(error)
-            Validation.Success(Pattern.Error(tree.loc))
+            Pattern.Error(tree.loc)
         }
         case _ => throw InternalCompilerException(s"Expected Pattern.Pattern to have tree child", tree.loc)
       }
@@ -2502,37 +2502,34 @@ object Weeder2 {
       case _ => pat
     }
 
-    private def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
+    private def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): ExtPattern = {
       expect(tree, TreeKind.Pattern.Pattern)
       tree.children.headOption match {
         case Some(subtree: Tree) => subtree.kind match {
           case TreeKind.Pattern.Tag => visitExtTagPattern(subtree, seen)
-          case TreeKind.Pattern.Variable => Validation.Success(visitExtTagDefaultPattern(subtree))
+          case TreeKind.Pattern.Variable => visitExtTagDefaultPattern(subtree)
           // Avoid double reporting errors by returning a success here
-          case TreeKind.ErrorTree(_) => Validation.Success(ExtPattern.Error(subtree.loc))
+          case TreeKind.ErrorTree(_) => ExtPattern.Error(subtree.loc)
           case _ =>
             val error = IllegalExtPattern(subtree.loc)
             sctx.errors.add(error)
-            Validation.Success(ExtPattern.Error(subtree.loc))
+            ExtPattern.Error(subtree.loc)
         }
         case _ => throw InternalCompilerException(s"Expected Pattern.Pattern to have tree child", tree.loc)
       }
     }
 
-    private def visitExtTagPattern(tree: SyntaxTree.Tree, seen: mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
+    private def visitExtTagPattern(tree: SyntaxTree.Tree, seen: mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): ExtPattern = {
       expect(tree, TreeKind.Pattern.Tag)
       val maybePat = tryPick(TreeKind.Pattern.TagBody, tree)
       val qname = pickQName(tree)
-      mapN(traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
-        maybePat =>
-          if (!qname.isUnqualified) {
-            val error = IllegalQualifiedExtPattern(qname)
-            sctx.errors.add(error)
-          }
-          maybePat match {
-            case None => ExtPattern.Tag(Name.mkLabel(qname.ident), List.empty, tree.loc)
-            case Some(elms) => ExtPattern.Tag(Name.mkLabel(qname.ident), elms, tree.loc)
-          }
+      if (!qname.isUnqualified) {
+        val error = IllegalQualifiedExtPattern(qname)
+        sctx.errors.add(error)
+      }
+      maybePat.map(visitExtTagTermsPat(_, seen)) match {
+        case None => ExtPattern.Tag(Name.mkLabel(qname.ident), List.empty, tree.loc)
+        case Some(elms) => ExtPattern.Tag(Name.mkLabel(qname.ident), elms, tree.loc)
       }
     }
 
@@ -2567,9 +2564,9 @@ object Weeder2 {
       }
     }
 
-    private def visitLiteralPat(tree: Tree)(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
+    private def visitLiteralPat(tree: Tree)(implicit sctx: SharedContext): Pattern = {
       expect(tree, TreeKind.Pattern.Literal)
-      mapN(Exprs.visitLiteralExpr(tree)) {
+      Exprs.visitLiteralExpr(tree) match {
         case Expr.Cst(cst, _) => cst match {
           case Constant.Null =>
             val error = IllegalNullPattern(tree.loc)
@@ -2592,33 +2589,30 @@ object Weeder2 {
       }
     }
 
-    private def visitTagPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
+    private def visitTagPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Pattern = {
       expect(tree, TreeKind.Pattern.Tag)
       val maybePat = tryPick(TreeKind.Pattern.TagBody, tree)
       val qname = pickQName(tree)
-      mapN(traverseOpt(maybePat)(visitTagTermsPat(_, seen))) {
-        maybePat =>
-          maybePat match {
-            case None => Pattern.Tag(qname, Nil, tree.loc)
-            case Some(elms) => Pattern.Tag(qname, elms.toList, tree.loc)
-          }
+      maybePat.map(visitTagTermsPat(_, seen)) match {
+        case None => Pattern.Tag(qname, Nil, tree.loc)
+        case Some(elms) => Pattern.Tag(qname, elms.toList, tree.loc)
       }
     }
 
     /** Extracts a tag body pattern as a list, expanding `()` to be `List(Unit)`. */
-    private def visitTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Nel[Pattern], CompilationMessage] = {
+    private def visitTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Nel[Pattern] = {
       expect(tree, TreeKind.Pattern.TagBody)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
-      mapN(traverse(patterns)(visitPattern(_, seen))) {
+      patterns.map(visitPattern(_, seen)) match {
         case Nil => Nel(Pattern.Cst(Constant.Unit, tree.loc), Nil)
         case x :: xs => Nel(x, xs)
       }
     }
 
-    private def visitExtTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[List[ExtTagPattern], CompilationMessage] = {
+    private def visitExtTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): List[ExtTagPattern] = {
       expect(tree, TreeKind.Pattern.TagBody)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
-      mapN(traverse(patterns)(visitPattern(_, seen))) {
+      patterns.map(visitPattern(_, seen)) match {
         case Nil => List(ExtTagPattern.Unit(tree.loc))
         case xs => xs.map(restrictToVarOrWild)
       }
@@ -2633,21 +2627,21 @@ object Weeder2 {
         ExtTagPattern.Error(pat.loc)
     }
 
-    private def visitTuplePat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
+    private def visitTuplePat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Pattern = {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
-      mapN(traverse(patterns)(visitPattern(_, seen))) {
+      patterns.map(visitPattern(_, seen)) match {
         case Nil => Pattern.Cst(Constant.Unit, tree.loc)
         case x :: Nil => x
         case x :: xs => Pattern.Tuple(Nel(x, xs), tree.loc)
       }
     }
 
-    private def visitRecordPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
+    private def visitRecordPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Pattern = {
       expect(tree, TreeKind.Pattern.Record)
       val fields = pickAll(TreeKind.Pattern.RecordFieldFragment, tree)
       val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree)
-      mapN(traverse(fields)(visitRecordField(_, seen)), traverseOpt(maybePattern)(visitPattern(_, seen))) {
+      (fields.map(visitRecordField(_, seen)), maybePattern.map(visitPattern(_, seen))) match {
 
         // Pattern { ... }
         case (fs, None) =>
@@ -2675,11 +2669,11 @@ object Weeder2 {
       }
     }
 
-    private def visitRecordField(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern.Record.RecordLabelPattern, CompilationMessage] = {
+    private def visitRecordField(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Pattern.Record.RecordLabelPattern = {
       expect(tree, TreeKind.Pattern.RecordFieldFragment)
       val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree)
       val ident = pickNameIdent(tree)
-      mapN(traverseOpt(maybePattern)(visitPattern(_, seen))) {
+      maybePattern.map(visitPattern(_, seen)) match {
         case None =>
           seen.get(ident.name) match {
             case None =>
@@ -2695,7 +2689,7 @@ object Weeder2 {
       }
     }
 
-    private def visitUnaryPat(tree: Tree)(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
+    private def visitUnaryPat(tree: Tree)(implicit sctx: SharedContext): Pattern = {
       expect(tree, TreeKind.Pattern.Unary)
       val NumberLiteralKinds = List(TokenKind.LiteralInt, TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
       val literalToken = ArrayOps.getOption(tree.children, 1) match {
@@ -2713,17 +2707,17 @@ object Weeder2 {
               visitLiteralPat(syntheticLiteral)
             case _ =>
               sctx.errors.add(WeederError.MalformedInt(tree.loc))
-              Validation.Success(Pattern.Error(tree.loc))
+              Pattern.Error(tree.loc)
           }
         case _ => throw InternalCompilerException(s"Expected unary operator but found tree", tree.loc)
       }
     }
 
-    private def visitFConsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
+    private def visitFConsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Pattern = {
       expect(tree, TreeKind.Pattern.FCons)
       // FCons are rewritten into tag patterns
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
-      mapN(traverse(patterns)(visitPattern(_, seen))) {
+      patterns.map(visitPattern(_, seen)) match {
         case pat1 :: pat2 :: Nil =>
           val qname = Name.mkQName("List.Cons", tree.loc)
           Pattern.Tag(qname, List(pat1, pat2), tree.loc)
@@ -2993,12 +2987,14 @@ object Weeder2 {
     }
 
     private def visitPatternList(tree: Tree)(implicit sctx: SharedContext): Validation[(List[Pattern], Option[Pattern]), CompilationMessage] = {
-      val rawList = traverse(pickAll(TreeKind.Pattern.Pattern, tree))(tree => Patterns.visitPattern(tree))
-      val maybeLatTerm = tryPickLatticeTermPattern(tree)
-      mapN(rawList, maybeLatTerm) {
-        // A() => A(())
-        case (Nil, latTerm) => (List(Pattern.Cst(Constant.Unit, tree.loc)), latTerm)
-        case (nonEmpty, latTerm) => (nonEmpty, latTerm)
+      val rawList = pickAll(TreeKind.Pattern.Pattern, tree).map(t => Patterns.visitPattern(t))
+      mapN(tryPickLatticeTermPattern(tree)) {
+        maybeLatTerm =>
+          rawList match {
+            // A() => A(())
+            case Nil => (List(Pattern.Cst(Constant.Unit, tree.loc)), maybeLatTerm)
+            case nonEmpty => (nonEmpty, maybeLatTerm)
+          }
       }
     }
 

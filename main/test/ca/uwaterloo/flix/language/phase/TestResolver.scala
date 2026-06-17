@@ -1650,6 +1650,57 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.DuplicateAssocTypeDef](result)
   }
 
+  test("DuplicateInstanceDef.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance C[String] {
+        |    pub def f(x: String): String = x
+        |    pub def f(x: String): String = x
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateInstanceDef](result)
+  }
+
+  test("DuplicateInstanceDef.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance C[String] {
+        |    pub def f(x: String): String = x
+        |    pub def f(x: String): String = x
+        |    pub def f(x: String): String = x
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateInstanceDef](result)
+  }
+
+  test("DuplicateInstanceDef.03") {
+    // A duplicate def that is not a member of the trait is still reported as a duplicate.
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance C[String] {
+        |    pub def f(x: String): String = x
+        |    pub def g(x: String): String = x
+        |    pub def g(x: String): String = x
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateInstanceDef](result)
+  }
+
   test("MissingAssocTypeDef.01") {
     val input =
       """
