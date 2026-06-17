@@ -563,6 +563,7 @@ final class Renderer {
 
     sb.append("  "); sb.append(bold(cyan("Navigation"))); sb.append('\n')
     appendHelpCol(sb, "Tab",      "switch between the per-def and per-module tables")
+    appendHelpCol(sb, "↑/↓",      "scroll the active table up and down one row")
     appendHelpCol(sb, "a/f/b",    "filter to all / frontend / backend phases")
     appendHelpCol(sb, "?",        "toggle this help screen; Esc returns to the defs table")
   }

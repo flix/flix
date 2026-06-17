@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.tools.compilertop.Model.*
 import org.jline.terminal.{Attributes, Terminal, TerminalBuilder}
 
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
 
 object CompilerTop {
 
@@ -32,6 +32,13 @@ object CompilerTop {
 
   /** Poll interval for the input thread (ms); doubles as how fast `running=false` is observed. */
   private val InputPollMs: Long = 100L
+
+  /**
+    * Bounded wait for the remaining bytes of a CSI escape sequence (e.g. the
+    * `[ A` after the `ESC` of an up-arrow). A lone `Esc` therefore costs at most
+    * this much latency before the input loop acts on it.
+    */
+  private val EscSeqMs: Long = 50L
 
   /** Fallback terminal height when JLine cannot determine the real one. */
   private val DefaultRows: Int = 24
@@ -119,6 +126,23 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
   private val view = new AtomicReference[View](View.Defs)
 
   /**
+    * Number of rows scrolled past the top of the active table. Written by the
+    * input thread on `↑` / `↓`, read and re-clamped by the renderer thread.
+    * Reset to 0 whenever the visible list changes identity (Tab / filter / sort
+    * / Esc), since a row offset is meaningless across a re-sorted or different
+    * list.
+    */
+  private val scrollOffset = new AtomicInteger(0)
+
+  /**
+    * The largest valid [[scrollOffset]] for the table the renderer last drew,
+    * published each frame by [[buildFrameState]]. Lets the input thread clamp
+    * `↓` without recomputing the snapshot, so holding `↓` past the end doesn't
+    * inflate the offset (which would make a later `↑` appear to do nothing).
+    */
+  private val maxScroll = new AtomicInteger(0)
+
+  /**
     * Counted down by the input thread when the user presses `q` (only after
     * [[completed]] is set). [[stop]] awaits it before tearing the renderer
     * down so the user can keep toggling the filter post-compile.
@@ -199,7 +223,11 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     *   - Tab (`9`) → flip between the defs and modules tables (from help,
     *     lands on the defs table).
     *   - `?`       → toggle the help view (column / keystroke legend).
-    *   - Esc (`27`) → return to the defs view (no-op if already there).
+    *   - `↑` / `↓` (CSI `ESC [ A` / `ESC [ B`) → scroll the active table up /
+    *     down one row, clamped to `[0, maxScroll]`.
+    *   - Esc (`27`) → return to the defs view (no-op if already there). `27`
+    *     also prefixes the arrow sequences, so a follow-up read disambiguates a
+    *     bare Esc from `↑` / `↓` (an Alt+key combo is treated as a bare Esc).
     *   - `q` / `Q` / Ctrl-C / EOF → if compilation has completed, signal
     *     [[stop]] to finish teardown; otherwise ignored (pressing `q`
     *     mid-compile must not abort the build).
@@ -221,9 +249,21 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
           }
         case 9 => // Tab — flip the table; from help, land on the defs table.
           view.updateAndGet(v => if (v == View.Help) View.Defs else v.toggledTable)
-        case 27 => // Esc — return to the "all" view: filter All, defs view.
-          filter.set(PhaseFilter.All)
-          view.set(View.Defs)
+          scrollOffset.set(0)
+        case 27 =>
+          // Esc, or the start of a CSI arrow sequence (`ESC [ A` / `ESC [ B`).
+          // A short follow-up read disambiguates: `[` then `A`/`B` is an arrow;
+          // a timeout (or anything else) is a bare Esc.
+          if (r.read(EscSeqMs) == '[') r.read(EscSeqMs) match {
+            case 'A' => scrollOffset.updateAndGet(o => (o - 1).max(0))               // up
+            case 'B' => scrollOffset.updateAndGet(o => (o + 1).min(maxScroll.get())) // down
+            case _   => // other CSI (←/→/Home/…) — ignored
+          } else {
+            // Bare Esc (or Alt+key): return to the "all" view, top of the table.
+            filter.set(PhaseFilter.All)
+            view.set(View.Defs)
+            scrollOffset.set(0)
+          }
         case '?' =>
           view.updateAndGet(v => if (v == View.Help) View.Defs else View.Help)
         case ch if ch > 0 =>
@@ -236,11 +276,14 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
           // the defs table) so the user can see the filter take effect —
           // otherwise the toggle happens invisibly behind the help screen.
           // From a table view the current table is preserved.
+          // Changing the sort or filter reorders / reselects the row set, so the
+          // current scroll offset no longer points at the same rows — reset to top.
           val char = ch.toChar
-          Sort.fromKey(char).foreach(sort.set)
+          Sort.fromKey(char).foreach { s => sort.set(s); scrollOffset.set(0) }
           PhaseFilter.fromKey(char).foreach { f =>
             filter.set(f)
             view.updateAndGet(v => if (v == View.Help) View.Defs else v)
+            scrollOffset.set(0)
           }
         case _ => // ignored
       }
@@ -346,8 +389,23 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     // either way since module aggregation rolls up from it.
     val raw = profiler.snapshot()
     val snap = applyFilter(raw, activeFilter).sortBy(s => -defSortKey(s, activeSort))
-    val visible = if (activeView == View.Modules) Vector.empty else snap.take(tableRows)
-    val modules = if (activeView == View.Modules) aggregateByModule(snap, activeSort).take(tableRows) else Vector.empty
+    val mods = if (activeView == View.Modules) aggregateByModule(snap, activeSort) else Vector.empty
+
+    // Scroll window over the active table. `maxScroll` is published so the input
+    // thread can clamp `↓`; the offset is also re-clamped here because a filter
+    // change or terminal resize can shrink the list between key presses. Help is
+    // a static legend, not a scrollable table, so its budget is 0.
+    val total = activeView match {
+      case View.Defs    => snap.length
+      case View.Modules => mods.length
+      case View.Help    => 0
+    }
+    val maxOff = (total - tableRows).max(0)
+    maxScroll.set(maxOff)
+    val offset = scrollOffset.get().min(maxOff).max(0)
+
+    val visible = if (activeView == View.Defs)    snap.slice(offset, offset + tableRows) else Vector.empty
+    val modules = if (activeView == View.Modules) mods.slice(offset, offset + tableRows) else Vector.empty
 
     // Coverage scopes to the active phase filter (via `matchesFilter`), so the
     // observed figure narrows to the same phases the visible table covers: press
