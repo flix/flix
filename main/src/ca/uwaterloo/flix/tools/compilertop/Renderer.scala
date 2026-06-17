@@ -86,9 +86,9 @@ object Renderer {
   private val BarWidth: Int = 12
 
   /** Width (in characters) of the per-phase wall-time bar drawn left of the `time` column. */
-  private val PhaseBarWidth: Int = 16
+  private val PhaseBarWidth: Int = 18
 
-  /** Fixed width of the phase-table numeric tail: `bar(16) + time(9) + blind(9) + %obs(6) + alloc(5) + par(5) + %cpu(6) + %wall(6)`, each with a leading separator. */
+  /** Fixed width of the phase-table numeric tail: `profile(18) + time(9) + blind(9) + %obs(6) + alloc(5) + par(5) + %cpu(6) + %wall(6)`, each with a leading separator. */
   private val PhaseTailWidth: Int = (1 + PhaseBarWidth) + (1 + 9) + (1 + 5) + (1 + 5) + (1 + 6) + (1 + 6) + (1 + 9) + (1 + 6)
 
   /** Floor on the phase-table name column when the terminal is narrow. */
@@ -347,7 +347,7 @@ final class Renderer {
     // this view, so every column is a plain (bold-cyan) header.
     sb.append(' ')
     sb.append(plainHeader(rpad("phase", nameWidth)))
-    sb.append(' '); sb.append(plainHeader(rpad("bar",   PhaseBarWidth)))
+    sb.append(' '); sb.append(plainHeader(rpad("profile", PhaseBarWidth)))
     sb.append(' '); sb.append(plainHeader(lpad("time",  9)))
     sb.append(' '); sb.append(plainHeader(lpad("blind", 9)))
     sb.append(' '); sb.append(plainHeader(lpad("%obs",  6)))
@@ -375,9 +375,10 @@ final class Renderer {
       val pctWall = 100.0 * p.wallNanos / safeElapsed
       val pctCpu  = 100.0 * p.threadSummedNanos / (safeElapsed * state.parallelism)
       // Two-tone wall-time bar, total length relative to the largest phase: the
-      // observed (attributed) slice in the %wall heat, the blind slice dim, so a
-      // fully-blind phase (e.g. Parser2) renders an all-dim bar.
-      val barField = stackedBar(p.attributedWallNanos.toDouble / maxWall, p.wallNanos.toDouble / maxWall, PhaseBarWidth, s => stylePctWall(s, pctWall))
+      // observed (attributed) slice in the %wall heat, the blind slice the same
+      // hue one shade darker, so a fully-blind phase (e.g. Parser2) renders as
+      // an all-dark bar in that phase's color.
+      val barField = stackedBar(p.attributedWallNanos.toDouble / maxWall, p.wallNanos.toDouble / maxWall, PhaseBarWidth, s => stylePctWall(s, pctWall), s => stylePctWallDim(s, pctWall))
       // Observed effective parallelism. Meaningless when no per-def work landed
       // in the phase (non-attributable phases), so show `-` rather than 0.0x.
       val parField =
@@ -665,7 +666,7 @@ final class Renderer {
     sb.append('\n')
 
     sb.append("  "); sb.append(bold(cyan("Phase columns"))); sb.append('\n')
-    appendHelpCol(sb, "bar",      "wall-time bar vs the largest phase; solid = observed (heat by %wall), dim = blind")
+    appendHelpCol(sb, "profile",  "wall-time bar vs the largest phase; solid = observed (heat by %wall), darker shade = blind")
     appendHelpCol(sb, "time",     "the phase's real wall-clock time")
     appendHelpCol(sb, "blind",    "the phase's wall time not attributed to any def (wall − observed)")
     appendHelpCol(sb, "%obs",     "the share of the phase's wall time attributed to per-def tracking")
@@ -738,22 +739,24 @@ final class Renderer {
   /**
     * Renders a left-growing two-tone bar `width` cells wide: an observed run
     * (`█`, handed to `fill` — typically the `%wall` heat), then a blind run
-    * (dim `▒`) for wall time not attributed to any def, then a dim `░` track.
-    * `observedFrac` and `totalFrac` are both relative to the same reference
-    * (the largest phase's wall), with `observedFrac ≤ totalFrac`, so the total
-    * filled length stays proportional to wall while the solid run shows how
-    * much of the phase the per-def tracking accounts for. A phase that ran at
-    * all keeps at least one filled cell so it never disappears entirely. The
-    * color codes are zero-width, so the visible width is exactly `width`.
+    * (`▒`, handed to `blindFill` — the same hue one shade darker) for wall time
+    * not attributed to any def, then a dim `░` track. `observedFrac` and
+    * `totalFrac` are both relative to the same reference (the largest phase's
+    * wall), with `observedFrac ≤ totalFrac`, so the total filled length stays
+    * proportional to wall while the solid run shows how much of the phase the
+    * per-def tracking accounts for. The half-tone `▒` glyph makes the blind run
+    * read as a darker shade even where the dim attribute is weak. A phase that
+    * ran at all keeps at least one filled cell so it never disappears entirely.
+    * The color codes are zero-width, so the visible width is exactly `width`.
     */
-  private def stackedBar(observedFrac: Double, totalFrac: Double, width: Int, fill: String => String): String = {
+  private def stackedBar(observedFrac: Double, totalFrac: Double, width: Int, fill: String => String, blindFill: String => String): String = {
     val total = totalFrac.max(0.0).min(1.0)
     val obs   = observedFrac.max(0.0).min(total)
     val wallCells  = if (total <= 0.0) 0 else math.round(total * width).toInt.max(1).min(width)
     val obsCells   = math.round(obs * width).toInt.min(wallCells)
     val blindCells = wallCells - obsCells
     val trackCells = width - wallCells
-    fill("█" * obsCells) + dim("▒" * blindCells) + dim("░" * trackCells)
+    fill("█" * obsCells) + blindFill("▒" * blindCells) + dim("░" * trackCells)
   }
 
   /**

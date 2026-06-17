@@ -103,6 +103,18 @@ object Styling {
     else formatted
   }
 
+  /**
+    * Darker-shade companion to [[stylePctWall]] for the unaccounted (blind)
+    * run of the phase wall-time bar: the *same* heat hue as [[stylePctWall]]
+    * but dimmed (and without the red tier's bold), so the blind run reads as a
+    * darker shade of the observed run's color rather than a different color.
+    */
+  def stylePctWallDim(formatted: String, pct: Double): String = {
+    if (pct >= PctWallRedThreshold) dim(red(formatted))
+    else if (pct >= PctWallYellowThreshold) dim(yellow(formatted))
+    else dim(formatted)
+  }
+
   /** Colors the active/parallelism field by occupancy: full=green bold, ≥50%=green, idle=gray, else yellow. */
   def styleThreads(active: Int, par: Int): String = {
     val s = f"$active%2d/$par%-2d"
