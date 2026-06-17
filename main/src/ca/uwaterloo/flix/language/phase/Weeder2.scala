@@ -321,13 +321,13 @@ object Weeder2 {
       val tparams = Types.pickKindedParameters(tree)
       val tpe = Types.pickType(tree)
       val eff = Types.tryPickEffect(tree)
+      val fparams = pickFormalParameters(tree)
       mapN(
-        pickFormalParameters(tree),
         Types.pickConstraints(tree),
         pickEqualityConstraints(tree),
         traverseOpt(maybeExpression)(Exprs.visitExpr)
       ) {
-        (fparams, tconstrs, econstrs, expr) =>
+        (tconstrs, econstrs, expr) =>
           Declaration.Sig(doc, ann, mod, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
       }
     }
@@ -341,13 +341,13 @@ object Weeder2 {
       val tparams = Types.pickKindedParameters(tree)
       val ttype = Types.pickType(tree)
       val eff = Types.tryPickEffect(tree)
+      val fparams = pickFormalParameters(tree)
       mapN(
-        pickFormalParameters(tree),
         Exprs.pickExpr(tree),
         Types.pickConstraints(tree),
         pickEqualityConstraints(tree)
       ) {
-        (fparams, exp, tconstrs, constrs) =>
+        (exp, tconstrs, constrs) =>
           Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
@@ -362,13 +362,13 @@ object Weeder2 {
       val tparams = Types.pickKindedParameters(tree)
       val ttype = Types.pickType(tree)
       val eff = Types.tryPickEffect(tree)
+      val fparams = pickFormalParameters(tree)
       mapN(
-        pickFormalParameters(tree),
         Exprs.pickExpr(tree),
         Types.pickConstraints(tree),
         pickEqualityConstraints(tree)
       ) {
-        (fparams, exp, tconstrs, constrs) =>
+        (exp, tconstrs, constrs) =>
           Declaration.Redef(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
@@ -379,13 +379,13 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
       val tparams = Types.pickKindedParameters(tree)
+      val fparams = pickFormalParameters(tree)
       mapN(
         Types.pickConstraints(tree),
         pickEqualityConstraints(tree),
-        pickFormalParameters(tree),
         Exprs.pickExpr(tree)
       ) {
-        (tconstrs, econstrs, fparams, expr) =>
+        (tconstrs, econstrs, expr) =>
           val eff = None
           val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           // TODO: There is a `Declaration.Law` but old Weeder produces a Def
@@ -618,11 +618,11 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
       val tpe = Types.pickType(tree)
+      val fparams = pickFormalParameters(tree)
       mapN(
-        pickFormalParameters(tree),
         Types.pickConstraints(tree),
       ) {
-        (fparams, tconstrs) =>
+        tconstrs =>
           Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, tree.loc)
       }
     }
@@ -793,33 +793,31 @@ object Weeder2 {
       loc
     )
 
-    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): Validation[List[FormalParam], CompilationMessage] = {
+    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): List[FormalParam] = {
       tryPick(TreeKind.ParameterList, tree) match {
         case Some(t) =>
           val params = pickAll(TreeKind.Parameter, t)
           if (params.isEmpty) {
-            Validation.Success(List(unitFormalParameter(t.loc)))
+            List(unitFormalParameter(t.loc))
           } else {
-            mapN(traverse(params)(visitParameter(_, presence))) {
-              params =>
-                // Check for duplicates
-                val paramsWithoutWildcards = params.filter(!_.ident.isWild)
-                val errors = SeqOps.getDuplicates(paramsWithoutWildcards, (p: FormalParam) => p.ident.name)
-                  .map(pair => DuplicateFormalParam(pair._1.ident.name, pair._1.loc, pair._2.loc))
-                errors.foreach(sctx.errors.add)
+            val fparams = params.map(visitParameter(_, presence))
+            // Check for duplicates
+            val paramsWithoutWildcards = fparams.filter(!_.ident.isWild)
+            val errors = SeqOps.getDuplicates(paramsWithoutWildcards, (p: FormalParam) => p.ident.name)
+              .map(pair => DuplicateFormalParam(pair._1.ident.name, pair._1.loc, pair._2.loc))
+            errors.foreach(sctx.errors.add)
 
-                // Check missing or illegal type ascription
-                params
-            }
+            // Check missing or illegal type ascription
+            fparams
           }
         case None =>
           val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc)
           sctx.errors.add(error)
-          Validation.Success(List(unitFormalParameter(tree.loc)))
+          List(unitFormalParameter(tree.loc))
       }
     }
 
-    private def visitParameter(tree: Tree, presence: Presence)(implicit sctx: SharedContext): Validation[FormalParam, CompilationMessage] = {
+    private def visitParameter(tree: Tree, presence: Presence)(implicit sctx: SharedContext): FormalParam = {
       expect(tree, TreeKind.Parameter)
       val ident = pickNameIdent(tree)
       val maybeType = tryPick(TreeKind.Type.Type, tree)
@@ -828,13 +826,13 @@ object Weeder2 {
         case (None, Presence.Required) =>
           val error = MissingTypeAscription(ident.name, tree.loc)
           sctx.errors.add(error)
-          Validation.Success(FormalParam(ident, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
+          FormalParam(ident, Some(Type.Error(tree.loc.asSynthetic)), tree.loc)
         case (Some(_), Presence.Forbidden) =>
           val error = IllegalFormalParamAscription(tree.loc)
           sctx.errors.add(error)
-          Validation.Success(FormalParam(ident, None, tree.loc))
-        case (Some(typeTree), _) => Validation.Success(FormalParam(ident, Some(Types.visitType(typeTree)), tree.loc))
-        case (None, _) => Validation.Success(FormalParam(ident, None, tree.loc))
+          FormalParam(ident, None, tree.loc)
+        case (Some(typeTree), _) => FormalParam(ident, Some(Types.visitType(typeTree)), tree.loc)
+        case (None, _) => FormalParam(ident, None, tree.loc)
       }
     }
   }
@@ -1178,8 +1176,9 @@ object Weeder2 {
 
     private def visitLambdaExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Lambda)
-      mapN(pickExpr(tree), Decls.pickFormalParameters(tree, presence = Presence.Optional)) {
-        (expr, fparams) => {
+      val fparams = Decls.pickFormalParameters(tree, presence = Presence.Optional)
+      mapN(pickExpr(tree)) {
+        expr => {
           val l = tree.loc.asSynthetic
           fparams.foldRight(expr) {
             case (fparam, acc) => WeededAst.Expr.Lambda(fparam, acc, l)
@@ -1434,12 +1433,12 @@ object Weeder2 {
 
       val ident = pickNameIdent(tree)
       val declaredEff = Types.tryPickEffect(tree)
+      val fparams = Decls.pickFormalParameters(tree, Presence.Optional)
       mapN(
         exprs,
-        Decls.pickFormalParameters(tree, Presence.Optional),
         Types.tryPickType(tree),
       ) {
-        case ((exp1, exp2), fparams, declaredTpe) =>
+        case ((exp1, exp2), declaredTpe) =>
           Expr.LocalDef(ann, ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
       }
     }
@@ -1948,10 +1947,8 @@ object Weeder2 {
     private def visitRunWithRule(tree: Tree)(implicit sctx: SharedContext): Validation[HandlerRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.RunWithRuleFragment)
       val ident = pickNameIdent(tree)
-      mapN(
-        Decls.pickFormalParameters(tree, Presence.Forbidden),
-        pickExpr(tree)
-      )((fparams0, expr) => {
+      val fparams0 = Decls.pickFormalParameters(tree, Presence.Forbidden)
+      mapN(pickExpr(tree))(expr => {
         // `def f()` becomes `def f(_unit: Unit)` (via Decls.pickFormalParameters).
         // `def f(x)` becomes `def f(_unit: Unit, x)`.
         // `def f(x, y, ..)` is unchanged.
@@ -2087,11 +2084,11 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val tpe = Types.pickType(tree)
       val eff = Types.tryPickEffect(tree)
+      val fparams = Decls.pickFormalParameters(tree)
       mapN(
         pickExpr(tree),
-        Decls.pickFormalParameters(tree),
       ) {
-        (expr, fparams) => JvmMethod(jvmAnns, ident, fparams, expr, tpe, eff, tree.loc)
+        expr => JvmMethod(jvmAnns, ident, fparams, expr, tpe, eff, tree.loc)
       }
     }
 
