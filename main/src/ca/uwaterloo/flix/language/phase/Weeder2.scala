@@ -275,13 +275,13 @@ object Weeder2 {
 
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val tparam = Types.pickSingleParameter(tree)
       flatMapN(
-        Types.pickSingleParameter(tree),
         Types.pickConstraints(tree),
         traverse(sigs)(visitSignatureDecl),
         traverse(laws)(visitLawDecl)
       ) {
-        (tparam, tconstr, sigs, laws) =>
+        (tconstr, sigs, laws) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree)
           mapN(traverse(assocs)(visitAssociatedTypeSigDecl(_, tparam))) {
             assocs => Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
@@ -318,8 +318,8 @@ object Weeder2 {
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true)
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val tparams = Types.pickKindedParameters(tree)
       mapN(
-        Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
         Types.pickType(tree),
         Types.tryPickEffect(tree),
@@ -327,7 +327,7 @@ object Weeder2 {
         pickEqualityConstraints(tree),
         traverseOpt(maybeExpression)(Exprs.visitExpr)
       ) {
-        (tparams, fparams, tpe, eff, tconstrs, econstrs, expr) =>
+        (fparams, tpe, eff, tconstrs, econstrs, expr) =>
           Declaration.Sig(doc, ann, mod, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
       }
     }
@@ -338,8 +338,8 @@ object Weeder2 {
       val mod = pickModifiers(tree, allowed = allowedModifiers, mustBePublic)
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val tparams = Types.pickKindedParameters(tree)
       mapN(
-        Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
         Exprs.pickExpr(tree),
         Types.pickType(tree),
@@ -347,7 +347,7 @@ object Weeder2 {
         pickEqualityConstraints(tree),
         Types.tryPickEffect(tree)
       ) {
-        (tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+        (fparams, exp, ttype, tconstrs, constrs, eff) =>
           Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
@@ -359,8 +359,8 @@ object Weeder2 {
       val mod = pickModifiers(tree, allowed = allowedModifiers)
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val tparams = Types.pickKindedParameters(tree)
       mapN(
-        Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
         Exprs.pickExpr(tree),
         Types.pickType(tree),
@@ -368,7 +368,7 @@ object Weeder2 {
         pickEqualityConstraints(tree),
         Types.tryPickEffect(tree)
       ) {
-        (tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+        (fparams, exp, ttype, tconstrs, constrs, eff) =>
           Declaration.Redef(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
@@ -378,14 +378,14 @@ object Weeder2 {
       val mod = pickModifiers(tree, allowed = Set.empty)
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val tparams = Types.pickKindedParameters(tree)
       mapN(
         Types.pickConstraints(tree),
         pickEqualityConstraints(tree),
-        Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
         Exprs.pickExpr(tree)
       ) {
-        (tconstrs, econstrs, tparams, fparams, expr) =>
+        (tconstrs, econstrs, fparams, expr) =>
           val eff = None
           val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           // TODO: There is a `Declaration.Law` but old Weeder produces a Def
@@ -402,12 +402,12 @@ object Weeder2 {
       val derivations = Types.pickDerivations(tree)
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
       flatMapN(
-        Types.pickParameters(tree),
         traverseOpt(shorthandBody)(Types.visitCaseType),
         traverse(cases)(visitEnumCase)
       ) {
-        (tparams, tpe, cases) =>
+        (tpe, cases) =>
           val casesVal = (tpe, cases) match {
             // Illegal empty singleton enum (`enum A()`)
             case (Some(List(Type.Error(_))), Nil) =>
@@ -459,12 +459,12 @@ object Weeder2 {
       val derivations = Types.pickDerivations(tree)
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
       flatMapN(
-        Types.pickParameters(tree),
         traverseOpt(shorthandBody)(Types.visitCaseType),
         traverse(cases)(visitRestrictableEnumCase)
       ) {
-        (tparams, tpe, cases) =>
+        (tpe, cases) =>
           val casesVal = (tpe, cases) match {
             // Illegal empty singleton enum (`enum A()`)
             case (Some(List(Type.Error(_))), Nil) =>
@@ -511,11 +511,11 @@ object Weeder2 {
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
       flatMapN(
-        Types.pickParameters(tree),
         traverse(fields)(visitStructField)
       ) {
-        (tparams, fields) =>
+        fields =>
           // Ensure that each name is unique
           val errors = SeqOps.getDuplicates(fields, (f: StructField) => f.name.name).map {
             case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
@@ -547,11 +547,11 @@ object Weeder2 {
       val mod = pickModifiers(tree, Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
       mapN(
-        Types.pickParameters(tree),
         Types.pickType(tree)
       ) {
-        (tparams, tpe) =>
+        tpe =>
           Declaration.TypeAlias(doc, ann, mod, ident, tparams, tpe, tree.loc)
       }
     }
@@ -561,26 +561,22 @@ object Weeder2 {
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
-      flatMapN(
-        Types.pickParameters(tree),
-      ) {
-        tparams =>
-          val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
-          val tpe = Types.tryPickTypeNoWild(tree)
-          val tparam = tparams match {
-            // Elided: Use class type parameter
-            case Nil => Validation.Success(classTypeParam)
-            // Single type parameter
-            case head :: Nil => Validation.Success(head)
-            // Multiple type parameters. Soft fail by picking the first parameter
-            case ts@head :: _ :: _ =>
-              val error = NonUnaryAssocType(ts.length, ident.loc)
-              sctx.errors.add(error)
-              Validation.Success(head)
-          }
-          mapN(tparam, tpe) {
-            (tparam, tpe) => Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, tree.loc)
-          }
+      val tparams = Types.pickParameters(tree)
+      val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
+      val tpe = Types.tryPickTypeNoWild(tree)
+      val tparam = tparams match {
+        // Elided: Use class type parameter
+        case Nil => Validation.Success(classTypeParam)
+        // Single type parameter
+        case head :: Nil => Validation.Success(head)
+        // Multiple type parameters. Soft fail by picking the first parameter
+        case ts@head :: _ :: _ =>
+          val error = NonUnaryAssocType(ts.length, ident.loc)
+          sctx.errors.add(error)
+          Validation.Success(head)
+      }
+      mapN(tparam, tpe) {
+        (tparam, tpe) => Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, tree.loc)
       }
     }
 
@@ -618,11 +614,11 @@ object Weeder2 {
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
+      val tparams = Types.pickParameters(tree)
       mapN(
-        Types.pickParameters(tree),
         traverse(ops)(visitOperationDecl)
       ) {
-        (tparams, ops) =>
+        ops =>
           Declaration.Effect(doc, ann, mod, ident, tparams, ops, tree.loc)
       }
     }
@@ -3339,15 +3335,15 @@ object Weeder2 {
       Derivations(derivations, loc)
     }
 
-    def pickParameters(tree: Tree)(implicit sctx: SharedContext): Validation[List[TypeParam], CompilationMessage] = {
+    def pickParameters(tree: Tree)(implicit sctx: SharedContext): List[TypeParam] = {
       tryPick(TreeKind.TypeParameterList, tree) match {
-        case None => Validation.Success(Nil)
+        case None => Nil
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           val tparams = parameters.map(visitParameter)
           val kinded = tparams.collect { case t: TypeParam.Kinded => t }
           val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
-          Validation.Success((kinded, unkinded) match {
+          (kinded, unkinded) match {
             // Only unkinded type parameters
             case (Nil, _ :: _) => tparams
             // Only kinded type parameters
@@ -3362,19 +3358,19 @@ object Weeder2 {
               val error = NeedAtleastOne(NamedTokenSet.Parameter, SyntacticContext.Decl.Type, None, tparamsTree.loc)
               sctx.errors.add(error)
               Nil
-          })
+          }
       }
     }
 
-    def pickKindedParameters(tree: Tree)(implicit sctx: SharedContext): Validation[List[TypeParam], CompilationMessage] = {
+    def pickKindedParameters(tree: Tree)(implicit sctx: SharedContext): List[TypeParam] = {
       tryPick(TreeKind.TypeParameterList, tree) match {
-        case None => Validation.Success(Nil)
+        case None => Nil
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           val tparams = parameters.map(visitParameter)
           val kinded = tparams.collect { case t: TypeParam.Kinded => t }
           val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
-          Validation.Success((kinded, unkinded) match {
+          (kinded, unkinded) match {
             // Only kinded type parameters
             case (_ :: _, Nil) => tparams
             // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
@@ -3385,13 +3381,13 @@ object Weeder2 {
             case (Nil, Nil) =>
               sctx.errors.add(EmptyTypeParamList(tparamsTree.loc))
               tparams
-          })
+          }
       }
     }
 
-    def pickSingleParameter(tree: Tree)(implicit sctx: SharedContext): Validation[TypeParam, CompilationMessage] = {
+    def pickSingleParameter(tree: Tree)(implicit sctx: SharedContext): TypeParam = {
       val tparams = pick(TreeKind.TypeParameterList, tree)
-      Validation.Success(visitParameter(pick(TreeKind.Parameter, tparams)))
+      visitParameter(pick(TreeKind.Parameter, tparams))
     }
 
     def visitParameter(tree: Tree)(implicit sctx: SharedContext): TypeParam = {
