@@ -518,9 +518,9 @@ object Lowering {
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      (lctx.className, lctx.thisRef) match {
-        case (Some(cn), Some(thisRef)) =>
-          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(method, cn), thisRef :: es, t, eff, loc)
+      (lctx.sym, lctx.thisRef) match {
+        case (Some(sym), Some(thisRef)) =>
+          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(method, sym), thisRef :: es, t, eff, loc)
         case _ =>
           throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
       }
@@ -563,7 +563,7 @@ object Lowering {
         val thisParam = m.fparams.head
         val thisTpe = lowerType(thisParam.tpe)
         val thisRef = MonoAst.Expr.Var(thisParam.bnd.sym, thisTpe, loc)
-        implicit val lctx: LocalContext = LocalContext(Some(sym.name), Some(thisRef))
+        implicit val lctx: LocalContext = LocalContext(Some(sym), Some(thisRef))
         lowerJvmMethod(m)
       }
       val t = lowerType(tpe)
@@ -2513,7 +2513,7 @@ object Lowering {
     * A local context threaded through `lowerExp` to carry information from an
     * enclosing `NewObject` to nested `InvokeSuperMethod` expressions.
     *
-    * @param className The internal name of the enclosing anonymous class (e.g. `"pkg.Anon$1"`).
+    * @param className The internal name of the enclosing anonymous class.
     *                  Set to `Some` when lowering a `NewObject` method body; `None` otherwise.
     *                  Injected into `AtomicOp.InvokeSuperMethod` so the backend can generate
     *                  the `CHECKCAST` and `INVOKEVIRTUAL super$methodName` instructions.
@@ -2521,7 +2521,7 @@ object Lowering {
     *                  parameter of the JvmMethod). Prepended to `InvokeSuperMethod` arguments
     *                  so the backend receives the receiver object as the first expression.
     */
-  private case class LocalContext(className: Option[String], thisRef: Option[MonoAst.Expr])
+  private case class LocalContext(sym: Option[Symbol.AnonClassSym], thisRef: Option[MonoAst.Expr])
 
   private object LocalContext {
     val empty: LocalContext = LocalContext(None, None)
