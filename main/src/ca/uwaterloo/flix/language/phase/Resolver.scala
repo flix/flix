@@ -445,7 +445,7 @@ object Resolver {
         case trt =>
           val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
           val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
-          val defs = defs0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
+          val defs = checkDuplicateInstanceDefs(defs0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix)), trt.sym)
           val tconstrs = optTconstrs.collect { case Some(t) => t }
           mapN(assocsVal) {
             case assocs =>
@@ -453,6 +453,33 @@ object Resolver {
               ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
           }
       }
+  }
+
+  /**
+    * Checks for duplicate definitions (by name) within an instance.
+    *
+    * Reports a [[ResolutionError.DuplicateInstanceDef]] for each duplicate and returns the
+    * definitions with later duplicates removed, keeping the first occurrence of each name.
+    * Instance defs are given distinct symbols by the [[Namer]], so duplicates are not caught
+    * by the usual symbol table machinery and must be detected here.
+    */
+  private def checkDuplicateInstanceDefs(defs: List[ResolvedAst.Declaration.Def], traitSym: Symbol.TraitSym)(implicit sctx: SharedContext): List[ResolvedAst.Declaration.Def] = {
+    val seen = mutable.Map.empty[String, ResolvedAst.Declaration.Def]
+    val result = mutable.ArrayBuffer.empty[ResolvedAst.Declaration.Def]
+    for (defn <- defs) {
+      val name = defn.sym.text
+      seen.get(name) match {
+        case None =>
+          seen.put(name, defn)
+          result += defn
+        case Some(firstDefn) =>
+          val loc1 = firstDefn.sym.loc
+          val loc2 = defn.sym.loc
+          sctx.errors.add(ResolutionError.DuplicateInstanceDef(name, traitSym, loc1, loc2))
+          sctx.errors.add(ResolutionError.DuplicateInstanceDef(name, traitSym, loc2, loc1))
+      }
+    }
+    result.toList
   }
 
   /**
