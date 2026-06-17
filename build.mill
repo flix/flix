@@ -118,6 +118,15 @@ object flix extends ScalaModule {
 
   // ── Custom Tasks ────────────────────────────────────────
 
+  /** Run: ./mill flix.buildAllExamples */
+  def buildAllExamples = Task {
+    os.proc("java", "-Xmx3g",
+      "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
+      "org.scalatest.tools.Runner",
+      "-s", "flix.maintenance.BuildAllExamples", "-o"
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
+  }
+
   /** Run: ./mill flix.testFuzzerSuite */
   def testFuzzerSuite = Task {
     os.proc("java", "-Xmx3g",
