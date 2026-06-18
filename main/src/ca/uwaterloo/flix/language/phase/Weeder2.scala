@@ -229,11 +229,11 @@ object Weeder2 {
           case TreeKind.Decl.Trait => visitTraitDecl(t)
           case TreeKind.Decl.Instance => visitInstanceDecl(t)
           case TreeKind.Decl.Def => visitDefinitionDecl(t)
-          case TreeKind.Decl.Enum => visitEnumDecl(t)
-          case TreeKind.Decl.RestrictableEnum => visitRestrictableEnumDecl(t)
-          case TreeKind.Decl.Struct => visitStructDecl(t)
-          case TreeKind.Decl.TypeAlias => visitTypeAliasDecl(t)
-          case TreeKind.Decl.Effect => visitEffectDecl(t)
+          case TreeKind.Decl.Enum => Validation.Success(visitEnumDecl(t))
+          case TreeKind.Decl.RestrictableEnum => Validation.Success(visitRestrictableEnumDecl(t))
+          case TreeKind.Decl.Struct => Validation.Success(visitStructDecl(t))
+          case TreeKind.Decl.TypeAlias => Validation.Success(visitTypeAliasDecl(t))
+          case TreeKind.Decl.Effect => Validation.Success(visitEffectDecl(t))
           case k => throw InternalCompilerException(s"unexpected declaration kind '$k'", t.loc)
         }
       }
@@ -387,7 +387,7 @@ object Weeder2 {
       }
     }
 
-    private def visitEnumDecl(tree: Tree)(implicit sctx: SharedContext): Validation[Declaration.Enum, CompilationMessage] = {
+    private def visitEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Enum = {
       expect(tree, TreeKind.Decl.Enum)
       val shorthandBody = tryPick(TreeKind.CaseBody, tree)
       val cases = pickAll(TreeKind.Case, tree)
@@ -397,53 +397,41 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
       val tparams = Types.pickParameters(tree)
-      flatMapN(
-        traverseOpt(shorthandBody)(Types.visitCaseType),
-        traverse(cases)(visitEnumCase)
-      ) {
-        (tpe, cases) =>
-          val casesVal = (tpe, cases) match {
-            // Illegal empty singleton enum (`enum A()`)
-            case (Some(List(Type.Error(_))), Nil) =>
-              // Fall back on no cases. Whoever generated the error must have reported it.
-              Validation.Success(List.empty)
-            // Singleton enum
-            case (Some(ts), cs) =>
-              // Error if both singleton shorthand and cases provided
-              // Treat this as an implicit case with the type t, e.g.,
-              // enum Foo(Int32) { case Bar, case Baz }
-              // ===>
-              // enum Foo { case Foo(Int32), case Bar, case Baz }
-              val syntheticCase = WeededAst.Case(ident, ts, ident.loc)
-              val allCases = syntheticCase :: cs
-              Validation.Success(allCases)
-            // Empty or Multiton enum
-            case (None, cs) =>
-              Validation.Success(cs)
-          }
-          mapN(casesVal) {
-            cases => Declaration.Enum(doc, ann, mod, ident, tparams, derivations, cases, tree.loc)
-          }
+      val tpe = shorthandBody.map(Types.visitCaseType)
+      val visitedCases = cases.map(visitEnumCase)
+      val finalCases = (tpe, visitedCases) match {
+        // Illegal empty singleton enum (`enum A()`)
+        case (Some(List(Type.Error(_))), Nil) =>
+          // Fall back on no cases. Whoever generated the error must have reported it.
+          List.empty
+        // Singleton enum
+        case (Some(ts), cs) =>
+          // Error if both singleton shorthand and cases provided
+          // Treat this as an implicit case with the type t, e.g.,
+          // enum Foo(Int32) { case Bar, case Baz }
+          // ===>
+          // enum Foo { case Foo(Int32), case Bar, case Baz }
+          val syntheticCase = WeededAst.Case(ident, ts, ident.loc)
+          syntheticCase :: cs
+        // Empty or Multiton enum
+        case (None, cs) =>
+          cs
       }
+      Declaration.Enum(doc, ann, mod, ident, tparams, derivations, finalCases, tree.loc)
     }
 
-    private def visitEnumCase(tree: Tree)(implicit sctx: SharedContext): Validation[Case, CompilationMessage] = {
+    private def visitEnumCase(tree: Tree)(implicit sctx: SharedContext): Case = {
       expect(tree, TreeKind.Case)
       val maybeType = tryPick(TreeKind.CaseBody, tree)
       val ident = pickNameIdent(tree)
-      mapN(
-        traverseOpt(maybeType)(Types.visitCaseType),
-        // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
-      ) {
-        maybeType =>
-          val tpes = maybeType.getOrElse(Nil)
-          // Make a source location that spans the name and type, excluding 'case'.
-          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
-          Case(ident, tpes, loc)
-      }
+      // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
+      val tpes = maybeType.map(Types.visitCaseType).getOrElse(Nil)
+      // Make a source location that spans the name and type, excluding 'case'.
+      val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
+      Case(ident, tpes, loc)
     }
 
-    private def visitRestrictableEnumDecl(tree: Tree)(implicit sctx: SharedContext): Validation[Declaration.RestrictableEnum, CompilationMessage] = {
+    private def visitRestrictableEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.RestrictableEnum = {
       expect(tree, TreeKind.Decl.RestrictableEnum)
       val shorthandBody = tryPick(TreeKind.CaseBody, tree)
       val restrictionParam = Types.visitParameter(pick(TreeKind.Parameter, tree))
@@ -454,84 +442,67 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
       val tparams = Types.pickParameters(tree)
-      flatMapN(
-        traverseOpt(shorthandBody)(Types.visitCaseType),
-        traverse(cases)(visitRestrictableEnumCase)
-      ) {
-        (tpe, cases) =>
-          val casesVal = (tpe, cases) match {
-            // Illegal empty singleton enum (`enum A()`)
-            case (Some(List(Type.Error(_))), Nil) =>
-              // Fall back on no cases. Whoever generated the error must have reported it.
-              Validation.Success(List.empty)
-            // Singleton enum
-            case (Some(ts), cs) =>
-              // Error if both singleton shorthand and cases provided
-              // Treat this as an implicit case with the type t, e.g.,
-              // enum Foo(Int32) { case Bar, case Baz }
-              // ===>
-              // enum Foo { case Foo(Int32), case Bar, case Baz }
-              val syntheticCase = WeededAst.RestrictableCase(ident, ts, ident.loc)
-              val allCases = syntheticCase :: cs
-              Validation.Success(allCases)
-            // Empty or Multiton enum
-            case (None, cs) =>
-              Validation.Success(cs)
-          }
-          mapN(casesVal) {
-            cases => Declaration.RestrictableEnum(doc, ann, mod, ident, restrictionParam, tparams, derivations, cases, tree.loc)
-          }
+      val tpe = shorthandBody.map(Types.visitCaseType)
+      val visitedCases = cases.map(visitRestrictableEnumCase)
+      val finalCases = (tpe, visitedCases) match {
+        // Illegal empty singleton enum (`enum A()`)
+        case (Some(List(Type.Error(_))), Nil) =>
+          // Fall back on no cases. Whoever generated the error must have reported it.
+          List.empty
+        // Singleton enum
+        case (Some(ts), cs) =>
+          // Error if both singleton shorthand and cases provided
+          // Treat this as an implicit case with the type t, e.g.,
+          // enum Foo(Int32) { case Bar, case Baz }
+          // ===>
+          // enum Foo { case Foo(Int32), case Bar, case Baz }
+          val syntheticCase = WeededAst.RestrictableCase(ident, ts, ident.loc)
+          syntheticCase :: cs
+        // Empty or Multiton enum
+        case (None, cs) =>
+          cs
       }
+      Declaration.RestrictableEnum(doc, ann, mod, ident, restrictionParam, tparams, derivations, finalCases, tree.loc)
     }
 
-    private def visitRestrictableEnumCase(tree: Tree)(implicit sctx: SharedContext): Validation[RestrictableCase, CompilationMessage] = {
+    private def visitRestrictableEnumCase(tree: Tree)(implicit sctx: SharedContext): RestrictableCase = {
       expect(tree, TreeKind.Case)
       val maybeType = tryPick(TreeKind.CaseBody, tree)
       val ident = pickNameIdent(tree)
-      mapN(
-        traverseOpt(maybeType)(Types.visitCaseType),
-        // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
-      ) {
-        maybeType =>
-          val tpes = maybeType.getOrElse(Nil)
-          RestrictableCase(ident, tpes, tree.loc)
-      }
+      // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
+      val tpes = maybeType.map(Types.visitCaseType).getOrElse(Nil)
+      RestrictableCase(ident, tpes, tree.loc)
     }
 
-    private def visitStructDecl(tree: Tree)(implicit sctx: SharedContext): Validation[Declaration.Struct, CompilationMessage] = {
+    private def visitStructDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Struct = {
       expect(tree, TreeKind.Decl.Struct)
-      val fields = pickAll(TreeKind.StructField, tree)
+      val fields = pickAll(TreeKind.StructField, tree).map(visitStructField)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
       val tparams = Types.pickParameters(tree)
-      flatMapN(
-        traverse(fields)(visitStructField)
-      ) {
-        fields =>
-          // Ensure that each name is unique
-          val errors = SeqOps.getDuplicates(fields, (f: StructField) => f.name.name).map {
-            case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
-          }
-          errors.foreach(sctx.errors.add)
-          // For each field, only keep the first occurrence of the name
-          val filteredFields = fields.distinctBy(_.name.name)
-          Validation.Success(Declaration.Struct(doc, ann, Modifiers(Modifier.Mutable :: mod.mod), ident, tparams, filteredFields, tree.loc))
+      // Ensure that each name is unique
+      val errors = SeqOps.getDuplicates(fields, (f: StructField) => f.name.name).map {
+        case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
       }
+      errors.foreach(sctx.errors.add)
+      // For each field, only keep the first occurrence of the name
+      val filteredFields = fields.distinctBy(_.name.name)
+      Declaration.Struct(doc, ann, Modifiers(Modifier.Mutable :: mod.mod), ident, tparams, filteredFields, tree.loc)
     }
 
-    private def visitStructField(tree: Tree)(implicit sctx: SharedContext): Validation[StructField, CompilationMessage] = {
+    private def visitStructField(tree: Tree)(implicit sctx: SharedContext): StructField = {
       expect(tree, TreeKind.StructField)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub, TokenKind.KeywordMut))
       val ident = pickNameIdent(tree)
       val ttype = Types.pickType(tree)
       // Make a source location that spans the name and type
       val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
-      Validation.Success(StructField(mod, Name.mkLabel(ident), ttype, loc))
+      StructField(mod, Name.mkLabel(ident), ttype, loc)
     }
 
-    private def visitTypeAliasDecl(tree: Tree)(implicit sctx: SharedContext): Validation[Declaration.TypeAlias, CompilationMessage] = {
+    private def visitTypeAliasDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.TypeAlias = {
       expect(tree, TreeKind.Decl.TypeAlias)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, Set(TokenKind.KeywordPub))
@@ -539,7 +510,7 @@ object Weeder2 {
       val doc = pickDocumentation(tree)
       val tparams = Types.pickParameters(tree)
       val tpe = Types.pickType(tree)
-      Validation.Success(Declaration.TypeAlias(doc, ann, mod, ident, tparams, tpe, tree.loc))
+      Declaration.TypeAlias(doc, ann, mod, ident, tparams, tpe, tree.loc)
     }
 
     private def visitAssociatedTypeSigDecl(tree: Tree, classTypeParam: TypeParam)(implicit sctx: SharedContext): Validation[Declaration.AssocTypeSig, CompilationMessage] = {
@@ -589,23 +560,18 @@ object Weeder2 {
       }
     }
 
-    private def visitEffectDecl(tree: Tree)(implicit sctx: SharedContext): Validation[Declaration.Effect, CompilationMessage] = {
+    private def visitEffectDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Effect = {
       expect(tree, TreeKind.Decl.Effect)
-      val ops = pickAll(TreeKind.Decl.Op, tree)
+      val ops = pickAll(TreeKind.Decl.Op, tree).map(visitOperationDecl)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
       val tparams = Types.pickParameters(tree)
-      mapN(
-        traverse(ops)(visitOperationDecl)
-      ) {
-        ops =>
-          Declaration.Effect(doc, ann, mod, ident, tparams, ops, tree.loc)
-      }
+      Declaration.Effect(doc, ann, mod, ident, tparams, ops, tree.loc)
     }
 
-    private def visitOperationDecl(tree: Tree)(implicit sctx: SharedContext): Validation[Declaration.Op, CompilationMessage] = {
+    private def visitOperationDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Op = {
       expect(tree, TreeKind.Decl.Op)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
@@ -614,7 +580,7 @@ object Weeder2 {
       val tpe = Types.pickType(tree)
       val fparams = pickFormalParameters(tree)
       val tconstrs = Types.pickConstraints(tree)
-      Validation.Success(Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, tree.loc))
+      Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, tree.loc)
     }
 
     private def pickDocumentation(tree0: Tree): Doc = {
@@ -3064,15 +3030,15 @@ object Weeder2 {
       *   - `Tuple(t) --> List(visitType(t))`
       *   - `t --> List(visitType(t))`
       */
-    def visitCaseType(tree: Tree)(implicit sctx: SharedContext): Validation[List[Type], CompilationMessage] = {
+    def visitCaseType(tree: Tree)(implicit sctx: SharedContext): List[Type] = {
       expect(tree, TreeKind.CaseBody)
       val innerTypes = pickAll(TreeKind.Type.Type, tree)
-      Validation.Success(innerTypes.map(visitType) match {
+      innerTypes.map(visitType) match {
         case Nil =>
           sctx.errors.add(NeedAtleastOne(NamedTokenSet.Type, SyntacticContext.Decl.Enum, loc = tree.loc))
           List(Type.Error(tree.loc))
         case types => types
-      })
+      }
     }
 
     private def visitNameType(tree: Tree)(implicit sctx: SharedContext): Type.Ambiguous = {
