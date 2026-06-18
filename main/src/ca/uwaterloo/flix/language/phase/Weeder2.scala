@@ -276,12 +276,12 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val doc = pickDocumentation(tree)
       val tparam = Types.pickSingleParameter(tree)
+      val tconstr = Types.pickConstraints(tree)
       flatMapN(
-        Types.pickConstraints(tree),
         traverse(sigs)(visitSignatureDecl),
         traverse(laws)(visitLawDecl)
       ) {
-        (tconstr, sigs, laws) =>
+        (sigs, laws) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree)
           mapN(traverse(assocs)(visitAssociatedTypeSigDecl(_, tparam))) {
             assocs => Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
@@ -297,13 +297,13 @@ object Weeder2 {
       val clazz = pickQName(tree)
       val doc = pickDocumentation(tree)
       val tpe = Types.pickType(tree)
+      val tconstrs = Types.pickConstraints(tree)
+      val econstrs = pickEqualityConstraints(tree)
       flatMapN(
-        Types.pickConstraints(tree),
-        pickEqualityConstraints(tree),
         traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = allowedDefModifiers, mustBePublic = true)),
         traverse(pickAll(TreeKind.Decl.Redef, tree))(visitRedefinitionDecl),
       ) {
-        (tconstrs, econstrs, defs, redefs) =>
+        (defs, redefs) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
           mapN(traverse(assocs)(visitAssociatedTypeDefDecl(_, tpe))) {
             assocs => Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, econstrs, assocs, defs, redefs, tree.loc)
@@ -322,12 +322,12 @@ object Weeder2 {
       val tpe = Types.pickType(tree)
       val eff = Types.tryPickEffect(tree)
       val fparams = pickFormalParameters(tree)
+      val tconstrs = Types.pickConstraints(tree)
+      val econstrs = pickEqualityConstraints(tree)
       mapN(
-        Types.pickConstraints(tree),
-        pickEqualityConstraints(tree),
         traverseOpt(maybeExpression)(Exprs.visitExpr)
       ) {
-        (tconstrs, econstrs, expr) =>
+        expr =>
           Declaration.Sig(doc, ann, mod, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
       }
     }
@@ -342,12 +342,12 @@ object Weeder2 {
       val ttype = Types.pickType(tree)
       val eff = Types.tryPickEffect(tree)
       val fparams = pickFormalParameters(tree)
+      val tconstrs = Types.pickConstraints(tree)
+      val constrs = pickEqualityConstraints(tree)
       mapN(
-        Exprs.pickExpr(tree),
-        Types.pickConstraints(tree),
-        pickEqualityConstraints(tree)
+        Exprs.pickExpr(tree)
       ) {
-        (exp, tconstrs, constrs) =>
+        exp =>
           Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
@@ -363,12 +363,12 @@ object Weeder2 {
       val ttype = Types.pickType(tree)
       val eff = Types.tryPickEffect(tree)
       val fparams = pickFormalParameters(tree)
+      val tconstrs = Types.pickConstraints(tree)
+      val constrs = pickEqualityConstraints(tree)
       mapN(
-        Exprs.pickExpr(tree),
-        Types.pickConstraints(tree),
-        pickEqualityConstraints(tree)
+        Exprs.pickExpr(tree)
       ) {
-        (exp, tconstrs, constrs) =>
+        exp =>
           Declaration.Redef(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
@@ -380,12 +380,12 @@ object Weeder2 {
       val doc = pickDocumentation(tree)
       val tparams = Types.pickKindedParameters(tree)
       val fparams = pickFormalParameters(tree)
+      val tconstrs = Types.pickConstraints(tree)
+      val econstrs = pickEqualityConstraints(tree)
       mapN(
-        Types.pickConstraints(tree),
-        pickEqualityConstraints(tree),
         Exprs.pickExpr(tree)
       ) {
-        (tconstrs, econstrs, expr) =>
+        expr =>
           val eff = None
           val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           // TODO: There is a `Declaration.Law` but old Weeder produces a Def
@@ -619,12 +619,8 @@ object Weeder2 {
       val doc = pickDocumentation(tree)
       val tpe = Types.pickType(tree)
       val fparams = pickFormalParameters(tree)
-      mapN(
-        Types.pickConstraints(tree),
-      ) {
-        tconstrs =>
-          Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, tree.loc)
-      }
+      val tconstrs = Types.pickConstraints(tree)
+      Validation.Success(Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, tree.loc))
     }
 
     private def pickDocumentation(tree0: Tree): Doc = {
@@ -714,22 +710,17 @@ object Weeder2 {
       }
     }
 
-    private def pickEqualityConstraints(tree: Tree)(implicit sctx: SharedContext): Validation[List[EqualityConstraint], CompilationMessage] = {
+    private def pickEqualityConstraints(tree: Tree)(implicit sctx: SharedContext): List[EqualityConstraint] = {
       val maybeConstraintList = tryPick(TreeKind.Decl.EqualityConstraintList, tree)
-      val constraints = traverseOpt(maybeConstraintList)(t => {
+      val constraints = maybeConstraintList.map(t => {
         val constraintTrees = pickAll(TreeKind.Decl.EqualityConstraintFragment, t)
-        traverse(constraintTrees)(visitEqualityConstraint)
+        constraintTrees.map(visitEqualityConstraint)
       })
-
-      mapN(constraints) {
-        case maybeConstrs => maybeConstrs.getOrElse(List.empty).collect {
-          case Some(constr) => constr
-        }
-      }
+      constraints.getOrElse(List.empty).flatten
     }
 
-    private def visitEqualityConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[Option[EqualityConstraint], CompilationMessage] = {
-      Validation.Success(pickAll(TreeKind.Type.Type, tree).map(Types.visitType) match {
+    private def visitEqualityConstraint(tree: Tree)(implicit sctx: SharedContext): Option[EqualityConstraint] = {
+      pickAll(TreeKind.Type.Type, tree).map(Types.visitType) match {
         case Type.Apply(Type.Ambiguous(qname, _), t1, _) :: t2 :: Nil =>
           Some(EqualityConstraint(qname, t1, t2, tree.loc))
 
@@ -737,7 +728,7 @@ object Weeder2 {
           val error = IllegalEqualityConstraint(tree.loc)
           sctx.errors.add(error)
           None
-      })
+      }
     }
 
     private val ALL_MODIFIERS: Set[TokenKind] = Set(
@@ -3358,14 +3349,14 @@ object Weeder2 {
         .getOrElse(TypeParam.Unkinded(ident))
     }
 
-    def pickConstraints(tree: Tree)(implicit sctx: SharedContext): Validation[List[TraitConstraint], CompilationMessage] = {
+    def pickConstraints(tree: Tree)(implicit sctx: SharedContext): List[TraitConstraint] = {
       val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree)
       maybeWithClause.map(
-        withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitTraitConstraint)
-      ).getOrElse(Validation.Success(List.empty))
+        withClauseTree => pickAll(TreeKind.Type.Constraint, withClauseTree).map(visitTraitConstraint)
+      ).getOrElse(List.empty)
     }
 
-    private def visitTraitConstraint(tree: Tree)(implicit sctx: SharedContext): Validation[TraitConstraint, CompilationMessage] = {
+    private def visitTraitConstraint(tree: Tree)(implicit sctx: SharedContext): TraitConstraint = {
       def replaceIllegalTypesWithErrors(tpe: Type): (Type, List[SourceLocation]) = {
         val errorLocations = mutable.ArrayBuffer.empty[SourceLocation]
 
@@ -3386,7 +3377,7 @@ object Weeder2 {
       // Check for illegal type constraint parameter
       val (tpe1, errors) = replaceIllegalTypesWithErrors(tpe)
       errors.headOption.map(loc => sctx.errors.add(IllegalTraitConstraintParameter(loc)))
-      Validation.Success(TraitConstraint(qname, tpe1, tree.loc))
+      TraitConstraint(qname, tpe1, tree.loc)
     }
 
     private def visitKind(tree: Tree)(implicit sctx: SharedContext): Kind = {
