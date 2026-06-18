@@ -271,15 +271,13 @@ object Weeder2 {
       val doc = pickDocumentation(tree)
       val tparam = Types.pickSingleParameter(tree)
       val tconstr = Types.pickConstraints(tree)
-      flatMapN(
+      mapN(
         traverse(sigs)(visitSignatureDecl),
         traverse(laws)(visitLawDecl)
       ) {
         (sigs, laws) =>
-          val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree)
-          mapN(traverse(assocs)(visitAssociatedTypeSigDecl(_, tparam))) {
-            assocs => Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
-          }
+          val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree).map(visitAssociatedTypeSigDecl(_, tparam))
+          Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
       }
     }
 
@@ -293,15 +291,13 @@ object Weeder2 {
       val tpe = Types.pickType(tree)
       val tconstrs = Types.pickConstraints(tree)
       val econstrs = pickEqualityConstraints(tree)
-      flatMapN(
+      mapN(
         traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = allowedDefModifiers, mustBePublic = true)),
         traverse(pickAll(TreeKind.Decl.Redef, tree))(visitRedefinitionDecl),
       ) {
         (defs, redefs) =>
-          val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
-          mapN(traverse(assocs)(visitAssociatedTypeDefDecl(_, tpe))) {
-            assocs => Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, econstrs, assocs, defs, redefs, tree.loc)
-          }
+          val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree).map(visitAssociatedTypeDefDecl(_, tpe))
+          Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, econstrs, assocs, defs, redefs, tree.loc)
       }
     }
 
@@ -513,7 +509,7 @@ object Weeder2 {
       Declaration.TypeAlias(doc, ann, mod, ident, tparams, tpe, tree.loc)
     }
 
-    private def visitAssociatedTypeSigDecl(tree: Tree, classTypeParam: TypeParam)(implicit sctx: SharedContext): Validation[Declaration.AssocTypeSig, CompilationMessage] = {
+    private def visitAssociatedTypeSigDecl(tree: Tree, classTypeParam: TypeParam)(implicit sctx: SharedContext): Declaration.AssocTypeSig = {
       expect(tree, TreeKind.Decl.AssociatedTypeSig)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
@@ -523,21 +519,19 @@ object Weeder2 {
       val tpe = Types.tryPickTypeNoWild(tree)
       val tparam = tparams match {
         // Elided: Use class type parameter
-        case Nil => Validation.Success(classTypeParam)
+        case Nil => classTypeParam
         // Single type parameter
-        case head :: Nil => Validation.Success(head)
+        case head :: Nil => head
         // Multiple type parameters. Soft fail by picking the first parameter
         case ts@head :: _ :: _ =>
           val error = NonUnaryAssocType(ts.length, ident.loc)
           sctx.errors.add(error)
-          Validation.Success(head)
+          head
       }
-      mapN(tparam, tpe) {
-        (tparam, tpe) => Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, tree.loc)
-      }
+      Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, tree.loc)
     }
 
-    private def visitAssociatedTypeDefDecl(tree: Tree, instType: Type)(implicit sctx: SharedContext): Validation[Declaration.AssocTypeDef, CompilationMessage] = {
+    private def visitAssociatedTypeDefDecl(tree: Tree, instType: Type)(implicit sctx: SharedContext): Declaration.AssocTypeDef = {
       expect(tree, TreeKind.Decl.AssociatedTypeDef)
       val mod = pickModifiers(tree, Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
@@ -546,18 +540,16 @@ object Weeder2 {
       val tpe = Types.pickType(tree)
       val typeArg = typeArgs match {
         // Use instance type if type arguments were elided
-        case Nil => Validation.Success(instType)
+        case Nil => instType
         // Single argument: use that
-        case head :: Nil => Validation.Success(head)
+        case head :: Nil => head
         // Multiple type arguments: recover by arbitrarily picking the first one
         case types =>
           val error = NonUnaryAssocType(types.length, ident.loc)
           sctx.errors.add(error)
-          Validation.Success(types.head)
+          types.head
       }
-      mapN(typeArg) {
-        typeArg => Declaration.AssocTypeDef(doc, mod, ident, typeArg, tpe, tree.loc)
-      }
+      Declaration.AssocTypeDef(doc, mod, ident, typeArg, tpe, tree.loc)
     }
 
     private def visitEffectDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Effect = {
@@ -1386,11 +1378,11 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val declaredEff = Types.tryPickEffect(tree)
       val fparams = Decls.pickFormalParameters(tree, Presence.Optional)
+      val declaredTpe = Types.tryPickType(tree)
       mapN(
         exprs,
-        Types.tryPickType(tree),
       ) {
-        case ((exp1, exp2), declaredTpe) =>
+        case (exp1, exp2) =>
           Expr.LocalDef(ann, ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
       }
     }
@@ -1572,8 +1564,9 @@ object Weeder2 {
 
     private def visitLetMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.LetMatch)
-      flatMapN(Patterns.pickPattern(tree), Types.tryPickType(tree), pickExpr(tree)) {
-        (pattern, tpe, expr) =>
+      val tpe = Types.tryPickType(tree)
+      flatMapN(Patterns.pickPattern(tree), pickExpr(tree)) {
+        (pattern, expr) =>
           // Extract (boundValue, restExp) from the Stm wrapping the let-match.
           val exprs = expr match {
             case Expr.Stm(boundValue :: rest, exp, loc) =>
@@ -1786,8 +1779,9 @@ object Weeder2 {
     private def visitAscribeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Ascribe)
       val eff = Types.tryPickEffect(tree)
-      mapN(pickExpr(tree), Types.tryPickTypeNoWild(tree)) {
-        (expr, tpe) => Expr.Ascribe(expr, tpe, eff, tree.loc)
+      val tpe = Types.tryPickTypeNoWild(tree)
+      mapN(pickExpr(tree)) {
+        expr => Expr.Ascribe(expr, tpe, eff, tree.loc)
       }
     }
 
@@ -1808,8 +1802,9 @@ object Weeder2 {
     private def visitUncheckedCastExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.UncheckedCast)
       val eff = Types.tryPickEffect(tree)
-      mapN(pickExpr(tree), Types.tryPickTypeNoWild(tree)) {
-        (expr, tpe) => Expr.UncheckedCast(expr, tpe, eff, tree.loc)
+      val tpe = Types.tryPickTypeNoWild(tree)
+      mapN(pickExpr(tree)) {
+        expr => Expr.UncheckedCast(expr, tpe, eff, tree.loc)
       }
     }
 
@@ -2979,16 +2974,15 @@ object Weeder2 {
       tryPick(TreeKind.Type.Type, tree).map(visitType).getOrElse(Type.Error(tree.loc))
     }
 
-    def tryPickTypeNoWild(tree: Tree)(implicit sctx: SharedContext): Validation[Option[Type], CompilationMessage] = {
-      mapN(tryPickType(tree)) {
+    def tryPickTypeNoWild(tree: Tree)(implicit sctx: SharedContext): Option[Type] = {
+      tryPickType(tree) match {
         case Some(Type.Var(ident, _)) if ident.isWild => None
         case t => t
       }
     }
 
-    def tryPickType(tree: Tree)(implicit sctx: SharedContext): Validation[Option[Type], CompilationMessage] = {
-      val maybeType = tryPick(TreeKind.Type.Type, tree)
-      Validation.Success(maybeType.map(visitType))
+    def tryPickType(tree: Tree)(implicit sctx: SharedContext): Option[Type] = {
+      tryPick(TreeKind.Type.Type, tree).map(visitType)
     }
 
     def tryPickEffect(tree: Tree)(implicit sctx: SharedContext): Option[Type] = {
