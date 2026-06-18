@@ -1684,7 +1684,7 @@ object Resolver {
             val superScp = scp0.withSuperClass(Some(clazz)).withSuperTargs(targs)
             val cs = constructors.map(visitJvmConstructor(_, superScp))
             val ms = methods.map(visitJvmMethod(_, superScp))
-            val anonClassSym = Symbol.mkAnonClassSym(loc);
+            val anonClassSym = Symbol.mkFreshAnonClassSym(loc);
             ResolvedAst.Expr.NewObject(anonClassSym, clazz, targs, cs, ms, loc)
           case None =>
             erased match {

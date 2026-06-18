@@ -331,7 +331,7 @@ object Symbol {
   /**
     * Returns the anon class symbol.
     */
-  def mkAnonClassSym(loc: SourceLocation)(implicit flix: Flix): AnonClassSym = {
+  def mkFreshAnonClassSym(loc: SourceLocation)(implicit flix: Flix): AnonClassSym = {
     val id = flix.genSym.freshId();
     new AnonClassSym(id, loc);
   }
