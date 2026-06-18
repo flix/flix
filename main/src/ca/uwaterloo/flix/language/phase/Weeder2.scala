@@ -119,7 +119,7 @@ object Weeder2 {
 
   private def visitUseMany(tree: Tree, namespace: Name.NName)(implicit sctx: SharedContext): List[UseOrImport] = {
     expect(tree, TreeKind.UsesOrImports.UseMany)
-    pickAllMulti(tree, TreeKind.Ident, TreeKind.UsesOrImports.Alias).map { t =>
+    pickAllMulti(tree, IdentAndAliasKinds).map { t =>
       t.kind match {
         case TreeKind.Ident => visitUseIdent(t, namespace)
         case TreeKind.UsesOrImports.Alias => visitUseAlias(t, namespace)
@@ -180,7 +180,7 @@ object Weeder2 {
 
   private def visitImportMany(tree: Tree, namespace: Seq[String])(implicit sctx: SharedContext): List[UseOrImport.Import] = {
     expect(tree, TreeKind.UsesOrImports.ImportMany)
-    pickAllMulti(tree, TreeKind.Ident, TreeKind.UsesOrImports.Alias).map { t =>
+    pickAllMulti(tree, IdentAndAliasKinds).map { t =>
       t.kind match {
         case TreeKind.Ident => visitImportIdent(t, namespace)
         case TreeKind.UsesOrImports.Alias => visitImportAlias(t, namespace)
@@ -212,17 +212,7 @@ object Weeder2 {
   private object Decls {
     def pickAllDeclarations(tree: Tree)(implicit sctx: SharedContext, flix: Flix): List[Declaration] = {
       expectAny(tree, List(TreeKind.Root, TreeKind.Decl.Module))
-      pickAllMulti(tree,
-        TreeKind.Decl.Module,
-        TreeKind.Decl.Trait,
-        TreeKind.Decl.Instance,
-        TreeKind.Decl.Def,
-        TreeKind.Decl.Enum,
-        TreeKind.Decl.RestrictableEnum,
-        TreeKind.Decl.Struct,
-        TreeKind.Decl.TypeAlias,
-        TreeKind.Decl.Effect
-      ).map { t =>
+      pickAllMulti(tree, DeclarationKinds).map { t =>
         t.kind match {
           case TreeKind.Decl.Module => visitModuleDecl(t)
           case TreeKind.Decl.Trait => visitTraitDecl(t)
@@ -1009,7 +999,7 @@ object Weeder2 {
     }
 
     private def visitArguments(tree: Tree)(implicit sctx: SharedContext): List[Expr] = {
-      val args = pickAllMulti(tree, TreeKind.Argument, TreeKind.ArgumentNamed).map { t =>
+      val args = pickAllMulti(tree, ArgumentKinds).map { t =>
         t.kind match {
           case TreeKind.Argument => pickExpr(t)
           case TreeKind.ArgumentNamed => visitArgumentNamed(t)
@@ -1473,7 +1463,7 @@ object Weeder2 {
 
 
     private def pickForFragments(tree: Tree)(implicit sctx: SharedContext): List[ForFragment] = {
-      pickAllMulti(tree, TreeKind.Expr.ForFragmentGuard, TreeKind.Expr.ForFragmentGenerator, TreeKind.Expr.ForFragmentLet).map { t =>
+      pickAllMulti(tree, ForFragmentKinds).map { t =>
         t.kind match {
           case TreeKind.Expr.ForFragmentGuard => visitForFragmentGuard(t)
           case TreeKind.Expr.ForFragmentGenerator => visitForFragmentGenerator(t)
@@ -1565,7 +1555,7 @@ object Weeder2 {
 
     private def visitTupleExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.Tuple)
-      val args = pickAllMulti(tree, TreeKind.Argument, TreeKind.ArgumentNamed).map { t =>
+      val args = pickAllMulti(tree, ArgumentKinds).map { t =>
         t.kind match {
           case TreeKind.Argument => pickExpr(t)
           case TreeKind.ArgumentNamed => visitArgumentNamed(t)
@@ -1623,7 +1613,7 @@ object Weeder2 {
 
     private def visitRecordOperationExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.RecordOperation)
-      val ops = pickAllMulti(tree, TreeKind.Expr.RecordOpUpdate, TreeKind.Expr.RecordOpExtend, TreeKind.Expr.RecordOpRestrict)
+      val ops = pickAllMulti(tree, RecordOpKinds)
       if (ops.isEmpty) {
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowercase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
         sctx.errors.add(error)
@@ -2035,7 +2025,7 @@ object Weeder2 {
 
     private def visitFixpointLambdaExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.FixpointLambda)
-      val paramTrees = pickAllMulti(pick(TreeKind.Predicate.ParamList, tree), TreeKind.Predicate.ParamUntyped, TreeKind.Predicate.Param)
+      val paramTrees = pickAllMulti(pick(TreeKind.Predicate.ParamList, tree), PredicateParamKinds)
       val params = paramTrees.map(Predicates.visitParam)
       Expr.FixpointLambda(params, pickExpr(tree), tree.loc)
     }
@@ -3370,10 +3360,12 @@ object Weeder2 {
     * Collects the text in immediate token children
     */
   private def text(tree: Tree): List[String] = {
-    tree.children.foldLeft[List[String]](List.empty)((acc, c) => c match {
-      case token@Token(_, _, _, _, _, _) => acc :+ token.text
-      case _ => acc
-    })
+    val buffer = mutable.ListBuffer.empty[String]
+    tree.children.foreach {
+      case token: Token => buffer += token.text
+      case _ => ()
+    }
+    buffer.toList
   }
 
   /**
@@ -3419,21 +3411,49 @@ object Weeder2 {
     * Picks out all the sub-trees of a specific [[TreeKind]].
     */
   private def pickAll(kind: TreeKind, tree: Tree): List[Tree] = {
-    tree.children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
-      case tree: Tree if tree.kind == kind => acc.appended(tree)
-      case _ => acc
-    })
+    val buffer = mutable.ListBuffer.empty[Tree]
+    tree.children.foreach {
+      case child: Tree if child.kind == kind => buffer += child
+      case _ => ()
+    }
+    buffer.toList
   }
+
+  /**
+    * Sets of [[TreeKind]]s passed to [[pickAllMulti]], hoisted to avoid rebuilding them on each call.
+    */
+  private val DeclarationKinds: Set[TreeKind] = Set(
+    TreeKind.Decl.Module,
+    TreeKind.Decl.Trait,
+    TreeKind.Decl.Instance,
+    TreeKind.Decl.Def,
+    TreeKind.Decl.Enum,
+    TreeKind.Decl.RestrictableEnum,
+    TreeKind.Decl.Struct,
+    TreeKind.Decl.TypeAlias,
+    TreeKind.Decl.Effect
+  )
+
+  private val IdentAndAliasKinds: Set[TreeKind] = Set(TreeKind.Ident, TreeKind.UsesOrImports.Alias)
+
+  private val ArgumentKinds: Set[TreeKind] = Set(TreeKind.Argument, TreeKind.ArgumentNamed)
+
+  private val ForFragmentKinds: Set[TreeKind] = Set(TreeKind.Expr.ForFragmentGuard, TreeKind.Expr.ForFragmentGenerator, TreeKind.Expr.ForFragmentLet)
+
+  private val RecordOpKinds: Set[TreeKind] = Set(TreeKind.Expr.RecordOpUpdate, TreeKind.Expr.RecordOpExtend, TreeKind.Expr.RecordOpRestrict)
+
+  private val PredicateParamKinds: Set[TreeKind] = Set(TreeKind.Predicate.ParamUntyped, TreeKind.Predicate.Param)
 
   /**
     * Picks out all the sub-trees matching any of the given [[TreeKind]]s, preserving source order.
     */
-  private def pickAllMulti(tree: Tree, kinds: TreeKind*): List[Tree] = {
-    val kindSet = kinds.toSet
-    tree.children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
-      case tree: Tree if kindSet.contains(tree.kind) => acc.appended(tree)
-      case _ => acc
-    })
+  private def pickAllMulti(tree: Tree, kinds: Set[TreeKind]): List[Tree] = {
+    val buffer = mutable.ListBuffer.empty[Tree]
+    tree.children.foreach {
+      case child: Tree if kinds.contains(child.kind) => buffer += child
+      case _ => ()
+    }
+    buffer.toList
   }
 
   /**
