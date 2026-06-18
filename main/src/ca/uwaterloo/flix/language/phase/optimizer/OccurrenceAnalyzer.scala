@@ -268,7 +268,7 @@ object OccurrenceAnalyzer {
           (Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+      case Expr.NewObject(sym, clazz, tpe, eff, constructors, methods, loc) =>
         val (cs, cCtxs) = constructors.map(visitJvmConstructor).unzip
         val (ms, mCtxs) = methods.map(visitJvmMethod).unzip
         val ctx = (cCtxs ++ mCtxs).foldLeft(ExprContext.Empty)(combineBranch)
@@ -276,7 +276,7 @@ object OccurrenceAnalyzer {
             ListOps.zip(methods, ms).forall { case (m1, m2) => m1 eq m2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.NewObject(name, clazz, tpe, eff, cs, ms, loc), ctx)
+          (Expr.NewObject(sym, clazz, tpe, eff, cs, ms, loc), ctx)
         }
     }
   }

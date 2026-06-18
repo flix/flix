@@ -369,10 +369,10 @@ object Inliner {
       val rs = rules.map(visitHandlerRule(_, ctx0))
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
+    case Expr.NewObject(sym, clazz, tpe, eff, constructors0, methods0, loc) =>
       val constructors = constructors0.map(visitJvmConstructor(_, ctx0))
       val methods = methods0.map(visitJvmMethod(_, ctx0))
-      Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc)
+      Expr.NewObject(sym, clazz, tpe, eff, constructors, methods, loc)
   }
 
   /**

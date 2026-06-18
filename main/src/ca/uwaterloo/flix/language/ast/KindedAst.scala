@@ -195,7 +195,7 @@ object KindedAst {
 
     case class PutStaticField(field: Field, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], targs: List[Type], constructors: List[JvmConstructor], methods: List[JvmMethod], tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], targs: List[Type], constructors: List[JvmConstructor], methods: List[JvmMethod], tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
