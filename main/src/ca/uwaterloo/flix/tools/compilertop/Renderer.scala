@@ -124,6 +124,7 @@ object Renderer {
                                     cns: Long,
                                     tvars: Long,
                                     evars: Long,
+                                    reduces: Long,
                                     dominantPhase: String,
                                     allocBytes: Long,
                                     nanos: Long,
@@ -161,6 +162,7 @@ object Renderer {
         cns           = s.cns,
         tvars         = s.tvars,
         evars         = s.evars,
+        reduces       = s.reduces,
         dominantPhase = s.dominantPhase.getOrElse("?"),
         allocBytes    = s.allocBytes,
         nanos         = s.totalNanos,
@@ -228,6 +230,7 @@ object Renderer {
         cns           = m.totalCns,
         tvars         = m.totalTvars,
         evars         = m.totalEvars,
+        reduces       = m.totalReduces,
         dominantPhase = m.dominantPhase.getOrElse("?"),
         allocBytes    = m.totalAllocBytes,
         nanos         = m.totalNanos,
@@ -582,6 +585,7 @@ final class Renderer {
       sb.append(' '); sb.append(sortableColumn(lpad("cns", 5), Sort.Cns,   activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("tv",  4), Sort.Tvars, activeSort))
       sb.append(' '); sb.append(sortableColumn(lpad("ev",  4), Sort.Evars, activeSort))
+      sb.append(' '); sb.append(sortableColumn(lpad("rpv", 4), Sort.Density, activeSort))
     }
     if (layout.showPhase) {
       sb.append(' '); sb.append(plainHeader(rpad("phase", 10)))
@@ -656,6 +660,7 @@ final class Renderer {
     appendHelpCol(sb, "cns",      "the number of type constraints generated during type inference")
     appendHelpCol(sb, "tv",       "the number of type variables in the def's constraint system")
     appendHelpCol(sb, "ev",       "the number of effect variables in the def's constraint system")
+    appendHelpCol(sb, "rpv",      "type reductions per type/effect variable — high values flag defs driving disproportionate type reduction (e.g. heavy associated-type use)")
     sb.append('\n')
 
     sb.append("  "); sb.append(bold(cyan("Backend columns"))); sb.append('\n')
@@ -712,6 +717,7 @@ final class Renderer {
       sb.append(' '); sb.append(lpad(cells.cns.toString, 5))
       sb.append(' '); sb.append(lpad(cells.tvars.toString, 4))
       sb.append(' '); sb.append(lpad(cells.evars.toString, 4))
+      sb.append(' '); sb.append(lpad(formatDensity(cells.reduces, cells.tvars, cells.evars), 4))
     }
     if (layout.showPhase) {
       sb.append(' ')
