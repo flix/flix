@@ -329,7 +329,7 @@ object Symbol {
   }
 
   /**
-    * Returns the anon class symbol.
+    * Returns a fresh uniquely generated name for a anonymous Java class.
     */
   def mkFreshAnonClassSym(loc: SourceLocation)(implicit flix: Flix): AnonClassSym = {
     val id = flix.genSym.freshId();
@@ -983,7 +983,7 @@ object Symbol {
   }
 
     /**
-    * AnonClass Symbol.
+    * Anonymous Java class symbol.
     */
   final class AnonClassSym(val id: Int, val loc: SourceLocation) extends Symbol with Locatable {
 

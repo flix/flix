@@ -126,7 +126,7 @@ object Reducer {
 
       case ErasedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         op match {
-          case AtomicOp.InvokeSuperMethod(method, sym) => ctx.addSuperMethod(sym.name, method)
+          case AtomicOp.InvokeSuperMethod(sym, method) => ctx.addSuperMethod(sym.name, method)
           case _ => ()
         }
         val es = exps.map(visitExpr)

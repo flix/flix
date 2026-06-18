@@ -907,7 +907,7 @@ object GenExpression {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
-      case AtomicOp.InvokeSuperMethod(method, sym) =>
+      case AtomicOp.InvokeSuperMethod(sym, method) =>
         // Add source line number for debugging
         BytecodeInstructions.addLoc(loc)
 
