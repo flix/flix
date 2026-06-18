@@ -273,12 +273,16 @@ object Kinder {
 
   /**
     * Performs kinding on the all the definition specifications in the given root.
+    *
+    * Returns each spec together with the kind environment inferred for it, so that
+    * `visitDef` can reuse the environment instead of recomputing it.
     */
-  private def visitDefSpecs(root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Spec] = {
+  private def visitDefSpecs(root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, (KindedAst.Spec, KindEnv)] = {
     ParOps.parMapValues(root.defs) {
       case defn => flix.profile(defn.sym, defn.loc) {
         val kenv = getKindEnvFromSpec(defn.spec, KindEnv.empty, root)
-        visitSpec(defn.spec, Nil, None, kenv, root)
+        val spec = visitSpec(defn.spec, Nil, None, kenv, root)
+        (spec, kenv)
       }
     }
   }
@@ -309,9 +313,13 @@ object Kinder {
     */
   private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
-      val kenv = getKindEnvFromSpec(spec0, kenv0, root)
-      // if the spec is already calculated (this is a top-level def), then just look it up
-      val spec = renv.defSpecs.getOrElse(sym, visitSpec(spec0, Nil, None, kenv, root))
+      // For a top-level def the spec and its kind environment were already computed
+      // in `visitDefSpecs`, so we reuse them. Instance defs and laws are not in
+      // `defSpecs`, so we compute them here under the given `kenv0`.
+      val (spec, kenv) = renv.defSpecs.getOrElse(sym, {
+        val kenv = getKindEnvFromSpec(spec0, kenv0, root)
+        (visitSpec(spec0, Nil, None, kenv, root), kenv)
+      })
       val exp = visitExp(exp0, kenv, root)(RegionScope.Top, renv, declKinds, sctx, flix)
       KindedAst.Def(sym, spec, exp, loc)
   }
@@ -435,7 +443,7 @@ object Kinder {
 
       case ResolvedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps0, loc2) =>
         val exps = exps0.map(visitExp(_, kenv0, root))
-        val targs = renv.defSpecs(sym).tparams.map {
+        val targs = renv.defSpecs(sym)._1.tparams.map {
           tparam => Type.freshVar(tparam.sym.kind, tparam.sym.loc)
         }
         val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
@@ -1960,7 +1968,7 @@ object Kinder {
     */
   private case class RootEnv(
                               aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
-                              defSpecs: Map[Symbol.DefnSym, KindedAst.Spec],
+                              defSpecs: Map[Symbol.DefnSym, (KindedAst.Spec, KindEnv)],
                               sigSpecs: Map[Symbol.SigSym, KindedAst.Spec]
                             ) extends TypeAliasEnv
 
