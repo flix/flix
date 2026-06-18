@@ -389,13 +389,13 @@ final class Renderer {
       // both happen for phases that do no per-def work, and the dash keeps that
       // visually distinct from a phase that did tracked work near zero.
       val allocField = if (p.allocBytes == 0L) lpad("-", 5) else lpad(formatBytes(p.allocBytes), 5)
-      val cpuField   = if (p.threadSummedNanos == 0L) lpad("-", 6) else stylePctCpu(f"$pctCpu%5.1f%%", pctCpu)
+      val cpuField   = if (p.threadSummedNanos == 0L) lpad("-", 6) else f"$pctCpu%5.1f%%"
       sb.append(' ')
       sb.append(rpad(truncate(p.phase, nameWidth), nameWidth))
       sb.append(' '); sb.append(barField)
       sb.append(' '); sb.append(lpad(formatMillis(p.wallNanos), 9))
       sb.append(' '); sb.append(lpad(formatMillis(blindNanos), 9))
-      sb.append(' '); sb.append(styleObserved(f"${p.pctObserved}%5.1f%%", p.pctObserved))
+      sb.append(' '); sb.append(f"${p.pctObserved}%5.1f%%")
       sb.append(' '); sb.append(allocField)
       sb.append(' '); sb.append(parField)
       sb.append(' '); sb.append(cpuField)
@@ -522,16 +522,16 @@ final class Renderer {
     sb.append(dim(" / "))
     sb.append(heapMaxField)
     // Key hints, anchored to the right under the dashboard's filter legend.
-    // `<tab> to cycle` always reads gray — it's a standing hint, never the
-    // active mode. When help is the active view only the "? for help" tip
+    // `<tab> cycle` always reads gray — it's a standing hint, never the
+    // active mode. When help is the active view only the "? help" tip
     // carries the "active mode" signal (bold yellow); the filter legend goes
     // plain because no filter is currently being applied to a visible table.
     // The "?" itself is underlined to match the keystroke-underline convention
     // used in the column headers and the filter legend.
     sb.append("     ")
-    sb.append(color("<tab> to cycle", Gray))
+    sb.append(color("<tab> cycle", Gray))
     sb.append("   ")
-    val tipText = s"$UnderlineCode?$NoUnderlineCode for help"
+    val tipText = s"$UnderlineCode?$NoUnderlineCode help"
     val tipStyled =
       if (state.activeView == View.Help) bold(color(tipText, Yellow))
       else color(tipText, Gray)
@@ -666,20 +666,11 @@ final class Renderer {
     sb.append('\n')
 
     sb.append("  "); sb.append(bold(cyan("Phase columns"))); sb.append('\n')
-    appendHelpCol(sb, "profile",  "wall-time bar vs the largest phase; solid = observed (heat by %wall), darker shade = blind")
+    appendHelpCol(sb, "profile",  "wall-time bar vs the largest phase; solid = observed, darker = blind")
     appendHelpCol(sb, "time",     "the phase's real wall-clock time")
     appendHelpCol(sb, "blind",    "the phase's wall time not attributed to any def (wall − observed)")
     appendHelpCol(sb, "%obs",     "the share of the phase's wall time attributed to per-def tracking")
-    appendHelpCol(sb, "par",      "observed effective parallelism (thread-summed time / wall); ~1 sequential, ~threads parallel")
-    appendHelpCol(sb, "%cpu",     "the phase's share of CPU time (thread-summed time / (elapsed × threads))")
-    appendHelpCol(sb, "%wall",    "the phase's share of wall-clock time (real phase wall / elapsed)")
-    sb.append('\n')
-
-    sb.append("  "); sb.append(bold(cyan("Navigation"))); sb.append('\n')
-    appendHelpCol(sb, "Tab",      "cycle through the per-def, per-module, and per-phase tables")
-    appendHelpCol(sb, "↑/↓",      "scroll the active table up and down one row")
-    appendHelpCol(sb, "a/f/b",    "filter to all / frontend / backend phases")
-    appendHelpCol(sb, "?",        "toggle this help screen; Esc returns to the defs table")
+    appendHelpCol(sb, "par",      "effective parallelism (thread-time / wall); ~1 sequential, ~threads parallel")
   }
 
   /** Appends one column-description row. */
