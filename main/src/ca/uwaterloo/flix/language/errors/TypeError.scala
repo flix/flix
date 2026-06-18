@@ -44,6 +44,7 @@ sealed trait TypeError extends CompilationMessage {
     case _: TypeError.MismatchedEffects => true
     case _: TypeError.NonPublicDefaultHandler => true
     case _: TypeError.UnusedEffectInSignature => true
+    case _: TypeError.UnusedHandlerEffect => true
     case _ => false
   }
 }
@@ -67,6 +68,8 @@ object TypeError {
     def loc: SourceLocation = loc1
 
     override def locs: List[SourceLocation] = List(loc2, loc3)
+
+    private def effectsToString(effs: List[EffSymOrRigidVar]): String = EffSymOrRigidVar.format(effs)
 
     def summary: String =
       s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
@@ -194,7 +197,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      val defString = s"{${magenta(effectsToString(defEffSyms))}}"
+      val defString = s"${magenta(effectsToString(defEffSyms))}"
       s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as $defString.
          |
          |${highlight(loc1, s"function declared as $defString", fmt)}
@@ -203,7 +206,7 @@ object TypeError {
          |
          |${underline("Explanation:")} The function is explicitly declared as $defString,
          |meaning it may not perform other effects. Since '${magenta(usedEffSym.name)}' is another effect,
-         |it cannot be used in this function. To fix this, either add ${magenta(usedEffSym.name)} to $defString
+         |it cannot be used in this function. To fix this, either add '${magenta(usedEffSym.name)}' to $defString
          |or remove the use of '${magenta(usedEffSym.name)}' inside the function.
          |""".stripMargin
     }
@@ -323,6 +326,25 @@ object TypeError {
          |
          |Available fields:
          |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    */
+  case class HandledEffectAppearsInSignature(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6220
+
+    def summary: String = s"Handled effect '${handledEff.name}', reappears in signature"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""Handled effect among expected effects in signature:
+         |${highlight(loc, s"handled effect: '${magenta(handledEff.name)}'", fmt)}
+         |${highlight(sigLoc, "also appears in the signature", fmt)}
+         |
+         |${underline("Solution:")} To fix this remove '${(magenta(handledEff.name))}' from the signature
+         |or subtract it from the other effect(s)
          |""".stripMargin
     }
   }
@@ -905,6 +927,46 @@ object TypeError {
   }
 
   /**
+    * An unhandled effect error.
+    *
+    * Occurs when an effect used inside a `run` expression is neither:
+    *   (a) handled by a handler
+    *   (b) declared in the enclosing function's effect signature.
+    *
+    * @param unhandled  The effect symbol or rigid variable that is unhandled.
+    * @param signature  The effect symbol or rigid variable representing the signature.
+    * @param uLoc       The source location of the unhandled effect use.
+    * @param handlerLoc The source location of the `run` expression's handler block.
+    * @param sigLoc     The source location of the enclosing function's effect signature.
+    */
+  case class UnhandledEffect(unhandled: EffSymOrRigidVar, signature: EffSymOrRigidVar, uLoc: SourceLocation, handlerLoc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7796
+
+    def loc: SourceLocation = uLoc
+
+    def summary: String = s"Unhandled effect: '${unhandled.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unhandled effect: '${magenta(unhandled.name)}'.
+         |
+         |${highlight(uLoc, s"effect '${magenta(unhandled.name)}' is not handled", fmt)}
+         |
+         |The effect is not handled by a handler:
+         |${highlight(handlerLoc, "", fmt)}
+         |
+         |And is not declared in the function signature:
+         |${highlight(sigLoc, s"'${magenta(unhandled.name)}' missing from signature", fmt)}
+         |
+         |${underline("Possible fixes:")}
+         |
+         |  (a) Add a handler for '${magenta(unhandled.name)}', or
+         |  (b) Add '${magenta(unhandled.name)}' to the enclosing function's effect signature.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Unresolved constructor type error.
     * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
     */
@@ -969,6 +1031,28 @@ object TypeError {
          |
          |${underline("Explanation:")} To fix this, either remove '${magenta(unusedEff.name)}' from the signature
          |or use the effect in the function body
+         |""".stripMargin
+    }
+  }
+
+  case class UnusedHandlerEffect(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation, sourceLoc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6219
+
+    def summary: String = s"Handler effect '${handledEff.name}' is unused"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""${highlight(loc, s"handler effect '${magenta(handledEff.name)}' is unused", fmt)}
+         |
+         |${highlight(sigLoc, s"'${magenta(handledEff.name)}' missing from the signature", fmt)}
+         |
+         |this effect is also not used by any expression in the 'run' block:
+         |${highlight(sourceLoc, s"'${magenta(handledEff.name)}' is not used by an expression", fmt)}
+         |
+         |${underline("Possible fixes:")}
+         |  (a) Remove the handler for '${magenta(handledEff.name)}'.
+         |  (b) Add '${magenta(handledEff.name)}' to the effect type of the expression inside the 'run' block.
+         |  (c) Subtract '${magenta(handledEff.name)}' from the other effects in the signature.
          |""".stripMargin
     }
   }

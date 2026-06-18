@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.{EffConflicted, Provenance}
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -500,10 +500,19 @@ object ConstraintSolver2 {
       case Result.Err(unsolved) =>
         // We try to compute user-friendly error message
         // If unsuccessful we return original unsolved constraints
-        val errors = EffectProvenance.getErrors(constrs0)
-        val c = errors match {
-          case Some(effErrors) => effErrors
-          case None => unsolved
+        val tooComplex = unsolved.exists {
+          case TypeConstraint.Conflicted(_ ,_ , prov) => prov match {
+            case Provenance.Timeout(_, _) => println("timeout"); true
+            case _ => false
+          }
+          case _ => false
+        }
+        val c = if (tooComplex) unsolved else {
+          val errors: Option[List[EffConflicted]] = EffectProvenance.getErrors(constrs0)
+          errors match {
+            case Some(effErrors) => effErrors
+            case None => unsolved
+          }
         }
         (c, Substitution.empty)
     }
