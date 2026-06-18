@@ -69,32 +69,26 @@ object Weeder2 {
 
   private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[CompilationUnit, CompilationMessage] = {
     try {
-      mapN(pickAllUsesAndImports(tree), Decls.pickAllDeclarations(tree)) {
-        (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
+      val usesAndImports = pickAllUsesAndImports(tree)
+      mapN(Decls.pickAllDeclarations(tree)) {
+        declarations => CompilationUnit(usesAndImports, declarations, tree.loc)
       }
     } catch {
       case PickException(error) => Validation.Failure(Chain(error))
     }
   }
 
-  private def pickAllUsesAndImports(tree: Tree)(implicit sctx: SharedContext): Validation[List[UseOrImport], CompilationMessage] = {
+  private def pickAllUsesAndImports(tree: Tree)(implicit sctx: SharedContext): List[UseOrImport] = {
     expectAny(tree, List(TreeKind.Root, TreeKind.Decl.Module))
     val maybeTree = tryPick(TreeKind.UsesOrImports.UseOrImportList, tree)
-    val maybeUsesAndImports = traverseOpt(maybeTree) {
-      tree =>
-        val uses = pickAll(TreeKind.UsesOrImports.Use, tree)
-        val imports = pickAll(TreeKind.UsesOrImports.Import, tree)
-        mapN(traverse(uses)(visitUse), traverse(imports)(visitImport)) {
-          (uses, imports) => uses.flatten ++ imports.flatten
-        }
-    }
-    mapN(maybeUsesAndImports) {
-      case Some(usesAndImports) => usesAndImports
-      case None => List.empty
-    }
+    maybeTree.map { tree =>
+      val uses = pickAll(TreeKind.UsesOrImports.Use, tree)
+      val imports = pickAll(TreeKind.UsesOrImports.Import, tree)
+      uses.flatMap(visitUse) ++ imports.flatMap(visitImport)
+    }.getOrElse(List.empty)
   }
 
-  private def visitUse(tree: Tree)(implicit sctx: SharedContext): Validation[List[UseOrImport], CompilationMessage] = {
+  private def visitUse(tree: Tree)(implicit sctx: SharedContext): List[UseOrImport] = {
     expect(tree, TreeKind.UsesOrImports.Use)
     val maybeUseMany = tryPick(TreeKind.UsesOrImports.UseMany, tree)
     val qname = pickQName(tree)
@@ -104,7 +98,7 @@ object Weeder2 {
     if (isUnqualifiedUse) {
       val error = UnqualifiedUse(qname, qname.loc)
       sctx.errors.add(error)
-      Validation.Success(List.empty)
+      List.empty
     } else {
       val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
       maybeUseMany match {
@@ -116,10 +110,10 @@ object Weeder2 {
             val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, useMany.loc)
             sctx.errors.add(error)
           }
-          Validation.Success(uses)
+          uses
         // case: Use one. Use the qname.
         case None =>
-          Validation.Success(List(UseOrImport.Use(qname, qname.ident, qname.loc)))
+          List(UseOrImport.Use(qname, qname.ident, qname.loc))
       }
     }
   }
@@ -164,7 +158,7 @@ object Weeder2 {
     }
   }
 
-  private def visitImport(tree: Tree)(implicit sctx: SharedContext): Validation[List[UseOrImport], CompilationMessage] = {
+  private def visitImport(tree: Tree)(implicit sctx: SharedContext): List[UseOrImport] = {
     expect(tree, TreeKind.UsesOrImports.Import)
     val jname = pickJavaName(tree)
     val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree)
@@ -177,11 +171,11 @@ object Weeder2 {
           val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, importMany.loc)
           sctx.errors.add(error)
         }
-        Validation.Success(imports)
+        imports
       // case: Import one. Use the Java name.
       case None =>
         val ident = Name.Ident(jname.fqn.lastOption.getOrElse(""), jname.loc)
-        Validation.Success(List(UseOrImport.Import(jname, ident, tree.loc)))
+        List(UseOrImport.Import(jname, ident, tree.loc))
     }
   }
 
@@ -254,11 +248,11 @@ object Weeder2 {
       val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val qname = pickQName(tree)
       val doc = pickDocumentation(tree)
+      val usesAndImports = pickAllUsesAndImports(tree)
       mapN(
-        pickAllUsesAndImports(tree),
         pickAllDeclarations(tree)
       ) {
-        (usesAndImports, declarations) => Declaration.Mod(doc, annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
+        declarations => Declaration.Mod(doc, annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
       }
     }
 
@@ -1025,8 +1019,9 @@ object Weeder2 {
 
     private def visitExprUseExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Use)
-      mapN(visitUse(pick(TreeKind.UsesOrImports.Use, tree)), pickExpr(tree)) {
-        (use, expr) => Expr.Use(use, expr, tree.loc)
+      val use = visitUse(pick(TreeKind.UsesOrImports.Use, tree))
+      mapN(pickExpr(tree)) {
+        expr => Expr.Use(use, expr, tree.loc)
       }
     }
 
