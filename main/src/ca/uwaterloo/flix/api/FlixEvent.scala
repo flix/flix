@@ -65,4 +65,11 @@ object FlixEvent {
    */
   case class SolveEffEquations(econstrs: List[Equation]) extends FlixEvent
 
+  /**
+    * An event that is fired once the constraint solver has produced the final
+    * type substitution for the given def symbol `sym`. `typeSize` is the total
+    * AST node count across the types bound to `Kind.Star` variables.
+    */
+  case class SubstitutionSizeDef(sym: Symbol.DefnSym, typeSize: Int) extends FlixEvent
+
 }

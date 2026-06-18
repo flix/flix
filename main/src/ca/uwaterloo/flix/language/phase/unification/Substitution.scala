@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
 
@@ -191,4 +191,18 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     * Returns the size of the largest type in this substitution.
     */
   def maxSize: Int = m.values.map(_.size).maxOption.getOrElse(0)
+
+  /**
+    * Returns the total size (summed AST node count) of the types bound to
+    * `Kind.Star` variables in this substitution's range. Captures the
+    * aggregate type-term blow-up — how large the types each ordinary type
+    * variable resolves to — not just the single largest one ([[maxSize]]).
+    */
+  def typeSubstSize: Int = {
+    var size = 0
+    m.foreach {
+      case (sym, tpe) => if (sym.kind == Kind.Star) size += tpe.size
+    }
+    size
+  }
 }
