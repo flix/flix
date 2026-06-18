@@ -108,6 +108,42 @@ object Aggregation {
   }
 
   /**
+    * Builds one [[PhaseStats]] row per phase that ran, for the per-phase table.
+    *
+    * Phase wall time comes from `phaseTimers` (the authoritative list of phases,
+    * summed by name since a phase can run more than once); the per-def time and
+    * alloc come from the snapshot's `byPhase` / `byPhaseAlloc`. `attributedWall`
+    * reuses [[computeCoverage]]'s optimistic-parallelism estimate
+    * (`threadSummed / par`, clamped to wall), so the per-row `pctObserved`
+    * matches the dashboard `observed` figure phase-for-phase.
+    *
+    * Unlike [[computeCoverage]], [[Model.NonAttributablePhases]] are NOT dropped:
+    * the table deliberately shows phases like `Lexer` / `Parser2` with their real
+    * `%wall` and `0%` observed. Rows are filtered by `f` (so `a`/`f`/`b` narrow the
+    * phase list like the other tables) and sorted by wall time descending.
+    */
+  def aggregateByPhase(snapshot: Vector[DefnStats], phaseTimers: Vector[PhaseTime], f: PhaseFilter, par: Int): Vector[PhaseStats] = {
+    val threads = par.max(1)
+
+    val timeByPhase = snapshot.foldLeft(Map.empty[String, Long]) {
+      case (acc, s) => s.byPhase.foldLeft(acc) { case (m, (p, n)) => m.updated(p, m.getOrElse(p, 0L) + n) }
+    }
+    val allocByPhase = snapshot.foldLeft(Map.empty[String, Long]) {
+      case (acc, s) => s.byPhaseAlloc.foldLeft(acc) { case (m, (p, n)) => m.updated(p, m.getOrElse(p, 0L) + n) }
+    }
+    val wallByPhase = phaseTimers.foldLeft(Map.empty[String, Long]) {
+      case (acc, pt) => acc.updated(pt.phase, acc.getOrElse(pt.phase, 0L) + pt.time)
+    }
+
+    wallByPhase.iterator.collect {
+      case (phase, wall) if matchesFilter(phase, f) =>
+        val threadSummed = timeByPhase.getOrElse(phase, 0L)
+        val attributedWall = (threadSummed / threads).min(wall)
+        PhaseStats(phase, wall, threadSummed, allocByPhase.getOrElse(phase, 0L), attributedWall)
+    }.toVector.sortBy(p => -p.wallNanos)
+  }
+
+  /**
     * Returns the descending sort key for a def under the given sort mode.
     * `Hotness` (time / LOC) is 0 for synthetic defs with no real source
     * span (`locLines <= 0`) so they sink to the bottom rather than dominating.

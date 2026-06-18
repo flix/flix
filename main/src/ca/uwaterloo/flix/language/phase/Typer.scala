@@ -117,6 +117,7 @@ object Typer {
         case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
         case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+        case sym: Symbol.AnonClassSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
       }
 
       // Every module symbol that either appears as a key (has children) or has an

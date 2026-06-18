@@ -84,7 +84,7 @@ object AtomicOp {
 
   case class InvokeMethod(method: Method) extends AtomicOp
 
-  case class InvokeSuperMethod(method: Method, className: String) extends AtomicOp
+  case class InvokeSuperMethod(sym: Symbol.AnonClassSym, method: Method) extends AtomicOp
 
   case class InvokeStaticMethod(method: Method) extends AtomicOp
 

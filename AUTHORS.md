@@ -99,4 +99,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Bertram Nellemann Thorsen](https://github.com/Palemand)
 - [Andreas Gotthelf Kühlwein Pedersen](https://github.com/ACoolWine)
 - [Fridolin Karger](https://github.com/LordBurtz)
-  
+- [Vipul Bhardwaj](https://github.com/vipulbhj)

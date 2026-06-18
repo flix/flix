@@ -129,7 +129,7 @@ object Kinder {
         kenv0
       } else {
         // The last add is simply to verify that the last tparam was marked as Eff
-        kenv0 + (tparams1.last.sym -> Kind.Eff)
+        kenv0.+(tparams1.last.sym, Kind.Eff)
       }
       val tparams = tparams1.map(visitTypeParam(_, kenv))
       val fields = fields0.map(visitStructField(_, kenv, root))
@@ -655,7 +655,7 @@ object Kinder {
         // which won't be found in the kenv of the function
         val kenvTpe = expectedType0.map(inferType(_, Kind.Star, kenv0, root)).getOrElse(KindEnv.empty)
         val kenvEff = expectedEff0.map(inferType(_, Kind.Eff, kenv0, root)).getOrElse(KindEnv.empty)
-        val kenv = KindEnv.merge(List(kenv0, kenvTpe, kenvEff))
+        val kenv = KindEnv.merge(kenv0, kenvTpe, kenvEff)
         val expectedType = expectedType0.map(visitType(_, Kind.Star, kenv, root))
         val expectedEff = expectedEff0.map(visitType(_, Kind.Eff, kenv, root))
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -765,12 +765,12 @@ object Kinder {
         val exp = visitExp(exp0, kenv0, root)
         KindedAst.Expr.PutStaticField(field, exp, loc)
 
-      case ResolvedAst.Expr.NewObject(name, clazz, targs0, constructors0, methods0, loc) =>
+      case ResolvedAst.Expr.NewObject(sym, clazz, targs0, constructors0, methods0, loc) =>
         val targs = targs0.map(visitType(_, Kind.Star, kenv0, root))
         val constructors = constructors0.map(visitJvmConstructor(_, kenv0, root))
         val methods = methods0.map(visitJvmMethod(_, kenv0, root))
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-        KindedAst.Expr.NewObject(name, clazz, targs, constructors, methods, tvar, loc)
+        KindedAst.Expr.NewObject(sym, clazz, targs, constructors, methods, tvar, loc)
 
       case ResolvedAst.Expr.NewChannel(exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -1468,12 +1468,12 @@ object Kinder {
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext): KindEnv = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs) =>
-      val fparamKenvs = fparams.map(inferFormalParam(_, kenv, root))
+      val fparamKenv = KindEnv.merge(fparams.map(inferFormalParam(_, kenv, root)))
       val tpeKenv = inferType(tpe, Kind.Star, kenv, root)
-      val effKenvs = eff0.map(inferType(_, Kind.Eff, kenv, root)).toList
-      val tconstrsKenvs = tconstrs.map(inferTraitConstraint(_, kenv, root))
-      val econstrsKenvs = econstrs.map(inferEqualityConstraint(_, kenv, root))
-      KindEnv.merge(fparamKenvs ::: tpeKenv :: effKenvs ::: tconstrsKenvs ::: econstrsKenvs)
+      val effKenv = eff0.map(inferType(_, Kind.Eff, kenv, root)).getOrElse(KindEnv.empty)
+      val tconstrsKenv = KindEnv.merge(tconstrs.map(inferTraitConstraint(_, kenv, root)))
+      val econstrsKenv = KindEnv.merge(econstrs.map(inferEqualityConstraint(_, kenv, root)))
+      KindEnv.merge(fparamKenv, tpeKenv, effKenv, tconstrsKenv, econstrsKenv)
   }
 
   /**
@@ -1562,11 +1562,11 @@ object Kinder {
       inferType(arg, kind, kenv0, root)
 
     case UnkindedType.Arrow(eff, _, _) =>
-      val effKenvs = eff.map(inferType(_, Kind.Eff, kenv0, root)).toList
+      val effKenv = eff.map(inferType(_, Kind.Eff, kenv0, root)).getOrElse(KindEnv.empty)
       val argKenv = tpe.typeArguments.foldLeft(KindEnv.empty) {
         case (acc, targ) => acc ++ inferType(targ, Kind.Star, kenv0, root)
       }
-      KindEnv.merge(effKenvs :+ argKenv)
+      KindEnv.merge(effKenv, argKenv)
 
     case UnkindedType.Enum(sym, _) =>
       val tyconKind = getEnumKind(root.enums(sym))
@@ -1812,11 +1812,24 @@ object Kinder {
 
     /**
       * Merges the given kind environments.
+      */
+    def merge(kenv1: KindEnv, kenvs: KindEnv*)(implicit sctx: SharedContext): KindEnv = {
+      kenvs.foldLeft(kenv1)(_ ++ _)
+    }
+
+    /**
+      * Merges the given kind environments.
       *
       * The environments must be disjoint.
       */
     def disjointAppend(kenv1: KindEnv, kenv2: KindEnv): KindEnv = {
-      KindEnv(kenv1.map ++ kenv2.map)
+      if (kenv1.map.isEmpty) {
+        kenv2
+      } else if (kenv2.map.isEmpty) {
+        kenv1
+      } else {
+        KindEnv(kenv1.map ++ kenv2.map)
+      }
     }
 
     /**
@@ -1833,14 +1846,17 @@ object Kinder {
     /**
       * Adds the given mapping to the kind environment.
       */
-    def +(pair: (Symbol.UnkindedTypeVarSym, Kind))(implicit sctx: SharedContext): KindEnv = pair match {
-      case (tvar, kind) => map.get(tvar) match {
+    def +(tvar: Symbol.UnkindedTypeVarSym, kind: Kind)(implicit sctx: SharedContext): KindEnv = {
+      map.get(tvar) match {
         case Some(kind0) => unify(kind0, kind) match {
+          // The kind is unchanged: reuse this environment rather than rebuilding the map.
+          case Some(minKind) if minKind == kind0 => this
           case Some(minKind) => KindEnv(map + (tvar -> minKind))
           case None =>
             val e = KindError.MismatchedKinds(kind0, kind, tvar.loc)
             sctx.errors.add(e)
-            KindEnv(map + (tvar -> kind0))
+            // We keep the existing kind0 mapping, so the environment is unchanged.
+            this
         }
         case None => KindEnv(map + (tvar -> kind))
       }
@@ -1849,8 +1865,19 @@ object Kinder {
     /**
       * Merges the given kind environment into this kind environment.
       */
-    def ++(other: KindEnv)(implicit sctx: SharedContext): KindEnv = {
-      other.map.foldLeft(this)(_ + _)
+    def ++(that: KindEnv)(implicit sctx: SharedContext): KindEnv = {
+      if (this.map.isEmpty) {
+        that
+      } else if (that.map.isEmpty) {
+        this
+      } else {
+        // Performance: `foreachEntry` avoids a tuple allocation per binding.
+        var acc = this
+        that.map.foreachEntry {
+          (tvar, kind) => acc = acc.+(tvar, kind)
+        }
+        acc
+      }
     }
   }
 

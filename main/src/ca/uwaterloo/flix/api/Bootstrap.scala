@@ -17,23 +17,22 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
-import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result}
-import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
-import ca.uwaterloo.flix.language.CompilationMessage
 
 import java.io.PrintStream
-import java.nio.file.*
+import java.nio.file.{FileSystems, Files, Path, StandardCopyOption}
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.collection.mutable
 import scala.io.StdIn.readLine
@@ -935,7 +934,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def outdated(flix: Flix)(implicit out: PrintStream): Result[Boolean, BootstrapError] = {
     implicit val formatter: Formatter = flix.getFormatter
 
-    val flixDeps = optManifest.map(findFlixDependencies).getOrElse(Nil)
+    val flixDeps = optManifest.map(FlixPackageManager.findFlixDependencies).getOrElse(Nil)
 
     val rows = flixDeps.flatMap { dep =>
       val updates = FlixPackageManager.findAvailableUpdates(dep, flix.options.githubToken) match {
@@ -1290,7 +1289,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * On overflow, falls back to a full re-scan.
       */
     private def applyWatcherEvents(events: List[FileWatcher.WatchEvent], flix: Flix): Unit = {
-      import FileWatcher.WatchEvent._
+      import FileWatcher.WatchEvent.*
 
       if (events.exists(_ == Overflow)) {
         // Overflow occurred: fall back to a full re-scan.

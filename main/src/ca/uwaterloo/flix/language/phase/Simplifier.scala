@@ -254,11 +254,11 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
+    case MonoAst.Expr.NewObject(sym, clazz, tpe, eff, constructors0, methods0, loc) =>
       val t = visitType(tpe)
       val constructors = constructors0 map visitJvmConstructor
       val methods = methods0 map visitJvmMethod
-      SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), constructors, methods, loc)
+      SimplifiedAst.Expr.NewObject(sym, clazz, t, simplifyEffect(eff), constructors, methods, loc)
 
   }
 

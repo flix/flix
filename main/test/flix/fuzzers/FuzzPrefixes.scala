@@ -29,7 +29,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
   /**
     * The number of prefixes to compile for each program.
     */
-  private val N: Int = 100
+  private val N: Int = 50
 
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")

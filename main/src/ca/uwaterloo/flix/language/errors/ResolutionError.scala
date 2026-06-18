@@ -101,6 +101,34 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate a duplicate definition in an instance.
+    *
+    * @param name the name of the duplicated definition.
+    * @param sym  the trait symbol of the instance.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
+    */
+  case class DuplicateInstanceDef(name: String, sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E9290
+
+    def summary: String = s"Duplicate definition '$name' in instance of trait '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Duplicate definition '${red(name)}' in instance of trait '${magenta(sym.name)}'.
+         |
+         |${highlight(loc1, "first occurrence", fmt)}
+         |
+         |${highlight(loc2, "duplicate", fmt)}
+         |
+         |${underline("Explanation:")} An instance can define each member of its trait at most once.
+         |""".stripMargin
+    }
+
+    val loc: SourceLocation = loc1
+  }
+
+  /**
     * An error raised to indicate a duplicate derivation.
     *
     * @param sym  the trait symbol of the duplicate derivation.

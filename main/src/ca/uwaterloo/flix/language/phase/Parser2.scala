@@ -158,14 +158,26 @@ object Parser2 {
 
   private def buildTree()(implicit s: State): SyntaxTree.Tree = {
     val tokens = s.tokens.iterator.buffered
-    // We are using lists as stacks here (Scala does have a 'Stack', but it is backed by an
-    // ArrayDeque). Lists are fastest here though since they have constant time prepend (+:) and
-    // tail implementations. We use prepend on Event.Open and stack.tail on Event.Close.
-    var stack: List[SyntaxTree.Tree] = List.empty
+
+    // A node's children are not known until its Close event, but we want to allocate each node's
+    // `Array[Child]` exactly once, at its final size, with each child copied exactly once.
+    //
+    // To do so we keep a single shared work-stack holding, at any moment, the not-yet-collected
+    // children of every currently-open node. The children of the most recently opened node are
+    // always a contiguous suffix of `workStack`. On Open we remember where that suffix begins; on
+    // Close we copy the suffix into a right-sized array, shrink the work-stack back to the start,
+    // and push the finished node so it becomes a child of its parent.
+    //
+    // Lists are used as the remaining stacks: they have constant time prepend (+:) and tail, and
+    // their depth is only the current nesting level (small).
+    val workStack: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
+    var startStack: List[Int] = List.empty
+    var kindStack: List[TreeKind] = List.empty
     var locationStack: List[Token] = List.empty
 
-    // Pop the last event, which must be a Close, to ensure that the stack is not empty when
-    // handling event below.
+    // Drop the last event, which must be a Close. This leaves the root node unclosed so that it is
+    // never popped during the loop below; it is finalized separately afterwards, when the work-stack
+    // holds exactly the root's children.
     val lastEvent = s.events.last
     s.events.dropRightInPlace(1)
     assert(lastEvent match {
@@ -181,12 +193,15 @@ object Parser2 {
       event match {
         case Event.Open(kind) =>
           locationStack = tokens.head +: locationStack
-          stack = SyntaxTree.Tree(kind, Array.empty, SourceLocation.Unknown) +: stack
+          startStack = workStack.length +: startStack
+          kindStack = kind +: kindStack
 
         case Event.Close =>
-          val child = stack.head
+          val start = startStack.head
+          val kind = kindStack.head
           val openToken = locationStack.head
-          stack.head.loc = if (stack.head.children.length == 0)
+          val numChildren = workStack.length - start
+          val loc = if (numChildren == 0)
             // If the subtree has no children, give it a zero length position just after the last
             // token.
             mkSourceLocation(lastAdvance.end, lastAdvance.end)
@@ -194,30 +209,43 @@ object Parser2 {
             // Otherwise the source location can span from the first to the last token in the
             // subtree.
             mkSourceLocation(openToken.start, lastAdvance.end)
+          // Copy this node's children (the suffix of workStack) into a right-sized array.
+          val childArray = new Array[SyntaxTree.Child](numChildren)
+          var i = 0
+          while (i < numChildren) {
+            childArray(i) = workStack(start + i)
+            i += 1
+          }
+          workStack.dropRightInPlace(numChildren)
+          startStack = startStack.tail
+          kindStack = kindStack.tail
           locationStack = locationStack.tail
-          stack = stack.tail
-          stack.head.children = stack.head.children :+ child
+          workStack += SyntaxTree.Tree(kind, childArray, loc)
 
         case Event.Advance =>
           val token = tokens.next()
           lastAdvance = token
-          stack.head.children = stack.head.children :+ token
+          workStack += token
       }
     }
 
-    // Set source location of the root.
-    stack.last.loc = SourceLocation(
-      isReal = true,
-      s.src,
-      SourcePosition.FirstPosition,
-      tokens.head.end
+    // The root is never closed (its Close was dropped above), so its children are exactly the
+    // remaining contents of the work-stack. Finalize it here.
+    assert(startStack.length == 1)
+    val root = SyntaxTree.Tree(
+      kindStack.head,
+      workStack.toArray,
+      // Set source location of the root.
+      SourceLocation(
+        isReal = true,
+        s.src,
+        SourcePosition.FirstPosition,
+        tokens.head.end
+      )
     )
 
-    // The stack should now contain a single Source tree, and there should only be an <eof> token
-    // left.
-    assert(stack.length == 1)
     assert(tokens.next().kind == TokenKind.Eof)
-    stack.head
+    root
   }
 
   /** Get first non-comment previous position of the parser as a [[SourceLocation]]. */
@@ -376,7 +404,7 @@ object Parser2 {
     */
   private def atAnyOpt(kinds: Set[TokenKind])(implicit s: State): Option[TokenKind] = {
     val token = nth(0)
-    Some(token).filter(kinds.contains)
+    if (kinds.contains(token)) Some(token) else None
   }
 
   /** Checks if the parser is at a token of a specific `kind` and advances past it if it is. */
@@ -661,6 +689,7 @@ object Parser2 {
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
   private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.NameMath, TokenKind.GenericOperator)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowercase)
+  private val NAME_LOWERCASE: Set[TokenKind] = Set(TokenKind.NameLowercase)
   // TODO: Static is used as a type in Prelude.flix. Static is also an expression.
   //       refactor When Static is used as a region "@ Static" to "@ static" since lowercase is
   //       a keyword.
@@ -706,7 +735,7 @@ object Parser2 {
     *             consumed.
     * @param allowTrailingDot If this is `false`, a trailing `.` will result in a parser error.
     */
-  private def nameAllowQualified(kinds: Set[TokenKind], allowTrailingDot: Boolean = false, tail: Set[TokenKind] = Set(TokenKind.NameLowercase))(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
+  private def nameAllowQualified(kinds: Set[TokenKind], allowTrailingDot: Boolean = false, tail: Set[TokenKind] = NAME_LOWERCASE)(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
 
     // Check if we are at a keyword and emit nice error if so.
@@ -1185,7 +1214,7 @@ object Parser2 {
       close(mark, if (isRestrictable) TreeKind.Decl.RestrictableEnum else TreeKind.Decl.Enum)
     }
 
-    private def FIRST_ENUM_CASE: Set[TokenKind] = Set(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma)
+    private val FIRST_ENUM_CASE: Set[TokenKind] = Set(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma)
 
     private def enumCases()(implicit s: State): Unit = {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Enum
@@ -1524,7 +1553,7 @@ object Parser2 {
           case TokenKind.Dot if nth(1) == TokenKind.NameLowercase => // Invoke method.
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
-            nameUnqualified(Set(TokenKind.NameLowercase))
+            nameUnqualified(NAME_LOWERCASE)
             // `exp.f` is a Java field lookup and `exp.f(..)` is a Java method invocation.
             if (at(TokenKind.ParenL)) {
               arguments()
@@ -1633,32 +1662,28 @@ object Parser2 {
 
     /** Returns the binary operator type of the current token if applicable. */
     private def peekBinaryOp()(implicit s: State): Option[BinaryOp] = {
-      nthToken(0) match {
-        case None => None
-        case Some(token) =>
-          token.kind match {
-            case TokenKind.AngleL => Some(BinaryOp.AngleL)
-            case TokenKind.AngleLEqual => Some(BinaryOp.AngleLEqual)
-            case TokenKind.AngleR => Some(BinaryOp.AngleR)
-            case TokenKind.AngleREqual => Some(BinaryOp.AngleREqual)
-            case TokenKind.AngledEqual => Some(BinaryOp.AngledEqual)
-            case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
-            case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
-            case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
-            case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
-            case TokenKind.KeywordAnd => Some(BinaryOp.And)
-            case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
-            case TokenKind.KeywordOr => Some(BinaryOp.Or)
-            case TokenKind.Minus => Some(BinaryOp.Minus)
-            case TokenKind.NameMath => Some(BinaryOp.NameMath)
-            case TokenKind.Plus => Some(BinaryOp.Plus)
-            case TokenKind.Slash => Some(BinaryOp.Slash)
-            case TokenKind.Star => Some(BinaryOp.Star)
-            case TokenKind.Tick => Some(BinaryOp.InfixFunction)
-            case TokenKind.ColonColonColon => Some(BinaryOp.TripleColon)
-            case TokenKind.GenericOperator => Some(BinaryOp.UserDefinedOperator)
-            case _ => None
-          }
+      nth(0) match {
+        case TokenKind.AngleL => Some(BinaryOp.AngleL)
+        case TokenKind.AngleLEqual => Some(BinaryOp.AngleLEqual)
+        case TokenKind.AngleR => Some(BinaryOp.AngleR)
+        case TokenKind.AngleREqual => Some(BinaryOp.AngleREqual)
+        case TokenKind.AngledEqual => Some(BinaryOp.AngledEqual)
+        case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
+        case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
+        case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
+        case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
+        case TokenKind.KeywordAnd => Some(BinaryOp.And)
+        case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
+        case TokenKind.KeywordOr => Some(BinaryOp.Or)
+        case TokenKind.Minus => Some(BinaryOp.Minus)
+        case TokenKind.NameMath => Some(BinaryOp.NameMath)
+        case TokenKind.Plus => Some(BinaryOp.Plus)
+        case TokenKind.Slash => Some(BinaryOp.Slash)
+        case TokenKind.Star => Some(BinaryOp.Star)
+        case TokenKind.Tick => Some(BinaryOp.InfixFunction)
+        case TokenKind.ColonColonColon => Some(BinaryOp.TripleColon)
+        case TokenKind.GenericOperator => Some(BinaryOp.UserDefinedOperator)
+        case _ => None
       }
     }
 
@@ -1713,8 +1738,8 @@ object Parser2 {
     }
 
     /** Returns the unary operator type of the current token, or `None` if the current token is not a unary operator. */
-    private def peekUnaryOp(token: Token): Option[UnaryOp] = {
-      token.kind match {
+    private def peekUnaryOp(kind: TokenKind): Option[UnaryOp] = {
+      kind match {
         case TokenKind.KeywordDiscard => Some(UnaryOp.Discard)
         case TokenKind.KeywordForce => Some(UnaryOp.Force)
         case TokenKind.KeywordLazy => Some(UnaryOp.Lazy)
@@ -2180,11 +2205,11 @@ object Parser2 {
     private def unaryExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
-      val op = nthToken(0)
+      val opKind = nth(0)
       val markOp = open()
       expectAny(FIRST_EXPR_UNARY)
       close(markOp, TreeKind.Operator)
-      expression(leftOpt = op.flatMap(peekUnaryOp))
+      expression(leftOpt = peekUnaryOp(opKind))
       close(mark, TreeKind.Expr.Unary)
     }
 
@@ -2810,7 +2835,7 @@ object Parser2 {
       assert(nth(0).isComment || at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
-      nameUnqualified(Set(TokenKind.NameLowercase))
+      nameUnqualified(NAME_LOWERCASE)
       Decl.parameters()
       expect(TokenKind.Equal)
       expression()
