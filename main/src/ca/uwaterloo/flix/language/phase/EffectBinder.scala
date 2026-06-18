@@ -329,10 +329,10 @@ object EffectBinder {
       }
       ReducedAst.Expr.RunWith(e, effUse, rs, ExpPosition.NonTail, tpe, purity, loc)
 
-    case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+    case LiftedAst.Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc) =>
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      ReducedAst.Expr.NewObject(name, clazz, tpe, purity, cs, ms, loc)
+      ReducedAst.Expr.NewObject(sym, clazz, tpe, purity, cs, ms, loc)
   }
 
   /**

@@ -140,7 +140,7 @@ object ClosureConv {
       }
       Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-    case Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+    case Expr.NewObject(sym, clazz, tpe, purity, constructors0, methods0, loc) =>
       val constructors = constructors0 map {
         case JvmConstructor(exp, retTpe, constructorPurity, constructorLoc) =>
           exp match {
@@ -158,7 +158,7 @@ object ClosureConv {
           val clo = mkLambdaClosure(fparams, exp, cloType, methodLoc)
           JvmMethod(ann, ident, fparams, clo, retTpe, methodPurity, methodLoc)
       }
-      Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
+      Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc)
 
     case Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
@@ -421,10 +421,10 @@ object ClosureConv {
         }
         Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-      case Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+      case Expr.NewObject(sym, clazz, tpe, purity, constructors0, methods0, loc) =>
         val constructors = constructors0.map(visitJvmConstructor)
         val methods = methods0.map(visitJvmMethod)
-        Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
+        Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc)
 
     }
 
@@ -654,7 +654,7 @@ object ClosureConv {
         }
         Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-      case Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+      case Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc) =>
         val cs = constructors.map {
           case JvmConstructor(exp, retTpe, constructorPurity, constructorLoc) =>
             val e = visit(exp)
@@ -665,7 +665,7 @@ object ClosureConv {
             val e = visit(exp)
             JvmMethod(ann, ident, fparams, e, retTpe, methodPurity, methodLoc)
         }
-        Expr.NewObject(name, clazz, tpe, purity, cs, ms, loc)
+        Expr.NewObject(sym, clazz, tpe, purity, cs, ms, loc)
     }
 
     visit(expr00)
