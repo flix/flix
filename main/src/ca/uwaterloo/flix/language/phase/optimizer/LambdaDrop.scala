@@ -355,7 +355,7 @@ object LambdaDrop {
       }
       Expr.RunWith(e1, effUse, rs, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff1, constructors, methods, loc1) =>
+    case Expr.NewObject(sym, clazz, tpe, eff1, constructors, methods, loc1) =>
       val cs = constructors.map {
         case MonoAst.JvmConstructor(exp, retTpe, eff2, loc2) =>
           val e = rewriteExp(exp)
@@ -366,7 +366,7 @@ object LambdaDrop {
           val e = rewriteExp(exp)
           MonoAst.JvmMethod(ann, ident, fparams, e, retTpe, eff2, loc2)
       }
-      Expr.NewObject(name, clazz, tpe, eff1, cs, ms, loc1)
+      Expr.NewObject(sym, clazz, tpe, eff1, cs, ms, loc1)
 
   }
 

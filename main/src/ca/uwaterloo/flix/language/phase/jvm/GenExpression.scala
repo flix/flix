@@ -907,7 +907,7 @@ object GenExpression {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
-      case AtomicOp.InvokeSuperMethod(method, className) =>
+      case AtomicOp.InvokeSuperMethod(sym, method) =>
         // Add source line number for debugging
         BytecodeInstructions.addLoc(loc)
 
@@ -916,7 +916,7 @@ object GenExpression {
 
         // Evaluate the receiver object.
         compileExpr(receiver)
-        val anonClassInternalName = className.replace('.', '/')
+        val anonClassInternalName = sym.name.replace('.', '/')
         mv.visitTypeInsn(CHECKCAST, anonClassInternalName)
 
         // Evaluate and cast each argument.
@@ -1598,9 +1598,9 @@ object GenExpression {
         ARETURN()
       }
 
-    case Expr.NewObject(name, _, _, _, constructors, methods, _) =>
+    case Expr.NewObject(sym, _, _, _, constructors, methods, _) =>
       val methodExps = methods.map(_.exp)
-      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
+      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, sym.name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
 

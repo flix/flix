@@ -240,8 +240,8 @@ object Eraser {
     case ReducedAst.Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val tw = ErasedAst.Expr.RunWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
       castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
-      ErasedAst.Expr.NewObject(name, clazz, visitType(tpe), purity, constructors.map(visitJvmConstructor), methods.map(visitJvmMethod), loc)
+    case ReducedAst.Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc) =>
+      ErasedAst.Expr.NewObject(sym, clazz, visitType(tpe), purity, constructors.map(visitJvmConstructor), methods.map(visitJvmMethod), loc)
   }
 
   /**

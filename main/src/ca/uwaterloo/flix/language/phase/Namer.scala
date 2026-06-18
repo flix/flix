@@ -1007,8 +1007,7 @@ object Namer {
       val fields = fields0.map(visitStructField)
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      val name = s"Anon$$${flix.genSym.freshId()}"
-      NamedAst.Expr.AmbiguousNew(name, t, region, fields, cs, ms, loc)
+      NamedAst.Expr.AmbiguousNew(t, region, fields, cs, ms, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val e = visitExp(exp)
