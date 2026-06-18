@@ -389,7 +389,7 @@ final class Renderer {
       // both happen for phases that do no per-def work, and the dash keeps that
       // visually distinct from a phase that did tracked work near zero.
       val allocField = if (p.allocBytes == 0L) lpad("-", 5) else lpad(formatBytes(p.allocBytes), 5)
-      val cpuField   = if (p.threadSummedNanos == 0L) lpad("-", 6) else stylePctCpu(f"$pctCpu%5.1f%%", pctCpu)
+      val cpuField   = if (p.threadSummedNanos == 0L) lpad("-", 6) else f"$pctCpu%5.1f%%"
       sb.append(' ')
       sb.append(rpad(truncate(p.phase, nameWidth), nameWidth))
       sb.append(' '); sb.append(barField)
