@@ -180,4 +180,26 @@ mod Test.Dec.TypeAlias {
 
     @Test
     def testTypeAlias29(): Unit \ Assert = assertEq(expected = 123, testTypeAlias29Helper(123))
+
+    ///
+    /// A record-row alias used in a record row extension.
+    ///
+    type alias RecordTail = (y = Int32)
+
+    def testTypeAlias30Helper(r: {x = Int32 | RecordTail}): Int32 = r#x + r#y
+
+    @Test
+    def testTypeAlias30(): Unit \ Assert =
+        assertEq(expected = 30, testTypeAlias30Helper({x = 10, y = 20}))
+
+    ///
+    /// A record-row alias with multiple fields used in a record row extension.
+    ///
+    type alias RecordTail2 = (y = Int32, z = Int32)
+
+    def testTypeAlias31Helper(r: {x = Int32 | RecordTail2}): Int32 = r#x + r#y + r#z
+
+    @Test
+    def testTypeAlias31(): Unit \ Assert =
+        assertEq(expected = 60, testTypeAlias31Helper({x = 10, y = 20, z = 30}))
 }

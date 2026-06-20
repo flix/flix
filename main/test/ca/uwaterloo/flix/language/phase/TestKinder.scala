@@ -1686,4 +1686,37 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UninferrableKind](result)
   }
 
+  test("KindError.RecordRowExtensionAlias.01") {
+    // The alias has Type kind (a record), but a record-row tail requires RecordRow kind.
+    val input =
+      """
+        |type alias R = { y = Int32 }
+        |def f(a: {x = Int32 | R}): Int32 = a#x
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
+  test("KindError.RecordRowExtensionAlias.02") {
+    // An alias to an enum has Type kind, which is not a valid record-row tail.
+    val input =
+      """
+        |enum Color { case Red }
+        |type alias R = Color
+        |def f(a: {x = Int32 | R}): Int32 = a#x
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
+  test("KindError.RecordRowExtensionAlias.03") {
+    // A bare (non-row) type directly in the tail is not a valid record-row tail.
+    val input =
+      """
+        |def f(a: {x = Int32 | Int32}): Int32 = a#x
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
 }
