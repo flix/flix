@@ -230,18 +230,18 @@ object FileOps {
     * }}}
     */
   def getFlixFilesIn(path: Path, depth: Int): List[Path] = {
-    walkTree(path, depth).filter(checkExt(_, "flix"))
+    walkTreeSorted(path, depth).filter(checkExt(_, "flix"))
   }
 
   /**
-    * Returns a list of all files (excluding directories) in the given path, visited recursively.
+    * Returns a sorted list of all files (excluding directories) in the given path, visited recursively.
     * The depth parameter is the maximum number of levels of directories to visit.
     * Use a depth of 0 to only visit the given directory.
     * Use a depth of 1 to only visit the files in the given directory.
     * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
     */
   def getFilesIn(path: Path, depth: Int): List[Path] = {
-    walkTree(path, depth).filter(Files.isRegularFile(_))
+    walkTreeSorted(path, depth).filter(Files.isRegularFile(_))
   }
 
   /**
@@ -254,11 +254,23 @@ object FileOps {
     * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
     */
   def getDirectoriesIn(path: Path, depth: Int): List[Path] = {
-    walkTree(path, depth).filter(Files.isDirectory(_))
+    walkTreeSorted(path, depth).filter(Files.isDirectory(_))
   }
 
   /**
-    * Returns a list of all paths in the given path (including `path`), visited recursively.
+    * Returns a sorted list of all paths in the given path (including `path`), visited recursively.
+    * The list is sorted by the path name.
+    * The depth parameter is the maximum number of levels of directories to visit.
+    * Use a depth of 0 to only visit the given directory.
+    * Use a depth of 1 to only visit the files in the given directory.
+    * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
+    */
+  private def walkTreeSorted(path: Path, depth: Int): List[Path] = {
+    walkTree(path, depth).sorted
+  }
+
+  /**
+    * Returns a list of all paths in the given path (including `path`), visited recursively, depth-first.
     * The depth parameter is the maximum number of levels of directories to visit.
     * Use a depth of 0 to only visit the given directory.
     * Use a depth of 1 to only visit the files in the given directory.
@@ -268,7 +280,7 @@ object FileOps {
     if (Files.exists(path) && Files.isDirectory(path))
       Files.walk(path, depth)
         .iterator().asScala
-        .toList.sorted
+        .toList
     else
       List.empty
   }
