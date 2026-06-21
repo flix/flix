@@ -19,173 +19,186 @@ import ca.uwaterloo.flix.language.errors.LexerError
 
 sealed trait TokenKind {
   /**
+    * Returns the canonical text of this token, if it has a fixed lexeme.
+    */
+  def fixedLexeme: Option[String] = this match {
+    // Punctuation and symbols
+    case TokenKind.Ampersand                   => Some("&")
+    case TokenKind.AngleL                      => Some("<")
+    case TokenKind.AngleLEqual                 => Some("<=")
+    case TokenKind.AngleR                      => Some(">")
+    case TokenKind.AngleREqual                 => Some(">=")
+    case TokenKind.AngledEqual                 => Some("<=>")
+    case TokenKind.AngledPlus                  => Some("<+>")
+    case TokenKind.ArrayHash                   => Some("Array#")
+    case TokenKind.ArrowThickR                 => Some("=>")
+    case TokenKind.ArrowThinL                  => Some("<-")
+    case TokenKind.ArrowThinRTight             => Some("->")
+    case TokenKind.ArrowThinRWhitespace        => Some("->")
+    case TokenKind.At                          => Some("@")
+    case TokenKind.Backslash                   => Some("\\")
+    case TokenKind.Bang                        => Some("!")
+    case TokenKind.BangEqual                   => Some("!=")
+    case TokenKind.Bar                         => Some("|")
+    case TokenKind.BarHash                     => Some("|#")
+    case TokenKind.BracketL                    => Some("[")
+    case TokenKind.BracketR                    => Some("]")
+    case TokenKind.Caret                       => Some("^")
+    case TokenKind.Colon                       => Some(":")
+    case TokenKind.ColonColon                  => Some("::")
+    case TokenKind.ColonColonColon             => Some(":::")
+    case TokenKind.ColonMinus                  => Some(":-")
+    case TokenKind.Comma                       => Some(",")
+    case TokenKind.CurlyL                      => Some("{")
+    case TokenKind.CurlyR                      => Some("}")
+    case TokenKind.Dollar                      => Some("$")
+    case TokenKind.Dot                         => Some(".")
+    case TokenKind.DotWhiteSpace               => Some(". ")
+    case TokenKind.Equal                       => Some("=")
+    case TokenKind.EqualEqual                  => Some("==")
+    case TokenKind.Hash                        => Some("#")
+    case TokenKind.HashBar                     => Some("#|")
+    case TokenKind.HashCurlyL                  => Some("#{")
+    case TokenKind.HashParenL                  => Some("#(")
+    case TokenKind.HoleAnonymous               => Some("???")
+    case TokenKind.ListHash                    => Some("List#")
+    case TokenKind.LiteralStringInterpolationL => Some("${")
+    case TokenKind.LiteralStringInterpolationR => Some("}\"")
+    case TokenKind.MapHash                     => Some("Map#")
+    case TokenKind.Minus                       => Some("-")
+    case TokenKind.ParenL                      => Some("(")
+    case TokenKind.ParenR                      => Some(")")
+    case TokenKind.Plus                        => Some("+")
+    case TokenKind.Semi                        => Some(";")
+    case TokenKind.SetHash                     => Some("Set#")
+    case TokenKind.Slash                       => Some("/")
+    case TokenKind.Star                        => Some("*")
+    case TokenKind.Tick                        => Some("`")
+    case TokenKind.Tilde                       => Some("~")
+    case TokenKind.Underscore                  => Some("_")
+    case TokenKind.VectorHash                  => Some("Vector#")
+
+    // Keywords
+    case TokenKind.KeywordAlias                => Some("alias")
+    case TokenKind.KeywordAnd                  => Some("and")
+    case TokenKind.KeywordAs                   => Some("as")
+    case TokenKind.KeywordCase                 => Some("case")
+    case TokenKind.KeywordCatch                => Some("catch")
+    case TokenKind.KeywordCheckedCast          => Some("checked_cast")
+    case TokenKind.KeywordCheckedECast         => Some("checked_ecast")
+    case TokenKind.KeywordChoose               => Some("choose")
+    case TokenKind.KeywordChooseStar           => Some("choose*")
+    case TokenKind.KeywordDef                  => Some("def")
+    case TokenKind.KeywordDiscard              => Some("discard")
+    case TokenKind.KeywordEMatch               => Some("ematch")
+    case TokenKind.KeywordEff                  => Some("eff")
+    case TokenKind.KeywordElse                 => Some("else")
+    case TokenKind.KeywordEnum                 => Some("enum")
+    case TokenKind.KeywordFalse                => Some("false")
+    case TokenKind.KeywordFix                  => Some("fix")
+    case TokenKind.KeywordForA                 => Some("forA")
+    case TokenKind.KeywordForM                 => Some("forM")
+    case TokenKind.KeywordForall               => Some("forall")
+    case TokenKind.KeywordForce                => Some("force")
+    case TokenKind.KeywordForeach              => Some("foreach")
+    case TokenKind.KeywordFrom                 => Some("from")
+    case TokenKind.KeywordHandler              => Some("handler")
+    case TokenKind.KeywordIf                   => Some("if")
+    case TokenKind.KeywordImport               => Some("import")
+    case TokenKind.KeywordInject               => Some("inject")
+    case TokenKind.KeywordInstance             => Some("instance")
+    case TokenKind.KeywordInstanceOf           => Some("instanceof")
+    case TokenKind.KeywordInto                 => Some("into")
+    case TokenKind.KeywordLaw                  => Some("law")
+    case TokenKind.KeywordLawful               => Some("lawful")
+    case TokenKind.KeywordLazy                 => Some("lazy")
+    case TokenKind.KeywordLet                  => Some("let")
+    case TokenKind.KeywordMatch                => Some("match")
+    case TokenKind.KeywordMod                  => Some("mod")
+    case TokenKind.KeywordMut                  => Some("mut")
+    case TokenKind.KeywordNew                  => Some("new")
+    case TokenKind.KeywordNot                  => Some("not")
+    case TokenKind.KeywordNull                 => Some("null")
+    case TokenKind.KeywordOpenVariant          => Some("open_variant")
+    case TokenKind.KeywordOpenVariantAs        => Some("open_variant_as")
+    case TokenKind.KeywordOr                   => Some("or")
+    case TokenKind.KeywordOverride             => Some("override")
+    case TokenKind.KeywordPQuery               => Some("pquery")
+    case TokenKind.KeywordPSolve               => Some("psolve")
+    case TokenKind.KeywordPar                  => Some("par")
+    case TokenKind.KeywordProject              => Some("project")
+    case TokenKind.KeywordPub                  => Some("pub")
+    case TokenKind.KeywordQuery                => Some("query")
+    case TokenKind.KeywordRedef                => Some("redef")
+    case TokenKind.KeywordRegion               => Some("region")
+    case TokenKind.KeywordRestrictable         => Some("restrictable")
+    case TokenKind.KeywordRun                  => Some("run")
+    case TokenKind.KeywordRvadd                => Some("rvadd")
+    case TokenKind.KeywordRvand                => Some("rvand")
+    case TokenKind.KeywordRvnot                => Some("rvnot")
+    case TokenKind.KeywordRvsub                => Some("rvsub")
+    case TokenKind.KeywordSealed               => Some("sealed")
+    case TokenKind.KeywordSelect               => Some("select")
+    case TokenKind.KeywordSolve                => Some("solve")
+    case TokenKind.KeywordSpawn                => Some("spawn")
+    case TokenKind.KeywordStaticLowercase      => Some("static")
+    case TokenKind.KeywordStaticUppercase      => Some("Static")
+    case TokenKind.KeywordStruct               => Some("struct")
+    case TokenKind.KeywordSuper                => Some("super")
+    case TokenKind.KeywordThrow                => Some("throw")
+    case TokenKind.KeywordTrait                => Some("trait")
+    case TokenKind.KeywordTrue                 => Some("true")
+    case TokenKind.KeywordTry                  => Some("try")
+    case TokenKind.KeywordType                 => Some("type")
+    case TokenKind.KeywordUncheckedCast        => Some("unchecked_cast")
+    case TokenKind.KeywordUniv                 => Some("univ")
+    case TokenKind.KeywordUnsafe               => Some("unsafe")
+    case TokenKind.KeywordUse                  => Some("use")
+    case TokenKind.KeywordWhere                => Some("where")
+    case TokenKind.KeywordWith                 => Some("with")
+    case TokenKind.KeywordXor                  => Some("xor")
+    case TokenKind.KeywordXvar                 => Some("xvar")
+    case TokenKind.KeywordYield                => Some("yield")
+
+    // Markers and variables that to not have a fixed lexeme
+    case _                                     => None
+  }
+
+  /**
     * A string representation of the [[TokenKind]] suitable for printing.
     * For instance TokenKind.Ampersand.display gives "'&'".
     */
-  def display: String = {
-    this match {
-      case TokenKind.Ampersand => "'&'"
-      case TokenKind.AngleL => "'<'"
-      case TokenKind.AngleLEqual => "'<='"
-      case TokenKind.AngleR => "'>'"
-      case TokenKind.AngleREqual => "'>='"
-      case TokenKind.AngledEqual => "'<=>'"
-      case TokenKind.AngledPlus => "'<+>'"
-      case TokenKind.Annotation => "<annotation>"
-      case TokenKind.ArrayHash => "'Array#'"
-      case TokenKind.ArrowThickR => "'=>'"
-      case TokenKind.ArrowThinL => "'<-'"
-      case TokenKind.ArrowThinRTight => "'->'"
-      case TokenKind.ArrowThinRWhitespace => "'->'"
-      case TokenKind.At => "'@'"
-      case TokenKind.Backslash => "'\\'"
-      case TokenKind.Bang => "'!'"
-      case TokenKind.BangEqual => "'!='"
-      case TokenKind.Bar => "'|'"
-      case TokenKind.BarHash => "'|#'"
-      case TokenKind.BracketL => "'['"
-      case TokenKind.BracketR => "']'"
-      case TokenKind.BuiltIn => "<built in>"
-      case TokenKind.Caret => "'^'"
-      case TokenKind.Colon => "':'"
-      case TokenKind.ColonColon => "'::'"
-      case TokenKind.ColonColonColon => "':::'"
-      case TokenKind.ColonMinus => "':-'"
-      case TokenKind.Comma => "','"
-      case TokenKind.CommentBlock => "<block comment>"
-      case TokenKind.CommentDoc => "<doc comment>"
-      case TokenKind.CommentLine => "<comment>"
-      case TokenKind.CurlyL => "'{'"
-      case TokenKind.CurlyR => "'}'"
+  def display: String = fixedLexeme match {
+    case Some(s) => s"'$s'"
+    case None    => this match {
+      case TokenKind.Annotation        => "<annotation>"
+      case TokenKind.BuiltIn           => "<built in>"
+      case TokenKind.CommentBlock      => "<block comment>"
+      case TokenKind.CommentDoc        => "<doc comment>"
+      case TokenKind.CommentLine       => "<comment>"
       case TokenKind.DebugInterpolator => "<debug-interpolator>"
-      case TokenKind.Dollar => "'$'"
-      case TokenKind.Dot => "'.'"
-      case TokenKind.DotWhiteSpace => "'. '"
-      case TokenKind.Equal => "'='"
-      case TokenKind.EqualEqual => "'=='"
-      case TokenKind.GenericOperator => "<user-defined operator>"
-      case TokenKind.Hash => "'#'"
-      case TokenKind.HashBar => "'#|'"
-      case TokenKind.HashCurlyL => "'#{'"
-      case TokenKind.HashParenL => "'#('"
-      case TokenKind.HoleAnonymous => "'???'"
-      case TokenKind.HoleNamed => "<named hole>"
-      case TokenKind.HoleVariable => "<variable hole>"
-      case TokenKind.KeywordAlias => "'alias'"
-      case TokenKind.KeywordAnd => "'and'"
-      case TokenKind.KeywordAs => "'as'"
-      case TokenKind.KeywordCase => "'case'"
-      case TokenKind.KeywordCatch => "'catch'"
-      case TokenKind.KeywordCheckedCast => "'checked_cast'"
-      case TokenKind.KeywordCheckedECast => "'checked_ecast'"
-      case TokenKind.KeywordChoose => "'choose'"
-      case TokenKind.KeywordChooseStar => "'choose*'"
-      case TokenKind.KeywordDef => "'def'"
-      case TokenKind.KeywordDiscard => "'discard'"
-      case TokenKind.KeywordEMatch => "'ematch'"
-      case TokenKind.KeywordEff => "'eff'"
-      case TokenKind.KeywordElse => "'else'"
-      case TokenKind.KeywordEnum => "'enum'"
-      case TokenKind.KeywordFalse => "'false'"
-      case TokenKind.KeywordFix => "'fix'"
-      case TokenKind.KeywordForA => "'forA'"
-      case TokenKind.KeywordForM => "'forM'"
-      case TokenKind.KeywordForall => "'forall'"
-      case TokenKind.KeywordForce => "'force'"
-      case TokenKind.KeywordForeach => "'foreach'"
-      case TokenKind.KeywordFrom => "'from'"
-      case TokenKind.KeywordHandler => "'handler'"
-      case TokenKind.KeywordIf => "'if'"
-      case TokenKind.KeywordImport => "'import'"
-      case TokenKind.KeywordInject => "'inject'"
-      case TokenKind.KeywordInstance => "'instance'"
-      case TokenKind.KeywordInstanceOf => "'instanceof'"
-      case TokenKind.KeywordInto => "'into'"
-      case TokenKind.KeywordLaw => "'law'"
-      case TokenKind.KeywordLawful => "'lawful'"
-      case TokenKind.KeywordLazy => "'lazy'"
-      case TokenKind.KeywordLet => "'let'"
-      case TokenKind.KeywordMatch => "'match'"
-      case TokenKind.KeywordMod => "'mod'"
-      case TokenKind.KeywordMut => "'mut'"
-      case TokenKind.KeywordNew => "'new'"
-      case TokenKind.KeywordNot => "'not'"
-      case TokenKind.KeywordNull => "'null'"
-      case TokenKind.KeywordOpenVariant => "'open_variant'"
-      case TokenKind.KeywordOpenVariantAs => "'open_variant_as'"
-      case TokenKind.KeywordOr => "'or'"
-      case TokenKind.KeywordOverride => "'override'"
-      case TokenKind.KeywordPQuery => "'pquery'"
-      case TokenKind.KeywordPSolve => "'psolve'"
-      case TokenKind.KeywordPar => "'par'"
-      case TokenKind.KeywordProject => "'project'"
-      case TokenKind.KeywordPub => "'pub'"
-      case TokenKind.KeywordQuery => "'query'"
-      case TokenKind.KeywordRedef => "'redef'"
-      case TokenKind.KeywordRegion => "'region'"
-      case TokenKind.KeywordRestrictable => "'restrictable'"
-      case TokenKind.KeywordRun => "'run'"
-      case TokenKind.KeywordRvadd => "'rvadd'"
-      case TokenKind.KeywordRvand => "'rvand'"
-      case TokenKind.KeywordRvnot => "'rvnot'"
-      case TokenKind.KeywordRvsub => "'rvsub'"
-      case TokenKind.KeywordSealed => "'sealed'"
-      case TokenKind.KeywordSelect => "'select'"
-      case TokenKind.KeywordSolve => "'solve'"
-      case TokenKind.KeywordSpawn => "'spawn'"
-      case TokenKind.KeywordStaticLowercase => "'static'"
-      case TokenKind.KeywordStaticUppercase => "'Static'"
-      case TokenKind.KeywordStruct => "'struct'"
-      case TokenKind.KeywordSuper => "'super'"
-      case TokenKind.KeywordThrow => "'throw'"
-      case TokenKind.KeywordTrait => "'trait'"
-      case TokenKind.KeywordTrue => "'true'"
-      case TokenKind.KeywordTry => "'try'"
-      case TokenKind.KeywordType => "'type'"
-      case TokenKind.KeywordUncheckedCast => "'unchecked_cast'"
-      case TokenKind.KeywordUniv => "'univ'"
-      case TokenKind.KeywordUnsafe => "'unsafe'"
-      case TokenKind.KeywordUse => "'use'"
-      case TokenKind.KeywordWhere => "'where'"
-      case TokenKind.KeywordWith => "'with'"
-
-      case TokenKind.KeywordXor => "'xor'"
-      case TokenKind.KeywordXvar => "'xvar'"
-      case TokenKind.KeywordYield => "'yield'"
-      case TokenKind.ListHash => "'List#'"
+      case TokenKind.GenericOperator   => "<user-defined operator>"
+      case TokenKind.HoleNamed         => "<named hole>"
+      case TokenKind.HoleVariable      => "<variable hole>"
       case TokenKind.LiteralBigDecimal => "'<digits>ff'"
-      case TokenKind.LiteralBigInt => "'<digits>ii'"
-      case TokenKind.LiteralChar => "<char>"
-      case TokenKind.LiteralFloat => "'<digits>.<digits>'"
-      case TokenKind.LiteralFloat32 => "'<digits>f32'"
-      case TokenKind.LiteralFloat64 => "'<digits>f64'"
-      case TokenKind.LiteralInt => "'<digits>'"
-      case TokenKind.LiteralInt16 => "'<digits>i16'"
-      case TokenKind.LiteralInt32 => "'<digits>i32'"
-      case TokenKind.LiteralInt64 => "'<digits>i64'"
-      case TokenKind.LiteralInt8 => "'<digits>i8'"
-      case TokenKind.LiteralRegex => "<regex>"
-      case TokenKind.LiteralString => "<string>"
-      case TokenKind.LiteralStringInterpolationL => "'${'"
-      case TokenKind.LiteralStringInterpolationR => "'}\"'"
-      case TokenKind.MapHash => "'Map#'"
-      case TokenKind.Minus => "'-'"
-      case TokenKind.NameLowercase => "<name>"
-      case TokenKind.NameMath => "<math name>"
-      case TokenKind.NameUppercase => "<Name>"
-      case TokenKind.ParenL => "'('"
-      case TokenKind.ParenR => "')'"
-      case TokenKind.Plus => "'+'"
-      case TokenKind.Semi => "';'"
-      case TokenKind.SetHash => "'Set#'"
-      case TokenKind.Slash => "'/'"
-      case TokenKind.Star => "'*'"
-      case TokenKind.Tick => "'`'"
-      case TokenKind.Tilde => "'~'"
-      case TokenKind.Underscore => "'_'"
-      case TokenKind.VectorHash => "'Vector#'"
-      case TokenKind.Eof => "<end-of-file>"
-      case TokenKind.Err(_) => "<error>"
+      case TokenKind.LiteralBigInt     => "'<digits>ii'"
+      case TokenKind.LiteralChar       => "<char>"
+      case TokenKind.LiteralFloat      => "'<digits>.<digits>'"
+      case TokenKind.LiteralFloat32    => "'<digits>f32'"
+      case TokenKind.LiteralFloat64    => "'<digits>f64'"
+      case TokenKind.LiteralInt        => "'<digits>'"
+      case TokenKind.LiteralInt16      => "'<digits>i16'"
+      case TokenKind.LiteralInt32      => "'<digits>i32'"
+      case TokenKind.LiteralInt64      => "'<digits>i64'"
+      case TokenKind.LiteralInt8       => "'<digits>i8'"
+      case TokenKind.LiteralRegex      => "<regex>"
+      case TokenKind.LiteralString     => "<string>"
+      case TokenKind.NameLowercase     => "<name>"
+      case TokenKind.NameMath          => "<math name>"
+      case TokenKind.NameUppercase     => "<Name>"
+      case TokenKind.Eof               => "<end-of-file>"
+      case TokenKind.Err(_)            => "<error>"
+      case _                           => sys.error(s"display: unhandled TokenKind: $this")
     }
   }
 
@@ -206,87 +219,7 @@ sealed trait TokenKind {
   def isComment: Boolean = this.isCommentDoc || this.isCommentNonDoc
 
   /** Returns `true` if this token is a keyword. */
-  def isKeyword: Boolean = this match {
-    case TokenKind.KeywordAlias => true
-    case TokenKind.KeywordAnd => true
-    case TokenKind.KeywordAs => true
-    case TokenKind.KeywordCase => true
-    case TokenKind.KeywordCatch => true
-    case TokenKind.KeywordCheckedCast => true
-    case TokenKind.KeywordCheckedECast => true
-    case TokenKind.KeywordChoose => true
-    case TokenKind.KeywordChooseStar => true
-    case TokenKind.KeywordDef => true
-    case TokenKind.KeywordDiscard => true
-    case TokenKind.KeywordEMatch => true
-    case TokenKind.KeywordEff => true
-    case TokenKind.KeywordElse => true
-    case TokenKind.KeywordEnum => true
-    case TokenKind.KeywordFalse => true
-    case TokenKind.KeywordFix => true
-    case TokenKind.KeywordForA => true
-    case TokenKind.KeywordForM => true
-    case TokenKind.KeywordForall => true
-    case TokenKind.KeywordForce => true
-    case TokenKind.KeywordForeach => true
-    case TokenKind.KeywordFrom => true
-    case TokenKind.KeywordHandler => true
-    case TokenKind.KeywordIf => true
-    case TokenKind.KeywordImport => true
-    case TokenKind.KeywordInject => true
-    case TokenKind.KeywordInstance => true
-    case TokenKind.KeywordInstanceOf => true
-    case TokenKind.KeywordInto => true
-    case TokenKind.KeywordLaw => true
-    case TokenKind.KeywordLawful => true
-    case TokenKind.KeywordLazy => true
-    case TokenKind.KeywordLet => true
-    case TokenKind.KeywordMatch => true
-    case TokenKind.KeywordMod => true
-    case TokenKind.KeywordNew => true
-    case TokenKind.KeywordNot => true
-    case TokenKind.KeywordNull => true
-    case TokenKind.KeywordOpenVariant => true
-    case TokenKind.KeywordOpenVariantAs => true
-    case TokenKind.KeywordOr => true
-    case TokenKind.KeywordOverride => true
-    case TokenKind.KeywordPQuery => true
-    case TokenKind.KeywordPSolve => true
-    case TokenKind.KeywordPar => true
-    case TokenKind.KeywordProject => true
-    case TokenKind.KeywordPub => true
-    case TokenKind.KeywordQuery => true
-    case TokenKind.KeywordRegion => true
-    case TokenKind.KeywordRestrictable => true
-    case TokenKind.KeywordRun => true
-    case TokenKind.KeywordRvadd => true
-    case TokenKind.KeywordRvand => true
-    case TokenKind.KeywordRvnot => true
-    case TokenKind.KeywordRvsub => true
-    case TokenKind.KeywordSealed => true
-    case TokenKind.KeywordSelect => true
-    case TokenKind.KeywordSolve => true
-    case TokenKind.KeywordSpawn => true
-    case TokenKind.KeywordStaticLowercase => true
-    case TokenKind.KeywordStruct => true
-    case TokenKind.KeywordSuper => true
-    case TokenKind.KeywordThrow => true
-    case TokenKind.KeywordTrait => true
-    case TokenKind.KeywordTrue => true
-    case TokenKind.KeywordTry => true
-    case TokenKind.KeywordType => true
-    case TokenKind.KeywordUncheckedCast => true
-    case TokenKind.KeywordUniv => true
-    case TokenKind.KeywordUnsafe => true
-    case TokenKind.KeywordUse => true
-    case TokenKind.KeywordWhere => true
-    case TokenKind.KeywordWith => true
-
-    case TokenKind.KeywordXor => true
-    case TokenKind.KeywordXvar => true
-    case TokenKind.KeywordYield => true
-    case _ => false
-  }
+  def isKeyword: Boolean = TokenKind.keywords.contains(this)
 
   /** Returns `true` if this token is a modifier (e.g. `pub`). */
   def isModifier: Boolean = this match {
@@ -1016,4 +949,32 @@ object TokenKind {
   /** A special token representing a malformed token, including the error that caused it. */
   case class Err(error: LexerError) extends TokenKind
 
+  /**
+    * The set of all [[TokenKind]]s that are Flix keywords.
+    * Note that this is the single source of truth, therefore must be kept in sync.
+    */
+  val keywords: Set[TokenKind] = Set(
+    KeywordAlias, KeywordAnd, KeywordAs, KeywordCase, KeywordCatch,
+    KeywordCheckedCast, KeywordCheckedECast, KeywordChoose, KeywordChooseStar,
+    KeywordDef, KeywordDiscard, KeywordEMatch, KeywordEff, KeywordElse,
+    KeywordEnum, KeywordFalse, KeywordFix, KeywordForA, KeywordForM,
+    KeywordForall, KeywordForce, KeywordForeach, KeywordFrom, KeywordHandler,
+    KeywordIf, KeywordImport, KeywordInject, KeywordInstance, KeywordInstanceOf,
+    KeywordInto, KeywordLaw, KeywordLawful, KeywordLazy, KeywordLet,
+    KeywordMatch, KeywordMod, KeywordMut, KeywordNew, KeywordNot, KeywordNull,
+    KeywordOpenVariant, KeywordOpenVariantAs, KeywordOr, KeywordOverride,
+    KeywordPQuery, KeywordPSolve, KeywordPar, KeywordProject, KeywordPub,
+    KeywordQuery, KeywordRedef, KeywordRegion, KeywordRestrictable, KeywordRun,
+    KeywordRvadd, KeywordRvand, KeywordRvnot, KeywordRvsub, KeywordSealed,
+    KeywordSelect, KeywordSolve, KeywordSpawn, KeywordStaticLowercase,
+    KeywordStaticUppercase, KeywordStruct, KeywordSuper, KeywordThrow,
+    KeywordTrait, KeywordTrue, KeywordTry, KeywordType, KeywordUncheckedCast,
+    KeywordUniv, KeywordUnsafe, KeywordUse, KeywordWhere, KeywordWith,
+    KeywordXor, KeywordXvar, KeywordYield
+  )
+
+  /**
+    * Returns the set of all fixed lexemes corresponding to keywords.
+    */
+  val keywordLexemes: Set[String] = keywords.flatMap(_.fixedLexeme)
 }
