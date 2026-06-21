@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
-import java.nio.file.{Files, LinkOption, Path, StandardOpenOption}
+import java.nio.file.{Files, LinkOption, Path, StandardCopyOption, StandardOpenOption}
 import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
@@ -69,6 +69,76 @@ object FileOps {
       } else {
         Result.Err(new RuntimeException(s"path '$path' does not exist"))
       }
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
+
+  /**
+    * Moves the path `source` to `target`. Wraps any error `e` in `Result.Err(e)`.
+    *
+    * @param source the source path to move from.
+    * @param target the target path to move to.
+    * @return `Ok(())` if `path` was successfully moved, `Err(e)` otherwise.
+    */
+  def move(source: Path, target: Path): Result[Unit, Exception] = {
+    try {
+      Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
+      Result.Ok(())
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
+
+  /**
+    * Moves the entire directory `sourceDir` to `targetDir` (including all its contents).
+    *
+    * Fails if `sourceDir` does not exist. Creates `targetDir` if it does not exist.
+    *
+    * @param sourceDir the source path directory to move from.
+    * @param targetDir the target path directory to move to.
+    * @return `Ok(())` if `sourceDir` was successfully moved, `Err(e)` otherwise.
+    */
+  def moveDir(sourceDir: Path, targetDir: Path): Result[Unit, Exception] = {
+    exists(sourceDir) match {
+      case Result.Err(e) => return Result.Err(e)
+      case Result.Ok(false) => return Result.Err(new RuntimeException(s"path '$sourceDir' does not exist"))
+      case Result.Ok(true) => ()
+    }
+    exists(targetDir) match {
+      case Result.Err(e) => return Result.Err(e)
+      case Result.Ok(false) => FileOps.newDirectoryIfAbsent(targetDir)
+      case Result.Ok(true) => ()
+    }
+    val moves = getFilesIn(sourceDir, Int.MaxValue)
+      .map { sourcePath =>
+        val relativeResourcePath = sourceDir.relativize(sourcePath)
+        val targetPath = targetDir.resolve(relativeResourcePath).normalize()
+        FileOps.move(sourcePath, targetPath)
+      }
+    Result.sequence(moves).map(_ => ())
+  }
+
+  /**
+    * Deletes all contents of the directory `dir` and the directory itself.
+    *
+    * Fails if `dir` does not exist or is not a directory.
+    *
+    * @param dir the directory to be removed.
+    * @return `Ok(())` if `dir` was successfully deleted, `Err(e)` otherwise.
+    */
+  def deleteDir(dir: Path): Result[Unit, Exception] = {
+    try {
+      if (!Files.exists(dir)) {
+        return Result.Err(new RuntimeException(s"path '$dir' does not exist"))
+      }
+      if (!Files.isDirectory(dir)) {
+        return Result.Err(new RuntimeException(s"path '$dir' is not a directory"))
+      }
+      val deletions = walkTree(dir, Int.MaxValue).map { path =>
+        delete(path)
+      }
+      Result.sequence(deletions).map(_ => ())
     } catch {
       case e: Exception => Result.Err(e)
     }
