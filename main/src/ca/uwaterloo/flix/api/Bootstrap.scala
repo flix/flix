@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, getManifestFile}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -26,13 +26,13 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{AvailableUpdates, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{AvailableUpdates, Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result}
 
 import java.io.{InputStream, PrintStream}
-import java.nio.file.{FileSystems, Files, Path, StandardCopyOption}
+import java.nio.file.{FileSystems, Files, OpenOption, Path, StandardCopyOption, StandardOpenOption}
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.collection.mutable
 import scala.io.StdIn.readLine
@@ -492,60 +492,128 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     *                e.g., `github:flix/museum`
     */
   def upgrade(flix: Flix, pkgName: String)(implicit formatter: Formatter, in: InputStream, out: PrintStream): Result[Unit, BootstrapError] = {
-    // Ensure project mode
-    val manifest = optManifest match {
+    // 1. Ensure project mode
+    // TODO: Use isProjectMode
+    val oldManifest = optManifest match {
       case None => return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'upgrade' in a non-project directory."))
       case Some(m) => m
     }
 
-    // Ensure project path is not a system directory
+    // 2. Ensure project path is not a system directory
     checkForSystemPath(projectPath) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
 
-    // Ensure cwd is not dangerous (system dir or outside project path)
+    // 3. Ensure cwd is not dangerous (system dir or outside project path)
     val cwd = Path.of(System.getProperty("user.dir"))
     checkForDangerousPath(cwd) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
 
-    // 1. Check that 'pkgName' occurs as a key in the dependencies declared in the manifest
-    val dependency = manifest.flixDependencies.find(_.identifier == pkgName) match {
+    // 4. Check that 'pkgName' occurs as a key in the dependencies declared in the manifest
+    val dependency = oldManifest.flixDependencies.find(_.identifier == pkgName) match {
       case None =>
         // TODO: Maybe introduce 'UpgradeError' instead of 'GeneralError'
         return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The package is not a declared dependency of the project."))
       case Some(d) => d
     }
 
-    // 2. Check for upgrades
+    // 5. Check for upgrades
     val availableUpdates = FlixPackageManager.findAvailableUpdates(dependency, apiKey) match {
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
       case Ok(u) => u
     }
 
-    // 3. Find latest minor version or latest patch if no greater minor version
+    // 6. Find latest minor version or latest patch if no greater minor version
     val update = latestMinorOrPatch(availableUpdates) match {
       case None => return Ok(())
       case Some(u) => u
     }
 
-    // 4. Download upgrade
+    // 7. Ask for confirmation
+    // TODO
 
-    // 5. Check for effect-safe upgrade
+    // 8. Write effect lock before installing new dependencies
+    lockEffects(flix) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
 
-    // 6. Write to manifest
+    // 9. Resolve old manifest to obtain dependency graph that we can diff with a new graph
+    val oldResolution = Steps.resolveFlixDependencies(oldManifest) match {
+      case Err(e) => return Err(e)
+      case Ok(r) => r
+    }
 
-    // 7. Delete unused dependencies
+    // 10. Update manifest
+    val newManifest = oldManifest.copy(
+      dependencies = oldManifest.dependencies.map {
+        case dep: Dependency.FlixDependency if dep == dependency => dep.copy(version = update)
+        case dep => dep
+      }
+    )
 
-    ???
+    // 11. Resolve new manifest
+    val newResolution = Steps.resolveFlixDependencies(newManifest) match {
+      case Err(e) => return Err(e)
+      case Ok(r) => r
+    }
+
+    // 12. Diff manifests, first checking for added dependencies and then removed dependencies
+    // N.B.: Diffing manifests directly is sensitive to tiny changes since the identity of a manifest is all its contents.
+    //       Perhaps an identifier that also includes its version or a hash of certain fields would be more resilient.
+
+    // N.B.: Subtract old from new, so if the new set of transitive dependencies is fully contained in the old
+    //       set of dependencies, then there is nothing to do.
+    val addedDependencies = newResolution.manifests.toSet -- oldResolution.manifests
+
+    // N.B.: Subtract new from old, so we know which dependencies to back up.
+    val removedDependencies = oldResolution.manifests.toSet -- newResolution.manifests
+
+    // Early return in case of no new dependencies
+    if (addedDependencies.isEmpty) {
+      // TODO: Report message saying no new dependencies to download but suggest pruning removed dependencies.
+      //       Doing so requires 'removedDependencies'.
+      return Ok(())
+    }
+
+    // 13. Backup removed dependencies
+    // TODO
+
+    // 14. Download dependencies
+    Steps.installDependencies(newResolution)
+
+    // 15. Check for effect-safe upgrade
+    checkEffects(flix) match {
+      case Err(e) =>
+        // TODO
+        restoreOldDependencies()
+        return Err(e)
+      case Ok(()) => ()
+    }
+
+    // 16. Double check effect upgrade with old dep graph to be really sure?
+    checkEffects(flix) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // 16. Write new manifest to file
+    Files.writeString(getManifestFile(projectPath), Manifest.format(newManifest), StandardOpenOption.TRUNCATE_EXISTING)
+
+    // 17. Delete unused dependencies
+
+    Ok(())
   }
 
   private def latestMinorOrPatch(updates: AvailableUpdates): Option[SemVer] = updates match {
     case AvailableUpdates(_, Some(minor), _) => Some(minor)
     case AvailableUpdates(_, None, patch) => patch
   }
+
+  private def restoreOldDependencies(): Unit = ???
 
   /**
     * Builds a fatjar package for the project.
