@@ -1,4 +1,5 @@
 /api/
+/build/
 /out/
 /local.properties
 /*.iml
