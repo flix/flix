@@ -326,4 +326,139 @@ mod Test.Exp.Jvm.Generic.NewObject {
         };
         assertTrue(c.compare("a", "b") < 0)
 
+    // --- Generic interface instantiated with a non-reference (primitive / Unit) type param ---
+    // Regression tests for https://github.com/flix/flix/issues/12876. The overridden method's
+    // erased JVM return type is `Object`, so a primitive result must be boxed (e.g. via
+    // `Integer.valueOf`) and `Unit` returned as its runtime value; otherwise the generated
+    // anonymous class fails JVM verification with a `VerifyError`.
+
+    @Test
+    def testNewObjectPrimitiveCallableInt8(): Unit \ {Assert, IO} =
+        let c = new Callable[Int8] {
+            def call(_this: Callable[Int8]): Int8 = 42i8
+        };
+        assertEq(expected = 42i8, c.call())
+
+    @Test
+    def testNewObjectPrimitiveCallableInt16(): Unit \ {Assert, IO} =
+        let c = new Callable[Int16] {
+            def call(_this: Callable[Int16]): Int16 = 42i16
+        };
+        assertEq(expected = 42i16, c.call())
+
+    @Test
+    def testNewObjectPrimitiveCallableInt32(): Unit \ {Assert, IO} =
+        let c = new Callable[Int32] {
+            def call(_this: Callable[Int32]): Int32 = 42i32
+        };
+        assertEq(expected = 42i32, c.call())
+
+    @Test
+    def testNewObjectPrimitiveCallableInt64(): Unit \ {Assert, IO} =
+        let c = new Callable[Int64] {
+            def call(_this: Callable[Int64]): Int64 = 42i64
+        };
+        assertEq(expected = 42i64, c.call())
+
+    @Test
+    def testNewObjectPrimitiveCallableFloat32(): Unit \ {Assert, IO} =
+        let c = new Callable[Float32] {
+            def call(_this: Callable[Float32]): Float32 = 42.0f32
+        };
+        assertEq(expected = 42.0f32, c.call())
+
+    @Test
+    def testNewObjectPrimitiveCallableFloat64(): Unit \ {Assert, IO} =
+        let c = new Callable[Float64] {
+            def call(_this: Callable[Float64]): Float64 = 42.0f64
+        };
+        assertEq(expected = 42.0f64, c.call())
+
+    @Test
+    def testNewObjectPrimitiveCallableBool(): Unit \ {Assert, IO} =
+        let c = new Callable[Bool] {
+            def call(_this: Callable[Bool]): Bool = true
+        };
+        assertTrue(c.call())
+
+    @Test
+    def testNewObjectPrimitiveCallableChar(): Unit \ {Assert, IO} =
+        let c = new Callable[Char] {
+            def call(_this: Callable[Char]): Char = 'x'
+        };
+        assertEq(expected = 'x', c.call())
+
+    @Test
+    def testNewObjectUnitCallable(): Unit \ {Assert, IO} =
+        let c = new Callable[Unit] {
+            def call(_this: Callable[Unit]): Unit = ()
+        };
+        assertEq(expected = (), c.call())
+
+    // --- A single generic anonymous-class site specialized at multiple types ---
+    // Regression tests for the anonymous-class specialization collision. The `new Callable[a]`
+    // site below lives in one generic def; monomorphization specializes it once per type. Each
+    // specialization must get its own generated anonymous class. Otherwise distinct
+    // specializations (e.g. `boxedCallable[Int32]` vs `boxedCallable[Bool]`) share one class
+    // name and collide, so one specialization runs with another's class -- a `ClassCastException`
+    // (or a `VerifyError` when the colliding representations differ) at runtime.
+
+    def boxedCallable(x: a): Callable[a] \ IO =
+        new Callable[a] { def call(_this: Callable[a]): a = x }
+
+    @Test
+    def testNewObjectSpecializationInt8(): Unit \ {Assert, IO} =
+        assertEq(expected = 1i8, boxedCallable(1i8).call())
+
+    @Test
+    def testNewObjectSpecializationInt16(): Unit \ {Assert, IO} =
+        assertEq(expected = 2i16, boxedCallable(2i16).call())
+
+    @Test
+    def testNewObjectSpecializationInt32(): Unit \ {Assert, IO} =
+        assertEq(expected = 3i32, boxedCallable(3i32).call())
+
+    @Test
+    def testNewObjectSpecializationInt64(): Unit \ {Assert, IO} =
+        assertEq(expected = 4i64, boxedCallable(4i64).call())
+
+    @Test
+    def testNewObjectSpecializationFloat32(): Unit \ {Assert, IO} =
+        assertEq(expected = 5.0f32, boxedCallable(5.0f32).call())
+
+    @Test
+    def testNewObjectSpecializationFloat64(): Unit \ {Assert, IO} =
+        assertEq(expected = 6.0f64, boxedCallable(6.0f64).call())
+
+    @Test
+    def testNewObjectSpecializationBool(): Unit \ {Assert, IO} =
+        assertEq(expected = true, boxedCallable(true).call())
+
+    @Test
+    def testNewObjectSpecializationChar(): Unit \ {Assert, IO} =
+        assertEq(expected = 'q', boxedCallable('q').call())
+
+    @Test
+    def testNewObjectSpecializationUnit(): Unit \ {Assert, IO} =
+        assertEq(expected = (), boxedCallable(()).call())
+
+    @Test
+    def testNewObjectSpecializationString(): Unit \ {Assert, IO} =
+        assertEq(expected = "hello", boxedCallable("hello").call())
+
+    // Mixes many specializations of the same site in one expression -- this is the exact shape
+    // that failed before the fix: the first call would run with a later specialization's class.
+    @Test
+    def testNewObjectSpecializationMixed(): Unit \ {Assert, IO} =
+        assertEq(expected = 7i8, boxedCallable(7i8).call());
+        assertEq(expected = 8i16, boxedCallable(8i16).call());
+        assertEq(expected = 9i32, boxedCallable(9i32).call());
+        assertEq(expected = 10i64, boxedCallable(10i64).call());
+        assertEq(expected = 11.0f32, boxedCallable(11.0f32).call());
+        assertEq(expected = 12.0f64, boxedCallable(12.0f64).call());
+        assertEq(expected = false, boxedCallable(false).call());
+        assertEq(expected = 'z', boxedCallable('z').call());
+        assertEq(expected = (), boxedCallable(()).call());
+        assertEq(expected = "world", boxedCallable("world").call())
+
 }
