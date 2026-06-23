@@ -692,6 +692,13 @@ object TypeVerifier {
 
       case SimpleType.AnyType if klazz == classOf[Object] => tpe
 
+      // Every Flix reference type (enums, tuples, structs, records, lazies, lambdas, lists,
+      // BigInt, ...) is represented as a reference (an object) at runtime, so it is a subtype of
+      // `java.lang.Object` -- e.g. the erased `Object` return type of a generic Java interface
+      // method implemented by an anonymous class. `SimpleType.erase` returns `Object` for exactly
+      // the reference-represented types (primitives erase to themselves).
+      case _ if klazz == classOf[Object] && SimpleType.erase(tpe) == SimpleType.Object => tpe
+
       case _ => failMismatchedTypes(tpe, klazz, loc)
     }
   }

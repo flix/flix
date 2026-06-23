@@ -395,6 +395,60 @@ mod Test.Exp.Jvm.Generic.NewObject {
         };
         assertEq(expected = (), c.call())
 
+    // --- Generic interface instantiated with a reference type param (list, tuple, enum, record) ---
+    // These are the reference-typed counterparts of the primitive tests above. The overridden
+    // method's erased JVM return type is `Object`; a reference value already matches it, so no
+    // boxing is needed and the value is `areturn`ed directly. They also exercise the internal
+    // TypeVerifier, which must accept any Flix reference type as a subtype of the erased `Object`.
+
+    enum Shape with Eq, ToString {
+        case Circle(Int32)
+        case Square(Int32)
+    }
+
+    @Test
+    def testNewObjectReferenceCallableList(): Unit \ {Assert, IO} =
+        let c = new Callable[List[Int32]] {
+            def call(_this: Callable[List[Int32]]): List[Int32] = 1 :: 2 :: 3 :: Nil
+        };
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, c.call())
+
+    @Test
+    def testNewObjectReferenceCallableListString(): Unit \ {Assert, IO} =
+        let c = new Callable[List[String]] {
+            def call(_this: Callable[List[String]]): List[String] = "a" :: "b" :: Nil
+        };
+        assertEq(expected = "a" :: "b" :: Nil, c.call())
+
+    @Test
+    def testNewObjectReferenceCallableTuple(): Unit \ {Assert, IO} =
+        let c = new Callable[(Int32, String)] {
+            def call(_this: Callable[(Int32, String)]): (Int32, String) = (1, "one")
+        };
+        assertEq(expected = (1, "one"), c.call())
+
+    @Test
+    def testNewObjectReferenceCallableOption(): Unit \ {Assert, IO} =
+        let c = new Callable[Option[Int32]] {
+            def call(_this: Callable[Option[Int32]]): Option[Int32] = Some(42)
+        };
+        assertEq(expected = Some(42), c.call())
+
+    @Test
+    def testNewObjectReferenceCallableEnum(): Unit \ {Assert, IO} =
+        let c = new Callable[Shape] {
+            def call(_this: Callable[Shape]): Shape = Shape.Circle(5)
+        };
+        assertEq(expected = Shape.Circle(5), c.call())
+
+    @Test
+    def testNewObjectReferenceCallableRecord(): Unit \ {Assert, IO} =
+        let c = new Callable[{ x = Int32, y = Int32 }] {
+            def call(_this: Callable[{ x = Int32, y = Int32 }]): { x = Int32, y = Int32 } = { x = 1, y = 2 }
+        };
+        let r = c.call();
+        assertEq(expected = 1, r#x)
+
     // --- A single generic anonymous-class site specialized at multiple types ---
     // Regression tests for the anonymous-class specialization collision. The `new Callable[a]`
     // site below lives in one generic def; monomorphization specializes it once per type. Each
@@ -446,8 +500,26 @@ mod Test.Exp.Jvm.Generic.NewObject {
     def testNewObjectSpecializationString(): Unit \ {Assert, IO} =
         assertEq(expected = "hello", boxedCallable("hello").call())
 
+    @Test
+    def testNewObjectSpecializationList(): Unit \ {Assert, IO} =
+        assertEq(expected = 1 :: 2 :: Nil, boxedCallable(1 :: 2 :: Nil).call())
+
+    @Test
+    def testNewObjectSpecializationTuple(): Unit \ {Assert, IO} =
+        assertEq(expected = (1, "one"), boxedCallable((1, "one")).call())
+
+    @Test
+    def testNewObjectSpecializationOption(): Unit \ {Assert, IO} =
+        assertEq(expected = Some(13), boxedCallable(Some(13)).call())
+
+    @Test
+    def testNewObjectSpecializationEnum(): Unit \ {Assert, IO} =
+        assertEq(expected = Shape.Square(7), boxedCallable(Shape.Square(7)).call())
+
     // Mixes many specializations of the same site in one expression -- this is the exact shape
     // that failed before the fix: the first call would run with a later specialization's class.
+    // Includes reference types (list, tuple, enum) alongside primitives so a collision between a
+    // primitive and a reference representation surfaces as a `VerifyError`/`ClassCastException`.
     @Test
     def testNewObjectSpecializationMixed(): Unit \ {Assert, IO} =
         assertEq(expected = 7i8, boxedCallable(7i8).call());
@@ -459,6 +531,9 @@ mod Test.Exp.Jvm.Generic.NewObject {
         assertEq(expected = false, boxedCallable(false).call());
         assertEq(expected = 'z', boxedCallable('z').call());
         assertEq(expected = (), boxedCallable(()).call());
-        assertEq(expected = "world", boxedCallable("world").call())
+        assertEq(expected = "world", boxedCallable("world").call());
+        assertEq(expected = 14 :: 15 :: Nil, boxedCallable(14 :: 15 :: Nil).call());
+        assertEq(expected = (16, "x"), boxedCallable((16, "x")).call());
+        assertEq(expected = Shape.Circle(17), boxedCallable(Shape.Circle(17)).call())
 
 }
