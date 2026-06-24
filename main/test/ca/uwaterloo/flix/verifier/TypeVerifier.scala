@@ -645,61 +645,72 @@ object TypeVerifier {
     * Asserts that `tpe` is a subtype of the java class type `klazz`.
     */
   private def checkJavaSubtype(tpe: SimpleType, klazz: Class[?], loc: SourceLocation): SimpleType = {
+    if (isJavaSubtype(tpe, klazz))
+      tpe
+    else
+      failMismatchedTypes(tpe, klazz, loc)
+  }
+
+  /**
+    * Returns `true` if `tpe` is a subtype of the java class type `klazz`.
+    */
+  private def isJavaSubtype(tpe: SimpleType, klazz: Class[?]): Boolean = {
     tpe match {
-      case SimpleType.Array(elmt) if klazz.isArray =>
-        checkJavaSubtype(elmt, klazz.getComponentType, loc)
-        tpe
+      case SimpleType.Array(elmt) =>
+        if (klazz.isArray) isJavaSubtype(elmt, klazz.getComponentType)
+        else true // TODO: Array subtyping
 
-      case SimpleType.Native(k) if klazz.isAssignableFrom(k) =>
-        tpe
+      case SimpleType.Native(k) => klazz.isAssignableFrom(k)
 
-      case SimpleType.Int8 if klazz == classOf[Byte] => tpe
-      case SimpleType.Int16 if klazz == classOf[Short] => tpe
-      case SimpleType.Int32 if klazz == classOf[Int] => tpe
-      case SimpleType.Int64 if klazz == classOf[Long] => tpe
-      case SimpleType.Float32 if klazz == classOf[Float] => tpe
-      case SimpleType.Float64 if klazz == classOf[Double] => tpe
-      case SimpleType.Bool if klazz == classOf[Boolean] => tpe
-      case SimpleType.Char if klazz == classOf[Char] => tpe
-      case SimpleType.Unit if klazz == classOf[Unit] => tpe
+      case SimpleType.Int8 => klazz == classOf[Byte]
+      case SimpleType.Int16 => klazz == classOf[Short]
+      case SimpleType.Int32 => klazz == classOf[Int]
+      case SimpleType.Int64 => klazz == classOf[Long]
+      case SimpleType.Float32 => klazz == classOf[Float]
+      case SimpleType.Float64 => klazz == classOf[Double]
+      case SimpleType.Bool => klazz == classOf[Boolean]
+      case SimpleType.Char => klazz == classOf[Char]
       // Unit is represented as a reference (the Unit singleton) at runtime, so it is a
       // subtype of any non-primitive Java type, e.g. the erased `Object` return of a
       // generic interface method implemented by an anonymous class.
-      case SimpleType.Unit if !klazz.isPrimitive => tpe
-      case SimpleType.Null if !klazz.isPrimitive => tpe
+      case SimpleType.Unit => klazz == classOf[Unit] || !klazz.isPrimitive
+      case SimpleType.Null => !klazz.isPrimitive
 
-      case SimpleType.String if klazz.isAssignableFrom(classOf[java.lang.String]) => tpe
-      case SimpleType.BigInt if klazz.isAssignableFrom(classOf[java.math.BigInteger]) => tpe
-      case SimpleType.BigDecimal if klazz.isAssignableFrom(classOf[java.math.BigDecimal]) => tpe
-      case SimpleType.Regex if klazz.isAssignableFrom(classOf[java.util.regex.Pattern]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Object), SimpleType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.Consumer[Object]]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Object), SimpleType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.Predicate[Object]]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Object) if klazz.isAssignableFrom(classOf[java.util.function.IntFunction[Object]]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.IntPredicate]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Int32) if klazz.isAssignableFrom(classOf[java.util.function.IntUnaryOperator]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.LongConsumer]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Object) if klazz.isAssignableFrom(classOf[java.util.function.LongFunction[Object]]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.LongPredicate]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Int64) if klazz.isAssignableFrom(classOf[java.util.function.LongUnaryOperator]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.DoubleConsumer]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Object) if klazz.isAssignableFrom(classOf[java.util.function.DoubleFunction[Object]]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.DoublePredicate]) => tpe
-      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Float64) if klazz.isAssignableFrom(classOf[java.util.function.DoubleUnaryOperator]) => tpe
+      case SimpleType.String => klazz.isAssignableFrom(classOf[java.lang.String])
+      case SimpleType.BigInt => klazz.isAssignableFrom(classOf[java.math.BigInteger])
+      case SimpleType.BigDecimal => klazz.isAssignableFrom(classOf[java.math.BigDecimal])
+      case SimpleType.Regex => klazz.isAssignableFrom(classOf[java.util.regex.Pattern])
+      case SimpleType.Arrow(List(SimpleType.Object), SimpleType.Unit) => klazz.isAssignableFrom(classOf[java.util.function.Consumer[Object]])
+      case SimpleType.Arrow(List(SimpleType.Object), SimpleType.Bool) => klazz.isAssignableFrom(classOf[java.util.function.Predicate[Object]])
+      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Unit) => klazz.isAssignableFrom(classOf[java.util.function.IntConsumer])
+      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Object) => klazz.isAssignableFrom(classOf[java.util.function.IntFunction[Object]])
+      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Bool) => klazz.isAssignableFrom(classOf[java.util.function.IntPredicate])
+      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Int32) => klazz.isAssignableFrom(classOf[java.util.function.IntUnaryOperator])
+      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Unit) => klazz.isAssignableFrom(classOf[java.util.function.LongConsumer])
+      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Object) => klazz.isAssignableFrom(classOf[java.util.function.LongFunction[Object]])
+      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Bool) => klazz.isAssignableFrom(classOf[java.util.function.LongPredicate])
+      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Int64) => klazz.isAssignableFrom(classOf[java.util.function.LongUnaryOperator])
+      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Unit) => klazz.isAssignableFrom(classOf[java.util.function.DoubleConsumer])
+      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Object) => klazz.isAssignableFrom(classOf[java.util.function.DoubleFunction[Object]])
+      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Bool) => klazz.isAssignableFrom(classOf[java.util.function.DoublePredicate])
+      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Float64) => klazz.isAssignableFrom(classOf[java.util.function.DoubleUnaryOperator])
 
-      case SimpleType.Array(_) => tpe // TODO: Array subtyping
-
-      case SimpleType.AnyType if klazz == classOf[Object] => tpe
+      case SimpleType.AnyType => klazz == classOf[Object]
 
       // Every Flix reference type (enums, tuples, structs, records, lazies, lambdas, lists,
       // BigInt, ...) is represented as a reference (an object) at runtime, so it is a subtype of
-      // `java.lang.Object` -- e.g. the erased `Object` return type of a generic Java interface
-      // method implemented by an anonymous class. `SimpleType.erase` returns `Object` for exactly
-      // the reference-represented types (primitives erase to themselves).
-      case _ if klazz == classOf[Object] && SimpleType.erase(tpe) == SimpleType.Object => tpe
-
-      case _ => failMismatchedTypes(tpe, klazz, loc)
+      // `java.lang.Object`
+      case SimpleType.Arrow(_, _) => klazz = classOf[Object]
+      case SimpleType.Void => klazz == classOf[Object]
+      case SimpleType.Region => klazz == classOf[Object]
+      case SimpleType.Lazy(_) => klazz == classOf[Object]
+      case SimpleType.Tuple(_) => klazz == classOf[Object]
+      case SimpleType.Enum(_, _) => klazz == classOf[Object]
+      case SimpleType.Struct(_, _) => klazz == classOf[Object]
+      case SimpleType.RecordEmpty => klazz == classOf[Object]
+      case SimpleType.RecordExtend(_, _, _) => klazz == classOf[Object]
+      case SimpleType.ExtensibleEmpty => klazz == classOf[Object]
+      case SimpleType.ExtensibleExtend(_, _, _) => klazz == classOf[Object]
     }
   }
 
