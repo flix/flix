@@ -662,6 +662,10 @@ object TypeVerifier {
       case SimpleType.Bool if klazz == classOf[Boolean] => tpe
       case SimpleType.Char if klazz == classOf[Char] => tpe
       case SimpleType.Unit if klazz == classOf[Unit] => tpe
+      // Unit is represented as a reference (the Unit singleton) at runtime, so it is a
+      // subtype of any non-primitive Java type, e.g. the erased `Object` return of a
+      // generic interface method implemented by an anonymous class.
+      case SimpleType.Unit if !klazz.isPrimitive => tpe
       case SimpleType.Null if !klazz.isPrimitive => tpe
 
       case SimpleType.String if klazz.isAssignableFrom(classOf[java.lang.String]) => tpe
@@ -687,6 +691,13 @@ object TypeVerifier {
       case SimpleType.Array(_) => tpe // TODO: Array subtyping
 
       case SimpleType.AnyType if klazz == classOf[Object] => tpe
+
+      // Every Flix reference type (enums, tuples, structs, records, lazies, lambdas, lists,
+      // BigInt, ...) is represented as a reference (an object) at runtime, so it is a subtype of
+      // `java.lang.Object` -- e.g. the erased `Object` return type of a generic Java interface
+      // method implemented by an anonymous class. `SimpleType.erase` returns `Object` for exactly
+      // the reference-represented types (primitives erase to themselves).
+      case _ if klazz == classOf[Object] && SimpleType.erase(tpe) == SimpleType.Object => tpe
 
       case _ => failMismatchedTypes(tpe, klazz, loc)
     }
