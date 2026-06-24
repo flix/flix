@@ -670,10 +670,7 @@ object TypeVerifier {
       case SimpleType.Float64 => klazz == classOf[Double]
       case SimpleType.Bool => klazz == classOf[Boolean]
       case SimpleType.Char => klazz == classOf[Char]
-      // Unit is represented as a reference (the Unit singleton) at runtime, so it is a
-      // subtype of any non-primitive Java type, e.g. the erased `Object` return of a
-      // generic interface method implemented by an anonymous class.
-      case SimpleType.Unit => klazz == classOf[Unit] || !klazz.isPrimitive
+      case SimpleType.Unit => klazz == classOf[Object]
       case SimpleType.Null => !klazz.isPrimitive
 
       case SimpleType.String => klazz.isAssignableFrom(classOf[java.lang.String])
