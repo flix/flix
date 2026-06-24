@@ -657,8 +657,7 @@ object TypeVerifier {
   private def isJavaSubtype(tpe: SimpleType, klazz: Class[?]): Boolean = {
     tpe match {
       case SimpleType.Array(elmt) =>
-        if (klazz.isArray) isJavaSubtype(elmt, klazz.getComponentType)
-        else true // TODO: Array subtyping
+        (klazz.isArray && isJavaSubtype(elmt, klazz.getComponentType)) || klazz == classOf[Object]
 
       case SimpleType.Native(k) => klazz.isAssignableFrom(k)
 
