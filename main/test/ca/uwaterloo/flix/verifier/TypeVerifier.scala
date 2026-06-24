@@ -700,7 +700,7 @@ object TypeVerifier {
       // Every Flix reference type (enums, tuples, structs, records, lazies, lambdas, lists,
       // BigInt, ...) is represented as a reference (an object) at runtime, so it is a subtype of
       // `java.lang.Object`
-      case SimpleType.Arrow(_, _) => klazz = classOf[Object]
+      case SimpleType.Arrow(_, _) => klazz == classOf[Object]
       case SimpleType.Void => klazz == classOf[Object]
       case SimpleType.Region => klazz == classOf[Object]
       case SimpleType.Lazy(_) => klazz == classOf[Object]
