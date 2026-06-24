@@ -84,7 +84,7 @@ object GenAnonymousClasses {
         case Some(jm) => javaClassToBackendType(jm.getReturnType)
         case None => if (m.tpe == SimpleType.Unit) VoidableType.Void else BackendType.toBackendType(m.tpe)
       }
-      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, m)(_, root))
+      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, actualres, m)(_, root))
     }
 
     // Generate bridge methods for super method calls.
@@ -188,7 +188,7 @@ object GenAnonymousClasses {
   }
 
   /** Creates code to read the arguments, load it into the `cloField` closure, call that function, and returns. */
-  private def methodIns(abstractClass: BackendObjType.AbstractArrow, cloField: ClassMaker.InstanceField, m: JvmMethod)(implicit mv: MethodVisitor, root: Root): Unit = {
+  private def methodIns(abstractClass: BackendObjType.AbstractArrow, cloField: ClassMaker.InstanceField, actualRes: VoidableType, m: JvmMethod)(implicit mv: MethodVisitor, root: Root): Unit = {
     val functionAbstractClass = abstractClass.superClass
     val returnType = BackendType.toBackendType(m.tpe)
 
@@ -204,12 +204,15 @@ object GenAnonymousClasses {
           PUTFIELD(functionAbstractClass.ArgField(i))
         }
     }
-    // Invoke the closure.
+    // Invoke the closure, leaving its result on the stack in the representation of `m.tpe`.
     BackendObjType.Result.unwindSuspensionFreeThunkToType(returnType, s"in anonymous class method ${m.ident.name}", m.loc)
 
-    m.tpe match {
-      case SimpleType.Unit => RETURN()
-      case _ => xReturn(returnType)
+    // Return the value using the method's erased JVM return type (`actualRes`). Any boxing
+    // needed to feed a primitive result into a reference (e.g. `Object`) return has already
+    // been applied in Lowering, so the value on the stack already matches `actualRes`.
+    actualRes match {
+      case VoidableType.Void => RETURN()
+      case res: BackendType => xReturn(res)
     }
   }
 

@@ -898,7 +898,12 @@ object Specialization {
     case Expr.NewObject(sym, clazz, tpe, eff, constructors0, methods0, loc) =>
       val constructors = constructors0.map(specializeJvmConstructor(_, env0, subst))
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
-      Expr.NewObject(sym, clazz, subst(tpe), subst(eff), constructors, methods, loc)
+      // Mint a fresh anonymous class symbol for each specialization. Otherwise distinct
+      // specializations of an enclosing generic def (e.g. `mk[String]` and `mk[Int32]`)
+      // would reuse the same anonymous class name and collide, so one specialization would
+      // run with the other's generated class.
+      val freshSym = Symbol.mkFreshAnonClassSym(sym.loc)
+      Expr.NewObject(freshSym, clazz, subst(tpe), subst(eff), constructors, methods, loc)
 
     case Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val e = specializeExp(innerExp, env0, subst)
