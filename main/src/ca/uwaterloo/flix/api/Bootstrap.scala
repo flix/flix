@@ -1036,8 +1036,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       // Tracks entry names already written to `zip` so that an entry present in more than one
       // dependency jar is written only once (first jar wins) instead of throwing.
       val seen = mutable.Set.empty[String]
+
       // Accumulates merged `META-INF/services/*` files: service name -> ordered, de-duplicated provider lines.
-      val services = mutable.LinkedHashMap.empty[String, mutable.LinkedHashSet[String]]
+      val services = mutable.LinkedHashMap.empty[String, List[String]]
 
       // Add jar dependencies.
       jarDependencies.foreach(dep => {
@@ -1052,8 +1053,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
               } else if (name.startsWith(servicesPrefix)) {
                 // Merge service-provider files rather than overwriting, so every provider survives.
                 val lines = new String(zipIn.readAllBytes()).linesIterator
-                  .map(_.trim).filter(l => l.nonEmpty && !l.startsWith("#"))
-                services.getOrElseUpdate(name, mutable.LinkedHashSet.empty) ++= lines
+                  .map(_.trim).filter(l => l.nonEmpty && !l.startsWith("#")).toList
+                services(name) = (services.getOrElse(name, List.empty) ++ lines).distinct
               } else if (name.startsWith(metaInfPrefix)) {
                 // Drop the rest of META-INF (manifest, signatures, index, multi-release, metadata).
               } else if (name.equals(s"module-info.$EXT_CLASS")) {
