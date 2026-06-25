@@ -1001,6 +1001,27 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Adds all jars in `dir` to `zip`.
       * Ignores non-jar files and does nothing if `dir` does not exist.
+      *
+      * Only the contents needed at runtime are copied from each dependency jar:
+      *   - Java class files (except `module-info.class`, which cannot be merged because
+      *     only one module descriptor may live at the jar root).
+      *   - Ordinary resources (e.g. native libraries, `*.properties`, capability files).
+      *   - `META-INF/services/` service-provider files, which are *merged* across jars so
+      *     that `java.util.ServiceLoader` (used by e.g. JLine to discover terminal providers)
+      *     still finds every provider.
+      *
+      * The rest of `META-INF/` is intentionally dropped, because copying it would be unsafe
+      * or useless in a fat jar:
+      *   - `META-INF/MANIFEST.MF` would collide with (and clobber) the fat jar's own manifest.
+      *   - Signature files (`*.SF`, `*.RSA`, `*.DSA`, `*.EC`, `SIG-*`) would no longer match the
+      *     repacked contents, making the JVM reject the jar with a `SecurityException`.
+      *   - `META-INF/INDEX.LIST` would reference jars that no longer exist.
+      *   - `META-INF/versions/` multi-release classes would be inert (the fat jar manifest does
+      *     not declare `Multi-Release: true`) and risk shadowing the base classes.
+      *   - License/notice/maven metadata is not needed at runtime.
+      *
+      * Duplicate entry paths across jars are de-duplicated (first jar wins) so that the build
+      * does not abort with a `ZipException: duplicate entry`.
       */
     def addJarsFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
       // First, we get all jar files inside the lib folder.
@@ -1008,24 +1029,48 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (!Files.exists(dir)) {
         return
       }
+      val servicesPrefix = "META-INF/services/"
+      val metaInfPrefix = "META-INF/"
       val jarDependencies = FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue)
+
+      // Tracks entry names already written to `zip` so that an entry present in more than one
+      // dependency jar is written only once (first jar wins) instead of throwing.
+      val seen = mutable.Set.empty[String]
+      // Accumulates merged `META-INF/services/*` files: service name -> ordered, de-duplicated provider lines.
+      val services = mutable.LinkedHashMap.empty[String, mutable.LinkedHashSet[String]]
+
       // Add jar dependencies.
       jarDependencies.foreach(dep => {
-        // Extract the content of the classes to the jar file.
+        // Extract the runtime contents of the dependency into the fat jar.
         Using(new ZipInputStream(Files.newInputStream(dep))) {
           zipIn =>
             var entry = zipIn.getNextEntry
             while (entry != null) {
-              // Get the class files except module-info and META-INF classes which are specific to each library.
-              if (entry.getName.endsWith(s".$EXT_CLASS") && !entry.getName.equals(s"module-info.$EXT_CLASS") && !entry.getName.contains("META-INF/")) {
-                // Write extracted class files to zip.
-                val classContent = zipIn.readAllBytes()
-                FileOps.addToZip(zip, entry.getName, classContent)
+              val name = entry.getName
+              if (entry.isDirectory) {
+                // Directory entries carry no content; the zip records them implicitly.
+              } else if (name.startsWith(servicesPrefix)) {
+                // Merge service-provider files rather than overwriting, so every provider survives.
+                val lines = new String(zipIn.readAllBytes()).linesIterator
+                  .map(_.trim).filter(l => l.nonEmpty && !l.startsWith("#"))
+                services.getOrElseUpdate(name, mutable.LinkedHashSet.empty) ++= lines
+              } else if (name.startsWith(metaInfPrefix)) {
+                // Drop the rest of META-INF (manifest, signatures, index, multi-release, metadata).
+              } else if (name.equals(s"module-info.$EXT_CLASS")) {
+                // Drop module descriptors: only one may live at the jar root and they cannot be merged.
+              } else if (seen.add(name)) {
+                // Copy classes and ordinary resources, skipping paths already taken by an earlier jar.
+                FileOps.addToZip(zip, name, zipIn.readAllBytes())
               }
               entry = zipIn.getNextEntry
             }
         }
       })
+
+      // Write the merged service-provider files.
+      for ((name, providers) <- services) {
+        FileOps.addToZip(zip, name, providers.mkString("\n").getBytes)
+      }
     }
 
     /**
