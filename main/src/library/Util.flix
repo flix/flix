@@ -14,4 +14,13 @@
  * limitations under the License.
  */
 
+///
+/// The `Util` module is a collection of general-purpose utility submodules,
+/// each offering a self-contained piece of functionality:
+///
+/// - `Util.Checksum` computes cryptographic digests, such as SHA-256.
+/// - `Util.Codec` encodes and decodes data, such as Base64.
+/// - `Util.GetOpt` parses command-line options and arguments.
+/// - `Util.Json` parses, builds, and serializes JSON values.
+///
 pub mod Util {}
