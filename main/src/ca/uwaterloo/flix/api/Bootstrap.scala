@@ -1002,23 +1002,21 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Adds all jars in `dir` to `zip`.
       * Ignores non-jar files and does nothing if `dir` does not exist.
       *
-      * Only the contents needed at runtime are copied from each dependency jar:
-      *   - Java class files (except `module-info.class`, which cannot be merged because
-      *     only one module descriptor may live at the jar root).
-      *   - Ordinary resources (e.g. native libraries, `*.properties`, capability files).
-      *   - `META-INF/services/` service-provider files, which are *merged* across jars so
-      *     that `java.util.ServiceLoader` (used by e.g. JLine to discover terminal providers)
-      *     still finds every provider.
-      *
-      * The rest of `META-INF/` is intentionally dropped, because copying it would be unsafe
-      * or useless in a fat jar:
-      *   - `META-INF/MANIFEST.MF` would collide with (and clobber) the fat jar's own manifest.
-      *   - Signature files (`*.SF`, `*.RSA`, `*.DSA`, `*.EC`, `SIG-*`) would no longer match the
-      *     repacked contents, making the JVM reject the jar with a `SecurityException`.
-      *   - `META-INF/INDEX.LIST` would reference jars that no longer exist.
-      *   - `META-INF/versions/` multi-release classes would be inert (the fat jar manifest does
-      *     not declare `Multi-Release: true`) and risk shadowing the base classes.
-      *   - License/notice/maven metadata is not needed at runtime.
+      * Most of each dependency jar is copied verbatim — class files, ordinary resources
+      * (native libraries, capability files, `.properties` files, ...), and library-specific
+      * `META-INF/` resources such as JLine's `META-INF/jline/providers/` registry — with two
+      * exceptions:
+      *   - `META-INF/services/` service-provider files are *merged* across jars (rather than
+      *     letting one jar's copy overwrite another's) so that `java.util.ServiceLoader` still
+      *     finds every provider.
+      *   - A small set of entries is dropped because copying them would be unsafe or useless:
+      *       - `META-INF/MANIFEST.MF` would collide with (and clobber) the fat jar's own manifest.
+      *       - Signature files (`.SF`, `.RSA`, `.DSA`, `.EC`, `SIG-` files) would no longer match
+      *         the repacked contents, making the JVM reject the jar with a `SecurityException`.
+      *       - `META-INF/INDEX.LIST` would reference jars that no longer exist.
+      *       - `META-INF/versions/` multi-release classes would be inert (the fat jar manifest
+      *         does not declare `Multi-Release: true`) and risk shadowing the base classes.
+      *       - `module-info.class` cannot be merged: only one may live at the jar root.
       *
       * Duplicate entry paths across jars are de-duplicated (first jar wins) so that the build
       * does not abort with a `ZipException: duplicate entry`.
@@ -1040,6 +1038,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       // Accumulates merged `META-INF/services/*` files: service name -> ordered, de-duplicated provider lines.
       val services = mutable.LinkedHashMap.empty[String, List[String]]
 
+      // Returns `true` for entries that must not be copied into the fat jar (see method doc).
+      def isUnsafeEntry(name: String): Boolean = {
+        // Signature files sit directly under META-INF/ (a single path segment after it).
+        val rest = if (name.startsWith(metaInfPrefix)) name.substring(metaInfPrefix.length) else name
+        val isSignatureFile = name.startsWith(metaInfPrefix) && !rest.contains("/") &&
+          (rest.startsWith("SIG-") || rest.endsWith(".SF") || rest.endsWith(".RSA") ||
+            rest.endsWith(".DSA") || rest.endsWith(".EC"))
+        name.equals(s"module-info.$EXT_CLASS") ||
+          name.equals("META-INF/MANIFEST.MF") ||
+          name.equals("META-INF/INDEX.LIST") ||
+          name.startsWith("META-INF/versions/") ||
+          isSignatureFile
+      }
+
       // Add jar dependencies.
       jarDependencies.foreach(dep => {
         // Extract the runtime contents of the dependency into the fat jar.
@@ -1055,12 +1067,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                 val lines = new String(zipIn.readAllBytes()).linesIterator
                   .map(_.trim).filter(l => l.nonEmpty && !l.startsWith("#")).toList
                 services(name) = (services.getOrElse(name, List.empty) ++ lines).distinct
-              } else if (name.startsWith(metaInfPrefix)) {
-                // Drop the rest of META-INF (manifest, signatures, index, multi-release, metadata).
-              } else if (name.equals(s"module-info.$EXT_CLASS")) {
-                // Drop module descriptors: only one may live at the jar root and they cannot be merged.
+              } else if (isUnsafeEntry(name)) {
+                // Drop entries that are unsafe or useless in a fat jar (see method doc).
               } else if (seen.add(name)) {
-                // Copy classes and ordinary resources, skipping paths already taken by an earlier jar.
+                // Copy everything else — classes, resources, and library-specific META-INF
+                // entries such as META-INF/jline/ — skipping paths taken by an earlier jar.
                 FileOps.addToZip(zip, name, zipIn.readAllBytes())
               }
               entry = zipIn.getNextEntry
