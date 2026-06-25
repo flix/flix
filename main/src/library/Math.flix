@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
+///
+/// The `Math` module is a collection of mathematical utility submodules,
+/// each offering a self-contained piece of functionality:
+///
+/// - `Math.Random` generates pseudorandom numbers.
+/// - `Math.Shuffle` produces random permutations of collections.
+///
 pub mod Math {
     /* empty */
 }
