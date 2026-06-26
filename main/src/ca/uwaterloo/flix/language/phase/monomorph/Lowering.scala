@@ -564,7 +564,7 @@ object Lowering {
         val thisTpe = lowerType(thisParam.tpe)
         val thisRef = MonoAst.Expr.Var(thisParam.bnd.sym, thisTpe, loc)
         implicit val lctx: LocalContext = LocalContext(Some(sym), Some(thisRef))
-        lowerJvmMethod(m)
+        lowerJvmMethod(m, clazz)
       }
       val t = lowerType(tpe)
       MonoAst.Expr.NewObject(sym, clazz, t, eff, cs, ms, loc)
@@ -667,13 +667,27 @@ object Lowering {
   /**
     * Lowers the given JvmMethod `method`.
     */
-  private def lowerJvmMethod(method: TypedAst.JvmMethod)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
-    case TypedAst.JvmMethod(ann, ident, fparams, exp, retTyp, eff, loc) =>
+  private def lowerJvmMethod(method: TypedAst.JvmMethod, clazz: Class[?])(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+    case TypedAst.JvmMethod(ann, ident, fparams, exp, _, eff, loc) =>
       val fs = fparams.map(lowerFormalParam)
-      val e = lowerExp(exp)
-      val t = lowerType(retTyp)
-      MonoAst.JvmMethod(ann, ident, fs, e, t, eff, loc)
+      val e0 = lowerExp(exp)
+      // If this method overrides a Java method whose erased return type is a reference
+      // (e.g. `Object` for a generic interface method) but the Flix result is a primitive,
+      // box it so the value matches the erased JVM signature. This mirrors the boxing applied
+      // to generic Java method *calls* above (see `boxIfNecessary` in InvokeMethod), and the
+      // call site unboxes the result symmetrically.
+      val e = overriddenJavaReturnType(clazz, ident.name, fparams.tail.length) match {
+        case Some(javaReturnType) => boxIfNecessary(e0, javaReturnType)
+        case None => e0
+      }
+      MonoAst.JvmMethod(ann, ident, fs, e, e.tpe, eff, loc)
   }
+
+  /** Returns the erased return type of the Java method on `clazz` matching `name` and `arity` (excluding the receiver). */
+  private def overriddenJavaReturnType(clazz: Class[?], name: String, arity: Int): Option[Class[?]] =
+    clazz.getMethods.collectFirst {
+      case m if m.getName == name && m.getParameterCount == arity => m.getReturnType
+    }
 
   /**
     * Lowers the given catch rule `rule0`.

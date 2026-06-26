@@ -1,5 +1,11 @@
 # Changelog
 
+Version 0.74.0:
+- Compiler: Improved performance of Parser (thanks Magnus!)
+- Compiler: Improved performance of Weeder (thanks Magnus!)
+- Compiler: Improved performance of Kinder (thanks Magnus!)
+- Compiler: Improved performance of Typer (thanks Magnus!)
+
 Version 0.73.0:
 - Library: Added `Util.Json` module (thanks Magnus!)
 - Compiler: Improved performance of CodeGen (thanks Magnus!)
