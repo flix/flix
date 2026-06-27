@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.{RigidityEnv, Symbol, Type, TypeConstructo
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 
 import scala.annotation.tailrec
-import scala.collection.mutable
 
 /**
   * A syntactic pre-solver for effect equations.
@@ -36,9 +35,8 @@ import scala.collection.mutable
   *
   * every equation is atomic, so the system is solved exactly by the substitution
   * `{ef1 ↦ IO, ef2 ↦ IO, ef3 ↦ Pure}` ([[PreSolveResult.Solved]]). If the system also
-  * contained `ef4 ~ ef1 ∪ Crash` then that equation is not atomic: it would be returned
-  * as the remainder of a [[PreSolveResult.Partial]] with the substitution applied to it,
-  * i.e. `ef4 ~ IO ∪ Crash`.
+  * contained `ef4 ~ ef1 ∪ Crash` then that equation is not atomic, so the whole system
+  * is deferred to the full solver ([[PreSolveResult.Opaque]]).
   */
 object PreEffUnification {
 
@@ -49,10 +47,7 @@ object PreEffUnification {
     /** Every equation was atomic and the system was solved exactly by `subst`. */
     case class Solved(subst: Substitution) extends PreSolveResult
 
-    /** The atomic equations were solved by `subst0`; `rest` are the remaining equations with `subst0` applied. */
-    case class Partial(subst0: Substitution, rest: List[TypeConstraint.Equality]) extends PreSolveResult
-
-    /** No atomic equations could be eliminated. */
+    /** The system is not fully atomic; defer it entirely to the full solver. */
     case object Opaque extends PreSolveResult
   }
 
@@ -66,14 +61,14 @@ object PreEffUnification {
     * and the variable orientation mirrors `Equation.mk` (a variable on the right-hand side
     * is bound first) and the elimination order of `SetUnification` (in equation order).
     *
-    * Non-atomic equations (and atomic conflicts, which the full solver must report or solve
-    * with subeffecting) are returned as the remainder.
+    * If every equation is atomic the system is solved exactly ([[PreSolveResult.Solved]]).
+    * If any equation is non-atomic, an atomic conflict, or relates rigid variables, the whole
+    * system is deferred to the full solver ([[PreSolveResult.Opaque]]), which must report the
+    * conflict or solve it with subeffecting.
     */
   def preSolve(eqs: List[TypeConstraint.Equality])(implicit scope: RegionScope, renv: RigidityEnv): PreSolveResult = {
     var m = Map.empty[Symbol.KindedTypeVarSym, Type]
 
-    // The equations that could not be eliminated and must go to the full solver.
-    val rest = mutable.ListBuffer.empty[TypeConstraint.Equality]
     // The equations that remain to be processed.
     var queue = eqs
     while (queue.nonEmpty) {
@@ -91,31 +86,17 @@ object PreEffUnification {
             case (Type.Var(sym, _), _) if renv.isFlexible(sym) =>
               m = m.updated(sym, t2)
             case _ =>
-              // Atomic conflict or rigid variables: defer to the full solver.
-              rest += eq
+              // Atomic conflict or rigid variables: defer the whole system to the full solver.
+              return PreSolveResult.Opaque
           }
         }
       } else {
-        // Non-atomic equation: defer to the full solver.
-        rest += eq
+        // Non-atomic equation: defer the whole system to the full solver.
+        return PreSolveResult.Opaque
       }
     }
-    if (m.isEmpty) {
-      if (rest.isEmpty) PreSolveResult.Solved(Substitution.empty) else PreSolveResult.Opaque
-    } else {
-      val subst = mkSubstitution(m)
-      if (rest.isEmpty) {
-        PreSolveResult.Solved(subst)
-      } else {
-        // Apply the eliminations to the remaining equations.
-        val restEqs = rest.result().map { eq =>
-          val t1 = subst(eq.tpe1)
-          val t2 = subst(eq.tpe2)
-          eq.renew(t1, t2)
-        }
-        PreSolveResult.Partial(subst, restEqs)
-      }
-    }
+    // Every equation was atomic and eliminated; the system is solved exactly.
+    PreSolveResult.Solved(mkSubstitution(m))
   }
 
   /**
