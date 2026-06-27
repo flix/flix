@@ -202,4 +202,24 @@ mod Test.Dec.TypeAlias {
     @Test
     def testTypeAlias31(): Unit \ Assert =
         assertEq(expected = 60, testTypeAlias31Helper({x = 10, y = 20, z = 30}))
+
+    ///
+    /// A polymorphic record-row alias applied to a concrete type in a record row extension.
+    ///
+    type alias MyRow[a] = (x = Int32, y = a)
+
+    def testTypeAlias32Helper(r: {z = String | MyRow[Int32]}): Int32 = r#x + r#y
+
+    @Test
+    def testTypeAlias32(): Unit \ Assert =
+        assertEq(expected = 30, testTypeAlias32Helper({x = 10, y = 20, z = "Hello World"}))
+
+    ///
+    /// A polymorphic record-row alias applied to a type variable in a record row extension.
+    ///
+    def testTypeAlias33Helper(r: {z = String | MyRow[a]}): a = r#y
+
+    @Test
+    def testTypeAlias33(): Unit \ Assert =
+        assertEq(expected = true, testTypeAlias33Helper({x = 10, y = true, z = "Hello World"}))
 }

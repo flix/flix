@@ -2918,11 +2918,10 @@ object Weeder2 {
 
     private def visitRecordRowType(tree: Tree)(implicit sctx: SharedContext): Type = {
       expectAny(tree, List(TreeKind.Type.Record, TreeKind.Type.RecordRow))
-      val maybeQName = tryPick(TreeKind.QName, tree).map(visitNameType)
-      val maybeVar = tryPick(TreeKind.Type.Variable, tree).map(visitVariableType)
+      val maybeType = tryPick(TreeKind.Type.Type, tree).map(visitType)
       val fields = pickAll(TreeKind.Type.RecordFieldFragment, tree).map(visitRecordField)
-      val variable = maybeQName.orElse(maybeVar).getOrElse(Type.RecordRowEmpty(tree.loc))
-      fields.foldRight(variable) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
+      val tail = maybeType.getOrElse(Type.RecordRowEmpty(tree.loc))
+      fields.foldRight(tail) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
     }
 
     private def visitRecordField(tree: Tree)(implicit sctx: SharedContext): (Name.Label, Type) = {

@@ -3653,18 +3653,6 @@ object Parser2 {
       close(mark, TreeKind.Type.Variable)
     }
 
-    private def rowTailType()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
-      nth(0) match {
-        case t if TYPE_VAR.contains(t) => variableType()
-        case TokenKind.NameUppercase => nameAllowQualified(NAME_TYPE)
-        case t => 
-          val mark = open()
-          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(TYPE_VAR + TokenKind.NameUppercase), actual = Some(t), loc = currentSourceLocation())
-          closeWithError(mark, error)
-      }
-    }
-
     private val TYPE_CONSTANT: Set[TokenKind] = Set(TokenKind.KeywordUniv, TokenKind.KeywordFalse, TokenKind.KeywordTrue)
 
     private def constantType()(implicit s: State): Mark.Closed = {
@@ -3697,7 +3685,7 @@ object Parser2 {
         getItem = recordField,
         checkForItem = NAME_FIELD.contains,
         breakWhen = _.isRecoverInType,
-        optionallyWith = Some((TokenKind.Bar, rowTailType)),
+        optionallyWith = Some((TokenKind.Bar, () => ttype())),
       )
       close(mark, TreeKind.Type.RecordRow)
     }
@@ -3746,7 +3734,7 @@ object Parser2 {
             breakWhen = _.isRecoverInType,
             delimiterL = TokenKind.CurlyL,
             delimiterR = TokenKind.CurlyR,
-            optionallyWith = Some((TokenKind.Bar, rowTailType)),
+            optionallyWith = Some((TokenKind.Bar, () => ttype())),
           )
           close(mark, TreeKind.Type.Record)
       }
