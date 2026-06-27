@@ -75,13 +75,6 @@ object EffUnification3 {
         case PreSolveResult.Solved(subst) =>
           // The whole system was atomic and exactly solvable.
           return Result.Ok(subst)
-        case PreSolveResult.Partial(_, _) =>
-          // Disabled (see #12885): solving only the remainder and composing it with the
-          // syntactic substitution (`fromSetSubst(...) @@ subst0`) bypasses the set-algebra
-          // canonicalization that the full solver applies. The resulting substitution can
-          // carry large, un-canonicalized effect unions that blow up (and overflow the
-          // stack) when monomorphization re-canonicalizes them. Fall through to full solving.
-          ()
         case PreSolveResult.Opaque => () // Fall through to full solving.
       }
     }
