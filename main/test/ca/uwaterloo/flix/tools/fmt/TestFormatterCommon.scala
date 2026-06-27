@@ -195,6 +195,13 @@ trait TestFormatterCommon extends AnyFunSuite {
   }
 
   /**
+    * Formats `tree`, failing the test if the formatter refuses to.
+    * The formatter only refuses when the tree contains a [[SyntaxTree.TreeKind.ErrorTree]].
+    */
+  protected def formatOrFail(tree: SyntaxTree.Tree): String =
+    PrettyPrinter.format(tree).getOrElse(fail("Formatter refused to format a valid syntax tree"))
+
+  /**
     * Finds the first line where two strings diverge and reports surrounding context.
     * This helps debugging idempotency and stability failures by showing the first point the outputs differ.
     */
