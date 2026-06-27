@@ -75,21 +75,13 @@ object EffUnification3 {
         case PreSolveResult.Solved(subst) =>
           // The whole system was atomic and exactly solvable.
           return Result.Ok(subst)
-        case PreSolveResult.Partial(subst0, rest) =>
-          // The atomic equations were eliminated; try to solve the (smaller) remainder
-          // exactly. On failure we redo the full system below, so that subeffecting
-          // (which may add slack to any equation) sees the original equations.
-          try {
-            val bimap0: AtomBimap = AtomBimap.fromConstraints(rest)
-            val equations = toEquations(rest, withSlack = false)(scope, renv, bimap0)
-            val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
-            if (unsolvedEqns.isEmpty) {
-              return Result.Ok(fromSetSubst(resultSubst)(withSlack = false, m = bimap0) @@ subst0)
-            }
-            // Otherwise we fall through and redo the full system.
-          } catch {
-            case InvalidType(_) => // We fall through.
-          }
+        case PreSolveResult.Partial(_, _) =>
+          // Disabled (see #12885): solving only the remainder and composing it with the
+          // syntactic substitution (`fromSetSubst(...) @@ subst0`) bypasses the set-algebra
+          // canonicalization that the full solver applies. The resulting substitution can
+          // carry large, un-canonicalized effect unions that blow up (and overflow the
+          // stack) when monomorphization re-canonicalizes them. Fall through to full solving.
+          ()
         case PreSolveResult.Opaque => () // Fall through to full solving.
       }
     }
