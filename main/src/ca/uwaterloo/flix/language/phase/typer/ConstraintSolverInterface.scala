@@ -189,7 +189,11 @@ object ConstraintSolverInterface {
       List(TypeError.NonUnitStatement(subst(actual), loc))
 
     case TypeConstraint.Equality(baseType1, baseType2, Provenance.Match(fullType1, fullType2, loc)) =>
-      val default = List(mkMismatchedTypesOrEffects(subst(baseType1), subst(baseType2), subst(fullType1), subst(fullType2), renv, loc))
+      val baseTpe1 = subst(baseType1)
+      val baseTpe2 = subst(baseType2)
+      val fullTpe1 = subst(fullType1)
+      val fullTpe2 = subst(fullType2)
+      val default = List(mkMismatchedTypesOrEffects(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc))
 
       (fullType1.typeConstructor, fullType2.typeConstructor) match {
         case (Some(TypeConstructor.SchemaRowExtend(pred1)), Some(TypeConstructor.SchemaRowExtend(pred2))) if pred1 == pred2 =>
@@ -208,6 +212,13 @@ object ConstraintSolverInterface {
 
             case _ => default
           }
+
+        // A function type and a concrete non-function type can never be unified, regardless of effects.
+        case _ if isArrowType(baseTpe1) && isConcreteNonArrowType(baseTpe2) =>
+          List(TypeError.MismatchedArrowAndNonArrow(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc))
+
+        case _ if isArrowType(baseTpe2) && isConcreteNonArrowType(baseTpe1) =>
+          List(TypeError.MismatchedArrowAndNonArrow(baseTpe2, baseTpe1, fullTpe1, fullTpe2, renv, loc))
 
         case _ => default
       }
@@ -259,21 +270,14 @@ object ConstraintSolverInterface {
   }
 
   /**
-    * Create the most specific mismatch error for the two conflicting types.
+    * Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
     */
   private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
-    (isArrowType(baseType1), isArrowType(baseType2)) match {
-      case (true, _) if isConcreteNonArrowType(baseType2) =>
-        TypeError.MismatchedArrowAndNonArrow(baseType1, baseType2, fullType1, fullType2, renv, loc)
-      case (_, true) if isConcreteNonArrowType(baseType1) =>
-        TypeError.MismatchedArrowAndNonArrow(baseType2, baseType1, fullType1, fullType2, renv, loc)
+    baseType1.kind match {
+      case Kind.Eff =>
+        TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, loc)
       case _ =>
-        baseType1.kind match {
-          case Kind.Eff =>
-            TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, loc)
-          case _ =>
-            TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
-        }
+        TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
     }
   }
 
