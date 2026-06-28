@@ -260,11 +260,6 @@ object ConstraintSolverInterface {
 
   /**
     * Create the most specific mismatch error for the two conflicting types.
-    *
-    * If one type is a function (arrow) and the other is a concrete non-function, we emit the
-    * specialized [[TypeError.MismatchedArrowAndNonArrow]] error, since the two can never be unified
-    * regardless of effects. Otherwise, we create either the MismatchedTypes or MismatchedEffects
-    * error based on the kind of the type.
     */
   private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     (isArrowType(baseType1), isArrowType(baseType2)) match {
@@ -286,7 +281,8 @@ object ConstraintSolverInterface {
     * Returns `true` if `tpe` is a function (arrow) type, with or without an effect.
     */
   private def isArrowType(tpe: Type): Boolean = tpe.typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) | Some(TypeConstructor.ArrowWithoutEffect(_)) => true
+    case Some(TypeConstructor.Arrow(_)) => true
+    case Some(TypeConstructor.ArrowWithoutEffect(_)) => true
     case _ => false
   }
 
@@ -297,7 +293,8 @@ object ConstraintSolverInterface {
     * function type.
     */
   private def isConcreteNonArrowType(tpe: Type): Boolean = tpe.typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) | Some(TypeConstructor.ArrowWithoutEffect(_)) => false
+    case Some(TypeConstructor.Arrow(_)) => false
+    case Some(TypeConstructor.ArrowWithoutEffect(_)) => false
     case Some(_) => true
     case None => false
   }
