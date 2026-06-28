@@ -613,11 +613,12 @@ object ResolutionError {
   }
 
   /**
-    * An error indicating the number of effect operation parameters does not match the expected number.
+    * An error indicating that the number of arguments given to an effect operation
+    * does not match the number of formal parameters it declares.
     *
     * @param op       the effect operation symbol.
-    * @param expected the expected number of parameters.
-    * @param actual   the actual number of parameters.
+    * @param expected the expected number of arguments (the operation's declared arity).
+    * @param actual   the actual number of arguments given.
     * @param loc      the location where the error occurred.
     */
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
@@ -629,9 +630,9 @@ object ResolutionError {
       import fmt.*
       s""">> Mismatched arity for operation '${red(op.name)}'.
          |
-         |Expected ${Grammar.n_things(expected, "parameter")} but found $actual.
+         |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
          |
-         |${highlight(loc, s"expected $expected parameters", fmt)}
+         |${highlight(loc, s"expected $expected arguments", fmt)}
          |""".stripMargin
     }
   }
