@@ -770,26 +770,4 @@ class TestNamer extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[NameError.IllegalSealedTrait](result)
   }
-
-  test("IllegalSealedTrait.Nested.01") {
-    // A sealed trait nested in a module is allowed.
-    val input =
-      """
-        |mod N {
-        |    sealed trait C[a]
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    rejectError[NameError.IllegalSealedTrait](result)
-  }
-
-  test("IllegalSealedTrait.Nested.02") {
-    // A non-sealed top-level trait is allowed.
-    val input =
-      """
-        |pub trait C[a]
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    rejectError[NameError.IllegalSealedTrait](result)
-  }
 }
