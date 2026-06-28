@@ -356,7 +356,7 @@ object EntryPoints {
       case Result.Ok(true) =>
         None
       case Result.Ok(false) =>
-        Some(EntryPointError.IllegalMainEntryPointResult(resultType, resultType.loc))
+        Some(EntryPointError.MainNonUnitReturnType(resultType, resultType.loc))
       case Result.Err(ErrorOrMalformed) =>
         // Do not report an error, since previous phases should have done already.
         None
