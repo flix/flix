@@ -186,6 +186,24 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedArrowAndNonArrow](result)
   }
 
+  test("MismatchedArrowAndNonArrow.03") {
+    // A function reference checked against a concrete non-function annotation (ExpectType).
+    val input = "def foo(): Int32 = x -> x"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedArrowAndNonArrow](result)
+  }
+
+  test("MismatchedArrowAndNonArrow.04") {
+    // A function reference passed where a concrete non-function argument is expected (ExpectArgument).
+    val input =
+      """
+        |def f(x: Int32): Int32 = x
+        |def foo(): Int32 = f(y -> y)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedArrowAndNonArrow](result)
+  }
+
   test("MismatchedTypes.06") {
     val input =
       """
