@@ -470,6 +470,11 @@ object TypeVerifier {
         case AtomicOp.InvokeStaticMethod(method) =>
           checkJavaParameters(ts, method.getParameterTypes.toList, loc)
           checkJavaSubtype(tpe, method.getReturnType, loc)
+
+        // Vector operations are simplified to array operations in the Simplifier.
+        case AtomicOp.VectorLit => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+        case AtomicOp.VectorLoad => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+        case AtomicOp.VectorLength => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
       }
 
     case Expr.ApplyClo(exp1, exp2, _, tpe, _, loc) =>

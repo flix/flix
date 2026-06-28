@@ -190,6 +190,9 @@ object OpPrinter {
     case (AtomicOp.RecordSelect(label), List(d)) => RecordSelect(label, d)
     case (AtomicOp.RecordRestrict(label), List(d)) => RecordRestrict(label, d)
     case (AtomicOp.ArrayLength, List(d)) => ArrayLength(d)
+    case (AtomicOp.VectorLit, _) => VectorLit(ds)
+    case (AtomicOp.VectorLoad, List(d1, d2)) => VectorLoad(d1, d2)
+    case (AtomicOp.VectorLength, List(d)) => VectorLength(d)
     case (AtomicOp.StructNew(sym, Mutability.Mutable, fields), d :: rs) =>
       ListOps.zipOption(fields, rs) match {
         case None => Expr.Unknown

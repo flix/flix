@@ -1086,6 +1086,11 @@ object GenExpression {
         pushString(s"Cannot cast from type '$from' to '$to'") // CastError, CastError, Loc, String
         INVOKESPECIAL(BackendObjType.CastError.Constructor) // CastError
         ATHROW()
+
+      // Vector operations are simplified to array operations in the Simplifier.
+      case AtomicOp.VectorLit => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+      case AtomicOp.VectorLoad => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+      case AtomicOp.VectorLength => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
     }
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
