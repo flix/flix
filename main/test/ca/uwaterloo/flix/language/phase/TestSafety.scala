@@ -349,6 +349,20 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.NewObjectMissingMethod](result)
   }
 
+  test("TestUnimplementedMethod.02") {
+    // A `protected abstract` method must be implemented (see issue #11415).
+    val input =
+      """
+        |import dev.flix.test.TestClassWithProtectedMethods
+        |
+        |def f(): TestClassWithProtectedMethods \ IO =
+        |  new TestClassWithProtectedMethods {
+        |  }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectMissingMethod](result)
+  }
+
   test("TestExtraMethod.01") {
     val input =
       """

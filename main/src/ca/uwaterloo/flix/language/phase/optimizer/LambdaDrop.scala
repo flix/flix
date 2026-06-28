@@ -187,16 +187,6 @@ object LambdaDrop {
           visitExp(exp1)
       }
 
-    case Expr.VectorLit(exps, _, _, _) =>
-      exps.foreach(visitExp)
-
-    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
-
-    case Expr.VectorLength(exp, _) =>
-      visitExp(exp)
-
     case Expr.Cast(exp, _, _, _) =>
       visitExp(exp)
 
@@ -319,19 +309,6 @@ object LambdaDrop {
           MonoAst.ExtMatchRule(pat, e1, loc1)
       }
       Expr.ExtMatch(e, rs, tpe, eff, loc)
-
-    case Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(rewriteExp)
-      Expr.VectorLit(es, tpe, eff, loc)
-
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = rewriteExp(exp1)
-      val e2 = rewriteExp(exp2)
-      Expr.VectorLoad(e1, e2, tpe, eff, loc)
-
-    case Expr.VectorLength(exp, loc) =>
-      val e = rewriteExp(exp)
-      Expr.VectorLength(e, loc)
 
     case Expr.Cast(exp, tpe, eff, loc) =>
       val e = rewriteExp(exp)

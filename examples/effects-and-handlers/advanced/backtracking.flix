@@ -27,9 +27,9 @@ def search(k: Int32): Int32 \ { Rewind, NonDet, IO } = {
         guess
 }
 
-pub def main(): Int32 \ { NonDet, IO } = region rc {
+pub def main(): Unit \ { NonDet, IO } = region rc {
     let checkpoints = MutMap.empty(rc);
-    run search(10) with handler Rewind {
+    let result = run search(10) with handler Rewind {
         def save(label, k) = {
             MutMap.put(label, k, checkpoints);
             k()
@@ -38,5 +38,6 @@ pub def main(): Int32 \ { NonDet, IO } = region rc {
             case Some(k) => k()
             case None    => -1
         }
-    }
+    };
+    println("Found: ${result}")
 }
