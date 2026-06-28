@@ -75,21 +75,6 @@ object EffUnification3 {
         case PreSolveResult.Solved(subst) =>
           // The whole system was atomic and exactly solvable.
           return Result.Ok(subst)
-        case PreSolveResult.Partial(subst0, rest) =>
-          // The atomic equations were eliminated; try to solve the (smaller) remainder
-          // exactly. On failure we redo the full system below, so that subeffecting
-          // (which may add slack to any equation) sees the original equations.
-          try {
-            val bimap0: AtomBimap = AtomBimap.fromConstraints(rest)
-            val equations = toEquations(rest, withSlack = false)(scope, renv, bimap0)
-            val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
-            if (unsolvedEqns.isEmpty) {
-              return Result.Ok(fromSetSubst(resultSubst)(withSlack = false, m = bimap0) @@ subst0)
-            }
-            // Otherwise we fall through and redo the full system.
-          } catch {
-            case InvalidType(_) => // We fall through.
-          }
         case PreSolveResult.Opaque => () // Fall through to full solving.
       }
     }
