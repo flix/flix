@@ -316,11 +316,40 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalMainEntryPointResult](result)
   }
 
+  test("Test.IllegalMainEntryPointResult.Main.03") {
+    // A non-Unit return type is rejected even when it has a ToString instance.
+    val input =
+      """
+        |def main(): Int64 \ IO = checked_ecast(42i64)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[EntryPointError.IllegalMainEntryPointResult](result)
+  }
+
+  test("Test.IllegalMainEntryPointResult.Main.04") {
+    val input =
+      """
+        |def main(): String = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[EntryPointError.IllegalMainEntryPointResult](result)
+  }
+
   test("Test.IllegalMainEntryPointResult.Other.01") {
     val input =
       """
         |enum E
         |def f(): E = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
+    expectError[EntryPointError.IllegalMainEntryPointResult](result)
+  }
+
+  test("Test.IllegalMainEntryPointResult.Other.02") {
+    // A non-Unit return type with a ToString instance is rejected for an explicit entry point too.
+    val input =
+      """
+        |def f(): Int64 \ IO = checked_ecast(42i64)
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
     expectError[EntryPointError.IllegalMainEntryPointResult](result)
@@ -371,7 +400,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.02") {
     val input =
       """
-        |def main(): Int64 \ IO = checked_ecast(42i64)
+        |def main(): Unit \ IO = checked_ecast(())
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectSuccess(result)
@@ -380,7 +409,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.03") {
     val input =
       """
-        |def main(): Int64 \ NonDet = checked_ecast(42i64)
+        |def main(): Unit \ NonDet = checked_ecast(())
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectSuccess(result)
@@ -389,7 +418,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.04") {
     val input =
       """
-        |def main(): Int64 \ {NonDet, IO} = checked_ecast(42i64)
+        |def main(): Unit \ {NonDet, IO} = checked_ecast(())
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectSuccess(result)

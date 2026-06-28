@@ -201,16 +201,11 @@ object EntryPointError {
       import fmt.*
       s""">> Unexpected result type '${red(FormatType.formatType(tpe))}' for main.
          |
-         |${highlight(loc, "type has no ToString instance", fmt)}
+         |${highlight(loc, "the result type must be Unit", fmt)}
          |
-         |${underline("Explanation:")} The main function must return Unit or a type with a
-         |ToString instance so the result can be printed.
+         |${underline("Explanation:")} The main function must return Unit.
          |
-         |To fix this, either:
-         |
-         |  (a) Change the return type to Unit,
-         |  (b) Define an instance of ToString for '${magenta(FormatType.formatType(tpe))}', or
-         |  (c) Derive an instance of ToString for '${magenta(FormatType.formatType(tpe))}'.
+         |To fix this, change the return type to Unit.
          |""".stripMargin
     }
   }

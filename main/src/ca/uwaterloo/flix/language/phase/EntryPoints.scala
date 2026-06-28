@@ -17,13 +17,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.util.collection.CofiniteSet
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
@@ -48,10 +45,9 @@ import scala.jdk.CollectionConverters.*
   *   - Check that all entry points have valid signatures, where rules differ from main, tests, and
   *     exports. If an entrypoint does not have a valid signature, its related annotation is
   *     removed to allow further compilation to continue with valid assumptions.
-  *   - Wrap entry points with default effect handlers
-  *   - Replace the existing main function by a new main function that prints the returned value if
-  *     its return type is not Unit.
   *   - Compute the set of all entry points and store it in Root.
+  *
+  * (Wrapping entry points with their default effect handlers happens later, in `Lowering`.)
   */
 object EntryPoints {
 
@@ -63,12 +59,8 @@ object EntryPoints {
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
     val (root2, errs2) = checkEntryPoints(root1)
-    // WrapTest and WrapMain assumes sensible tests, so CheckEntryPoints must run first.
-    // Notice that a main function with test annotation will be wrapped twice.
-    val root3 = wrapMain(root2)
-    // WrapMain might change main, so findEntryPoints must be after.
-    val root4 = findEntryPoints(root3)
-    (root4, errs1 ++ errs2)
+    val root3 = findEntryPoints(root2)
+    (root3, errs1 ++ errs2)
   }
 
   /**
@@ -203,8 +195,7 @@ object EntryPoints {
     *   - No type variables.
     *   - One parameter of type Unit.
     *   - An effect that is a subset of the primitive effects.
-    *   - Return type Unit or return type `t` where `ToString[t]` exists
-    *     (This is split into two cases to allow compilation without the standard library).
+    *   - Return type Unit.
     */
   private def checkMain(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     val errs = checkNoTypeVariables(defn) match {
@@ -213,9 +204,9 @@ object EntryPoints {
         // Only run these on functions without type variables.
         // A main function should have:
         //  - A single Unit argument
-        //  - An String or Unit return value
+        //  - A Unit return value
         //  - An effect set containing only primitive effects or effects that have default handlers
-        checkUnitArg(defn) ++ checkToStringOrUnitResult(defn) ++ checkEffects(defn, Symbol.PrimitiveEffs ++ root.defaultHandlers.map(_.handledSym))
+        checkUnitArg(defn) ++ checkUnitResult(defn) ++ checkEffects(defn, Symbol.PrimitiveEffs ++ root.defaultHandlers.map(_.handledSym))
     }
     if (errs.nonEmpty) {
       // Invalidate main and add errors.
@@ -353,29 +344,19 @@ object EntryPoints {
   }
 
   /**
-    * Returns `None` if `defn` has return type Unit or has a return type with `ToString` defined.
-    * Returns an error otherwise.
+    * Returns `None` if `defn` has return type Unit. Returns an error otherwise.
     *
-    * In order to support compilation without the standard library, Unit is checked first even
-    * though it has `ToString` defined.
+    * The main function must return Unit. Tools that want to run-and-print an arbitrary function
+    * (e.g. the shell's `:eval` or the editor's run button) are responsible for wrapping the call
+    * in `println(...)` themselves, so the compiler does not need to special-case ToString here.
     */
-  private def checkToStringOrUnitResult(defn: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): Option[EntryPointError] = {
+  private def checkUnitResult(defn: TypedAst.Def)(implicit flix: Flix): Option[EntryPointError] = {
     val resultType = defn.spec.retTpe
     isUnitType(resultType) match {
       case Result.Ok(true) =>
         None
       case Result.Ok(false) =>
-        val unknownTraitSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
-        val traitSym = root.traits.getOrElse(unknownTraitSym, throw InternalCompilerException(s"'$unknownTraitSym' trait not found", defn.sym.loc)).sym
-        val constraint = TypeConstraint.Trait(traitSym, resultType, SourceLocation.Unknown)
-        val hasToString = ConstraintSolver2.solveAll(List(constraint), SubstitutionTree.empty)(RegionScope.Top, RigidityEnv.empty, root.traitEnv, root.eqEnv, flix) match {
-          // If we could reduce all the way, it has ToString.
-          case (Nil, _) => true
-          // If not, there is no ToString instance.
-          case (_ :: _, _) => false
-        }
-        if (hasToString) None
-        else Some(EntryPointError.IllegalMainEntryPointResult(resultType, resultType.loc))
+        Some(EntryPointError.IllegalMainEntryPointResult(resultType, resultType.loc))
       case Result.Err(ErrorOrMalformed) =>
         // Do not report an error, since previous phases should have done already.
         None
@@ -485,103 +466,6 @@ object EntryPoints {
       case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
       case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
     }
-  }
-
-  /**
-    * WrapMain takes the main function (if it exists) and creates a new main function that prints
-    * the value of the existing main function (unless it returns unit).
-    *
-    * From previous phases we know that the main function:
-    *   - Exists if root.mainEntryPoint is Some.
-    *   - Returns Unit or has a return type with ToString defined
-    *   - Has a valid signature (without type variables, etc.)
-    */
-  def wrapMain(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
-    root.mainEntryPoint.map(root.defs(_)) match {
-      case Some(main0: TypedAst.Def) =>
-        isUnitType(main0.spec.retTpe) match {
-          case Result.Ok(true) =>
-            // main doesn't need a wrapper.
-            root
-          case Result.Ok(false) =>
-            // main needs a wrapper.
-            val main = mkEntryPoint(main0, root)
-            val root1 = root.copy(
-              defs = root.defs + (main.sym -> main),
-              mainEntryPoint = Some(main.sym)
-            )
-            root1
-          case Result.Err(ErrorOrMalformed) =>
-            // Do not report an error, since previous phases should have done already.
-            root
-        }
-
-      case Some(_) | None =>
-        // Main doesn't need a wrapper or no main exists.
-        root
-    }
-  }
-
-  /**
-    * Returns a new function that calls the main function and prints its value
-    * (`mainFunc` in the example below).
-    *
-    * {{{
-    *   def mainFunc(): tpe \ ef = exp
-    *
-    *   def main$(): Unit \ ef + IO = println(main())
-    * }}}
-    */
-  private def mkEntryPoint(oldEntryPoint: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
-    val argSym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, SourceLocation.Unknown)
-
-    // The new type is `Unit -> Unit \ IO + eff` where `eff` is the effect of the old main.
-    val argType = Type.Unit
-    val retType = Type.Unit
-    val eff = Type.mkUnion(Type.IO, oldEntryPoint.spec.eff, SourceLocation.Unknown)
-
-    val tpe = Type.mkArrowWithEffect(argType, eff, retType, SourceLocation.Unknown)
-    val spec = TypedAst.Spec(
-      doc = Doc(Nil, SourceLocation.Unknown),
-      ann = Annotations.Empty,
-      mod = Modifiers.Empty,
-      tparams = Nil,
-      fparams = List(TypedAst.FormalParam(
-        TypedAst.Binder(argSym, argType),
-        argType,
-        TypeSource.Ascribed,
-        Decreasing.NonDecreasing,
-        SourceLocation.Unknown)
-      ),
-      declaredScheme = Scheme(Nil, Nil, Nil, tpe),
-      retTpe = retType,
-      eff = eff,
-      tconstrs = Nil,
-      econstrs = Nil,
-    )
-
-    val mainArrowType = oldEntryPoint.spec.declaredScheme.base
-    val mainSym = DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
-    val mainArgType = Type.Unit
-    val mainArg = TypedAst.Expr.Cst(Constant.Unit, mainArgType, SourceLocation.Unknown)
-    val mainReturnType = mainArrowType.arrowResultType
-    val mainEffect = mainArrowType.arrowEffectType
-    // `mainFunc()`.
-    val mainCall = TypedAst.Expr.ApplyDef(mainSym, List(mainArg), List.empty, mainArrowType, mainReturnType, mainEffect, ApplyPosition.NonTail, SourceLocation.Unknown)
-
-    // `println(mainFunc())`.
-    val printSym = DefSymUse(root.defs(new Symbol.DefnSym(None, Nil, "println", SourceLocation.Unknown)).sym, SourceLocation.Unknown)
-    val printArg = mainCall
-    val printArgType = mainCall.tpe
-    val printReturnType = Type.Unit
-    val printEffect = Type.IO
-    val printArrowType = Type.mkArrowWithEffect(printArgType, printEffect, printReturnType, SourceLocation.Unknown)
-    val printCallEffect = Type.mkUnion(printEffect, printArg.eff, SourceLocation.Unknown)
-    val printCall = TypedAst.Expr.ApplyDef(printSym, List(printArg), List(printArgType), printArrowType, printReturnType, printCallEffect, ApplyPosition.NonTail, SourceLocation.Unknown)
-
-    val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
-
-    TypedAst.Def(sym, spec, printCall, SourceLocation.Unknown)
   }
 
   /** Returns a new root where [[TypedAst.Root.entryPoints]] contains all entry points (main/test/export). */
