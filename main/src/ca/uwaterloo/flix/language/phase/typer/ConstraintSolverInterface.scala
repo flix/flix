@@ -170,19 +170,27 @@ object ConstraintSolverInterface {
       List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.ExpectType(expected, actual, loc)) =>
+      val expectedTpe = subst(expected)
+      val actualTpe = subst(actual)
       (tpe1.kind, tpe2.kind) match {
         case (Kind.RecordRow, Kind.RecordRow) =>
           mkErrorsFromRecords(tpe1, tpe2, renv, loc)
         case (_, _) =>
-          List(TypeError.UnexpectedType(expected = subst(expected), inferred = subst(actual), renv, loc))
+          // A function type and a concrete non-function type can never be unified, regardless of effects.
+          mkArrowAndNonArrowError(expectedTpe, actualTpe, expectedTpe, actualTpe, renv, loc)
+            .getOrElse(List(TypeError.UnexpectedType(expected = expectedTpe, inferred = actualTpe, renv, loc)))
       }
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
+      val expectedTpe = subst(expected)
+      val actualTpe = subst(actual)
       (tpe1.kind, tpe2.kind) match {
         case (Kind.RecordRow, Kind.RecordRow) =>
           mkErrorsFromRecords(tpe1, tpe2, renv, loc)
         case (_, _) =>
-          List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
+          // A function type and a concrete non-function type can never be unified, regardless of effects.
+          mkArrowAndNonArrowError(expectedTpe, actualTpe, expectedTpe, actualTpe, renv, loc)
+            .getOrElse(List(TypeError.UnexpectedArg(sym, num, expected = expectedTpe, actual = actualTpe, renv, loc)))
       }
 
     case TypeConstraint.Equality(_, _, Provenance.NonUnitStatement(actual, loc)) =>
@@ -214,13 +222,8 @@ object ConstraintSolverInterface {
           }
 
         // A function type and a concrete non-function type can never be unified, regardless of effects.
-        case _ if isArrowType(baseTpe1) && isConcreteNonArrowType(baseTpe2) =>
-          List(TypeError.MismatchedArrowAndNonArrow(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc))
-
-        case _ if isArrowType(baseTpe2) && isConcreteNonArrowType(baseTpe1) =>
-          List(TypeError.MismatchedArrowAndNonArrow(baseTpe2, baseTpe1, fullTpe1, fullTpe2, renv, loc))
-
-        case _ => default
+        case _ =>
+          mkArrowAndNonArrowError(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc).getOrElse(default)
       }
 
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
@@ -279,6 +282,22 @@ object ConstraintSolverInterface {
       case _ =>
         TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
     }
+  }
+
+  /**
+    * Returns `Some` containing a [[TypeError.MismatchedArrowAndNonArrow]] error if exactly one of
+    * `baseType1` and `baseType2` is a function (arrow) type and the other is a concrete non-function
+    * type. Such types can never be unified, regardless of effects.
+    *
+    * Returns `None` otherwise (e.g. if either type is a variable, which could still unify with a function).
+    */
+  private def mkArrowAndNonArrowError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Option[List[TypeError]] = {
+    if (isArrowType(baseType1) && isConcreteNonArrowType(baseType2))
+      Some(List(TypeError.MismatchedArrowAndNonArrow(baseType1, baseType2, fullType1, fullType2, renv, loc)))
+    else if (isArrowType(baseType2) && isConcreteNonArrowType(baseType1))
+      Some(List(TypeError.MismatchedArrowAndNonArrow(baseType2, baseType1, fullType1, fullType2, renv, loc)))
+    else
+      None
   }
 
   /**
