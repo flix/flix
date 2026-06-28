@@ -1199,6 +1199,180 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TestAssocType.05") {
+    // Regression test. See https://github.com/flix/flix/issues/11213
+    // The associated effect of the `Vec` instance is declared as `OutInt32`, but the body
+    // `Container.forEach(Runner.exec, x)` has effect `Runner.E[Container.Elm[Vec[a]]]`.
+    // Reducing this nested associated type must terminate and report the mismatch.
+    val input =
+      """
+        |trait Container[t] {
+        |    type Elm: Type
+        |    pub def forEach(f: Container.Elm[t] -> Unit \ ef, t: t): Unit \ ef
+        |}
+        |
+        |enum Vec[a](a)
+        |
+        |instance Container[Vec[a]] {
+        |    type Elm = a
+        |    pub def forEach(f: a -> Unit \ ef, v: Vec[a]): Unit \ ef =
+        |        let Vec.Vec(x) = v;
+        |        f(x)
+        |}
+        |
+        |eff OutInt32 {
+        |    def toStream(x: Int32): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    type E = OutInt32
+        |    pub def exec(x: Int32): Unit \ OutInt32 = OutInt32.toStream(x)
+        |}
+        |
+        |instance Runner[Vec[a]] with Runner[a] {
+        |    type E = OutInt32
+        |    pub def exec(x: Vec[a]): Unit \ OutInt32 =
+        |        Container.forEach(Runner.exec, x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.06") {
+    // Regression test. See https://github.com/flix/flix/issues/11213
+    // The `Vec` instance is missing the `with Runner[a]` constraint, so `Runner.exec` on the
+    // element type is unresolvable. Reducing the nested associated type must terminate.
+    val input =
+      """
+        |trait Container[t] {
+        |    type Elm: Type
+        |    pub def forEach(f: Container.Elm[t] -> Unit \ ef, t: t): Unit \ ef
+        |}
+        |
+        |enum Vec[a](a)
+        |
+        |instance Container[Vec[a]] {
+        |    type Elm = a
+        |    pub def forEach(f: a -> Unit \ ef, v: Vec[a]): Unit \ ef =
+        |        let Vec.Vec(x) = v;
+        |        f(x)
+        |}
+        |
+        |eff OutInt32 {
+        |    def toStream(x: Int32): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    type E = OutInt32
+        |    pub def exec(x: Int32): Unit \ OutInt32 = OutInt32.toStream(x)
+        |}
+        |
+        |instance Runner[Vec[a]] {
+        |    type E = Runner.E[a]
+        |    pub def exec(x: Vec[a]): Unit \ Runner.E[a] =
+        |        Container.forEach(Runner.exec, x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.07") {
+    // Regression test. See https://github.com/flix/flix/issues/11213
+    // The body performs an extra `OutInt32` effect on top of the nested associated effect, so
+    // its effect is `Runner.E[a] + OutInt32`, which does not match the declared `Runner.E[a]`.
+    val input =
+      """
+        |trait Container[t] {
+        |    type Elm: Type
+        |    pub def forEach(f: Container.Elm[t] -> Unit \ ef, t: t): Unit \ ef
+        |}
+        |
+        |enum Vec[a](a)
+        |
+        |instance Container[Vec[a]] {
+        |    type Elm = a
+        |    pub def forEach(f: a -> Unit \ ef, v: Vec[a]): Unit \ ef =
+        |        let Vec.Vec(x) = v;
+        |        f(x)
+        |}
+        |
+        |eff OutInt32 {
+        |    def toStream(x: Int32): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    type E = OutInt32
+        |    pub def exec(x: Int32): Unit \ OutInt32 = OutInt32.toStream(x)
+        |}
+        |
+        |instance Runner[Vec[a]] with Runner[a] {
+        |    type E = Runner.E[a]
+        |    pub def exec(x: Vec[a]): Unit \ Runner.E[a] =
+        |        Container.forEach(Runner.exec, x);
+        |        OutInt32.toStream(42)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.08") {
+    // Regression test. See https://github.com/flix/flix/issues/11213
+    // `Runner.exec` on a `Vec[Int32]` has effect `Runner.E[Vec[Int32]]`, which reduces through
+    // the instances to `OutInt32`. The declared `OutString` must not match, and the concrete
+    // reduction chain must terminate.
+    val input =
+      """
+        |enum Vec[a](a)
+        |
+        |eff OutInt32 {
+        |    def toStream(x: Int32): Unit
+        |}
+        |
+        |eff OutString {
+        |    def toStream(x: String): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    type E = OutInt32
+        |    pub def exec(x: Int32): Unit \ OutInt32 = OutInt32.toStream(x)
+        |}
+        |
+        |instance Runner[Vec[a]] with Runner[a] {
+        |    type E = Runner.E[a]
+        |    pub def exec(x: Vec[a]): Unit \ Runner.E[a] =
+        |        let Vec.Vec(y) = x;
+        |        Runner.exec(y)
+        |}
+        |
+        |def runMismatch(x: Vec[Int32]): Unit \ OutString = Runner.exec(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
   test("TestRecordPattern.01") {
     val input =
       """
