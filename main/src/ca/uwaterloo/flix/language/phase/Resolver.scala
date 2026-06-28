@@ -3491,11 +3491,16 @@ object Resolver {
 
   /**
     * Checks that the operator's arity matches the number of arguments given.
+    *
+    * Reports [[ResolutionError.OverAppliedOp]] if too many arguments are given and
+    * [[ResolutionError.UnderAppliedOp]] if too few arguments are given.
     */
   private def checkOpArity(op: Declaration.Op, numArgs: Int, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    if (op.spec.fparams.length != numArgs) {
-      val error = ResolutionError.MismatchedOpArity(op.sym, op.spec.fparams.length, numArgs, loc)
-      sctx.errors.add(error)
+    val expected = op.spec.fparams.length
+    if (numArgs > expected) {
+      sctx.errors.add(ResolutionError.OverAppliedOp(op.sym, expected, numArgs, loc))
+    } else if (numArgs < expected) {
+      sctx.errors.add(ResolutionError.UnderAppliedOp(op.sym, expected, numArgs, loc))
     }
   }
 

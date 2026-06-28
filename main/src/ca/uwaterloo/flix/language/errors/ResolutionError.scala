@@ -613,22 +613,47 @@ object ResolutionError {
   }
 
   /**
-    * An error indicating that the number of arguments given to an effect operation
-    * does not match the number of formal parameters it declares.
+    * An error indicating that an effect operation is given too many arguments,
+    * i.e. more arguments than the number of formal parameters it declares.
     *
     * @param op       the effect operation symbol.
     * @param expected the expected number of arguments (the operation's declared arity).
     * @param actual   the actual number of arguments given.
     * @param loc      the location where the error occurred.
     */
-  case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+  case class OverAppliedOp(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0912
 
-    def summary: String = s"Mismatched arity for operation '${op.name}'."
+    def summary: String = s"Too many arguments for operation '${op.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched arity for operation '${red(op.name)}'.
+      s""">> Too many arguments for operation '${red(op.name)}'.
+         |
+         |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
+         |
+         |${highlight(loc, s"expected $expected arguments", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error indicating that an effect operation is given too few arguments,
+    * i.e. fewer arguments than the number of formal parameters it declares.
+    *
+    * @param op       the effect operation symbol.
+    * @param expected the expected number of arguments (the operation's declared arity).
+    * @param actual   the actual number of arguments given.
+    * @param loc      the location where the error occurred.
+    */
+  case class UnderAppliedOp(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E0913
+
+    def summary: String = s"Too few arguments for operation '${op.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Too few arguments for operation '${red(op.name)}'.
          |
          |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
          |

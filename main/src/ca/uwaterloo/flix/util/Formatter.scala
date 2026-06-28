@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.errors.ErrorCode
 import ca.uwaterloo.flix.util.collection.ListOps
 
+import java.nio.file.{Path, Paths}
 import scala.collection.mutable
 
 trait Formatter {
@@ -15,7 +16,7 @@ trait Formatter {
     val fixedChars = 8
     val k = kind.toString
     val c = code.toString
-    val s = source.name
+    val s = Formatter.relativizeForDisplay(source.name)
     val numberOfDashes = Math.max(3, minWidth - fixedChars - k.length - c.length - s.length)
     val dashes = "-" * numberOfDashes
     s"-- ${blue(k)} ${blue(s"[$c]")} $dashes ${blue(s)}${System.lineSeparator()}"
@@ -147,6 +148,33 @@ trait Formatter {
 }
 
 object Formatter {
+
+  /**
+    * The current working directory, used to relativize absolute source paths for display.
+    */
+  private lazy val WorkingDirectory: Path = Paths.get("").toAbsolutePath
+
+  /**
+    * Returns the source `name` relativized to the current working directory for display.
+    *
+    * An absolute path is made relative to the working directory when that yields a shorter
+    * string (e.g. a long absolute project path becomes `src/Main.flix`). Relative paths are
+    * returned unchanged, as is any path that cannot be relativized (e.g. a different filesystem
+    * root on Windows).
+    */
+  def relativizeForDisplay(name: String): String = {
+    try {
+      val path = Paths.get(name)
+      if (!path.isAbsolute) {
+        name
+      } else {
+        val relative = WorkingDirectory.relativize(path).toString.replace('\\', '/')
+        if (relative.length < name.length) relative else name
+      }
+    } catch {
+      case _: IllegalArgumentException => name
+    }
+  }
 
   /**
     * A formatter that does not apply any color styling.

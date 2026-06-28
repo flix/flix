@@ -167,6 +167,11 @@ object Request {
   case class Formatting(requestId: String, uri: String, options: FormattingOptions) extends Request
 
   /**
+    * A request to get the folding ranges for a file.
+    */
+  case class FoldingRange(requestId: String, uri: String) extends Request
+
+  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
@@ -491,6 +496,16 @@ object Request {
       uri <- parseUri(json)
       options = FormattingOptions.parse(json \ "options")
     } yield Request.Formatting(id, uri, options)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[FoldingRange]] request.
+    */
+  def parseFoldingRange(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+    } yield Request.FoldingRange(id, uri)
   }
 
 }
