@@ -1175,12 +1175,25 @@ object Lowering {
     * Channel put expressions are rewritten as follows:
     * {{{ c <- 42 }}}
     * becomes a call to the standard library function:
-    * {{{ Concurrent/Channel.put(42, c) }}}
+    * {{{ let chan = c; let value = 42; Concurrent/Channel.put(value, chan) }}}
+    *
+    * Here `exp1` is the channel and `exp2` is the value (i.e. `exp1 <- exp2`). In source order
+    * the channel is evaluated before the value, but `Channel.put` takes the value before the
+    * channel. We let-bind both expressions in source order so that reordering them into the
+    * argument list does not change their evaluation order. See:
+    * https://github.com/flix/flix/issues/10378
     */
   private def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, eff: Type, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val chanSym = mkLetSym("chan", loc)
+    val valueSym = mkLetSym("value", loc)
+    val chanVar = MonoAst.Expr.Var(chanSym, exp1.tpe, loc)
+    val valueVar = MonoAst.Expr.Var(valueSym, exp2.tpe, loc)
     val itpe = lowerType(Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc))
     val defnSym = lookup(Defs.ChannelPut, itpe)
-    MonoAst.Expr.ApplyDef(defnSym, List(exp2, exp1), itpe, Type.Unit, eff, loc)
+    val putExp = MonoAst.Expr.ApplyDef(defnSym, List(valueVar, chanVar), itpe, Type.Unit, eff, loc)
+    // The channel binding is the outermost let, so the channel is evaluated before the value.
+    val valueLet = MonoAst.Expr.Let(valueSym, exp2, putExp, Type.Unit, eff, Occur.Unknown, loc)
+    MonoAst.Expr.Let(chanSym, exp1, valueLet, Type.Unit, eff, Occur.Unknown, loc)
   }
 
   /**

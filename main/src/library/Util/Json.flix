@@ -41,6 +41,10 @@ pub mod Util.Json {
         pub def toString(j: Json): String = toCompactString(j)
     }
 
+    instance Formattable[Json] {
+        pub def format(j: Json): RichString = toRichString(2, j)
+    }
+
     ///
     /// The maximum nesting depth (number of enclosing arrays/objects) the parser
     /// accepts. Inputs nested deeper are rejected with `MaxDepthExceeded` rather
