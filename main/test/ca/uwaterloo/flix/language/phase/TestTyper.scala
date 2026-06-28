@@ -174,6 +174,18 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[MismatchedTypes](result)
   }
 
+  test("MismatchedArrowAndNonArrow.01") {
+    val input = "def foo(): a = solve (x -> x)"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedArrowAndNonArrow](result)
+  }
+
+  test("MismatchedArrowAndNonArrow.02") {
+    val input = "def foo(): a = if (true) (x -> x) else 1"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedArrowAndNonArrow](result)
+  }
+
   test("MismatchedTypes.06") {
     val input =
       """

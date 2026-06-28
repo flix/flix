@@ -191,7 +191,7 @@ object ConstraintSolverInterface {
     case TypeConstraint.Equality(baseType1, baseType2, Provenance.Match(fullType1, fullType2, loc)) =>
       val default = List(mkMismatchedTypesOrEffects(subst(baseType1), subst(baseType2), subst(fullType1), subst(fullType2), renv, loc))
 
-      (fullType1.typeConstructor, fullType1.typeConstructor) match {
+      (fullType1.typeConstructor, fullType2.typeConstructor) match {
         case (Some(TypeConstructor.SchemaRowExtend(pred1)), Some(TypeConstructor.SchemaRowExtend(pred2))) if pred1 == pred2 =>
           (baseType1.typeConstructor, baseType2.typeConstructor) match {
             case (Some(TypeConstructor.Relation(arity1)), Some(TypeConstructor.Relation(arity2))) if arity1 != arity2 =>
@@ -259,15 +259,47 @@ object ConstraintSolverInterface {
   }
 
   /**
-    * Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
+    * Create the most specific mismatch error for the two conflicting types.
+    *
+    * If one type is a function (arrow) and the other is a concrete non-function, we emit the
+    * specialized [[TypeError.MismatchedArrowAndNonArrow]] error, since the two can never be unified
+    * regardless of effects. Otherwise, we create either the MismatchedTypes or MismatchedEffects
+    * error based on the kind of the type.
     */
   private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
-    baseType1.kind match {
-      case Kind.Eff =>
-        TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, loc)
+    (isArrowType(baseType1), isArrowType(baseType2)) match {
+      case (true, _) if isConcreteNonArrowType(baseType2) =>
+        TypeError.MismatchedArrowAndNonArrow(baseType1, baseType2, fullType1, fullType2, renv, loc)
+      case (_, true) if isConcreteNonArrowType(baseType1) =>
+        TypeError.MismatchedArrowAndNonArrow(baseType2, baseType1, fullType1, fullType2, renv, loc)
       case _ =>
-        TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
+        baseType1.kind match {
+          case Kind.Eff =>
+            TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, loc)
+          case _ =>
+            TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
+        }
     }
+  }
+
+  /**
+    * Returns `true` if `tpe` is a function (arrow) type, with or without an effect.
+    */
+  private def isArrowType(tpe: Type): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) | Some(TypeConstructor.ArrowWithoutEffect(_)) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if `tpe` has a concrete (non-arrow) type constructor.
+    *
+    * Returns `false` for type variables and associated types, since those could still unify with a
+    * function type.
+    */
+  private def isConcreteNonArrowType(tpe: Type): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) | Some(TypeConstructor.ArrowWithoutEffect(_)) => false
+    case Some(_) => true
+    case None => false
   }
 
   /**
