@@ -145,7 +145,7 @@ object FlixPackageManager {
     *
     * `project` must be of the form `<owner>/<repo>`
     *
-    * The package is installed at `lib/<owner>/<repo>`
+    * The package is installed at `lib/github/<owner>/<repo>`
     *
     * There should be only one file with the given extension.
     *

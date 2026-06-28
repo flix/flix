@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, EXT_MANIFEST, FLIX_TOML, LICENSE, README, getExternalJarDirectory, getFlixPackageFile, getFlixPackageManifestFile, getLibraryDirectory, getManifestFile, getMavenDirectory, getTmpDir}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -26,15 +26,16 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{AvailableUpdates, Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result}
 
-import java.io.PrintStream
+import java.io.{BufferedReader, InputStream, InputStreamReader, PrintStream}
 import java.nio.file.{FileSystems, Files, Path, StandardCopyOption}
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.collection.mutable
+import scala.io.Source
 import scala.io.StdIn.readLine
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.util.{Failure, Success, Using}
@@ -182,11 +183,14 @@ object Bootstrap {
   /** The flix package file extension. Does not contain leading '.' */
   private val EXT_FPKG: String = "fpkg"
 
+  /** The flix package file extension. Does not contain leading '.' */
+  private val EXT_MANIFEST: String = "toml"
+
   /** The jar file extension. Does not contain leading '.' */
   private val EXT_JAR: String = "jar"
 
   /** The manifest / flix toml file name. */
-  private val FLIX_TOML: String = "flix.toml"
+  private val FLIX_TOML: String = s"flix.$EXT_MANIFEST"
 
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
@@ -227,6 +231,29 @@ object Bootstrap {
     * N.B.: Use [[getLibraryDirectory]] if possible.
     */
   private val libDirectoryRaw: String = "lib/"
+
+  private def getTmpDir(p: Path): Path = p.resolve(".tmp")
+
+
+  private def getFlixPackageResource(p: Path, flixDep: Dependency.FlixDependency, fileExtension: String) =
+    p.resolve(flixDep.repo.toString.toLowerCase)
+      .resolve(flixDep.username)
+      .resolve(flixDep.projectName)
+      .resolve(flixDep.version.toString)
+      .resolve(s"${flixDep.projectName}-${flixDep.version}.$fileExtension")
+      .normalize()
+
+  private def getFlixPackageFile(p: Path, flixDep: Dependency.FlixDependency): Path =
+    getFlixPackageResource(p, flixDep, EXT_FPKG)
+
+  private def getFlixPackageManifestFile(p: Path, flixDep: Dependency.FlixDependency): Path =
+    getFlixPackageResource(p, flixDep, EXT_MANIFEST)
+
+  private def getMavenDirectory(p: Path): Path =
+    getLibraryDirectory(p).resolve("cache").normalize()
+
+  private def getExternalJarDirectory(p: Path): Path =
+    getLibraryDirectory(p).resolve("external").normalize()
 
   /**
     * Returns the path to the source directory relative to the given path `p`.
@@ -472,6 +499,217 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       ()
     }
+  }
+
+  /**
+    * Upgrades `pkgName` to the latest minor version and/or patch.
+    *
+    * Example 1 - Latest minor version if one is available:
+    * If package is version 0.1.0, and versions `1.0.0`, `0.3.1`, `0.3.0`, `0.2.0`, and `0.1.1`, then
+    * version `0.3.1` is applied.
+    * In particular, the major version is ignored.
+    *
+    * Example 2 - Latest patch version if no greater minor upgrade available:
+    * If package is version `0.2.0` and versions `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, and `0.1.0`, then
+    * version `0.2.3` is applied.
+    *
+    * Assumes that `this` [[Bootstrap]] instance implies that the manifest was successfully parsed and is up to date.
+    *
+    * @param pkgName the package identifier to upgrade. The identifier is the key as it appears in the manifest file,
+    *                e.g., `github:flix/museum`
+    */
+  def upgrade(flix: Flix, pkgName: String)(implicit formatter: Formatter, in: InputStream, out: PrintStream): Result[Unit, BootstrapError] = {
+    // 1. Ensure project mode
+    // TODO: Use isProjectMode
+    val oldManifest = optManifest match {
+      case None => return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'upgrade' in a non-project directory."))
+      case Some(m) => m
+    }
+
+    // 2. Ensure project path is not a system directory
+    checkForSystemPath(projectPath) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // 3. Ensure cwd is not dangerous (system dir or outside project path)
+    val cwd = Path.of(System.getProperty("user.dir"))
+    checkForDangerousPath(cwd) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // 4. Check that 'pkgName' occurs as a key in the dependencies declared in the manifest
+    val dependency = oldManifest.flixDependencies.find(_.identifier == pkgName) match {
+      case None =>
+        // TODO: Maybe introduce 'UpgradeError' instead of 'GeneralError'
+        return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The package is not a declared dependency of the project."))
+      case Some(d) => d
+    }
+
+    // 5. Check for upgrades
+    val availableUpdates = FlixPackageManager.findAvailableUpdates(dependency, apiKey) match {
+      case Err(e) => return Err(BootstrapError.FlixPackageError(e))
+      case Ok(u) => u
+    }
+
+    // 6. Find latest minor version or latest patch if no greater minor version
+    val update = latestMinorOrPatch(availableUpdates) match {
+      case None => return Ok(())
+      case Some(u) => u
+    }
+
+    // 7. Ask for confirmation
+    val confirmationMessage =
+      s"""A new version was found: ${dependency.version} -> $update
+         |Do you want to proceed? [y/N]""".stripMargin
+    out.print(confirmationMessage)
+
+    val reader = new BufferedReader(new InputStreamReader(in))
+    val confirmed = try {
+      val input = reader.readLine()
+      if (input == null) {
+        return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. Confirmation input was null."))
+      }
+      input.toLowerCase == "y"
+    } catch {
+      case e: Exception => return Err(BootstrapError.GeneralError(s"Refusing to run 'upgrade'. Failed to read input: ${e.getMessage}"))
+    } finally {
+      reader.close()
+    }
+
+    if (!confirmed) {
+      return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The user declined the upgrade."))
+    }
+
+    // 8. Write effect lock before installing new dependencies
+    lockEffects(flix) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // 9. Resolve old manifest to obtain dependency graph that we can diff with a new graph
+    val oldResolution = Steps.resolveFlixDependencies(oldManifest) match {
+      case Err(e) => return Err(e)
+      case Ok(r) => r
+    }
+
+    // 10. Update manifest
+    val newManifest = oldManifest.copy(
+      dependencies = oldManifest.dependencies.map {
+        case dep: Dependency.FlixDependency if dep == dependency => dep.copy(version = update)
+        case dep => dep
+      }
+    )
+
+    // 11. Resolve new manifest
+    val newResolution = Steps.resolveFlixDependencies(newManifest) match {
+      case Err(e) => return Err(e)
+      case Ok(r) => r
+    }
+
+    // 12. Diff manifests, first checking for added dependencies and then removed dependencies
+    // N.B.: Diffing manifests directly is sensitive to tiny changes since the identity of a manifest is all its contents.
+    //       Perhaps an identifier that also includes its version or a hash of certain fields would be more resilient.
+
+    // N.B.: Subtract old from new, so if the new set of transitive dependencies is fully contained in the old
+    //       set of dependencies, then there is nothing to do.
+    val addedManifests = newResolution.manifests.toSet -- oldResolution.manifests
+
+    // N.B.: Subtract new from old, so we know which dependencies to back up.
+    val removedManifests = oldResolution.manifests.toSet -- newResolution.manifests
+
+    // Early return in case of no new dependencies
+    if (addedManifests.isEmpty) {
+      // TODO: Report message saying no new dependencies to download but suggest pruning removed dependencies.
+      //       Doing so requires 'removedManifests'.
+      return Ok(())
+    }
+
+    // 13. Back up removed dependencies
+    val oldPaths = FileOps.getFilesIn(getLibraryDirectory(projectPath).resolve("github").normalize(), Int.MaxValue)
+
+    // Create local temporary directory
+    val tmpDir = Files.createTempDirectory(getTmpDir(projectPath), "")
+
+    // Move old flix dependencies
+    val removedDependencies = removedManifests.flatMap(_.flixDependencies)
+    removedDependencies.foreach { dep =>
+      // Move fpkg
+      val fpkgSourcePath = getFlixPackageFile(projectPath, dep)
+      val fpkgTargetPath = getFlixPackageFile(tmpDir, dep)
+      FileOps.move(fpkgSourcePath, fpkgTargetPath)
+
+      // Move manifest
+      val manifestSourcePath = getFlixPackageManifestFile(projectPath, dep)
+      val manifestTargetPath = getFlixPackageManifestFile(tmpDir, dep)
+      FileOps.move(manifestSourcePath, manifestTargetPath)
+    }
+
+    // Move all maven jars
+    val mvnDir = getMavenDirectory(projectPath)
+    val tmpMvnDir = getMavenDirectory(tmpDir)
+    FileOps.moveDir(mvnDir, tmpMvnDir) match {
+      case Err(e) => BootstrapError.FileError(s"Failed to move file: ${e.getMessage}")
+      case Ok(()) => ()
+    }
+
+    // Move all external jars
+    val extDir = getExternalJarDirectory(projectPath)
+    val tmpExtDir = getExternalJarDirectory(tmpDir)
+    FileOps.moveDir(extDir, tmpExtDir) match {
+      case Err(e) => BootstrapError.FileError(s"Failed to move file: ${e.getMessage}")
+      case Ok(()) => ()
+    }
+
+    // 14. Download dependencies
+    val newInstalledDeps = Steps.installDependencies(newResolution) match {
+      case Err(e) => return Err(e)
+      case Ok(fpkgs :: _ :: _ :: Nil) => fpkgs.toSet -- oldPaths
+      case Ok(paths) =>
+        return Err(BootstrapError.GeneralError(s"Internal Error: Installing dependencies returned unexpected number of paths: ${paths.length}"))
+    }
+
+    // 15. Check for effect-safe upgrade
+    checkEffects(flix) match {
+      case Err(effectError) =>
+        // Restore old files
+        // TODO: Handle deletion errors & refactor
+        newInstalledDeps.map(_.getParent).map(FileOps.deleteDir)
+        removedDependencies.foreach { dep =>
+          // Move fpkg
+          val fpkgSourcePath = getFlixPackageFile(tmpDir, dep)
+          val fpkgTargetPath = getFlixPackageFile(projectPath, dep)
+          FileOps.move(fpkgSourcePath, fpkgTargetPath)
+
+          // Move manifest
+          val manifestSourcePath = getFlixPackageManifestFile(tmpDir, dep)
+          val manifestTargetPath = getFlixPackageManifestFile(projectPath, dep)
+          FileOps.move(manifestSourcePath, manifestTargetPath)
+        }
+        FileOps.deleteDir(mvnDir)
+        FileOps.moveDir(tmpMvnDir, mvnDir)
+        FileOps.deleteDir(extDir)
+        FileOps.moveDir(tmpExtDir, extDir)
+        return Err(effectError)
+      case Ok(()) => ()
+    }
+
+    // 16. Double check effect upgrade with old dep graph to be really sure?
+    checkEffects(flix) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // 16. Write new manifest to file
+    FileOps.writeString(getManifestFile(projectPath), Manifest.format(newManifest))
+
+    Ok(())
+  }
+
+  private def latestMinorOrPatch(updates: AvailableUpdates): Option[SemVer] = updates match {
+    case AvailableUpdates(_, Some(minor), _) => Some(minor)
+    case AvailableUpdates(_, None, patch) => patch
   }
 
   /**
