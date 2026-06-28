@@ -399,7 +399,7 @@ object TypeReconstruction {
           TypedAst.CatchRule(bnd, clazz, b, ruleLoc)
       }
       val tpe = rs.head.exp.tpe
-      val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
+      val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff).toList, loc)
       TypedAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>

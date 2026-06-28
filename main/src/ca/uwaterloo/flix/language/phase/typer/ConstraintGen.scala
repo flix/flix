@@ -863,11 +863,11 @@ object ConstraintGen {
       case Expr.TryCatch(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = rules.map(visitCatchRule).unzip
-        c.unifyAllTypes(tpes, loc)
-        val ruleTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
+        c.unifyAllTypes(tpes.toList, loc)
+        val ruleTpe = tpes.head
         c.unifyType(tpe, ruleTpe, loc)
         val resTpe = tpe
-        val resEff = Type.mkUnion(eff :: effs, loc)
+        val resEff = Type.mkUnion(eff :: effs.toList, loc)
         (resTpe, resEff)
 
       case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>

@@ -192,7 +192,7 @@ object UseGraph {
 
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
-      visitExp(exp) ++ visitExps(rules.map(_.exp))
+      visitExp(exp) ++ visitExps(rules.map(_.exp).toList)
 
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)

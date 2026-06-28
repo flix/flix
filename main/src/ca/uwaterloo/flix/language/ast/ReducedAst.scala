@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition
 
 import java.lang.reflect.Method
 
+import ca.uwaterloo.flix.util.collection.Nel
+
 object ReducedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
@@ -96,7 +98,7 @@ object ReducedAst {
 
     case class Region(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class TryCatch(exp: Expr, rules: Nel[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 

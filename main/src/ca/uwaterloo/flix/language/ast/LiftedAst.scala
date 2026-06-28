@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, JvmAnnotation, Modifiers, Source}
+import ca.uwaterloo.flix.util.collection.Nel
 
 object LiftedAst {
 
@@ -82,7 +83,7 @@ object LiftedAst {
 
     case class Region(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class TryCatch(exp: Expr, rules: Nel[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 

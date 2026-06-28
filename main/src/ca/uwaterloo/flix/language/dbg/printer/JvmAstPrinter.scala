@@ -61,7 +61,7 @@ object JvmAstPrinter {
     case Expr.Region(sym, _, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case JvmAst.CatchRule(sym, _, clazz, body) => (sym, clazz, print(body))
-    })
+    }.toList)
     case Expr.RunWith(exp, effUse, rules, _, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case JvmAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))

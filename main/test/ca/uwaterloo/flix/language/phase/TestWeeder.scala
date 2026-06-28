@@ -1878,6 +1878,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[ParseError.NeedAtleastOne](result)
   }
 
+  test("MissingCatchRules.02") {
+    // Multiple empty catch blocks must still be rejected (no empty rule list reaches later phases).
+    val input =
+      """
+        |def foo(): Bool =
+        |    try { true } catch {} catch {}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
   test("MissingTypeParameter.Enum.01") {
     val input =
       """

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
+import ca.uwaterloo.flix.util.collection.Nel
 
 object JvmAst {
 
@@ -105,7 +106,7 @@ object JvmAst {
 
     case class Region(sym: Symbol.VarSym, offset: Int, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class TryCatch(exp: Expr, rules: Nel[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 

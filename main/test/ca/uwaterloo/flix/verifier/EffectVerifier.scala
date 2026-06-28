@@ -280,7 +280,7 @@ object EffectVerifier {
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }
-      val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
+      val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff).toList, loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Throw(exp, _, eff, loc) =>

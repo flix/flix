@@ -224,7 +224,7 @@ object OccurrenceAnalyzer {
         val (rs, ctxs) = rules.map(visitCatchRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         val ctx3 = combineSeq(ctx1, ctx2)
-        if ((e eq exp) && ListOps.zip(rules, rs).forall { case (r1, r2) => r1 eq r2 }) {
+        if ((e eq exp) && ListOps.zip(rules.toList, rs.toList).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
           (Expr.TryCatch(e, rs, tpe, eff, loc), ctx3)

@@ -183,7 +183,7 @@ object ResolvedAst {
     case class Unsafe(exp: Expr, eff: UnkindedType, asEff: Option[UnkindedType], loc: SourceLocation) extends Expr
 
 
-    case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
+    case class TryCatch(exp: Expr, rules: Nel[CatchRule], loc: SourceLocation) extends Expr
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 

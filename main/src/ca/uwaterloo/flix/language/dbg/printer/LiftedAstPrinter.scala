@@ -64,7 +64,7 @@ object LiftedAstPrinter {
     case Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
-    })
+    }.toList)
     case RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case LiftedAst.HandlerRule(symUse, fparams, body) =>
         (symUse.sym, fparams.map(printFormalParam), print(body))

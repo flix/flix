@@ -97,7 +97,7 @@ object ResolvedAstPrinter {
 
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, body, _) => (sym, clazz, print(body))
-    })
+    }.toList)
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _) => DocAst.Expr.Handler(symUse.sym, rules.map {
       case ResolvedAst.HandlerRule(opSymUse, fparams, exp, _) => (opSymUse.sym, fparams.map(printFormalParam), print(exp))

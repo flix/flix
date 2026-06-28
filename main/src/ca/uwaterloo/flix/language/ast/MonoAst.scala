@@ -97,7 +97,7 @@ object MonoAst {
 
     case class Cast(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class TryCatch(exp: Expr, rules: Nel[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

@@ -1793,15 +1793,15 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.Try)
       val maybeCatch = pickAll(TreeKind.Expr.TryCatchBodyFragment, tree)
       val expr = pickExpr(tree)
-      maybeCatch.map(visitTryCatchBody) match {
-        // Bad case: try expr
-        case Nil | Nil :: Nil =>
+      maybeCatch.flatMap(visitTryCatchBody) match {
+        // Bad case: try expr (no catch rules)
+        case Nil =>
           // Fall back on Expr.Error
           val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, None, tree.loc)
           sctx.errors.add(error)
           Expr.Error(error)
         // Case: try expr catch { rules... }
-        case catches => Expr.TryCatch(expr, catches.flatten, tree.loc)
+        case r :: rs => Expr.TryCatch(expr, Nel(r, rs), tree.loc)
       }
     }
 

@@ -785,7 +785,7 @@ object PatMatch2 {
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
-        checkCatchRules(rules)
+        checkCatchRules(rules.toList)
 
       case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 
