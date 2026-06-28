@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.InvokeMethod.VarArgs {
+mod Test.Exp.Jvm.InvokeStaticMethod.VarArgs {
 
     import java.nio.file.Path
 
@@ -21,5 +21,11 @@ mod Test.Exp.Jvm.InvokeMethod.VarArgs {
         // Varargs omitted entirely
         let p = Path.of("hello");
         assertEq(expected = "hello", p.getFileName().toString())
+
+    @Test
+    def testInvokeVarArgs04(): Unit \ Assert + IO =
+        // Explicit varargs vector
+        let p = Path.of("hello", Vector#{"foo", "bar.txt"});
+        assertEq(expected = "bar.txt", p.getFileName().toString())
 
 }
