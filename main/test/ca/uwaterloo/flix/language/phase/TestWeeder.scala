@@ -196,6 +196,30 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
+  test("EmptyInterpolatedExpression.07") {
+    val input = "def f(x: String): String = \"${x}${}\""
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
+  test("EmptyInterpolatedExpression.08") {
+    val input = "def f(x: String): String = \"${}${x}\""
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
+  test("EmptyInterpolatedExpression.09") {
+    val input = "def f(x: String, y: String): String = \"${x}${}${y}\""
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
+  test("EmptyInterpolatedExpression.10") {
+    val input = "def f(y: String): String = \"${}abc${y}\""
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
   test("EmptyRecordExtensionPattern.01") {
     val input =
       """

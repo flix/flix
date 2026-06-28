@@ -49,11 +49,11 @@ object TypeReduction2 {
 
     case Type.Alias(_, _, tpe, _) => (tpe, Nil)
 
-    case Type.AssocType(AssocTypeSymUse(sym, _), tpe, _, _) =>
+    case Type.AssocType(symUse, tpe, kind, loc) =>
       val (t, cs) = reduce(tpe)
 
       // Get all the associated types from the context
-      val assocOpt = eqenv.getAssocDef(sym, t)
+      val assocOpt = eqenv.getAssocDef(symUse.sym, t)
 
       // Find the instance that matches
       val matches = assocOpt.flatMap {
@@ -82,8 +82,17 @@ object TypeReduction2 {
       }
 
       matches match {
-        // Case 1: No match. Can't reduce the type.
-        case None => (tpe0, cs)
+        // Case 1: No match. We cannot reduce the head, but the argument may have
+        // been reduced. We must reflect that in the returned type: reducing the
+        // argument calls `progress.markProgress()`, so returning the original
+        // `tpe0` here would signal progress without changing the type, causing
+        // the constraint solver to loop forever (see issue #11213).
+        // Performance: Reuse `tpe0` if the argument was unchanged.
+        case None =>
+          if (t eq tpe)
+            (tpe0, cs)
+          else
+            (Type.AssocType(symUse, t, kind, loc), cs)
 
         // Case 2: One match. Use it.
         case Some(newTpe) =>
