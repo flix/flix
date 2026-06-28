@@ -203,6 +203,10 @@ object Eraser {
         case AtomicOp.HoleError(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.MatchError => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.CastError(_, _) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        // Vector operations are simplified to array operations in the Simplifier.
+        case AtomicOp.VectorLit => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+        case AtomicOp.VectorLoad => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+        case AtomicOp.VectorLength => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
       }
 
     case ReducedAst.Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
