@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Den
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Result}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
 /**
@@ -686,7 +686,7 @@ object Lowering {
 
   /** Returns the erased return type of the Java method on `clazz` matching `name` and `arity` (excluding the receiver). */
   private def overriddenJavaReturnType(clazz: Class[?], name: String, arity: Int): Option[Class[?]] =
-    clazz.getMethods.collectFirst {
+    JvmUtils.getOverridableInstanceMethods(clazz).collectFirst {
       case m if m.getName == name && m.getParameterCount == arity => m.getReturnType
     }
 
