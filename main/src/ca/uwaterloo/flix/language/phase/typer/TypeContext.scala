@@ -232,8 +232,8 @@ class TypeContext {
   /**
     * Adds the given trait constraints to the context.
     */
-  def addClassConstraints(tconstrs0: List[TraitConstraint], loc: SourceLocation): Unit = {
-    for (TraitConstraint(head, arg, _) <- tconstrs0) {
+  def addClassConstraints(tconstrs0: List[TraitConstraint]): Unit = {
+    for (TraitConstraint(head, arg, loc) <- tconstrs0) {
       val tconstr = TypeConstraint.Trait(head.sym, arg, loc)
       currentScopeConstraints.add(tconstr)
     }

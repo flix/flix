@@ -176,7 +176,7 @@ object SchemaConstraintGen {
             val order = TraitConstraint(TraitSymUse(orderSym, loc), tuple, loc)
             val foldable = TraitConstraint(TraitSymUse(foldableSym, loc), freshTypeConstructorVar, loc)
 
-            c.addClassConstraints(List(order, foldable), loc)
+            c.addClassConstraints(List(order, foldable))
 
             val aefSym = new Symbol.AssocTypeSym(foldableSym, "Aef", loc)
             val aefTpe = Type.AssocType(AssocTypeSymUse(aefSym, loc), freshTypeConstructorVar, Kind.Eff, loc)
@@ -222,8 +222,8 @@ object SchemaConstraintGen {
         val (termTypes, termEffs) = terms.map(visitExp(_)).unzip
         c.unifyType(Type.Pure, Type.mkUnion(termEffs, loc), loc)
         c.unifyType(tvar, mkRelationOrLatticeType(den, termTypes, loc), loc)
-        val tconstrs = getTermTraitConstraints(den, termTypes, root, loc)
-        c.addClassConstraints(tconstrs, loc)
+        val tconstrs = getTermTraitConstraints(den, termTypes, terms.map(_.loc), root)
+        c.addClassConstraints(tconstrs)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
         resTpe
     }
@@ -239,8 +239,8 @@ object SchemaConstraintGen {
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val termTypes = terms.map(visitPattern)
         c.unifyType(tvar, mkRelationOrLatticeType(den, termTypes, loc), loc)
-        val tconstrs = getTermTraitConstraints(den, termTypes, root, loc)
-        c.addClassConstraints(tconstrs, loc)
+        val tconstrs = getTermTraitConstraints(den, termTypes, terms.map(_.loc), root)
+        c.addClassConstraints(tconstrs)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
         resTpe
 
@@ -272,12 +272,16 @@ object SchemaConstraintGen {
 
   /**
     * Returns the trait constraints for the given term types `ts` with the given denotation `den`.
+    *
+    * Each trait constraint is associated with the source location `locs` of the term it originates from,
+    * so that any missing instance error points at the specific term rather than the whole atom.
     */
-  private def getTermTraitConstraints(den: Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[TraitConstraint] = den match {
+  private def getTermTraitConstraints(den: Denotation, ts: List[Type], locs: List[SourceLocation], root: KindedAst.Root): List[TraitConstraint] = den match {
     case Denotation.Relational =>
-      ts.flatMap(mkTraitConstraintsForRelationalTerm(_, root, loc))
+      ts.zip(locs).flatMap { case (tpe, loc) => mkTraitConstraintsForRelationalTerm(tpe, root, loc) }
     case Denotation.Latticenal =>
-      ts.init.flatMap(mkTraitConstraintsForRelationalTerm(_, root, loc)) ::: mkTraitConstraintsForLatticeTerm(ts.last, root, loc)
+      ts.init.zip(locs.init).flatMap { case (tpe, loc) => mkTraitConstraintsForRelationalTerm(tpe, root, loc) } :::
+        mkTraitConstraintsForLatticeTerm(ts.last, root, locs.last)
   }
 
   /**
