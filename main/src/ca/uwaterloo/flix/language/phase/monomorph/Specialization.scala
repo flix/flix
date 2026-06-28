@@ -84,6 +84,7 @@ import scala.collection.mutable
   *   - Schema fields are in alphabetical order
   *   - Effect formulas are flat unions of effects in alphabetical order or a complement thereof.
   *   - Case set formulas are a single CaseSet literal or a complement thererof.
+  *   - Bool formulas are a single Boolean constant (`True` or `False`).
   *
   * At a high level the relation between specialization and lowering is as follows
   *
@@ -1375,6 +1376,13 @@ object Specialization {
       case (Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y) => Type.mkDifference(x, y, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y) => Type.mkSymmetricDiff(x, y, loc)
 
+      // Simplify bool equations.
+      // Unlike effects, no separate canonicalization is needed: the smart constructors below fully
+      // reduce a ground formula to a single `True` or `False` constant.
+      case (Type.Cst(TypeConstructor.Not, _), y) => Type.mkNot(y, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y) => Type.mkAnd(x, y, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y) => Type.mkOr(x, y, loc)
+
       // Simplify case equations.
       case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
@@ -1442,7 +1450,10 @@ object Specialization {
     case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
     case Kind.Star => Type.mkAnyType(tpe0.loc)
     case Kind.Eff => Type.Pure
-    case Kind.Bool => Type.mkAnyType(tpe0.loc)
+    // Design choice: free/unconstrained bool type variables are monomorphized to `False`.
+    // `Bool` is a phantom kind that is erased to `Unit` in the backend, so any choice yields a
+    // well-typed program with identical runtime behavior; we fix on `False` for determinism.
+    case Kind.Bool => Type.False
     case Kind.RecordRow => Type.RecordRowEmpty
     case Kind.SchemaRow => Type.SchemaRowEmpty
     case Kind.Predicate => Type.mkAnyType(tpe0.loc)
