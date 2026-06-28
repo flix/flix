@@ -703,6 +703,10 @@ object Namer {
       val symNs = if (isCompanion) Name.NName(ns0.idents.init, ns0.loc) else ns0
       val sym = Symbol.mkTraitSym(symNs, ident)
       val mod = visitModifiers(mod0, ns0)
+      if (mod.isSealed && sym.namespace.isEmpty) {
+        // A top-level trait cannot be sealed: anyone may define an instance at the top level.
+        sctx.errors.add(NameError.IllegalSealedTrait(ident.name, ident.loc))
+      }
       val tparam = visitTypeParam(tparams0)
 
       val sts = superTraits.map(visitTraitConstraint)
