@@ -127,7 +127,7 @@ object Desugar {
     */
   private def visitRedef(def0: WeededAst.Declaration.Redef)(implicit flix: Flix): DesugaredAst.Declaration.Def = def0 match {
     case WeededAst.Declaration.Redef(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
-      val mod = mod0.copy(mod = Modifier.Override :: mod0.mod)
+      val mod = mod0.copy(mod = Modifier.Redef :: mod0.mod)
       val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
       val exp = visitExp(exp0)

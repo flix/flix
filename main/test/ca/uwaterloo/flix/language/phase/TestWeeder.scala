@@ -783,7 +783,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalModifier.02") {
     val input =
       """
-        |override enum A
+        |mut enum A
         |
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -813,7 +813,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalModifier.05") {
     val input =
       """instance Sub[String] {
-        |    pub override redef sub(x: String, y: String): String = ???
+        |    pub redef sub(x: String, y: String): String = ???
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)

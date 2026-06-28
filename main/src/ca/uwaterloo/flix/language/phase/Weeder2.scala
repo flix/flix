@@ -274,7 +274,7 @@ object Weeder2 {
 
     private def visitInstanceDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Declaration.Instance = {
       expect(tree, TreeKind.Decl.Instance)
-      val allowedDefModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set(TokenKind.KeywordPub) else Set(TokenKind.KeywordPub, TokenKind.KeywordOverride)
+      val allowedDefModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub)
       val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
@@ -658,7 +658,6 @@ object Weeder2 {
       TokenKind.KeywordSealed,
       TokenKind.KeywordLawful,
       TokenKind.KeywordPub,
-      TokenKind.KeywordOverride,
       TokenKind.KeywordMut)
 
     private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit sctx: SharedContext): Modifiers = {
@@ -696,7 +695,6 @@ object Weeder2 {
         case TokenKind.KeywordLawful => Modifier.Lawful
         case TokenKind.KeywordPub => Modifier.Public
         case TokenKind.KeywordMut => Modifier.Mutable
-        case TokenKind.KeywordOverride => Modifier.Override
         case kind => throw InternalCompilerException(s"Parser passed unknown modifier '$kind'", token.mkSourceLocation())
       }
     }
