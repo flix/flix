@@ -189,9 +189,13 @@ object ConstraintSolverInterface {
       List(TypeError.NonUnitStatement(subst(actual), loc))
 
     case TypeConstraint.Equality(baseType1, baseType2, Provenance.Match(fullType1, fullType2, loc)) =>
-      val default = List(mkMismatchedTypesOrEffects(subst(baseType1), subst(baseType2), subst(fullType1), subst(fullType2), renv, loc))
+      val baseTpe1 = subst(baseType1)
+      val baseTpe2 = subst(baseType2)
+      val fullTpe1 = subst(fullType1)
+      val fullTpe2 = subst(fullType2)
+      val default = List(mkMismatchedTypesOrEffects(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc))
 
-      (fullType1.typeConstructor, fullType1.typeConstructor) match {
+      (fullType1.typeConstructor, fullType2.typeConstructor) match {
         case (Some(TypeConstructor.SchemaRowExtend(pred1)), Some(TypeConstructor.SchemaRowExtend(pred2))) if pred1 == pred2 =>
           (baseType1.typeConstructor, baseType2.typeConstructor) match {
             case (Some(TypeConstructor.Relation(arity1)), Some(TypeConstructor.Relation(arity2))) if arity1 != arity2 =>
@@ -208,6 +212,13 @@ object ConstraintSolverInterface {
 
             case _ => default
           }
+
+        // A function type and a concrete non-function type can never be unified, regardless of effects.
+        case _ if isArrowType(baseTpe1) && isConcreteNonArrowType(baseTpe2) =>
+          List(TypeError.MismatchedArrowAndNonArrow(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc))
+
+        case _ if isArrowType(baseTpe2) && isConcreteNonArrowType(baseTpe1) =>
+          List(TypeError.MismatchedArrowAndNonArrow(baseTpe2, baseTpe1, fullTpe1, fullTpe2, renv, loc))
 
         case _ => default
       }
@@ -268,6 +279,28 @@ object ConstraintSolverInterface {
       case _ =>
         TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
     }
+  }
+
+  /**
+    * Returns `true` if `tpe` is a function (arrow) type, with or without an effect.
+    */
+  private def isArrowType(tpe: Type): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) => true
+    case Some(TypeConstructor.ArrowWithoutEffect(_)) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if `tpe` has a concrete (non-arrow) type constructor.
+    *
+    * Returns `false` for type variables and associated types, since those could still unify with a
+    * function type.
+    */
+  private def isConcreteNonArrowType(tpe: Type): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) => false
+    case Some(TypeConstructor.ArrowWithoutEffect(_)) => false
+    case Some(_) => true
+    case None => false
   }
 
   /**
