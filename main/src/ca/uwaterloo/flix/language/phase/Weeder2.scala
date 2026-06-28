@@ -874,11 +874,12 @@ object Weeder2 {
     private def visitStringInterpolationExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.StringInterpolation)
       val init = WeededAst.Expr.Cst(Constant.Str(""), tree.loc)
-      // Check for empty interpolation
-      if (tryPick(TreeKind.Expr.Expr, tree).isEmpty) {
-        val error = EmptyInterpolatedExpression(tree.loc)
-        sctx.errors.add(error)
-        return Expr.Error(error)
+
+      // Check for empty interpolated expressions, e.g. `"${}"` or `"${x}${}"`.
+      val emptyInterpolations = findEmptyInterpolations(tree)
+      if (emptyInterpolations.nonEmpty) {
+        emptyInterpolations.foreach(sctx.errors.add)
+        return Expr.Error(emptyInterpolations.head)
       }
 
       tree.children.foldLeft(init: WeededAst.Expr) {
@@ -905,6 +906,31 @@ object Weeder2 {
         // Skip anything else (Parser will have produced an error.)
         case (acc, _) => acc
       }
+    }
+
+    /**
+      * Returns an [[EmptyInterpolatedExpression]] error for each empty interpolation (e.g. `${}`) in `tree`.
+      *
+      * Each interpolation is opened by a [[TokenKind.LiteralStringInterpolationL]] token (`"${` or `}${`) and must be
+      * followed by an expression. If the opener is instead followed by another opener or the closing `}"` then the
+      * interpolation is empty. This catches both fully-empty strings (`"${}"`) and empty interpolations mixed with
+      * non-empty ones (`"${x}${}"`).
+      */
+    private def findEmptyInterpolations(tree: Tree): List[EmptyInterpolatedExpression] = {
+      def isExpr(child: SyntaxTree.Child): Boolean = child match {
+        case t: Tree => t.kind == TreeKind.Expr.Expr
+        case _ => false
+      }
+      // Ignore comment tokens so they cannot sit between an opener and its expression.
+      val children = tree.children.filterNot {
+        case token@Token(_, _, _, _, _, _) => token.kind.isComment
+        case _ => false
+      }
+      children.sliding(2).collect {
+        case Array(opener@Token(_, _, _, _, _, _), next)
+          if opener.kind == TokenKind.LiteralStringInterpolationL && !isExpr(next) =>
+          EmptyInterpolatedExpression(opener.mkSourceLocation())
+      }.toList
     }
 
     private def visitOpenVariantExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
