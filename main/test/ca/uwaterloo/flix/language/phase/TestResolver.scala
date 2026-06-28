@@ -807,6 +807,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("UndefinedJvmMethod.08") {
+    // `null` is not assignable to a primitive parameter (`charAt(int)`),
+    // so the method must not resolve.
+    val input =
+      raw"""
+           |import java.lang.String
+           |
+           |def foo(): Unit =
+           |    let o = new String();
+           |    let _ = o.charAt(null);
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
   test("UndefinedJvmField.01") {
     val input =
       """
