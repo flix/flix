@@ -204,8 +204,6 @@ object EntryPointError {
          |${highlight(loc, "the result type must be Unit", fmt)}
          |
          |${underline("Explanation:")} The main function must return Unit.
-         |
-         |To fix this, change the return type to Unit.
          |""".stripMargin
     }
   }
