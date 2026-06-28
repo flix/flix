@@ -1323,26 +1323,24 @@ object ResolutionError {
   /**
     * An error raised to indicate an undefined struct field in a struct get or struct put expression.
     *
-    * @param struct the optional symbol of the struct.
-    * @param field  the name of the missing field.
-    * @param loc    the location where the error occurred.
+    * The struct that the field is expected to belong to is intentionally not reported: a field access
+    * `e->f` is resolved by the field name alone, since the type of the receiver `e` is not yet known
+    * during resolution. Naming a struct here would therefore be a guess (see issue #10151).
+    *
+    * @param field the name of the missing field.
+    * @param loc   the location where the error occurred.
     */
-  case class UndefinedStructField(struct: Option[Symbol.StructSym], field: Name.Label, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedStructField(field: Name.Label, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3574
 
-    def summary: String = s"Undefined struct field '$field'$structMessage"
+    def summary: String = s"Undefined struct field '$field'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Undefined struct field '${red(field.toString)}'$structMessage.
+      s""">> Undefined struct field '${red(field.toString)}'.
          |
          |${highlight(loc, "undefined field", fmt)}
          |""".stripMargin
-    }
-
-    private def structMessage: String = struct match {
-      case Some(sym) => s" on struct '$sym'."
-      case None => ""
     }
   }
 
