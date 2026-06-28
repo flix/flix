@@ -277,6 +277,13 @@ object TypeReduction2 {
     case Type.Cst(TypeConstructor.Regex, _) => classOf[java.util.regex.Pattern]
     case Type.Cst(TypeConstructor.Native(clazz), _) => clazz
 
+    // The Null type has no Java class; `null` is a valid value of any reference
+    // type. Apache Commons treats a `null` element in the parameter-type array
+    // as assignable to any non-primitive parameter (and not to primitives), so
+    // returning `null` lets `null` arguments resolve against specific reference
+    // parameters (e.g. `String`), not just `Object`.
+    case Type.Cst(TypeConstructor.Null, _) => null
+
     // Parameterized Java types (e.g. ArrayList[String])
     case Type.Apply(_, _, _) if isNativeBase(tpe) =>
       tpe.baseType match {
@@ -286,13 +293,11 @@ object TypeReduction2 {
 
     // Arrays
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType, _), _, _) =>
-      val t = getJavaType(elmType)
-      t.arrayType()
+      getJavaArrayType(elmType)
 
     // Vectors
     case Type.Apply(Type.Cst(TypeConstructor.Vector, _), elmType, _) =>
-      val t = getJavaType(elmType)
-      t.arrayType()
+      getJavaArrayType(elmType)
 
     // Functions: map Flix Arrow types to Java functional interfaces.
     case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), varArg, _), varRet, _) =>
@@ -301,6 +306,18 @@ object TypeReduction2 {
         case None => classOf[Object]
       }
     case _ => classOf[Object] // default
+  }
+
+  /**
+    * Returns the Java array class for an array/vector with the given element type.
+    *
+    * A `Null` element type has no Java class (see [[getJavaType]]), so we fall
+    * back to `Object[]` (e.g. `Array#{null, null}` becomes `Object[]`).
+    */
+  private def getJavaArrayType(elmType: Type): Class[?] = {
+    val t = getJavaType(elmType)
+    val elmClass: Class[?] = if (t == null) classOf[Object] else t
+    elmClass.arrayType()
   }
 
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
@@ -570,26 +587,32 @@ object TypeReduction2 {
     val substMap = buildTypeVarSubstitution(method, typeArgs)
     val genericParamTypes = method.getGenericParameterTypes
     argTypes.zip(genericParamTypes).flatMap { case (argType, genericParamType) =>
-      genericParamType match {
-        case tv: TypeVariable[_] =>
-          substMap.get(tv.getName).map { expectedType =>
-            TypeConstraint.Equality(expectedType, argType,
-              TypeConstraint.Provenance.Match(expectedType, argType, loc))
-          }
-        case pt: ParameterizedType =>
-          mkParamTypeConstraints(pt, argType, substMap, loc)
-        case gat: GenericArrayType =>
-          // For varargs/array params (e.g., T[] in Stream.of(T...)), emit a constraint
-          // linking the component type variable to the Flix array/vector element type.
-          (gat.getGenericComponentType, argType.typeArguments) match {
-            case (tv: TypeVariable[_], elmType :: _) =>
-              substMap.get(tv.getName).map { expectedType =>
-                TypeConstraint.Equality(expectedType, elmType,
-                  TypeConstraint.Provenance.Match(expectedType, elmType, loc))
-              }.toList
-            case _ => Nil
-          }
-        case _ => None
+      argType match {
+        // `null` is a valid value of any reference type, so it must not constrain
+        // the parameter's type variable. Emit no constraint and let the receiver
+        // or surrounding context determine the type variable.
+        case Type.Cst(TypeConstructor.Null, _) => None
+        case _ => genericParamType match {
+          case tv: TypeVariable[_] =>
+            substMap.get(tv.getName).map { expectedType =>
+              TypeConstraint.Equality(expectedType, argType,
+                TypeConstraint.Provenance.Match(expectedType, argType, loc))
+            }
+          case pt: ParameterizedType =>
+            mkParamTypeConstraints(pt, argType, substMap, loc)
+          case gat: GenericArrayType =>
+            // For varargs/array params (e.g., T[] in Stream.of(T...)), emit a constraint
+            // linking the component type variable to the Flix array/vector element type.
+            (gat.getGenericComponentType, argType.typeArguments) match {
+              case (tv: TypeVariable[_], elmType :: _) =>
+                substMap.get(tv.getName).map { expectedType =>
+                  TypeConstraint.Equality(expectedType, elmType,
+                    TypeConstraint.Provenance.Match(expectedType, elmType, loc))
+                }.toList
+              case _ => Nil
+            }
+          case _ => None
+        }
       }
     }
   }
