@@ -302,20 +302,25 @@ pub mod RichString {
     ///
     /// Uses the Formattable trait to format each element.
     ///
-    pub def join(sep: RichString, xs: t[a]): RichString \ (Formattable.Aef[a] + Foldable.Aef[t]) with Formattable[a], Foldable[t] =
+    pub def join(sep: RichString, xs: t): RichString \ (Formattable.Aef[a] + ForEach.Aef[t]) with ForEach[t], Formattable[a] where ForEach.Elm[t] ~ a =
         joinWith(Formattable.format, sep, xs)
 
     ///
     /// Returns the concatenation of elements in `xs` according to `f` with RichString `sep` inserted between each.
     ///
-    pub def joinWith(f: a -> RichString \ ef, sep: RichString, xs: t[a]): RichString \ (ef + Foldable.Aef[t]) with Foldable[t] =
-        let l = Foldable.toList(xs);
-        match l {
-            case Nil => empty()
-            case x :: Nil => f(x)
-            case x :: rest =>
-                List.foldLeft((acc, elem) -> acc + sep + f(elem), f(x), rest)
-        }
+    pub def joinWith(f: ForEach.Elm[t] -> RichString \ ef, sep: RichString, xs: t): RichString \ (ef + ForEach.Aef[t]) with ForEach[t] = region rc {
+        let acc = Ref.fresh(rc, empty());
+        let first = Ref.fresh(rc, true);
+        foreach (x <- xs) {
+            if (Ref.get(first)) {
+                Ref.put(f(x), acc);
+                Ref.put(false, first)
+            } else {
+                Ref.put(Ref.get(acc) + sep + f(x), acc)
+            }
+        };
+        Ref.get(acc)
+    }
 
     ///
     /// Returns the concatenation of `rs1` and `rs2`.

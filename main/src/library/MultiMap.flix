@@ -36,8 +36,8 @@ pub mod MultiMap {
         type Aef = Formattable.Aef[k] + Formattable.Aef[v]
 
         pub def format(x: MultiMap[k, v]): RichString \ Formattable.Aef[k] + Formattable.Aef[v] =
-            let kvs = MultiMap.toMap(x) |> Map.toList |> List.map(match (k, vs) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(vs));
-            RichString.fromString("MultiMap#{") + RichString.joinWith(identity, RichString.fromString(", "), kvs) + RichString.fromString("}")
+            let fmtKeyValue = match (k, vs) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(vs);
+            RichString.fromString("MultiMap#{") + RichString.joinWith(fmtKeyValue, RichString.fromString(", "), MultiMap.toMap(x)) + RichString.fromString("}")
     }
 
     instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {

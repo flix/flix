@@ -39,8 +39,8 @@ pub mod Map {
         type Aef = Formattable.Aef[k] + Formattable.Aef[v]
 
         pub def format(x: Map[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
-            let pairs = Map.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(v));
-            RichString.fromString("Map#{") + RichString.joinWith(identity, RichString.fromString(", "), pairs) + RichString.fromString("}")
+            let fmtKeyValue = match (k, v) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(v);
+            RichString.fromString("Map#{") + RichString.joinWith(fmtKeyValue, RichString.fromString(", "), x) + RichString.fromString("}")
     }
 
     instance ToString[Map[k, v]] with ToString[k], ToString[v] {

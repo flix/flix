@@ -45,7 +45,7 @@ pub mod Set {
         type Aef = Formattable.Aef[a]
 
         pub def format(x: Set[a]): RichString \ Formattable.Aef[a] =
-            RichString.fromString("Set#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), Set.toList(x)) + RichString.fromString("}")
+            RichString.fromString("Set#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
     }
 
     instance ToString[Set[a]] with ToString[a] {
