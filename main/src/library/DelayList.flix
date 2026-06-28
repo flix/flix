@@ -201,17 +201,41 @@ pub mod DelayList {
     }
 
     ///
-    /// Returns `l` without the first element.
+    /// Returns `Some(xs)` where `xs` is `l` without the first element.
     ///
-    /// Does not force the tail of `l`.
+    /// Returns `None` if `l` is empty.
     ///
-    @Experimental @Lazy
-    pub def tail(l: DelayList[a]): DelayList[a] = match l {
-        case ENil         => ENil
-        case ECons(_, xs) => xs
-        case LCons(_, xs) => LList(xs)
-        case LList(xs)    => LList(lazy tail(force xs))
+    /// Forces `l` until the first element is found, but does not force the tail.
+    ///
+    @Experimental
+    pub def tail(l: DelayList[a]): Option[DelayList[a]] = match l {
+        case ENil         => None
+        case ECons(_, xs) => Some(xs)
+        case LCons(_, xs) => Some(LList(xs))
+        case LList(xs)    => tail(force xs)
     }
+
+    ///
+    /// Returns `Some(xs)` where `xs` is `l` without the last element.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def init(l: DelayList[a]): Option[DelayList[a]] =
+        def loop(prev, ll, acc) = match ll {
+            case ENil         => acc
+            case ECons(x, xs) => loop(x, xs, ECons(prev, acc))
+            case LCons(x, xs) => loop(x, force xs, ECons(prev, acc))
+            case LList(xs)    => loop(prev, force xs, acc)
+        };
+        match l {
+            case ENil         => None
+            case ECons(x, xs) => Some(reverse(loop(x, xs, ENil)))
+            case LCons(x, xs) => Some(reverse(loop(x, force xs, ENil)))
+            case LList(xs)    => init(force xs)
+        }
 
     ///
     /// Returns the number of elements in `l`.
@@ -1199,11 +1223,14 @@ pub mod DelayList {
     @Experimental @Lazy
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r =
         let cursor = Ref.fresh(rc, l);
-        let next = () -> match head(Ref.get(cursor)) {
-            case None => None
-            case Some(x) =>
-                Ref.put(tail(Ref.get(cursor)), cursor);
-                Some(x)
+        let next = () -> {
+            let ll = Ref.get(cursor);
+            match head(ll) {
+                case None => None
+                case Some(x) =>
+                    Ref.put(Option.getWithDefault(ENil, tail(ll)), cursor);
+                    Some(x)
+            }
         };
         Iterator.unfoldWithIter(rc, next)
 
