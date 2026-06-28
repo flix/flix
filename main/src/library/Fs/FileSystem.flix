@@ -1455,7 +1455,7 @@ pub mod Fs.FileSystem {
         sidecar: String,
         f: Unit -> a \ ef
     ): a \ (ef - FileSystem) + FileSystem =
-        let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
+        let computeHex = bytes -> Util.Codec.encodeHex(hash(bytes));
         let doReadBytes = file -> FileSystem.readBytes(file);
         let doReadSidecar = file -> FileSystem.read(file);
         let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, doReadBytes, (str, f1) -> FileSystem.write(str = str, f1));
