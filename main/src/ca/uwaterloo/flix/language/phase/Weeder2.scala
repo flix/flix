@@ -3037,7 +3037,7 @@ object Weeder2 {
             // ARROW FUNCTIONS
             case "->" =>
               val eff = tryPickEffect(tree)
-              val l = tree.loc.asSynthetic
+              val synthLoc = tree.loc.asSynthetic
               val (lastParam, initParams) = t1 match {
                 // Normally singleton tuples `((a, b))` are treated as `(a, b)`. That's fine unless we are doing an arrow type!
                 // In this case we need t1 "unflattened" so we redo the visit.
@@ -3047,8 +3047,18 @@ object Weeder2 {
                   (params.last, params.init)
                 case t => (t, List.empty)
               }
-              val base = Type.Arrow(List(lastParam), eff, t2, l)
-              initParams.foldRight(base)((acc, tpe) => Type.Arrow(List(acc), None, tpe, l))
+              // The outermost arrow corresponds to the actual source location of the whole
+              // arrow type. The inner arrows produced by currying a tuple parameter list are
+              // synthetic since they do not appear directly in the source. The innermost arrow
+              // carries the effect.
+              initParams match {
+                case Nil =>
+                  Type.Arrow(List(lastParam), eff, t2, tree.loc)
+                case head :: tail =>
+                  val base = Type.Arrow(List(lastParam), eff, t2, synthLoc)
+                  val inner = tail.foldRight(base: Type)((param, acc) => Type.Arrow(List(param), None, acc, synthLoc))
+                  Type.Arrow(List(head), None, inner, tree.loc)
+              }
             // REGULAR TYPE OPERATORS
             case "+" => Type.Union(t1, t2, tree.loc)
             case "-" => Type.Difference(t1, t2, tree.loc)
