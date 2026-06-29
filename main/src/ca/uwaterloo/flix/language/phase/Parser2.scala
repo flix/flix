@@ -3695,7 +3695,7 @@ object Parser2 {
         getItem = recordField,
         checkForItem = NAME_FIELD.contains,
         breakWhen = _.isRecoverInType,
-        optionallyWith = Some((TokenKind.Bar, variableType)),
+        optionallyWith = Some((TokenKind.Bar, () => ttype())),
       )
       close(mark, TreeKind.Type.RecordRow)
     }
@@ -3744,7 +3744,7 @@ object Parser2 {
             breakWhen = _.isRecoverInType,
             delimiterL = TokenKind.CurlyL,
             delimiterR = TokenKind.CurlyR,
-            optionallyWith = Some((TokenKind.Bar, variableType)),
+            optionallyWith = Some((TokenKind.Bar, () => ttype())),
           )
           close(mark, TreeKind.Type.Record)
       }
