@@ -276,12 +276,12 @@ object SchemaConstraintGen {
     */
   private def addTermTraitConstraints(den: Denotation, ts: List[Type], locs: List[SourceLocation], root: KindedAst.Root)(implicit c: TypeContext): Unit = den match {
     case Denotation.Relational =>
-      ts.zip(locs).foreach {
-        case (tpe, loc) => c.addClassConstraints(mkTraitConstraintsForRelationalTerm(tpe, root, loc), loc)
+      for ((tpe, loc) <- ts.zip(locs)) {
+        c.addClassConstraints(mkTraitConstraintsForRelationalTerm(tpe, root, loc), loc)
       }
     case Denotation.Latticenal =>
-      ts.init.zip(locs.init).foreach {
-        case (tpe, loc) => c.addClassConstraints(mkTraitConstraintsForRelationalTerm(tpe, root, loc), loc)
+      for ((tpe, loc) <- ts.init.zip(locs.init)) {
+        c.addClassConstraints(mkTraitConstraintsForRelationalTerm(tpe, root, loc), loc)
       }
       c.addClassConstraints(mkTraitConstraintsForLatticeTerm(ts.last, root, locs.last), locs.last)
   }
