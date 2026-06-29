@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 /** Generates bytecode for anonymous classes (created through NewObject). */
@@ -124,7 +124,7 @@ object GenAnonymousClasses {
 
   /** Finds the Java method matching the given name and parameter count on `clazz`. */
   private def findJavaMethod(clazz: Class[?], name: String, arity: Int): Option[java.lang.reflect.Method] = {
-    clazz.getMethods.find(m => m.getName == name && m.getParameterCount == arity)
+    JvmUtils.getOverridableInstanceMethods(clazz).find(m => m.getName == name && m.getParameterCount == arity)
   }
 
   /** Maps a Java `Class[?]` to a `BackendType`. */

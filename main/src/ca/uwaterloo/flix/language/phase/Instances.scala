@@ -199,10 +199,10 @@ object Instances {
           case (None, None) => sctx.errors.add(InstanceError.MissingImplementation(sig.sym, inst.trt.loc))
           // Case 2: there is no definition with the same name, but there is a default implementation
           case (None, Some(_)) => ()
-          // Case 3: there is an implementation marked override, but no default implementation
-          case (Some(defn), None) if defn.spec.mod.isOverride => sctx.errors.add(InstanceError.IllegalRedef(defn.sym, defn.sym.loc))
-          // Case 4: there is an overriding implementation, but no override modifier
-          case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => sctx.errors.add(InstanceError.UnmarkedRedef(defn.sym, defn.sym.loc))
+          // Case 3: there is an implementation marked redef, but no default implementation
+          case (Some(defn), None) if defn.spec.mod.isRedef => sctx.errors.add(InstanceError.IllegalRedef(defn.sym, defn.sym.loc))
+          // Case 4: there is a redefining implementation, but no redef modifier
+          case (Some(defn), Some(_)) if !defn.spec.mod.isRedef => sctx.errors.add(InstanceError.UnmarkedRedef(defn.sym, defn.sym.loc))
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
             val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(RegionScope.Top, flix)

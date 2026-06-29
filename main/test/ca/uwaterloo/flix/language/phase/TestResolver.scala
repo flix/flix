@@ -807,6 +807,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("UndefinedJvmMethod.08") {
+    // `null` is not assignable to a primitive parameter (`charAt(int)`),
+    // so the method must not resolve.
+    val input =
+      raw"""
+           |import java.lang.String
+           |
+           |def foo(): Unit =
+           |    let o = new String();
+           |    let _ = o.charAt(null);
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
   test("UndefinedJvmField.01") {
     val input =
       """
@@ -1761,7 +1777,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
-  test("Test.MismatchedOpArity.Handler.01") {
+  test("Test.OverAppliedOp.Handler.01") {
     val input =
       """
         |eff E {
@@ -1775,10 +1791,44 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
+    expectError[ResolutionError.OverAppliedOp](result)
   }
 
-  test("Test.MismatchedOpArity.Handler.02") {
+  test("Test.OverAppliedOp.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(x, y, z, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.OverAppliedOp](result)
+  }
+
+  test("Test.OverAppliedOp.Handler.03") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(a, b, c, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.OverAppliedOp](result)
+  }
+
+  test("Test.UnderAppliedOp.Handler.01") {
     val input =
       """
         |eff E {
@@ -1792,7 +1842,41 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
+    expectError[ResolutionError.UnderAppliedOp](result)
+  }
+
+  test("Test.UnderAppliedOp.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32, z: Bool): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedOp](result)
+  }
+
+  test("Test.UnderAppliedOp.Handler.03") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32, z: Bool): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(x, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedOp](result)
   }
 
   test("Test.MismatchedTagPatternArity.01") {

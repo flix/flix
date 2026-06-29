@@ -136,6 +136,21 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
 
+        case AtomicOp.VectorLit =>
+          // Note: We simplify Vectors to Arrays.
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, es, t, purity, loc)
+
+        case AtomicOp.VectorLoad =>
+          // Note: We simplify Vectors to Arrays.
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, es, t, purity, loc)
+
+        case AtomicOp.VectorLength =>
+          // Note: We simplify Vectors to Arrays.
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, es, t, purity, loc)
+
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef
           val List(e1, e2) = es
@@ -208,25 +223,6 @@ object Simplifier {
       val t = visitType(tpe)
       val ef = simplifyEffect(eff)
       extMatch(e, rules, t, ef, loc)
-
-    case MonoAst.Expr.VectorLit(exps, tpe, _, loc) =>
-      // Note: We simplify Vectors to Arrays.
-      val es = exps.map(visitExp)
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, es, t, Purity.Pure, loc)
-
-    case MonoAst.Expr.VectorLoad(exp1, exp2, tpe, _, loc) =>
-      // Note: We simplify Vectors to Arrays.
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), t, Purity.Pure, loc)
-
-    case MonoAst.Expr.VectorLength(exp, loc) =>
-      // Note: We simplify Vectors to Arrays.
-      val e = visitExp(exp)
-      val purity = e.purity
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), SimpleType.Int32, purity, loc)
 
     case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp)

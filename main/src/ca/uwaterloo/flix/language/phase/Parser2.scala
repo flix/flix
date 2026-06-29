@@ -3284,10 +3284,20 @@ object Parser2 {
         case _ => None
       }
 
+      // A `}${` token both closes the current interpolation and opens the next one (e.g. between the two
+      // interpolations in `"${x}${y}"`). When such a token appears right after an opener, the current
+      // interpolation is empty (e.g. the first `${}` in `"${}${x}"`). It is distinguished from a nested string
+      // opener `"${` (e.g. in `"${ "${x}" }"`) by its leading `}`.
+      def atEmptyInterpolation: Boolean =
+        at(TokenKind.LiteralStringInterpolationL) && nthToken(0).exists(_.text.startsWith("}"))
+
       var lastOpener = getOpener
       while (lastOpener.isDefined && !eof()) {
         if (atTerminator(lastOpener)) {
           lastOpener = None // Terminate the loop.
+        } else if (atEmptyInterpolation) {
+          // Skip the empty interpolation, leaving the openers adjacent in the tree so the Weeder reports it.
+          lastOpener = getOpener
         } else {
           expression()
           lastOpener = getOpener // Try to get nested interpolation.
