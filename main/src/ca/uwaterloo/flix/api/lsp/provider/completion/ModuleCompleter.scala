@@ -53,7 +53,7 @@ object ModuleCompleter {
     val thisName = module.toString
     val isResolved = scope.m.values.exists(_.exists {
       case Resolution.Declaration(Mod(_, _, _, thatName, _, _, _, _)) => thatName.toString == thisName
-      case Resolution.Declaration(Trait(_, _, _, thatName, _, _, _, _, _, _)) => thatName.toString == thisName
+      case Resolution.Declaration(Trait(_, _, _, thatName, _, _, _, _, _)) => thatName.toString == thisName
       case Resolution.Declaration(Enum(_, _, _, thatName, _, _, _, _)) => thatName.toString == thisName
       case Resolution.Declaration(Struct(_, _, _, thatName, _, _, _)) => thatName.toString == thisName
       case Resolution.Declaration(Effect(_, _, _, thatName, _, _, _)) => thatName.toString == thisName

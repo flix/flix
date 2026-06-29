@@ -17,32 +17,15 @@
 
 pub mod JoinLattice {
 
-    use Bool.{==>}
-
     ///
     /// A trait for join semi lattices.
     ///
-    pub lawful trait JoinLattice[a] with PartialOrder[a] {
+    pub trait JoinLattice[a] with PartialOrder[a] {
 
         ///
         /// Returns the least upper bound of `x` and `y`.
         ///
         pub def leastUpperBound(x: a, y: a): a
-
-        ///
-        /// The law asserts that the least upper bound operator returns
-        /// an element that is greater than or equal to each of its arguments.
-        ///
-        law leastUpperBound1: forall (x: a, y: a) PartialOrder.lessEqual(x, JoinLattice.leastUpperBound(x, y))
-            and PartialOrder.lessEqual(y, JoinLattice.leastUpperBound(x, y))
-
-        ///
-        /// The law asserts that the least upper bound operator returns
-        /// the smallest element that is larger than its two arguments.
-        ///
-        law leastUpperBound2: forall (x: a, y: a, z: a) (PartialOrder.lessEqual(x, z) and PartialOrder.lessEqual(y, z))
-            ==> PartialOrder.lessEqual(JoinLattice.leastUpperBound(x, y), z)
-
     }
 
     instance JoinLattice[Int8] {

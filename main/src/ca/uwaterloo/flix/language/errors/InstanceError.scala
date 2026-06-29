@@ -416,29 +416,6 @@ object InstanceError {
   }
 
   /**
-    * Error indicating an unlawful signature in a lawful trait.
-    *
-    * @param sym the symbol of the unlawful signature.
-    * @param loc the location where the error occurred.
-    */
-  case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
-    def code: ErrorCode = ErrorCode.E3281
-
-    def summary: String = s"Unlawful signature '${sym.name}' in lawful trait '${sym.trt.name}'."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Unlawful signature '${red(sym.name)}' in lawful trait '${magenta(sym.trt.name)}'.
-         |
-         |${highlight(loc, "signature not covered by any law", fmt)}
-         |
-         |${underline("Explanation:")} Each signature in a lawful trait must appear in at least one law.
-         |Add a law that uses '${sym.name}' or remove the 'lawful' modifier from the trait.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Error indicating an unmarked redefinition (def used instead of redef).
     *
     * @param sym the def that should use redef.

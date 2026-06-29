@@ -194,7 +194,6 @@ object Namer {
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
     case decl: DesugaredAst.Declaration.Effect => visitEffect(decl, ns0)
-    case decl: DesugaredAst.Declaration.Law => throw InternalCompilerException("unexpected law", decl.loc)
   }
 
   /**
@@ -258,7 +257,7 @@ object Namer {
       val table3 = addUsesToTable(table2, sym.ns, usesAndImports)
       liftCompanion(table3, sym, decls)
 
-    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, assocs, sigs, _, _) =>
+    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, assocs, sigs, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       val assocsAndSigs = assocs ++ sigs
       assocsAndSigs.foldLeft(table1)(tableDecl)
@@ -694,7 +693,7 @@ object Namer {
     * Performs naming on the given trait `trt`.
     */
   private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Trait = trt match {
-    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits, assocs, signatures, laws, loc) =>
+    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits, assocs, signatures, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
@@ -708,9 +707,8 @@ object Namer {
       val sts = superTraits.map(visitTraitConstraint)
       val ascs = assocs.map(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
       val sigs = signatures.map(visitSig(_, ns0, sym))
-      val ls = laws.map(visitDef(_, ns0, DefKind.Member))
 
-      NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, ls, loc)
+      NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, loc)
   }
 
   /**
@@ -1746,7 +1744,7 @@ object Namer {
     * Gets the location of the symbol of the declaration.
     */
   private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
-    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Def(sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
