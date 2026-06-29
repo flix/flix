@@ -124,7 +124,7 @@ instance Collectable[Vector[a]] {
 
 instance Iterable[Vector[a]] {
     type Elm = a
-    pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r = Vector.iterator(rc, v)
+    pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, {}, r] \ r = Vector.iterator(rc, v)
 }
 
 instance ForEach[Vector[a]] {
@@ -1442,7 +1442,7 @@ pub mod Vector {
     ///
     /// Returns an iterator over `v`
     ///
-    pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r =
+    pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, {}, r] \ r =
         Iterator.range(rc, 0, length(v)) |> Iterator.map(i -> get(i, v))
 
     ///

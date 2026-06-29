@@ -139,7 +139,7 @@ pub mod List {
 
     instance Iterable[List[a]] {
         type Elm = a
-        pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = List.iterator(rc, l)
+        pub def iterator(rc: Region[r], l: List[a]): Iterator[a, {}, r] \ r = List.iterator(rc, l)
     }
 
     instance ForEach[List[a]] {
@@ -1550,7 +1550,7 @@ pub mod List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ r =
+    pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, {}, r] \ r =
         let ls = Ref.fresh(rc, xs);
         let next = () -> {
             match (Ref.get(ls)) {
@@ -1558,7 +1558,7 @@ pub mod List {
                 case x :: rs => Ref.put(rs, ls); Some(x)
             }
         };
-        Iterator.unfoldWithIter(rc, next)
+        Iterator.unfoldWithIter(rc, next) |> Iterator.absorbRegion
 
     ///
     /// Helper function for `sequence` and `traverse`.

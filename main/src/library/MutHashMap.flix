@@ -33,7 +33,7 @@ pub mod MutHashMap {
     instance Iterable[MutHashMap[k, v, r]] {
         type Elm = (k, v)
         type Aef = r
-        pub def iterator(rc: Region[r1], m: MutHashMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
+        pub def iterator(rc: Region[r1], m: MutHashMap[k, v, r]): Iterator[(k, v), r, r1] \ (r + r1) =
             MutHashMap.iterator(rc, m)
     }
 
@@ -570,7 +570,7 @@ pub mod MutHashMap {
     ///
     /// Returns an iterator over key-value pairs in `m` in insertion order.
     ///
-    pub def iterator(rc: Region[r2], m: MutHashMap[k, v, r]): Iterator[(k, v), r2 + r, r2] \ { r, r2 } =
+    pub def iterator(rc: Region[r2], m: MutHashMap[k, v, r]): Iterator[(k, v), r, r2] \ { r, r2 } =
         let curr = Ref.fresh(rc, m->head);
         def next() = match Ref.get(curr) {
             case None => None
@@ -578,18 +578,18 @@ pub mod MutHashMap {
                 Ref.put(Node.getOrderNext(entry), curr);
                 Some((Node.getKey(entry), Node.getValue(entry)))
         };
-        Iterator.unfoldWithIter(rc, next)
+        Iterator.unfoldWithIter(rc, next) |> Iterator.absorbRegion
 
     ///
     /// Returns an iterator over keys in `m` in insertion order.
     ///
-    pub def iteratorKeys(rc: Region[r2], m: MutHashMap[k, v, r]): Iterator[k, r2 + r, r2] \ { r, r2 } =
+    pub def iteratorKeys(rc: Region[r2], m: MutHashMap[k, v, r]): Iterator[k, r, r2] \ { r, r2 } =
         iterator(rc, m) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over values in `m` in insertion order.
     ///
-    pub def iteratorValues(rc: Region[r2], m: MutHashMap[k, v, r]): Iterator[v, r2 + r, r2] \ { r, r2 } =
+    pub def iteratorValues(rc: Region[r2], m: MutHashMap[k, v, r]): Iterator[v, r, r2] \ { r, r2 } =
         iterator(rc, m) |> Iterator.map(snd)
 
     ///
