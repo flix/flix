@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -368,33 +368,41 @@ object EntryPoints {
     *
     * Returns `None` if `defn` has a malformed effect.
     *
-    * Return `Some(err)` otherwise.
+    * Otherwise returns `Some(err)`. The error names only the effects that are not
+    * in `allowed`, e.g. effect `IO + Ask` against allowed `IO` reports just `Ask`.
     */
   private def checkEffects(defn: TypedAst.Def, allowed: SortedSet[Symbol.EffSym])(implicit flix: Flix): Option[EntryPointError] = {
     val eff = defn.spec.eff
-    checkSubset(eff, allowed) match {
-      case Result.Ok(true) =>
-        None
-      case Result.Ok(false) =>
-        Some(EntryPointError.IllegalEntryPointEffect(eff, eff.loc))
-      case Result.Err(_) =>
-        // Do not report an error, since previous phases should have done already.
-        None
+    val residual = residualEffects(eff, allowed)
+    if (residual.isEmpty) {
+      // Either `eff` is a subset of `allowed`, or it is malformed - in which case a
+      // previous phase has already reported an error. Either way, report nothing here.
+      None
+    } else {
+      Some(EntryPointError.IllegalEntryPointEffect(toEffType(residual, eff.loc), eff.loc))
     }
   }
 
   /**
-    * Returns `true` if `smaller` is a subset of `larger`.
+    * Returns the effects of `tpe` that are not in `allowed` (i.e. `tpe - allowed`).
     *
-    * Returns `false` for all effects containing type variables or Error.
+    * Returns the empty set for any effect containing type variables, associated
+    * types, or error types, since such effects are reported by an earlier phase.
     */
-  private def checkSubset(smaller: Type, larger: SortedSet[Symbol.EffSym]): Result[Boolean, Unit] = {
-    for (
-      s <- Type.eval(smaller)
-    ) yield {
-      // Check that s is a subset of larger.
-      // s ⊆ larger <=> s - larger = {}
-      CofiniteSet.difference(s, CofiniteSet.mkSet(larger)).isEmpty
+  private def residualEffects(tpe: Type, allowed: SortedSet[Symbol.EffSym]): CofiniteSet[Symbol.EffSym] =
+    Type.eval(tpe) match {
+      case Result.Ok(s) => CofiniteSet.difference(s, CofiniteSet.mkSet(allowed))
+      case Result.Err(_) => CofiniteSet.empty
+    }
+
+  /** Reconstructs an effect [[Type]], located at `loc`, from a set of effect symbols. */
+  private def toEffType(s: CofiniteSet[Symbol.EffSym], loc: SourceLocation): Type = {
+    def union(syms: SortedSet[Symbol.EffSym]): Type =
+      Type.mkUnion(syms.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc)
+
+    s match {
+      case CofiniteSet.Set(syms) => union(syms)
+      case CofiniteSet.Compl(syms) => Type.mkDifference(Type.Univ, union(syms), loc)
     }
   }
 
