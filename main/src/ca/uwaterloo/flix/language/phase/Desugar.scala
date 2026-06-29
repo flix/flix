@@ -1322,7 +1322,7 @@ object Desugar {
       val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
       mkApplyFqn("Map.empty", List(unit), loc0)
     } else {
-      val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc) }
+      val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc.spanWith(v.loc)) }
       desugarCollectionLitToVec("Vector.toMap", es, loc0)
     }
   }

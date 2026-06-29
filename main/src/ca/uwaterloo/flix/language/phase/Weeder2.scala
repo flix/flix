@@ -837,7 +837,7 @@ object Weeder2 {
         case TreeKind.Expr.FixpointQueryWithProvenance => visitFixpointQueryWithProvenanceExpr(tree)
         case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
         case TreeKind.Expr.ExtTag => visitExtTag(tree)
-        case TreeKind.Expr.Intrinsic => visitIntrinsic(tree, None)
+        case TreeKind.Expr.Intrinsic => visitIntrinsic(tree, None, tree.loc)
         case TreeKind.ErrorTree(err) => Expr.Error(err)
         case k =>
           throw InternalCompilerException(s"Expected expression, got '$k'.", tree.loc)
@@ -1012,7 +1012,7 @@ object Weeder2 {
       val exprTree = pick(TreeKind.Expr.Expr, tree)
       val args = pickArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
       tryPick(TreeKind.Expr.Intrinsic, exprTree) match {
-        case Some(intrinsic) => visitIntrinsic(intrinsic, Some(args))
+        case Some(intrinsic) => visitIntrinsic(intrinsic, Some(args), tree.loc)
         case None => Expr.Apply(visitExpr(exprTree), args, tree.loc)
       }
     }
@@ -1652,22 +1652,25 @@ object Weeder2 {
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowercase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
         sctx.errors.add(error)
       }
-      ops.foldRight(pickExpr(tree))((op, acc) =>
+      ops.foldRight(pickExpr(tree))((op, acc) => {
+        // The base record `acc` appears to the right of `op` (e.g. `{ op | acc }`), so the location
+        // of each constructed node must span both the operation and the accumulated base record.
+        val loc = op.loc.spanWith(acc.loc)
         op.kind match {
           case TreeKind.Expr.RecordOpExtend =>
             val id = pickNameIdent(op)
-            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), acc, op.loc)
+            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), acc, loc)
           case TreeKind.Expr.RecordOpRestrict =>
             val id = pickNameIdent(op)
-            Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
+            Expr.RecordRestrict(Name.mkLabel(id), acc, loc)
           case TreeKind.Expr.RecordOpUpdate =>
             val id = pickNameIdent(op)
             // An update is a restrict followed by an extension
-            val restricted = Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
-            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), restricted, op.loc)
+            val restricted = Expr.RecordRestrict(Name.mkLabel(id), acc, loc)
+            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), restricted, loc)
           case k => throw InternalCompilerException(s"'$k' is not a record operation", op.loc)
         }
-      )
+      })
     }
 
     private def visitLiteralArrayExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
@@ -2120,10 +2123,9 @@ object Weeder2 {
       *   - `args = Some(Nil)` is an applied intrinsic with zero arguments (e.g. `%%EXAMPLE%%()`)
       *   - `args = Some(Cons(.., ..))` is an applied intrinsic with some arguments (e.g. `%%VECTOR_LENGTH%%(v)`)
       */
-    private def visitIntrinsic(tree: Tree, args: Option[List[Expr]])(implicit sctx: SharedContext): Expr = {
+    private def visitIntrinsic(tree: Tree, args: Option[List[Expr]], loc: SourceLocation)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.Intrinsic)
       val intrinsic = text(tree).head.stripPrefix("%%").stripSuffix("%%")
-      val loc = tree.loc
       val res = (intrinsic, args) match {
         case ("ARRAY_LENGTH", Some(e1 :: Nil)) => Expr.ArrayLength(e1, loc)
         case ("ARRAY_LOAD", Some(e1 :: e2 :: Nil)) => Expr.ArrayLoad(e1, e2, loc)
