@@ -225,7 +225,11 @@ object ConstraintSolver2 {
   private def simplify(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): List[TypeConstraint] = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, prov) => (tpe1, tpe2) match {
       // (appU)
-      case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) if isSyntactic(tpe1.kind) && isSyntactic(tpe2.kind) =>
+      // We only decompose an application when the head type constructors can unify. Two types with
+      // distinct, known constructors (e.g. `Map[k, v]` against `a -> b`) can never be unified, and
+      // decomposing them structurally aligns unrelated components, producing a cascade of misleading
+      // positional errors. Leaving the constraint intact lets a single, clear error be reported.
+      case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) if isSyntactic(tpe1.kind) && isSyntactic(tpe2.kind) && constructorsMayUnify(tpe1, tpe2) =>
         progress.markProgress()
         simplify(TypeConstraint.Equality(t11, t21, prov), progress) ::: simplify(TypeConstraint.Equality(t12, t22, prov), progress)
 
@@ -683,6 +687,20 @@ object ConstraintSolver2 {
       val assoc = Type.AssocType(cst, tpe1, tpe2.kind, tpe1.loc)
       TypeConstraint.Equality(assoc, tpe2, Provenance.Match(tpe1, tpe2, loc))
   }
+
+  /**
+    * Returns `true` if the head type constructors of `tpe1` and `tpe2` may unify.
+    *
+    * Two types with distinct, known type constructors (e.g. `Map[k, v]` and `a -> b`) can never be
+    * unified, so decomposing such an application structurally only aligns unrelated components.
+    * Returns `true` if the constructors are equal, or if either head is a variable or otherwise
+    * unknown (e.g. an associated type), since those could still unify.
+    */
+  private def constructorsMayUnify(tpe1: Type, tpe2: Type): Boolean =
+    (tpe1.typeConstructor, tpe2.typeConstructor) match {
+      case (Some(tc1), Some(tc2)) => tc1 == tc2
+      case _ => true
+    }
 
   /**
     * Returns true if the kind should be unified syntactically.
