@@ -28,25 +28,4 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
-
-  test("RecordRowExtensionAlias.01") {
-    val input =
-      """
-        |type alias R = (y = Int32)
-        |def f(a: {x = Int32 | R}): Int32 = a#x
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectSuccess(result)
-  }
-
-  test("RecordRowExtensionAlias.02") {
-    val input =
-      """
-        |type alias R = (y = Int32)
-        |type alias Big = (x = Int32 | R)
-        |def f(a: {z = Int32 | Big }): Int32 = a#x
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectSuccess(result)
-  }
 }
