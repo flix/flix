@@ -51,6 +51,11 @@ import scala.reflect.ClassTag
 object ParOps {
 
   /**
+    * The threshold at which `parAgg` switches from parallel to sequential evaluation.
+    */
+  private val SequentialThreshold: Int = 4
+
+  /**
     * Applies the function `f` to every element of `xs` in parallel.
     */
   def parMap[A, B: ClassTag](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
@@ -261,15 +266,6 @@ object ParOps {
     // Return the set of reachable Ts.
     reach
   }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Helpers                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * The threshold at which `parAgg` switches from parallel to sequential evaluation.
-    */
-  private val SequentialThreshold: Int = 4
 
   /**
     * Returns true if the compiler is running on a single thread.
