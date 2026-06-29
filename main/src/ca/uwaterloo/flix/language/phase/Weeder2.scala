@@ -274,7 +274,7 @@ object Weeder2 {
 
     private def visitInstanceDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Declaration.Instance = {
       expect(tree, TreeKind.Decl.Instance)
-      val allowedDefModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set(TokenKind.KeywordPub) else Set(TokenKind.KeywordPub, TokenKind.KeywordOverride)
+      val allowedDefModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub)
       val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
@@ -658,7 +658,6 @@ object Weeder2 {
       TokenKind.KeywordSealed,
       TokenKind.KeywordLawful,
       TokenKind.KeywordPub,
-      TokenKind.KeywordOverride,
       TokenKind.KeywordMut)
 
     private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit sctx: SharedContext): Modifiers = {
@@ -696,7 +695,6 @@ object Weeder2 {
         case TokenKind.KeywordLawful => Modifier.Lawful
         case TokenKind.KeywordPub => Modifier.Public
         case TokenKind.KeywordMut => Modifier.Mutable
-        case TokenKind.KeywordOverride => Modifier.Override
         case kind => throw InternalCompilerException(s"Parser passed unknown modifier '$kind'", token.mkSourceLocation())
       }
     }
@@ -839,7 +837,7 @@ object Weeder2 {
         case TreeKind.Expr.FixpointQueryWithProvenance => visitFixpointQueryWithProvenanceExpr(tree)
         case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
         case TreeKind.Expr.ExtTag => visitExtTag(tree)
-        case TreeKind.Expr.Intrinsic => visitIntrinsic(tree, None)
+        case TreeKind.Expr.Intrinsic => visitIntrinsic(tree, None, tree.loc)
         case TreeKind.ErrorTree(err) => Expr.Error(err)
         case k =>
           throw InternalCompilerException(s"Expected expression, got '$k'.", tree.loc)
@@ -1014,7 +1012,7 @@ object Weeder2 {
       val exprTree = pick(TreeKind.Expr.Expr, tree)
       val args = pickArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
       tryPick(TreeKind.Expr.Intrinsic, exprTree) match {
-        case Some(intrinsic) => visitIntrinsic(intrinsic, Some(args))
+        case Some(intrinsic) => visitIntrinsic(intrinsic, Some(args), tree.loc)
         case None => Expr.Apply(visitExpr(exprTree), args, tree.loc)
       }
     }
@@ -1654,22 +1652,25 @@ object Weeder2 {
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowercase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
         sctx.errors.add(error)
       }
-      ops.foldRight(pickExpr(tree))((op, acc) =>
+      ops.foldRight(pickExpr(tree))((op, acc) => {
+        // The base record `acc` appears to the right of `op` (e.g. `{ op | acc }`), so the location
+        // of each constructed node must span both the operation and the accumulated base record.
+        val loc = op.loc.spanWith(acc.loc)
         op.kind match {
           case TreeKind.Expr.RecordOpExtend =>
             val id = pickNameIdent(op)
-            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), acc, op.loc)
+            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), acc, loc)
           case TreeKind.Expr.RecordOpRestrict =>
             val id = pickNameIdent(op)
-            Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
+            Expr.RecordRestrict(Name.mkLabel(id), acc, loc)
           case TreeKind.Expr.RecordOpUpdate =>
             val id = pickNameIdent(op)
             // An update is a restrict followed by an extension
-            val restricted = Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
-            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), restricted, op.loc)
+            val restricted = Expr.RecordRestrict(Name.mkLabel(id), acc, loc)
+            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), restricted, loc)
           case k => throw InternalCompilerException(s"'$k' is not a record operation", op.loc)
         }
-      )
+      })
     }
 
     private def visitLiteralArrayExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
@@ -2122,10 +2123,9 @@ object Weeder2 {
       *   - `args = Some(Nil)` is an applied intrinsic with zero arguments (e.g. `%%EXAMPLE%%()`)
       *   - `args = Some(Cons(.., ..))` is an applied intrinsic with some arguments (e.g. `%%VECTOR_LENGTH%%(v)`)
       */
-    private def visitIntrinsic(tree: Tree, args: Option[List[Expr]])(implicit sctx: SharedContext): Expr = {
+    private def visitIntrinsic(tree: Tree, args: Option[List[Expr]], loc: SourceLocation)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.Intrinsic)
       val intrinsic = text(tree).head.stripPrefix("%%").stripSuffix("%%")
-      val loc = tree.loc
       val res = (intrinsic, args) match {
         case ("ARRAY_LENGTH", Some(e1 :: Nil)) => Expr.ArrayLength(e1, loc)
         case ("ARRAY_LOAD", Some(e1 :: e2 :: Nil)) => Expr.ArrayLoad(e1, e2, loc)
@@ -2944,10 +2944,10 @@ object Weeder2 {
 
     private def visitRecordRowType(tree: Tree)(implicit sctx: SharedContext): Type = {
       expectAny(tree, List(TreeKind.Type.Record, TreeKind.Type.RecordRow))
-      val maybeVar = tryPick(TreeKind.Type.Variable, tree).map(visitVariableType)
+      val maybeType = tryPick(TreeKind.Type.Type, tree).map(visitType)
       val fields = pickAll(TreeKind.Type.RecordFieldFragment, tree).map(visitRecordField)
-      val variable = maybeVar.getOrElse(Type.RecordRowEmpty(tree.loc))
-      fields.foldRight(variable) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
+      val tail = maybeType.getOrElse(Type.RecordRowEmpty(tree.loc))
+      fields.foldRight(tail) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
     }
 
     private def visitRecordField(tree: Tree)(implicit sctx: SharedContext): (Name.Label, Type) = {
@@ -3037,18 +3037,15 @@ object Weeder2 {
             // ARROW FUNCTIONS
             case "->" =>
               val eff = tryPickEffect(tree)
-              val l = tree.loc.asSynthetic
-              val (lastParam, initParams) = t1 match {
+              val params = t1 match {
                 // Normally singleton tuples `((a, b))` are treated as `(a, b)`. That's fine unless we are doing an arrow type!
                 // In this case we need t1 "unflattened" so we redo the visit.
                 case Type.Tuple(_, _) =>
                   val t1Tree = pick(TreeKind.Type.Tuple, pick(TreeKind.Type.Type, tree))
-                  val params = pickAll(TreeKind.Type.Type, t1Tree).map(visitType)
-                  (params.last, params.init)
-                case t => (t, List.empty)
+                  pickAll(TreeKind.Type.Type, t1Tree).map(visitType)
+                case t => List(t)
               }
-              val base = Type.Arrow(List(lastParam), eff, t2, l)
-              initParams.foldRight(base)((acc, tpe) => Type.Arrow(List(acc), None, tpe, l))
+              mkCurriedArrow(params, eff, t2, tree.loc)
             // REGULAR TYPE OPERATORS
             case "+" => Type.Union(t1, t2, tree.loc)
             case "-" => Type.Difference(t1, t2, tree.loc)
@@ -3070,6 +3067,30 @@ object Weeder2 {
           }
 
         case operands => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands: $operands", tree.loc)
+      }
+    }
+
+    /**
+      * Returns the curried arrow type formed from the parameter types `params`, effect `eff`, and result
+      * type `tresult`.
+      *
+      * A multi-parameter arrow `(a, b) -> c` is curried into nested single-parameter arrows `a -> (b -> c)`.
+      * The outermost arrow is given the real location `loc` since it corresponds to the source arrow type,
+      * whereas the inner arrows introduced by currying are synthetic since they do not appear directly in the
+      * source. The innermost arrow carries the effect `eff`.
+      */
+    private def mkCurriedArrow(params: List[Type], eff: Option[Type], tresult: Type, loc: SourceLocation): Type = {
+      val synthLoc = loc.asSynthetic
+      params match {
+        case Nil =>
+          // A parameterless arrow cannot be written in source.
+          tresult
+        case onlyParam :: Nil =>
+          Type.Arrow(List(onlyParam), eff, tresult, loc)
+        case firstParam :: restParams =>
+          val innermost = Type.Arrow(List(restParams.last), eff, tresult, synthLoc)
+          val inner = restParams.init.foldRight(innermost: Type)((param, acc) => Type.Arrow(List(param), None, acc, synthLoc))
+          Type.Arrow(List(firstParam), None, inner, loc)
       }
     }
 
