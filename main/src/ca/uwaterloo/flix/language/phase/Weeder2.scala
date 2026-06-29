@@ -3037,18 +3037,15 @@ object Weeder2 {
             // ARROW FUNCTIONS
             case "->" =>
               val eff = tryPickEffect(tree)
-              val l = tree.loc.asSynthetic
-              val (lastParam, initParams) = t1 match {
+              val params = t1 match {
                 // Normally singleton tuples `((a, b))` are treated as `(a, b)`. That's fine unless we are doing an arrow type!
                 // In this case we need t1 "unflattened" so we redo the visit.
                 case Type.Tuple(_, _) =>
                   val t1Tree = pick(TreeKind.Type.Tuple, pick(TreeKind.Type.Type, tree))
-                  val params = pickAll(TreeKind.Type.Type, t1Tree).map(visitType)
-                  (params.last, params.init)
-                case t => (t, List.empty)
+                  pickAll(TreeKind.Type.Type, t1Tree).map(visitType)
+                case t => List(t)
               }
-              val base = Type.Arrow(List(lastParam), eff, t2, l)
-              initParams.foldRight(base)((acc, tpe) => Type.Arrow(List(acc), None, tpe, l))
+              mkCurriedArrow(params, eff, t2, tree.loc)
             // REGULAR TYPE OPERATORS
             case "+" => Type.Union(t1, t2, tree.loc)
             case "-" => Type.Difference(t1, t2, tree.loc)
@@ -3070,6 +3067,30 @@ object Weeder2 {
           }
 
         case operands => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands: $operands", tree.loc)
+      }
+    }
+
+    /**
+      * Returns the curried arrow type formed from the parameter types `params`, effect `eff`, and result
+      * type `tresult`.
+      *
+      * A multi-parameter arrow `(a, b) -> c` is curried into nested single-parameter arrows `a -> (b -> c)`.
+      * The outermost arrow is given the real location `loc` since it corresponds to the source arrow type,
+      * whereas the inner arrows introduced by currying are synthetic since they do not appear directly in the
+      * source. The innermost arrow carries the effect `eff`.
+      */
+    private def mkCurriedArrow(params: List[Type], eff: Option[Type], tresult: Type, loc: SourceLocation): Type = {
+      val synthLoc = loc.asSynthetic
+      params match {
+        case Nil =>
+          // A parameterless arrow cannot be written in source.
+          tresult
+        case onlyParam :: Nil =>
+          Type.Arrow(List(onlyParam), eff, tresult, loc)
+        case firstParam :: restParams =>
+          val innermost = Type.Arrow(List(restParams.last), eff, tresult, synthLoc)
+          val inner = restParams.init.foldRight(innermost: Type)((param, acc) => Type.Arrow(List(param), None, acc, synthLoc))
+          Type.Arrow(List(firstParam), None, inner, loc)
       }
     }
 
