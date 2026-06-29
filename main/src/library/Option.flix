@@ -155,7 +155,7 @@ pub mod Option {
 
     instance Iterable[Option[a]] {
         type Elm = a
-        pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = Option.iterator(rc, o)
+        pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, {}, r] \ r = Option.iterator(rc, o)
     }
 
     instance ForEach[Option[a]] {
@@ -601,7 +601,7 @@ pub mod Option {
     ///
     /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
     ///
-    pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = match o {
+    pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, {}, r] \ r = match o {
         case None    => Iterator.empty(rc)
         case Some(x) => Iterator.singleton(rc, x)
     }

@@ -46,7 +46,7 @@ pub mod MutMap {
     instance Iterable[MutMap[k, v, r]] {
         type Elm = (k, v)
         type Aef = r
-        pub def iterator(rc: Region[r1], m: MutMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
+        pub def iterator(rc: Region[r1], m: MutMap[k, v, r]): Iterator[(k, v), r, r1] \ (r + r1) =
             MutMap.iterator(rc, m)
     }
 
@@ -542,19 +542,19 @@ pub mod MutMap {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r2, r1] \ { r1, r2 } =
         Map.iterator(rc, m->inner) |> Iterator.map(x -> checked_ecast(x))
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 + r2, r1] \ { r1, r2 } =
+    pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r2, r1] \ { r1, r2 } =
         Map.iteratorKeys(rc, m->inner) |> Iterator.map(x -> checked_ecast(x))
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 + r2, r1] \ { r1, r2 } =
+    pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r2, r1] \ { r1, r2 } =
         Map.iteratorValues(rc, m->inner) |> Iterator.map(x -> checked_ecast(x))
 
     ///

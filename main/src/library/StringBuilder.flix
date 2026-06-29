@@ -114,7 +114,7 @@ pub mod StringBuilder {
     ///
     /// Returns an iterator over `sb`.
     ///
-    pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r2, r1] \ { r1, r2 } =
         let StringBuilder(msb) = sb;
         Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> unsafe IO as r2 { msb.charAt(i) })
 

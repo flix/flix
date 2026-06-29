@@ -59,7 +59,7 @@ pub mod DelayMap {
 
     instance Iterable[DelayMap[k, v]] {
         type Elm = (k, v)
-        pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), r, r] \ r =
+        pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), {}, r] \ r =
             DelayMap.iterator(rc, m)
     }
 
@@ -765,7 +765,7 @@ pub mod DelayMap {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     @Experimental
-    pub def iterator(rc: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r, r] \ r =
+    pub def iterator(rc: Region[r], m: DelayMap[a, b]): Iterator[(a, b), {}, r] \ r =
         let DMap(t) = m;
         RedBlackTree.iterator(rc, t) |> Iterator.map(match (k, v) -> (k, force v))
 
