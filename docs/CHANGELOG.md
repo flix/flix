@@ -1,5 +1,10 @@
 # Changelog
 
+Version 0.75.0:
+- Library: Extended `Range` and `Discrete` (thanks Magnus!)
+- Compiler: Improved some compiler error messages (thanks Magnus!)
+- VSCode: Added folding-range support (thanks Magnus!)
+
 Version 0.74.0:
 - Compiler: Improved performance of Parser (thanks Magnus!)
 - Compiler: Improved performance of Weeder (thanks Magnus!)

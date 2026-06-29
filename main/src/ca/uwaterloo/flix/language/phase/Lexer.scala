@@ -99,7 +99,6 @@ object Lexer {
       ("open_variant", TokenKind.KeywordOpenVariant),
       ("open_variant_as", TokenKind.KeywordOpenVariantAs),
       ("or", TokenKind.KeywordOr),
-      ("override", TokenKind.KeywordOverride),
       ("par", TokenKind.KeywordPar),
       ("pquery", TokenKind.KeywordPQuery),
       ("project", TokenKind.KeywordProject),
