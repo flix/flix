@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -1826,6 +1826,74 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.OverAppliedOp](result)
+  }
+
+  test("DuplicateUpperName.Eff.Handler.01") {
+    // Regression test for https://github.com/flix/flix/issues/12003.
+    // A duplicate effect must not crash a later phase, even when a handler refers to
+    // an operation of the duplicated effect. Here the empty (operation-less) duplicate
+    // is declared last, so without merging it would shadow the operation.
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |eff E
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.Eff.Handler.02") {
+    // Regression test for https://github.com/flix/flix/issues/12003.
+    // As DuplicateUpperName.Eff.Handler.01, but with the empty duplicate declared first.
+    val input =
+      """
+        |eff E
+        |
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.Eff.Handler.03") {
+    // Regression test for https://github.com/flix/flix/issues/12003.
+    // Both duplicate effects declare operations; a handler refers to an operation from
+    // the declaration that would otherwise be shadowed.
+    val input =
+      """
+        |eff E {
+        |    def op1(): Unit
+        |}
+        |
+        |eff E {
+        |    def op2(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op1(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
   test("Test.UnderAppliedOp.Handler.01") {
