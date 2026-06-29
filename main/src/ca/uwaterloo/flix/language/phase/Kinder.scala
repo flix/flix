@@ -1138,11 +1138,7 @@ object Kinder {
           Type.freshError(Kind.Error, loc)
       }
 
-    case UnkindedType.Apply(t10, t20, loc) =>
-      val t2 = visitType(t20, Kind.Wild, kenv, root)
-      val k1 = Kind.mkArrow(t2.kind, expectedKind)
-      val t1 = visitType(t10, k1, kenv, root)
-      mkApply(t1, t2, loc)
+    case app: UnkindedType.Apply => visitApply(app, expectedKind, kenv, root)
 
     case UnkindedType.Ascribe(t, k, loc) =>
       unify(k, expectedKind) match {
@@ -1362,6 +1358,102 @@ object Kinder {
       case (Kind.Star, Kind.Eff) => KindError.UnexpectedEffect(loc)
       case (Kind.Eff, Kind.Star) => KindError.UnexpectedType(loc)
       case _ => KindError.UnexpectedKind(expectedKind, actualKind, loc)
+    }
+  }
+
+  /**
+    * Performs kinding on the type application `app` (i.e. `head[arg1, ..., argN]`).
+    *
+    * When the head has a statically-known kind and the application is arity-consistent with the
+    * `expectedKind`, each argument is checked top-down against the kind expected for its position.
+    * This lets a kind error be reported at the offending argument while comparing only the single
+    * expected and actual kinds, rather than at the head while comparing whole arrow kinds. For
+    * example, in `Foo[Int32, Int32, Int32]` where `Foo` expects a `Bool` in its third position,
+    * the error points at the third `Int32` and reads "expected Bool, found Type".
+    *
+    * Otherwise (a type variable head whose kind is inferred from its usage, or an arity mismatch)
+    * we fall back to the bottom-up algorithm, which infers each argument's kind and checks the head
+    * against the resulting arrow kind. The bottom-up path is also responsible for the specialized
+    * arity errors (e.g. [[KindError.MismatchedArityOfEnum]]).
+    */
+  private def visitApply(app: UnkindedType.Apply, expectedKind: Kind, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): Type = {
+    val (head, args) = collectApp(app)
+    knownHeadKind(head) match {
+      // Case 1: The head has a known kind and is applied to exactly as many arguments as its kind
+      // expects (given the kind expected of the whole application). Check each argument top-down.
+      case Some(headKind) if args.length + Kind.kindArgs(expectedKind).length == Kind.kindArgs(headKind).length =>
+        val paramKinds = Kind.kindArgs(headKind)
+        val headType = visitType(head, headKind, kenv, root)
+        val argTypes = args.zip(paramKinds).map {
+          case ((arg, loc), paramKind) => (visitType(arg, paramKind, kenv, root), loc)
+        }
+        // The kind left after applying the arguments must match the expected kind.
+        val resultKind = dropKindArgs(headKind, args.length)
+        unify(resultKind, expectedKind) match {
+          case Some(_) =>
+            argTypes.foldLeft(headType) { case (acc, (argType, loc)) => mkApply(acc, argType, loc) }
+          case None =>
+            sctx.errors.add(mkUnexpectedKindError(expectedKind, resultKind, app.loc))
+            Type.freshError(Kind.Error, app.loc)
+        }
+
+      // Case 2: Otherwise, fall back to the bottom-up algorithm.
+      case _ => visitApplyBottomUp(app, expectedKind, kenv, root)
+    }
+  }
+
+  /**
+    * Performs kinding on the type application `app` using the bottom-up algorithm: each argument's
+    * kind is inferred freely, and the head is checked against the resulting arrow kind.
+    */
+  private def visitApplyBottomUp(app: UnkindedType.Apply, expectedKind: Kind, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): Type = app match {
+    case UnkindedType.Apply(t10, t20, loc) =>
+      val t2 = visitType(t20, Kind.Wild, kenv, root)
+      val k1 = Kind.mkArrow(t2.kind, expectedKind)
+      val t1 = visitType(t10, k1, kenv, root)
+      mkApply(t1, t2, loc)
+  }
+
+  /**
+    * Collects the spine of a type application, returning the innermost head and the list of
+    * arguments (left-to-right), each paired with the location of the application that supplied it.
+    */
+  private def collectApp(tpe: UnkindedType): (UnkindedType, List[(UnkindedType, SourceLocation)]) = tpe match {
+    case UnkindedType.Apply(t1, t2, loc) =>
+      val (head, args) = collectApp(t1)
+      (head, args :+ (t2, loc))
+    case _ => (tpe, Nil)
+  }
+
+  /**
+    * Returns the statically-known kind of the given application head, if any.
+    *
+    * We only return a kind for the user-declared parameterized type heads (enums, structs, effects,
+    * and restrictable enums), as these are the heads whose arguments benefit most from precise,
+    * per-argument kind errors. Returns `None` for everything else (e.g. a type variable whose kind
+    * is inferred from its usage, or a built-in type constructor), in which case kinding falls back
+    * to the bottom-up algorithm.
+    */
+  private def knownHeadKind(tpe: UnkindedType)(implicit declKinds: DeclKinds): Option[Kind] = tpe match {
+    case UnkindedType.Enum(sym, _) => Some(declKinds.enumKinds(sym))
+    case UnkindedType.Struct(sym, _) => Some(declKinds.structKinds(sym))
+    case UnkindedType.Effect(sym, _) => Some(declKinds.effectKinds(sym))
+    case UnkindedType.RestrictableEnum(sym, _) => Some(declKinds.restrictableEnumKinds(sym))
+    case _ => None
+  }
+
+  /**
+    * Drops the first `n` argument kinds from the arrow kind `k`, returning the kind that remains
+    * after applying `n` arguments. The caller must ensure `k` has at least `n` argument kinds.
+    */
+  private def dropKindArgs(k: Kind, n: Int): Kind = {
+    if (n <= 0) {
+      k
+    } else {
+      k match {
+        case Kind.Arrow(_, k2) => dropKindArgs(k2, n - 1)
+        case _ => k
+      }
     }
   }
 

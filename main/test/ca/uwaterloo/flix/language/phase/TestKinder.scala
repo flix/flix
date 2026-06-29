@@ -1136,6 +1136,22 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
+  test("KindError.UnexpectedKind.Enum.Apply.01") {
+    // The second type argument should have kind RecordRow, but Int32 has kind Type.
+    // The error must be reported at the argument (with the single mismatched kinds),
+    // not at the enum head (comparing the whole arrow kinds). See issue #2116.
+    val input =
+      """
+        |enum Rec[a: Type, r: RecordRow] {
+        |    case R({ value = a | r })
+        |}
+        |def f(): Rec[Int32,
+        |             Int32] = ??? // ERROR
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
   test("KindError.UnexpectedKind.Struct.Field.01") {
     val input =
       """
@@ -1481,6 +1497,36 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |enum E[a] {
         |  case C(Int32 -> Int32 \ a)
         |}
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.UnexpectedType](result)
+  }
+
+  test("KindError.UnexpectedType.Enum.Apply.01") {
+    // The second type argument occupies an effect slot, but Int32 is a type.
+    // The error must be reported at the argument, not at the enum head.
+    val input =
+      """
+        |enum Holder[a: Type, e: Eff] {
+        |    case Hold(a -> a \ e)
+        |}
+        |def f(): Holder[Int32,
+        |                Int32] = ??? // ERROR
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.UnexpectedType](result)
+  }
+
+  test("KindError.UnexpectedType.Struct.Apply.01") {
+    // The second type argument occupies an effect slot, but Int32 is a type.
+    // The error must be reported at the argument, not at the struct head.
+    val input =
+      """
+        |struct Crate[v: Type, r: Eff] {
+        |    x: v
+        |}
+        |def f(): Crate[Int32,
+        |               Int32] = ??? // ERROR
         |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedType](result)
