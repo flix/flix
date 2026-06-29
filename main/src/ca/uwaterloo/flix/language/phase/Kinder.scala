@@ -1139,13 +1139,7 @@ object Kinder {
       }
 
     case UnkindedType.Apply(t10, t20, loc) =>
-      // Error reporting for row-tail
-      val kind = (t10, t10.baseType) match {
-        case (UnkindedType.Apply(_, _, _), UnkindedType.Cst(TypeConstructor.RecordRowExtend(_), _)) => Kind.RecordRow
-        case _ => Kind.Wild
-      }
-      
-      val t2 = visitType(t20, kind, kenv, root)
+      val t2 = visitType(t20, Kind.Wild, kenv, root)
       val k1 = Kind.mkArrow(t2.kind, expectedKind)
       val t1 = visitType(t10, k1, kenv, root)
       mkApply(t1, t2, loc)
