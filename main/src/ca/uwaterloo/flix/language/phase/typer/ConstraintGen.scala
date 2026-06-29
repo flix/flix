@@ -111,7 +111,7 @@ object ConstraintGen {
 
         c.unifyType(itvar, declaredType, loc2)
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(tconstrs)
+        c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
         c.unifySource(pvar, declaredEff, loc2)
@@ -141,7 +141,7 @@ object ConstraintGen {
         val declaredResultType = generalizeVoid(declaredType.arrowResultType)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(tconstrs)
+        c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
         c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
@@ -165,7 +165,7 @@ object ConstraintGen {
 
         val (tpes, effs) = exps.map(visitExp).unzip
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(tconstrs)
+        c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(itvar, declaredType, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
