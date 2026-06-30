@@ -3,7 +3,7 @@
 Here is a list of projects that are currently open for exploration.
 
 If you are interested in working on any of these projects, feel free to reach
-out to us on Gitter. If you are a student at Aarhus University you can reach
+out to us on Zulip. If you are a student at Aarhus University you can reach
 out to Magnus directly.
 
 ## Language & Type System
