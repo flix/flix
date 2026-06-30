@@ -69,16 +69,6 @@ use their continuation in much more restricted ways: some never resume at all
 efficiently than the general case, avoiding the cost of capturing a first-class
 continuation.
 
-### Effect Handler Benchmarks (issue 12870)
-
-The Flix compiler ships with a suite of benchmarks used to track its performance
-over time. At present these benchmarks make little or no use of algebraic
-effects and handlers, even though effect handling is a central feature of the
-language and a part of the compiler with interesting performance
-characteristics. Without representative benchmarks it is difficult to measure
-the impact of changes to the effect compilation strategy or to compare Flix
-against other languages with effect handlers.
-
 ### Effect Refactoring (issue 4616)
 
 Adding or removing an effect from a function is rarely a local change. If a
