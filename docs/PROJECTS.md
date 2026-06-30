@@ -69,15 +69,6 @@ use their continuation in much more restricted ways: some never resume at all
 efficiently than the general case, avoiding the cost of capturing a first-class
 continuation.
 
-### Effect Refactoring (issue 4616)
-
-Adding or removing an effect from a function is rarely a local change. If a
-function gains, say, a `Log` effect, then every function that calls it — and
-every higher-order function that takes it as an argument — may need to change as
-well, either by gaining the effect or by becoming effect-polymorphic. Doing this
-by hand is tedious and error-prone, and the right choice is not always obvious,
-particularly in the presence of higher-order functions and function composition.
-
 ## Datalog & Logic Programming
 
 ### Failable Datalog (issue 5463)
