@@ -43,7 +43,7 @@ suite. This process is fully automatic and can be run for hours. Often such
 techniques, with suitably clever 'mutation strategies', are able to find
 significantly more bugs than those found by unit testing.
 
-## Code Formatting
+## Code Formatting (issue 1098)
 
 A significant part of compiler implementation focuses on the parser: the
 compiler phase that turns source code text into abstract syntax trees. However,
@@ -52,7 +52,7 @@ abstract syntax trees back into neatly formatted source code text. Today,
 programming languages like Go, IDEs like Intellij IDEA, and linters all come
 with built-in support for code formatting.
 
-## Tail Recursion Modulo Cons
+## Tail Recursion Modulo Cons (issue 1228)
 
 Tail Recursion Modulo Cons (TRMC) is an essential optimization for functional
 programming languages that enable very efficient compilation of common functions
@@ -69,7 +69,7 @@ range of techniques that can verify that a program (or part of a program) always
 terminates. For example, by checking that recursive calls always operate on
 structurally smaller elements.
 
-## Abortive and Tail-Resumptive Handlers
+## Abortive and Tail-Resumptive Handlers (issue 12887)
 
 Flix supports algebraic effects and handlers. When a handler invokes its
 continuation, the general case requires capturing and reifying the continuation
@@ -80,7 +80,7 @@ use their continuation in much more restricted ways: some never resume at all
 efficiently than the general case, avoiding the cost of capturing a first-class
 continuation.
 
-## Effect Handler Benchmarks
+## Effect Handler Benchmarks (issue 12870)
 
 The Flix compiler ships with a suite of benchmarks used to track its performance
 over time. At present these benchmarks make little or no use of algebraic
@@ -90,7 +90,7 @@ characteristics. Without representative benchmarks it is difficult to measure
 the impact of changes to the effect compilation strategy or to compare Flix
 against other languages with effect handlers.
 
-## Destination-Driven Code Generation
+## Destination-Driven Code Generation (issue 12614)
 
 When the Flix compiler generates JVM bytecode, expression compilation
 unconditionally leaves a value on the stack — even when that value is never
@@ -106,7 +106,7 @@ the compiler can avoid materializing unused values, and can compile boolean
 conditions directly into jumps rather than producing a boolean and then testing
 it.
 
-## Meta-Choice Expressions
+## Meta-Choice Expressions (issue 12418)
 
 Parsing is usually thought of as producing a single abstract syntax tree from a
 piece of source code. In some situations, however, a fragment of source code is
@@ -116,7 +116,7 @@ candidate parses of the same fragment, deferring the decision of which one is
 correct to a later compiler phase that has more context, for example type
 information.
 
-## Semantic Grep
+## Semantic Grep (issue 11322)
 
 Programmers frequently search their codebases, but the standard tools — such as
 `grep` — operate purely on text and have no understanding of program structure
@@ -124,7 +124,7 @@ or semantics. A *semantic* search command would instead let programmers query
 their code based on its meaning: for example, finding all pure functions, all
 functions with a particular signature, or all uses of a given definition.
 
-## Reactive MVC Module
+## Reactive MVC Module (issue 7269)
 
 Modern user-interface frameworks, such as React, are built around a simple but
 powerful idea: the programmer describes the application state and how it
@@ -134,7 +134,7 @@ and an imperative, on-demand runtime is a natural fit for a functional language
 with an effect system, where the side effects performed during state transitions
 can be tracked and controlled.
 
-## Fluent APIs
+## Fluent APIs (issue 6625)
 
 Many libraries expose *fluent* or *protocol* APIs in which methods must be
 called in a particular order — for instance, a resource must be opened before it
@@ -143,7 +143,7 @@ protocols statically, so misuse is only detected at runtime. By encoding the
 state of an object at the type level, a sufficiently expressive type system can
 make illegal call sequences a compile-time error.
 
-## Type Qualifiers
+## Type Qualifiers (issue 6528)
 
 Type qualifiers annotate a type with extra information that the type system then
 tracks and enforces. Familiar examples include `const` (the value may not be
@@ -153,7 +153,7 @@ for type qualifiers to Flix would let programmers express and enforce a wide
 range of such properties, potentially by desugaring qualified types into an
 underlying representation indexed by a type-level qualifier.
 
-## Mutation Testing
+## Mutation Testing (issue 6095)
 
 A test suite is only as good as its ability to detect bugs. Mutation testing
 measures this directly: it systematically introduces small changes ("mutants")
@@ -162,7 +162,7 @@ and then runs the test suite against each mutant. A mutant that is *not* caught
 by any test reveals a gap in the suite. Because Flix has a rich, typed AST,
 mutations can be generated in a principled, type-directed way.
 
-## Failable Datalog
+## Failable Datalog (issue 5463)
 
 Flix integrates first-class Datalog constraints into a general-purpose
 functional language. Standard Datalog computes a least fixed point and always
@@ -171,7 +171,7 @@ example, partial functions applied within rules. A model of *failable* Datalog
 would give a principled account of how failure of various kinds propagates
 through Datalog computation.
 
-## Widening with Datalog Semantics
+## Widening with Datalog Semantics (issue 5388)
 
 Static analyses are often expressed as fixed-point computations over a lattice,
 and Flix's first-class Datalog constraints with lattice semantics are well
@@ -181,7 +181,7 @@ accelerates convergence. It is an open question how widening can be expressed
 naturally within Datalog semantics — for example, by combining the old and new
 values of a lattice element within a rule.
 
-## Effect Refactoring
+## Effect Refactoring (issue 4616)
 
 Adding or removing an effect from a function is rarely a local change. If a
 function gains, say, a `Log` effect, then every function that calls it — and
@@ -190,7 +190,7 @@ well, either by gaining the effect or by becoming effect-polymorphic. Doing this
 by hand is tedious and error-prone, and the right choice is not always obvious,
 particularly in the presence of higher-order functions and function composition.
 
-## Auto-Completion as a Service
+## Auto-Completion as a Service (issue 4579)
 
 Editor features such as auto-completion and redundancy checking are usually
 hard-wired into the compiler or language server. An alternative is to make them
@@ -199,7 +199,7 @@ for example, through macros — and have the editor surface them. This raises
 interesting questions about the "algebra" of completions: how they compose, and
 how a combinator library might expose the abstract syntax tree to drive them.
 
-## User-Defined Kinds for Sets
+## User-Defined Kinds for Sets (issue 4536)
 
 Flix uses kinds to classify types — for example, distinguishing ordinary types
 from type-level booleans or effects. It would be useful to let programmers define
@@ -208,7 +208,7 @@ their own kinds whose inhabitants form a fixed, enumerated set, such as a kind
 as type-level tags and enable more precise, domain-specific use of the type
 system.
 
-## Type-Indexed Streams
+## Type-Indexed Streams (issue 4533)
 
 Streams are a fundamental abstraction for working with sequences of values,
 including potentially infinite ones. By indexing a stream type with type-level
@@ -218,7 +218,7 @@ at compile time, for example taking the last element of an infinite stream, whil
 still allowing generic operations such as `map`, `zip`, and `flatMap` to be
 expressed over all streams.
 
-## Overloaded Functions for Timing Resistance
+## Overloaded Functions for Timing Resistance (issue 4530)
 
 Security-critical code, such as a routine that compares two secret strings, must
 often be written to be *timing-resistant*: its running time must not depend on
@@ -229,7 +229,7 @@ write generic code and have the compiler, guided by the type system, select the
 appropriate variant at compile time based on whether the data is secret —
 avoiding both runtime dispatch and the risk of choosing wrongly by hand.
 
-## Controlling Variable Capture
+## Controlling Variable Capture (issue 4518)
 
 Some language constructs are only safe if the expressions they enclose do not
 capture certain kinds of variables. For example, an expression that is spawned on
@@ -238,7 +238,7 @@ that could then be accessed concurrently. It is an open question how best to
 express and enforce such restrictions, and how the answer relates to the
 distinction between capabilities, effects, and effect exclusion.
 
-## VSCode Testing API Integration
+## VSCode Testing API Integration (issue 4502)
 
 Flix ships with a Visual Studio Code extension that provides a rich editing
 experience backed by the compiler. VSCode exposes a dedicated Testing API that
@@ -247,7 +247,7 @@ them, and report their results inline. Integrating Flix's unit tests with this
 API would give Flix programmers a first-class testing experience inside their
 editor.
 
-## Structural Relations
+## Structural Relations (issue 3127)
 
 In Flix's Datalog, relations are referred to by a fixed schema. A more
 *structural* treatment would let rules mention only the fields they care about
@@ -256,7 +256,7 @@ and ignore the rest — so that, for example, an `Edge` relation carrying an ext
 while a rule that derives a fact must still supply every field that fact
 requires. This is reminiscent of row polymorphism applied to Datalog predicates.
 
-## Stable JVM API (Facade)
+## Stable JVM API (Facade) (issue 2359)
 
 Flix compiles to the JVM and can interoperate with Java, but calling Flix code
 *from* Java is awkward because Flix functions are often polymorphic and compiled
@@ -265,7 +265,7 @@ programmers to *export* selected non-polymorphic functions would let the compile
 generate a stable Java interface — a facade — that Java code can call directly,
 making Flix usable as a library from the wider JVM ecosystem.
 
-## Compile-Time Interpreter
+## Compile-Time Interpreter (issue 1153)
 
 A compile-time interpreter evaluates a subset of the language during compilation.
 Such an interpreter opens the door to compile-time meta-programming: macro
@@ -275,7 +275,7 @@ operate on the typed AST rather than a lowered representation, be restricted to
 pure expressions (with the exception of pure JVM interop), and use a step counter
 to guarantee termination.
 
-## Compilation to WebAssembly
+## Compilation to WebAssembly (issue 500)
 
 WebAssembly is a portable binary instruction format designed to run at
 near-native speed inside a memory-safe, sandboxed execution environment — most
