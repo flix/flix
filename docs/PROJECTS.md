@@ -159,15 +159,6 @@ making Flix usable as a library from the wider JVM ecosystem.
 
 ## Analysis & Metaprogramming
 
-### Termination Analysis
-
-A common programming mistake is to write an infinite loop. Unfortunately, most
-contemporary programming languages, such as C, C++, C#, Java, Kotlin, and Scala,
-do not help programmers avoid such issues. Termination analysis describes a wide
-range of techniques that can verify that a program (or part of a program) always
-terminates. For example, by checking that recursive calls always operate on
-structurally smaller elements.
-
 ### Meta-Choice Expressions (issue 12418)
 
 Parsing is usually thought of as producing a single abstract syntax tree from a
@@ -189,26 +180,6 @@ pure expressions (with the exception of pure JVM interop), and use a step counte
 to guarantee termination.
 
 ## Editor & Developer Tooling
-
-### Package Management
-
-Today, programs are rarely written from scratch, but rather build on a large
-collection of external libraries. Different languages have different package
-ecosystems: Java has Maven, JavaScript has NPM, Rust has Cargo, and so forth.
-All of these languages offer some form of package manager that is used to
-download, install, upgrade, and keep track of the dependencies of a software
-project. The problem is non-trivial: For example, how should we handle the
-situation where a project depends on package A and package B, and A depends on C
-(version 1.0), but B depends on C (version 2.0)?
-
-### Code Formatting (issue 1098)
-
-A significant part of compiler implementation focuses on the parser: the
-compiler phase that turns source code text into abstract syntax trees. However,
-the opposite direction is often forgotten: the code formatter that turns
-abstract syntax trees back into neatly formatted source code text. Today,
-programming languages like Go, IDEs like Intellij IDEA, and linters all come
-with built-in support for code formatting.
 
 ### Semantic Grep (issue 11322)
 
