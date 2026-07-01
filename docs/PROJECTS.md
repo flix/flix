@@ -200,18 +200,6 @@ editor.
 
 ## Testing & Benchmarking
 
-### QuickCheck
-
-QuickCheck frameworks are testing tools used in software development to perform
-property-based testing. Instead of writing specific test cases, developers
-define properties that their code should satisfy. These properties are then
-tested against a large number of automatically generated random inputs.
-QuickCheck frameworks generate a wide range of test inputs to explore various
-edge cases and potential issues in the code. If a property fails for a
-particular input, the framework automatically simplifies the input to find the
-simplest case that causes the failure. This helps developers identify and fix
-bugs in their code efficiently.
-
 ### Compiler Fuzzing
 
 Compilers are large and complex pieces of software. The correctness of a
@@ -237,15 +225,19 @@ mutations can be generated in a principled, type-directed way.
 
 ## Libraries & Applications
 
-### Reactive MVC Module (issue 7269)
+### GUI and TUI Libraries with Effect Handlers (issue 7269)
 
-Modern user-interface frameworks, such as React, are built around a simple but
-powerful idea: the programmer describes the application state and how it
-transitions, and a runtime is responsible for rendering that state and
-re-rendering it whenever it changes. This separation between declarative state
-and an imperative, on-demand runtime is a natural fit for a functional language
-with an effect system, where the side effects performed during state transitions
-can be tracked and controlled.
+Graphical user interfaces (GUIs) and terminal user interfaces (TUIs) are
+inherently effectful: they draw to a screen, react to input, and evolve over
+time. Algebraic effects and handlers offer a promising way to express such
+interfaces, letting a program describe rendering and event handling as ordinary
+effect operations while a handler supplies the concrete backend — a windowing
+toolkit, a terminal, or something else entirely. Two challenges make this
+especially interesting: concurrency, since most toolkits insist that rendering
+and event dispatch happen on a dedicated UI thread separate from the application
+logic; and testability, since the interface can be driven by mock handlers that
+feed scripted input and record rendered output, enabling automated tests without
+a real screen or terminal.
 
 ### Type-Indexed Streams (issue 4533)
 
@@ -256,3 +248,15 @@ evaluated eagerly or lazily — the type system can rule out nonsensical operati
 at compile time, for example taking the last element of an infinite stream, while
 still allowing generic operations such as `map`, `zip`, and `flatMap` to be
 expressed over all streams.
+
+### QuickCheck Framework
+
+QuickCheck frameworks are testing tools used in software development to perform
+property-based testing. Instead of writing specific test cases, developers
+define properties that their code should satisfy. These properties are then
+tested against a large number of automatically generated random inputs.
+QuickCheck frameworks generate a wide range of test inputs to explore various
+edge cases and potential issues in the code. If a property fails for a
+particular input, the framework automatically simplifies the input to find the
+simplest case that causes the failure. This helps developers identify and fix
+bugs in their code efficiently.
