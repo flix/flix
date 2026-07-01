@@ -67,7 +67,7 @@ object SignatureCompleter {
     */
   private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
     val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
-      case Some(Resolution.Declaration(Trait(_, _, _, name, _, _, _, _, _, _))) => name.toString
+      case Some(Resolution.Declaration(Trait(_, _, _, name, _, _, _, _, _))) => name.toString
       case Some(Resolution.Declaration(Mod(_, _, _, name, _, _, _, _))) => name.toString
       case _ => return Nil
     }

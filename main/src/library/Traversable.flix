@@ -33,20 +33,6 @@ pub mod Traversable {
         ///
         pub def sequence(t: t[m[a]]): m[t[a]] \ Foldable.Aef[t] with Applicative[m] =
             Traversable.traverse(identity, t)
-
-        ///
-        /// Traversing with the identity function wrapped into an applicative preserves the container `t`
-        /// where accessing elements within `t` is pure.
-        ///
-        law identity: forall (t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] where Foldable.Aef[t] ~ {} Traversable.traverse(f, t) == Applicative.point(t)
-
-        ///
-        /// sequence identity.
-        ///
-        law identity: forall (t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] where Foldable.Aef[t] ~ {} Traversable.sequence(Functor.map(f, t)) == Applicative.point(t)
-
-        // Missing laws: naturality and composition.
-
     }
 
     ///

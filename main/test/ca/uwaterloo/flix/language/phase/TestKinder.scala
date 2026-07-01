@@ -1188,17 +1188,6 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.UnexpectedKind.Trait.Law.01") {
-    val input =
-      """
-        |trait C[a: Type -> Type] {
-        |  law l: forall (x: a) ???
-        |}
-        |""".stripMargin
-    val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
-  }
-
   test("KindError.UnexpectedKind.Trait.Sig.01") {
     val input =
       """

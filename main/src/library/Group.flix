@@ -47,25 +47,6 @@ pub mod Group {
         ///
         pub def remove(x: a, y: a): a =
             Group.combine(x, Group.inverse(y))
-
-        ///
-        /// Combining the inverse of `x` with `x` yields the neutral element in the group.
-        ///
-        /// The operation is commutative i.e. if `y` is the inverse of `x` and `e` is the
-        /// identity (neutral element) then
-        /// `combine(x, y) == combine(y, x) == e`
-        ///
-        law leftInvertible: forall (x: a) with Eq[a] Group.combine(Group.inverse(x), x) == Group.empty()
-
-        ///
-        /// Combining the inverse of `x` with `x` yields the neutral element in the group.
-        ///
-        /// The operation is commutative i.e. if `y` is the inverse of `x` and `e` is the
-        /// identity (neutral element) then
-        /// `combine(x, y) == combine(y, x) == e`
-        ///
-        law rightInvertible: forall (x: a) with Eq[a] Group.combine(x, Group.inverse(x)) == Group.empty()
-
     }
 
     instance Group[Unit] {

@@ -797,7 +797,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalModifier.01") {
     val input =
       """
-        |lawful enum A
+        |sealed enum A
         |
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
