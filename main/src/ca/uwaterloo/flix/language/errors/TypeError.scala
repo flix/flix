@@ -17,12 +17,11 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{TypedAst, *}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
+import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -58,7 +57,7 @@ object TypeError {
     *
     * @param expected the list of effects declared in the function signature
     * @param actual   the list of effects present on the argument at the call site
-    * @param loc1      the source location of the call site (where the argument is passed)
+    * @param loc1     the source location of the call site (where the argument is passed)
     * @param loc2     the source location of the function signature (where the expected effect is declared)
     * @param loc3     the source location of the argument definition (where the actual effect originates)
     */
@@ -183,8 +182,8 @@ object TypeError {
     *
     * @param defEffSyms the symbol(s) the effect(s) in the function definition
     * @param usedEffSym the symbol of the effect causing the error
-    * @param loc1    the location of the function explicitly declared as defEffSym.
-    * @param loc2   the location where the other effect is used.
+    * @param loc1       the location of the function explicitly declared as defEffSym.
+    * @param loc2       the location where the other effect is used.
     */
   case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6216
@@ -193,11 +192,11 @@ object TypeError {
 
     override def locs: List[SourceLocation] = List(loc1)
 
-    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as ${effectsToString(defEffSyms)}"
+    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as ${EffSymOrRigidVar.format(defEffSyms)}"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      val defString = s"${magenta(effectsToString(defEffSyms))}"
+      val defString = s"${magenta(EffSymOrRigidVar.format(defEffSyms))}"
       s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as $defString.
          |
          |${highlight(loc1, s"function declared as $defString", fmt)}
@@ -216,7 +215,7 @@ object TypeError {
     * An error raised when an effect is used in a function that is explicitly declared Pure.
     *
     * @param effSym the symbol of the effect causing the error
-    * @param loc1    the location of the function explicitly declared as {}.
+    * @param loc1   the location of the function explicitly declared as {}.
     * @param loc2   the location where the effect is used.
     */
   case class ExplicitlyPureFunctionUsesEffect(effSym: EffSymOrRigidVar, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
@@ -247,7 +246,7 @@ object TypeError {
   /**
     * An error raised when IO is used in a function that is explicitly declared Pure.
     *
-    * @param loc1  the location of the function explicitly declared as {}.
+    * @param loc1 the location of the function explicitly declared as {}.
     * @param loc2 the location where IO is used.
     */
   case class ExplicitlyPureFunctionUsesIO(loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
@@ -331,6 +330,12 @@ object TypeError {
   }
 
   /**
+    * An error raised when an effect that is already handled by a handler also
+    * appears among the expected effects in the enclosing function's signature.
+    *
+    * @param handledEff the symbol of the effect that is handled but also declared in the signature
+    * @param loc        the location of the handled effect
+    * @param sigLoc     the location where the effect reappears in the function signature
     */
   case class HandledEffectAppearsInSignature(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6220
@@ -343,7 +348,7 @@ object TypeError {
          |${highlight(loc, s"handled effect: '${magenta(handledEff.name)}'", fmt)}
          |${highlight(sigLoc, "also appears in the signature", fmt)}
          |
-         |${underline("Solution:")} To fix this remove '${(magenta(handledEff.name))}' from the signature
+         |${underline("Solution:")} To fix this remove '${magenta(handledEff.name)}' from the signature
          |or subtract it from the other effect(s)
          |""".stripMargin
     }
@@ -964,8 +969,8 @@ object TypeError {
     * An unhandled effect error.
     *
     * Occurs when an effect used inside a `run` expression is neither:
-    *   (a) handled by a handler
-    *   (b) declared in the enclosing function's effect signature.
+    * (a) handled by a handler
+    * (b) declared in the enclosing function's effect signature.
     *
     * @param unhandled  The effect symbol or rigid variable that is unhandled.
     * @param signature  The effect symbol or rigid variable representing the signature.
@@ -1069,6 +1074,16 @@ object TypeError {
     }
   }
 
+  /**
+    * An error raised when a handler handles an effect that is neither used by
+    * any expression inside its `run` block nor declared in the enclosing
+    * function's effect signature.
+    *
+    * @param handledEff the symbol of the effect handled by the handler but never used
+    * @param loc        the location of the handler for the unused effect
+    * @param sigLoc     the location of the enclosing function's effect signature
+    * @param sourceLoc  the location of the `run` block's expression that fails to use the effect
+    */
   case class UnusedHandlerEffect(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation, sourceLoc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6219
 
@@ -1128,14 +1143,6 @@ object TypeError {
       Type.getFlixType(tpe).toString
     else
       tpe.getName
-  }
-
-  /**
-    * Returns the effect set as a string.
-    */
-  private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
-    case x :: Nil => s"'${x.name}'"
-    case xs => xs.map(_.name).mkString("'{", ", ", "}'")
   }
 
 }
