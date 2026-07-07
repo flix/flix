@@ -236,6 +236,10 @@ class TypeContext {
 
   /**
     * Adds the given trait constraints to the context.
+    *
+    * Each constraint is reported at the given `loc`, regardless of the location stored on the
+    * constraint itself. A constraint typically originates from a signature, but the error should
+    * point at the use site, so callers pass the use-site location here.
     */
   def addClassConstraints(tconstrs0: List[TraitConstraint], loc: SourceLocation): Unit = {
     for (TraitConstraint(head, arg, _) <- tconstrs0) {

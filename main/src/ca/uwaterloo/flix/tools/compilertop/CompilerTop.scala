@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.tools.compilertop.Model.*
 import org.jline.terminal.{Attributes, Terminal, TerminalBuilder}
 
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
 
 object CompilerTop {
 
@@ -33,6 +33,13 @@ object CompilerTop {
   /** Poll interval for the input thread (ms); doubles as how fast `running=false` is observed. */
   private val InputPollMs: Long = 100L
 
+  /**
+    * Bounded wait for the remaining bytes of a CSI escape sequence (e.g. the
+    * `[ A` after the `ESC` of an up-arrow). A lone `Esc` therefore costs at most
+    * this much latency before the input loop acts on it.
+    */
+  private val EscSeqMs: Long = 50L
+
   /** Fallback terminal height when JLine cannot determine the real one. */
   private val DefaultRows: Int = 24
 
@@ -41,21 +48,23 @@ object CompilerTop {
 
 
   /**
-    * Fixed-overhead rows: blank + 2 dashboard/stats lines + blank + 2 def-chrome +
-    * 1 blank-before-modules + 2 module-chrome + 1 cursor-parking row.
+    * Fixed-overhead rows: blank + 2 dashboard/stats lines + blank +
+    * 2 table-chrome (header + divider) + 1 cursor-parking row. Only one
+    * table is visible at a time now, so there is no second-table chrome to
+    * reserve.
     */
-  private val ChromeRows: Int = 10
+  private val ChromeRows: Int = 7
 
-  /** Reserved breathing room above and below the rendered view. */
-  private val RowMargin: Int = 2
+  /**
+    * Reserved breathing room below the rendered view, on top of the
+    * cursor-parking row already counted in [[ChromeRows]]. Just one cosmetic
+    * blank line — the parking row alone is enough to prevent the terminal
+    * from scrolling.
+    */
+  private val RowMargin: Int = 1
 
-  /** Floor on the total data-row budget. */
-  private val MinDataRows: Int = 8
-
-  /** Floor on the def-table row count. */
-  private val MinDefN: Int = 5
-  /** Floor on the module-table row count. */
-  private val MinModuleN: Int = 3
+  /** Floor on the table's data-row budget. */
+  private val MinTableRows: Int = 8
 
 }
 
@@ -108,12 +117,30 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
   private val sort = new AtomicReference[Sort](Sort.Time)
 
   /**
-    * Active top-level view (tables vs. help screen). Written by the input
-    * thread on `?` / `Esc`, read by the renderer thread. Default is
-    * [[View.Main]]. Compilation keeps running regardless of which view is
-    * showing; toggling does not interfere with the build.
+    * Active top-level view (defs table / modules table / help screen).
+    * Written by the input thread on `Tab` / `?` / `Esc`, read by the
+    * renderer thread. Default is [[View.Defs]]. Compilation keeps running
+    * regardless of which view is showing; toggling does not interfere with
+    * the build.
     */
-  private val view = new AtomicReference[View](View.Main)
+  private val view = new AtomicReference[View](View.Defs)
+
+  /**
+    * Number of rows scrolled past the top of the active table. Written by the
+    * input thread on `↑` / `↓`, read and re-clamped by the renderer thread.
+    * Reset to 0 whenever the visible list changes identity (Tab / filter / sort
+    * / Esc), since a row offset is meaningless across a re-sorted or different
+    * list.
+    */
+  private val scrollOffset = new AtomicInteger(0)
+
+  /**
+    * The largest valid [[scrollOffset]] for the table the renderer last drew,
+    * published each frame by [[buildFrameState]]. Lets the input thread clamp
+    * `↓` without recomputing the snapshot, so holding `↓` past the end doesn't
+    * inflate the offset (which would make a later `↑` appear to do nothing).
+    */
+  private val maxScroll = new AtomicInteger(0)
 
   /**
     * Counted down by the input thread when the user presses `q` (only after
@@ -193,8 +220,14 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     *   - `f` / `F` → filter to frontend phases
     *   - `b` / `B` → filter to backend phases
     *   - `a` / `A` → reset to all phases
+    *   - Tab (`9`) → cycle the defs → modules → phases tables (from help,
+    *     lands on the defs table).
     *   - `?`       → toggle the help view (column / keystroke legend).
-    *   - Esc (`27`) → return to the main view (no-op if already there).
+    *   - `↑` / `↓` (CSI `ESC [ A` / `ESC [ B`) → scroll the active table up /
+    *     down one row, clamped to `[0, maxScroll]`.
+    *   - Esc (`27`) → return to the defs view (no-op if already there). `27`
+    *     also prefixes the arrow sequences, so a follow-up read disambiguates a
+    *     bare Esc from `↑` / `↓` (an Alt+key combo is treated as a bare Esc).
     *   - `q` / `Q` / Ctrl-C / EOF → if compilation has completed, signal
     *     [[stop]] to finish teardown; otherwise ignored (pressing `q`
     *     mid-compile must not abort the build).
@@ -214,25 +247,43 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
             quitLatch.countDown()
             return
           }
-        case 27 => // Esc — return to the "all" view: filter All, main view.
-          filter.set(PhaseFilter.All)
-          view.set(View.Main)
+        case 9 => // Tab — cycle the table; from help, land on the defs table.
+          view.updateAndGet(v => if (v == View.Help) View.Defs else v.toggledTable)
+          scrollOffset.set(0)
+        case 27 =>
+          // Esc, or the start of a CSI arrow sequence (`ESC [ A` / `ESC [ B`).
+          // A short follow-up read disambiguates: `[` then `A`/`B` is an arrow;
+          // a timeout (or anything else) is a bare Esc.
+          if (r.read(EscSeqMs) == '[') r.read(EscSeqMs) match {
+            case 'A' => scrollOffset.updateAndGet(o => (o - 1).max(0))               // up
+            case 'B' => scrollOffset.updateAndGet(o => (o + 1).min(maxScroll.get())) // down
+            case _   => // other CSI (←/→/Home/…) — ignored
+          } else {
+            // Bare Esc (or Alt+key): return to the "all" view, top of the table.
+            filter.set(PhaseFilter.All)
+            view.set(View.Defs)
+            scrollOffset.set(0)
+          }
         case '?' =>
-          view.updateAndGet(v => if (v == View.Help) View.Main else View.Help)
+          view.updateAndGet(v => if (v == View.Help) View.Defs else View.Help)
         case ch if ch > 0 =>
           // Dispatch via the Sort / PhaseFilter ADTs so the key ↔ value
           // mapping lives in one place ([[Model.Sort.fromKey]],
           // [[Model.PhaseFilter.fromKey]]) rather than being duplicated
           // across this match and the renderer's header / legend code.
           //
-          // Pressing a filter key from the help view also returns to the main
-          // view so the user can see the filter take effect — otherwise the
-          // toggle happens invisibly behind the help screen.
+          // Pressing a filter key from the help view also leaves help (onto
+          // the defs table) so the user can see the filter take effect —
+          // otherwise the toggle happens invisibly behind the help screen.
+          // From a table view the current table is preserved.
+          // Changing the sort or filter reorders / reselects the row set, so the
+          // current scroll offset no longer points at the same rows — reset to top.
           val char = ch.toChar
-          Sort.fromKey(char).foreach(sort.set)
+          Sort.fromKey(char).foreach { s => sort.set(s); scrollOffset.set(0) }
           PhaseFilter.fromKey(char).foreach { f =>
             filter.set(f)
-            view.set(View.Main)
+            view.updateAndGet(v => if (v == View.Help) View.Defs else v)
+            scrollOffset.set(0)
           }
         case _ => // ignored
       }
@@ -312,17 +363,17 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val currentPhase = if (isDone) "done" else flix.getCurrentPhaseName.getOrElse("starting")
     val phaseTimersSize = flix.phaseTimers.size
 
-    // Budget rows for the two tables based on the current terminal height,
-    // reserving an extra `RowMargin` rows so the view never quite touches
-    // the top or bottom edge of the terminal.
-    val dataRows = (terminalRows() - ChromeRows - RowMargin).max(MinDataRows)
-    val moduleN = (dataRows / 3).max(MinModuleN)
-    val defN = (dataRows - moduleN).max(MinDefN)
+    // Budget rows for the single visible table based on the current terminal
+    // height, reserving an extra `RowMargin` rows so the view never quite
+    // touches the top or bottom edge of the terminal. Only one table shows at
+    // a time, so it gets the whole budget.
+    val tableRows = (terminalRows() - ChromeRows - RowMargin).max(MinTableRows)
 
+    val activeView = view.get()
     val activeFilter = filter.get()
     val activeSort = sort.get()
 
-    // The mono / opt / cls columns only render under the backend view (the
+    // The mono / inl / cls columns only render under the backend view (the
     // phases that populate them only fire in the backend pipeline). The cns /
     // tv / ev columns only render under the frontend view (constraint
     // generation is purely a Typer concern). Layout itself doesn't know about
@@ -333,11 +384,42 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     // reserving 2 columns for the 1-space left and right table padding.
     val layout = Layout.compute((terminalCols() - 2).max(1), showCounts, showCns)
 
-    val snap = applyFilter(profiler.snapshot(), activeFilter).sortBy(s => -defSortKey(s, activeSort))
-    val visible = snap.take(defN)
-    val modules = aggregateByModule(snap, activeSort).take(moduleN)
+    // Only build the rows the active view actually renders: the def list when
+    // on Defs / Help, the module aggregate when on Modules. `snap` is computed
+    // either way since module aggregation rolls up from it.
+    val raw = profiler.snapshot()
+    val snap = applyFilter(raw, activeFilter).sortBy(s => -defSortKey(s, activeSort))
+    val mods = if (activeView == View.Modules) aggregateByModule(snap, activeSort) else Vector.empty
+    // Phase rows roll up from the unfiltered `raw` snapshot + phaseTimers; the
+    // active filter selects which phases show (inside aggregateByPhase) rather
+    // than re-projecting per-def time, so each phase's alloc / cpu stay correct.
+    val phaseRows = if (activeView == View.Phases) aggregateByPhase(raw, flix.phaseTimers.toVector, activeFilter, parallelism) else Vector.empty
 
-    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, view.get(), layout, visible, modules)
+    // Scroll window over the active table. `maxScroll` is published so the input
+    // thread can clamp `↓`; the offset is also re-clamped here because a filter
+    // change or terminal resize can shrink the list between key presses. Help is
+    // a static legend, not a scrollable table, so its budget is 0.
+    val total = activeView match {
+      case View.Defs    => snap.length
+      case View.Modules => mods.length
+      case View.Phases  => phaseRows.length
+      case View.Help    => 0
+    }
+    val maxOff = (total - tableRows).max(0)
+    maxScroll.set(maxOff)
+    val offset = scrollOffset.get().min(maxOff).max(0)
+
+    val visible = if (activeView == View.Defs)    snap.slice(offset, offset + tableRows) else Vector.empty
+    val modules = if (activeView == View.Modules) mods.slice(offset, offset + tableRows) else Vector.empty
+    val phases  = if (activeView == View.Phases)  phaseRows.slice(offset, offset + tableRows) else Vector.empty
+
+    // Coverage scopes to the active phase filter (via `matchesFilter`), so the
+    // observed figure narrows to the same phases the visible table covers: press
+    // `f`/`b` and both the rows and the coverage % follow. `parallelism` divides
+    // the thread-summed per-def time into an estimated attributed wall slice.
+    val coverage = computeCoverage(raw, flix.phaseTimers.toVector, activeFilter, parallelism)
+
+    FrameState(parallelism, isDone, elapsed, activeThreads, heap, currentPhase, phaseTimersSize, activeFilter, activeSort, activeView, layout, visible, modules, phases, coverage)
   }
 
 }

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListOps
 
 /**
   * Companion object for the [[Substitution]] class.
@@ -63,7 +64,10 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
   private def visitType(t: Type): Type = t match {
     // NB: The order of cases has been determined by code coverage analysis.
-    case x: Type.Var => m.getOrElse(x.sym, x)
+    case x: Type.Var =>
+      // Performance: A non-capturing default avoids a thunk allocation per lookup.
+      val tpe = m.getOrElse(x.sym, null)
+      if (tpe == null) x else tpe
 
     case Type.Cst(_, _) => t
 
@@ -76,21 +80,25 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       app.renew(x, y, loc)
 
     case Type.Alias(sym, args0, tpe0, loc) =>
-      val args = args0.map(visitType)
+      val args = ListOps.mapWithReuse(args0)(visitType)
       val tpe = visitType(tpe0)
-      Type.Alias(sym, args, tpe, loc)
+      // Performance: Reuse t, if possible.
+      if ((args eq args0) && (tpe eq tpe0)) t else Type.Alias(sym, args, tpe, loc)
 
     case Type.AssocType(cst, args0, kind, loc) =>
       val args = args0.map(visitType)
-      Type.AssocType(cst, args, kind, loc)
+      // Performance: Reuse t, if possible.
+      if (args eq args0) t else Type.AssocType(cst, args, kind, loc)
 
     case Type.JvmToType(tpe0, loc) =>
       val tpe = visitType(tpe0)
-      Type.JvmToType(tpe, loc)
+      // Performance: Reuse t, if possible.
+      if (tpe eq tpe0) t else Type.JvmToType(tpe, loc)
 
     case Type.JvmToEff(tpe0, loc) =>
       val tpe = visitType(tpe0)
-      Type.JvmToEff(tpe, loc)
+      // Performance: Reuse t, if possible.
+      if (tpe eq tpe0) t else Type.JvmToEff(tpe, loc)
 
     case Type.UnresolvedJvmType(member0, loc) =>
       val member = member0.map(visitType)
@@ -160,8 +168,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     // Case 3: Merge the two substitutions.
 
     // Add all bindings in `that`. (Applying the current substitution).
+    // Performance: `foreachEntry` avoids a tuple allocation per binding.
     var result = that.m
-    for ((x, tpe) <- that.m) {
+    that.m.foreachEntry { (x, tpe) =>
       val t = this.apply(tpe)
       if (!(t eq tpe)) {
         result = result.updated(x, t)
@@ -169,7 +178,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     }
 
     // Add all bindings in `this` that are not in `that`.
-    for ((x, tpe) <- this.m) {
+    this.m.foreachEntry { (x, tpe) =>
       if (!that.m.contains(x)) {
         result = result.updated(x, tpe)
       }

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -805,6 +805,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
+  }
+
+  test("UndefinedJvmMethod.08") {
+    // `null` is not assignable to a primitive parameter (`charAt(int)`),
+    // so the method must not resolve.
+    val input =
+      raw"""
+           |import java.lang.String
+           |
+           |def foo(): Unit =
+           |    let o = new String();
+           |    let _ = o.charAt(null);
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmField.01") {
@@ -1650,6 +1666,57 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.DuplicateAssocTypeDef](result)
   }
 
+  test("DuplicateInstanceDef.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance C[String] {
+        |    pub def f(x: String): String = x
+        |    pub def f(x: String): String = x
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateInstanceDef](result)
+  }
+
+  test("DuplicateInstanceDef.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance C[String] {
+        |    pub def f(x: String): String = x
+        |    pub def f(x: String): String = x
+        |    pub def f(x: String): String = x
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateInstanceDef](result)
+  }
+
+  test("DuplicateInstanceDef.03") {
+    // A duplicate def that is not a member of the trait is still reported as a duplicate.
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance C[String] {
+        |    pub def f(x: String): String = x
+        |    pub def g(x: String): String = x
+        |    pub def g(x: String): String = x
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateInstanceDef](result)
+  }
+
   test("MissingAssocTypeDef.01") {
     val input =
       """
@@ -1710,7 +1777,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
-  test("Test.MismatchedOpArity.Handler.01") {
+  test("Test.OverAppliedOp.Handler.01") {
     val input =
       """
         |eff E {
@@ -1724,10 +1791,112 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
+    expectError[ResolutionError.OverAppliedOp](result)
   }
 
-  test("Test.MismatchedOpArity.Handler.02") {
+  test("Test.OverAppliedOp.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(x, y, z, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.OverAppliedOp](result)
+  }
+
+  test("Test.OverAppliedOp.Handler.03") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(a, b, c, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.OverAppliedOp](result)
+  }
+
+  test("DuplicateUpperName.Eff.Handler.01") {
+    // Regression test for https://github.com/flix/flix/issues/12003.
+    // A duplicate effect must not crash a later phase, even when a handler refers to
+    // an operation of the duplicated effect. Here the empty (operation-less) duplicate
+    // is declared last, so without merging it would shadow the operation.
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |eff E
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.Eff.Handler.02") {
+    // Regression test for https://github.com/flix/flix/issues/12003.
+    // As DuplicateUpperName.Eff.Handler.01, but with the empty duplicate declared first.
+    val input =
+      """
+        |eff E
+        |
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.Eff.Handler.03") {
+    // Regression test for https://github.com/flix/flix/issues/12003.
+    // Both duplicate effects declare operations; a handler refers to an operation from
+    // the declaration that would otherwise be shadowed.
+    val input =
+      """
+        |eff E {
+        |    def op1(): Unit
+        |}
+        |
+        |eff E {
+        |    def op2(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op1(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("Test.UnderAppliedOp.Handler.01") {
     val input =
       """
         |eff E {
@@ -1741,7 +1910,41 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
+    expectError[ResolutionError.UnderAppliedOp](result)
+  }
+
+  test("Test.UnderAppliedOp.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32, z: Bool): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedOp](result)
+  }
+
+  test("Test.UnderAppliedOp.Handler.03") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32, z: Bool): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(x, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedOp](result)
   }
 
   test("Test.MismatchedTagPatternArity.01") {

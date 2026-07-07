@@ -222,8 +222,7 @@ object SchemaConstraintGen {
         val (termTypes, termEffs) = terms.map(visitExp(_)).unzip
         c.unifyType(Type.Pure, Type.mkUnion(termEffs, loc), loc)
         c.unifyType(tvar, mkRelationOrLatticeType(den, termTypes, loc), loc)
-        val tconstrs = getTermTraitConstraints(den, termTypes, root, loc)
-        c.addClassConstraints(tconstrs, loc)
+        addTermTraitConstraints(den, termTypes, terms.map(_.loc), root)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
         resTpe
     }
@@ -239,8 +238,7 @@ object SchemaConstraintGen {
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val termTypes = terms.map(visitPattern)
         c.unifyType(tvar, mkRelationOrLatticeType(den, termTypes, loc), loc)
-        val tconstrs = getTermTraitConstraints(den, termTypes, root, loc)
-        c.addClassConstraints(tconstrs, loc)
+        addTermTraitConstraints(den, termTypes, terms.map(_.loc), root)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
         resTpe
 
@@ -271,13 +269,21 @@ object SchemaConstraintGen {
   }
 
   /**
-    * Returns the trait constraints for the given term types `ts` with the given denotation `den`.
+    * Adds the trait constraints for the given term types `ts` with the given denotation `den`.
+    *
+    * Each term's constraints are added at that term's own source location (from `locs`), so that a
+    * missing instance error points at the specific offending term rather than the whole atom.
     */
-  private def getTermTraitConstraints(den: Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[TraitConstraint] = den match {
+  private def addTermTraitConstraints(den: Denotation, ts: List[Type], locs: List[SourceLocation], root: KindedAst.Root)(implicit c: TypeContext): Unit = den match {
     case Denotation.Relational =>
-      ts.flatMap(mkTraitConstraintsForRelationalTerm(_, root, loc))
+      for ((tpe, loc) <- ts.zip(locs)) {
+        c.addClassConstraints(mkTraitConstraintsForRelationalTerm(tpe, root, loc), loc)
+      }
     case Denotation.Latticenal =>
-      ts.init.flatMap(mkTraitConstraintsForRelationalTerm(_, root, loc)) ::: mkTraitConstraintsForLatticeTerm(ts.last, root, loc)
+      for ((tpe, loc) <- ts.init.zip(locs.init)) {
+        c.addClassConstraints(mkTraitConstraintsForRelationalTerm(tpe, root, loc), loc)
+      }
+      c.addClassConstraints(mkTraitConstraintsForLatticeTerm(ts.last, root, locs.last), locs.last)
   }
 
   /**

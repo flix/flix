@@ -99,7 +99,6 @@ object Lexer {
       ("open_variant", TokenKind.KeywordOpenVariant),
       ("open_variant_as", TokenKind.KeywordOpenVariantAs),
       ("or", TokenKind.KeywordOr),
-      ("override", TokenKind.KeywordOverride),
       ("par", TokenKind.KeywordPar),
       ("pquery", TokenKind.KeywordPQuery),
       ("project", TokenKind.KeywordProject),
@@ -229,12 +228,11 @@ object Lexer {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
 
-      // Sort the stale inputs by size to increase throughput to start work early on the biggest
-      // tasks.
-      val staleByDecreasingSize = stale.keys.toList.sortBy(s => -s.data.length)
+      // Schedule the biggest sources first to increase throughput.
+      def sortBy(src: Source): Int = -src.data.length
 
       // Lex each stale source file in parallel.
-      val (results, errors) = ParOps.parMap(staleByDecreasingSize) {
+      val (results, errors) = ParOps.parMapWithPriority(stale.keys, sortBy) {
         src =>
           val (tokens, errors) = lex(src)
           (src -> tokens, errors)

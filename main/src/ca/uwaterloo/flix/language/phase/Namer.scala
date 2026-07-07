@@ -703,6 +703,10 @@ object Namer {
       val symNs = if (isCompanion) Name.NName(ns0.idents.init, ns0.loc) else ns0
       val sym = Symbol.mkTraitSym(symNs, ident)
       val mod = visitModifiers(mod0, ns0)
+      if (mod.isSealed && sym.namespace.isEmpty) {
+        // A top-level trait cannot be sealed: anyone may define an instance at the top level.
+        sctx.errors.add(NameError.IllegalSealedTrait(ident.name, ident.loc))
+      }
       val tparam = visitTypeParam(tparams0)
 
       val sts = superTraits.map(visitTraitConstraint)
@@ -1007,8 +1011,7 @@ object Namer {
       val fields = fields0.map(visitStructField)
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      val name = s"Anon$$${flix.genSym.freshId()}"
-      NamedAst.Expr.AmbiguousNew(name, t, region, fields, cs, ms, loc)
+      NamedAst.Expr.AmbiguousNew(t, region, fields, cs, ms, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val e = visitExp(exp)

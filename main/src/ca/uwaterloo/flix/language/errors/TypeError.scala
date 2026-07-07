@@ -598,6 +598,40 @@ object TypeError {
   }
 
   /**
+    * A mismatch between a function (arrow) type and a non-function type.
+    *
+    * This is a special case of [[MismatchedTypes]]: a function and a non-function can never be
+    * unified, regardless of effects.
+    *
+    * @param arrowType    the function (arrow) type.
+    * @param nonArrowType the non-function type.
+    * @param fullType1    the first full type.
+    * @param fullType2    the second full type.
+    * @param renv         the rigidity environment.
+    * @param loc          the location where the error occurred.
+    */
+  case class MismatchedArrowAndNonArrow(arrowType: Type, nonArrowType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6925
+
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(fullType1), SymbolSet.symbolsOf(fullType2))
+
+    def summary: String = s"Unable to unify the function type '${formatType(arrowType, Some(renv), minimizeEffs = true, amb = amb)}' with the non-function type '${formatType(nonArrowType, Some(renv), minimizeEffs = true, amb = amb)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unable to unify the ${magenta("function")} type '${red(formatType(arrowType, Some(renv), minimizeEffs = true, amb = amb))}' with the non-function type '${red(formatType(nonArrowType, Some(renv), minimizeEffs = true, amb = amb))}'.
+         |
+         |${highlight(loc, "mismatched types.", fmt)}
+         |
+         |Type One: ${cyan(formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb))}
+         |
+         |${underline("Explanation:")} A ${magenta("function")} type can never be equal to a non-function type, regardless of effects.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Missing trait instance.
     *
     * @param trt  the trait of the instance.

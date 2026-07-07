@@ -842,7 +842,7 @@ object Safety {
         case JvmMethod(_, ident, fparams, _, _, _, _) => (ident.name, fparams.tail.length)
       }.toSet
 
-      val javaMethods = JvmUtils.getInstanceMethods(clazz)
+      val javaMethods = JvmUtils.getOverridableInstanceMethods(clazz)
       val objectMethodNameAndArity = JvmUtils.getInstanceMethods(classOf[Object])
         .map(m => (m.getName, m.getParameterCount)).toSet
 

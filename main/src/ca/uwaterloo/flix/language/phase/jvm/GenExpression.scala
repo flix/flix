@@ -907,7 +907,7 @@ object GenExpression {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
-      case AtomicOp.InvokeSuperMethod(method, className) =>
+      case AtomicOp.InvokeSuperMethod(sym, method) =>
         // Add source line number for debugging
         BytecodeInstructions.addLoc(loc)
 
@@ -916,7 +916,7 @@ object GenExpression {
 
         // Evaluate the receiver object.
         compileExpr(receiver)
-        val anonClassInternalName = className.replace('.', '/')
+        val anonClassInternalName = sym.name.replace('.', '/')
         mv.visitTypeInsn(CHECKCAST, anonClassInternalName)
 
         // Evaluate and cast each argument.
@@ -1086,6 +1086,11 @@ object GenExpression {
         pushString(s"Cannot cast from type '$from' to '$to'") // CastError, CastError, Loc, String
         INVOKESPECIAL(BackendObjType.CastError.Constructor) // CastError
         ATHROW()
+
+      // Vector operations are simplified to array operations in the Simplifier.
+      case AtomicOp.VectorLit => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+      case AtomicOp.VectorLoad => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+      case AtomicOp.VectorLength => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
     }
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
@@ -1598,9 +1603,9 @@ object GenExpression {
         ARETURN()
       }
 
-    case Expr.NewObject(name, _, _, _, constructors, methods, _) =>
+    case Expr.NewObject(sym, _, _, _, constructors, methods, _) =>
       val methodExps = methods.map(_.exp)
-      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
+      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, sym.name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
 

@@ -342,19 +342,6 @@ object Inliner {
       val rs = rules.map(visitExtMatchRule(_, ctx0))
       Expr.ExtMatch(e, rs, tpe, eff, loc)
 
-    case Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, ctx0))
-      Expr.VectorLit(es, tpe, eff, loc)
-
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, ctx0)
-      val e2 = visitExp(exp2, ctx0)
-      Expr.VectorLoad(e1, e2, tpe, eff, loc)
-
-    case Expr.VectorLength(exp, loc) =>
-      val e = visitExp(exp, ctx0)
-      Expr.VectorLength(e, loc)
-
     case Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       Expr.Cast(e, tpe, eff, loc)
@@ -369,10 +356,10 @@ object Inliner {
       val rs = rules.map(visitHandlerRule(_, ctx0))
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
+    case Expr.NewObject(sym, clazz, tpe, eff, constructors0, methods0, loc) =>
       val constructors = constructors0.map(visitJvmConstructor(_, ctx0))
       val methods = methods0.map(visitJvmMethod(_, ctx0))
-      Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc)
+      Expr.NewObject(sym, clazz, tpe, eff, constructors, methods, loc)
   }
 
   /**
@@ -904,6 +891,7 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.ArrayLit, exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.VectorLit, exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.StructNew(_, _, _), exps, _, _, _) => exps.forall(isTrivial)
     // IfThenElse with simple sub-expressions is simple. This enables inlining of
     // small branching functions like Int32.compare:
@@ -946,6 +934,9 @@ object Inliner {
       case AtomicOp.ArrayLoad => exps.forall(isSimple)
       case AtomicOp.ArrayStore => exps.forall(isSimple)
       case AtomicOp.ArrayLength => exps.forall(isSimple)
+      case AtomicOp.VectorLit => exps.forall(isSimple)
+      case AtomicOp.VectorLoad => exps.forall(isSimple)
+      case AtomicOp.VectorLength => exps.forall(isSimple)
       case AtomicOp.InvokeMethod(_) => exps.forall(isSimple)
       case AtomicOp.InvokeStaticMethod(_) => exps.forall(isSimple)
       case AtomicOp.GetField(_) => exps.forall(isSimple)

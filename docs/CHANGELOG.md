@@ -1,5 +1,20 @@
 # Changelog
 
+Version 0.75.0:
+- Library: Extended `Range` and `Discrete` (thanks Magnus!)
+- Compiler: Improved some compiler error messages (thanks Magnus!)
+- VSCode: Added folding-range support (thanks Magnus!)
+
+Version 0.74.0:
+- Compiler: Improved performance of Parser (thanks Magnus!)
+- Compiler: Improved performance of Weeder (thanks Magnus!)
+- Compiler: Improved performance of Kinder (thanks Magnus!)
+- Compiler: Improved performance of Typer (thanks Magnus!)
+
+Version 0.73.0:
+- Library: Added `Util.Json` module (thanks Magnus!)
+- Compiler: Improved performance of CodeGen (thanks Magnus!)
+
 Version 0.72.0:
 - Compiler: Improved effect error messages (thanks Alexander and Samuel!)
 

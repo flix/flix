@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.compilertop
 
+import ca.uwaterloo.flix.api.PhaseTime
 import ca.uwaterloo.flix.tools.compilertop.Formatting.lineCount
 import ca.uwaterloo.flix.tools.compilertop.Model.*
 import ca.uwaterloo.flix.tools.compilertop.Profiler.DefnStats
@@ -58,6 +59,91 @@ object Aggregation {
     byPhaseCount.iterator.collect { case (p, n) if phases.contains(p) => n }.sum
 
   /**
+    * Splits attributable phase wall time into accounted vs unaccounted for the
+    * dashboard `observed` figure — see [[Model.Coverage]] for the semantics.
+    *
+    * For each phase we estimate how much of its wall slice the per-def table
+    * actually attributes: the thread-summed per-def time spread across `par`
+    * threads, i.e. `attributedWall ≈ threadSummed / par`, clamped to the phase
+    * wall. This *optimistically assumes full parallelism* — accurate for a
+    * saturated parallel phase (where `threadSummed ≈ par × wall`), but it
+    * under-counts a sequential phase (which ran on one thread, yet is divided by
+    * `par`), so such a phase reads as a partial blind spot even when fully
+    * instrumented.
+    *
+    * Phase wall and per-def times are summed by name first, since a phase can
+    * run more than once (e.g. `OccurrenceAnalyzer` / `Inliner` across optimizer
+    * rounds). Phases in [[Model.NonAttributablePhases]] are dropped entirely
+    * (they have no per-def unit). The unknown-phase bucket `"?"` never appears
+    * as a real phase-timer entry, so it can't leak in.
+    *
+    * Scoped to the active filter `f` via [[matchesFilter]] — the same predicate
+    * the def table uses — so the figure covers exactly the phases the visible
+    * table covers (e.g. under `Frontend` only `FrontendPhases` count).
+    */
+  def computeCoverage(snapshot: Vector[DefnStats], phaseTimers: Vector[PhaseTime], f: PhaseFilter, par: Int): Coverage = {
+    val threads = par.max(1)
+
+    // Thread-summed per-def time attributed to each phase.
+    val attributedByPhase = snapshot.foldLeft(Map.empty[String, Long]) {
+      case (acc, s) => s.byPhase.foldLeft(acc) { case (m, (p, n)) => m.updated(p, m.getOrElse(p, 0L) + n) }
+    }
+
+    val wallByPhase = phaseTimers.foldLeft(Map.empty[String, Long]) {
+      case (acc, pt) => acc.updated(pt.phase, acc.getOrElse(pt.phase, 0L) + pt.time)
+    }
+
+    var accountedNanos = 0L
+    var unaccountedNanos = 0L
+    wallByPhase.foreach {
+      case (phase, _) if !matchesFilter(phase, f)              => // outside the active filter's phases
+      case (phase, _) if NonAttributablePhases.contains(phase) => // excluded: no per-def unit
+      case (phase, wall) =>
+        // Optimistically assume full parallelism: thread-summed time / threads.
+        val attributedWall = (attributedByPhase.getOrElse(phase, 0L) / threads).min(wall)
+        accountedNanos += attributedWall
+        unaccountedNanos += wall - attributedWall
+    }
+    Coverage(accountedNanos, unaccountedNanos)
+  }
+
+  /**
+    * Builds one [[PhaseStats]] row per phase that ran, for the per-phase table.
+    *
+    * Phase wall time comes from `phaseTimers` (the authoritative list of phases,
+    * summed by name since a phase can run more than once); the per-def time and
+    * alloc come from the snapshot's `byPhase` / `byPhaseAlloc`. `attributedWall`
+    * reuses [[computeCoverage]]'s optimistic-parallelism estimate
+    * (`threadSummed / par`, clamped to wall), so the per-row `pctObserved`
+    * matches the dashboard `observed` figure phase-for-phase.
+    *
+    * Unlike [[computeCoverage]], [[Model.NonAttributablePhases]] are NOT dropped:
+    * the table deliberately shows phases like `Lexer` / `Parser2` with their real
+    * `%wall` and `0%` observed. Rows are filtered by `f` (so `a`/`f`/`b` narrow the
+    * phase list like the other tables) and sorted by wall time descending.
+    */
+  def aggregateByPhase(snapshot: Vector[DefnStats], phaseTimers: Vector[PhaseTime], f: PhaseFilter, par: Int): Vector[PhaseStats] = {
+    val threads = par.max(1)
+
+    val timeByPhase = snapshot.foldLeft(Map.empty[String, Long]) {
+      case (acc, s) => s.byPhase.foldLeft(acc) { case (m, (p, n)) => m.updated(p, m.getOrElse(p, 0L) + n) }
+    }
+    val allocByPhase = snapshot.foldLeft(Map.empty[String, Long]) {
+      case (acc, s) => s.byPhaseAlloc.foldLeft(acc) { case (m, (p, n)) => m.updated(p, m.getOrElse(p, 0L) + n) }
+    }
+    val wallByPhase = phaseTimers.foldLeft(Map.empty[String, Long]) {
+      case (acc, pt) => acc.updated(pt.phase, acc.getOrElse(pt.phase, 0L) + pt.time)
+    }
+
+    wallByPhase.iterator.collect {
+      case (phase, wall) if matchesFilter(phase, f) =>
+        val threadSummed = timeByPhase.getOrElse(phase, 0L)
+        val attributedWall = (threadSummed / threads).min(wall)
+        PhaseStats(phase, wall, threadSummed, allocByPhase.getOrElse(phase, 0L), attributedWall)
+    }.toVector.sortBy(p => -p.wallNanos)
+  }
+
+  /**
     * Returns the descending sort key for a def under the given sort mode.
     * `Hotness` (time / LOC) is 0 for synthetic defs with no real source
     * span (`locLines <= 0`) so they sink to the bottom rather than dominating.
@@ -66,7 +152,6 @@ object Aggregation {
     case Sort.Time    => s.totalNanos.toDouble
     case Sort.Hotness => Formatting.hotnessMsPerLine(s.totalNanos, lineCount(s.loc))
     case Sort.Mono  => sumPhaseCounts(s.byPhaseCount, MonoCountPhases).toDouble
-    case Sort.Opt   => sumPhaseCounts(s.byPhaseCount, OptCountPhases).toDouble
     case Sort.Inl   => s.inlined.toDouble
     case Sort.Cls   => sumPhaseCounts(s.byPhaseCount, ClsCountPhases).toDouble
     case Sort.Size  => s.classBytes.toDouble
@@ -81,7 +166,6 @@ object Aggregation {
     case Sort.Time    => m.totalNanos.toDouble
     case Sort.Hotness => Formatting.hotnessMsPerLine(m.totalNanos, m.totalLines)
     case Sort.Mono  => sumPhaseCounts(m.byPhaseCount, MonoCountPhases).toDouble
-    case Sort.Opt   => sumPhaseCounts(m.byPhaseCount, OptCountPhases).toDouble
     case Sort.Inl   => m.totalInlined.toDouble
     case Sort.Cls   => sumPhaseCounts(m.byPhaseCount, ClsCountPhases).toDouble
     case Sort.Size  => m.totalClassBytes.toDouble

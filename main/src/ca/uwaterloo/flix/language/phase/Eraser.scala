@@ -203,6 +203,10 @@ object Eraser {
         case AtomicOp.HoleError(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.MatchError => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.CastError(_, _) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        // Vector operations are simplified to array operations in the Simplifier.
+        case AtomicOp.VectorLit => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+        case AtomicOp.VectorLoad => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+        case AtomicOp.VectorLength => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
       }
 
     case ReducedAst.Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
@@ -240,8 +244,8 @@ object Eraser {
     case ReducedAst.Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val tw = ErasedAst.Expr.RunWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
       castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
-      ErasedAst.Expr.NewObject(name, clazz, visitType(tpe), purity, constructors.map(visitJvmConstructor), methods.map(visitJvmMethod), loc)
+    case ReducedAst.Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc) =>
+      ErasedAst.Expr.NewObject(sym, clazz, visitType(tpe), purity, constructors.map(visitJvmConstructor), methods.map(visitJvmMethod), loc)
   }
 
   /**

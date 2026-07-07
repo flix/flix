@@ -23,19 +23,40 @@ package ca.uwaterloo.flix.tools.compilertop
 object Model {
 
   /**
-    * Which top-level screen the renderer should draw. Toggled by `?` /
-    * `Esc` in the input thread. The dashboard and stats lines render the
-    * same in either view; only the body below them changes.
+    * Which top-level screen the renderer should draw. Switched by `Tab`
+    * (flip table), `?` (help), and `Esc` (back to defs) in the input thread.
+    * The dashboard and stats lines render the same in every view; only the
+    * body below them changes.
     *
-    *   - [[View.Main]]: the def + module tables (default).
+    *   - [[View.Defs]]: the per-def table (default), full terminal height.
+    *   - [[View.Modules]]: the per-module aggregate table, full terminal
+    *     height. `Tab` cycles into this from [[View.Defs]].
+    *   - [[View.Phases]]: the per-phase aggregate table (phase name, time,
+    *     alloc, par, %cpu, %wall, blind, %observed). `Tab` cycles into this
+    *     from [[View.Modules]].
     *   - [[View.Help]]: a static legend explaining each column and
     *     keystroke, so the user doesn't have to guess what e.g. `tv` or
     *     `rnd` mean.
     */
-  sealed trait View
+  sealed trait View {
+    /**
+      * The next table view in the `Tab` cycle:
+      * [[View.Defs]] → [[View.Modules]] → [[View.Phases]] → [[View.Defs]].
+      * From [[View.Help]] there is no "next table", so it maps to itself;
+      * the input loop special-cases leaving help separately.
+      */
+    final def toggledTable: View = this match {
+      case View.Defs    => View.Modules
+      case View.Modules => View.Phases
+      case View.Phases  => View.Defs
+      case View.Help    => View.Help
+    }
+  }
   object View {
-    case object Main extends View
-    case object Help extends View
+    case object Defs    extends View
+    case object Modules extends View
+    case object Phases  extends View
+    case object Help    extends View
   }
 
   /**
@@ -81,6 +102,29 @@ object Model {
   )
 
   /**
+    * Phases that inherently have no per-`DefnSym` unit to attribute time to, so
+    * the dashboard coverage line excludes them from the accounted / unaccounted
+    * split rather than reporting their wall time as a (false) closeable blind
+    * spot. Three structural reasons, mirroring the coverage table in
+    * [[Profiler]]:
+    *
+    *   - Pre-naming passes (`Reader`, `Lexer`, `Parser2`, `Weeder2`, `Desugar`,
+    *     `Namer`) run before any `DefnSym` exists, so there is no key to attribute.
+    *   - Pure filter passes (`TreeShaker1`, `TreeShaker2`) do no per-def work.
+    *   - The `Optimizer` fixpoint wrapper does no work of its own; its time is
+    *     captured transitively through the `OccurrenceAnalyzer` / `Inliner` phases
+    *     it drives, so counting it here would be redundant.
+    *
+    * Phases that *could* be attributed but currently aren't (`Resolver`,
+    * `Deriver`, `Instances`) are deliberately NOT in this set — they are real,
+    * closeable blind spots and belong in the unaccounted tally.
+    */
+  val NonAttributablePhases: Set[String] = Set(
+    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar", "Namer",
+    "TreeShaker1", "Optimizer", "TreeShaker2",
+  )
+
+  /**
     * Selects the descending sort key applied to the def and module tables.
     * Each option surfaces a different kind of suspect, so the same def can
     * top one ranking and not another.
@@ -99,8 +143,6 @@ object Model {
     case object Hotness extends Sort { val key = 'h' }
     /** Most monomorphic instances first — surfaces generic-explosion hotspots. */
     case object Mono    extends Sort { val key = 'm' }
-    /** Most optimizer fixed-point re-visits first — surfaces inliner / occurrence-analyzer thrashing. */
-    case object Opt     extends Sort { val key = 'o' }
     /** Most times inlined at a call site first — surfaces small leaf defs that get duplicated everywhere. */
     case object Inl     extends Sort { val key = 'i' }
     /** Most class files emitted first — surfaces JVM fan-out from polymorphism / closures. */
@@ -117,7 +159,7 @@ object Model {
     case object Evars   extends Sort { val key = 'e' }
 
     /** All sort values. */
-    val all: List[Sort] = List(Time, Hotness, Mono, Opt, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
+    val all: List[Sort] = List(Time, Hotness, Mono, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
 
     /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
@@ -125,8 +167,6 @@ object Model {
 
   /** Phases whose `track` count maps to the `mono` column — number of monomorphic instances created. */
   val MonoCountPhases: Set[String] = Set("Monomorpher")
-  /** Phases whose `track` count maps to the `opt` column — optimizer fixed-point re-visits. */
-  val OptCountPhases: Set[String] = Set("Optimizer", "LambdaDrop")
   /** Phases whose `track` count maps to the `cls` column — class files emitted post-specialization. */
   val ClsCountPhases: Set[String] = Set("CodeGen")
 
@@ -151,4 +191,50 @@ object Model {
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
   }
+
+  /**
+    * A row in the per-phase aggregate table. One per phase that ran (driven by
+    * `Flix.phaseTimers`, so non-attributable phases like `Lexer` / `Parser2`
+    * appear too, with `0` observed). The renderer derives `%cpu` / `%wall`
+    * against the per-frame `elapsed` / `parallelism`, the same late-binding the
+    * def / module rows use for their percentages.
+    *
+    * @param phase               the phase name (as passed to `flix.phase(...)`).
+    * @param wallNanos           real phase wall time, summed across repeats, from `Flix.phaseTimers`.
+    * @param threadSummedNanos   thread-summed per-def time attributed to this phase (`Σ DefnStats.byPhase`).
+    * @param allocBytes          compiler-side heap bytes attributed to this phase (`Σ DefnStats.byPhaseAlloc`).
+    * @param attributedWallNanos estimated attributed wall slice: `(threadSummed / parallelism).min(wall)`, mirroring [[Coverage]].
+    */
+  final case class PhaseStats(phase: String, wallNanos: Long, threadSummedNanos: Long, allocBytes: Long, attributedWallNanos: Long) {
+    /** Share of this phase's wall time the per-def table attributes (the per-phase `observed` figure). */
+    def pctObserved: Double =
+      if (wallNanos <= 0L) 0.0 else 100.0 * attributedWallNanos / wallNanos
+  }
+
+  /**
+    * Phase-level wall-time reconciliation backing the dashboard `observed` figure.
+    *
+    * `Flix.phaseTimers` records each phase's wall time. For each phase we
+    * estimate the slice the per-def table attributes by spreading its
+    * thread-summed per-def time across the available threads:
+    * `attributedWall ≈ threadSummed / parallelism`, clamped to the phase wall.
+    * `accounted` sums those estimates; `unaccounted` is the remaining wall.
+    *
+    * The estimate *optimistically assumes full parallelism*. For a saturated
+    * parallel phase (`threadSummed ≈ parallelism × wall`) it recovers the true
+    * attributed wall, so a partially-instrumented parallel phase now reads as
+    * partially covered rather than fully covered. The flip side: a sequential
+    * phase ran on one thread yet is still divided by `parallelism`, so it is
+    * under-counted and reads as a partial blind spot even when fully
+    * instrumented — the unit mix (thread-summed ÷ threads vs single-threaded
+    * wall) is only exact at the parallel extreme.
+    *
+    * Phases in [[NonAttributablePhases]] are excluded entirely: they have no
+    * per-def unit by construction, so the denominator is "attributable phase
+    * wall time".
+    *
+    * @param accountedNanos   summed estimated attributed wall across phases.
+    * @param unaccountedNanos summed remaining (unattributed) wall across phases.
+    */
+  final case class Coverage(accountedNanos: Long, unaccountedNanos: Long)
 }

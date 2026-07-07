@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, SourceLocation, Symbol, Type, 
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TerminationError
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.{ListOps, OptionOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
@@ -232,10 +233,7 @@ object Terminator {
                 val fparams = defn.spec.fparams
                 val selfSym = SelfInstanceDef(defn.sym, sig.sym)
                 val newExp = visitExp(List(RecursionContext(selfSym, fparams, SubEnv.init(fparams))), defn.exp, ApplyPosition.OtherTail)
-                val decreasingIndices = lctx.getDecreasing(selfSym)
-                val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
-                  if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
-                }
+                val newFparams = mkDecreasingFparams(fparams, lctx.getDecreasing(selfSym))
                 defn.copy(spec = defn.spec.copy(fparams = newFparams), exp = newExp)
               case None => visitDef(defn)
             }
@@ -258,10 +256,7 @@ object Terminator {
         val fparams = sig.spec.fparams
         val selfSym = SelfSig(sig.sym)
         val newExp = visitExp(List(RecursionContext(selfSym, fparams, SubEnv.init(fparams))), exp, ApplyPosition.OtherTail)
-        val decreasingIndices = lctx.getDecreasing(selfSym)
-        val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
-          if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
-        }
+        val newFparams = mkDecreasingFparams(fparams, lctx.getDecreasing(selfSym))
         sig.copy(spec = sig.spec.copy(fparams = newFparams), exp = Some(newExp))
       case Some(exp) =>
         implicit val lctx: LocalContext = LocalContext.mk()
@@ -283,11 +278,11 @@ object Terminator {
       if (defn.spec.ann.isTailRecursive && !lctx.selfCallObservedDef.contains(defn.sym)) {
         sctx.errors.add(TerminationError.NonRecursiveTailRec(defn.sym, defn.sym.loc))
       }
-      val decreasingIndices = lctx.getDecreasing(selfSym)
-      val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
-        if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
-      }
-      defn.copy(spec = defn.spec.copy(fparams = newFparams), exp = newExp)
+      val newFparams = mkDecreasingFparams(fparams, lctx.getDecreasing(selfSym))
+      if ((newExp eq defn.exp) && (newFparams eq fparams))
+        defn
+      else
+        defn.copy(spec = defn.spec.copy(fparams = newFparams), exp = newExp)
     } else {
       implicit val lctx: LocalContext =
         if (defn.spec.ann.isTailRecursive) LocalContext.mkTailRec(defn.sym)
@@ -296,9 +291,20 @@ object Terminator {
       if (defn.spec.ann.isTailRecursive && !lctx.selfCallObservedDef.contains(defn.sym)) {
         sctx.errors.add(TerminationError.NonRecursiveTailRec(defn.sym, defn.sym.loc))
       }
-      defn.copy(exp = newExp)
+      if (newExp eq defn.exp) defn else defn.copy(exp = newExp)
     }
   }
+
+  /**
+    * Returns `fparams` with the parameters at `decreasingIndices` marked as strictly decreasing.
+    *
+    * Returns `fparams` itself when `decreasingIndices` is empty.
+    */
+  private def mkDecreasingFparams(fparams: List[FormalParam], decreasingIndices: Set[Int]): List[FormalParam] =
+    if (decreasingIndices.isEmpty) fparams
+    else fparams.zipWithIndex.map { case (fp, i) =>
+      if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
+    }
 
   ////////////////////////////////////////////////////////////////////////////
   // Self-call matching
@@ -404,8 +410,8 @@ object Terminator {
         // --- Match: extend env in all contexts ---
         case Expr.Match(exp1, rules0, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          val rs = rules0.map(visitMatchRule(contexts, exp1, _, pos))
-          Expr.Match(e, rs, tpe, eff, loc)
+          val rs = ListOps.mapWithReuse(rules0)(visitMatchRule(contexts, exp1, _, pos))
+          if ((e eq exp1) && (rs eq rules0)) exp0 else Expr.Match(e, rs, tpe, eff, loc)
 
         // --- Let: propagate alias in all contexts ---
         case Expr.Let(bnd, exp1, exp2, tpe, eff, loc) =>
@@ -416,7 +422,7 @@ object Terminator {
             case _ => contexts
           }
           val e2 = visitExp(extContexts, exp2, pos)
-          Expr.Let(bnd, e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.Let(bnd, e1, e2, tpe, eff, loc)
 
         // --- LocalDef: push new context, visit body with extended list ---
         case Expr.LocalDef(ann, bnd, fparams0, exp1, exp2, tpe, eff, loc) =>
@@ -434,10 +440,7 @@ object Terminator {
             val localCtx = RecursionContext(localSelfSym, fparams0, SubEnv.init(fparams0))
             checkStrictPositivity(fparams0, parentSym)
             val body = visitExp(localCtx :: contexts, exp1, ApplyPosition.OtherTail)
-            val decreasingIndices = lctx.getDecreasing(localSelfSym)
-            val newFps = fparams0.zipWithIndex.map { case (fp, i) =>
-              if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
-            }
+            val newFps = mkDecreasingFparams(fparams0, lctx.getDecreasing(localSelfSym))
             (body, newFps)
           } else {
             (visitExp(Nil, exp1, ApplyPosition.OtherTail), fparams0)
@@ -447,10 +450,11 @@ object Terminator {
           }
           lctx.currentLocalDefSym = prevLocalDefSym
           val e2 = visitExp(contexts, exp2, pos)
-          Expr.LocalDef(ann, bnd, fps, e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2) && (fps eq fparams0)) exp0
+          else Expr.LocalDef(ann, bnd, fps, e1, e2, tpe, eff, loc)
 
         // --- ApplyClo: check closure restriction ---
-        case Expr.ApplyClo(exp1, exp2, tpe, eff, _, loc) =>
+        case Expr.ApplyClo(exp1, exp2, tpe, eff, pos0, loc) =>
           topSymOpt match {
             case Some(_) =>
               if (!isTopLevelFormalParam(contexts, exp1)) {
@@ -460,10 +464,10 @@ object Terminator {
           }
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.ApplyClo(e1, e2, tpe, eff, pos, loc)
+          if ((e1 eq exp1) && (e2 eq exp2) && (pos0 == pos)) exp0 else Expr.ApplyClo(e1, e2, tpe, eff, pos, loc)
 
         // --- ApplyDef: check callee restriction ---
-        case Expr.ApplyDef(symUse, exps0, itpe, tpe, eff, purity, _, loc) =>
+        case Expr.ApplyDef(symUse, exps0, itpe, tpe, eff, purity, pos0, loc) =>
           lctx.tailRecSym.foreach { trSym =>
             if (symUse.sym == trSym) {
               lctx.selfCallObservedDef += trSym
@@ -483,8 +487,8 @@ object Terminator {
           }
           val isSelfCall = lctx.tailRecSym.contains(symUse.sym)
           val ap = if (isSelfCall && pos != ApplyPosition.NonTail) ApplyPosition.SelfTail else pos
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.ApplyDef(symUse, es, itpe, tpe, eff, purity, ap, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if ((es eq exps0) && (pos0 == ap)) exp0 else Expr.ApplyDef(symUse, es, itpe, tpe, eff, purity, ap, loc)
 
         // --- All other expressions (TypedAst declaration order) ---
 
@@ -496,21 +500,21 @@ object Terminator {
 
         case Expr.HoleWithExp(exp1, tpe, eff, purity, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.HoleWithExp(e, tpe, eff, purity, loc)
+          if (e eq exp1) exp0 else Expr.HoleWithExp(e, tpe, eff, purity, loc)
 
         case Expr.OpenAs(sym, exp1, tpe, loc) =>
           val e = visitExp(contexts, exp1, pos)
-          Expr.OpenAs(sym, e, tpe, loc)
+          if (e eq exp1) exp0 else Expr.OpenAs(sym, e, tpe, loc)
 
         case Expr.Use(sym, alias, exp1, loc) =>
           val e = visitExp(contexts, exp1, pos)
-          Expr.Use(sym, alias, e, loc)
+          if (e eq exp1) exp0 else Expr.Use(sym, alias, e, loc)
 
         case Expr.Lambda(fparam, exp1, tpe, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.Lambda(fparam, e, tpe, loc)
+          if (e eq exp1) exp0 else Expr.Lambda(fparam, e, tpe, loc)
 
-        case Expr.ApplyLocalDef(symUse, exps0, arrowTpe, tpe, eff, _, loc) =>
+        case Expr.ApplyLocalDef(symUse, exps0, arrowTpe, tpe, eff, pos0, loc) =>
           if (lctx.currentLocalDefSym.contains(symUse.sym)) {
             lctx.selfCallObservedLocal += symUse.sym
             if (lctx.tailRecLocalSyms.contains(symUse.sym) && pos == ApplyPosition.NonTail) {
@@ -519,46 +523,46 @@ object Terminator {
           }
           val isSelfCall = lctx.currentLocalDefSym.contains(symUse.sym)
           val ap = if (isSelfCall && pos != ApplyPosition.NonTail) ApplyPosition.SelfTail else pos
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, ap, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if ((es eq exps0) && (pos0 == ap)) exp0 else Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, ap, loc)
 
-        case Expr.ApplyOp(symUse, exps0, tpe, eff, _, loc) =>
+        case Expr.ApplyOp(symUse, exps0, tpe, eff, pos0, loc) =>
           checkForbidden(contexts, loc)
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.ApplyOp(symUse, es, tpe, eff, pos, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if ((es eq exps0) && (pos0 == pos)) exp0 else Expr.ApplyOp(symUse, es, tpe, eff, pos, loc)
 
-        case Expr.ApplySig(symUse, exps0, itpe, tpe, eff, purity, isEq, _, loc) =>
+        case Expr.ApplySig(symUse, exps0, itpe, tpe, eff, purity, isEq, pos0, loc) =>
           // TODO: Difficult to disallow due to e.g. +, -, == and so on.
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.ApplySig(symUse, es, itpe, tpe, eff, purity, isEq, pos, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if ((es eq exps0) && (pos0 == pos)) exp0 else Expr.ApplySig(symUse, es, itpe, tpe, eff, purity, isEq, pos, loc)
 
         case Expr.Unary(sop, exp1, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.Unary(sop, e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.Unary(sop, e, tpe, eff, loc)
 
         case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.Binary(sop, e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.Binary(sop, e1, e2, tpe, eff, loc)
 
         case Expr.Region(kind, sym, exp1, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, pos)
-          Expr.Region(kind, sym, e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.Region(kind, sym, e, tpe, eff, loc)
 
         case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, pos)
           val e3 = visitExp(contexts, exp3, pos)
-          Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3)) exp0 else Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
         case Expr.Stm(exps, exp, tpe, eff, loc) =>
-          val es = exps.map(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = ListOps.mapWithReuse(exps)(visitExp(contexts, _, ApplyPosition.NonTail))
           val e = visitExp(contexts, exp, pos)
-          Expr.Stm(es, e, tpe, eff, loc)
+          if ((es eq exps) && (e eq exp)) exp0 else Expr.Stm(es, e, tpe, eff, loc)
 
         case Expr.Discard(exp1, eff, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.Discard(e, eff, loc)
+          if (e eq exp1) exp0 else Expr.Discard(e, eff, loc)
 
 
         case Expr.RestrictableChoose(star, exp1, rules0, tpe, eff, loc) =>
@@ -572,116 +576,119 @@ object Terminator {
           Expr.ExtMatch(e, rs, tpe, eff, loc)
 
         case Expr.Tag(sym, exps0, tpe, eff, loc) =>
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.Tag(sym, es, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.Tag(sym, es, tpe, eff, loc)
 
         case Expr.RestrictableTag(sym, exps0, tpe, eff, loc) =>
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.RestrictableTag(sym, es, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.RestrictableTag(sym, es, tpe, eff, loc)
 
         case Expr.ExtTag(sym, exps0, tpe, eff, loc) =>
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.ExtTag(sym, es, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.ExtTag(sym, es, tpe, eff, loc)
 
         case Expr.Tuple(exps0, tpe, eff, loc) =>
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.Tuple(es, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.Tuple(es, tpe, eff, loc)
 
         case Expr.RecordSelect(exp1, field, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.RecordSelect(e, field, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.RecordSelect(e, field, tpe, eff, loc)
 
         case Expr.RecordExtend(field, exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.RecordExtend(field, e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.RecordExtend(field, e1, e2, tpe, eff, loc)
 
         case Expr.RecordRestrict(field, exp1, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.RecordRestrict(field, e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.RecordRestrict(field, e, tpe, eff, loc)
 
         case Expr.ArrayLit(exps0, exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.ArrayLit(es, e, tpe, eff, loc)
+          if ((es eq exps0) && (e eq exp1)) exp0 else Expr.ArrayLit(es, e, tpe, eff, loc)
 
         case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
           val e3 = visitExp(contexts, exp3, ApplyPosition.NonTail)
-          Expr.ArrayNew(e1, e2, e3, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3)) exp0 else Expr.ArrayNew(e1, e2, e3, tpe, eff, loc)
 
         case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.ArrayLoad(e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.ArrayLoad(e1, e2, tpe, eff, loc)
 
         case Expr.ArrayLength(exp1, tpe, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.ArrayLength(e, tpe, loc)
+          if (e eq exp1) exp0 else Expr.ArrayLength(e, tpe, loc)
 
         case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
           checkForbidden(contexts, loc)
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
           val e3 = visitExp(contexts, exp3, ApplyPosition.NonTail)
-          Expr.ArrayStore(e1, e2, e3, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3)) exp0 else Expr.ArrayStore(e1, e2, e3, eff, loc)
 
         case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
-          val fs = fields0.map { case (f, exp1) => (f, visitExp(contexts, exp1, ApplyPosition.NonTail)) }
-          val r = region0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.StructNew(sym, fs, r, tpe, eff, loc)
+          val fs = ListOps.mapWithReuse(fields0) { case p@(f, exp1) =>
+            val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
+            if (e eq exp1) p else (f, e)
+          }
+          val r = OptionOps.mapWithReuse(region0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if ((fs eq fields0) && (r eq region0)) exp0 else Expr.StructNew(sym, fs, r, tpe, eff, loc)
 
         case Expr.StructGet(exp1, field, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.StructGet(e, field, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.StructGet(e, field, tpe, eff, loc)
 
         case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.StructPut(e1, field, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.StructPut(e1, field, e2, tpe, eff, loc)
 
         case Expr.VectorLit(exps0, tpe, eff, loc) =>
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.VectorLit(es, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.VectorLit(es, tpe, eff, loc)
 
         case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.VectorLoad(e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.VectorLoad(e1, e2, tpe, eff, loc)
 
         case Expr.VectorLength(exp1, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.VectorLength(e, loc)
+          if (e eq exp1) exp0 else Expr.VectorLength(e, loc)
 
         case Expr.Ascribe(exp1, tpe, eff, purity, expectedEff, loc) =>
           val e = visitExp(contexts, exp1, pos)
-          Expr.Ascribe(e, tpe, eff, purity, expectedEff, loc)
+          if (e eq exp1) exp0 else Expr.Ascribe(e, tpe, eff, purity, expectedEff, loc)
 
         case Expr.InstanceOf(exp1, clazz, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.InstanceOf(e, clazz, loc)
+          if (e eq exp1) exp0 else Expr.InstanceOf(e, clazz, loc)
 
         case Expr.CheckedCast(cast, exp1, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, pos)
-          Expr.CheckedCast(cast, e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.CheckedCast(cast, e, tpe, eff, loc)
 
         case Expr.UncheckedCast(exp1, declaredType, declaredEff, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
         case Expr.Unsafe(exp1, sym, tpe, eff, purity, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.Unsafe(e, sym, tpe, eff, purity, loc)
+          if (e eq exp1) exp0 else Expr.Unsafe(e, sym, tpe, eff, purity, loc)
 
 
         case Expr.TryCatch(exp1, rules0, tpe, eff, loc) =>
@@ -692,7 +699,7 @@ object Terminator {
         case Expr.Throw(exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.Throw(e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.Throw(e, tpe, eff, loc)
 
         case Expr.Handler(sym, rules0, tpe, eff, purity, evar, loc) =>
           checkForbidden(contexts, loc)
@@ -703,44 +710,44 @@ object Terminator {
           checkForbidden(contexts, loc)
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.RunWith(e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.RunWith(e1, e2, tpe, eff, loc)
 
         case Expr.InvokeConstructor(constructor, exps0, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
 
         case Expr.InvokeSuperConstructor(constructor, exps0, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.InvokeSuperConstructor(constructor, es, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.InvokeSuperConstructor(constructor, es, tpe, eff, loc)
 
         case Expr.InvokeMethod(method, exp1, exps0, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.InvokeMethod(method, e, es, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if ((e eq exp1) && (es eq exps0)) exp0 else Expr.InvokeMethod(method, e, es, tpe, eff, loc)
 
         case Expr.InvokeSuperMethod(method, exps0, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.InvokeSuperMethod(method, es, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.InvokeSuperMethod(method, es, tpe, eff, loc)
 
         case Expr.InvokeStaticMethod(method, exps0, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.InvokeStaticMethod(method, es, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.InvokeStaticMethod(method, es, tpe, eff, loc)
 
         case Expr.GetField(field, exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.GetField(field, e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.GetField(field, e, tpe, eff, loc)
 
         case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.PutField(field, e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.PutField(field, e1, e2, tpe, eff, loc)
 
         case Expr.GetStaticField(_, _, _, loc) =>
           checkForbidden(contexts, loc)
@@ -749,28 +756,28 @@ object Terminator {
         case Expr.PutStaticField(field, exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.PutStaticField(field, e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.PutStaticField(field, e, tpe, eff, loc)
 
-        case Expr.NewObject(name, clazz, tpe, eff, constructors, methods0, loc) =>
+        case Expr.NewObject(sym, clazz, tpe, eff, constructors, methods0, loc) =>
           checkForbidden(contexts, loc)
           val ms = methods0.map(visitJvmMethod(contexts, _))
-          Expr.NewObject(name, clazz, tpe, eff, constructors, ms, loc)
+          Expr.NewObject(sym, clazz, tpe, eff, constructors, ms, loc)
 
         case Expr.NewChannel(exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.NewChannel(e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.NewChannel(e, tpe, eff, loc)
 
         case Expr.GetChannel(exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.GetChannel(e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.GetChannel(e, tpe, eff, loc)
 
         case Expr.PutChannel(exp1, exp2, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.PutChannel(e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.PutChannel(e1, e2, tpe, eff, loc)
 
         case Expr.SelectChannel(rules0, default0, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
@@ -782,7 +789,7 @@ object Terminator {
           checkForbidden(contexts, loc)
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.Spawn(e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.Spawn(e1, e2, tpe, eff, loc)
 
         case Expr.ParYield(frags0, exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
@@ -792,57 +799,58 @@ object Terminator {
 
         case Expr.Lazy(exp1, tpe, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.Lazy(e, tpe, loc)
+          if (e eq exp1) exp0 else Expr.Lazy(e, tpe, loc)
 
         case Expr.Force(exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.Force(e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.Force(e, tpe, eff, loc)
 
         case Expr.FixpointConstraintSet(_, _, _) => exp0
 
         case Expr.FixpointLambda(pparams, exp1, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          Expr.FixpointLambda(pparams, e, tpe, eff, loc)
+          if (e eq exp1) exp0 else Expr.FixpointLambda(pparams, e, tpe, eff, loc)
 
         case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
-          Expr.FixpointMerge(e1, e2, tpe, eff, loc)
+          if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.FixpointMerge(e1, e2, tpe, eff, loc)
 
         case Expr.FixpointQueryWithProvenance(exps0, selects, from, tpe, eff, loc) =>
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.FixpointQueryWithProvenance(es, selects, from, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.FixpointQueryWithProvenance(es, selects, from, tpe, eff, loc)
 
         case Expr.FixpointQueryWithSelect(exps0, exp1, sels0, guard, where0, tpe, eff, from, loc) =>
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          val ss = sels0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          val w = where0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.FixpointQueryWithSelect(es, e, ss, guard, w, tpe, eff, from, loc)
+          val ss = ListOps.mapWithReuse(sels0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          val w = ListOps.mapWithReuse(where0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if ((es eq exps0) && (e eq exp1) && (ss eq sels0) && (w eq where0)) exp0
+          else Expr.FixpointQueryWithSelect(es, e, ss, guard, w, tpe, eff, from, loc)
 
         case Expr.FixpointSolveWithProject(exps0, optNames, tpe, eff, stf, loc) =>
           checkForbidden(contexts, loc)
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.FixpointSolveWithProject(es, optNames, tpe, eff, stf, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.FixpointSolveWithProject(es, optNames, tpe, eff, stf, loc)
 
         case Expr.FixpointInjectInto(exps0, idents, tpe, eff, loc) =>
-          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
-          Expr.FixpointInjectInto(es, idents, tpe, eff, loc)
+          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          if (es eq exps0) exp0 else Expr.FixpointInjectInto(es, idents, tpe, eff, loc)
 
         case Expr.Error(_, _, _) => exp0
       }
     }
   }
 
-  /** Sets the `pos` field on an Apply node. */
+  /** Sets the `pos` field on an Apply node. Reuses `exp` if the field is unchanged. */
   private def decorateApply(exp: Expr, pos: ApplyPosition): Expr = exp match {
-    case e: Expr.ApplyDef      => e.copy(pos = pos)
-    case e: Expr.ApplySig      => e.copy(pos = pos)
-    case e: Expr.ApplyLocalDef => e.copy(pos = pos)
-    case e: Expr.ApplyClo      => e.copy(pos = pos)
-    case e: Expr.ApplyOp       => e.copy(pos = pos)
+    case e: Expr.ApplyDef      => if (e.pos == pos) e else e.copy(pos = pos)
+    case e: Expr.ApplySig      => if (e.pos == pos) e else e.copy(pos = pos)
+    case e: Expr.ApplyLocalDef => if (e.pos == pos) e else e.copy(pos = pos)
+    case e: Expr.ApplyClo      => if (e.pos == pos) e else e.copy(pos = pos)
+    case e: Expr.ApplyOp       => if (e.pos == pos) e else e.copy(pos = pos)
     case _                     => exp
   }
 
@@ -879,9 +887,9 @@ object Terminator {
     case MatchRule(pat, guard0, body0, loc) =>
       val extContexts = contexts.map(ctx =>
         ctx.copy(env = extendEnvFromScrutinee(ctx.env, scrutinee, pat)))
-      val guard = guard0.map(visitExp(extContexts, _, ApplyPosition.NonTail))
+      val guard = OptionOps.mapWithReuse(guard0)(visitExp(extContexts, _, ApplyPosition.NonTail))
       val body = visitExp(extContexts, body0, pos)
-      MatchRule(pat, guard, body, loc)
+      if ((guard eq guard0) && (body eq body0)) rule0 else MatchRule(pat, guard, body, loc)
   }
 
 
