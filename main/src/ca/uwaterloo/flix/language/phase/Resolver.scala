@@ -3636,6 +3636,23 @@ object Resolver {
         Some(ResolvedAst.Declaration.Enum(doc1, ann1, mod1, sym, combinedTparams, combinedDerivations, combinedCases, loc1))
     }
 
+    /**
+      * Optionally merges `eff1` and `eff2`. If `eff2` is [[None]] `eff1` is returned. If `eff2`
+      * is [[Some]] it indicates that it is a duplicate, and we merge the 2 effects.
+      *
+      * This is done to ensure that all operations of the effect are included.
+      * This is assumed to be the case by later phases which can cause crashes.
+      *
+      * No guarantees about whether operations from `eff1` or `eff2` are kept.
+      */
+    private def resilientMergeEffects(eff1: ResolvedAst.Declaration.Effect, eff2: Option[ResolvedAst.Declaration.Effect]): Option[ResolvedAst.Declaration.Effect] = (eff1, eff2) match {
+      case (_, None) => Some(eff1)
+      case (ResolvedAst.Declaration.Effect(doc1, ann1, mod1, sym, tparams1, ops1, loc1), Some(ResolvedAst.Declaration.Effect(_, _, _, _, tparams2, ops2, _))) =>
+        val combinedTparams = (tparams1 ++ tparams2).distinctBy(_.name.name)
+        val combinedOps = (ops1 ++ ops2).distinctBy(_.sym)
+        Some(ResolvedAst.Declaration.Effect(doc1, ann1, mod1, sym, combinedTparams, combinedOps, loc1))
+    }
+
     private def ++(that: SymbolTable): SymbolTable = {
       SymbolTable(
         modules = this.modules ++ that.modules,
@@ -3648,7 +3665,9 @@ object Resolver {
         structs = this.structs ++ that.structs,
         structFields = this.structFields ++ that.structFields,
         restrictableEnums = this.restrictableEnums ++ that.restrictableEnums,
-        effects = this.effects ++ that.effects,
+        effects = that.effects.foldLeft(this.effects) {
+          case (acc, (newSym, eff0)) => acc.updatedWith(newSym)(resilientMergeEffects(eff0, _))
+        },
         typeAliases = this.typeAliases ++ that.typeAliases
       )
     }

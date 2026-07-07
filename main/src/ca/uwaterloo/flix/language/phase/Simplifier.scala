@@ -158,7 +158,16 @@ object Simplifier {
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), SimpleType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, Purity.Impure, loc)
+          // Here `e1` is the spawned expression and `e2` is the region (i.e. `spawn e1 @ e2`).
+          // In source order the closure for `e1` is created before the region is evaluated, but
+          // codegen pushes the region (the receiver of `Region.spawn`) before the closure (its
+          // argument). We let-bind the closure so that it is created first; the region stays the
+          // second argument so codegen can still recognize the `Static` region.
+          // See: https://github.com/flix/flix/issues/10707
+          val closureSym = Symbol.freshVarSym("spawnClosure" + Flix.Delimiter, BoundBy.Let, loc)
+          val closureVar = SimplifiedAst.Expr.Var(closureSym, lambdaTyp, loc)
+          val spawnExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(closureVar, e2), t, Purity.Impure, loc)
+          SimplifiedAst.Expr.Let(closureSym, lambdaExp, spawnExp, t, Purity.Impure, loc)
 
         case AtomicOp.Lazy =>
           // Wrap the expression in a closure: () -> tpe \ Pure
