@@ -23,6 +23,10 @@ sealed trait EffSymOrRigidVar {
 
 object EffSymOrRigidVar {
 
+  /**
+    * Formats a list of effects symbols to their listed format.
+    * This is primarily used in the error messages of `TypeError.scala`.
+    */
   def format(effs: List[EffSymOrRigidVar]): String = effs match {
     case x :: Nil => s"'${x.name}'"
     case xs => xs.map(_.name).mkString("'{", ", ", "}'")
