@@ -68,26 +68,23 @@ object TypeError {
 
     override def locs: List[SourceLocation] = List(loc2, loc3)
 
-    private def effectsToString(effs: List[EffSymOrRigidVar]): String = EffSymOrRigidVar.format(effs)
-
-    def summary: String =
-      s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
+    def summary: String = s"Mismatched effect: expected ${EffSymOrRigidVar.format(expected)}, but got ${EffSymOrRigidVar.format(actual)}"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched effect(s): expected ${magenta(effectsToString(expected))}, but got ${red(effectsToString(actual))}.
+      s""">> Mismatched effect(s): expected ${magenta(EffSymOrRigidVar.format(expected))}, but got ${red(EffSymOrRigidVar.format(actual))}.
          |
-         |${highlight(loc2, s"function expected argument with effect(s) ${magenta(effectsToString(expected))}", fmt)}
+         |${highlight(loc2, s"function expected argument with effect(s) ${magenta(EffSymOrRigidVar.format(expected))}", fmt)}
          |
-         |${highlight(loc1, s"function argument with effect(s) ${red(effectsToString(actual))} was passed", fmt)}
+         |${highlight(loc1, s"function argument with effect(s) ${red(EffSymOrRigidVar.format(actual))} was passed", fmt)}
          |
          |${highlight(loc3, s"the culprit", fmt)}
          |
-         |${underline("Explanation:")} A function with effect(s) ${magenta(effectsToString(expected))} cannot accept an argument
-         |that carries effect(s) ${red(effectsToString(actual))}. Either:
+         |${underline("Explanation:")} A function with effect(s) ${magenta(EffSymOrRigidVar.format(expected))} cannot accept an argument
+         |that carries effect(s) ${red(EffSymOrRigidVar.format(actual))}. Either:
          |
-         |  (a) Change the argument to use effect(s) ${magenta(effectsToString(expected))}, or
-         |  (b) Update the function signature to accept effect(s) ${red(effectsToString(actual))}.
+         |  (a) Change the argument to use effect(s) ${magenta(EffSymOrRigidVar.format(expected))}, or
+         |  (b) Update the function signature to accept effect(s) ${red(EffSymOrRigidVar.format(actual))}.
          |""".stripMargin
     }
   }
