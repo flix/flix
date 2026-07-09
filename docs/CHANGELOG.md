@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.75.1:
+- Compiler: Fixed a few bugs (thanks Magnus!)
+
 Version 0.75.0:
 - Library: Extended `Range` and `Discrete` (thanks Magnus!)
 - Compiler: Improved some compiler error messages (thanks Magnus!)
