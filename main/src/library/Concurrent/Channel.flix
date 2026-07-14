@@ -90,7 +90,7 @@ pub mod Concurrent.Channel {
     )
 
     /// Returns the `MpmcAdmin` of `c`.
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def mpmcAdmin(c: Mpmc[a, Static]): MpmcAdmin = {
         let Mpmc.Mpmc(admin, _) = c;
         admin
@@ -139,7 +139,7 @@ pub mod Concurrent.Channel {
     /// negative. A channel with `bufferSize` zero means that sending and
     /// receiving is syncronized.
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO =
         if (bufferSize < 0)
             bug!("bufferSize < 0")
@@ -165,7 +165,7 @@ pub mod Concurrent.Channel {
     ///
     /// Creates a new channel tuple (sender, receiver)
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def newChannelTuple(bufferSize: Int32): (Mpmc[a, Static], Mpmc[a, Static]) \ IO =
         let c = newChannel(bufferSize);
         (c, c)
@@ -176,7 +176,7 @@ pub mod Concurrent.Channel {
     ///
     /// Implements the expression `c <- e`.
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def put(e: a, c: Mpmc[a, Static]): Unit \ IO =
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, size, _, rendezvous, _) = admin;
@@ -204,7 +204,7 @@ pub mod Concurrent.Channel {
     ///
     /// Implements to the expression `<- c`.
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def get(c: Mpmc[a, Static]): a \ IO =
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, _, _, _, _) = mpmcAdmin(c);
         lock(channelLock);
@@ -217,7 +217,7 @@ pub mod Concurrent.Channel {
     /// Retrieves an element from the channel `c` and unlocks `locks` after doing so.
     /// Assumes the channel to be non-empty.
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def unsafeGetAndUnlock(c: Mpmc[a, Static], locks: List[ReentrantLock]): a \ IO = {
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, _, _, _) = admin;
@@ -256,7 +256,7 @@ pub mod Concurrent.Channel {
     ///      returned list of locks post call.
     ///      In the non-blocking case, selectFrom unlocks all locks first
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def selectFrom(
         channels: List[MpmcAdmin],
         blocking: Bool

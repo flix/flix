@@ -40,14 +40,14 @@ pub mod Fixpoint3.Solver {
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
     /// The stratification is computed automatically by the solver.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def runSolver(d: Datalog): Datalog = runSolverInternal(false, d)
 
     ///
     /// Returns a provenance model of the given Datalog program `d`.
     /// The provenance model can later be used for provenance queries.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def runSolverWithProvenance(d: Datalog): Datalog = runSolverInternal(true, d)
 
     def runSolverInternal(withProv: Bool, d: Datalog): Datalog = region rc {
@@ -110,7 +110,7 @@ pub mod Fixpoint3.Solver {
     /// I.e. the facts of the union is the union of the facts and likewise for rules.
     /// A fact or rule may occur twice in the Datalog program. This has no effect on its semantics.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def union(d1: Datalog, d2: Datalog): Datalog = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(edb1 ++ edb2, idb1 ++ idb2)
@@ -144,7 +144,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def provenanceOf(p: PredSym, f: Vector[Boxed], withh: Vector[PredSym], mkExtVar: PredSym -> Vector[Boxed] -> t, d: Datalog): Vector[t] = match d {
         case Datalog(_, _) => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
         case Model(db) => unsafe IO {
@@ -200,7 +200,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def projectSym(p: PredSym, d: Datalog): Datalog = match d {
         case Datalog(facts, _) =>
             let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
@@ -227,7 +227,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def rename(preds: List[PredSym], d: Datalog): Datalog = {
         // Determine all the predicate symbols in `d`.
         let predSyms = PredSymsOf.predSymsOf(d);
@@ -257,7 +257,7 @@ pub mod Fixpoint3.Solver {
     /// I.e. returns a Datalog program corresponding to `#{p(t1). p(t1').}`
     /// given the sequence `(t1), (t1')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto1(p: PredSym, ts: f[t1]): Datalog \ Foldable.Aef[f] with Order[t1], Foldable[f] =
         injectIntoX(match (v1) -> Vector#{box(v1)}, p, ts)
 
@@ -267,7 +267,7 @@ pub mod Fixpoint3.Solver {
     /// I.e. returns a Datalog program corresponding to `#{p(t1, t2). p(t1', t2').}`
     /// given the sequence `(t1, t2), (t1', t2')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto2(p: PredSym, ts: f[(t1, t2)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Foldable[f] =
         injectIntoX(match (v1, v2) -> Vector#{box(v1), box(v2)}, p, ts)
 
@@ -277,7 +277,7 @@ pub mod Fixpoint3.Solver {
     /// I.e. returns a Datalog program corresponding to `#{p(t1, t2, t3). p(t1', t2', t3').}`
     /// given the sequence `(t1, t2, t3), (t1', t2', t3')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto3(p: PredSym, ts: f[(t1, t2, t3)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Foldable[f] =
         injectIntoX(match (v1, v2, v3) -> Vector#{box(v1), box(v2), box(v3)}, p, ts)
 
@@ -288,7 +288,7 @@ pub mod Fixpoint3.Solver {
     /// `#{p(t1, t2, t3, t4). p(t1', t2', t3', t4').}`
     /// given the sequence `(t1, t2, t3, t4), (t1', t2', t3', t4')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto4(p: PredSym, ts: f[(t1, t2, t3, t4)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4) -> Vector#{box(v1), box(v2), box(v3), box(v4)}, p, ts)
 
@@ -299,7 +299,7 @@ pub mod Fixpoint3.Solver {
     /// `#{p(t1, t2, t3, t4, t5). p(t1', t2', t3', t4', t5').}`
     /// given the sequence `(t1, t2, t3, t4, t5), (t1', t2', t3', t4', t5')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto5(p: PredSym, ts: f[(t1, t2, t3, t4, t5)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5)}, p, ts)
 
@@ -310,7 +310,7 @@ pub mod Fixpoint3.Solver {
     /// `#{p(t1, t2, t3, t4, t5, t6). p(t1', t2', t3', t4', t5', t6').}`
     /// given the sequence `(t1, t2, t3, t4, t5, t6), (t1', t2', t3', t4', t5', t6')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto6(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6)}, p, ts)
 
@@ -321,7 +321,7 @@ pub mod Fixpoint3.Solver {
     /// `#{p(t1, t2, t3, t4, t5, t6, t7). p(t1', t2', t3', t4', t5', t6', t7').}`
     /// given the sequence `(t1, t2, t3, t4, t5, t6, t7), (t1', t2', t3', t4', t5', t6', t7')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto7(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Foldable[f] =
         injectIntoX(
             match (v1, v2, v3, v4, v5, v6, v7) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6), box(v7)},
@@ -337,7 +337,7 @@ pub mod Fixpoint3.Solver {
     /// given the sequence
     /// `(t1, t2, t3, t4, t5, t6, t7, t8), (t1', t2', t3', t4', t5', t6', t7', t8')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto8(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Foldable[f] =
         injectIntoX(
             match (v1, v2, v3, v4, v5, v6, v7, v8) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6), box(v7), box(v8)},
@@ -353,7 +353,7 @@ pub mod Fixpoint3.Solver {
     /// given the sequence
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9), (t1', t2', t3', t4', t5', t6', t7', t8', t9')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto9(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Foldable[f] =
         injectIntoX(
             match (v1, v2, v3, v4, v5, v6, v7, v8, v9) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6), box(v7), box(v8), box(v9)},
@@ -371,7 +371,7 @@ pub mod Fixpoint3.Solver {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto10(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Foldable[f] =
         injectIntoX(
             match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6), box(v7), box(v8), box(v9), box(v10)},
@@ -389,7 +389,7 @@ pub mod Fixpoint3.Solver {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto11(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Foldable[f] =
         injectIntoX(
             match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6), box(v7), box(v8), box(v9), box(v10), box(v11)},
@@ -407,7 +407,7 @@ pub mod Fixpoint3.Solver {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto12(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Foldable[f] =
         injectIntoX(
             match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6), box(v7), box(v8), box(v9), box(v10), box(v11), box(v12)},
@@ -425,7 +425,7 @@ pub mod Fixpoint3.Solver {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto13(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Foldable[f] =
         injectIntoX(
             match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6), box(v7), box(v8), box(v9), box(v10), box(v11), box(v12), box(v13)},
@@ -443,7 +443,7 @@ pub mod Fixpoint3.Solver {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto14(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Foldable[f] =
         injectIntoX(
             match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6), box(v7), box(v8), box(v9), box(v10), box(v11), box(v12), box(v13), box(v14)},
@@ -461,7 +461,7 @@ pub mod Fixpoint3.Solver {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14', t15')`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def injectInto15(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]): Datalog \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15], Foldable[f] =
         injectIntoX(
             match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) -> Vector#{box(v1), box(v2), box(v3), box(v4), box(v5), box(v6), box(v7), box(v8), box(v9), box(v10), box(v11), box(v12), box(v13), box(v14), box(v15)},
@@ -492,7 +492,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts0(p: PredSym, d: Datalog): Vector[t] with Order[t] =
         // Unsafe cast is required. If a predicate is nullary then its values must be Unit.
         factsOf(_ -> unchecked_cast(() as t), p, d)
@@ -500,7 +500,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts1(p: PredSym, d: Datalog): Vector[t] with Order[t] =
         let f = terms -> (
             unbox(Vector.get(0, terms))
@@ -510,7 +510,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts2(p: PredSym, d: Datalog): Vector[(t1, t2)] with Order[t1], Order[t2] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -521,7 +521,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts3(p: PredSym, d: Datalog): Vector[(t1, t2, t3)] with Order[t1], Order[t2], Order[t3] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -533,7 +533,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts4(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4)] with Order[t1], Order[t2], Order[t3], Order[t4] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -546,7 +546,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts5(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -560,7 +560,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts6(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5, t6)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -575,7 +575,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts7(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5, t6, t7)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -591,7 +591,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts8(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5, t6, t7, t8)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -608,7 +608,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts9(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -626,7 +626,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts10(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -645,7 +645,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts11(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -665,7 +665,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts12(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -686,7 +686,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts13(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -708,7 +708,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts14(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),
@@ -731,7 +731,7 @@ pub mod Fixpoint3.Solver {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @LoweringTarget
+    @LoweringTargetDatalog
     pub def facts15(p: PredSym, d: Datalog): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15] =
         let f = terms -> (
             unbox(Vector.get(0, terms)),

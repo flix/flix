@@ -77,9 +77,14 @@ case class Annotations(annotations: List[Annotation]) {
   def isLazyWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.LazyWhenPure])
 
   /**
-    * Returns `true` if `this` sequence contains the `@LoweringTarget` annotation.
+    * Returns `true` if `this` sequence contains the `@LoweringTargetDatalog` annotation.
     */
-  def isLoweringTarget: Boolean = annotations exists (_.isInstanceOf[Annotation.LoweringTarget])
+  def isLoweringTargetDatalog: Boolean = annotations exists (_.isInstanceOf[Annotation.LoweringTargetDatalog])
+
+  /**
+    * Returns `true` if `this` sequence contains the `@LoweringTargetChannel` annotation.
+    */
+  def isLoweringTargetChannel: Boolean = annotations exists (_.isInstanceOf[Annotation.LoweringTargetChannel])
 
   /**
     * Returns `true` if `this` sequence contains the `@Parallel` annotation.
