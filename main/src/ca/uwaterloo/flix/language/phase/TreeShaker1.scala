@@ -49,7 +49,16 @@ object TreeShaker1 {
       case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
     }
 
-    root.copy(defs = reachableDefs)
+    val reachableInstances = root.instances.filter {
+      case (traitSym, _) => allReachable.contains(ReachableSym.TraitSym(traitSym))
+    }
+
+    val reachableSigs = root.sigs.map {
+      case (sigSym, sig) if allReachable.contains(ReachableSym.SigSym(sigSym)) => sigSym -> sig
+      case (sigSym, sig) => sigSym -> sig.copy(exp = None)
+    }
+
+    root.copy(defs = reachableDefs, instances = reachableInstances, sigs = reachableSigs)
   }
 
   /** Returns the symbols reachable from `sym`. */
