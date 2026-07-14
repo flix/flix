@@ -40,14 +40,9 @@ object TreeShaker1 {
 
     val defaultHandlers = root.defaultHandlers.map(handler => ReachableSym.DefnSym(handler.handlerSym)).toSet
 
-    val loweringTargets: Set[ReachableSym] = root.defs.foldLeft(Set[ReachableSym]()) {
-      case (acc, (_, defn)) if (defn.spec.ann.isLoweringTargetDatalog ||
-                                defn.spec.ann.isLoweringTargetChannel) => acc + ReachableSym.DefnSym(defn.sym)
-      case (acc, _) => acc
-    }
-
     // Compute the symbols that are transitively reachable.
-    val allReachable = ParOps.parReach(initReach ++ loweringTargets ++ defaultHandlers, visitSym(_, root))
+    // `@LoweringTargetDatalog` and `@LoweringTargetChannel` defs are included if needed during `visitExp`.
+    val allReachable = ParOps.parReach(initReach ++ defaultHandlers, visitSym(_, root))
 
     // Filter the reachable definitions.
     val reachableDefs = root.defs.filter {
@@ -72,6 +67,14 @@ object TreeShaker1 {
       root.instances(traitSym).foldLeft(Set.empty[ReachableSym]) {
         case (acc, s) => visitExps(s.defs.map(_.exp)) ++ acc
       }
+
+    case ReachableSym.ChannelUsed =>
+      root.defs.values.filter(_.spec.ann.isLoweringTargetChannel)
+        .map(d => ReachableSym.DefnSym(d.sym)).toSet
+
+    case ReachableSym.DatalogUsed =>
+      root.defs.values.filter(_.spec.ann.isLoweringTargetDatalog)
+        .map(d => ReachableSym.DefnSym(d.sym)).toSet
   }
 
   /** Returns the symbols reachable from `e0`. */
@@ -258,22 +261,25 @@ object TreeShaker1 {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.NewChannel(exp, _, _, _) =>
-      visitExp(exp)
+      Set(ReachableSym.ChannelUsed) ++ visitExp(exp)
 
     case Expr.GetChannel(exp, _, _, _) =>
-      visitExp(exp)
+      Set(ReachableSym.ChannelUsed) ++ visitExp(exp)
 
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+      Set(ReachableSym.ChannelUsed) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+      Set(ReachableSym.ChannelUsed) ++  visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.SelectChannel(selects, optExp, _, _, _) =>
-      visitExps(selects.map(_.exp)) ++ visitExps(selects.map(_.chan)) ++ optExp.map(visitExp).getOrElse(Set.empty)
+      Set(ReachableSym.ChannelUsed) ++
+        visitExps(selects.map(_.exp)) ++
+        visitExps(selects.map(_.chan)) ++
+        optExp.map(visitExp).getOrElse(Set.empty)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
-      visitExps(frags.map(_.exp)) ++ visitExp(exp)
+      Set(ReachableSym.ChannelUsed) ++  visitExps(frags.map(_.exp)) ++ visitExp(exp)
 
     case Expr.Lazy(exp, _, _) =>
       visitExp(exp)
@@ -282,29 +288,30 @@ object TreeShaker1 {
       visitExp(exp)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>
-      cs.map(visitConstraint).fold(Set.empty)(_ ++ _)
+      Set(ReachableSym.DatalogUsed) ++ cs.map(visitConstraint).fold(Set.empty)(_ ++ _)
 
     case Expr.FixpointLambda(_, exp, _, _, _) =>
-      visitExp(exp)
+      Set(ReachableSym.DatalogUsed) ++ visitExp(exp)
 
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+      Set(ReachableSym.DatalogUsed) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
-      visitExps(exps) ++ visitHead(select)
+      Set(ReachableSym.DatalogUsed) ++ visitExps(exps) ++ visitHead(select)
 
     case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from0, where0, _, _, _, _) =>
-      visitExps(exps) ++
+      Set(ReachableSym.DatalogUsed) ++
+        visitExps(exps) ++
         visitExp(queryExp) ++
         visitExps(selects) ++
         visitBodies(from0) ++
         visitExps(where0)
 
     case Expr.FixpointSolveWithProject(exps0, _, _, _, _, _) =>
-      visitExps(exps0)
+      Set(ReachableSym.DatalogUsed) ++ visitExps(exps0)
 
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
-      visitExps(exps)
+      Set(ReachableSym.DatalogUsed) ++ visitExps(exps)
 
     case Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
@@ -346,6 +353,10 @@ object TreeShaker1 {
     case class TraitSym(sym: Symbol.TraitSym) extends ReachableSym
 
     case class SigSym(sym: Symbol.SigSym) extends ReachableSym
+
+    case object DatalogUsed extends ReachableSym
+
+    case object ChannelUsed extends ReachableSym
 
   }
 
