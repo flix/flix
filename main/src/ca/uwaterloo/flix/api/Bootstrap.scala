@@ -504,6 +504,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Upgrades `pkgName` to the latest minor version and/or patch.
     *
+    * // TODO: Rewrite this documentation. It now takes the packageName and version as argument. If 'latest' then it finds the latest version.
     * Example 1 - Latest minor version if one is available:
     * If package is version 0.1.0, and versions `1.0.0`, `0.3.1`, `0.3.0`, `0.2.0`, and `0.1.1`, then
     * version `0.3.1` is applied.
@@ -518,7 +519,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * @param pkgName the package identifier to upgrade. The identifier is the key as it appears in the manifest file,
     *                e.g., `github:flix/museum`
     */
-  def upgrade(flix: Flix, pkgName: String)(implicit formatter: Formatter, in: InputStream, out: PrintStream): Result[Unit, BootstrapError] = {
+  def upgrade(flix: Flix, pkgName: String, semVer: Option[SemVer])(implicit formatter: Formatter, in: InputStream, out: PrintStream): Result[Unit, BootstrapError] = {
     // 1. Ensure project mode
     // TODO: Use isProjectMode
     val oldManifest = optManifest match {
@@ -548,18 +549,29 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // 5. Check for upgrades
-    val availableUpdates = FlixPackageManager.findAvailableUpdates(dependency, apiKey) match {
-      case Err(e) => return Err(BootstrapError.FlixPackageError(e))
-      case Ok(u) => u
+    val update = semVer match {
+      case Some(version) =>
+        // 5(a). The version was specified by the user
+        FlixPackageManager.checkForSpecificVersion(dependency, apiKey, version) match {
+          case Err(e) =>
+            return Err(BootstrapError.FlixPackageError(e))
+          case Ok(version) => version
+        }
+
+      case None =>
+        // 5(b). The version was 'latest' so we must check for the latest version.
+        val availableUpdates = FlixPackageManager.findAvailableUpdates(dependency, apiKey) match {
+          case Err(e) => return Err(BootstrapError.FlixPackageError(e))
+          case Ok(u) => u
+        }
+
+        findLatestVersion(availableUpdates) match {
+          case None => return Ok(())
+          case Some(version) => version
+        }
     }
 
-    // 6. Find latest minor version or latest patch if no greater minor version
-    val update = latestMinorOrPatch(availableUpdates) match {
-      case None => return Ok(())
-      case Some(u) => u
-    }
-
-    // 7. Ask for confirmation
+    // 6. Ask for confirmation
     val confirmationMessage =
       s"""A new version was found: ${dependency.version} -> $update
          |Do you want to proceed? [y/N]""".stripMargin
@@ -582,19 +594,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The user declined the upgrade."))
     }
 
-    // 8. Write effect lock before installing new dependencies
+    // 7. Write effect lock before installing new dependencies
+    // TODO: Check for effect lock file and report error if it does not exist.
     lockEffects(flix) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
 
-    // 9. Resolve old manifest to obtain dependency graph that we can diff with a new graph
+    // 8. Resolve old manifest to obtain dependency graph that we can diff with a new graph
     val oldResolution = Steps.resolveFlixDependencies(oldManifest) match {
       case Err(e) => return Err(e)
       case Ok(r) => r
     }
 
-    // 10. Update manifest
+    // 9. Update manifest
     val newManifest = oldManifest.copy(
       dependencies = oldManifest.dependencies.map {
         case dep: Dependency.FlixDependency if dep == dependency => dep.copy(version = update)
@@ -602,13 +615,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     )
 
-    // 11. Resolve new manifest
+    // 10. Resolve new manifest
     val newResolution = Steps.resolveFlixDependencies(newManifest) match {
       case Err(e) => return Err(e)
       case Ok(r) => r
     }
 
-    // 12. Diff manifests, first checking for added dependencies and then removed dependencies
+    // 11. Diff manifests, first checking for added dependencies and then removed dependencies
     // N.B.: Diffing manifests directly is sensitive to tiny changes since the identity of a manifest is all its contents.
     //       Perhaps an identifier that also includes its version or a hash of certain fields would be more resilient.
 
@@ -626,7 +639,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       return Ok(())
     }
 
-    // 13. Back up removed dependencies
+    // 12. Back up removed dependencies
     val oldPaths = FileOps.getFilesIn(getLibraryDirectory(projectPath).resolve("github").normalize(), Int.MaxValue)
 
     // Create local temporary directory
@@ -662,7 +675,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(()) => ()
     }
 
-    // 14. Download dependencies
+    // 13. Download dependencies
     val newInstalledDeps = Steps.installDependencies(newResolution) match {
       case Err(e) => return Err(e)
       case Ok(fpkgs :: _ :: _ :: Nil) => fpkgs.toSet -- oldPaths
@@ -670,9 +683,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         return Err(BootstrapError.GeneralError(s"Internal Error: Installing dependencies returned unexpected number of paths: ${paths.length}"))
     }
 
-    // 15. Check for effect-safe upgrade
+    // 14. Check for effect-safe upgrade
     checkEffects(flix) match {
       case Err(effectError) =>
+        // TODO: Ask for confirmation to proceed with new effect set
         // Restore old files
         // TODO: Handle deletion errors & refactor
         newInstalledDeps.map(_.getParent).map(FileOps.deleteDir)
@@ -695,21 +709,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(()) => ()
     }
 
-    // 16. Double check effect upgrade with old dep graph to be really sure?
+    // 15. Double check effect upgrade with old dep graph to be really sure?
     checkEffects(flix) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
 
-    // 16. Write new manifest to file
+    // 17. Write new manifest to file
     FileOps.writeString(getManifestFile(projectPath), Manifest.format(newManifest))
 
     Ok(())
-  }
-
-  private def latestMinorOrPatch(updates: AvailableUpdates): Option[SemVer] = updates match {
-    case AvailableUpdates(_, Some(minor), _) => Some(minor)
-    case AvailableUpdates(_, None, patch) => patch
   }
 
   /**
@@ -734,6 +743,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       ()
     }
+  }
+
+  private def findLatestVersion(updates: AvailableUpdates): Option[SemVer] = updates match {
+    case AvailableUpdates(Some(major), _, _) => Some(major)
+    case AvailableUpdates(_, Some(minor), _) => Some(minor)
+    case AvailableUpdates(_, _, Some(patch)) => Some(patch)
+    case AvailableUpdates(_, _, _) => None
   }
 
   /**

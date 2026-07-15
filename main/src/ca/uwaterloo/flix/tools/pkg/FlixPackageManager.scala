@@ -41,9 +41,9 @@ object FlixPackageManager {
     *                            A manifest is the resource a flix dependency resolves to.
     */
   case class Resolution(origin: Manifest,
-                        manifests: List[Manifest],
-                        immediateDependents: Map[Manifest, List[Manifest]],
-                        manifestToFlixDeps: ListMap[Manifest, FlixDependency])
+    manifests: List[Manifest],
+    immediateDependents: Map[Manifest, List[Manifest]],
+    manifestToFlixDeps: ListMap[Manifest, FlixDependency])
 
   /**
     * Represents the dependency resolution of [[origin]] where the maximum security level has been computed
@@ -55,8 +55,8 @@ object FlixPackageManager {
     *                           A manifest is the resource a flix dependency resolves to.
     */
   case class SecureResolution(origin: Manifest,
-                              security: Map[Manifest, SecurityContext],
-                              manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
+    security: Map[Manifest, SecurityContext],
+    manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
     /**
       * All manifests in the resolution.
       */
@@ -116,6 +116,20 @@ object FlixPackageManager {
       minor = ver.minorUpdate(availableVersions)
       patch = ver.patchUpdate(availableVersions)
     } yield AvailableUpdates(major, minor, patch)
+  }
+
+  /**
+    * Returns `version` if that version exists as a release of `dep`.
+    */
+  def checkForSpecificVersion(dep: FlixDependency, apiKey: Option[String], version: SemVer): Result[SemVer, PackageError] = {
+    for {
+      githubProject <- GitHub.parseProject(s"${dep.username}/${dep.projectName}")
+      releases <- GitHub.getReleases(githubProject, apiKey)
+      _ <- releases.find(release => release.version == version) match {
+        case Some(matchingVersion) => Result.Ok(matchingVersion)
+        case None => Result.Err(PackageError.VersionDoesNotExist(version, githubProject))
+      }
+    } yield version
   }
 
   /**
