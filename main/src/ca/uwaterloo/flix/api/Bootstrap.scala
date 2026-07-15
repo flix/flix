@@ -675,33 +675,40 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // 14. Check for effect-safe upgrade
     checkEffects(flix) match {
       case Err(effectError) =>
-        // TODO: Ask for confirmation to proceed with new effect set
-        // Restore old files
-        // TODO: Handle deletion errors & refactor
-        newInstalledDeps.map(_.getParent).map(FileOps.deleteDir)
-        removedDependencies.foreach { dep =>
-          // Move fpkg
-          val fpkgSourcePath = getFlixPackageFile(tmpDir, dep)
-          val fpkgTargetPath = getFlixPackageFile(projectPath, dep)
-          FileOps.move(fpkgSourcePath, fpkgTargetPath)
 
-          // Move manifest
-          val manifestSourcePath = getFlixPackageManifestFile(tmpDir, dep)
-          val manifestTargetPath = getFlixPackageManifestFile(projectPath, dep)
-          FileOps.move(manifestSourcePath, manifestTargetPath)
+        val errorMessage = effectError.message(formatter)
+        val effectUpgradeConfirmationMessage =
+          s"""$errorMessage
+             |
+             |Do trust the package to use these new effects [y/N]?""".stripMargin
+
+        askForConfirmation(effectUpgradeConfirmationMessage) match {
+          case Err(e) => return Err(e) // TODO: Restore files like Ok(false) case
+          case Ok(false) =>
+            // Restore old files
+            // TODO: Handle deletion errors & refactor
+            newInstalledDeps.map(_.getParent).map(FileOps.deleteDir)
+            removedDependencies.foreach { dep =>
+              // Move fpkg
+              val fpkgSourcePath = getFlixPackageFile(tmpDir, dep)
+              val fpkgTargetPath = getFlixPackageFile(projectPath, dep)
+              FileOps.move(fpkgSourcePath, fpkgTargetPath)
+
+              // Move manifest
+              val manifestSourcePath = getFlixPackageManifestFile(tmpDir, dep)
+              val manifestTargetPath = getFlixPackageManifestFile(projectPath, dep)
+              FileOps.move(manifestSourcePath, manifestTargetPath)
+            }
+            FileOps.deleteDir(mvnDir)
+            FileOps.moveDir(tmpMvnDir, mvnDir)
+            FileOps.deleteDir(extDir)
+            FileOps.moveDir(tmpExtDir, extDir)
+            return Err(BootstrapError.GeneralError("Upgrade aborted. Restored previous package version."))
+
+          case Ok(true) => lockEffects(flix)
         }
-        FileOps.deleteDir(mvnDir)
-        FileOps.moveDir(tmpMvnDir, mvnDir)
-        FileOps.deleteDir(extDir)
-        FileOps.moveDir(tmpExtDir, extDir)
-        return Err(effectError)
-      case Ok(()) => ()
-    }
 
-    // 15. Double check effect upgrade with old dep graph to be really sure?
-    checkEffects(flix) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
+      case Ok(()) => () // Continue
     }
 
     // 17. Write new manifest to file
