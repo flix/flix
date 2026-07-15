@@ -575,23 +575,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val confirmationMessage =
       s"""A new version was found: ${dependency.version} -> $update
          |Do you want to proceed? [y/N]""".stripMargin
-    out.print(confirmationMessage)
 
-    val reader = new BufferedReader(new InputStreamReader(in))
-    val confirmed = try {
-      val input = reader.readLine()
-      if (input == null) {
-        return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. Confirmation input was null."))
-      }
-      input.toLowerCase == "y"
-    } catch {
-      case e: Exception => return Err(BootstrapError.GeneralError(s"Refusing to run 'upgrade'. Failed to read input: ${e.getMessage}"))
-    } finally {
-      reader.close()
-    }
-
-    if (!confirmed) {
-      return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The user declined the upgrade."))
+    askForConfirmation(confirmationMessage) match {
+      case Err(e) => return Err(e)
+      case Ok(false) =>
+        return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The user declined the upgrade."))
+      case Ok(true) => ()
     }
 
     // 7. Write effect lock before installing new dependencies
@@ -719,6 +708,22 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     FileOps.writeString(getManifestFile(projectPath), Manifest.format(newManifest))
 
     Ok(())
+  }
+
+  private def askForConfirmation(confirmationMessage: String)(implicit in: InputStream, out: PrintStream): Result[Boolean, BootstrapError] = {
+    out.print(confirmationMessage)
+    val reader = new BufferedReader(new InputStreamReader(in))
+    try {
+      val input = reader.readLine()
+      if (input == null) {
+        return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. Confirmation input was null."))
+      }
+      Ok(input.toLowerCase == "y")
+    } catch {
+      case e: Exception => Err(BootstrapError.GeneralError(s"Refusing to run 'upgrade'. Failed to read input: ${e.getMessage}"))
+    } finally {
+      reader.close()
+    }
   }
 
   /**
