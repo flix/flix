@@ -53,9 +53,8 @@ object TreeShaker1 {
       case (traitSym, _) => allReachable.contains(ReachableSym.TraitSym(traitSym))
     }
 
-    val reachableSigs = root.sigs.map {
-      case (sigSym, sig) if allReachable.contains(ReachableSym.SigSym(sigSym)) => sigSym -> sig
-      case (sigSym, sig) => sigSym -> sig.copy(exp = None)
+    val reachableSigs = root.sigs.filter {
+      case (sigSym, _) => allReachable.contains(ReachableSym.SigSym(sigSym))
     }
 
     root.copy(defs = reachableDefs, instances = reachableInstances, sigs = reachableSigs)
