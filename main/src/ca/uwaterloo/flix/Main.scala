@@ -640,9 +640,13 @@ object Main {
 
       cmd("upgrade").text("  checks for a new version of the given package and downloads it.")
         .children(
-          arg[String]("<package id>").action((s, c) => c.copy(command = Command.Upgrade(s)))
+          arg[String]("<package id>@<version>").action((s, c) => c.copy(command = Command.Upgrade(s)))
             .required()
-            .text("the package to upgrade. The identifier corresponds to the dependency key in the manifest.")
+            .text("  the package to upgrade. " +
+              "<package id> corresponds to the dependency key in the manifest. " +
+              "<version> is a valid semantic version, i.e., major.minor.patch. " +
+              "<version> may also be the string 'latest' which will refer to the latest major release."
+            )
         )
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
