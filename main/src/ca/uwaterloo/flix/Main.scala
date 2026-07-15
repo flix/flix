@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
-import ca.uwaterloo.flix.tools.pkg.PackageModules
+import ca.uwaterloo.flix.tools.pkg.{PackageModules, SemVer}
 import ca.uwaterloo.flix.util.*
 
 import java.io.{File, PrintStream}
@@ -446,14 +446,19 @@ object Main {
           }
 
         case Command.Upgrade(pkg) =>
-          exitOnResult {
-            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-              bootstrap =>
-                val flix = new Flix().setFormatter(formatter)
-                flix.setOptions(options.copy(progress = false))
-                val trimmedPkgName = pkg.trim
-                bootstrap.upgrade(flix, trimmedPkgName)(formatter, System.in, System.out)
-            }
+          parseUpgradePackage(pkg) match {
+            case Result.Err(e) =>
+              println(e)
+              System.exit(1)
+            case Result.Ok((packageName, version)) =>
+              exitOnResult {
+                Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+                  bootstrap =>
+                    val flix = new Flix().setFormatter(formatter)
+                    flix.setOptions(options.copy(progress = false))
+                    bootstrap.upgrade(flix, packageName, version)(formatter, System.in, System.out)
+                }
+              }
           }
 
         case Command.CompilerPerf =>
@@ -470,6 +475,31 @@ object Main {
       case ex: RuntimeException =>
         ex.printStackTrace()
         System.exit(1)
+    }
+  }
+
+  /**
+    * Parses the argument to the 'upgrade' command of the shape 'packageName@version'.
+    *
+    * @param str the input argument of the form 'pkg@version'.
+    * @return `Ok((packageName, None))` if the input was 'packageName@latest'. Returns `Ok((packageName, Some(version))`
+    *         if the input was 'packageName@version' and 'version' is a valid semantic version. Returns `Err(...)` otherwise.
+    */
+  private def parseUpgradePackage(str: String): Result[(String, Option[SemVer]), String] = {
+    val splitStr = str.trim.split('@')
+    if (splitStr.length < 2) {
+      return Result.Err("Invalid upgrade argument: No version specified")
+    }
+    if (splitStr.length > 2) {
+      return Result.Err("Invalid upgrade argument: Too many occurrences of '@'")
+    }
+    val pkgName = splitStr(0)
+    splitStr(1) match {
+      case "latest" => Result.Ok((pkgName, None))
+      case version => SemVer.ofString(version) match {
+        case None => Result.Err(s"Invalid upgrade argument: invalid semantic version '$version'")
+        case Some(semVer) => Result.Ok((pkgName, Some(semVer)))
+      }
     }
   }
 
@@ -640,7 +670,9 @@ object Main {
 
       cmd("upgrade").text("  checks for a new version of the given package and downloads it.")
         .children(
-          arg[String]("<package id>@<version>").action((s, c) => c.copy(command = Command.Upgrade(s)))
+          arg[String]("<package id>@<version>")
+            .action((s, c) => c.copy(command = Command.Upgrade(s)))
+            .maxOccurs(1)
             .required()
             .text("  the package to upgrade. " +
               "<package id> corresponds to the dependency key in the manifest. " +
