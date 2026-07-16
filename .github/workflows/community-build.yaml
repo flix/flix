@@ -66,6 +66,7 @@ jobs:
           - "rywiese/scope-graphs"
           - "stephentetley/flix-htmldoc"
           - "stephentetley/flix-pretty"
+          - "ababup1192/flix_game_engine"
     runs-on: ubuntu-latest
     steps:
       - name: Install JDK
