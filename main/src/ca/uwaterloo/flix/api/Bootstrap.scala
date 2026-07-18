@@ -540,6 +540,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(()) => ()
     }
 
+    // 4. Check effect lock file exists
+    FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      case Ok(false) => return Err(BootstrapError.FileError("Refusing to run 'upgrade'. No effect lock file 'effects.lock' found."))
+      case Ok(true) => ()
+    }
+
     // 4. Check that 'pkgName' occurs as a key in the dependencies declared in the manifest
     val dependency = oldManifest.flixDependencies.find(_.identifier == pkgName) match {
       case None =>
@@ -581,13 +588,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(false) =>
         return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The user declined the upgrade."))
       case Ok(true) => ()
-    }
-
-    // 7. Write effect lock before installing new dependencies
-    // TODO: Check for effect lock file and report error if it does not exist.
-    lockEffects(flix) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
     }
 
     // 8. Resolve old manifest to obtain dependency graph that we can diff with a new graph
