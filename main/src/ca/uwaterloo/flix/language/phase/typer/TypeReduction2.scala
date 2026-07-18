@@ -32,7 +32,12 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type)(implicit scope: RegionScope, renv: RigidityEnv, progress: Progress, eqenv: EqualityEnv, flix: Flix): (Type, List[TypeConstraint]) = tpe0 match {
+  def reduce(tpe0: Type)(implicit scope: RegionScope, renv: RigidityEnv, progress: Progress, eqenv: EqualityEnv, flix: Flix): (Type, List[TypeConstraint]) = {
+    SolverMetrics.counters.reduces += 1 // Counts type-reduction work; backs the compiler-top `rpv` column.
+    reduceInner(tpe0)
+  }
+
+  private def reduceInner(tpe0: Type)(implicit scope: RegionScope, renv: RigidityEnv, progress: Progress, eqenv: EqualityEnv, flix: Flix): (Type, List[TypeConstraint]) = tpe0 match {
     case t: Type.Var => (t, Nil)
 
     case t: Type.Cst => (t, Nil)
