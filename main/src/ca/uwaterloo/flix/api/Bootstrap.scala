@@ -521,9 +521,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def upgrade(flix: Flix, pkgName: String, semVer: Option[SemVer])(implicit formatter: Formatter, in: InputStream, out: PrintStream): Result[Unit, BootstrapError] = {
     // 1. Ensure project mode
-    // TODO: Use isProjectMode
+    if (!isProjectMode) {
+      return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. Not in project mode."))
+    }
+
     val oldManifest = optManifest match {
-      case None => return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'upgrade' in a non-project directory."))
+      case None => return Err(BootstrapError.FileError("Refusing to run 'upgrade'. No manifest 'flix.toml' found."))
       case Some(m) => m
     }
 
