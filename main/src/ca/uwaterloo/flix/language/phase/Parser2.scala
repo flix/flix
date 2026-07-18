@@ -1020,7 +1020,6 @@ object Parser2 {
           modifiers()
           nth(0) match {
             case TokenKind.CurlyR => continue = false
-            case TokenKind.KeywordLaw => lawDecl(openBefore(docMark))
             case TokenKind.KeywordDef => signatureDecl(openBefore(docMark))
             case TokenKind.KeywordType => associatedTypeSigDecl(openBefore(docMark))
             case at =>
@@ -1030,7 +1029,7 @@ object Parser2 {
               while (!nth(0).isFirstInTraitDecl && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw)), actual = Some(at), sctx, loc = loc)
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), sctx, loc = loc)
               closeWithError(errMark, error, Some(at))
           }
         }
@@ -1143,29 +1142,6 @@ object Parser2 {
 
       val treeKind = if (declKind == TokenKind.KeywordRedef) TreeKind.Decl.Redef else TreeKind.Decl.Def
       close(mark, treeKind)
-    }
-
-    private def lawDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
-      assert(at(TokenKind.KeywordLaw))
-      expect(TokenKind.KeywordLaw)
-      nameUnqualified(NAME_FUNCTION)
-      expect(TokenKind.Colon)
-      expect(TokenKind.KeywordForall)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
-      }
-      if (at(TokenKind.ParenL)) {
-        parameters()
-      }
-      if (at(TokenKind.KeywordWith)) {
-        Type.constraints()
-      }
-      if (at(TokenKind.KeywordWhere)) {
-        equalityConstraints()
-      }
-      Expr.expression()
-      close(mark, TreeKind.Decl.Law)
     }
 
     private def enumerationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {

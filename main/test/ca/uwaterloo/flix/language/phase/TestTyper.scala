@@ -883,18 +883,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("Test.UnexpectedArgument.04") {
-    val input =
-      """
-        |trait A[a] {
-        |    pub def f(x: Bool, y: a): Bool
-        |    law l: forall (x: Int32, y: Bool) A.f(x, y)
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
-  }
-
   test("Test.UnexpectedArgument.05") {
     // Regression test.
     // See https://github.com/flix/flix/issues/3634

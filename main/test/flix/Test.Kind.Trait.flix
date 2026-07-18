@@ -50,36 +50,6 @@ mod Test.Kind.Trait {
                 }
             }
         }
-
-        mod Law {
-            mod FormalParams {
-                trait CStar1[a] {
-                    law star: forall(x: a) ???
-                }
-            }
-
-            mod TypeConstraint {
-                trait CStar[a: Type]
-
-                trait CStar1[a] {
-                    law star: forall(x: a) with CStar[a] ???
-                }
-            }
-
-            mod Enum {
-                pub enum EStar[_a: Type]
-
-                trait CStar1[a] {
-                    law star: forall(x: EStar[a]) ???
-                }
-            }
-
-            mod Exp {
-                trait CStar1[a] {
-                    law star: forall(x: a) { discard (???: a); ??? }
-                }
-            }
-        }
     }
 
     mod Explicit {
@@ -147,55 +117,6 @@ mod Test.Kind.Trait {
             mod Exp {
                 trait CStar1[a: Type] {
                     pub def star(x: a): Int32 = let _: a = ???; ???
-                }
-            }
-        }
-
-        mod Law {
-            mod FormalParams {
-                trait CStar1[a: Type] {
-                    law star: forall(x: a) ???
-                }
-
-                trait CStarToStar1[a: Type -> Type] {
-                    law starToStar: forall(x: a[Int32]) ???
-                }
-            }
-
-            mod TypeConstraint {
-                trait CStar[a: Type]
-                trait CStarToStar[a: Type -> Type]
-                trait CBoolToStar[a: Eff -> Type]
-
-                trait CStar1[a: Type] {
-                    law star: forall(x: a) with CStar[a] ???
-                }
-
-                trait CStarToStar1[a: Type -> Type] {
-                    law starToStar: forall(x: a[Int32]) with CStarToStar[a] ???
-                }
-
-                trait CBoolToStar1[a: Eff -> Type] {
-                    law boolToStar: forall(x: a[{}]) with CBoolToStar[a] ???
-                }
-            }
-
-            mod Enum {
-                pub enum EStar[_a: Type]
-                pub enum EStarToStar[_a: Type -> Type]
-
-                trait CStar1[a: Type] {
-                    law star: forall(x: EStar[a]) ???
-                }
-
-                trait CStarToStar1[a: Type -> Type] {
-                    law starToStar: forall(x: EStarToStar[a]) ???
-                }
-            }
-
-            mod Exp {
-                trait CStar1[a: Type] {
-                    law star: forall(x: a) { discard (???: a); ??? }
                 }
             }
         }

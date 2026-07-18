@@ -16,34 +16,17 @@
 
 pub mod MeetLattice {
 
-    use Bool.{==>}
-
     ///
     /// A trait for meet semi lattices.
     /// A Meet Lattice is pair of functions (⊑, ⊓) where ⊑ is a partial order and ⊓ satisfy two properties:
     /// lower-bound and greatest-lower-bound.
     ///
-    pub lawful trait MeetLattice[a] with PartialOrder[a] {
+    pub trait MeetLattice[a] with PartialOrder[a] {
 
         ///
         /// Returns the greatest lower bound of `x` and `y`.
         ///
         pub def greatestLowerBound(x: a, y: a): a
-
-        ///
-        /// The lower bound law asserts that the greatest lower bound operator returns an element that
-        /// is less than or equal to each of its arguments.
-        ///
-        law greatestLowerBound1: forall (x: a, y: a) PartialOrder.lessEqual(MeetLattice.greatestLowerBound(x, y), x)
-            and PartialOrder.lessEqual(MeetLattice.greatestLowerBound(x, y), y)
-
-        ///
-        /// The greatest lower bound law asserts that the greatest lower bound operator returns the
-        /// largest element that is smaller than its two arguments.
-        ///
-        law greatestLowerBound2: forall (x: a, y: a, z: a) (PartialOrder.lessEqual(z, x) and PartialOrder.lessEqual(z, y))
-            ==> PartialOrder.lessEqual(z, MeetLattice.greatestLowerBound(x, y))
-
     }
 
     instance MeetLattice[Int8] {

@@ -23,14 +23,8 @@ sealed trait Modifier
 object Modifier {
 
   /**
-    * The lawful modifier.
-    */
-  case object Lawful extends Modifier
-
-  /**
     * The mutable modifier.
     */
-
   case object Mutable extends Modifier
 
   /**

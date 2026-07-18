@@ -16,8 +16,6 @@
 
 pub mod Hash {
 
-    use Bool.{==>}
-
     import java.lang.Byte
     import java.lang.Character
     import java.lang.Double
@@ -29,16 +27,11 @@ pub mod Hash {
     ///
     /// A trait for types that can be hashed.
     ///
-    pub lawful trait Hash[a] {
+    pub trait Hash[a] {
         ///
         /// Returns a hash value for the given x.
         ///
         pub def hash(x: a): Int32
-
-        ///
-        /// Hash values are consistent with equality: equal values have equal hashes.
-        ///
-        law consistency: forall (x: a, y: a) with Eq[a] (x == y) ==> (Hash.hash(x) == Hash.hash(y))
     }
 
     instance Hash[Unit] {
