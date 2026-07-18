@@ -555,7 +555,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         FlixPackageManager.checkForSpecificVersion(dependency, apiKey, version) match {
           case Err(e) =>
             return Err(BootstrapError.FlixPackageError(e))
-          case Ok(version) => version
+          case Ok(existingVersion) => existingVersion
         }
 
       case None =>
