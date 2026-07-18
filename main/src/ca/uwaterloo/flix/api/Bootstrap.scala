@@ -560,11 +560,18 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // 5. Check for upgrades
     val update = semVer match {
+      case Some(version) if dependency.version == version =>
+        // 5(a). The version was specified by the user.
+        // Special case: Check `version` is current version before going to network.
+        // Perform early return. There is nothing to do.
+        out.println(s"Already at version '$version'. Nothing to do.")
+        return Ok(())
+
       case Some(version) =>
-        // 5(a). The version was specified by the user
+        // 5(a). The version was specified by the user.
+        // The specified version is different from current version so check network.
         FlixPackageManager.checkForSpecificVersion(dependency, apiKey, version) match {
-          case Err(e) =>
-            return Err(BootstrapError.FlixPackageError(e))
+          case Err(e) => return Err(BootstrapError.FlixPackageError(e))
           case Ok(existingVersion) => existingVersion
         }
 
@@ -576,7 +583,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         }
 
         findLatestVersion(availableUpdates) match {
-          case None => return Ok(())
+          case None =>
+            // There was no version higher than the current version. Early return.
+            out.println("No upgrade available. Nothing to do.")
+            return Ok(())
+
+          case Some(version) if dependency.version == version =>
+            // This should be an unreachable case but for sanity, this should be an early return.
+            out.println(s"Already at version '$version'. Nothing to do.")
+            return Ok(())
+
           case Some(version) => version
         }
     }
@@ -588,8 +604,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     askForConfirmation(confirmationMessage) match {
       case Err(e) => return Err(e)
-      case Ok(false) =>
-        return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The user declined the upgrade."))
+      case Ok(false) => return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The user declined the upgrade."))
       case Ok(true) => ()
     }
 
