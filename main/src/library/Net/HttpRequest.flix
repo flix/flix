@@ -81,9 +81,25 @@ pub mod Net.HttpRequest {
         })
 
     ///
+    /// Creates a POST request to the given `url` with no body.
+    ///
+    /// Use `postWith` to set a body at construction, or `withBody`/`withBodyBytes` to add one later.
+    ///
+    pub def post(url: String): HttpRequest =
+        HttpRequest({
+            method          = Method.Post,
+            url             = url,
+            headers         = Map.empty(),
+            body            = None,
+            requestTimeout  = None,
+            connectTimeout  = None,
+            followRedirects = true
+        })
+
+    ///
     /// Creates a POST request to the given `url` with the given `body`.
     ///
-    pub def post(url: String, body: String): HttpRequest =
+    pub def postWith(url: String, body: String): HttpRequest =
         HttpRequest({
             method          = Method.Post,
             url             = url,
@@ -95,9 +111,25 @@ pub mod Net.HttpRequest {
         })
 
     ///
+    /// Creates a PUT request to the given `url` with no body.
+    ///
+    /// Use `putWith` to set a body at construction, or `withBody`/`withBodyBytes` to add one later.
+    ///
+    pub def put(url: String): HttpRequest =
+        HttpRequest({
+            method          = Method.Put,
+            url             = url,
+            headers         = Map.empty(),
+            body            = None,
+            requestTimeout  = None,
+            connectTimeout  = None,
+            followRedirects = true
+        })
+
+    ///
     /// Creates a PUT request to the given `url` with the given `body`.
     ///
-    pub def put(url: String, body: String): HttpRequest =
+    pub def putWith(url: String, body: String): HttpRequest =
         HttpRequest({
             method          = Method.Put,
             url             = url,
@@ -109,9 +141,25 @@ pub mod Net.HttpRequest {
         })
 
     ///
+    /// Creates a PATCH request to the given `url` with no body.
+    ///
+    /// Use `patchWith` to set a body at construction, or `withBody`/`withBodyBytes` to add one later.
+    ///
+    pub def patch(url: String): HttpRequest =
+        HttpRequest({
+            method          = Method.Patch,
+            url             = url,
+            headers         = Map.empty(),
+            body            = None,
+            requestTimeout  = None,
+            connectTimeout  = None,
+            followRedirects = true
+        })
+
+    ///
     /// Creates a PATCH request to the given `url` with the given `body`.
     ///
-    pub def patch(url: String, body: String): HttpRequest =
+    pub def patchWith(url: String, body: String): HttpRequest =
         HttpRequest({
             method          = Method.Patch,
             url             = url,

@@ -15,7 +15,7 @@ def main(): Unit \ { Http, IO } =
         "age"  => JNumber(35.0ff)
     };
     let json = Json.toCompactString(ToJson.toJson(body));
-    let req = HttpRequest.post("https://flix.dev/api/users", json)
+    let req = HttpRequest.postWith("https://flix.dev/api/users", json)
                 |> HttpRequest.withContentType("application/json");
     match Http.send(req) {
         case Ok(resp) =>
