@@ -55,13 +55,24 @@ pub mod Iterator {
         Iterator(rc, iterF)
 
     ///
+    /// Re-wraps `iter` so that its own region does not appear in its effect set.
+    ///
+    /// An iterator's stepper always runs in its region `rc`, so a region effect on the
+    /// iterator's own region is not observable to consumers. This removes that region
+    /// from the visible effect `ef`, leaving only the genuinely foreign effects.
+    ///
+    pub def absorbRegion(iter: Iterator[a, { ef, r }, r]): Iterator[a, ef, r] =
+        let Iterator(rc, g) = iter;
+        Iterator(rc, g)
+
+    ///
     /// Build an iterator by applying `f` to the seed value `st`.
     ///
     /// `f` should return `Some(a, st1)` to signal a new element `a` and a new seed value `st1`.
     ///
     /// `f` should return `None` to signal the end of the iterator.
     ///
-    pub def unfold(rc: Region[r], f: s -> Option[(a, s)] \ ef, st: s): Iterator[a, ef + r, r] \ r =
+    pub def unfold(rc: Region[r], f: s -> Option[(a, s)] \ ef, st: s): Iterator[a, ef, r] \ r =
         let state = Ref.fresh(rc, st);
         let f1 = () -> match f(Ref.get(state)) {
             case None           => Done
@@ -77,7 +88,7 @@ pub mod Iterator {
     ///
     /// `f` should return `None` to signal the end of the iterator.
     ///
-    pub def iterate(rc: Region[r], f: a -> Option[a] \ ef, x: a): Iterator[a, ef + r, r] \ r =
+    pub def iterate(rc: Region[r], f: a -> Option[a] \ ef, x: a): Iterator[a, ef, r] \ r =
         let state = Ref.fresh(rc, x);
         let f1 = () -> match f(Ref.get(state)) {
             case None     => Done
@@ -89,14 +100,14 @@ pub mod Iterator {
     ///
     /// Returns an empty iterator.
     ///
-    pub def empty(rc: Region[r]): Iterator[a, r, r] =
+    pub def empty(rc: Region[r]): Iterator[a, {}, r] =
         let f = _ -> checked_ecast(Done);
         Iterator(rc, f)
 
     ///
     /// Returns an iterator containing only a single element, `x`.
     ///
-    pub def singleton(rc: Region[r], x: a): Iterator[a, r, r] \ r =
+    pub def singleton(rc: Region[r], x: a): Iterator[a, {}, r] \ r =
         repeat(rc, 1, x)
 
     ///
@@ -118,7 +129,7 @@ pub mod Iterator {
     ///
     /// Returns an empty iterator if `b >= e`.
     ///
-    pub def range(rc: Region[r], b: Int32, e: Int32): Iterator[Int32, r, r] \ r =
+    pub def range(rc: Region[r], b: Int32, e: Int32): Iterator[Int32, {}, r] \ r =
         let pos = Ref.fresh(rc, b);
         if (e <= b)
             empty(rc)
@@ -135,7 +146,7 @@ pub mod Iterator {
     ///
     /// Returns an empty iterator if `n < 0`.
     ///
-    pub def repeat(rc: Region[r], n: Int32, x: a): Iterator[a, r, r] \ r =
+    pub def repeat(rc: Region[r], n: Int32, x: a): Iterator[a, {}, r] \ r =
         let ix = Ref.fresh(rc, n);
         let iterF = () -> {
             let i = Ref.get(ix);
@@ -409,10 +420,10 @@ pub mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
+    pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef, r] \ r =
         let Iterator(rc, _) = iter;
         let ix = Ref.fresh(rc, 0);
-        map(x -> { let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x) }, iter)
+        absorbRegion(map(x -> { let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x) }, iter))
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
@@ -488,7 +499,7 @@ pub mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def drop(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
+    pub def drop(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ r =
         let Iterator(rc, iterF) = iter;
         let ix = Ref.fresh(rc, n);
         def loop() = {
@@ -513,7 +524,7 @@ pub mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
+    pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ r =
         let Iterator(rc, iterF) = iter;
         let ix = Ref.fresh(rc, n);
         def loop() = {
@@ -554,7 +565,7 @@ pub mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, r + ef1 + ef2, r] \ r =
+    pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 + ef2, r] \ r =
         let Iterator(rc, iterF) = iter;
         let start = Ref.fresh(rc, true);
         def loop() = match iterF() {
@@ -577,7 +588,7 @@ pub mod Iterator {
     ///
     /// Currently `f` has to generate an iterator with region `r`.
     ///
-    pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, r + ef1 + ef2 + ef3, r] \ r =
+    pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, ef1 + ef2 + ef3, r] \ r =
         let Iterator(rc, iterF) = ma;
         let innerIter = Ref.fresh(rc, polymorphicEmpty(rc));
         let inside = Ref.fresh(rc, false);
@@ -625,7 +636,7 @@ pub mod Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def intersperse(sep: a, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
+    pub def intersperse(sep: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ r =
         let Iterator(rc, _) = iter;
         let start = Ref.fresh(rc, true);
         let step = x ->
@@ -635,7 +646,7 @@ pub mod Iterator {
             } else {
                 cons(sep, singleton(rc, x))
             };
-        flatMap(step, iter)
+        absorbRegion(flatMap(step, iter))
 
     ///
     /// Returns the concatenation of the elements in `iter` with the elements of `sep` inserted between every two adjacent elements.
@@ -646,7 +657,7 @@ pub mod Iterator {
     ///
     /// The original iterators `sep` and `iter` should not be reused.
     ///
-    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ (r + Foldable.Aef[t]) with Foldable[t] =
+    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef, r] \ (r + Foldable.Aef[t]) with Foldable[t] =
         let Iterator(rc, _) = iter;
         let start = Ref.fresh(rc, true);
         let sepL = Foldable.toList(sep);
@@ -658,13 +669,10 @@ pub mod Iterator {
                 append(ofList(rc, sepL), innerIter)
             }
         };
-        flatMap(step, iter)
+        absorbRegion(flatMap(step, iter))
 
     ///
     /// Helper for `intercalate`.
-    ///
-    /// Note - this is not the "best" return type. Ideally it should be `Iterator[a, r, r]` but
-    /// then `intercalate` fails.
     ///
     def ofList(rc: Region[r], xs: List[a]): Iterator[a, {}, r] \ r =
         let ls = Ref.fresh(rc, xs);
@@ -752,7 +760,7 @@ pub mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, r + ef1 + ef2, r] \ r =
+    pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, ef1 + ef2, r] \ r =
         flatMap(identity, iter)
 
 }

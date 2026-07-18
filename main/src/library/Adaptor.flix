@@ -72,7 +72,7 @@ pub mod Adaptor {
     ///
     /// Returns a Flix Iterator of the elements in the given Java List.
     ///
-    pub def fromListToIterator(rc: Region[r], l: JList[a]): Iterator[a, r, r] \ r =
+    pub def fromListToIterator(rc: Region[r], l: JList[a]): Iterator[a, {}, r] \ r =
         def iterator(x) = unsafe IO as r { x.iterator() };
         iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a]))
 
@@ -89,7 +89,7 @@ pub mod Adaptor {
     ///
     /// Returns a Flix Iterator of the elements in the given Java Set.
     ///
-    pub def fromSetToIterator(rc: Region[r], s: JSet[a]): Iterator[a, r, r] \ r =
+    pub def fromSetToIterator(rc: Region[r], s: JSet[a]): Iterator[a, {}, r] \ r =
         def iterator(x) = unsafe IO as r { x.iterator() };
         iterator(s) |> fromIterator(rc, (Proxy.Proxy: Proxy[a]))
 
@@ -109,7 +109,7 @@ pub mod Adaptor {
     ///
     /// Returns a Flix Iterator of the key-value pairs in the given Java Map.
     ///
-    pub def fromMapToIterator(rc: Region[r], m: JMap[k, v]): Iterator[(k, v), r, r] \ r =
+    pub def fromMapToIterator(rc: Region[r], m: JMap[k, v]): Iterator[(k, v), {}, r] \ r =
         def entrySet(x) = unsafe IO as r { x.entrySet() };
         def iterator(x) = unsafe IO as r { x.iterator() };
         def hasNext(x) = unsafe IO as r { x.hasNext() };
@@ -124,12 +124,12 @@ pub mod Adaptor {
             }
             case false => None
         };
-        Iterator.unfoldWithIter(rc, getNext)
+        Iterator.unfoldWithIter(rc, getNext) |> Iterator.absorbRegion
 
     ///
     /// Returns a fresh Flix `Iterator` from the Java iterator `iter`.
     ///
-    pub def fromIterator(rc: Region[r], _: Proxy[a], iter: JIterator[a]): Iterator[a, r, r] =
+    pub def fromIterator(rc: Region[r], _: Proxy[a], iter: JIterator[a]): Iterator[a, {}, r] =
         def hasNext(x) = unsafe IO as r { x.hasNext() };
         def next(x) = unsafe IO as r { x.next() };
         let step = () -> {
@@ -139,12 +139,12 @@ pub mod Adaptor {
             }
         };
         let iterF = () -> (step());
-        Iterator.unfoldWithIter(rc, iterF)
+        Iterator.unfoldWithIter(rc, iterF) |> Iterator.absorbRegion
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java Stream.
     ///
-    pub def fromStreamToIterator(rc: Region[r], strm: Stream[a]): Iterator[a, r, r] \ r =
+    pub def fromStreamToIterator(rc: Region[r], strm: Stream[a]): Iterator[a, {}, r] \ r =
         let baseStream: BaseStream[a, Stream[a]] = checked_cast(strm);
         let iter = unsafe IO as r { baseStream.iterator() };
         Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a]), iter)
@@ -152,7 +152,7 @@ pub mod Adaptor {
     ///
     /// Returns a Flix Iterator of the elements in the given Java Collection.
     ///
-    pub def fromCollectionToIterator(rc: Region[r], col: Collection[a]): Iterator[a, r, r] \ r =
+    pub def fromCollectionToIterator(rc: Region[r], col: Collection[a]): Iterator[a, {}, r] \ r =
         let iter = unsafe IO as r { col.iterator() };
         Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a]), iter)
 

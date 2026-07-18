@@ -126,7 +126,7 @@ pub mod Chain {
 
     instance Iterable[Chain[a]] {
         type Elm = a
-        pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
+        pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, {}, r] \ r = Chain.iterator(rc, c)
     }
 
     instance ForEach[Chain[a]] {
@@ -823,7 +823,7 @@ pub mod Chain {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r =
+    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, {}, r] \ r =
         let cursor = Ref.fresh(rc, viewLeft(c));
         let next = () -> match (Ref.get(cursor)) {
             case ViewLeft.NoneLeft => None
@@ -831,7 +831,7 @@ pub mod Chain {
                 Ref.put(viewLeft(xs), cursor);
                 Some(x)
         };
-        Iterator.unfoldWithIter(rc, next)
+        Iterator.unfoldWithIter(rc, next) |> Iterator.absorbRegion
 
     ///
     /// Returns the chain `c` as a Nel.

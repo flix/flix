@@ -147,7 +147,7 @@ pub mod Nec {
 
     instance Iterable[Nec[a]] {
         type Elm = a
-        pub def iterator(rc: Region[r], l: Nec[a]): Iterator[a, r, r] \ r = Nec.iterator(rc, l)
+        pub def iterator(rc: Region[r], l: Nec[a]): Iterator[a, {}, r] \ r = Nec.iterator(rc, l)
     }
 
     instance ForEach[Nec[a]] {
@@ -813,13 +813,13 @@ pub mod Nec {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(rc: Region[r], c: Nec[a]): Iterator[a, r, r] \ r =
+    pub def iterator(rc: Region[r], c: Nec[a]): Iterator[a, {}, r] \ r =
         iteratorHelper(rc, Some(viewLeft(c)))
 
     ///
     /// Returns an iterator over `l`.
     ///
-    def iteratorHelper(rc: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r, r] \ r =
+    def iteratorHelper(rc: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, {}, r] \ r =
         let cursor = Ref.fresh(rc, vl);
         let next = () -> match (Ref.get(cursor)) {
             case None => None
@@ -830,7 +830,7 @@ pub mod Nec {
                 Ref.put(Some(viewLeft(xs)), cursor);
                 Some(x)
         };
-        Iterator.unfoldWithIter(rc, next)
+        Iterator.unfoldWithIter(rc, next) |> Iterator.absorbRegion
 
     ///
     /// Helper for the `sort` functions.
