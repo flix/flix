@@ -43,6 +43,38 @@ object Formatting {
   def hotnessMsPerLine(nanos: Long, lines: Int): Double =
     if (lines <= 0) 0.0 else (nanos / 1_000_000L).toDouble / lines
 
+  /**
+    * Floor on the type-substitution size below which the `tpv` per-variable
+    * density column is suppressed. A ratio over a tiny numerator is noise —
+    * a def that resolves three variables to ~60 nodes would read "20/var"
+    * without flagging any real blow-up. Floors on the *numerator*
+    * (substitution size), mirroring the kept `rpv` ratio, which floored on
+    * its numerator (reduction count) rather than the variable count. Tunable
+    * — validate against a full-population sample before trusting the value.
+    */
+  val MinSubstForDensity: Long = 1000L
+
+  /**
+    * Descending sort key for the `tpv` substitution-per-variable density
+    * column: `size / vars` (`size = substTypeSize`, `vars = tvars`). Returns
+    * `NegativeInfinity` (sinks below every scored row) when `size` is below
+    * [[MinSubstForDensity]] or the def has no type variables — matching the
+    * `-` the cell renders. Shared with [[formatDensity]] so the displayed and
+    * sorted values cannot drift.
+    */
+  def densityScore(size: Long, vars: Long): Double =
+    if (size < MinSubstForDensity || vars <= 0L) Double.NegativeInfinity
+    else size.toDouble / vars
+
+  /**
+    * Formats a substitution-per-variable ratio as a rounded integer, or `-`
+    * when `size` is below [[MinSubstForDensity]] or `vars` is zero. See
+    * [[densityScore]] for the matching sort key.
+    */
+  def formatDensity(size: Long, vars: Long): String =
+    if (size < MinSubstForDensity || vars <= 0L) "-"
+    else math.round(size.toDouble / vars).toString
+
   // -- Formatting helpers -------------------------------------------------
 
   /** Renders a [[SourceLocation]] as `file:line`, or `?` if synthetic. */
