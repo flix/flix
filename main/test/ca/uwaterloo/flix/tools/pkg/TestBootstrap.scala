@@ -398,6 +398,41 @@ class TestBootstrap extends AnyFunSuite {
     assert(bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
   }
 
+  // TODO: Add test that upgrade with eff-lock first is error
+  // TODO: Add the other eff-check tests as upgrade tests
+
+  test("upgrade on same version as before is ok") {
+    // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
+    // There is no upgrade done, but we assert that
+    // performing eff-check after eff-lock succeeds.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
+
+    // Override manifest
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.0"
+        |""".stripMargin
+    )
+    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
+
+    // Override main file
+    val main =
+      """
+        |pub def main(): Unit \ IO =
+        |    println(Upgr.entrypoint(42))
+        |""".stripMargin
+    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
+
+    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+
+    val actual = bootstrap.upgrade(PkgTestUtils.mkFlix, "github:jaschdoc/flix-test-pkg-eff-upgrade", Some(SemVer(0, 1, 0)))(Formatter.getDefault, System.in, System.out)
+
+    assert(actual == Result.Ok(()))
+  }
+
+
   private def calcHash(p: Path): String = {
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
