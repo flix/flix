@@ -739,7 +739,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                 FileOps.deleteDir(extDir),
                 FileOps.moveDir(tmpExtDir, extDir)
               )
-            ) match {
+            ).map(_ => ()) match {
               case Err(e) => return Err(BootstrapError.FileError( // TODO: Refactor to error
                 "FATAL UPGRADE ERROR: Unable to restore files. " +
                   "Please remove newly installed dependencies and restore old dependencies." +
