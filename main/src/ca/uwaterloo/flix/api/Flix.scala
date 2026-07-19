@@ -255,6 +255,15 @@ class Flix {
     this
   }
 
+  def remFpkg(p: Path)(implicit sctx: SecurityContext): Flix = {
+    if (isValidFpkgFile(p).toOption.isEmpty) {
+      throw new IllegalArgumentException(s"'$p' must be a fpkg file.")
+    }
+
+    remInput(p.toString, Input.RealFile(p, sctx))
+    this
+  }
+
   /**
     * Adds Flix source code from a string with an associated virtual path.
     *
