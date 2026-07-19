@@ -19,9 +19,12 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
-import java.nio.file.{Files, LinkOption, Path, StandardCopyOption, StandardOpenOption}
+import java.io.IOException
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.{FileVisitResult, Files, LinkOption, Path, SimpleFileVisitor, StandardCopyOption, StandardOpenOption}
 import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipOutputStream}
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
 
@@ -135,10 +138,9 @@ object FileOps {
       if (!Files.isDirectory(dir)) {
         return Result.Err(new RuntimeException(s"path '$dir' is not a directory"))
       }
-      val deletions = walkTree(dir, Int.MaxValue).map { path =>
-        delete(path)
+      walkTreePostOrder(dir).flatMap { paths =>
+        Result.sequence(paths.map(delete)).map(_ => ())
       }
-      Result.sequence(deletions).map(_ => ())
     } catch {
       case e: Exception => Result.Err(e)
     }
@@ -259,7 +261,9 @@ object FileOps {
 
   /**
     * Returns a sorted list of all paths in the given path (including `path`), visited recursively.
-    * The list is sorted by the path name.
+    * The list is sorted by the path name, i.e., the shortest path name first.
+    * Reverse the list if you need to
+    *
     * The depth parameter is the maximum number of levels of directories to visit.
     * Use a depth of 0 to only visit the given directory.
     * Use a depth of 1 to only visit the files in the given directory.
@@ -283,6 +287,29 @@ object FileOps {
         .toList
     else
       List.empty
+  }
+
+  private def walkTreePostOrder(path: Path): Result[List[Path], Exception] = {
+    try {
+      val result = mutable.ArrayBuffer.empty[Path]
+      Files.walkFileTree(path, new SimpleFileVisitor[Path] {
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          result.addOne(file)
+          FileVisitResult.CONTINUE
+        }
+
+        override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = {
+          if (exc != null) {
+            throw exc
+          }
+          result.addOne(dir)
+          FileVisitResult.CONTINUE
+        }
+      })
+      Result.Ok(result.toList)
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
   }
 
   /**
