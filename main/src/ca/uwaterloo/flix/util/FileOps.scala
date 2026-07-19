@@ -129,7 +129,7 @@ object FileOps {
               sourcePath =>
                 val relativeResourcePath = sourceDir.relativize(sourcePath)
                 val targetPath = targetDir.resolve(relativeResourcePath).normalize()
-                if (Files.isDirectory(sourceDir)) {
+                if (Files.isDirectory(sourcePath)) {
                   FileOps.createDir(targetPath)
                 } else {
                   FileOps.copy(sourcePath, targetPath)
