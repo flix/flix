@@ -725,21 +725,40 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           // TODO: Refactor Err(_) case into own case and perform same cleanup logic
           case Err(_) | Ok(false) =>
             // Restore old files
-            Result.sequence(
-              List(
-                Result.traverse(newInstalledDeps.map(_.getParent))(FileOps.deleteDir),
-                Result.traverse(removedDependencies) { dep =>
-                  // Move fpkg
-                  val fpkgSourcePath = getFlixPackageDir(getUpgradeBackupDir(projectPath), dep)
-                  val fpkgTargetPath = getFlixPackageDir(projectPath, dep)
-                  FileOps.move(fpkgSourcePath, fpkgTargetPath)
-                },
-                FileOps.deleteDir(mvnDir),
-                FileOps.moveDir(tmpMvnDir, mvnDir),
-                FileOps.deleteDir(extDir),
-                FileOps.moveDir(tmpExtDir, extDir)
-              )
-            ).map(_ => ()) match {
+            val fpkgRollBacks = List(
+              Result.traverse(newInstalledDeps.map(_.getParent))(FileOps.deleteDir),
+              Result.traverse(removedDependencies) { dep =>
+                // Move fpkg
+                val fpkgSourcePath = getFlixPackageDir(getUpgradeBackupDir(projectPath), dep)
+                val fpkgTargetPath = getFlixPackageDir(projectPath, dep)
+                FileOps.move(fpkgSourcePath, fpkgTargetPath)
+              })
+
+            // Tolerate missing directories
+            val mvnRollBacks = List(
+              FileOps.exists(mvnDir).flatMap {
+                case true => FileOps.deleteDir(mvnDir)
+                case false => Result.Ok(())
+              },
+              FileOps.exists(tmpMvnDir).flatMap {
+                case true => FileOps.moveDir(tmpMvnDir, mvnDir)
+                case false => Result.Ok(())
+              }
+            )
+
+            // Tolerate missing directories
+            val extJarRollBacks = List(
+              FileOps.exists(extDir).flatMap {
+                case true => FileOps.deleteDir(extDir)
+                case false => Result.Ok(())
+              },
+              FileOps.exists(tmpExtDir).flatMap {
+                case true => FileOps.moveDir(tmpExtDir, extDir)
+                case false => Result.Ok(())
+              }
+            )
+
+            Result.sequence(fpkgRollBacks ::: mvnRollBacks ::: extJarRollBacks).map(_ => ()) match {
               case Err(e) => return Err(BootstrapError.FileError( // TODO: Refactor to error
                 "FATAL UPGRADE ERROR: Unable to restore files. " +
                   "Please remove newly installed dependencies and restore old dependencies." +
