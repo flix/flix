@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EFFECT_LOCK_FILE, EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, EXT_MANIFEST, FLIX_TOML, LICENSE, README, getExternalJarDirectory, getFlixPackageFile, getFlixPackageManifestFile, getLibraryDirectory, getManifestFile, getMavenDirectory, getTmpDir}
+import ca.uwaterloo.flix.api.Bootstrap.{EFFECT_LOCK_FILE, EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, EXT_MANIFEST, FLIX_TOML, LICENSE, README, getExternalJarDirectory, getFlixPackageDir, getFlixPackageFile, getFlixPackageManifestFile, getLibraryDirectory, getManifestFile, getMavenDirectory, getUpgradeBackupDir}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -234,14 +234,17 @@ object Bootstrap {
     */
   private val libDirectoryRaw: String = "lib/"
 
-  private def getTmpDir(p: Path): Path = p.resolve(".tmp")
+  private def getUpgradeBackupDir(p: Path): Path = p.resolve(".flix_upgrade_backup/").normalize()
 
-
-  private def getFlixPackageResource(p: Path, flixDep: Dependency.FlixDependency, fileExtension: String): Path =
+  private def getFlixPackageDir(p: Path, flixDep: Dependency.FlixDependency): Path =
     p.resolve(flixDep.repo.toString.toLowerCase)
       .resolve(flixDep.username)
       .resolve(flixDep.projectName)
       .resolve(flixDep.version.toString)
+      .normalize()
+
+  private def getFlixPackageResource(p: Path, flixDep: Dependency.FlixDependency, fileExtension: String): Path =
+    getFlixPackageDir(p, flixDep)
       .resolve(s"${flixDep.projectName}-${flixDep.version}.$fileExtension")
       .normalize()
 
@@ -651,26 +654,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // 12. Back up removed dependencies
     val oldPaths = FileOps.getFilesIn(getLibraryDirectory(projectPath).resolve("github").normalize(), Int.MaxValue)
 
-    // Create local temporary directory
-    val tmpDir = Files.createTempDirectory(getTmpDir(projectPath), "")
-
     // Move old flix dependencies
     val removedDependencies = removedManifests.flatMap(_.flixDependencies)
     removedDependencies.foreach { dep =>
-      // Move fpkg
-      val fpkgSourcePath = getFlixPackageFile(projectPath, dep)
-      val fpkgTargetPath = getFlixPackageFile(tmpDir, dep)
-      FileOps.move(fpkgSourcePath, fpkgTargetPath)
-
-      // Move manifest
-      val manifestSourcePath = getFlixPackageManifestFile(projectPath, dep)
-      val manifestTargetPath = getFlixPackageManifestFile(tmpDir, dep)
-      FileOps.move(manifestSourcePath, manifestTargetPath)
+      val fpkgSourcePath = getFlixPackageDir(projectPath, dep)
+      val fpkgTargetPath = getFlixPackageDir(getUpgradeBackupDir(projectPath), dep)
+      FileOps.moveDir(fpkgSourcePath, fpkgTargetPath)
     }
 
     // Move all maven jars
     val mvnDir = getMavenDirectory(projectPath)
-    val tmpMvnDir = getMavenDirectory(tmpDir)
+    val tmpMvnDir = getMavenDirectory(getUpgradeBackupDir(projectPath))
     FileOps.exists(mvnDir) match {
       case Err(e) => return Err(BootstrapError.FileError(s"Unexpected error checking existence of maven directory: ${e.getMessage}"))
       case Ok(true) => FileOps.moveDir(mvnDir, tmpMvnDir) match {
@@ -682,7 +676,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Move all external jars
     val extDir = getExternalJarDirectory(projectPath)
-    val tmpExtDir = getExternalJarDirectory(tmpDir)
+    val tmpExtDir = getExternalJarDirectory(getUpgradeBackupDir(projectPath))
     FileOps.exists(extDir) match {
       case Err(e) => return Err(BootstrapError.FileError(s"Unexpected error checking existence of external jar directory: ${e.getMessage}"))
       case Ok(true) => FileOps.moveDir(extDir, tmpExtDir) match {
@@ -717,13 +711,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
             // TODO: Handle deletion errors & refactor
             newInstalledDeps.map(_.getParent).map(FileOps.deleteDir)
             removedDependencies.foreach { dep =>
+              // TODO: Move dirs instead of files
               // Move fpkg
-              val fpkgSourcePath = getFlixPackageFile(tmpDir, dep)
+              val fpkgSourcePath = getFlixPackageFile(getUpgradeBackupDir(projectPath), dep)
               val fpkgTargetPath = getFlixPackageFile(projectPath, dep)
               FileOps.move(fpkgSourcePath, fpkgTargetPath)
 
               // Move manifest
-              val manifestSourcePath = getFlixPackageManifestFile(tmpDir, dep)
+              val manifestSourcePath = getFlixPackageManifestFile(getUpgradeBackupDir(projectPath), dep)
               val manifestTargetPath = getFlixPackageManifestFile(projectPath, dep)
               FileOps.move(manifestSourcePath, manifestTargetPath)
             }
