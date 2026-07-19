@@ -671,17 +671,25 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Move all maven jars
     val mvnDir = getMavenDirectory(projectPath)
     val tmpMvnDir = getMavenDirectory(tmpDir)
-    FileOps.moveDir(mvnDir, tmpMvnDir) match {
-      case Err(e) => BootstrapError.FileError(s"Failed to move file: ${e.getMessage}")
-      case Ok(()) => ()
+    FileOps.exists(mvnDir) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"Unexpected error checking existence of maven directory: ${e.getMessage}"))
+      case Ok(true) => FileOps.moveDir(mvnDir, tmpMvnDir) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Unable to Maven directory: ${e.getMessage}"))
+        case Ok(()) => ()
+      }
+      case Ok(false) => () // Tolerate missing maven directory and continue
     }
 
     // Move all external jars
     val extDir = getExternalJarDirectory(projectPath)
     val tmpExtDir = getExternalJarDirectory(tmpDir)
-    FileOps.moveDir(extDir, tmpExtDir) match {
-      case Err(e) => BootstrapError.FileError(s"Failed to move file: ${e.getMessage}")
-      case Ok(()) => ()
+    FileOps.exists(extDir) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"Unexpected error checking existence of external jar directory: ${e.getMessage}"))
+      case Ok(true) => FileOps.moveDir(extDir, tmpExtDir) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Unable to move external jar directory: ${e.getMessage}"))
+        case Ok(()) => ()
+      }
+      case Ok(false) => () // Tolerate missing maven directory and continue
     }
 
     // 13. Download dependencies
@@ -725,16 +733,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
             FileOps.moveDir(tmpExtDir, extDir)
             return Err(BootstrapError.GeneralError("Upgrade aborted. Restored previous package version."))
 
-          case Ok(true) => lockEffects(flix)
+          case Ok(true) => () // Continue
         }
 
       case Ok(()) => () // Continue
     }
 
+    // 17. Remove files from old dependency graph
+    // TODO
+
     // 17. Write new manifest to file
     FileOps.writeString(getManifestFile(projectPath), Manifest.format(newManifest))
 
-    Ok(())
+    // Lock effects
+    lockEffects(flix).map {
+      v =>
+        out.println("Update successful.")
+        v
+    }
   }
 
   private def askForConfirmation(confirmationMessage: String)(implicit in: InputStream, out: PrintStream): Result[Boolean, BootstrapError] = {
