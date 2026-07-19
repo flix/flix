@@ -86,7 +86,7 @@ object FileOps {
     */
   def move(source: Path, target: Path): Result[Unit, Exception] = {
     try {
-      Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
+      Files.move(source, target, StandardCopyOption.ATOMIC_MOVE)
       Result.Ok(())
     } catch {
       case e: Exception => Result.Err(e)
@@ -114,13 +114,42 @@ object FileOps {
       case Result.Ok(false) => FileOps.newDirectoryIfAbsent(targetDir)
       case Result.Ok(true) => ()
     }
-    val moves = getFilesIn(sourceDir, Int.MaxValue)
-      .map { sourcePath =>
-        val relativeResourcePath = sourceDir.relativize(sourcePath)
-        val targetPath = targetDir.resolve(relativeResourcePath).normalize()
-        FileOps.move(sourcePath, targetPath)
-      }
-    Result.sequence(moves).map(_ => ())
+    // Attempt to move directory as-is by renaming.
+    FileOps.move(sourceDir, targetDir) match {
+      case Result.Ok(()) =>
+        // Successful move, nothing more to do.
+        Result.Ok(())
+
+      case Result.Err(_) =>
+        // Error happened, fall back to recursively copying and then deleting.
+        // 1. Recursively copy.
+        FileOps.walkTreePreOrder(sourceDir).flatMap {
+          paths =>
+            Result.traverse(paths) {
+              sourcePath =>
+                val relativeResourcePath = sourceDir.relativize(sourcePath)
+                val targetPath = targetDir.resolve(relativeResourcePath).normalize()
+                if (Files.isDirectory(sourceDir)) {
+                  FileOps.createDir(targetPath)
+                } else {
+                  FileOps.copy(sourcePath, targetPath)
+                }
+            }
+        } match {
+          // 2. Recursively delete if no error occurred.
+          case Result.Err(e) => Result.Err(e)
+          case Result.Ok(()) => FileOps.deleteDir(sourceDir)
+        }
+    }
+  }
+
+  private def copy(source: Path, destination: Path): Result[Unit, Exception] = {
+    try {
+      Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING)
+      Result.Ok(())
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
   }
 
   /**
@@ -195,6 +224,26 @@ object FileOps {
     */
   def writeJSON(p: Path, j: JValue): Unit = {
     FileOps.writeString(p, JsonMethods.pretty(JsonMethods.render(j)))
+  }
+
+  /**
+    * Creates a new directory at the given path `p`.
+    *
+    * The path must not already contain a non-directory.
+    */
+  def createDir(path: Path): Result[Unit, Exception] = {
+    try {
+      if (Files.exists(path)) {
+        return Result.Err(new RuntimeException(s"Path '$path' already exists.'"))
+      }
+      if (!Files.isDirectory(path)) {
+        return Result.Err(new RuntimeException(s"Path '$path' is not a directory.'"))
+      }
+      Files.createDirectories(path)
+      Result.Ok(())
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
   }
 
   /**
@@ -288,6 +337,26 @@ object FileOps {
         .toList
     else
       List.empty
+  }
+
+  private def walkTreePreOrder(path: Path): Result[List[Path], Exception] = {
+    try {
+      val result = mutable.ArrayBuffer.empty[Path]
+      Files.walkFileTree(path, new SimpleFileVisitor[Path] {
+        override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          result.addOne(dir)
+          FileVisitResult.CONTINUE
+        }
+
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          result.addOne(file)
+          FileVisitResult.CONTINUE
+        }
+      })
+      Result.Ok(result.toList)
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
   }
 
   private def walkTreePostOrder(path: Path): Result[List[Path], Exception] = {
