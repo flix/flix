@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EFFECT_LOCK_FILE, EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, EXT_MANIFEST, FLIX_TOML, LICENSE, README, getExternalJarDirectory, getFlixPackageDir, getFlixPackageFile, getFlixPackageManifestFile, getLibraryDirectory, getManifestFile, getMavenDirectory, getUpgradeBackupDir}
+import ca.uwaterloo.flix.api.Bootstrap.{EFFECT_LOCK_FILE, EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, EXT_MANIFEST, FLIX_TOML, LICENSE, README, getExternalJarDirectory, getFlixPackageDir, getFlixPackageFile, getFlixPackageManifestFile, getLibraryDirectory, getManifestFile, getMavenDirectory, getUpgradeBackupDir, libDirectoryRaw}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -552,7 +552,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
       case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
       case Ok(false) => return Err(BootstrapError.FileError(s"Refusing to run 'upgrade'. No effect lock file '$EFFECT_LOCK_FILE' found. Run 'eff-lock' to generate one."))
-      case Ok(true) => ()
+      case Ok(true) => () // Continue
+    }
+
+    // 5. Check backup directory from previously aborted upgrade does not exist
+    FileOps.exists(Bootstrap.getUpgradeBackupDir(projectPath)) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      case Ok(true) => return Err(BootstrapError.FileError( // TODO: Refactor this into an error
+        "Refusing to run 'upgrade'. " +
+          "Backup from earlier aborted 'upgrade' exists." +
+          System.lineSeparator() +
+          System.lineSeparator() +
+          s"Please resolve the issue by manually moving needed files into the '$libDirectoryRaw' directory and removing the backup directory. " +
+          System.lineSeparator() +
+          s"Backup directory located at: ${Bootstrap.getUpgradeBackupDir(projectPath)}" +
+          System.lineSeparator() +
+          s"$libDirectoryRaw located at: ${Bootstrap.getLibraryDirectory(projectPath)}"
+      ))
+      case Ok(false) => () // Continue
     }
 
     // 4. Check that 'pkgName' occurs as a key in the dependencies declared in the manifest
