@@ -145,6 +145,42 @@ class TestMain extends AnyFunSuite {
     assert(opts.isEmpty)
   }
 
+  test("upgrade invalidName@") {
+    val args = Array("upgrade", "invalidName@")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade invalidName@invalidVersion") {
+    val args = Array("upgrade", "invalidName@invalidVersion")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade @") {
+    val args = Array("upgrade", "@")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade @version") {
+    val args = Array("upgrade", "@version")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade @version@") {
+    val args = Array("upgrade", "@version@")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade @@") {
+    val args = Array("upgrade", "@@")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
   test("--json") {
     val args = Array("--json")
     val opts = Main.parseCmdOpts(args).get
