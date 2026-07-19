@@ -445,19 +445,26 @@ object Main {
             }
           }
 
-        case Command.Upgrade(pkg) =>
-          parseUpgradePackage(pkg) match {
-            case Result.Err(e) =>
-              println(e)
+        case Command.Upgrade =>
+          cmdOpts.upgradePackage match {
+            case None =>
+              println("No argument provided to 'upgrade' command")
               System.exit(1)
-            case Result.Ok((packageName, version)) =>
-              exitOnResult {
-                Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-                  bootstrap =>
-                    val flix = new Flix().setFormatter(formatter)
-                    flix.setOptions(options.copy(progress = false))
-                    bootstrap.upgrade(flix, packageName, version)(formatter, System.in, System.out)
-                }
+
+            case Some(pkg) =>
+              parseUpgradePackage(pkg) match {
+                case Result.Err(e) =>
+                  println(e)
+                  System.exit(1)
+                case Result.Ok((packageName, version)) =>
+                  exitOnResult {
+                    Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+                      bootstrap =>
+                        val flix = new Flix().setFormatter(formatter)
+                        flix.setOptions(options.copy(progress = false))
+                        bootstrap.upgrade(flix, packageName, version)(formatter, System.in, System.out)
+                    }
+                  }
               }
           }
 
@@ -503,6 +510,11 @@ object Main {
     }
   }
 
+  private def validateUpgradePackage(str: String): Either[String, Unit] = parseUpgradePackage(str) match {
+    case Result.Ok(_) => Right(())
+    case Result.Err(e) => Left(e)
+  }
+
   /**
     * A case class representing the parsed command line options.
     */
@@ -517,6 +529,7 @@ object Main {
     threads: Option[Int] = None,
     top: Boolean = false,
     assumeYes: Boolean = false,
+    upgradePackage: Option[String] = None,
     xbenchmarkCodeSize: Boolean = false,
     xbenchmarkIncremental: Boolean = false,
     xbenchmarkPhases: Boolean = false,
@@ -578,7 +591,7 @@ object Main {
 
     case object EffLock extends Command
 
-    case class Upgrade(pkg: String) extends Command
+    case object Upgrade extends Command
 
     case object CompilerPerf extends Command
 
@@ -669,11 +682,13 @@ object Main {
         .action((_, c) => c.copy(command = Command.EffLock))
 
       cmd("upgrade").text("  checks for a new version of the given package and downloads it.")
+        .action((_, c) => c.copy(command = Command.Upgrade))
         .children(
           arg[String]("<package id>@<version>")
-            .action((s, c) => c.copy(command = Command.Upgrade(s)))
-            .maxOccurs(1)
             .required()
+            .maxOccurs(1)
+            .validate(validateUpgradePackage)
+            .action((s, c) => c.copy(upgradePackage = Some(s)))
             .text("  the package to upgrade. " +
               "<package id> corresponds to the dependency key in the manifest. " +
               "<version> is a valid semantic version, i.e., major.minor.patch. " +
