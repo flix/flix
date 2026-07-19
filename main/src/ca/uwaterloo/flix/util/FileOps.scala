@@ -134,7 +134,7 @@ object FileOps {
                 } else {
                   FileOps.copy(sourcePath, targetPath)
                 }
-            }
+            }.map(_ => ())
         } match {
           // 2. Recursively delete if no error occurred.
           case Result.Err(e) => Result.Err(e)
