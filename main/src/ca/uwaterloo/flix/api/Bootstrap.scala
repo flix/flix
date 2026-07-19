@@ -235,7 +235,7 @@ object Bootstrap {
   private def getTmpDir(p: Path): Path = p.resolve(".tmp")
 
 
-  private def getFlixPackageResource(p: Path, flixDep: Dependency.FlixDependency, fileExtension: String) =
+  private def getFlixPackageResource(p: Path, flixDep: Dependency.FlixDependency, fileExtension: String): Path =
     p.resolve(flixDep.repo.toString.toLowerCase)
       .resolve(flixDep.username)
       .resolve(flixDep.projectName)
