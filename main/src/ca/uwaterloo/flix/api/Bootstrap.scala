@@ -722,27 +722,45 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
              |Do trust the package to use these new effects [y/N]?""".stripMargin
 
         askForConfirmation(effectUpgradeConfirmationMessage) match {
-          case Err(e) => return Err(e) // TODO: Restore files like Ok(false) case
-          case Ok(false) =>
+          // TODO: Refactor Err(_) case into own case and perform same cleanup logic
+          case Err(_) | Ok(false) =>
             // Restore old files
-            // TODO: Handle deletion errors & refactor
-            newInstalledDeps.map(_.getParent).map(FileOps.deleteDir)
-            removedDependencies.foreach { dep =>
-              // TODO: Move dirs instead of files
-              // Move fpkg
-              val fpkgSourcePath = getFlixPackageFile(getUpgradeBackupDir(projectPath), dep)
-              val fpkgTargetPath = getFlixPackageFile(projectPath, dep)
-              FileOps.move(fpkgSourcePath, fpkgTargetPath)
-
-              // Move manifest
-              val manifestSourcePath = getFlixPackageManifestFile(getUpgradeBackupDir(projectPath), dep)
-              val manifestTargetPath = getFlixPackageManifestFile(projectPath, dep)
-              FileOps.move(manifestSourcePath, manifestTargetPath)
+            Result.sequence(
+              List(
+                Result.traverse(newInstalledDeps.map(_.getParent))(FileOps.deleteDir),
+                Result.traverse(removedDependencies) { dep =>
+                  // Move fpkg
+                  val fpkgSourcePath = getFlixPackageDir(getUpgradeBackupDir(projectPath), dep)
+                  val fpkgTargetPath = getFlixPackageDir(projectPath, dep)
+                  FileOps.move(fpkgSourcePath, fpkgTargetPath)
+                },
+                FileOps.deleteDir(mvnDir),
+                FileOps.moveDir(tmpMvnDir, mvnDir),
+                FileOps.deleteDir(extDir),
+                FileOps.moveDir(tmpExtDir, extDir)
+              )
+            ) match {
+              case Err(e) => return Err(BootstrapError.FileError( // TODO: Refactor to error
+                "FATAL UPGRADE ERROR: Unable to restore files. " +
+                  "Please remove newly installed dependencies and restore old dependencies." +
+                  System.lineSeparator() +
+                  "Alternatively, remove all dependencies and redownload them." +
+                  System.lineSeparator() +
+                  System.lineSeparator() +
+                  s"Files to restore located in: ${Bootstrap.getUpgradeBackupDir(projectPath)}" +
+                  System.lineSeparator() +
+                  s"Files to remove located in:" +
+                  s"  ${Bootstrap.getLibraryDirectory(projectPath)}" +
+                  System.lineSeparator() +
+                  s"  ${Bootstrap.getMavenDirectory(projectPath)}" +
+                  System.lineSeparator() +
+                  s"  ${Bootstrap.getExternalJarDirectory(projectPath)}" +
+                  System.lineSeparator() +
+                  System.lineSeparator() +
+                  s"Root cause: ${e.getMessage}"
+              ))
+              case Ok(()) => // Continue
             }
-            FileOps.deleteDir(mvnDir)
-            FileOps.moveDir(tmpMvnDir, mvnDir)
-            FileOps.deleteDir(extDir)
-            FileOps.moveDir(tmpExtDir, extDir)
             return Err(BootstrapError.GeneralError("Upgrade aborted. Restored previous package version."))
 
           case Ok(true) => () // Continue
@@ -751,11 +769,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(()) => () // Continue
     }
 
-    // 17. Remove files from old dependency graph
-    // TODO
 
     // 17. Write new manifest to file
     FileOps.writeString(getManifestFile(projectPath), Manifest.format(newManifest))
+
+    // 17. Remove files from old dependency graph (from backup directory)
+    FileOps.deleteDir(Bootstrap.getUpgradeBackupDir(projectPath))
 
     // Lock effects
     lockEffects(flix).map {
