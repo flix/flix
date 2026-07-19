@@ -399,7 +399,6 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   // TODO: Add test that upgrade with eff-lock first is error
-  // TODO: Add the other eff-check tests as upgrade tests
 
   test("upgrade on same version as before is ok") {
     // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.

@@ -1749,7 +1749,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
             flix.remFile(path)(SecurityContext.Unrestricted)
           } else if (path.toString.endsWith(s".$EXT_FPKG")) {
             flixPackagePaths = flixPackagePaths.filterNot(_ == path)
-            flix.remFile(path)(SecurityContext.Unrestricted)
+            flix.remFpkg(path)(SecurityContext.Unrestricted)
           } else if (path.toString.endsWith(s".$EXT_JAR")) {
             mavenPackagePaths = mavenPackagePaths.filterNot(_ == path)
             jarPackagePaths = jarPackagePaths.filterNot(_ == path)
@@ -1763,7 +1763,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
             mavenPackagePaths = mavenPackagePaths.filterNot(_.startsWith(path))
             jarPackagePaths = jarPackagePaths.filterNot(_.startsWith(path))
             for (p <- deletedFlix) flix.remFile(p)(SecurityContext.Unrestricted)
-            for (p <- deletedFpkg) flix.remFile(p)(SecurityContext.Unrestricted)
+            for (p <- deletedFpkg) flix.remFpkg(p)(SecurityContext.Unrestricted)
           }
 
         case Overflow => // already handled above
@@ -1805,6 +1805,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     private def updateStaleSourcesByTimestamp(flix: Flix): Unit = {
       val previousSources = timestamps.keySet
+      println(s"Timestamps = ${timestamps.keySet}")
 
       for (path <- sourcePaths if hasChanged(path)) {
         flix.addFile(path)(SecurityContext.Unrestricted)
@@ -1825,8 +1826,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       val currentSources = (sourcePaths ::: flixPackagePaths ::: mavenPackagePaths ::: jarPackagePaths).filter(p => Files.exists(p))
 
       val deletedSources = previousSources -- currentSources
+      println(s"deletedSource = $deletedSources")
       for (path <- deletedSources) {
-        flix.remFile(path)(SecurityContext.Unrestricted)
+        //
+        if (path.toAbsolutePath.normalize().startsWith(getLibraryDirectory(projectPath).toAbsolutePath.normalize())) {
+          flix.remFpkg(path)(SecurityContext.Paranoid)
+        } else {
+          flix.remFile(path)(SecurityContext.Unrestricted)
+        }
       }
 
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
