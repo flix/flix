@@ -784,6 +784,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+
+  /**
+    * // TODO: Better docs
+    * Assumes 'no', does not close any of the streams.
+    *
+    * @param confirmationMessage
+    * @param in
+    * @param out
+    * @return
+    */
   private def askForConfirmation(confirmationMessage: String)(implicit in: InputStream, out: PrintStream): Result[Boolean, BootstrapError] = {
     out.print(confirmationMessage)
     val reader = new BufferedReader(new InputStreamReader(in))
@@ -795,8 +805,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       Ok(input.toLowerCase == "y")
     } catch {
       case e: Exception => Err(BootstrapError.GeneralError(s"Refusing to run 'upgrade'. Failed to read input: ${e.getMessage}"))
-    } finally {
-      reader.close()
     }
   }
 
