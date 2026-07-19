@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, EXT_MANIFEST, FLIX_TOML, LICENSE, README, getExternalJarDirectory, getFlixPackageFile, getFlixPackageManifestFile, getLibraryDirectory, getManifestFile, getMavenDirectory, getTmpDir}
+import ca.uwaterloo.flix.api.Bootstrap.{EFFECT_LOCK_FILE, EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, EXT_MANIFEST, FLIX_TOML, LICENSE, README, getExternalJarDirectory, getFlixPackageFile, getFlixPackageManifestFile, getLibraryDirectory, getManifestFile, getMavenDirectory, getTmpDir}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -192,6 +192,8 @@ object Bootstrap {
   /** The manifest / flix toml file name. */
   private val FLIX_TOML: String = s"flix.$EXT_MANIFEST"
 
+  private val EFFECT_LOCK_FILE: String = "effects.lock"
+
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
 
@@ -295,7 +297,7 @@ object Bootstrap {
   /**
     * Returns the path to the `effects.lock` relative to the given path `p`.
     */
-  private def getEffectLockFile(p: Path): Path = p.resolve("effects.lock").normalize()
+  private def getEffectLockFile(p: Path): Path = p.resolve(EFFECT_LOCK_FILE).normalize()
 
   /**
     * Returns the path to the LICENSE file relative to the given path `p`.
@@ -546,7 +548,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // 4. Check effect lock file exists
     FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
       case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-      case Ok(false) => return Err(BootstrapError.FileError("Refusing to run 'upgrade'. No effect lock file 'effects.lock' found. Run 'eff-lock' to generate one."))
+      case Ok(false) => return Err(BootstrapError.FileError(s"Refusing to run 'upgrade'. No effect lock file '$EFFECT_LOCK_FILE' found. Run 'eff-lock' to generate one."))
       case Ok(true) => ()
     }
 
@@ -836,7 +838,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
       case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-      case Ok(false) => return Err(BootstrapError.FileError("No 'effects.lock' file found. Unable to run 'eff-check'."))
+      case Ok(false) => return Err(BootstrapError.FileError(s"No '$EFFECT_LOCK_FILE' file found. Unable to run 'eff-check'."))
       case Ok(true) => ()
     }
 
