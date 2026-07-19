@@ -127,10 +127,22 @@ class TestMain extends AnyFunSuite {
     assert(opts.isEmpty)
   }
 
-  test("upgrade pkg") {
-    val args = Array("upgrade", "pkg")
+  test("upgrade name@latest") {
+    val args = Array("upgrade", "name@latest")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.command == Main.Command.Upgrade("pkg"))
+    assert(opts.upgradePackage.contains("name@latest"))
+  }
+
+  test("upgrade otherName@1.2.3") {
+    val args = Array("upgrade", "otherName@1.2.3")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("otherName@1.2.3"))
+  }
+
+  test("upgrade invalidName") {
+    val args = Array("upgrade", "invalidName")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
   }
 
   test("--json") {
@@ -216,5 +228,4 @@ class TestMain extends AnyFunSuite {
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xsummary)
   }
-
 }
