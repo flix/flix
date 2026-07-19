@@ -181,6 +181,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.isEmpty)
   }
 
+  test("upgrade @name@latest") {
+    val args = Array("upgrade", "@name@latest")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
   test("upgrade @@") {
     val args = Array("upgrade", "@@")
     val opts = Main.parseCmdOpts(args)
