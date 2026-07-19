@@ -110,6 +110,7 @@ object FileOps {
     }
     exists(targetDir) match {
       case Result.Err(e) => return Result.Err(e)
+      case Result.Ok(_) if Files.isRegularFile(targetDir) => return Result.Err(new RuntimeException(s"path '$targetDir' is not a valid target directory. It is a file.'"))
       case Result.Ok(false) => FileOps.newDirectoryIfAbsent(targetDir)
       case Result.Ok(true) => ()
     }
