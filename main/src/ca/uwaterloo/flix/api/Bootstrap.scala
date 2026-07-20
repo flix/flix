@@ -798,7 +798,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Lock effects
     lockEffects(flix).map {
       v =>
-        out.println("Update successful.")
+        out.println("Upgrade successful.")
         v
     }
   }
