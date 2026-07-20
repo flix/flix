@@ -2964,4 +2964,42 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
+  test("BoolEqualityConstraint.Demand.Bool.01") {
+    // The caller violates the side condition `b ~ true` by instantiating `b` to `false`.
+    val input =
+      """
+        |enum B[_: Bool] { case B }
+        |def mkFalse(): B[false] = B.B
+        |def useAsTrue(x: B[b]): Bool where b ~ true = isTrue(x)
+        |def isTrue(_: B[true]): Bool = true
+        |def test(): Bool = useAsTrue(mkFalse())
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("BoolEqualityConstraint.Demand.Eff.01") {
+    // The caller violates the side condition `ef ~ {}` by passing an impure function.
+    val input =
+      """
+        |eff Print { def print(): Unit }
+        |def onlyPure(f: a -> b \ ef, x: a): b \ ef where ef ~ {} = f(x)
+        |def test(): Int32 \ Print = onlyPure(x -> { Print.print(); x }, 42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("BoolEqualityConstraint.Assume.Required.01") {
+    // Without the `where b ~ true` assumption, the body does not typecheck.
+    val input =
+      """
+        |enum B[_: Bool] { case B }
+        |def isTrue(_: B[true]): Bool = true
+        |def useAsTrue(x: B[b]): Bool = isTrue(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
 }

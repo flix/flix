@@ -251,10 +251,7 @@ object Kinder {
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val t = visitType(tpe0, kind, kenv, root)
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, root))
-      val econstrs = econstrs0.collect {
-        case ResolvedAst.EqualityConstraint(UnkindedType.AssocType(symUse, arg, _), tpe2, loc) =>
-          visitEqualityConstraint(symUse, arg, tpe2, loc, kenv, root)
-      }
+      val econstrs = econstrs0.flatMap(visitAnyEqualityConstraint(_, kenv, root))
       val assocs = assocs0.map(visitAssocTypeDef(_, kind, kenv, root))
       val defs = defs0.map(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn, kenv, root)))
       KindedAst.Instance(doc, ann, mod, symUse, tparams, t, tconstrs, econstrs, assocs, defs, ns, loc)
@@ -370,10 +367,7 @@ object Kinder {
           )
       }
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, root))
-      val econstrs = econstrs0.collect {
-        case ResolvedAst.EqualityConstraint(UnkindedType.AssocType(symUse, arg, _), tpe2, loc) =>
-          visitEqualityConstraint(symUse, arg, tpe2, loc, kenv, root)
-      }
+      val econstrs = econstrs0.flatMap(visitAnyEqualityConstraint(_, kenv, root))
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
       val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff.getOrElse(Type.Pure), tpe, tpe.loc)
       val sc = Scheme(allQuantifiers, tconstrs, econstrs, base)
@@ -1387,10 +1381,64 @@ object Kinder {
     *
     * The caller is responsible for filtering out ill-shaped constraints before invoking this helper.
     */
+  /**
+    * Performs kinding on the given equality constraint, dispatching on its form.
+    *
+    * Returns `None` for an ill-shaped associated-type constraint whose head failed to resolve (the
+    * error has already been reported); otherwise returns the kinded constraint.
+    */
+  private def visitAnyEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): Option[EqualityConstraint] = econstr match {
+    case ResolvedAst.EqualityConstraint(UnkindedType.AssocType(symUse, arg, _), tpe2, loc) =>
+      Some(visitEqualityConstraint(symUse, arg, tpe2, loc, kenv, root))
+    case ResolvedAst.EqualityConstraint(UnkindedType.Error(_), _, _) =>
+      // The associated-type head failed to resolve; the error was already reported.
+      None
+    case ResolvedAst.EqualityConstraint(tpe1, tpe2, loc) =>
+      Some(visitBoolEqualityConstraint(tpe1, tpe2, loc, kenv, root))
+  }
+
   private def visitEqualityConstraint(symUse: AssocTypeSymUse, arg: UnkindedType, tpe2: UnkindedType, loc: SourceLocation, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): EqualityConstraint = {
     val t1 = visitType(arg, Kind.Wild, kenv, root)
     val t2 = visitType(tpe2, Kind.Wild, kenv, root)
-    EqualityConstraint(symUse, t1, t2, loc)
+    EqualityConstraint.AssocEq(symUse, t1, t2, loc)
+  }
+
+  /**
+    * Performs kinding on the given Boolean/effect equality side condition `tpe1 ~ tpe2`.
+    *
+    * Both sides must have kind [[Kind.Bool]] or both must have kind [[Kind.Eff]]; otherwise a
+    * kind error is reported.
+    */
+  private def visitBoolEqualityConstraint(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): EqualityConstraint = {
+    // Prefer a Boolean/effect kind determined by either side so bare variables link to the right kind.
+    val expected = boolEffHint(tpe1).orElse(boolEffHint(tpe2)).getOrElse(Kind.Wild)
+    val t1 = visitType(tpe1, expected, kenv, root)
+    val t2 = visitType(tpe2, expected, kenv, root)
+    (t1.kind, t2.kind) match {
+      case (Kind.Bool, Kind.Bool) => ()
+      case (Kind.Eff, Kind.Eff) => ()
+      case (k1, k2) if k1 == k2 =>
+        // Same kind, but not a Boolean/effect kind: a side condition must range over Bool or Eff.
+        sctx.errors.add(KindError.MismatchedKinds(Kind.Bool, k1, loc))
+      case (k1, k2) =>
+        sctx.errors.add(KindError.MismatchedKinds(k1, k2, loc))
+    }
+    EqualityConstraint.BoolEq(t1, t2, loc)
+  }
+
+  /**
+    * Returns [[Kind.Bool]] or [[Kind.Eff]] if the head constructor of `tpe` determines it, else `None`.
+    */
+  private def boolEffHint(tpe: UnkindedType): Option[Kind] = tpe match {
+    case UnkindedType.Apply(t1, _, _) => boolEffHint(t1)
+    case UnkindedType.Effect(_, _) => Some(Kind.Eff)
+    case UnkindedType.Cst(tc, _) => tc match {
+      case TypeConstructor.True | TypeConstructor.False | TypeConstructor.And | TypeConstructor.Or | TypeConstructor.Not => Some(Kind.Bool)
+      case TypeConstructor.Pure | TypeConstructor.Univ | TypeConstructor.Union | TypeConstructor.Intersection | TypeConstructor.Complement => Some(Kind.Eff)
+      case TypeConstructor.Effect(_, _) => Some(Kind.Eff)
+      case _ => None
+    }
+    case _ => None
   }
 
   /**
@@ -1520,8 +1568,10 @@ object Kinder {
           val kenv2 = inferType(tpe2, kind2, kenv, root)
           kenv1 ++ kenv2
         case _ =>
-          // Ill-shaped or error constraint; still infer kinds from the parts we can resolve.
-          inferType(tpe2, Kind.Wild, kenv, root)
+          // A Boolean/effect side condition (or an error constraint): infer kinds from both sides,
+          // using a Boolean/effect hint from either side so bare variables link to the right kind.
+          val hint = boolEffHint(tpe1).orElse(boolEffHint(tpe2)).getOrElse(Kind.Wild)
+          inferType(tpe1, hint, kenv, root) ++ inferType(tpe2, hint, kenv, root)
       }
   }
 

@@ -199,8 +199,11 @@ object Serialize {
     TraitConstr(serializeTraitSym(tconstr0.symUse.sym), serializeType(tconstr0.arg))
   }
 
-  private def serializeEqualityConstraint(econstr0: EqualityConstraint): EqConstr = {
-    EqConstr(serializeAssocTypeSym(econstr0.symUse.sym), serializeType(econstr0.tpe1), serializeType(econstr0.tpe2))
+  private def serializeEqualityConstraint(econstr0: EqualityConstraint): EqConstr = econstr0 match {
+    case EqualityConstraint.AssocEq(symUse, tpe1, tpe2, _) =>
+      EqConstr(Some(serializeAssocTypeSym(symUse.sym)), serializeType(tpe1), serializeType(tpe2))
+    case EqualityConstraint.BoolEq(tpe1, tpe2, _) =>
+      EqConstr(None, serializeType(tpe1), serializeType(tpe2))
   }
 
 }

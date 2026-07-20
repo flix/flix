@@ -224,7 +224,9 @@ package object serialization {
 
   case class TraitConstr(sym: TraitSym, tpe: SType)
 
-  case class EqConstr(sym: AssocTypeSym, tpe1: SType, tpe2: SType)
+  // `sym` is `Some` for an associated-type equality (`sym[tpe1] ~ tpe2`) and `None` for a
+  // Boolean/effect equality (`tpe1 ~ tpe2`).
+  case class EqConstr(sym: Option[AssocTypeSym], tpe1: SType, tpe2: SType)
 
   /** Implicitly defines type hints for json4s for each of the serializable constructors. */
   implicit val formats: org.json4s.Formats = org.json4s.native.Serialization.formats(

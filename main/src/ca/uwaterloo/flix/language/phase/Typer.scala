@@ -317,7 +317,10 @@ object Typer {
             visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
           }
       }
-      val typedEconstrs = econstrs.map(ec => TypedAst.EqualityConstraint(Type.AssocType(ec.symUse, ec.tpe1, ec.tpe2.kind, ec.loc), ec.tpe2, ec.loc))
+      val typedEconstrs = econstrs.map {
+        case EqualityConstraint.AssocEq(symUse, tpe1, tpe2, ecLoc) => TypedAst.EqualityConstraint(Type.AssocType(symUse, tpe1, tpe2.kind, ecLoc), tpe2, ecLoc)
+        case EqualityConstraint.BoolEq(tpe1, tpe2, ecLoc) => TypedAst.EqualityConstraint(tpe1, tpe2, ecLoc)
+      }
       TypedAst.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, typedEconstrs, assocs, defs, ns, loc)
   }
 
@@ -478,9 +481,11 @@ object Typer {
     * Returns a list containing both types in the constraint.
     */
   private def getTypes(econstr: EqualityConstraint): List[Type] = econstr match {
-    case EqualityConstraint(cst, tpe1, tpe2, _) =>
+    case EqualityConstraint.AssocEq(cst, tpe1, tpe2, _) =>
       // Kind is irrelevant for our purposes
       List(Type.AssocType(cst, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
+    case EqualityConstraint.BoolEq(tpe1, tpe2, _) =>
+      List(tpe1, tpe2)
   }
 
   /**

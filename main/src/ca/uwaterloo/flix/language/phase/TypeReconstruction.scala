@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.instantiateJavaTypeWithObjectArgs
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing, EqualityConstraint}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -57,7 +57,10 @@ object TypeReconstruction {
       val fparams = fparams0.map(visitFormalParam(_, SubstitutionTree.empty))
       val eff1 = eff.getOrElse(Type.Pure)
       // We do not perform substitution on any of the types because they should all be rigid.
-      val typedEconstrs = econstrs.map(ec => TypedAst.EqualityConstraint(Type.AssocType(ec.symUse, ec.tpe1, ec.tpe2.kind, ec.loc), ec.tpe2, ec.loc))
+      val typedEconstrs = econstrs.map {
+        case EqualityConstraint.AssocEq(symUse, tpe1, tpe2, loc) => TypedAst.EqualityConstraint(Type.AssocType(symUse, tpe1, tpe2.kind, loc), tpe2, loc)
+        case EqualityConstraint.BoolEq(tpe1, tpe2, loc) => TypedAst.EqualityConstraint(tpe1, tpe2, loc)
+      }
       TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff1, tconstrs, typedEconstrs)
   }
 

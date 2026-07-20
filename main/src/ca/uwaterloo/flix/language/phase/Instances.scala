@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Instance, RegionScope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.errors.InstanceError.MissingEqualityConstraint
@@ -44,7 +44,9 @@ object Instances {
     */
   private def toShared(ec: TypedAst.EqualityConstraint): Option[EqualityConstraint] = ec match {
     case TypedAst.EqualityConstraint(Type.AssocType(cst, arg, _, _), tpe2, loc) =>
-      Some(EqualityConstraint(cst, arg, tpe2, loc))
+      Some(EqualityConstraint.AssocEq(cst, arg, tpe2, loc))
+    case TypedAst.EqualityConstraint(tpe1, tpe2, loc) if tpe1.kind == Kind.Bool || tpe1.kind == Kind.Eff =>
+      Some(EqualityConstraint.BoolEq(tpe1, tpe2, loc))
     case TypedAst.EqualityConstraint(_, _, _) =>
       None
   }

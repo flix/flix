@@ -350,32 +350,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[ParseError.NeedAtleastOne](result)
   }
 
-  test("IllegalEqualityConstraint.01") {
-    val input =
-      """
-        |def f(): String where Int32 ~ Int32 = ???
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEqualityConstraint](result)
-  }
-
-  test("IllegalEqualityConstraint.02") {
-    val input =
-      """
-        |def f(): String where Int32 ~ Elem[a] = ???
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEqualityConstraint](result)
-  }
-
-  test("IllegalEqualityConstraint.03") {
-    val input =
-      """
-        |def f(): String where Int32 ~ Int64 = ???
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEqualityConstraint](result)
-  }
+  // Note: a `where` fragment whose left-hand side is not an associated type is no longer a weeder
+  // error; it is treated as a Boolean/effect side condition and its kinds are checked in the Kinder
+  // (see TestKinder "KindError.BoolEqualityConstraint.*").
 
   test("IllegalEscapeSequence.Char.01") {
     val input =

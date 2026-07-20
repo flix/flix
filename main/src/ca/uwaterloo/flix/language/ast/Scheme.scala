@@ -107,8 +107,10 @@ object Scheme {
     }
 
     val newEconstrs = sc.econstrs.map {
-      case EqualityConstraint(symUse, tpe1, tpe2, _) =>
-        EqualityConstraint(symUse, visitType(tpe1), visitType(tpe2), loc)
+      case EqualityConstraint.AssocEq(symUse, tpe1, tpe2, _) =>
+        EqualityConstraint.AssocEq(symUse, visitType(tpe1), visitType(tpe2), loc)
+      case EqualityConstraint.BoolEq(tpe1, tpe2, _) =>
+        EqualityConstraint.BoolEq(visitType(tpe1), visitType(tpe2), loc)
     }
 
     (newTconstrs, newEconstrs, newBase, substMap)
@@ -154,16 +156,22 @@ object Scheme {
     val subst0 = Substitution(substMap)
     val eenv0 = ConstraintSolverInterface.expandEqualityEnv(globalEqEnv0, localEconstrs.map(subst0.apply))
 
-    // Resolve what we can from the new econstrs
-    val tconstrs2_0 = econstrs2_0.map { case EqualityConstraint(symUse, t1, t2, loc) => TypeConstraint.Equality(Type.AssocType(symUse, t1, t2.kind, loc), t2, Provenance.Match(t1, t2, loc)) }
+    // Split the new econstrs into associated-type equalities and Boolean/effect equalities.
+    val (assocEc2, boolEc2) = econstrs2_0.partitionMap {
+      case a: EqualityConstraint.AssocEq => Left(a)
+      case b: EqualityConstraint.BoolEq => Right(b)
+    }
+
+    // Resolve what we can from the new associated-type econstrs
+    val tconstrs2_0 = assocEc2.map { case EqualityConstraint.AssocEq(symUse, t1, t2, loc) => TypeConstraint.Equality(Type.AssocType(symUse, t1, t2.kind, loc), t2, Provenance.Match(t1, t2, loc)) }
     val (econstrs2_1, subst) = ConstraintSolver2.solveAllTypes(tconstrs2_0)(scope, RigidityEnv.empty, eenv0, flix)
 
     // Anything we didn't solve must be a standard equality constraint
-    // Apply the substitution to the new scheme 2
+    // Apply the substitution to the new scheme 2. Boolean/effect equalities are carried through unchanged.
     val econstrs2 = econstrs2_1.map {
-      case TypeConstraint.Equality(Type.AssocType(symUse, t1, _, _), t2, prov) => EqualityConstraint(symUse, subst(t1), subst(t2), prov.loc)
+      case TypeConstraint.Equality(Type.AssocType(symUse, t1, _, _), t2, prov) => EqualityConstraint.AssocEq(symUse, subst(t1), subst(t2), prov.loc)
       case _ => throw InternalCompilerException("unexpected constraint", SourceLocation.Unknown)
-    }
+    } ++ boolEc2.map(subst.apply)
     val tpe2 = subst(tpe2_0)
     val cconstrs2 = cconstrs2_0.map {
       case TraitConstraint(head, arg, loc) =>
@@ -186,9 +194,16 @@ object Scheme {
     // Check that the constraints from sc1 hold
     // And that the bases unify
     val cconstrs = sc1.tconstrs.map { case TraitConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg, loc) }
-    val econstrs = sc1.econstrs.map { case EqualityConstraint(symUse, t1, t2, loc) => TypeConstraint.Equality(Type.AssocType(symUse, t1, t2.kind, loc), t2, Provenance.Match(t1, t2, loc)) }
+    val econstrs = sc1.econstrs.map {
+      case EqualityConstraint.AssocEq(symUse, t1, t2, loc) => TypeConstraint.Equality(Type.AssocType(symUse, t1, t2.kind, loc), t2, Provenance.Match(t1, t2, loc))
+      case EqualityConstraint.BoolEq(t1, t2, loc) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, loc))
+    }
     val baseConstr = TypeConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
-    ConstraintSolver2.solveAll(baseConstr :: cconstrs ::: econstrs, SubstitutionTree.shallow(subst))(scope, renv, cenv, eenv, flix) match {
+
+    // Discharge sc2's Boolean/effect equalities by assumption (see ConstraintSolverInterface.mkAssumptionSubst).
+    val assumeSubst = ConstraintSolverInterface.mkAssumptionSubst(econstrs2, scope).getOrElse(Substitution.empty)
+    val goals = (baseConstr :: cconstrs ::: econstrs).map(SubstitutionTree.shallow(assumeSubst).apply)
+    ConstraintSolver2.solveAll(goals, SubstitutionTree.shallow(subst))(scope, renv, cenv, eenv, flix) match {
       // We succeed only if there are no leftover constraints
       case (Nil, _) => true
       case (_ :: _, _) => false

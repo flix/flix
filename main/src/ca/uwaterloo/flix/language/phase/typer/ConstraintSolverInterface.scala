@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.SourcePosition.moveRight
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, EffUnification3, EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
-import ca.uwaterloo.flix.util.Build
+import ca.uwaterloo.flix.util.{Build, Result}
 
 import scala.annotation.tailrec
 
@@ -65,7 +65,9 @@ object ConstraintSolverInterface {
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
-      val allTparams = tpe.typeVars ++ eff.getOrElse(Type.Pure).typeVars ++ fparams.flatMap(_.tpe.typeVars) ++ econstrs.flatMap(_.tpe2.typeVars)
+      // Both sides of an equality constraint contribute: for a Bool/effect side condition, the LHS is a
+      // real formula whose variables must be rigid while checking the body.
+      val allTparams = tpe.typeVars ++ eff.getOrElse(Type.Pure).typeVars ++ fparams.flatMap(_.tpe.typeVars) ++ econstrs.flatMap(ec => ec.tpe1.typeVars ++ ec.tpe2.typeVars)
 
       // The rigidity environment is made up of:
       // 1. rigid variables from the context (e.g. from instance type parameters)
@@ -97,7 +99,19 @@ object ConstraintSolverInterface {
 
       // Apply the initial substitution to all the constraints
       val initialTree = SubstitutionTree.shallow(initialSubst)
-      val constrs = constrs0.map(initialTree.apply)
+
+      // Discharge Boolean/effect `where` equalities by assumption: compute a reproductive unifier of
+      // the assumed equations and apply it to the body's constraints before solving. It is applied
+      // only to the goals, never folded into `initialTree` or the returned substitution, so the type
+      // parameters remain intact in the reconstructed body.
+      val assumeTree = mkAssumptionSubst(econstrs ++ econstrs0, RegionScope.Top) match {
+        case Some(s) => SubstitutionTree.shallow(s)
+        case None =>
+          // The `where` clause is unsatisfiable (e.g. `where true ~ false`). We do not apply any
+          // assumption; the equality remains as an ordinary goal and produces the type error.
+          SubstitutionTree.empty
+      }
+      val constrs = constrs0.map(initialTree.apply).map(assumeTree.apply)
 
       ///////////////////////////////////////////////////////////////////
       //             This is where the stuff happens!                  //
@@ -121,7 +135,7 @@ object ConstraintSolverInterface {
               val declaredEffWithDebug = Type.mkUnion(eff.getOrElse(Type.Pure), Type.Debug, loc)
               val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
               val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
-              val constrsWithDebug = constrs0.map(initialTree.apply)
+              val constrsWithDebug = constrs0.map(initialTree.apply).map(assumeTree.apply)
               val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
 
               leftovers2 match {
@@ -463,10 +477,59 @@ object ConstraintSolverInterface {
     *   Elm[b] ~ String
     * }}}
     */
+  /**
+    * Computes a substitution that discharges the Boolean/effect equality constraints in `econstrs`
+    * by treating them as assumptions.
+    *
+    * For a `where` clause containing Boolean/effect equalities `b1 ~ b2`, we compute a reproductive
+    * most-general unifier of those equations with all their type variables flexible. Because Boolean
+    * and effect unification are unitary, the ground instances of the returned substitution coincide
+    * exactly with the assignments satisfying the equations. Applying it to the body's constraints
+    * before solving (with the type parameters rigid again) therefore checks the body only for the
+    * type-parameter assignments permitted by the `where` clause.
+    *
+    * The returned substitution is used only to transform the constraint goals; it must NOT be folded
+    * into the substitution returned by the solver, since the type parameters must remain in the
+    * reconstructed body.
+    *
+    * Returns `None` if any equation is unsatisfiable (e.g. `where true ~ false`).
+    */
+  def mkAssumptionSubst(econstrs: List[EqualityConstraint], scope: RegionScope)(implicit flix: Flix): Option[Substitution] = {
+    val boolEqs = econstrs.collect { case EqualityConstraint.BoolEq(tpe1, tpe2, loc) => (tpe1, tpe2, loc) }
+    if (boolEqs.isEmpty) {
+      return Some(Substitution.empty)
+    }
+
+    // All variables in the assumed equations are treated as flexible when computing the unifier.
+    val renv = RigidityEnv.empty
+
+    // Discharge the Boolean-kinded equations via Boolean unification.
+    val boolSubstOpt = boolEqs.filter { case (tpe1, _, _) => tpe1.kind == Kind.Bool }.foldLeft(Option(Substitution.empty)) {
+      case (Some(acc), (tpe1, tpe2, _)) => BoolUnification.unify(acc(tpe1), acc(tpe2), renv).map(s => s @@ acc)
+      case (None, _) => None
+    }
+
+    // Discharge the effect-kinded equations via effect unification.
+    val effEqs = boolEqs.collect { case (tpe1, tpe2, loc) if tpe1.kind == Kind.Eff => TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc)) }
+    val effSubstOpt = EffUnification3.unifyAll(effEqs, scope, renv) match {
+      case Result.Ok(s) => Some(s)
+      case Result.Err(_) => None
+    }
+
+    for {
+      bs <- boolSubstOpt
+      es <- effSubstOpt
+    } yield es @@ bs
+  }
+
   def expandEqualityEnv(eqEnv: EqualityEnv, econstrs: List[EqualityConstraint]): EqualityEnv = {
     econstrs.foldLeft(eqEnv) {
-      case (acc, EqualityConstraint(AssocTypeSymUse(sym, _), tpe1, tpe2, _)) =>
+      case (acc, EqualityConstraint.AssocEq(AssocTypeSymUse(sym, _), tpe1, tpe2, _)) =>
         acc.addAssocTypeDef(sym, tpe1, tpe2)
+      // Boolean/effect equalities are not associated-type rewrites; they are discharged via the
+      // assumption substitution (see mkAssumptionSubst), so they do not enter the equality env.
+      case (acc, _: EqualityConstraint.BoolEq) =>
+        acc
     }
   }
 }

@@ -421,7 +421,7 @@ object DesugaredAst {
 
   case class TraitConstraint(trt: Name.QName, tpe: Type, loc: SourceLocation)
 
-  case class EqualityConstraint(qname: Name.QName, tpe1: Type, tpe2: Type, loc: SourceLocation)
+  case class EqualityConstraint(qname: Option[Name.QName], tpe1: Type, tpe2: Type, loc: SourceLocation)
 
   case class Constraint(head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 

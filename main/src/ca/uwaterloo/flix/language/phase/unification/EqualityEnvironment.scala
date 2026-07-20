@@ -33,9 +33,11 @@ object EqualityEnvironment {
     */
   def entail(econstrs0: List[EqualityConstraint], econstr0: EqualityConstraint, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: RegionScope, flix: Flix): Result[Unit, List[TypeConstraint]] = {
     val econstr = econstr0 match {
-      case EqualityConstraint(symUse, tpe1, tpe2, loc) =>
+      case EqualityConstraint.AssocEq(symUse, tpe1, tpe2, loc) =>
         val assoc = Type.AssocType(symUse, tpe1, tpe2.kind, loc)
         TypeConstraint.Equality(assoc, tpe2, Provenance.Match(assoc, tpe2, loc))
+      case EqualityConstraint.BoolEq(tpe1, tpe2, loc) =>
+        TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
     }
 
     val eenv = ConstraintSolverInterface.expandEqualityEnv(eqEnv, econstrs0)
