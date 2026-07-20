@@ -124,12 +124,8 @@ object FlixPackageManager {
   def checkForSpecificVersion(dep: FlixDependency, apiKey: Option[String], version: SemVer): Result[SemVer, PackageError] = {
     for {
       githubProject <- GitHub.parseProject(s"${dep.username}/${dep.projectName}")
-      releases <- GitHub.getReleases(githubProject, apiKey)
-      _ <- releases.find(release => release.version == version) match {
-        case Some(matchingVersion) => Result.Ok(matchingVersion)
-        case None => Result.Err(PackageError.VersionDoesNotExist(version, githubProject))
-      }
-    } yield version
+      release <- GitHub.getSpecificRelease(githubProject, version, apiKey)
+    } yield release.version
   }
 
   /**
