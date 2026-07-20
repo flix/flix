@@ -636,6 +636,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(r) => r
     }
 
+    // N.B.: Obtain list of old paths (dependency snapshot) before resolving new dependencies since doing so has the side effect of downloading tomls
+    // And also snapshot before moving old dependencies away so the list of lib files is not empty
+    val oldPaths = FileOps.getFilesIn(getLibraryDirectory(projectPath).resolve("github").normalize(), Int.MaxValue)
+
     // 9. Update manifest
     val newManifest = oldManifest.copy(
       dependencies = oldManifest.dependencies.map {
@@ -671,9 +675,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     out.println(s"addedManifests = $addedManifests")
 
     // 12. Back up removed dependencies
-    // N.B.: Obtain list of old paths (dependency snapshot) before moving them so the list of lib files is not empty
-    val oldPaths = FileOps.getFilesIn(getLibraryDirectory(projectPath).resolve("github").normalize(), Int.MaxValue)
-
     // Move old flix dependencies
     val removedDependencies = removedManifests.flatMap(_.flixDependencies)
     removedDependencies.foreach { dep =>
