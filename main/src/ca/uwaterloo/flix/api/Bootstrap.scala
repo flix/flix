@@ -668,6 +668,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       return Ok(())
     }
 
+    out.println(s"addedManifests = $addedManifests")
+
     // 12. Back up removed dependencies
     val oldPaths = FileOps.getFilesIn(getLibraryDirectory(projectPath).resolve("github").normalize(), Int.MaxValue)
 
@@ -706,7 +708,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // 13. Download dependencies
     val newInstalledDeps = Steps.installDependencies(newResolution) match {
       case Err(e) => return Err(e)
-      case Ok(fpkgs :: _ :: _ :: Nil) => fpkgs.toSet -- oldPaths
+      case Ok(fpkgs :: _ :: _ :: Nil) =>
+        out.println(s"oldPaths = $oldPaths")
+        out.println(s"fpkgs = ${fpkgs.toSet}")
+        out.println(s"fpkgs.toSet -- oldPaths = ${fpkgs.toSet -- oldPaths}")
+        fpkgs.toSet -- oldPaths
       case Ok(paths) =>
         return Err(BootstrapError.GeneralError(s"Internal Error: Installing dependencies returned unexpected number of paths: ${paths.length}"))
     }
@@ -821,6 +827,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (input == null) {
         return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. Confirmation input was null."))
       }
+      out.println()
       Ok(input.toLowerCase == "y")
     } catch {
       case e: Exception => Err(BootstrapError.GeneralError(s"Refusing to run 'upgrade'. Failed to read input: ${e.getMessage}"))
