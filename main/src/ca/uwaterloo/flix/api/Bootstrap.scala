@@ -671,6 +671,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     out.println(s"addedManifests = $addedManifests")
 
     // 12. Back up removed dependencies
+    // N.B.: Obtain list of old paths (dependency snapshot) before moving them so the list of lib files is not empty
     val oldPaths = FileOps.getFilesIn(getLibraryDirectory(projectPath).resolve("github").normalize(), Int.MaxValue)
 
     // Move old flix dependencies
