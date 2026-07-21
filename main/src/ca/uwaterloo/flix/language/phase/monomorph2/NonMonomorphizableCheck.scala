@@ -18,34 +18,27 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
+// TODO Make it a proper compiler error-message
 /**
   * Thrown when the flow set contains a growing cycle (see [[NonMonomorphizableCheck]]).
-  *
-  * Deliberately not an [[ca.uwaterloo.flix.util.InternalCompilerException]]: it indicates a
-  * property of the user's program, not a compiler bug. Routing it through the ordinary
-  * `CompilationMessage` pipeline is a known follow-up.
   */
 case class NonMonomorphizableProgramException(message: String, loc: SourceLocation) extends RuntimeException(s"$message ($loc)")
 
 /**
-  * Rejects non-monomorphizable programs — flow sets with no finite solution — before
-  * [[ConstraintSolver.solve]]'s fixpoint loop would grow without bound and exhaust the heap.
+  * Rejects non-monomorphizable programs (flow sets with no finite solution) before
+  * [[ConstraintSolver.solve]]'s fixpoint loop, which would otherwise grow without bound.
   *
   * Following "The Simple Essence of Monomorphization" (§3.3.2), the flow set is reinterpreted as
   * a graph over `(MonoVar, tuple-position)` vertices, and we look for a "growing cycle": a reachable
   * cycle with at least one edge that wraps the flowing type in an additional type constructor
   * (`a` flowing into `List[a]`). Such a cycle arises from polymorphic recursion
-  * (`def f(x: a): List[a] = ...f(lst)...`) or a non-regular recursive enum/struct
+  * (e.g. `def f(x: a): List[a] = f(x::Nil)`) or a non-regular recursive enum/struct
   * (`enum T[a] { case Base(a); case Recurse(T[Poly[a]]) }`). A cycle of only direct-copy edges is
-  * ordinary, convergent self-recursion and is fine. (The paper's third case — escaping
-  * existentials — cannot arise: Flix has no existential types.)
+  * ordinary, convergent self-recursion and is fine.
   *
-  * Every `MonoVar` kind participates, including `RestrictableEnum` (which the `Solution` never
-  * reports): the solver propagates flows uniformly regardless of destination kind, so a growing
-  * cycle through any kind still diverges. The check over-approximates in one known way: a
-  * non-regular enum whose growing case is declared but never constructed is still rejected once
-  * any other case of it is constructed, even though demand-driven specialization would not need
-  * the growing case.
+  * The check over-approximates in one known way: a non-regular enum whose growing case is declared
+  * but never constructed is still rejected once any other case of it is constructed, even though
+  * demand-driven specialization would not need the growing case.
   */
 object NonMonomorphizableCheck {
 

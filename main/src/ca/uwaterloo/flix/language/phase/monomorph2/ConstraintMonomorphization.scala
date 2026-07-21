@@ -27,8 +27,8 @@ import ca.uwaterloo.flix.language.ast.{MonoAst, TypedAst}
   * At a high level, this pipeline works as follows:
   *
   *   - 1. [[ConstraintCollection]] generates flow constraints describing how concrete types and
-  *     type shapes propagate into the type-parameter slots of every polymorphic def, enum,
-  *     struct, and restrictable enum.
+  *     type shapes propagate into the type-parameter slots of every polymorphic def/enum/struct/
+  *     restrictable-enum.
   *   - 2. [[NonMonomorphizableCheck]] rejects programs with no finite solution (e.g. polymorphic
   *     recursion) before solving, so the next step cannot loop forever.
   *   - 3. [[ConstraintSolver]] solves the flow constraints to a fixpoint, producing the set of

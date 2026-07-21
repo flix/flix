@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{MonoAst, TypedAst}
 
 /**
-  * Solution-driven specialization: uses the solver's solution to specialize all defs, enums, and
-  * structs in a single parallel pass.
+  * Solution-driven specialization: uses the solver's solution to specialize all def/enum/struct/
+  * restrictable-enum in a single parallel pass.
   *
   * `run` and [[SolutionLowering]] have different responsibilities: `run` builds the tables mapping
   * each original polymorphic symbol/instantiation to its fresh specialized symbol, and

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 /**
   * Constraint generation for constraint-based monomorphization: emits `Flow` constraints
-  * describing how concrete types propagate through the program, for `ConstraintSolver` to solve.
+  * describing how concrete types propagate through the program, for [[ConstraintSolver]] to solve.
   */
 object ConstraintCollection {
 
