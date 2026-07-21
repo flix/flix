@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 
 /**
-  * A monomorphization variable (def/enum/sig/struct/restrictable-enum) whose concrete
+  * A monomorphization target-variable (def/enum/sig/struct/restrictable-enum) whose concrete
   * type-argument tuple the solver determines, then substitutes back wherever `MonoArg.Param`
   * references it.
   */
