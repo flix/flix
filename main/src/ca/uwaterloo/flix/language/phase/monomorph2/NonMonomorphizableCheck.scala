@@ -16,14 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase.monomorph2
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
-
-// TODO Make it a proper compiler error-message
-/**
-  * Thrown when the flow set contains a growing cycle (see [[NonMonomorphizableCheck]]).
-  */
-case class NonMonomorphizableProgramException(message: String, loc: SourceLocation) extends RuntimeException(s"$message ($loc)")
-
 /**
   * Rejects non-monomorphizable programs (flow sets with no finite solution) before
   * [[ConstraintSolver.solve]]'s fixpoint loop, which would otherwise grow without bound.
@@ -42,9 +34,10 @@ case class NonMonomorphizableProgramException(message: String, loc: SourceLocati
   */
 object NonMonomorphizableCheck {
 
+  // TODO Make it a proper compiler error-message
   /**
     * Checks whether `flows` contains a reachable growing cycle and throws
-    * [[NonMonomorphizableProgramException]] if so.
+    * [[InternalCompilerException]] if so.
     */
   def checkMonomorphizable(flows: Set[Flow]): Unit = ???
 }
