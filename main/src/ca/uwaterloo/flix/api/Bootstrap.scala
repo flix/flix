@@ -622,7 +622,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // 6. Ask for confirmation
     val confirmationMessage =
       s"""A new version was found: ${dependency.version} -> $update
-         |Do you want to proceed? [y/N]""".stripMargin
+         |Do you want to proceed? [y/N] """.stripMargin
 
     askForConfirmation(confirmationMessage) match {
       case Err(e) => return Err(e)
@@ -724,7 +724,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         val effectUpgradeConfirmationMessage =
           s"""$errorMessage
              |
-             |Do trust the package to use these new effects [y/N]?""".stripMargin
+             |Do trust the package to use these new effects? [y/N] """.stripMargin
 
         askForConfirmation(effectUpgradeConfirmationMessage) match {
           // TODO: Refactor Err(_) case into own case and perform same cleanup logic
