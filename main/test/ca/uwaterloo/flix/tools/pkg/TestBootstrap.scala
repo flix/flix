@@ -295,7 +295,11 @@ class TestBootstrap extends AnyFunSuite {
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
     bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
 
-    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
+    // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+    // Otherwise, bootstrap won't add sources to the Flix object.
+    val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    assert(bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
   }
 
   test("eff-check on effect unsafe upgrade reports error") {
@@ -341,6 +345,8 @@ class TestBootstrap extends AnyFunSuite {
     FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld/$pkgName-$vOld.toml")).unsafeGet
     FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld/$pkgName-$vOld.fpkg")).unsafeGet
 
+    // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+    // Otherwise, bootstrap won't add sources to the Flix object.
     val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
     bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) match {
@@ -393,6 +399,8 @@ class TestBootstrap extends AnyFunSuite {
     FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vUnsafe/$pkgName-$vUnsafe.toml")).unsafeGet
     FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vUnsafe/$pkgName-$vUnsafe.fpkg")).unsafeGet
 
+    // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+    // Otherwise, bootstrap won't add sources to the Flix object.
     val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
     assert(bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
@@ -426,8 +434,12 @@ class TestBootstrap extends AnyFunSuite {
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
     bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
 
+    // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+    // Otherwise, bootstrap won't add sources to the Flix object.
+    val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
     val upgradeVersion = Some(SemVer(0, 1, 0))
-    val actual = bootstrap.upgrade(
+    val actual = bootstrapUpgr.upgrade(
       PkgTestUtils.mkFlix,
       "github:jaschdoc/flix-test-pkg-eff-upgrade",
       upgradeVersion
@@ -460,18 +472,18 @@ class TestBootstrap extends AnyFunSuite {
         |""".stripMargin
     FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
 
-    val bootstrapPre = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    bootstrapPre.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
 
     // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
     // Otherwise, bootstrap won't add sources to the Flix object.
-    val bootstrapPost = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
     // Simulate user pressing "y" to the initial upgrade prompt, but "n" to the effect trust prompt
     val in = new java.io.ByteArrayInputStream("y\nn\n".getBytes)
 
     val upgradeVersion = Some(SemVer(0, 1, 1))
-    val actual = bootstrapPost.upgrade(
+    val actual = bootstrapUpgr.upgrade(
       PkgTestUtils.mkFlix,
       "github:jaschdoc/flix-test-pkg-eff-upgrade",
       upgradeVersion
@@ -511,11 +523,15 @@ class TestBootstrap extends AnyFunSuite {
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
     bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
 
+    // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+    // Otherwise, bootstrap won't add sources to the Flix object.
+    val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
     // Simulate user pressing "y" to the initial downgrade prompt
     val in = new java.io.ByteArrayInputStream("y\n".getBytes)
 
     val upgradeVersion = Some(SemVer(0, 1, 0))
-    val actual = bootstrap.upgrade(
+    val actual = bootstrapUpgr.upgrade(
       PkgTestUtils.mkFlix,
       "github:jaschdoc/flix-test-pkg-eff-upgrade",
       upgradeVersion
