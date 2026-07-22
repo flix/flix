@@ -95,7 +95,8 @@ object ConstraintCollection {
          | Type.Var(_, _)
          | Type.Cst(_, _) => acc
     case app @ Type.Apply(_, _, _) =>
-      val (head, args) = MonomorphHelpers.flattenApply(app)
+      val head = app.baseType
+      val args = app.typeArguments
       val acc1 = args.foldLeft(acc)((a, t) => visitType(t, a))
       val mvarOpt = head match {
         case Type.Cst(TypeConstructor.Enum(sym, _), _)             => Some(MonoVar.Enum(sym))
@@ -152,8 +153,7 @@ object ConstraintCollection {
         if (tpe.kind == Kind.Eff && tpe.typeVars.isEmpty)
           MonoArg.Const(MonomorphCanon.simplify(tpe, isGround = true)(ctx.root, ctx.flix))
         else {
-          val (head, args) = MonomorphHelpers.flattenApply(tpe)
-          MonoArg.App(typeToMonoArg(head), args.map(arg => typeToMonoArg(arg)))
+          MonoArg.App(typeToMonoArg(tpe.baseType), tpe.typeArguments.map(arg => typeToMonoArg(arg)))
         }
       case other =>
         MonoArg.Const(other)
