@@ -1173,7 +1173,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val projectPathNormalized = projectPath.normalize().toAbsolutePath
     val pathNormalized = path.normalize().toAbsolutePath
     if (projectPathNormalized != pathNormalized && projectPathNormalized.startsWith(pathNormalized)) {
-      return Err(BootstrapError.FileError(s"Refusing to delete file in ancestor of project directory: '${path.normalize()}'"))
+      return Err(BootstrapError.FileError(s"Refusing to process file in ancestor of project directory: '${path.normalize()}'"))
     }
     Ok(())
   }
