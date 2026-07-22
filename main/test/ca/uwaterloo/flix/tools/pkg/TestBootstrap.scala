@@ -460,14 +460,18 @@ class TestBootstrap extends AnyFunSuite {
         |""".stripMargin
     FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
 
-    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+    val bootstrapPre = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    bootstrapPre.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+
+    // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+    // Otherwise, bootstrap won't add sources to the Flix object.
+    val bootstrapPost = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
     // Simulate user pressing "y" to the initial upgrade prompt, but "n" to the effect trust prompt
     val in = new java.io.ByteArrayInputStream("y\nn\n".getBytes)
 
     val upgradeVersion = Some(SemVer(0, 1, 1))
-    val actual = bootstrap.upgrade(
+    val actual = bootstrapPost.upgrade(
       PkgTestUtils.mkFlix,
       "github:jaschdoc/flix-test-pkg-eff-upgrade",
       upgradeVersion
