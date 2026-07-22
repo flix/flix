@@ -19,6 +19,49 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 
 /**
-  * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
+  * Represents an equality constraint appearing in a `where` clause.
+  *
+  * There are two forms:
+  *   - [[EqualityConstraint.AssocEq]] asserts that an associated type `cst[tpe1]` equals `tpe2`.
+  *   - [[EqualityConstraint.BoolEq]] asserts that two Boolean/effect formulas `tpe1` and `tpe2` are equal.
   */
-case class EqualityConstraint(symUse: AssocTypeSymUse, tpe1: Type, tpe2: Type, loc: SourceLocation)
+sealed trait EqualityConstraint {
+  def tpe1: Type
+
+  def tpe2: Type
+
+  def loc: SourceLocation
+
+  /**
+    * Returns this constraint with its source location replaced by `newLoc`.
+    */
+  def withLoc(newLoc: SourceLocation): EqualityConstraint = this match {
+    case c: EqualityConstraint.AssocEq => c.copy(loc = newLoc)
+    case c: EqualityConstraint.BoolEq => c.copy(loc = newLoc)
+  }
+
+  /**
+    * Returns this constraint with its two types replaced by `newTpe1` and `newTpe2`.
+    */
+  def withTypes(newTpe1: Type, newTpe2: Type): EqualityConstraint = this match {
+    case c: EqualityConstraint.AssocEq => c.copy(tpe1 = newTpe1, tpe2 = newTpe2)
+    case c: EqualityConstraint.BoolEq => c.copy(tpe1 = newTpe1, tpe2 = newTpe2)
+  }
+}
+
+object EqualityConstraint {
+
+  /**
+    * Represents that `symUse[tpe1]` and `tpe2` are equivalent types.
+    */
+  case class AssocEq(symUse: AssocTypeSymUse, tpe1: Type, tpe2: Type, loc: SourceLocation) extends EqualityConstraint
+
+  /**
+    * Represents that the Boolean/effect formulas `tpe1` and `tpe2` are equivalent.
+    *
+    * Both `tpe1` and `tpe2` have kind [[ca.uwaterloo.flix.language.ast.Kind.Bool]] or both have
+    * kind [[ca.uwaterloo.flix.language.ast.Kind.Eff]].
+    */
+  case class BoolEq(tpe1: Type, tpe2: Type, loc: SourceLocation) extends EqualityConstraint
+
+}

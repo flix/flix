@@ -179,7 +179,7 @@ object GotoProvider {
 
     case TraitConstraint(_, _, loc) => loc.isReal
 
-    case EqualityConstraint(_, _, _, loc) => loc.isReal
+    case ec: EqualityConstraint => ec.loc.isReal
 
     case _: Symbol => true
     case tpe: Type => tpe.loc.isReal

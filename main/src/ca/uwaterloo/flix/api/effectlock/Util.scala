@@ -52,7 +52,7 @@ object Util {
 
     val base = visit(sc0.base)
     val tconstrs = sc0.tconstrs.map(tc => tc.copy(arg = visit(tc.arg)))
-    val econstrs = sc0.econstrs.map(ec => ec.copy(tpe1 = visit(ec.tpe1), tpe2 = visit(ec.tpe2)))
+    val econstrs = sc0.econstrs.map(ec => ec.withTypes(visit(ec.tpe1), visit(ec.tpe2)))
     val qs = sc0.quantifiers.map {
       q =>
         seen.get(q.kind) match {

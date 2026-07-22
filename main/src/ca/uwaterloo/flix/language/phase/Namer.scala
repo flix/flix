@@ -1737,8 +1737,11 @@ object Namer {
     val effTvars = eff.toList.flatMap(freeTypeVars)
 
     val econstrTvars = econstrs.flatMap {
-      // We only infer vars from the right-hand-side of the constraint.
-      case DesugaredAst.EqualityConstraint(_, _, tpe2, _) => freeTypeVars(tpe2)
+      // For an associated-type constraint we only infer vars from the right-hand side (the left-hand
+      // side variables are bound by the associated type's argument, which appears elsewhere).
+      case DesugaredAst.EqualityConstraint(Some(_), _, tpe2, _) => freeTypeVars(tpe2)
+      // For a Boolean/effect side condition both sides are real formulas, so infer from both.
+      case DesugaredAst.EqualityConstraint(None, tpe1, tpe2, _) => freeTypeVars(tpe1) ::: freeTypeVars(tpe2)
     }
 
     (fparamTvars ::: tpeTvars ::: effTvars ::: econstrTvars).distinct.map {

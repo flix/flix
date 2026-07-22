@@ -1719,4 +1719,35 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError](result)
   }
 
+  test("KindError.BoolEqualityConstraint.01") {
+    // A Boolean/effect side condition requires both sides to have kind Bool or Eff;
+    // here the right-hand side has kind Type.
+    val input =
+      """
+        |def f(g: a -> b \ ef, x: a): b \ ef where ef ~ Int32 = g(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[KindError](result)
+  }
+
+  test("KindError.BoolEqualityConstraint.02") {
+    // Both sides have kind Type, which is neither Bool nor Eff.
+    val input =
+      """
+        |def f(): String where Int32 ~ Int32 = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[KindError](result)
+  }
+
+  test("KindError.BoolEqualityConstraint.03") {
+    // Both sides have kind Type (distinct constructors).
+    val input =
+      """
+        |def f(): String where Int32 ~ Int64 = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[KindError](result)
+  }
+
 }

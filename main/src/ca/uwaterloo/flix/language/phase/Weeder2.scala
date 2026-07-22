@@ -646,7 +646,13 @@ object Weeder2 {
     private def visitEqualityConstraint(tree: Tree)(implicit sctx: SharedContext): Option[EqualityConstraint] = {
       pickAll(TreeKind.Type.Type, tree).map(Types.visitType) match {
         case Type.Apply(Type.Ambiguous(qname, _), t1, _) :: t2 :: Nil =>
-          Some(EqualityConstraint(qname, t1, t2, tree.loc))
+          // An associated-type equality constraint: `Trait.Assoc[arg] ~ Type`.
+          Some(EqualityConstraint(Some(qname), t1, t2, tree.loc))
+
+        case t1 :: t2 :: Nil =>
+          // A general (Boolean/effect) equality side condition: `formula ~ formula`.
+          // The kinds are checked later, in the Kinder.
+          Some(EqualityConstraint(None, t1, t2, tree.loc))
 
         case _ =>
           val error = IllegalEqualityConstraint(tree.loc)

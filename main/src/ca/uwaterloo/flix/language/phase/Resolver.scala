@@ -2077,7 +2077,7 @@ object Resolver {
     * Performs name resolution on the given equality constraint `econstr0`.
     */
   private def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.EqualityConstraint = tconstr0 match {
-    case NamedAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
+    case NamedAst.EqualityConstraint(Some(qname), tpe1, tpe2, loc) =>
       val t1 = resolveType(tpe1, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
       val t2 = resolveType(tpe2, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
 
@@ -2090,6 +2090,13 @@ object Resolver {
           sctx.errors.add(error)
           ResolvedAst.EqualityConstraint(UnkindedType.Error(qname.loc), t2, loc)
       }
+
+    case NamedAst.EqualityConstraint(None, tpe1, tpe2, loc) =>
+      // A Boolean/effect side condition: both sides are resolved as ordinary types (the left-hand
+      // side is not an associated type). The kinds are checked in the Kinder.
+      val t1 = resolveType(tpe1, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+      val t2 = resolveType(tpe2, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+      ResolvedAst.EqualityConstraint(t1, t2, loc)
   }
 
   /**
