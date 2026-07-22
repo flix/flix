@@ -140,7 +140,7 @@ class Flix {
   def profile[A](sym: Symbol.DefnSym, loc: SourceLocation)(thunk: => A): A =
     profiler match {
       case Some(p) => p.track(sym, loc)(thunk)
-      case None    => thunk
+      case None => thunk
     }
 
   /**
@@ -250,6 +250,14 @@ class Flix {
   def remFile(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
+
+    remInput(p.toString, Input.RealFile(p, sctx))
+    this
+  }
+
+  def remFpkg(p: Path)(implicit sctx: SecurityContext): Flix = {
+    if (!p.getFileName.toString.endsWith(".fpkg"))
+      throw new IllegalArgumentException(s"'$p' must be a .fpkg file.")
 
     remInput(p.toString, Input.RealFile(p, sctx))
     this
@@ -922,7 +930,7 @@ class Flix {
         clazzPath.inits.foldLeft(acc) {
           // Case 1: Nonempty path: split prefix and package
           case (acc1, prefix :+ pkg) => acc1 + (prefix -> pkg)
-          // Case 2: Empty path: skip it
+            // Case 2: Empty path: skip it
           case (acc1, _) => acc1
         }
     }

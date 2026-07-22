@@ -19,9 +19,12 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
-import java.nio.file.{Files, LinkOption, Path, StandardOpenOption}
+import java.io.IOException
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.{FileVisitResult, Files, LinkOption, Path, SimpleFileVisitor, StandardCopyOption, StandardOpenOption}
 import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipOutputStream}
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
 
@@ -68,6 +71,105 @@ object FileOps {
         Result.Ok(())
       } else {
         Result.Err(new RuntimeException(s"path '$path' does not exist"))
+      }
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
+
+  /**
+    * Moves the path `source` to `target`. Wraps any error `e` in `Result.Err(e)`.
+    *
+    * @param source the source path to move from.
+    * @param target the target path to move to.
+    * @return `Ok(())` if `path` was successfully moved, `Err(e)` otherwise.
+    */
+  def move(source: Path, target: Path): Result[Unit, Exception] = {
+    try {
+      Files.move(source, target, StandardCopyOption.ATOMIC_MOVE)
+      Result.Ok(())
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
+
+  /**
+    * Moves the entire directory `sourceDir` to `targetDir` (including all its contents).
+    *
+    * Fails if `sourceDir` does not exist. Creates `targetDir` if it does not exist.
+    *
+    * @param sourceDir the source path directory to move from.
+    * @param targetDir the target path directory to move to.
+    * @return `Ok(())` if `sourceDir` was successfully moved, `Err(e)` otherwise.
+    */
+  def moveDir(sourceDir: Path, targetDir: Path): Result[Unit, Exception] = {
+    exists(sourceDir) match {
+      case Result.Err(e) => return Result.Err(e)
+      case Result.Ok(false) => return Result.Err(new RuntimeException(s"path '$sourceDir' does not exist"))
+      case Result.Ok(true) => ()
+    }
+    exists(targetDir) match {
+      case Result.Err(e) => return Result.Err(e)
+      case Result.Ok(_) if Files.isRegularFile(targetDir) => return Result.Err(new RuntimeException(s"path '$targetDir' is not a valid target directory. It is a file.'"))
+      case Result.Ok(false) => FileOps.newDirectoryIfAbsent(targetDir)
+      case Result.Ok(true) => ()
+    }
+    // Attempt to move directory as-is by renaming.
+    FileOps.move(sourceDir, targetDir) match {
+      case Result.Ok(()) =>
+        // Successful move, nothing more to do.
+        Result.Ok(())
+
+      case Result.Err(_) =>
+        // Error happened, fall back to recursively copying and then deleting.
+        // 1. Recursively copy.
+        FileOps.walkTreePreOrder(sourceDir).flatMap {
+          paths =>
+            Result.traverse(paths) {
+              sourcePath =>
+                val relativeResourcePath = sourceDir.relativize(sourcePath)
+                val targetPath = targetDir.resolve(relativeResourcePath).normalize()
+                if (Files.isDirectory(sourcePath)) {
+                  FileOps.createDir(targetPath)
+                } else {
+                  FileOps.copy(sourcePath, targetPath)
+                }
+            }.map(_ => ())
+        } match {
+          // 2. Recursively delete if no error occurred.
+          case Result.Err(e) => Result.Err(e)
+          case Result.Ok(()) => FileOps.deleteDir(sourceDir)
+        }
+    }
+  }
+
+  private def copy(source: Path, destination: Path): Result[Unit, Exception] = {
+    try {
+      Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING)
+      Result.Ok(())
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
+
+  /**
+    * Deletes all contents of the directory `dir` and the directory itself.
+    *
+    * Fails if `dir` does not exist or is not a directory.
+    *
+    * @param dir the directory to be removed.
+    * @return `Ok(())` if `dir` was successfully deleted, `Err(e)` otherwise.
+    */
+  def deleteDir(dir: Path): Result[Unit, Exception] = {
+    try {
+      if (!Files.exists(dir)) {
+        return Result.Err(new RuntimeException(s"path '$dir' does not exist"))
+      }
+      if (!Files.isDirectory(dir)) {
+        return Result.Err(new RuntimeException(s"path '$dir' is not a directory"))
+      }
+      walkTreePostOrder(dir).flatMap { paths =>
+        Result.sequence(paths.map(delete)).map(_ => ())
       }
     } catch {
       case e: Exception => Result.Err(e)
@@ -129,6 +231,23 @@ object FileOps {
     *
     * The path must not already contain a non-directory.
     */
+  def createDir(path: Path): Result[Unit, Exception] = {
+    try {
+      if (!Files.isDirectory(path)) {
+        return Result.Err(new RuntimeException(s"Path '$path' is not a directory.'"))
+      }
+      Files.createDirectories(path)
+      Result.Ok(())
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
+
+  /**
+    * Creates a new directory at the given path `p`.
+    *
+    * The path must not already contain a non-directory.
+    */
   def newDirectoryIfAbsent(p: Path): Unit = {
     if (!Files.exists(p)) {
       Files.createDirectories(p)
@@ -160,18 +279,18 @@ object FileOps {
     * }}}
     */
   def getFlixFilesIn(path: Path, depth: Int): List[Path] = {
-    walkTree(path, depth).filter(checkExt(_, "flix"))
+    walkTreeSorted(path, depth).filter(checkExt(_, "flix"))
   }
 
   /**
-    * Returns a list of all files (excluding directories) in the given path, visited recursively.
+    * Returns a sorted list of all files (excluding directories) in the given path, visited recursively.
     * The depth parameter is the maximum number of levels of directories to visit.
     * Use a depth of 0 to only visit the given directory.
     * Use a depth of 1 to only visit the files in the given directory.
     * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
     */
   def getFilesIn(path: Path, depth: Int): List[Path] = {
-    walkTree(path, depth).filter(Files.isRegularFile(_))
+    walkTreeSorted(path, depth).filter(Files.isRegularFile(_))
   }
 
   /**
@@ -184,11 +303,25 @@ object FileOps {
     * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
     */
   def getDirectoriesIn(path: Path, depth: Int): List[Path] = {
-    walkTree(path, depth).filter(Files.isDirectory(_))
+    walkTreeSorted(path, depth).filter(Files.isDirectory(_))
   }
 
   /**
-    * Returns a list of all paths in the given path (including `path`), visited recursively.
+    * Returns a sorted list of all paths in the given path (including `path`), visited recursively.
+    * The list is sorted by the path name, i.e., the shortest path name first.
+    * Reverse the list if you need to
+    *
+    * The depth parameter is the maximum number of levels of directories to visit.
+    * Use a depth of 0 to only visit the given directory.
+    * Use a depth of 1 to only visit the files in the given directory.
+    * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
+    */
+  private def walkTreeSorted(path: Path, depth: Int): List[Path] = {
+    walkTree(path, depth).sorted
+  }
+
+  /**
+    * Returns a list of all paths in the given path (including `path`), visited recursively, depth-first.
     * The depth parameter is the maximum number of levels of directories to visit.
     * Use a depth of 0 to only visit the given directory.
     * Use a depth of 1 to only visit the files in the given directory.
@@ -198,9 +331,52 @@ object FileOps {
     if (Files.exists(path) && Files.isDirectory(path))
       Files.walk(path, depth)
         .iterator().asScala
-        .toList.sorted
+        .toList
     else
       List.empty
+  }
+
+  private def walkTreePreOrder(path: Path): Result[List[Path], Exception] = {
+    try {
+      val result = mutable.ArrayBuffer.empty[Path]
+      Files.walkFileTree(path, new SimpleFileVisitor[Path] {
+        override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          result.addOne(dir)
+          FileVisitResult.CONTINUE
+        }
+
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          result.addOne(file)
+          FileVisitResult.CONTINUE
+        }
+      })
+      Result.Ok(result.toList)
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
+
+  private def walkTreePostOrder(path: Path): Result[List[Path], Exception] = {
+    try {
+      val result = mutable.ArrayBuffer.empty[Path]
+      Files.walkFileTree(path, new SimpleFileVisitor[Path] {
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          result.addOne(file)
+          FileVisitResult.CONTINUE
+        }
+
+        override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = {
+          if (exc != null) {
+            throw exc
+          }
+          result.addOne(dir)
+          FileVisitResult.CONTINUE
+        }
+      })
+      Result.Ok(result.toList)
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
   }
 
   /**

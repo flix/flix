@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
+import ca.uwaterloo.flix.api.Bootstrap.{EFFECT_LOCK_FILE, EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, getExternalJarDirectory, getFlixPackageDir, getLibraryDirectory, getManifestFile, getMavenDirectory, getUpgradeBackupDir, libDirectoryRaw}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -26,12 +26,12 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{AvailableUpdates, Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result}
 
-import java.io.PrintStream
+import java.io.{BufferedReader, InputStream, InputStreamReader, PrintStream}
 import java.nio.file.{FileSystems, Files, Path, StandardCopyOption}
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.collection.mutable
@@ -182,11 +182,16 @@ object Bootstrap {
   /** The flix package file extension. Does not contain leading '.' */
   private val EXT_FPKG: String = "fpkg"
 
+  /** The flix package file extension. Does not contain leading '.' */
+  private val EXT_MANIFEST: String = "toml"
+
   /** The jar file extension. Does not contain leading '.' */
   private val EXT_JAR: String = "jar"
 
   /** The manifest / flix toml file name. */
-  private val FLIX_TOML: String = "flix.toml"
+  private val FLIX_TOML: String = s"flix.$EXT_MANIFEST"
+
+  private val EFFECT_LOCK_FILE: String = "effects.lock"
 
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
@@ -228,6 +233,33 @@ object Bootstrap {
     */
   private val libDirectoryRaw: String = "lib/"
 
+  private def getUpgradeBackupDir(p: Path): Path = p.resolve(".flix_upgrade_backup/").normalize()
+
+  private def getFlixPackageDir(p: Path, flixDep: Dependency.FlixDependency): Path =
+    getLibraryDirectory(p)
+      .resolve(flixDep.repo.toString.toLowerCase)
+      .resolve(flixDep.username)
+      .resolve(flixDep.projectName)
+      .resolve(flixDep.version.toString)
+      .normalize()
+
+  private def getFlixPackageResource(p: Path, flixDep: Dependency.FlixDependency, fileExtension: String): Path =
+    getFlixPackageDir(p, flixDep)
+      .resolve(s"${flixDep.projectName}-${flixDep.version}.$fileExtension")
+      .normalize()
+
+  private def getFlixPackageFile(p: Path, flixDep: Dependency.FlixDependency): Path =
+    getFlixPackageResource(p, flixDep, EXT_FPKG)
+
+  private def getFlixPackageManifestFile(p: Path, flixDep: Dependency.FlixDependency): Path =
+    getFlixPackageResource(p, flixDep, EXT_MANIFEST)
+
+  private def getMavenDirectory(p: Path): Path =
+    getLibraryDirectory(p).resolve(MavenPackageManager.DirName).normalize()
+
+  private def getExternalJarDirectory(p: Path): Path =
+    getLibraryDirectory(p).resolve(JarPackageManager.DirName).normalize()
+
   /**
     * Returns the path to the source directory relative to the given path `p`.
     */
@@ -268,7 +300,7 @@ object Bootstrap {
   /**
     * Returns the path to the `effects.lock` relative to the given path `p`.
     */
-  private def getEffectLockFile(p: Path): Path = p.resolve("effects.lock").normalize()
+  private def getEffectLockFile(p: Path): Path = p.resolve(EFFECT_LOCK_FILE).normalize()
 
   /**
     * Returns the path to the LICENSE file relative to the given path `p`.
@@ -475,6 +507,348 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
+    * Upgrades `pkgName` to the latest minor version and/or patch.
+    *
+    * // TODO: Rewrite this documentation. It now takes the packageName and version as argument. If 'latest' then it finds the latest version.
+    * Example 1 - Latest minor version if one is available:
+    * If package is version 0.1.0, and versions `1.0.0`, `0.3.1`, `0.3.0`, `0.2.0`, and `0.1.1`, then
+    * version `0.3.1` is applied.
+    * In particular, the major version is ignored.
+    *
+    * Example 2 - Latest patch version if no greater minor upgrade available:
+    * If package is version `0.2.0` and versions `0.2.3`, `0.2.2`, `0.2.1`, `0.2.0`, and `0.1.0`, then
+    * version `0.2.3` is applied.
+    *
+    * Assumes that `this` [[Bootstrap]] instance implies that the manifest was successfully parsed and is up to date.
+    *
+    * @param pkgName the package identifier to upgrade. The identifier is the key as it appears in the manifest file,
+    *                e.g., `github:flix/museum`
+    */
+  def upgrade(flix: Flix, pkgName: String, semVer: Option[SemVer])(implicit formatter: Formatter, in: InputStream, out: PrintStream): Result[Unit, BootstrapError] = {
+    // 1. Ensure project mode
+    if (!isProjectMode) {
+      return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. Not in project mode."))
+    }
+
+    val oldManifest = optManifest match {
+      case None => return Err(BootstrapError.FileError("Refusing to run 'upgrade'. No manifest 'flix.toml' found."))
+      case Some(m) => m
+    }
+
+    // 2. Ensure project path is not a system directory
+    checkForSystemPath(projectPath) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // 3. Ensure cwd is not dangerous (system dir or outside project path)
+    val cwd = Path.of(System.getProperty("user.dir"))
+    checkForDangerousPath(cwd) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // 4. Check effect lock file exists
+    FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      case Ok(false) => return Err(BootstrapError.FileError(s"Refusing to run 'upgrade'. No effect lock file '$EFFECT_LOCK_FILE' found. Run 'eff-lock' to generate one."))
+      case Ok(true) => () // Continue
+    }
+
+    // 5. Check backup directory from previously aborted upgrade does not exist
+    FileOps.exists(Bootstrap.getUpgradeBackupDir(projectPath)) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      case Ok(true) => return Err(BootstrapError.FileError( // TODO: Refactor this into an error
+        "Refusing to run 'upgrade'. " +
+          "Backup from earlier aborted 'upgrade' exists." +
+          System.lineSeparator() +
+          System.lineSeparator() +
+          s"Please resolve the issue by manually moving needed files into the '$libDirectoryRaw' directory and removing the backup directory. " +
+          System.lineSeparator() +
+          s"Backup directory located at: ${Bootstrap.getUpgradeBackupDir(projectPath)}" +
+          System.lineSeparator() +
+          s"$libDirectoryRaw located at: ${Bootstrap.getLibraryDirectory(projectPath)}"
+      ))
+      case Ok(false) => () // Continue
+    }
+
+    // 4. Check that 'pkgName' occurs as a key in the dependencies declared in the manifest
+    val dependency = oldManifest.flixDependencies.find(_.identifier == pkgName) match {
+      case None =>
+        // TODO: Maybe introduce 'UpgradeError' instead of 'GeneralError'
+        return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The package is not a declared dependency of the project."))
+      case Some(d) => d
+    }
+
+    // 5. Check for upgrades
+    val update = semVer match {
+      case Some(version) if dependency.version == version =>
+        // 5(a). The version was specified by the user.
+        // Special case: Check `version` is current version before going to network.
+        // Perform early return. There is nothing to do.
+        out.println(s"Already at version '$version'. Nothing to do.")
+        return Ok(())
+
+      case Some(version) =>
+        // 5(a). The version was specified by the user.
+        // The specified version is different from current version so check network.
+        FlixPackageManager.checkForSpecificVersion(dependency, apiKey, version) match {
+          case Err(e) => return Err(BootstrapError.FlixPackageError(e))
+          case Ok(existingVersion) => existingVersion
+        }
+
+      case None =>
+        // 5(b). The version was 'latest' so we must check for the latest version.
+        val availableUpdates = FlixPackageManager.findAvailableUpdates(dependency, apiKey) match {
+          case Err(e) => return Err(BootstrapError.FlixPackageError(e))
+          case Ok(u) => u
+        }
+
+        findLatestVersion(availableUpdates) match {
+          case None =>
+            // There was no version higher than the current version. Early return.
+            out.println("No upgrade available. Nothing to do.")
+            return Ok(())
+
+          case Some(version) if dependency.version == version =>
+            // This should be an unreachable case but for sanity, this should be an early return.
+            out.println(s"Already at version '$version'. Nothing to do.")
+            return Ok(())
+
+          case Some(version) => version
+        }
+    }
+
+    // 6. Ask for confirmation
+    val confirmationMessage =
+      s"""A new version was found: ${dependency.version} -> $update
+         |Do you want to proceed? [y/N] """.stripMargin
+
+    askForConfirmation(confirmationMessage) match {
+      case Err(e) => return Err(e)
+      case Ok(false) => return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The user declined the upgrade."))
+      case Ok(true) => ()
+    }
+
+    // 7. Resolve old manifest to obtain dependency graph that we can diff with a new graph
+    val oldResolution = Steps.resolveFlixDependencies(oldManifest) match {
+      case Err(e) => return Err(e)
+      case Ok(r) => r
+    }
+
+    // N.B.: Obtain list of old paths (dependency snapshot) before resolving new dependencies since doing so has the side effect of downloading tomls
+    // And also snapshot before moving old dependencies away so the list of lib files is not empty
+    val oldPaths = FileOps.getFilesIn(getLibraryDirectory(projectPath).resolve("github").normalize(), Int.MaxValue)
+
+    // 8. Update manifest
+    val newManifest = oldManifest.copy(
+      dependencies = oldManifest.dependencies.map {
+        case dep: Dependency.FlixDependency if dep == dependency => dep.copy(version = update)
+        case dep => dep
+      }
+    )
+
+    // 9. Resolve new manifest
+    val newResolution = Steps.resolveFlixDependencies(newManifest) match {
+      case Err(e) => return Err(e)
+      case Ok(r) => r
+    }
+
+    // 10. Diff manifests, first checking for added dependencies and then removed dependencies
+    // N.B.: Diffing manifests directly is sensitive to tiny changes since the identity of a manifest is all its contents.
+    //       Perhaps an identifier that also includes its version or a hash of certain fields would be more resilient.
+
+    // N.B.: Subtract old from new, so if the new set of transitive dependencies is fully contained in the old
+    //       set of dependencies, then there is nothing to do.
+    val addedManifests = newResolution.manifests.toSet -- oldResolution.manifests
+
+    // N.B.: Subtract new from old, so we know which dependencies to back up.
+    val removedManifests = oldResolution.manifests.toSet -- newResolution.manifests
+
+    // Early return in case of no new dependencies
+    if (addedManifests.isEmpty) {
+      // TODO: Report message saying no new dependencies to download but suggest pruning removed dependencies.
+      //       Doing so requires 'removedManifests'.
+      return Ok(())
+    }
+
+    // 11. Back up removed dependencies
+    // Move old flix dependencies
+    val removedDependencies = removedManifests.flatMap(_.flixDependencies)
+    Result.traverse(removedDependencies) { dep =>
+      val fpkgSourcePath = getFlixPackageDir(projectPath, dep)
+      val fpkgTargetPath = getFlixPackageDir(getUpgradeBackupDir(projectPath), dep)
+      FileOps.moveDir(fpkgSourcePath, fpkgTargetPath)
+    }.map(_ => ()) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"Failed to back up old dependencies: ${e.getCause}"))
+      case Ok(()) => () // Continue
+    }
+
+    // Move all maven jars
+    val mvnDir = getMavenDirectory(projectPath)
+    val tmpMvnDir = getMavenDirectory(getUpgradeBackupDir(projectPath))
+    FileOps.exists(mvnDir) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"Unexpected error checking existence of maven directory: ${e.getMessage}"))
+      case Ok(true) => FileOps.moveDir(mvnDir, tmpMvnDir) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Unable to Maven directory: ${e.getMessage}"))
+        case Ok(()) => ()
+      }
+      case Ok(false) => () // Tolerate missing maven directory and continue
+    }
+
+    // Move all external jars
+    val extDir = getExternalJarDirectory(projectPath)
+    val tmpExtDir = getExternalJarDirectory(getUpgradeBackupDir(projectPath))
+    FileOps.exists(extDir) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"Unexpected error checking existence of external jar directory: ${e.getMessage}"))
+      case Ok(true) => FileOps.moveDir(extDir, tmpExtDir) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Unable to move external jar directory: ${e.getMessage}"))
+        case Ok(()) => ()
+      }
+      case Ok(false) => () // Tolerate missing maven directory and continue
+    }
+
+    // 12. Download dependencies
+    val newInstalledDeps = Steps.installDependencies(newResolution) match {
+      case Err(e) => return Err(e)
+      case Ok(fpkgs :: _ :: _ :: Nil) => fpkgs.toSet -- oldPaths
+      case Ok(paths) =>
+        return Err(BootstrapError.GeneralError(s"Internal Error: Installing dependencies returned unexpected number of paths: ${paths.length}"))
+    }
+
+    // 13. Check for effect-safe upgrade
+    checkEffects(flix) match {
+      case Err(effectError: BootstrapError.EffectUpgradeError) =>
+
+        val errorMessage = effectError.message(formatter)
+        val effectUpgradeConfirmationMessage =
+          s"""$errorMessage
+             |
+             |Do trust the package to use these new effects? [y/N] """.stripMargin
+
+        askForConfirmation(effectUpgradeConfirmationMessage) match {
+          // TODO: Refactor Err(_) case into own case and perform same cleanup logic
+          case Err(_) | Ok(false) =>
+            rollbackUpgrade(removedDependencies, mvnDir, tmpMvnDir, extDir, tmpExtDir, newInstalledDeps) match {
+              case Err(e) => return Err(e)
+              case Ok(()) => // Continue
+            }
+            return Err(BootstrapError.GeneralError("Upgrade aborted. Restored previous package version."))
+
+          case Ok(true) =>
+            () // Continue
+        }
+
+      case Err(error) => // Other error, e.g., compilation error
+        rollbackUpgrade(removedDependencies, mvnDir, tmpMvnDir, extDir, tmpExtDir, newInstalledDeps) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => // Continue
+        }
+        return Err(error)
+
+      case Ok(()) =>
+        () // Continue
+    }
+
+    // 14. Write new manifest to file
+    FileOps.writeString(getManifestFile(projectPath), Manifest.format(newManifest))
+
+    // 15. Remove files from old dependency graph (from backup directory)
+    FileOps.deleteDir(Bootstrap.getUpgradeBackupDir(projectPath))
+
+    // 16. Lock effects
+    lockEffects(flix).map {
+      v =>
+        out.println("Upgrade successful.")
+        v
+    }
+  }
+
+
+  private def rollbackUpgrade(removedDependencies: Set[Dependency.FlixDependency], mvnDir: Path, tmpMvnDir: Path, extDir: Path, tmpExtDir: Path, newInstalledDeps: Set[Path]): Result[Unit, BootstrapError] = {
+    // Restore old files
+    val fpkgRollBacks = List(
+      Result.traverse(newInstalledDeps.map(_.getParent))(FileOps.deleteDir),
+      Result.traverse(removedDependencies) { dep =>
+        // Move fpkg
+        val fpkgSourcePath = getFlixPackageDir(getUpgradeBackupDir(projectPath), dep)
+        val fpkgTargetPath = getFlixPackageDir(projectPath, dep)
+        FileOps.moveDir(fpkgSourcePath, fpkgTargetPath)
+      })
+
+    // Tolerate missing directories
+    val mvnRollBacks = List(
+      FileOps.exists(mvnDir).flatMap {
+        case true => FileOps.deleteDir(mvnDir)
+        case false => Result.Ok(())
+      },
+      FileOps.exists(tmpMvnDir).flatMap {
+        case true => FileOps.moveDir(tmpMvnDir, mvnDir)
+        case false => Result.Ok(())
+      }
+    )
+
+    // Tolerate missing directories
+    val extJarRollBacks = List(
+      FileOps.exists(extDir).flatMap {
+        case true => FileOps.deleteDir(extDir)
+        case false => Result.Ok(())
+      },
+      FileOps.exists(tmpExtDir).flatMap {
+        case true => FileOps.moveDir(tmpExtDir, extDir)
+        case false => Result.Ok(())
+      }
+    )
+
+    Result.sequence(fpkgRollBacks ::: mvnRollBacks ::: extJarRollBacks).map(_ => ()) match {
+      case Err(e) => Err(BootstrapError.FileError( // TODO: Refactor to error
+        "FATAL UPGRADE ERROR: Unable to restore files. " +
+          "Please remove newly installed dependencies and restore old dependencies." +
+          System.lineSeparator() +
+          "Alternatively, remove all dependencies and redownload them." +
+          System.lineSeparator() +
+          System.lineSeparator() +
+          s"Files to restore located in: ${Bootstrap.getUpgradeBackupDir(projectPath)}" +
+          System.lineSeparator() +
+          s"Files to remove located in:" +
+          s"  ${Bootstrap.getLibraryDirectory(projectPath)}" +
+          System.lineSeparator() +
+          s"  ${Bootstrap.getMavenDirectory(projectPath)}" +
+          System.lineSeparator() +
+          s"  ${Bootstrap.getExternalJarDirectory(projectPath)}" +
+          System.lineSeparator() +
+          System.lineSeparator() +
+          s"Root cause: ${e.getMessage}"
+      ))
+      case Ok(()) => Ok(()) // Continue
+    }
+  }
+
+  /**
+    * // TODO: Better docs
+    * Assumes 'no', does not close any of the streams.
+    *
+    * @param confirmationMessage
+    * @param in
+    * @param out
+    * @return
+    */
+  private def askForConfirmation(confirmationMessage: String)(implicit in: InputStream, out: PrintStream): Result[Boolean, BootstrapError] = {
+    out.print(confirmationMessage)
+    val reader = new BufferedReader(new InputStreamReader(in))
+    try {
+      val input = reader.readLine()
+      if (input == null) {
+        return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. Confirmation input was null."))
+      }
+      out.println()
+      Ok(input.toLowerCase == "y")
+    } catch {
+      case e: Exception => Err(BootstrapError.GeneralError(s"Refusing to run 'upgrade'. Failed to read input: ${e.getMessage}"))
+    }
+  }
+
+  /**
     * Builds a fatjar package for the project.
     */
   def buildFatJar(flix: Flix): Result[Unit, BootstrapError] = {
@@ -496,6 +870,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       ()
     }
+  }
+
+  private def findLatestVersion(updates: AvailableUpdates): Option[SemVer] = updates match {
+    case AvailableUpdates(Some(major), _, _) => Some(major)
+    case AvailableUpdates(_, Some(minor), _) => Some(minor)
+    case AvailableUpdates(_, _, Some(patch)) => Some(patch)
+    case AvailableUpdates(_, _, _) => None
   }
 
   /**
@@ -552,7 +933,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
       case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-      case Ok(false) => return Err(BootstrapError.FileError("No 'effects.lock' file found. Unable to run 'eff-check'."))
+      case Ok(false) => return Err(BootstrapError.FileError(s"No '$EFFECT_LOCK_FILE' file found. Unable to run 'eff-check'."))
       case Ok(true) => ()
     }
 
@@ -788,8 +1169,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /** Returns `Err` if `path` is an ancestor of `projectPath`. */
   private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
-    if (projectPath.normalize().startsWith(path.normalize())) {
-      return Err(BootstrapError.FileError(s"Refusing to delete file in ancestor of project directory: '${path.normalize()}"))
+    // TODO: What about siblings?
+    val projectPathNormalized = projectPath.normalize().toAbsolutePath
+    val pathNormalized = path.normalize().toAbsolutePath
+    if (projectPathNormalized != pathNormalized && projectPathNormalized.startsWith(pathNormalized)) {
+      return Err(BootstrapError.FileError(s"Refusing to process file in ancestor of project directory: '${path.normalize()}'"))
     }
     Ok(())
   }
@@ -1389,7 +1773,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
             flix.remFile(path)(SecurityContext.Unrestricted)
           } else if (path.toString.endsWith(s".$EXT_FPKG")) {
             flixPackagePaths = flixPackagePaths.filterNot(_ == path)
-            flix.remFile(path)(SecurityContext.Unrestricted)
+            flix.remFpkg(path)(SecurityContext.Unrestricted)
           } else if (path.toString.endsWith(s".$EXT_JAR")) {
             mavenPackagePaths = mavenPackagePaths.filterNot(_ == path)
             jarPackagePaths = jarPackagePaths.filterNot(_ == path)
@@ -1403,7 +1787,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
             mavenPackagePaths = mavenPackagePaths.filterNot(_.startsWith(path))
             jarPackagePaths = jarPackagePaths.filterNot(_.startsWith(path))
             for (p <- deletedFlix) flix.remFile(p)(SecurityContext.Unrestricted)
-            for (p <- deletedFpkg) flix.remFile(p)(SecurityContext.Unrestricted)
+            for (p <- deletedFpkg) flix.remFpkg(p)(SecurityContext.Unrestricted)
           }
 
         case Overflow => // already handled above
@@ -1436,7 +1820,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       // Remove deleted sources.
       for (path <- previousSources -- currentSources) {
-        flix.remFile(path)(SecurityContext.Unrestricted)
+        val isLibraryPath =
+          path.toAbsolutePath.normalize().startsWith(
+            getLibraryDirectory(projectPath).toAbsolutePath.normalize()
+          )
+        if (isLibraryPath) {
+          flix.remFpkg(path)(SecurityContext.Paranoid)
+        } else {
+          flix.remFile(path)(SecurityContext.Unrestricted)
+        }
       }
     }
 
@@ -1466,7 +1858,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       val deletedSources = previousSources -- currentSources
       for (path <- deletedSources) {
-        flix.remFile(path)(SecurityContext.Unrestricted)
+        val isLibraryPath =
+          path.toAbsolutePath.normalize().startsWith(
+            getLibraryDirectory(projectPath).toAbsolutePath.normalize()
+          )
+        if (isLibraryPath) {
+          flix.remFpkg(path)(SecurityContext.Paranoid)
+        } else {
+          flix.remFile(path)(SecurityContext.Unrestricted)
+        }
       }
 
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
