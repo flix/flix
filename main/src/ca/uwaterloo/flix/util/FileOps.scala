@@ -233,9 +233,6 @@ object FileOps {
     */
   def createDir(path: Path): Result[Unit, Exception] = {
     try {
-      if (Files.exists(path)) {
-        return Result.Err(new RuntimeException(s"Path '$path' already exists.'"))
-      }
       if (!Files.isDirectory(path)) {
         return Result.Err(new RuntimeException(s"Path '$path' is not a directory.'"))
       }
