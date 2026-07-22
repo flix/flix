@@ -95,10 +95,9 @@ object ConstraintCollection {
          | Type.Var(_, _)
          | Type.Cst(_, _) => acc
     case app @ Type.Apply(_, _, _) =>
-      val head = app.baseType
       val args = app.typeArguments
       val acc1 = args.foldLeft(acc)((a, t) => visitType(t, a))
-      val mvarOpt = head match {
+      val mvarOpt = app.baseType match {
         case Type.Cst(TypeConstructor.Enum(sym, _), _)             => Some(MonoVar.Enum(sym))
         case Type.Cst(TypeConstructor.RestrictableEnum(sym, _), _) => Some(MonoVar.RestrictableEnum(sym))
         case Type.Cst(TypeConstructor.Struct(sym, _), _)           => Some(MonoVar.Struct(sym))
