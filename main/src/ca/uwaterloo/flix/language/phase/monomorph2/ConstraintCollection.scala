@@ -30,14 +30,14 @@ object ConstraintCollection {
   /**
     * Generation context.
     *
-    * @param currentDecl the decl which we are currently traversing
-    * @param tparamEnv maps the current def's type parameters to their indices
+    * @param tparamEnv maps the current declaration's type parameters to `MonoArg.Param` — always
+    *                  `Param`, not statically enforced, so a future scope could use more than one
+    *                  `MonoVar`.
     * @param root the typed AST root (needed to resolve ground associated types)
     * @param flix the Flix context (needed by TypeReduction2)
     */
   case class Context(
-    currentDecl: MonoVar,
-    tparamEnv: Map[Symbol.KindedTypeVarSym, Int],
+    tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg],
     root: TypedAst.Root,
     flix: Flix
   )
@@ -49,32 +49,36 @@ object ConstraintCollection {
     val fromDefs: Set[Flow] = ???
 
     val fromEnums = ParOps.parMap(root.enums.values) { enm =>
-      val tparamEnv = enm.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> i }.toMap
-      implicit val ctx: Context = Context(MonoVar.Enum(enm.sym), tparamEnv, root, flix)
+      val mvar = MonoVar.Enum(enm.sym)
+      val tparamEnv = enm.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+      implicit val ctx: Context = Context(tparamEnv, root, flix)
       visitEnum(enm, Nil)
     }.flatten.toSet
 
     val fromInstances: Set[Flow] = ???
 
     val fromRestrictableEnums = ParOps.parMap(root.restrictableEnums.values) { enm =>
-      val tparamEnv = (enm.index :: enm.tparams).zipWithIndex.map { case (tp, i) => tp.sym -> i }.toMap
-      implicit val ctx: Context = Context(MonoVar.RestrictableEnum(enm.sym), tparamEnv, root, flix)
+      val mvar = MonoVar.RestrictableEnum(enm.sym)
+      val tparamEnv = (enm.index :: enm.tparams).zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+      implicit val ctx: Context = Context(tparamEnv, root, flix)
       visitRestrictableEnum(enm, Nil)
     }.flatten.toSet
 
     val fromStructs = ParOps.parMap(root.structs.values) { struct =>
-      val tparamEnv = struct.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> i }.toMap
-      implicit val ctx: Context = Context(MonoVar.Struct(struct.sym), tparamEnv, root, flix)
+      val mvar = MonoVar.Struct(struct.sym)
+      val tparamEnv = struct.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+      implicit val ctx: Context = Context(tparamEnv, root, flix)
       visitStruct(struct, Nil)
     }.flatten.toSet
 
     val fromSigs: Set[Flow] = ???
 
     val fromEffects = ParOps.parMap(root.effects.values.flatMap(_.ops)) { op =>
-      val tparamEnv = op.spec.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> i }.toMap
       // We need a Synthetic DefnSym to tie the tparams to
       val defnSym = new Symbol.DefnSym(None, op.sym.namespace, op.sym.name, op.sym.loc)
-      implicit val ctx: Context = Context(MonoVar.Def(defnSym), tparamEnv, root, flix)
+      val mvar = MonoVar.Def(defnSym)
+      val tparamEnv = op.spec.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+      implicit val ctx: Context = Context(tparamEnv, root, flix)
       val acc1 = op.spec.fparams.foldLeft(List.empty[Flow]) { case (a, FormalParam(_, tpe, _, _, _)) => visitType(tpe, a) }
       visitType(op.spec.retTpe, acc1)
     }.flatten.toSet
@@ -132,15 +136,10 @@ object ConstraintCollection {
     val tpe = Type.eraseAliases(tpe0)
     tpe match {
       case Type.Var(sym, _) =>
-        ctx.tparamEnv.get(sym) match {
-          case Some(idx) => MonoArg.Param(ctx.currentDecl, idx)
-          case None =>
-            // A type variable that is not a tparam of the current decl, e.g. a region var
-            // introduced by `region r { ... }`, which is local to the expression.
-            // We record them as an opaque constant so the flow is still emitted but the
-            // solver does not propagate them.
-            MonoArg.Const(tpe)
-        }
+        // A type variable that is not a tparam of the current decl (absent from tparamEnv) — e.g.
+        // a region var introduced by `region r { ... }`. We record it as an opaque constant so the
+        // flow is still emitted but the solver does not propagate it.
+        ctx.tparamEnv.getOrElse(sym, MonoArg.Const(tpe))
       case at @ Type.AssocType(symUse, arg, kind, assocLoc) =>
         if (tpe.typeVars.isEmpty)
           MonoArg.Const(MonomorphCanon.reduceAssocType(at)(ctx.root, ctx.flix))
