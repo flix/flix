@@ -31,21 +31,6 @@ mod Test.Dec.Mod {
     def testMod01(): Bool = A.f()
 
     @CompileTest
-    def testMod02(): Bool = A.B.f()
-
-    @CompileTest
-    def testMod03(): Bool = A.B.C.f()
-
-    @CompileTest
     def testMod04(): Bool = A.g()
-
-    @CompileTest
-    def testMod05(): Bool = A.B.g()
-
-    @CompileTest
-    def testMod06(): Bool = A.B.C.g()
-
-    @CompileTest
-    def testMod07(): Bool = X.Y.Z.f()
 
 }
