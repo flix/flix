@@ -89,28 +89,31 @@ object ConstraintCollection {
   /**
     * Emits flow constraints for enum type applications occurring in `tpe`.
     */
-  private def visitType(tpe0: Type, acc: List[Flow])(implicit ctx: Context): List[Flow] = Type.eraseAliases(tpe0) match {
-    case at @ Type.AssocType(_, arg, _, _) =>
-      if (at.typeVars.isEmpty)
-        visitType(MonomorphCanon.reduceAssocType(at)(ctx.root, ctx.flix), acc)
-      else
-        visitType(arg, acc)
-    case _: Type.BaseType
-         | Type.Var(_, _)
-         | Type.Cst(_, _) => acc
-    case app @ Type.Apply(_, _, _) =>
-      val args = app.typeArguments
-      val acc1 = args.foldLeft(acc)((a, t) => visitType(t, a))
-      val mvarOpt = app.baseType match {
-        case Type.Cst(TypeConstructor.Enum(sym, _), _)             => Some(MonoVar.Enum(sym))
-        case Type.Cst(TypeConstructor.RestrictableEnum(sym, _), _) => Some(MonoVar.RestrictableEnum(sym))
-        case Type.Cst(TypeConstructor.Struct(sym, _), _)           => Some(MonoVar.Struct(sym))
-        case _                                                     => None
-      }
-      mvarOpt match {
-        case Some(mvar) => Flow(args.map(t => typeToMonoArg(t)), mvar) :: acc1
-        case None       => acc1
-      }
+  private def visitType(tpe0: Type, acc: List[Flow])(implicit ctx: Context): List[Flow] = {
+    def dealiasedVisitType(tpe: Type, acc: List[Flow]): List[Flow] = tpe match {
+      case at @ Type.AssocType(_, arg, _, _) =>
+        if (at.typeVars.isEmpty)
+          visitType(MonomorphCanon.reduceAssocType(at)(ctx.root, ctx.flix), acc)
+        else
+          dealiasedVisitType(arg, acc)
+      case _: Type.BaseType
+           | Type.Var(_, _)
+           | Type.Cst(_, _) => acc
+      case app @ Type.Apply(_, _, _) =>
+        val args = app.typeArguments
+        val acc1 = args.foldLeft(acc)((a, t) => dealiasedVisitType(t, a))
+        val mvarOpt = app.baseType match {
+          case Type.Cst(TypeConstructor.Enum(sym, _), _)             => Some(MonoVar.Enum(sym))
+          case Type.Cst(TypeConstructor.RestrictableEnum(sym, _), _) => Some(MonoVar.RestrictableEnum(sym))
+          case Type.Cst(TypeConstructor.Struct(sym, _), _)           => Some(MonoVar.Struct(sym))
+          case _                                                     => None
+        }
+        mvarOpt match {
+          case Some(mvar) => Flow(args.map(t => dealiasedTypeToMonoArg(t)), mvar) :: acc1
+          case None       => acc1
+        }
+    }
+    dealiasedVisitType(Type.eraseAliases(tpe0), acc)
   }
 
   /**
@@ -132,8 +135,11 @@ object ConstraintCollection {
     structDecl.fields.values.foldLeft(acc) { (a, field) => visitType(field.tpe, a) }
 
   /** Converts `tpe0` to a `MonoArg` relative to the current declaration context. */
-  private def typeToMonoArg(tpe0: Type)(implicit ctx: Context): MonoArg = {
-    val tpe = Type.eraseAliases(tpe0)
+  private def typeToMonoArg(tpe0: Type)(implicit ctx: Context): MonoArg =
+    dealiasedTypeToMonoArg(Type.eraseAliases(tpe0))
+
+  /** Like [[typeToMonoArg]], but `tpe` must already have its aliases erased (deeply). */
+  private def dealiasedTypeToMonoArg(tpe: Type)(implicit ctx: Context): MonoArg =
     tpe match {
       case Type.Var(sym, _) =>
         // A type variable that is not a tparam of the current decl (absent from tparamEnv) — e.g.
@@ -144,18 +150,17 @@ object ConstraintCollection {
         if (tpe.typeVars.isEmpty)
           MonoArg.Const(MonomorphCanon.reduceAssocType(at)(ctx.root, ctx.flix))
         else
-          MonoArg.Assoc(symUse.sym, typeToMonoArg(arg), kind, assocLoc)
+          MonoArg.Assoc(symUse.sym, dealiasedTypeToMonoArg(arg), kind, assocLoc)
       case Type.Cst(_, _) | _: Type.BaseType =>
         MonoArg.Const(tpe)
       case Type.Apply(_, _, _) =>
         if (tpe.kind == Kind.Eff && tpe.typeVars.isEmpty)
           MonoArg.Const(MonomorphCanon.simplify(tpe, isGround = true)(ctx.root, ctx.flix))
         else {
-          MonoArg.App(typeToMonoArg(tpe.baseType), tpe.typeArguments.map(arg => typeToMonoArg(arg)))
+          MonoArg.App(dealiasedTypeToMonoArg(tpe.baseType), tpe.typeArguments.map(arg => dealiasedTypeToMonoArg(arg)))
         }
       case other =>
         MonoArg.Const(other)
     }
-  }
 
 }
