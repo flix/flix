@@ -107,15 +107,27 @@ object Annotation {
   }
 
   /**
-    * An annotation that marks a function definition as a target for lowering.
+    * An annotation that marks a function definition as a target for the Datalog lowering.
     *
-    * A function annotated with `LoweringTarget` may not be discarded until lowering has
-    * been performed.
+    * A function annotated with `LoweringTargetDatalog` may not be discarded until lowering has
+    * been performed if the program uses the Datalog subset of the language.
     *
     * @param loc the source location of the annotation.
     */
-  case class LoweringTarget(loc: SourceLocation) extends Annotation {
-    override def toString: String = "@LoweringTarget"
+  case class LoweringTargetDatalog(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@LoweringTargetDatalog"
+  }
+
+  /**
+    * An annotation that marks a function definition as a target for the Channel lowering.
+    *
+    * A function annotated with `LoweringTargetDatalog` may not be discarded until lowering has
+    * been performed if the program uses Channels.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class LoweringTargetChannel(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@LoweringTargetChannel"
   }
 
   /**
