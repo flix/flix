@@ -190,7 +190,7 @@ mod Test.Exp.Jvm.Instanceof {
 
     // Refined-type binding: bound name is typed as Number and Number.intValue is invoked on it.
     @Test
-    def testInstanceofBind01(): Unit \ Assert = {
+    def testInstanceofBind01(): Unit \ {Assert, IO} = {
         let o: Object = checked_cast(100ii);
         let n = o instanceof {
             case x: Number => x.intValue()
@@ -201,7 +201,7 @@ mod Test.Exp.Jvm.Instanceof {
 
     // Refined-type binding: bound name is typed as Enum and Enum.name is invoked on it.
     @Test
-    def testInstanceofBind02(): Unit \ Assert = {
+    def testInstanceofBind02(): Unit \ {Assert, IO} = {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
         let s = o instanceof {
             case e: Enum[_] => e.name()
@@ -212,7 +212,7 @@ mod Test.Exp.Jvm.Instanceof {
 
     // Refined-type binding: bound name is typed as CharSequence and CharSequence.length is invoked on it.
     @Test
-    def testInstanceofBind03(): Unit \ Assert = {
+    def testInstanceofBind03(): Unit \ {Assert, IO} = {
         let o: Object = checked_cast("hello");
         let n = o instanceof {
             case s: CharSequence => s.length()
@@ -223,7 +223,7 @@ mod Test.Exp.Jvm.Instanceof {
 
     // Untyped catch-all binds the scrutinee at its static type.
     @Test
-    def testInstanceofBind04(): Unit \ Assert = {
+    def testInstanceofBind04(): Unit \ {Assert, IO} = {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
         let isObj = o instanceof {
             case _: CharSequence => false

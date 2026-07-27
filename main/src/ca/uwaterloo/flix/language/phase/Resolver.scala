@@ -2821,10 +2821,20 @@ object Resolver {
       case UnkindedType.Var(sym, _) => sym.isWild
       case _ => false
     }
+    // A type constructor that corresponds to a concrete Java class at runtime, and so can be
+    // used as an `instanceof` rule type: either a raw Java type or a Java-backed Flix builtin.
+    def isJavaBackedType(tc: TypeConstructor): Boolean = tc match {
+      case TypeConstructor.Native(_) => true
+      case TypeConstructor.Str => true
+      case TypeConstructor.BigInt => true
+      case TypeConstructor.BigDecimal => true
+      case TypeConstructor.Regex => true
+      case _ => false
+    }
     val base = tpe.baseType
     val args = tpe.typeArguments
     base match {
-      case UnkindedType.Cst(TypeConstructor.Native(_), _) =>
+      case UnkindedType.Cst(tc, _) if isJavaBackedType(tc) =>
         args.foreach { arg =>
           if (!isWildcardVar(arg)) sctx.errors.add(ResolutionError.IllegalInstanceOfTypeArgument(arg.loc))
         }

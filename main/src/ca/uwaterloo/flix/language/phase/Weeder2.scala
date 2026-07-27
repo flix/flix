@@ -1209,34 +1209,10 @@ object Weeder2 {
                   mkApply(tokenOperatorToName(kind).get)
 
                 // Special cases that create different AST nodes
-                case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
-                case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
-                case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-                case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
                 case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc)
                 case Token(TokenKind.KeywordOr, _, _, _, _, _) => Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc)
                 case Token(TokenKind.ColonColon, _, _, _, _, _) => Expr.FCons(e1, e2, tree.loc)
                 case Token(TokenKind.AngledPlus, _, _, _, _, _) => Expr.FixpointMerge(e1, e2, tree.loc)
-                case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
-                  tryPickQName(exprs(1)) match {
-                    case Some(qname) =>
-                      if (qname.isUnqualified) Expr.InstanceOf(e1, qname.ident, tree.loc)
-                      else {
-                        val error = IllegalQualifiedName(exprs(1).loc)
-                        sctx.errors.add(error)
-                        Expr.Error(error)
-                      }
-                    case None =>
-                      val error = UnexpectedToken(
-                        NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
-                        None,
-                        SyntacticContext.Expr.OtherExpr,
-                        hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
-                        loc = exprs(1).loc
-                      )
-                      sctx.errors.add(error)
-                      Expr.Error(error)
-                  }
                 case token@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
                   val ident = Name.Ident(token.text, op.loc)
                   Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc)
@@ -1389,23 +1365,25 @@ object Weeder2 {
       }
     }
 
-    private def visitInstanceOfMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    private def visitInstanceOfMatchExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.InstanceOfMatch)
       val rules0 = pickAll(TreeKind.Expr.InstanceOfMatchRuleFragment, tree)
-      flatMapN(pickExpr(tree), traverse(rules0)(visitInstanceOfMatchRule)) {
-        case (expr, Nil) =>
+      val expr = pickExpr(tree)
+      rules0.map(visitInstanceOfMatchRule) match {
+        case Nil =>
           val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
           sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
-        case (expr, rules) => Validation.Success(Expr.InstanceOfMatch(expr, rules, tree.loc))
+          Expr.Error(error)
+        case rules => Expr.InstanceOfMatch(expr, rules, tree.loc)
       }
     }
 
-    private def visitInstanceOfMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[InstanceOfMatchRule, CompilationMessage] = {
+    private def visitInstanceOfMatchRule(tree: Tree)(implicit sctx: SharedContext): InstanceOfMatchRule = {
       expect(tree, TreeKind.Expr.InstanceOfMatchRuleFragment)
-      mapN(pickNameIdent(tree), Types.tryPickType(tree), pickExpr(tree)) {
-        case (ident, tpe, expr) => InstanceOfMatchRule(ident, tpe, expr, tree.loc)
-      }
+      val ident = pickNameIdent(tree)
+      val tpe = Types.tryPickType(tree)
+      val expr = pickExpr(tree)
+      InstanceOfMatchRule(ident, tpe, expr, tree.loc)
     }
 
     private def visitRestrictableChooseExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {

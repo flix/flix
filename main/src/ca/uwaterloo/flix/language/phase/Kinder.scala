@@ -927,7 +927,7 @@ object Kinder {
   /**
     * Performs kinding on the given instanceof match rule under the given kind environment.
     */
-  private def visitInstanceOfMatchRule(rule0: ResolvedAst.InstanceOfMatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.InstanceOfMatchRule = rule0 match {
+  private def visitInstanceOfMatchRule(rule0: ResolvedAst.InstanceOfMatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.InstanceOfMatchRule = rule0 match {
     case ResolvedAst.InstanceOfMatchRule(sym, tpe0, exp0, loc) =>
       val tpe = tpe0.map(visitType(_, Kind.Star, kenv, root))
       val exp = visitExp(exp0, kenv, root)

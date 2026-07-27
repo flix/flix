@@ -1032,6 +1032,11 @@ object Lowering {
   /** Extracts the Java reference class corresponding to `tpe`, if any. */
   private def javaClassOfTpe(tpe: Type): Option[java.lang.Class[?]] = tpe.baseType match {
     case Type.Cst(TypeConstructor.Native(c), _) => Some(c)
+    // Flix reference types that are backed by a concrete Java class at runtime.
+    case Type.Cst(TypeConstructor.Str, _) => Some(classOf[java.lang.String])
+    case Type.Cst(TypeConstructor.BigInt, _) => Some(classOf[java.math.BigInteger])
+    case Type.Cst(TypeConstructor.BigDecimal, _) => Some(classOf[java.math.BigDecimal])
+    case Type.Cst(TypeConstructor.Regex, _) => Some(classOf[java.util.regex.Pattern])
     case _ => None
   }
 
