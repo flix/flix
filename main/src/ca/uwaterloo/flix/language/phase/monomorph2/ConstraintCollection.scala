@@ -489,8 +489,14 @@ object ConstraintCollection {
         else {
           MonoArg.App(dealiasedTypeToMonoArg(tpe.baseType), tpe.typeArguments.map(arg => dealiasedTypeToMonoArg(arg)))
         }
-      case other =>
-        MonoArg.Const(other)
+      case Type.Alias(_, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected type alias (should have been erased): $tpe", tpe.loc)
+      case Type.JvmToType(_, loc) =>
+        throw InternalCompilerException("Unexpected JVM type", loc)
+      case Type.JvmToEff(_, loc) =>
+        throw InternalCompilerException("Unexpected JVM eff", loc)
+      case Type.UnresolvedJvmType(_, loc) =>
+        throw InternalCompilerException("Unexpected JVM type", loc)
     }
 
   /** Returns the enum/restrictable-enum/struct `MonoVar` and type arguments of `tpe0`. */
