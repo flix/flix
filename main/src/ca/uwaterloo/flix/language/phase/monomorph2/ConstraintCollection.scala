@@ -68,11 +68,9 @@ object ConstraintCollection {
     ParOps.parMap(root.instances.values) { inst =>
       inst.defs.foreach { instDef =>
         val mvar = MonoVar.Def(instDef.sym)
-        val instTparamEnv = inst.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
-        val offset = inst.tparams.length
-        val specTparamEnv = instDef.spec.tparams.zipWithIndex.map { case (tp, j) => tp.sym -> MonoArg.Param(mvar, offset + j) }.toMap
+        val allTparams = inst.tparams ++ instDef.spec.tparams
+        implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = allTparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
         flix.profile(instDef.sym, instDef.loc) {
-          implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = instTparamEnv ++ specTparamEnv
           visitDef(instDef)
         }
       }
