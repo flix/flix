@@ -97,8 +97,7 @@ object ConstraintCollection {
           visitType(MonomorphCanon.reduceAssocType(at)(root, flix))
         else
           dealiasedVisitType(arg)
-      case _: Type.BaseType
-           | Type.Var(_, _)
+      case _: Type.Var(_, _)
            | Type.Cst(_, _) => ()
       case app @ Type.Apply(_, _, _) =>
         val args = app.typeArguments
@@ -149,7 +148,7 @@ object ConstraintCollection {
           MonoArg.Const(MonomorphCanon.reduceAssocType(at)(root, flix))
         else
           MonoArg.Assoc(symUse.sym, dealiasedTypeToMonoArg(arg), kind, assocLoc)
-      case Type.Cst(_, _) | _: Type.BaseType =>
+      case Type.Cst(_, _) =>
         MonoArg.Const(tpe)
       case Type.Apply(_, _, _) =>
         if (tpe.kind == Kind.Eff && tpe.typeVars.isEmpty)
