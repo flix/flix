@@ -34,7 +34,7 @@ object ConstraintCollection {
     *
     * This class is thread-safe.
     */
-  private class Context {
+  private class SharedContext {
     private val flows: mutable.ArrayBuffer[Flow] = mutable.ArrayBuffer.empty
 
     /** Emits `flow` as one of the generated constraints. */
@@ -48,7 +48,7 @@ object ConstraintCollection {
     * Generates specialization constraints for every top-level declaration in `root0`.
     */
   def generate(root0: TypedAst.Root)(implicit flix: Flix): Set[Flow] = {
-    implicit val ctx: Context = new Context()
+    implicit val sctx: SharedContext = new SharedContext()
     implicit val root: TypedAst.Root = root0
 
     ParOps.parMap(root.defs.values) { defn =>
@@ -115,13 +115,13 @@ object ConstraintCollection {
       visitType(op.spec.retTpe)
     }
 
-    ctx.result
+    sctx.result
   }
 
   /**
     * Emits flow constraints for enum type applications occurring in `tpe`.
     */
-  private def visitType(tpe0: Type)(implicit ctx: Context, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
+  private def visitType(tpe0: Type)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
     def dealiasedVisitType(tpe: Type): Unit = tpe match {
       case at @ Type.AssocType(_, arg, _, _) =>
         if (at.typeVars.isEmpty)
@@ -138,7 +138,7 @@ object ConstraintCollection {
       case app @ Type.Apply(_, _, _) =>
         val args = app.typeArguments
         args.foreach(dealiasedVisitType)
-        declMonoVar(app.baseType).foreach(mvar => ctx.addFlow(Flow(args.map(t => dealiasedTypeToMonoArg(t)), mvar)))
+        declMonoVar(app.baseType).foreach(mvar => sctx.addFlow(Flow(args.map(t => dealiasedTypeToMonoArg(t)), mvar)))
     }
     dealiasedVisitType(Type.eraseAliases(tpe0))
   }
@@ -154,25 +154,25 @@ object ConstraintCollection {
   /**
     * Emits flow constraints for all case field types in `enumDecl`.
     */
-  private def visitEnum(enumDecl: TypedAst.Enum)(implicit ctx: Context, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
+  private def visitEnum(enumDecl: TypedAst.Enum)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
     enumDecl.cases.values.foreach(cas => cas.tpes.foreach(visitType(_)))
 
   /**
     * Emits flow constraints for all case field types in `restrictableEnumDecl`.
     */
-  private def visitRestrictableEnum(restrictableEnumDecl: TypedAst.RestrictableEnum)(implicit ctx: Context, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
+  private def visitRestrictableEnum(restrictableEnumDecl: TypedAst.RestrictableEnum)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
     restrictableEnumDecl.cases.values.foreach(cas => cas.tpes.foreach(visitType(_)))
 
   /**
     * Emits flow constraints for all field types in `structDecl`.
     */
-  private def visitStruct(structDecl: TypedAst.Struct)(implicit ctx: Context, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
+  private def visitStruct(structDecl: TypedAst.Struct)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
     structDecl.fields.values.foreach(field => visitType(field.tpe))
 
   /**
     * Emits flow constraints for the formal parameter types, return type, and body of `defn`.
     */
-  private def visitDef(defn: TypedAst.Def)(implicit ctx: Context, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
+  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
     defn.spec.fparams.foreach { case FormalParam(_, tpe, _, _, _) => visitType(tpe) }
     visitType(defn.spec.retTpe)
     visitExp(defn.exp)
@@ -183,25 +183,25 @@ object ConstraintCollection {
     * Emits flow constraints for the default-handler calls that
     * `SolutionLowering.wrapDefWithDefaultHandlers` synthesizes around entry points.
     */
-  private def entryPointHandlerFlows(defn: TypedAst.Def)(implicit ctx: Context, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = ???
+  private def entryPointHandlerFlows(defn: TypedAst.Def)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = ???
 
   /**
     * Emits flow constraints for all call sites and enum/struct construction sites in `exp`.
     * Datalog and channel nodes additionally emit constraints for the stdlib calls
     * [[SolutionLowering]] will synthesize for them.
     */
-  private def visitExp(exp0: Expr)(implicit ctx: Context, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = exp0 match {
+  private def visitExp(exp0: Expr)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) => ()
     case Expr.Var(_, _, _) => ()
     case Expr.Hole(_, _, _, _, _) => ()
 
     case Expr.ApplyDef(symUse, exps, targs, _, _, _, _, _) =>
       exps.foreach(visitExp(_))
-      ctx.addFlow(Flow(targs.map(typeToMonoArg(_)), MonoVar.Def(symUse.sym)))
+      sctx.addFlow(Flow(targs.map(typeToMonoArg(_)), MonoVar.Def(symUse.sym)))
 
     case Expr.ApplySig(symUse, exps, targ, targs, _, _, _, _, _) =>
       exps.foreach(visitExp(_))
-      ctx.addFlow(Flow((targ :: targs).map(typeToMonoArg(_)), MonoVar.Sig(symUse.sym)))
+      sctx.addFlow(Flow((targ :: targs).map(typeToMonoArg(_)), MonoVar.Sig(symUse.sym)))
 
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
       exps.foreach(visitExp(_))
@@ -249,12 +249,12 @@ object ConstraintCollection {
     case Expr.Tag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       exps.foreach(visitExp(_))
-      ctx.addFlow(Flow(tpArgs.map(typeToMonoArg(_)), mvar))
+      sctx.addFlow(Flow(tpArgs.map(typeToMonoArg(_)), mvar))
 
     case Expr.RestrictableTag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       exps.foreach(visitExp(_))
-      ctx.addFlow(Flow(tpArgs.map(typeToMonoArg(_)), mvar))
+      sctx.addFlow(Flow(tpArgs.map(typeToMonoArg(_)), mvar))
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
@@ -323,7 +323,7 @@ object ConstraintCollection {
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       fields.foreach { case (_, e) => visitExp(e) }
       region.foreach(visitExp(_))
-      ctx.addFlow(Flow(tpArgs.map(typeToMonoArg(_)), mvar))
+      sctx.addFlow(Flow(tpArgs.map(typeToMonoArg(_)), mvar))
 
     case Expr.StructGet(exp, _, _, _, _) => visitExp(exp)
 
@@ -447,11 +447,11 @@ object ConstraintCollection {
     * `AnyType` reach `Fixpoint.Boxable`'s box/unbox, whose unchecked casts would turn it into a
     * silently wrong runtime value instead.
     */
-  private def visitPat(pat0: TypedAst.Pattern)(implicit ctx: Context, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = pat0 match {
+  private def visitPat(pat0: TypedAst.Pattern)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = pat0 match {
     case TypedAst.Pattern.Tag(_, pats, tpe, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       pats.foreach(visitPat(_))
-      ctx.addFlow(Flow(tpArgs.map(typeToMonoArg(_)), mvar))
+      sctx.addFlow(Flow(tpArgs.map(typeToMonoArg(_)), mvar))
     case TypedAst.Pattern.Tuple(elms, _, _) =>
       elms.foreach(visitPat(_))
     case TypedAst.Pattern.Record(pats, pat, _, _) =>
