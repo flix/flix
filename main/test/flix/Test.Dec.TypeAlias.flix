@@ -229,9 +229,13 @@ mod Test.Dec.TypeAlias {
     type alias AssertEff = Assert
     type alias AssertFun = Int32 -> Int32 \ AssertEff
 
+    def testTypeAlias34Fn(x: Int32): Int32 \ Assert =
+        assertEq(expected = 21, x);
+        x * 2
+
     def testTypeAlias34Helper(f: AssertFun): Int32 \ Assert = f(21)
 
     @Test
     def testTypeAlias34(): Unit \ Assert =
-        assertEq(expected = 42, testTypeAlias34Helper(x -> x * 2))
+        assertEq(expected = 42, testTypeAlias34Helper(testTypeAlias34Fn))
 }
