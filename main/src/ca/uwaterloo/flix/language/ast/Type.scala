@@ -505,7 +505,7 @@ object Type {
   /**
     * A type represented by the type constructor `tc`.
     */
-  case class Cst(tc: TypeConstructor, loc: SourceLocation) extends Type with BaseType {
+  case class Cst(tc: TypeConstructor, loc: SourceLocation) extends Type {
     def kind: Kind = tc.kind
 
     override def hashCode(): Int = tc.hashCode()
@@ -573,7 +573,7 @@ object Type {
   /**
     * A type which must be reduced by finding the correct JVM constructor, method, or field.
     */
-  case class JvmToType(tpe: Type, loc: SourceLocation) extends Type with BaseType {
+  case class JvmToType(tpe: Type, loc: SourceLocation) extends Type {
     override def kind: Kind = Kind.Star
   }
 
