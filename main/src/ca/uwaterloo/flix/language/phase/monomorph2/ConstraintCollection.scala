@@ -97,7 +97,7 @@ object ConstraintCollection {
           visitType(MonomorphCanon.reduceAssocType(at)(root, flix))
         else
           dealiasedVisitType(arg)
-      case _: Type.Var(_, _)
+      case _ @ Type.Var(_, _)
            | Type.Cst(_, _) => ()
       case app @ Type.Apply(_, _, _) =>
         val args = app.typeArguments
