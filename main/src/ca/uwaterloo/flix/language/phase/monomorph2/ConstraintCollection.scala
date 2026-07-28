@@ -93,13 +93,12 @@ object ConstraintCollection {
     }
 
     ParOps.parMap(root.sigs.values.filter(_.exp.isDefined)) { sig =>
-      // We prepend traitTparam (e.g. `t` in `Foldable[t]`) since it isn't in sig.spec.tparams
-      // but is free in the default impl body.
+      // The trait's type parameter (e.g. `t` in `Foldable[t]`) is prepended since it isn't in sig.spec.tparams
+      // but it is free in the default impl body (which are the only ones we call `visitExp` on).
       val trt = root.traits(sig.sym.trt)
       val traitTparam = trt.tparam
       val allTparams = traitTparam :: sig.spec.tparams
-      // We synthesize a DefnSym so their own tparams classify as Param, not wrongly-ground Const.
-      // (Same is true for the effect-operation loop below.)
+      // We synthesize a DefnSym so their own tparams classify as Param, not  wrongly-ground Const. (As for fromEffects)
       val ns = sig.sym.trt.namespace :+ sig.sym.trt.name
       val defnSym = new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
       val mvar = MonoVar.Def(defnSym)
