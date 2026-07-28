@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
 
-import scala.collection.mutable
-
 /**
   * Constraint generation for constraint-based monomorphization: emits `Flow` constraints
   * describing how concrete types propagate through the program, for [[ConstraintSolver]] to solve.
