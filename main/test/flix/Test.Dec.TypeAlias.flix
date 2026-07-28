@@ -222,4 +222,16 @@ mod Test.Dec.TypeAlias {
     @Test
     def testTypeAlias33(): Unit \ Assert =
         assertEq(expected = true, testTypeAlias33Helper({x = 10, y = true, z = "Hello World"}))
+
+    ///
+    /// An effect alias used in the effect position of a function type alias.
+    ///
+    type alias AssertEff = Assert
+    type alias AssertFun = Int32 -> Int32 \ AssertEff
+
+    def testTypeAlias34Helper(f: AssertFun): Int32 \ Assert = f(21)
+
+    @Test
+    def testTypeAlias34(): Unit \ Assert =
+        assertEq(expected = 42, testTypeAlias34Helper(x -> x * 2))
 }
