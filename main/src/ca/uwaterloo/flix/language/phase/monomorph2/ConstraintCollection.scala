@@ -131,9 +131,13 @@ object ConstraintCollection {
           visitType(MonomorphCanon.reduceAssocType(at)(root, flix))
         else
           dealiasedVisitType(arg)
-      case _: Type.BaseType
-           | Type.Var(_, _)
-           | Type.Cst(_, _) => ()
+      case Type.Var(_, _)
+           | Type.Cst(_, _)
+           | Type.JvmToEff(_, _)
+           | Type.JvmToType(_, _)
+           | Type.UnresolvedJvmType(_, _)=> ()
+      case Type.Alias(_, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected type alias (should have been erased): $tpe", tpe.loc)
       case app @ Type.Apply(_, _, _) =>
         val args = app.typeArguments
         args.foreach(dealiasedVisitType)
@@ -477,7 +481,7 @@ object ConstraintCollection {
           MonoArg.Const(MonomorphCanon.reduceAssocType(at)(root, flix))
         else
           MonoArg.Assoc(symUse.sym, dealiasedTypeToMonoArg(arg), kind, assocLoc)
-      case Type.Cst(_, _) | _: Type.BaseType =>
+      case Type.Cst(_, _) =>
         MonoArg.Const(tpe)
       case Type.Apply(_, _, _) =>
         if (tpe.kind == Kind.Eff && tpe.typeVars.isEmpty)
