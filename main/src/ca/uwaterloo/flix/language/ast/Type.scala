@@ -144,9 +144,9 @@ sealed trait Type {
     * }}}
     *
     */
-  def baseType: Type.BaseType = this match {
+  def baseType: Type = this match {
     case Type.Apply(t1, _, _) => t1.baseType
-    case bt: Type.BaseType => bt
+    case bt => bt
   }
 
   /**
@@ -475,15 +475,9 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-    * The union of non-Apply types.
-    * Used to restrict the range of return values of [[Type.baseType]].
-    */
-  sealed trait BaseType extends Type
-
-  /**
     * A type variable.
     */
-  case class Var(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with BaseType with Ordered[Type.Var] {
+  case class Var(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with Ordered[Type.Var] {
 
     def withText(text: VarText): Var = Var(sym.withText(text), loc)
 
@@ -511,7 +505,7 @@ object Type {
   /**
     * A type represented by the type constructor `tc`.
     */
-  case class Cst(tc: TypeConstructor, loc: SourceLocation) extends Type with BaseType {
+  case class Cst(tc: TypeConstructor, loc: SourceLocation) extends Type {
     def kind: Kind = tc.kind
 
     override def hashCode(): Int = tc.hashCode()
@@ -560,14 +554,14 @@ object Type {
   /**
     * A type alias, including the arguments passed to it and the type it represents.
     */
-  case class Alias(symUse: TypeAliasSymUse, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
+  case class Alias(symUse: TypeAliasSymUse, args: List[Type], tpe: Type, loc: SourceLocation) extends Type {
     override def kind: Kind = tpe.kind
   }
 
   /**
     * An associated type.
     */
-  case class AssocType(symUse: AssocTypeSymUse, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType {
+  case class AssocType(symUse: AssocTypeSymUse, arg: Type, kind: Kind, loc: SourceLocation) extends Type {
     override def equals(obj: Any): Boolean = obj match {
       case that: AssocType => this.symUse.sym == that.symUse.sym && this.arg == that.arg
       case _ => false
@@ -579,21 +573,21 @@ object Type {
   /**
     * A type which must be reduced by finding the correct JVM constructor, method, or field.
     */
-  case class JvmToType(tpe: Type, loc: SourceLocation) extends Type with BaseType {
+  case class JvmToType(tpe: Type, loc: SourceLocation) extends Type {
     override def kind: Kind = Kind.Star
   }
 
   /**
     * An effect which must be reduced by finding the correct JVM constructor or method.
     */
-  case class JvmToEff(tpe: Type, loc: SourceLocation) extends Type with BaseType {
+  case class JvmToEff(tpe: Type, loc: SourceLocation) extends Type {
     override def kind: Kind = Kind.Eff
   }
 
   /**
     * An unresolved Java type. Once the type variables are resolved, this can be reduced to a normal type.
     */
-  case class UnresolvedJvmType(member: JvmMember, loc: SourceLocation) extends Type with BaseType {
+  case class UnresolvedJvmType(member: JvmMember, loc: SourceLocation) extends Type {
     override def kind: Kind = Kind.Jvm
   }
 
