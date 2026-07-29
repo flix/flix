@@ -58,6 +58,7 @@ jobs:
           - "JonathanStarup/Flix-ANSI-Terminal"
           - "JonathanStarup/ListSet"
           - "JonathanStarup/talpin1992-in-flix"
+          - "ababup1192/flix_game_engine"
           - "magnus-madsen/bibblitz"
           - "jaschdoc/flix-test-pkg-trust-transitive-plain"
           - "jaschdoc/flix-test-pkg-trust-transitive-java"
@@ -66,7 +67,6 @@ jobs:
           - "rywiese/scope-graphs"
           - "stephentetley/flix-htmldoc"
           - "stephentetley/flix-pretty"
-          - "ababup1192/flix_game_engine"
     runs-on: ubuntu-latest
     steps:
       - name: Install JDK

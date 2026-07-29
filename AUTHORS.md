@@ -100,3 +100,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Andreas Gotthelf Kühlwein Pedersen](https://github.com/ACoolWine)
 - [Fridolin Karger](https://github.com/LordBurtz)
 - [Vipul Bhardwaj](https://github.com/vipulbhj)
+- [Mirai Tomiyama](https://github.com/ababup1192)
