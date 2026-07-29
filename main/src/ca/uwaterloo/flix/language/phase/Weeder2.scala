@@ -256,7 +256,7 @@ object Weeder2 {
       expect(tree, TreeKind.Decl.Trait)
       val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
-      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordSealed))
+      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub, TokenKind.KeywordSealed))
       val ident = pickNameIdent(tree)
       val tparamsList = pick(TreeKind.TypeParameterList, tree)
       if (pickAll(TreeKind.Parameter, tparamsList).length != 1) {
@@ -267,9 +267,7 @@ object Weeder2 {
       val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree).map(visitAssociatedTypeSigDecl(_, tparam))
       val sigs = pickAll(TreeKind.Decl.Signature, tree)
       val sigs0 = sigs.map(visitSignatureDecl)
-      val laws = pickAll(TreeKind.Decl.Law, tree)
-      val laws0 = laws.map(visitLawDecl)
-      Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs0, laws0, tree.loc)
+      Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs0, tree.loc)
     }
 
     private def visitInstanceDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Declaration.Instance = {
@@ -336,22 +334,6 @@ object Weeder2 {
       val tconstrs = Types.pickConstraints(tree)
       val constrs = pickEqualityConstraints(tree)
       Declaration.Redef(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
-    }
-
-    private def visitLawDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Def = {
-      val doc = pickDocumentation(tree)
-      val ann = pickAnnotations(tree)
-      val mod = pickModifiers(tree, allowed = Set.empty)
-      val ident = pickNameIdent(tree)
-      val tparams = Types.pickKindedParameters(tree)
-      val fparams = pickFormalParameters(tree)
-      val expr = Exprs.pickExpr(tree)
-      val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
-      val eff = None
-      val tconstrs = Types.pickConstraints(tree)
-      val econstrs = pickEqualityConstraints(tree)
-      // TODO: There is a `Declaration.Law` but old Weeder produces a Def
-      Declaration.Def(doc, ann, mod, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
     }
 
     private def visitEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Enum = {
@@ -657,7 +639,6 @@ object Weeder2 {
 
     private val ALL_MODIFIERS: Set[TokenKind] = Set(
       TokenKind.KeywordSealed,
-      TokenKind.KeywordLawful,
       TokenKind.KeywordPub,
       TokenKind.KeywordMut)
 
@@ -693,7 +674,6 @@ object Weeder2 {
       }
       token.kind match {
         case TokenKind.KeywordSealed => Modifier.Sealed
-        case TokenKind.KeywordLawful => Modifier.Lawful
         case TokenKind.KeywordPub => Modifier.Public
         case TokenKind.KeywordMut => Modifier.Mutable
         case kind => throw InternalCompilerException(s"Parser passed unknown modifier '$kind'", token.mkSourceLocation())

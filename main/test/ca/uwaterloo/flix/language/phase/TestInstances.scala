@@ -643,36 +643,6 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
-  test("Test.UnlawfulSignature.01") {
-    val input =
-      """
-        |lawful trait C[a] {
-        |    pub def f(): a
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[InstanceError.UnlawfulSignature](result)
-  }
-
-  test("Test.UnlawfulSignature.02") {
-    val input =
-      """
-        |instance C[Int32] {
-        |    pub def f(x: Int32): Bool = true
-        |    pub def g(x: Int32): Bool = true
-        |}
-        |
-        |lawful trait C[a] {
-        |  pub def f(x: a): Bool
-        |  pub def g(x: a): Bool
-        |
-        |  law l: forall (x: a) C.f(x)
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[InstanceError.UnlawfulSignature](result)
-  }
-
   test("Test.MultipleErrors.01") {
     val input =
       """

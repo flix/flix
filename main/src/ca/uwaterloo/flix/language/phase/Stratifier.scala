@@ -68,9 +68,8 @@ object Stratifier {
     * Performs Stratification of the given trait `t0`.
     */
   private def visitTrait(t0: TypedAst.Trait)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Trait = {
-    val nl = t0.laws.map(visitDef)
     val ns = t0.sigs.map(visitSig)
-    t0.copy(laws = nl, sigs = ns)
+    t0.copy(sigs = ns)
   }
 
   /**

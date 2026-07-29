@@ -350,7 +350,7 @@ object Resolver {
             case decls => ResolvedAst.Declaration.Mod(doc, ann, mod, sym, usesAndImports, decls, loc)
           }
       }
-    case trt@NamedAst.Declaration.Trait(_, _, _, _, _, _, _, _, _, _) =>
+    case trt@NamedAst.Declaration.Trait(_, _, _, _, _, _, _, _, _) =>
       resolveTrait(trt, scp0, ns0)
     case inst@NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, _) =>
       resolveInstance(inst, scp0, ns0)
@@ -414,19 +414,17 @@ object Resolver {
     * Resolves all the traits in the given root.
     */
   private def resolveTrait(c0: NamedAst.Declaration.Trait, scp0: LocalScope, ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Trait, ResolutionError] = c0 match {
-    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures, laws0, loc) =>
+    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures, loc) =>
       val tparam = resolveTypeParam(tparam0, scp0, ns0, root)
       val scp = scp0 ++ mkTypeParamScp(List(tparam))
       // ignore the parameter of the super traits; we don't use it
       val superTraitsVal = traverse(superTraits0)(tconstr => resolveSuperTrait(tconstr, scp, taenv, ns0, root))
-      val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
       val assocs = assocs0.map(resolveAssocTypeSig(_, scp, taenv, ns0, root))
       val sigsList = signatures.map(resolveSig(_, sym, tparam.sym, scp)(ns0, taenv, sctx, root, flix))
-      val laws = laws0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
       mapN(superTraitsVal) {
         case superTraits =>
           val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-          ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
+          ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, loc)
       }
   }
 
@@ -2898,7 +2896,7 @@ object Resolver {
       // Then see if there's a module with this name declared in our namespace
       root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
         case Declaration.Mod(_, _, _, sym, _, _, _, _) => sym.ns
-        case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
@@ -2908,7 +2906,7 @@ object Resolver {
       // Then see if there's a module with this name declared in the root namespace
       root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
         case Declaration.Mod(_, _, _, sym, _, _, _, _) => sym.ns
-        case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
@@ -3283,7 +3281,7 @@ object Resolver {
     */
   private def getSym(symbol: NamedAst.Declaration): Symbol = symbol match {
     case NamedAst.Declaration.Mod(_, _, _, sym, _, _, _, _) => sym
-    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym
+    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym
     case NamedAst.Declaration.Def(sym, _, _, _) => sym
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym

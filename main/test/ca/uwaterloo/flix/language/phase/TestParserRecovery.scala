@@ -103,19 +103,6 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("IllegalDefName.05") {
-    val input =
-      """
-        |trait B[a] {
-        |    law A:forall() false
-        |}
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[ParseError](result)
-    expectMain(result)
-  }
-
   test("IllegalDefName.06") {
     val input =
       """

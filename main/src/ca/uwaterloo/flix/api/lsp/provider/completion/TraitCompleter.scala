@@ -75,7 +75,7 @@ object TraitCompleter {
   private def inScope(struct: TypedAst.Trait, scope: LocalScope): Boolean = {
     val thisName = struct.sym.toString
     val isResolved = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Trait(_, _, _, thatName, _, _, _, _, _, _)) => thisName == thatName.toString
+      case Resolution.Declaration(Trait(_, _, _, thatName, _, _, _, _, _)) => thisName == thatName.toString
       case _ => false
     })
     val isRoot = struct.sym.namespace.isEmpty

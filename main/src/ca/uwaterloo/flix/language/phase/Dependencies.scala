@@ -100,7 +100,6 @@ object Dependencies {
     trt.superTraits.foreach(visitTraitConstraint)
     trt.assocs.foreach(visitAssocTypeSig)
     trt.sigs.foreach(visitSig)
-    trt.laws.foreach(visitDef)
     trt
   }
 
