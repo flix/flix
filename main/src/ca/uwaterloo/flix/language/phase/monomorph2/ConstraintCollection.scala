@@ -17,11 +17,12 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, MatchRule, Predicate}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.shared.Denotation
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, RegionScope}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
@@ -199,15 +200,13 @@ object ConstraintCollection {
       requiredHandlers.foldLeft(defn.spec.eff) { case (eff, handler) =>
         val handlerDef = root.defs(handler.handlerSym)
         val handlerTparams = handlerDef.spec.tparams
-        val effMonoArg = typeToMonoArg(eff)
-        val retTpeMonoArg = typeToMonoArg(defn.spec.retTpe)
-        // Handler signature is `pub def h(f: Unit -> a \ ef): a \ ...`, but the relative order of
-        // `a`/`ef` in `handlerTparams` isn't guaranteed.
-        val args = handlerTparams.map(_.sym.kind) match {
-          case Kind.Eff  :: Kind.Star :: Nil => effMonoArg :: retTpeMonoArg :: Nil
-          case Kind.Star :: Kind.Eff  :: Nil => retTpeMonoArg :: effMonoArg :: Nil
-          case _ => throw InternalCompilerException(s"Expected a default handler with exactly one Star and one Eff tparam, but found: ${handlerTparams.map(_.sym.kind)}", loc)
-        }
+        // Handler signature is `pub def h(f: Unit -> a \ ef): a \ ...`, but `ef` may itself be e.g
+        // a sum of several free effect tparams (e.g. `ef1 + ef2`), therefore we unify the handler's
+        // declared parameter type against the concrete call site.
+        val concreteParamTpe = Type.mkArrowWithEffect(Type.Unit, eff, defn.spec.retTpe, loc)
+        val subst = ConstraintSolver2.fullyUnify(handlerDef.spec.fparams.head.tpe, concreteParamTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
+          .getOrElse(throw InternalCompilerException(s"Could not unify default handler '${handler.handlerSym}' against its call site.", loc))
+        val args = handlerTparams.map(tp => typeToMonoArg(subst(Type.Var(tp.sym, loc))))
         sctx.addFlow(Flow(args, MonoVar.Def(handler.handlerSym)))
         MonomorphCanon.canonicalEffect(Type.mkUnion(Type.mkDifference(eff, handler.handledEff, loc), Type.IO, loc))
       }
