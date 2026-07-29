@@ -435,17 +435,18 @@ object ConstraintCollection {
       constructors.foreach(c => visitExp(c.exp))
       methods.foreach(m => visitExp(m.exp))
 
-    // Lowering synthesizes Channel.get/put/newChannelTuple calls for GetChannel/PutChannel/
-    // NewChannel respectively.
+    // Lowering synthesizes a Channel.get call, generic over the channel's element type.
     case Expr.GetChannel(exp, tpe, _, _) =>
       visitExp(exp)
       sctx.addFlow(Flow(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(tpe))), MonoVar.Def(Defs.ChannelGet)))
 
+    // Lowering synthesizes a Channel.put call, generic over the element type.
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       sctx.addFlow(Flow(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(exp2.tpe))), MonoVar.Def(Defs.ChannelPut)))
 
+    // Lowering synthesizes a Channel.newChannelTuple call, generic over the element type.
     case Expr.NewChannel(exp, tpe, _, _) =>
       val elmType = extractChannelElm(tpe)
       visitExp(exp)
