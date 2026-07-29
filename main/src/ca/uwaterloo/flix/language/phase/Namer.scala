@@ -722,7 +722,7 @@ object Namer {
     */
   private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Instance = instance match {
     case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, econstrs, assocs, defs, loc) =>
-      val tparams = getImplicitTypeParamsFromTypes(List(tpe))
+      val tparams = getImplicitTypeParamsFromInstance(tpe, econstrs)
       val t = visitType(tpe)
       val tcsts = tconstrs.map(visitTraitConstraint)
       val ecsts = econstrs.map(visitEqualityConstraint)
@@ -1711,11 +1711,24 @@ object Namer {
   }
 
   /**
-    * Returns the implicit type parameters constructed from the given types.
+    * Returns the implicit type parameters of an instance, constructed from its head type `tpe`
+    * and its equality constraints `econstrs`.
+    *
+    * In addition to the free variables of the head type, we introduce a type variable for every
+    * free variable on the right-hand side of an equality constraint. This mirrors how defs treat
+    * their equality constraints (see [[visitImplicitTypeParamsFromFormalParams]]) and lets an
+    * instance name the result of an associated type, e.g.
+    * `instance Foo[Map[k, v]] where Bar.Baz[k] ~ a` introduces `a`.
     */
-  private def getImplicitTypeParamsFromTypes(types: List[DesugaredAst.Type])(implicit flix: Flix): List[NamedAst.TypeParam] = {
-    val tvars = types.flatMap(freeTypeVars).distinct
-    tvars.map {
+  private def getImplicitTypeParamsFromInstance(tpe: DesugaredAst.Type, econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+    val tpeTvars = freeTypeVars(tpe)
+
+    val econstrTvars = econstrs.flatMap {
+      // We only introduce vars from the right-hand-side of the constraint.
+      case DesugaredAst.EqualityConstraint(_, _, tpe2, _) => freeTypeVars(tpe2)
+    }
+
+    (tpeTvars ::: econstrTvars).distinct.map {
       ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident), ident.loc)
     }
   }

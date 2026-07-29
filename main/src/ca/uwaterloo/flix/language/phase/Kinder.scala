@@ -247,7 +247,12 @@ object Kinder {
   private def visitInstance(inst: ResolvedAst.Declaration.Instance, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Instance = inst match {
     case ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams0, tpe0, tconstrs0, econstrs0, assocs0, defs0, ns, loc) =>
       val kind = declKinds.traitKinds(symUse.sym)
-      val kenv = inferType(tpe0, kind, KindEnv.empty, root)
+      // The kind environment is inferred from the head type together with the equality constraints,
+      // so that type variables introduced on the right-hand side of an equality constraint (which
+      // do not appear in the head) are assigned the kind of the associated type's result.
+      val headKenv = inferType(tpe0, kind, KindEnv.empty, root)
+      val econstrsKenv = KindEnv.merge(econstrs0.map(inferEqualityConstraint(_, headKenv, root)))
+      val kenv = KindEnv.merge(headKenv, econstrsKenv)
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val t = visitType(tpe0, kind, kenv, root)
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, root))
