@@ -5,6 +5,7 @@ mod Test.Exp.Jvm.Instanceof {
     import java.lang.Long
     import java.lang.Number
     import java.lang.Object
+    import java.lang.{String => JString}
     import java.lang.StringBuilder
     import java.nio.file.OpenOption
     import java.nio.file.StandardOpenOption
@@ -290,6 +291,28 @@ mod Test.Exp.Jvm.Instanceof {
             case _ => -1
         };
         Assert.assertEq(expected = 0, n)
+    }
+
+    // Java-backed builtin: java.lang.String is a valid 'instanceof' rule type and dispatches on it.
+    @Test
+    def testInstanceofJString01(): Unit \ Assert = {
+        let o: Object = checked_cast("hello");
+        let tag = o instanceof {
+            case _: JString => "string"
+            case _ => "other"
+        };
+        Assert.assertEq(expected = "string", tag)
+    }
+
+    // Java-backed builtin: the bound name is typed as java.lang.String and its methods are callable.
+    @Test
+    def testInstanceofJString02(): Unit \ {Assert, IO} = {
+        let o: Object = checked_cast("hello");
+        let n = o instanceof {
+            case s: JString => s.length()
+            case _ => -1
+        };
+        Assert.assertEq(expected = 5, n)
     }
 
     // Polymorphic scrutinee: when called with a Java reference, the typed rule fires;

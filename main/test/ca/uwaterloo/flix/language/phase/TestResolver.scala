@@ -1298,13 +1298,12 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalInstanceOfType](result)
   }
 
-  test("IllegalInstanceOfType.NonNativeJavaType") {
+  test("IllegalInstanceOfType.Primitive") {
     val input =
       """
-        |import java.lang.{String => JString}
         |import java.lang.Object
         |def f(o: Object): Bool = o instanceof {
-        |    case _: JString => true
+        |    case _: Int32 => true
         |    case _ => false
         |}
         |""".stripMargin
