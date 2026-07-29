@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-pub mod Checksum {
-
-    import java.security.MessageDigest
-
-    ///
-    /// Returns the SHA-256 digest of the given bytes `v`.
-    ///
-    pub def sha256(v: Vector[Int8]): Vector[Int8] =
-        unsafe IO {
-            let md = MessageDigest.getInstance("SHA-256");
-            Array.toVector(md.digest(v))
-        }
-
-}
+///
+/// The `Util` module is a collection of general-purpose utility submodules,
+/// each offering a self-contained piece of functionality:
+///
+/// - `Util.Checksum` computes cryptographic digests, such as SHA-256.
+/// - `Util.Codec` encodes and decodes data, such as Base64.
+/// - `Util.GetOpt` parses command-line options and arguments.
+/// - `Util.Json` parses, builds, and serializes JSON values.
+///
+pub mod Util {}

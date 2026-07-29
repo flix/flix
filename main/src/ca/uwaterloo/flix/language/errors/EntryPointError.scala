@@ -187,35 +187,6 @@ object EntryPointError {
   }
 
   /**
-    * Error indicating an unexpected result type for the main entry point function.
-    *
-    * @param tpe the result type.
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalMainEntryPointResult(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
-    def code: ErrorCode = ErrorCode.E1403
-
-    def summary: String = s"Unexpected result type for main: '${FormatType.formatType(tpe)}'."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Unexpected result type '${red(FormatType.formatType(tpe))}' for main.
-         |
-         |${highlight(loc, "type has no ToString instance", fmt)}
-         |
-         |${underline("Explanation:")} The main function must return Unit or a type with a
-         |ToString instance so the result can be printed.
-         |
-         |To fix this, either:
-         |
-         |  (a) Change the return type to Unit,
-         |  (b) Define an instance of ToString for '${magenta(FormatType.formatType(tpe))}', or
-         |  (c) Derive an instance of ToString for '${magenta(FormatType.formatType(tpe))}'.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Error indicating an unexpected formal parameter in a runnable (test or main) entry point function.
     *
     * @param loc the location where the error occurred.
@@ -242,6 +213,28 @@ object EntryPointError {
          |
          |  @Test
          |  def testFoo(): Unit = ...
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Error indicating that the main entry point function has a non-Unit return type.
+    *
+    * @param tpe the actual (non-Unit) result type.
+    * @param loc the location where the error occurred.
+    */
+  case class MainNonUnitReturnType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
+    def code: ErrorCode = ErrorCode.E1403
+
+    def summary: String = s"Unexpected result type for main: '${FormatType.formatType(tpe)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected result type '${red(FormatType.formatType(tpe))}' for main.
+         |
+         |${highlight(loc, "the result type must be Unit", fmt)}
+         |
+         |${underline("Explanation:")} The main function must return Unit.
          |""".stripMargin
     }
   }

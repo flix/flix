@@ -216,7 +216,12 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
           Err(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None))
       }
     } catch {
-      case ex: RuntimeException => Err(ex.getMessage)
+      // Catch `Throwable` (not just `RuntimeException`): a successfully compiled
+      // program can crash at runtime by throwing a `FlixError` (e.g. `HoleError`,
+      // `MatchError`, `CastError`), which extends `java.lang.Error`, not
+      // `RuntimeException`. If such an error escaped, no response would be sent
+      // and the client (play.flix.dev) would hang. See issue #11540.
+      case ex: Throwable => Err(Option(ex.getMessage).getOrElse(ex.toString))
     }
   }
 

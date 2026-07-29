@@ -56,6 +56,17 @@ object TypeConstraint {
     */
   case class Equality(tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
+
+    /**
+      * Creates a new Equality, reusing this one if the types are unchanged.
+      */
+    def renew(newTpe1: Type, newTpe2: Type): Equality = {
+      if ((tpe1 eq newTpe1) && (tpe2 eq newTpe2)) {
+        this
+      } else {
+        Equality(newTpe1, newTpe2, prov)
+      }
+    }
   }
 
   /**

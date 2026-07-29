@@ -3,6 +3,7 @@ mod Test.Exp.Concurrency.Spawn {
     import java.lang.NullPointerException
     import java.lang.{Thread => JThread}
 
+    use Assert.assertEq
     use Assert.assertTrue
 
     @Test
@@ -58,6 +59,21 @@ mod Test.Exp.Concurrency.Spawn {
 
     @Test
     def testSpawn18(): Unit = region rc { spawn spawn spawn 123 @ rc @ rc @ rc }
+
+    // A spawn `spawn exp @ region` must evaluate its region expression at the spawn site,
+    // and the spawned thread must run. The closure for `exp` is created before the region is
+    // evaluated, matching left-to-right source order, even though codegen pushes the region
+    // (the receiver of `Region.spawn`) before the closure (its argument).
+    // See https://github.com/flix/flix/issues/10707.
+    @Test
+    def testSpawnRegionEvalOrder01(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let regionEvaluated = Ref.fresh(rc, false);
+        let (tx, rx) = Channel.buffered(1);
+        spawn { Channel.send(42, tx) } @ { Ref.put(true, regionEvaluated); rc };
+        let received = Channel.recv(rx);
+        assertEq(expected = 42, received);
+        assertEq(expected = true, Ref.get(regionEvaluated))
+    }
 
     @Test
     def testExceptionsInChildThread01(): Unit \ (Assert + IO) =

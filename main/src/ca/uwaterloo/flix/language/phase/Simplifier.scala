@@ -136,6 +136,21 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
 
+        case AtomicOp.VectorLit =>
+          // Note: We simplify Vectors to Arrays.
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, es, t, purity, loc)
+
+        case AtomicOp.VectorLoad =>
+          // Note: We simplify Vectors to Arrays.
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, es, t, purity, loc)
+
+        case AtomicOp.VectorLength =>
+          // Note: We simplify Vectors to Arrays.
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, es, t, purity, loc)
+
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef
           val List(e1, e2) = es
@@ -143,7 +158,16 @@ object Simplifier {
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), SimpleType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, Purity.Impure, loc)
+          // Here `e1` is the spawned expression and `e2` is the region (i.e. `spawn e1 @ e2`).
+          // In source order the closure for `e1` is created before the region is evaluated, but
+          // codegen pushes the region (the receiver of `Region.spawn`) before the closure (its
+          // argument). We let-bind the closure so that it is created first; the region stays the
+          // second argument so codegen can still recognize the `Static` region.
+          // See: https://github.com/flix/flix/issues/10707
+          val closureSym = Symbol.freshVarSym("spawnClosure" + Flix.Delimiter, BoundBy.Let, loc)
+          val closureVar = SimplifiedAst.Expr.Var(closureSym, lambdaTyp, loc)
+          val spawnExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(closureVar, e2), t, Purity.Impure, loc)
+          SimplifiedAst.Expr.Let(closureSym, lambdaExp, spawnExp, t, Purity.Impure, loc)
 
         case AtomicOp.Lazy =>
           // Wrap the expression in a closure: () -> tpe \ Pure
@@ -209,25 +233,6 @@ object Simplifier {
       val ef = simplifyEffect(eff)
       extMatch(e, rules, t, ef, loc)
 
-    case MonoAst.Expr.VectorLit(exps, tpe, _, loc) =>
-      // Note: We simplify Vectors to Arrays.
-      val es = exps.map(visitExp)
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, es, t, Purity.Pure, loc)
-
-    case MonoAst.Expr.VectorLoad(exp1, exp2, tpe, _, loc) =>
-      // Note: We simplify Vectors to Arrays.
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), t, Purity.Pure, loc)
-
-    case MonoAst.Expr.VectorLength(exp, loc) =>
-      // Note: We simplify Vectors to Arrays.
-      val e = visitExp(exp)
-      val purity = e.purity
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), SimpleType.Int32, purity, loc)
-
     case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -254,11 +259,11 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
+    case MonoAst.Expr.NewObject(sym, clazz, tpe, eff, constructors0, methods0, loc) =>
       val t = visitType(tpe)
       val constructors = constructors0 map visitJvmConstructor
       val methods = methods0 map visitJvmMethod
-      SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), constructors, methods, loc)
+      SimplifiedAst.Expr.NewObject(sym, clazz, t, simplifyEffect(eff), constructors, methods, loc)
 
   }
 

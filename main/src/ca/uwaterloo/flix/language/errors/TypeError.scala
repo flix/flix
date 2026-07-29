@@ -17,12 +17,11 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{TypedAst, *}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
+import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -58,7 +57,7 @@ object TypeError {
     *
     * @param expected the list of effects declared in the function signature
     * @param actual   the list of effects present on the argument at the call site
-    * @param loc1      the source location of the call site (where the argument is passed)
+    * @param loc1     the source location of the call site (where the argument is passed)
     * @param loc2     the source location of the function signature (where the expected effect is declared)
     * @param loc3     the source location of the argument definition (where the actual effect originates)
     */
@@ -69,26 +68,23 @@ object TypeError {
 
     override def locs: List[SourceLocation] = List(loc2, loc3)
 
-    private def effectsToString(effs: List[EffSymOrRigidVar]): String = EffSymOrRigidVar.format(effs)
-    
-    def summary: String =
-      s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
+    def summary: String = s"Mismatched effect: expected ${EffSymOrRigidVar.format(expected)}, but got ${EffSymOrRigidVar.format(actual)}"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched effect(s): expected ${magenta(effectsToString(expected))}, but got ${red(effectsToString(actual))}.
+      s""">> Mismatched effect(s): expected ${magenta(EffSymOrRigidVar.format(expected))}, but got ${red(EffSymOrRigidVar.format(actual))}.
          |
-         |${highlight(loc2, s"function expected argument with effect(s) ${magenta(effectsToString(expected))}", fmt)}
+         |${highlight(loc2, s"function expected argument with effect(s) ${magenta(EffSymOrRigidVar.format(expected))}", fmt)}
          |
-         |${highlight(loc1, s"function argument with effect(s) ${red(effectsToString(actual))} was passed", fmt)}
+         |${highlight(loc1, s"function argument with effect(s) ${red(EffSymOrRigidVar.format(actual))} was passed", fmt)}
          |
          |${highlight(loc3, s"the culprit", fmt)}
          |
-         |${underline("Explanation:")} A function with effect(s) ${magenta(effectsToString(expected))} cannot accept an argument
-         |that carries effect(s) ${red(effectsToString(actual))}. Either:
+         |${underline("Explanation:")} A function with effect(s) ${magenta(EffSymOrRigidVar.format(expected))} cannot accept an argument
+         |that carries effect(s) ${red(EffSymOrRigidVar.format(actual))}. Either:
          |
-         |  (a) Change the argument to use effect(s) ${magenta(effectsToString(expected))}, or
-         |  (b) Update the function signature to accept effect(s) ${red(effectsToString(actual))}.
+         |  (a) Change the argument to use effect(s) ${magenta(EffSymOrRigidVar.format(expected))}, or
+         |  (b) Update the function signature to accept effect(s) ${red(EffSymOrRigidVar.format(actual))}.
          |""".stripMargin
     }
   }
@@ -183,8 +179,8 @@ object TypeError {
     *
     * @param defEffSyms the symbol(s) the effect(s) in the function definition
     * @param usedEffSym the symbol of the effect causing the error
-    * @param loc1    the location of the function explicitly declared as defEffSym.
-    * @param loc2   the location where the other effect is used.
+    * @param loc1       the location of the function explicitly declared as defEffSym.
+    * @param loc2       the location where the other effect is used.
     */
   case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6216
@@ -193,11 +189,11 @@ object TypeError {
 
     override def locs: List[SourceLocation] = List(loc1)
 
-    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as ${effectsToString(defEffSyms)}"
+    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as ${EffSymOrRigidVar.format(defEffSyms)}"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      val defString = s"{${magenta(effectsToString(defEffSyms))}}"
+      val defString = s"${magenta(EffSymOrRigidVar.format(defEffSyms))}"
       s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as $defString.
          |
          |${highlight(loc1, s"function declared as $defString", fmt)}
@@ -206,7 +202,7 @@ object TypeError {
          |
          |${underline("Explanation:")} The function is explicitly declared as $defString,
          |meaning it may not perform other effects. Since '${magenta(usedEffSym.name)}' is another effect,
-         |it cannot be used in this function. To fix this, either add ${magenta(usedEffSym.name)} to $defString
+         |it cannot be used in this function. To fix this, either add '${magenta(usedEffSym.name)}' to $defString
          |or remove the use of '${magenta(usedEffSym.name)}' inside the function.
          |""".stripMargin
     }
@@ -216,7 +212,7 @@ object TypeError {
     * An error raised when an effect is used in a function that is explicitly declared Pure.
     *
     * @param effSym the symbol of the effect causing the error
-    * @param loc1    the location of the function explicitly declared as {}.
+    * @param loc1   the location of the function explicitly declared as {}.
     * @param loc2   the location where the effect is used.
     */
   case class ExplicitlyPureFunctionUsesEffect(effSym: EffSymOrRigidVar, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
@@ -247,7 +243,7 @@ object TypeError {
   /**
     * An error raised when IO is used in a function that is explicitly declared Pure.
     *
-    * @param loc1  the location of the function explicitly declared as {}.
+    * @param loc1 the location of the function explicitly declared as {}.
     * @param loc2 the location where IO is used.
     */
   case class ExplicitlyPureFunctionUsesIO(loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
@@ -331,19 +327,25 @@ object TypeError {
   }
 
   /**
+    * An error raised when an effect that is already handled by a handler also
+    * appears among the expected effects in the enclosing function's signature.
+    *
+    * @param handledEff the symbol of the effect that is handled but also declared in the signature
+    * @param loc        the location of the handled effect
+    * @param sigLoc     the location where the effect reappears in the function signature
     */
   case class HandledEffectAppearsInSignature(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6220
 
-    def summary: String = s"handled effect '${handledEff.name}', reappears in signature"
+    def summary: String = s"Handled effect '${handledEff.name}', reappears in signature"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s"""handled effect among expected effects in signature:
+      s"""Handled effect among expected effects in signature:
          |${highlight(loc, s"handled effect: '${magenta(handledEff.name)}'", fmt)}
          |${highlight(sigLoc, "also appears in the signature", fmt)}
          |
-         |${underline("Solution:")} To fix this remove '${(magenta(handledEff.name))}' from the signature
+         |${underline("Solution:")} To fix this remove '${magenta(handledEff.name)}' from the signature
          |or subtract it from the other effect(s)
          |""".stripMargin
     }
@@ -593,6 +595,40 @@ object TypeError {
          |
          |Type One: ${cyan(formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb))}
          |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb))}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * A mismatch between a function (arrow) type and a non-function type.
+    *
+    * This is a special case of [[MismatchedTypes]]: a function and a non-function can never be
+    * unified, regardless of effects.
+    *
+    * @param arrowType    the function (arrow) type.
+    * @param nonArrowType the non-function type.
+    * @param fullType1    the first full type.
+    * @param fullType2    the second full type.
+    * @param renv         the rigidity environment.
+    * @param loc          the location where the error occurred.
+    */
+  case class MismatchedArrowAndNonArrow(arrowType: Type, nonArrowType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6925
+
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(fullType1), SymbolSet.symbolsOf(fullType2))
+
+    def summary: String = s"Unable to unify the function type '${formatType(arrowType, Some(renv), minimizeEffs = true, amb = amb)}' with the non-function type '${formatType(nonArrowType, Some(renv), minimizeEffs = true, amb = amb)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unable to unify the ${magenta("function")} type '${red(formatType(arrowType, Some(renv), minimizeEffs = true, amb = amb))}' with the non-function type '${red(formatType(nonArrowType, Some(renv), minimizeEffs = true, amb = amb))}'.
+         |
+         |${highlight(loc, "mismatched types.", fmt)}
+         |
+         |Type One: ${cyan(formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb))}
+         |
+         |${underline("Explanation:")} A ${magenta("function")} type can never be equal to a non-function type, regardless of effects.
          |""".stripMargin
     }
   }
@@ -930,8 +966,8 @@ object TypeError {
     * An unhandled effect error.
     *
     * Occurs when an effect used inside a `run` expression is neither:
-    *   (a) handled by a handler
-    *   (b) declared in the enclosing function's effect signature.
+    * (a) handled by a handler
+    * (b) declared in the enclosing function's effect signature.
     *
     * @param unhandled  The effect symbol or rigid variable that is unhandled.
     * @param signature  The effect symbol or rigid variable representing the signature.
@@ -1035,10 +1071,20 @@ object TypeError {
     }
   }
 
+  /**
+    * An error raised when a handler handles an effect that is neither used by
+    * any expression inside its `run` block nor declared in the enclosing
+    * function's effect signature.
+    *
+    * @param handledEff the symbol of the effect handled by the handler but never used
+    * @param loc        the location of the handler for the unused effect
+    * @param sigLoc     the location of the enclosing function's effect signature
+    * @param sourceLoc  the location of the `run` block's expression that fails to use the effect
+    */
   case class UnusedHandlerEffect(handledEff: EffSymOrRigidVar, loc: SourceLocation, sigLoc: SourceLocation, sourceLoc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6219
 
-    def summary: String = s"handler effect '${handledEff.name}' is unused"
+    def summary: String = s"Handler effect '${handledEff.name}' is unused"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
@@ -1094,14 +1140,6 @@ object TypeError {
       Type.getFlixType(tpe).toString
     else
       tpe.getName
-  }
-
-  /**
-    * Returns the effect set as a string.
-    */
-  private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
-    case x :: Nil => s"'${x.name}'"
-    case xs => xs.map(_.name).mkString("'{", ", ", "}'")
   }
 
 }

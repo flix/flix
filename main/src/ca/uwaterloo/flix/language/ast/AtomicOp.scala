@@ -64,6 +64,12 @@ object AtomicOp {
 
   case object ArrayLength extends AtomicOp
 
+  case object VectorLit extends AtomicOp
+
+  case object VectorLoad extends AtomicOp
+
+  case object VectorLength extends AtomicOp
+
   case class StructNew(sym: Symbol.StructSym, mutability: Mutability, fields: List[Symbol.StructFieldSym]) extends AtomicOp
 
   case class StructGet(sym: Symbol.StructFieldSym) extends AtomicOp
@@ -84,7 +90,7 @@ object AtomicOp {
 
   case class InvokeMethod(method: Method) extends AtomicOp
 
-  case class InvokeSuperMethod(method: Method, className: String) extends AtomicOp
+  case class InvokeSuperMethod(sym: Symbol.AnonClassSym, method: Method) extends AtomicOp
 
   case class InvokeStaticMethod(method: Method) extends AtomicOp
 

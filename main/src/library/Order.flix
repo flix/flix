@@ -142,14 +142,6 @@ pub mod Order {
     pub def maxBy(cmp: (a, a) -> Comparison, x: a, y: a): a =
         if (cmp(x, y) == Comparison.LessThan) y else x
 
-    ///
-    /// Lazily combines two comparisons.
-    ///
-    /// If `c1` is either `Comparison.LessThan` or `Comparison.GreaterThan` then `c2` is never evaluated.
-    ///
-    pub def thenCompare(c1: Comparison, c2: Lazy[Comparison]): Comparison =
-        if (c1 != Comparison.EqualTo) c1 else force c2
-
     instance Order[Unit] {
 
         pub def compare(_: Unit, _: Unit): Comparison = Comparison.EqualTo

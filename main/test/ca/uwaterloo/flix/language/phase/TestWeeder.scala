@@ -196,6 +196,30 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
+  test("EmptyInterpolatedExpression.07") {
+    val input = "def f(x: String): String = \"${x}${}\""
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
+  test("EmptyInterpolatedExpression.08") {
+    val input = "def f(x: String): String = \"${}${x}\""
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
+  test("EmptyInterpolatedExpression.09") {
+    val input = "def f(x: String, y: String): String = \"${x}${}${y}\""
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
+  test("EmptyInterpolatedExpression.10") {
+    val input = "def f(y: String): String = \"${}abc${y}\""
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
   test("EmptyRecordExtensionPattern.01") {
     val input =
       """
@@ -783,7 +807,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalModifier.02") {
     val input =
       """
-        |override enum A
+        |mut enum A
         |
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -813,7 +837,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalModifier.05") {
     val input =
       """instance Sub[String] {
-        |    pub override redef sub(x: String, y: String): String = ???
+        |    pub redef sub(x: String, y: String): String = ???
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)

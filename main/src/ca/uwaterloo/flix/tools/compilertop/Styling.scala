@@ -35,6 +35,10 @@ object Styling {
   private val HeapYellowThresholdRatio:        Double = 0.7
   private val HotnessRedThresholdMsPerLine:    Double = 25.0
   private val HotnessYellowThresholdMsPerLine: Double = 15.0
+  private val ModuleHotnessRedThresholdMsPerLine:    Double = 4.0
+  private val ModuleHotnessYellowThresholdMsPerLine: Double = 2.0
+  private val ObservedRedThresholdPct:         Double = 25.0
+  private val ObservedYellowThresholdPct:      Double = 50.0
   private val PctCpuRedThreshold:              Double = 5.0
   private val PctCpuYellowThreshold:           Double = 1.0
   private val PctWallRedThreshold:             Double = 15.0
@@ -55,14 +59,33 @@ object Styling {
   /**
     * Colors the sym name based on its hotness (ms-per-source-line) — surfaces
     * small defs that consume time disproportionate to their body size. Defs
-    * with no real source span (`locLines <= 0`) are left unstyled because the
+    * with no real source span (`lines <= 0`) are left unstyled because the
     * denominator is meaningless; [[hotnessMsPerLine]] returns 0 for them so
     * they fall below the yellow threshold and pass through unchanged.
+    *
+    * Bold is deliberately NOT used here — the renderer reserves it as the
+    * "currently being compiled" signal on def-row first cells, so bold
+    * composes naturally with red/yellow when a hot def is also active.
     */
-  def styleSym(name: String, nanos: Long, locLines: Int): String = {
-    val msPerLine = Formatting.hotnessMsPerLine(nanos, locLines)
-    if (msPerLine >= HotnessRedThresholdMsPerLine) bold(red(name))
+  def styleSym(name: String, nanos: Long, lines: Int): String = {
+    val msPerLine = Formatting.hotnessMsPerLine(nanos, lines)
+    if (msPerLine >= HotnessRedThresholdMsPerLine) red(name)
     else if (msPerLine >= HotnessYellowThresholdMsPerLine) yellow(name)
+    else name
+  }
+
+  /**
+    * Module-row analogue of [[styleSym]]: colors a module name by its
+    * aggregate hotness (summed ms / summed source lines). Uses the same
+    * absolute two-tier red/yellow scheme but with much lower cutoffs —
+    * averaging a module's cost over all its lines dilutes the per-line
+    * figure, so it never approaches the per-def thresholds. Calibrated so
+    * the densest modules light up while the bulk stay plain.
+    */
+  def styleModule(name: String, nanos: Long, lines: Int): String = {
+    val msPerLine = Formatting.hotnessMsPerLine(nanos, lines)
+    if (msPerLine >= ModuleHotnessRedThresholdMsPerLine) red(name)
+    else if (msPerLine >= ModuleHotnessYellowThresholdMsPerLine) yellow(name)
     else name
   }
 
@@ -80,6 +103,18 @@ object Styling {
     else formatted
   }
 
+  /**
+    * Darker-shade companion to [[stylePctWall]] for the unaccounted (blind)
+    * run of the phase wall-time bar: the *same* heat hue as [[stylePctWall]]
+    * but dimmed (and without the red tier's bold), so the blind run reads as a
+    * darker shade of the observed run's color rather than a different color.
+    */
+  def stylePctWallDim(formatted: String, pct: Double): String = {
+    if (pct >= PctWallRedThreshold) dim(red(formatted))
+    else if (pct >= PctWallYellowThreshold) dim(yellow(formatted))
+    else dim(formatted)
+  }
+
   /** Colors the active/parallelism field by occupancy: full=green bold, ≥50%=green, idle=gray, else yellow. */
   def styleThreads(active: Int, par: Int): String = {
     val s = f"$active%2d/$par%-2d"
@@ -95,5 +130,17 @@ object Styling {
     if (ratio >= HeapRedThresholdRatio) bold(red(formatted))
     else if (ratio >= HeapYellowThresholdRatio) yellow(formatted)
     else green(formatted)
+  }
+
+  /**
+    * Colors the dashboard `observed` percentage. Inverted from the other tiers
+    * because *high* coverage is the good outcome: a healthy figure stays the
+    * default dim/gray (no warning), dropping to yellow below the yellow cutoff
+    * and red below the red cutoff.
+    */
+  def styleObserved(formatted: String, pct: Double): String = {
+    if (pct < ObservedRedThresholdPct) red(formatted)
+    else if (pct < ObservedYellowThresholdPct) yellow(formatted)
+    else dim(formatted)
   }
 }

@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Den
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Result}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
 /**
@@ -409,16 +409,17 @@ object Lowering {
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      MonoAst.Expr.VectorLit(es, t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLit, es, t, eff, loc)
 
     case TypedAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
-      MonoAst.Expr.VectorLoad(e1, e2, t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLoad, List(e1, e2), t, eff, loc)
 
     case TypedAst.Expr.VectorLength(exp, loc) =>
-      MonoAst.Expr.VectorLength(lowerExp(exp), loc)
+      val e = lowerExp(exp)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLength, List(e), Type.Int32, e.eff, loc)
 
     case TypedAst.Expr.Ascribe(exp, _, _, _, _, _) =>
       lowerExp(exp)
@@ -518,9 +519,9 @@ object Lowering {
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      (lctx.className, lctx.thisRef) match {
-        case (Some(cn), Some(thisRef)) =>
-          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(method, cn), thisRef :: es, t, eff, loc)
+      (lctx.sym, lctx.thisRef) match {
+        case (Some(sym), Some(thisRef)) =>
+          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, method), thisRef :: es, t, eff, loc)
         case _ =>
           throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
       }
@@ -557,17 +558,17 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, eff, loc)
 
-    case TypedAst.Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+    case TypedAst.Expr.NewObject(sym, clazz, tpe, eff, constructors, methods, loc) =>
       val cs = constructors.map(lowerJvmConstructor)
       val ms = methods.map { m =>
         val thisParam = m.fparams.head
         val thisTpe = lowerType(thisParam.tpe)
         val thisRef = MonoAst.Expr.Var(thisParam.bnd.sym, thisTpe, loc)
-        implicit val lctx: LocalContext = LocalContext(Some(name), Some(thisRef))
-        lowerJvmMethod(m)
+        implicit val lctx: LocalContext = LocalContext(Some(sym), Some(thisRef))
+        lowerJvmMethod(m, clazz)
       }
       val t = lowerType(tpe)
-      MonoAst.Expr.NewObject(name, clazz, t, eff, cs, ms, loc)
+      MonoAst.Expr.NewObject(sym, clazz, t, eff, cs, ms, loc)
 
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -667,13 +668,27 @@ object Lowering {
   /**
     * Lowers the given JvmMethod `method`.
     */
-  private def lowerJvmMethod(method: TypedAst.JvmMethod)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
-    case TypedAst.JvmMethod(ann, ident, fparams, exp, retTyp, eff, loc) =>
+  private def lowerJvmMethod(method: TypedAst.JvmMethod, clazz: Class[?])(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+    case TypedAst.JvmMethod(ann, ident, fparams, exp, _, eff, loc) =>
       val fs = fparams.map(lowerFormalParam)
-      val e = lowerExp(exp)
-      val t = lowerType(retTyp)
-      MonoAst.JvmMethod(ann, ident, fs, e, t, eff, loc)
+      val e0 = lowerExp(exp)
+      // If this method overrides a Java method whose erased return type is a reference
+      // (e.g. `Object` for a generic interface method) but the Flix result is a primitive,
+      // box it so the value matches the erased JVM signature. This mirrors the boxing applied
+      // to generic Java method *calls* above (see `boxIfNecessary` in InvokeMethod), and the
+      // call site unboxes the result symmetrically.
+      val e = overriddenJavaReturnType(clazz, ident.name, fparams.tail.length) match {
+        case Some(javaReturnType) => boxIfNecessary(e0, javaReturnType)
+        case None => e0
+      }
+      MonoAst.JvmMethod(ann, ident, fs, e, e.tpe, eff, loc)
   }
+
+  /** Returns the erased return type of the Java method on `clazz` matching `name` and `arity` (excluding the receiver). */
+  private def overriddenJavaReturnType(clazz: Class[?], name: String, arity: Int): Option[Class[?]] =
+    JvmUtils.getOverridableInstanceMethods(clazz).collectFirst {
+      case m if m.getName == name && m.getParameterCount == arity => m.getReturnType
+    }
 
   /**
     * Lowers the given catch rule `rule0`.
@@ -1160,12 +1175,25 @@ object Lowering {
     * Channel put expressions are rewritten as follows:
     * {{{ c <- 42 }}}
     * becomes a call to the standard library function:
-    * {{{ Concurrent/Channel.put(42, c) }}}
+    * {{{ let chan = c; let value = 42; Concurrent/Channel.put(value, chan) }}}
+    *
+    * Here `exp1` is the channel and `exp2` is the value (i.e. `exp1 <- exp2`). In source order
+    * the channel is evaluated before the value, but `Channel.put` takes the value before the
+    * channel. We let-bind both expressions in source order so that reordering them into the
+    * argument list does not change their evaluation order. See:
+    * https://github.com/flix/flix/issues/10378
     */
   private def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, eff: Type, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val chanSym = mkLetSym("chan", loc)
+    val valueSym = mkLetSym("value", loc)
+    val chanVar = MonoAst.Expr.Var(chanSym, exp1.tpe, loc)
+    val valueVar = MonoAst.Expr.Var(valueSym, exp2.tpe, loc)
     val itpe = lowerType(Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc))
     val defnSym = lookup(Defs.ChannelPut, itpe)
-    MonoAst.Expr.ApplyDef(defnSym, List(exp2, exp1), itpe, Type.Unit, eff, loc)
+    val putExp = MonoAst.Expr.ApplyDef(defnSym, List(valueVar, chanVar), itpe, Type.Unit, eff, loc)
+    // The channel binding is the outermost let, so the channel is evaluated before the value.
+    val valueLet = MonoAst.Expr.Let(valueSym, exp2, putExp, Type.Unit, eff, Occur.Unknown, loc)
+    MonoAst.Expr.Let(chanSym, exp1, valueLet, Type.Unit, eff, Occur.Unknown, loc)
   }
 
   /**
@@ -2091,7 +2119,7 @@ object Lowering {
     * Returns a vector expression constructed from the given `exps` with type list of `elmType`.
     */
   private def mkVector(exps: List[MonoAst.Expr], elmType: Type, loc: SourceLocation): MonoAst.Expr = {
-    MonoAst.Expr.VectorLit(exps, Type.mkVector(elmType, loc), Type.Pure, loc)
+    MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLit, exps, Type.mkVector(elmType, loc), Type.Pure, loc)
   }
 
   /**
@@ -2207,19 +2235,6 @@ object Lowering {
           MonoAst.ExtMatchRule(p, e1, loc1)
       }
       MonoAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
-
-    case MonoAst.Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(substExp(_, subst))
-      MonoAst.Expr.VectorLit(es, tpe, eff, loc)
-
-    case MonoAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      MonoAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
-
-    case MonoAst.Expr.VectorLength(exp, loc) =>
-      val e = substExp(exp, subst)
-      MonoAst.Expr.VectorLength(e, loc)
 
     case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -2513,7 +2528,7 @@ object Lowering {
     * A local context threaded through `lowerExp` to carry information from an
     * enclosing `NewObject` to nested `InvokeSuperMethod` expressions.
     *
-    * @param className The internal name of the enclosing anonymous class (e.g. `"pkg.Anon$1"`).
+    * @param className The internal name of the enclosing anonymous class.
     *                  Set to `Some` when lowering a `NewObject` method body; `None` otherwise.
     *                  Injected into `AtomicOp.InvokeSuperMethod` so the backend can generate
     *                  the `CHECKCAST` and `INVOKEVIRTUAL super$methodName` instructions.
@@ -2521,7 +2536,7 @@ object Lowering {
     *                  parameter of the JvmMethod). Prepended to `InvokeSuperMethod` arguments
     *                  so the backend receives the receiver object as the first expression.
     */
-  private case class LocalContext(className: Option[String], thisRef: Option[MonoAst.Expr])
+  private case class LocalContext(sym: Option[Symbol.AnonClassSym], thisRef: Option[MonoAst.Expr])
 
   private object LocalContext {
     val empty: LocalContext = LocalContext(None, None)

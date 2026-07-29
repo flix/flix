@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.util.Result
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import scala.annotation.unused
 
 /**
   * The FormatterLsp object provides functionality to format Flix source files using the [[PrettyPrinter]].
@@ -54,10 +55,8 @@ object FormatterLsp {
   def format(root: SyntaxTree.Root, uri: String): List[TextEdit] =
     findTreeBasedOnUri(root, uri).map(treeToTextEdits).getOrElse(Nil)
 
-  private def treeToTextEdits(tree: SyntaxTree.Tree): List[TextEdit] = {
-    val formatted = PrettyPrinter.format(tree)
-    List(TextEdit(Range(Position(1, 1), Position(Int.MaxValue, 1)), formatted))
-  }
+  // TODO: Call the actual formatter here as soon as it is merged.
+  private def treeToTextEdits(@unused tree: SyntaxTree.Tree): List[TextEdit] = Nil
 
   /**
     * Applies the given text edits to the file at the specified path.

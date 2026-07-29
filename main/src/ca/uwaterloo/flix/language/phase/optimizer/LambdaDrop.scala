@@ -187,16 +187,6 @@ object LambdaDrop {
           visitExp(exp1)
       }
 
-    case Expr.VectorLit(exps, _, _, _) =>
-      exps.foreach(visitExp)
-
-    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
-
-    case Expr.VectorLength(exp, _) =>
-      visitExp(exp)
-
     case Expr.Cast(exp, _, _, _) =>
       visitExp(exp)
 
@@ -320,19 +310,6 @@ object LambdaDrop {
       }
       Expr.ExtMatch(e, rs, tpe, eff, loc)
 
-    case Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(rewriteExp)
-      Expr.VectorLit(es, tpe, eff, loc)
-
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = rewriteExp(exp1)
-      val e2 = rewriteExp(exp2)
-      Expr.VectorLoad(e1, e2, tpe, eff, loc)
-
-    case Expr.VectorLength(exp, loc) =>
-      val e = rewriteExp(exp)
-      Expr.VectorLength(e, loc)
-
     case Expr.Cast(exp, tpe, eff, loc) =>
       val e = rewriteExp(exp)
       Expr.Cast(e, tpe, eff, loc)
@@ -355,7 +332,7 @@ object LambdaDrop {
       }
       Expr.RunWith(e1, effUse, rs, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff1, constructors, methods, loc1) =>
+    case Expr.NewObject(sym, clazz, tpe, eff1, constructors, methods, loc1) =>
       val cs = constructors.map {
         case MonoAst.JvmConstructor(exp, retTpe, eff2, loc2) =>
           val e = rewriteExp(exp)
@@ -366,7 +343,7 @@ object LambdaDrop {
           val e = rewriteExp(exp)
           MonoAst.JvmMethod(ann, ident, fparams, e, retTpe, eff2, loc2)
       }
-      Expr.NewObject(name, clazz, tpe, eff1, cs, ms, loc1)
+      Expr.NewObject(sym, clazz, tpe, eff1, cs, ms, loc1)
 
   }
 

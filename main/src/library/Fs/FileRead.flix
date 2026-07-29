@@ -226,7 +226,7 @@ pub mod Fs.FileRead {
         sidecar: String,
         f: Unit -> a \ ef
     ): a \ (ef - FileRead) + FileRead =
-        let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
+        let computeHex = bytes -> Util.Codec.encodeHex(hash(bytes));
         let doReadBytes = file -> FileRead.readBytes(file);
         let doReadSidecar = file -> FileRead.read(file);
         run { f() } with handler FileRead {

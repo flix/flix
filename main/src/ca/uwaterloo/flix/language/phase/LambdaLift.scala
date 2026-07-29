@@ -233,10 +233,10 @@ object LambdaLift {
       }
       LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+    case SimplifiedAst.Expr.NewObject(sym, clazz, tpe, purity, constructors0, methods0, loc) =>
       val constructors = constructors0.map(visitJvmConstructor)
       val methods = methods0.map(visitJvmMethod)
-      LiftedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
+      LiftedAst.Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc)
 
     case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 

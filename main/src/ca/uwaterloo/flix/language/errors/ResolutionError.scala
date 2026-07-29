@@ -101,6 +101,34 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate a duplicate definition in an instance.
+    *
+    * @param name the name of the duplicated definition.
+    * @param sym  the trait symbol of the instance.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
+    */
+  case class DuplicateInstanceDef(name: String, sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E9290
+
+    def summary: String = s"Duplicate definition '$name' in instance of trait '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Duplicate definition '${red(name)}' in instance of trait '${magenta(sym.name)}'.
+         |
+         |${highlight(loc1, "first occurrence", fmt)}
+         |
+         |${highlight(loc2, "duplicate", fmt)}
+         |
+         |${underline("Explanation:")} An instance can define each member of its trait at most once.
+         |""".stripMargin
+    }
+
+    val loc: SourceLocation = loc1
+  }
+
+  /**
     * An error raised to indicate a duplicate derivation.
     *
     * @param sym  the trait symbol of the duplicate derivation.
@@ -585,25 +613,51 @@ object ResolutionError {
   }
 
   /**
-    * An error indicating the number of effect operation parameters does not match the expected number.
+    * An error indicating that an effect operation is given too many arguments,
+    * i.e. more arguments than the number of formal parameters it declares.
     *
     * @param op       the effect operation symbol.
-    * @param expected the expected number of parameters.
-    * @param actual   the actual number of parameters.
+    * @param expected the expected number of arguments (the operation's declared arity).
+    * @param actual   the actual number of arguments given.
     * @param loc      the location where the error occurred.
     */
-  case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+  case class OverAppliedOp(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0912
 
-    def summary: String = s"Mismatched arity for operation '${op.name}'."
+    def summary: String = s"Too many arguments for operation '${op.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched arity for operation '${red(op.name)}'.
+      s""">> Too many arguments for operation '${red(op.name)}'.
          |
-         |Expected ${Grammar.n_things(expected, "parameter")} but found $actual.
+         |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
          |
-         |${highlight(loc, s"expected $expected parameters", fmt)}
+         |${highlight(loc, s"expected $expected arguments", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error indicating that an effect operation is given too few arguments,
+    * i.e. fewer arguments than the number of formal parameters it declares.
+    *
+    * @param op       the effect operation symbol.
+    * @param expected the expected number of arguments (the operation's declared arity).
+    * @param actual   the actual number of arguments given.
+    * @param loc      the location where the error occurred.
+    */
+  case class UnderAppliedOp(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E0913
+
+    def summary: String = s"Too few arguments for operation '${op.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Too few arguments for operation '${red(op.name)}'.
+         |
+         |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
+         |
+         |${highlight(loc, s"expected $expected arguments", fmt)}
          |""".stripMargin
     }
   }

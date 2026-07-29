@@ -19,7 +19,7 @@
 ///
 /// Acknowledgement: this is a port of Sven Panne's `System.Console.GetOpt` in the Haskell Base libraries.
 ///
-pub mod GetOpt {
+pub mod Util.GetOpt {
 
     ///
     /// `ArgOrder` defines how to parse further arguments that follow non-options.

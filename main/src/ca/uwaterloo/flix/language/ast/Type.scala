@@ -573,7 +573,7 @@ object Type {
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(symUse, arg)
+    override def hashCode(): Int = Objects.hash(symUse.sym, arg)
   }
 
   /**

@@ -445,7 +445,7 @@ object Resolver {
         case trt =>
           val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
           val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
-          val defs = defs0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
+          val defs = checkDuplicateInstanceDefs(defs0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix)), trt.sym)
           val tconstrs = optTconstrs.collect { case Some(t) => t }
           mapN(assocsVal) {
             case assocs =>
@@ -453,6 +453,33 @@ object Resolver {
               ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
           }
       }
+  }
+
+  /**
+    * Checks for duplicate definitions (by name) within an instance.
+    *
+    * Reports a [[ResolutionError.DuplicateInstanceDef]] for each duplicate and returns the
+    * definitions with later duplicates removed, keeping the first occurrence of each name.
+    * Instance defs are given distinct symbols by the [[Namer]], so duplicates are not caught
+    * by the usual symbol table machinery and must be detected here.
+    */
+  private def checkDuplicateInstanceDefs(defs: List[ResolvedAst.Declaration.Def], traitSym: Symbol.TraitSym)(implicit sctx: SharedContext): List[ResolvedAst.Declaration.Def] = {
+    val seen = mutable.Map.empty[String, ResolvedAst.Declaration.Def]
+    val result = mutable.ArrayBuffer.empty[ResolvedAst.Declaration.Def]
+    for (defn <- defs) {
+      val name = defn.sym.text
+      seen.get(name) match {
+        case None =>
+          seen.put(name, defn)
+          result += defn
+        case Some(firstDefn) =>
+          val loc1 = firstDefn.sym.loc
+          val loc2 = defn.sym.loc
+          sctx.errors.add(ResolutionError.DuplicateInstanceDef(name, traitSym, loc1, loc2))
+          sctx.errors.add(ResolutionError.DuplicateInstanceDef(name, traitSym, loc2, loc1))
+      }
+    }
+    result.toList
   }
 
   /**
@@ -473,10 +500,12 @@ object Resolver {
     */
   private def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Def = d0 match {
     case NamedAst.Declaration.Def(sym, spec0, exp0, loc) =>
-      val spec = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
-      val scp = scp0 ++ mkSpecScp(spec)
-      val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
-      ResolvedAst.Declaration.Def(sym, spec, exp, loc)
+      flix.profile(sym, loc) {
+        val spec = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
+        val scp = scp0 ++ mkSpecScp(spec)
+        val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
+        ResolvedAst.Declaration.Def(sym, spec, exp, loc)
+      }
   }
 
   /**
@@ -1014,7 +1043,7 @@ object Resolver {
       val b = resolveExp(exp, scp0)
       ResolvedAst.Expr.ArrayLength(b, loc)
 
-    case NamedAst.Expr.AmbiguousNew(anonName, tpe, region0, fields0, constructors, methods, loc) =>
+    case NamedAst.Expr.AmbiguousNew(tpe, region0, fields0, constructors, methods, loc) =>
       val qnameOpt = tpe match {
         case NamedAst.Type.Ambiguous(qname, _) => Some(qname)
         case _ => None
@@ -1023,7 +1052,7 @@ object Resolver {
       if (isStructShape)
         resolveAmbiguousNewAsStruct(qnameOpt, tpe, region0, fields0, scp0, loc)
       else
-        resolveAmbiguousNewAsObject(anonName, qnameOpt, tpe, constructors, methods, scp0, loc)
+        resolveAmbiguousNewAsObject(qnameOpt, tpe, constructors, methods, scp0, loc)
 
     case NamedAst.Expr.StructGet(exp, field0, loc) =>
       lookupStructField(field0, scp0, ns0, root) match {
@@ -1631,7 +1660,7 @@ object Resolver {
     * Resolves an ambiguous `new` expression where the body is object-shaped (JVM constructors/methods or empty).
     * The name must refer to a Java class. If it resolves to a Flix struct instead, emits `NewStructWithObjectConstructors` or `NewStructWithObjectMethods`.
     */
-  private def resolveAmbiguousNewAsObject(anonName: String, qnameOpt: Option[Name.QName], tpe: NamedAst.Type, constructors: List[NamedAst.JvmConstructor], methods: List[NamedAst.JvmMethod], scp0: LocalScope, loc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+  private def resolveAmbiguousNewAsObject(qnameOpt: Option[Name.QName], tpe: NamedAst.Type, constructors: List[NamedAst.JvmConstructor], methods: List[NamedAst.JvmMethod], scp0: LocalScope, loc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val structOpt = qnameOpt.flatMap { qname =>
       lookupStruct(qname, scp0, ns0, root) match {
         case Result.Ok(st) => Some(st)
@@ -1657,7 +1686,8 @@ object Resolver {
             val superScp = scp0.withSuperClass(Some(clazz)).withSuperTargs(targs)
             val cs = constructors.map(visitJvmConstructor(_, superScp))
             val ms = methods.map(visitJvmMethod(_, superScp))
-            ResolvedAst.Expr.NewObject(anonName, clazz, targs, cs, ms, loc)
+            val anonClassSym = Symbol.mkFreshAnonClassSym(loc);
+            ResolvedAst.Expr.NewObject(anonClassSym, clazz, targs, cs, ms, loc)
           case None =>
             erased match {
               case _: UnkindedType.Error =>
@@ -3294,6 +3324,7 @@ object Resolver {
     case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol $sym", SourceLocation.Unknown)
     case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
+    case sym: Symbol.AnonClassSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
   }
 
   /**
@@ -3460,11 +3491,16 @@ object Resolver {
 
   /**
     * Checks that the operator's arity matches the number of arguments given.
+    *
+    * Reports [[ResolutionError.OverAppliedOp]] if too many arguments are given and
+    * [[ResolutionError.UnderAppliedOp]] if too few arguments are given.
     */
   private def checkOpArity(op: Declaration.Op, numArgs: Int, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    if (op.spec.fparams.length != numArgs) {
-      val error = ResolutionError.MismatchedOpArity(op.sym, op.spec.fparams.length, numArgs, loc)
-      sctx.errors.add(error)
+    val expected = op.spec.fparams.length
+    if (numArgs > expected) {
+      sctx.errors.add(ResolutionError.OverAppliedOp(op.sym, expected, numArgs, loc))
+    } else if (numArgs < expected) {
+      sctx.errors.add(ResolutionError.UnderAppliedOp(op.sym, expected, numArgs, loc))
     }
   }
 
@@ -3600,6 +3636,23 @@ object Resolver {
         Some(ResolvedAst.Declaration.Enum(doc1, ann1, mod1, sym, combinedTparams, combinedDerivations, combinedCases, loc1))
     }
 
+    /**
+      * Optionally merges `eff1` and `eff2`. If `eff2` is [[None]] `eff1` is returned. If `eff2`
+      * is [[Some]] it indicates that it is a duplicate, and we merge the 2 effects.
+      *
+      * This is done to ensure that all operations of the effect are included.
+      * This is assumed to be the case by later phases which can cause crashes.
+      *
+      * No guarantees about whether operations from `eff1` or `eff2` are kept.
+      */
+    private def resilientMergeEffects(eff1: ResolvedAst.Declaration.Effect, eff2: Option[ResolvedAst.Declaration.Effect]): Option[ResolvedAst.Declaration.Effect] = (eff1, eff2) match {
+      case (_, None) => Some(eff1)
+      case (ResolvedAst.Declaration.Effect(doc1, ann1, mod1, sym, tparams1, ops1, loc1), Some(ResolvedAst.Declaration.Effect(_, _, _, _, tparams2, ops2, _))) =>
+        val combinedTparams = (tparams1 ++ tparams2).distinctBy(_.name.name)
+        val combinedOps = (ops1 ++ ops2).distinctBy(_.sym)
+        Some(ResolvedAst.Declaration.Effect(doc1, ann1, mod1, sym, combinedTparams, combinedOps, loc1))
+    }
+
     private def ++(that: SymbolTable): SymbolTable = {
       SymbolTable(
         modules = this.modules ++ that.modules,
@@ -3612,7 +3665,9 @@ object Resolver {
         structs = this.structs ++ that.structs,
         structFields = this.structFields ++ that.structFields,
         restrictableEnums = this.restrictableEnums ++ that.restrictableEnums,
-        effects = this.effects ++ that.effects,
+        effects = that.effects.foldLeft(this.effects) {
+          case (acc, (newSym, eff0)) => acc.updatedWith(newSym)(resilientMergeEffects(eff0, _))
+        },
         typeAliases = this.typeAliases ++ that.typeAliases
       )
     }

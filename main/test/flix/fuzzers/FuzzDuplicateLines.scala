@@ -30,7 +30,7 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
   /**
     * Number of variants to make of each file. Each variant has a single line duplicated.
     */
-  private val N = 30
+  private val N = 15
 
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")

@@ -38,6 +38,18 @@ Examples:
 
 **Note:** Flix test files that reference `dev.flix.test.*` classes (test Java classes) will fail when run via `flix.run` because those classes are only on the classpath during `flix.test`. These failures are expected — use the test suite to run them.
 
+## Benchmarking Performance
+
+When asked to benchmark the performance impact of a change, run:
+
+```bash
+Xperf --frontend --par --n 50
+```
+
+If the numbers are not stable, increase the sample count to `--n 100` or `--n 250`.
+
+Drop `--frontend` if the change affects the backend, so the benchmark covers the full pipeline.
+
 ## Commit Messages
 
 Commit messages must start with a lowercase prefix followed by a colon and space:
@@ -61,6 +73,11 @@ Branch names must be prefixed with the same categories as commit messages:
 - `perf/` — performance improvement
 
 Example: `refactor/simplify-type-reduction`
+
+## GitHub Pull Requests
+
+- Omit the testing section from the PR description.
+- Omit the "Generated with Claude Code" line from the PR description.
 
 ## Writing Flix Code
 

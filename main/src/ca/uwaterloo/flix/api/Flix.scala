@@ -604,7 +604,9 @@ class Flix {
     shutdownForkJoinPool()
 
     // Reset the progress bar.
-    progressBar.complete()
+    if (options.progress) {
+      progressBar.complete()
+    }
 
     // Stop the live compiler profiler TUI only if there are errors and no
     // `codeGen` will follow. On the success path, leave it running so
@@ -648,7 +650,7 @@ class Flix {
     var treeShaker1Ast = TreeShaker1.run(typedAst)
     // Note: Do not null typedAst. It is used later.
 
-    var monomorpherAst = Specialization.run(typedAst)
+    var monomorpherAst = Specialization.run(treeShaker1Ast)
     treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     var lambdaDropAst = LambdaDrop.run(monomorpherAst)
@@ -701,7 +703,9 @@ class Flix {
     shutdownForkJoinPool()
 
     // Reset the progress bar.
-    progressBar.complete()
+    if (options.progress) {
+      progressBar.complete()
+    }
 
     // Stop the live compiler profiler TUI, if it is running.
     compilerTop.foreach(_.stop())

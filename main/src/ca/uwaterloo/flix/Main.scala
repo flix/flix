@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, FormatterLsp as LspFormatter}
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -361,7 +360,7 @@ object Main {
               System.exit(1)
           }
 
-        case PlainLsp =>
+        case Command.PlainLsp =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'lsp' command does not support file arguments.")
             System.exit(1)

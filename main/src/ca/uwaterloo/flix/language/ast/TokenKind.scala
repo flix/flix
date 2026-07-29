@@ -114,7 +114,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordOpenVariant => "'open_variant'"
       case TokenKind.KeywordOpenVariantAs => "'open_variant_as'"
       case TokenKind.KeywordOr => "'or'"
-      case TokenKind.KeywordOverride => "'override'"
       case TokenKind.KeywordPQuery => "'pquery'"
       case TokenKind.KeywordPSolve => "'psolve'"
       case TokenKind.KeywordPar => "'par'"
@@ -249,7 +248,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordOpenVariant => true
     case TokenKind.KeywordOpenVariantAs => true
     case TokenKind.KeywordOr => true
-    case TokenKind.KeywordOverride => true
     case TokenKind.KeywordPQuery => true
     case TokenKind.KeywordPSolve => true
     case TokenKind.KeywordPar => true
@@ -292,7 +290,6 @@ sealed trait TokenKind {
   def isModifier: Boolean = this match {
     case TokenKind.KeywordLawful => true
     case TokenKind.KeywordMut => true
-    case TokenKind.KeywordOverride => true
     case TokenKind.KeywordPub => true
     case TokenKind.KeywordSealed => true
     case _ => false
@@ -870,8 +867,6 @@ object TokenKind {
   case object KeywordOpenVariantAs extends TokenKind
 
   case object KeywordOr extends TokenKind
-
-  case object KeywordOverride extends TokenKind
 
   case object KeywordPQuery extends TokenKind
 

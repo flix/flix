@@ -43,7 +43,6 @@ mod Fs.FsLayer {
     import java.nio.file.PathMatcher
     import java.nio.file.StandardOpenOption
     import java.util.stream.BaseStream
-    import java.util.HexFormat
     import java.util.UUID
     import java.util.stream.Stream
 
@@ -853,14 +852,6 @@ mod Fs.FsLayer {
         }
 
     // ─── Checksum helpers ──────────────────────────────────────────────
-
-    ///
-    /// Converts a vector of bytes to a lowercase hex string.
-    ///
-    pub def bytesToHex(v: Vector[Int8]): String = region rc {
-        let arr = Vector.toArray(rc, v);
-        unsafe IO { HexFormat.of().formatHex(arr) }
-    }
 
     ///
     /// Verifies `actual` (a hex digest string) against the checksum stored in

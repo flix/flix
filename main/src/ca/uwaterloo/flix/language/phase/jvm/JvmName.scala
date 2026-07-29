@@ -104,25 +104,70 @@ object JvmName {
   /**
     * Performs name mangling on the given string `s` to avoid issues with special characters.
     */
-  def mangle(s: String): String = s.
-    replace("+", Flix.Delimiter + "plus").
-    replace("-", Flix.Delimiter + "minus").
-    replace("*", Flix.Delimiter + "asterisk").
-    replace("/", Flix.Delimiter + "fslash").
-    replace("\\", Flix.Delimiter + "bslash").
-    replace("<", Flix.Delimiter + "less").
-    replace(">", Flix.Delimiter + "greater").
-    replace("=", Flix.Delimiter + "eq").
-    replace("&", Flix.Delimiter + "ampersand").
-    replace("|", Flix.Delimiter + "bar").
-    replace("^", Flix.Delimiter + "caret").
-    replace("~", Flix.Delimiter + "tilde").
-    replace("!", Flix.Delimiter + "exclamation").
-    replace("#", Flix.Delimiter + "hashtag").
-    replace(":", Flix.Delimiter + "colon").
-    replace("?", Flix.Delimiter + "question").
-    replace("@", Flix.Delimiter + "at").
-    replace(".", Flix.Delimiter + "dot")
+  def mangle(s: String): String = {
+    // Fast path: most names contain no special characters, so we avoid
+    // allocating a new string entirely.
+    if (!containsSpecialChar(s)) s else mangleSlow(s)
+  }
+
+  /**
+    * Returns `true` if `s` contains at least one character that must be mangled.
+    */
+  private def containsSpecialChar(s: String): Boolean = {
+    var i = 0
+    while (i < s.length) {
+      if (mangleReplacement(s.charAt(i)) != null) {
+        return true
+      }
+      i = i + 1
+    }
+    false
+  }
+
+  /**
+    * Mangles `s` in a single pass, replacing every special character with its mangled form.
+    */
+  private def mangleSlow(s: String): String = {
+    val sb = new StringBuilder(s.length + 16)
+    var i = 0
+    while (i < s.length) {
+      val c = s.charAt(i)
+      val replacement = mangleReplacement(c)
+      if (replacement != null) {
+        sb.append(Flix.Delimiter)
+        sb.append(replacement)
+      } else {
+        sb.append(c)
+      }
+      i = i + 1
+    }
+    sb.toString
+  }
+
+  /**
+    * Returns the mangled replacement for the special character `c`, or `null` if `c` is not special.
+    */
+  private def mangleReplacement(c: Char): String = c match {
+    case '+' => "plus"
+    case '-' => "minus"
+    case '*' => "asterisk"
+    case '/' => "fslash"
+    case '\\' => "bslash"
+    case '<' => "less"
+    case '>' => "greater"
+    case '=' => "eq"
+    case '&' => "ampersand"
+    case '|' => "bar"
+    case '^' => "caret"
+    case '~' => "tilde"
+    case '!' => "exclamation"
+    case '#' => "hashtag"
+    case ':' => "colon"
+    case '?' => "question"
+    case '@' => "at"
+    case '.' => "dot"
+    case _ => null
+  }
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Java Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

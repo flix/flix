@@ -93,8 +93,13 @@ object GenEffectClasses {
           // Cast the given generic handler to the current effect.
           handler.load()
           CHECKCAST(effectName)
-          // Convert the given resumption into a callable Fn1$Obj (Value -> Result) via ResumptionWrapper.
           GETFIELD(opField)
+          // The handler closure is shared across every invocation of this operation. Make a fresh
+          // copy (preserving captures, but with fresh argument/local/pc slots) so that re-entrant
+          // invocations from deep or multi-shot resumptions do not clobber each other's arguments.
+          val absArrow = BackendObjType.AbstractArrow(opFunction.args, opFunction.result)
+          CHECKCAST(absArrow.jvmName)
+          INVOKEVIRTUAL(absArrow.GetUniqueThreadClosureMethod)
           for ((par, i) <- params.zipWithIndex) {
             DUP()
             par.load()

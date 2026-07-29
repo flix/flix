@@ -78,4 +78,37 @@ object ListOps {
       case Some(value) => value
     }
   }
+
+  /**
+    * Applies `f` to each element of `list`, returning `list` itself if `f`
+    * returns a reference-equal (`eq`) element for every entry.
+    *
+    * Unchanged suffixes are shared between the result and `list`, so callers
+    * can detect "nothing changed" with a single reference equality check.
+    */
+  def mapWithReuse[T <: AnyRef](list: List[T])(f: T => T): List[T] =
+    list.mapConserve(f)
+
+  /**
+    * Applies the one-to-many function `f` to each element of `list`,
+    * returning `list` itself if `f` returns a single reference-equal (`eq`)
+    * element for every entry.
+    */
+  def flatMapWithReuse[T <: AnyRef](list: List[T])(f: T => List[T]): List[T] = {
+    var changed = false
+    val buf = List.newBuilder[T]
+    var cur = list
+    while (cur.nonEmpty) {
+      val elm = cur.head
+      f(elm) match {
+        // Performance: Reuse the original element, if possible.
+        case e :: Nil if e eq elm => buf += e
+        case es =>
+          changed = true
+          buf ++= es
+      }
+      cur = cur.tail
+    }
+    if (changed) buf.result() else list
+  }
 }

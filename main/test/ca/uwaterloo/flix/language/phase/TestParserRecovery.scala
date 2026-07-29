@@ -422,7 +422,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    /// This is not quite finished
         |    pub def
         |}
-        |def main(): Int32 = Bar.foo()
+        |def main(): Unit = ()
         |
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -790,7 +790,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |def map(t: Int32): Int32 = match t
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -804,7 +804,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    ParentOf("Pompey", "Strabo").,
         |    ParentOf("Sextus", "Pompey").
         |}
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -941,7 +941,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Unit \ IO =
         |    def bar(): Int32 = 123
-        |def main(): Int32 = 456
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -957,7 +957,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    } with handler AskTell ;
         |    true
         |
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -969,7 +969,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    try { true } catch
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -979,7 +979,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("MissingRecordOperation.01") {
     val input =
       """
-        |def main(): Int32 =
+        |def main(): Unit =
         |    let _ = { | {} };
         |    2
         |""".stripMargin
@@ -993,7 +993,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    run { true }
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -1005,7 +1005,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    try { true }
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)

@@ -98,3 +98,6 @@ By adding your name to this document, you agree to release all your contribution
 - [Anders Bjerrum Jensen](https://github.com/AndersJensenStudie)
 - [Bertram Nellemann Thorsen](https://github.com/Palemand)
 - [Andreas Gotthelf Kühlwein Pedersen](https://github.com/ACoolWine)
+- [Fridolin Karger](https://github.com/LordBurtz)
+- [Vipul Bhardwaj](https://github.com/vipulbhj)
+- [Simon Lykke Andersen](https://github.com/Simon220902)

@@ -139,7 +139,7 @@ pub def !>(x: a, f: a -> Unit \ ef): a \ ef = f(x); x
 ///
 /// Coerces the given value `x`.
 ///
-pub def coerce(x: t): Coerce.Out[t] with Coerce[t] = Coerce.coerce(x)
+pub def coerce(x: t): Coerce.Out[t] \ Coerce.Aef[t] with Coerce[t] = Coerce.coerce(x)
 
 ///
 /// Converts `x` to a string and prints it to standard out followed by a new line.

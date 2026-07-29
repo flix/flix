@@ -689,7 +689,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.ExtraneousDef](result)
   }
 
-  test("Test.IllegalOverride.01") {
+  test("Test.IllegalRedef.01") {
     val input =
       """
         |trait C[a] {
@@ -697,14 +697,14 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |}
         |
         |instance C[Int32] {
-        |  override pub def f(x: Int32): Bool = true
+        |  redef f(x: Int32): Bool = true
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.IllegalRedef](result)
   }
 
-  test("Test.UnmarkedOverride.01") {
+  test("Test.UnmarkedRedef.01") {
     val input =
       """
         |trait C[a] {

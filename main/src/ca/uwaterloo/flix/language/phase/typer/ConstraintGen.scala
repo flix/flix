@@ -1368,7 +1368,7 @@ object ConstraintGen {
 
       // Find the matching Java method by name and arity (excluding 'this' param).
       val flixParamCount = fparams.tail.length
-      val javaMethodOpt = JvmUtils.getInstanceMethods(clazz)
+      val javaMethodOpt = JvmUtils.getOverridableInstanceMethods(clazz)
         .find(m => m.getName == ident.name && m.getParameterCount == flixParamCount)
       javaMethodOpt match {
         case Some(jm) =>

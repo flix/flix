@@ -46,14 +46,14 @@ case class Modifiers(mod: List[Modifier]) {
   def isMutable: Boolean = mod contains Modifier.Mutable
 
   /**
-    * Returns `true` if these modifiers contain the override modifier.
-    */
-  def isOverride: Boolean = mod contains Modifier.Override
-
-  /**
     * Returns `true` if these modifiers contain the public modifier.
     */
   def isPublic: Boolean = mod contains Modifier.Public
+
+  /**
+    * Returns `true` if these modifiers contain the redefinition modifier.
+    */
+  def isRedef: Boolean = mod contains Modifier.Redef
 
   /**
     * Returns `true` if these modifiers contain the sealed modifier.

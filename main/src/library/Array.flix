@@ -952,8 +952,7 @@ pub mod Array {
     ///
     pub def partition(rc1: Region[r1], rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r]): (Array[a, r1], Array[a, r2]) \ { ef, r, r1, r2 } =
         let step = {
-            (x, acc) ->
-                let (a1, a2) = acc;
+            x -> match (a1, a2) ->
                 if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);

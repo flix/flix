@@ -34,14 +34,14 @@ object Modifier {
   case object Mutable extends Modifier
 
   /**
-    * The override modifier.
-    */
-  case object Override extends Modifier
-
-  /**
     * The public modifier.
     */
   case object Public extends Modifier
+
+  /**
+    * The redefinition modifier.
+    */
+  case object Redef extends Modifier
 
   /**
     * The sealed modifier.
