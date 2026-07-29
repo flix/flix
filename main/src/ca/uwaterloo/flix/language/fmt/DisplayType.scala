@@ -671,6 +671,7 @@ object DisplayType {
 
         case TypeConstructor.Error(_, _) => DisplayType.Error
       }
+      case Type.Apply(_, _, loc) => throw InternalCompilerException("unexpected Type.Apply", loc)
     }
 
     visit(t0)
