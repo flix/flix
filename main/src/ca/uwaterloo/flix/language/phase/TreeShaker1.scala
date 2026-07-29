@@ -278,7 +278,7 @@ object TreeShaker1 {
       Set(Reachable.ChannelUsed) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
-      Set(Reachable.ChannelUsed) ++  visitExp(exp1) ++ visitExp(exp2)
+      Set(Reachable.ChannelUsed) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.SelectChannel(selects, optExp, _, _, _) =>
       Set(Reachable.ChannelUsed) ++
@@ -287,7 +287,7 @@ object TreeShaker1 {
         optExp.map(visitExp).getOrElse(Set.empty)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
-      Set(Reachable.ChannelUsed) ++  visitExps(frags.map(_.exp)) ++ visitExp(exp)
+      Set(Reachable.ChannelUsed) ++ visitExps(frags.map(_.exp)) ++ visitExp(exp)
 
     case Expr.Lazy(exp, _, _) =>
       visitExp(exp)
@@ -362,12 +362,12 @@ object TreeShaker1 {
 
     case class SigSym(sym: Symbol.SigSym) extends Reachable
 
-    /**
-      * A Datalog feature is used: All Datalog
-      */
-    case object DatalogUsed extends Reachable
+    /** A Channel construct is used: All Channel lowering targets are reachable. */
 
     case object ChannelUsed extends Reachable
+
+    /** A Datalog construct is used: All Datalog lowering targets are reachable. */
+    case object DatalogUsed extends Reachable
 
   }
 
