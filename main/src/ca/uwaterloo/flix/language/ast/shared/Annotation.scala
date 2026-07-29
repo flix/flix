@@ -121,7 +121,7 @@ object Annotation {
   /**
     * An annotation that marks a function definition as a target for the Channel lowering.
     *
-    * A function annotated with `LoweringTargetDatalog` may not be discarded until lowering has
+    * A function annotated with `LoweringTargetChannel` may not be discarded until lowering has
     * been performed if the program uses Channels.
     *
     * @param loc the source location of the annotation.
