@@ -170,9 +170,9 @@ object Typer {
         case None =>
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
           val tpe = subst(assocSig.tpe.get)
-          AssocTypeDef(tparams, inst.tpe, tpe)
+          AssocTypeDef(tparams, inst.tpe, tpe, inst.econstrs)
         case Some(KindedAst.AssocTypeDef(_, _, _, arg, tpe, _)) =>
-          AssocTypeDef(tparams, arg, tpe)
+          AssocTypeDef(tparams, arg, tpe, inst.econstrs)
       }
     } yield {
       ((assocSig.sym, head), assocDef)

@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, EqualityConstraint, RegionScope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.JvmUtils
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
@@ -57,7 +57,7 @@ object TypeReduction2 {
 
       // Find the instance that matches
       val matches = assocOpt.flatMap {
-        case AssocTypeDef(tparams, assocTpe0, ret0) =>
+        case AssocTypeDef(tparams, assocTpe0, ret0, econstrs0) =>
 
 
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
@@ -74,10 +74,16 @@ object TypeReduction2 {
           val assocSubst = Substitution(assocVarMap)
           val assocTpe = assocSubst(assocTpe0)
           val ret = assocSubst(ret0)
+          // The instance's equality constraints are refreshed with the same substitution as `ret`,
+          // so any variable `ret` shares with them (e.g. one introduced solely on the right-hand
+          // side of an equality constraint) is the same fresh variable in both. Emitting them as
+          // obligations lets the solver determine that variable, e.g. `Elm[Wrapper[c]] = a` together
+          // with `Elm[c] ~ a` reduces `Elm[Wrapper[List[Int32]]]` to `Int32` rather than a loose var.
+          val econstrs = econstrs0.map(assocSubst.apply)
 
           // Instantiate all the instance constraints according to the substitution.
           ConstraintSolver2.fullyUnify(t, assocTpe, scope, assocRenv).map {
-            case subst => subst(ret)
+            case subst => (subst(ret), econstrs.map(subst.apply).map(equalityConstraintToTypeConstraint(_, loc)))
           }
       }
 
@@ -94,10 +100,11 @@ object TypeReduction2 {
           else
             (Type.AssocType(symUse, t, kind, loc), cs)
 
-        // Case 2: One match. Use it.
-        case Some(newTpe) =>
+        // Case 2: One match. Use it, together with any obligations from the instance's
+        // equality constraints.
+        case Some((newTpe, newCs)) =>
           progress.markProgress()
-          (newTpe, cs)
+          (newTpe, cs ::: newCs)
       }
 
     case Type.JvmToType(tpe, loc) =>
@@ -181,6 +188,13 @@ object TypeReduction2 {
             case _ => (unresolved, cs)
           }
       }
+  }
+
+  /** Converts an equality constraint `cst[tpe1] ~ tpe2` into the corresponding [[TypeConstraint]]. */
+  private def equalityConstraintToTypeConstraint(constr: EqualityConstraint, loc: SourceLocation): TypeConstraint = constr match {
+    case EqualityConstraint(cst, tpe1, tpe2, _) =>
+      val assoc = Type.AssocType(cst, tpe1, tpe2.kind, tpe1.loc)
+      TypeConstraint.Equality(assoc, tpe2, TypeConstraint.Provenance.Match(tpe1, tpe2, loc))
   }
 
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */

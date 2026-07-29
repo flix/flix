@@ -46,9 +46,11 @@ case class EqualityEnv(private val m: Map[(Symbol.AssocTypeSym, TypeHead), Assoc
       case None => this
 
       case Some(head) =>
-        // tparams are Nil because we are adding instances directly, but not schemas of instances
+        // tparams are Nil because we are adding instances directly, but not schemas of instances.
+        // econstrs are Nil because this is a leaf assumption (e.g. a where-clause equality), not an
+        // instance definition that could introduce right-hand-side variables.
         val tparams = Nil
-        val defn = AssocTypeDef(tparams, arg, ret)
+        val defn = AssocTypeDef(tparams, arg, ret, Nil)
 
         EqualityEnv(m + ((sym, head) -> defn))
     }

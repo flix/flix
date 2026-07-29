@@ -21,5 +21,10 @@ import ca.uwaterloo.flix.language.ast.{Type, Symbol}
   * Represents the definition of an associated type.
   * If this associated type is named `Assoc`, then
   * Assoc[arg] = ret.
+  *
+  * `econstrs` are the equality constraints of the instance this definition comes from. They are
+  * carried here so that reduction can determine any type variables that `ret` shares with them but
+  * that do not appear in `arg` (i.e. variables introduced solely on the right-hand side of an
+  * instance equality constraint). They reference the same variables as `tparams`, `arg`, and `ret`.
   */
-case class AssocTypeDef(tparams: List[Symbol.KindedTypeVarSym], arg: Type, ret: Type)
+case class AssocTypeDef(tparams: List[Symbol.KindedTypeVarSym], arg: Type, ret: Type, econstrs: List[EqualityConstraint])
