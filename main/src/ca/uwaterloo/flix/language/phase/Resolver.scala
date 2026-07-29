@@ -260,7 +260,7 @@ object Resolver {
     case _: UnkindedType.UnappliedNative => Nil
     case _: UnkindedType.Cst => Nil
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
-    case _: UnkindedType.Arrow => Nil
+    case UnkindedType.Arrow(eff, _, _) => eff.toList.flatMap(getAliasUses)
     case _: UnkindedType.CaseSet => Nil
     case UnkindedType.CaseComplement(tpe, _) => getAliasUses(tpe)
     case UnkindedType.CaseUnion(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
