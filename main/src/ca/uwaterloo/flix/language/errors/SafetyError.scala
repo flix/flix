@@ -234,6 +234,30 @@ object SafetyError {
 
 
   /**
+    * An error raised to indicate that an `instanceof` match is not exhaustive because none of
+    * its cases is a default case, and so no case is guaranteed to match at runtime.
+    *
+    * @param loc the location of the `instanceof` match.
+    */
+  case class NonExhaustiveInstanceOfMatch(loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E5837
+
+    def summary: String = "Non-exhaustive 'instanceof' match: at least one case must be a default case."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Non-exhaustive '${red("instanceof")}' match: at least one case must be a default case.
+         |
+         |${highlight(loc, "missing a default case", fmt)}
+         |
+         |${underline("Explanation:")} An 'instanceof' match must have a default case that has
+         |no type annotation (e.g. 'case x => ...'), so that some case always matches.
+         |""".stripMargin
+    }
+  }
+
+
+  /**
     * An error raised to indicate that the object in a `throw` expression is not a Throwable.
     *
     * @param loc the location of the object

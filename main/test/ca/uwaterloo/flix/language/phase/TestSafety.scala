@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{Forbidden, IllegalCatchType, IllegalMethodEffect, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar, IllegalThrowType}
+import ca.uwaterloo.flix.language.errors.SafetyError.{Forbidden, IllegalCatchType, IllegalMethodEffect, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar, IllegalThrowType, NonExhaustiveInstanceOfMatch}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -90,6 +90,56 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[IllegalThrowType](result)
+  }
+
+  test("NonExhaustiveInstanceOfMatch.01") {
+    val input =
+      """
+        |import java.lang.Object
+        |import java.lang.CharSequence
+        |
+        |def f(): String =
+        |    let o: Object = checked_cast("hello");
+        |    o instanceof {
+        |        case _: CharSequence => "cs"
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveInstanceOfMatch](result)
+  }
+
+  test("NonExhaustiveInstanceOfMatch.02") {
+    val input =
+      """
+        |import java.lang.Object
+        |import java.lang.CharSequence
+        |import java.lang.Number
+        |
+        |def f(): String =
+        |    let o: Object = checked_cast("hello");
+        |    o instanceof {
+        |        case _: CharSequence => "cs"
+        |        case _: Number       => "num"
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveInstanceOfMatch](result)
+  }
+
+  test("NonExhaustiveInstanceOfMatch.03") {
+    val input =
+      """
+        |import java.lang.Object
+        |import java.util.ArrayList
+        |
+        |def f(): String =
+        |    let o: Object = checked_cast("hello");
+        |    o instanceof {
+        |        case _: ArrayList[_] => "list"
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveInstanceOfMatch](result)
   }
 
   test("UnexpectedBodyAtomPattern.01") {
