@@ -56,7 +56,7 @@ object SymbolProvider {
     * Returns an Interface SymbolInformation from a Trait node.
     */
   private def mkTraitWorkSpaceSymbol(t: TypedAst.Trait) = t match {
-    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => WorkspaceSymbol(
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _) => WorkspaceSymbol(
       sym.name, SymbolKind.Interface, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
     )
   }
@@ -66,7 +66,7 @@ object SymbolProvider {
     * It navigates the AST and adds Sig and TypeParam of t and as children DocumentSymbols.
     */
   private def mkTraitDocumentSymbol(t: TypedAst.Trait): DocumentSymbol = t match {
-    case TypedAst.Trait(doc, _, _, sym, tparam, _, _, signatures, _, _) => DocumentSymbol( // TODO ASSOC-TYPES visit assocs
+    case TypedAst.Trait(doc, _, _, sym, tparam, _, _, signatures, _) => DocumentSymbol( // TODO ASSOC-TYPES visit assocs
       sym.name,
       Some(doc.text),
       SymbolKind.Interface,

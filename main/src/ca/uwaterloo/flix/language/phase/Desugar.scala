@@ -71,7 +71,6 @@ object Desugar {
     case d: WeededAst.Declaration.Instance => visitInstance(d)
     case d: WeededAst.Declaration.Def => visitDef(d)
     case d: WeededAst.Declaration.Redef => visitRedef(d)
-    case d: WeededAst.Declaration.Law => visitLaw(d)
     case d: WeededAst.Declaration.Enum => visitEnum(d)
     case d: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
     case d: WeededAst.Declaration.Struct => visitStruct(d)
@@ -83,13 +82,12 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Trait]] `trait0`.
     */
   private def visitTrait(trait0: WeededAst.Declaration.Trait)(implicit flix: Flix): DesugaredAst.Declaration.Trait = trait0 match {
-    case WeededAst.Declaration.Trait(doc, ann, mod, ident, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
+    case WeededAst.Declaration.Trait(doc, ann, mod, ident, tparam0, superTraits0, assocs0, sigs0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val superTraits = superTraits0.map(visitTraitConstraint)
       val assocs = assocs0.map(visitAssocTypeSig)
       val sigs = sigs0.map(visitSig)
-      val laws = laws0.map(visitDef)
-      DesugaredAst.Declaration.Trait(doc, ann, mod, ident, tparam, superTraits, assocs, sigs, laws, loc)
+      DesugaredAst.Declaration.Trait(doc, ann, mod, ident, tparam, superTraits, assocs, sigs, loc)
   }
 
   /**
@@ -136,20 +134,6 @@ object Desugar {
       val tconstrs = tconstrs0.map(visitTraitConstraint)
       val econstrs = econstrs0.map(visitEqualityConstraint)
       DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, loc)
-  }
-
-  /**
-    * Desugars the given [[WeededAst.Declaration.Law]] `law0`.
-    */
-  private def visitLaw(law0: WeededAst.Declaration.Law)(implicit flix: Flix): DesugaredAst.Declaration.Law = law0 match {
-    case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
-      val tparams = tparams0.map(visitTypeParam)
-      val fparams = visitFormalParams(fparams0)
-      val exp = visitExp(exp0)
-      val tpe = visitType(tpe0)
-      val eff = visitType(eff0)
-      val tconstrs = tconstrs0.map(visitTraitConstraint)
-      DesugaredAst.Declaration.Law(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, loc)
   }
 
   /**

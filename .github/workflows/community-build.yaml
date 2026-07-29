@@ -64,6 +64,7 @@ jobs:
           - "jaschdoc/flix-test-pkg-trust-transitive-java"
           - "mlutze/flix-json"
           - "mlutze/flixball"
+          - "mlutze/flixball-2"
           - "rywiese/scope-graphs"
           - "stephentetley/flix-htmldoc"
           - "stephentetley/flix-pretty"

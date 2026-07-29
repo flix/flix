@@ -227,7 +227,7 @@ object Kinder {
     * Performs kinding on the given trait.
     */
   private def visitTrait(trt: ResolvedAst.Declaration.Trait, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Trait = trt match {
-    case ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
+    case ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, loc) =>
       val kenv = getKindEnvFromTypeParam(tparam0)
       val tparam = visitTypeParam(tparam0, kenv)
       val superTraits = superTraits0.map(visitTraitConstraint(_, kenv, root))
@@ -237,8 +237,7 @@ object Kinder {
           val sig = visitSig(sig0, tparam, kenv, root)
           sigSym -> sig
       }
-      val laws = laws0.map(visitDef(_, kenv, root)) // TODO ASSOC-TYPES need to include super traits?
-      KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
+      KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, loc)
   }
 
   /**
@@ -314,7 +313,7 @@ object Kinder {
   private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       // For a top-level def the spec and its kind environment were already computed
-      // in `visitDefSpecs`, so we reuse them. Instance defs and laws are not in
+      // in `visitDefSpecs`, so we reuse them. Instance defs are not in
       // `defSpecs`, so we compute them here under the given `kenv0`.
       val (spec, kenv) = renv.defSpecs.getOrElse(sym, {
         val kenv = getKindEnvFromSpec(spec0, kenv0, root)

@@ -167,7 +167,7 @@ object HighlightProvider {
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
-    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal
@@ -243,7 +243,7 @@ object HighlightProvider {
   }
 
   private def ifTraitThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
-    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
     case _ => true
   }
 
@@ -293,7 +293,7 @@ object HighlightProvider {
       case TypedAst.StructField(sym, _, _) => Some(getStructFieldSymOccurs(sym))
       case SymUse.StructFieldSymUse(sym, _) => Some(getStructFieldSymOccurs(sym))
       // Traits
-      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
+      case TypedAst.Trait(_, _, _, sym, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
       case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
       // Type Aliases
       case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))

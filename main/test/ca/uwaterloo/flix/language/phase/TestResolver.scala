@@ -480,6 +480,31 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
+  test("CyclicTypeAliases.07") {
+    val input =
+      s"""
+         |type alias Foo = Int32 -> Int32 \\ Foo
+         |
+         |def f(): Foo = x -> x
+         |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
+  test("CyclicTypeAliases.08") {
+    val input =
+      s"""
+         |type alias Foo = Int32 -> Int32 \\ Bar
+         |type alias Bar = Int32 -> Int32 \\ Foo
+         |
+         |def f(): Foo = x -> x
+         |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
   test("UndefinedName.01") {
     val input = "def f(): Int32 = x"
     val result = check(input, Options.TestWithLibNix)

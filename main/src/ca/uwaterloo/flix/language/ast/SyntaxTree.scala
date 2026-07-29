@@ -153,8 +153,6 @@ object SyntaxTree {
 
       case object Instance extends Decl
 
-      case object Law extends Decl
-
       case object Module extends Decl
 
       case object Op extends Decl
