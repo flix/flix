@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, Loca
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, Name, RigidityEnv, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeConstraint, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap, ListOps, MapOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -1330,10 +1330,24 @@ object Specialization {
     val progress = Progress()
 
     val (res, cs) = TypeReduction2.reduce(assoc)(scope, renv, progress, root.eqEnv, flix)
-    if (cs.nonEmpty) throw InternalCompilerException(s"unexpected constraints: $cs", assoc.loc)
 
-    if (progress.query()) res
-    else throw InternalCompilerException(s"Could not reduce associated type $assoc", assoc.loc)
+    if (!progress.query())
+      throw InternalCompilerException(s"Could not reduce associated type $assoc", assoc.loc)
+
+    // Reduction may emit equality obligations when the matched instance introduces a variable on the
+    // right-hand side of an equality constraint (e.g. `type Elm = a` with `Elm[c] ~ a`). Since
+    // `assoc` is ground, each obligation is between ground types and fully determines the variables
+    // in `res`; solve them and apply the solution. Any associated types remaining in the result are
+    // reduced by the caller (`simplify`), matching the behavior when there are no obligations.
+    val subst = cs.foldLeft(Substitution.empty) {
+      case (acc, TypeConstraint.Equality(t1, t2, _)) =>
+        ConstraintSolver2.fullyUnify(acc(t1), acc(t2), scope, renv)(root.eqEnv, flix) match {
+          case Some(s) => s @@ acc
+          case None => throw InternalCompilerException(s"Could not solve constraint '$t1 ~ $t2' while reducing $assoc", assoc.loc)
+        }
+      case (_, c) => throw InternalCompilerException(s"unexpected constraint: $c", assoc.loc)
+    }
+    subst(res)
   }
 
   /**

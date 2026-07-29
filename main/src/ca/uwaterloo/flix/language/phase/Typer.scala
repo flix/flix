@@ -170,15 +170,31 @@ object Typer {
         case None =>
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
           val tpe = subst(assocSig.tpe.get)
-          AssocTypeDef(tparams, inst.tpe, tpe, inst.econstrs)
+          AssocTypeDef(tparams, inst.tpe, tpe, relevantEconstrs(inst.tpe, tpe, inst.econstrs))
         case Some(KindedAst.AssocTypeDef(_, _, _, arg, tpe, _)) =>
-          AssocTypeDef(tparams, arg, tpe, inst.econstrs)
+          AssocTypeDef(tparams, arg, tpe, relevantEconstrs(arg, tpe, inst.econstrs))
       }
     } yield {
       ((assocSig.sym, head), assocDef)
     }
 
     EqualityEnv(assocs.toMap)
+  }
+
+  /**
+    * Returns the equality constraints of `econstrs` that are needed to reduce an associated type
+    * definition with argument `arg` and result `ret`.
+    *
+    * A constraint is relevant only if its right-hand side mentions a variable that occurs in `ret`
+    * but is not bound by `arg` — i.e. a variable introduced solely on the right-hand side of the
+    * constraint. All other constraints play no role in reducing the associated type, so they are
+    * dropped; this keeps reduction of pre-existing instances (whose result is fully determined by
+    * the head) free of spurious obligations.
+    */
+  private def relevantEconstrs(arg: Type, ret: Type, econstrs: List[EqualityConstraint]): List[EqualityConstraint] = {
+    val argVars = arg.typeVars.map(_.sym)
+    val needed = ret.typeVars.map(_.sym).diff(argVars)
+    econstrs.filter(_.tpe2.typeVars.map(_.sym).exists(needed.contains))
   }
 
   /**

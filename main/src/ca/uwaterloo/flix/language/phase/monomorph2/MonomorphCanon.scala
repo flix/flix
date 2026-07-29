@@ -19,7 +19,8 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
-import ca.uwaterloo.flix.language.phase.typer.{Progress, TypeReduction2}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeConstraint, TypeReduction2}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.CofiniteSet
 
@@ -66,11 +67,26 @@ private[monomorph2] object MonomorphCanon {
   // Copied from monomorph.Specialization.reduceAssocType
   /** Reduces the given associated into its definition, will crash if not able to. */
   def reduceAssocType(assoc: Type.AssocType)(implicit root: TypedAst.Root, flix: Flix): Type = {
+    val scope = RegionScope.Top
+    val renv = RigidityEnv.empty
     val progress = Progress()
-    val (res, cs) = TypeReduction2.reduce(assoc)(RegionScope.Top, RigidityEnv.empty, progress, root.eqEnv, flix)
-    if (cs.nonEmpty) throw InternalCompilerException(s"unexpected constraints: $cs", assoc.loc)
-    if (progress.query()) res
-    else throw InternalCompilerException(s"Could not reduce associated type $assoc", assoc.loc)
+    val (res, cs) = TypeReduction2.reduce(assoc)(scope, renv, progress, root.eqEnv, flix)
+
+    if (!progress.query())
+      throw InternalCompilerException(s"Could not reduce associated type $assoc", assoc.loc)
+
+    // Reduction may emit equality obligations when the matched instance introduces a variable on the
+    // right-hand side of an equality constraint. Since `assoc` is ground, each obligation is between
+    // ground types and fully determines the variables in `res`; solve them and apply the solution.
+    val subst = cs.foldLeft(Substitution.empty) {
+      case (acc, TypeConstraint.Equality(t1, t2, _)) =>
+        ConstraintSolver2.fullyUnify(acc(t1), acc(t2), scope, renv)(root.eqEnv, flix) match {
+          case Some(s) => s @@ acc
+          case None => throw InternalCompilerException(s"Could not solve constraint '$t1 ~ $t2' while reducing $assoc", assoc.loc)
+        }
+      case (_, c) => throw InternalCompilerException(s"unexpected constraint: $c", assoc.loc)
+    }
+    subst(res)
   }
 
   // Ported from monomorph.Specialization.normalizeApply, with a small difference
