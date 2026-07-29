@@ -32,7 +32,7 @@ mod Test.Exp.Jvm.Instanceof {
     }
 
     @Test
-    def testInstanceof03(): Unit \ Assert = {
+    def testInstanceof03(): Unit = {
         let o: Object = checked_cast("Hello World");
         o instanceof {
             case _ => ()
@@ -58,7 +58,7 @@ mod Test.Exp.Jvm.Instanceof {
     }
 
     @Test
-    def testInstanceof06(): Unit \ Assert = {
+    def testInstanceof06(): Unit = {
         let o: Object = checked_cast(100ii);
         o instanceof {
             case _ => ()
@@ -84,7 +84,7 @@ mod Test.Exp.Jvm.Instanceof {
     }
 
     @Test
-    def testInstanceof10(): Unit \ Assert = {
+    def testInstanceof10(): Unit = {
         let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
         o instanceof {
             case _ => ()
@@ -121,7 +121,7 @@ mod Test.Exp.Jvm.Instanceof {
 
     // instanceof binds the scrutinee as the typed class and lets us call its methods.
     @Test
-    def testInstanceof14(): Unit \ Assert = {
+    def testInstanceof14(): Unit \ {Assert, IO} = {
         let o: Object = checked_cast("Hello");
         let len = o instanceof {
             case s: CharSequence => s.length()
@@ -191,7 +191,7 @@ mod Test.Exp.Jvm.Instanceof {
 
     // Refined-type binding: bound name is typed as Number and Number.intValue is invoked on it.
     @Test
-    def testInstanceofBind01(): Unit \ {Assert, IO} = {
+    def testInstanceofBind01(): Unit \ Assert = {
         let o: Object = checked_cast(100ii);
         let n = o instanceof {
             case x: Number => x.intValue()
@@ -306,7 +306,7 @@ mod Test.Exp.Jvm.Instanceof {
 
     // Java-backed builtin: the bound name is typed as java.lang.String and its methods are callable.
     @Test
-    def testInstanceofJString02(): Unit \ {Assert, IO} = {
+    def testInstanceofJString02(): Unit \ Assert = {
         let o: Object = checked_cast("hello");
         let n = o instanceof {
             case s: JString => s.length()
