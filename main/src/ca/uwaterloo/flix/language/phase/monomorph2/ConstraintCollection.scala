@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, MatchRule, Predicate}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, RegionScope}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, PredicateAndArity, RegionScope}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -508,20 +508,16 @@ object ConstraintCollection {
 
     // Lowering synthesizes Fixpoint3.Solver.injectIntoN(p, ts), generic over the container
     // constructor and the tuple's component types.
-    case Expr.FixpointInjectInto(exps, _, _, _, loc) =>
-      exps.foreach { e =>
-        val (tycon, argTypes) = Type.eraseAliases(e.tpe) match {
-          case Type.Apply(tc, innerType, _) =>
-            innerType.typeConstructor match {
-              case Some(TypeConstructor.Tuple(_)) => (tc, innerType.typeArguments)
-              case Some(TypeConstructor.Unit)     => (tc, Nil)
-              case _                              => (tc, List(innerType))
-            }
+    case Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
+      exps.zip(predsAndArities).foreach { case (e, PredicateAndArity(_, arity)) =>
+        Type.eraseAliases(e.tpe) match {
+          case Type.Apply(tc, innerTpe, _) =>
+            val argTypes = unmkTuplish(arity, innerTpe)
+            val flowArgs = (tc :: argTypes).map(typeToMonoArg)
+            visitExp(e)
+            sctx.addFlow(Flow(flowArgs, MonoVar.Def(Defs.ProjectInto(arity))))
           case t => throw InternalCompilerException(s"Unexpected non-foldable type: '$t'.", loc)
         }
-        val flowArgs = (tycon :: argTypes).map(typeToMonoArg)
-        visitExp(e)
-        sctx.addFlow(Flow(flowArgs, MonoVar.Def(Defs.ProjectInto(argTypes.length))))
       }
 
     // Lowering synthesizes Fixpoint3.Solver.factsN(p, d), generic over the N selected terms'
