@@ -122,7 +122,7 @@ object ConstraintGen {
   /**
     * Emits flow constraints for enum type applications occurring in `tpe`.
     */
-  private def visitType(tpe0: Type)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
+  private def visitType(tpe0: Type)(implicit tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg],  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     def dealiasedVisitType(tpe: Type): Unit = tpe match {
       case at @ Type.AssocType(_, arg, _, _) =>
         if (at.typeVars.isEmpty)
@@ -155,25 +155,25 @@ object ConstraintGen {
   /**
     * Emits flow constraints for all case field types in `enumDecl`.
     */
-  private def visitEnum(enumDecl: TypedAst.Enum)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
+  private def visitEnum(enumDecl: TypedAst.Enum)(implicit tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg],  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
     enumDecl.cases.values.foreach(cas => cas.tpes.foreach(visitType))
 
   /**
     * Emits flow constraints for all case field types in `restrictableEnumDecl`.
     */
-  private def visitRestrictableEnum(restrictableEnumDecl: TypedAst.RestrictableEnum)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
+  private def visitRestrictableEnum(restrictableEnumDecl: TypedAst.RestrictableEnum)(implicit tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg],  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
     restrictableEnumDecl.cases.values.foreach(cas => cas.tpes.foreach(visitType))
 
   /**
     * Emits flow constraints for all field types in `structDecl`.
     */
-  private def visitStruct(structDecl: TypedAst.Struct)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
+  private def visitStruct(structDecl: TypedAst.Struct)(implicit tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg],  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
     structDecl.fields.values.foreach(field => visitType(field.tpe))
 
   /**
     * Emits flow constraints for the formal parameter and return types of `op`.
     */
-  private def visitOp(op: TypedAst.Op)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
+  private def visitOp(op: TypedAst.Op)(implicit tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg],  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     op.spec.fparams.foreach { case FormalParam(_, tpe, _, _, _) => visitType(tpe) }
     visitType(op.spec.retTpe)
   }
@@ -181,7 +181,7 @@ object ConstraintGen {
   /**
     * Emits flow constraints for the formal parameter types, return type, and body of `defn`.
     */
-  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
+  private def visitDef(defn: TypedAst.Def)(implicit tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg],  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     defn.spec.fparams.foreach { case FormalParam(_, tpe, _, _, _) => visitType(tpe) }
     visitType(defn.spec.retTpe)
     visitExp(defn.exp)
@@ -192,14 +192,14 @@ object ConstraintGen {
     * Emits flow constraints for the default-handler calls that
     * `SpecializeAndLower.wrapDefWithDefaultHandlers` synthesizes around entry points.
     */
-  private def entryPointHandlerFlows(defn: TypedAst.Def)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = ???
+  private def entryPointHandlerFlows(defn: TypedAst.Def)(implicit tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = ???
 
   /**
     * Emits flow constraints for all call sites and enum/struct construction sites in `exp`.
     * Datalog and channel nodes additionally emit constraints for the stdlib calls
     * [[SpecializeAndLower]] will synthesize for them.
     */
-  private def visitExp(exp0: Expr)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = exp0 match {
+  private def visitExp(exp0: Expr)(implicit tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg],  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) => ()
     case Expr.Var(_, _, _) => ()
     case Expr.Hole(_, _, _, _, _) => ()
@@ -456,7 +456,7 @@ object ConstraintGen {
     * `AnyType` reach `Fixpoint.Boxable`'s box/unbox, whose unchecked casts would turn it into a
     * silently wrong runtime value instead.
     */
-  private def visitPat(pat0: TypedAst.Pattern)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = pat0 match {
+  private def visitPat(pat0: TypedAst.Pattern)(implicit tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg],  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = pat0 match {
     case TypedAst.Pattern.Tag(_, pats, tpe, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       pats.foreach(visitPat)
