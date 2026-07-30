@@ -34,5 +34,5 @@ object ConstraintSolver {
     * Callers must run [[NonMonomorphizableCheck.checkMonomorphizable]] first; without it, a
     * non-monomorphizable flow set makes the fixpoint loop grow without bound.
     */
-  def solve(flows: Set[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = ???
+  def solve(flows: List[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = ???
 }
