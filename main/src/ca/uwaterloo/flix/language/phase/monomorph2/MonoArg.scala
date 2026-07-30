@@ -18,25 +18,6 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 
-/**
-  * A monomorphization target-variable (def/enum/sig/struct/restrictable-enum) whose concrete
-  * type-argument tuple the solver determines, then substitutes back wherever `MonoArg.Param`
-  * references it.
-  */
-sealed trait MonoVar
-
-object MonoVar {
-  case class Def(sym: Symbol.DefnSym) extends MonoVar
-
-  case class Enum(sym: Symbol.EnumSym) extends MonoVar
-
-  case class Sig(sym: Symbol.SigSym) extends MonoVar
-
-  case class RestrictableEnum(sym: Symbol.RestrictableEnumSym) extends MonoVar
-
-  case class Struct(sym: Symbol.StructSym) extends MonoVar
-}
-
 /** A type argument that flows into a `MonoVar`. */
 sealed trait MonoArg
 
@@ -73,21 +54,3 @@ object MonoArg {
     case MonoArg.Assoc(_, a, _, _) => collectParams(a)
   }
 }
-
-/**
-  * A component-wise flow constraint.
-  * Read as: "The type-argument tuple `args` flows into the parameter slots of `dst`."
-  */
-case class Flow(args: List[MonoArg], dst: MonoVar)
-
-/**
-  * The result of constraint solving: for each polymorphic def/enum/struct/restrictable-enum
-  * symbol, the set of concrete type-argument tuples it must be specialized at. A restrictable
-  * enum's tuple always starts with its case-set index (`Kind.CaseSet`).
-  */
-case class Solution(
-  defs: Map[Symbol.DefnSym, Set[List[Type]]],
-  enums: Map[Symbol.EnumSym, Set[List[Type]]],
-  structs: Map[Symbol.StructSym, Set[List[Type]]],
-  restrictableEnums: Map[Symbol.RestrictableEnumSym, Set[List[Type]]]
-)
