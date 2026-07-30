@@ -70,7 +70,7 @@ object ConstraintGen {
     }
 
     ParOps.parMap(root.instances.values) { inst =>
-      inst.defs.foreach { instDef =>
+      for (instDef <- inst.defs) {
         val mvar = MonoVar.Def(instDef.sym)
         val allTparams = inst.tparams ++ instDef.spec.tparams
         implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = allTparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
@@ -104,7 +104,9 @@ object ConstraintGen {
       val mvar = MonoVar.Def(defnSym)
       implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = allTparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
       flix.profile(defnSym, sig.sym.loc) {
-        sig.exp.foreach(visitExp)
+        for (exp <- sig.exp) {
+          visitExp(exp)
+        }
       }
     }
 
@@ -138,8 +140,12 @@ object ConstraintGen {
         throw InternalCompilerException(s"Unexpected type alias (should have been erased): $tpe", tpe.loc)
       case app @ Type.Apply(_, _, _) =>
         val args = app.typeArguments
-        args.foreach(dealiasedVisitType)
-        declMonoVar(app.baseType).foreach(mvar => sctx.addFlow(FlowConstraint(Instantiation(args.map(t => dealiasedTypeToMonoArg(t))), mvar)))
+        for (arg <- args) {
+          dealiasedVisitType(arg)
+        }
+        for (mvar <- declMonoVar(app.baseType)) {
+          sctx.addFlow(FlowConstraint(Instantiation(args.map(t => dealiasedTypeToMonoArg(t))), mvar))
+        }
     }
     dealiasedVisitType(Type.eraseAliases(tpe0))
   }
@@ -155,26 +161,41 @@ object ConstraintGen {
   /**
     * Emits flow constraints for all case field types in `enumDecl`.
     */
-  private def visitEnum(enumDecl: TypedAst.Enum)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
-    enumDecl.cases.values.foreach(cas => cas.tpes.foreach(visitType))
+  private def visitEnum(enumDecl: TypedAst.Enum)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
+    for (cas <- enumDecl.cases.values) {
+      for (tpe <- cas.tpes) {
+        visitType(tpe)
+      }
+    }
+  }
 
   /**
     * Emits flow constraints for all case field types in `restrictableEnumDecl`.
     */
-  private def visitRestrictableEnum(restrictableEnumDecl: TypedAst.RestrictableEnum)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
-    restrictableEnumDecl.cases.values.foreach(cas => cas.tpes.foreach(visitType))
+  private def visitRestrictableEnum(restrictableEnumDecl: TypedAst.RestrictableEnum)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
+    for (cas <- restrictableEnumDecl.cases.values) {
+      for (tpe <- cas.tpes) {
+        visitType(tpe)
+      }
+    }
+  }
 
   /**
     * Emits flow constraints for all field types in `structDecl`.
     */
-  private def visitStruct(structDecl: TypedAst.Struct)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit =
-    structDecl.fields.values.foreach(field => visitType(field.tpe))
+  private def visitStruct(structDecl: TypedAst.Struct)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
+    for (field <- structDecl.fields.values) {
+      visitType(field.tpe)
+    }
+  }
 
   /**
     * Emits flow constraints for the formal parameter and return types of `op`.
     */
   private def visitOp(op: TypedAst.Op)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
-    op.spec.fparams.foreach { case FormalParam(_, tpe, _, _, _) => visitType(tpe) }
+    for (case FormalParam(_, tpe, _, _, _) <- op.spec.fparams) {
+      visitType(tpe)
+    }
     visitType(op.spec.retTpe)
   }
 
@@ -182,7 +203,9 @@ object ConstraintGen {
     * Emits flow constraints for the formal parameter types, return type, and body of `defn`.
     */
   private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = {
-    defn.spec.fparams.foreach { case FormalParam(_, tpe, _, _, _) => visitType(tpe) }
+    for (case FormalParam(_, tpe, _, _, _) <- defn.spec.fparams) {
+      visitType(tpe)
+    }
     visitType(defn.spec.retTpe)
     visitExp(defn.exp)
     entryPointHandlerFlows(defn)
@@ -205,15 +228,21 @@ object ConstraintGen {
     case Expr.Hole(_, _, _, _, _) => ()
 
     case Expr.ApplyDef(symUse, exps, targs, _, _, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       sctx.addFlow(FlowConstraint(Instantiation(targs.map(typeToMonoArg)), MonoVar.Def(symUse.sym)))
 
     case Expr.ApplySig(symUse, exps, targ, targs, _, _, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       sctx.addFlow(FlowConstraint(Instantiation((targ :: targs).map(typeToMonoArg)), MonoVar.Sig(symUse.sym)))
 
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
@@ -237,7 +266,9 @@ object ConstraintGen {
       visitExp(exp3)
 
     case Expr.Stm(exps, exp, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       visitExp(exp)
 
     case Expr.Discard(exp, _, _) => visitExp(exp)
@@ -248,38 +279,51 @@ object ConstraintGen {
 
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach {
-        case MatchRule(pat, guardOpt, body, _) =>
-          visitPat(pat)
-          guardOpt.foreach(visitExp)
-          visitExp(body)
+      for (case MatchRule(pat, guardOpt, body, _) <- rules) {
+        visitPat(pat)
+        for (exp0 <- guardOpt) {
+          visitExp(exp0)
+        }
+        visitExp(body)
       }
 
     case Expr.Tag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
 
     case Expr.RestrictableTag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach(r => visitExp(r.exp))
+      for (rule <- rules) {
+        visitExp(rule.exp)
+      }
 
     case Expr.ExtMatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach(r => visitExp(r.exp))
+      for (rule <- rules) {
+        visitExp(rule.exp)
+      }
 
     case Expr.ExtTag(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
 
     case Expr.Tuple(exps, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     case Expr.LocalDef(_, bnd, _, exp1, exp2, _, _, _) =>
       visitType(bnd.tpe)
@@ -287,7 +331,9 @@ object ConstraintGen {
       visitExp(exp2)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     case Expr.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
@@ -300,7 +346,9 @@ object ConstraintGen {
     case Expr.RecordRestrict(_, exp, _, _, _) => visitExp(exp)
 
     case Expr.ArrayLit(exps, exp, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       visitExp(exp)
 
     case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
@@ -320,7 +368,9 @@ object ConstraintGen {
       visitExp(exp3)
 
     case Expr.VectorLit(exps, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     case Expr.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1)
@@ -330,8 +380,12 @@ object ConstraintGen {
 
     case Expr.StructNew(_, fields, region, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
-      fields.foreach { case (_, e) => visitExp(e) }
-      region.foreach(visitExp)
+      for (case (_, exp) <- fields) {
+        visitExp(exp)
+      }
+      for (exp <- region) {
+        visitExp(exp)
+      }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
 
     case Expr.StructGet(exp, _, _, _, _) => visitExp(exp)
@@ -356,12 +410,16 @@ object ConstraintGen {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach(r => visitExp(r.exp))
+      for (rule <- rules) {
+        visitExp(rule.exp)
+      }
 
     case Expr.Throw(exp, _, _, _) => visitExp(exp)
 
     case Expr.Handler(_, rules, _, _, _, _, _) =>
-      rules.foreach(r => visitExp(r.exp))
+      for (rule <- rules) {
+        visitExp(rule.exp)
+      }
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)
@@ -375,20 +433,30 @@ object ConstraintGen {
     case Expr.ParYield(_, _, _, _, _) => ???
 
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       visitExp(exp)
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     case Expr.GetField(_, exp, _, _, _) => visitExp(exp)
 
@@ -401,8 +469,12 @@ object ConstraintGen {
     case Expr.PutStaticField(_, exp, _, _, _) => visitExp(exp)
 
     case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
-      constructors.foreach(c => visitExp(c.exp))
-      methods.foreach(m => visitExp(m.exp))
+      for (c <- constructors) {
+        visitExp(c.exp)
+      }
+      for (m <- methods) {
+        visitExp(m.exp)
+      }
 
     // Lowering synthesizes Channel.get/put/newChannelTuple calls for GetChannel/PutChannel/
     // NewChannel respectively.
@@ -429,7 +501,9 @@ object ConstraintGen {
       visitExp(exp2)
 
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
 
     // Lowering synthesizes Fixpoint3.Solver.injectIntoN(p, ts), generic over the container
     // constructor and the tuple's component types.
@@ -459,12 +533,18 @@ object ConstraintGen {
   private def visitPat(pat0: TypedAst.Pattern)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = pat0 match {
     case TypedAst.Pattern.Tag(_, pats, tpe, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
-      pats.foreach(visitPat)
+      for (pat <- pats) {
+        visitPat(pat)
+      }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
     case TypedAst.Pattern.Tuple(elms, _, _) =>
-      elms.foreach(visitPat)
+      for (elm <- elms) {
+        visitPat(elm)
+      }
     case TypedAst.Pattern.Record(pats, pat, _, _) =>
-      pats.foreach(lp => visitPat(lp.pat))
+      for (lp <- pats) {
+        visitPat(lp.pat)
+      }
       visitPat(pat)
     case TypedAst.Pattern.Wild(_, _) | TypedAst.Pattern.Var(_, _, _) | TypedAst.Pattern.Cst(_, _, _) | TypedAst.Pattern.Error(_, _) =>
       ()
