@@ -56,7 +56,6 @@ object NonMonomorphizableCheck {
         }
     }.toList
 
-    val seeds = positions.collect { case (_, dstV, ps) if ps.isEmpty => dstV }
     val edges = positions.flatMap { case (arg, dstV, ps) =>
       ps.map { case (v, j) => Edge(Vertex(v, j), dstV, growing = isGrowingHead(arg)) }
     }
@@ -65,12 +64,11 @@ object NonMonomorphizableCheck {
 
     val adjacency = edges.groupMap(_.src)(_.dst)
     val getAdj = (v: Vertex) => adjacency.getOrElse(v, Nil)
-    val reachable = Graph.reachable(seeds, getAdj)
     val vertices = edges.iterator.flatMap(e => Iterator(e.src, e.dst)).toSet
     val scc = Graph.stronglyConnectedComponents(vertices, getAdj)
 
-    // Detect polymorphic recursion: If a growing reachable edge is on a cycle (i.e. endpoints share SCC).
-    edges.find(e => e.growing && reachable(e.src) && scc(e.src) == scc(e.dst)) match {
+    // Detect polymorphic recursion: If a growing edge is on a cycle (i.e. endpoints share SCC).
+    edges.find(e => e.growing && scc(e.src) == scc(e.dst)) match {
       case Some(edge) =>
         throw InternalCompilerException(
           s"Program is not monomorphizable: found an infinitely-growing recursive type " +

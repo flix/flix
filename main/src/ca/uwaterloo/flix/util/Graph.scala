@@ -136,25 +136,4 @@ object Graph {
 
     sccId.toMap
   }
-
-  /**
-    * Get every node reachable from `seeds`, using the `getAdj` function to find adjacent nodes,
-    * i.e., the outgoing edges of a node `n`.
-    *
-    * `N` must have a well-defined equality and hashcode.
-    */
-  def reachable[N](seeds: Iterable[N], getAdj: (N => List[N])): Set[N] = {
-    val visited = mutable.Set.empty[N]
-    val queue = mutable.Queue.empty[N]
-    visited ++= seeds
-    queue.enqueueAll(seeds)
-    while (queue.nonEmpty) {
-      val v = queue.dequeue()
-      for (w <- getAdj(v) if !visited(w)) {
-        visited += w
-        queue.enqueue(w)
-      }
-    }
-    visited.toSet
-  }
 }
