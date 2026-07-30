@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, MatchRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, MatchRule, TypeParam}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -58,14 +58,14 @@ object ConstraintGen {
     ParOps.parMap(root.defs.values) { defn =>
       flix.profile(defn.sym, defn.loc) {
         val mvar = MonoVar.Def(defn.sym)
-        implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = defn.spec.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+        implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = mkTparamEnv(mvar, defn.spec.tparams)
         visitDef(defn)
       }
     }
 
     ParOps.parMap(root.enums.values) { enm =>
       val mvar = MonoVar.Enum(enm.sym)
-      implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = enm.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+      implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = mkTparamEnv(mvar, enm.tparams)
       visitEnum(enm)
     }
 
@@ -73,7 +73,7 @@ object ConstraintGen {
       inst.defs.foreach { instDef =>
         val mvar = MonoVar.Def(instDef.sym)
         val allTparams = inst.tparams ++ instDef.spec.tparams
-        implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = allTparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+        implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = mkTparamEnv(mvar, allTparams)
         flix.profile(instDef.sym, instDef.loc) {
           visitDef(instDef)
         }
@@ -82,13 +82,13 @@ object ConstraintGen {
 
     ParOps.parMap(root.restrictableEnums.values) { enm =>
       val mvar = MonoVar.RestrictableEnum(enm.sym)
-      implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = (enm.index :: enm.tparams).zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+      implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = mkTparamEnv(mvar, enm.index :: enm.tparams)
       visitRestrictableEnum(enm)
     }
 
     ParOps.parMap(root.structs.values) { struct =>
       val mvar = MonoVar.Struct(struct.sym)
-      implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = struct.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+      implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = mkTparamEnv(mvar, struct.tparams)
       visitStruct(struct)
     }
 
@@ -102,7 +102,7 @@ object ConstraintGen {
       val ns = sig.sym.trt.namespace :+ sig.sym.trt.name
       val defnSym = new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
       val mvar = MonoVar.Def(defnSym)
-      implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = allTparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+      implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = mkTparamEnv(mvar, allTparams)
       flix.profile(defnSym, sig.sym.loc) {
         sig.exp.foreach(visitExp)
       }
@@ -112,12 +112,16 @@ object ConstraintGen {
       // We need a Synthetic DefnSym to tie the tparams to
       val defnSym = new Symbol.DefnSym(None, op.sym.namespace, op.sym.name, op.sym.loc)
       val mvar = MonoVar.Def(defnSym)
-      implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = op.spec.tparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
+      implicit val tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg] = mkTparamEnv(mvar, op.spec.tparams)
       visitOp(op)
     }
 
     sctx.result
   }
+
+  /** Returns the `MonoArg.Param` bindings for `mvar`'s type parameters, in declared order. */
+  private def mkTparamEnv(mvar: MonoVar, tparams: List[TypeParam]): Map[Symbol.KindedTypeVarSym, MonoArg] =
+    tparams.zipWithIndex.map { case (tp, i) => tp.sym -> MonoArg.Param(mvar, i) }.toMap
 
   /**
     * Emits flow constraints for enum type applications occurring in `tpe`.
