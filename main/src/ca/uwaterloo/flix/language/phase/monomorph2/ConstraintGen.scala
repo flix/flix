@@ -131,14 +131,7 @@ object ConstraintGen {
           visitType(MonomorphCanon.reduceAssocType(at)(root, flix))
         else
           dealiasedVisitType(arg)
-      case Type.Var(_, _)
-           | Type.Cst(_, _)
-           | Type.JvmToEff(_, _)
-           | Type.JvmToType(_, _)
-           | Type.UnresolvedJvmType(_, _)=> ()
-      case Type.Alias(_, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected type alias (should have been erased): $tpe", tpe.loc)
-      case app @ Type.Apply(_, _, _) =>
+      case app @ Type.Apply(_, _, _)    =>
         val args = app.typeArguments
         for (arg <- args) {
           dealiasedVisitType(arg)
@@ -146,6 +139,13 @@ object ConstraintGen {
         for (mvar <- declMonoVar(app.baseType)) {
           sctx.addFlow(FlowConstraint(Instantiation(args.map(t => dealiasedTypeToMonoArg(t))), mvar))
         }
+      case Type.Var(_, _)               => ()
+      case Type.Cst(_, _)               => ()
+      case Type.JvmToEff(_, _)          => ()
+      case Type.JvmToType(_, _)         => ()
+      case Type.UnresolvedJvmType(_, _) => ()
+      case Type.Alias(_, _, _, _)       =>
+        throw InternalCompilerException(s"Unexpected type alias (should have been erased): $tpe", tpe.loc)
     }
     dealiasedVisitType(Type.eraseAliases(tpe0))
   }
@@ -223,60 +223,46 @@ object ConstraintGen {
     * [[SpecializeAndLower]] will synthesize for them.
     */
   private def visitExp(exp0: Expr)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = exp0 match {
-    case Expr.Cst(_, _, _) => ()
-    case Expr.Var(_, _, _) => ()
+    case Expr.Cst(_, _, _)        => ()
+    case Expr.Var(_, _, _)        => ()
     case Expr.Hole(_, _, _, _, _) => ()
-
     case Expr.ApplyDef(symUse, exps, targs, _, _, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
       sctx.addFlow(FlowConstraint(Instantiation(targs.map(typeToMonoArg)), MonoVar.Def(symUse.sym)))
-
     case Expr.ApplySig(symUse, exps, targ, targs, _, _, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
       sctx.addFlow(FlowConstraint(Instantiation((targ :: targs).map(typeToMonoArg)), MonoVar.Sig(symUse.sym)))
-
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
-
     case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.Unary(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.Lambda(_, exp, _, _) => visitExp(exp)
-
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
-
     case Expr.Stm(exps, exp, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
       visitExp(exp)
-
     case Expr.Discard(exp, _, _) => visitExp(exp)
-
     case Expr.Region(_, _, exp, _, _, _) => visitExp(exp)
-
     case Expr.Use(_, _, exp, _) => visitExp(exp)
-
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp)
       for (case MatchRule(pat, guardOpt, body, _) <- rules) {
@@ -286,98 +272,76 @@ object ConstraintGen {
         }
         visitExp(body)
       }
-
     case Expr.Tag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       for (exp <- exps) {
         visitExp(exp)
       }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
-
     case Expr.RestrictableTag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       for (exp <- exps) {
         visitExp(exp)
       }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       for (rule <- rules) {
         visitExp(rule.exp)
       }
-
     case Expr.ExtMatch(exp, rules, _, _, _) =>
       visitExp(exp)
       for (rule <- rules) {
         visitExp(rule.exp)
       }
-
     case Expr.ExtTag(_, exps, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
-
     case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
-
     case Expr.Tuple(exps, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
-
     case Expr.LocalDef(_, bnd, _, exp1, exp2, _, _, _) =>
       visitType(bnd.tpe)
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
-
     case Expr.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
-
     case Expr.RecordSelect(exp, _, _, _, _) => visitExp(exp)
-
     case Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.RecordRestrict(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.ArrayLit(exps, exp, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
       visitExp(exp)
-
     case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
-
     case Expr.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.ArrayLength(exp, _, _) => visitExp(exp)
-
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
-
     case Expr.VectorLit(exps, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
-
     case Expr.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.VectorLength(exp, _) => visitExp(exp)
-
     case Expr.StructNew(_, fields, region, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       for (case (_, exp) <- fields) {
@@ -387,48 +351,33 @@ object ConstraintGen {
         visitExp(exp)
       }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
-
     case Expr.StructGet(exp, _, _, _, _) => visitExp(exp)
-
     case Expr.StructPut(exp1, _, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.Lazy(exp, _, _) => visitExp(exp)
-
     case Expr.Force(exp, _, _, _) => visitExp(exp)
-
     case Expr.Ascribe(exp, _, _, _, _, _) => visitExp(exp)
-
     case Expr.InstanceOf(exp, _, _) => visitExp(exp)
-
     case Expr.CheckedCast(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.UncheckedCast(exp, _, _, _, _, _) => visitExp(exp)
-
     case Expr.Unsafe(exp, _, _, _, _, _) => visitExp(exp)
-
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
       for (rule <- rules) {
         visitExp(rule.exp)
       }
-
     case Expr.Throw(exp, _, _, _) => visitExp(exp)
-
     case Expr.Handler(_, rules, _, _, _, _, _) =>
       for (rule <- rules) {
         visitExp(rule.exp)
       }
-
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     // Lowering synthesizes Channel.get/put/newChannel calls for each non-last fragment.
     case Expr.ParYield(_, _, _, _, _) => ???
 
@@ -436,38 +385,29 @@ object ConstraintGen {
       for (exp <- exps) {
         visitExp(exp)
       }
-
     case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
-
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       visitExp(exp)
       for (exp <- exps) {
         visitExp(exp)
       }
-
     case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
-
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
-
     case Expr.GetField(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.PutField(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.GetStaticField(_, _, _, _) => ()
-
     case Expr.PutStaticField(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
       for (c <- constructors) {
         visitExp(c.exp)
@@ -499,12 +439,10 @@ object ConstraintGen {
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
-
     // Lowering synthesizes Fixpoint3.Solver.injectIntoN(p, ts), generic over the container
     // constructor and the tuple's component types.
     case Expr.FixpointInjectInto(_, _, _, _, _) => ???
@@ -546,8 +484,10 @@ object ConstraintGen {
         visitPat(lp.pat)
       }
       visitPat(pat)
-    case TypedAst.Pattern.Wild(_, _) | TypedAst.Pattern.Var(_, _, _) | TypedAst.Pattern.Cst(_, _, _) | TypedAst.Pattern.Error(_, _) =>
-      ()
+    case TypedAst.Pattern.Wild(_, _)   => ()
+    case TypedAst.Pattern.Var(_, _, _) => ()
+    case TypedAst.Pattern.Cst(_, _, _) => ()
+    case TypedAst.Pattern.Error(_, _)  => ()
   }
 
   /** Converts `tpe0` to a `MonoArg` relative to the current declaration context. */
