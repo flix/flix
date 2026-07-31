@@ -87,4 +87,6 @@ jobs:
         timeout-minutes: 10
         run: |
           # Build the project.
-          java -jar out.jar build --github-token ${{ secrets.GITHUB_TOKEN }}
+          # Note: -Xss8m because type inference recurses once per AST node along a
+          # function's spine, so large functions exhaust the default 1MB stack.
+          java -Xss8m -jar out.jar build --github-token ${{ secrets.GITHUB_TOKEN }}
