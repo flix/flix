@@ -551,7 +551,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // 4. Check effect lock file exists
     FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
       case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-      case Ok(false) => return Err(BootstrapError.FileError(s"Refusing to run 'upgrade'. No effect lock file '$EFFECT_LOCK_FILE' found. Run 'eff-lock' to generate one."))
+      case Ok(false) => return Err(BootstrapError.UpgradeError.MissingFile(EFFECT_LOCK_FILE))
       case Ok(true) => () // Continue
     }
 

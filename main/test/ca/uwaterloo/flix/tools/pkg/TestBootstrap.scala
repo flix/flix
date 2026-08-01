@@ -441,7 +441,7 @@ class TestBootstrap extends AnyFunSuite {
       upgradeVersion
     )(Formatter.getDefault, System.in, System.out)
 
-    assert(actual == Result.Err(BootstrapError.UpgradeError.MissingEffectLockFile))
+    assert(actual == Result.Err(BootstrapError.UpgradeError.MissingFile("effects.lock")))
 
   }
 

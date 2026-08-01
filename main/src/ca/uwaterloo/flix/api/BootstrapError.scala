@@ -105,8 +105,10 @@ object BootstrapError {
   }
 
   object UpgradeError {
-    object MissingEffectLockFile extends BootstrapError {
-      override def message(f: Formatter): String = ???
+    case class MissingFile(file: String) extends BootstrapError {
+      override def message(f: Formatter): String = {
+        s"Refusing to run 'upgrade'. No effect lock file '$file' found. Run 'eff-lock' to generate one."
+      }
     }
   }
 }
