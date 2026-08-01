@@ -157,9 +157,11 @@ object Model {
     case object Tvars   extends Sort { val key = 'v' }
     /** Most effect variables first — surfaces effect-polymorphic defs. */
     case object Evars   extends Sort { val key = 'e' }
+    /** Highest type-substitution size per type variable first — surfaces defs whose inference resolves each `Kind.Star` variable to a disproportionately large type. Floored on the type-substitution size. The key is `p` (the free letter in `tpv`). */
+    case object TypeSubstDensity extends Sort { val key = 'p' }
 
     /** All sort values. */
-    val all: List[Sort] = List(Time, Hotness, Mono, Inl, Cls, Size, Alloc, Cns, Tvars, Evars)
+    val all: List[Sort] = List(Time, Hotness, Mono, Inl, Cls, Size, Alloc, Cns, Tvars, Evars, TypeSubstDensity)
 
     /** The sort whose `key` matches `c` (case-insensitive), or `None`. */
     def fromKey(c: Char): Option[Sort] = all.find(_.key == c.toLower)
@@ -182,11 +184,12 @@ object Model {
     * @param totalCns       summed Typer constraint counts across the module's defs.
     * @param totalTvars     summed `Kind.Star` type-variable counts across the module's defs.
     * @param totalEvars     summed `Kind.Eff`  effect-variable counts across the module's defs.
+    * @param totalSubstTypeSize summed `Kind.Star` substitution term sizes across the module's defs.
     * @param totalInlined   summed inliner call-site inline counts across the module's defs.
     * @param totalClassBytes summed bytecode byte size of emitted `.class` files across the module's defs.
     * @param totalAllocBytes summed compiler-side heap allocation bytes across the module's defs.
     */
-  final case class ModuleStats(module: String, totalNanos: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
+  final case class ModuleStats(module: String, totalNanos: Long, totalLines: Int, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], totalCns: Long, totalTvars: Long, totalEvars: Long, totalSubstTypeSize: Long, totalInlined: Long, totalClassBytes: Long, totalAllocBytes: Long) {
     /** Returns the phase that consumed the most time in this module, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
