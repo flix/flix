@@ -406,12 +406,49 @@ class TestBootstrap extends AnyFunSuite {
     assert(bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
   }
 
-  // TODO: Add test that upgrade with eff-lock first is error
+  test("upgrade without effect lock file reports error") {
+    // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
+    // There is no upgrade done, but we assert that
+    // an error is reported if the effect lock file does not exist.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
+
+    // Override manifest
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.0"
+        |""".stripMargin
+    )
+    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
+
+    // Override main file
+    val main =
+      """
+        |pub def main(): Unit \ IO =
+        |    println(Upgr.entrypoint(42))
+        |""".stripMargin
+    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
+
+    // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+    // Otherwise, bootstrap won't add sources to the Flix object.
+    val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val upgradeVersion = Some(SemVer(0, 1, 0))
+
+    val actual = bootstrapUpgr.upgrade(
+      PkgTestUtils.mkFlix,
+      "github:jaschdoc/flix-test-pkg-eff-upgrade",
+      upgradeVersion
+    )(Formatter.getDefault, System.in, System.out)
+
+    assert(actual == Result.Err(BootstrapError.UpgradeError.MissingEffectLockFile))
+
+  }
 
   test("upgrade on same version as before is ok") {
     // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
     // There is no upgrade done, but we assert that
-    // performing eff-check after eff-lock succeeds.
+    // performing upgrade after eff-lock succeeds.
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
 

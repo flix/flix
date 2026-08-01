@@ -103,4 +103,10 @@ object BootstrapError {
         s"$formattedSym${System.lineSeparator()}$formattedUses"
     }.mkString(System.lineSeparator())
   }
+
+  object UpgradeError {
+    object MissingEffectLockFile extends BootstrapError {
+      override def message(f: Formatter): String = ???
+    }
+  }
 }
