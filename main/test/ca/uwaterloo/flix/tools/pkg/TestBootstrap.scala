@@ -540,6 +540,63 @@ class TestBootstrap extends AnyFunSuite {
     assert(actual == Result.Ok(()))
   }
 
+  test("upgrade twice on effect safe downgrade is ok") {
+    // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
+    // Version 0.1.1 of the dependency has signature `Int32 -> Int32 \ IO`.
+    // We downgrade from `Int32 -> Int32 \ IO` to `Int32 -> Int32`
+    // and assert that it succeeds.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
+
+    // Override manifest
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.1"
+        |""".stripMargin
+    )
+    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
+
+    // Override main file
+    val main =
+      """
+        |pub def main(): Unit \ IO =
+        |    println(Upgr.entrypoint(42))
+        |""".stripMargin
+    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
+
+    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+
+    // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+    // Otherwise, bootstrap won't add sources to the Flix object.
+    val bootstrapUpgr1 = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    // Simulate user pressing "y" to the initial downgrade prompt
+    val in1 = new java.io.ByteArrayInputStream("y\n".getBytes)
+
+    val upgradeVersion = Some(SemVer(0, 1, 0))
+    bootstrapUpgr1.upgrade(
+      PkgTestUtils.mkFlix,
+      "github:jaschdoc/flix-test-pkg-eff-upgrade",
+      upgradeVersion
+    )(Formatter.getDefault, in1, System.out).unsafeGet // N.B.: Unsafe get to crash on error
+
+    // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+    // Otherwise, bootstrap won't add sources to the Flix object.
+    val bootstrapUpgr2 = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    // Simulate user pressing "y" to the initial downgrade prompt
+    val in2 = new java.io.ByteArrayInputStream("y\n".getBytes)
+
+    val actual = bootstrapUpgr2.upgrade(
+      PkgTestUtils.mkFlix,
+      "github:jaschdoc/flix-test-pkg-eff-upgrade",
+      upgradeVersion
+    )(Formatter.getDefault, in2, System.out)
+
+    assert(actual == Result.Ok(()))
+  }
+
   private def calcHash(p: Path): String = {
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>

@@ -327,7 +327,7 @@ object FileOps {
     * Use a depth of 1 to only visit the files in the given directory.
     * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
     */
-  private def walkTree(path: Path, depth: Int): List[Path] = {
+  def walkTree(path: Path, depth: Int): List[Path] = {
     if (Files.exists(path) && Files.isDirectory(path))
       Files.walk(path, depth)
         .iterator().asScala
