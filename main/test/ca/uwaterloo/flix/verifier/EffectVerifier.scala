@@ -162,6 +162,12 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.InstanceOfMatch(exp, rules, tpe, eff, loc) =>
+      visitExp(exp)
+      rules.foreach(r => visitExp(r.exp))
+      val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
+      val actual = eff
+      expectType(expected, actual, loc)
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }

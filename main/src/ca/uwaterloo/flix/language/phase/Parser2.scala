@@ -1573,6 +1573,12 @@ object Parser2 {
               lhs = close(mark, TreeKind.Expr.Index)
               lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
             }
+          case TokenKind.KeywordInstanceOf =>
+            val mark = openBefore(lhs)
+            eat(TokenKind.KeywordInstanceOf)
+            instanceOfMatchRules()
+            lhs = close(mark, TreeKind.Expr.InstanceOfMatch)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
           case _ => continue = false
         }
       }
@@ -1649,17 +1655,17 @@ object Parser2 {
         case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
         case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
         case TokenKind.KeywordAnd => Some(BinaryOp.And)
-        case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
         case TokenKind.KeywordOr => Some(BinaryOp.Or)
-        case TokenKind.Minus => Some(BinaryOp.Minus)
-        case TokenKind.NameMath => Some(BinaryOp.NameMath)
-        case TokenKind.Plus => Some(BinaryOp.Plus)
-        case TokenKind.Slash => Some(BinaryOp.Slash)
-        case TokenKind.Star => Some(BinaryOp.Star)
-        case TokenKind.Tick => Some(BinaryOp.InfixFunction)
-        case TokenKind.ColonColonColon => Some(BinaryOp.TripleColon)
-        case TokenKind.GenericOperator => Some(BinaryOp.UserDefinedOperator)
-        case _ => None
+            case TokenKind.Minus => Some(BinaryOp.Minus)
+            case TokenKind.NameMath => Some(BinaryOp.NameMath)
+            case TokenKind.Plus => Some(BinaryOp.Plus)
+            case TokenKind.Slash => Some(BinaryOp.Slash)
+            case TokenKind.Star => Some(BinaryOp.Star)
+            case TokenKind.Tick => Some(BinaryOp.InfixFunction)
+            case TokenKind.ColonColonColon => Some(BinaryOp.TripleColon)
+            case TokenKind.GenericOperator => Some(BinaryOp.UserDefinedOperator)
+            case _ => None
+
       }
     }
 
@@ -1676,7 +1682,6 @@ object Parser2 {
       TokenKind.EqualEqual,
       TokenKind.GenericOperator,
       TokenKind.KeywordAnd,
-      TokenKind.KeywordInstanceOf,
       TokenKind.KeywordOr,
       TokenKind.Minus,
       TokenKind.NameMath,
@@ -1730,7 +1735,6 @@ object Parser2 {
 
       /** Precedence for operators, lower is higher precedence. */
       private def precedence: Int = this match {
-        case BinaryOp.InstanceOf => 0
         case BinaryOp.Or => 1
         case BinaryOp.And => 2
         case BinaryOp.EqualEqual | BinaryOp.AngledEqual | BinaryOp.BangEqual => 3
@@ -1811,8 +1815,6 @@ object Parser2 {
       case object EqualEqual extends BinaryOp
 
       case object InfixFunction extends BinaryOp
-
-      case object InstanceOf extends BinaryOp
 
       case object Minus extends BinaryOp
 
@@ -2350,6 +2352,38 @@ object Parser2 {
         }
       }
       Result.Ok((result, mark))
+    }
+
+    private def instanceOfMatchRules()(implicit s: State): Unit = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.CatchRule,
+        checkForItem = _ == TokenKind.KeywordCase,
+        getItem = instanceOfMatchRule,
+        breakWhen = _.isRecoverInExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.Optional(TokenKind.Comma)
+      )
+    }
+
+    private def instanceOfMatchRule()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      val mark = open()
+      expect(TokenKind.KeywordCase)
+      nameUnqualified(NAME_VARIABLE)
+      if (eat(TokenKind.Colon)) {
+        Type.ttype()
+      }
+      if (eat(TokenKind.Equal)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
+      } else {
+        expect(TokenKind.ArrowThickR)
+      }
+      statement()
+      close(mark, TreeKind.Expr.InstanceOfMatchRuleFragment)
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {

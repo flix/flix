@@ -152,6 +152,17 @@ object Safety {
         visitExp(rule.exp)
       }
 
+    case Expr.InstanceOfMatch(exp, rules, _, _, loc) =>
+      visitExp(exp)
+      rules.foreach(rule => visitExp(rule.exp))
+      // An 'instanceof' match is exhaustive only if at least one case is a default case
+      // (i.e. one without a type annotation), which is guaranteed to match. Unreachable
+      // cases following a default case are reported separately as a redundancy error.
+      val hasDefault = rules.exists(_.tpe.isEmpty)
+      if (!hasDefault) {
+        sctx.errors.add(SafetyError.NonExhaustiveInstanceOfMatch(loc))
+      }
+
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))

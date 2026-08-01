@@ -816,6 +816,15 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
+      case Expr.InstanceOfMatch(exp, rules, tvar, loc) =>
+        val (scrutTpe, scrutEff) = visitExp(exp)
+        val (tpes, effs) = rules.map(visitInstanceOfMatchRule(_, scrutTpe)).unzip
+        c.unifyAllTypes(tpes, loc)
+        val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
+        c.unifyType(tvar, resTpe, loc)
+        val resEff = Type.mkUnion(scrutEff :: effs, loc)
+        (tvar, resEff)
+
       case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
         // A cast expression is sound; the type system ensures the declared type is correct.
         cast match {
@@ -1271,6 +1280,27 @@ object ConstraintGen {
   private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.CatchRule(sym, clazz, exp, _) =>
       c.expectType(expected = Type.mkNative(clazz, sym.loc), sym.tvar, sym.loc)
+      visitExp(exp)
+  }
+
+  /**
+    * Generates constraints for the given instanceof match rule.
+    *
+    * For typed rules, each wildcard type variable introduced by the rule's type is marked rigid,
+    * so the bound variable's type is opaque inside the body.
+    *
+    * Returns the body's type and the body's effect.
+    */
+  private def visitInstanceOfMatchRule(rule: KindedAst.InstanceOfMatchRule, scrutTpe: Type)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
+    case KindedAst.InstanceOfMatchRule(sym, tpe, exp, _) =>
+      tpe match {
+        case Some(t) =>
+          t.typeVars.foreach(tvar => c.rigidify(tvar.sym))
+          c.unifyType(sym.tvar, t, sym.loc)
+        case None =>
+          // No type ascription: bind sym to the scrutinee's type.
+          c.unifyType(sym.tvar, scrutTpe, sym.loc)
+      }
       visitExp(exp)
   }
 

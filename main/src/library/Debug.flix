@@ -84,14 +84,11 @@ pub mod Debug {
             case JvmValue.JvmObject(obj) =>
                 if (Objects.isNull(obj)) {
                     "null"
-                } else if (obj instanceof JString) {
-                    "\"" + escape(unchecked_cast(obj as String)) + "\""
-                } else if (obj instanceof JBigInteger) {
-                    unchecked_cast(obj as JBigInteger).toString() + "ii"
-                } else if (obj instanceof JBigDecimal) {
-                    unchecked_cast(obj as JBigDecimal).toString() + "ff"
-                } else {
-                    objectToString(obj)
+                } else obj instanceof {
+                    case s: JString     => "\"" + escape(s) + "\""
+                    case b: JBigInteger => b.toString() + "ii"
+                    case b: JBigDecimal => b.toString() + "ff"
+                    case _              => objectToString(obj)
                 }
         }
     }

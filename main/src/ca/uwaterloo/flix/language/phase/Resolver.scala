@@ -1111,6 +1111,18 @@ object Resolver {
           ResolvedAst.Expr.Error(error)
       }
 
+    case NamedAst.Expr.InstanceOfMatch(exp, rules, loc) =>
+      val e = resolveExp(exp, scp0)
+      val rs = rules.map {
+        case NamedAst.InstanceOfMatchRule(sym, tpe, body, ruleLoc) =>
+          val resolvedTpe = tpe.map(resolveType(_, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root))
+          resolvedTpe.foreach(checkInstanceOfRuleType)
+          val scp = scp0 ++ mkVarScp(sym)
+          val b = resolveExp(body, scp)
+          ResolvedAst.InstanceOfMatchRule(sym, resolvedTpe, b, ruleLoc)
+      }
+      ResolvedAst.Expr.InstanceOfMatch(e, rs, loc)
+
     case NamedAst.Expr.CheckedCast(c, exp, loc) =>
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.CheckedCast(c, e, loc)
@@ -2793,6 +2805,42 @@ object Resolver {
     effOpt match {
       case None => Result.Err(ResolutionError.UndefinedEffect(qname, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, ns0, qname.loc))
       case Some(decl) => Result.Ok(decl)
+    }
+  }
+
+  /**
+    * Validates that the type of an `instanceof` match rule is well-formed: a Java reference
+    * type constructor applied to zero or more wildcard type variables. Reports any
+    * violations via the shared context but always returns the type unchanged so downstream
+    * phases see consistent shapes.
+    */
+  private def checkInstanceOfRuleType(tpe: UnkindedType)(implicit sctx: SharedContext): Unit = {
+    def isWildcardVar(t: UnkindedType): Boolean = t match {
+      case UnkindedType.Var(sym, _) => sym.isWild
+      case _ => false
+    }
+    // A type constructor that corresponds to a concrete Java class at runtime, and so can be
+    // used as an `instanceof` rule type: either a raw Java type or a Java-backed Flix builtin.
+    def isJavaBackedType(tc: TypeConstructor): Boolean = tc match {
+      case TypeConstructor.Native(_) => true
+      case TypeConstructor.Str => true
+      case TypeConstructor.BigInt => true
+      case TypeConstructor.BigDecimal => true
+      case TypeConstructor.Regex => true
+      case _ => false
+    }
+    val base = tpe.baseType
+    val args = tpe.typeArguments
+    base match {
+      case UnkindedType.Cst(tc, _) if isJavaBackedType(tc) =>
+        args.foreach { arg =>
+          if (!isWildcardVar(arg)) sctx.errors.add(ResolutionError.IllegalInstanceOfTypeArgument(arg.loc))
+        }
+      case UnkindedType.Error(_) =>
+        // An error has already been reported during resolution.
+        ()
+      case _ =>
+        sctx.errors.add(ResolutionError.IllegalInstanceOfType(tpe.loc))
     }
   }
 

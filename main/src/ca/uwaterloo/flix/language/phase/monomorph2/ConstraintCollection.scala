@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, MatchRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, InstanceOfMatchRule, MatchRule}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
@@ -248,6 +248,15 @@ object ConstraintCollection {
         case MatchRule(pat, guardOpt, body, _) =>
           visitPat(pat)
           guardOpt.foreach(visitExp)
+          visitExp(body)
+      }
+
+    case Expr.InstanceOfMatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach {
+        case InstanceOfMatchRule(bnd, tpe, body, _) =>
+          visitType(bnd.tpe)
+          tpe.foreach(visitType(_))
           visitExp(body)
       }
 
