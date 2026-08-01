@@ -540,6 +540,70 @@ class TestBootstrap extends AnyFunSuite {
     assert(actual == Result.Ok(()))
   }
 
+  test("upgrade twice on effect unsafe upgrade gives same error") {
+    // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
+    // Version 0.1.1 of the dependency has signature `Int32 -> Int32 \ IO`.
+    // We upgrade from `Int32 -> Int32` to `Int32 -> Int32 \ IO`
+    // and assert that it does NOT succeed because we decline the effect trust prompt.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
+
+    // Override manifest
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.0"
+        |""".stripMargin
+    )
+    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
+
+    // Override main file
+    val main =
+      """
+        |pub def main(): Unit \ IO =
+        |    println(Upgr.entrypoint(42))
+        |""".stripMargin
+    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
+
+    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+
+    // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+    // Otherwise, bootstrap won't add sources to the Flix object.
+    val bootstrapUpgr1 = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    // Simulate user pressing "y" to the initial upgrade prompt, but "n" to the effect trust prompt
+    val in1 = new java.io.ByteArrayInputStream("y\nn\n".getBytes)
+
+    val upgradeVersion = Some(SemVer(0, 1, 1))
+
+    val firstError = bootstrapUpgr1.upgrade(
+      PkgTestUtils.mkFlix,
+      "github:jaschdoc/flix-test-pkg-eff-upgrade",
+      upgradeVersion
+    )(Formatter.getDefault, in1, System.out)
+
+    firstError match {
+      case Result.Err(BootstrapError.GeneralError(msg)) if msg.contains("Upgrade aborted") =>
+        // N.B.: Use new bootstrap instance for different flix objects, to perform cache invalidation.
+        // Otherwise, bootstrap won't add sources to the Flix object.
+        val bootstrapUpgr2 = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+        // Simulate user pressing "y" to the initial upgrade prompt, but "n" to the effect trust prompt
+        val in2 = new java.io.ByteArrayInputStream("y\nn\n".getBytes)
+
+        val secondError = bootstrapUpgr2.upgrade(
+          PkgTestUtils.mkFlix,
+          "github:jaschdoc/flix-test-pkg-eff-upgrade",
+          upgradeVersion
+        )(Formatter.getDefault, in2, System.out)
+
+        assert(firstError == secondError)
+
+      case Result.Err(e) => fail(e.message(Formatter.getDefault))
+      case Result.Ok(()) => fail("expected effect upgrade error / rollback")
+    }
+  }
+
   test("upgrade twice on effect safe downgrade is ok") {
     // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
     // Version 0.1.1 of the dependency has signature `Int32 -> Int32 \ IO`.
