@@ -766,6 +766,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
 
   private def rollbackUpgrade(removedDependencies: Set[Dependency.FlixDependency], mvnDir: Path, tmpMvnDir: Path, extDir: Path, tmpExtDir: Path, newInstalledDeps: Set[Path]): Result[Unit, BootstrapError] = {
+    // TODO: Clean up this function. We do not need all the path args.
     // Restore old files
     val fpkgRollBacks = List(
       Result.traverse(newInstalledDeps.map(_.getParent))(FileOps.deleteDir),
@@ -820,7 +821,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           System.lineSeparator() +
           s"Root cause: ${e.getMessage}"
       ))
-      case Ok(()) => Ok(()) // Continue
+      case Ok(()) =>
+        // Remove backup dir if successful
+        FileOps.deleteDir(getUpgradeBackupDir(projectPath)) match {
+          // TODO: Same error as above
+          case Err(e) => Err(BootstrapError.FileError(s"Unexpected IO Error: ${e.getMessage}"))
+          case Ok(()) => Ok(())
+        }
     }
   }
 
