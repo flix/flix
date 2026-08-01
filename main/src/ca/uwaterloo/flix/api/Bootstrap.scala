@@ -527,7 +527,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def upgrade(flix: Flix, pkgName: String, semVer: Option[SemVer])(implicit formatter: Formatter, in: InputStream, out: PrintStream): Result[Unit, BootstrapError] = {
     // 1. Ensure project mode
     if (!isProjectMode) {
-      return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. Not in project mode."))
+      return Err(BootstrapError.FileError("Refusing to run 'upgrade'. No manifest 'flix.toml' found."))
     }
 
     val oldManifest = optManifest match {
