@@ -56,7 +56,7 @@ object BootstrapError {
     override def message(f: Formatter): String = e
   }
 
-  case class EffectUpgradeError(e: List[(String, Scheme, List[SourceLocation])]) extends BootstrapError {
+  case class SupplyChainAttackError(e: List[(String, Scheme, List[SourceLocation])]) extends BootstrapError {
     override def message(f: Formatter): String = {
       s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @

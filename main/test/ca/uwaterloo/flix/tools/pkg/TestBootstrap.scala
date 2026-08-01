@@ -350,7 +350,7 @@ class TestBootstrap extends AnyFunSuite {
     val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
     bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) match {
-      case Result.Err(BootstrapError.EffectUpgradeError(_)) => succeed
+      case Result.Err(BootstrapError.SupplyChainAttackError(_)) => succeed
       case Result.Err(e) => fail(e.message(Formatter.getDefault))
       case Result.Ok(()) => fail("expected effect upgrade error")
     }

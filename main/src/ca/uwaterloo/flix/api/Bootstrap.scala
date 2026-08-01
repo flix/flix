@@ -718,7 +718,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // 13. Check for effect-safe upgrade
     checkEffects(flix) match {
-      case Err(effectError: BootstrapError.EffectUpgradeError) =>
+      case Err(effectError: BootstrapError.SupplyChainAttackError) =>
 
         val errorMessage = effectError.message(formatter)
         val effectUpgradeConfirmationMessage =
@@ -982,7 +982,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (allErrors.isEmpty) {
       Ok(())
     } else {
-      Err(BootstrapError.EffectUpgradeError(allErrors))
+      Err(BootstrapError.SupplyChainAttackError(allErrors))
     }
   }
 
