@@ -104,8 +104,17 @@ object BootstrapError {
     }.mkString(System.lineSeparator())
   }
 
+  /**
+    * A namespace to group errors relevant to the upgrade command.
+    */
   object UpgradeError {
-    case class MissingFile(file: String) extends BootstrapError {
+
+    /**
+      * An error raised to indicate that the effect lock file is missing during upgrade.
+      *
+      * @param file the effect lock file name.
+      */
+    case class MissingEffectLockFile(file: String) extends BootstrapError {
       override def message(f: Formatter): String = {
         s"Refusing to run 'upgrade'. No effect lock file '$file' found. Run 'eff-lock' to generate one."
       }
