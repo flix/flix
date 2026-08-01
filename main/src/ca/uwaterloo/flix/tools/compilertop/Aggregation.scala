@@ -159,6 +159,7 @@ object Aggregation {
     case Sort.Cns   => s.cns.toDouble
     case Sort.Tvars => s.tvars.toDouble
     case Sort.Evars => s.evars.toDouble
+    case Sort.Density => Formatting.densityScore(s.reduces, s.tvars, s.evars).getOrElse(Double.NegativeInfinity)
   }
 
   /** Module-level analogue of [[defSortKey]], applied after summing across each module's defs. */
@@ -173,6 +174,7 @@ object Aggregation {
     case Sort.Cns   => m.totalCns.toDouble
     case Sort.Tvars => m.totalTvars.toDouble
     case Sort.Evars => m.totalEvars.toDouble
+    case Sort.Density => Formatting.densityScore(m.totalReduces, m.totalTvars, m.totalEvars).getOrElse(Double.NegativeInfinity)
   }
 
   /** Groups `snap` by namespace, sums each metric, and returns rows sorted by `srt` descending. */
@@ -205,7 +207,8 @@ object Aggregation {
       val totalInlined = defs.iterator.map(_.inlined).sum
       val totalClassBytes = defs.iterator.map(_.classBytes).sum
       val totalAllocBytes = defs.iterator.map(_.allocBytes).sum
-      ModuleStats(mod, totalNanos, totalLines, byPhase, byPhaseCount, byPhaseAlloc, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes, totalAllocBytes)
+      val totalReduces = defs.iterator.map(_.reduces).sum
+      ModuleStats(mod, totalNanos, totalLines, byPhase, byPhaseCount, byPhaseAlloc, totalCns, totalTvars, totalEvars, totalInlined, totalClassBytes, totalAllocBytes, totalReduces)
     }.toVector.sortBy(m => -moduleSortKey(m, srt))
   }
 }
