@@ -119,5 +119,14 @@ object BootstrapError {
         s"Refusing to run 'upgrade'. No effect lock file '$file' found. Run 'eff-lock' to generate one."
       }
     }
+
+    /**
+      * An error raised to indicate that the user did not approve the new version to upgrade to.
+      * E.g., if the upgrade is from version `0.1.0` to `0.1.1` then the user is prompted to accept
+      * or reject the upgrade before the `0.1.1` package is downloaded. This error is raised if they reject.
+      */
+    case object UpgradeVersionRejected extends BootstrapError {
+      override def message(f: Formatter): String = s"Upgrade aborted. You did approve the new version."
+    }
   }
 }

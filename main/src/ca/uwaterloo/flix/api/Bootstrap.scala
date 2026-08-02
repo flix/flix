@@ -626,7 +626,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     askForConfirmation(confirmationMessage) match {
       case Err(e) => return Err(e)
-      case Ok(false) => return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. The user declined the upgrade."))
+      case Ok(false) => return Err(BootstrapError.UpgradeError.UpgradeVersionRejected)
       case Ok(true) => ()
     }
 
