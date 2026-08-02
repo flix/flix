@@ -224,22 +224,34 @@ class TestMain extends AnyFunSuite {
     assert(opts.isEmpty)
   }
 
+  test("upgrade name@latest without flags") {
+    val args = Array("upgrade", "name@latest")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("name@latest"))
+    assert(!opts.assumeYes)
+    assert(!opts.unsafeUpgradeAssumeYes)
+  }
+
   test("upgrade name@latest -y") {
     val args = Array("upgrade", "name@latest", "-y")
-    val opts = Main.parseCmdOpts(args)
-    assert(opts.isEmpty)
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("name@latest"))
+    assert(opts.assumeYes)
   }
 
   test("upgrade name@latest --assume-yes") {
-    val args = Array("upgrade", "name@latest", "--asume-yes")
-    val opts = Main.parseCmdOpts(args)
-    assert(opts.isEmpty)
+    val args = Array("upgrade", "name@latest", "--assume-yes")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("name@latest"))
+    assert(opts.assumeYes)
   }
 
   test("upgrade --unsafe-yes name@latest") {
     val args = Array("upgrade", "--unsafe-yes", "name@latest")
-    val opts = Main.parseCmdOpts(args)
-    assert(opts.isEmpty)
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("name@latest"))
+    assert(!opts.assumeYes)
+    assert(opts.unsafeUpgradeAssumeYes)
   }
 
   test("--json") {
