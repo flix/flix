@@ -558,7 +558,7 @@ class TestBootstrap extends AnyFunSuite {
       upgradeVersion
     )(Formatter.getDefault, in, System.out)
 
-    assert(actual == Result.Err(BootstrapError.UpgradeError.MissingEffectLockFile("")))
+    assert(actual == Result.Err(BootstrapError.UpgradeError.InvalidConfirmationInput))
   }
 
   test("upgrade on invalid confirmation input reports error") {
