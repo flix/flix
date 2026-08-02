@@ -602,7 +602,7 @@ class TestBootstrap extends AnyFunSuite {
       upgradeVersion
     )(Formatter.getDefault, in, System.out)
 
-    assert(actual == Result.Err(BootstrapError.UpgradeError.InvalidConfirmationInput))
+    assert(actual == Result.Err(BootstrapError.UpgradeError.UpgradeVersionRejected))
   }
 
   test("upgrade on invalid confirmation input second time reports error") {
@@ -646,7 +646,13 @@ class TestBootstrap extends AnyFunSuite {
       upgradeVersion
     )(Formatter.getDefault, in, System.out)
 
-    assert(actual == Result.Err(BootstrapError.UpgradeError.MissingEffectLockFile("")))
+    assert(
+      actual match {
+        case Result.Err(BootstrapError.UpgradeError.UnsafeUpgradeRejected(_)) => succeed
+        case Result.Err(e) => fail(s"Expected UnsafeUpgradeRejected, but got $e")
+        case Result.Ok(()) => fail(s"Expected UnsafeUpgradeRejected, but got Result.Ok(())")
+      }
+    )
   }
 
   test("upgrade on effect unsafe upgrade reports error") {

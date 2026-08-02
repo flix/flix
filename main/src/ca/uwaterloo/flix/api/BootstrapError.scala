@@ -135,5 +135,14 @@ object BootstrapError {
     case object InvalidConfirmationInput extends BootstrapError {
       override def message(f: Formatter): String = "Refusing to run 'upgrade'. Confirmation input was invalid."
     }
+
+    /**
+      * An error raised to indicate that the user declined the effect unsafe error.
+      *
+      * @param supplyChainAttackError the [[SupplyChainAttackError]] that was raised.
+      */
+    case class UnsafeUpgradeRejected(supplyChainAttackError: SupplyChainAttackError) extends BootstrapError {
+      override def message(f: Formatter): String = "Upgrade aborted. Restored previous package version."
+    }
   }
 }

@@ -727,13 +727,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
              |Do trust the package to use these new effects? [y/N] """.stripMargin
 
         askForConfirmation(effectUpgradeConfirmationMessage) match {
-          // TODO: Refactor Err(_) case into own case and perform same cleanup logic
+          // TODO: Refactor Err(_) case into own case and perform same cleanup logic but return other error than UnsafeUpgradeRejected
           case Err(_) | Ok(false) =>
             rollbackUpgrade(removedDependencies, mvnDir, tmpMvnDir, extDir, tmpExtDir, newInstalledDeps) match {
               case Err(e) => return Err(e)
               case Ok(()) => // Continue
             }
-            return Err(BootstrapError.GeneralError("Upgrade aborted. Restored previous package version."))
+            return Err(BootstrapError.UpgradeError.UnsafeUpgradeRejected(effectError))
 
           case Ok(true) =>
             () // Continue
