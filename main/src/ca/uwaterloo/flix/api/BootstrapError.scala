@@ -126,7 +126,14 @@ object BootstrapError {
       * or reject the upgrade before the `0.1.1` package is downloaded. This error is raised if they reject.
       */
     case object UpgradeVersionRejected extends BootstrapError {
-      override def message(f: Formatter): String = s"Upgrade aborted. You did approve the new version."
+      override def message(f: Formatter): String = "Upgrade aborted. You did approve the new version."
+    }
+
+    /**
+      * An error raised to indicate that the input stream was invalid, e.g., `null`.
+      */
+    case object InvalidConfirmationInput extends BootstrapError {
+      override def message(f: Formatter): String = "Refusing to run 'upgrade'. Confirmation input was invalid."
     }
   }
 }

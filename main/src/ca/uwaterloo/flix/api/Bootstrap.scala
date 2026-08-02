@@ -846,7 +846,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     try {
       val input = reader.readLine()
       if (input == null) {
-        return Err(BootstrapError.GeneralError("Refusing to run 'upgrade'. Confirmation input was null."))
+        return Err(BootstrapError.UpgradeError.InvalidConfirmationInput)
       }
       out.println()
       Ok(input.toLowerCase == "y")
