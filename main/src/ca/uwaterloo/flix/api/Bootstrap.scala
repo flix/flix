@@ -627,7 +627,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     askForConfirmation(confirmationMessage) match {
       case Err(e) => return Err(e)
       case Ok(false) => return Err(BootstrapError.UpgradeError.UpgradeVersionRejected)
-      case Ok(true) => ()
+      case Ok(true) => () // Continue
     }
 
     // 7. Resolve old manifest to obtain dependency graph that we can diff with a new graph
