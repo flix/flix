@@ -529,6 +529,7 @@ object Main {
     threads: Option[Int] = None,
     top: Boolean = false,
     assumeYes: Boolean = false,
+    unsafeUpgradeAssumeYes: Boolean = false,
     upgradePackage: Option[String] = None,
     xbenchmarkCodeSize: Boolean = false,
     xbenchmarkIncremental: Boolean = false,
@@ -693,6 +694,20 @@ object Main {
               "<package id> corresponds to the dependency key in the manifest. " +
               "<version> is a valid semantic version, i.e., major.minor.patch. " +
               "<version> may also be the string 'latest' which will refer to the latest major release."
+            ),
+          opt[Unit]('y', "assume-yes")
+            .action((_, c) => c.copy(assumeYes = true))
+            .text("accepts the version upgrade if available. " +
+              "This flag also automatically rejects effect unsafe upgrades. " +
+              "See --unsafe-yes for to change the behavior."
+            ),
+          opt[Unit]("unsafe-yes")
+            .action((_, c) => c.copy(unsafeUpgradeAssumeYes = true))
+            .text("accepts the upgrade even if it is effect unsafe. " +
+              "Enabling this may expose you to supply-chain attacks. " +
+              "This flag does NOT imply --assume-yes, so use both this flag and --assume-yes (or -y) to run without interaction. " +
+              "If you only have --unsafe-yes enabled, then you still manually have to confirm the version upgrade " +
+              "but it will automatically accept the unsafe upgrade."
             )
         )
 
