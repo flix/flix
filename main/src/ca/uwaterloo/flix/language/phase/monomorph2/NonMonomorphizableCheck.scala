@@ -77,8 +77,6 @@ object NonMonomorphizableCheck {
       (v, j) <- MonoArg.collectParams(arg).distinct
     } yield Edge(Vertex(v, j), Vertex(dst, i), growing = isGrowingHead(arg))).toList
 
-    if (edges.isEmpty) return
-
     val adjacency = edges.groupMap(_.src)(_.dst)
     val getAdj = (v: Vertex) => adjacency.getOrElse(v, Nil)
     val vertices = edges.iterator.flatMap(e => Iterator(e.src, e.dst)).toSet
