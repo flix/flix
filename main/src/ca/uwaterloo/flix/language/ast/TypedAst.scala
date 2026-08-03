@@ -67,7 +67,7 @@ object TypedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation)
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint]) extends Decl
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: Nel[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint]) extends Decl
 
   case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.CaseSym, Case], loc: SourceLocation) extends Decl
 
@@ -139,7 +139,7 @@ object TypedAst {
 
     case class Let(bnd: Binder, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class LocalDef(ann: Annotations, bnd: Binder, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class LocalDef(ann: Annotations, bnd: Binder, fparams: Nel[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Region(bnd: Binder, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -407,11 +407,11 @@ object TypedAst {
 
   case class JvmConstructor(exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
+  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: Nel[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
   case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
 
-  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
+  case class HandlerRule(op: OpSymUse, fparams: Nel[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

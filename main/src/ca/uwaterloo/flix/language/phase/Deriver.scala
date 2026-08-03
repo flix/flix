@@ -200,9 +200,9 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = Nil,
-        fparams = List(
+        fparams = Nel(
           KindedAst.FormalParam(param1, tpe, TypeSource.Ascribed, loc),
-          KindedAst.FormalParam(param2, tpe, TypeSource.Ascribed, loc)
+          List(KindedAst.FormalParam(param2, tpe, TypeSource.Ascribed, loc))
         ),
         sc = Scheme(
           Nil,
@@ -385,9 +385,9 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = Nil,
-        fparams = List(
+        fparams = Nel(
           KindedAst.FormalParam(param1, tpe, TypeSource.Ascribed, loc),
-          KindedAst.FormalParam(param2, tpe, TypeSource.Ascribed, loc)
+          List(KindedAst.FormalParam(param2, tpe, TypeSource.Ascribed, loc))
         ),
         sc = Scheme(
           Nil,
@@ -556,7 +556,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = Nil,
-        fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
+        fparams = Nel(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc), Nil),
         sc = Scheme(
           Nil,
           List(TraitConstraint(TraitSymUse(toStringTraitSym, loc), tpe, loc)),
@@ -766,7 +766,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = Nil,
-        fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
+        fparams = Nel(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc), Nil),
         sc = Scheme(
           Nil,
           List(TraitConstraint(TraitSymUse(hashTraitSym, loc), tpe, loc)),
@@ -923,7 +923,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = Nil,
-        fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
+        fparams = Nel(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc), Nil),
         sc = Scheme(
           Nil,
           List(TraitConstraint(TraitSymUse(coerceTraitSym, loc), tpe, loc)),

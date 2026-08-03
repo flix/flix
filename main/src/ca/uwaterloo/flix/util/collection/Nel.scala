@@ -15,6 +15,9 @@
  */
 package ca.uwaterloo.flix.util.collection
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.InternalCompilerException
+
 /**
   * A non-empty list (Nel) - always has at least one element.
   *
@@ -26,6 +29,12 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
 
   /** Returns the number of elements in `this` (always at least 1). */
   def length: Int = 1 + xs.length
+
+  /** Returns the first element of `this`. */
+  override def head: T = x
+
+  /** Returns all elements of `this` except the first. */
+  override def tail: List[T] = xs
 
   /** Builds a new [[Nel]] by applying `f` to all elements of `this`. */
   override def map[S](f: T => S): Nel[S] = Nel(f(x), xs.map(f))
@@ -45,5 +54,19 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
 
   /** Returns `this` as a [[List]]. */
   override def toList: List[T] = x :: xs
+
+}
+
+object Nel {
+
+  /**
+    * Returns `l` as a [[Nel]].
+    *
+    * Throws an [[InternalCompilerException]] if `l` is empty.
+    */
+  def unsafeFrom[T](l: List[T]): Nel[T] = l match {
+    case Nil => throw InternalCompilerException("Unexpected empty list", SourceLocation.Unknown)
+    case x :: xs => Nel(x, xs)
+  }
 
 }

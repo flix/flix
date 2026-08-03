@@ -28,7 +28,7 @@ object CompletionUtils {
 
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
-  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
+  private def isUnitFunction(fparams: Iterable[TypedAst.FormalParam]): Boolean = fparams.size == 1 && isUnitType(fparams.head.tpe)
 
   def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
@@ -52,7 +52,7 @@ object CompletionUtils {
   /**
     * Generate a snippet which represents calling a function.
     */
-  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
+  def getApplySnippet(name: String, fparams: Iterable[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
     val args = fparams.zipWithIndex.map {
@@ -69,12 +69,12 @@ object CompletionUtils {
   /**
     * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
     */
-  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
+  def getOpHandlerSnippet(name: String, fparams: Iterable[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
-    val args = fparams.zipWithIndex.map {
+    val args = fparams.toList.zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
-    } :+ s"$${${fparams.length + 1}:resume}"
+    } :+ s"$${${fparams.size + 1}:resume}"
     if (functionIsUnit)
       s"$name($${1:resume}) = "
     else
@@ -350,7 +350,7 @@ object CompletionUtils {
     * Formats the given Op
     */
   def fmtOp(op: TypedAst.Op): String = {
-    val fparamsString = (op.spec.fparams.collect { case p if p.tpe != Type.Unit => p.bnd.sym.text } :+ "k").mkString(", ")
+    val fparamsString = (op.spec.fparams.toList.collect { case p if p.tpe != Type.Unit => p.bnd.sym.text } :+ "k").mkString(", ")
     s"    def ${op.sym.name}($fparamsString) = ???"
   }
 }

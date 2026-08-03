@@ -913,7 +913,7 @@ object Lowering {
     // by just checking the length of the handlers and if it is greater than 0
     // just adding IO. However, that would only work while default handlers can only generate IO.
     val eff = Type.mkUnion(effDif, Type.IO, effLoc)
-    val tpe = Type.mkCurriedArrowWithEffect(defn.spec.fparams.map(_.tpe), eff, defn.spec.retTpe, baseTypeLoc)
+    val tpe = Type.mkCurriedArrowWithEffect(defn.spec.fparams.toList.map(_.tpe), eff, defn.spec.retTpe, baseTypeLoc)
     val spec = defn.spec.copy(
       declaredScheme = defn.spec.declaredScheme.copy(base = tpe),
       eff = eff,
