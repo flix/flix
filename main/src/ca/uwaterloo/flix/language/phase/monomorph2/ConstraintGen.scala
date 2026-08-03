@@ -139,7 +139,7 @@ object ConstraintGen {
       case app @ Type.Apply(_, _, _) =>
         val args = app.typeArguments
         args.foreach(dealiasedVisitType)
-        declMonoVar(app.baseType).foreach(mvar => sctx.addFlow(FlowConstraint(args.map(t => dealiasedTypeToMonoArg(t)), mvar)))
+        declMonoVar(app.baseType).foreach(mvar => sctx.addFlow(FlowConstraint(Instantiation(args.map(t => dealiasedTypeToMonoArg(t))), mvar)))
     }
     dealiasedVisitType(Type.eraseAliases(tpe0))
   }
@@ -206,11 +206,11 @@ object ConstraintGen {
 
     case Expr.ApplyDef(symUse, exps, targs, _, _, _, _, _) =>
       exps.foreach(visitExp)
-      sctx.addFlow(FlowConstraint(targs.map(typeToMonoArg), MonoVar.Def(symUse.sym)))
+      sctx.addFlow(FlowConstraint(Instantiation(targs.map(typeToMonoArg)), MonoVar.Def(symUse.sym)))
 
     case Expr.ApplySig(symUse, exps, targ, targs, _, _, _, _, _) =>
       exps.foreach(visitExp)
-      sctx.addFlow(FlowConstraint((targ :: targs).map(typeToMonoArg), MonoVar.Sig(symUse.sym)))
+      sctx.addFlow(FlowConstraint(Instantiation((targ :: targs).map(typeToMonoArg)), MonoVar.Sig(symUse.sym)))
 
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)
@@ -258,12 +258,12 @@ object ConstraintGen {
     case Expr.Tag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       exps.foreach(visitExp)
-      sctx.addFlow(FlowConstraint(tpArgs.map(typeToMonoArg), mvar))
+      sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
 
     case Expr.RestrictableTag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       exps.foreach(visitExp)
-      sctx.addFlow(FlowConstraint(tpArgs.map(typeToMonoArg), mvar))
+      sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
@@ -332,7 +332,7 @@ object ConstraintGen {
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       fields.foreach { case (_, e) => visitExp(e) }
       region.foreach(visitExp)
-      sctx.addFlow(FlowConstraint(tpArgs.map(typeToMonoArg), mvar))
+      sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
 
     case Expr.StructGet(exp, _, _, _, _) => visitExp(exp)
 
@@ -460,7 +460,7 @@ object ConstraintGen {
     case TypedAst.Pattern.Tag(_, pats, tpe, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       pats.foreach(visitPat)
-      sctx.addFlow(FlowConstraint(tpArgs.map(typeToMonoArg), mvar))
+      sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
     case TypedAst.Pattern.Tuple(elms, _, _) =>
       elms.foreach(visitPat)
     case TypedAst.Pattern.Record(pats, pat, _, _) =>

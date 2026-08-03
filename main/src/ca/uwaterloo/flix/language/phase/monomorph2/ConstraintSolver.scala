@@ -21,10 +21,10 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 /**
   * Solves the flow constraints produced by [[ConstraintGen]] to a fixpoint: starting from
-  * the ground (all-constant) flows, each newly solved tuple is substituted into the flows that
-  * depend on it until no new tuples appear. Sig destinations are additionally dispatched to their
-  * implementing (or default) def. The result is, per polymorphic symbol, exactly the ground
-  * type-argument tuples that actually arise.
+  * the ground (all-constant) flows, each newly solved instantiation is substituted into the flows
+  * that depend on it until no new instantiations appear. Sig destinations are additionally
+  * dispatched to their implementing (or default) def. The result is, per polymorphic symbol,
+  * exactly the ground instantiations that actually arise.
   */
 object ConstraintSolver {
 
