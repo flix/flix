@@ -296,7 +296,7 @@ object Redundancy {
     * Finds unused formal parameters.
     */
   private def findUnusedFormalParameters(fparams: Nel[FormalParam], used: Used): List[UnusedFormalParam] = {
-    fparams.toList.collect {
+    fparams.collect {
       case fparam if deadVarSym(fparam.bnd.sym, used) => UnusedFormalParam(fparam.bnd.sym)
     }
   }

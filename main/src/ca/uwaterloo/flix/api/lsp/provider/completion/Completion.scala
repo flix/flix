@@ -377,7 +377,7 @@ sealed trait Completion {
 
     case Completion.OpHandlerCompletion(op, range, priority) =>
       val name = op.sym.name
-      val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams.toList)
+      val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)
       val description = Some(name)
       val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(op.spec)(flix)), description)
       CompletionItem(
@@ -519,7 +519,7 @@ sealed trait Completion {
 
     case Completion.HoleCompletion(sym, decl, priority, loc) =>
       val name = decl.sym.toString
-      val args = decl.spec.fparams.toList.dropRight(1).zipWithIndex.map {
+      val args = decl.spec.fparams.init.zipWithIndex.map {
         case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
       } ::: sym.text :: Nil
       val params = args.mkString(", ")

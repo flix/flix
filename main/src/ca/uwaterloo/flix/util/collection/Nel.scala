@@ -36,11 +36,17 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
   /** Returns all elements of `this` except the first. */
   override def tail: List[T] = xs
 
+  /** Returns all elements of `this` except the last. */
+  override def init: List[T] = if (xs.isEmpty) Nil else x :: xs.init
+
   /** Builds a new [[Nel]] by applying `f` to all elements of `this`. */
   override def map[S](f: T => S): Nel[S] = Nel(f(x), xs.map(f))
 
   /** Builds a new [[List]] by applying `f` to all elements of `this` and concatenating the results. */
   override def flatMap[S](f: T => IterableOnce[S]): List[S] = toList.flatMap(f)
+
+  /** Builds a new [[List]] by applying `pf` to all elements of `this` on which it is defined. */
+  override def collect[S](pf: PartialFunction[T, S]): List[S] = toList.collect(pf)
 
   /** Returns a [[Nel]] of pairs of the elements of `this` and their indices. */
   override def zipWithIndex: Nel[(T, Int)] = Nel((x, 0), xs.zipWithIndex.map { case (y, i) => (y, i + 1) })

@@ -1296,7 +1296,9 @@ object ConstraintGen {
       val ops = effect.ops.map(op => op.sym -> op).toMap
       // Don't need to generalize since ops are monomorphic
       // Don't need to handle unknown op because resolver would have caught this
-      val (actualFparams, List(resumptionFparam)) = actualFparams0.toList.splitAt(actualFparams0.length - 1)
+      // The last formal parameter is the resumption, the rest correspond to the operation's parameters.
+      val actualFparams = actualFparams0.init
+      val resumptionFparam = actualFparams0.last
       ops(symUse.sym) match {
         case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _), _) =>
           val resumptionArgType = opTpe

@@ -92,7 +92,7 @@ object MagicDefCompleter {
     matchedDefs.map {
       case defn =>
         val label = baseExp + "." + defn.sym.text // VSCode requires the code to be a prefix of the label.
-        val snippet = getSnippet(defn.sym, defn.spec.fparams.toList.init, baseExp)
+        val snippet = getSnippet(defn.sym, defn.spec.fparams.init, baseExp)
         Completion.MagicDefCompletion(defn, label, snippet, range, Priority.Lower(0))
     }
   }
