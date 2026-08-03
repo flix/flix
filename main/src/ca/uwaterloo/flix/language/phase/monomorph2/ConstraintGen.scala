@@ -21,7 +21,8 @@ import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type, TypeConstructor, Type
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, MatchRule}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
-import scala.collection.mutable
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.*
 
 /**
   * Constraint generation for constraint-based monomorphization: emits `FlowConstraint` constraints
@@ -29,26 +30,29 @@ import scala.collection.mutable
   */
 object ConstraintGen {
 
+  private object SharedContext {
+    /** Returns a fresh shared context. */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
   /**
     * The mutable data used throughout constraint generation.
     *
     * This class is thread-safe.
     */
-  private class SharedContext {
-    private val flows: mutable.ArrayBuffer[FlowConstraint] = mutable.ArrayBuffer.empty
-
+  private case class SharedContext(flows: ConcurrentLinkedQueue[FlowConstraint]) {
     /** Emits `flow` as one of the generated constraints. */
-    def addFlow(flow: FlowConstraint): Unit = synchronized { flows.addOne(flow) }
+    def addFlow(flow: FlowConstraint): Unit = flows.add(flow)
 
     /** Returns every flow emitted so far. */
-    def result: Set[FlowConstraint] = synchronized { flows.toSet }
+    def result: Set[FlowConstraint] = flows.asScala.toSet
   }
 
   /**
     * Generates specialization constraints for every top-level declaration in `root0`.
     */
   def generate(root0: TypedAst.Root)(implicit flix: Flix): Set[FlowConstraint] = {
-    implicit val sctx: SharedContext = new SharedContext()
+    implicit val sctx: SharedContext = SharedContext.mk()
     implicit val root: TypedAst.Root = root0
 
     ParOps.parMap(root.defs.values) { defn =>
