@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.collection.CofiniteSet
   * Shared definition of what a given (possibly non-ground) monomorph type becomes:
   * effect canonicalization and associated-type reduction.
   *
-  * Both [[ConstraintSolver]] and [[SolutionSpecialization]] must agree on this, or
+  * Both [[ConstraintSolver]] and [[Specialize]] must agree on this, or
   * their `(sym, type)` defTable keys diverge for the same instantiation.
   */
 private[monomorph2] object MonomorphCanon {

@@ -186,14 +186,14 @@ object ConstraintGen {
 
   /**
     * Emits flow constraints for the default-handler calls that
-    * `SolutionLowering.wrapDefWithDefaultHandlers` synthesizes around entry points.
+    * `SpecializeAndLower.wrapDefWithDefaultHandlers` synthesizes around entry points.
     */
   private def entryPointHandlerFlows(defn: TypedAst.Def)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = ???
 
   /**
     * Emits flow constraints for all call sites and enum/struct construction sites in `exp`.
     * Datalog and channel nodes additionally emit constraints for the stdlib calls
-    * [[SolutionLowering]] will synthesize for them.
+    * [[SpecializeAndLower]] will synthesize for them.
     */
   private def visitExp(exp0: Expr)(implicit sctx: SharedContext, tparamEnv: Map[Symbol.KindedTypeVarSym, MonoArg], root: TypedAst.Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) => ()

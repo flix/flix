@@ -23,12 +23,12 @@ import ca.uwaterloo.flix.language.ast.{MonoAst, TypedAst}
   * Solution-driven specialization: uses the solver's solution to specialize all def/enum/struct/
   * restrictable-enum in a single parallel pass.
   *
-  * `run` and [[SolutionLowering]] have different responsibilities: `run` builds the tables mapping
+  * `run` and [[SpecializeAndLower]] have different responsibilities: `run` builds the tables mapping
   * each original polymorphic symbol/instantiation to its fresh specialized symbol, and
-  * [[SolutionLowering]] does the actual `TypedAst`-to-`MonoAst` transformation, using those tables
+  * [[SpecializeAndLower]] does the actual `TypedAst`-to-`MonoAst` transformation, using those tables
   * to resolve which fresh symbol each call/tag/struct-access site should point to.
   */
-object SolutionSpecialization {
+object Specialize {
 
   /** Specializes `root` per `solution`, the constraint solver's output. */
   def run(root: TypedAst.Root, solution: Solution)(implicit flix: Flix): MonoAst.Root = ???
