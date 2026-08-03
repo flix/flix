@@ -39,5 +39,5 @@ object NonMonomorphizableCheck {
     * Checks whether `flows` contains a reachable growing cycle and throws
     * [[InternalCompilerException]] if so.
     */
-  def checkMonomorphizable(flows: Set[Flow]): Unit = ???
+  def checkMonomorphizable(flows: Set[FlowConstraint]): Unit = ???
 }

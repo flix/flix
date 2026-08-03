@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import scala.collection.mutable
 
 /**
-  * Constraint generation for constraint-based monomorphization: emits `Flow` constraints
+  * Constraint generation for constraint-based monomorphization: emits `FlowConstraint` constraints
   * describing how concrete types propagate through the program, for [[ConstraintSolver]] to solve.
   */
 object ConstraintGen {
@@ -35,19 +35,19 @@ object ConstraintGen {
     * This class is thread-safe.
     */
   private class SharedContext {
-    private val flows: mutable.ArrayBuffer[Flow] = mutable.ArrayBuffer.empty
+    private val flows: mutable.ArrayBuffer[FlowConstraint] = mutable.ArrayBuffer.empty
 
     /** Emits `flow` as one of the generated constraints. */
-    def addFlow(flow: Flow): Unit = synchronized { flows.addOne(flow) }
+    def addFlow(flow: FlowConstraint): Unit = synchronized { flows.addOne(flow) }
 
     /** Returns every flow emitted so far. */
-    def result: Set[Flow] = synchronized { flows.toSet }
+    def result: Set[FlowConstraint] = synchronized { flows.toSet }
   }
 
   /**
     * Generates specialization constraints for every top-level declaration in `root0`.
     */
-  def generate(root0: TypedAst.Root)(implicit flix: Flix): Set[Flow] = {
+  def generate(root0: TypedAst.Root)(implicit flix: Flix): Set[FlowConstraint] = {
     implicit val sctx: SharedContext = new SharedContext()
     implicit val root: TypedAst.Root = root0
 
@@ -135,7 +135,7 @@ object ConstraintGen {
       case app @ Type.Apply(_, _, _) =>
         val args = app.typeArguments
         args.foreach(dealiasedVisitType)
-        declMonoVar(app.baseType).foreach(mvar => sctx.addFlow(Flow(args.map(t => dealiasedTypeToMonoArg(t)), mvar)))
+        declMonoVar(app.baseType).foreach(mvar => sctx.addFlow(FlowConstraint(args.map(t => dealiasedTypeToMonoArg(t)), mvar)))
     }
     dealiasedVisitType(Type.eraseAliases(tpe0))
   }
@@ -202,11 +202,11 @@ object ConstraintGen {
 
     case Expr.ApplyDef(symUse, exps, targs, _, _, _, _, _) =>
       exps.foreach(visitExp)
-      sctx.addFlow(Flow(targs.map(typeToMonoArg), MonoVar.Def(symUse.sym)))
+      sctx.addFlow(FlowConstraint(targs.map(typeToMonoArg), MonoVar.Def(symUse.sym)))
 
     case Expr.ApplySig(symUse, exps, targ, targs, _, _, _, _, _) =>
       exps.foreach(visitExp)
-      sctx.addFlow(Flow((targ :: targs).map(typeToMonoArg), MonoVar.Sig(symUse.sym)))
+      sctx.addFlow(FlowConstraint((targ :: targs).map(typeToMonoArg), MonoVar.Sig(symUse.sym)))
 
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)
@@ -254,12 +254,12 @@ object ConstraintGen {
     case Expr.Tag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       exps.foreach(visitExp)
-      sctx.addFlow(Flow(tpArgs.map(typeToMonoArg), mvar))
+      sctx.addFlow(FlowConstraint(tpArgs.map(typeToMonoArg), mvar))
 
     case Expr.RestrictableTag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       exps.foreach(visitExp)
-      sctx.addFlow(Flow(tpArgs.map(typeToMonoArg), mvar))
+      sctx.addFlow(FlowConstraint(tpArgs.map(typeToMonoArg), mvar))
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
@@ -328,7 +328,7 @@ object ConstraintGen {
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       fields.foreach { case (_, e) => visitExp(e) }
       region.foreach(visitExp)
-      sctx.addFlow(Flow(tpArgs.map(typeToMonoArg), mvar))
+      sctx.addFlow(FlowConstraint(tpArgs.map(typeToMonoArg), mvar))
 
     case Expr.StructGet(exp, _, _, _, _) => visitExp(exp)
 
@@ -456,7 +456,7 @@ object ConstraintGen {
     case TypedAst.Pattern.Tag(_, pats, tpe, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       pats.foreach(visitPat)
-      sctx.addFlow(Flow(tpArgs.map(typeToMonoArg), mvar))
+      sctx.addFlow(FlowConstraint(tpArgs.map(typeToMonoArg), mvar))
     case TypedAst.Pattern.Tuple(elms, _, _) =>
       elms.foreach(visitPat)
     case TypedAst.Pattern.Record(pats, pat, _, _) =>

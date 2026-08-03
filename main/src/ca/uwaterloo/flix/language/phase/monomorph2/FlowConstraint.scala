@@ -20,4 +20,4 @@ package ca.uwaterloo.flix.language.phase.monomorph2
   * A component-wise flow constraint.
   * Read as: "The type-argument tuple `args` flows into the parameter slots of `dst`."
   */
-case class Flow(args: List[MonoArg], dst: MonoVar)
+case class FlowConstraint(args: List[MonoArg], dst: MonoVar)
