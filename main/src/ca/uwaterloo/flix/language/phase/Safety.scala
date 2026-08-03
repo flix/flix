@@ -873,7 +873,7 @@ object Safety {
       }
 
       // an unimplemented method is only a problem if it's abstract and isn't auto-implemented by Object
-      val missing = unimplemented.filter { method => isAbstractMethod(method) && !isObjectMethod(method) }
+      val missing = unimplemented.filter { case (method, _, _) => isAbstractMethod(method) && !isObjectMethod(method) }
       if (missing.nonEmpty && extra.nonEmpty) { // TODO debugging
         println(unimplemented)
         println(extra)
