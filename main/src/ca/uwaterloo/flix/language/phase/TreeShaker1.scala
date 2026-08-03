@@ -36,9 +36,9 @@ object TreeShaker1 {
 
   /** Performs tree shaking on `root`. */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker1") {
-    val initReach: Set[ReachableItem] = root.entryPoints.map(ReachableItem.DefnSym.apply)
+    val initReach: Set[Reachable] = root.entryPoints.map(Reachable.DefnSym.apply)
 
-    val defaultHandlers = root.defaultHandlers.map(handler => ReachableItem.DefnSym(handler.handlerSym)).toSet
+    val defaultHandlers = root.defaultHandlers.map(handler => Reachable.DefnSym(handler.handlerSym)).toSet
 
     // Compute the symbols that are transitively reachable.
     // `@LoweringTargetDatalog` and `@LoweringTargetChannel` defs are included if needed during `visitExp`.
@@ -46,47 +46,47 @@ object TreeShaker1 {
 
     // Filter the reachable definitions.
     val reachableDefs = root.defs.filter {
-      case (sym, _) => allReachable.contains(ReachableItem.DefnSym(sym))
+      case (sym, _) => allReachable.contains(Reachable.DefnSym(sym))
     }
 
     val reachableInstances = root.instances.filter {
-      case (traitSym, _) => allReachable.contains(ReachableItem.TraitSym(traitSym))
+      case (traitSym, _) => allReachable.contains(Reachable.TraitSym(traitSym))
     }
 
     val reachableSigs = root.sigs.filter {
-      case (sigSym, _) => allReachable.contains(ReachableItem.SigSym(sigSym))
+      case (sigSym, _) => allReachable.contains(Reachable.SigSym(sigSym))
     }
 
     root.copy(defs = reachableDefs, instances = reachableInstances, sigs = reachableSigs)
   }
 
   /** Returns the symbols reachable from `sym`. */
-  private def visitSym(sym: ReachableItem, root: Root): Set[ReachableItem] = sym match {
-    case ReachableItem.DefnSym(defnSym) =>
+  private def visitSym(sym: Reachable, root: Root): Set[Reachable] = sym match {
+    case Reachable.DefnSym(defnSym) =>
       val defn = root.defs(defnSym)
       visitExp(defn.exp)
 
-    case ReachableItem.SigSym(sigSym) =>
+    case Reachable.SigSym(sigSym) =>
       val sig = root.sigs(sigSym)
-      Set(ReachableItem.TraitSym(sig.sym.trt)) ++
+      Set(Reachable.TraitSym(sig.sym.trt)) ++
         sig.exp.map(visitExp).getOrElse(Set.empty)
 
-    case ReachableItem.TraitSym(traitSym) =>
-      root.instances(traitSym).foldLeft(Set.empty[ReachableItem]) {
+    case Reachable.TraitSym(traitSym) =>
+      root.instances(traitSym).foldLeft(Set.empty[Reachable]) {
         case (acc, s) => visitExps(s.defs.map(_.exp)) ++ acc
       }
 
-    case ReachableItem.ChannelUsed =>
+    case Reachable.ChannelUsed =>
       root.defs.values.filter(_.spec.ann.isLoweringTargetChannel)
-        .map(d => ReachableItem.DefnSym(d.sym)).toSet
+        .map(d => Reachable.DefnSym(d.sym)).toSet
 
-    case ReachableItem.DatalogUsed =>
+    case Reachable.DatalogUsed =>
       root.defs.values.filter(_.spec.ann.isLoweringTargetDatalog)
-        .map(d => ReachableItem.DefnSym(d.sym)).toSet
+        .map(d => Reachable.DefnSym(d.sym)).toSet
   }
 
   /** Returns the symbols reachable from `e0`. */
-  private def visitExp(e0: Expr): Set[ReachableItem] = e0 match {
+  private def visitExp(e0: Expr): Set[Reachable] = e0 match {
     case Expr.Cst(_, _, _) =>
       Set.empty
 
@@ -112,7 +112,7 @@ object TreeShaker1 {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(bnd, exps, _, _, _, _, _, _) =>
-      Set(ReachableItem.DefnSym(bnd.sym)) ++ visitExps(exps)
+      Set(Reachable.DefnSym(bnd.sym)) ++ visitExps(exps)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
       visitExps(exps)
@@ -121,7 +121,7 @@ object TreeShaker1 {
       visitExps(exps)
 
     case Expr.ApplySig(bnd, exps, _, _, _, _, _, _, _) =>
-      Set(ReachableItem.SigSym(bnd.sym)) ++ visitExps(exps)
+      Set(Reachable.SigSym(bnd.sym)) ++ visitExps(exps)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -269,25 +269,25 @@ object TreeShaker1 {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.NewChannel(exp, _, _, _) =>
-      Set(ReachableItem.ChannelUsed) ++ visitExp(exp)
+      Set(Reachable.ChannelUsed) ++ visitExp(exp)
 
     case Expr.GetChannel(exp, _, _, _) =>
-      Set(ReachableItem.ChannelUsed) ++ visitExp(exp)
+      Set(Reachable.ChannelUsed) ++ visitExp(exp)
 
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
-      Set(ReachableItem.ChannelUsed) ++ visitExp(exp1) ++ visitExp(exp2)
+      Set(Reachable.ChannelUsed) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
-      Set(ReachableItem.ChannelUsed) ++  visitExp(exp1) ++ visitExp(exp2)
+      Set(Reachable.ChannelUsed) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.SelectChannel(selects, optExp, _, _, _) =>
-      Set(ReachableItem.ChannelUsed) ++
+      Set(Reachable.ChannelUsed) ++
         visitExps(selects.map(_.exp)) ++
         visitExps(selects.map(_.chan)) ++
         optExp.map(visitExp).getOrElse(Set.empty)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
-      Set(ReachableItem.ChannelUsed) ++  visitExps(frags.map(_.exp)) ++ visitExp(exp)
+      Set(Reachable.ChannelUsed) ++ visitExps(frags.map(_.exp)) ++ visitExp(exp)
 
     case Expr.Lazy(exp, _, _) =>
       visitExp(exp)
@@ -296,19 +296,19 @@ object TreeShaker1 {
       visitExp(exp)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>
-      Set(ReachableItem.DatalogUsed) ++ cs.map(visitConstraint).fold(Set.empty)(_ ++ _)
+      Set(Reachable.DatalogUsed) ++ cs.map(visitConstraint).fold(Set.empty)(_ ++ _)
 
     case Expr.FixpointLambda(_, exp, _, _, _) =>
-      Set(ReachableItem.DatalogUsed) ++ visitExp(exp)
+      Set(Reachable.DatalogUsed) ++ visitExp(exp)
 
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
-      Set(ReachableItem.DatalogUsed) ++ visitExp(exp1) ++ visitExp(exp2)
+      Set(Reachable.DatalogUsed) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
-      Set(ReachableItem.DatalogUsed) ++ visitExps(exps) ++ visitHead(select)
+      Set(Reachable.DatalogUsed) ++ visitExps(exps) ++ visitHead(select)
 
     case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from0, where0, _, _, _, _) =>
-      Set(ReachableItem.DatalogUsed) ++
+      Set(Reachable.DatalogUsed) ++
         visitExps(exps) ++
         visitExp(queryExp) ++
         visitExps(selects) ++
@@ -316,55 +316,58 @@ object TreeShaker1 {
         visitExps(where0)
 
     case Expr.FixpointSolveWithProject(exps0, _, _, _, _, _) =>
-      Set(ReachableItem.DatalogUsed) ++ visitExps(exps0)
+      Set(Reachable.DatalogUsed) ++ visitExps(exps0)
 
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
-      Set(ReachableItem.DatalogUsed) ++ visitExps(exps)
+      Set(Reachable.DatalogUsed) ++ visitExps(exps)
 
     case Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
   }
 
   /** Returns the symbols reachable from `exps`. */
-  private def visitExps(exps: List[Expr]): Set[ReachableItem] =
+  private def visitExps(exps: List[Expr]): Set[Reachable] =
     exps.map(visitExp).fold(Set.empty)(_ ++ _)
 
   /** Returns the symbols reachable from `cs`. */
-  private def visitConstraint(cs: Constraint): Set[ReachableItem] = cs match {
+  private def visitConstraint(cs: Constraint): Set[Reachable] = cs match {
     case Constraint(_, head, bodies, _) =>
       visitHead(head) ++ visitBodies(bodies)
   }
 
   /** Returns the symbols reachable from `bodies`. */
-  private def visitBodies(bodies: List[Predicate.Body]): Set[ReachableItem] =
+  private def visitBodies(bodies: List[Predicate.Body]): Set[Reachable] =
     bodies.map(visitBody).fold(Set.empty)(_ ++ _)
 
   /** Returns the symbols reachable from `head`. */
-  private def visitHead(head: Predicate.Head): Set[ReachableItem] = head match {
+  private def visitHead(head: Predicate.Head): Set[Reachable] = head match {
     case Head.Atom(_, _, exps, _, _) => visitExps(exps)
   }
 
   /** Returns the symbols reachable from `body`. */
-  private def visitBody(body: Predicate.Body): Set[ReachableItem] = body match {
+  private def visitBody(body: Predicate.Body): Set[Reachable] = body match {
     case Body.Atom(_, _, _, _, _, _, _) => Set.empty
     case Body.Functional(_, exp, _) => visitExp(exp)
     case Body.Guard(exp, _) => visitExp(exp)
   }
 
   /** Reachable symbols (defs, traits, sigs). */
-  private sealed trait ReachableItem
+  private sealed trait Reachable
 
-  private object ReachableItem {
+  private object Reachable {
 
-    case class DefnSym(sym: Symbol.DefnSym) extends ReachableItem
+    case class DefnSym(sym: Symbol.DefnSym) extends Reachable
 
-    case class TraitSym(sym: Symbol.TraitSym) extends ReachableItem
+    case class TraitSym(sym: Symbol.TraitSym) extends Reachable
 
-    case class SigSym(sym: Symbol.SigSym) extends ReachableItem
+    case class SigSym(sym: Symbol.SigSym) extends Reachable
 
-    case object DatalogUsed extends ReachableItem
+    /** A Channel construct is used: All Channel lowering targets are reachable. */
 
-    case object ChannelUsed extends ReachableItem
+    case object ChannelUsed extends Reachable
+
+    /** A Datalog construct is used: All Datalog lowering targets are reachable. */
+    case object DatalogUsed extends Reachable
 
   }
 

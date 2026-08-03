@@ -56,7 +56,6 @@ object PredDeps {
   }
 
   private def visitTrait(trt: Trait)(implicit sctx: SharedContext): Trait = {
-    trt.laws.foreach(visitDef)
     trt.sigs.foreach(visitSig)
     trt
   }

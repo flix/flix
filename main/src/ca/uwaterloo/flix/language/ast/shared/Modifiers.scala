@@ -36,11 +36,6 @@ case class Modifiers(mod: List[Modifier]) {
   def asPublic: Modifiers = if (isPublic) this else Modifiers(Modifier.Public :: mod)
 
   /**
-    * Returns `true` if these modifiers contain the lawful modifier.
-    */
-  def isLawful: Boolean = mod contains Modifier.Lawful
-
-  /**
     * Returns `true` if these modifiers contain the mutable modifier.
     */
   def isMutable: Boolean = mod contains Modifier.Mutable

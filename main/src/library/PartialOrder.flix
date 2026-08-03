@@ -16,28 +16,16 @@
 
 pub mod PartialOrder {
 
-    use Bool.{==>}
-
     ///
     /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
     ///
-    pub lawful trait PartialOrder[a] {
+    pub trait PartialOrder[a] {
 
         ///
         /// Returns `true` if `x` is smaller or equal to `y`.
         ///
         pub def lessEqual(x: a, y: a): Bool
         // TODO This should not return a Boolean, but instead perform a three-way comparison.
-
-        ///
-        /// Reflexivity: An element `x` is lower or equal to itself.
-        ///
-        law reflexivity: forall (x: a) PartialOrder.lessEqual(x, x)
-
-        ///
-        /// Transitivity: If `x` is lower or equal to `y` and `y` is lower equal to `z` then `x` must be lower or equal to `z`.
-        ///
-        law transitivity: forall (x: a, y: a, z: a) (PartialOrder.lessEqual(x, y) and PartialOrder.lessEqual(y, z)) ==> PartialOrder.lessEqual(x, z)
     }
 
     instance PartialOrder[Int8] {

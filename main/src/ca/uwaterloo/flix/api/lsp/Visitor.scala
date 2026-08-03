@@ -206,7 +206,7 @@ object Visitor {
   }
 
   private def visitTrait(t: Trait)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Trait(_, ann, _, _, tparam, superTraits, assocs, sigs, laws, loc) = t
+    val Trait(_, ann, _, _, tparam, superTraits, assocs, sigs, loc) = t
     if (!a.accept(loc)) {
       return
     }
@@ -218,7 +218,6 @@ object Visitor {
     superTraits.foreach(visitTraitConstraint)
     assocs.foreach(visitAssocTypeSig)
     sigs.foreach(visitSig)
-    laws.foreach(visitDef)
   }
 
   private def visitAssocTypeSig(assoc: AssocTypeSig)(implicit a: Acceptor, c: Consumer): Unit = {

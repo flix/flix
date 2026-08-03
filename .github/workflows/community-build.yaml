@@ -58,11 +58,13 @@ jobs:
           - "JonathanStarup/Flix-ANSI-Terminal"
           - "JonathanStarup/ListSet"
           - "JonathanStarup/talpin1992-in-flix"
+          - "ababup1192/flix_game_engine"
           - "magnus-madsen/bibblitz"
           - "jaschdoc/flix-test-pkg-trust-transitive-plain"
           - "jaschdoc/flix-test-pkg-trust-transitive-java"
           - "mlutze/flix-json"
           - "mlutze/flixball"
+          - "mlutze/flixball-2"
           - "rywiese/scope-graphs"
           - "stephentetley/flix-htmldoc"
           - "stephentetley/flix-pretty"
@@ -85,4 +87,6 @@ jobs:
         timeout-minutes: 10
         run: |
           # Build the project.
-          java -jar out.jar build --github-token ${{ secrets.GITHUB_TOKEN }}
+          # Note: -Xss8m because type inference recurses once per AST node along a
+          # function's spine, so large functions exhaust the default 1MB stack.
+          java -Xss8m -jar out.jar build --github-token ${{ secrets.GITHUB_TOKEN }}

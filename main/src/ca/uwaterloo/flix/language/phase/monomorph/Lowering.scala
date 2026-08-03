@@ -1613,22 +1613,12 @@ object Lowering {
 
   private def lowerInjectInto(exps: List[TypedAst.Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val loweredExps = exps.zip(predsAndArities).map {
-      case (exp, PredicateAndArity(pred, _)) =>
-        // Compute the types arguments of the functor F[(a, b, c)] or F[a].
-        val (_, targsLength) = exp.tpe match {
-          case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
-            case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments.length)
-            case Some(TypeConstructor.Unit) => (tycon, 0)
-            case _ => (tycon, 1)
-          }
-          case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
-        }
-
+      case (exp, PredicateAndArity(pred, arity)) =>
         // The type of the function.
         val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, lowerType(exp.tpe)), Types.Datalog, loc)
 
         // Compute the symbol of the function.
-        val sym = lookup(Defs.ProjectInto(targsLength), defTpe)
+        val sym = lookup(Defs.ProjectInto(arity), defTpe)
 
         // Put everything together.
         val argExps = mkPredSym(pred) :: lowerExp(exp) :: Nil
