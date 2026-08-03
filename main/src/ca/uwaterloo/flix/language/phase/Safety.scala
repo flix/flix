@@ -872,6 +872,10 @@ object Safety {
           }
       }
 
+      if (unimplemented.nonEmpty && extra.nonEmpty) { // TODO debugging
+        println(unimplemented)
+        println(extra)
+      }
       unimplemented.foreach {
         case (method, _, _) =>
           // an unimplemented method is only a problem if it's abstract and isn't auto-implemented by Object
