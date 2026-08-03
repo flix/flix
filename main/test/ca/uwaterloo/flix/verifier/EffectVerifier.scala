@@ -127,6 +127,9 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.LetSeq(bindings, body, _, eff, _) =>
+      bindings.foreach { case (_, exp) => visitExp(exp) }
+      visitExp(body)
     case Expr.LocalDef(_, _, _, exp1, exp2, _, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)

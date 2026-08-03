@@ -112,6 +112,9 @@ object ClosureConv {
     case Expr.Let(sym, e1, e2, tpe, purity, loc) =>
       Expr.Let(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
+    case Expr.LetSeq(bindings, body, tpe, purity, loc) =>
+      Expr.LetSeq(bindings.map { case (sym, exp) => (sym, visitExp(exp)) }, visitExp(body), tpe, purity, loc)
+
     case e: Expr.LocalDef => visitLocalDef(e)
 
     case Expr.Region(sym, e, tpe, purity, loc) =>
@@ -248,6 +251,9 @@ object ClosureConv {
 
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
       filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
+
+    case Expr.LetSeq(bindings, body, _, _, _) =>
+      bindings.foldRight(freeVars(body)) { case ((sym, exp), acc) => filterBoundVar(freeVars(exp) ++ acc, sym) }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
       val bound = sym :: fparams.map(_.sym)
@@ -387,6 +393,10 @@ object ClosureConv {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expr.Let(newSym, e1, e2, tpe, purity, loc)
+
+      case Expr.LetSeq(bindings, body, tpe, purity, loc) =>
+        val newBindings = bindings.map { case (sym, exp) => (subst.getOrElse(sym, sym), visitExp(exp)) }
+        Expr.LetSeq(newBindings, visitExp(body), tpe, purity, loc)
 
       case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
         // We never substitute a LocalDef symbol, since it is never free
@@ -626,6 +636,9 @@ object ClosureConv {
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         Expr.Let(sym, e1, e2, tpe, purity, loc)
+
+      case Expr.LetSeq(bindings, body, tpe, purity, loc) =>
+        Expr.LetSeq(bindings.map { case (sym, exp) => (sym, visit(exp)) }, visit(body), tpe, purity, loc)
 
       case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
         val e1 = visit(exp1)

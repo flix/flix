@@ -60,6 +60,8 @@ object LiftedAstPrinter {
       val d = (DocAst.Expr.Meta("_"), None, print(defaultExp))
       DocAst.Expr.Match(print(exp), cs :+ d)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case LetSeq(bindings, body, _, _, _) =>
+      bindings.foldRight(print(body)) { case ((sym, exp), acc) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp.tpe)), print(exp), acc) }
     case Stm(exps, exp, _, _, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
