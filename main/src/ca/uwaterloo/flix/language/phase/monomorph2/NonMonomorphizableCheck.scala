@@ -112,12 +112,19 @@ object NonMonomorphizableCheck {
 
   /** Returns `true` iff `tc` is an effect, case-set, or Boolean formula algebra constructor. */
   private def isSetAlgebraConstructor(tc: TypeConstructor): Boolean = tc match {
-    case TypeConstructor.Union | TypeConstructor.Intersection | TypeConstructor.Complement |
-         TypeConstructor.Difference | TypeConstructor.SymmetricDiff => true
-    case TypeConstructor.CaseUnion(_) | TypeConstructor.CaseIntersection(_) |
-         TypeConstructor.CaseComplement(_) | TypeConstructor.CaseSymmetricDiff(_) => true
-    case TypeConstructor.And | TypeConstructor.Or | TypeConstructor.Not => true
-    case _ => false
+    case TypeConstructor.Union                => true
+    case TypeConstructor.Intersection         => true
+    case TypeConstructor.Complement           => true
+    case TypeConstructor.Difference           => true
+    case TypeConstructor.SymmetricDiff        => true
+    case TypeConstructor.CaseUnion(_)         => true
+    case TypeConstructor.CaseIntersection(_)  => true
+    case TypeConstructor.CaseComplement(_)    => true
+    case TypeConstructor.CaseSymmetricDiff(_) => true
+    case TypeConstructor.And                  => true
+    case TypeConstructor.Or                   => true
+    case TypeConstructor.Not                  => true
+    case _                                    => false
   }
 
   /** Returns the source location of `mvar`'s declaration. */
