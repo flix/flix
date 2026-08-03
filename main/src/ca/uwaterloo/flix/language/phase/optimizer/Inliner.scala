@@ -187,7 +187,7 @@ object Inliner {
         case Expr.Lambda(fparam, e1, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
-          val letBinding = bindArgs(e1, List(fparam), List(e2), loc)
+          val letBinding = bindArgs(e1, Nel(fparam, Nil), List(e2), loc)
           visitExp(letBinding, ctx0)
 
         case e1 =>
@@ -290,7 +290,7 @@ object Inliner {
         val ctx1 = ctx0.addVarSubst(sym, freshVarSym)
         val e2 = visitExp(exp2, ctx1)
         val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-        val ctx2 = ctx1.addVarSubsts(varSubsts)
+        val ctx2 = ctx1.addVarSubsts(varSubsts.toList)
           .addInScopeVar(sym, BoundKind.ParameterOrPattern)
           .addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
         val e1 = visitExp(exp1, ctx2)
@@ -720,7 +720,7 @@ object Inliner {
   private def visitHandlerRule(rule: MonoAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.HandlerRule = rule match {
     case MonoAst.HandlerRule(op, fparams, exp1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-      val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
+      val ctx = ctx0.addVarSubsts(varSubsts.toList).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e1 = visitExp(exp1, ctx)
       MonoAst.HandlerRule(op, fps, e1)
   }
@@ -734,7 +734,7 @@ object Inliner {
   private def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
     case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff1, loc1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-      val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
+      val ctx = ctx0.addVarSubsts(varSubsts.toList).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e = visitExp(exp, ctx)
       MonoAst.JvmMethod(ann, ident, fps, e, retTpe, eff1, loc1)
   }
@@ -1028,7 +1028,7 @@ object Inliner {
     }
 
     /** Returns a [[LocalContext]] with the mappings of `l` added to [[varSubst]]. */
-    def addVarSubsts(l: Iterable[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
+    def addVarSubsts(l: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
       this.copy(varSubst = l.foldLeft(this.varSubst)(_ ++ _))
     }
 

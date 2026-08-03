@@ -377,7 +377,7 @@ sealed trait Completion {
 
     case Completion.OpHandlerCompletion(op, range, priority) =>
       val name = op.sym.name
-      val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)
+      val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams.toList)
       val description = Some(name)
       val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(op.spec)(flix)), description)
       CompletionItem(

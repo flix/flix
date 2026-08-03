@@ -39,6 +39,19 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
   /** Builds a new [[Nel]] by applying `f` to all elements of `this`. */
   override def map[S](f: T => S): Nel[S] = Nel(f(x), xs.map(f))
 
+  /** Builds a new [[List]] by applying `f` to all elements of `this` and concatenating the results. */
+  override def flatMap[S](f: T => IterableOnce[S]): List[S] = toList.flatMap(f)
+
+  /** Returns a [[Nel]] of pairs of the elements of `this` and their indices. */
+  override def zipWithIndex: Nel[(T, Int)] = Nel((x, 0), xs.zipWithIndex.map { case (y, i) => (y, i + 1) })
+
+  /**
+    * Returns a [[Nel]] of pairs of corresponding elements of `this` and `that`.
+    *
+    * Throws an [[InternalCompilerException]] if `this` and `that` have different lengths.
+    */
+  def zip[S](that: Nel[S]): Nel[(T, S)] = Nel((x, that.x), ListOps.zip(xs, that.xs))
+
   /** Returns two lists from a list of tuples. */
   override def unzip[A1, A2](implicit asPair: T => (A1, A2)): (Nel[A1], Nel[A2]) = {
     val (a, b) = asPair(x)

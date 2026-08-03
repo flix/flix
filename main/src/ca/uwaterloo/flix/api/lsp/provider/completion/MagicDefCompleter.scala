@@ -92,7 +92,7 @@ object MagicDefCompleter {
     matchedDefs.map {
       case defn =>
         val label = baseExp + "." + defn.sym.text // VSCode requires the code to be a prefix of the label.
-        val snippet = getSnippet(defn.sym, defn.spec.fparams.init, baseExp)
+        val snippet = getSnippet(defn.sym, defn.spec.fparams.toList.init, baseExp)
         Completion.MagicDefCompletion(defn, label, snippet, range, Priority.Lower(0))
     }
   }
@@ -131,7 +131,7 @@ object MagicDefCompleter {
     *   A.B.C.f({1:?arg1}, {2:?arg2}, lastArg)
     * }}}
     */
-  private def getSnippet(sym: QualifiedSym, fparamsExceptLast: Iterable[TypedAst.FormalParam], lastArg: String): String = {
+  private def getSnippet(sym: QualifiedSym, fparamsExceptLast: List[TypedAst.FormalParam], lastArg: String): String = {
     if (fparamsExceptLast.isEmpty) {
       s"$sym($lastArg)"
     } else {

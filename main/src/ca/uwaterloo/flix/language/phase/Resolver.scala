@@ -705,7 +705,7 @@ object Resolver {
     */
   private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym)(implicit sctx: SharedContext): Unit = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, tpe, _, _, _) =>
-      val tpes = tpe :: fparams.toList.flatMap(_.tpe)
+      val tpes = tpe :: fparams.flatMap(_.tpe)
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (!tvars.contains(tvar)) {
         val error = ResolutionError.IllegalSignature(sym, tvar, sym.loc)
@@ -929,7 +929,7 @@ object Resolver {
 
     case NamedAst.Expr.LocalDef(ann, sym, fparams0, exp1, exp2, loc) =>
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
-      val scp1 = scp0 ++ mkLocalDefScp(ann, sym, fparams) ++ mkFormalParamScp(fparams)
+      val scp1 = scp0 ++ mkLocalDefScp(ann, sym, fparams) ++ mkFormalParamScp(fparams.toList)
       val e1 = resolveExp(exp1, scp1)
       val scp2 = scp0 ++ mkLocalDefScp(ann, sym, fparams)
       val e2 = resolveExp(exp2, scp2)
@@ -1592,7 +1592,7 @@ object Resolver {
     case NamedAst.JvmMethod(ann0, ident, fparams0, exp, tpe, eff, loc) =>
       val ann = ann0.flatMap(resolveJvmAnnotation(_, scp0))
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
-      val scp = scp0 ++ mkFormalParamScp(fparams)
+      val scp = scp0 ++ mkFormalParamScp(fparams.toList)
       val e = resolveExp(exp, scp)
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
@@ -1751,7 +1751,7 @@ object Resolver {
             val fp = fparams.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns, root))
             findOpInEffect(ident, decl, ns, scp0) match {
               case Result.Ok(o) =>
-                val scp = scp0 ++ mkFormalParamScp(fp)
+                val scp = scp0 ++ mkFormalParamScp(fp.toList)
                 checkOpArity(o, fp.length - 1, ident.loc)
                 val b = resolveExp(body, scp)
                 Some(ResolvedAst.HandlerRule(OpSymUse(o.sym, ident.loc), fp, b, loc))
@@ -3378,7 +3378,7 @@ object Resolver {
   /**
     * Creates a use LocalScope from the given formal parameters.
     */
-  private def mkFormalParamScp(fparams: Iterable[ResolvedAst.FormalParam]): LocalScope = {
+  private def mkFormalParamScp(fparams: List[ResolvedAst.FormalParam]): LocalScope = {
     fparams.foldLeft(LocalScope.empty) {
       case (acc, fparam) => acc + (fparam.sym.text -> Resolution.Var(fparam.sym))
     }
@@ -3398,7 +3398,7 @@ object Resolver {
     */
   private def mkSpecScp(spec: ResolvedAst.Spec): LocalScope = spec match {
     case ResolvedAst.Spec(_, _, _, tparams, fparams, _, _, _, _) =>
-      mkTypeParamScp(tparams) ++ mkFormalParamScp(fparams)
+      mkTypeParamScp(tparams) ++ mkFormalParamScp(fparams.toList)
   }
 
   /**

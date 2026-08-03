@@ -1725,7 +1725,7 @@ object Namer {
     */
   private def visitImplicitTypeParamsFromFormalParams(fparams: Nel[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
-    val fparamTvars = fparams.toList.flatMap {
+    val fparamTvars = fparams.flatMap {
       case DesugaredAst.FormalParam(_, Some(tpe1), _) => freeTypeVars(tpe1)
       case DesugaredAst.FormalParam(_, None, _) => Nil
     }

@@ -302,9 +302,9 @@ object Terminator {
     */
   private def mkDecreasingFparams(fparams: Nel[FormalParam], decreasingIndices: Set[Int]): Nel[FormalParam] =
     if (decreasingIndices.isEmpty) fparams
-    else Nel.unsafeFrom(fparams.toList.zipWithIndex.map { case (fp, i) =>
+    else fparams.zipWithIndex.map { case (fp, i) =>
       if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
-    })
+    }
 
   ////////////////////////////////////////////////////////////////////////////
   // Self-call matching
