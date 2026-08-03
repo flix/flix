@@ -71,17 +71,11 @@ object NonMonomorphizableCheck {
     * [[InternalCompilerException]] if so.
     */
   def checkMonomorphizable(flows: Set[Flow]): Unit = {
-    val positions = flows.iterator.flatMap {
-      case Flow(args, dst) =>
-        args.iterator.zipWithIndex.map { case (arg, i) =>
-          val dstV = Vertex(dst, i)
-          (arg, dstV, MonoArg.collectParams(arg).distinct)
-        }
-    }.toList
-
-    val edges = positions.flatMap { case (arg, dstV, ps) =>
-      ps.map { case (v, j) => Edge(Vertex(v, j), dstV, growing = isGrowingHead(arg)) }
-    }
+    val edges = (for {
+      Flow(args, dst) <- flows.iterator
+      (arg, i) <- args.zipWithIndex
+      (v, j) <- MonoArg.collectParams(arg).distinct
+    } yield Edge(Vertex(v, j), Vertex(dst, i), growing = isGrowingHead(arg))).toList
 
     if (edges.isEmpty) return
 
