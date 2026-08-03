@@ -874,8 +874,8 @@ object Safety {
 
       unimplemented.foreach {
         case (method, _, _) =>
-          // an unimplemented method is only a problem if it's abstract
-          if (isAbstractMethod(method)) {
+          // an unimplemented method is only a problem if it's abstract and isn't auto-implemented by Object
+          if (isAbstractMethod(method) && !isObjectMethod(method)) {
             sctx.errors.add(NewObjectMissingMethod(clazz, method, loc))
           }
       }
@@ -926,6 +926,16 @@ object Safety {
   /** Return `true` if `m` is abstract. */
   private def isAbstractMethod(m: java.lang.reflect.Method): Boolean =
     java.lang.reflect.Modifier.isAbstract(m.getModifiers)
+
+  /** Returns `true` if `m` is or overrides a method found on the Object class. */
+  private def isObjectMethod(method: java.lang.reflect.Method): Boolean = {
+    try {
+      classOf[Object].getDeclaredMethod(method.getName, method.getParameterTypes*)
+      true
+    } catch {
+      case _: NoSuchMethodException => false
+    }
+  }
 
   /** Returns `true` if `eff` includes control effects (e.g. Console). */
   private def hasControlEffects(eff: Type): Boolean = {
