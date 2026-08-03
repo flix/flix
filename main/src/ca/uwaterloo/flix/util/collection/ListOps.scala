@@ -18,7 +18,10 @@ package ca.uwaterloo.flix.util.collection
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.util
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * Operations on lists.
@@ -110,5 +113,56 @@ object ListOps {
       cur = cur.tail
     }
     if (changed) buf.result() else list
+  }
+
+  /**
+    * Identifies corresponding elements in the given lists according to the given function, disregarding order.
+    *
+    * Returns a 3-tuple:
+    * - the corresponding pairs
+    * - the unpaired items in the first list
+    * - the unpaired items in the second list
+    *
+    * Worst case O(n**2) time, but linear when the lists are ordered according to their correspondences.
+    *
+    * Assumes f is an equivalence-like relation.
+    */
+  def unorderedCorresponds[A, B](l1: List[A], l2: List[B])(f: (A, B) => Boolean): (List[(A, B)], List[A], List[B]) = {
+    val pairs = List.newBuilder[(A, B)]
+
+    // build a linked list from l2 for fast removal
+    val dll2 = new util.LinkedList[B]()
+    l2.foreach(dll2.add)
+
+    val lone1 = l1.filter {
+      a =>
+        extractMatch(dll2)(f(a, _)) match {
+          // no match for this value; add it to the loners
+          case None => true
+
+          // found a match; add it to the pairs
+          case Some(b) =>
+            pairs.addOne((a, b))
+            false
+        }
+    }
+
+    val lone2 = dll2.asScala.toList
+
+    (pairs.result, lone1, lone2)
+
+  }
+
+  /** Removes and returns the first element in the list matching the given predicate. */
+  private def extractMatch[A](l: util.LinkedList[A])(f: A => Boolean): Option[A] = {
+    val iter = l.iterator()
+    while (iter.hasNext) {
+      val next = iter.next()
+      if (f(next)) {
+        iter.remove()
+        return Some(next)
+      }
+    }
+    None
   }
 }

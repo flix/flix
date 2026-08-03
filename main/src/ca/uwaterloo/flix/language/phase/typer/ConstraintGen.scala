@@ -1344,28 +1344,6 @@ object ConstraintGen {
   }
 
   /**
-    * Resolves a `java.lang.reflect.Type` to a Flix [[Type]] using the given
-    * substitution map. Falls back to the erased (Object-filled) type.
-    */
-  private def resolveJavaType(javaType: java.lang.reflect.Type, substMap: Map[String, Type], loc: SourceLocation): Type = javaType match {
-    case tv: TypeVariable[_] =>
-      substMap.getOrElse(tv.getName, Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc))
-    case pt: ParameterizedType =>
-      pt.getRawType match {
-        case rawClazz: Class[_] =>
-          val base = Type.getFlixType(rawClazz)
-          val resolvedArgs = pt.getActualTypeArguments.toList.map(resolveJavaType(_, substMap, loc))
-          Type.mkApply(base, resolvedArgs, loc)
-        case _ =>
-          Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc)
-      }
-    case clazz: Class[_] =>
-      Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
-    case _ =>
-      Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc)
-  }
-
-  /**
     * Generates constraints for the SelectChannelRule.
     *
     * Returns the type and effect of the rule.

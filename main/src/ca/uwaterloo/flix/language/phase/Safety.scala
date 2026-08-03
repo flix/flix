@@ -9,8 +9,12 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, S
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver2}
+import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{JvmUtils, ParOps}
 
+import java.lang.reflect.{ParameterizedType, TypeVariable}
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
@@ -842,24 +846,39 @@ object Safety {
         case JvmMethod(_, ident, fparams, _, _, _, _) => (ident.name, fparams.tail.length)
       }.toSet
 
+      val objTparams = clazz.getTypeParameters.toList.map(_.getName)
+      val objTargs = tpe.typeArguments
+      val substMap = objTparams.zip(objTargs).toMap
+
       val javaMethods = JvmUtils.getOverridableInstanceMethods(clazz)
-      val objectMethodNameAndArity = JvmUtils.getInstanceMethods(classOf[Object])
-        .map(m => (m.getName, m.getParameterCount)).toSet
+      val expectedMethods = javaMethods.map {
+        case method =>
+          val name = method.getName
+          val types = method.getGenericParameterTypes.map(resolveJavaType(_, substMap, loc))
+          (method, name, types)
+      }.sortBy { case (_method, name, types) => (name, types.length) }
 
-      val unimplementedMethods = javaMethods.filter { m =>
-        isAbstractMethod(m) &&
-        !objectMethodNameAndArity.contains((m.getName, m.getParameterCount)) &&
-        !flixMethodNameAndArity.contains((m.getName, m.getParameterCount))
-      }
-      unimplementedMethods.foreach(m => sctx.errors.add(NewObjectMissingMethod(clazz, m, loc)))
-
-      // Check for undefined methods (Flix methods not matching any Java method).
-      val javaMethodNameAndArity = javaMethods.map(m => (m.getName, m.getParameterCount)).toSet
-      val undefinedMethods = methods.filter {
+      val actualMethods = methods.map {
         case JvmMethod(_, ident, fparams, _, _, _, _) =>
-          !javaMethodNameAndArity.contains((ident.name, fparams.tail.length))
+          val name = ident.name
+          val types = fparams.map(_.tpe)
+          (ident, name, types)
+      }.sortBy { case (_ident, name, types) => (name, types.length) }
+
+      val (_pairs, missing, extra) = ListOps.unorderedCorresponds(expectedMethods, actualMethods) {
+        case ((_method, expectedName, expectedTypes), (_ident, actualName, actualTypes)) =>
+          if (expectedName != actualName) {
+            false
+          } else {
+            expectedTypes.corresponds(actualTypes) {
+              // TODO support equality env here
+              case (expectedType, actualType) => ConstraintSolver2.isEquivalent(expectedType, actualType)(EqualityEnv.empty, flix)
+            }
+          }
       }
-      undefinedMethods.foreach(m => sctx.errors.add(NewObjectUndefinedMethod(clazz, m.ident.name, m.loc)))
+
+      missing.foreach { case (method, _, _) => sctx.errors.add(NewObjectMissingMethod(clazz, method, loc)) }
+      extra.foreach { case (ident, name, _) => sctx.errors.add(NewObjectUndefinedMethod(clazz, name, ident.loc)) }
 
       // `methods` must not let control effects escape.
       val controlEffecting = methods.filter(m => hasControlEffects(m.eff))
@@ -875,6 +894,29 @@ object Safety {
       case _: NoSuchMethodException => false
     }
   }
+
+  /**
+    * Resolves a `java.lang.reflect.Type` to a Flix [[Type]] using the given
+    * substitution map. Falls back to the erased (Object-filled) type.
+    */
+  private def resolveJavaType(javaType: java.lang.reflect.Type, substMap: Map[String, Type], loc: SourceLocation): Type = javaType match {
+    case tv: TypeVariable[_] =>
+      substMap.getOrElse(tv.getName, Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc))
+    case pt: ParameterizedType =>
+      pt.getRawType match {
+        case rawClazz: Class[_] =>
+          val base = Type.getFlixType(rawClazz)
+          val resolvedArgs = pt.getActualTypeArguments.toList.map(resolveJavaType(_, substMap, loc))
+          Type.mkApply(base, resolvedArgs, loc)
+        case _ =>
+          Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc)
+      }
+    case clazz: Class[_] =>
+      Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+    case _ =>
+      Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc)
+  }
+
 
   /** Returns `true` if `c` is public. */
   private def isPublicClass(c: Class[?]): Boolean =
