@@ -856,7 +856,7 @@ object Safety {
       val actualMethods = methods.map {
         case JvmMethod(_, ident, fparams, _, _, _, _) =>
           val name = ident.name
-          val types = fparams.map(_.tpe)
+          val types = fparams.map(_.tpe).tail // drop the `this` parameter
           (ident, name, types)
       }.sortBy { case (_, name, types) => (name, types.length) }
 
