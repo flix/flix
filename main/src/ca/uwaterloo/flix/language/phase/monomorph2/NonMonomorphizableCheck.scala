@@ -20,19 +20,42 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException}
 
 /**
-  * Rejects non-monomorphizable programs (flow sets with no finite solution) before
-  * [[ConstraintSolver.solve]]'s fixpoint loop, which would otherwise grow without bound.
+  * The purpose of this phase is to reject non-monomorphizable programs (i.e. programs with
+  * polymorphic recursion). This is needed to ensure that the subsequent [[ConstraintSolver]]
+  * phase does not attempt to create a solution that will grow without bound.
   *
-  * Following "The Simple Essence of Monomorphization" (§3.3.2), the flow set is reinterpreted as
-  * a graph over `(MonoVar, tuple-position)` vertices, and we look for a "growing cycle": a reachable
-  * cycle with at least one edge that wraps the flowing type in an additional type constructor
-  * (`a` flowing into `List[a]`). Such a cycle arises from polymorphic recursion
-  * (e.g. `def f(x: a): List[a] = f(x::Nil)`). A cycle of only direct-copy edges is
-  * ordinary, convergent self-recursion and is fine.
+  * Following "The Simple Essence of Monomorphization" (§3.3.2), the collection of [[FlowConstraint]]s
+  * is reinterpreted as a graph where edges are annotated with whether they are growing or not.
   *
-  * The check over-approximates in one known way: a non-regular enum whose growing case is declared
-  * but never constructed is still rejected once any other case of it is constructed, even though
-  * demand-driven specialization would not need the growing case.
+  * Take the following program containing polymorphic recursion:
+  * {{{
+  *  enum PerfectTree[a] {
+  *      case Leaf(a)
+  *      case Node(PerfectTree[(a, a)])
+  *  }
+  *  def size(t: PerfectTree[b]): Int32 = match t {
+  *     case PerfectTree.Leaf(_)     => 1
+  *     case PerfectTree.Node(inner) => 2 * size(inner)
+  *  }
+  *  def main(): Unit \ IO = {
+  *      let t = PerfectTree.Node(PerfectTree.Leaf((1, 2)));
+  *      println(size(t))
+  *  }
+  * }}}
+  * The problematic [[FlowConstraint]]s for this program are (with nicer formatting):
+  * {{{
+  *   [(a,a)] ~> a // Stemming from `case Node(PerfectTree[(a, a)])`
+  *   [(b,b)] ~> b // Stemming from the recursive `size(inner)` call
+  * }}}
+  * These are problematic because they establish a cycle (self-loop) with a "growing"
+  * edge. Where "growing" means that the type-variable in the cycle is nested in another
+  * type. When we reinterpret the [[FlowConstraint]]s of a program with polymorphic
+  * recursion as a graph there will be at least one cycle with some "growing" edge.
+  *
+  * N.B. Beware that there is some inconsistency wrt. reachability and rejection.
+  * Unreachable polymorphic recursive enum/struct declarations will be rejected whereas
+  * polymorphic recursive function definitions will not, due to having already been
+  * filtered away during [[TreeShaker1]].
   */
 object NonMonomorphizableCheck {
 
