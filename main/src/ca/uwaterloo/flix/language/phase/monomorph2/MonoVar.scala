@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
   * A monomorphization target-variable (def/enum/sig/struct/restrictable-enum) whose concrete
-  * type-argument tuple the solver determines, then substitutes back wherever `MonoArg.Param`
+  * instantiation the solver determines, then substitutes back wherever `MonoArg.Param`
   * references it.
   */
 sealed trait MonoVar
