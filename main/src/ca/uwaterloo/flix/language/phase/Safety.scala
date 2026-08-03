@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver2}
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
-import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
 import ca.uwaterloo.flix.util.{JvmUtils, ParOps}
 
 import java.lang.reflect.{ParameterizedType, TypeVariable}
@@ -68,7 +68,6 @@ object Safety {
     checkSpecPermissions(sig.spec)
     sig.exp.foreach(visitExp(_))
   }
-
 
 
   /**
@@ -449,47 +448,47 @@ object Safety {
         case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Regex, _)) => ()
         case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Array, _)) => ()
 
-        // Allow casting one Java type to another if there is a subtype relationship.
+          // Allow casting one Java type to another if there is a subtype relationship.
         case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
           if (right.isAssignableFrom(left)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-        // Similar, but for String.
+          // Similar, but for String.
         case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
           if (right.isAssignableFrom(classOf[String])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-        // Similar, but for Regex.
+          // Similar, but for Regex.
         case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
           if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-        // Similar, but for BigInt.
+          // Similar, but for BigInt.
         case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
           if (right.isAssignableFrom(classOf[BigInteger])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-        // Similar, but for BigDecimal.
+          // Similar, but for BigDecimal.
         case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
           if (right.isAssignableFrom(classOf[java.math.BigDecimal])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-        // Similar, but for Arrays.
+          // Similar, but for Arrays.
         case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right), _)) =>
           if (right.isAssignableFrom(classOf[Array[Object]])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-        // Disallow casting a type variable.
+          // Disallow casting a type variable.
         case (src@Type.Var(_, _), _) =>
           sctx.errors.add(IllegalCheckedCastFromVar(src, to, loc))
 
-        // Disallow casting a type variable (symmetric case)
+          // Disallow casting a type variable (symmetric case)
         case (_, dst@Type.Var(_, _)) =>
           sctx.errors.add(IllegalCheckedCastToVar(from, dst, loc))
 
-        // Disallow casting a Java type to any other type.
+          // Disallow casting a Java type to any other type.
         case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
           sctx.errors.add(IllegalCheckedCastToNonJava(clazz, to, loc))
 
-        // Disallow casting a Java type to any other type (symmetric case).
+          // Disallow casting a Java type to any other type (symmetric case).
         case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
           sctx.errors.add(IllegalCheckedCastFromNonJava(from, clazz, loc))
 
-        // Disallow all other casts.
+          // Disallow all other casts.
         case _ => sctx.errors.add(IllegalCheckedCast(from, to, loc))
       }
   }
@@ -565,27 +564,27 @@ object Safety {
         // Allow all null casts.
         case (Type.Null, _) => ()
 
-        // Allow casts where one side is a type variable.
+          // Allow casts where one side is a type variable.
         case (Type.Var(_, _), _) => ()
         case (_, Some(Type.Var(_, _))) => ()
 
-        // Allow casts between Java types.
+          // Allow casts between Java types.
         case (Type.Cst(TypeConstructor.Native(_), _), _) => ()
         case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => ()
 
-        // Disallow casting a Boolean to another primitive type.
+          // Disallow casting a Boolean to another primitive type.
         case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
           sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-        // Disallow casting a Boolean to another primitive type (symmetric case).
+          // Disallow casting a Boolean to another primitive type (symmetric case).
         case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
           sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-        // Disallowing casting a non-primitive type to a primitive type.
+          // Disallowing casting a non-primitive type to a primitive type.
         case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
           sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-        // Disallowing casting a non-primitive type to a primitive type (symmetric case).
+          // Disallowing casting a non-primitive type to a primitive type (symmetric case).
         case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
           sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
@@ -841,13 +840,14 @@ object Safety {
           }
       }
 
-      val objTparams = clazz.getTypeParameters.toList.map(_.getName)
-      val objTargs = tpe.typeArguments
-      val substMap = objTparams.zip(objTargs).toMap
-
+      val targs = tpe.typeArguments
+      val getTargOpt = targs.lift // returns the targ at the given index, or None
       val javaMethods = JvmUtils.getOverridableInstanceMethods(clazz)
       val expectedMethods = javaMethods.map {
         case method =>
+          val tparamNameToIndex = JvmUtils.resolveTypeParamMapping(method, clazz)
+          val substMap = MapOps.filterMapValues(tparamNameToIndex)(getTargOpt)
+
           val name = method.getName
           val types = method.getGenericParameterTypes.map(resolveJavaType(_, substMap, loc))
           (method, name, types)
@@ -874,10 +874,6 @@ object Safety {
 
       // an unimplemented method is only a problem if it's abstract and isn't auto-implemented by Object
       val missing = unimplemented.filter { case (method, _, _) => isAbstractMethod(method) && !isObjectMethod(method) }
-      if (missing.nonEmpty && extra.nonEmpty) { // TODO debugging
-        println(unimplemented)
-        println(extra)
-      }
       missing.foreach { case (method, _, _) => sctx.errors.add(NewObjectMissingMethod(clazz, method, loc)) }
       extra.foreach { case (ident, name, _) => sctx.errors.add(NewObjectUndefinedMethod(clazz, name, ident.loc)) }
 
@@ -930,7 +926,7 @@ object Safety {
   /** Returns `true` if `m` is or overrides a method found on the Object class. */
   private def isObjectMethod(method: java.lang.reflect.Method): Boolean = {
     try {
-      classOf[Object].getDeclaredMethod(method.getName, method.getParameterTypes*)
+      classOf[Object].getDeclaredMethod(method.getName, method.getParameterTypes *)
       true
     } catch {
       case _: NoSuchMethodException => false
