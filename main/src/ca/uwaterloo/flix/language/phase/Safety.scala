@@ -860,7 +860,7 @@ object Safety {
           (ident, name, types)
       }.sortBy { case (_, name, types) => (name, types.length) }
 
-      val (_, missing, extra) = ListOps.unorderedCorresponds(expectedMethods, actualMethods) {
+      val (_, unimplemented, extra) = ListOps.unorderedCorresponds(expectedMethods, actualMethods) {
         case ((_, expectedName, expectedTypes), (_, actualName, actualTypes)) =>
           if (expectedName != actualName) {
             false
@@ -872,7 +872,13 @@ object Safety {
           }
       }
 
-      missing.foreach { case (method, _, _) => sctx.errors.add(NewObjectMissingMethod(clazz, method, loc)) }
+      unimplemented.foreach {
+        case (method, _, _) =>
+          // an unimplemented method is only a problem if it's abstract
+          if (isAbstractMethod(method)) {
+            sctx.errors.add(NewObjectMissingMethod(clazz, method, loc))
+          }
+      }
       extra.foreach { case (ident, name, _) => sctx.errors.add(NewObjectUndefinedMethod(clazz, name, ident.loc)) }
 
       // `methods` must not let control effects escape.
