@@ -27,7 +27,7 @@ import scala.collection.mutable
   * Constraint generation for constraint-based monomorphization: emits `Flow` constraints
   * describing how concrete types propagate through the program, for [[ConstraintSolver]] to solve.
   */
-object ConstraintCollection {
+object ConstraintGen {
 
   /**
     * The mutable data used throughout constraint generation.

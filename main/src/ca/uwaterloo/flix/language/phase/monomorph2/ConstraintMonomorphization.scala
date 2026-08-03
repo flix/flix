@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.ast.{MonoAst, TypedAst}
   *
   * At a high level, this pipeline works as follows:
   *
-  *   - 1. [[ConstraintCollection]] generates flow constraints describing how concrete types and
+  *   - 1. [[ConstraintGen]] generates flow constraints describing how concrete types and
   *     type shapes propagate into the type-parameter slots of every polymorphic def/enum/struct/
   *     restrictable-enum.
   *   - 2. [[NonMonomorphizableCheck]] rejects programs with no finite solution (e.g. polymorphic
@@ -44,7 +44,7 @@ object ConstraintMonomorphization {
 
   /** Performs constraint-based monomorphization of the given AST `root`. */
   def run(root: TypedAst.Root)(implicit flix: Flix): MonoAst.Root = {
-    val constraints = ConstraintCollection.generate(root)
+    val constraints = ConstraintGen.generate(root)
     NonMonomorphizableCheck.checkMonomorphizable(constraints)
     val solution = ConstraintSolver.solve(constraints, root)
     SolutionSpecialization.run(root, solution)
