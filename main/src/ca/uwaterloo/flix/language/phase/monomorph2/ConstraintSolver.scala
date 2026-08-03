@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 /**
-  * Solves the flow constraints produced by [[ConstraintCollection]] to a fixpoint: starting from
+  * Solves the flow constraints produced by [[ConstraintGen]] to a fixpoint: starting from
   * the ground (all-constant) flows, each newly solved tuple is substituted into the flows that
   * depend on it until no new tuples appear. Sig destinations are additionally dispatched to their
   * implementing (or default) def. The result is, per polymorphic symbol, exactly the ground
