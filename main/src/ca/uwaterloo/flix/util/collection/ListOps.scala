@@ -149,7 +149,7 @@ object ListOps {
 
     val lone2 = dll2.asScala.toList
 
-    (pairs.result, lone1, lone2)
+    (pairs.result(), lone1, lone2)
 
   }
 

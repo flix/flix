@@ -841,11 +841,6 @@ object Safety {
           }
       }
 
-      // Check for missing abstract method implementations (by name + arity).
-      val flixMethodNameAndArity = methods.map {
-        case JvmMethod(_, ident, fparams, _, _, _, _) => (ident.name, fparams.tail.length)
-      }.toSet
-
       val objTparams = clazz.getTypeParameters.toList.map(_.getName)
       val objTargs = tpe.typeArguments
       val substMap = objTparams.zip(objTargs).toMap
@@ -856,17 +851,17 @@ object Safety {
           val name = method.getName
           val types = method.getGenericParameterTypes.map(resolveJavaType(_, substMap, loc))
           (method, name, types)
-      }.sortBy { case (_method, name, types) => (name, types.length) }
+      }.sortBy { case (_, name, types) => (name, types.length) }
 
       val actualMethods = methods.map {
         case JvmMethod(_, ident, fparams, _, _, _, _) =>
           val name = ident.name
           val types = fparams.map(_.tpe)
           (ident, name, types)
-      }.sortBy { case (_ident, name, types) => (name, types.length) }
+      }.sortBy { case (_, name, types) => (name, types.length) }
 
-      val (_pairs, missing, extra) = ListOps.unorderedCorresponds(expectedMethods, actualMethods) {
-        case ((_method, expectedName, expectedTypes), (_ident, actualName, actualTypes)) =>
+      val (_, missing, extra) = ListOps.unorderedCorresponds(expectedMethods, actualMethods) {
+        case ((_, expectedName, expectedTypes), (_, actualName, actualTypes)) =>
           if (expectedName != actualName) {
             false
           } else {
