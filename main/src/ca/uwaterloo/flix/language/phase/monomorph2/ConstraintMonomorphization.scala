@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.language.ast.{MonoAst, TypedAst}
   *   - 2. [[NonMonomorphizableCheck]] rejects programs with no finite solution (e.g. polymorphic
   *     recursion) before solving, so the next step cannot loop forever.
   *   - 3. [[ConstraintSolver]] solves the flow constraints to a fixpoint, producing the set of
-  *     concrete type-argument tuples each polymorphic symbol must be specialized at.
+  *     concrete instantiations each polymorphic symbol must be specialized at.
   *   - 4. [[Specialize]] specializes (and lowers) every def/enum/struct/
   *     restrictable-enum accordingly.
   *

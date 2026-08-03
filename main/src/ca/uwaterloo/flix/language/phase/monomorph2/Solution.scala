@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 /**
   * The result of constraint solving: for each polymorphic def/enum/struct/restrictable-enum
-  * symbol, the set of concrete type-argument tuples it must be specialized at. A restrictable
-  * enum's tuple always starts with its case-set index (`Kind.CaseSet`).
+  * symbol, the set of concrete instantiations it must be specialized at. A restrictable
+  * enum's instantiation always starts with its case-set index (`Kind.CaseSet`).
   */
 case class Solution(
   defs: Map[Symbol.DefnSym, Set[List[Type]]],
