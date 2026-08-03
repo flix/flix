@@ -872,17 +872,13 @@ object Safety {
           }
       }
 
-      if (unimplemented.nonEmpty && extra.nonEmpty) { // TODO debugging
+      // an unimplemented method is only a problem if it's abstract and isn't auto-implemented by Object
+      val missing = unimplemented.filter { method => isAbstractMethod(method) && !isObjectMethod(method) }
+      if (missing.nonEmpty && extra.nonEmpty) { // TODO debugging
         println(unimplemented)
         println(extra)
       }
-      unimplemented.foreach {
-        case (method, _, _) =>
-          // an unimplemented method is only a problem if it's abstract and isn't auto-implemented by Object
-          if (isAbstractMethod(method) && !isObjectMethod(method)) {
-            sctx.errors.add(NewObjectMissingMethod(clazz, method, loc))
-          }
-      }
+      missing.foreach { case (method, _, _) => sctx.errors.add(NewObjectMissingMethod(clazz, method, loc)) }
       extra.foreach { case (ident, name, _) => sctx.errors.add(NewObjectUndefinedMethod(clazz, name, ident.loc)) }
 
       // `methods` must not let control effects escape.
