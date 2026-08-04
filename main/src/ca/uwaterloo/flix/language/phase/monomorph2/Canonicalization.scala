@@ -41,13 +41,13 @@ private[monomorph2] object Canonicalization {
     * N.B.: `eff` must be simplified and ground.
     */
   def evalEff(eff: Type): CofiniteSet[Symbol.EffSym] = eff match {
-    case Type.Univ                                                                        => CofiniteSet.universe
-    case Type.Pure                                                                        => CofiniteSet.empty
-    case Type.Cst(TypeConstructor.Effect(sym, _), _)                                     => CofiniteSet.mkSet(sym)
-    case Type.Cst(TypeConstructor.Region(_), _)                                          => CofiniteSet.mkSet(Symbol.IO)
-    case Type.Alias(_, _, inner, _)                                                      => evalEff(inner)
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _)                       => CofiniteSet.complement(evalEff(y))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _)          => CofiniteSet.union(evalEff(x), evalEff(y))
+    case Type.Univ                                                                      => CofiniteSet.universe
+    case Type.Pure                                                                      => CofiniteSet.empty
+    case Type.Cst(TypeConstructor.Effect(sym, _), _)                                    => CofiniteSet.mkSet(sym)
+    case Type.Cst(TypeConstructor.Region(_), _)                                         => CofiniteSet.mkSet(Symbol.IO)
+    case Type.Alias(_, _, inner, _)                                                     => evalEff(inner)
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _)                      => CofiniteSet.complement(evalEff(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _)         => CofiniteSet.union(evalEff(x), evalEff(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _)  => CofiniteSet.intersection(evalEff(x), evalEff(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _)    => CofiniteSet.difference(evalEff(x), evalEff(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) => CofiniteSet.xor(evalEff(x), evalEff(y))
