@@ -52,10 +52,9 @@ import ca.uwaterloo.flix.util.{Graph, InternalCompilerException}
   * type. When we reinterpret the [[FlowConstraint]]s of a program with polymorphic
   * recursion as a graph there will be at least one cycle with some "growing" edge.
   *
-  * N.B. Beware that there is some inconsistency wrt. reachability and rejection.
-  * Unreachable polymorphic recursive enum/struct declarations will be rejected whereas
-  * polymorphic recursive function definitions will not, due to having already been
-  * filtered away during [[TreeShaker1]].
+  * N.B. Because of [[TreeShaker1]], unreachable occurrences of polymorphic recursive function
+  * definitions (`def`, `sig`, instance `def`) will not be detected, whereas unreachable
+  * polymorphic recursive enum/struct declarations will still be rejected.
   */
 object NonMonomorphizableCheck {
 
