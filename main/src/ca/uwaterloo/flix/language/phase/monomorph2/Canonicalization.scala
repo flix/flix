@@ -33,24 +33,24 @@ import ca.uwaterloo.flix.util.collection.CofiniteSet
 private[monomorph2] object Canonicalization {
 
   /** Returns the canonical effect equivalent to `eff`. */
-  def canonicalEffect(eff: Type): Type = coSetToType(evalEffect(eff), eff.loc)
+  def canonicalEffect(eff: Type): Type = coSetToType(evalEff(eff), eff.loc)
 
   /**
     * Evaluates `eff`.
     *
     * N.B.: `eff` must be simplified and ground.
     */
-  def evalEffect(eff: Type): CofiniteSet[Symbol.EffSym] = eff match {
+  def evalEff(eff: Type): CofiniteSet[Symbol.EffSym] = eff match {
     case Type.Univ                                                                        => CofiniteSet.universe
     case Type.Pure                                                                        => CofiniteSet.empty
     case Type.Cst(TypeConstructor.Effect(sym, _), _)                                     => CofiniteSet.mkSet(sym)
     case Type.Cst(TypeConstructor.Region(_), _)                                          => CofiniteSet.mkSet(Symbol.IO)
-    case Type.Alias(_, _, inner, _)                                                      => evalEffect(inner)
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _)                       => CofiniteSet.complement(evalEffect(y))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _)          => CofiniteSet.union(evalEffect(x), evalEffect(y))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _)  => CofiniteSet.intersection(evalEffect(x), evalEffect(y))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _)    => CofiniteSet.difference(evalEffect(x), evalEffect(y))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) => CofiniteSet.xor(evalEffect(x), evalEffect(y))
+    case Type.Alias(_, _, inner, _)                                                      => evalEff(inner)
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _)                       => CofiniteSet.complement(evalEff(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _)          => CofiniteSet.union(evalEff(x), evalEff(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _)  => CofiniteSet.intersection(evalEff(x), evalEff(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _)    => CofiniteSet.difference(evalEff(x), evalEff(y))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) => CofiniteSet.xor(evalEff(x), evalEff(y))
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
   }
 
