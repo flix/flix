@@ -66,11 +66,8 @@ object NonMonomorphizableCheck {
   private case class Edge(src: Vertex, dst: Vertex, growing: Boolean)
 
   // TODO Make it a proper compiler error-message
-  /**
-    * Checks whether `flows` contains a reachable growing cycle and throws
-    * [[InternalCompilerException]] if so.
-    */
-  def checkMonomorphizable(flows: List[Flow]): Unit = {
+  /** Checks whether `flows` contains a growing cycle and throws [[InternalCompilerException]] if so. */
+  def checkMonomorphizable(flows: List[FlowConstraint]): Unit = {
     val edges = for {
       FlowConstraint(Instantiation(args), dst) <- flows
       (arg, i) <- args.zipWithIndex
