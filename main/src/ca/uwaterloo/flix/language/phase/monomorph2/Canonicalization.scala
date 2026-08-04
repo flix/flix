@@ -32,11 +32,9 @@ import ca.uwaterloo.flix.util.collection.CofiniteSet
   */
 private[monomorph2] object Canonicalization {
 
-  // Copied from monomorph.Specialization.canonicalEffect
   /** Returns the canonical effect equivalent to `eff`. */
   def canonicalEffect(eff: Type): Type = coSetToType(evalEffect(eff), eff.loc)
 
-  // Copied from monomorph.Specialization.eval
   /**
     * Evaluates `eff`.
     *
@@ -56,14 +54,12 @@ private[monomorph2] object Canonicalization {
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
   }
 
-  // Copied from monomorph.Specialization.coSetToType
   /** Returns the [[Type]] representation of `set` with `loc`. */
   def coSetToType(set: CofiniteSet[Symbol.EffSym], loc: SourceLocation): Type = set match {
     case CofiniteSet.Set(s)   => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc)
     case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc), loc)
   }
 
-  // Copied from monomorph.Specialization.reduceAssocType
   /** Reduces the given associated into its definition, will crash if not able to. */
   def reduceAssocType(assoc: Type.AssocType)(implicit root: TypedAst.Root, flix: Flix): Type = {
     val progress = Progress()
@@ -73,7 +69,6 @@ private[monomorph2] object Canonicalization {
     else throw InternalCompilerException(s"Could not reduce associated type $assoc", assoc.loc)
   }
 
-  // Ported from monomorph.Specialization.normalizeApply, with a small difference
   /**
     * Rebuilds `Type.Apply(normalize(tpe1), normalize(tpe2), loc)`, folding ground effect,
     * bool, and case-set/record-row/schema-row formulas via the same smart constructors used
@@ -110,7 +105,6 @@ private[monomorph2] object Canonicalization {
     }
   }
 
-  // Copied from monomorph.Specialization.simplify
   /**
     * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
     * reducible.
@@ -130,7 +124,6 @@ private[monomorph2] object Canonicalization {
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
   }
 
-  // Copied from monomorph.Specialization.mkRecordExtendSorted
   /**
     * Returns a sorted record, assuming that `rest` is sorted.
     *
@@ -152,7 +145,6 @@ private[monomorph2] object Canonicalization {
     case Type.UnresolvedJvmType(_, _)  => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
   }
 
-  // Copied from monomorph.Specialization.mkSchemaExtendSorted
   /**
     * Returns a sorted schema, assuming that `rest` is sorted.
     *
