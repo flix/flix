@@ -427,7 +427,7 @@ object Main {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
-              bootstrap.checkEffects(flix)
+              bootstrap.checkEffects(flix).map(_ => println("Upgrade is safe."))
             }
           }
 
