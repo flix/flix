@@ -646,13 +646,11 @@ class TestBootstrap extends AnyFunSuite {
       upgradeVersion
     )(Formatter.getDefault, in, System.out)
 
-    assert(
-      actual match {
-        case Result.Err(BootstrapError.UpgradeError.UnsafeUpgradeRejected(_)) => succeed
-        case Result.Err(e) => fail(s"Expected UnsafeUpgradeRejected, but got $e")
-        case Result.Ok(()) => fail(s"Expected UnsafeUpgradeRejected, but got Result.Ok(())")
-      }
-    )
+    actual match {
+      case Result.Err(BootstrapError.UpgradeError.UnsafeUpgradeRejected(_)) => succeed
+      case Result.Err(e) => fail(s"Expected UnsafeUpgradeRejected, but got $e")
+      case Result.Ok(()) => fail(s"Expected UnsafeUpgradeRejected, but got Result.Ok(())")
+    }
   }
 
   test("upgrade on effect unsafe upgrade reports error") {
