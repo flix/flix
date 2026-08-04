@@ -70,7 +70,7 @@ object ConstraintGen {
     }
 
     ParOps.parMap(root.instances.values) { inst =>
-      inst.defs.foreach { instDef =>
+      for (instDef <- inst.defs) {
         val mvar = MonoVar.Def(instDef.sym)
         val allTparams = inst.tparams ++ instDef.spec.tparams
         implicit val tparamEnv: TparamEnv = mkTparamEnv(mvar, allTparams)
@@ -104,7 +104,9 @@ object ConstraintGen {
       val mvar = MonoVar.Def(defnSym)
       implicit val tparamEnv: TparamEnv = mkTparamEnv(mvar, allTparams)
       flix.profile(defnSym, sig.sym.loc) {
-        sig.exp.foreach(visitExp)
+        for (exp <- sig.exp) {
+          visitExp(exp)
+        }
       }
     }
 
@@ -138,17 +140,21 @@ object ConstraintGen {
           visitType(MonomorphCanon.reduceAssocType(at)(root, flix))
         else
           dealiasedVisitType(arg)
-      case Type.Var(_, _)
-           | Type.Cst(_, _)
-           | Type.JvmToEff(_, _)
-           | Type.JvmToType(_, _)
-           | Type.UnresolvedJvmType(_, _)=> ()
-      case Type.Alias(_, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected type alias (should have been erased): $tpe", tpe.loc)
-      case app @ Type.Apply(_, _, _) =>
+      case app @ Type.Apply(_, _, _)    =>
         val args = app.typeArguments
-        args.foreach(dealiasedVisitType)
-        declMonoVar(app.baseType).foreach(mvar => sctx.addFlow(FlowConstraint(Instantiation(args.map(t => dealiasedTypeToMonoArg(t))), mvar)))
+        for (arg <- args) {
+          dealiasedVisitType(arg)
+        }
+        for (mvar <- declMonoVar(app.baseType)) {
+          sctx.addFlow(FlowConstraint(Instantiation(args.map(t => dealiasedTypeToMonoArg(t))), mvar))
+        }
+      case Type.Var(_, _)               => ()
+      case Type.Cst(_, _)               => ()
+      case Type.JvmToEff(_, _)          => ()
+      case Type.JvmToType(_, _)         => ()
+      case Type.UnresolvedJvmType(_, _) => ()
+      case Type.Alias(_, _, _, _)       =>
+        throw InternalCompilerException(s"Unexpected type alias (should have been erased): $tpe", tpe.loc)
     }
     dealiasedVisitType(Type.eraseAliases(tpe0))
   }
@@ -164,34 +170,51 @@ object ConstraintGen {
   /**
     * Emits flow constraints for all case field types in `enumDecl`.
     */
-  private def visitEnum(enumDecl: TypedAst.Enum)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
-    enumDecl.cases.values.foreach(cas => cas.tpes.foreach(visitType))
+  private def visitEnum(enumDecl: TypedAst.Enum)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+    for (cas <- enumDecl.cases.values) {
+      for (tpe <- cas.tpes) {
+        visitType(tpe)
+      }
+    }
+  }
 
   /**
     * Emits flow constraints for all case field types in `restrictableEnumDecl`.
     */
-  private def visitRestrictableEnum(restrictableEnumDecl: TypedAst.RestrictableEnum)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
-    restrictableEnumDecl.cases.values.foreach(cas => cas.tpes.foreach(visitType))
+  private def visitRestrictableEnum(restrictableEnumDecl: TypedAst.RestrictableEnum)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+    for (cas <- restrictableEnumDecl.cases.values) {
+      for (tpe <- cas.tpes) {
+        visitType(tpe)
+      }
+    }
+  }
 
   /**
     * Emits flow constraints for all field types in `structDecl`.
     */
-  private def visitStruct(structDecl: TypedAst.Struct)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
-    structDecl.fields.values.foreach(field => visitType(field.tpe))
+  private def visitStruct(structDecl: TypedAst.Struct)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+    for (field <- structDecl.fields.values) {
+      visitType(field.tpe)
+    }
+  }
 
   /**
     * Emits flow constraints for the formal parameter and return types of `op`.
     */
   private def visitOp(op: TypedAst.Op)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
-    op.spec.fparams.foreach { case FormalParam(_, tpe, _, _, _) => visitType(tpe) }
+    for (case FormalParam(_, tpe, _, _, _) <- op.spec.fparams) {
+      visitType(tpe)
+    }
     visitType(op.spec.retTpe)
   }
 
   /**
     * Emits flow constraints for the formal parameter types, return type, and body of `defn`.
     */
-  private def visitDef(defn: TypedAst.Def)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
-    defn.spec.fparams.foreach { case FormalParam(_, tpe, _, _, _) => visitType(tpe) }
+ private def visitDef(defn: TypedAst.Def)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+    for (case FormalParam(_, tpe, _, _, _) <- defn.spec.fparams) {
+      visitType(tpe)
+    }
     visitType(defn.spec.retTpe)
     visitExp(defn.exp)
     entryPointHandlerFlows(defn)
@@ -209,209 +232,198 @@ object ConstraintGen {
     * [[SpecializeAndLower]] will synthesize for them.
     */
   private def visitExp(exp0: Expr)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = exp0 match {
-    case Expr.Cst(_, _, _) => ()
-    case Expr.Var(_, _, _) => ()
+    case Expr.Cst(_, _, _)        => ()
+    case Expr.Var(_, _, _)        => ()
     case Expr.Hole(_, _, _, _, _) => ()
-
     case Expr.ApplyDef(symUse, exps, targs, _, _, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       sctx.addFlow(FlowConstraint(Instantiation(targs.map(typeToMonoArg)), MonoVar.Def(symUse.sym)))
-
     case Expr.ApplySig(symUse, exps, targ, targs, _, _, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       sctx.addFlow(FlowConstraint(Instantiation((targ :: targs).map(typeToMonoArg)), MonoVar.Sig(symUse.sym)))
-
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.Unary(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.Lambda(_, exp, _, _) => visitExp(exp)
-
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
-
     case Expr.Stm(exps, exp, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       visitExp(exp)
-
     case Expr.Discard(exp, _, _) => visitExp(exp)
-
     case Expr.Region(_, _, exp, _, _, _) => visitExp(exp)
-
     case Expr.Use(_, _, exp, _) => visitExp(exp)
-
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach {
-        case MatchRule(pat, guardOpt, body, _) =>
-          visitPat(pat)
-          guardOpt.foreach(visitExp)
-          visitExp(body)
+      for (case MatchRule(pat, guardOpt, body, _) <- rules) {
+        visitPat(pat)
+        for (exp0 <- guardOpt) {
+          visitExp(exp0)
+        }
+        visitExp(body)
       }
-
     case Expr.Tag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
-
     case Expr.RestrictableTag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach(r => visitExp(r.exp))
-
+      for (rule <- rules) {
+        visitExp(rule.exp)
+      }
     case Expr.ExtMatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach(r => visitExp(r.exp))
-
+      for (rule <- rules) {
+        visitExp(rule.exp)
+      }
     case Expr.ExtTag(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
-
     case Expr.Tuple(exps, _, _, _) =>
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     case Expr.LocalDef(_, bnd, _, exp1, exp2, _, _, _) =>
       visitType(bnd.tpe)
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     case Expr.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
-
     case Expr.RecordSelect(exp, _, _, _, _) => visitExp(exp)
-
     case Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.RecordRestrict(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.ArrayLit(exps, exp, _, _, _) =>
-      exps.foreach(visitExp)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
       visitExp(exp)
-
     case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
-
     case Expr.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.ArrayLength(exp, _, _) => visitExp(exp)
-
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
-
     case Expr.VectorLit(exps, _, _, _) =>
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     case Expr.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.VectorLength(exp, _) => visitExp(exp)
-
     case Expr.StructNew(_, fields, region, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
-      fields.foreach { case (_, e) => visitExp(e) }
-      region.foreach(visitExp)
+      for (case (_, exp) <- fields) {
+        visitExp(exp)
+      }
+      for (exp <- region) {
+        visitExp(exp)
+      }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
-
     case Expr.StructGet(exp, _, _, _, _) => visitExp(exp)
-
     case Expr.StructPut(exp1, _, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.Lazy(exp, _, _) => visitExp(exp)
-
     case Expr.Force(exp, _, _, _) => visitExp(exp)
-
     case Expr.Ascribe(exp, _, _, _, _, _) => visitExp(exp)
-
     case Expr.InstanceOf(exp, _, _) => visitExp(exp)
-
     case Expr.CheckedCast(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.UncheckedCast(exp, _, _, _, _, _) => visitExp(exp)
-
     case Expr.Unsafe(exp, _, _, _, _, _) => visitExp(exp)
-
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach(r => visitExp(r.exp))
-
+      for (rule <- rules) {
+        visitExp(rule.exp)
+      }
     case Expr.Throw(exp, _, _, _) => visitExp(exp)
-
     case Expr.Handler(_, rules, _, _, _, _, _) =>
-      rules.foreach(r => visitExp(r.exp))
-
+      for (rule <- rules) {
+        visitExp(rule.exp)
+      }
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     // Lowering synthesizes Channel.get/put/newChannel calls for each non-last fragment.
     case Expr.ParYield(_, _, _, _, _) => ???
 
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       visitExp(exp)
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     case Expr.GetField(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.PutField(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.GetStaticField(_, _, _, _) => ()
-
     case Expr.PutStaticField(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
-      constructors.foreach(c => visitExp(c.exp))
-      methods.foreach(m => visitExp(m.exp))
+      for (c <- constructors) {
+        visitExp(c.exp)
+      }
+      for (m <- methods) {
+        visitExp(m.exp)
+      }
 
     // Lowering synthesizes Channel.get/put/newChannelTuple calls for GetChannel/PutChannel/
     // NewChannel respectively.
@@ -436,10 +448,10 @@ object ConstraintGen {
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
-      exps.foreach(visitExp)
-
+      for (exp <- exps) {
+        visitExp(exp)
+      }
     // Lowering synthesizes Fixpoint3.Solver.injectIntoN(p, ts), generic over the container
     // constructor and the tuple's component types.
     case Expr.FixpointInjectInto(_, _, _, _, _) => ???
@@ -468,15 +480,23 @@ object ConstraintGen {
   private def visitPat(pat0: TypedAst.Pattern)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = pat0 match {
     case TypedAst.Pattern.Tag(_, pats, tpe, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
-      pats.foreach(visitPat)
+      for (pat <- pats) {
+        visitPat(pat)
+      }
       sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
     case TypedAst.Pattern.Tuple(elms, _, _) =>
-      elms.foreach(visitPat)
+      for (elm <- elms) {
+        visitPat(elm)
+      }
     case TypedAst.Pattern.Record(pats, pat, _, _) =>
-      pats.foreach(lp => visitPat(lp.pat))
+      for (lp <- pats) {
+        visitPat(lp.pat)
+      }
       visitPat(pat)
-    case TypedAst.Pattern.Wild(_, _) | TypedAst.Pattern.Var(_, _, _) | TypedAst.Pattern.Cst(_, _, _) | TypedAst.Pattern.Error(_, _) =>
-      ()
+    case TypedAst.Pattern.Wild(_, _)   => ()
+    case TypedAst.Pattern.Var(_, _, _) => ()
+    case TypedAst.Pattern.Cst(_, _, _) => ()
+    case TypedAst.Pattern.Error(_, _)  => ()
   }
 
   /** Converts `tpe0` to a `MonoArg` relative to the current declaration context. */
