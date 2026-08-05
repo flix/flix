@@ -21,84 +21,84 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestListOps extends AnyFunSuite {
 
-  test("unorderedCorresponds.Empty.01") {
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List.empty[Int], List.empty[Int])(_ == _)
+  test("fullOuterJoin.Empty.01") {
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List.empty[Int], List.empty[Int])(_ == _)
     assert(pairs == Nil)
     assert(lone1 == Nil)
     assert(lone2 == Nil)
   }
 
-  test("unorderedCorresponds.Empty.02") {
+  test("fullOuterJoin.Empty.02") {
     // Everything in the second list is unpaired.
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List.empty[Int], List(1, 2))(_ == _)
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List.empty[Int], List(1, 2))(_ == _)
     assert(pairs == Nil)
     assert(lone1 == Nil)
     assert(lone2 == List(1, 2))
   }
 
-  test("unorderedCorresponds.Empty.03") {
+  test("fullOuterJoin.Empty.03") {
     // Everything in the first list is unpaired.
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1, 2), List.empty[Int])(_ == _)
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1, 2), List.empty[Int])(_ == _)
     assert(pairs == Nil)
     assert(lone1 == List(1, 2))
     assert(lone2 == Nil)
   }
 
-  test("unorderedCorresponds.SameOrder.01") {
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1, 2, 3), List(1, 2, 3))(_ == _)
+  test("fullOuterJoin.SameOrder.01") {
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1, 2, 3), List(1, 2, 3))(_ == _)
     assert(pairs == List((1, 1), (2, 2), (3, 3)))
     assert(lone1 == Nil)
     assert(lone2 == Nil)
   }
 
-  test("unorderedCorresponds.DifferentOrder.01") {
+  test("fullOuterJoin.DifferentOrder.01") {
     // The whole point: order must not affect which elements pair up.
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1, 2, 3), List(3, 1, 2))(_ == _)
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1, 2, 3), List(3, 1, 2))(_ == _)
     assert(pairs == List((1, 1), (2, 2), (3, 3)))
     assert(lone1 == Nil)
     assert(lone2 == Nil)
   }
 
-  test("unorderedCorresponds.PartialOverlap.01") {
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1, 2, 3), List(3, 4, 1))(_ == _)
+  test("fullOuterJoin.PartialOverlap.01") {
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1, 2, 3), List(3, 4, 1))(_ == _)
     assert(pairs == List((1, 1), (3, 3)))
     assert(lone1 == List(2))
     assert(lone2 == List(4))
   }
 
-  test("unorderedCorresponds.Disjoint.01") {
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1, 2), List(3, 4))(_ == _)
+  test("fullOuterJoin.Disjoint.01") {
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1, 2), List(3, 4))(_ == _)
     assert(pairs == Nil)
     assert(lone1 == List(1, 2))
     assert(lone2 == List(3, 4))
   }
 
-  test("unorderedCorresponds.Duplicates.01") {
+  test("fullOuterJoin.Duplicates.01") {
     // Each element of the second list may be consumed at most once.
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1, 1), List(1))(_ == _)
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1, 1), List(1))(_ == _)
     assert(pairs == List((1, 1)))
     assert(lone1 == List(1))
     assert(lone2 == Nil)
   }
 
-  test("unorderedCorresponds.Duplicates.02") {
+  test("fullOuterJoin.Duplicates.02") {
     // Symmetric case: a surplus duplicate in the second list is left over.
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1), List(1, 1))(_ == _)
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1), List(1, 1))(_ == _)
     assert(pairs == List((1, 1)))
     assert(lone1 == Nil)
     assert(lone2 == List(1))
   }
 
-  test("unorderedCorresponds.Duplicates.03") {
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1, 1, 2), List(2, 1, 1))(_ == _)
+  test("fullOuterJoin.Duplicates.03") {
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1, 1, 2), List(2, 1, 1))(_ == _)
     assert(pairs == List((1, 1), (1, 1), (2, 2)))
     assert(lone1 == Nil)
     assert(lone2 == Nil)
   }
 
-  test("unorderedCorresponds.HeterogeneousTypes.01") {
+  test("fullOuterJoin.HeterogeneousTypes.01") {
     // The two lists need not have the same element type.
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1, 2, 3), List("3", "1", "4")) {
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1, 2, 3), List("3", "1", "4")) {
       case (i, s) => i.toString == s
     }
     assert(pairs == List((1, "1"), (3, "3")))
@@ -106,9 +106,9 @@ class TestListOps extends AnyFunSuite {
     assert(lone2 == List("4"))
   }
 
-  test("unorderedCorresponds.CoarseRelation.01") {
+  test("fullOuterJoin.CoarseRelation.01") {
     // A relation coarser than equality: pair numbers by parity.
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1, 2), List(4, 3, 5)) {
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1, 2), List(4, 3, 5)) {
       case (a, b) => a % 2 == b % 2
     }
     assert(pairs == List((1, 3), (2, 4)))
@@ -116,8 +116,8 @@ class TestListOps extends AnyFunSuite {
     assert(lone2 == List(5))
   }
 
-  test("unorderedCorresponds.NeverMatches.01") {
-    val (pairs, lone1, lone2) = ListOps.unorderedCorresponds(List(1, 2), List(1, 2))((_, _) => false)
+  test("fullOuterJoin.NeverMatches.01") {
+    val (pairs, lone1, lone2) = ListOps.fullOuterJoin(List(1, 2), List(1, 2))((_, _) => false)
     assert(pairs == Nil)
     assert(lone1 == List(1, 2))
     assert(lone2 == List(1, 2))
