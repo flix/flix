@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.monomorph2
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException}
 
 /**
@@ -98,27 +98,18 @@ object NonMonomorphizableCheck {
     */
   private def isGrowingHead(arg: MonoArg): Boolean = arg match {
     // a direct copy, never growth
-    case MonoArg.Param(_, _) => false
+    case MonoArg.Param(_, _)                => false
     // set algebra doesn't count as nesting
-    case MonoArg.App(MonoArg.Const(Type.Cst(tc, _)), _) => !isSetAlgebraConstructor(tc)
-    case _ => true
-  }
-
-  /** Returns `true` iff `tc` is an effect, case-set, or Boolean formula algebra constructor. */
-  private def isSetAlgebraConstructor(tc: TypeConstructor): Boolean = tc match {
-    case TypeConstructor.Union                => true
-    case TypeConstructor.Intersection         => true
-    case TypeConstructor.Complement           => true
-    case TypeConstructor.Difference           => true
-    case TypeConstructor.SymmetricDiff        => true
-    case TypeConstructor.CaseUnion(_)         => true
-    case TypeConstructor.CaseIntersection(_)  => true
-    case TypeConstructor.CaseComplement(_)    => true
-    case TypeConstructor.CaseSymmetricDiff(_) => true
-    case TypeConstructor.And                  => true
-    case TypeConstructor.Or                   => true
-    case TypeConstructor.Not                  => true
-    case _                                    => false
+    case MonoArg.App(MonoArg.Const(tpe), _) =>
+      Kind.resultKind(tpe.kind) match {
+        case Kind.Eff        => false
+        case Kind.Bool       => false
+        case Kind.CaseSet(_) => false
+        case _               => true
+      }
+    case MonoArg.App(_, _)                  => true
+    case MonoArg.Const(_)                   => true
+    case MonoArg.Assoc(_, _, _, _)          => true
   }
 
   /** Returns the source location of `mvar`'s declaration. */
