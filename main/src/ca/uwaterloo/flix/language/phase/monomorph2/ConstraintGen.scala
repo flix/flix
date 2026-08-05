@@ -137,7 +137,7 @@ object ConstraintGen {
     def dealiasedVisitType(tpe: Type): Unit = tpe match {
       case at @ Type.AssocType(_, arg, _, _) =>
         if (at.typeVars.isEmpty)
-          visitType(MonomorphCanon.reduceAssocType(at)(root, flix))
+          visitType(Canonicalization.reduceAssocType(at)(root, flix))
         else
           dealiasedVisitType(arg)
       case app @ Type.Apply(_, _, _)    =>
@@ -513,14 +513,14 @@ object ConstraintGen {
         tparamEnv.get(sym).getOrElse(MonoArg.Const(tpe))
       case at @ Type.AssocType(symUse, arg, kind, assocLoc) =>
         if (tpe.typeVars.isEmpty)
-          MonoArg.Const(MonomorphCanon.reduceAssocType(at)(root, flix))
+          MonoArg.Const(Canonicalization.reduceAssocType(at)(root, flix))
         else
           MonoArg.Assoc(symUse.sym, dealiasedTypeToMonoArg(arg), kind, assocLoc)
       case Type.Cst(_, _) =>
         MonoArg.Const(tpe)
       case Type.Apply(_, _, _) =>
         if (tpe.kind == Kind.Eff && tpe.typeVars.isEmpty)
-          MonoArg.Const(MonomorphCanon.simplify(tpe, isGround = true)(root, flix))
+          MonoArg.Const(Canonicalization.simplify(tpe, isGround = true)(root, flix))
         else {
           MonoArg.App(dealiasedTypeToMonoArg(tpe.baseType), tpe.typeArguments.map(arg => dealiasedTypeToMonoArg(arg)))
         }
