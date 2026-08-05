@@ -49,23 +49,17 @@ private[monomorph2] object Symbols {
 
     def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.facts$arity")
 
-    // ADDED
     def Lift(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Boxable.lift$arity")
 
-    // ADDED
     def LiftB(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Boxable.lift${arity}b")
 
-    // ADDED
     def LiftXM(inArity: Int, outArity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Boxable.lift${inArity}X$outArity")
 
-    // ADDED
     lazy val Lattice: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Ast.Shared.lattice")
-    // ADDED
+
     lazy val LatticeBox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Ast.Shared.box")
 
-    // ADDED
     lazy val VectorGet: Symbol.DefnSym = Symbol.mkDefnSym("Vector.get")
-
   }
 
   object Enums {
