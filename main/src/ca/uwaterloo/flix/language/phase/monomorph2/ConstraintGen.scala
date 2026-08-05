@@ -473,7 +473,7 @@ object ConstraintGen {
     // rewrite path), so its instantiation must be predicted here.
     case Expr.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp)
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.PredSym))), MonoVar.Enum(Enums.FList)))
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Fixpoint.Ast.Shared.PredSym))), MonoVar.Enum(Enums.List.List)))
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
@@ -491,7 +491,7 @@ object ConstraintGen {
             val argTypes = unmkTuplish(arity, innerTpe)
             val flowArgs = (tc :: argTypes).map(typeToMonoArg)
             visitExp(e)
-            sctx.addFlow(FlowConstraint(Instantiation(flowArgs), MonoVar.Def(Defs.ProjectInto(arity))))
+            sctx.addFlow(FlowConstraint(Instantiation(flowArgs), MonoVar.Def(Defs.Fixpoint.Solver.InjectInto(arity))))
           case t => throw InternalCompilerException(s"Unexpected non-foldable type: '$t'.", loc)
         }
       }
@@ -519,7 +519,7 @@ object ConstraintGen {
       for (exp <- where) {
         visitExp(exp)
       }
-      sctx.addFlow(FlowConstraint(Instantiation(argTypes.map(typeToMonoArg)), MonoVar.Def(Defs.Facts(arity))))
+      sctx.addFlow(FlowConstraint(Instantiation(argTypes.map(typeToMonoArg)), MonoVar.Def(Defs.Fixpoint.Solver.Facts(arity))))
     // Generates, per goal term (type `a`): Fixpoint3.Boxable.box(x: a): Boxed with Order[a]
     // Generates, per term type `t` the extensible-variant result can carry:
     //   Fixpoint3.Boxable.unbox(x: Boxed): t
@@ -539,10 +539,10 @@ object ConstraintGen {
       }
       val extVarType = unwrapVectorType(tpe0)
       for (t <- predicatesOfExtVar(extVarType).flatMap(_._2)) {
-        sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(t))), MonoVar.Def(Defs.Unbox)))
+        sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(t))), MonoVar.Def(Defs.Fixpoint.Boxable.Unbox)))
       }
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Boxed))), MonoVar.Def(Defs.VectorGet)))
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(extVarType))), MonoVar.Def(Defs.ProvenanceOf)))
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Fixpoint.Boxed))), MonoVar.Def(Defs.Vector.Get)))
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(extVarType))), MonoVar.Def(Defs.Fixpoint.Solver.ProvenanceOf)))
 
     case Expr.Error(_, _, _) => ()
   }
