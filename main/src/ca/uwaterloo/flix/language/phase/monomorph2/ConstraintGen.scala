@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, MatchRule, TypeParam}
+import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -387,8 +388,23 @@ object ConstraintGen {
     case Expr.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-    // Lowering synthesizes Channel.get/put/newChannel calls for each non-last fragment.
-    case Expr.ParYield(_, _, _, _, _) => ???
+    // Generates, for each non-last fragment (element type `a`):
+    //   Concurrent.Channel.newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO
+    //   Concurrent.Channel.put(e: a, c: Mpmc[a, Static]): Unit \ IO
+    //   Concurrent.Channel.get(c: Mpmc[a, Static]): a \ IO
+    case Expr.ParYield(frags, exp, _, _, _) =>
+      for (f <- frags) {
+        visitPat(f.pat)
+        visitExp(f.exp)
+      }
+      visitExp(exp)
+      for (frag <- frags.init) {
+        val elmType = frag.exp.tpe
+        val elmArg = typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType))
+        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.ChannelNew)))
+        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.ChannelPut)))
+        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.ChannelGet)))
+      }
 
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
       for (exp <- exps) {
@@ -425,17 +441,41 @@ object ConstraintGen {
         visitExp(m.exp)
       }
 
-    // Lowering synthesizes Channel.get/put/newChannelTuple calls for GetChannel/PutChannel/
-    // NewChannel respectively.
-    case Expr.GetChannel(_, _, _, _) => ???
-
-    case Expr.PutChannel(_, _, _, _, _) => ???
-
-    case Expr.NewChannel(_, _, _, _) => ???
-
-    // Lowering synthesizes Channel.mpmcAdmin/unsafeGetAndUnlock calls per rule (not Channel.get),
-    // plus one fixed List[ChannelMpmcAdmin] built via mkTag/mkList.
-    case Expr.SelectChannel(_, _, _, _, _) => ???
+    // Generates: Concurrent.Channel.get(c: Mpmc[a, Static]): a \ IO
+    case Expr.GetChannel(exp, tpe, _, _) =>
+      visitExp(exp)
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(tpe)))), MonoVar.Def(Defs.ChannelGet)))
+    // Generates: Concurrent.Channel.put(e: a, c: Mpmc[a, Static]): Unit \ IO
+    case Expr.PutChannel(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(exp2.tpe)))), MonoVar.Def(Defs.ChannelPut)))
+    // Generates: Concurrent.Channel.newChannelTuple(bufferSize: Int32): (Mpmc[a, Static], Mpmc[a, Static]) \ IO
+    case Expr.NewChannel(exp, tpe, _, _) =>
+      val elmType = extractChannelElm(tpe)
+      visitExp(exp)
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType)))), MonoVar.Def(Defs.ChannelNewTuple)))
+    // Generates, per rule (element type `a`, not a Channel.get call):
+    //   Concurrent.Channel.unsafeGetAndUnlock(c: Mpmc[a, Static], locks: List[ReentrantLock]): a \ IO
+    //   Concurrent.Channel.mpmcAdmin(c: Mpmc[a, Static]): MpmcAdmin
+    // Plus one fixed `List[MpmcAdmin]` value, built via mkTag/mkList.
+    case Expr.SelectChannel(rules, default, _, _, _) =>
+      for (rule <- rules) {
+        val elmType = rule.chan.tpe match {
+          // Only possible shape since ConstraintGen.visitSelectRule unifies every rule's channel with Receiver[_]
+          case Type.Apply(Type.Cst(TypeConstructor.Receiver, _), e, _) => e
+          case t => throw InternalCompilerException(s"Expected Receiver[_], but got $t", rule.chan.loc)
+        }
+        val elmArg = typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType))
+        visitExp(rule.chan)
+        visitExp(rule.exp)
+        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.ChannelUnsafeGetAndUnlock)))
+        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.ChannelMpmcAdmin)))
+      }
+      for (exp <- default) {
+        visitExp(exp)
+      }
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.ChannelMpmcAdmin))), MonoVar.Enum(Enums.FList)))
 
     // Lowering synthesizes every Box/Unbox/liftN/lattice/Facts/ProjectInto/ProvenanceOf call for
     // Datalog fixpoint nodes, mirroring the TypedAst structure lowering itself inspects.
@@ -540,5 +580,12 @@ object ConstraintGen {
     val mvar = declMonoVar(tpe.baseType).getOrElse(
       throw InternalCompilerException(s"Expected an Enum, RestrictableEnum, or Struct type, but got $tpe", tpe0.loc))
     (mvar, tpe.typeArguments)
+  }
+
+  /** Extracts T from NewChannel's `(Sender[T], Receiver[T])` type — see ConstraintGen's NewChannel rule. */
+  private def extractChannelElm(tpe: Type): Type = tpe.typeArguments match {
+    case List(Type.Apply(Type.Cst(TypeConstructor.Sender, _), elm, _), _) => elm
+    case List(Type.Apply(Type.Cst(TypeConstructor.Receiver, _), elm, _), _) => elm
+    case _ => throw InternalCompilerException(s"Expected (Sender[_], Receiver[_]), but got $tpe", tpe.loc)
   }
 }
