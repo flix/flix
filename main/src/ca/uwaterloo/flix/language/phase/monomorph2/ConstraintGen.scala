@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, MatchRule, Predicate, TypeParam}
-import ca.uwaterloo.flix.language.ast.shared.Denotation
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, PredicateAndArity}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -469,10 +469,11 @@ object ConstraintGen {
         }
       }
 
-    // Lowering synthesizes a List[PredSym] directly via mkTag/mkList (bypassing the ordinary
+    // Generates a `List[PredSym]` value directly via mkTag/mkList (bypassing the ordinary
     // rewrite path), so its instantiation must be predicted here.
-    case Expr.FixpointLambda(_, _, _, _, _) => ???
-
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
+      visitExp(exp)
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.PredSym))), MonoVar.Enum(Enums.FList)))
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
@@ -480,18 +481,68 @@ object ConstraintGen {
       for (exp <- exps) {
         visitExp(exp)
       }
-    // Lowering synthesizes Fixpoint3.Solver.injectIntoN(p, ts), generic over the container
-    // constructor and the tuple's component types.
-    case Expr.FixpointInjectInto(_, _, _, _, _) => ???
-
-    // Lowering synthesizes Fixpoint3.Solver.factsN(p, d), generic over the N selected terms'
-    // types.
-    case Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _, _, _) => ???
-
-    // Lowering synthesizes a box call per goal term, an unbox call per term type the
-    // extensible-variant result can carry, and Solver.provenanceOf/Vector.get calls at a fixed
-    // Boxed type.
-    case Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => ???
+    // Generates: Fixpoint3.Solver.injectIntoN(p: PredSym, ts: f[(t1, ..., tN)]): Datalog \ ...
+    // with Order[t1], ..., Order[tN], Foldable[f] — `f` is the container constructor, `t1..tN`
+    // the tuple's component types.
+    case Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
+      for (case (e, PredicateAndArity(_, arity)) <- exps.zip(predsAndArities)) {
+        Type.eraseAliases(e.tpe) match {
+          case Type.Apply(tc, innerTpe, _) =>
+            val argTypes = unmkTuplish(arity, innerTpe)
+            val flowArgs = (tc :: argTypes).map(typeToMonoArg)
+            visitExp(e)
+            sctx.addFlow(FlowConstraint(Instantiation(flowArgs), MonoVar.Def(Defs.ProjectInto(arity))))
+          case t => throw InternalCompilerException(s"Unexpected non-foldable type: '$t'.", loc)
+        }
+      }
+    // Generates: Fixpoint3.Solver.factsN(p: PredSym, d: Datalog): Vector[(t1, ..., tN)] with
+    // Order[t1], ..., Order[tN] — the `t1..tN` flow args must come from the resolved result type
+    // `tpe0`, NOT from `selects`' own term types, which may still carry locally-scoped type vars.
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, tpe0, _, _) =>
+      val arity = selects.length
+      val innerTpe = unwrapVectorType(tpe0)
+      val argTypes = unmkTuplish(arity, innerTpe)
+      for (exp <- exps) {
+        visitExp(exp)
+      }
+      visitExp(queryExp)
+      for (exp <- selects) {
+        visitExp(exp)
+      }
+      for (p <- from) {
+        p match {
+          case Predicate.Body.Guard(e, _)               => visitExp(e)
+          case Predicate.Body.Functional(_, e, _)       => visitExp(e)
+          case Predicate.Body.Atom(_, _, _, _, _, _, _) => ()
+        }
+      }
+      for (exp <- where) {
+        visitExp(exp)
+      }
+      sctx.addFlow(FlowConstraint(Instantiation(argTypes.map(typeToMonoArg)), MonoVar.Def(Defs.Facts(arity))))
+    // Generates, per goal term (type `a`): Fixpoint3.Boxable.box(x: a): Boxed with Order[a]
+    // Generates, per term type `t` the extensible-variant result can carry:
+    //   Fixpoint3.Boxable.unbox(x: Boxed): t
+    // Plus, at a fixed `Boxed` type:
+    //   Fixpoint3.Solver.provenanceOf(p: PredSym, f: Vector[Boxed], withh: Vector[PredSym], mkExtVar: PredSym -> Vector[Boxed] -> t, d: Datalog): Vector[t]
+    //   Vector.get(i: Int32, v: Vector[Boxed]): Boxed
+    case Expr.FixpointQueryWithProvenance(exps, select, _, tpe0, _, _) =>
+      for (exp <- exps) {
+        visitExp(exp)
+      }
+      select match {
+        case Predicate.Head.Atom(_, _, terms, _, _) =>
+          for (term <- terms) {
+            visitExp(term)
+            boxFlow(term.tpe)
+          }
+      }
+      val extVarType = unwrapVectorType(tpe0)
+      for (t <- predicatesOfExtVar(extVarType).flatMap(_._2)) {
+        sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(t))), MonoVar.Def(Defs.Unbox)))
+      }
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Boxed))), MonoVar.Def(Defs.VectorGet)))
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(extVarType))), MonoVar.Def(Defs.ProvenanceOf)))
 
     case Expr.Error(_, _, _) => ()
   }
@@ -611,6 +662,41 @@ object ConstraintGen {
     */
   private def unmkTuplish(arity: Int, tpe: Type): List[Type] =
     if (arity <= 1) List(tpe) else tpe.typeArguments
+
+  /** Returns `t` from `Vector[t]` — mirrors [[SpecializeAndLower.unwrapVectorType]]. */
+  private def unwrapVectorType(tpe0: Type): Type = Type.eraseAliases(tpe0) match {
+    case Type.Apply(Type.Cst(TypeConstructor.Vector, _), extType, _) => extType
+    case t => throw InternalCompilerException(s"Expected Type.Apply(Type.Cst(TypeConstructor.Vector, _), _, _), but got $t", tpe0.loc)
+  }
+
+  /** Mirrors [[SpecializeAndLower.predicatesOfExtVar]]. */
+  private def predicatesOfExtVar(tpe0: Type): List[(Name.Pred, List[Type])] = Type.eraseAliases(tpe0) match {
+    case Type.Apply(Type.Cst(TypeConstructor.Extensible, _), tpe1, _) => predicatesOfSchemaRow(tpe1)
+    case t => throw InternalCompilerException(s"Expected Type.Apply(Type.Cst(TypeConstructor.Extensible, _), _, _), but got $t", tpe0.loc)
+  }
+
+  /** Mirrors [[SpecializeAndLower.predicatesOfSchemaRow]]. */
+  private def predicatesOfSchemaRow(row: Type): List[(Name.Pred, List[Type])] = row match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), rel, _), tpe2, _) =>
+      (pred, termTypesOfRelation(rel)) :: predicatesOfSchemaRow(tpe2)
+    case Type.Var(_, _) => Nil
+    case Type.SchemaRowEmpty => Nil
+    case t => throw InternalCompilerException(s"Got unexpected $t", t.loc)
+  }
+
+  /**
+    * Mirrors [[SpecializeAndLower.termTypesOfRelation]]. Unlike it, a `Type.Var` tail — the
+    * relation's own arity trailing off unconstrained, not a term type — is skipped, not an error.
+    */
+  private def termTypesOfRelation(rel: Type): List[Type] = {
+    def flattenApply(rel0: Type): List[Type] = rel0 match {
+      case Type.Cst(TypeConstructor.Relation(_), _) => Nil
+      case Type.Apply(rest, t, _) => t :: flattenApply(rest)
+      case Type.Var(_, _) => Nil
+      case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got $t", rel0.loc)
+    }
+    flattenApply(rel).reverse
+  }
 
   /** Converts `tpe0` to a `MonoArg` relative to the current declaration context. */
   private def typeToMonoArg(tpe0: Type)(implicit tparamEnv: TparamEnv, root: TypedAst.Root, flix: Flix): MonoArg =
