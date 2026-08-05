@@ -138,10 +138,19 @@ private[monomorph2] object Canonicalization {
   }
 
   /**
-    * Defaults an unresolved (stray) type to its kind's ground default: `Star` (and other
-    * value-like kinds) → `AnyType`, `Eff` → `Pure`, `CaseSet`/`SchemaRow`/`RecordRow` → empty.
-    * Safe because a var is only stray when nothing in the program constrained it to a concrete
-    * type.
+    * Defaults an unresolved (stray) type to its kind's ground default:
+    * - `Star` (and other value-like kinds) becomes `AnyType`
+    * - `Eff` becomes `Pure`
+    * - `CaseSet`/`SchemaRow`/`RecordRow` becomes empty
+    * This is safe because a var is only stray when nothing in the program constrained
+    * it to a concrete type. E.g.
+    * {{{
+    *   def main(): Unit \ IO =
+    *       match None { // This is `Option[a]` but with no restrictions on `a`, therefore it defaults to `AnyType`
+    *           case None => println("None")
+    *           case Some(_) => println("Some - what?")
+    *       }
+    * }}}
     */
   def default(tpe0: Type): Type = tpe0.kind match {
     case Kind.Wild          => Type.mkAnyType(tpe0.loc)
@@ -159,9 +168,7 @@ private[monomorph2] object Canonicalization {
   }
 
   /**
-    * Returns a sorted record, assuming that `rest` is sorted.
-    *
-    * labels of the same name are not reordered.
+    * Returns a (stable) sorted record, assuming that `rest` is sorted.
     *
     * N.B. `rest` must not contain [[Type.AssocType]] or [[Type.Alias]].
     */
