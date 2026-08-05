@@ -17,22 +17,243 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{RegionScope, SymUse}
+import ca.uwaterloo.flix.language.phase.monomorph2.MonomorphHelpers.lowerChannelType
+import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.Defs
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
+import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.collection.mutable
 
 /**
   * Solves the flow constraints produced by [[ConstraintGen]] to a fixpoint: starting from
-  * the ground (all-constant) flows, each newly solved instantiation is substituted into the flows
-  * that depend on it until no new instantiations appear. Sig destinations are additionally
-  * dispatched to their implementing (or default) def. The result is, per polymorphic symbol,
-  * exactly the ground instantiations that actually arise.
+  * the ground (all-constant) flows, each newly solved instantiation is substituted into the
+  * flows that depend on it until no new instantiations appear.
+  *
+  * Sig destinations are additionally dispatched to their implementing (or default) def.
+  *
+  * The result is, per polymorphic symbol, the set of ground instantiations it must be
+  * specialized at.
   */
 object ConstraintSolver {
 
   /**
     * Solves `flows` to a fixpoint and returns the set of required specializations.
     *
-    * Callers must run [[NonMonomorphizableCheck.checkMonomorphizable]] first; without it, a
-    * non-monomorphizable flow set makes the fixpoint loop grow without bound.
+    * Callers must run [[NonMonomorphizableCheck.checkMonomorphizable]] first to make
+    * sure that the fixpoint loop will not grow without bound.
     */
-  def solve(flows: List[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = ???
+  def solve(flows: List[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = {
+    val instanceMap = MonomorphHelpers.mkInstanceMap(root.instances)
+    val pregrounded = flows.iterator.map(f => pregroundFlow(f, root)).toList
+    val dependents  = buildDependents(pregrounded)
+
+    val solution  = mutable.Map.empty[MonoVar, mutable.Set[List[Type]]]
+    val inFlight  = mutable.Set.empty[(MonoVar, List[Type])]
+    val worklist  = mutable.Queue.empty[(MonoVar, List[Type])]
+
+    // Param substitution can reintroduce a raw Sender/Receiver.
+    // It is re-lowered so the key matches [[SpecializeAndLower]]'s lookup.
+    val channelDefs = Set(Defs.ChannelGet, Defs.ChannelPut, Defs.ChannelNewTuple, Defs.ChannelMpmcAdmin, Defs.ChannelUnsafeGetAndUnlock)
+
+    def enqueue(dst: MonoVar, inst0: List[Type]): Unit = {
+      val inst = dst match {
+        case MonoVar.Def(sym) if channelDefs.contains(sym) => inst0.map(lowerChannelType)
+        case MonoVar.Def(_)                                => inst0
+        case MonoVar.Enum(_)                               => inst0
+        case MonoVar.Sig(_)                                => inst0
+        case MonoVar.RestrictableEnum(_)                   => inst0
+        case MonoVar.Struct(_)                             => inst0
+      }
+      val key = (dst, inst)
+      if (!solution.get(dst).exists(_.contains(inst)) && !inFlight.contains(key)) {
+        inFlight += key
+        worklist.enqueue((dst, inst))
+      }
+    }
+
+    // Seed: ground flows (all-Const instantiations) become initial worklist entries.
+    for (pf <- pregrounded) {
+      for (t <- groundArgs(pf, Map.empty, root)) {
+        enqueue(pf.dst, t)
+      }
+    }
+
+    // Fixpoint loop.
+    while (worklist.nonEmpty) {
+      val (dst, inst) = worklist.dequeue()
+      inFlight -= ((dst, inst))
+
+      val seen = solution.getOrElseUpdate(dst, mutable.Set.empty)
+      if (!seen.contains(inst)) {
+        seen += inst
+
+        // Sig dispatch: resolve to impl def and forward the instantiation.
+        dst match {
+          case MonoVar.Sig(sigSym) =>
+            for (case (implSym, implArgs) <- resolveSig(sigSym, inst, root, instanceMap)) {
+              enqueue(MonoVar.Def(implSym), implArgs)
+            }
+          case MonoVar.Def(_)              => ()
+          case MonoVar.Enum(_)             => ()
+          case MonoVar.RestrictableEnum(_) => ()
+          case MonoVar.Struct(_)           => ()
+        }
+
+        // Propagate: substitute this MonoVar's new instantiation into all dependent flows.
+        for (pf <- dependents.getOrElse(dst, Nil)) {
+          for (groundInstantiation <- groundArgs(pf, Map(dst -> inst), root)) {
+            enqueue(pf.dst, groundInstantiation)
+          }
+        }
+      }
+    }
+
+    Solution(
+      defs = solution.collect { case (MonoVar.Def(sym), insts) => sym -> insts.toSet }.toMap,
+      enums = solution.collect { case (MonoVar.Enum(sym), insts) => sym -> insts.toSet }.toMap,
+      structs = solution.collect { case (MonoVar.Struct(sym), insts) => sym -> insts.toSet }.toMap,
+      restrictableEnums = solution.collect { case (MonoVar.RestrictableEnum(sym), insts) => sym -> insts.toSet }.toMap
+    )
+  }
+
+  /** Return for each MonoVar, the (pregrounded) flows whose args contain `Param(mvar, _)`. */
+  private def buildDependents(flows: List[PregroundedFlow]): Map[MonoVar, List[PregroundedFlow]] = {
+    val m = mutable.Map.empty[MonoVar, mutable.ListBuffer[PregroundedFlow]]
+    for (pf <- flows) {
+      val mvars = pf.args.flatMap(arg => MonoArg.collectParams(arg)).map(_._1).toSet
+      for (v <- mvars) {
+        m.getOrElseUpdate(v, mutable.ListBuffer.empty) += pf
+      }
+    }
+    m.map { case (k, buf) => k -> buf.toList }.toMap
+  }
+
+  /**
+    * Substitutes `bindings` into `arg`'s `Param`s.
+    * Returns `None` if some `Param`'s var isn't bound (yet).
+    */
+  private def substArg(arg: MonoArg, bindings: Map[MonoVar, List[Type]]): Option[Type] = arg match {
+    case MonoArg.Const(t) => Some(t)
+    case MonoArg.Param(v, i) =>
+      for {
+        inst <- bindings.get(v)
+        tpe  <- inst.lift(i)
+      } yield tpe
+    case MonoArg.App(head, args) =>
+      for {
+        h  <- substArg(head, bindings)
+        as <- substArgs(args, bindings)
+      } yield as.foldLeft(h) { case (acc, t) => Type.Apply(acc, t, h.loc) }
+    case MonoArg.Assoc(sym, a, kind, loc) =>
+      substArg(a, bindings).map { t =>
+        Type.AssocType(SymUse.AssocTypeSymUse(sym, loc), t, kind, loc)
+      }
+  }
+
+  /**
+    * Substitutes `bindings` into every arg in `args`.
+    * Returns `None` if some `Param`'s var isn't bound (yet).
+    */
+  private def substArgs(args: List[MonoArg], bindings: Map[MonoVar, List[Type]]): Option[List[Type]] =
+    sequence(args.map(substArg(_, bindings)))
+
+  /** `None` if any `x` is. */
+  private def sequence[A](xs: List[Option[A]]): Option[List[A]] =
+    xs.foldRight(Option(List.empty[A])) { (x, acc) =>
+      for {
+        v  <- x
+        vs <- acc
+      } yield v :: vs
+    }
+
+  /** Rewrites every `Region` constant in `t` to `IO`. */
+  private def rewriteRegionToIO(t: Type): Type = t match {
+    case Type.Cst(TypeConstructor.Region(_), loc) => Type.Cst(TypeConstructor.Effect(Symbol.IO, Kind.Eff), loc)
+    case Type.Apply(t1, t2, loc)                  => Type.Apply(rewriteRegionToIO(t1), rewriteRegionToIO(t2), loc)
+    case Type.Alias(sym, args, inner, loc)        => Type.Alias(sym, args.map(rewriteRegionToIO), rewriteRegionToIO(inner), loc)
+    case other                                    => other
+  }
+
+  /** A [[FlowConstraint]] with each Param-free arg position pre-grounded once, since those can't
+    * change on retry. `preGrounded(i)` is `None` iff position `i` still has a `Param`.
+    */
+  private case class PregroundedFlow(dst: MonoVar, args: List[MonoArg], preGrounded: List[Option[Type]])
+
+  /** Returns `flow` with its Param-free positions pre-grounded. */
+  private def pregroundFlow(flow: FlowConstraint, root: TypedAst.Root)(implicit flix: Flix): PregroundedFlow = flow match {
+    case FlowConstraint(Instantiation(args), dst) =>
+      val preGrounded = args.map { arg =>
+        if (MonoArg.collectParams(arg).nonEmpty) None
+        else groundArg(arg, Map.empty, root)
+      }
+      PregroundedFlow(dst, args, preGrounded)
+  }
+
+  /** Grounds `pf`'s args to a ground instantiation, or `None` if any position is not ready. */
+  private def groundArgs(pf: PregroundedFlow, bindings: Map[MonoVar, List[Type]], root: TypedAst.Root)
+                         (implicit flix: Flix): Option[List[Type]] =
+    sequence(pf.args.zip(pf.preGrounded).map {
+      case (_, Some(t)) => Some(t)
+      case (arg, None)  => groundArg(arg, bindings, root)
+    })
+
+  /**
+    * Grounds `arg` via [[substArg]] and the shared [[Canonicalization]] pipeline.
+    */
+  private def groundArg(arg: MonoArg, bindings: Map[MonoVar, List[Type]], root: TypedAst.Root)
+                          (implicit flix: Flix): Option[Type] =
+    substArg(arg, bindings).map { raw =>
+      val defaulted = rewriteRegionToIO(raw).map(Canonicalization.default)
+      val result = Canonicalization.simplify(defaulted, isGround = true)(root, flix)
+      if (result.typeVars.nonEmpty) {
+        throw InternalCompilerException(s"Defaulted arg did not fully ground: $result", result.loc)
+      }
+      result
+    }
+
+  /**
+    * Resolves a sig call with `instantiation` to the impl def sym and its type args.
+    * Returns `None` if the instance cannot be found.
+    */
+  private def resolveSig(
+    sigSym: Symbol.SigSym,
+    instantiation: List[Type],
+    root: TypedAst.Root,
+    instanceMap: Map[(Symbol.TraitSym, TypeConstructor), TypedAst.Instance]
+  )(implicit flix: Flix): Option[(Symbol.DefnSym, List[Type])] = {
+    val traitType = instantiation.head
+    for {
+      tyCon    <- traitType.typeConstructor
+      instance <- instanceMap.get((sigSym.trt, tyCon))
+      result   <- instance.defs.find(_.sym.text == sigSym.name) match {
+        case Some(implDef) =>
+          val sigOwnArgs = instantiation.tail // type args beyond the trait type param
+          instanceArgsFor(instance, traitType, root).map(instanceArgs => (implDef.sym, instanceArgs ++ sigOwnArgs))
+
+        case None =>
+          // No impl def: sig has a default impl. Synthesize a trait-level sym and forward the
+          // instantiation as-is (the default belongs to the trait, not the instance).
+          for {
+            _ <- root.sigs(sigSym).exp
+            _ <- instanceArgsFor(instance, traitType, root)
+          } yield {
+            val ns = sigSym.trt.namespace :+ sigSym.trt.name
+            (new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc), instantiation)
+          }
+      }
+    } yield result
+  }
+
+  /** Unifies `instance`'s type against `traitType`, returning its tparams' values in order.
+    * `None` if unification fails or leaves some tparam unresolved.
+    */
+  private def instanceArgsFor(instance: TypedAst.Instance, traitType: Type, root: TypedAst.Root)
+                              (implicit flix: Flix): Option[List[Type]] =
+    if (instance.tparams.isEmpty) Some(Nil)
+    else for {
+      subst <- ConstraintSolver2.fullyUnify(instance.tpe, traitType, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
+      args  <- sequence(instance.tparams.map(tp => subst.m.get(tp.sym)))
+    } yield args
 }

@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.phase.typer.{Progress, TypeReduction2}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.CofiniteSet
 
+import scala.collection.immutable.SortedSet
+
 /**
   * Shared definition of what a given (possibly non-ground) monomorph type becomes:
   * effect canonicalization and associated-type reduction.
@@ -133,6 +135,27 @@ private[monomorph2] object Canonicalization {
     case Type.JvmToType(_, loc)         => throw InternalCompilerException("unexpected JVM type", loc)
     case Type.JvmToEff(_, loc)          => throw InternalCompilerException("unexpected JVM eff", loc)
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+  }
+
+  /**
+    * Defaults an unresolved (stray) type to its kind's ground default: `Star` (and other
+    * value-like kinds) → `AnyType`, `Eff` → `Pure`, `CaseSet`/`SchemaRow`/`RecordRow` → empty.
+    * Safe because a var is only stray when nothing in the program constrained it to a concrete
+    * type.
+    */
+  def default(tpe0: Type): Type = tpe0.kind match {
+    case Kind.Wild          => Type.mkAnyType(tpe0.loc)
+    case Kind.WildCaseSet   => Type.mkAnyType(tpe0.loc)
+    case Kind.Star          => Type.mkAnyType(tpe0.loc)
+    case Kind.Bool          => Type.mkAnyType(tpe0.loc)
+    case Kind.Predicate     => Type.mkAnyType(tpe0.loc)
+    case Kind.Arrow(_, _)   => Type.mkAnyType(tpe0.loc)
+    case Kind.Eff           => Type.Pure
+    case Kind.RecordRow     => Type.RecordRowEmpty
+    case Kind.SchemaRow     => Type.SchemaRowEmpty
+    case Kind.CaseSet(sym)  => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
+    case Kind.Jvm           => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
+    case Kind.Error         => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
   }
 
   /**
