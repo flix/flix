@@ -401,9 +401,9 @@ object ConstraintGen {
       for (frag <- frags.init) {
         val elmType = frag.exp.tpe
         val elmArg = typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType))
-        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.ChannelNew)))
-        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.ChannelPut)))
-        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.ChannelGet)))
+        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.NewChannel)))
+        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.Put)))
+        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.Get)))
       }
 
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
@@ -444,17 +444,17 @@ object ConstraintGen {
     // Generates: Concurrent.Channel.get(c: Mpmc[a, Static]): a \ IO
     case Expr.GetChannel(exp, tpe, _, _) =>
       visitExp(exp)
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(tpe)))), MonoVar.Def(Defs.ChannelGet)))
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(tpe)))), MonoVar.Def(Defs.Concurrent.Channel.Get)))
     // Generates: Concurrent.Channel.put(e: a, c: Mpmc[a, Static]): Unit \ IO
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(exp2.tpe)))), MonoVar.Def(Defs.ChannelPut)))
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(exp2.tpe)))), MonoVar.Def(Defs.Concurrent.Channel.Put)))
     // Generates: Concurrent.Channel.newChannelTuple(bufferSize: Int32): (Mpmc[a, Static], Mpmc[a, Static]) \ IO
     case Expr.NewChannel(exp, tpe, _, _) =>
       val elmType = extractChannelElm(tpe)
       visitExp(exp)
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType)))), MonoVar.Def(Defs.ChannelNewTuple)))
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType)))), MonoVar.Def(Defs.Concurrent.Channel.NewChannelTuple)))
     // Generates, per rule (element type `a`, not a Channel.get call):
     //   Concurrent.Channel.unsafeGetAndUnlock(c: Mpmc[a, Static], locks: List[ReentrantLock]): a \ IO
     //   Concurrent.Channel.mpmcAdmin(c: Mpmc[a, Static]): MpmcAdmin
@@ -469,13 +469,13 @@ object ConstraintGen {
         val elmArg = typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType))
         visitExp(rule.chan)
         visitExp(rule.exp)
-        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.ChannelUnsafeGetAndUnlock)))
-        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.ChannelMpmcAdmin)))
+        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.UnsafeGetAndUnlock)))
+        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.MpmcAdmin)))
       }
       for (exp <- default) {
         visitExp(exp)
       }
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.ChannelMpmcAdmin))), MonoVar.Enum(Enums.FList)))
+      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Concurrent.Channel.MpmcAdmin))), MonoVar.Enum(Enums.List.List)))
 
     // Lowering synthesizes every Box/Unbox/liftN/lattice/Facts/ProjectInto/ProvenanceOf call for
     // Datalog fixpoint nodes, mirroring the TypedAst structure lowering itself inspects.
