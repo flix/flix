@@ -30,13 +30,13 @@ private[monomorph2] object Symbols {
   object Defs {
     object Concurrent {
       object Channel {
-        lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.get")
-        lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannel")
-        lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.put")
-        lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcAdmin")
-        lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
-        lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
-        lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
+        lazy val Get: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.get")
+        lazy val NewChannel: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannel")
+        lazy val Put: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.put")
+        lazy val MpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcAdmin")
+        lazy val NewChannelTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
+        lazy val SelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
+        lazy val UnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
       }
     }
 
@@ -51,39 +51,39 @@ private[monomorph2] object Symbols {
       }
 
       object Solver {
-        lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.runSolver")
-        lazy val SolveWithProvenance: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.runSolverWithProvenance")
-        lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.union")
-        lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.projectSym")
+        lazy val RunSolver: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.runSolver")
+        lazy val RunSolverWithProvenance: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.runSolverWithProvenance")
+        lazy val Union: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.union")
+        lazy val ProjectSym: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.projectSym")
         lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.rename")
         lazy val ProvenanceOf: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.provenanceOf")
 
-        def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.injectInto$arity")
+        def InjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.injectInto$arity")
         def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Solver.facts$arity")
       }
 
       object Ast {
         object Shared {
           lazy val Lattice: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Ast.Shared.lattice")
-          lazy val LatticeBox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Ast.Shared.box")
+          lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$fixpointVersion.Ast.Shared.box")
         }
       }
     }
 
     object Vector {
-      lazy val VectorGet: Symbol.DefnSym = Symbol.mkDefnSym("Vector.get")
+      lazy val Get: Symbol.DefnSym = Symbol.mkDefnSym("Vector.get")
     }
   }
 
   object Enums {
     object Concurrent {
       object Channel {
-        lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Mpmc")
-        lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.MpmcAdmin")
+        lazy val Mpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Mpmc")
+        lazy val MpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.MpmcAdmin")
       }
 
       object ReentrantLock {
-        lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.ReentrantLock")
+        lazy val ReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.ReentrantLock")
       }
     }
 
@@ -111,7 +111,7 @@ private[monomorph2] object Symbols {
     }
 
     object List {
-      lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
+      lazy val List: Symbol.EnumSym = Symbol.mkEnumSym("List")
     }
 
     object Reflect {
@@ -124,17 +124,18 @@ private[monomorph2] object Symbols {
   object Types {
     object Concurrent {
       object Channel {
-        lazy val ChannelMpmc: Type = Type.Cst(TypeConstructor.Enum(Enums.Concurrent.Channel.ChannelMpmc, Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown)
-        lazy val ChannelMpmcAdmin: Type = Type.mkEnum(Enums.Concurrent.Channel.ChannelMpmcAdmin, Nil, SourceLocation.Unknown)
+        lazy val Mpmc: Type = Type.Cst(TypeConstructor.Enum(Enums.Concurrent.Channel.Mpmc, Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown)
+        lazy val MpmcAdmin: Type = Type.mkEnum(Enums.Concurrent.Channel.MpmcAdmin, Nil, SourceLocation.Unknown)
       }
 
       object ReentrantLock {
-        lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.Concurrent.ReentrantLock.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
+        lazy val ReentrantLock: Type = Type.mkEnum(Enums.Concurrent.ReentrantLock.ReentrantLock, Nil, SourceLocation.Unknown)
       }
     }
 
     object Fixpoint {
       object Solver {
+        // Synthetic, these are not real stdlib declarations, just the corresponding def's arrow type.
         lazy val SolveType: Type = Type.mkPureArrow(Types.Fixpoint.Ast.Datalog.Datalog, Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
         lazy val MergeType: Type = Type.mkPureUncurriedArrow(scala.collection.immutable.List(Types.Fixpoint.Ast.Datalog.Datalog, Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
         lazy val FilterType: Type = Type.mkPureUncurriedArrow(scala.collection.immutable.List(Types.Fixpoint.Ast.Shared.PredSym, Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
@@ -177,7 +178,7 @@ private[monomorph2] object Symbols {
     }
 
     object List {
-      def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.List.FList, scala.collection.immutable.List(t), loc)
+      def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.List.List, scala.collection.immutable.List(t), loc)
     }
   }
 }
