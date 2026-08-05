@@ -134,7 +134,7 @@ object ListOps {
     for {
       a <- l1
     } {
-      extractMatch(l2)(f(a, _)) match {
+      extractMatch(unpaired2)(f(a, _)) match {
         case None =>
           unpaired1 = a :: unpaired1
         case Some((b, rest)) =>
@@ -156,7 +156,7 @@ object ListOps {
           if (f(hd)) {
             Some((hd, acc reverse_::: tl))
           } else {
-            helper(in, hd :: acc)
+            helper(tl, hd :: acc)
           }
       }
     }
