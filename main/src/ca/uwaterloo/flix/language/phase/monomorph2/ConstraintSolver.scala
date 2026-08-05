@@ -55,7 +55,7 @@ object ConstraintSolver {
 
     // Param substitution can reintroduce a raw Sender/Receiver.
     // It is re-lowered so the key matches [[SpecializeAndLower]]'s lookup.
-    val channelDefs = Set(Defs.ChannelGet, Defs.ChannelPut, Defs.ChannelNewTuple, Defs.ChannelMpmcAdmin, Defs.ChannelUnsafeGetAndUnlock)
+    val channelDefs = Set(Defs.Concurrent.Channel.Get, Defs.Concurrent.Channel.Put, Defs.Concurrent.Channel.NewChannelTuple, Defs.Concurrent.Channel.MpmcAdmin, Defs.Concurrent.Channel.UnsafeGetAndUnlock)
 
     def enqueue(dst: MonoVar, inst0: List[Type]): Unit = {
       val inst = dst match {
