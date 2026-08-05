@@ -43,9 +43,9 @@ private[monomorph2] object MonomorphHelpers {
     */
   def lowerChannelType(tpe: Type): Type = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), elm, _) =>
-      Type.Apply(Type.Apply(Symbols.Types.ChannelMpmc, lowerChannelType(elm), loc), Type.IO, loc)
+      Type.Apply(Type.Apply(Symbols.Types.Concurrent.Channel.Mpmc, lowerChannelType(elm), loc), Type.IO, loc)
     case Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), elm, _) =>
-      Type.Apply(Type.Apply(Symbols.Types.ChannelMpmc, lowerChannelType(elm), loc), Type.IO, loc)
+      Type.Apply(Type.Apply(Symbols.Types.Concurrent.Channel.Mpmc, lowerChannelType(elm), loc), Type.IO, loc)
     case Type.Apply(t1, t2, loc) =>
       Type.Apply(lowerChannelType(t1), lowerChannelType(t2), loc)
     case Type.Alias(sym, args, inner, loc) =>
