@@ -20,12 +20,9 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 
 /**
-  * Fully-qualified stdlib symbols/types this pipeline's synthesized code refers to. A copy of
-  * `monomorph.Symbols`, not a dependency on it — kept separate so this package never needs
-  * cross-package visibility into the demand-driven baseline, and vice versa.
-  *
-  * A pure copy — the `Defs` marked (ADDED) below are the only ones the old demand-driven baseline
-  * (Specialization.scala/Lowering.scala) never references.
+  * A collection of symbols defined in the Flix Standard Library that this pipeline's Channel and
+  * Datalog lowering refers to. Each entry here must match a real stdlib symbol of the same name
+  * and type.
   */
 private[monomorph2] object Symbols {
   object Defs {
