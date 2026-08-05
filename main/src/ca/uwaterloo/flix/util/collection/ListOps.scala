@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util
 import scala.annotation.tailrec
-import scala.jdk.CollectionConverters
-import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * Operations on lists.
@@ -127,42 +125,42 @@ object ListOps {
     *
     * Assumes f is an equivalence-like relation.
     */
-  def unorderedCorresponds[A, B](l1: List[A], l2: List[B])(f: (A, B) => Boolean): (List[(A, B)], List[A], List[B]) = {
-    val pairs = List.newBuilder[(A, B)]
+  def fullOuterJoin[A, B](l1: List[A], l2: List[B])(f: (A, B) => Boolean): (List[(A, B)], List[A], List[B]) = {
+    // pairs and unpaired1 are built up during iteration; unpaired2 is broken down during iteration
+    var pairs = List.empty[(A, B)]
+    var unpaired1 = List.empty[A]
+    var unpaired2 = l2
 
-    // build a linked list from l2 for fast removal
-    val dll2 = new util.LinkedList[B]()
-    l2.foreach(dll2.add)
-
-    val lone1 = l1.filter {
-      a =>
-        extractMatch(dll2)(f(a, _)) match {
-          // no match for this value; add it to the loners
-          case None => true
-
-          // found a match; add it to the pairs
-          case Some(b) =>
-            pairs.addOne((a, b))
-            false
-        }
+    for {
+      a <- l1
+    } {
+      extractMatch(l2)(f(a, _)) match {
+        case None =>
+          unpaired1 = a :: unpaired1
+        case Some((b, rest)) =>
+          unpaired2 = rest
+          pairs = (a, b) :: pairs
+      }
     }
 
-    val lone2 = dll2.asScala.toList
-
-    (pairs.result(), lone1, lone2)
-
+    (pairs.reverse, unpaired1.reverse, unpaired2)
   }
 
   /** Removes and returns the first element in the list matching the given predicate. */
-  private def extractMatch[A](l: util.LinkedList[A])(f: A => Boolean): Option[A] = {
-    val iter = l.iterator()
-    while (iter.hasNext) {
-      val next = iter.next()
-      if (f(next)) {
-        iter.remove()
-        return Some(next)
+  private def extractMatch[A](l: List[A])(f: A => Boolean): Option[(A, List[A])] = {
+    @tailrec
+    def helper(in: List[A], acc: List[A]): Option[(A, List[A])] = {
+      in match {
+        case Nil => None
+        case hd :: tl =>
+          if (f(hd)) {
+            Some((hd, acc reverse_::: tl))
+          } else {
+            helper(in, hd :: acc)
+          }
       }
     }
-    None
+
+    helper(l, Nil)
   }
 }

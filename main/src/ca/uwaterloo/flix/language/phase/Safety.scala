@@ -564,27 +564,27 @@ object Safety {
         // Allow all null casts.
         case (Type.Null, _) => ()
 
-          // Allow casts where one side is a type variable.
+        // Allow casts where one side is a type variable.
         case (Type.Var(_, _), _) => ()
         case (_, Some(Type.Var(_, _))) => ()
 
-          // Allow casts between Java types.
+        // Allow casts between Java types.
         case (Type.Cst(TypeConstructor.Native(_), _), _) => ()
         case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => ()
 
-          // Disallow casting a Boolean to another primitive type.
+        // Disallow casting a Boolean to another primitive type.
         case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
           sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-          // Disallow casting a Boolean to another primitive type (symmetric case).
+        // Disallow casting a Boolean to another primitive type (symmetric case).
         case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
           sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-          // Disallowing casting a non-primitive type to a primitive type.
+        // Disallowing casting a non-primitive type to a primitive type.
         case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
           sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-          // Disallowing casting a non-primitive type to a primitive type (symmetric case).
+        // Disallowing casting a non-primitive type to a primitive type (symmetric case).
         case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
           sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
@@ -840,6 +840,7 @@ object Safety {
           }
       }
 
+      // `methods` must cover all the class's abstract methods and must not include any extra methods
       val targs = tpe.typeArguments
       val getTargOpt = targs.lift // returns the targ at the given index, or None
       val javaMethods = JvmUtils.getOverridableInstanceMethods(clazz)
@@ -850,22 +851,24 @@ object Safety {
 
           val name = method.getName
           val types = method.getGenericParameterTypes.map(resolveJavaType(_, substMap, loc))
-          (method, name, types)
-      }.sortBy { case (_, name, types) => (name, types.length) }
+          val retTpe = resolveJavaType(method.getGenericReturnType, substMap, loc)
+          (method, name, types, retTpe)
+      }.sortBy { case (_, name, types, _) => (name, types.length) }
 
       val actualMethods = methods.map {
-        case JvmMethod(_, ident, fparams, _, _, _, _) =>
+        case JvmMethod(_, ident, fparams, _, retTpe, _, _) =>
           val name = ident.name
           val types = fparams.map(_.tpe).tail // drop the `this` parameter
-          (ident, name, types)
-      }.sortBy { case (_, name, types) => (name, types.length) }
+          (ident, name, types, retTpe)
+      }.sortBy { case (_, name, types, _) => (name, types.length) }
 
-      val (_, unimplemented, extra) = ListOps.unorderedCorresponds(expectedMethods, actualMethods) {
-        case ((_, expectedName, expectedTypes), (_, actualName, actualTypes)) =>
+      // matching methods are the ones whose names match and whose formal parameter types are equivalent
+      val (_, unimplemented, extra) = ListOps.fullOuterJoin(expectedMethods, actualMethods) {
+        case ((_, expectedName, expectedTypes, expectedRetType), (_, actualName, actualTypes, actualRetType)) =>
           if (expectedName != actualName) {
             false
           } else {
-            expectedTypes.corresponds(actualTypes) {
+            (expectedRetType :: expectedTypes.toList).corresponds(actualRetType :: actualTypes) {
               // TODO support equality env here
               case (expectedType, actualType) => ConstraintSolver2.isEquivalent(expectedType, actualType)(EqualityEnv.empty, flix)
             }
@@ -873,9 +876,9 @@ object Safety {
       }
 
       // an unimplemented method is only a problem if it's abstract and isn't auto-implemented by Object
-      val missing = unimplemented.filter { case (method, _, _) => isAbstractMethod(method) && !isObjectMethod(method) }
-      missing.foreach { case (method, _, _) => sctx.errors.add(NewObjectMissingMethod(clazz, method, loc)) }
-      extra.foreach { case (ident, name, _) => sctx.errors.add(NewObjectUndefinedMethod(clazz, name, ident.loc)) }
+      val missing = unimplemented.filter { case (method, _, _, _) => isAbstractMethod(method) && !isObjectMethod(method) }
+      missing.foreach { case (method, _, _, _) => sctx.errors.add(NewObjectMissingMethod(clazz, method, loc)) }
+      extra.foreach { case (ident, name, _, _) => sctx.errors.add(NewObjectUndefinedMethod(clazz, name, ident.loc)) }
 
       // `methods` must not let control effects escape.
       val controlEffecting = methods.filter(m => hasControlEffects(m.eff))
