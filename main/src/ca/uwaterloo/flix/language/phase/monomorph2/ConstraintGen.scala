@@ -469,11 +469,12 @@ object ConstraintGen {
         }
       }
 
-    // Generates a `List[PredSym]` value directly via mkTag/mkList (bypassing the ordinary
-    // rewrite path), so its instantiation must be predicted here.
     case Expr.FixpointLambda(_, exp, _, _, _) =>
+      // Generates a `List[PredSym]` value directly via mkTag/mkList (bypassing the ordinary
+      // rewrite path), so its instantiation must be predicted here.
       visitExp(exp)
       sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Fixpoint.Ast.Shared.PredSym))), MonoVar.Enum(Enums.List.List)))
+
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
@@ -481,10 +482,11 @@ object ConstraintGen {
       for (exp <- exps) {
         visitExp(exp)
       }
-    // Generates: Fixpoint3.Solver.injectIntoN(p: PredSym, ts: f[(t1, ..., tN)]): Datalog \ ...
-    // with Order[t1], ..., Order[tN], Foldable[f] — `f` is the container constructor, `t1..tN`
-    // the tuple's component types.
+
     case Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
+      // Generates: Fixpoint3.Solver.injectIntoN(p: PredSym, ts: f[(t1, ..., tN)]): Datalog \ ...
+      // with Order[t1], ..., Order[tN], Foldable[f] — `f` is the container constructor, `t1..tN`
+      // the tuple's component types.
       for (case (e, PredicateAndArity(_, arity)) <- exps.zip(predsAndArities)) {
         Type.eraseAliases(e.tpe) match {
           case Type.Apply(tc, innerTpe, _) =>
@@ -495,10 +497,11 @@ object ConstraintGen {
           case t => throw InternalCompilerException(s"Unexpected non-foldable type: '$t'.", loc)
         }
       }
-    // Generates: Fixpoint3.Solver.factsN(p: PredSym, d: Datalog): Vector[(t1, ..., tN)] with
-    // Order[t1], ..., Order[tN] — the `t1..tN` flow args must come from the resolved result type
-    // `tpe0`, NOT from `selects`' own term types, which may still carry locally-scoped type vars.
+
     case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, tpe0, _, _) =>
+      // Generates: Fixpoint3.Solver.factsN(p: PredSym, d: Datalog): Vector[(t1, ..., tN)] with
+      // Order[t1], ..., Order[tN] — the `t1..tN` flow args must come from the resolved result type
+      // `tpe0`, NOT from `selects`' own term types, which may still carry locally-scoped type vars.
       val arity = selects.length
       val innerTpe = unwrapVectorType(tpe0)
       val argTypes = unmkTuplish(arity, innerTpe)
@@ -520,13 +523,14 @@ object ConstraintGen {
         visitExp(exp)
       }
       sctx.addFlow(FlowConstraint(Instantiation(argTypes.map(typeToMonoArg)), MonoVar.Def(Defs.Fixpoint.Solver.Facts(arity))))
-    // Generates, per goal term (type `a`): Fixpoint3.Boxable.box(x: a): Boxed with Order[a]
-    // Generates, per term type `t` the extensible-variant result can carry:
-    //   Fixpoint3.Boxable.unbox(x: Boxed): t
-    // Plus, at a fixed `Boxed` type:
-    //   Fixpoint3.Solver.provenanceOf(p: PredSym, f: Vector[Boxed], withh: Vector[PredSym], mkExtVar: PredSym -> Vector[Boxed] -> t, d: Datalog): Vector[t]
-    //   Vector.get(i: Int32, v: Vector[Boxed]): Boxed
+
     case Expr.FixpointQueryWithProvenance(exps, select, _, tpe0, _, _) =>
+      // Generates, per goal term (type `a`): Fixpoint3.Boxable.box(x: a): Boxed with Order[a]
+      // Generates, per term type `t` the extensible-variant result can carry:
+      //   Fixpoint3.Boxable.unbox(x: Boxed): t
+      // Plus, at a fixed `Boxed` type:
+      //   Fixpoint3.Solver.provenanceOf(p: PredSym, f: Vector[Boxed], withh: Vector[PredSym], mkExtVar: PredSym -> Vector[Boxed] -> t, d: Datalog): Vector[t]
+      //   Vector.get(i: Int32, v: Vector[Boxed]): Boxed
       for (exp <- exps) {
         visitExp(exp)
       }
