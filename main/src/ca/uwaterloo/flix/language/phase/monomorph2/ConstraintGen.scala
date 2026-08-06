@@ -439,11 +439,11 @@ object ConstraintGen {
     // plus one fixed List[ChannelMpmcAdmin] built via mkTag/mkList.
     case Expr.SelectChannel(_, _, _, _, _) => ???
 
-    // Generates the Box/Unbox/liftN/lattice/Facts/ProjectInto/ProvenanceOf calls for Datalog
-    // fixpoint nodes, mirroring the TypedAst structure lowering itself inspects — see
-    // `boxFlow`/`headTermFlows`/`guardLiftFlow`/`functionalLiftFlow`/`latticeFlows` below for the
-    // concrete signature each one predicts.
     case Expr.FixpointConstraintSet(cs, _, _) =>
+      // Generates the Box/Unbox/liftN/lattice/Facts/ProjectInto/ProvenanceOf calls for Datalog
+      // fixpoint nodes, mirroring the TypedAst structure lowering itself inspects — see
+      // `boxFlow`/`headTermFlows`/`guardLiftFlow`/`functionalLiftFlow`/`latticeFlows` below for the
+      // concrete signature each one predicts.
       for (c <- cs) {
         val cparams0 = c.cparams
         c.head match {
