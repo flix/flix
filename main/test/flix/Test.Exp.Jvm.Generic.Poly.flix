@@ -187,4 +187,35 @@ mod Test.Exp.Jvm.Generic.Poly {
         polyPut(m, "x", 1);
         assertEq(expected = 1, polyGet2(m, "x"))
 
+    @Test
+    def testArrayListOfTuples28(): Unit \ {Assert, IO} =
+        let l: ArrayList[(String, String)] = new ArrayList();
+        discard l.add(("Red", "#FF0000"));
+        let (name, hex) = l.get(0);
+        assertEq(expected = "Red/#FF0000", "${name}/${hex}")
+
+    @Test
+    def testArrayListOfLists29(): Unit \ {Assert, IO} =
+        let l: ArrayList[List[Int32]] = new ArrayList();
+        discard l.add(1 :: 2 :: 3 :: Nil);
+        assertEq(expected = 6, List.sum(l.get(0)))
+
+    @Test
+    def testHashMapOfTuples30(): Unit \ {Assert, IO} =
+        let m: HashMap[String, (Int32, Int32)] = new HashMap();
+        discard m.put("k", (1, 2));
+        let (a, b) = m.get("k");
+        assertEq(expected = 3, a + b)
+
+    @Test
+    def testOptionalOfTuple31(): Unit \ {Assert, IO} =
+        let opt: Optional[(String, Int32)] = Optional.of(("x", 42));
+        let (s, i) = opt.get();
+        assertEq(expected = "x42", "${s}${i}")
+
+    @Test
+    def testStaticMethodReturnsTuple32(): Unit \ {Assert, IO} =
+        let (a, b) = Objects.requireNonNull(("a", "b"));
+        assertEq(expected = "ab", "${a}${b}")
+
 }
