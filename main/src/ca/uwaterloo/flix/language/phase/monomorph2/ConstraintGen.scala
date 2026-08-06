@@ -388,11 +388,12 @@ object ConstraintGen {
     case Expr.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-    // Generates, for each non-last fragment (element type `a`):
-    //   Concurrent.Channel.newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO
-    //   Concurrent.Channel.put(e: a, c: Mpmc[a, Static]): Unit \ IO
-    //   Concurrent.Channel.get(c: Mpmc[a, Static]): a \ IO
+
     case Expr.ParYield(frags, exp, _, _, _) =>
+      // Generates, for each non-last fragment (element type `a`):
+      //   Concurrent.Channel.newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO
+      //   Concurrent.Channel.put(e: a, c: Mpmc[a, Static]): Unit \ IO
+      //   Concurrent.Channel.get(c: Mpmc[a, Static]): a \ IO
       for (f <- frags) {
         visitPat(f.pat)
         visitExp(f.exp)
@@ -441,25 +442,28 @@ object ConstraintGen {
         visitExp(m.exp)
       }
 
-    // Generates: Concurrent.Channel.get(c: Mpmc[a, Static]): a \ IO
     case Expr.GetChannel(exp, tpe, _, _) =>
+      // Generates: Concurrent.Channel.get(c: Mpmc[a, Static]): a \ IO
       visitExp(exp)
       sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(tpe)))), MonoVar.Def(Defs.Concurrent.Channel.Get)))
-    // Generates: Concurrent.Channel.put(e: a, c: Mpmc[a, Static]): Unit \ IO
+
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
+      // Generates: Concurrent.Channel.put(e: a, c: Mpmc[a, Static]): Unit \ IO
       visitExp(exp1)
       visitExp(exp2)
       sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(exp2.tpe)))), MonoVar.Def(Defs.Concurrent.Channel.Put)))
-    // Generates: Concurrent.Channel.newChannelTuple(bufferSize: Int32): (Mpmc[a, Static], Mpmc[a, Static]) \ IO
+
     case Expr.NewChannel(exp, tpe, _, _) =>
+      // Generates: Concurrent.Channel.newChannelTuple(bufferSize: Int32): (Mpmc[a, Static], Mpmc[a, Static]) \ IO
       val elmType = extractChannelElm(tpe)
       visitExp(exp)
       sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType)))), MonoVar.Def(Defs.Concurrent.Channel.NewChannelTuple)))
-    // Generates, per rule (element type `a`, not a Channel.get call):
-    //   Concurrent.Channel.unsafeGetAndUnlock(c: Mpmc[a, Static], locks: List[ReentrantLock]): a \ IO
-    //   Concurrent.Channel.mpmcAdmin(c: Mpmc[a, Static]): MpmcAdmin
-    // Plus one fixed `List[MpmcAdmin]` value, built via mkTag/mkList.
+
     case Expr.SelectChannel(rules, default, _, _, _) =>
+      // Generates, per rule (element type `a`, not a Channel.get call):
+      //   Concurrent.Channel.unsafeGetAndUnlock(c: Mpmc[a, Static], locks: List[ReentrantLock]): a \ IO
+      //   Concurrent.Channel.mpmcAdmin(c: Mpmc[a, Static]): MpmcAdmin
+      // Plus one fixed `List[MpmcAdmin]` value, built via mkTag/mkList.
       for (rule <- rules) {
         val elmType = rule.chan.tpe match {
           // Only possible shape since ConstraintGen.visitSelectRule unifies every rule's channel with Receiver[_]
