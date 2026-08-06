@@ -121,6 +121,139 @@ class TestMain extends AnyFunSuite {
     assert(opts.args == Seq("arg1", "arg2"))
   }
 
+  test("upgrade") {
+    val args = Array("upgrade")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade name@latest") {
+    val args = Array("upgrade", "name@latest")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("name@latest"))
+  }
+
+  test("upgrade otherName@1.2.3") {
+    val args = Array("upgrade", "otherName@1.2.3")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("otherName@1.2.3"))
+  }
+
+  test("upgrade invalidName@1") {
+    val args = Array("upgrade", "invalidName@1")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade invalidName") {
+    val args = Array("upgrade", "invalidName")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade invalidName@") {
+    val args = Array("upgrade", "invalidName@")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade invalidName@invalidVersion") {
+    val args = Array("upgrade", "invalidName@invalidVersion")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade @") {
+    val args = Array("upgrade", "@")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade @version") {
+    val args = Array("upgrade", "@version")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade @version@") {
+    val args = Array("upgrade", "@version@")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade @name@latest") {
+    val args = Array("upgrade", "@name@latest")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade @@") {
+    val args = Array("upgrade", "@@")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+
+  test("upgrade 1@") {
+    val args = Array("upgrade", "1@")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade 1.2.3@") {
+    val args = Array("upgrade", "1.2.3@")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade -y") {
+    val args = Array("upgrade", "-y")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade --assume-yes") {
+    val args = Array("upgrade", "--assume-yes")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade --unsafe-yes") {
+    val args = Array("upgrade", "--unsafe-yes")
+    val opts = Main.parseCmdOpts(args)
+    assert(opts.isEmpty)
+  }
+
+  test("upgrade name@latest without flags") {
+    val args = Array("upgrade", "name@latest")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("name@latest"))
+    assert(!opts.assumeYes)
+    assert(!opts.unsafeUpgradeAssumeYes)
+  }
+
+  test("upgrade name@latest -y") {
+    val args = Array("upgrade", "name@latest", "-y")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("name@latest"))
+    assert(opts.assumeYes)
+  }
+
+  test("upgrade name@latest --assume-yes") {
+    val args = Array("upgrade", "name@latest", "--assume-yes")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("name@latest"))
+    assert(opts.assumeYes)
+  }
+
+  test("upgrade --unsafe-yes name@latest") {
+    val args = Array("upgrade", "--unsafe-yes", "name@latest")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.upgradePackage.contains("name@latest"))
+    assert(!opts.assumeYes)
+    assert(opts.unsafeUpgradeAssumeYes)
+  }
+
   test("--json") {
     val args = Array("--json")
     val opts = Main.parseCmdOpts(args).get
@@ -204,5 +337,4 @@ class TestMain extends AnyFunSuite {
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xsummary)
   }
-
 }

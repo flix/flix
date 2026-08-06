@@ -41,9 +41,9 @@ object FlixPackageManager {
     *                            A manifest is the resource a flix dependency resolves to.
     */
   case class Resolution(origin: Manifest,
-                        manifests: List[Manifest],
-                        immediateDependents: Map[Manifest, List[Manifest]],
-                        manifestToFlixDeps: ListMap[Manifest, FlixDependency])
+    manifests: List[Manifest],
+    immediateDependents: Map[Manifest, List[Manifest]],
+    manifestToFlixDeps: ListMap[Manifest, FlixDependency])
 
   /**
     * Represents the dependency resolution of [[origin]] where the maximum security level has been computed
@@ -55,8 +55,8 @@ object FlixPackageManager {
     *                           A manifest is the resource a flix dependency resolves to.
     */
   case class SecureResolution(origin: Manifest,
-                              security: Map[Manifest, SecurityContext],
-                              manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
+    security: Map[Manifest, SecurityContext],
+    manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
     /**
       * All manifests in the resolution.
       */
@@ -119,6 +119,16 @@ object FlixPackageManager {
   }
 
   /**
+    * Returns `version` if that version exists as a release of `dep`.
+    */
+  def checkForSpecificVersion(dep: FlixDependency, apiKey: Option[String], version: SemVer): Result[SemVer, PackageError] = {
+    for {
+      githubProject <- GitHub.parseProject(s"${dep.username}/${dep.projectName}")
+      release <- GitHub.getSpecificRelease(githubProject, version, apiKey)
+    } yield release.version
+  }
+
+  /**
     * Installs all the Flix dependencies of `resolution` into the `lib/` directory of `projectRoot` and
     * returns a list of paths to all the dependencies along with their allowed security context.
     */
@@ -145,7 +155,7 @@ object FlixPackageManager {
     *
     * `project` must be of the form `<owner>/<repo>`
     *
-    * The package is installed at `lib/<owner>/<repo>`
+    * The package is installed at `lib/github/<owner>/<repo>`
     *
     * There should be only one file with the given extension.
     *
