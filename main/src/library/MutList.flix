@@ -33,7 +33,7 @@ pub mod MutList {
     instance Iterable[MutList[a, r]] {
         type Elm = a
         type Aef = r
-        pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
+        pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r, r1] \ (r + r1) = MutList.iterator(rc, l)
     }
 
     instance ForEach[MutList[a, r]] {
@@ -806,7 +806,7 @@ pub mod MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r2, r1] \ { r1, r2 } =
         let ix = Ref.fresh(rc, 0);
         let len = length(l);
         let next = () -> {
@@ -819,7 +819,7 @@ pub mod MutList {
                 None
             }
         };
-        Iterator.unfoldWithIter(rc, next)
+        Iterator.unfoldWithIter(rc, next) |> Iterator.absorbRegion
 
     ///
     /// Applies `f` to all the elements in `v`.
