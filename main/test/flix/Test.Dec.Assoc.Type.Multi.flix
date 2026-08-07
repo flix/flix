@@ -7,7 +7,7 @@ mod Test.Dec.Assoc.Type.Multi {
     ////////////////////////////////////////////////////////
 
     trait Build[a] {
-        type Builder[a, r]: Type
+        type Builder[a, r: Region]: Type
         pub def build(b: Build.Builder[a, r]): a \ r
     }
 
@@ -73,7 +73,7 @@ mod Test.Dec.Assoc.Type.Multi {
     ////////////////////////////////////////////////////////
 
     trait Runner[a] {
-        type Aef[a, r]: Eff
+        type Aef[a, r: Region]: Eff
         pub def exec(x: a, rc: Region[r]): Int32 \ Runner.Aef[a, r]
     }
 
