@@ -526,7 +526,7 @@ object Safety {
 
   /** Returns the monomorphic / concrete associated type of `sym0` from trait instance on `tpe0` if it exists. */
   private def tryEraseAssocType(sym0: Symbol.AssocTypeSym, tpe0: Type)(implicit root: Root): Option[Type] = {
-    root.eqEnv.getAssocDef(sym0, tpe0).map(_.ret).filter(isMonomorphicType)
+    root.eqEnv.getAssocDef(sym0, List(tpe0)).map(_.ret).filter(isMonomorphicType(_))
   }
 
   /** Returns `true` iff all types in `tpe0` are monomorphic (i.e. there are no type variables). */

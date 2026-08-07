@@ -238,9 +238,9 @@ object Typer {
       val renv = RigidityEnv.empty.markRigid(tparam0.sym)
       val superTraits = superTraits0 // no subst to be done
       val assocs = assocs0.map {
-        case KindedAst.AssocTypeSig(sigDoc, sigMod, sigSym, tp0, kind, tpe, sigLoc) =>
-          val tp = visitTypeParam(tp0)
-          TypedAst.AssocTypeSig(sigDoc, sigMod, sigSym, tp, kind, tpe, sigLoc)
+        case KindedAst.AssocTypeSig(sigDoc, sigMod, sigSym, tps0, kind, tpe, sigLoc) =>
+          val tps = tps0.map(visitTypeParam)
+          TypedAst.AssocTypeSig(sigDoc, sigMod, sigSym, tps, kind, tpe, sigLoc)
       }
       val tconstr = TraitConstraint(TraitSymUse(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val sigs = sigs0.values.map(visitSig(_, renv, List(tconstr), root, traitEnv, eqEnv)).toList
