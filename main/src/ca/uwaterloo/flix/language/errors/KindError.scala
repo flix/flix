@@ -239,17 +239,17 @@ object KindError {
     * yet supported.
     *
     * @param sym  the associated type symbol.
-    * @param kind the declared kind of the associated type.
+    * @param declaredKind the declared kind of the associated type.
     * @param loc  the location where the error occurred.
     */
-  case class UnsupportedMultiparamAssocTypeKind(sym: Symbol.AssocTypeSym, kind: Kind, loc: SourceLocation) extends KindError {
+  case class UnsupportedMultiparamAssocTypeKind(sym: Symbol.AssocTypeSym, declaredKind: Kind, loc: SourceLocation) extends KindError {
     def code: ErrorCode = ErrorCode.E3252
 
-    override def summary: String = s"Associated type '${sym.name}' of kind '$kind' may not have several parameters."
+    override def summary: String = s"Associated type '${sym.name}' of kind '$declaredKind' may not have several parameters."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Associated type '${red(sym.name)}' of kind '${red(kind.toString)}' may not have several parameters.
+      s""">> Associated type '${red(sym.name)}' of kind '${red(declaredKind.toString)}' may not have several parameters.
          |
          |${highlight(loc, "unsupported kind", fmt)}
          |
