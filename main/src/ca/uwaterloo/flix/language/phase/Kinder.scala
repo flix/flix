@@ -397,17 +397,30 @@ object Kinder {
   /**
     * Performs kinding on the given associated type definition under the given kind environment.
     */
-  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, trtKind: Kind, kenv: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.AssocTypeDef = d0 match {
+  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, trtKind: Kind, kenv0: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.AssocTypeDef = d0 match {
     case ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, args0, tpe0, loc) =>
       val trt = root.traits(symUse.sym.trt)
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
       // The first argument selects the instance and so has the trait's kind.
       // The remaining arguments are kinded against the assoc type's own parameters.
+      val restKinds = assocSig.tparams.drop(1).map(declaredKindOfTypeParam)
+
+      // The arguments after the first introduce binders local to this definition, so they are
+      // absent from the instance's kind environment. Infer their kinds from their own
+      // occurrences, here and in the right-hand side.
+      val kenv = args0 match {
+        case Nil => kenv0
+        case _ :: rest =>
+          val restKenv = rest.zipWithIndex.foldLeft(KindEnv.empty) {
+            case (acc, (t, i)) => acc ++ inferType(t, restKinds.lift(i).getOrElse(Kind.Wild), kenv0, root)
+          }
+          kenv0 ++ restKenv ++ inferType(tpe0, tpeKind, kenv0 ++ restKenv, root)
+      }
+
       val args = args0 match {
         case Nil => Nil
         case arg0 :: rest =>
-          val restKinds = assocSig.tparams.drop(1).map(declaredKindOfTypeParam)
           val rest1 = rest.zipWithIndex.map {
             case (t, i) => visitType(t, restKinds.lift(i).getOrElse(Kind.Wild), kenv, root)
           }

@@ -172,7 +172,11 @@ object Typer {
           val tpe = subst(assocSig.tpe.get)
           AssocTypeDef(tparams, List(inst.tpe), tpe)
         case Some(KindedAst.AssocTypeDef(_, _, _, args, tpe, _)) =>
-          AssocTypeDef(tparams, args, tpe)
+          // Arguments after the first are binders local to this definition, not instance type
+          // parameters. Include them so that reduction refreshes them, rather than sharing one
+          // symbol across every reduction of the definition.
+          val binders = args.drop(1).flatMap(_.typeVars).map(_.sym)
+          AssocTypeDef(tparams ++ binders, args, tpe)
       }
     } yield {
       ((assocSig.sym, head), assocDef)
