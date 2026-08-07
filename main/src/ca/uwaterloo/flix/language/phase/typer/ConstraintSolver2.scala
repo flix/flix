@@ -683,9 +683,10 @@ object ConstraintSolver2 {
     * Replaces the location with the given location.
     */
   private def equalityConstraintToTypeConstraint(constr: EqualityConstraint, loc: SourceLocation): TypeConstraint = constr match {
-    case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      val assoc = Type.AssocType(cst, tpe1, tpe2.kind, tpe1.loc)
-      TypeConstraint.Equality(assoc, tpe2, Provenance.Match(tpe1, tpe2, loc))
+    case EqualityConstraint(cst, args, tpe2, _) =>
+      val assocLoc = args.headOption.map(_.loc).getOrElse(loc)
+      val assoc = Type.AssocType(cst, args, tpe2.kind, assocLoc)
+      TypeConstraint.Equality(assoc, tpe2, Provenance.Match(assoc, tpe2, loc))
   }
 
   /**
