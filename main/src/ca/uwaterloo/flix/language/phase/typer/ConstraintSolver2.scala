@@ -214,6 +214,8 @@ object ConstraintSolver2 {
     *   - (reflU): eliminates trivial equalities: `τ ~ τ` becomes `∅`
     *   - eliminates constraints containing unrecoverable errors (see [[isEliminable]])
     *   - (redU): reduces the types in the constraint
+    *   - (assocU): breaks down an equality between two permanently stuck applications of the same
+    *     associated type (see [[decomposeStuckAssocType]])
     *
     * The rules are applied in the listed order to each constraint:
     * applications are broken down exhaustively, and then the remaining
@@ -244,11 +246,16 @@ object ConstraintSolver2 {
           // (redU)
           val (r1, cs1) = reduce(tpe1)(scope, renv, progress, eqenv, flix)
           val (r2, cs2) = reduce(tpe2)(scope, renv, progress, eqenv, flix)
-          // Performance: Reuse this, if possible.
-          if ((r1 eq tpe1) && (r2 eq tpe2) && cs1.isEmpty && cs2.isEmpty)
-            constr :: Nil
-          else
-            TypeConstraint.Equality(r1, r2, prov) :: cs1 ::: cs2
+          // (assocU)
+          decomposeStuckAssocType(r1, r2, prov, progress) match {
+            case Some(cs) => cs ::: cs1 ::: cs2
+            case None =>
+              // Performance: Reuse this, if possible.
+              if ((r1 eq tpe1) && (r2 eq tpe2) && cs1.isEmpty && cs2.isEmpty)
+                constr :: Nil
+              else
+                TypeConstraint.Equality(r1, r2, prov) :: cs1 ::: cs2
+          }
         }
     }
 
@@ -291,6 +298,55 @@ object ConstraintSolver2 {
       }
 
     case TypeConstraint.EffConflicted(_) => constr :: Nil
+  }
+
+  /**
+    * Decomposes an equality between two applications of the same associated type whose reduction
+    * is permanently stuck:
+    *
+    * {{{
+    *   T[τ, τ₁, ..., τₙ] ~ T[τ, υ₁, ..., υₙ]
+    * }}}
+    *
+    * becomes
+    *
+    * {{{
+    *   τ₁ ~ υ₁, ..., τₙ ~ υₙ
+    * }}}
+    *
+    * Returns `None` if the rule does not apply.
+    *
+    * Associated types are not injective, so this is not an equivalence: with the definition
+    * `type T[Int32, b] = Int32` both sides reduce to `Int32` whatever `b` is. The decomposed
+    * constraints imply the original by congruence, but not the other way around, so this commits
+    * to a solution that is sound but more specific than necessary. That is only acceptable where
+    * the alternative is failure, which is what the two guards ensure:
+    *
+    *   - The selectors must be syntactically equal, and are never themselves decomposed. The
+    *     selector is the argument the non-injectivity is about.
+    *   - Every variable in the selector must be rigid. Reduction picks a definition by the head
+    *     of the selector alone (see [[EqualityEnv.getAssocDef]]), so a selector that (redU) has
+    *     just failed to reduce can never reduce later: no substitution can change a rigid head,
+    *     and the equality environment is fixed for the duration of the solve. The constraint is
+    *     stuck for good, and would otherwise be left over and reported as an error.
+    *
+    * This cannot reuse (appU), which has neither guard, and it must run after (redU), so that it
+    * sees only those applications that reduction has already given up on.
+    */
+  // (assocU)
+  private def decomposeStuckAssocType(tpe1: Type, tpe2: Type, prov: Provenance, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): Option[List[TypeConstraint]] = (tpe1, tpe2) match {
+    case (Type.AssocType(symUse1, sel1 :: args1, _, _), Type.AssocType(symUse2, sel2 :: args2, _, _))
+      if symUse1.sym == symUse2.sym &&
+        args1.nonEmpty &&
+        args1.length == args2.length &&
+        sel1 == sel2 &&
+        sel1.typeVars.forall(tvar => renv.isRigid(tvar.sym)) =>
+      progress.markProgress()
+      Some(args1.zip(args2).flatMap {
+        case (t1, t2) => simplify(TypeConstraint.Equality(t1, t2, prov), progress)
+      })
+
+    case _ => None
   }
 
   /**

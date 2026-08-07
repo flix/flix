@@ -61,12 +61,28 @@ mod Test.Dec.Assoc.Type.Multi {
     trait Twice[a] {
         type Pair[a, b]: Type
         pub def dup(x: a, y: b): Twice.Pair[a, b]
+        pub def first(x: a, p: Twice.Pair[a, b]): b
     }
 
     instance Twice[Int32] {
         type Pair[Int32, b] = (b, b)
         pub def dup(_x: Int32, y: b): (b, b) = (y, y)
+        pub def first(_x: Int32, p: (b, b)): b = fst(p)
     }
+
+    ////////////////////////////////////////////////////////
+    // Stuck applications decompose                       //
+    ////////////////////////////////////////////////////////
+
+    // 'Twice.first' pins the selector to the rigid 'a', but leaves the binder of
+    // its 'Twice.Pair' parameter free: the wildcard match discards the result, so
+    // nothing outside the equality with 'Twice.dup' determines it. Both sides are
+    // stuck on 'a' — no instance is selected by a rigid variable — so this only
+    // typechecks if the two applications decompose argument-wise.
+    pub def roundTrip(x: a, y: b): Bool with Twice[a] =
+        match Twice.first(x, Twice.dup(x, y)) {
+            case _ => true
+        }
 
     ////////////////////////////////////////////////////////
     // Effect-kinded associated type with extra parameter  //
@@ -104,6 +120,14 @@ mod Test.Dec.Assoc.Type.Multi {
     @Test
     pub def testTwice01(): Unit \ Assert =
         assertEq(expected = ("x", "x"), Twice.dup(1, "x"))
+
+    @Test
+    pub def testTwice02(): Unit \ Assert =
+        assertEq(expected = "x", Twice.first(1, ("x", "x")))
+
+    @Test
+    pub def testDecompose01(): Unit \ Assert =
+        assertEq(expected = true, roundTrip(1, "x"))
 
     @Test
     pub def testRunner01(): Unit \ Assert = region rc {
