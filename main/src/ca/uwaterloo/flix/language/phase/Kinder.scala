@@ -389,8 +389,13 @@ object Kinder {
       if (tparams0.length > 1 && kind == Kind.Bool) {
         sctx.errors.add(KindError.UnsupportedMultiparamAssocTypeKind(sym, kind, loc))
       }
-      val tparams = tparams0.map(visitTypeParam(_, kenv))
-      val tpe = tpe0.map(visitType(_, kind, kenv, root))
+      // The first parameter is the trait's own, and takes its kind from the trait. Parameters
+      // after the first take theirs from this declaration, defaulting to Type.
+      val kenv1 = tparams0.drop(1).foldLeft(kenv) {
+        case (acc, tp) => acc + (tp.sym, declaredKindOfTypeParam(tp))
+      }
+      val tparams = tparams0.map(visitTypeParam(_, kenv1))
+      val tpe = tpe0.map(visitType(_, kind, kenv1, root))
       KindedAst.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc)
   }
 
@@ -407,22 +412,22 @@ object Kinder {
       val restKinds = assocSig.tparams.drop(1).map(declaredKindOfTypeParam)
 
       // The arguments after the first introduce binders local to this definition, so they are
-      // absent from the instance's kind environment. Infer their kinds from their own
-      // occurrences, here and in the right-hand side.
+      // absent from the instance's kind environment. Their kinds are not inferred: the trait's
+      // declaration of the associated type fixes them.
       val kenv = args0 match {
         case Nil => kenv0
         case _ :: rest =>
-          val restKenv = rest.zipWithIndex.foldLeft(KindEnv.empty) {
-            case (acc, (t, i)) => acc ++ inferType(t, restKinds.lift(i).getOrElse(Kind.Wild), kenv0, root)
+          rest.zipWithIndex.foldLeft(kenv0) {
+            case (acc, (UnkindedType.Var(tvarSym, _), i)) => acc + (tvarSym, restKinds.lift(i).getOrElse(Kind.Star))
+            case (acc, _) => acc // Not a binder; already reported by the Resolver.
           }
-          kenv0 ++ restKenv ++ inferType(tpe0, tpeKind, kenv0 ++ restKenv, root)
       }
 
       val args = args0 match {
         case Nil => Nil
         case arg0 :: rest =>
           val rest1 = rest.zipWithIndex.map {
-            case (t, i) => visitType(t, restKinds.lift(i).getOrElse(Kind.Wild), kenv, root)
+            case (t, i) => visitType(t, restKinds.lift(i).getOrElse(Kind.Star), kenv, root)
           }
           visitType(arg0, trtKind, kenv, root) :: rest1
       }
@@ -1209,7 +1214,7 @@ object Kinder {
                 case arg0 :: rest =>
                   val restKinds = tparams.drop(1).map(declaredKindOfTypeParam)
                   val rest1 = rest.zipWithIndex.map {
-                    case (t, i) => visitType(t, restKinds.lift(i).getOrElse(Kind.Wild), kenv, root)
+                    case (t, i) => visitType(t, restKinds.lift(i).getOrElse(Kind.Star), kenv, root)
                   }
                   visitType(arg0, innerExpectedKind, kenv, root) :: rest1
               }
@@ -1433,15 +1438,16 @@ object Kinder {
     * Performs kinding on the given type parameter under the given kind environment.
     */
   /**
-    * Returns the declared kind of the given type parameter, or [[Kind.Wild]] if it has none.
+    * Returns the declared kind of the given type parameter, defaulting to [[Kind.Star]].
     *
-    * Used for the parameters of an associated type after the first, which are ordinary binders
-    * and so carry no kind from the surrounding trait.
+    * Used for the parameters of an associated type after the first. Those are ordinary binders,
+    * so they take no kind from the surrounding trait; instead the trait's declaration of the
+    * associated type fixes them, and an unannotated parameter is a type.
     */
   private def declaredKindOfTypeParam(tparam: ResolvedAst.TypeParam): Kind = tparam match {
     case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
-    case _: ResolvedAst.TypeParam.Unkinded => Kind.Wild
-    case _: ResolvedAst.TypeParam.Implicit => Kind.Wild
+    case _: ResolvedAst.TypeParam.Unkinded => Kind.Star
+    case _: ResolvedAst.TypeParam.Implicit => Kind.Star
   }
 
   private def visitTypeParam(tparam: ResolvedAst.TypeParam, kenv: KindEnv)(implicit sctx: SharedContext): KindedAst.TypeParam = {
@@ -1563,12 +1569,15 @@ object Kinder {
         case UnkindedType.AssocType(AssocTypeSymUse(sym, _), args, _) =>
           val trt = root.traits(sym.trt)
           val kind1 = declKinds.traitKinds(trt.sym)
-          val kind2 = trt.assocs.find(_.sym == sym).get.kind
-          // Only the first argument selects the instance; the rest are inferred without expectation.
+          val assocSig = trt.assocs.find(_.sym == sym).get
+          val kind2 = assocSig.kind
+          // Only the first argument selects the instance; the kinds of the rest are fixed by
+          // the trait's declaration of the associated type.
+          val restKinds = assocSig.tparams.drop(1).map(declaredKindOfTypeParam)
           val kenv1 = args match {
             case Nil => KindEnv.empty
-            case arg :: rest => rest.foldLeft(inferType(arg, kind1, kenv, root)) {
-              case (acc, t) => acc ++ inferType(t, Kind.Wild, kenv, root)
+            case arg :: rest => rest.zipWithIndex.foldLeft(inferType(arg, kind1, kenv, root)) {
+              case (acc, (t, i)) => acc ++ inferType(t, restKinds.lift(i).getOrElse(Kind.Star), kenv, root)
             }
           }
           val kenv2 = inferType(tpe2, kind2, kenv, root)
@@ -1624,10 +1633,13 @@ object Kinder {
     case UnkindedType.AssocType(cst, args, _) =>
       val trt = root.traits(cst.sym.trt)
       val kind = declKinds.traitKinds(trt.sym)
+      // Only the first argument selects the instance; the kinds of the rest are fixed by the
+      // trait's declaration of the associated type.
+      val restKinds = trt.assocs.find(_.sym == cst.sym).map(_.tparams.drop(1).map(declaredKindOfTypeParam)).getOrElse(Nil)
       args match {
         case Nil => KindEnv.empty
-        case arg :: rest => rest.foldLeft(inferType(arg, kind, kenv0, root)) {
-          case (acc, t) => acc ++ inferType(t, Kind.Wild, kenv0, root)
+        case arg :: rest => rest.zipWithIndex.foldLeft(inferType(arg, kind, kenv0, root)) {
+          case (acc, (t, i)) => acc ++ inferType(t, restKinds.lift(i).getOrElse(Kind.Star), kenv0, root)
         }
       }
 
