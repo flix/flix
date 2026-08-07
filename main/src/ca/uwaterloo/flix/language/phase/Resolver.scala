@@ -614,11 +614,11 @@ object Resolver {
     * Performs name resolution on the given associated type signature `s0` in the given namespace `ns0`.
     */
   private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.AssocTypeSig = s0 match {
-    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind0, tpe0, loc) =>
-      val tparam = resolveTypeParam(tparam0, scp0, ns0, root)
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams0, kind0, tpe0, loc) =>
+      val tparams = tparams0.map(resolveTypeParam(_, scp0, ns0, root))
       val kind = resolveKind(kind0, scp0, ns0, root)
       val tpe = tpe0.map(resolveType(_, Some(kind), Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix))
-      ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc)
+      ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc)
   }
 
   /**
@@ -657,9 +657,9 @@ object Resolver {
             val doc = Doc(Nil, loc)
             val mod = Modifiers.Empty
             val symUse = AssocTypeSymUse(ascSym, loc)
-            val arg = targ
+            val args = List(targ)
             val tpe = UnkindedType.Error(loc)
-            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
+            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, args, tpe, loc)
             m.put(ascSym, ascDef)
           }
         }
@@ -678,10 +678,10 @@ object Resolver {
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
     */
   private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
-    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
 
       // For now, we don't add any tvars from the args. We should have gotten those directly from the instance
-      val arg = resolveType(arg0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+      val args = args0.map(resolveType(_, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix))
       val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
       val symVal: Result[Symbol.AssocTypeSym, ResolutionError] = trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
@@ -694,7 +694,7 @@ object Resolver {
       mapN(symVal.toValidation) {
         sym =>
           val symUse = AssocTypeSymUse(sym, ident.loc)
-          ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
+          ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, args, tpe, loc)
       }
   }
 
@@ -2082,7 +2082,7 @@ object Resolver {
       lookupAssocType(qname, scp0, ns0, root) match {
         case Result.Ok(assoc) =>
           val symUse = AssocTypeSymUse(assoc.sym, qname.loc)
-          val head = UnkindedType.AssocType(symUse, t1, qname.loc)
+          val head = UnkindedType.AssocType(symUse, List(t1), qname.loc)
           ResolvedAst.EqualityConstraint(head, t2, loc)
         case Result.Err(error) =>
           sctx.errors.add(error)
@@ -2592,7 +2592,7 @@ object Resolver {
             targHd match {
               case targHd: UnkindedType.Var =>
                 val cst = AssocTypeSymUse(sym, loc)
-                val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
+                val assoc = UnkindedType.AssocType(cst, List(targHd), tpe0.loc)
                 UnkindedType.mkApply(assoc, targTl, tpe0.loc)
               case _ =>
                 val error = ResolutionError.IllegalAssocTypeApplication(tpe0.loc)
