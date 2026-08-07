@@ -73,12 +73,12 @@ mod Test.Dec.Assoc.Type.Multi {
 
     trait Runner[a] {
         type Aef[a, r]: Eff
-        pub def run(x: a, rc: Region[r]): Int32 \ Runner.Aef[a, r]
+        pub def exec(x: a, rc: Region[r]): Int32 \ Runner.Aef[a, r]
     }
 
     instance Runner[Int32] {
         type Aef[Int32, r] = r
-        pub def run(x: Int32, _rc: Region[r]): Int32 \ r = x
+        pub def exec(x: Int32, _rc: Region[r]): Int32 \ r = x
     }
 
     ////////////////////////////////////////////////////////
@@ -104,7 +104,7 @@ mod Test.Dec.Assoc.Type.Multi {
 
     @Test
     pub def testRunner01(): Unit \ Assert = region rc {
-        assertEq(expected = 7, Runner.run(7, rc))
+        assertEq(expected = 7, Runner.exec(7, rc))
     }
 
 }
