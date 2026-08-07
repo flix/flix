@@ -1361,7 +1361,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSourceLocation(loc: SourceLocation)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a class='source' target='_blank' rel='nofollow' href='${createLink(loc)}'>Source</a>")
+    sb.append(s"<a class='source' href='${createLink(loc)}'>Source</a>")
   }
 
   /**
