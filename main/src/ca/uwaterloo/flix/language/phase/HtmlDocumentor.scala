@@ -1215,12 +1215,16 @@ object HtmlDocumentor {
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
       e.tpe1 match {
-        case Type.AssocType(cst, arg, _, _) =>
+        case Type.AssocType(cst, as, _, _) =>
           docTraitName(cst.sym.trt)
           sb.append(".")
           sb.append(esc(cst.sym.name))
           sb.append("[")
-          docType(arg)
+          as.zipWithIndex.foreach {
+            case (a, i) =>
+              if (i > 0) sb.append(", ")
+              docType(a)
+          }
           sb.append("] ~ ")
           docType(e.tpe2)
         case _ =>

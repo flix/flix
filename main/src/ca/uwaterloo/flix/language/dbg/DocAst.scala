@@ -489,7 +489,7 @@ object DocAst {
 
     def Alias(sym: Symbol.TypeAliasSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
 
-    def AssocType(sym: Symbol.AssocTypeSym, arg: Type): Type = App(AsIs(sym.toString), List(arg))
+    def AssocType(sym: Symbol.AssocTypeSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
 
     def Array(t: Type): Type = App(AsIs("Array"), List(t))
 

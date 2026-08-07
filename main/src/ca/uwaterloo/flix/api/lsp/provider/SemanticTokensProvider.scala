@@ -305,11 +305,11 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given associated type signature `assoc`.
     */
   private def visitAssocTypeSig(assoc: TypedAst.AssocTypeSig): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssocTypeSig(_, _, sym, tparam, _, tpe, _) =>
+    case TypedAst.AssocTypeSig(_, _, sym, tparams, _, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
-        visitTypeParam(tparam),
+        tparams.iterator.flatMap(visitTypeParam),
         tpe.iterator.flatMap(visitType)
       )
   }
@@ -318,11 +318,11 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given associated type definition `assoc`.
     */
   private def visitAssocTypeDef(assoc: TypedAst.AssocTypeDef): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssocTypeDef(_, _, symUse, arg, tpe, _) =>
+    case TypedAst.AssocTypeDef(_, _, symUse, args, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.loc)
       IteratorOps.all(
         Iterator(t),
-        visitType(arg),
+        args.iterator.flatMap(visitType),
         visitType(tpe),
       )
   }
@@ -829,9 +829,9 @@ object SemanticTokensProvider {
         val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
         Iterator(t) ++ args.flatMap(visitType).iterator
 
-      case Type.AssocType(cst, arg, _, _) =>
+      case Type.AssocType(cst, as, _, _) =>
         val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
-        Iterator(t) ++ visitType(arg)
+        Iterator(t) ++ as.iterator.flatMap(visitType)
 
       // Jvm types should not be exposed to the user.
       case _: Type.JvmToType => Iterator.empty
