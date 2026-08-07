@@ -742,10 +742,10 @@ object Namer {
     * Performs naming on the given equality constraint `econstr`.
     */
   private def visitEqualityConstraint(econstr: DesugaredAst.EqualityConstraint)(implicit sctx: SharedContext, flix: Flix): NamedAst.EqualityConstraint = econstr match {
-    case DesugaredAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
-      val t1 = visitType(tpe1)
+    case DesugaredAst.EqualityConstraint(qname, args, tpe2, loc) =>
+      val ts = args.map(visitType)
       val t2 = visitType(tpe2)
-      NamedAst.EqualityConstraint(qname, t1, t2, loc)
+      NamedAst.EqualityConstraint(qname, ts, t2, loc)
   }
 
   /**
@@ -1736,7 +1736,7 @@ object Namer {
 
     val econstrTvars = econstrs.flatMap {
       // We only infer vars from the right-hand-side of the constraint.
-      case DesugaredAst.EqualityConstraint(_, _, tpe2, _) => freeTypeVars(tpe2)
+      case DesugaredAst.EqualityConstraint(_, _, tpe2, _) => freeTypeVars(tpe2) // We only infer vars from the right-hand-side.
     }
 
     (fparamTvars ::: tpeTvars ::: effTvars ::: econstrTvars).distinct.map {

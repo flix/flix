@@ -1708,4 +1708,17 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError](result)
   }
 
+  test("KindError.UnsupportedMultiparamAssocTypeKind.01") {
+    // Bool-kinded associated types cannot be atoms in Boolean unification,
+    // so they are restricted to a single parameter.
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Bool
+        |}
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.UnsupportedMultiparamAssocTypeKind](result)
+  }
+
 }

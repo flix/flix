@@ -234,4 +234,30 @@ object KindError {
     }
   }
 
+  /**
+    * An error raised to indicate an associated type with several parameters whose kind is not
+    * yet supported.
+    *
+    * @param sym  the associated type symbol.
+    * @param kind the declared kind of the associated type.
+    * @param loc  the location where the error occurred.
+    */
+  case class UnsupportedMultiparamAssocTypeKind(sym: Symbol.AssocTypeSym, kind: Kind, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3252
+
+    override def summary: String = s"Associated type '${sym.name}' of kind '$kind' may not have several parameters."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Associated type '${red(sym.name)}' of kind '${red(kind.toString)}' may not have several parameters.
+         |
+         |${highlight(loc, "unsupported kind", fmt)}
+         |
+         |${underline("Explanation:")} Associated types of kind '${cyan("Bool")}' are not yet supported
+         |by Boolean unification, so they are restricted to a single parameter.
+         |Associated types of kind '${cyan("Type")}' and '${cyan("Eff")}' may take several parameters.
+         |""".stripMargin
+    }
+  }
+
 }

@@ -90,7 +90,7 @@ sealed trait UnkindedType {
     case UnkindedType.Struct(_, _) => SortedSet.empty
     case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
-    case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAssocType(_, _, _) => SortedSet.empty
     case UnkindedType.UnappliedNative(_, _) => SortedSet.empty
     case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
     case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
@@ -202,9 +202,9 @@ object UnkindedType {
     * Only exists temporarily in the Resolver until it's converted to an [[AssocType]].
     */
   @EliminatedBy(Resolver.getClass)
-  case class UnappliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends UnkindedType {
+  case class UnappliedAssocType(sym: Symbol.AssocTypeSym, arity: Int, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case UnappliedAssocType(sym2, _) => sym == sym2
+      case UnappliedAssocType(sym2, _, _) => sym == sym2
       case _ => false
     }
 
@@ -562,7 +562,7 @@ object UnkindedType {
     case AssocType(cst, args, loc) => AssocType(cst, args.map(eraseAliases), loc) // TODO ASSOC-TYPES check that this is valid
     case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
-    case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
+    case UnappliedAssocType(_, _, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
     case UnappliedNative(_, loc) => throw InternalCompilerException("unexpected unapplied native type", loc)
   }
 }

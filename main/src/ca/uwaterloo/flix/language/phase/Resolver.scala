@@ -677,6 +677,32 @@ object Resolver {
   /**
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
     */
+  /**
+    * Checks the parameters of an associated type definition.
+    *
+    * The first parameter is matched against the instance type and may be any type. Every other
+    * parameter is a binder and must be a distinct type variable. The number of parameters must
+    * match the declaration in the trait.
+    */
+  private def checkAssocTypeDefParams(sym: Symbol.AssocTypeSym, args: List[UnkindedType], trt: NamedAst.Declaration.Trait, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    trt.assocs.find(_.sym == sym).foreach {
+      assocSig =>
+        val expected = assocSig.tparams.length
+        if (args.length != expected) {
+          sctx.errors.add(ResolutionError.MismatchedAssocTypeArity(sym, expected, args.length, loc))
+        }
+    }
+
+    // Skip the first parameter: it is matched against the instance type.
+    args.drop(1).foldLeft(Set.empty[Symbol.UnkindedTypeVarSym]) {
+      case (seen, UnkindedType.Var(tvarSym, _)) if !seen.contains(tvarSym) =>
+        seen + tvarSym
+      case (seen, arg) =>
+        sctx.errors.add(ResolutionError.IllegalAssocTypeParam(sym, arg.loc))
+        seen
+    }
+  }
+
   private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
 
@@ -693,6 +719,7 @@ object Resolver {
       }
       mapN(symVal.toValidation) {
         sym =>
+          checkAssocTypeDefParams(sym, args, trt, ident.loc)
           val symUse = AssocTypeSymUse(sym, ident.loc)
           ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, args, tpe, loc)
       }
@@ -2075,14 +2102,17 @@ object Resolver {
     * Performs name resolution on the given equality constraint `econstr0`.
     */
   private def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.EqualityConstraint = tconstr0 match {
-    case NamedAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
-      val t1 = resolveType(tpe1, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+    case NamedAst.EqualityConstraint(qname, args, tpe2, loc) =>
+      val ts = args.map(resolveType(_, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix))
       val t2 = resolveType(tpe2, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
 
       lookupAssocType(qname, scp0, ns0, root) match {
         case Result.Ok(assoc) =>
           val symUse = AssocTypeSymUse(assoc.sym, qname.loc)
-          val head = UnkindedType.AssocType(symUse, List(t1), qname.loc)
+          if (ts.length != assoc.tparams.length) {
+            sctx.errors.add(ResolutionError.MismatchedAssocTypeArity(assoc.sym, assoc.tparams.length, ts.length, qname.loc))
+          }
+          val head = UnkindedType.AssocType(symUse, ts, qname.loc)
           ResolvedAst.EqualityConstraint(head, t2, loc)
         case Result.Err(error) =>
           sctx.errors.add(error)
@@ -2576,29 +2606,31 @@ object Resolver {
           UnkindedType.mkApply(applyAlias(alias, usedArgs, loc), extraArgs, tpe0.loc)
         }
 
-      case UnkindedType.UnappliedAssocType(sym, loc) =>
-        targs match {
+      case UnkindedType.UnappliedAssocType(sym, arity, loc) =>
+        // The associated type consumes `arity` arguments; anything beyond that is a type application.
+        if (arity < 1 || targs.length < arity) {
           // Case 1: The associated type is under-applied.
-          case Nil =>
-            val error = ResolutionError.UnderAppliedAssocType(sym, loc)
-            sctx.errors.add(error)
-            UnkindedType.Error(loc)
-
+          val error = ResolutionError.UnderAppliedAssocType(sym, loc)
+          sctx.errors.add(error)
+          UnkindedType.Error(loc)
+        } else {
           // Case 2: The associated type is fully applied.
-          // Apply the types first type inside the assoc type, then apply any leftover types.
-          case targHead :: targTail =>
-            val targHd = finishResolveType(targHead, taenv)
-            val targTl = targTail.map(finishResolveType(_, taenv))
-            targHd match {
-              case targHd: UnkindedType.Var =>
-                val cst = AssocTypeSymUse(sym, loc)
-                val assoc = UnkindedType.AssocType(cst, List(targHd), tpe0.loc)
-                UnkindedType.mkApply(assoc, targTl, tpe0.loc)
-              case _ =>
-                val error = ResolutionError.IllegalAssocTypeApplication(tpe0.loc)
-                sctx.errors.add(error)
-                UnkindedType.Error(loc)
-            }
+          // Resolve the arguments inside the assoc type, then apply any leftover types.
+          val (used0, extra0) = targs.splitAt(arity)
+          val used = used0.map(finishResolveType(_, taenv))
+          val extra = extra0.map(finishResolveType(_, taenv))
+          // Only the first argument selects the instance, so only it must be a type variable.
+          // The remaining arguments are ordinary binders and may be any type.
+          used.head match {
+            case _: UnkindedType.Var =>
+              val cst = AssocTypeSymUse(sym, loc)
+              val assoc = UnkindedType.AssocType(cst, used, tpe0.loc)
+              UnkindedType.mkApply(assoc, extra, tpe0.loc)
+            case _ =>
+              val error = ResolutionError.IllegalAssocTypeApplication(tpe0.loc)
+              sctx.errors.add(error)
+              UnkindedType.Error(loc)
+          }
         }
 
       case UnkindedType.UnappliedNative(clazz, loc) =>
@@ -3198,7 +3230,7 @@ object Resolver {
     */
   private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, loc: SourceLocation): UnkindedType = {
     getAssocTypeIfAccessible(assoc0)
-    mkUnappliedAssocType(assoc0.sym, loc)
+    mkUnappliedAssocType(assoc0.sym, assoc0.tparams.length, loc)
   }
 
   /**
@@ -3274,7 +3306,7 @@ object Resolver {
   /**
     * Construct the associated type constructor for the given symbol `sym` with the given kind `k`.
     */
-  private def mkUnappliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAssocType(sym, loc)
+  private def mkUnappliedAssocType(sym: Symbol.AssocTypeSym, arity: Int, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAssocType(sym, arity, loc)
 
   /**
     * Gets the proper symbol from the given named symbol.

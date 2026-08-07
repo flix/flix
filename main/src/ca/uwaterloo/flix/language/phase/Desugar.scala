@@ -391,10 +391,10 @@ object Desugar {
     * Desugars the given [[WeededAst.EqualityConstraint]] `econstr0`.
     */
   private def visitEqualityConstraint(econstr0: WeededAst.EqualityConstraint): DesugaredAst.EqualityConstraint = econstr0 match {
-    case WeededAst.EqualityConstraint(qname, tpe01, tpe02, loc) =>
-      val tpe1 = visitType(tpe01)
+    case WeededAst.EqualityConstraint(qname, args0, tpe02, loc) =>
+      val args = args0.map(visitType)
       val tpe2 = visitType(tpe02)
-      DesugaredAst.EqualityConstraint(qname, tpe1, tpe2, loc)
+      DesugaredAst.EqualityConstraint(qname, args, tpe2, loc)
   }
 
   /**

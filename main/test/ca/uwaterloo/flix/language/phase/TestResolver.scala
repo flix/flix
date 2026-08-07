@@ -1802,6 +1802,66 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
+  test("MismatchedAssocTypeArity.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String] = String
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedAssocTypeArity](result)
+  }
+
+  test("MismatchedAssocTypeArity.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String, b] = String
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedAssocTypeArity](result)
+  }
+
+  test("IllegalAssocTypeParam.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String, Int32] = String
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeParam](result)
+  }
+
+  test("IllegalAssocTypeParam.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b, c]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String, b, b] = String
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeParam](result)
+  }
+
   test("Test.OverAppliedOp.Handler.01") {
     val input =
       """

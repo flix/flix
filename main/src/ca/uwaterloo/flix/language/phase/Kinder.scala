@@ -384,6 +384,11 @@ object Kinder {
     */
   private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssocTypeSig, kenv: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.AssocTypeSig = s0 match {
     case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams0, kind, tpe0, loc) =>
+      // Bool-kinded associated types cannot appear as atoms in Boolean unification
+      // (see BoolUnification.unify), so they are restricted to a single parameter.
+      if (tparams0.length > 1 && kind == Kind.Bool) {
+        sctx.errors.add(KindError.UnsupportedMultiparamAssocTypeKind(sym, kind, loc))
+      }
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val tpe = tpe0.map(visitType(_, kind, kenv, root))
       KindedAst.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc)
@@ -398,10 +403,15 @@ object Kinder {
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
       // The first argument selects the instance and so has the trait's kind.
-      // TODO ASSOC-TYPES kind the remaining arguments against the assoc type's own parameters.
+      // The remaining arguments are kinded against the assoc type's own parameters.
       val args = args0 match {
         case Nil => Nil
-        case arg0 :: rest => visitType(arg0, trtKind, kenv, root) :: rest.map(visitType(_, Kind.Wild, kenv, root))
+        case arg0 :: rest =>
+          val restKinds = assocSig.tparams.drop(1).map(visitTypeParam(_, kenv).sym.kind)
+          val rest1 = rest.zipWithIndex.map {
+            case (t, i) => visitType(t, restKinds.lift(i).getOrElse(Kind.Wild), kenv, root)
+          }
+          visitType(arg0, trtKind, kenv, root) :: rest1
       }
       val tpe = visitType(tpe0, tpeKind, kenv, root)
       KindedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc)
@@ -1174,16 +1184,21 @@ object Kinder {
       val trt = root.traits(cst.sym.trt)
       // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
       trt.assocs.find(_.sym == cst.sym).get match {
-        case ResolvedAst.Declaration.AssocTypeSig(_, _, _, _, k0, _, _) =>
+        case ResolvedAst.Declaration.AssocTypeSig(_, _, _, tparams, k0, _, _) =>
           // check that the assoc type kind matches the expected
           unify(k0, expectedKind) match {
             case Some(kind) =>
               // The first argument selects the instance and so has the trait's kind.
-              // TODO ASSOC-TYPES kind the remaining arguments against the assoc type's own parameters.
+              // The remaining arguments are kinded against the assoc type's own parameters.
               val innerExpectedKind = declKinds.traitKinds(trt.sym)
               val args = args0 match {
                 case Nil => Nil
-                case arg0 :: rest => visitType(arg0, innerExpectedKind, kenv, root) :: rest.map(visitType(_, Kind.Wild, kenv, root))
+                case arg0 :: rest =>
+                  val restKinds = tparams.drop(1).map(visitTypeParam(_, kenv).sym.kind)
+                  val rest1 = rest.zipWithIndex.map {
+                    case (t, i) => visitType(t, restKinds.lift(i).getOrElse(Kind.Wild), kenv, root)
+                  }
+                  visitType(arg0, innerExpectedKind, kenv, root) :: rest1
               }
               Type.AssocType(cst, args, kind, loc)
             case None =>
