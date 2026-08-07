@@ -50,7 +50,7 @@ sealed trait UnkindedType {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
-    case UnkindedType.AssocType(cst, arg, loc) => UnkindedType.AssocType(cst, arg.map(f), loc)
+    case UnkindedType.AssocType(cst, args, loc) => UnkindedType.AssocType(cst, args.map(_.map(f)), loc)
     case t: UnkindedType.Error => t
   }
 
@@ -317,13 +317,13 @@ object UnkindedType {
   /**
     * A fully resolved associated type.
     */
-  case class AssocType(assocTypeSymUse: AssocTypeSymUse, arg: UnkindedType, loc: SourceLocation) extends UnkindedType {
+  case class AssocType(assocTypeSymUse: AssocTypeSymUse, args: List[UnkindedType], loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case AssocType(AssocTypeSymUse(sym2, _), arg2, _) => assocTypeSymUse.sym == sym2 && arg == arg2
+      case AssocType(AssocTypeSymUse(sym2, _), args2, _) => assocTypeSymUse.sym == sym2 && args == args2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(assocTypeSymUse, arg)
+    override def hashCode(): Int = Objects.hash(assocTypeSymUse, args)
   }
 
   /**
@@ -559,7 +559,7 @@ object UnkindedType {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case AssocType(cst, arg, loc) => AssocType(cst, eraseAliases(arg), loc) // TODO ASSOC-TYPES check that this is valid
+    case AssocType(cst, args, loc) => AssocType(cst, args.map(eraseAliases), loc) // TODO ASSOC-TYPES check that this is valid
     case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)

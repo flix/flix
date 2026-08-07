@@ -54,9 +54,9 @@ object WeededAst {
 
     case class TypeAlias(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Declaration
 
-    case class AssocTypeSig(doc: Doc, mod: Modifiers, ident: Name.Ident, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
+    case class AssocTypeSig(doc: Doc, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], kind: Kind, tpe: Option[Type], loc: SourceLocation)
 
-    case class AssocTypeDef(doc: Doc, mod: Modifiers, ident: Name.Ident, arg: Type, tpe: Type, loc: SourceLocation)
+    case class AssocTypeDef(doc: Doc, mod: Modifiers, ident: Name.Ident, args: List[Type], tpe: Type, loc: SourceLocation)
 
     case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
 

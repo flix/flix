@@ -57,7 +57,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
-    case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
+    case Type.AssocType(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars) // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.typeVars
     case Type.JvmToEff(tpe, _) => tpe.typeVars
@@ -76,7 +76,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
-    case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
+    case Type.AssocType(_, args, _, _) => args.foldLeft(SortedSet.empty[Symbol.EffSym])((acc, t) => acc ++ t.effects) // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.effects
     case Type.JvmToEff(tpe, _) => tpe.effects
@@ -95,7 +95,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
     case Type.Alias(_, _, tpe, _) => tpe.cases
-    case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
+    case Type.AssocType(_, args, _, _) => args.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases) // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.cases
     case Type.JvmToEff(tpe, _) => tpe.cases
@@ -255,7 +255,7 @@ sealed trait Type {
     case Type.Cst(_, _) => 1
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
-    case Type.AssocType(_, arg, _, _) => arg.size + 1
+    case Type.AssocType(_, args, _, _) => args.map(_.size).sum + 1
     case Type.JvmToType(tpe, _) => tpe.size + 1
     case Type.JvmToEff(tpe, _) => tpe.size + 1
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.map(_.size).sum + 1
@@ -561,13 +561,13 @@ object Type {
   /**
     * An associated type.
     */
-  case class AssocType(symUse: AssocTypeSymUse, arg: Type, kind: Kind, loc: SourceLocation) extends Type {
+  case class AssocType(symUse: AssocTypeSymUse, args: List[Type], kind: Kind, loc: SourceLocation) extends Type {
     override def equals(obj: Any): Boolean = obj match {
-      case that: AssocType => this.symUse.sym == that.symUse.sym && this.arg == that.arg
+      case that: AssocType => this.symUse.sym == that.symUse.sym && this.args == that.args
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(symUse.sym, arg)
+    override def hashCode(): Int = Objects.hash(symUse.sym, args)
   }
 
   /**
@@ -901,6 +901,15 @@ object Type {
   def mkApply(base: Type, ts: List[Type], loc: SourceLocation): Type = ts.foldLeft(base) {
     case (acc, t) => Apply(acc, t, loc)
   }
+
+  /**
+    * Constructs the unary associated type `symUse[arg]`.
+    *
+    * Convenience for the common case; associated types may take several arguments,
+    * of which only the first selects the instance.
+    */
+  def mkAssocType(symUse: AssocTypeSymUse, arg: Type, kind: Kind, loc: SourceLocation): Type =
+    Type.AssocType(symUse, List(arg), kind, loc)
 
   /**
     * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
@@ -1277,7 +1286,7 @@ object Type {
     case Type.Cst(_, _) => false
     case Type.Apply(tpe1, tpe2, _) => hasJvmType(tpe1) || hasJvmType(tpe2)
     case Type.Alias(_, _, t, _) => hasJvmType(t)
-    case Type.AssocType(_, arg, _, _) => hasJvmType(arg)
+    case Type.AssocType(_, args, _, _) => args.exists(hasJvmType)
     case Type.JvmToType(_, _) => true
     case Type.JvmToEff(_, _) => true
     case Type.UnresolvedJvmType(_, _) => true
@@ -1294,7 +1303,7 @@ object Type {
     }
     case Type.Apply(tpe1, tpe2, _) => hasError(tpe1) || hasError(tpe2)
     case Type.Alias(_, _, t, _) => hasError(t)
-    case Type.AssocType(_, arg, _, _) => hasError(arg)
+    case Type.AssocType(_, args, _, _) => args.exists(hasError)
     case Type.JvmToType(_, _) => false
     case Type.JvmToEff(_, _) => false
     case Type.UnresolvedJvmType(_, _) => false
@@ -1428,9 +1437,9 @@ object Type {
       Type.Apply(t1, t2, loc)
     case Alias(_, _, tpe, _) =>
       purifyRegion(tpe, sym)
-    case AssocType(symUse, arg, kind, loc) =>
-      val a = purifyRegion(arg, sym)
-      AssocType(symUse, a, kind, loc)
+    case AssocType(symUse, args, kind, loc) =>
+      val as = args.map(purifyRegion(_, sym))
+      AssocType(symUse, as, kind, loc)
     case JvmToType(tpe, loc) =>
       val t = purifyRegion(tpe, sym)
       JvmToType(t, loc)
