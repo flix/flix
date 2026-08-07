@@ -28,7 +28,7 @@ import scala.collection.mutable
   * variables, effects, errors, or simple associated effects, described in the grammar below.
   *
   * atom ::= VarFlex | VarRigid | Eff | Error | atomAssoc
-  * atomAssoc ::= Assoc atomAssoc | VarRigid
+  * atomAssoc ::= Assoc atomAssoc+ | VarRigid
   */
 private sealed trait EffAtom extends Ordered[EffAtom] {
   override def compare(that: EffAtom): Int = (this, that) match {
@@ -36,9 +36,9 @@ private sealed trait EffAtom extends Ordered[EffAtom] {
     case (EffAtom.VarRigid(sym1), EffAtom.VarRigid(sym2)) => sym1.id - sym2.id
     case (EffAtom.Eff(sym1), EffAtom.Eff(sym2)) => sym1.compare(sym2)
     case (EffAtom.Region(sym1), EffAtom.Region(sym2)) => sym1.compare(sym2)
-    case (EffAtom.Assoc(sym1, arg1), EffAtom.Assoc(sym2, arg2)) =>
+    case (EffAtom.Assoc(sym1, args1), EffAtom.Assoc(sym2, args2)) =>
       val symCmp = sym1.compare(sym2)
-      if (symCmp != 0) symCmp else arg1.compare(arg2)
+      if (symCmp != 0) symCmp else compareAll(args1, args2)
     case (EffAtom.Error(id1), EffAtom.Error(id2)) => id1 - id2
     case _ =>
       def ordinal(a: EffAtom): Int = a match {
@@ -51,6 +51,16 @@ private sealed trait EffAtom extends Ordered[EffAtom] {
       }
 
       ordinal(this) - ordinal(that)
+  }
+
+  /** Compares two argument lists lexicographically, shorter lists first. */
+  private def compareAll(l1: List[EffAtom], l2: List[EffAtom]): Int = (l1, l2) match {
+    case (Nil, Nil) => 0
+    case (Nil, _ :: _) => -1
+    case (_ :: _, Nil) => 1
+    case (x :: xs, y :: ys) =>
+      val cmp = x.compare(y)
+      if (cmp != 0) cmp else compareAll(xs, ys)
   }
 }
 
@@ -65,7 +75,7 @@ private object EffAtom {
   case class Eff(sym: Symbol.EffSym) extends EffAtom
 
   /** Represents an associated effect. */
-  case class Assoc(sym: Symbol.AssocTypeSym, arg: EffAtom) extends EffAtom
+  case class Assoc(sym: Symbol.AssocTypeSym, args: List[EffAtom]) extends EffAtom
 
   /** Represents a region. */
   case class Region(sym: Symbol.RegionSym) extends EffAtom
@@ -89,7 +99,7 @@ private object EffAtom {
   /** Returns the [[EffAtom]] representation of `t` or throws [[InvalidType]]. */
   private def assocFromType(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): EffAtom = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => EffAtom.VarRigid(sym)
-    case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => EffAtom.Assoc(sym, assocFromType(arg))
+    case Type.AssocType(AssocTypeSymUse(sym, _), args, _, _) => EffAtom.Assoc(sym, args.map(assocFromType))
     case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
     case _ => throw InvalidType(t)
   }
@@ -128,8 +138,10 @@ private object EffAtom {
     */
   private def getAssocAtoms(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): Option[EffAtom] = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => Some(EffAtom.VarRigid(sym))
-    case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) =>
-      getAssocAtoms(arg).map(EffAtom.Assoc(sym, _))
+    case Type.AssocType(AssocTypeSymUse(sym, _), args, _, _) =>
+      // All arguments must be valid atoms; otherwise the whole associated type is not an atom.
+      val atoms = args.map(getAssocAtoms)
+      if (atoms.forall(_.isDefined)) Some(EffAtom.Assoc(sym, atoms.map(_.get))) else None
     case Type.Alias(_, _, tpe, _) => getAssocAtoms(tpe)
     case _ => None
   }
@@ -143,8 +155,8 @@ private object EffAtom {
     case EffAtom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
     case EffAtom.VarRigid(sym) => Type.Var(sym, loc)
     case EffAtom.VarFlex(sym) => Type.Var(sym, loc)
-    case EffAtom.Assoc(sym, arg0) =>
-      Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
+    case EffAtom.Assoc(sym, args0) =>
+      Type.AssocType(AssocTypeSymUse(sym, loc), args0.map(toType(_, loc)), Kind.Eff, loc)
     case EffAtom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
   }
 }

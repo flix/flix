@@ -22,4 +22,4 @@ import ca.uwaterloo.flix.language.ast.{Type, Symbol}
   * If this associated type is named `Assoc`, then
   * Assoc[arg] = ret.
   */
-case class AssocTypeDef(tparams: List[Symbol.KindedTypeVarSym], arg: Type, ret: Type)
+case class AssocTypeDef(tparams: List[Symbol.KindedTypeVarSym], args: List[Type], ret: Type)
