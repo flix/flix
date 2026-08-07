@@ -213,11 +213,11 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.AssocTypeSig]] `assoc0`.
     */
   private def visitAssocTypeSig(assoc0: WeededAst.Declaration.AssocTypeSig): DesugaredAst.Declaration.AssocTypeSig = assoc0 match {
-    case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam0, kind0, tpe0, loc) =>
-      val tparam = visitTypeParam(tparam0)
+    case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe0, loc) =>
+      val tparams = tparams0.map(visitTypeParam)
       val kind = visitKind(kind0)
       val tpe = tpe0.map(visitType)
-      DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, loc)
+      DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams, kind, tpe, loc)
   }
 
   /**
@@ -367,10 +367,10 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.AssocTypeDef]] `assoc0`.
     */
   private def visitAssocTypeDef(assoc0: WeededAst.Declaration.AssocTypeDef): DesugaredAst.Declaration.AssocTypeDef = assoc0 match {
-    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
-      val arg = visitType(arg0)
+    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
+      val args = args0.map(visitType)
       val tpe = visitType(tpe0)
-      DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc)
+      DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc)
   }
 
   /**

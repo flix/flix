@@ -51,7 +51,7 @@ object Deserialize {
     case Var(sym) => Type.Var(deserializeKindedTypeVarSym(sym), SourceLocation.Unknown)
     case Cst(tc) => Type.Cst(deserializeTypeConstructor(tc), SourceLocation.Unknown)
     case Apply(tpe1, tpe2) => Type.Apply(deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
-    case AssocType(symUse, arg, kind) => Type.AssocType(deserializeAssocTypeSymUse(symUse), deserializeType(arg), deserializeKind(kind), SourceLocation.Unknown)
+    case AssocType(symUse, args, kind) => Type.AssocType(deserializeAssocTypeSymUse(symUse), args.map(deserializeType), deserializeKind(kind), SourceLocation.Unknown)
   }
 
   private def deserializeTypeConstructor(tc0: STC): TypeConstructor = tc0 match {
@@ -215,8 +215,8 @@ object Deserialize {
   }
 
   private def deserializeEqualityConstraint(econstr0: EqConstr): EqualityConstraint = econstr0 match {
-    case EqConstr(sym, tpe1, tpe2) =>
-      EqualityConstraint(deserializeAssocTypeSymUse(sym), deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
+    case EqConstr(sym, args, tpe2) =>
+      EqualityConstraint(deserializeAssocTypeSymUse(sym), args.map(deserializeType), deserializeType(tpe2), SourceLocation.Unknown)
   }
 
   private def deserializeTraitConstraint(tconstr0: TraitConstr): TraitConstraint = tconstr0 match {

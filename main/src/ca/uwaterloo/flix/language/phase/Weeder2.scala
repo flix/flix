@@ -481,7 +481,7 @@ object Weeder2 {
       }
       val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
       val tpe = Types.tryPickTypeNoWild(tree)
-      Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, tree.loc)
+      Declaration.AssocTypeSig(doc, mod, ident, List(tparam), kind, tpe, tree.loc)
     }
 
     private def visitAssociatedTypeDefDecl(tree: Tree, instType: Type)(implicit sctx: SharedContext): Declaration.AssocTypeDef = {
@@ -502,7 +502,7 @@ object Weeder2 {
           types.head
       }
       val tpe = Types.pickType(tree)
-      Declaration.AssocTypeDef(doc, mod, ident, typeArg, tpe, tree.loc)
+      Declaration.AssocTypeDef(doc, mod, ident, List(typeArg), tpe, tree.loc)
     }
 
     private def visitEffectDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Effect = {

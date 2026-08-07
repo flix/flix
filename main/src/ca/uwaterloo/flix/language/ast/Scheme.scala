@@ -118,7 +118,7 @@ object Scheme {
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
   def generalize(tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], tpe0: Type, renv: RigidityEnv)(implicit scope: RegionScope): Scheme = {
-    val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
+    val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.args.flatMap(_.typeVars) ++ econstr.tpe2.typeVars)
     val quantifiers = renv.getFlexibleVarsOf(tvars.toList)
     Scheme(quantifiers.map(_.sym), tconstrs, econstrs, tpe0)
   }

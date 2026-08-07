@@ -310,7 +310,7 @@ object EntryPoints {
       List(defn.spec.retTpe) ++
       List(defn.spec.eff) ++
       defn.spec.tconstrs.map(_.arg) ++
-      defn.spec.econstrs.flatMap(ec => List(ec.tpe1, ec.tpe2))
+      defn.spec.econstrs.flatMap(ec => ec.args :+ ec.tpe2)
   }
 
   /** Returns `None` if `defn` has a single parameter of type Unit. Returns an error otherwise. */
