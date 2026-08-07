@@ -862,7 +862,7 @@ object Deriver {
           Doc(Nil, loc),
           Modifiers.Empty,
           AssocTypeSymUse(outSym, loc),
-          tpe,
+          List(tpe),
           outTpe,
           loc
         )
