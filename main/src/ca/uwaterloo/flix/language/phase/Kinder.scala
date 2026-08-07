@@ -1443,9 +1443,6 @@ object Kinder {
   }
 
   /**
-    * Performs kinding on the given type parameter under the given kind environment.
-    */
-  /**
     * Returns the declared kind of the given type parameter, defaulting to [[Kind.Star]].
     *
     * Used for the parameters of an associated type after the first. Those are ordinary binders,
@@ -1458,6 +1455,9 @@ object Kinder {
     case _: ResolvedAst.TypeParam.Implicit => Kind.Star
   }
 
+  /**
+    * Performs kinding on the given type parameter under the given kind environment.
+    */
   private def visitTypeParam(tparam: ResolvedAst.TypeParam, kenv: KindEnv)(implicit sctx: SharedContext): KindedAst.TypeParam = {
     val (name, sym0, loc) = tparam match {
       case ResolvedAst.TypeParam.Kinded(kName, kSym, _, kLoc) => (kName, kSym, kLoc)

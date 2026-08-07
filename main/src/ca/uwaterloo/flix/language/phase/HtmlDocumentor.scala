@@ -1146,6 +1146,9 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>type</span> ")
     sb.append(s"<span class='name'>${assoc.sym.name}</span>")
+    // The first parameter is the trait's own and is always elided. Any further parameters are
+    // binders of this associated type, so they must be shown.
+    docAssocTypeParams(assoc.tparams)
     sb.append(": ")
     docKind(assoc.kind)
     sb.append("</code>")
@@ -1292,6 +1295,31 @@ object HtmlDocumentor {
       sb.append("</code>")
     }
     sb.append("</div>")
+  }
+
+  /**
+    * Document the type parameters of an associated type, wrapped in `[]`.
+    *
+    * Unlike [[docTypeParams]], the parameters are kept in declaration order, since an associated
+    * type is applied positionally. Nothing is emitted for a single parameter: that is the trait's
+    * own parameter, which is elided in the source as well.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docAssocTypeParams(tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (tparams.lengthIs < 2) {
+      return
+    }
+
+    sb.append("<span class='tparams'>[")
+    docList(tparams) { p =>
+      sb.append("<span class='tparam'>")
+      sb.append(s"<span class='type'>${esc(p.name.name)}</span>")
+      sb.append(": ")
+      docKind(p.sym.kind)
+      sb.append("</span>")
+    }
+    sb.append("]</span>")
   }
 
   /**
