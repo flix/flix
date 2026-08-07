@@ -306,9 +306,17 @@ header > .spacer {
     width: 100%;
 }
 
-header .icon svg {
-    /* Get rid of weird padding on the icon */
+.icon {
+    /* The artwork of each icon is appended to this stylesheet by HtmlDocumentor, as a `--icon`
+       mask. Masking, rather than embedding the SVG as an image, lets the icon take the `color` of
+       its parent. */
     display: block;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    background-color: currentColor;
+    -webkit-mask: var(--icon) center / contain no-repeat;
+    mask: var(--icon) center / contain no-repeat;
 }
 
 header > .toggle {
