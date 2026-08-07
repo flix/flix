@@ -42,8 +42,8 @@ object Instances {
     * resolution, so we swallow the case here rather than crash.
     */
   private def toShared(ec: TypedAst.EqualityConstraint): Option[EqualityConstraint] = ec match {
-    case TypedAst.EqualityConstraint(Type.AssocType(cst, arg, _, _), tpe2, loc) =>
-      Some(EqualityConstraint(cst, arg, tpe2, loc))
+    case TypedAst.EqualityConstraint(Type.AssocType(cst, args, _, _), tpe2, loc) =>
+      Some(EqualityConstraint(cst, args, tpe2, loc))
     case TypedAst.EqualityConstraint(_, _, _) =>
       None
   }

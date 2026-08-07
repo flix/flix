@@ -161,9 +161,9 @@ object Specialization {
         // Remove the Alias and continue.
         apply(t)
 
-      case Type.AssocType(symUse, arg0, kind, loc) =>
-        val arg = apply(arg0)
-        val assoc = Type.AssocType(symUse, arg, kind, loc)
+      case Type.AssocType(symUse, args0, kind, loc) =>
+        val args = args0.map(apply)
+        val assoc = Type.AssocType(symUse, args, kind, loc)
         val reducedType = reduceAssocType(assoc)
         // `reducedType` is ground, but might need normalization.
         simplify(reducedType, isGround = true)
@@ -1347,9 +1347,9 @@ object Specialization {
     case c@Type.Cst(_, _) => c
     case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, isGround), app, isGround)
     case Type.Alias(_, _, t, _) => simplify(t, isGround)
-    case Type.AssocType(symUse, arg0, kind, loc) =>
-      val arg = simplify(arg0, isGround)
-      val assoc = Type.AssocType(symUse, arg, kind, loc)
+    case Type.AssocType(symUse, args0, kind, loc) =>
+      val args = args0.map(simplify(_, isGround))
+      val assoc = Type.AssocType(symUse, args, kind, loc)
       val t = reduceAssocType(assoc)
       simplify(t, isGround)
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
