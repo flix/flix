@@ -316,7 +316,7 @@ object Typer {
             visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
           }
       }
-      val typedEconstrs = econstrs.map(ec => TypedAst.EqualityConstraint(Type.AssocType(ec.symUse, ec.tpe1, ec.tpe2.kind, ec.loc), ec.tpe2, ec.loc))
+      val typedEconstrs = econstrs.map(ec => TypedAst.EqualityConstraint(Type.AssocType(ec.symUse, ec.args, ec.tpe2.kind, ec.loc), ec.tpe2, ec.loc))
       TypedAst.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, typedEconstrs, assocs, defs, ns, loc)
   }
 

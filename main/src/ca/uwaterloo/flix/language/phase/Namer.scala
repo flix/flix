@@ -673,20 +673,20 @@ object Namer {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
       val sym = Symbol.mkAssocTypeSym(trt, ident)
-      val tparam = visitTypeParam(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val kind = visitKind(kind0)
       val t = tpe.map(visitType)
-      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, t, loc)
+      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, t, loc)
   }
 
   /**
     * Performs naming on the given associated type definition `d0`.
     */
   private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.AssocTypeDef = d0 match {
-    case DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc) =>
-      val t1 = visitType(arg)
+    case DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) =>
+      val ts = args.map(visitType)
       val t2 = visitType(tpe)
-      NamedAst.Declaration.AssocTypeDef(doc, mod, ident, t1, t2, loc)
+      NamedAst.Declaration.AssocTypeDef(doc, mod, ident, ts, t2, loc)
   }
 
   /**

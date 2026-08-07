@@ -542,7 +542,7 @@ object Dependencies {
     case Type.Alias(cst, args, _, loc) =>
       addDependency(cst.loc, loc)
       args.foreach(visitType)
-    case Type.AssocType(_, arg, _, _) => visitType(arg)
+    case Type.AssocType(_, as, _, _) => as.foreach(visitType)
     case Type.JvmToType(t, _) => visitType(t)
     case Type.JvmToEff(t, _) => visitType(t)
     case Type.UnresolvedJvmType(_, _) => ()
@@ -586,7 +586,7 @@ object Dependencies {
     visitType(tc.arg)
 
   private def visitEqualityConstraint(ec: EqualityConstraint)(implicit sctx: SharedContext): Unit = {
-    visitType(ec.tpe1)
+    ec.args.foreach(visitType)
     visitType(ec.tpe2)
   }
 

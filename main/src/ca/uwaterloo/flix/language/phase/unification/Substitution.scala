@@ -133,7 +133,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     * Applies `this` substitution to the given equality constraint.
     */
   def apply(ec: EqualityConstraint): EqualityConstraint = if (isEmpty) ec else ec match {
-    case EqualityConstraint(cst, t1, t2, loc) => EqualityConstraint(cst, apply(t1), apply(t2), loc)
+    case EqualityConstraint(cst, ts, t2, loc) => EqualityConstraint(cst, ts.map(apply), apply(t2), loc)
   }
 
   /**
