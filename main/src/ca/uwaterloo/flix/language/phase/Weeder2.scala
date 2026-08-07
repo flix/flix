@@ -467,21 +467,16 @@ object Weeder2 {
       val doc = pickDocumentation(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
-      val tparams = Types.pickParameters(tree)
-      val tparam = tparams match {
+      val tparams0 = Types.pickParameters(tree)
+      // The first parameter selects the instance; any further parameters are ordinary binders.
+      val tparams = tparams0 match {
         // Elided: Use class type parameter
-        case Nil => classTypeParam
-        // Single type parameter
-        case head :: Nil => head
-        // Multiple type parameters. Soft fail by picking the first parameter
-        case ts@head :: _ :: _ =>
-          val error = NonUnaryAssocType(ts.length, ident.loc)
-          sctx.errors.add(error)
-          head
+        case Nil => List(classTypeParam)
+        case ts => ts
       }
       val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
       val tpe = Types.tryPickTypeNoWild(tree)
-      Declaration.AssocTypeSig(doc, mod, ident, List(tparam), kind, tpe, tree.loc)
+      Declaration.AssocTypeSig(doc, mod, ident, tparams, kind, tpe, tree.loc)
     }
 
     private def visitAssociatedTypeDefDecl(tree: Tree, instType: Type)(implicit sctx: SharedContext): Declaration.AssocTypeDef = {
@@ -489,20 +484,15 @@ object Weeder2 {
       val doc = pickDocumentation(tree)
       val mod = pickModifiers(tree, Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
-      val typeArgs = Types.pickArguments(tree)
-      val typeArg = typeArgs match {
+      val typeArgs0 = Types.pickArguments(tree)
+      // The first argument is the matched instance type; any further arguments are binders.
+      val typeArgs = typeArgs0 match {
         // Use instance type if type arguments were elided
-        case Nil => instType
-        // Single argument: use that
-        case head :: Nil => head
-        // Multiple type arguments: recover by arbitrarily picking the first one
-        case types =>
-          val error = NonUnaryAssocType(types.length, ident.loc)
-          sctx.errors.add(error)
-          types.head
+        case Nil => List(instType)
+        case ts => ts
       }
       val tpe = Types.pickType(tree)
-      Declaration.AssocTypeDef(doc, mod, ident, List(typeArg), tpe, tree.loc)
+      Declaration.AssocTypeDef(doc, mod, ident, typeArgs, tpe, tree.loc)
     }
 
     private def visitEffectDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Effect = {
@@ -626,9 +616,24 @@ object Weeder2 {
     }
 
     private def visitEqualityConstraint(tree: Tree)(implicit sctx: SharedContext): Option[EqualityConstraint] = {
+      /** Unrolls the application spine of `tpe` into its head and arguments, left to right. */
+      def unroll(tpe: Type): (Type, List[Type]) = tpe match {
+        case Type.Apply(t1, t2, _) =>
+          val (head, args) = unroll(t1)
+          (head, args :+ t2)
+        case t => (t, Nil)
+      }
+
       pickAll(TreeKind.Type.Type, tree).map(Types.visitType) match {
-        case Type.Apply(Type.Ambiguous(qname, _), t1, _) :: t2 :: Nil =>
-          Some(EqualityConstraint(qname, t1, t2, tree.loc))
+        case lhs :: t2 :: Nil =>
+          unroll(lhs) match {
+            case (Type.Ambiguous(qname, _), args@(_ :: _)) =>
+              Some(EqualityConstraint(qname, args, t2, tree.loc))
+            case _ =>
+              val error = IllegalEqualityConstraint(tree.loc)
+              sctx.errors.add(error)
+              None
+          }
 
         case _ =>
           val error = IllegalEqualityConstraint(tree.loc)

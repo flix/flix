@@ -1106,28 +1106,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a non-unary associated type.
-    *
-    * @param n   the number of parameters of the associated type.
-    * @param loc the location where the error occurred.
-    */
-  case class NonUnaryAssocType(n: Int, loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E3236
-
-    def summary: String = s"Non-unary associated type: expected 1 parameter, found $n."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Non-unary associated type: expected ${cyan("1")} parameter, found ${red(n.toString)}.
-         |
-         |${src(loc, "too many parameters")}
-         |
-         |${underline("Explanation:")} Associated types must have exactly one type parameter.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate an undefined annotation.
     *
     * @param name the name of the undefined annotation.

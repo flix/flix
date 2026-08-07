@@ -1247,6 +1247,70 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate that an associated type definition has the wrong number of
+    * arguments for its declared signature.
+    *
+    * @param sym      the associated type symbol.
+    * @param expected the number of parameters declared in the trait.
+    * @param actual   the number of arguments supplied.
+    * @param loc      the location where the error occurred.
+    */
+  case class MismatchedAssocTypeArity(sym: Symbol.AssocTypeSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3250
+
+    def summary: String = s"Associated type '${sym.name}' expects $expected parameter(s), but found $actual."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Associated type '${red(sym.name)}' expects ${cyan(expected.toString)} parameter(s), but found ${red(actual.toString)}.
+         |
+         |${highlight(loc, s"expected $expected parameter(s)", fmt)}
+         |
+         |${underline("Explanation:")} An associated type definition must take the same number of
+         |parameters as its declaration in the trait.
+         |
+         |  trait T[a] {
+         |      type S[a, b]: Type
+         |  }
+         |  instance T[Int32] {
+         |      type S[Int32] = Int32         // not OK: missing a parameter
+         |      type S[Int32, b] = (Int32, b) // OK
+         |  }
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a parameter of an associated type definition, other than
+    * the first, is not a distinct type variable.
+    *
+    * @param sym the associated type symbol.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalAssocTypeParam(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3251
+
+    def summary: String = s"Illegal parameter of associated type '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Illegal parameter of associated type '${red(sym.name)}'.
+         |
+         |${highlight(loc, "must be a distinct type variable", fmt)}
+         |
+         |${underline("Explanation:")} Only the first parameter of an associated type definition is
+         |matched against the instance. Every other parameter must be a distinct type variable.
+         |
+         |  instance T[Int32] {
+         |      type S[Int32, String] = Int32 // not OK: not a type variable
+         |      type S[Int32, b, b] = Int32   // not OK: repeated type variable
+         |      type S[Int32, b, c] = (b, c)  // OK
+         |  }
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that a generic Java type is used without type arguments.
     *
     * @param clazz         the Java class.
