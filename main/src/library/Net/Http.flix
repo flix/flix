@@ -64,22 +64,40 @@ pub mod Net.Http {
         send(HttpRequest.options(url))
 
     ///
+    /// Sends a POST request to the given `url` with no body.
+    ///
+    pub def post(url: String): Result[IoError, HttpResponse] \ Http =
+        send(HttpRequest.post(url))
+
+    ///
     /// Sends a POST request to the given `url` with the given `body`.
     ///
-    pub def post(url: String, body: String): Result[IoError, HttpResponse] \ Http =
-        send(HttpRequest.post(url, body))
+    pub def postWith(url: String, body: String): Result[IoError, HttpResponse] \ Http =
+        send(HttpRequest.postWith(url, body))
+
+    ///
+    /// Sends a PUT request to the given `url` with no body.
+    ///
+    pub def put(url: String): Result[IoError, HttpResponse] \ Http =
+        send(HttpRequest.put(url))
 
     ///
     /// Sends a PUT request to the given `url` with the given `body`.
     ///
-    pub def put(url: String, body: String): Result[IoError, HttpResponse] \ Http =
-        send(HttpRequest.put(url, body))
+    pub def putWith(url: String, body: String): Result[IoError, HttpResponse] \ Http =
+        send(HttpRequest.putWith(url, body))
+
+    ///
+    /// Sends a PATCH request to the given `url` with no body.
+    ///
+    pub def patch(url: String): Result[IoError, HttpResponse] \ Http =
+        send(HttpRequest.patch(url))
 
     ///
     /// Sends a PATCH request to the given `url` with the given `body`.
     ///
-    pub def patch(url: String, body: String): Result[IoError, HttpResponse] \ Http =
-        send(HttpRequest.patch(url, body))
+    pub def patchWith(url: String, body: String): Result[IoError, HttpResponse] \ Http =
+        send(HttpRequest.patchWith(url, body))
 
     ///
     /// Sends a DELETE request to the given `url`.
