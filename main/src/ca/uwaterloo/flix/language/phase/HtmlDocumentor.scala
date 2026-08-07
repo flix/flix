@@ -29,6 +29,7 @@ import org.commonmark.renderer.html.HtmlRenderer
 import java.io.IOException
 import java.net.URLEncoder
 import java.nio.file.{Files, Path, Paths}
+import java.util.regex.Pattern
 import scala.annotation.tailrec
 
 /**
@@ -74,6 +75,11 @@ object HtmlDocumentor {
     * The root of the link to each file of the standard library.
     */
   private val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
+
+  /**
+    * Matches an HTML comment, including any whitespace that follows it.
+    */
+  private val CommentPattern: Pattern = Pattern.compile("(?s)<!--.*?-->\\s*")
 
   def run(root: TypedAst.Root, packageModules: PackageModules)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
@@ -1341,11 +1347,12 @@ object HtmlDocumentor {
   /**
     * Appends a 'copy link' button the the given `StringBuilder`.
     * This creates a link to the given ID on the current URL.
+    *
+    * The button is marked by a section sign rather than an inlined SVG icon. There is one of these
+    * buttons per documented element, so an inlined icon would dominate the size of the page.
     */
   private def docLink(id: String)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a href='#${escUrl(id)}' class='copy-link' title='Link To Element'>")
-    inlineIcon("link")
-    sb.append("</a> ")
+    sb.append(s"<a href='#${escUrl(id)}' class='copy-link'>&sect;</a> ")
   }
 
   /**
@@ -1482,9 +1489,13 @@ object HtmlDocumentor {
     * Append the contents of the SVG file with the given `name` to the given `StringBuilder`.
     *
     * By inlining the icon into the HTML itself, it can inherit the `color` of its parent.
+    *
+    * The attribution comments of the icon are stripped, since they carry no meaning in the output.
+    * They are kept in the SVG files themselves, along with `icons/LICENSE.md`.
     */
   private def inlineIcon(name: String)(implicit sb: StringBuilder): Unit = {
-    sb.append(readResourceString(s"$Icons/$name.svg"))
+    val svg = readResourceString(s"$Icons/$name.svg")
+    sb.append(CommentPattern.matcher(svg).replaceAll("").trim)
   }
 
   /**
