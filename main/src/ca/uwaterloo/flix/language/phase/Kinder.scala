@@ -415,7 +415,7 @@ object Kinder {
       val args = args0 match {
         case Nil => Nil
         case arg0 :: rest =>
-          val restKinds = assocSig.tparams.drop(1).map(visitTypeParam(_, kenv).sym.kind)
+          val restKinds = assocSig.tparams.drop(1).map(declaredKindOfTypeParam)
           val rest1 = rest.zipWithIndex.map {
             case (t, i) => visitType(t, restKinds.lift(i).getOrElse(Kind.Wild), kenv, root)
           }
@@ -1202,7 +1202,7 @@ object Kinder {
               val args = args0 match {
                 case Nil => Nil
                 case arg0 :: rest =>
-                  val restKinds = tparams.drop(1).map(visitTypeParam(_, kenv).sym.kind)
+                  val restKinds = tparams.drop(1).map(declaredKindOfTypeParam)
                   val rest1 = rest.zipWithIndex.map {
                     case (t, i) => visitType(t, restKinds.lift(i).getOrElse(Kind.Wild), kenv, root)
                   }
@@ -1427,6 +1427,18 @@ object Kinder {
   /**
     * Performs kinding on the given type parameter under the given kind environment.
     */
+  /**
+    * Returns the declared kind of the given type parameter, or [[Kind.Wild]] if it has none.
+    *
+    * Used for the parameters of an associated type after the first, which are ordinary binders
+    * and so carry no kind from the surrounding trait.
+    */
+  private def declaredKindOfTypeParam(tparam: ResolvedAst.TypeParam): Kind = tparam match {
+    case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
+    case _: ResolvedAst.TypeParam.Unkinded => Kind.Wild
+    case _: ResolvedAst.TypeParam.Implicit => Kind.Wild
+  }
+
   private def visitTypeParam(tparam: ResolvedAst.TypeParam, kenv: KindEnv)(implicit sctx: SharedContext): KindedAst.TypeParam = {
     val (name, sym0, loc) = tparam match {
       case ResolvedAst.TypeParam.Kinded(kName, kSym, _, kLoc) => (kName, kSym, kLoc)
