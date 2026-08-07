@@ -617,7 +617,10 @@ object Resolver {
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams0, kind0, tpe0, loc) =>
       val tparams = tparams0.map(resolveTypeParam(_, scp0, ns0, root))
       val kind = resolveKind(kind0, scp0, ns0, root)
-      val tpe = tpe0.map(resolveType(_, Some(kind), Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix))
+      // The first parameter is the trait's own, already in scope. Parameters after the first
+      // are binders introduced by this declaration, so scope them for the default type.
+      val scp = scp0 ++ mkTypeParamScp(tparams.drop(1))
+      val tpe = tpe0.map(resolveType(_, Some(kind), Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix))
       ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc)
   }
 
@@ -678,13 +681,28 @@ object Resolver {
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
     */
   /**
-    * Checks the parameters of an associated type definition.
+    * Returns the binders introduced by an associated type definition.
     *
-    * The first parameter is matched against the instance type and may be any type. Every other
-    * parameter is a binder and must be a distinct type variable. The number of parameters must
-    * match the declaration in the trait.
+    * The first argument is matched against the instance type and introduces nothing: its
+    * variables come from the instance. Every other argument is a binder and must be a distinct
+    * type variable, scoped to this definition alone.
     */
-  private def checkAssocTypeDefParams(sym: Symbol.AssocTypeSym, args: List[UnkindedType], trt: NamedAst.Declaration.Trait, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+  private def mkAssocTypeDefBinders(sym: Symbol.AssocTypeSym, args: List[NamedAst.Type])(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.TypeParam] = {
+    val (binders, _) = args.drop(1).foldLeft((List.empty[ResolvedAst.TypeParam], Set.empty[String])) {
+      case ((acc, seen), NamedAst.Type.Var(ident, loc)) if !seen.contains(ident.name) =>
+        val tvarSym = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)(RegionScope.Top, flix)
+        (acc :+ ResolvedAst.TypeParam.Implicit(ident, tvarSym, loc), seen + ident.name)
+      case ((acc, seen), arg) =>
+        sctx.errors.add(ResolutionError.IllegalAssocTypeParam(sym, arg.loc))
+        (acc, seen)
+    }
+    binders
+  }
+
+  /**
+    * Checks that an associated type definition takes as many arguments as its declaration.
+    */
+  private def checkAssocTypeDefArity(sym: Symbol.AssocTypeSym, args: List[NamedAst.Type], trt: NamedAst.Declaration.Trait, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     trt.assocs.find(_.sym == sym).foreach {
       assocSig =>
         val expected = assocSig.tparams.length
@@ -692,23 +710,11 @@ object Resolver {
           sctx.errors.add(ResolutionError.MismatchedAssocTypeArity(sym, expected, args.length, loc))
         }
     }
-
-    // Skip the first parameter: it is matched against the instance type.
-    args.drop(1).foldLeft(Set.empty[Symbol.UnkindedTypeVarSym]) {
-      case (seen, UnkindedType.Var(tvarSym, _)) if !seen.contains(tvarSym) =>
-        seen + tvarSym
-      case (seen, arg) =>
-        sctx.errors.add(ResolutionError.IllegalAssocTypeParam(sym, arg.loc))
-        seen
-    }
   }
 
   private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
 
-      // For now, we don't add any tvars from the args. We should have gotten those directly from the instance
-      val args = args0.map(resolveType(_, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix))
-      val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
       val symVal: Result[Symbol.AssocTypeSym, ResolutionError] = trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
       } match {
@@ -719,7 +725,16 @@ object Resolver {
       }
       mapN(symVal.toValidation) {
         sym =>
-          checkAssocTypeDefParams(sym, args, trt, ident.loc)
+          checkAssocTypeDefArity(sym, args0, trt, ident.loc)
+
+          // The variables of the first argument come from the instance. Every argument after
+          // the first is a binder, scoped to this definition, so we introduce it here.
+          val binders = mkAssocTypeDefBinders(sym, args0)
+          val scp = scp0 ++ mkTypeParamScp(binders)
+
+          val args = args0.map(resolveType(_, None, Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix))
+          val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+
           val symUse = AssocTypeSymUse(sym, ident.loc)
           ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, args, tpe, loc)
       }
