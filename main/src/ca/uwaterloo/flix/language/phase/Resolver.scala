@@ -678,9 +678,6 @@ object Resolver {
   }
 
   /**
-    * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
-    */
-  /**
     * Returns the binders introduced by an associated type definition.
     *
     * The first argument is matched against the instance type and introduces nothing: its
@@ -712,6 +709,9 @@ object Resolver {
     }
   }
 
+  /**
+    * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
+    */
   private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
 

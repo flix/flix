@@ -1194,6 +1194,20 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UnderAppliedAssocType](result)
   }
 
+  test("UnderAppliedAssocType.02") {
+    // A multiparameter associated type must be applied to all of its parameters.
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |}
+        |
+        |def f(x: C.T[a]): String = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedAssocType](result)
+  }
+
   test("IllegalRawJavaType.List") {
     val input =
       """
@@ -1827,6 +1841,20 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |instance C[String] {
         |    type T[String, b] = String
         |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedAssocTypeArity](result)
+  }
+
+  test("MismatchedAssocTypeArity.03") {
+    // An equality constraint must apply the associated type to all of its parameters.
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |}
+        |
+        |def f(x: a): String with C[a] where C.T[a] ~ String = ???
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedAssocTypeArity](result)

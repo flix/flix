@@ -79,7 +79,9 @@ mod Test.Dec.Assoc.Type.Multi {
 
     instance Runner[Int32] {
         type Aef[Int32, r] = r
-        pub def exec(x: Int32, _rc: Region[r]): Int32 \ r = x
+        pub def exec(x: Int32, rc: Region[r]): Int32 \ r =
+            let rf = Ref.fresh(rc, x);
+            Ref.get(rf)
     }
 
     ////////////////////////////////////////////////////////
