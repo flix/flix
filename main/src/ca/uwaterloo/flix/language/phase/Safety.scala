@@ -509,11 +509,12 @@ object Safety {
     case Type.Alias(symUse, args, tpe, loc) =>
       Type.Alias(symUse, args.map(eraseKnownAssociatedTypes), eraseKnownAssociatedTypes(tpe), loc)
 
-    case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), arg, kind, loc) =>
-      val tpe = eraseKnownAssociatedTypes(arg)
-      val optConcreteType = tryEraseAssocType(sym, tpe)
-      // Optionally return the concrete type, falling back to the erased type in the argument.
-      optConcreteType.getOrElse(Type.AssocType(symUse, tpe, kind, loc))
+    case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), args, kind, loc) =>
+      val tpes = args.map(eraseKnownAssociatedTypes)
+      // Only the first argument selects the instance.
+      val optConcreteType = tpes.headOption.flatMap(tryEraseAssocType(sym, _))
+      // Optionally return the concrete type, falling back to the erased types in the arguments.
+      optConcreteType.getOrElse(Type.AssocType(symUse, tpes, kind, loc))
 
     case Type.JvmToType(tpe, loc) =>
       Type.JvmToType(eraseKnownAssociatedTypes(tpe), loc)
@@ -537,7 +538,7 @@ object Safety {
     case Type.Cst(_, _) => true
     case Type.Apply(tpe1, tpe2, _) => isMonomorphicType(tpe1) && isMonomorphicType(tpe2)
     case Type.Alias(_, args, tpe, _) => args.forall(isMonomorphicType) && isMonomorphicType(tpe)
-    case Type.AssocType(_, arg, _, _) => isMonomorphicType(arg)
+    case Type.AssocType(_, args, _, _) => args.forall(isMonomorphicType)
     case Type.JvmToType(tpe, _) => isMonomorphicType(tpe)
     case Type.JvmToEff(tpe, _) => isMonomorphicType(tpe)
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.forall(isMonomorphicType)

@@ -129,9 +129,9 @@ private[monomorph2] object Canonicalization {
     case Type.Cst(_, _)            => tpe
     case app@Type.Apply(_, _, _)   => normalizeApply(simplify(_, isGround), app, isGround)
     case Type.Alias(_, _, t, _)    => simplify(t, isGround)
-    case Type.AssocType(symUse, arg0, kind, loc) =>
-      val arg = simplify(arg0, isGround)
-      simplify(reduceAssocType(Type.AssocType(symUse, arg, kind, loc)), isGround)
+    case Type.AssocType(symUse, args0, kind, loc) =>
+      val args = args0.map(simplify(_, isGround))
+      simplify(reduceAssocType(Type.AssocType(symUse, args, kind, loc)), isGround)
     case Type.JvmToType(_, loc)         => throw InternalCompilerException("unexpected JVM type", loc)
     case Type.JvmToEff(_, loc)          => throw InternalCompilerException("unexpected JVM eff", loc)
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
