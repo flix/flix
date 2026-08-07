@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
+import ca.uwaterloo.flix.util.collection.Nel
 import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
@@ -1305,14 +1306,14 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docFormalParams(fparams: Nel[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
     fparams match {
-      case List(TypedAst.FormalParam(_, Type.Cst(TypeConstructor.Unit, _), _, _, _)) =>
+      case Nel(TypedAst.FormalParam(_, Type.Cst(TypeConstructor.Unit, _), _, _, _), Nil) =>
       // For a function declared with zero formal parameters,
       // the compiler will introduce a single parameter of the unit type
       case _ =>
-        docList(fparams.sortBy(_.loc)) { p =>
+        docList(fparams.toList.sortBy(_.loc)) { p =>
           sb.append(s"<span><span>${esc(p.bnd.sym.text)}</span>: ")
           docType(p.tpe)
           sb.append("</span>")

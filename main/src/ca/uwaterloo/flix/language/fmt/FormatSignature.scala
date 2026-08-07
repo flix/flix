@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.util.collection.Nel
 
 object FormatSignature {
 
@@ -52,9 +53,9 @@ object FormatSignature {
   /**
     * Returns a formatted string of the formal parameters.
     */
-  private def formatFormalParams(fparams0: List[TypedAst.FormalParam])(implicit flix: Flix): String = fparams0 match {
+  private def formatFormalParams(fparams0: Nel[TypedAst.FormalParam])(implicit flix: Flix): String = fparams0 match {
     // Case 1: Single Unit type parameter. This gets sugared into a nullary function: `foo()`
-    case fparam :: Nil if fparam.tpe == Type.Unit => ""
+    case Nel(fparam, Nil) if fparam.tpe == Type.Unit => ""
     // Case 2: Some list of parameters. Format each and join them: `foo(x: Int32, y: Bool)`
     case fparams =>
       val formattedArgs = fparams.map {
