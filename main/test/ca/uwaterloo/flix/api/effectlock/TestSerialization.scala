@@ -231,7 +231,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val a = VarSym(0, Text("a"), StarKind)
     val tb = AssocTypeSym(TraitSym(List(), "T"), "B")
-    val tpe = Apply(Apply(Apply(Apply(Cst(Arrow(3)), Cst(Pure)), Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), AssocType(tb, Var(a), StarKind))), Var(a)), AssocType(tb, Var(a), StarKind))
+    val tpe = Apply(Apply(Apply(Apply(Cst(Arrow(3)), Cst(Pure)), Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), AssocType(tb, List(Var(a)), StarKind))), Var(a)), AssocType(tb, List(Var(a)), StarKind))
     val scheme = SScheme(List(a), List.empty, List.empty, tpe)
     val expected = SDef(List.empty, "h", scheme)
 
@@ -488,7 +488,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val a = VarSym(0, Text("a"), StarKind)
     val tb = AssocTypeSym(TraitSym(List(), "T"), "B")
-    val tpe = Apply(Apply(Apply(Apply(Cst(Arrow(3)), Cst(Pure)), Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), AssocType(tb, Var(a), StarKind))), Var(a)), AssocType(tb, Var(a), StarKind))
+    val tpe = Apply(Apply(Apply(Apply(Cst(Arrow(3)), Cst(Pure)), Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), AssocType(tb, List(Var(a)), StarKind))), Var(a)), AssocType(tb, List(Var(a)), StarKind))
     val tconstr = TraitConstr(TraitSym(List.empty, "T"), Var(a))
     val scheme = SScheme(List(a), List(tconstr), List.empty, tpe)
     val expected = SSig(List("T"), "f", scheme)
