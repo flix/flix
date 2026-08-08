@@ -29,6 +29,7 @@ import org.commonmark.renderer.html.HtmlRenderer
 import java.io.IOException
 import java.net.URLEncoder
 import java.nio.file.{Files, Path, Paths}
+import java.util.regex.Pattern
 import scala.annotation.tailrec
 
 /**
@@ -74,6 +75,23 @@ object HtmlDocumentor {
     * The root of the link to each file of the standard library.
     */
   private val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
+
+  /**
+    * Matches an HTML comment, including any whitespace that follows it.
+    */
+  private val CommentPattern: Pattern = Pattern.compile("(?s)<!--.*?-->\\s*")
+
+  /**
+    * The icons of the documentation, as pairs of the CSS class that selects an icon and the name of
+    * its SVG file, relative to [[Icons]].
+    */
+  private val IconClasses: List[(String, String)] = List(
+    "back" -> "back",
+    "close" -> "close",
+    "dark" -> "darkMode",
+    "light" -> "lightMode",
+    "open" -> "menu",
+  )
 
   def run(root: TypedAst.Root, packageModules: PackageModules)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
@@ -885,22 +903,14 @@ object HtmlDocumentor {
     sb.append("<div class='spacer' role='presentation'></div>")
 
     sb.append("<button id='theme-toggle' class='toggle' aria-label='Toggle Theme'>")
-    sb.append("<span class='dark icon'>")
-    inlineIcon("darkMode")
-    sb.append("</span>")
-    sb.append("<span class='light icon'>")
-    inlineIcon("lightMode")
-    sb.append("</span>")
+    docIcon("dark")
+    docIcon("light")
     sb.append("</button>")
 
     sb.append("<div id='menu-toggle' class='toggle'>")
     sb.append("<input type='checkbox' aria-label='Toggle Navigation Menu'>")
-    sb.append("<span class='open icon'>")
-    inlineIcon("menu")
-    sb.append("</span>")
-    sb.append("<span class='close icon'>")
-    inlineIcon("close")
-    sb.append("</span>")
+    docIcon("open")
+    docIcon("close")
     sb.append("</div>")
 
     sb.append("</header>")
@@ -915,7 +925,7 @@ object HtmlDocumentor {
     sb.append("<nav>")
     parent.map { p =>
       sb.append(s"<a class='back' href='${escUrl(moduleFileName(p))}'>")
-      inlineIcon("back")
+      docIcon("back")
       sb.append(moduleName(p))
       sb.append("</a>")
     }
@@ -1373,11 +1383,12 @@ object HtmlDocumentor {
   /**
     * Appends a 'copy link' button the the given `StringBuilder`.
     * This creates a link to the given ID on the current URL.
+    *
+    * The button is marked by a section sign rather than an inlined SVG icon. There is one of these
+    * buttons per documented element, so an inlined icon would dominate the size of the page.
     */
   private def docLink(id: String)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a href='#${escUrl(id)}' class='copy-link' title='Link To Element'>")
-    inlineIcon("link")
-    sb.append("</a> ")
+    sb.append(s"<a href='#${escUrl(id)}' class='copy-link'>&sect;</a> ")
   }
 
   /**
@@ -1386,7 +1397,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSourceLocation(loc: SourceLocation)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a class='source' target='_blank' rel='nofollow' href='${createLink(loc)}'>Source</a>")
+    sb.append(s"<a class='source' href='${createLink(loc)}'>Source</a>")
   }
 
   /**
@@ -1500,8 +1511,8 @@ object HtmlDocumentor {
     * Make a copy of the static assets into the output directory.
     */
   private def writeAssets()(implicit flix: Flix): Unit = {
-    val stylesheet = readResource(Stylesheet)
-    writeFile("styles.css", stylesheet)
+    val stylesheet = readResourceString(Stylesheet) + mkIconStyles()
+    writeFile("styles.css", stylesheet.getBytes)
 
     val favicon = readResource(FavIcon)
     writeFile("favicon.png", favicon)
@@ -1511,12 +1522,32 @@ object HtmlDocumentor {
   }
 
   /**
-    * Append the contents of the SVG file with the given `name` to the given `StringBuilder`.
+    * Append the icon with the given CSS class, `cls`, to the given `StringBuilder`.
     *
-    * By inlining the icon into the HTML itself, it can inherit the `color` of its parent.
+    * The element is empty: its artwork is applied by the stylesheet, see [[mkIconStyles]].
     */
-  private def inlineIcon(name: String)(implicit sb: StringBuilder): Unit = {
-    sb.append(readResourceString(s"$Icons/$name.svg"))
+  private def docIcon(cls: String)(implicit sb: StringBuilder): Unit = {
+    sb.append(s"<span class='$cls icon'></span>")
+  }
+
+  /**
+    * Returns the CSS rules that give each icon of [[IconClasses]] its artwork, as a mask.
+    *
+    * The icons are put in the stylesheet, rather than inlined into the HTML, since each page would
+    * otherwise carry a copy of every icon it uses. Masking, rather than embedding the SVG as an
+    * image, keeps the icons able to inherit the `color` of their parent.
+    *
+    * The attribution comments of each icon are stripped, since they carry no meaning in the output.
+    * They are kept in the SVG files themselves, along with `icons/LICENSE.md`.
+    */
+  private def mkIconStyles(): String = {
+    val rules = IconClasses.map {
+      case (cls, name) =>
+        val svg = readResourceString(s"$Icons/$name.svg")
+        val stripped = CommentPattern.matcher(svg).replaceAll("").trim
+        s".$cls.icon { --icon: url(\"data:image/svg+xml,${escDataUri(stripped)}\") }"
+    }
+    rules.mkString("\n", "\n", "\n")
   }
 
   /**
@@ -1576,6 +1607,13 @@ object HtmlDocumentor {
     * Transform the string into a valid URL.
     */
   private def escUrl(s: String): String = URLEncoder.encode(s, "UTF-8")
+
+  /**
+    * Escape the string for inclusion in a `data:` URI.
+    *
+    * Unlike in a query string, a `+` denotes itself in a `data:` URI, so spaces must be escaped.
+    */
+  private def escDataUri(s: String): String = escUrl(s).replace("+", "%20")
 
   /**
     * An item is a unit that is typically output to its own HTML file.

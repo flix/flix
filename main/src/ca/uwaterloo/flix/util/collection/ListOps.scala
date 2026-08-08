@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.util.collection
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.util
 import scala.annotation.tailrec
 
 /**
@@ -110,5 +111,56 @@ object ListOps {
       cur = cur.tail
     }
     if (changed) buf.result() else list
+  }
+
+  /**
+    * Identifies corresponding elements in the given lists according to the given function, disregarding order.
+    *
+    * Returns a 3-tuple:
+    * - the corresponding pairs
+    * - the unpaired items in the first list
+    * - the unpaired items in the second list
+    *
+    * Worst case O(n**2) time, but linear when the lists are ordered according to their correspondences.
+    *
+    * Assumes f is an equivalence-like relation.
+    */
+  def fullOuterJoin[A, B](l1: List[A], l2: List[B])(f: (A, B) => Boolean): (List[(A, B)], List[A], List[B]) = {
+    // pairs and unpaired1 are built up during iteration; unpaired2 is broken down during iteration
+    var pairs = List.empty[(A, B)]
+    var unpaired1 = List.empty[A]
+    var unpaired2 = l2
+
+    for {
+      a <- l1
+    } {
+      extractMatch(unpaired2)(f(a, _)) match {
+        case None =>
+          unpaired1 = a :: unpaired1
+        case Some((b, rest)) =>
+          unpaired2 = rest
+          pairs = (a, b) :: pairs
+      }
+    }
+
+    (pairs.reverse, unpaired1.reverse, unpaired2)
+  }
+
+  /** Removes and returns the first element in the list matching the given predicate. */
+  private def extractMatch[A](l: List[A])(f: A => Boolean): Option[(A, List[A])] = {
+    @tailrec
+    def helper(in: List[A], acc: List[A]): Option[(A, List[A])] = {
+      in match {
+        case Nil => None
+        case hd :: tl =>
+          if (f(hd)) {
+            Some((hd, acc reverse_::: tl))
+          } else {
+            helper(tl, hd :: acc)
+          }
+      }
+    }
+
+    helper(l, Nil)
   }
 }

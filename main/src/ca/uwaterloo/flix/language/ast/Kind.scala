@@ -154,6 +154,15 @@ object Kind {
   }
 
   /**
+    * Returns the result of an arrow kind.
+    */
+  @tailrec
+  def resultKind(k: Kind): Kind = k match {
+    case Kind.Arrow(_, k2) => resultKind(k2)
+    case _ => k
+  }
+
+  /**
     * Returns the arguments of an arrow kind.
     */
   def kindArgs(k: Kind): List[Kind] = k match {
