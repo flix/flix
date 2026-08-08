@@ -50,7 +50,7 @@ private sealed trait EffAtom extends Ordered[EffAtom] {
         case EffAtom.VarRigid(_) => 1
         case EffAtom.Region(_) => 2
         case EffAtom.Eff(_) => 3
-        case EffAtom.Assoc(_, _) => 4
+        case EffAtom.Assoc(_, _, _) => 4
         case EffAtom.Error(_) => 5
       }
 
