@@ -63,7 +63,7 @@ object Serialize {
     case Type.Cst(tc, _) => Cst(serializeTypeConstructor(tc))
     case Type.Apply(tpe1, tpe2, _) => Apply(serializeType(tpe1), serializeType(tpe2))
     case Type.Alias(_, _, tpe, _) => serializeType(tpe) // Inline type alias erasure
-    case Type.AssocType(symUse, arg, kind, _) => AssocType(serializeAssocTypeSym(symUse.sym), serializeType(arg), serializeKind(kind))
+    case Type.AssocType(symUse, sel, args, kind, _) => AssocType(serializeAssocTypeSym(symUse.sym), serializeType(sel), args.map(serializeType), serializeKind(kind))
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JvmToType", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JvmToEff", loc)
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected UnresolvedJvmType", loc)
@@ -200,7 +200,7 @@ object Serialize {
   }
 
   private def serializeEqualityConstraint(econstr0: EqualityConstraint): EqConstr = {
-    EqConstr(serializeAssocTypeSym(econstr0.symUse.sym), serializeType(econstr0.tpe1), serializeType(econstr0.tpe2))
+    EqConstr(serializeAssocTypeSym(econstr0.symUse.sym), serializeType(econstr0.sel), econstr0.args.map(serializeType), serializeType(econstr0.tpe2))
   }
 
 }

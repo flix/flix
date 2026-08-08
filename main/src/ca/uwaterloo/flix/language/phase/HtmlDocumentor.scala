@@ -1145,6 +1145,7 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>type</span> ")
     sb.append(s"<span class='name'>${assoc.sym.name}</span>")
+    docAssocTypeParams(assoc.tparam, assoc.tparams)
     sb.append(": ")
     docKind(assoc.kind)
     sb.append("</code>")
@@ -1225,12 +1226,16 @@ object HtmlDocumentor {
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
       e.tpe1 match {
-        case Type.AssocType(cst, arg, _, _) =>
+        case Type.AssocType(cst, sel, as, _, _) =>
           docTraitName(cst.sym.trt)
           sb.append(".")
           sb.append(esc(cst.sym.name))
           sb.append("[")
-          docType(arg)
+          (sel :: as).zipWithIndex.foreach {
+            case (a, i) =>
+              if (i > 0) sb.append(", ")
+              docType(a)
+          }
           sb.append("] ~ ")
           docType(e.tpe2)
         case _ =>
@@ -1287,6 +1292,31 @@ object HtmlDocumentor {
       sb.append("</code>")
     }
     sb.append("</div>")
+  }
+
+  /**
+    * Document the type parameters of an associated type, wrapped in `[]`.
+    *
+    * Unlike [[docTypeParams]], the parameters are kept in declaration order, since an associated
+    * type is applied positionally. Nothing is emitted unless the associated type introduces
+    * binders of its own: `tparam` alone is the trait's parameter, elided in the source as well.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docAssocTypeParams(tparam: TypedAst.TypeParam, tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (tparams.isEmpty) {
+      return
+    }
+
+    sb.append("<span class='tparams'>[")
+    docList(tparam :: tparams) { p =>
+      sb.append("<span class='tparam'>")
+      sb.append(s"<span class='type'>${esc(p.name.name)}</span>")
+      sb.append(": ")
+      docKind(p.sym.kind)
+      sb.append("</span>")
+    }
+    sb.append("]</span>")
   }
 
   /**

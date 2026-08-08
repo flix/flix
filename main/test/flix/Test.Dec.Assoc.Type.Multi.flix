@@ -1,0 +1,137 @@
+mod Test.Dec.Assoc.Type.Multi {
+
+    use Assert.assertEq
+
+    ////////////////////////////////////////////////////////
+    // Extra parameter in trailing position                //
+    ////////////////////////////////////////////////////////
+
+    trait Build[a] {
+        type Builder[a: Type, r: Region]: Type
+        pub def build(b: Build.Builder[a, r]): a \ r
+    }
+
+    instance Build[List[t]] {
+        type Builder[List[t], r] = MutList[t, r]
+        pub def build(b: MutList[t, r]): List[t] \ r = MutList.toList(b)
+    }
+
+    pub def buildList(rc: Region[r]): List[Int32] \ r =
+        let ml = MutList.empty(rc);
+        MutList.push(1, ml);
+        MutList.push(2, ml);
+        Build.build(ml)
+
+    ////////////////////////////////////////////////////////
+    // Extra parameter reordered                          //
+    ////////////////////////////////////////////////////////
+
+    // The point-free encoding cannot express this: the extra parameter is
+    // not the trailing parameter of the right-hand side.
+    trait Reorder[a] {
+        type Swapped[a, b]: Type
+        pub def swap(x: a, y: Reorder.Swapped[a, b]): b
+    }
+
+    instance Reorder[Int32] {
+        type Swapped[Int32, b] = (b, Int32)
+        pub def swap(_x: Int32, y: (b, Int32)): b = fst(y)
+    }
+
+    ////////////////////////////////////////////////////////
+    // Extra parameter discarded                          //
+    ////////////////////////////////////////////////////////
+
+    // The point-free encoding cannot express this either: the extra
+    // parameter is unused on the right-hand side.
+    trait Ignore[a] {
+        type Const[a, b]: Type
+        pub def wrap(x: a, y: b): Ignore.Const[a, b]
+    }
+
+    instance Ignore[Int32] {
+        type Const[Int32, b] = Int32
+        pub def wrap(x: Int32, _y: b): Int32 = x
+    }
+
+    ////////////////////////////////////////////////////////
+    // Extra parameter used twice                         //
+    ////////////////////////////////////////////////////////
+
+    trait Twice[a] {
+        type Pair[a, b]: Type
+        pub def dup(x: a, y: b): Twice.Pair[a, b]
+        pub def first(x: a, p: Twice.Pair[a, b]): b
+    }
+
+    instance Twice[Int32] {
+        type Pair[Int32, b] = (b, b)
+        pub def dup(_x: Int32, y: b): (b, b) = (y, y)
+        pub def first(_x: Int32, p: (b, b)): b = fst(p)
+    }
+
+    ////////////////////////////////////////////////////////
+    // Stuck applications decompose                       //
+    ////////////////////////////////////////////////////////
+
+    // 'Twice.first' pins the selector to the rigid 'a', but leaves the binder of
+    // its 'Twice.Pair' parameter free: the wildcard match discards the result, so
+    // nothing outside the equality with 'Twice.dup' determines it. Both sides are
+    // stuck on 'a' — no instance is selected by a rigid variable — so this only
+    // typechecks if the two applications decompose argument-wise.
+    pub def roundTrip(x: a, y: b): Bool with Twice[a] =
+        match Twice.first(x, Twice.dup(x, y)) {
+            case _ => true
+        }
+
+    ////////////////////////////////////////////////////////
+    // Effect-kinded associated type with extra parameter  //
+    ////////////////////////////////////////////////////////
+
+    trait Runner[a] {
+        type Aef[a: Type, r: Region]: Eff
+        pub def exec(x: a, rc: Region[r]): Int32 \ Runner.Aef[a, r]
+    }
+
+    instance Runner[Int32] {
+        type Aef[Int32, r] = r
+        pub def exec(x: Int32, rc: Region[r]): Int32 \ r =
+            let rf = Ref.fresh(rc, x);
+            Ref.get(rf)
+    }
+
+    ////////////////////////////////////////////////////////
+    // Tests                                              //
+    ////////////////////////////////////////////////////////
+
+    @Test
+    pub def testBuild01(): Unit \ Assert = region rc {
+        assertEq(expected = List#{1, 2}, buildList(rc))
+    }
+
+    @Test
+    pub def testReorder01(): Unit \ Assert =
+        assertEq(expected = "a", Reorder.swap(1, ("a", 2)))
+
+    @Test
+    pub def testIgnore01(): Unit \ Assert =
+        assertEq(expected = 42, Ignore.wrap(42, "ignored"))
+
+    @Test
+    pub def testTwice01(): Unit \ Assert =
+        assertEq(expected = ("x", "x"), Twice.dup(1, "x"))
+
+    @Test
+    pub def testTwice02(): Unit \ Assert =
+        assertEq(expected = "x", Twice.first(1, ("x", "x")))
+
+    @Test
+    pub def testDecompose01(): Unit \ Assert =
+        assertEq(expected = true, roundTrip(1, "x"))
+
+    @Test
+    pub def testRunner01(): Unit \ Assert = region rc {
+        assertEq(expected = 7, Runner.exec(7, rc))
+    }
+
+}

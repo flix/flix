@@ -214,6 +214,8 @@ object ConstraintSolver2 {
     *   - (reflU): eliminates trivial equalities: `τ ~ τ` becomes `∅`
     *   - eliminates constraints containing unrecoverable errors (see [[isEliminable]])
     *   - (redU): reduces the types in the constraint
+    *   - (assocU): breaks down an equality between two permanently stuck applications of the same
+    *     associated type (see [[decomposeStuckAssocType]])
     *
     * The rules are applied in the listed order to each constraint:
     * applications are broken down exhaustively, and then the remaining
@@ -244,11 +246,16 @@ object ConstraintSolver2 {
           // (redU)
           val (r1, cs1) = reduce(tpe1)(scope, renv, progress, eqenv, flix)
           val (r2, cs2) = reduce(tpe2)(scope, renv, progress, eqenv, flix)
-          // Performance: Reuse this, if possible.
-          if ((r1 eq tpe1) && (r2 eq tpe2) && cs1.isEmpty && cs2.isEmpty)
-            constr :: Nil
-          else
-            TypeConstraint.Equality(r1, r2, prov) :: cs1 ::: cs2
+          // (assocU)
+          decomposeStuckAssocType(r1, r2, prov, progress) match {
+            case Some(cs) => cs ::: cs1 ::: cs2
+            case None =>
+              // Performance: Reuse this, if possible.
+              if ((r1 eq tpe1) && (r2 eq tpe2) && cs1.isEmpty && cs2.isEmpty)
+                constr :: Nil
+              else
+                TypeConstraint.Equality(r1, r2, prov) :: cs1 ::: cs2
+          }
         }
     }
 
@@ -291,6 +298,47 @@ object ConstraintSolver2 {
       }
 
     case TypeConstraint.EffConflicted(_) => constr :: Nil
+  }
+
+  /**
+    * Decomposes an equality between two applications of the same associated type whose reduction
+    * is permanently stuck:
+    *
+    * {{{
+    *   T[τ, τ₁, ..., τₙ] ~ T[τ, υ₁, ..., υₙ]
+    * }}}
+    *
+    * becomes
+    *
+    * {{{
+    *   τ₁ ~ υ₁, ..., τₙ ~ υₙ
+    * }}}
+    *
+    * Returns `None` if the rule does not apply.
+    *
+    * The selectors must be equal, and every variable in the selector must be rigid. Under the
+    * open world assumption a rigid selector stands for any type, including one whose definition
+    * of `T` is injective in the remaining arguments, so the equation holds only if the remaining
+    * arguments are equal.
+    *
+    * The selector itself is never decomposed, and the rule runs after (redU), so it sees only
+    * those applications reduction has given up on. It cannot reuse (appU), which has no such
+    * guards.
+    */
+  // (assocU)
+  private def decomposeStuckAssocType(tpe1: Type, tpe2: Type, prov: Provenance, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): Option[List[TypeConstraint]] = (tpe1, tpe2) match {
+    case (Type.AssocType(symUse1, sel1, args1, _, _), Type.AssocType(symUse2, sel2, args2, _, _))
+      if symUse1.sym == symUse2.sym &&
+        args1.nonEmpty &&
+        args1.length == args2.length &&
+        sel1 == sel2 &&
+        sel1.typeVars.forall(tvar => renv.isRigid(tvar.sym)) =>
+      progress.markProgress()
+      Some(args1.zip(args2).flatMap {
+        case (t1, t2) => simplify(TypeConstraint.Equality(t1, t2, prov), progress)
+      })
+
+    case _ => None
   }
 
   /**
@@ -683,9 +731,9 @@ object ConstraintSolver2 {
     * Replaces the location with the given location.
     */
   private def equalityConstraintToTypeConstraint(constr: EqualityConstraint, loc: SourceLocation): TypeConstraint = constr match {
-    case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      val assoc = Type.AssocType(cst, tpe1, tpe2.kind, tpe1.loc)
-      TypeConstraint.Equality(assoc, tpe2, Provenance.Match(tpe1, tpe2, loc))
+    case EqualityConstraint(cst, sel, args, tpe2, _) =>
+      val assoc = Type.AssocType(cst, sel, args, tpe2.kind, sel.loc)
+      TypeConstraint.Equality(assoc, tpe2, Provenance.Match(assoc, tpe2, loc))
   }
 
   /**

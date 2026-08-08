@@ -136,11 +136,11 @@ object ConstraintGen {
     */
   private def visitType(tpe0: Type)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     def dealiasedVisitType(tpe: Type): Unit = tpe match {
-      case at @ Type.AssocType(_, arg, _, _) =>
+      case at @ Type.AssocType(_, sel, args, _, _) =>
         if (at.typeVars.isEmpty)
           visitType(Canonicalization.reduceAssocType(at)(root, flix))
         else
-          dealiasedVisitType(arg)
+          (sel :: args).foreach(dealiasedVisitType)
       case app @ Type.Apply(_, _, _)    =>
         val args = app.typeArguments
         for (arg <- args) {
@@ -555,11 +555,11 @@ object ConstraintGen {
         // a region var introduced by `region r { ... }`. We record it as an opaque constant so the
         // flow is still emitted but the solver does not propagate it.
         tparamEnv.get(sym).getOrElse(MonoArg.Const(tpe))
-      case at @ Type.AssocType(symUse, arg, kind, assocLoc) =>
+      case at @ Type.AssocType(symUse, sel, args, kind, assocLoc) =>
         if (tpe.typeVars.isEmpty)
           MonoArg.Const(Canonicalization.reduceAssocType(at)(root, flix))
         else
-          MonoArg.Assoc(symUse.sym, dealiasedTypeToMonoArg(arg), kind, assocLoc)
+          MonoArg.Assoc(symUse.sym, dealiasedTypeToMonoArg(sel), args.map(dealiasedTypeToMonoArg), kind, assocLoc)
       case Type.Cst(_, _) =>
         MonoArg.Const(tpe)
       case Type.Apply(_, _, _) =>

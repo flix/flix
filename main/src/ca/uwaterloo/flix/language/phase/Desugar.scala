@@ -212,11 +212,12 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.AssocTypeSig]] `assoc0`.
     */
   private def visitAssocTypeSig(assoc0: WeededAst.Declaration.AssocTypeSig): DesugaredAst.Declaration.AssocTypeSig = assoc0 match {
-    case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam0, kind0, tpe0, loc) =>
+    case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam0, tparams0, kind0, tpe0, loc) =>
       val tparam = visitTypeParam(tparam0)
+      val tparams = tparams0.map(visitTypeParam)
       val kind = visitKind(kind0)
       val tpe = tpe0.map(visitType)
-      DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, loc)
+      DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, tparams, kind, tpe, loc)
   }
 
   /**
@@ -366,10 +367,11 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.AssocTypeDef]] `assoc0`.
     */
   private def visitAssocTypeDef(assoc0: WeededAst.Declaration.AssocTypeDef): DesugaredAst.Declaration.AssocTypeDef = assoc0 match {
-    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, args0, tpe0, loc) =>
       val arg = visitType(arg0)
+      val args = args0.map(visitType)
       val tpe = visitType(tpe0)
-      DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc)
+      DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg, args, tpe, loc)
   }
 
   /**
@@ -391,10 +393,11 @@ object Desugar {
     * Desugars the given [[WeededAst.EqualityConstraint]] `econstr0`.
     */
   private def visitEqualityConstraint(econstr0: WeededAst.EqualityConstraint): DesugaredAst.EqualityConstraint = econstr0 match {
-    case WeededAst.EqualityConstraint(qname, tpe01, tpe02, loc) =>
-      val tpe1 = visitType(tpe01)
+    case WeededAst.EqualityConstraint(qname, sel0, args0, tpe02, loc) =>
+      val sel = visitType(sel0)
+      val args = args0.map(visitType)
       val tpe2 = visitType(tpe02)
-      DesugaredAst.EqualityConstraint(qname, tpe1, tpe2, loc)
+      DesugaredAst.EqualityConstraint(qname, sel, args, tpe2, loc)
   }
 
   /**

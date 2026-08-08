@@ -109,7 +109,7 @@ object NonMonomorphizableCheck {
       }
     case MonoArg.App(_, _)                  => true
     case MonoArg.Const(_)                   => true
-    case MonoArg.Assoc(_, _, _, _)          => true
+    case MonoArg.Assoc(_, _, _, _, _)       => true
   }
 
   /** Returns the source location of `mvar`'s declaration. */

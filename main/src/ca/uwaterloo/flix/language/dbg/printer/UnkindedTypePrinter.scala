@@ -84,7 +84,7 @@ object UnkindedTypePrinter {
       case (UnkindedType.CaseIntersection(tpe1, tpe2, _), _) => mkApp(Type.CaseIntersection(print(tpe1), print(tpe2)), args.map(print))
       case (UnkindedType.Ascribe(tpe, kind, _), _) => mkApp(Type.Ascribe(print(tpe), KindPrinter.print(kind)), args.map(print))
       case (UnkindedType.Alias(cst, aliasArgs, _, _), _) => mkApp(Type.Alias(cst.sym, aliasArgs.map(print)), args.map(print))
-      case (UnkindedType.AssocType(cst, arg, _), _) => mkApp(Type.AssocType(cst.sym, print(arg)), args.map(print))
+      case (UnkindedType.AssocType(cst, sel, as, _), _) => mkApp(Type.AssocType(cst.sym, (sel :: as).map(print)), args.map(print))
       case (UnkindedType.Error(_), _) => Type.Error
       case (UnkindedType.Apply(_, _, _), _) =>
         // `collectApp` does not return Apply as base.

@@ -265,12 +265,13 @@ object CompletionUtils {
           Type.Alias(cst, args, t, loc)
         }
 
-      case Type.AssocType(cst, args0, kind, loc) =>
+      case Type.AssocType(cst, sel0, args0, kind, loc) =>
         if (oldSym == cst.sym) {
           Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
         } else {
+          val sel = replaceText(oldSym, sel0, newText)
           val args = args0.map(replaceText(oldSym, _, newText))
-          Type.AssocType(cst, args, kind, loc)
+          Type.AssocType(cst, sel, args, kind, loc)
         }
 
       // Jvm types should not be exposed to the user.

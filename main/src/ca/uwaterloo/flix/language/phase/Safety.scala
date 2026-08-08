@@ -509,11 +509,12 @@ object Safety {
     case Type.Alias(symUse, args, tpe, loc) =>
       Type.Alias(symUse, args.map(eraseKnownAssociatedTypes), eraseKnownAssociatedTypes(tpe), loc)
 
-    case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), arg, kind, loc) =>
-      val tpe = eraseKnownAssociatedTypes(arg)
-      val optConcreteType = tryEraseAssocType(sym, tpe)
-      // Optionally return the concrete type, falling back to the erased type in the argument.
-      optConcreteType.getOrElse(Type.AssocType(symUse, tpe, kind, loc))
+    case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), sel, args, kind, loc) =>
+      val s = eraseKnownAssociatedTypes(sel)
+      val tpes = args.map(eraseKnownAssociatedTypes)
+      val optConcreteType = tryEraseAssocType(sym, s)
+      // Optionally return the concrete type, falling back to the erased types in the arguments.
+      optConcreteType.getOrElse(Type.AssocType(symUse, s, tpes, kind, loc))
 
     case Type.JvmToType(tpe, loc) =>
       Type.JvmToType(eraseKnownAssociatedTypes(tpe), loc)
@@ -528,7 +529,7 @@ object Safety {
 
   /** Returns the monomorphic / concrete associated type of `sym0` from trait instance on `tpe0` if it exists. */
   private def tryEraseAssocType(sym0: Symbol.AssocTypeSym, tpe0: Type)(implicit root: Root): Option[Type] = {
-    root.eqEnv.getAssocDef(sym0, tpe0).map(_.ret).filter(isMonomorphicType)
+    root.eqEnv.getAssocDef(sym0, tpe0).map(_.ret).filter(isMonomorphicType(_))
   }
 
   /** Returns `true` iff all types in `tpe0` are monomorphic (i.e. there are no type variables). */
@@ -537,7 +538,7 @@ object Safety {
     case Type.Cst(_, _) => true
     case Type.Apply(tpe1, tpe2, _) => isMonomorphicType(tpe1) && isMonomorphicType(tpe2)
     case Type.Alias(_, args, tpe, _) => args.forall(isMonomorphicType) && isMonomorphicType(tpe)
-    case Type.AssocType(_, arg, _, _) => isMonomorphicType(arg)
+    case Type.AssocType(_, sel, args, _, _) => isMonomorphicType(sel) && args.forall(isMonomorphicType)
     case Type.JvmToType(tpe, _) => isMonomorphicType(tpe)
     case Type.JvmToEff(tpe, _) => isMonomorphicType(tpe)
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.forall(isMonomorphicType)

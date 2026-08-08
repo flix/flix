@@ -28,11 +28,11 @@ object EqualityEnv {
 case class EqualityEnv(private val m: Map[(Symbol.AssocTypeSym, TypeHead), AssocTypeDef]) {
 
   /**
-    * Returns the value of the associated type, if it is defined.
+    * Returns the value of the associated type for the given selector type, if it is defined.
     */
-  def getAssocDef(sym: Symbol.AssocTypeSym, tpe: Type): Option[AssocTypeDef] = {
+  def getAssocDef(sym: Symbol.AssocTypeSym, sel: Type): Option[AssocTypeDef] = {
     for {
-      head <- TypeHead.fromType(tpe)
+      head <- TypeHead.fromType(sel)
       assoc <- m.get((sym, head))
     } yield assoc
   }
@@ -40,15 +40,15 @@ case class EqualityEnv(private val m: Map[(Symbol.AssocTypeSym, TypeHead), Assoc
   /**
     * Adds the given associate type to the environment.
     */
-  def addAssocTypeDef(sym: Symbol.AssocTypeSym, arg: Type, ret: Type): EqualityEnv = {
-    TypeHead.fromType(arg) match {
+  def addAssocTypeDef(sym: Symbol.AssocTypeSym, sel: Type, args: List[Type], ret: Type): EqualityEnv = {
+    TypeHead.fromType(sel) match {
       // Resiliency: Ignore this instance if it's not well-formed
       case None => this
 
       case Some(head) =>
         // tparams are Nil because we are adding instances directly, but not schemas of instances
         val tparams = Nil
-        val defn = AssocTypeDef(tparams, arg, ret)
+        val defn = AssocTypeDef(tparams, sel, args, ret)
 
         EqualityEnv(m + ((sym, head) -> defn))
     }

@@ -251,8 +251,8 @@ object Kinder {
       val t = visitType(tpe0, kind, kenv, root)
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, root))
       val econstrs = econstrs0.collect {
-        case ResolvedAst.EqualityConstraint(UnkindedType.AssocType(symUse, arg, _), tpe2, loc) =>
-          visitEqualityConstraint(symUse, arg, tpe2, loc, kenv, root)
+        case ResolvedAst.EqualityConstraint(UnkindedType.AssocType(symUse, sel, args, _), tpe2, loc) =>
+          visitEqualityConstraint(symUse, sel, args, tpe2, loc, kenv, root)
       }
       val assocs = assocs0.map(visitAssocTypeDef(_, kind, kenv, root))
       val defs = defs0.map(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn, kenv, root)))
@@ -370,8 +370,8 @@ object Kinder {
       }
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, root))
       val econstrs = econstrs0.collect {
-        case ResolvedAst.EqualityConstraint(UnkindedType.AssocType(symUse, arg, _), tpe2, loc) =>
-          visitEqualityConstraint(symUse, arg, tpe2, loc, kenv, root)
+        case ResolvedAst.EqualityConstraint(UnkindedType.AssocType(symUse, sel, args, _), tpe2, loc) =>
+          visitEqualityConstraint(symUse, sel, args, tpe2, loc, kenv, root)
       }
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
       val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff.getOrElse(Type.Pure), tpe, tpe.loc)
@@ -383,23 +383,35 @@ object Kinder {
     * Performs kinding on the given associated type signature under the given kind environment.
     */
   private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssocTypeSig, kenv: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.AssocTypeSig = s0 match {
-    case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind, tpe0, loc) =>
-      val tparam = visitTypeParam(tparam0, kenv)
-      val tpe = tpe0.map(visitType(_, kind, kenv, root))
-      KindedAst.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc)
+    case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, tparams0, kind, tpe0, loc) =>
+      val kenv1 = tparams0.foldLeft(kenv) {
+        case (acc, tp) => acc + (tp.sym, declaredKindOfTypeParam(tp))
+      }
+      val tparam = visitTypeParam(tparam0, kenv1)
+      val tparams = tparams0.map(visitTypeParam(_, kenv1))
+      val tpe = tpe0.map(visitType(_, kind, kenv1, root))
+      KindedAst.AssocTypeSig(doc, mod, sym, tparam, tparams, kind, tpe, loc)
   }
 
   /**
     * Performs kinding on the given associated type definition under the given kind environment.
     */
-  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, trtKind: Kind, kenv: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.AssocTypeDef = d0 match {
-    case ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg0, tpe0, loc) =>
+  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, trtKind: Kind, kenv0: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.AssocTypeDef = d0 match {
+    case ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg0, tparams0, tpe0, loc) =>
       val trt = root.traits(symUse.sym.trt)
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
-      val args = visitType(arg0, trtKind, kenv, root)
+
+      // The binders are absent from the instance's kind environment, and their kinds are not
+      // inferred: the trait's declaration of the associated type fixes them.
+      val kenv = tparams0.zip(assocSig.tparams).foldLeft(kenv0) {
+        case (acc, (tp, declared)) => acc + (tp.sym, declaredKindOfTypeParam(declared))
+      }
+
+      val arg = visitType(arg0, trtKind, kenv, root)
+      val tparams = tparams0.map(visitTypeParam(_, kenv))
       val tpe = visitType(tpe0, tpeKind, kenv, root)
-      KindedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc)
+      KindedAst.AssocTypeDef(doc, mod, symUse, arg, tparams, tpe, loc)
   }
 
   /**
@@ -1165,18 +1177,20 @@ object Kinder {
           }
       }
 
-    case UnkindedType.AssocType(cst, arg0, loc) =>
+    case UnkindedType.AssocType(cst, sel0, args0, loc) =>
       val trt = root.traits(cst.sym.trt)
       // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
       trt.assocs.find(_.sym == cst.sym).get match {
-        case ResolvedAst.Declaration.AssocTypeSig(_, _, _, _, k0, _, _) =>
-          // TODO ASSOC-TYPES for now assuming just one type parameter
+        case ResolvedAst.Declaration.AssocTypeSig(_, _, _, _, tparams, k0, _, _) =>
           // check that the assoc type kind matches the expected
           unify(k0, expectedKind) match {
             case Some(kind) =>
               val innerExpectedKind = declKinds.traitKinds(trt.sym)
-              val arg = visitType(arg0, innerExpectedKind, kenv, root)
-              Type.AssocType(cst, arg, kind, loc)
+              val sel = visitType(sel0, innerExpectedKind, kenv, root)
+              val args = args0.zip(declaredKinds(tparams, args0.length)).map {
+                case (t, k) => visitType(t, k, kenv, root)
+              }
+              Type.AssocType(cst, sel, args, kind, loc)
             case None =>
               sctx.errors.add(mkUnexpectedKindError(expectedKind, k0, loc))
               Type.freshError(Kind.Error, loc)
@@ -1386,10 +1400,30 @@ object Kinder {
     *
     * The caller is responsible for filtering out ill-shaped constraints before invoking this helper.
     */
-  private def visitEqualityConstraint(symUse: AssocTypeSymUse, arg: UnkindedType, tpe2: UnkindedType, loc: SourceLocation, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): EqualityConstraint = {
-    val t1 = visitType(arg, Kind.Wild, kenv, root)
+  private def visitEqualityConstraint(symUse: AssocTypeSymUse, sel: UnkindedType, args: List[UnkindedType], tpe2: UnkindedType, loc: SourceLocation, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): EqualityConstraint = {
+    val t1 = visitType(sel, Kind.Wild, kenv, root)
+    val ts = args.map(visitType(_, Kind.Wild, kenv, root))
     val t2 = visitType(tpe2, Kind.Wild, kenv, root)
-    EqualityConstraint(symUse, t1, t2, loc)
+    EqualityConstraint(symUse, t1, ts, t2, loc)
+  }
+
+  /**
+    * Returns the declared kinds of the given associated type parameters, padded with [[Kind.Star]]
+    * to `n` entries so that zipping against `n` arguments preserves their number.
+    *
+    * The padding matters only where the arity of a use does not match the declaration. That is
+    * reported by the Resolver, and kinding continues so later errors are not suppressed.
+    */
+  private def declaredKinds(tparams: List[ResolvedAst.TypeParam], n: Int): List[Kind] =
+    tparams.map(declaredKindOfTypeParam).padTo(n, Kind.Star)
+
+  /**
+    * Returns the declared kind of the given type parameter, defaulting to [[Kind.Star]].
+    */
+  private def declaredKindOfTypeParam(tparam: ResolvedAst.TypeParam): Kind = tparam match {
+    case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
+    case _: ResolvedAst.TypeParam.Unkinded => Kind.Star
+    case _: ResolvedAst.TypeParam.Implicit => Kind.Star
   }
 
   /**
@@ -1511,11 +1545,14 @@ object Kinder {
   private def inferEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext): KindEnv = econstr match {
     case ResolvedAst.EqualityConstraint(tpe1, tpe2, _) =>
       tpe1 match {
-        case UnkindedType.AssocType(AssocTypeSymUse(sym, _), arg, _) =>
+        case UnkindedType.AssocType(AssocTypeSymUse(sym, _), sel, args, _) =>
           val trt = root.traits(sym.trt)
           val kind1 = declKinds.traitKinds(trt.sym)
-          val kind2 = trt.assocs.find(_.sym == sym).get.kind
-          val kenv1 = inferType(arg, kind1, kenv, root)
+          val assocSig = trt.assocs.find(_.sym == sym).get
+          val kind2 = assocSig.kind
+          val kenv1 = args.zip(declaredKinds(assocSig.tparams, args.length)).foldLeft(inferType(sel, kind1, kenv, root)) {
+            case (acc, (t, k)) => acc ++ inferType(t, k, kenv, root)
+          }
           val kenv2 = inferType(tpe2, kind2, kenv, root)
           kenv1 ++ kenv2
         case _ =>
@@ -1566,10 +1603,13 @@ object Kinder {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, root)
       }
 
-    case UnkindedType.AssocType(cst, arg, _) =>
+    case UnkindedType.AssocType(cst, sel, args, _) =>
       val trt = root.traits(cst.sym.trt)
       val kind = declKinds.traitKinds(trt.sym)
-      inferType(arg, kind, kenv0, root)
+      val tparams = trt.assocs.find(_.sym == cst.sym).map(_.tparams).getOrElse(Nil)
+      args.zip(declaredKinds(tparams, args.length)).foldLeft(inferType(sel, kind, kenv0, root)) {
+        case (acc, (t, k)) => acc ++ inferType(t, k, kenv0, root)
+      }
 
     case UnkindedType.Arrow(eff, _, _) =>
       val effKenv = eff.map(inferType(_, Kind.Eff, kenv0, root)).getOrElse(KindEnv.empty)
