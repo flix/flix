@@ -373,8 +373,8 @@ object DisplayType {
         mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
         mkApply(Name(amb.qualify(cst.sym)), (args ++ t.typeArguments).map(visit))
-      case Type.AssocType(cst, as, _, _) =>
-        mkApply(Name(cst.sym.name), (as ++ t.typeArguments).map(visit))
+      case Type.AssocType(cst, sel, as, _, _) =>
+        mkApply(Name(cst.sym.name), (sel :: as ::: t.typeArguments).map(visit))
       case Type.JvmToType(tpe, _) =>
         mkApply(DisplayType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
       case Type.JvmToEff(tpe, _) =>

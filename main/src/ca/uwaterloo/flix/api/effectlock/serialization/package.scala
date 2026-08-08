@@ -44,7 +44,7 @@ package object serialization {
 
   case class Apply(tpe1: SType, tpe2: SType) extends SType
 
-  case class AssocType(symUse: AssocTypeSym, args: List[SType], kind: SKind) extends SType
+  case class AssocType(symUse: AssocTypeSym, sel: SType, args: List[SType], kind: SKind) extends SType
 
   /** Represents a serializable type constructor (STC). */
   sealed trait STC
@@ -224,7 +224,7 @@ package object serialization {
 
   case class TraitConstr(sym: TraitSym, tpe: SType)
 
-  case class EqConstr(sym: AssocTypeSym, args: List[SType], tpe2: SType)
+  case class EqConstr(sym: AssocTypeSym, sel: SType, args: List[SType], tpe2: SType)
 
   /** Implicitly defines type hints for json4s for each of the serializable constructors. */
   implicit val formats: org.json4s.Formats = org.json4s.native.Serialization.formats(

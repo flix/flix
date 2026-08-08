@@ -72,9 +72,9 @@ object ResolvedAst {
 
     case class TypeAlias(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
-    case class AssocTypeSig(doc: Doc, mod: Modifiers, sym: Symbol.AssocTypeSym, tparams: List[TypeParam], kind: Kind, tpe: Option[UnkindedType], loc: SourceLocation) extends Declaration
+    case class AssocTypeSig(doc: Doc, mod: Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, tparams: List[TypeParam], kind: Kind, tpe: Option[UnkindedType], loc: SourceLocation) extends Declaration
 
-    case class AssocTypeDef(doc: Doc, mod: Modifiers, symUse: AssocTypeSymUse, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends Declaration
+    case class AssocTypeDef(doc: Doc, mod: Modifiers, symUse: AssocTypeSymUse, arg: UnkindedType, tparams: List[TypeParam], tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
     case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, tparams: List[TypeParam], ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
 

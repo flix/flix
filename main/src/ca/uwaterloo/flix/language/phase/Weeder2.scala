@@ -467,16 +467,14 @@ object Weeder2 {
       val doc = pickDocumentation(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
-      val tparams0 = Types.pickParameters(tree)
-      // The first parameter selects the instance; any further parameters are ordinary binders.
-      val tparams = tparams0 match {
+      val (tparam, tparams) = Types.pickParameters(tree) match {
         // Elided: Use class type parameter
-        case Nil => List(classTypeParam)
-        case ts => ts
+        case Nil => (classTypeParam, Nil)
+        case t :: ts => (t, ts)
       }
       val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
       val tpe = Types.tryPickTypeNoWild(tree)
-      Declaration.AssocTypeSig(doc, mod, ident, tparams, kind, tpe, tree.loc)
+      Declaration.AssocTypeSig(doc, mod, ident, tparam, tparams, kind, tpe, tree.loc)
     }
 
     private def visitAssociatedTypeDefDecl(tree: Tree, instType: Type)(implicit sctx: SharedContext): Declaration.AssocTypeDef = {
@@ -484,15 +482,13 @@ object Weeder2 {
       val doc = pickDocumentation(tree)
       val mod = pickModifiers(tree, Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
-      val typeArgs0 = Types.pickArguments(tree)
-      // The first argument is the matched instance type; any further arguments are binders.
-      val typeArgs = typeArgs0 match {
+      val (arg, args) = Types.pickArguments(tree) match {
         // Use instance type if type arguments were elided
-        case Nil => List(instType)
-        case ts => ts
+        case Nil => (instType, Nil)
+        case t :: ts => (t, ts)
       }
       val tpe = Types.pickType(tree)
-      Declaration.AssocTypeDef(doc, mod, ident, typeArgs, tpe, tree.loc)
+      Declaration.AssocTypeDef(doc, mod, ident, arg, args, tpe, tree.loc)
     }
 
     private def visitEffectDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Effect = {
@@ -627,8 +623,8 @@ object Weeder2 {
       pickAll(TreeKind.Type.Type, tree).map(Types.visitType) match {
         case lhs :: t2 :: Nil =>
           unroll(lhs) match {
-            case (Type.Ambiguous(qname, _), args@(_ :: _)) =>
-              Some(EqualityConstraint(qname, args, t2, tree.loc))
+            case (Type.Ambiguous(qname, _), sel :: args) =>
+              Some(EqualityConstraint(qname, sel, args, t2, tree.loc))
             case _ =>
               val error = IllegalEqualityConstraint(tree.loc)
               sctx.errors.add(error)

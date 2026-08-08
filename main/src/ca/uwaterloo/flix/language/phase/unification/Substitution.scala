@@ -85,10 +85,11 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       // Performance: Reuse t, if possible.
       if ((args eq args0) && (tpe eq tpe0)) t else Type.Alias(sym, args, tpe, loc)
 
-    case Type.AssocType(cst, args0, kind, loc) =>
+    case Type.AssocType(cst, sel0, args0, kind, loc) =>
+      val sel = visitType(sel0)
       val args = args0.map(visitType)
       // Performance: Reuse t, if possible.
-      if (args eq args0) t else Type.AssocType(cst, args, kind, loc)
+      if ((sel eq sel0) && (args eq args0)) t else Type.AssocType(cst, sel, args, kind, loc)
 
     case Type.JvmToType(tpe0, loc) =>
       val tpe = visitType(tpe0)
@@ -133,7 +134,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     * Applies `this` substitution to the given equality constraint.
     */
   def apply(ec: EqualityConstraint): EqualityConstraint = if (isEmpty) ec else ec match {
-    case EqualityConstraint(cst, ts, t2, loc) => EqualityConstraint(cst, ts.map(apply), apply(t2), loc)
+    case EqualityConstraint(cst, s, ts, t2, loc) => EqualityConstraint(cst, apply(s), ts.map(apply), apply(t2), loc)
   }
 
   /**

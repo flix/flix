@@ -42,8 +42,8 @@ object Instances {
     * resolution, so we swallow the case here rather than crash.
     */
   private def toShared(ec: TypedAst.EqualityConstraint): Option[EqualityConstraint] = ec match {
-    case TypedAst.EqualityConstraint(Type.AssocType(cst, args, _, _), tpe2, loc) =>
-      Some(EqualityConstraint(cst, args, tpe2, loc))
+    case TypedAst.EqualityConstraint(Type.AssocType(cst, sel, args, _, _), tpe2, loc) =>
+      Some(EqualityConstraint(cst, sel, args, tpe2, loc))
     case TypedAst.EqualityConstraint(_, _, _) =>
       None
   }
@@ -126,7 +126,7 @@ object Instances {
       case Type.Alias(alias, _, _, _) =>
         sctx.errors.add(InstanceError.IllegalTypeAliasInstance(alias.sym, trt.sym, trt.loc))
         false
-      case Type.AssocType(assoc, _, _, loc) =>
+      case Type.AssocType(assoc, _, _, _, loc) =>
         sctx.errors.add(InstanceError.IllegalAssocTypeInstance(assoc.sym, trt.sym, loc))
         false
 

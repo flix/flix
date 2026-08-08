@@ -67,7 +67,7 @@ object UnkindedTypePrinter {
       case (UnkindedType.Struct(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.RestrictableEnum(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.UnappliedAlias(sym, _), _) => Type.AsIs(sym.toString)
-      case (UnkindedType.UnappliedAssocType(sym, _, _), _) => Type.AsIs(sym.toString)
+      case (UnkindedType.UnappliedAssocType(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.UnappliedNative(clazz, _), _) => Type.AsIs(clazz.getSimpleName)
       case (UnkindedType.Arrow(eff0, arity, _), _) if args.lengthIs == arity && arity >= 2 =>
         // `(a1, a2, ..) -> b \ ef` is represented as `List(a1, a2, .., b)`
@@ -84,7 +84,7 @@ object UnkindedTypePrinter {
       case (UnkindedType.CaseIntersection(tpe1, tpe2, _), _) => mkApp(Type.CaseIntersection(print(tpe1), print(tpe2)), args.map(print))
       case (UnkindedType.Ascribe(tpe, kind, _), _) => mkApp(Type.Ascribe(print(tpe), KindPrinter.print(kind)), args.map(print))
       case (UnkindedType.Alias(cst, aliasArgs, _, _), _) => mkApp(Type.Alias(cst.sym, aliasArgs.map(print)), args.map(print))
-      case (UnkindedType.AssocType(cst, as, _), _) => mkApp(Type.AssocType(cst.sym, as.map(print)), args.map(print))
+      case (UnkindedType.AssocType(cst, sel, as, _), _) => mkApp(Type.AssocType(cst.sym, (sel :: as).map(print)), args.map(print))
       case (UnkindedType.Error(_), _) => Type.Error
       case (UnkindedType.Apply(_, _, _), _) =>
         // `collectApp` does not return Apply as base.

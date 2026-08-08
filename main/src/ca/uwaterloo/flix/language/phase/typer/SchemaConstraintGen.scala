@@ -179,7 +179,7 @@ object SchemaConstraintGen {
             c.addClassConstraints(List(order, foldable), loc)
 
             val aefSym = new Symbol.AssocTypeSym(foldableSym, "Aef", loc)
-            val aefTpe = Type.AssocType(AssocTypeSymUse(aefSym, loc), List(freshTypeConstructorVar), Kind.Eff, loc)
+            val aefTpe = Type.AssocType(AssocTypeSymUse(aefSym, loc), freshTypeConstructorVar, Nil, Kind.Eff, loc)
 
             val (tpe, eff) = visitExp(exp)
             c.unifyType(tpe, Type.mkApply(freshTypeConstructorVar, List(tuple), loc), loc)

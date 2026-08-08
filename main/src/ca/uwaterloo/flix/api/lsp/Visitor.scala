@@ -149,7 +149,7 @@ object Visitor {
   }
 
   private def visitAssocTypeDef(tdefn: AssocTypeDef)(implicit a: Acceptor, c: Consumer): Unit = {
-    val AssocTypeDef(_, _, symUse, args, _, loc) = tdefn
+    val AssocTypeDef(_, _, symUse, arg, tparams, _, loc) = tdefn
     if (!a.accept(loc)) {
       return
     }
@@ -157,7 +157,8 @@ object Visitor {
     c.consumeAssocTypeDef(tdefn)
 
     visitAssocTypeSymUse(symUse)
-    args.foreach(visitType)
+    visitType(arg)
+    tparams.foreach(visitTypeParam)
   }
 
   private def visitAssocTypeSymUse(symUse: AssocTypeSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -221,13 +222,14 @@ object Visitor {
   }
 
   private def visitAssocTypeSig(assoc: AssocTypeSig)(implicit a: Acceptor, c: Consumer): Unit = {
-    val AssocTypeSig(_, _, _, tparams, _, tpe, loc) = assoc
+    val AssocTypeSig(_, _, _, tparam, tparams, _, tpe, loc) = assoc
     if (!a.accept(loc)) {
       return
     }
 
     c.consumeAssocTypeSig(assoc)
 
+    visitTypeParam(tparam)
     tparams.foreach(visitTypeParam)
     tpe.foreach(visitType)
   }
@@ -292,7 +294,7 @@ object Visitor {
     c.consumeEqualityConstraint(ec)
 
     tpe1 match {
-      case Type.AssocType(symUse, _, _, _) => visitAssocTypeSymUse(symUse)
+      case Type.AssocType(symUse, _, _, _, _) => visitAssocTypeSymUse(symUse)
       case _ => ()
     }
     visitType(tpe1)
@@ -784,7 +786,7 @@ object Visitor {
         visitType(t1)
         visitType(t2)
       case Type.Alias(_, args, _, _) => args.foreach(visitType)
-      case Type.AssocType(_, ts, _, _) => ts.foreach(visitType)
+      case Type.AssocType(_, s, ts, _, _) => visitType(s); ts.foreach(visitType)
       case Type.JvmToType(t, _) => visitType(t)
       case Type.JvmToEff(t, _) => visitType(t)
       case Type.UnresolvedJvmType(_, _) => ()

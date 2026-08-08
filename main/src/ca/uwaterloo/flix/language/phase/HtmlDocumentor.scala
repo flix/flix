@@ -1135,9 +1135,9 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>type</span> ")
     sb.append(s"<span class='name'>${assoc.sym.name}</span>")
-    // The first parameter is the trait's own and is always elided. Any further parameters are
-    // binders of this associated type, so they must be shown.
-    docAssocTypeParams(assoc.tparams)
+    // The trait's own parameter is elided in the source, so it is only worth showing alongside
+    // the binders this associated type introduces.
+    docAssocTypeParams(assoc.tparam, assoc.tparams)
     sb.append(": ")
     docKind(assoc.kind)
     sb.append("</code>")
@@ -1218,12 +1218,12 @@ object HtmlDocumentor {
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
       e.tpe1 match {
-        case Type.AssocType(cst, as, _, _) =>
+        case Type.AssocType(cst, sel, as, _, _) =>
           docTraitName(cst.sym.trt)
           sb.append(".")
           sb.append(esc(cst.sym.name))
           sb.append("[")
-          as.zipWithIndex.foreach {
+          (sel :: as).zipWithIndex.foreach {
             case (a, i) =>
               if (i > 0) sb.append(", ")
               docType(a)
@@ -1290,18 +1290,18 @@ object HtmlDocumentor {
     * Document the type parameters of an associated type, wrapped in `[]`.
     *
     * Unlike [[docTypeParams]], the parameters are kept in declaration order, since an associated
-    * type is applied positionally. Nothing is emitted for a single parameter: that is the trait's
-    * own parameter, which is elided in the source as well.
+    * type is applied positionally. Nothing is emitted unless the associated type introduces
+    * binders of its own: `tparam` alone is the trait's parameter, elided in the source as well.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docAssocTypeParams(tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (tparams.lengthIs < 2) {
+  private def docAssocTypeParams(tparam: TypedAst.TypeParam, tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (tparams.isEmpty) {
       return
     }
 
     sb.append("<span class='tparams'>[")
-    docList(tparams) { p =>
+    docList(tparam :: tparams) { p =>
       sb.append("<span class='tparam'>")
       sb.append(s"<span class='type'>${esc(p.name.name)}</span>")
       sb.append(": ")

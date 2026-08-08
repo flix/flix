@@ -290,7 +290,7 @@ object Namer {
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) =>
+    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Effect(_, _, _, sym, _, ops, _) =>
@@ -306,7 +306,7 @@ object Namer {
     case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, caze)
 
-    case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) =>
+    case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, _, loc) =>
       throw InternalCompilerException("unexpected tabling of associated type definition", loc)
 
   }
@@ -668,25 +668,27 @@ object Namer {
     * Performs naming on the given associated type signature `s0`.
     */
   private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.AssocTypeSig = s0 match {
-    case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe, loc) =>
+    case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparam0, tparams0, kind0, tpe, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
       val sym = Symbol.mkAssocTypeSym(trt, ident)
+      val tparam = visitTypeParam(tparam0)
       val tparams = tparams0.map(visitTypeParam)
       val kind = visitKind(kind0)
       val t = tpe.map(visitType)
-      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, t, loc)
+      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, tparams, kind, t, loc)
   }
 
   /**
     * Performs naming on the given associated type definition `d0`.
     */
   private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.AssocTypeDef = d0 match {
-    case DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) =>
+    case DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg, args, tpe, loc) =>
+      val t1 = visitType(arg)
       val ts = args.map(visitType)
       val t2 = visitType(tpe)
-      NamedAst.Declaration.AssocTypeDef(doc, mod, ident, ts, t2, loc)
+      NamedAst.Declaration.AssocTypeDef(doc, mod, ident, t1, ts, t2, loc)
   }
 
   /**
@@ -742,10 +744,11 @@ object Namer {
     * Performs naming on the given equality constraint `econstr`.
     */
   private def visitEqualityConstraint(econstr: DesugaredAst.EqualityConstraint)(implicit sctx: SharedContext, flix: Flix): NamedAst.EqualityConstraint = econstr match {
-    case DesugaredAst.EqualityConstraint(qname, args, tpe2, loc) =>
+    case DesugaredAst.EqualityConstraint(qname, sel, args, tpe2, loc) =>
+      val t1 = visitType(sel)
       val ts = args.map(visitType)
       val t2 = visitType(tpe2)
-      NamedAst.EqualityConstraint(qname, ts, t2, loc)
+      NamedAst.EqualityConstraint(qname, t1, ts, t2, loc)
   }
 
   /**
@@ -1736,7 +1739,7 @@ object Namer {
 
     val econstrTvars = econstrs.flatMap {
       // We only infer vars from the right-hand-side of the constraint.
-      case DesugaredAst.EqualityConstraint(_, _, tpe2, _) => freeTypeVars(tpe2) // We only infer vars from the right-hand-side.
+      case DesugaredAst.EqualityConstraint(_, _, _, tpe2, _) => freeTypeVars(tpe2) // We only infer vars from the right-hand-side.
     }
 
     (fparamTvars ::: tpeTvars ::: effTvars ::: econstrTvars).distinct.map {
@@ -1760,8 +1763,8 @@ object Namer {
     case NamedAst.Declaration.Op(sym, _, _) => sym.loc
     case NamedAst.Declaration.Case(sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym.loc
-    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
-    case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
+    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected instance", loc)
     case NamedAst.Declaration.Mod(_, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
