@@ -37,8 +37,8 @@ object Util {
       case Type.Alias(symUse, args, tpe, loc) =>
         Type.Alias(symUse, args.map(visit), visit(tpe), loc)
 
-      case Type.AssocType(symUse, args, kind, loc) =>
-        Type.AssocType(symUse, args.map(visit), kind, loc)
+      case Type.AssocType(symUse, sel, args, kind, loc) =>
+        Type.AssocType(symUse, visit(sel), args.map(visit), kind, loc)
 
       case Type.JvmToType(tpe, loc) =>
         Type.JvmToType(visit(tpe), loc)

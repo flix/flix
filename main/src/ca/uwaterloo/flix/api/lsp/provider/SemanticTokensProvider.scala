@@ -305,10 +305,11 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given associated type signature `assoc`.
     */
   private def visitAssocTypeSig(assoc: TypedAst.AssocTypeSig): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssocTypeSig(_, _, sym, tparams, _, tpe, _) =>
+    case TypedAst.AssocTypeSig(_, _, sym, tparam, tparams, _, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
+        visitTypeParam(tparam),
         tparams.iterator.flatMap(visitTypeParam),
         tpe.iterator.flatMap(visitType)
       )
@@ -318,11 +319,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given associated type definition `assoc`.
     */
   private def visitAssocTypeDef(assoc: TypedAst.AssocTypeDef): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssocTypeDef(_, _, symUse, args, tpe, _) =>
+    case TypedAst.AssocTypeDef(_, _, symUse, arg, tparams, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.loc)
       IteratorOps.all(
         Iterator(t),
-        args.iterator.flatMap(visitType),
+        visitType(arg),
+        tparams.iterator.flatMap(visitTypeParam),
         visitType(tpe),
       )
   }
@@ -829,9 +831,9 @@ object SemanticTokensProvider {
         val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
         Iterator(t) ++ args.flatMap(visitType).iterator
 
-      case Type.AssocType(cst, as, _, _) =>
+      case Type.AssocType(cst, sel, as, _, _) =>
         val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
-        Iterator(t) ++ as.iterator.flatMap(visitType)
+        Iterator(t) ++ visitType(sel) ++ as.iterator.flatMap(visitType)
 
       // Jvm types should not be exposed to the user.
       case _: Type.JvmToType => Iterator.empty
@@ -939,7 +941,7 @@ object SemanticTokensProvider {
   private def visitEqualityConstraint(ec0: EqualityConstraint): Iterator[SemanticToken] = ec0 match {
     case EqualityConstraint(tpe1, tpe2, _) =>
       val assocTokens = tpe1 match {
-        case Type.AssocType(cst, _, _, _) => visitAssocTypeSymUse(cst)
+        case Type.AssocType(cst, _, _, _, _) => visitAssocTypeSymUse(cst)
         case _ => Iterator.empty
       }
       assocTokens ++ visitType(tpe1) ++ visitType(tpe2)

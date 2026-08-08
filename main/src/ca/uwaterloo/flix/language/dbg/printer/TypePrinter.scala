@@ -77,7 +77,7 @@ object TypePrinter {
         DocAst.Type.SymmetricDiff(print(arg0), print(arg1))
       case (Type.Cst(tc, _), _) => mkApp(TypeConstructorPrinter.print(tc), args.map(print))
       case (Type.Alias(cst, aliasArgs, _, _), _) => mkApp(DocAst.Type.Alias(cst.sym, aliasArgs.map(print)), args.map(print))
-      case (Type.AssocType(cst, as, _, _), _) => mkApp(DocAst.Type.AssocType(cst.sym, as.map(print)), args.map(print))
+      case (Type.AssocType(cst, sel, as, _, _), _) => mkApp(DocAst.Type.AssocType(cst.sym, (sel :: as).map(print)), args.map(print))
       case (Type.JvmToType(arg, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToType"), List(print(arg))), args.map(print))
       case (Type.JvmToEff(arg, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToEff"), List(print(arg))), args.map(print))
       case (Type.UnresolvedJvmType(member, _), _) => mkApp(mkApp(printJvmMember(member), List(print(tpe))), args.map(print))

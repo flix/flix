@@ -161,9 +161,10 @@ object Specialization {
         // Remove the Alias and continue.
         apply(t)
 
-      case Type.AssocType(symUse, args0, kind, loc) =>
+      case Type.AssocType(symUse, sel0, args0, kind, loc) =>
+        val sel = apply(sel0)
         val args = args0.map(apply)
-        val assoc = Type.AssocType(symUse, args, kind, loc)
+        val assoc = Type.AssocType(symUse, sel, args, kind, loc)
         val reducedType = reduceAssocType(assoc)
         // `reducedType` is ground, but might need normalization.
         simplify(reducedType, isGround = true)
@@ -288,7 +289,7 @@ object Specialization {
       // Non-record related types or a record in correct order.
       Type.mkRecordRowExtend(label, tpe, rest, loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.AssocType(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected JVM eff '$rest'", rest.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
@@ -310,7 +311,7 @@ object Specialization {
       // Non-record related types or a record in correct order.
       Type.mkSchemaRowExtend(label, tpe, rest, loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.AssocType(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected JVM eff '$rest'", rest.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
@@ -1347,9 +1348,10 @@ object Specialization {
     case c@Type.Cst(_, _) => c
     case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, isGround), app, isGround)
     case Type.Alias(_, _, t, _) => simplify(t, isGround)
-    case Type.AssocType(symUse, args0, kind, loc) =>
+    case Type.AssocType(symUse, sel0, args0, kind, loc) =>
+      val sel = simplify(sel0, isGround)
       val args = args0.map(simplify(_, isGround))
-      val assoc = Type.AssocType(symUse, args, kind, loc)
+      val assoc = Type.AssocType(symUse, sel, args, kind, loc)
       val t = reduceAssocType(assoc)
       simplify(t, isGround)
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)

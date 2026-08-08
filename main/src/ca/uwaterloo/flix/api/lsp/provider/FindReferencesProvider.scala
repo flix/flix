@@ -136,8 +136,8 @@ object FindReferencesProvider {
     case TypedAst.Struct(_, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.RestrictableEnum(_, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
-    case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
-    case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.AssocTypeSig(_, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.AssocTypeDef(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
     case exp: TypedAst.Expr => exp.loc.isReal
@@ -174,7 +174,7 @@ object FindReferencesProvider {
     case SymUse.StructFieldSymUse(_, loc) => loc.isReal
     case SymUse.TraitSymUse(_, loc) => loc.isReal
 
-    case EqualityConstraint(_, _, _, loc) => loc.isReal
+    case EqualityConstraint(_, _, _, _, loc) => loc.isReal
     case TraitConstraint(_, _, loc) => loc.isReal
 
     case tpe: Type => tpe.loc.isReal
@@ -192,7 +192,7 @@ object FindReferencesProvider {
     */
   private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
     // Assoc Types
-    case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
+    case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
     case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSymOccurs(sym))
     // Cases
     case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))

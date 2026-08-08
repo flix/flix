@@ -465,8 +465,8 @@ object ConstraintSolverInterface {
     */
   def expandEqualityEnv(eqEnv: EqualityEnv, econstrs: List[EqualityConstraint]): EqualityEnv = {
     econstrs.foldLeft(eqEnv) {
-      case (acc, EqualityConstraint(AssocTypeSymUse(sym, _), args, tpe2, _)) =>
-        acc.addAssocTypeDef(sym, args, tpe2)
+      case (acc, EqualityConstraint(AssocTypeSymUse(sym, _), sel, args, tpe2, _)) =>
+        acc.addAssocTypeDef(sym, sel, args, tpe2)
     }
   }
 }

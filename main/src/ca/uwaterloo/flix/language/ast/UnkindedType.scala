@@ -50,7 +50,7 @@ sealed trait UnkindedType {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
-    case UnkindedType.AssocType(cst, args, loc) => UnkindedType.AssocType(cst, args.map(_.map(f)), loc)
+    case UnkindedType.AssocType(cst, sel, args, loc) => UnkindedType.AssocType(cst, sel.map(f), args.map(_.map(f)), loc)
     case t: UnkindedType.Error => t
   }
 
@@ -90,7 +90,7 @@ sealed trait UnkindedType {
     case UnkindedType.Struct(_, _) => SortedSet.empty
     case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
-    case UnkindedType.UnappliedAssocType(_, _, _) => SortedSet.empty
+    case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
     case UnkindedType.UnappliedNative(_, _) => SortedSet.empty
     case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
     case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
@@ -103,7 +103,7 @@ sealed trait UnkindedType {
     // For aliases we used the reduced type
     case UnkindedType.Alias(_, _, tpe, _) => tpe.definiteTypeVars
     // For associated types we cannot yet reduce, so we are conservative and say none.
-    case UnkindedType.AssocType(_, _, _) => SortedSet.empty
+    case UnkindedType.AssocType(_, _, _, _) => SortedSet.empty
 
     case UnkindedType.Error(_) => SortedSet.empty
   }
@@ -202,9 +202,9 @@ object UnkindedType {
     * Only exists temporarily in the Resolver until it's converted to an [[AssocType]].
     */
   @EliminatedBy(Resolver.getClass)
-  case class UnappliedAssocType(sym: Symbol.AssocTypeSym, arity: Int, loc: SourceLocation) extends UnkindedType {
+  case class UnappliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case UnappliedAssocType(sym2, _, _) => sym == sym2
+      case UnappliedAssocType(sym2, _) => sym == sym2
       case _ => false
     }
 
@@ -316,14 +316,17 @@ object UnkindedType {
 
   /**
     * A fully resolved associated type.
+    *
+    * `sel` is the selector: the argument that determines which instance the type reduces by.
+    * `args` are the remaining arguments, which play no part in selecting the instance.
     */
-  case class AssocType(assocTypeSymUse: AssocTypeSymUse, args: List[UnkindedType], loc: SourceLocation) extends UnkindedType {
+  case class AssocType(assocTypeSymUse: AssocTypeSymUse, sel: UnkindedType, args: List[UnkindedType], loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case AssocType(AssocTypeSymUse(sym2, _), args2, _) => assocTypeSymUse.sym == sym2 && args == args2
+      case AssocType(AssocTypeSymUse(sym2, _), sel2, args2, _) => assocTypeSymUse.sym == sym2 && sel == sel2 && args == args2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(assocTypeSymUse, args)
+    override def hashCode(): Int = Objects.hash(assocTypeSymUse, sel, args)
   }
 
   /**
@@ -559,10 +562,10 @@ object UnkindedType {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case AssocType(cst, args, loc) => AssocType(cst, args.map(eraseAliases), loc) // TODO ASSOC-TYPES check that this is valid
+    case AssocType(cst, sel, args, loc) => AssocType(cst, eraseAliases(sel), args.map(eraseAliases), loc) // TODO ASSOC-TYPES check that this is valid
     case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
-    case UnappliedAssocType(_, _, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
+    case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
     case UnappliedNative(_, loc) => throw InternalCompilerException("unexpected unapplied native type", loc)
   }
 }

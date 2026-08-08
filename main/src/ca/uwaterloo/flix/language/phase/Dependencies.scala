@@ -542,7 +542,7 @@ object Dependencies {
     case Type.Alias(cst, args, _, loc) =>
       addDependency(cst.loc, loc)
       args.foreach(visitType)
-    case Type.AssocType(_, as, _, _) => as.foreach(visitType)
+    case Type.AssocType(_, sel, as, _, _) => visitType(sel); as.foreach(visitType)
     case Type.JvmToType(t, _) => visitType(t)
     case Type.JvmToEff(t, _) => visitType(t)
     case Type.UnresolvedJvmType(_, _) => ()

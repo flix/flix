@@ -41,16 +41,17 @@ object MonoArg {
 
   /**
     * An associated type applied to symbolic mono-arguments, e.g. `Collection.Elm[a]` becomes
-    * `Assoc(Elm, List(Param(v, i)))`.
+    * `Assoc(Elm, Param(v, i), Nil)`.
+    * `sel` is the selector, which picks the instance; `args` are the remaining arguments.
     * `kind` and `loc` are stored so the solver can reconstruct `Type.AssocType` for reduction.
     */
-  case class Assoc(sym: Symbol.AssocTypeSym, args: List[MonoArg], kind: Kind, loc: SourceLocation) extends MonoArg
+  case class Assoc(sym: Symbol.AssocTypeSym, sel: MonoArg, args: List[MonoArg], kind: Kind, loc: SourceLocation) extends MonoArg
 
   /** Returns every `(MonoVar, index)` pair referenced by a `Param` inside `arg`, however deeply wrapped. */
   def collectParams(arg: MonoArg): List[(MonoVar, Int)] = arg match {
     case MonoArg.Const(_)          => Nil
     case MonoArg.Param(v, i)       => List((v, i))
     case MonoArg.App(tycon, args)  => collectParams(tycon) ++ args.flatMap(collectParams)
-    case MonoArg.Assoc(_, as, _, _) => as.flatMap(collectParams)
+    case MonoArg.Assoc(_, sel, as, _, _) => collectParams(sel) ::: as.flatMap(collectParams)
   }
 }

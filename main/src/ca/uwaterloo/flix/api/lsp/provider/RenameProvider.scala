@@ -124,8 +124,8 @@ object RenameProvider {
     case TypedAst.Struct(_, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.RestrictableEnum(_, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
-    case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
-    case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.AssocTypeSig(_, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.AssocTypeDef(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
     case exp: TypedAst.Expr => exp.loc.isReal
@@ -164,7 +164,7 @@ object RenameProvider {
 
     case TraitConstraint(_, _, loc) => loc.isReal
 
-    case EqualityConstraint(_, _, _, loc) => loc.isReal
+    case EqualityConstraint(_, _, _, _, loc) => loc.isReal
 
     case _: Symbol => true
     case tpe: Type => tpe.loc.isReal

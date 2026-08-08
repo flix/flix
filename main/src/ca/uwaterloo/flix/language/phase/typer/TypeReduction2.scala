@@ -49,24 +49,25 @@ object TypeReduction2 {
 
     case Type.Alias(_, _, tpe, _) => (tpe, Nil)
 
-    case Type.AssocType(symUse, tpes, kind, loc) =>
+    case Type.AssocType(symUse, sel0, tpes, kind, loc) =>
+      val (s, cs0) = reduce(sel0)
       val reduced = tpes.map(reduce)
       val ts = reduced.map(_._1)
-      val cs = reduced.flatMap(_._2)
+      val cs = cs0 ::: reduced.flatMap(_._2)
 
       // Get all the associated types from the context.
-      // Only the first argument selects the definition.
-      val assocOpt = eqenv.getAssocDef(symUse.sym, ts)
+      // Only the selector picks the definition.
+      val assocOpt = eqenv.getAssocDef(symUse.sym, s)
 
       // Find the instance that matches
       val matches = assocOpt.flatMap {
-        case AssocTypeDef(tparams, assocTpes0, ret0) if assocTpes0.length == ts.length =>
+        case AssocTypeDef(tparams, assocSel0, assocTpes0, ret0) if assocTpes0.length == ts.length =>
 
 
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
-          val assocRenv = ts.flatMap(_.typeVars).map(_.sym).foldLeft(renv)(_.markRigid(_))
+          val assocRenv = (s :: ts).flatMap(_.typeVars).map(_.sym).foldLeft(renv)(_.markRigid(_))
 
 
           // Refresh the flexible variables in the instance
@@ -75,13 +76,14 @@ object TypeReduction2 {
             case fromSym => fromSym -> Type.freshVar(fromSym.kind, fromSym.loc)(scope, flix)
           }.toMap
           val assocSubst = Substitution(assocVarMap)
+          val assocSel = assocSubst(assocSel0)
           val assocTpes = assocTpes0.map(assocSubst.apply)
           val ret = assocSubst(ret0)
 
-          // Unify pairwise across every argument position, threading the substitution.
+          // Unify pairwise across the selector and every argument, threading the substitution.
           // Instantiate all the instance constraints according to the resulting substitution.
           val init: Option[Substitution] = Some(Substitution.empty)
-          ts.zip(assocTpes).foldLeft(init) {
+          (s :: ts).zip(assocSel :: assocTpes).foldLeft(init) {
             case (None, _) => None
             case (Some(acc), (t, assocTpe)) =>
               ConstraintSolver2.fullyUnify(acc(t), acc(assocTpe), scope, assocRenv).map(_ @@ acc)
@@ -98,10 +100,10 @@ object TypeReduction2 {
         // the constraint solver to loop forever (see issue #11213).
         // Performance: Reuse `tpe0` if the arguments were unchanged.
         case None =>
-          if (ts.lazyZip(tpes).forall(_ eq _))
+          if ((s eq sel0) && ts.lazyZip(tpes).forall(_ eq _))
             (tpe0, cs)
           else
-            (Type.AssocType(symUse, ts, kind, loc), cs)
+            (Type.AssocType(symUse, s, ts, kind, loc), cs)
 
         // Case 2: One match. Use it.
         case Some(newTpe) =>
@@ -368,7 +370,7 @@ object TypeReduction2 {
       // so the type arguments do not affect method/field resolution.
       isNativeBase(tpe) || (isKnown(t1) && isKnown(t2))
     case Type.Alias(_, _, t, _) => isKnown(t)
-    case Type.AssocType(_, _, _, _) => false
+    case Type.AssocType(_, _, _, _, _) => false
   }
 
   /** A lookup result of a Java field. */

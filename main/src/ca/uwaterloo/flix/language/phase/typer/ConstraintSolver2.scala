@@ -316,26 +316,18 @@ object ConstraintSolver2 {
     *
     * Returns `None` if the rule does not apply.
     *
-    * Associated types are not injective, so this is not an equivalence: with the definition
-    * `type T[Int32, b] = Int32` both sides reduce to `Int32` whatever `b` is. The decomposed
-    * constraints imply the original by congruence, but not the other way around, so this commits
-    * to a solution that is sound but more specific than necessary. That is only acceptable where
-    * the alternative is failure, which is what the two guards ensure:
+    * The selectors must be equal, and every variable in the selector must be rigid. Under the
+    * open world assumption a rigid selector stands for any type, including one whose definition
+    * of `T` is injective in the remaining arguments, so the equation holds only if the remaining
+    * arguments are equal.
     *
-    *   - The selectors must be syntactically equal, and are never themselves decomposed. The
-    *     selector is the argument the non-injectivity is about.
-    *   - Every variable in the selector must be rigid. Reduction picks a definition by the head
-    *     of the selector alone (see [[EqualityEnv.getAssocDef]]), so a selector that (redU) has
-    *     just failed to reduce can never reduce later: no substitution can change a rigid head,
-    *     and the equality environment is fixed for the duration of the solve. The constraint is
-    *     stuck for good, and would otherwise be left over and reported as an error.
-    *
-    * This cannot reuse (appU), which has neither guard, and it must run after (redU), so that it
-    * sees only those applications that reduction has already given up on.
+    * The selector itself is never decomposed, and the rule runs after (redU), so it sees only
+    * those applications reduction has given up on. It cannot reuse (appU), which has no such
+    * guards.
     */
   // (assocU)
   private def decomposeStuckAssocType(tpe1: Type, tpe2: Type, prov: Provenance, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): Option[List[TypeConstraint]] = (tpe1, tpe2) match {
-    case (Type.AssocType(symUse1, sel1 :: args1, _, _), Type.AssocType(symUse2, sel2 :: args2, _, _))
+    case (Type.AssocType(symUse1, sel1, args1, _, _), Type.AssocType(symUse2, sel2, args2, _, _))
       if symUse1.sym == symUse2.sym &&
         args1.nonEmpty &&
         args1.length == args2.length &&
@@ -739,9 +731,8 @@ object ConstraintSolver2 {
     * Replaces the location with the given location.
     */
   private def equalityConstraintToTypeConstraint(constr: EqualityConstraint, loc: SourceLocation): TypeConstraint = constr match {
-    case EqualityConstraint(cst, args, tpe2, _) =>
-      val assocLoc = args.headOption.map(_.loc).getOrElse(loc)
-      val assoc = Type.AssocType(cst, args, tpe2.kind, assocLoc)
+    case EqualityConstraint(cst, sel, args, tpe2, _) =>
+      val assoc = Type.AssocType(cst, sel, args, tpe2.kind, sel.loc)
       TypeConstraint.Equality(assoc, tpe2, Provenance.Match(assoc, tpe2, loc))
   }
 

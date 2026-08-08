@@ -171,7 +171,7 @@ object EffUnification3 {
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       SetFormula.mkElemSet(x)
 
-    case tpe@Type.AssocType(_, _, _, _) =>
+    case tpe@Type.AssocType(_, _, _, _, _) =>
       val x = m.getForwardIndex(EffAtom.fromType(tpe))
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound associated type: '$tpe'.", tpe.loc)
       SetFormula.Cst(x)
