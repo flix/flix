@@ -318,7 +318,6 @@ object UnkindedType {
     * A fully resolved associated type.
     *
     * `sel` is the selector: the argument that determines which instance the type reduces by.
-    * `args` are the remaining arguments, which play no part in selecting the instance.
     */
   case class AssocType(assocTypeSymUse: AssocTypeSymUse, sel: UnkindedType, args: List[UnkindedType], loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {

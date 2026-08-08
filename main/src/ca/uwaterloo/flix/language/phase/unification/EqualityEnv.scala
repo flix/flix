@@ -28,10 +28,7 @@ object EqualityEnv {
 case class EqualityEnv(private val m: Map[(Symbol.AssocTypeSym, TypeHead), AssocTypeDef]) {
 
   /**
-    * Returns the value of the associated type, if it is defined.
-    *
-    * Only the selector picks the definition: an associated type may take several arguments, but
-    * which instance it resolves to is determined by the selector alone.
+    * Returns the value of the associated type for the given selector type, if it is defined.
     */
   def getAssocDef(sym: Symbol.AssocTypeSym, sel: Type): Option[AssocTypeDef] = {
     for {

@@ -562,7 +562,6 @@ object Type {
     * An associated type.
     *
     * `sel` is the selector: the argument that determines which instance the type reduces by.
-    * `args` are the remaining arguments, which play no part in selecting the instance.
     */
   case class AssocType(symUse: AssocTypeSymUse, sel: Type, args: List[Type], kind: Kind, loc: SourceLocation) extends Type {
     override def equals(obj: Any): Boolean = obj match {

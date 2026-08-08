@@ -1145,8 +1145,6 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>type</span> ")
     sb.append(s"<span class='name'>${assoc.sym.name}</span>")
-    // The trait's own parameter is elided in the source, so it is only worth showing alongside
-    // the binders this associated type introduces.
     docAssocTypeParams(assoc.tparam, assoc.tparams)
     sb.append(": ")
     docKind(assoc.kind)

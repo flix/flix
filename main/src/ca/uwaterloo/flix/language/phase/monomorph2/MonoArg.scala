@@ -42,7 +42,6 @@ object MonoArg {
   /**
     * An associated type applied to symbolic mono-arguments, e.g. `Collection.Elm[a]` becomes
     * `Assoc(Elm, Param(v, i), Nil)`.
-    * `sel` is the selector, which picks the instance; `args` are the remaining arguments.
     * `kind` and `loc` are stored so the solver can reconstruct `Type.AssocType` for reduction.
     */
   case class Assoc(sym: Symbol.AssocTypeSym, sel: MonoArg, args: List[MonoArg], kind: Kind, loc: SourceLocation) extends MonoArg
