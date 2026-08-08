@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.math.Ordering.Implicits.seqOrdering
 
 /**
   * Atomic effects that can be represented as atoms in
@@ -41,7 +42,7 @@ private sealed trait EffAtom extends Ordered[EffAtom] {
       if (symCmp != 0) symCmp
       else {
         val selCmp = sel1.compare(sel2)
-        if (selCmp != 0) selCmp else compareAll(args1, args2)
+        if (selCmp != 0) selCmp else Ordering[List[EffAtom]].compare(args1, args2)
       }
     case (EffAtom.Error(id1), EffAtom.Error(id2)) => id1 - id2
     case _ =>
@@ -55,16 +56,6 @@ private sealed trait EffAtom extends Ordered[EffAtom] {
       }
 
       ordinal(this) - ordinal(that)
-  }
-
-  /** Compares two argument lists lexicographically, shorter lists first. */
-  private def compareAll(l1: List[EffAtom], l2: List[EffAtom]): Int = (l1, l2) match {
-    case (Nil, Nil) => 0
-    case (Nil, _ :: _) => -1
-    case (_ :: _, Nil) => 1
-    case (x :: xs, y :: ys) =>
-      val cmp = x.compare(y)
-      if (cmp != 0) cmp else compareAll(xs, ys)
   }
 }
 

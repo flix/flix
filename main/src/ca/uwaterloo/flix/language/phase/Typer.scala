@@ -168,18 +168,16 @@ object Typer {
       assocDef = assocDefOpt match {
         // If there's no definition, then we fall back to the default
         case None =>
-          // The default is written in terms of the trait's parameter, so substitute the instance
-          // type for it. The associated type's own binders carry over as arguments of the
-          // definition, so that a use of the default matches on them and refreshes them.
+          // Given `trait C[a] { type T[a, b]: Type = (a, b) }` and `instance C[Int32]`,
+          // the default is `T[Int32, b] = (Int32, b)`.
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
           val tpe = subst(assocSig.tpe.get)
           val binders = assocSig.tparams
           val args = binders.map(tp => Type.Var(tp.sym, tp.loc))
           AssocTypeDef(tparams ++ binders.map(_.sym), inst.tpe, args, tpe)
         case Some(KindedAst.AssocTypeDef(_, _, _, arg, binders, tpe, _)) =>
-          // The binders are local to this definition, not instance type parameters. Include them
-          // so that reduction refreshes them, rather than sharing one symbol across every
-          // reduction of the definition.
+          // The binders join the instance's type parameters so that each reduction refreshes
+          // them, rather than sharing one symbol across every reduction of the definition.
           val args = binders.map(b => Type.Var(b.sym, b.loc))
           AssocTypeDef(tparams ++ binders.map(_.sym), arg, args, tpe)
       }

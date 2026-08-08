@@ -512,7 +512,6 @@ object Safety {
     case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), sel, args, kind, loc) =>
       val s = eraseKnownAssociatedTypes(sel)
       val tpes = args.map(eraseKnownAssociatedTypes)
-      // Only the selector picks the instance.
       val optConcreteType = tryEraseAssocType(sym, s)
       // Optionally return the concrete type, falling back to the erased types in the arguments.
       optConcreteType.getOrElse(Type.AssocType(symUse, s, tpes, kind, loc))

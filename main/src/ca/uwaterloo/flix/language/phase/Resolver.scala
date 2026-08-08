@@ -618,8 +618,7 @@ object Resolver {
       val tparam = resolveTypeParam(tparam0, scp0, ns0, root)
       val tparams = tparams0.map(resolveTypeParam(_, scp0, ns0, root))
       val kind = resolveKind(kind0, scp0, ns0, root)
-      // The trait's own parameter is already in scope. The rest are binders introduced by this
-      // declaration, so scope them for the default type.
+      // The binders are in scope in the default type.
       val scp = scp0 ++ mkTypeParamScp(tparams)
       val tpe = tpe0.map(resolveType(_, Some(kind), Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix))
       ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, tparams, kind, tpe, loc)
@@ -680,8 +679,7 @@ object Resolver {
   /**
     * Returns the binders introduced by the given arguments of an associated type definition.
     *
-    * These are the arguments after the selector, which is matched against the instance and
-    * introduces nothing. Each must be a distinct type variable, scoped to this definition alone.
+    * Each must be a distinct type variable, scoped to this definition alone.
     */
   private def mkAssocTypeDefBinders(sym: Symbol.AssocTypeSym, args: List[NamedAst.Type])(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.TypeParam] = {
     val (binders, _) = args.foldLeft((List.empty[ResolvedAst.TypeParam], Set.empty[String])) {
@@ -727,8 +725,7 @@ object Resolver {
         sym =>
           checkAssocTypeDefArity(sym, args0, trt, ident.loc)
 
-          // The variables of the selector come from the instance. Every other argument is a
-          // binder, scoped to this definition, so we introduce it here.
+          // The variables of the selector come from the instance; the rest we introduce here.
           val tparams = mkAssocTypeDefBinders(sym, args0)
           val scp = scp0 ++ mkTypeParamScp(tparams)
 
@@ -2639,8 +2636,7 @@ object Resolver {
         }
 
       case UnkindedType.UnappliedAssocType(sym, loc) =>
-        // The associated type consumes the selector plus one argument per declared parameter;
-        // anything beyond that is an ordinary type application.
+        // Anything beyond the declared arity is an ordinary type application.
         val arity = 1 + assocTypeArity(sym, root)
         targs.splitAt(arity) match {
           // Case 1: The associated type is under-applied.

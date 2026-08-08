@@ -392,8 +392,6 @@ object Kinder {
     */
   private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssocTypeSig, kenv: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.AssocTypeSig = s0 match {
     case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, tparams0, kind, tpe0, loc) =>
-      // The trait's own parameter takes its kind from the trait. The rest take theirs from this
-      // declaration, defaulting to Type.
       val kenv1 = tparams0.foldLeft(kenv) {
         case (acc, tp) => acc + (tp.sym, declaredKindOfTypeParam(tp))
       }
@@ -412,14 +410,12 @@ object Kinder {
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
 
-      // The binders are local to this definition, so they are absent from the instance's kind
-      // environment. Their kinds are not inferred: the trait's declaration of the associated
-      // type fixes them.
+      // The binders are absent from the instance's kind environment, and their kinds are not
+      // inferred: the trait's declaration of the associated type fixes them.
       val kenv = tparams0.zip(assocSig.tparams).foldLeft(kenv0) {
         case (acc, (tp, declared)) => acc + (tp.sym, declaredKindOfTypeParam(declared))
       }
 
-      // The selector picks the instance and so has the trait's kind.
       val arg = visitType(arg0, trtKind, kenv, root)
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val tpe = visitType(tpe0, tpeKind, kenv, root)
@@ -1197,8 +1193,6 @@ object Kinder {
           // check that the assoc type kind matches the expected
           unify(k0, expectedKind) match {
             case Some(kind) =>
-              // The selector picks the instance and so has the trait's kind. The remaining
-              // arguments are kinded against the assoc type's own parameters.
               val innerExpectedKind = declKinds.traitKinds(trt.sym)
               val sel = visitType(sel0, innerExpectedKind, kenv, root)
               val args = args0.zip(declaredKinds(tparams, args0.length)).map {
@@ -1433,10 +1427,6 @@ object Kinder {
 
   /**
     * Returns the declared kind of the given type parameter, defaulting to [[Kind.Star]].
-    *
-    * Used for the parameters of an associated type after the selector. Those are ordinary
-    * binders, so they take no kind from the surrounding trait; instead the trait's declaration
-    * of the associated type fixes them, and an unannotated parameter is a type.
     */
   private def declaredKindOfTypeParam(tparam: ResolvedAst.TypeParam): Kind = tparam match {
     case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
@@ -1568,8 +1558,6 @@ object Kinder {
           val kind1 = declKinds.traitKinds(trt.sym)
           val assocSig = trt.assocs.find(_.sym == sym).get
           val kind2 = assocSig.kind
-          // Only the selector picks the instance; the kinds of the rest are fixed by the trait's
-          // declaration of the associated type.
           val kenv1 = args.zip(declaredKinds(assocSig.tparams, args.length)).foldLeft(inferType(sel, kind1, kenv, root)) {
             case (acc, (t, k)) => acc ++ inferType(t, k, kenv, root)
           }
@@ -1626,8 +1614,6 @@ object Kinder {
     case UnkindedType.AssocType(cst, sel, args, _) =>
       val trt = root.traits(cst.sym.trt)
       val kind = declKinds.traitKinds(trt.sym)
-      // Only the selector picks the instance; the kinds of the rest are fixed by the trait's
-      // declaration of the associated type.
       val tparams = trt.assocs.find(_.sym == cst.sym).map(_.tparams).getOrElse(Nil)
       args.zip(declaredKinds(tparams, args.length)).foldLeft(inferType(sel, kind, kenv0, root)) {
         case (acc, (t, k)) => acc ++ inferType(t, k, kenv0, root)
