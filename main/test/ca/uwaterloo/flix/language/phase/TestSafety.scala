@@ -378,6 +378,74 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.NewObjectUndefinedMethod](result)
   }
 
+  test("TestExtraMethod.02") {
+    // Methods are matched by parameter type, not just by name and arity:
+    // `compare` on a `Comparator[String]` takes two Strings, not two Int32s.
+    val input =
+      """
+        |import java.util.Comparator
+        |
+        |def f(): Comparator[String] \ IO =
+        |  new Comparator[String] {
+        |    def compare(_this: Comparator[String], x: Int32, y: Int32): Int32 = x - y
+        |  }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectUndefinedMethod](result)
+  }
+
+  test("TestExtraMethod.03") {
+    // The type parameter of an *inherited* method is resolved through the extends chain:
+    // TestGenericChildInterface[String] gives TestGenericInterface's T1 = String, so an
+    // implementation taking an Int32 does not match.
+    val input =
+      """
+        |import dev.flix.test.TestGenericChildInterface
+        |
+        |def f(): TestGenericChildInterface[String] \ IO =
+        |  new TestGenericChildInterface[String] {
+        |    def testMethod(_this: TestGenericChildInterface[String], x: Int32): Int32 = x
+        |    def describe(_this: TestGenericChildInterface[String]): String = "child"
+        |  }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectUndefinedMethod](result)
+  }
+
+  test("TestExtraMethod.04") {
+    // Overloads are distinguished by parameter type: `append(char)` is implemented
+    // with an Int32, so it matches neither `append` overload of that arity.
+    val input =
+      """
+        |import java.lang.Appendable
+        |import java.lang.CharSequence
+        |
+        |def f(): Appendable \ IO =
+        |  new Appendable {
+        |    def append(_this: Appendable, seq: CharSequence): Appendable = ???
+        |    def append(_this: Appendable, x: Int32): Appendable = ???
+        |    def append(_this: Appendable, seq: CharSequence, start: Int32, end: Int32): Appendable = ???
+        |  }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectUndefinedMethod](result)
+  }
+
+  test("TestUnimplementedMethod.03") {
+    // The inherited generic method `testMethod` is missing entirely.
+    val input =
+      """
+        |import dev.flix.test.TestGenericChildInterface
+        |
+        |def f(): TestGenericChildInterface[String] \ IO =
+        |  new TestGenericChildInterface[String] {
+        |    def describe(_this: TestGenericChildInterface[String]): String = "child"
+        |  }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectMissingMethod](result)
+  }
+
   test("TestNonDefaultConstructor.01") {
     val input =
       """

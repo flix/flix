@@ -4,7 +4,6 @@ The following files in this directory:
 - close.svg
 - darkMode.svg
 - lightMode.svg
-- link.svg
 - menu.svg
 
 are part of the Google Material Symbols project and licensed under the Apache 2.0 license. See:
