@@ -49,8 +49,7 @@ object ConstraintSolver {
     val pregrounded = flows.map(f => pregroundFlow(f, root))
     val dependents  = buildDependents(pregrounded)
 
-    val solution  = mutable.Map.empty[MonoVar, mutable.Set[List[Type]]]
-    val inFlight  = mutable.Set.empty[(MonoVar, List[Type])]
+    val solution  = mutable.Map.empty[MonoVar, mutable.ListBuffer[List[Type]]]
     val worklist  = mutable.Queue.empty[(MonoVar, List[Type])]
 
     // Param substitution can reintroduce a raw Sender/Receiver.
@@ -66,10 +65,10 @@ object ConstraintSolver {
         case MonoVar.RestrictableEnum(_)                   => inst0
         case MonoVar.Struct(_)                             => inst0
       }
-      val key = (dst, inst)
-      if (!solution.get(dst).exists(_.contains(inst)) && !inFlight.contains(key)) {
-        inFlight += key
-        worklist.enqueue((dst, inst))
+      if (!solution.get(dst).exists(_.contains(inst))) {
+        if (!worklist.contains((dst, inst))) {
+          worklist.enqueue((dst, inst))
+        }
       }
     }
 
@@ -83,9 +82,8 @@ object ConstraintSolver {
     // Fixpoint loop.
     while (worklist.nonEmpty) {
       val (dst, inst) = worklist.dequeue()
-      inFlight -= ((dst, inst))
 
-      val seen = solution.getOrElseUpdate(dst, mutable.Set.empty)
+      val seen = solution.getOrElseUpdate(dst, mutable.ListBuffer.empty)
       if (!seen.contains(inst)) {
         seen += inst
 
@@ -111,10 +109,10 @@ object ConstraintSolver {
     }
 
     Solution(
-      defs = solution.collect { case (MonoVar.Def(sym), insts) => sym -> insts.toSet }.toMap,
-      enums = solution.collect { case (MonoVar.Enum(sym), insts) => sym -> insts.toSet }.toMap,
-      structs = solution.collect { case (MonoVar.Struct(sym), insts) => sym -> insts.toSet }.toMap,
-      restrictableEnums = solution.collect { case (MonoVar.RestrictableEnum(sym), insts) => sym -> insts.toSet }.toMap
+      defs = solution.collect { case (MonoVar.Def(sym), insts) => sym -> insts.toList }.toMap,
+      enums = solution.collect { case (MonoVar.Enum(sym), insts) => sym -> insts.toList }.toMap,
+      structs = solution.collect { case (MonoVar.Struct(sym), insts) => sym -> insts.toList }.toMap,
+      restrictableEnums = solution.collect { case (MonoVar.RestrictableEnum(sym), insts) => sym -> insts.toList }.toMap
     )
   }
 
