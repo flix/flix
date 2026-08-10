@@ -683,11 +683,18 @@ object ConstraintGen {
     */
   private def headTermFlows(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = exp0 match {
     case Expr.Var(sym, tpe, _) =>
-      if (!MonomorphHelpers.isQuantifiedVar(sym, cparams0)) boxFlow(tpe)
+      if (!MonomorphHelpers.isQuantifiedVar(sym, cparams0)) {
+        boxFlow(tpe)
+      }
     case _ =>
       val fvs = MonomorphHelpers.quantifiedVars(cparams0, exp0)
-      if (fvs.isEmpty) boxFlow(exp0.tpe)
-      else sctx.addFlow(FlowConstraint(Instantiation((fvs.map(_._2) :+ exp0.tpe).map(typeToMonoArg)), MonoVar.Def(Defs.Fixpoint.Boxable.Lift(fvs.length))))
+      if (fvs.isEmpty) {
+        boxFlow(exp0.tpe)
+      } else {
+        val argTypes = fvs.map(_._2) // t1, ..., tN
+        val liftArgs = (argTypes :+ exp0.tpe).map(typeToMonoArg)
+        sctx.addFlow(FlowConstraint(Instantiation(liftArgs), MonoVar.Def(Defs.Fixpoint.Boxable.Lift(fvs.length))))
+      }
   }
 
   /** Flows for a body atom's terms — mirrors [[SpecializeAndLower.lowerBodyTerm]]. */
@@ -696,8 +703,11 @@ object ConstraintGen {
       term match {
         case TypedAst.Pattern.Wild(_, _)         => ()
         case TypedAst.Pattern.Var(bnd, tpe, _)   =>
-          if (!MonomorphHelpers.isQuantifiedVar(bnd.sym, cparams0)) boxFlow(tpe)
-          else ()
+          if (!MonomorphHelpers.isQuantifiedVar(bnd.sym, cparams0)) {
+            boxFlow(tpe)
+          } else {
+            ()
+          }
         case TypedAst.Pattern.Cst(_, tpe, _)     => boxFlow(tpe)
         case TypedAst.Pattern.Tag(_, _, _, _)    => ()
         case TypedAst.Pattern.Tuple(_, _, _)     => ()
@@ -714,7 +724,11 @@ object ConstraintGen {
     */
   private def guardLiftFlow(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     val fvs = MonomorphHelpers.quantifiedVars(cparams0, exp0)
-    if (fvs.nonEmpty) sctx.addFlow(FlowConstraint(Instantiation(fvs.map(kv => typeToMonoArg(kv._2))), MonoVar.Def(Defs.Fixpoint.Boxable.LiftB(fvs.length))))
+    if (fvs.nonEmpty) {
+      val argTypes = fvs.map(_._2) // t1, ..., tN
+      val liftArgs = argTypes.map(typeToMonoArg)
+      sctx.addFlow(FlowConstraint(Instantiation(liftArgs), MonoVar.Def(Defs.Fixpoint.Boxable.LiftB(fvs.length))))
+    }
   }
 
   /**
@@ -729,7 +743,9 @@ object ConstraintGen {
       case t => throw InternalCompilerException(s"Expected Vector[_], but got $t", exp0.loc)
     }
     val outTypes = unmkTuplish(outArity, inner)
-    sctx.addFlow(FlowConstraint(Instantiation((inVars.map(_._2) ++ outTypes).map(typeToMonoArg)), MonoVar.Def(Defs.Fixpoint.Boxable.LiftXM(inVars.length, outArity))))
+    val inTypes = inVars.map(_._2) // i1, ..., iM
+    val liftArgs = (inTypes ++ outTypes).map(typeToMonoArg)
+    sctx.addFlow(FlowConstraint(Instantiation(liftArgs), MonoVar.Def(Defs.Fixpoint.Boxable.LiftXM(inTypes.length, outArity))))
   }
 
   /**
@@ -753,7 +769,11 @@ object ConstraintGen {
     * an arity-1 result bare, so a single value can itself be tuple-typed.
     */
   private def unmkTuplish(arity: Int, tpe: Type): List[Type] =
-    if (arity <= 1) List(tpe) else tpe.typeArguments
+    if (arity <= 1) {
+      List(tpe)
+    } else {
+      tpe.typeArguments
+    }
 
   /** Returns `t` from `Vector[t]` — mirrors [[SpecializeAndLower.unwrapVectorType]]. */
   private def unwrapVectorType(tpe0: Type): Type = Type.eraseAliases(tpe0) match {
