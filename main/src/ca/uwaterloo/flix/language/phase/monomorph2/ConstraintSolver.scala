@@ -46,7 +46,7 @@ object ConstraintSolver {
     */
   def solve(flows: List[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = {
     val instanceMap = MonomorphHelpers.mkInstanceMap(root.instances)
-    val pregrounded = flows.iterator.map(f => pregroundFlow(f, root)).toList
+    val pregrounded = flows.map(f => pregroundFlow(f, root))
     val dependents  = buildDependents(pregrounded)
 
     val solution  = mutable.Map.empty[MonoVar, mutable.Set[List[Type]]]
@@ -185,8 +185,11 @@ object ConstraintSolver {
   private def pregroundFlow(flow: FlowConstraint, root: TypedAst.Root)(implicit flix: Flix): PregroundedFlow = flow match {
     case FlowConstraint(Instantiation(args), dst) =>
       val preGrounded = args.map { arg =>
-        if (MonoArg.collectParams(arg).nonEmpty) None
-        else groundArg(arg, Map.empty, root)
+        if (MonoArg.collectParams(arg).nonEmpty) {
+          None
+        } else {
+          groundArg(arg, Map.empty, root)
+        }
       }
       PregroundedFlow(dst, args, preGrounded)
   }
@@ -251,9 +254,12 @@ object ConstraintSolver {
     */
   private def instanceArgsFor(instance: TypedAst.Instance, traitType: Type, root: TypedAst.Root)
                               (implicit flix: Flix): Option[List[Type]] =
-    if (instance.tparams.isEmpty) Some(Nil)
-    else for {
-      subst <- ConstraintSolver2.fullyUnify(instance.tpe, traitType, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
-      args  <- sequence(instance.tparams.map(tp => subst.m.get(tp.sym)))
-    } yield args
+    if (instance.tparams.isEmpty) {
+      Some(Nil)
+    } else {
+      for {
+        subst <- ConstraintSolver2.fullyUnify(instance.tpe, traitType, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
+        args  <- sequence(instance.tparams.map(tp => subst.m.get(tp.sym)))
+      } yield args
+    }
 }
