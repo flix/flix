@@ -578,7 +578,7 @@ object ConstraintGen {
       for (case (e, PredicateAndArity(_, arity)) <- exps.zip(predsAndArities)) {
         Type.eraseAliases(e.tpe) match {
           case Type.Apply(tc, innerTpe, _) =>
-            val argTypes = unmkTuplish(arity, innerTpe)
+            val argTypes = Type.unmkTuplish(arity, innerTpe)
             val flowArgs = (tc :: argTypes).map(typeToMonoArg)
             visitExp(e)
             sctx.addFlow(FlowConstraint(Instantiation(flowArgs), MonoVar.Def(Defs.Fixpoint.Solver.InjectInto(arity))))
@@ -592,7 +592,7 @@ object ConstraintGen {
       // `tpe0`, NOT from `selects`' own term types, which may still carry locally-scoped type vars.
       val arity = selects.length
       val innerTpe = unwrapVectorType(tpe0)
-      val argTypes = unmkTuplish(arity, innerTpe)
+      val argTypes = Type.unmkTuplish(arity, innerTpe)
       for (exp <- exps) {
         visitExp(exp)
       }
@@ -742,7 +742,7 @@ object ConstraintGen {
       case Type.Apply(Type.Cst(TypeConstructor.Vector, _), t, _) => t
       case t => throw InternalCompilerException(s"Expected Vector[_], but got $t", exp0.loc)
     }
-    val outTypes = unmkTuplish(outArity, inner)
+    val outTypes = Type.unmkTuplish(outArity, inner)
     val inTypes = inVars.map(_._2) // i1, ..., iM
     val liftArgs = (inTypes ++ outTypes).map(typeToMonoArg)
     sctx.addFlow(FlowConstraint(Instantiation(liftArgs), MonoVar.Def(Defs.Fixpoint.Boxable.LiftXM(inTypes.length, outArity))))
@@ -763,17 +763,6 @@ object ConstraintGen {
       sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(tpe))), MonoVar.Def(Defs.Fixpoint.Ast.Shared.Lattice)))
       sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(tpe))), MonoVar.Def(Defs.Fixpoint.Ast.Shared.Box)))
   }
-
-  /**
-    * Inverse of `Type.mkTuplish`. `arity` can't be derived from `tpe` alone — mkTuplish leaves
-    * an arity-1 result bare, so a single value can itself be tuple-typed.
-    */
-  private def unmkTuplish(arity: Int, tpe: Type): List[Type] =
-    if (arity <= 1) {
-      List(tpe)
-    } else {
-      tpe.typeArguments
-    }
 
   /** Returns `t` from `Vector[t]` — mirrors [[SpecializeAndLower.unwrapVectorType]]. */
   private def unwrapVectorType(tpe0: Type): Type = Type.eraseAliases(tpe0) match {
