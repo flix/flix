@@ -117,16 +117,18 @@ object ConstraintSolver {
     )
   }
 
+  /** Returns every distinct MonoVar referenced by a `Param` in `pf`'s args. */
+  private def paramVars(pf: PregroundedFlow): Set[MonoVar] =
+    pf.args.flatMap(MonoArg.collectParams).map(_._1).toSet
+
   /** Return for each MonoVar, the (pregrounded) flows whose args contain `Param(mvar, _)`. */
   private def buildDependents(flows: List[PregroundedFlow]): Map[MonoVar, List[PregroundedFlow]] = {
-    val m = mutable.Map.empty[MonoVar, mutable.ListBuffer[PregroundedFlow]]
-    for (pf <- flows) {
-      val mvars = pf.args.flatMap(arg => MonoArg.collectParams(arg)).map(_._1).toSet
-      for (v <- mvars) {
-        m.getOrElseUpdate(v, mutable.ListBuffer.empty) += pf
-      }
-    }
-    m.map { case (k, buf) => k -> buf.toList }.toMap
+    val edges = for {
+      pf <- flows
+      v  <- paramVars(pf)
+    } yield v -> pf
+
+    edges.groupMap(_._1)(_._2)
   }
 
   /**
