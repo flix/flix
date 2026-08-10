@@ -966,6 +966,19 @@ object Type {
   }
 
   /**
+    * Inverse of [[mkTuplish]]: recovers the list of types that were combined into `tpe`.
+    *
+    * Returns `List(tpe)` if `arity <= 1`, since [[mkTuplish]] leaves a single value bare.
+    * Returns `tpe`'s type arguments otherwise.
+    */
+  def unmkTuplish(arity: Int, tpe: Type): List[Type] =
+    if (arity <= 1) {
+      List(tpe)
+    } else {
+      tpe.typeArguments
+    }
+
+  /**
     * Constructs the a native type.
     */
   def mkNative(clazz: Class[?], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
