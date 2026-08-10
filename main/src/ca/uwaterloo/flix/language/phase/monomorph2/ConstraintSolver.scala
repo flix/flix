@@ -141,7 +141,12 @@ object ConstraintSolver {
     case MonoArg.Param(v, i) =>
       for {
         inst <- bindings.get(v)
-        tpe  <- inst.lift(i)
+        tpe  <-
+          if (i >= 0 && i < inst.length) {
+            Some(inst(i))
+          } else {
+            None
+          }
       } yield tpe
     case MonoArg.App(head, args) =>
       for {
