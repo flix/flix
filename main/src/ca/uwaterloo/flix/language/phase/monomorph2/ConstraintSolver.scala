@@ -163,9 +163,14 @@ object ConstraintSolver {
   /** Rewrites every `Region` constant in `t` to `IO`. */
   private def rewriteRegionToIO(t: Type): Type = t match {
     case Type.Cst(TypeConstructor.Region(_), loc) => Type.Cst(TypeConstructor.Effect(Symbol.IO, Kind.Eff), loc)
+    case Type.Cst(_, _)                           => t
+    case Type.Var(_, _)                           => t
     case Type.Apply(t1, t2, loc)                  => Type.Apply(rewriteRegionToIO(t1), rewriteRegionToIO(t2), loc)
     case Type.Alias(sym, args, inner, loc)        => Type.Alias(sym, args.map(rewriteRegionToIO), rewriteRegionToIO(inner), loc)
-    case other                                    => other
+    case Type.AssocType(sym, arg, kind, loc)      => Type.AssocType(sym, rewriteRegionToIO(arg), kind, loc)
+    case Type.JvmToType(tpe, loc)                 => Type.JvmToType(rewriteRegionToIO(tpe), loc)
+    case Type.JvmToEff(tpe, loc)                  => Type.JvmToEff(rewriteRegionToIO(tpe), loc)
+    case Type.UnresolvedJvmType(_, _)             => t
   }
 
   /** A [[FlowConstraint]] with each Param-free arg position pre-grounded once, since those can't
