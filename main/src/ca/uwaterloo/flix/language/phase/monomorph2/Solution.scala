@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.monomorph2
 
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
   * The result of constraint solving: for each polymorphic def/enum/struct/restrictable-enum
@@ -24,8 +24,8 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
   * enum's instantiation always starts with its case-set index (`Kind.CaseSet`).
   */
 case class Solution(
-  defs: Map[Symbol.DefnSym, List[List[Type]]],
-  enums: Map[Symbol.EnumSym, List[List[Type]]],
-  structs: Map[Symbol.StructSym, List[List[Type]]],
-  restrictableEnums: Map[Symbol.RestrictableEnumSym, List[List[Type]]]
+  defs: Map[Symbol.DefnSym, List[GroundInstantiation]],
+  enums: Map[Symbol.EnumSym, List[GroundInstantiation]],
+  structs: Map[Symbol.StructSym, List[GroundInstantiation]],
+  restrictableEnums: Map[Symbol.RestrictableEnumSym, List[GroundInstantiation]]
 )

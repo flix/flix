@@ -50,14 +50,14 @@ object ConstraintSolver {
     val pregrounded = flows.map(f => pregroundFlow(f, root))
     val dependents  = buildDependents(pregrounded)
 
-    val solution  = mutable.Map.empty[MonoVar, mutable.ListBuffer[List[Type]]]
-    val worklist  = mutable.Queue.empty[(MonoVar, List[Type])]
+    val solution  = mutable.Map.empty[MonoVar, mutable.ListBuffer[GroundInstantiation]]
+    val worklist  = mutable.Queue.empty[(MonoVar, GroundInstantiation)]
 
-    def enqueue(dst: MonoVar, inst0: List[Type]): Unit = {
+    def enqueue(dst: MonoVar, inst0: GroundInstantiation): Unit = {
       val inst = dst match {
         case MonoVar.Def(sym) =>
           if (Defs.Concurrent.Channel.NeedsRelowering.contains(sym)) {
-            inst0.map(lowerChannelType)
+            GroundInstantiation(inst0.args.map(lowerChannelType))
           } else {
             inst0
           }
@@ -136,14 +136,14 @@ object ConstraintSolver {
     * Substitutes `bindings` into `arg`'s `Param`s.
     * Returns `None` if some `Param`'s var isn't bound (yet).
     */
-  private def substArg(arg: MonoArg, bindings: Map[MonoVar, List[Type]]): Option[Type] = arg match {
+  private def substArg(arg: MonoArg, bindings: Map[MonoVar, GroundInstantiation]): Option[Type] = arg match {
     case MonoArg.Const(t) => Some(t)
     case MonoArg.Param(v, i) =>
       for {
         inst <- bindings.get(v)
         tpe  <-
-          if (i >= 0 && i < inst.length) {
-            Some(inst(i))
+          if (i >= 0 && i < inst.args.length) {
+            Some(inst.args(i))
           } else {
             None
           }
@@ -193,17 +193,17 @@ object ConstraintSolver {
   }
 
   /** Grounds `pf`'s args to a ground instantiation, or `None` if any position is not ready. */
-  private def groundArgs(pf: PregroundedFlow, bindings: Map[MonoVar, List[Type]], root: TypedAst.Root)
-                         (implicit flix: Flix): Option[List[Type]] =
+  private def groundArgs(pf: PregroundedFlow, bindings: Map[MonoVar, GroundInstantiation], root: TypedAst.Root)
+                         (implicit flix: Flix): Option[GroundInstantiation] =
     ListOps.traverse(pf.args.zip(pf.preGrounded)) {
       case (_, Some(t)) => Some(t)
       case (arg, None)  => groundArg(arg, bindings, root)
-    }
+    }.map(GroundInstantiation.apply)
 
   /**
     * Grounds `arg` via [[substArg]] and the shared [[Canonicalization]] pipeline.
     */
-  private def groundArg(arg: MonoArg, bindings: Map[MonoVar, List[Type]], root: TypedAst.Root)
+  private def groundArg(arg: MonoArg, bindings: Map[MonoVar, GroundInstantiation], root: TypedAst.Root)
                           (implicit flix: Flix): Option[Type] =
     substArg(arg, bindings).map {
       raw =>
@@ -221,18 +221,18 @@ object ConstraintSolver {
     */
   private def resolveSig(
     sigSym: Symbol.SigSym,
-    instantiation: List[Type],
+    instantiation: GroundInstantiation,
     root: TypedAst.Root,
     instanceMap: Map[(Symbol.TraitSym, TypeConstructor), TypedAst.Instance]
-  )(implicit flix: Flix): Option[(Symbol.DefnSym, List[Type])] = {
-    val traitType = instantiation.head
+  )(implicit flix: Flix): Option[(Symbol.DefnSym, GroundInstantiation)] = {
+    val traitType = instantiation.args.head
     for {
       tyCon    <- traitType.typeConstructor
       instance <- instanceMap.get((sigSym.trt, tyCon))
       result   <- instance.defs.find(_.sym.text == sigSym.name) match {
         case Some(implDef) =>
-          val sigOwnArgs = instantiation.tail // type args beyond the trait type param
-          Some((implDef.sym, instanceArgsFor(instance, traitType, root) ++ sigOwnArgs))
+          val sigOwnArgs = instantiation.args.tail // type args beyond the trait type param
+          Some((implDef.sym, GroundInstantiation(instanceArgsFor(instance, traitType, root) ++ sigOwnArgs)))
 
         case None =>
           // No impl def: sig has a default impl. Synthesize a trait-level sym and forward the
