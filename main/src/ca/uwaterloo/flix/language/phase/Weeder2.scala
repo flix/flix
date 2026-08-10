@@ -612,7 +612,7 @@ object Weeder2 {
     }
 
     private def visitEqualityConstraint(tree: Tree)(implicit sctx: SharedContext): Option[EqualityConstraint] = {
-      /** Unrolls the application spine of `tpe` into its head and arguments, left to right. */
+      // MATT docs
       def unroll(tpe: Type): (Type, List[Type]) = tpe match {
         case Type.Apply(t1, t2, _) =>
           val (head, args) = unroll(t1)

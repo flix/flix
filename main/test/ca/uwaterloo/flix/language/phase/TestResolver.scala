@@ -1195,7 +1195,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
   test("UnderAppliedAssocType.02") {
-    // A multiparameter associated type must be applied to all of its parameters.
+    // MATT docs
     val input =
       """
         |trait C[a] {
@@ -1847,7 +1847,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
   test("MismatchedAssocTypeArity.03") {
-    // An equality constraint must apply the associated type to all of its parameters.
+    // MATT docs
     val input =
       """
         |trait C[a] {

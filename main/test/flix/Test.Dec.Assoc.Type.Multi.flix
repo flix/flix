@@ -2,9 +2,7 @@ mod Test.Dec.Assoc.Type.Multi {
 
     use Assert.assertEq
 
-    ////////////////////////////////////////////////////////
-    // Extra parameter in trailing position                //
-    ////////////////////////////////////////////////////////
+    // MATT docs
 
     trait Build[a] {
         type Builder[a: Type, r: Region]: Type
@@ -22,12 +20,7 @@ mod Test.Dec.Assoc.Type.Multi {
         MutList.push(2, ml);
         Build.build(ml)
 
-    ////////////////////////////////////////////////////////
-    // Extra parameter reordered                          //
-    ////////////////////////////////////////////////////////
-
-    // The point-free encoding cannot express this: the extra parameter is
-    // not the trailing parameter of the right-hand side.
+    // MATT docs
     trait Reorder[a] {
         type Swapped[a, b]: Type
         pub def swap(x: a, y: Reorder.Swapped[a, b]): b
@@ -38,12 +31,7 @@ mod Test.Dec.Assoc.Type.Multi {
         pub def swap(_x: Int32, y: (b, Int32)): b = fst(y)
     }
 
-    ////////////////////////////////////////////////////////
-    // Extra parameter discarded                          //
-    ////////////////////////////////////////////////////////
-
-    // The point-free encoding cannot express this either: the extra
-    // parameter is unused on the right-hand side.
+    // MATT docs
     trait Ignore[a] {
         type Const[a, b]: Type
         pub def wrap(x: a, y: b): Ignore.Const[a, b]
@@ -54,9 +42,7 @@ mod Test.Dec.Assoc.Type.Multi {
         pub def wrap(x: Int32, _y: b): Int32 = x
     }
 
-    ////////////////////////////////////////////////////////
-    // Extra parameter used twice                         //
-    ////////////////////////////////////////////////////////
+    // MATT docs
 
     trait Twice[a] {
         type Pair[a, b]: Type
@@ -70,23 +56,13 @@ mod Test.Dec.Assoc.Type.Multi {
         pub def first(_x: Int32, p: (b, b)): b = fst(p)
     }
 
-    ////////////////////////////////////////////////////////
-    // Stuck applications decompose                       //
-    ////////////////////////////////////////////////////////
-
-    // 'Twice.first' pins the selector to the rigid 'a', but leaves the binder of
-    // its 'Twice.Pair' parameter free: the wildcard match discards the result, so
-    // nothing outside the equality with 'Twice.dup' determines it. Both sides are
-    // stuck on 'a' — no instance is selected by a rigid variable — so this only
-    // typechecks if the two applications decompose argument-wise.
+    // MATT docs
     pub def roundTrip(x: a, y: b): Bool with Twice[a] =
         match Twice.first(x, Twice.dup(x, y)) {
             case _ => true
         }
 
-    ////////////////////////////////////////////////////////
-    // Effect-kinded associated type with extra parameter  //
-    ////////////////////////////////////////////////////////
+    // MATT docs
 
     trait Runner[a] {
         type Aef[a: Type, r: Region]: Eff
@@ -100,9 +76,7 @@ mod Test.Dec.Assoc.Type.Multi {
             Ref.get(rf)
     }
 
-    ////////////////////////////////////////////////////////
-    // Tests                                              //
-    ////////////////////////////////////////////////////////
+    // MATT docs
 
     @Test
     pub def testBuild01(): Unit \ Assert = region rc {

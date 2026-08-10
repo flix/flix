@@ -1246,15 +1246,7 @@ object ResolutionError {
     }
   }
 
-  /**
-    * An error raised to indicate that an associated type definition has the wrong number of
-    * arguments for its declared signature.
-    *
-    * @param sym      the associated type symbol.
-    * @param expected the number of parameters declared in the trait.
-    * @param actual   the number of arguments supplied.
-    * @param loc      the location where the error occurred.
-    */
+  // MATT docs
   case class MismatchedAssocTypeArity(sym: Symbol.AssocTypeSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3250
 
@@ -1280,13 +1272,7 @@ object ResolutionError {
     }
   }
 
-  /**
-    * An error raised to indicate that a parameter of an associated type definition, other than
-    * the first, is not a distinct type variable.
-    *
-    * @param sym the associated type symbol.
-    * @param loc the location where the error occurred.
-    */
+  // MATT docs
   case class IllegalAssocTypeParam(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3251
 

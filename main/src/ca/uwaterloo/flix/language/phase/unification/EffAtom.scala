@@ -134,8 +134,7 @@ private object EffAtom {
   private def getAssocAtoms(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): Option[EffAtom] = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => Some(EffAtom.VarRigid(sym))
     case Type.AssocType(AssocTypeSymUse(sym, _), sel, args, _, _) =>
-      // The selector and every argument must be valid atoms; otherwise the whole associated
-      // type is not an atom.
+      // MATT docs
       for {
         s <- getAssocAtoms(sel)
         atoms = args.map(getAssocAtoms)

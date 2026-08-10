@@ -618,7 +618,7 @@ object Resolver {
       val tparam = resolveTypeParam(tparam0, scp0, ns0, root)
       val tparams = tparams0.map(resolveTypeParam(_, scp0, ns0, root))
       val kind = resolveKind(kind0, scp0, ns0, root)
-      // The binders are in scope in the default type.
+      // MATT docs
       val scp = scp0 ++ mkTypeParamScp(tparams)
       val tpe = tpe0.map(resolveType(_, Some(kind), Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix))
       ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, tparams, kind, tpe, loc)
@@ -676,11 +676,7 @@ object Resolver {
     }
   }
 
-  /**
-    * Returns the binders introduced by the given arguments of an associated type definition.
-    *
-    * Each must be a distinct type variable, scoped to this definition alone.
-    */
+  // MATT docs
   private def mkAssocTypeDefBinders(sym: Symbol.AssocTypeSym, args: List[NamedAst.Type])(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.TypeParam] = {
     val (binders, _) = args.foldLeft((List.empty[ResolvedAst.TypeParam], Set.empty[String])) {
       case ((acc, seen), NamedAst.Type.Var(ident, loc)) if !seen.contains(ident.name) =>
@@ -693,11 +689,7 @@ object Resolver {
     binders
   }
 
-  /**
-    * Checks that an associated type definition takes as many arguments as its declaration.
-    *
-    * `args` excludes the selector, so the reported counts add it back.
-    */
+  // MATT docs
   private def checkAssocTypeDefArity(sym: Symbol.AssocTypeSym, args: List[NamedAst.Type], trt: NamedAst.Declaration.Trait, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     trt.assocs.find(_.sym == sym).foreach {
       assocSig =>
@@ -725,7 +717,7 @@ object Resolver {
         sym =>
           checkAssocTypeDefArity(sym, args0, trt, ident.loc)
 
-          // The variables of the selector come from the instance; the rest we introduce here.
+          // MATT docs
           val tparams = mkAssocTypeDefBinders(sym, args0)
           val scp = scp0 ++ mkTypeParamScp(tparams)
 
@@ -2580,12 +2572,7 @@ object Resolver {
     visit(tpe0)
   }
 
-  /**
-    * Returns the number of parameters the given associated type declares beyond its selector.
-    *
-    * Returns zero if the declaration cannot be found, which keeps resolution going after an
-    * earlier error.
-    */
+  // MATT docs
   private def assocTypeArity(sym: Symbol.AssocTypeSym, root: NamedAst.Root): Int = {
     root.symbols
       .getOrElse(Name.mkUnlocatedNName(sym.namespace), Map.empty)
@@ -2636,7 +2623,7 @@ object Resolver {
         }
 
       case UnkindedType.UnappliedAssocType(sym, loc) =>
-        // Anything beyond the declared arity is an ordinary type application.
+        // MATT docs
         val arity = 1 + assocTypeArity(sym, root)
         targs.splitAt(arity) match {
           // Case 1: The associated type is under-applied.
@@ -2651,8 +2638,7 @@ object Resolver {
             val sel = finishResolveType(sel0, taenv, root)
             val args = args0.map(finishResolveType(_, taenv, root))
             val extra = extra0.map(finishResolveType(_, taenv, root))
-            // Only the selector picks the instance, so only it must be a type variable.
-            // The remaining arguments are ordinary binders and may be any type.
+            // MATT docs
             sel match {
               case _: UnkindedType.Var =>
                 val cst = AssocTypeSymUse(sym, loc)
@@ -2664,7 +2650,7 @@ object Resolver {
                 UnkindedType.Error(loc)
             }
 
-          // Case 3: Unreachable — `arity` is at least one, so a full application is non-empty.
+          // Case 3: MATT docs
           case (Nil, _) =>
             throw InternalCompilerException("unexpected empty associated type application", loc)
         }

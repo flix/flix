@@ -1295,15 +1295,7 @@ object HtmlDocumentor {
     sb.append("</div>")
   }
 
-  /**
-    * Document the type parameters of an associated type, wrapped in `[]`.
-    *
-    * Unlike [[docTypeParams]], the parameters are kept in declaration order, since an associated
-    * type is applied positionally. Nothing is emitted unless the associated type introduces
-    * binders of its own: `tparam` alone is the trait's parameter, elided in the source as well.
-    *
-    * The result will be appended to the given `StringBuilder`, `sb`.
-    */
+  // MATT docs
   private def docAssocTypeParams(tparam: TypedAst.TypeParam, tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (tparams.isEmpty) {
       return

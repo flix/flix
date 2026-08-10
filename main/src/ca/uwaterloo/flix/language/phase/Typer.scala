@@ -168,16 +168,14 @@ object Typer {
       assocDef = assocDefOpt match {
         // If there's no definition, then we fall back to the default
         case None =>
-          // Given `trait C[a] { type T[a, b]: Type = (a, b) }` and `instance C[Int32]`,
-          // the default is `T[Int32, b] = (Int32, b)`.
+          // MATT docs
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
           val tpe = subst(assocSig.tpe.get)
           val binders = assocSig.tparams
           val args = binders.map(tp => Type.Var(tp.sym, tp.loc))
           AssocTypeDef(tparams ++ binders.map(_.sym), inst.tpe, args, tpe)
         case Some(KindedAst.AssocTypeDef(_, _, _, arg, binders, tpe, _)) =>
-          // The binders join the instance's type parameters so that each reduction refreshes
-          // them, rather than sharing one symbol across every reduction of the definition.
+          // MATT docs
           val args = binders.map(b => Type.Var(b.sym, b.loc))
           AssocTypeDef(tparams ++ binders.map(_.sym), arg, args, tpe)
       }

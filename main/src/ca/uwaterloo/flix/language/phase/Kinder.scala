@@ -410,8 +410,7 @@ object Kinder {
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
 
-      // The binders are absent from the instance's kind environment, and their kinds are not
-      // inferred: the trait's declaration of the associated type fixes them.
+      // MATT docs
       val kenv = tparams0.zip(assocSig.tparams).foldLeft(kenv0) {
         case (acc, (tp, declared)) => acc + (tp.sym, declaredKindOfTypeParam(declared))
       }
@@ -1415,19 +1414,11 @@ object Kinder {
     EqualityConstraint(symUse, t1, ts, t2, loc)
   }
 
-  /**
-    * Returns the declared kinds of the given associated type parameters, padded with [[Kind.Star]]
-    * to `n` entries so that zipping against `n` arguments preserves their number.
-    *
-    * The padding matters only where the arity of a use does not match the declaration. That is
-    * reported by the Resolver, and kinding continues so later errors are not suppressed.
-    */
+  // MATT docs
   private def declaredKinds(tparams: List[ResolvedAst.TypeParam], n: Int): List[Kind] =
     tparams.map(declaredKindOfTypeParam).padTo(n, Kind.Star)
 
-  /**
-    * Returns the declared kind of the given type parameter, defaulting to [[Kind.Star]].
-    */
+  // MATT docs
   private def declaredKindOfTypeParam(tparam: ResolvedAst.TypeParam): Kind = tparam match {
     case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
     case _: ResolvedAst.TypeParam.Unkinded => Kind.Star

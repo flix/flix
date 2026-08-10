@@ -56,7 +56,7 @@ object TypeReduction2 {
       val cs = cs0 ::: reduced.flatMap(_._2)
 
       // Get all the associated types from the context.
-      // Only the selector picks the definition.
+      // MATT docs
       val assocOpt = eqenv.getAssocDef(symUse.sym, s)
 
       // Find the instance that matches
@@ -80,7 +80,7 @@ object TypeReduction2 {
           val assocTpes = assocTpes0.map(assocSubst.apply)
           val ret = assocSubst(ret0)
 
-          // Unify pairwise across the selector and every argument, threading the substitution.
+          // MATT docs
           // Instantiate all the instance constraints according to the resulting substitution.
           val init: Option[Substitution] = Some(Substitution.empty)
           (s :: ts).zip(assocSel :: assocTpes).foldLeft(init) {

@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.{Type, Symbol}
   * Represents the definition of an associated type.
   * If this associated type is named `Assoc`, then
   * Assoc[sel, args...] = ret.
-  *
-  * `sel` is the selector, which alone determines the instance this definition belongs to.
   */
+// MATT docs
 case class AssocTypeDef(tparams: List[Symbol.KindedTypeVarSym], sel: Type, args: List[Type], ret: Type)
