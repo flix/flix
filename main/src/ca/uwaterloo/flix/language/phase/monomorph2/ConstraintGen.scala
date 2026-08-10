@@ -701,18 +701,18 @@ object ConstraintGen {
   private def bodyAtomTermConstraints(cparams0: List[TypedAst.ConstraintParam], terms: List[TypedAst.Pattern])(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     for (term <- terms) {
       term match {
-        case TypedAst.Pattern.Wild(_, _)         => ()
-        case TypedAst.Pattern.Var(bnd, tpe, _)   =>
+        case TypedAst.Pattern.Wild(_, _)           => ()
+        case TypedAst.Pattern.Var(bnd, tpe, _)     =>
           if (!MonomorphHelpers.isQuantifiedVar(bnd.sym, cparams0)) {
             boxConstraint(tpe)
           } else {
             ()
           }
-        case TypedAst.Pattern.Cst(_, tpe, _)     => boxConstraint(tpe)
-        case TypedAst.Pattern.Tag(_, _, _, _)    => ()
-        case TypedAst.Pattern.Tuple(_, _, _)     => ()
-        case TypedAst.Pattern.Error(_, _)        => ()
-        case TypedAst.Pattern.Record(_, _, _, _) => ()
+        case TypedAst.Pattern.Cst(_, tpe, _)       => boxConstraint(tpe)
+        case TypedAst.Pattern.Tag(_, _, _, loc)    => throw InternalCompilerException(s"Unexpected pattern: '$term'.", loc)
+        case TypedAst.Pattern.Tuple(_, _, loc)     => throw InternalCompilerException(s"Unexpected pattern: '$term'.", loc)
+        case TypedAst.Pattern.Error(_, loc)        => throw InternalCompilerException(s"Unexpected pattern: '$term'.", loc)
+        case TypedAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$term'.", loc)
       }
     }
   }
