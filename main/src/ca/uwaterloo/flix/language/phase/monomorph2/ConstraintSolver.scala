@@ -146,10 +146,11 @@ object ConstraintSolver {
       for {
         h  <- substArg(head, bindings)
         as <- substArgs(args, bindings)
-      } yield as.foldLeft(h) { case (acc, t) => Type.Apply(acc, t, h.loc) }
+      } yield Type.mkApply(h, as, h.loc)
     case MonoArg.Assoc(sym, a, kind, loc) =>
-      substArg(a, bindings).map { t =>
-        Type.AssocType(SymUse.AssocTypeSymUse(sym, loc), t, kind, loc)
+      substArg(a, bindings).map {
+        t =>
+          Type.AssocType(SymUse.AssocTypeSymUse(sym, loc), t, kind, loc)
       }
   }
 
@@ -185,12 +186,13 @@ object ConstraintSolver {
   /** Returns `flow` with its Param-free positions pre-grounded. */
   private def pregroundFlow(flow: FlowConstraint, root: TypedAst.Root)(implicit flix: Flix): PregroundedFlow = flow match {
     case FlowConstraint(Instantiation(args), dst) =>
-      val preGrounded = args.map { arg =>
-        if (MonoArg.collectParams(arg).nonEmpty) {
-          None
-        } else {
-          groundArg(arg, Map.empty, root)
-        }
+      val preGrounded = args.map {
+        arg =>
+          if (MonoArg.collectParams(arg).nonEmpty) {
+            None
+          } else {
+            groundArg(arg, Map.empty, root)
+          }
       }
       PregroundedFlow(dst, args, preGrounded)
   }
@@ -208,13 +210,14 @@ object ConstraintSolver {
     */
   private def groundArg(arg: MonoArg, bindings: Map[MonoVar, List[Type]], root: TypedAst.Root)
                           (implicit flix: Flix): Option[Type] =
-    substArg(arg, bindings).map { raw =>
-      val defaulted = rewriteRegionToIO(raw).map(Canonicalization.default)
-      val result = Canonicalization.simplify(defaulted, isGround = true)(root, flix)
-      if (result.typeVars.nonEmpty) {
-        throw InternalCompilerException(s"Defaulted arg did not fully ground: $result", result.loc)
-      }
-      result
+    substArg(arg, bindings).map {
+      raw =>
+        val defaulted = rewriteRegionToIO(raw).map(Canonicalization.default)
+        val result = Canonicalization.simplify(defaulted, isGround = true)(root, flix)
+        if (result.typeVars.nonEmpty) {
+          throw InternalCompilerException(s"Defaulted arg did not fully ground: $result", result.loc)
+        }
+        result
     }
 
   /**
