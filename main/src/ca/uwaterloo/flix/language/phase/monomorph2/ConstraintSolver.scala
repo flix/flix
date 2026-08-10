@@ -232,33 +232,24 @@ object ConstraintSolver {
       result   <- instance.defs.find(_.sym.text == sigSym.name) match {
         case Some(implDef) =>
           val sigOwnArgs = instantiation.tail // type args beyond the trait type param
-          instanceArgsFor(instance, traitType, root).map(instanceArgs => (implDef.sym, instanceArgs ++ sigOwnArgs))
+          Some((implDef.sym, instanceArgsFor(instance, traitType, root) ++ sigOwnArgs))
 
         case None =>
           // No impl def: sig has a default impl. Synthesize a trait-level sym and forward the
           // instantiation as-is (the default belongs to the trait, not the instance).
-          for {
-            _ <- root.sigs(sigSym).exp
-            _ <- instanceArgsFor(instance, traitType, root)
-          } yield {
-            val ns = sigSym.trt.namespace :+ sigSym.trt.name
-            (new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc), instantiation)
+          root.sigs(sigSym).exp.map {
+            _ =>
+              val ns = sigSym.trt.namespace :+ sigSym.trt.name
+              (new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc), instantiation)
           }
       }
     } yield result
   }
 
-  /** Unifies `instance`'s type against `traitType`, returning its tparams' values in order.
-    * `None` if unification fails or leaves some tparam unresolved.
-    */
+  /** Unifies `instance`'s type against `traitType`, returning its tparams' values in order. */
   private def instanceArgsFor(instance: TypedAst.Instance, traitType: Type, root: TypedAst.Root)
-                              (implicit flix: Flix): Option[List[Type]] =
-    if (instance.tparams.isEmpty) {
-      Some(Nil)
-    } else {
-      for {
-        subst <- ConstraintSolver2.fullyUnify(instance.tpe, traitType, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
-        args  <- ListOps.traverse(instance.tparams)(tp => subst.m.get(tp.sym))
-      } yield args
-    }
+                              (implicit flix: Flix): List[Type] = {
+    val subst = ConstraintSolver2.fullyUnify(instance.tpe, traitType, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
+    instance.tparams.map(tp => subst.m(tp.sym))
+  }
 }
