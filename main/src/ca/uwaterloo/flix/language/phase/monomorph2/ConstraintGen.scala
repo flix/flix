@@ -44,12 +44,12 @@ object ConstraintGen {
     *
     * This class is thread-safe.
     */
-  private case class SharedContext(flows: ConcurrentLinkedQueue[FlowConstraint]) {
+  private case class SharedContext(flowConstraints: ConcurrentLinkedQueue[FlowConstraint]) {
     /** Emits `flow` as one of the generated constraints. */
-    def addFlow(flow: FlowConstraint): Unit = flows.add(flow)
+    def addFlowConstraint(flow: FlowConstraint): Unit = flowConstraints.add(flow)
 
-    /** Returns every flow emitted so far. */
-    def result: List[FlowConstraint] = flows.asScala.toList
+    /** Returns every flow constraint emitted so far. */
+    def result: List[FlowConstraint] = flowConstraints.asScala.toList
   }
 
   /**
@@ -150,7 +150,7 @@ object ConstraintGen {
           dealiasedVisitType(arg)
         }
         for (mvar <- declMonoVar(app.baseType)) {
-          sctx.addFlow(FlowConstraint(Instantiation(args.map(t => dealiasedTypeToMonoArg(t))), mvar))
+          sctx.addFlowConstraint(FlowConstraint(Instantiation(args.map(t => dealiasedTypeToMonoArg(t))), mvar))
         }
       case Type.Var(_, _)               => ()
       case Type.Cst(_, _)               => ()
@@ -221,14 +221,14 @@ object ConstraintGen {
     }
     visitType(defn.spec.retTpe)
     visitExp(defn.exp)
-    entryPointHandlerFlows(defn)
+    entryPointHandlerConstraints(defn)
   }
 
   /**
     * Emits flow constraints for the default-handler calls that
     * [[SpecializeAndLower.wrapDefWithDefaultHandlers]] synthesizes around entry points.
     */
-  private def entryPointHandlerFlows(defn: TypedAst.Def)(implicit tparamEnv: TparamEnv, sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
+  private def entryPointHandlerConstraints(defn: TypedAst.Def)(implicit tparamEnv: TparamEnv, sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
     if (TypedAstOps.isEntryPoint(defn)(root)) {
       val loc = defn.spec.eff.loc
       val defEffects = Canonicalization.evalEff(defn.spec.eff)
@@ -267,7 +267,7 @@ object ConstraintGen {
         val subst = ConstraintSolver2.fullyUnify(handlerDef.spec.fparams.head.tpe, concreteParamTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
           .getOrElse(throw InternalCompilerException(s"Could not unify default handler '${handler.handlerSym}' against its call site.", loc))
         val args = handlerTparams.map(tp => typeToMonoArg(subst(Type.Var(tp.sym, loc))))
-        sctx.addFlow(FlowConstraint(Instantiation(args), MonoVar.Def(handler.handlerSym)))
+        sctx.addFlowConstraint(FlowConstraint(Instantiation(args), MonoVar.Def(handler.handlerSym)))
         Canonicalization.canonicalEffect(Type.mkUnion(Type.mkDifference(eff, handler.handledEff, loc), Type.IO, loc))
       }
       ()
@@ -286,12 +286,12 @@ object ConstraintGen {
       for (exp <- exps) {
         visitExp(exp)
       }
-      sctx.addFlow(FlowConstraint(Instantiation(targs.map(typeToMonoArg)), MonoVar.Def(symUse.sym)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(targs.map(typeToMonoArg)), MonoVar.Def(symUse.sym)))
     case Expr.ApplySig(symUse, exps, targ, targs, _, _, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
       }
-      sctx.addFlow(FlowConstraint(Instantiation((targ :: targs).map(typeToMonoArg)), MonoVar.Sig(symUse.sym)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation((targ :: targs).map(typeToMonoArg)), MonoVar.Sig(symUse.sym)))
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)
@@ -333,13 +333,13 @@ object ConstraintGen {
       for (exp <- exps) {
         visitExp(exp)
       }
-      sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
     case Expr.RestrictableTag(_, exps, tpe, _, _) =>
       val (mvar, tpArgs) = getMonoVarAndTypeArgs(tpe)
       for (exp <- exps) {
         visitExp(exp)
       }
-      sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       for (rule <- rules) {
@@ -406,7 +406,7 @@ object ConstraintGen {
       for (exp <- region) {
         visitExp(exp)
       }
-      sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
     case Expr.StructGet(exp, _, _, _, _) => visitExp(exp)
     case Expr.StructPut(exp1, _, exp2, _, _, _) =>
       visitExp(exp1)
@@ -448,9 +448,9 @@ object ConstraintGen {
       for (frag <- frags.init) {
         val elmType = frag.exp.tpe
         val elmArg = typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType))
-        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.NewChannel)))
-        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.Put)))
-        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.Get)))
+        sctx.addFlowConstraint(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.NewChannel)))
+        sctx.addFlowConstraint(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.Put)))
+        sctx.addFlowConstraint(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.Get)))
       }
 
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
@@ -491,19 +491,19 @@ object ConstraintGen {
     case Expr.GetChannel(exp, tpe, _, _) =>
       // Generates: Concurrent.Channel.get(c: Mpmc[a, Static]): a \ IO
       visitExp(exp)
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(tpe)))), MonoVar.Def(Defs.Concurrent.Channel.Get)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(tpe)))), MonoVar.Def(Defs.Concurrent.Channel.Get)))
 
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
       // Generates: Concurrent.Channel.put(e: a, c: Mpmc[a, Static]): Unit \ IO
       visitExp(exp1)
       visitExp(exp2)
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(exp2.tpe)))), MonoVar.Def(Defs.Concurrent.Channel.Put)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(exp2.tpe)))), MonoVar.Def(Defs.Concurrent.Channel.Put)))
 
     case Expr.NewChannel(exp, tpe, _, _) =>
       // Generates: Concurrent.Channel.newChannelTuple(bufferSize: Int32): (Mpmc[a, Static], Mpmc[a, Static]) \ IO
       val elmType = extractChannelElm(tpe)
       visitExp(exp)
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType)))), MonoVar.Def(Defs.Concurrent.Channel.NewChannelTuple)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType)))), MonoVar.Def(Defs.Concurrent.Channel.NewChannelTuple)))
 
     case Expr.SelectChannel(rules, default, _, _, _) =>
       // Generates, per rule (element type `a`, not a Channel.get call):
@@ -519,40 +519,40 @@ object ConstraintGen {
         val elmArg = typeToMonoArg(MonomorphHelpers.lowerChannelType(elmType))
         visitExp(rule.chan)
         visitExp(rule.exp)
-        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.UnsafeGetAndUnlock)))
-        sctx.addFlow(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.MpmcAdmin)))
+        sctx.addFlowConstraint(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.UnsafeGetAndUnlock)))
+        sctx.addFlowConstraint(FlowConstraint(Instantiation(List(elmArg)), MonoVar.Def(Defs.Concurrent.Channel.MpmcAdmin)))
       }
       for (exp <- default) {
         visitExp(exp)
       }
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Concurrent.Channel.MpmcAdmin))), MonoVar.Enum(Enums.List.List)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Concurrent.Channel.MpmcAdmin))), MonoVar.Enum(Enums.List.List)))
 
-    // Generates the Box/Unbox/liftN/lattice/Facts/ProjectInto/ProvenanceOf calls for Datalog
-    // fixpoint nodes, mirroring the TypedAst structure lowering itself inspects — see
-    // `boxFlow`/`headTermFlows`/`guardLiftFlow`/`functionalLiftFlow`/`latticeFlows` below for the
-    // concrete signature each one predicts.
     case Expr.FixpointConstraintSet(cs, _, _) =>
+      // Generates the Box/Unbox/liftN/lattice/Facts/ProjectInto/ProvenanceOf calls for Datalog
+      // fixpoint nodes, mirroring the TypedAst structure lowering itself inspects — see
+      // `boxConstraint`/`headTermConstraints`/`guardLiftConstraint`/`functionalLiftConstraint`/`latticeConstraints` below for the
+      // concrete signature each one predicts.
       for (c <- cs) {
         val cparams0 = c.cparams
         c.head match {
           case Predicate.Head.Atom(_, den, terms, _, loc) =>
             for (term <- terms) {
               visitExp(term)
-              headTermFlows(cparams0, term)
+              headTermConstraints(cparams0, term)
             }
-            latticeFlows(den, terms.lastOption.map(_.tpe), loc)
+            latticeConstraints(den, terms.lastOption.map(_.tpe), loc)
         }
         for (p <- c.body) {
           p match {
             case Predicate.Body.Guard(e, _) =>
               visitExp(e)
-              guardLiftFlow(cparams0, e)
+              guardLiftConstraint(cparams0, e)
             case Predicate.Body.Functional(outBnds, e, _) =>
-              functionalLiftFlow(cparams0, outBnds.length, e)
+              functionalLiftConstraint(cparams0, outBnds.length, e)
               visitExp(e)
             case Predicate.Body.Atom(_, den, _, _, terms, _, loc) =>
-              bodyAtomTermFlows(cparams0, terms)
-              latticeFlows(den, terms.lastOption.map(_.tpe), loc)
+              bodyAtomTermConstraints(cparams0, terms)
+              latticeConstraints(den, terms.lastOption.map(_.tpe), loc)
           }
         }
       }
@@ -561,7 +561,7 @@ object ConstraintGen {
       // Generates a `List[PredSym]` value directly via mkTag/mkList (bypassing the ordinary
       // rewrite path), so its instantiation must be predicted here.
       visitExp(exp)
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Fixpoint.Ast.Shared.PredSym))), MonoVar.Enum(Enums.List.List)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Fixpoint.Ast.Shared.PredSym))), MonoVar.Enum(Enums.List.List)))
 
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1)
@@ -579,9 +579,9 @@ object ConstraintGen {
         Type.eraseAliases(e.tpe) match {
           case Type.Apply(tc, innerTpe, _) =>
             val argTypes = Type.unmkTuplish(arity, innerTpe)
-            val flowArgs = (tc :: argTypes).map(typeToMonoArg)
+            val injectIntoArgs = (tc :: argTypes).map(typeToMonoArg)
             visitExp(e)
-            sctx.addFlow(FlowConstraint(Instantiation(flowArgs), MonoVar.Def(Defs.Fixpoint.Solver.InjectInto(arity))))
+            sctx.addFlowConstraint(FlowConstraint(Instantiation(injectIntoArgs), MonoVar.Def(Defs.Fixpoint.Solver.InjectInto(arity))))
           case t => throw InternalCompilerException(s"Unexpected non-foldable type: '$t'.", loc)
         }
       }
@@ -610,7 +610,7 @@ object ConstraintGen {
       for (exp <- where) {
         visitExp(exp)
       }
-      sctx.addFlow(FlowConstraint(Instantiation(argTypes.map(typeToMonoArg)), MonoVar.Def(Defs.Fixpoint.Solver.Facts(arity))))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(argTypes.map(typeToMonoArg)), MonoVar.Def(Defs.Fixpoint.Solver.Facts(arity))))
 
     case Expr.FixpointQueryWithProvenance(exps, select, _, tpe0, _, _) =>
       // Generates, per goal term (type `a`): Fixpoint3.Boxable.box(x: a): Boxed with Order[a]
@@ -626,15 +626,15 @@ object ConstraintGen {
         case Predicate.Head.Atom(_, _, terms, _, _) =>
           for (term <- terms) {
             visitExp(term)
-            boxFlow(term.tpe)
+            boxConstraint(term.tpe)
           }
       }
       val extVarType = unwrapVectorType(tpe0)
       for (t <- predicatesOfExtVar(extVarType).flatMap(_._2)) {
-        sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(t))), MonoVar.Def(Defs.Fixpoint.Boxable.Unbox)))
+        sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(t))), MonoVar.Def(Defs.Fixpoint.Boxable.Unbox)))
       }
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Fixpoint.Boxed))), MonoVar.Def(Defs.Vector.Get)))
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(extVarType))), MonoVar.Def(Defs.Fixpoint.Solver.ProvenanceOf)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Fixpoint.Boxed))), MonoVar.Def(Defs.Vector.Get)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(extVarType))), MonoVar.Def(Defs.Fixpoint.Solver.ProvenanceOf)))
 
     case Expr.Error(_, _, _) => ()
   }
@@ -654,7 +654,7 @@ object ConstraintGen {
       for (pat <- pats) {
         visitPat(pat)
       }
-      sctx.addFlow(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(tpArgs.map(typeToMonoArg)), mvar))
     case TypedAst.Pattern.Tuple(elms, _, _) =>
       for (elm <- elms) {
         visitPat(elm)
@@ -671,44 +671,44 @@ object ConstraintGen {
   }
 
   /** Generates: Fixpoint3.Boxable.box(x: a): Boxed with Order[a] — mirrors [[SpecializeAndLower.box]]. */
-  private def boxFlow(tpe: Type)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
-    sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(tpe))), MonoVar.Def(Defs.Fixpoint.Boxable.Box)))
+  private def boxConstraint(tpe: Type)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
+    sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(tpe))), MonoVar.Def(Defs.Fixpoint.Boxable.Box)))
 
   /**
     * Flows for a head term — mirrors [[SpecializeAndLower.lowerHeadTerm]]. A bare quantified var
-    * generates nothing (it flows through as-is); anything else generates either `boxFlow` (no
+    * generates nothing (it flows through as-is); anything else generates either `boxConstraint` (no
     * free vars) or:
     *   Fixpoint3.Boxable.liftN(f: t1 -> ... -> tN -> t): Boxed -> ... -> Boxed
     *     with Order[t1], ..., Order[tN], Order[t]
     */
-  private def headTermFlows(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = exp0 match {
+  private def headTermConstraints(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = exp0 match {
     case Expr.Var(sym, tpe, _) =>
       if (!MonomorphHelpers.isQuantifiedVar(sym, cparams0)) {
-        boxFlow(tpe)
+        boxConstraint(tpe)
       }
     case _ =>
       val fvs = MonomorphHelpers.quantifiedVars(cparams0, exp0)
       if (fvs.isEmpty) {
-        boxFlow(exp0.tpe)
+        boxConstraint(exp0.tpe)
       } else {
         val argTypes = fvs.map(_._2) // t1, ..., tN
         val liftArgs = (argTypes :+ exp0.tpe).map(typeToMonoArg)
-        sctx.addFlow(FlowConstraint(Instantiation(liftArgs), MonoVar.Def(Defs.Fixpoint.Boxable.Lift(fvs.length))))
+        sctx.addFlowConstraint(FlowConstraint(Instantiation(liftArgs), MonoVar.Def(Defs.Fixpoint.Boxable.Lift(fvs.length))))
       }
   }
 
   /** Flows for a body atom's terms — mirrors [[SpecializeAndLower.lowerBodyTerm]]. */
-  private def bodyAtomTermFlows(cparams0: List[TypedAst.ConstraintParam], terms: List[TypedAst.Pattern])(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+  private def bodyAtomTermConstraints(cparams0: List[TypedAst.ConstraintParam], terms: List[TypedAst.Pattern])(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     for (term <- terms) {
       term match {
         case TypedAst.Pattern.Wild(_, _)         => ()
         case TypedAst.Pattern.Var(bnd, tpe, _)   =>
           if (!MonomorphHelpers.isQuantifiedVar(bnd.sym, cparams0)) {
-            boxFlow(tpe)
+            boxConstraint(tpe)
           } else {
             ()
           }
-        case TypedAst.Pattern.Cst(_, tpe, _)     => boxFlow(tpe)
+        case TypedAst.Pattern.Cst(_, tpe, _)     => boxConstraint(tpe)
         case TypedAst.Pattern.Tag(_, _, _, _)    => ()
         case TypedAst.Pattern.Tuple(_, _, _)     => ()
         case TypedAst.Pattern.Error(_, _)        => ()
@@ -722,12 +722,12 @@ object ConstraintGen {
     *   with Order[t1], ..., Order[tN]
     * Mirrors [[SpecializeAndLower.mkGuard]]. Arity 0 emits nothing: there is no `lift0b`.
     */
-  private def guardLiftFlow(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+  private def guardLiftConstraint(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     val fvs = MonomorphHelpers.quantifiedVars(cparams0, exp0)
     if (fvs.nonEmpty) {
       val argTypes = fvs.map(_._2) // t1, ..., tN
       val liftArgs = argTypes.map(typeToMonoArg)
-      sctx.addFlow(FlowConstraint(Instantiation(liftArgs), MonoVar.Def(Defs.Fixpoint.Boxable.LiftB(fvs.length))))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(liftArgs), MonoVar.Def(Defs.Fixpoint.Boxable.LiftB(fvs.length))))
     }
   }
 
@@ -736,7 +736,7 @@ object ConstraintGen {
     *   Vector[Boxed] -> Vector[Vector[Boxed]]
     * Mirrors [[SpecializeAndLower.mkFunctional]].
     */
-  private def functionalLiftFlow(cparams0: List[TypedAst.ConstraintParam], outArity: Int, exp0: TypedAst.Expr)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+  private def functionalLiftConstraint(cparams0: List[TypedAst.ConstraintParam], outArity: Int, exp0: TypedAst.Expr)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     val inVars = MonomorphHelpers.quantifiedVars(cparams0, exp0)
     val inner = Type.eraseAliases(exp0.tpe) match {
       case Type.Apply(Type.Cst(TypeConstructor.Vector, _), t, _) => t
@@ -745,7 +745,7 @@ object ConstraintGen {
     val outTypes = Type.unmkTuplish(outArity, inner)
     val inTypes = inVars.map(_._2) // i1, ..., iM
     val liftArgs = (inTypes ++ outTypes).map(typeToMonoArg)
-    sctx.addFlow(FlowConstraint(Instantiation(liftArgs), MonoVar.Def(Defs.Fixpoint.Boxable.LiftXM(inTypes.length, outArity))))
+    sctx.addFlowConstraint(FlowConstraint(Instantiation(liftArgs), MonoVar.Def(Defs.Fixpoint.Boxable.LiftXM(inTypes.length, outArity))))
   }
 
   /**
@@ -755,13 +755,13 @@ object ConstraintGen {
     *   Fixpoint3.Ast.Shared.box(d: Denotation[v]): Denotation[Boxed] with Order[v]
     * Mirrors [[SpecializeAndLower.mkDenotation]].
     */
-  private def latticeFlows(den: Denotation, lastTermType: Option[Type], loc: SourceLocation)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = den match {
+  private def latticeConstraints(den: Denotation, lastTermType: Option[Type], loc: SourceLocation)(implicit tparamEnv: TparamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = den match {
     case Denotation.Relational =>
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Fixpoint.Boxed))), MonoVar.Enum(Enums.Fixpoint.Ast.Shared.Denotation)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(Types.Fixpoint.Boxed))), MonoVar.Enum(Enums.Fixpoint.Ast.Shared.Denotation)))
     case Denotation.Latticenal =>
       val tpe = lastTermType.getOrElse(throw InternalCompilerException("Unexpected nullary lattice predicate.", loc))
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(tpe))), MonoVar.Def(Defs.Fixpoint.Ast.Shared.Lattice)))
-      sctx.addFlow(FlowConstraint(Instantiation(List(typeToMonoArg(tpe))), MonoVar.Def(Defs.Fixpoint.Ast.Shared.Box)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(tpe))), MonoVar.Def(Defs.Fixpoint.Ast.Shared.Lattice)))
+      sctx.addFlowConstraint(FlowConstraint(Instantiation(List(typeToMonoArg(tpe))), MonoVar.Def(Defs.Fixpoint.Ast.Shared.Box)))
   }
 
   /** Returns `t` from `Vector[t]` — mirrors [[SpecializeAndLower.unwrapVectorType]]. */
