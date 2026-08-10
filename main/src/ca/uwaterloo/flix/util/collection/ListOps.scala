@@ -90,6 +90,18 @@ object ListOps {
     list.mapConserve(f)
 
   /**
+    * Applies `f` to each element of `list`, short-circuiting to `None` if any application
+    * does. Otherwise returns `Some` of the results, in order.
+    */
+  def traverse[A, B](list: List[A])(f: A => Option[B]): Option[List[B]] =
+    list.foldRight(Option(List.empty[B])) { (x, acc) =>
+      for {
+        v  <- f(x)
+        vs <- acc
+      } yield v :: vs
+    }
+
+  /**
     * Applies the one-to-many function `f` to each element of `list`,
     * returning `list` itself if `f` returns a single reference-equal (`eq`)
     * element for every entry.

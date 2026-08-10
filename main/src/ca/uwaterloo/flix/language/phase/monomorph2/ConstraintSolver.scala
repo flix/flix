@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.phase.monomorph2.MonomorphHelpers.lowerChannel
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.Defs
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import scala.collection.mutable
 
@@ -145,7 +146,7 @@ object ConstraintSolver {
     case MonoArg.App(head, args) =>
       for {
         h  <- substArg(head, bindings)
-        as <- substArgs(args, bindings)
+        as <- ListOps.traverse(args)(substArg(_, bindings))
       } yield Type.mkApply(h, as, h.loc)
     case MonoArg.Assoc(sym, a, kind, loc) =>
       substArg(a, bindings).map {
@@ -153,22 +154,6 @@ object ConstraintSolver {
           Type.AssocType(SymUse.AssocTypeSymUse(sym, loc), t, kind, loc)
       }
   }
-
-  /**
-    * Substitutes `bindings` into every arg in `args`.
-    * Returns `None` if some `Param`'s var isn't bound (yet).
-    */
-  private def substArgs(args: List[MonoArg], bindings: Map[MonoVar, List[Type]]): Option[List[Type]] =
-    sequence(args.map(substArg(_, bindings)))
-
-  /** `None` if any `x` is. */
-  private def sequence[A](xs: List[Option[A]]): Option[List[A]] =
-    xs.foldRight(Option(List.empty[A])) { (x, acc) =>
-      for {
-        v  <- x
-        vs <- acc
-      } yield v :: vs
-    }
 
   /** Rewrites every `Region` constant in `t` to `IO`. */
   private def rewriteRegionToIO(t: Type): Type = t match {
@@ -200,10 +185,10 @@ object ConstraintSolver {
   /** Grounds `pf`'s args to a ground instantiation, or `None` if any position is not ready. */
   private def groundArgs(pf: PregroundedFlow, bindings: Map[MonoVar, List[Type]], root: TypedAst.Root)
                          (implicit flix: Flix): Option[List[Type]] =
-    sequence(pf.args.zip(pf.preGrounded).map {
+    ListOps.traverse(pf.args.zip(pf.preGrounded)) {
       case (_, Some(t)) => Some(t)
       case (arg, None)  => groundArg(arg, bindings, root)
-    })
+    }
 
   /**
     * Grounds `arg` via [[substArg]] and the shared [[Canonicalization]] pipeline.
@@ -263,7 +248,7 @@ object ConstraintSolver {
     } else {
       for {
         subst <- ConstraintSolver2.fullyUnify(instance.tpe, traitType, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
-        args  <- sequence(instance.tparams.map(tp => subst.m.get(tp.sym)))
+        args  <- ListOps.traverse(instance.tparams)(tp => subst.m.get(tp.sym))
       } yield args
     }
 }
