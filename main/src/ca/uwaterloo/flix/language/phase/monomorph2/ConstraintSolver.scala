@@ -52,19 +52,20 @@ object ConstraintSolver {
     val solution  = mutable.Map.empty[MonoVar, mutable.ListBuffer[List[Type]]]
     val worklist  = mutable.Queue.empty[(MonoVar, List[Type])]
 
-    // Param substitution can reintroduce a raw Sender/Receiver.
-    // It is re-lowered so the key matches [[SpecializeAndLower]]'s lookup.
-    val channelDefs = Set(Defs.Concurrent.Channel.Get, Defs.Concurrent.Channel.Put, Defs.Concurrent.Channel.NewChannelTuple, Defs.Concurrent.Channel.MpmcAdmin, Defs.Concurrent.Channel.UnsafeGetAndUnlock)
-
     def enqueue(dst: MonoVar, inst0: List[Type]): Unit = {
       val inst = dst match {
-        case MonoVar.Def(sym) if channelDefs.contains(sym) => inst0.map(lowerChannelType)
-        case MonoVar.Def(_)                                => inst0
-        case MonoVar.Enum(_)                               => inst0
-        case MonoVar.Sig(_)                                => inst0
-        case MonoVar.RestrictableEnum(_)                   => inst0
-        case MonoVar.Struct(_)                             => inst0
+        case MonoVar.Def(sym) =>
+          if (Defs.Concurrent.Channel.NeedsRelowering.contains(sym)) {
+            inst0.map(lowerChannelType)
+          } else {
+            inst0
+          }
+        case MonoVar.Enum(_)              => inst0
+        case MonoVar.Sig(_)               => inst0
+        case MonoVar.RestrictableEnum(_)  => inst0
+        case MonoVar.Struct(_)            => inst0
       }
+      // Only add genuinely new instantiations, i.e. ones not already in the solution nor in the worklist.
       if (!solution.get(dst).exists(_.contains(inst))) {
         if (!worklist.contains((dst, inst))) {
           worklist.enqueue((dst, inst))
