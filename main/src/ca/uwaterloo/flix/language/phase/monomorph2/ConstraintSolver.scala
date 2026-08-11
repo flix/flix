@@ -47,8 +47,7 @@ object ConstraintSolver {
     */
   def solve(flows: List[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = {
     val instanceMap = MonomorphHelpers.mkInstanceMap(root.instances)
-    val pregrounded = flows.map(f => pregroundFlow(f, root))
-    val dependents  = buildDependents(pregrounded)
+    val dependents  = buildDependents(flows)
 
     val solution  = mutable.Map.empty[MonoVar, mutable.ListBuffer[GroundInstantiation]]
     val worklist  = mutable.Queue.empty[(MonoVar, GroundInstantiation)]
@@ -75,9 +74,9 @@ object ConstraintSolver {
     }
 
     // Seed: ground flows (all-Const instantiations) become initial worklist entries.
-    for (pf <- pregrounded) {
-      for (t <- groundArgs(pf, Map.empty, root)) {
-        enqueue(pf.dst, t)
+    for (fc <- flows) {
+      for (t <- groundArgs(fc, Map.empty, root)) {
+        enqueue(fc.dst, t)
       }
     }
 
@@ -102,9 +101,9 @@ object ConstraintSolver {
         }
 
         // Propagate: substitute this MonoVar's new instantiation into all dependent flows.
-        for (pf <- dependents.getOrElse(dst, Nil)) {
-          for (groundInstantiation <- groundArgs(pf, Map(dst -> inst), root)) {
-            enqueue(pf.dst, groundInstantiation)
+        for (fc <- dependents.getOrElse(dst, Nil)) {
+          for (groundInstantiation <- groundArgs(fc, Map(dst -> inst), root)) {
+            enqueue(fc.dst, groundInstantiation)
           }
         }
       }
@@ -118,16 +117,16 @@ object ConstraintSolver {
     )
   }
 
-  /** Returns every distinct MonoVar referenced by a `Param` in `pf`'s args. */
-  private def paramVars(pf: PregroundedFlow): Set[MonoVar] =
-    pf.args.flatMap(MonoArg.collectParams).map(_._1).toSet
+  /** Returns every distinct MonoVar referenced by a `Param` in `fc`'s args. */
+  private def paramVars(fc: FlowConstraint): Set[MonoVar] =
+    fc.args.args.flatMap(MonoArg.collectParams).map(_._1).toSet
 
-  /** Return for each MonoVar, the (pregrounded) flows whose args contain `Param(mvar, _)`. */
-  private def buildDependents(flows: List[PregroundedFlow]): Map[MonoVar, List[PregroundedFlow]] = {
+  /** Return for each MonoVar, the flows whose args contain `Param(mvar, _)`. */
+  private def buildDependents(flows: List[FlowConstraint]): Map[MonoVar, List[FlowConstraint]] = {
     val edges = for {
-      pf <- flows
-      v  <- paramVars(pf)
-    } yield v -> pf
+      fc <- flows
+      v  <- paramVars(fc)
+    } yield v -> fc
 
     edges.groupMap(_._1)(_._2)
   }
@@ -173,32 +172,10 @@ object ConstraintSolver {
     case Type.UnresolvedJvmType(_, _)             => t
   }
 
-  /** A [[FlowConstraint]] with each Param-free arg position pre-grounded once, since those can't
-    * change on retry. `preGrounded(i)` is `None` iff position `i` still has a `Param`.
-    */
-  private case class PregroundedFlow(dst: MonoVar, args: List[MonoArg], preGrounded: List[Option[Type]])
-
-  /** Returns `flow` with its Param-free positions pre-grounded. */
-  private def pregroundFlow(flow: FlowConstraint, root: TypedAst.Root)(implicit flix: Flix): PregroundedFlow = flow match {
-    case FlowConstraint(Instantiation(args), dst) =>
-      val preGrounded = args.map {
-        arg =>
-          if (MonoArg.collectParams(arg).nonEmpty) {
-            None
-          } else {
-            groundArg(arg, Map.empty, root)
-          }
-      }
-      PregroundedFlow(dst, args, preGrounded)
-  }
-
-  /** Grounds `pf`'s args to a ground instantiation, or `None` if any position is not ready. */
-  private def groundArgs(pf: PregroundedFlow, bindings: Map[MonoVar, GroundInstantiation], root: TypedAst.Root)
+  /** Grounds `fc`'s args to a ground instantiation, or `None` if any position is not ready. */
+  private def groundArgs(fc: FlowConstraint, bindings: Map[MonoVar, GroundInstantiation], root: TypedAst.Root)
                          (implicit flix: Flix): Option[GroundInstantiation] =
-    ListOps.traverse(pf.args.zip(pf.preGrounded)) {
-      case (_, Some(t)) => Some(t)
-      case (arg, None)  => groundArg(arg, bindings, root)
-    }.map(GroundInstantiation.apply)
+    ListOps.traverse(fc.args.args)(groundArg(_, bindings, root)).map(GroundInstantiation(_))
 
   /**
     * Grounds `arg` via [[substArg]] and the shared [[Canonicalization]] pipeline.
