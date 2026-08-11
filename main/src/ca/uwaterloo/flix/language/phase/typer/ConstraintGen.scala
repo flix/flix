@@ -144,7 +144,7 @@ object ConstraintGen {
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        c.unifySource(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -169,7 +169,7 @@ object ConstraintGen {
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(itvar, declaredType, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        c.unifySource(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -901,7 +901,7 @@ object ConstraintGen {
         val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc) // TODO EFF-TPARAMS need kind
         // Subtract the effect from the body effect and add the handler effects.
         val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), Type.mkUnion(effs, loc), loc)
-        c.unifyType(evar2, continuationEffect, loc)
+        c.unifyHandler(evar2, continuationEffect, loc)
         val resultTpe = Type.mkArrowWithEffect(Type.mkArrowWithEffect(Type.Unit, evar1, tvar, loc), evar2, tvar, loc)
         val resultEff = Type.Pure
         (resultTpe, resultEff)
