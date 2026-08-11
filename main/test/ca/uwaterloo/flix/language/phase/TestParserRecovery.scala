@@ -103,19 +103,6 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("IllegalDefName.05") {
-    val input =
-      """
-        |trait B[a] {
-        |    law A:forall() false
-        |}
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[ParseError](result)
-    expectMain(result)
-  }
-
   test("IllegalDefName.06") {
     val input =
       """
@@ -422,7 +409,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    /// This is not quite finished
         |    pub def
         |}
-        |def main(): Int32 = Bar.foo()
+        |def main(): Unit = ()
         |
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -790,7 +777,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |def map(t: Int32): Int32 = match t
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -804,7 +791,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    ParentOf("Pompey", "Strabo").,
         |    ParentOf("Sextus", "Pompey").
         |}
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -941,7 +928,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Unit \ IO =
         |    def bar(): Int32 = 123
-        |def main(): Int32 = 456
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -957,7 +944,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    } with handler AskTell ;
         |    true
         |
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -969,7 +956,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    try { true } catch
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -979,7 +966,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("MissingRecordOperation.01") {
     val input =
       """
-        |def main(): Int32 =
+        |def main(): Unit =
         |    let _ = { | {} };
         |    2
         |""".stripMargin
@@ -993,7 +980,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    run { true }
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -1005,7 +992,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    try { true }
-        |def main(): Int32 = 123
+        |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ParseError](result)
@@ -1077,6 +1064,28 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
+  }
+
+  test("AmbiguousNew.01") {
+    val input =
+      """
+        |struct S[r] { x: Int32 }
+        |def main(): Unit = region rc { let _ = new S @ rc; () }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("AmbiguousNew.02") {
+    val input =
+      """
+        |struct S[r] { x: Int32 }
+        |def main(): Unit = region rc { let _ = new S @ rc { 123 }; () }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
   }
 
   /**

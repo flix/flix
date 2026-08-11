@@ -53,7 +53,7 @@ object EffectBinder {
     * operand stack.
     */
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("EffectBinder") {
-    val newDefs = ParOps.parMapValues(root.defs)(visitDef)
+    val newDefs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
@@ -329,10 +329,10 @@ object EffectBinder {
       }
       ReducedAst.Expr.RunWith(e, effUse, rs, ExpPosition.NonTail, tpe, purity, loc)
 
-    case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+    case LiftedAst.Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc) =>
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      ReducedAst.Expr.NewObject(name, clazz, tpe, purity, cs, ms, loc)
+      ReducedAst.Expr.NewObject(sym, clazz, tpe, purity, cs, ms, loc)
   }
 
   /**

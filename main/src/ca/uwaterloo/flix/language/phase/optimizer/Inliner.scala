@@ -17,7 +17,7 @@
 
 package ca.uwaterloo.flix.language.phase.optimizer
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
@@ -73,7 +73,7 @@ object Inliner {
   /** Performs inlining on the given AST `root`. */
   def run(root: MonoAst.Root)(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
     val sctx: SharedContext = SharedContext.mk()
-    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
+    val defs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)(sctx, root, flix)))
     val newDelta = sctx.changed.asScala.keys.toSet
     val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
     val liveDefs = defs.filter(kv => liveSyms.contains(kv._1))
@@ -198,6 +198,7 @@ object Inliner {
       val es = exps.map(visitExp(_, ctx0))
       if (shouldInlineDef(root.defs(sym), es, ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
+        flix.emitEvent(FlixEvent.InlinedDef(sym))
         val defn = root.defs(sym)
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
         val letBinding = bindArgs(defn.exp, defn.spec.fparams, es, loc)
@@ -341,19 +342,6 @@ object Inliner {
       val rs = rules.map(visitExtMatchRule(_, ctx0))
       Expr.ExtMatch(e, rs, tpe, eff, loc)
 
-    case Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, ctx0))
-      Expr.VectorLit(es, tpe, eff, loc)
-
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, ctx0)
-      val e2 = visitExp(exp2, ctx0)
-      Expr.VectorLoad(e1, e2, tpe, eff, loc)
-
-    case Expr.VectorLength(exp, loc) =>
-      val e = visitExp(exp, ctx0)
-      Expr.VectorLength(e, loc)
-
     case Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       Expr.Cast(e, tpe, eff, loc)
@@ -368,10 +356,10 @@ object Inliner {
       val rs = rules.map(visitHandlerRule(_, ctx0))
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
+    case Expr.NewObject(sym, clazz, tpe, eff, constructors0, methods0, loc) =>
       val constructors = constructors0.map(visitJvmConstructor(_, ctx0))
       val methods = methods0.map(visitJvmMethod(_, ctx0))
-      Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc)
+      Expr.NewObject(sym, clazz, tpe, eff, constructors, methods, loc)
   }
 
   /**
@@ -903,6 +891,7 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.ArrayLit, exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.VectorLit, exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.StructNew(_, _, _), exps, _, _, _) => exps.forall(isTrivial)
     // IfThenElse with simple sub-expressions is simple. This enables inlining of
     // small branching functions like Int32.compare:
@@ -945,6 +934,9 @@ object Inliner {
       case AtomicOp.ArrayLoad => exps.forall(isSimple)
       case AtomicOp.ArrayStore => exps.forall(isSimple)
       case AtomicOp.ArrayLength => exps.forall(isSimple)
+      case AtomicOp.VectorLit => exps.forall(isSimple)
+      case AtomicOp.VectorLoad => exps.forall(isSimple)
+      case AtomicOp.VectorLength => exps.forall(isSimple)
       case AtomicOp.InvokeMethod(_) => exps.forall(isSimple)
       case AtomicOp.InvokeStaticMethod(_) => exps.forall(isSimple)
       case AtomicOp.GetField(_) => exps.forall(isSimple)

@@ -1,9 +1,9 @@
 ///
 /// We introduce type aliases to model information flow security.
 ///
-type alias Variable = String         // e.g. "secretKey"
-type alias SecurityLevel = String    // e.g. "TopSecret"
-type alias Location = Int32          // e.g. 42
+type alias Variable = String // e.g. "secretKey"
+type alias SecurityLevel = String // e.g. "TopSecret"
+type alias Location = Int32 // e.g. 42
 
 ///
 /// We compute all confidentiality violations by tracking information flows
@@ -71,10 +71,11 @@ pub def main(): Unit \ IO =
 /// This models a system with four security levels forming a lattice:
 /// Public < Confidential < Secret < TopSecret
 ///
-def database(): #{ FlowsTo(Variable, Variable, Location),
-                   Classification(Variable, SecurityLevel),
-                   CanFlowTo(SecurityLevel, SecurityLevel) | r } = #{
-
+def database(): #{
+    FlowsTo(Variable, Variable, Location),
+    Classification(Variable, SecurityLevel),
+    CanFlowTo(SecurityLevel, SecurityLevel) | r
+} = #{
     // Define the security lattice: allowed flows between levels.
     // Information can flow UP in security (Public -> Secret) but not DOWN.
     CanFlowTo("Public", "Public").

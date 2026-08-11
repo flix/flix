@@ -8,7 +8,7 @@ use Net.TcpConnect
 def main(): Unit \ { Dns, TcpConnect, IO } = region rc {
     match Dns.lookup("tcpbin.com") {
         case Err(err) => println("DNS error: ${err}")
-        case Ok(ip)   =>
+        case Ok(ip) =>
             match TcpConnect.connect(ip, 4242i16) {
                 case Err(err) => println("Connect error: ${err}")
                 case Ok(socket) =>
@@ -20,7 +20,7 @@ def main(): Unit \ { Dns, TcpConnect, IO } = region rc {
                     let recvBuf = Array.repeat(rc, 1024, (0i8: Int8));
                     match Readable.read(recvBuf, socket) {
                         case Err(err) => println("Read error: ${err}")
-                        case Ok(n)    =>
+                        case Ok(n) =>
                             let bytes = Array.slice(rc, start = 0, end = n, recvBuf);
                             let reply = String.fromBytes(Array.toVector(bytes));
                             println("Echo: ${reply}")

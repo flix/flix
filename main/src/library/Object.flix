@@ -25,7 +25,7 @@ pub mod Object {
     pub def isNull(x: a): Bool =
         match Reflect.reflectValue(x) {
             case Reflect.JvmValue.JvmObject(obj) => Objects.isNull(obj)
-            case _ => false
+            case _                               => false
         }
 
     ///

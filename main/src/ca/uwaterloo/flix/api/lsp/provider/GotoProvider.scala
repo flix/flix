@@ -121,6 +121,8 @@ object GotoProvider {
     // Traits
     case SymUse.TraitSymUse(sym, loc) => Some(LocationLink.fromTraitSym(sym, loc))
     case SymUse.SigSymUse(sym, loc) => Some(LocationLink.fromSigSym(sym, loc))
+    // Type Aliases
+    case Type.Alias(symUse, _, _, _) => Some(LocationLink.fromTypeAliasSym(symUse.sym, symUse.loc))
     // Type Vars
     case Type.Var(sym, loc) => Some(LocationLink.fromTypeVarSym(sym, loc))
     // Vars
@@ -129,7 +131,7 @@ object GotoProvider {
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
-    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal

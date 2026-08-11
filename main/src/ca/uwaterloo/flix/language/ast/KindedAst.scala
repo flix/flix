@@ -25,9 +25,10 @@ import java.lang.reflect.Field
 
 object KindedAst {
 
-  val empty: Root = Root(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
 
-  case class Root(traits: Map[Symbol.TraitSym, Trait],
+  case class Root(modules: Map[Symbol.ModuleSym, Mod],
+                  traits: Map[Symbol.TraitSym, Trait],
                   instances: ListMap[Symbol.TraitSym, Instance],
                   defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
@@ -41,7 +42,9 @@ object KindedAst {
                   availableClasses: AvailableClasses,
                   tokens: Map[Source, Array[Token]])
 
-  case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: Map[Symbol.SigSym, Sig], laws: List[Def], loc: SourceLocation)
+  case class Mod(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.ModuleSym, loc: SourceLocation)
+
+  case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: Map[Symbol.SigSym, Sig], loc: SourceLocation)
 
   case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, symUse: TraitSymUse, tparams: List[TypeParam], tpe: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
@@ -192,7 +195,7 @@ object KindedAst {
 
     case class PutStaticField(field: Field, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], targs: List[Type], constructors: List[JvmConstructor], methods: List[JvmMethod], tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], targs: List[Type], constructors: List[JvmConstructor], methods: List[JvmMethod], tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 

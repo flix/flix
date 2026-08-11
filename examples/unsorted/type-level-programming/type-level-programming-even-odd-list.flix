@@ -37,10 +37,10 @@ def _map(f: a -> b, l: EOList[a, e]): EOList[b, e] = match l {
 /// or (not e1 and not e2).
 /// which is equivalent to not (e1 xor e2).
 def _append(l1: EOList[a, e1], l2: EOList[a, e2]): EOList[a, not (e1 xor e2)] = match l1 {
-     case EOList.Nil         =>
+    case EOList.Nil =>
         // We have to insert unchecked casts because the Flix type system does not
         // refine the type of l1 when we pattern match on it, i.e. there no GADTs.
         unchecked_cast(l2 as EOList[a, not (e1 xor e2)])
-     case EOList.Cons(x, xs) =>
+    case EOList.Cons(x, xs) =>
         unchecked_cast(EOList.Cons(x, _append(xs, l2)) as EOList[a, not (e1 xor e2)])
 }

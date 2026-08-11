@@ -136,8 +136,10 @@ pub mod Net.HttpResponse {
     /// Returns `Ok(r)` if the response status is in the 2xx range, or `Err` otherwise.
     ///
     pub def expect(r: HttpResponse): Result[IoError, HttpResponse] =
-        if (isSuccess(r)) Ok(r)
-        else Err(IoError(ErrorKind.Other, "Unexpected HTTP status: ${status(r)}"))
+        if (isSuccess(r))
+            Ok(r)
+        else
+            Err(IoError(ErrorKind.Other, "Unexpected HTTP status: ${status(r)}"))
 
     ///
     /// Returns the value of the `content-type` header, or `None` if not present.

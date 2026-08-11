@@ -37,7 +37,7 @@ object LambdaLift {
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
-    val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val defs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
@@ -233,10 +233,10 @@ object LambdaLift {
       }
       LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+    case SimplifiedAst.Expr.NewObject(sym, clazz, tpe, purity, constructors0, methods0, loc) =>
       val constructors = constructors0.map(visitJvmConstructor)
       val methods = methods0.map(visitJvmMethod)
-      LiftedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
+      LiftedAst.Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc)
 
     case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 

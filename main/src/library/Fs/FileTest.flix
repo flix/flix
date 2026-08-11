@@ -57,11 +57,12 @@ pub mod Fs.FileTest {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileTest) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                y -> checked_ecast(
-                    Fs.FileStat.runWithFileSystem(
-                        () -> runWithFileStat(() -> f(y))
+                y ->
+                    checked_ecast(
+                        Fs.FileStat.runWithFileSystem(
+                            () -> runWithFileStat(() -> f(y))
+                        )
                     )
-                )
             )(x)
         )
 
@@ -90,7 +91,7 @@ pub mod Fs.FileTest {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTest) + {FileTest, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTest) + { FileTest, Logger } =
         run { f() } with handler FileTest {
             def exists(filename, k) = {
                 logPre("exists", filename);

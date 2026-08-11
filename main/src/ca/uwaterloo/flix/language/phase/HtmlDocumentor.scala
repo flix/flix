@@ -22,11 +22,14 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
-import com.github.rjeschke.txtmark
+import org.commonmark.ext.gfm.tables.TablesExtension
+import org.commonmark.parser.Parser
+import org.commonmark.renderer.html.HtmlRenderer
 
 import java.io.IOException
 import java.net.URLEncoder
 import java.nio.file.{Files, Path, Paths}
+import java.util.regex.Pattern
 import scala.annotation.tailrec
 
 /**
@@ -72,6 +75,23 @@ object HtmlDocumentor {
     * The root of the link to each file of the standard library.
     */
   private val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
+
+  /**
+    * Matches an HTML comment, including any whitespace that follows it.
+    */
+  private val CommentPattern: Pattern = Pattern.compile("(?s)<!--.*?-->\\s*")
+
+  /**
+    * The icons of the documentation, as pairs of the CSS class that selects an icon and the name of
+    * its SVG file, relative to [[Icons]].
+    */
+  private val IconClasses: List[(String, String)] = List(
+    "back" -> "back",
+    "close" -> "close",
+    "dark" -> "darkMode",
+    "light" -> "lightMode",
+    "open" -> "menu",
+  )
 
   def run(root: TypedAst.Root, packageModules: PackageModules)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
@@ -242,7 +262,7 @@ object HtmlDocumentor {
       var enums: List[Enum] = Nil
       var typeAliases: List[TypedAst.TypeAlias] = Nil
       var defs: List[TypedAst.Def] = Nil
-      mod.foreach {
+      mod.children.foreach {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
         case sym: Symbol.TraitSym =>
           traits = mkTrait(sym, moduleSym, root) :: traits
@@ -257,6 +277,7 @@ object HtmlDocumentor {
 
       Module(
         moduleSym,
+        mod.doc,
         parent,
         uses,
         submodules.map(visitMod(_, Some(moduleSym))),
@@ -333,11 +354,12 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterContents(mod: Module, packageModules: PackageModules): Module = mod match {
-    case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
       val included = packageModules.contains(sym)
       if (included) {
         Module(
           sym,
+          doc,
           parent,
           uses,
           submodules.map(m => filterContents(m, PackageModules.All)),
@@ -356,6 +378,7 @@ object HtmlDocumentor {
 
         Module(
           sym,
+          doc,
           parent,
           Nil,
           sm.map(m => filterContents(m, packageModules)),
@@ -376,7 +399,7 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterTrait(trt: Trait): Trait = trt match {
-    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, laws, loc), signatures, defs, instances, parent, _) =>
+    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, loc), signatures, defs, instances, parent, _) =>
       Trait(
         TypedAst.Trait(
           doc,
@@ -387,7 +410,6 @@ object HtmlDocumentor {
           superTraits,
           assocs,
           Nil,
-          laws.filter(l => l.spec.mod.isPublic),
           loc
         ),
         signatures.filter(s => s.spec.mod.isPublic),
@@ -445,7 +467,7 @@ object HtmlDocumentor {
       * Recursively walks the module tree removing empty modules.
       */
     def visitMod(mod: Module): Option[Module] = mod match {
-      case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+      case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
         val filteredSubMods = submodules.flatMap(visitMod)
 
         val isEmpty =
@@ -460,6 +482,7 @@ object HtmlDocumentor {
         else Some(
           Module(
             sym,
+            doc,
             parent,
             uses,
             filteredSubMods,
@@ -475,6 +498,7 @@ object HtmlDocumentor {
     visitMod(mod)
       .getOrElse(Module(
         mod.sym,
+        mod.doc,
         None,
         Nil,
         Nil,
@@ -490,7 +514,7 @@ object HtmlDocumentor {
     * Get the given module tree, but with all companion modules paired to their respective items.
     */
   private def pairModules(mod: Module): Module = mod match {
-    case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
 
       val visitedSubmodules = submodules.map(pairModules)
 
@@ -517,6 +541,7 @@ object HtmlDocumentor {
 
       Module(
         sym,
+        doc,
         parent,
         uses,
         filteredSubmodules,
@@ -576,6 +601,7 @@ object HtmlDocumentor {
 
     sb.append("<main>")
     sb.append(s"<h1>${esc(mod.qualifiedName)}</h1>")
+    modDoc(mod.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedDefs, docDef)
     sb.append("</main>")
@@ -852,6 +878,7 @@ object HtmlDocumentor {
        |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
+       |<link href='https://fonts.googleapis.com/css?family=Open+Sans&display=swap' rel='stylesheet'>
        |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
        |<script type='module' src='./index.js'></script>
@@ -876,22 +903,14 @@ object HtmlDocumentor {
     sb.append("<div class='spacer' role='presentation'></div>")
 
     sb.append("<button id='theme-toggle' class='toggle' aria-label='Toggle Theme'>")
-    sb.append("<span class='dark icon'>")
-    inlineIcon("darkMode")
-    sb.append("</span>")
-    sb.append("<span class='light icon'>")
-    inlineIcon("lightMode")
-    sb.append("</span>")
+    docIcon("dark")
+    docIcon("light")
     sb.append("</button>")
 
     sb.append("<div id='menu-toggle' class='toggle'>")
     sb.append("<input type='checkbox' aria-label='Toggle Navigation Menu'>")
-    sb.append("<span class='open icon'>")
-    inlineIcon("menu")
-    sb.append("</span>")
-    sb.append("<span class='close icon'>")
-    inlineIcon("close")
-    sb.append("</span>")
+    docIcon("open")
+    docIcon("close")
     sb.append("</div>")
 
     sb.append("</header>")
@@ -906,7 +925,7 @@ object HtmlDocumentor {
     sb.append("<nav>")
     parent.map { p =>
       sb.append(s"<a class='back' href='${escUrl(moduleFileName(p))}'>")
-      inlineIcon("back")
+      docIcon("back")
       sb.append(moduleName(p))
       sb.append("</a>")
     }
@@ -1332,11 +1351,12 @@ object HtmlDocumentor {
   /**
     * Appends a 'copy link' button the the given `StringBuilder`.
     * This creates a link to the given ID on the current URL.
+    *
+    * The button is marked by a section sign rather than an inlined SVG icon. There is one of these
+    * buttons per documented element, so an inlined icon would dominate the size of the page.
     */
   private def docLink(id: String)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a href='#${escUrl(id)}' class='copy-link' title='Link To Element'>")
-    inlineIcon("link")
-    sb.append("</a> ")
+    sb.append(s"<a href='#${escUrl(id)}' class='copy-link'>&sect;</a> ")
   }
 
   /**
@@ -1345,7 +1365,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSourceLocation(loc: SourceLocation)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a class='source' target='_blank' rel='nofollow' href='${createLink(loc)}'>Source</a>")
+    sb.append(s"<a class='source' href='${createLink(loc)}'>Source</a>")
   }
 
   /**
@@ -1370,23 +1390,33 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docDoc(doc: Doc)(implicit sb: StringBuilder): Unit = {
+    renderDoc(doc, "doc")
+  }
+
+  /**
+    * Renders a module-level [[Doc]] using the `mod-doc` CSS class.
+    *
+    * Module-level documentation uses its own class so it can carry distinct
+    * typography from item-level docs (e.g. larger font, different family).
+    */
+  private def modDoc(doc: Doc)(implicit sb: StringBuilder): Unit = {
+    renderDoc(doc, "mod-doc")
+  }
+
+  private def renderDoc(doc: Doc, cls: String)(implicit sb: StringBuilder): Unit = {
     val text = doc.text
     if (text.isBlank) {
       return
     }
 
-    val escaped = esc(text)
+    val extensions = java.util.List.of(TablesExtension.create())
+    val parser = Parser.builder().extensions(extensions).build()
+    val node = parser.parse(text)
+    val renderer = HtmlRenderer.builder().extensions(extensions).escapeHtml(true).build()
+    val html = renderer.render(node)
 
-    val config =
-      txtmark.Configuration.builder()
-        .build()
-    val parsed = txtmark.Processor.process(escaped, config)
-
-    // Since both esc and process escapes the & character, it needs to be unescaped once
-    val unescaped = parsed.replace("&amp;", "&")
-
-    sb.append("<div class='doc'>")
-    sb.append(unescaped)
+    sb.append(s"<div class='$cls'>")
+    sb.append(html)
     sb.append("</div>")
   }
 
@@ -1449,8 +1479,8 @@ object HtmlDocumentor {
     * Make a copy of the static assets into the output directory.
     */
   private def writeAssets()(implicit flix: Flix): Unit = {
-    val stylesheet = readResource(Stylesheet)
-    writeFile("styles.css", stylesheet)
+    val stylesheet = readResourceString(Stylesheet) + mkIconStyles()
+    writeFile("styles.css", stylesheet.getBytes)
 
     val favicon = readResource(FavIcon)
     writeFile("favicon.png", favicon)
@@ -1460,12 +1490,32 @@ object HtmlDocumentor {
   }
 
   /**
-    * Append the contents of the SVG file with the given `name` to the given `StringBuilder`.
+    * Append the icon with the given CSS class, `cls`, to the given `StringBuilder`.
     *
-    * By inlining the icon into the HTML itself, it can inherit the `color` of its parent.
+    * The element is empty: its artwork is applied by the stylesheet, see [[mkIconStyles]].
     */
-  private def inlineIcon(name: String)(implicit sb: StringBuilder): Unit = {
-    sb.append(readResourceString(s"$Icons/$name.svg"))
+  private def docIcon(cls: String)(implicit sb: StringBuilder): Unit = {
+    sb.append(s"<span class='$cls icon'></span>")
+  }
+
+  /**
+    * Returns the CSS rules that give each icon of [[IconClasses]] its artwork, as a mask.
+    *
+    * The icons are put in the stylesheet, rather than inlined into the HTML, since each page would
+    * otherwise carry a copy of every icon it uses. Masking, rather than embedding the SVG as an
+    * image, keeps the icons able to inherit the `color` of their parent.
+    *
+    * The attribution comments of each icon are stripped, since they carry no meaning in the output.
+    * They are kept in the SVG files themselves, along with `icons/LICENSE.md`.
+    */
+  private def mkIconStyles(): String = {
+    val rules = IconClasses.map {
+      case (cls, name) =>
+        val svg = readResourceString(s"$Icons/$name.svg")
+        val stripped = CommentPattern.matcher(svg).replaceAll("").trim
+        s".$cls.icon { --icon: url(\"data:image/svg+xml,${escDataUri(stripped)}\") }"
+    }
+    rules.mkString("\n", "\n", "\n")
   }
 
   /**
@@ -1527,6 +1577,13 @@ object HtmlDocumentor {
   private def escUrl(s: String): String = URLEncoder.encode(s, "UTF-8")
 
   /**
+    * Escape the string for inclusion in a `data:` URI.
+    *
+    * Unlike in a query string, a `+` denotes itself in a `data:` URI, so spaces must be escaped.
+    */
+  private def escDataUri(s: String): String = escUrl(s).replace("+", "%20")
+
+  /**
     * An item is a unit that is typically output to its own HTML file.
     */
   private sealed trait Item {
@@ -1544,6 +1601,7 @@ object HtmlDocumentor {
     * A representation of a module that's easier to work with while generating documentation.
     */
   private case class Module(sym: Symbol.ModuleSym,
+                            doc: Doc,
                             parent: Option[Symbol.ModuleSym],
                             uses: List[UseOrImport],
                             submodules: List[Module],

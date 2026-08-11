@@ -190,6 +190,9 @@ object OpPrinter {
     case (AtomicOp.RecordSelect(label), List(d)) => RecordSelect(label, d)
     case (AtomicOp.RecordRestrict(label), List(d)) => RecordRestrict(label, d)
     case (AtomicOp.ArrayLength, List(d)) => ArrayLength(d)
+    case (AtomicOp.VectorLit, _) => VectorLit(ds)
+    case (AtomicOp.VectorLoad, List(d1, d2)) => VectorLoad(d1, d2)
+    case (AtomicOp.VectorLength, List(d)) => VectorLength(d)
     case (AtomicOp.StructNew(sym, Mutability.Mutable, fields), d :: rs) =>
       ListOps.zipOption(fields, rs) match {
         case None => Expr.Unknown
@@ -219,7 +222,7 @@ object OpPrinter {
     case (AtomicOp.PutField(field), List(d1, d2)) => JavaPutField(field, d1, d2)
     case (AtomicOp.ArrayStore, List(d1, d2, d3)) => ArrayStore(d1, d2, d3)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
-    case (AtomicOp.InvokeSuperMethod(method, _), d :: rs) => JavaInvokeMethod(method, d, rs)
+    case (AtomicOp.InvokeSuperMethod(_, method), d :: rs) => JavaInvokeMethod(method, d, rs)
     // fall back if non other applies
     case (op1, ds1) => App(Meta(op1.toString), ds1)
   }

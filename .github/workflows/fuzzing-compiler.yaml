@@ -19,6 +19,15 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+      - name: Cache Mill and Coursier
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.cache/mill
+          key: ${{ runner.os }}-mill-${{ hashFiles('build.mill', '.mill-version') }}
+          restore-keys: |
+            ${{ runner.os }}-mill-
       - name: Fuzz with timeout
         timeout-minutes: 20
         run: ./mill flix.testFuzzerSuite

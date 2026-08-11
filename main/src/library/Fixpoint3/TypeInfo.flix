@@ -88,15 +88,19 @@ pub mod Fixpoint3.TypeInfo {
             let typeUnifier = MutDisjointSets.empty(rc);
             // Have to traverse in same order as `Compiler.flix`
             foreach ((_, pseudStrat) <- pseudoStratums) {
-                MutMap.foldLeft(_ -> rules2 -> {
-                    List.forEach(match (_, rule) -> typeConstraint(rule, typeUnifier, idCreator), rules2)
-                }, (), pseudStrat)
+                MutMap.foldLeft(
+                    _ -> rules2 -> {
+                        List.forEach(match (_, rule) -> typeConstraint(rule, typeUnifier, idCreator), rules2)
+                    },
+                    (),
+                    pseudStrat
+                )
             };
 
             let maxId = Counter.get(idCreator);
             let arr = Array.empty(rc, maxId);
             // Register `RelSym`s.
-            foreach(RelSym.Symbol(PredSym(_, id), arity, _) <- rels) {
+            foreach (RelSym.Symbol(PredSym(_, id), arity, _) <- rels) {
                 Array.put(Array.repeat(rc, arity, -1), toInt32(id), arr)
             };
             // Register functional predicates.
@@ -142,11 +146,13 @@ pub mod Fixpoint3.TypeInfo {
     ///
     pub def expandTypeInfoToProv(typeInfo: TypeInformation, predicates: Predicates): TypeInformation =
         let max = getMax(predicates);
-        Vector.mapWithIndex(i -> v -> match Int32.toInt64(i) < max {
-            case true => expandTypeToProv(v)
-            case false => v
-        }, typeInfo)
-
+        Vector.mapWithIndex(
+            i -> v -> match Int32.toInt64(i) < max {
+                case true  => expandTypeToProv(v)
+                case false => v
+            },
+            typeInfo
+        )
 
     ///
     /// Expands `relType` to include the provenance annotations types.
@@ -158,7 +164,7 @@ pub mod Fixpoint3.TypeInfo {
     ///
     def computeSizeOfFunctional(id: Int64, count: Int32, typeUnifier: TypeUnifier[r]): Int32 \ r =
         match MutDisjointSets.find((id, count), typeUnifier) {
-            case None => count
+            case None    => count
             case Some(_) => computeSizeOfFunctional(id, count + 1, typeUnifier)
         }
 
@@ -192,7 +198,7 @@ pub mod Fixpoint3.TypeInfo {
     ///
     def typeHead(head: HeadPredicate, varSymUnifier: VarSymUnifier[r1], typeUnifier: TypeUnifier[r2]): Unit \ r1 + r2 =
         let HeadPredicate.HeadAtom(PredSym(_, id), _, terms) = head;
-        foreach((i, t) <- ForEach.withIndex(terms)) {
+        foreach ((i, t) <- ForEach.withIndex(terms)) {
             match t {
                 case HeadTerm.Var(VarSym.VarSym(sym)) =>
                     typeVar(id, i, sym, varSymUnifier, typeUnifier)
@@ -228,8 +234,8 @@ pub mod Fixpoint3.TypeInfo {
     /// Register that `(id, index) == term`.
     ///
     def typeBodyTerm(id: Int64, index: Int32, term: BodyTerm, varSymUnifier: VarSymUnifier[r1], typeUnifier: TypeUnifier[r2]): Unit \ r1 + r2 = match term {
-        case BodyTerm.Wild => ()
-        case BodyTerm.Lit(_) => ()
+        case BodyTerm.Wild                    => ()
+        case BodyTerm.Lit(_)                  => ()
         case BodyTerm.Var(VarSym.VarSym(sym)) => typeVar(id, index, sym, varSymUnifier, typeUnifier)
     }
 

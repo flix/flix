@@ -1,7 +1,32 @@
 # Changelog
 
-Version 0.71.0:
+Version 0.75.2:
+- Compiler: Improved tree shaking of lowering-related library functions (thanks Simon!)
+- Compiler: Reduced the size of generated HTML documentation (thanks Magnus!)
+- Compiler: Fixed a few bugs (thanks Matt!)
 
+Version 0.75.1:
+- Compiler: Fixed a few bugs (thanks Magnus!)
+
+Version 0.75.0:
+- Library: Extended `Range` and `Discrete` (thanks Magnus!)
+- Compiler: Improved some compiler error messages (thanks Magnus!)
+- VSCode: Added folding-range support (thanks Magnus!)
+
+Version 0.74.0:
+- Compiler: Improved performance of Parser (thanks Magnus!)
+- Compiler: Improved performance of Weeder (thanks Magnus!)
+- Compiler: Improved performance of Kinder (thanks Magnus!)
+- Compiler: Improved performance of Typer (thanks Magnus!)
+
+Version 0.73.0:
+- Library: Added `Util.Json` module (thanks Magnus!)
+- Compiler: Improved performance of CodeGen (thanks Magnus!)
+
+Version 0.72.0:
+- Compiler: Improved effect error messages (thanks Alexander and Samuel!)
+
+Version 0.71.0:
 - Compiler: Significantly improved Java interoperability for generic/polymorphic types (thanks Magnus!)
 - Compiler: Improved pattern match compilation with ordinal dispatch and tableswitch (thanks Magnus!)
 - Compiler: Various bytecode optimizations for improved runtime performance (thanks Magnus!)

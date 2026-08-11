@@ -134,7 +134,7 @@ object DocAst {
 
     case class Unsafe(d: Expr, runEff: Type, asEff: Option[Type]) extends Composite
 
-    case class NewObject(name: String, clazz: Class[?], tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod]) extends Composite
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: Class[?], tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod]) extends Composite
 
     case class Lambda(fparams: List[Expr.AscriptionTpe], body: Expr) extends Composite
 

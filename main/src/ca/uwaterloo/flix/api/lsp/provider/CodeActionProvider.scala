@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Diagnostic, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, EffSymOrRigidVar}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.errors.{CodeHint, ParseError, ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -59,23 +59,53 @@ object CodeActionProvider {
     case ResolutionError.UndefinedType(qn, _, ap, _, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap)
 
-    case te@TypeError.ExplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
+    case te@TypeError.ExplicitlyPureFunctionUsesIO(loc, loc2) if overlaps(range, loc) || overlaps(range, loc2) =>
       List(CodeAction(
         title = "Change {} to IO",
         kind = CodeActionKind.QuickFix,
-        diagnostic = Some(Diagnostic.from(te, Some(root))),
+        diagnostics = List(Diagnostic.from(te, Some(root))),
         isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "IO"))))),
         command = None
       ))
 
-    case te@TypeError.ImplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
+    case te@TypeError.ImplicitlyPureFunctionUsesIO(loc, loc2) if overlaps(range, loc) || overlaps(range, loc2) =>
       List(CodeAction(
-        title = "add \\ IO to signature",
+        title = "Add \\ IO to effect set in signature",
         kind = CodeActionKind.QuickFix,
-        diagnostic = Some(Diagnostic.from(te, Some(root))),
+        diagnostics = List(Diagnostic.from(te, Some(root))),
         isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ IO "))))),
+        command = None
+      ))
+
+    case te@TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc, loc2) if overlaps(range, loc) || overlaps(range, loc2) =>
+      List(CodeAction(
+        title = f"Change {} to ${sym.name}",
+        kind = CodeActionKind.QuickFix,
+        diagnostics = List(Diagnostic.from(te, Some(root))),
+        isPreferred = true,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), sym.name))))),
+        command = None
+      ))
+
+    case te@TypeError.ImplicitlyPureFunctionUsesEffect(sym, loc, loc2) if overlaps(range, loc) || overlaps(range, loc2) =>
+      List(CodeAction(
+        title = f"Add \\ ${sym.name} to effect set in signature",
+        kind = CodeActionKind.QuickFix,
+        diagnostics = List(Diagnostic.from(te, Some(root))),
+        isPreferred = true,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), f" \\ ${sym.name} "))))),
+        command = None
+      ))
+
+    case te@TypeError.EffectfulFunctionUsesOtherEffect(syms, usedSym, loc, loc2) if overlaps(range, loc) || overlaps(range, loc2) =>
+      List(CodeAction(
+        title = f"Add ${usedSym.name} to effect set in signature",
+        kind = CodeActionKind.QuickFix,
+        diagnostics = List(Diagnostic.from(te, Some(root))),
+        isPreferred = true,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), f"${effectsToString(syms)} + ${usedSym.name}"))))),
         command = None
       ))
 
@@ -104,6 +134,16 @@ object CodeActionProvider {
       ))
 
     case _ => Nil
+  }
+
+
+  /**
+    * Returns the effect set as a string.
+    * Same function as in `TypeError` but without the surrounding quotes.
+    */
+  private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
+    case x :: Nil => s"${x.name}"
+    case xs => xs.map(_.name).mkString("{", ", ", "}")
   }
 
   /**

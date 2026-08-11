@@ -90,7 +90,7 @@ pub mod Concurrent.Channel {
     )
 
     /// Returns the `MpmcAdmin` of `c`.
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def mpmcAdmin(c: Mpmc[a, Static]): MpmcAdmin = {
         let Mpmc.Mpmc(admin, _) = c;
         admin
@@ -139,9 +139,11 @@ pub mod Concurrent.Channel {
     /// negative. A channel with `bufferSize` zero means that sending and
     /// receiving is syncronized.
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO =
-        if (bufferSize < 0) bug!("bufferSize < 0") else {
+        if (bufferSize < 0)
+            bug!("bufferSize < 0")
+        else {
             let unBuffered = bufferSize == 0;
             let reentrantLock = newLock(fairness());
             let size = Ref.fresh(Static, 0);
@@ -163,7 +165,7 @@ pub mod Concurrent.Channel {
     ///
     /// Creates a new channel tuple (sender, receiver)
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def newChannelTuple(bufferSize: Int32): (Mpmc[a, Static], Mpmc[a, Static]) \ IO =
         let c = newChannel(bufferSize);
         (c, c)
@@ -174,7 +176,7 @@ pub mod Concurrent.Channel {
     ///
     /// Implements the expression `c <- e`.
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def put(e: a, c: Mpmc[a, Static]): Unit \ IO =
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, size, _, rendezvous, _) = admin;
@@ -202,7 +204,7 @@ pub mod Concurrent.Channel {
     ///
     /// Implements to the expression `<- c`.
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def get(c: Mpmc[a, Static]): a \ IO =
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, _, _, _, _) = mpmcAdmin(c);
         lock(channelLock);
@@ -215,7 +217,7 @@ pub mod Concurrent.Channel {
     /// Retrieves an element from the channel `c` and unlocks `locks` after doing so.
     /// Assumes the channel to be non-empty.
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def unsafeGetAndUnlock(c: Mpmc[a, Static], locks: List[ReentrantLock]): a \ IO = {
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, _, _, _) = admin;
@@ -254,7 +256,7 @@ pub mod Concurrent.Channel {
     ///      returned list of locks post call.
     ///      In the non-blocking case, selectFrom unlocks all locks first
     ///
-    @LoweringTarget
+    @LoweringTargetChannel
     pub def selectFrom(
         channels: List[MpmcAdmin],
         blocking: Bool
@@ -266,9 +268,9 @@ pub mod Concurrent.Channel {
         let selectCondition = newCondition(selectLock);
 
         // Sort locks to avoid deadlocks
-        let sortedLocks = channels |>
-            List.sortBy(match MpmcAdmin.MpmcAdmin(id, _, _, _, _, _, _, _) -> id) |>
-            List.map(match MpmcAdmin.MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
+        let sortedLocks = channels
+            |> List.sortBy(match MpmcAdmin.MpmcAdmin(id, _, _, _, _, _, _, _) -> id)
+            |> List.map(match MpmcAdmin.MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
 
     ///
@@ -307,7 +309,8 @@ pub mod Concurrent.Channel {
         let optionalElement = MutDeque.popFront(elementDeque);
 
         match optionalElement {
-            case None => { // No element was found
+            case None => {
+                // No element was found
                 // Create a new lock and condition
                 let conditionLock = newLock(fairness());
                 lock(conditionLock);
@@ -352,7 +355,6 @@ pub mod Concurrent.Channel {
         selectLock: ReentrantLock,
         selectCondition: Condition
     ): (Int32, List[ReentrantLock]) \ IO =
-
         // Lock all locks in sorted order. This avoids the case
         // where a channel receives an element while the later channels are
         // searched for elements but before we place the condition on the
@@ -368,19 +370,23 @@ pub mod Concurrent.Channel {
         /* TODO: Optimization opportunity. The order of searching here could be
                  randomized to avoid starvation scenarios).
         */
-        let index = channels |>
-            List.mapWithIndex(i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
-                (Ref.get(size) > 0, i)
-            }) |>
-            List.findLeft(match (b, _) -> b) |>
-            Option.map(snd);
+        let index = channels
+            |> List.mapWithIndex(
+                i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
+                    (Ref.get(size) > 0, i)
+                }
+            )
+            |> List.findLeft(match (b, _) -> b)
+            |> Option.map(snd);
 
         match index {
             case Some(i) =>
                 (i, sortedLocks `List.append` (selectLock :: Nil))
 
-            case None => { // No channel had an element ready
-                if (blocking) { // We have to wait for an element
+            case None => {
+                // No channel had an element ready
+                if (blocking) {
+                    // We have to wait for an element
                     // Add our condition to all channels to get notified when a
                     // new element is added.
                     List.forEach(addGetter(selectLock, selectCondition), channels);
@@ -399,8 +405,8 @@ pub mod Concurrent.Channel {
                     // Try again
                     selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
                 } else {
-                    (sortedLocks `List.append` (selectLock :: Nil)) |>
-                        List.forEach(unlock);
+                    (sortedLocks `List.append` (selectLock :: Nil))
+                        |> List.forEach(unlock);
                     (-1, Nil)
                 }
             }
@@ -451,10 +457,7 @@ pub mod Concurrent.Channel {
         // Unlock the channel
         unlock(channelLock)
 
-
     // ------------- Helper Methods --------------------------------------------
-
-
 
     ///
     /// Unsafe wrapper for `Concurrent.Condition.await(c)`

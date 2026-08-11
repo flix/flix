@@ -66,7 +66,7 @@ object JvmAstPrinter {
       case JvmAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case Expr.NewObject(name, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
+    case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, clazz, SimpleTypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
   }
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */

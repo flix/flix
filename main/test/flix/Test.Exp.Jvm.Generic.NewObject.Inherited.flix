@@ -3,7 +3,9 @@ mod Test.Exp.Jvm.Generic.NewObject.Inherited {
     use Assert.{assertEq, assertTrue}
 
     import dev.flix.test.TestGenericChildInterface
+    import dev.flix.test.TestGenericGrandchildInterface
     import dev.flix.test.TestGenericSubInterface
+    import dev.flix.test.TestGenericSwappedInterface
     import java.lang.{Comparable => JComparable}
     import java.lang.{Integer => JInteger}
 
@@ -25,6 +27,28 @@ mod Test.Exp.Jvm.Generic.NewObject.Inherited {
                 "hello"
             def compareTo(_this: TestGenericSubInterface[String], o: String): Int32 =
                 "hello".compareTo(o)
+        }
+
+    // `testMethod` is inherited two levels up, from TestGenericInterface, where its type
+    // parameter is spelled `T1` rather than `U`.
+    @CompileTest
+    def testGenericGrandchildInterfaceCompile01(): TestGenericGrandchildInterface[String] \ IO =
+        new TestGenericGrandchildInterface[String] {
+            def identity(_this: TestGenericGrandchildInterface[String], x: String): String =
+                x
+            def testMethod(_this: TestGenericGrandchildInterface[String], x: String): String =
+                x + x
+            def describe(_this: TestGenericGrandchildInterface[String]): String =
+                "grandchild"
+        }
+
+    // TestGenericSwappedInterface[A, B] extends TestGenericInterface2[B, A],
+    // so the inherited `apply` takes a B and returns an A.
+    @CompileTest
+    def testGenericSwappedInterfaceCompile01(): TestGenericSwappedInterface[String, JInteger] \ IO =
+        new TestGenericSwappedInterface[String, JInteger] {
+            def apply(_this: TestGenericSwappedInterface[String, JInteger], a: JInteger): String =
+                a.toString()
         }
 
     // Tests
@@ -106,5 +130,53 @@ mod Test.Exp.Jvm.Generic.NewObject.Inherited {
                 "hello".compareTo(o)
         };
         assertEq(expected = 0, obj.compareTo("hello"))
+
+    @Test
+    def testGenericGrandchildInterfaceInherited01(): Unit \ {Assert, IO} =
+        let obj = new TestGenericGrandchildInterface[String] {
+            def identity(_this: TestGenericGrandchildInterface[String], x: String): String =
+                x
+            def testMethod(_this: TestGenericGrandchildInterface[String], x: String): String =
+                x + "!"
+            def describe(_this: TestGenericGrandchildInterface[String]): String =
+                "grandchild"
+        };
+        let r: String = obj.testMethod("hi");
+        assertEq(expected = "hi!", r)
+
+    @Test
+    def testGenericGrandchildInterfaceInherited02(): Unit \ {Assert, IO} =
+        let obj = new TestGenericGrandchildInterface[String] {
+            def identity(_this: TestGenericGrandchildInterface[String], x: String): String =
+                x
+            def testMethod(_this: TestGenericGrandchildInterface[String], x: String): String =
+                x
+            def describe(_this: TestGenericGrandchildInterface[String]): String =
+                "two-levels-up"
+        };
+        let r: String = obj.describe();
+        assertEq(expected = "two-levels-up", r)
+
+    @Test
+    def testGenericGrandchildInterfaceOwnMethod01(): Unit \ {Assert, IO} =
+        let obj = new TestGenericGrandchildInterface[JInteger] {
+            def identity(_this: TestGenericGrandchildInterface[JInteger], x: JInteger): JInteger =
+                x
+            def testMethod(_this: TestGenericGrandchildInterface[JInteger], x: JInteger): JInteger =
+                x
+            def describe(_this: TestGenericGrandchildInterface[JInteger]): String =
+                "integer-grandchild"
+        };
+        let r: JInteger = obj.identity(JInteger.valueOf(7i32));
+        assertEq(expected = 7, r.intValue())
+
+    @Test
+    def testGenericSwappedInterfaceApply01(): Unit \ {Assert, IO} =
+        let obj = new TestGenericSwappedInterface[String, JInteger] {
+            def apply(_this: TestGenericSwappedInterface[String, JInteger], a: JInteger): String =
+                "n=" + a.toString()
+        };
+        let r: String = obj.apply(JInteger.valueOf(42i32));
+        assertEq(expected = "n=42", r)
 
 }

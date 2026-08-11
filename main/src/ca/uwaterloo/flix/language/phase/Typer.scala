@@ -51,7 +51,7 @@ object Typer {
     val typeAliases = visitTypeAliases(root)
     val precedenceGraph = LabelledPrecedenceGraph.empty
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
-    val modules = ListMap(collectModules(root))
+    val modules = collectModules(root)
     val defaultHandlers = DefaultHandlers.visitDefaultHandlers(root)(flix, sctx, traitEnv, eqEnv)
     val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, defaultHandlers, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty, root.tokens)
 
@@ -60,10 +60,15 @@ object Typer {
   }
 
   /**
-    * Collects the symbols in the given root into a map.
+    * Collects the symbols in the given root into a map of typed `Mod` declarations.
+    *
+    * For each module symbol (declared explicitly via `mod` or synthesized from a leaf
+    * symbol's namespace), we attach its children and any documentation/annotations/modifiers
+    * carried over from the kinded root. Synthesized modules with no declaration site receive
+    * empty defaults.
     */
-  private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _, _) =>
+  private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, TypedAst.Mod] = root match {
+    case KindedAst.Root(modules, traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _, _) =>
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -112,11 +117,21 @@ object Typer {
         case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
         case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+        case sym: Symbol.AnonClassSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
       }
 
-      groups.map {
-        case (k, v) => (k, v.toList)
-      }
+      // Every module symbol that either appears as a key (has children) or has an
+      // explicit declaration must have an entry in the result.
+      val allModuleSyms = groups.keySet ++ modules.keySet
+
+      allModuleSyms.iterator.map { sym =>
+        val children = groups.getOrElse(sym, Set.empty).toList
+        val mod = modules.get(sym) match {
+          case Some(m) => TypedAst.Mod(m.doc, m.ann, m.mod, sym, children, m.loc)
+          case None => TypedAst.Mod(Doc(Nil, SourceLocation.Unknown), Annotations.Empty, Modifiers.Empty, sym, children, SourceLocation.Unknown)
+        }
+        sym -> mod
+      }.toMap
   }
 
   /**
@@ -170,13 +185,17 @@ object Typer {
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_) {
-      case defn =>
+    // Schedule the biggest defs first to increase throughput.
+    def sortBy(defn: KindedAst.Def): Int = defn.loc.startLine - defn.loc.endLine
+
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValuesWithPriority(_, sortBy) {
+      case defn => flix.profile(defn.sym, defn.loc) {
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
         // If no effect is specified, we assume the function is pure
         val eff1 = defn.spec.eff.getOrElse(Type.Pure)
         val enableSubeffects = shouldSubeffect(eff1, Subeffecting.ModDefs)
         visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
+      }
     })
   }
 
@@ -214,7 +233,7 @@ object Typer {
     * Reassembles a single trait.
     */
   private def visitTrait(trt: KindedAst.Trait, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Trait = trt match {
-    case KindedAst.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
+    case KindedAst.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val renv = RigidityEnv.empty.markRigid(tparam0.sym)
       val superTraits = superTraits0 // no subst to be done
@@ -225,8 +244,7 @@ object Typer {
       }
       val tconstr = TraitConstraint(TraitSymUse(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val sigs = sigs0.values.map(visitSig(_, renv, List(tconstr), root, traitEnv, eqEnv)).toList
-      val laws = laws0.map(visitDef(_, List(tconstr), Nil, renv, root, traitEnv, eqEnv, open = false))
-      TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
+      TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, loc)
   }
 
   /**
@@ -263,7 +281,10 @@ object Typer {
   private def visitInstances(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): ListMap[Symbol.TraitSym, TypedAst.Instance] = {
     val instances0 = root.instances.values
 
-    val instances = ParOps.parMap(instances0)(visitInstance(_, root, traitEnv, eqEnv))
+    // Schedule the biggest instances first to increase throughput.
+    def sortBy(inst: KindedAst.Instance): Int = inst.loc.startLine - inst.loc.endLine
+
+    val instances = ParOps.parMapWithPriority(instances0, sortBy)(visitInstance(_, root, traitEnv, eqEnv))
     val mapping = instances.map {
       case instance => instance.trt.sym -> instance
     }
@@ -287,11 +308,13 @@ object Typer {
 
       val defs = defs0.map {
         defn =>
-          // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
-          // If no effect is specified, we assume the function is pure
-          val eff1 = defn.spec.eff.getOrElse(Type.Pure)
-          val open = shouldSubeffect(eff1, Subeffecting.InsDefs)
-          visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
+          flix.profile(defn.sym, defn.loc) {
+            // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
+            // If no effect is specified, we assume the function is pure
+            val eff1 = defn.spec.eff.getOrElse(Type.Pure)
+            val open = shouldSubeffect(eff1, Subeffecting.InsDefs)
+            visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
+          }
       }
       val typedEconstrs = econstrs.map(ec => TypedAst.EqualityConstraint(Type.AssocType(ec.symUse, ec.tpe1, ec.tpe2.kind, ec.loc), ec.tpe2, ec.loc))
       TypedAst.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, typedEconstrs, assocs, defs, ns, loc)

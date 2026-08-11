@@ -208,6 +208,4 @@ pub mod BigDecimal {
         else
             None
 
-
 }
-

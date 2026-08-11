@@ -33,7 +33,7 @@ eff Searchable {
 /// position is not safe.
 ///
 def isSafePosition(pos: Int32, diagonal: Int32, sol: Placement): Bool = match sol {
-    case Nil     => true
+    case Nil => true
     case q :: qs =>
         let isSafe = pos != q and pos != q + diagonal and pos != q - diagonal;
         isSafe and isSafePosition(pos, diagonal + 1, qs)

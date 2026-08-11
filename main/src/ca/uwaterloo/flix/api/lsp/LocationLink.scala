@@ -92,6 +92,18 @@ object LocationLink {
   }
 
   /**
+    * Returns a location link to the given type alias symbol `sym`.
+    */
+  def fromTypeAliasSym(sym: Symbol.TypeAliasSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
+    val aliasDecl = root.typeAliases(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(aliasDecl.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
     * Returns a location link to the given symbol `sym`.
     */
   def fromCaseSym(sym: Symbol.CaseSym, loc: SourceLocation)(implicit root: Root): LocationLink = {

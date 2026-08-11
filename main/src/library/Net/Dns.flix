@@ -68,7 +68,6 @@ pub mod Net.Dns {
                     case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
-
         }
 
     ///

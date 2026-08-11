@@ -126,19 +126,19 @@ pub mod Sys.Process {
                 let res = try {
                     let arr = List.toArray(rc, cmd :: args);
                     let pb = new ProcessBuilder(arr);
-                    foreach(e <- Map.toList(env)) {
+                    foreach (e <- Map.toList(env)) {
                         pb.environment().put(fst(e), snd(e));
                         ()
                     };
                     match cwdPath {
                         case Some(cwd) => pb.directory(new JFile(cwd)); ()
-                        case None => ()
+                        case None      => ()
                     };
                     let process = pb.start();
                     Ok(ProcessHandle(process))
                 } catch {
-                    case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 };
                 k(res)
             }
@@ -148,8 +148,8 @@ pub mod Sys.Process {
                     let ProcessHandle(p) = ph;
                     k(Ok(p.exitValue()))
                 } catch {
-                    case ex: IllegalThreadStateException  => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                    case ex: IOException                  => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IllegalThreadStateException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException                 => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def isAlive(ph, k) =
@@ -222,7 +222,6 @@ pub mod Sys.Process {
                     case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
                     case ex: IOException          => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
-
         }
 
     ///

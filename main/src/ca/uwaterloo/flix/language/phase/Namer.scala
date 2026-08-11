@@ -74,7 +74,7 @@ object Namer {
     */
   private def collectModNodes(decls: List[NamedAst.Declaration]): List[NamedAst.Declaration.Mod] =
     decls.flatMap {
-      case m @ NamedAst.Declaration.Mod(_, _, _, _, _, inner, _) => m :: collectModNodes(inner)
+      case m @ NamedAst.Declaration.Mod(_, _, _, _, _, _, inner, _) => m :: collectModNodes(inner)
       case _ => Nil
     }
 
@@ -121,7 +121,7 @@ object Namer {
         for (decl <- decls) {
           decl match {
             // We check if it is a *public* module declaration.
-            case Declaration.Mod(_, mod, sym, _, _, _, loc) if mod.isPublic =>
+            case Declaration.Mod(_, _, mod, sym, _, _, _, loc) if mod.isPublic =>
               // Check if `sym` has parent.
               sym.parent() match {
                 case None => // No parent, nothing to check.
@@ -164,7 +164,7 @@ object Namer {
       val ds = decls.getOrElse(sym.ns.last, Nil)
       // Check that the declarations contain a module declaration for `sym`.
       val exists = ds.exists {
-        case Declaration.Mod(_, _, otherSym, _, _, _, _) => sym == otherSym
+        case Declaration.Mod(_, _, _, otherSym, _, _, _, _) => sym == otherSym
         case _ => false
       }
       // If no declaration exists then `sym` is an orphan.
@@ -194,14 +194,13 @@ object Namer {
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
     case decl: DesugaredAst.Declaration.Effect => visitEffect(decl, ns0)
-    case decl: DesugaredAst.Declaration.Law => throw InternalCompilerException("unexpected law", decl.loc)
   }
 
   /**
     * Performs naming on the given module.
     */
   private def visitMod(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
-    case DesugaredAst.Declaration.Mod(ann, mod, qname, usesAndImports0, decls, loc) =>
+    case DesugaredAst.Declaration.Mod(doc, ann, mod, qname, usesAndImports0, decls, loc) =>
 
       //
       // Check for [[NameError.IllegalModuleFile]] -- i.e. that public modules reside at correct paths.
@@ -240,7 +239,7 @@ object Namer {
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
-      NamedAst.Declaration.Mod(ann, mod, sym, qname.loc, usesAndImports, ds, loc)
+      NamedAst.Declaration.Mod(doc, ann, mod, sym, qname.loc, usesAndImports, ds, loc)
   }
 
   /**
@@ -251,14 +250,14 @@ object Namer {
   }
 
   private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
-    case NamedAst.Declaration.Mod(_, _, sym, _, usesAndImports, decls, _) =>
+    case NamedAst.Declaration.Mod(_, _, _, sym, _, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
       val table2 = decls.foldLeft(table1)(tableDecl)
       val table3 = addUsesToTable(table2, sym.ns, usesAndImports)
       liftCompanion(table3, sym, decls)
 
-    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, assocs, sigs, _, _) =>
+    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, assocs, sigs, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       val assocsAndSigs = assocs ++ sigs
       assocsAndSigs.foldLeft(table1)(tableDecl)
@@ -694,7 +693,7 @@ object Namer {
     * Performs naming on the given trait `trt`.
     */
   private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Trait = trt match {
-    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits, assocs, signatures, laws, loc) =>
+    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits, assocs, signatures, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
@@ -703,14 +702,17 @@ object Namer {
       val symNs = if (isCompanion) Name.NName(ns0.idents.init, ns0.loc) else ns0
       val sym = Symbol.mkTraitSym(symNs, ident)
       val mod = visitModifiers(mod0, ns0)
+      if (mod.isSealed && sym.namespace.isEmpty) {
+        // A top-level trait cannot be sealed: anyone may define an instance at the top level.
+        sctx.errors.add(NameError.IllegalSealedTrait(ident.name, ident.loc))
+      }
       val tparam = visitTypeParam(tparams0)
 
       val sts = superTraits.map(visitTraitConstraint)
       val ascs = assocs.map(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
       val sigs = signatures.map(visitSig(_, ns0, sym))
-      val ls = laws.map(visitDef(_, ns0, DefKind.Member))
 
-      NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, ls, loc)
+      NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, loc)
   }
 
   /**
@@ -1001,10 +1003,13 @@ object Namer {
       val e = visitExp(exp)
       NamedAst.Expr.ArrayLength(e, loc)
 
-    case DesugaredAst.Expr.StructNew(qname, exps, regionOpt, loc) =>
-      val e = visitExp(regionOpt)
-      val es = exps.map(visitStructField)
-      NamedAst.Expr.StructNew(qname, es, Some(e), loc)
+    case DesugaredAst.Expr.AmbiguousNew(tpe, region0, fields0, constructors, methods, loc) =>
+      val t = visitType(tpe)
+      val region = region0.map(visitExp)
+      val fields = fields0.map(visitStructField)
+      val cs = constructors.map(visitJvmConstructor)
+      val ms = methods.map(visitJvmMethod)
+      NamedAst.Expr.AmbiguousNew(t, region, fields, cs, ms, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val e = visitExp(exp)
@@ -1093,13 +1098,6 @@ object Namer {
     case DesugaredAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.GetField(e, name, loc)
-
-    case DesugaredAst.Expr.NewObject(tpe, constructors, methods, loc) =>
-      val t = visitType(tpe)
-      val cs = constructors.map(visitJvmConstructor)
-      val ms = methods.map(visitJvmMethod)
-      val name = s"Anon$$${flix.genSym.freshId()}"
-      NamedAst.Expr.NewObject(name, t, cs, ms, loc)
 
     case DesugaredAst.Expr.NewChannel(exp, loc) =>
       val e = visitExp(exp)
@@ -1750,7 +1748,7 @@ object Namer {
     * Gets the location of the symbol of the declaration.
     */
   private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
-    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Def(sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
@@ -1765,7 +1763,7 @@ object Namer {
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected instance", loc)
-    case NamedAst.Declaration.Mod(_, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
+    case NamedAst.Declaration.Mod(_, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 
   /**

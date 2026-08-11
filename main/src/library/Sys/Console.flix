@@ -64,7 +64,7 @@ pub mod Sys.Console {
     pub def readlnWithDefault(p: a, default: String): String \ Console + Formattable.Aef[a] with Formattable[a] =
         Console.print(prompt(p));
         match Console.readln() {
-            case None        => default
+            case None => default
             case Some(input) =>
                 let trimmed = String.trim(input);
                 if (String.isEmpty(trimmed)) default else trimmed
@@ -81,10 +81,10 @@ pub mod Sys.Console {
     pub def readlnWith(p: a, f: String -> Result[String, b]): Option[b] \ Console + Formattable.Aef[a] with Formattable[a] =
         Console.print(prompt(p));
         match Console.readln() {
-            case None        => None
+            case None => None
             case Some(input) =>
                 match f(input) {
-                    case Ok(v)    => Some(v)
+                    case Ok(v) => Some(v)
                     case Err(msg) =>
                         Console.eprintln(msg);
                         readlnWith(p, f)
@@ -104,8 +104,8 @@ pub mod Sys.Console {
         let hint = if (default#default) " [Y/n] " else " [y/N] ";
         Console.print(prompt(p) + hint);
         match Console.readln() {
-            case None        => default#default
-            case Some(raw)   =>
+            case None => default#default
+            case Some(raw) =>
                 let input = String.toLowerCase(String.trim(raw));
                 if (String.isEmpty(input))
                     default#default
@@ -130,10 +130,10 @@ pub mod Sys.Console {
             Console.println("  ${i + 1}) ${prompt(opt)}");
         Console.print("> ");
         match Console.readln() {
-            case None        => None
-            case Some(raw)   =>
+            case None => None
+            case Some(raw) =>
                 match Int32.fromString(raw) {
-                    case None    => None
+                    case None => None
                     case Some(n) =>
                         if (1 <= n and n <= List.length(choices))
                             List.head(List.drop(n - 1, choices))
@@ -154,10 +154,10 @@ pub mod Sys.Console {
         def loop() = {
             Console.print("> ");
             match Console.readln() {
-                case None      => None
+                case None => None
                 case Some(raw) =>
                     match Int32.fromString(raw) {
-                        case None    => loop()
+                        case None => loop()
                         case Some(n) =>
                             if (1 <= n and n <= List.length(choices))
                                 List.head(List.drop(n - 1, choices))
@@ -177,7 +177,7 @@ pub mod Sys.Console {
         // NB: System.console() returns null when there is no interactive terminal (e.g. IDE, piped input).
         let reader = match Object.toOption(System.console()) {
             case Some(c) => () -> Object.toOption(c.readLine())
-            case None    =>
+            case None =>
                 let br = new BufferedReader(new InputStreamReader(System.in));
                 () -> Object.toOption(br.readLine())
         };

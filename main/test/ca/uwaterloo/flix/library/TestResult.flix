@@ -833,17 +833,4 @@ mod TestResult {
         assertEq(expected = (1 :: 2 :: 3 :: Nil) :: Nil, Ok(1 :: 2 :: 3 :: Nil) |> Result.iterator(rc) |> Iterator.toList)
     }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // tryCatch                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def tryCatch01(): Unit \ Assert = assertEq(expected = Ok(1), Result.tryCatch(_ -> 1 / 1))
-
-    @Test
-    def tryCatch02(): Unit \ Assert = region rc {
-        let arr = Array#{0} @ rc;
-        assertEq(expected = true, Result.tryCatch(_ -> Array.get(10, arr)) |> Result.isErr)
-    }
-
 }

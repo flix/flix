@@ -199,13 +199,13 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        tparams = tparams,
+        tparams = Nil,
         fparams = List(
           KindedAst.FormalParam(param1, tpe, TypeSource.Ascribed, loc),
           KindedAst.FormalParam(param2, tpe, TypeSource.Ascribed, loc)
         ),
         sc = Scheme(
-          tparams.map(_.sym),
+          Nil,
           List(TraitConstraint(TraitSymUse(eqTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkBool(loc), loc)
@@ -384,13 +384,13 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        tparams = tparams,
+        tparams = Nil,
         fparams = List(
           KindedAst.FormalParam(param1, tpe, TypeSource.Ascribed, loc),
           KindedAst.FormalParam(param2, tpe, TypeSource.Ascribed, loc)
         ),
         sc = Scheme(
-          tparams.map(_.sym),
+          Nil,
           List(TraitConstraint(TraitSymUse(orderTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
@@ -555,10 +555,10 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        tparams = tparams,
+        tparams = Nil,
         fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
-          tparams.map(_.sym),
+          Nil,
           List(TraitConstraint(TraitSymUse(toStringTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, Type.mkString(loc), loc)
@@ -765,10 +765,10 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        tparams = tparams,
+        tparams = Nil,
         fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
-          tparams.map(_.sym),
+          Nil,
           List(TraitConstraint(TraitSymUse(hashTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, Type.mkInt32(loc), loc)
@@ -922,10 +922,10 @@ object Deriver {
         doc = Doc(Nil, loc),
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
-        tparams = tparams,
+        tparams = Nil,
         fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
-          tparams.map(_.sym),
+          Nil,
           List(TraitConstraint(TraitSymUse(coerceTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, retTpe, loc)

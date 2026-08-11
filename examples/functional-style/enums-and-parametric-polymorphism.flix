@@ -1,6 +1,6 @@
 /// An algebraic data type for binary trees with leaves.
 enum Tree[a] {
-    case Leaf(a),
+    case Leaf(a)
     case Node(Tree[a], Tree[a])
 }
 

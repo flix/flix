@@ -1,14 +1,14 @@
 /// A mutable struct that represents a person
 struct Person[r] {
-    name: String,
-    mut age: Int32,
+    name:       String,
+    mut age:    Int32,
     mut height: Int32
 }
 
 mod Person {
     /// Create a new `Person` struct with the specified name
     pub def giveBirth(name: String, rc: Region[r]): Person[r] \ r =
-        new Person @ rc { name = name, age = 0, height = 30 }
+        new Person @ rc {name = name, age = 0, height = 30}
 
     /// Increase the age of `person` by 1 and if the age is less than 18,
     /// increase their height by 10.
@@ -20,7 +20,7 @@ mod Person {
             ()
         }
 
-    pub def printPerson(person: Person[r]): Unit \ {IO, r} =
+    pub def printPerson(person: Person[r]): Unit \ { IO, r } =
         println("${person->name} is ${person->age} years old and is ${person->height} cm tall")
 }
 def main(): Unit \ IO = region rc {

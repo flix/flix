@@ -112,6 +112,60 @@ object JvmUtils {
   }
 
   /**
+    * Returns the instance methods of `clazz` that an anonymous subclass may override.
+    *
+    * This is like [[getInstanceMethods]] but also includes `protected` methods. The standard
+    * `Class.getMethods` (which backs [[getInstanceMethods]]) only reports `public` members, so a
+    * `protected abstract` method — which a subclass is nonetheless required to implement — would
+    * otherwise be invisible (see https://github.com/flix/flix/issues/11415).
+    *
+    * `static`, `final`, and `private` methods are excluded since they cannot be overridden.
+    * `package-private` methods are excluded since the generated subclass does not reside in the
+    * same package as `clazz` and therefore cannot override them.
+    */
+  def getOverridableInstanceMethods(clazz: Class[?]): List[Method] = {
+    // The public instance methods (including inherited ones and interface defaults) are already
+    // handled correctly by `getInstanceMethods`.
+    val publicMethods = getInstanceMethods(clazz)
+
+    // `protected` methods can only be declared in classes (interface members are `public`), so we
+    // walk the superclass chain and collect the declared methods of every visibility.
+    val declaredMethods = superclasses(clazz).flatMap(_.getDeclaredMethods.toList)
+    val protectedMethods = declaredMethods.filter { m =>
+      isInstance(m) &&
+        Modifier.isProtected(m.getModifiers) &&
+        !Modifier.isFinal(m.getModifiers) &&
+        !m.isSynthetic
+    }
+
+    // Drop any `protected` method also exposed as `public` (e.g. widened by a subclass) and keep
+    // only the most-derived declaration of each remaining `protected` method.
+    val extraMethods = mostDerived(protectedMethods.filterNot(m => publicMethods.exists(methodsMatch(m, _))))
+
+    publicMethods ::: extraMethods
+  }
+
+  /** Returns `clazz` and all of its superclasses, most-derived first (ending at `Object`). */
+  private def superclasses(clazz: Class[?]): List[Class[?]] = {
+    var result = List.empty[Class[?]]
+    var current: Class[?] = clazz
+    while (current != null) {
+      result ::= current
+      current = current.getSuperclass
+    }
+    result.reverse
+  }
+
+  /** Keeps the first method for each (name, parameter types) signature, discarding later ones. */
+  private def mostDerived(methods: List[Method]): List[Method] = {
+    val seen = scala.collection.mutable.Set.empty[(String, List[Class[?]])]
+    methods.filter { m =>
+      val key = (m.getName, m.getParameterTypes.toList)
+      if (seen(key)) false else { seen += key; true }
+    }
+  }
+
+  /**
     * Returns true if the methods are the same in regards to overloading.
     */
   private def methodsMatch(m1: Method, m2: Method): Boolean = {

@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.Main.Command.PlainLsp
-import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, Formatter as LspFormatter}
+import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, FormatterLsp as LspFormatter}
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
@@ -72,12 +71,14 @@ object Main {
       outputJvm = false,
       outputPath = Options.Default.outputPath,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
+      compilerTop = cmdOpts.top,
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
       xsubeffecting = cmdOpts.xsubeffecting,
+      xnewmono = cmdOpts.xnewmono,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
@@ -89,8 +90,14 @@ object Main {
       options = options.copy(progress = false)
     }
 
-    // Don't use progress bar if not attached to a console.
+    // Don't use progress bar / --top TUI if not attached to a console.
     if (System.console() == null) {
+      options = options.copy(progress = false, compilerTop = false)
+    }
+
+    // Don't use progress bar if --top is set: the live TUI repaints the screen
+    // every 100ms and the spinner would just fight with it.
+    if (cmdOpts.top) {
       options = options.copy(progress = false)
     }
 
@@ -354,7 +361,7 @@ object Main {
               System.exit(1)
           }
 
-        case PlainLsp =>
+        case Command.PlainLsp =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'lsp' command does not support file arguments.")
             System.exit(1)
@@ -468,6 +475,7 @@ object Main {
     json: Boolean = false,
     listen: Option[Int] = None,
     threads: Option[Int] = None,
+    top: Boolean = false,
     assumeYes: Boolean = false,
     xbenchmarkCodeSize: Boolean = false,
     xbenchmarkIncremental: Boolean = false,
@@ -479,6 +487,7 @@ object Main {
     xprintphases: Boolean = false,
     xsummary: Boolean = false,
     xsubeffecting: Set[Subeffecting] = Set.empty,
+    xnewmono: Boolean = false,
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
     XPerfPar: Boolean = false,
@@ -661,6 +670,9 @@ object Main {
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
 
+      opt[Unit]("top").action((_, c) => c.copy(top = true)).
+        text("displays a live view of where the compiler spends its time.")
+
       opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
         text("automatically answer yes to all prompts.")
 
@@ -709,6 +721,10 @@ object Main {
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
+
+      // Xnewmono
+      opt[Unit]("Xnewmono").action((_, c) => c.copy(xnewmono = true)).
+        text("[experimental] uses the constraint-based monomorphization pipeline instead of the demand-driven one.")
 
       note("")
 

@@ -101,6 +101,34 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate a duplicate definition in an instance.
+    *
+    * @param name the name of the duplicated definition.
+    * @param sym  the trait symbol of the instance.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
+    */
+  case class DuplicateInstanceDef(name: String, sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E9290
+
+    def summary: String = s"Duplicate definition '$name' in instance of trait '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Duplicate definition '${red(name)}' in instance of trait '${magenta(sym.name)}'.
+         |
+         |${highlight(loc1, "first occurrence", fmt)}
+         |
+         |${highlight(loc2, "duplicate", fmt)}
+         |
+         |${underline("Explanation:")} An instance can define each member of its trait at most once.
+         |""".stripMargin
+    }
+
+    val loc: SourceLocation = loc1
+  }
+
+  /**
     * An error raised to indicate a duplicate derivation.
     *
     * @param sym  the trait symbol of the duplicate derivation.
@@ -504,25 +532,155 @@ object ResolutionError {
   }
 
   /**
-    * An error indicating the number of effect operation parameters does not match the expected number.
+    * An error raised when a Java class is instantiated with struct-style fields.
     *
-    * @param op       the effect operation symbol.
-    * @param expected the expected number of parameters.
-    * @param actual   the actual number of parameters.
-    * @param loc      the location where the error occurred.
+    * @param name the qualified name being instantiated.
+    * @param loc  the location where the error occurred.
     */
-  case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
-    def code: ErrorCode = ErrorCode.E0912
+  case class NewObjectWithStructFields(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3741
 
-    def summary: String = s"Mismatched arity for operation '${op.name}'."
+    def summary: String = s"'${name.toString}' is a Java class. A new Java object expression cannot have struct fields."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched arity for operation '${red(op.name)}'.
+      s""">> '${red(name.toString)}' is a Java class, not a struct.
          |
-         |Expected ${Grammar.n_things(expected, "parameter")} but found $actual.
+         |A new Java object expression cannot have struct fields.
          |
-         |${highlight(loc, s"expected $expected parameters", fmt)}
+         |${highlight(loc, "unexpected struct fields", fmt)}
+         |
+         |${underline("Explanation:")} To implement a Java interface or extend a class, use:
+         |
+         |  new ${name.toString} { def method(...) = ... }
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a Java class is instantiated with a struct-style region.
+    *
+    * @param name the qualified name being instantiated.
+    * @param loc  the location where the error occurred.
+    */
+  case class NewObjectWithStructRegion(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E9364
+
+    def summary: String = s"'${name.toString}' is a Java class. A new Java object expression cannot have a region."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> '${red(name.toString)}' is a Java class, not a struct.
+         |
+         |A new Java object expression cannot have a region.
+         |
+         |${highlight(loc, "unexpected struct region", fmt)}
+         |
+         |${underline("Explanation:")} To implement a Java interface or extend a class, use:
+         |
+         |  new ${name.toString} { def method(...) = ... }
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a Flix struct is instantiated with JVM-style constructors.
+    *
+    * @param name the qualified name being instantiated.
+    * @param loc  the location where the error occurred.
+    */
+  case class NewStructWithObjectConstructors(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E6285
+
+    def summary: String = s"'${name.toString}' is a struct. A new struct expression must use struct syntax with a region and fields."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> '${red(name.toString)}' is a struct, not a Java class.
+         |
+         |A new struct expression cannot have JVM constructors.
+         |
+         |${highlight(loc, "unexpected JVM constructor", fmt)}
+         |
+         |${underline("Explanation:")} To create a struct, use:
+         |
+         |  new ${name.toString} @ region { field = value, ... }
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a Flix struct is instantiated with JVM-style methods.
+    *
+    * @param name the qualified name being instantiated.
+    * @param loc  the location where the error occurred.
+    */
+  case class NewStructWithObjectMethods(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E1541
+
+    def summary: String = s"'${name.toString}' is a struct. A new struct expression must use struct syntax with a region and fields."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> '${red(name.toString)}' is a struct, not a Java class.
+         |
+         |A new struct expression cannot have JVM methods.
+         |
+         |${highlight(loc, "unexpected JVM method", fmt)}
+         |
+         |${underline("Explanation:")} To create a struct, use:
+         |
+         |  new ${name.toString} @ region { field = value, ... }
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error indicating that an effect operation is given too many arguments,
+    * i.e. more arguments than the number of formal parameters it declares.
+    *
+    * @param op       the effect operation symbol.
+    * @param expected the expected number of arguments (the operation's declared arity).
+    * @param actual   the actual number of arguments given.
+    * @param loc      the location where the error occurred.
+    */
+  case class OverAppliedOp(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E0912
+
+    def summary: String = s"Too many arguments for operation '${op.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Too many arguments for operation '${red(op.name)}'.
+         |
+         |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
+         |
+         |${highlight(loc, s"expected $expected arguments", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error indicating that an effect operation is given too few arguments,
+    * i.e. fewer arguments than the number of formal parameters it declares.
+    *
+    * @param op       the effect operation symbol.
+    * @param expected the expected number of arguments (the operation's declared arity).
+    * @param actual   the actual number of arguments given.
+    * @param loc      the location where the error occurred.
+    */
+  case class UnderAppliedOp(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E0913
+
+    def summary: String = s"Too few arguments for operation '${op.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Too few arguments for operation '${red(op.name)}'.
+         |
+         |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
+         |
+         |${highlight(loc, s"expected $expected arguments", fmt)}
          |""".stripMargin
     }
   }

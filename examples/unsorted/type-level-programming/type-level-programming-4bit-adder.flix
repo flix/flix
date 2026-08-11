@@ -17,8 +17,8 @@ def mk3(): I4[false, false, true, true] = I4.I4
 ///
 /// This is somewhat involved since we have to keep track of overflow.
 ///
-def inc(_: I4[a, b, c, d]):
-    I4[a xor (b and c and d), b xor (c and d), c xor d, not d] = I4.I4
+def inc(_: I4[a, b, c, d]): I4[a xor (b and c and d), b xor (c and d), c xor d, not d] =
+    I4.I4
 
 ///
 /// We can now specify a function that returns the number 4.

@@ -10,13 +10,13 @@ mod Domain.ParitySign {
     ///
     // TODO: Consider how to re-implement this.
     enum ParitySign with Eq {
-                              case Top,
-            // TODO: Introduce Odd/Even and Pos/Neg?
-                       case ENeg,    case EPos,
-
-        case ONeg,            case Zer,            case OPos,
-
-                              case Bot
+        case Top // TODO: Introduce Odd/Even and Pos/Neg?
+        case ENeg
+        case EPos
+        case ONeg
+        case Zer
+        case OPos
+        case Bot
     }
 
     ///
@@ -47,14 +47,14 @@ mod Domain.ParitySign {
         case (ParitySign.Bot, x)                => x
         case (x, ParitySign.Bot)                => x
         case (ParitySign.ONeg, ParitySign.ONeg) => ParitySign.ONeg
-        case (ParitySign.Zer,  ParitySign.Zer)  => ParitySign.Zer
-        case (ParitySign.Zer,  ParitySign.ENeg) => ParitySign.ENeg
-        case (ParitySign.Zer,  ParitySign.EPos) => ParitySign.EPos
+        case (ParitySign.Zer, ParitySign.Zer)   => ParitySign.Zer
+        case (ParitySign.Zer, ParitySign.ENeg)  => ParitySign.ENeg
+        case (ParitySign.Zer, ParitySign.EPos)  => ParitySign.EPos
         case (ParitySign.OPos, ParitySign.OPos) => ParitySign.OPos
         case (ParitySign.ENeg, ParitySign.ENeg) => ParitySign.ENeg
-        case (ParitySign.ENeg,  ParitySign.Zer) => ParitySign.ENeg
+        case (ParitySign.ENeg, ParitySign.Zer)  => ParitySign.ENeg
         case (ParitySign.EPos, ParitySign.EPos) => ParitySign.EPos
-        case (ParitySign.EPos,  ParitySign.Zer) => ParitySign.EPos
+        case (ParitySign.EPos, ParitySign.Zer)  => ParitySign.EPos
         case _                                  => ParitySign.Top
     }
 
@@ -65,14 +65,14 @@ mod Domain.ParitySign {
         case (ParitySign.Top, x)                => x
         case (x, ParitySign.Top)                => x
         case (ParitySign.ONeg, ParitySign.ONeg) => ParitySign.ONeg
-        case (ParitySign.Zer,  ParitySign.Zer)  => ParitySign.Zer
-        case (ParitySign.Zer,  ParitySign.ENeg) => ParitySign.Zer
-        case (ParitySign.Zer,  ParitySign.EPos) => ParitySign.Zer
+        case (ParitySign.Zer, ParitySign.Zer)   => ParitySign.Zer
+        case (ParitySign.Zer, ParitySign.ENeg)  => ParitySign.Zer
+        case (ParitySign.Zer, ParitySign.EPos)  => ParitySign.Zer
         case (ParitySign.OPos, ParitySign.OPos) => ParitySign.OPos
         case (ParitySign.ENeg, ParitySign.ENeg) => ParitySign.ENeg
-        case (ParitySign.ENeg,  ParitySign.Zer) => ParitySign.Zer
+        case (ParitySign.ENeg, ParitySign.Zer)  => ParitySign.Zer
         case (ParitySign.EPos, ParitySign.EPos) => ParitySign.EPos
-        case (ParitySign.EPos,  ParitySign.Zer) => ParitySign.Zer
+        case (ParitySign.EPos, ParitySign.Zer)  => ParitySign.Zer
         case (ParitySign.ENeg, ParitySign.EPos) => ParitySign.Zer
         case (ParitySign.EPos, ParitySign.ENeg) => ParitySign.Zer
         case _                                  => ParitySign.Bot
@@ -82,9 +82,11 @@ mod Domain.ParitySign {
     /// Abstracts a concrete integer into the Parity domain.
     ///
     pub def alpha(i: Int32): ParitySign = {
-        if      (i == 0)    ParitySign.Zer
-        else if (i <= 0)    if (i `Int32.remainder` 2 != 0) ParitySign.ONeg else ParitySign.ENeg
-        else                if (i `Int32.remainder` 2 != 0) ParitySign.OPos else ParitySign.EPos
+        if (i == 0)
+            ParitySign.Zer
+        else if (i <= 0)
+            if (i `Int32.remainder` 2 != 0) ParitySign.ONeg else ParitySign.ENeg
+        else if (i `Int32.remainder` 2 != 0) ParitySign.OPos else ParitySign.EPos
     }
 
     ///

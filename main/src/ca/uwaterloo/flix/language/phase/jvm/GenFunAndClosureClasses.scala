@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
@@ -37,19 +37,28 @@ object GenFunAndClosureClasses {
     ParOps.parAgg(defs.values, Map.empty[JvmName, JvmClass])({
 
       case (macc, closure) if isClosure(closure) =>
-        val closureName = JvmOps.getClosureClassName(closure.sym)
-        val code = genClosure(closureName, closure)
-        macc + (closureName -> JvmClass(closureName, code))
+        flix.profile(closure.sym, closure.loc) {
+          val closureName = JvmOps.getClosureClassName(closure.sym)
+          val code = genClosure(closureName, closure)
+          flix.emitEvent(FlixEvent.EmittedClass(closure.sym, code.length))
+          macc + (closureName -> JvmClass(closureName, code))
+        }
 
       case (macc, defn) if isFunction(defn) && isControlPure(defn) =>
-        val functionName = BackendObjType.Defn(defn.sym).jvmName
-        val code = genControlPureFunction(functionName, defn)
-        macc + (functionName -> JvmClass(functionName, code))
+        flix.profile(defn.sym, defn.loc) {
+          val functionName = BackendObjType.Defn(defn.sym).jvmName
+          val code = genControlPureFunction(functionName, defn)
+          flix.emitEvent(FlixEvent.EmittedClass(defn.sym, code.length))
+          macc + (functionName -> JvmClass(functionName, code))
+        }
 
       case (macc, defn) if isFunction(defn) =>
-        val functionName = BackendObjType.Defn(defn.sym).jvmName
-        val code = genControlImpureFunction(functionName, defn)
-        macc + (functionName -> JvmClass(functionName, code))
+        flix.profile(defn.sym, defn.loc) {
+          val functionName = BackendObjType.Defn(defn.sym).jvmName
+          val code = genControlImpureFunction(functionName, defn)
+          flix.emitEvent(FlixEvent.EmittedClass(defn.sym, code.length))
+          macc + (functionName -> JvmClass(functionName, code))
+        }
 
       case (macc, _) =>
         macc

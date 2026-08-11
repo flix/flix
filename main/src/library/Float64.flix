@@ -230,12 +230,11 @@ pub mod Float64 {
     ///
     def clamp(min: {min = Float64}, max: {max = Float64}, x: Float64): Float64 =
         if (x < min#min)
-             min#min
+            min#min
+        else if (x > max#max)
+            max#max
         else
-            if (x > max#max)
-                max#max
-            else
-                x
+            x
 
     ///
     /// Convert `x` to an `Int8`.

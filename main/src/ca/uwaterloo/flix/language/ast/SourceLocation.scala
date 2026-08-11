@@ -70,6 +70,18 @@ case class SourceLocation(isReal: Boolean, source: Source, start: SourcePosition
   }
 
   /**
+    * Returns the smallest [[SourceLocation]] that contains both `this` and `that`.
+    *
+    * The result is real only if both `this` and `that` are real. Assumes both locations
+    * refer to the same source.
+    */
+  def spanWith(that: SourceLocation): SourceLocation = {
+    val start = SourcePosition.Order.min(this.start, that.start)
+    val end = SourcePosition.Order.max(this.end, that.end)
+    SourceLocation(this.isReal && that.isReal, this.source, start, end)
+  }
+
+  /**
     * Returns the one-indexed line where the entity ends.
     */
   def endLine: Int = end.lineOneIndexed

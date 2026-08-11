@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-/// Effect Hierarchy ([D] = has @DefaultHandler):
+/// ## Effect Hierarchy
 ///
+/// `[D]` = has `@DefaultHandler`.
+///
+/// ```
 /// FileSystem [D]                      (29 ops — unified root)
 /// ├── FileStat [D]                    (11 ops)
 /// │   ├── FileTest [D]                (4 ops)
@@ -52,29 +55,31 @@
 ///     ├── MkDir                             — mkDir
 ///     ├── MkDirs                            — mkDirs
 ///     └── MkTempDir                         — mkTempDir
+/// ```
 ///
-/// Middleware Availability:
+/// ## Middleware Availability
 ///
-///                    FileTest  FilePermission  FileTime  FileStat  FileRead  DirList  Glob  FileWrite  FileSystem
-/// withLogging        x         x               x         x         x         x        x     x          x
-/// withBaseDir        x         x               x         x         x         x        x     x          x
-/// withChroot         x         x               x         x         x         x        x     x          x
-/// withAllowList      x         x               x         x         x         x        x     x          x
-/// withDenyList       x         x               x         x         x         x        x     x          x
-/// withAllowGlob      x         x               x         x         x         x        x     x          x
-/// withDenyGlob       x         x               x         x         x         x        x     x          x
-/// withFollowLinks    x         x               x         x         x         x        x     x          x
-/// withTransferLimit                                                x                        x          x
-/// withChecksum                                                     x                        x          x
-/// withDryRun                                                                                x          x
-/// withReadOnly                                                                              x          x
-/// withAtomicWrite                                                                           x          x
-/// withBackup                                                                                x          x
-/// withConflictCheck                                                                         x          x
-/// withMkParentDirs                                                                          x          x
-/// withSizeRotation                                                                          x          x
-/// withMemoryOverlay                                                                                    x
-/// withInMemoryFS                                                                                       x
+/// |                   | FileTest | FilePermission | FileTime | FileStat | FileRead | DirList | Glob | FileWrite | FileSystem |
+/// |-------------------|:--------:|:--------------:|:--------:|:--------:|:--------:|:-------:|:----:|:---------:|:----------:|
+/// | withLogging       | x        | x              | x        | x        | x        | x       | x    | x         | x          |
+/// | withBaseDir       | x        | x              | x        | x        | x        | x       | x    | x         | x          |
+/// | withChroot        | x        | x              | x        | x        | x        | x       | x    | x         | x          |
+/// | withAllowList     | x        | x              | x        | x        | x        | x       | x    | x         | x          |
+/// | withDenyList      | x        | x              | x        | x        | x        | x       | x    | x         | x          |
+/// | withAllowGlob     | x        | x              | x        | x        | x        | x       | x    | x         | x          |
+/// | withDenyGlob      | x        | x              | x        | x        | x        | x       | x    | x         | x          |
+/// | withFollowLinks   | x        | x              | x        | x        | x        | x       | x    | x         | x          |
+/// | withTransferLimit |          |                |          |          | x        |         |      | x         | x          |
+/// | withChecksum      |          |                |          |          | x        |         |      | x         | x          |
+/// | withDryRun        |          |                |          |          |          |         |      | x         | x          |
+/// | withReadOnly      |          |                |          |          |          |         |      | x         | x          |
+/// | withAtomicWrite   |          |                |          |          |          |         |      | x         | x          |
+/// | withBackup        |          |                |          |          |          |         |      | x         | x          |
+/// | withConflictCheck |          |                |          |          |          |         |      | x         | x          |
+/// | withMkParentDirs  |          |                |          |          |          |         |      | x         | x          |
+/// | withSizeRotation  |          |                |          |          |          |         |      | x         | x          |
+/// | withMemoryOverlay |          |                |          |          |          |         |      |           | x          |
+/// | withInMemoryFS    |          |                |          |          |          |         |      |           | x          |
 pub mod Fs {
     /* empty */
 }

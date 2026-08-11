@@ -21,12 +21,14 @@ import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityC
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
-import ca.uwaterloo.flix.language.phase.jvm.{JvmBackend, JvmLoader, JvmWriter}
+import ca.uwaterloo.flix.language.phase.jvm.{CodeGen, JvmLoader, JvmWriter}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
+import ca.uwaterloo.flix.language.phase.monomorph2.ConstraintMonomorphization
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
+import ca.uwaterloo.flix.tools.compilertop.{CompilerTop, Profiler}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
@@ -101,6 +103,11 @@ class Flix {
   def getParsedAst: SyntaxTree.Root = cachedParserCst
 
   /**
+    * Returns the weeded ast.
+    */
+  def getWeededAst: WeededAst.Root = cachedWeederAst
+
+  /**
     * A cache of error messages for incremental compilation.
     */
   private var cachedErrors: List[CompilationMessage] = Nil
@@ -111,9 +118,45 @@ class Flix {
   var phaseTimers: ArrayBuffer[PhaseTime] = ArrayBuffer.empty
 
   /**
-    * The current phase we are in. Initially null.
+    * Optional profiler that records where compile time is spent. Installed
+    * by [[setOptions]] when the compiler profiler is enabled; absent on the
+    * default path so [[profile]] is a no-op with no measurement overhead.
     */
-  private var currentPhase: PhaseTime = _
+  private var profiler: Option[Profiler] = None
+
+  /** The live compiler profiler TUI, if it has been started. */
+  private var compilerTop: Option[CompilerTop] = None
+
+  /** Returns the currently installed profiler, or `None`. */
+  def getProfiler: Option[Profiler] = profiler
+
+  /** Installs (or removes, when `None`) the profiler that backs [[profile]]. */
+  def setProfiler(p: Option[Profiler]): Unit = profiler = p
+
+  /**
+    * Records the time spent running `thunk` against `sym`, attributed to
+    * the currently running phase. When no profiler is installed, `thunk`
+    * runs unchanged.
+    */
+  def profile[A](sym: Symbol.DefnSym, loc: SourceLocation)(thunk: => A): A =
+    profiler match {
+      case Some(p) => p.track(sym, loc)(thunk)
+      case None    => thunk
+    }
+
+  /**
+    * The current phase we are in. Initially `None`. Volatile so the compiler
+    * profiler renderer thread sees each store made by the compile thread in
+    * [[phase]] / [[phaseNew]].
+    */
+  @volatile private var currentPhase: Option[PhaseTime] = None
+
+  /**
+    * Name of the currently-executing phase, or `None` before the first
+    * phase has started or after [[compile]] has reset state.
+    */
+  def getCurrentPhaseName: Option[String] =
+    currentPhase.map(_.phase)
 
   /**
     * The progress bar.
@@ -400,6 +443,16 @@ class Flix {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
     options = opts
+    if (opts.compilerTop && compilerTop.isEmpty) {
+      val p = new Profiler(() => getCurrentPhaseName)
+      setProfiler(Some(p))
+      // The profiler subscribes to compiler events (e.g. NewConstraintsDef)
+      // to track signals that are awkward to thread through `track()`.
+      addListener(p)
+      val t = new CompilerTop(this, p)
+      t.start()
+      compilerTop = Some(t)
+    }
     this
   }
 
@@ -440,6 +493,7 @@ class Flix {
 
     // Reset the phase information.
     phaseTimers = ArrayBuffer.empty
+    currentPhase = None
 
     // Reset the phase list file if relevant
     if (this.options.xprintphases) {
@@ -551,7 +605,16 @@ class Flix {
     shutdownForkJoinPool()
 
     // Reset the progress bar.
-    progressBar.complete()
+    if (options.progress) {
+      progressBar.complete()
+    }
+
+    // Stop the live compiler profiler TUI only if there are errors and no
+    // `codeGen` will follow. On the success path, leave it running so
+    // `codeGen` can continue updating it through the mid-end and backend phases.
+    if (errors.nonEmpty) {
+      compilerTop.foreach(_.stop())
+    }
 
     // Print summary?
     if (options.xsummary) {
@@ -588,7 +651,9 @@ class Flix {
     var treeShaker1Ast = TreeShaker1.run(typedAst)
     // Note: Do not null typedAst. It is used later.
 
-    var monomorpherAst = Specialization.run(typedAst)
+    var monomorpherAst =
+      if (options.xnewmono) ConstraintMonomorphization.run(treeShaker1Ast)
+      else Specialization.run(treeShaker1Ast)
     treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     var lambdaDropAst = LambdaDrop.run(monomorpherAst)
@@ -624,7 +689,7 @@ class Flix {
     eraserAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     // Generate JVM classes.
-    val bytecodeAst = JvmBackend.run(reducerAst)
+    val bytecodeAst = CodeGen.run(reducerAst)
     reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     val totalTime = flix.getTotalTime
@@ -641,7 +706,12 @@ class Flix {
     shutdownForkJoinPool()
 
     // Reset the progress bar.
-    progressBar.complete()
+    if (options.progress) {
+      progressBar.complete()
+    }
+
+    // Stop the live compiler profiler TUI, if it is running.
+    compilerTop.foreach(_.stop())
 
     // Return the result.
     result
@@ -686,10 +756,10 @@ class Flix {
     */
   def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0)
+    currentPhase = Some(PhaseTime(phase, 0))
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "")
+      progressBar.observe(phase, "")
     }
 
     // Measure the execution time.
@@ -697,11 +767,10 @@ class Flix {
     val (root, errs) = f
     val e = System.nanoTime() - t
 
-    // Update the phase time.
-    currentPhase = currentPhase.copy(time = e)
-
-    // And add it to the list of executed phases.
-    phaseTimers += currentPhase
+    // Update the phase time and add it to the list of executed phases.
+    val finished = PhaseTime(phase, e)
+    currentPhase = Some(finished)
+    phaseTimers += finished
 
     if (this.options.xprintphases) {
       d.output(phase, root)(this)
@@ -716,10 +785,10 @@ class Flix {
     */
   def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0)
+    currentPhase = Some(PhaseTime(phase, 0))
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "")
+      progressBar.observe(phase, "")
     }
 
     // Measure the execution time.
@@ -727,11 +796,10 @@ class Flix {
     val r = f
     val e = System.nanoTime() - t
 
-    // Update the phase time.
-    currentPhase = currentPhase.copy(time = e)
-
-    // And add it to the list of executed phases.
-    phaseTimers += currentPhase
+    // Update the phase time and add it to the list of executed phases.
+    val finished = PhaseTime(phase, e)
+    currentPhase = Some(finished)
+    phaseTimers += finished
 
     if (this.options.xprintphases) {
       d.output(phase, r)(this)

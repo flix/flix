@@ -74,7 +74,7 @@ object SimplifiedAstPrinter {
       case SimplifiedAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case NewObject(name, clazz, tpe, _, constructors, methods, _) =>
+    case NewObject(sym, clazz, tpe, _, constructors, methods, _) =>
       val cs = constructors.map {
         case SimplifiedAst.JvmConstructor(exp, retTpe, _, _) =>
           DocAst.JvmConstructor(print(exp), SimpleTypePrinter.print(retTpe))
@@ -83,7 +83,7 @@ object SimplifiedAstPrinter {
         case SimplifiedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
           DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(exp), SimpleTypePrinter.print(retTpe))
       }
-      DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), cs, ms)
+      DocAst.Expr.NewObject(sym, clazz, SimpleTypePrinter.print(tpe), cs, ms)
   }
 
   /**

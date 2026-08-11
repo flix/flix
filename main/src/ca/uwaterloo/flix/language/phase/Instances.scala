@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Instance, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
@@ -56,35 +55,8 @@ object Instances {
     implicit val sctx: SharedContext = SharedContext.mk()
     flix.phaseNew("Instances") {
       val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList2(_)(checkInstancesOfTrait(_, root)))
-      val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
-      (root.copy(instances = instances, traits = traits), sctx.errors.asScala.toList)
+      (root.copy(instances = instances), sctx.errors.asScala.toList)
     }
-  }
-
-
-  /**
-    * Checks that all signatures in `trait0` are used in laws if `trait0` is marked `lawful`.
-    */
-  private def checkLawApplication(trait0: TypedAst.Trait)(implicit sctx: SharedContext): Unit = trait0 match {
-    // Case 1: lawful trait
-    case TypedAst.Trait(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
-      val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
-        case (acc, TypedAst.Def(_, _, exp, _)) => acc ++ TypedAstOps.sigSymsOf(exp)
-      }
-      val unusedSigs = sigs.map(_.sym).toSet -- usedSigs
-      unusedSigs.toList.foreach {
-        sig => sctx.errors.add(InstanceError.UnlawfulSignature(sig, sig.loc))
-      }
-    // Case 2: non-lawful trait
-    case _ => ()
-  }
-
-  /**
-    * Performs validations on a single trait.
-    */
-  private def visitTrait(trait0: TypedAst.Trait)(implicit sctx: SharedContext): TypedAst.Trait = {
-    checkLawApplication(trait0)
-    trait0
   }
 
   /**
@@ -199,10 +171,10 @@ object Instances {
           case (None, None) => sctx.errors.add(InstanceError.MissingImplementation(sig.sym, inst.trt.loc))
           // Case 2: there is no definition with the same name, but there is a default implementation
           case (None, Some(_)) => ()
-          // Case 3: there is an implementation marked override, but no default implementation
-          case (Some(defn), None) if defn.spec.mod.isOverride => sctx.errors.add(InstanceError.IllegalRedef(defn.sym, defn.sym.loc))
-          // Case 4: there is an overriding implementation, but no override modifier
-          case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => sctx.errors.add(InstanceError.UnmarkedRedef(defn.sym, defn.sym.loc))
+          // Case 3: there is an implementation marked redef, but no default implementation
+          case (Some(defn), None) if defn.spec.mod.isRedef => sctx.errors.add(InstanceError.IllegalRedef(defn.sym, defn.sym.loc))
+          // Case 4: there is a redefining implementation, but no redef modifier
+          case (Some(defn), Some(_)) if !defn.spec.mod.isRedef => sctx.errors.add(InstanceError.UnmarkedRedef(defn.sym, defn.sym.loc))
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
             val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(RegionScope.Top, flix)

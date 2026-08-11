@@ -2577,4 +2577,189 @@ mod TestBPlusTree {
     def randomInt32(): Int32 \ Random =
         Int64.clampToInt32(min = Int32.minValue(), max = Int32.maxValue(), Int64.rightShift(Random.randomInt64(), 32))
 
+    /////////////////////////////////////////////////////////////////////////////
+    // putAll                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def putAll01(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.putAll((List.empty(): List[(Int32, Int32)]), t);
+        assertTrue(BPlusTree.isEmpty(t))
+    }
+
+    @Test
+    def putAll02(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.putAll(List#{(1, 10)}, t);
+        assertEq(expected = Some(10), BPlusTree.get(1, t))
+    }
+
+    @Test
+    def putAll03(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.putAll(List#{(1, 10), (2, 20), (3, 30)}, t);
+        assertEq(expected = Some(10), BPlusTree.get(1, t));
+        assertEq(expected = Some(20), BPlusTree.get(2, t));
+        assertEq(expected = Some(30), BPlusTree.get(3, t))
+    }
+
+    @Test
+    def putAll04(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.putAll(List#{(1, 10), (1, 99)}, t);
+        assertEq(expected = Some(99), BPlusTree.get(1, t));
+        assertEq(expected = 1, BPlusTree.size(t))
+    }
+
+    @Test
+    def putAll05(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 10, t);
+        BPlusTree.putAll(List#{(2, 20), (3, 30)}, t);
+        assertEq(expected = Some(10), BPlusTree.get(1, t));
+        assertEq(expected = Some(20), BPlusTree.get(2, t));
+        assertEq(expected = Some(30), BPlusTree.get(3, t))
+    }
+
+    @Test
+    def putAll06(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.putAll(Vector#{(5, 50), (3, 30), (1, 10), (4, 40), (2, 20)}, t);
+        assertEq(expected = List#{(1, 10), (2, 20), (3, 30), (4, 40), (5, 50)}, BPlusTree.toList(t))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def forEachWithIndex01(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        let list = MutList.empty(rc);
+        BPlusTree.forEachWithIndex(i -> k -> v -> MutList.push((i, k, v), list), t);
+        assertTrue(MutList.isEmpty(list))
+    }
+
+    @Test
+    def forEachWithIndex02(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(42, 99, t);
+        let list = MutList.empty(rc);
+        BPlusTree.forEachWithIndex(i -> k -> v -> MutList.push((i, k, v), list), t);
+        assertEq(expected = Vector#{(0, 42, 99)}, MutList.toVector(list))
+    }
+
+    @Test
+    def forEachWithIndex03(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 10, t);
+        BPlusTree.put(2, 20, t);
+        BPlusTree.put(3, 30, t);
+        let list = MutList.empty(rc);
+        BPlusTree.forEachWithIndex(i -> k -> v -> MutList.push((i, k, v), list), t);
+        assertEq(expected = Vector#{(0, 1, 10), (1, 2, 20), (2, 3, 30)}, MutList.toVector(list))
+    }
+
+    @Test
+    def forEachWithIndex04(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(3, 30, t);
+        BPlusTree.put(1, 10, t);
+        BPlusTree.put(2, 20, t);
+        let list = MutList.empty(rc);
+        BPlusTree.forEachWithIndex(i -> _ -> _ -> MutList.push(i, list), t);
+        assertEq(expected = Vector#{0, 1, 2}, MutList.toVector(list))
+    }
+
+    @Test
+    def forEachWithIndex05(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (i <- Range.Range(0, 20))
+            BPlusTree.put(i, i * 2, t);
+        let list = MutList.empty(rc);
+        BPlusTree.forEachWithIndex(i -> k -> _ -> MutList.push((i, k), list), t);
+        let expected = Vector.map(i -> (i, i), Vector.range(0, 20));
+        assertTrue(MutList.toVector(list) `Vector.equals` expected)
+    }
+
+    @Test
+    def forEachWithIndex06(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(10, 100, t);
+        BPlusTree.put(20, 200, t);
+        BPlusTree.put(30, 300, t);
+        let list = MutList.empty(rc);
+        BPlusTree.forEachWithIndex(i -> k -> v -> MutList.push((i, k, v), list), t);
+        assertEq(expected = Vector#{(0, 10, 100), (1, 20, 200), (2, 30, 300)}, MutList.toVector(list))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getOrAbort                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def getOrAbort01(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        let r = run {
+            BPlusTree.getOrAbort(1, t)
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+    }
+
+    @Test
+    def getOrAbort02(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 42, t);
+        let r = run {
+            BPlusTree.getOrAbort(1, t)
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(42), r)
+    }
+
+    @Test
+    def getOrAbort03(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 10, t);
+        let r = run {
+            BPlusTree.getOrAbort(2, t)
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+    }
+
+    @Test
+    def getOrAbort04(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 10, t);
+        BPlusTree.put(2, 20, t);
+        BPlusTree.put(3, 30, t);
+        let r1 = run { BPlusTree.getOrAbort(1, t) } with Abort.runWithResult;
+        let r2 = run { BPlusTree.getOrAbort(2, t) } with Abort.runWithResult;
+        let r3 = run { BPlusTree.getOrAbort(3, t) } with Abort.runWithResult;
+        assertEq(expected = Ok(10), r1);
+        assertEq(expected = Ok(20), r2);
+        assertEq(expected = Ok(30), r3)
+    }
+
+    @Test
+    def getOrAbort05(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (i <- Range.Range(0, 50))
+            BPlusTree.put(i, i * 10, t);
+        let r = run {
+            BPlusTree.getOrAbort(25, t)
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(250), r)
+    }
+
+    @Test
+    def getOrAbort06(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (i <- Range.Range(0, 50))
+            BPlusTree.put(i, i * 10, t);
+        let r = run {
+            BPlusTree.getOrAbort(100, t)
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+    }
 }

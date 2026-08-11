@@ -153,8 +153,6 @@ object SyntaxTree {
 
       case object Instance extends Decl
 
-      case object Law extends Decl
-
       case object Module extends Decl
 
       case object Op extends Decl
@@ -304,9 +302,7 @@ object SyntaxTree {
 
       case object MatchRuleFragment extends Expr
 
-      case object NewObject extends Expr
-
-      case object NewStruct extends Expr
+      case object AmbiguousNew extends Expr
 
       case object StructGet extends Expr
 

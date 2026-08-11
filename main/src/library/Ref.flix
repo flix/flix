@@ -24,7 +24,7 @@ pub mod Ref {
     /// Returns a new reference to `x` in the region `rc`.
     ///
     pub def fresh(rc: Region[r], x: a): Ref[a, r] \ r =
-        new Ref @ rc { v = x }
+        new Ref @ rc {v = x}
 
     ///
     /// Returns the element referenced by `rf`.
@@ -37,7 +37,6 @@ pub mod Ref {
     ///
     pub def put(x: a, rf: Ref[a, r]): Unit \ r =
         rf->v = x
-
 
     ///
     /// Updates `rf` to reference `f` applied to the value referenced by `rf`.

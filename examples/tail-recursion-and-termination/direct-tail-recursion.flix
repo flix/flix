@@ -6,7 +6,6 @@
 /// The `@Tailrec` annotation asks the compiler to verify that every
 /// self-recursive call is in tail position — here the recursive call
 /// `isPrefixOf(xs, ys)` is the last operation in its branch.
-
 @Terminates @Tailrec
 pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
     case (Nil, _)           => true

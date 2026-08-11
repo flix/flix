@@ -59,9 +59,12 @@ pub mod Int32 {
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
     pub def abs(x: Int32): Int32 = {
-        if      (x >= 0)            x
-        else if (x == minValue())   -1
-        else                        -x
+        if (x >= 0)
+            x
+        else if (x == minValue())
+            -1
+        else
+            -x
     }
 
     ///
@@ -91,11 +94,16 @@ pub mod Int32 {
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int32, y: Int32): Int32 = {
-        if      (x >= 0 and y >= 0)                     abs(x - y)
-        else if (x < 0 and y < 0)                       abs(x - y)
-        else if (x == minValue() or y == minValue())    -1
-        else if (minValue() + abs(x) + abs(y) >= 0)     -1
-        else                                            abs(x - y)
+        if (x >= 0 and y >= 0)
+            abs(x - y)
+        else if (x < 0 and y < 0)
+            abs(x - y)
+        else if (x == minValue() or y == minValue())
+            -1
+        else if (minValue() + abs(x) + abs(y) >= 0)
+            -1
+        else
+            abs(x - y)
     }
 
     ///
@@ -103,9 +111,12 @@ pub mod Int32 {
     /// The sign of x - y.
     ///
     pub def compare(x: Int32, y: Int32): Int32 = {
-        if      (x == y)    0
-        else if (x < y)     -1
-        else                1
+        if (x == y)
+            0
+        else if (x < y)
+            -1
+        else
+            1
     }
 
     ///
@@ -135,9 +146,12 @@ pub mod Int32 {
     /// representation of `x`.
     ///
     pub def bitCount(x: Int32): Int32 = {
-        if      (x == 0)         0
-        else if (x `remainder` 2 != 0) bitCount(logicalRightShift(dist = 1, x)) + 1
-        else                           bitCount(logicalRightShift(dist = 1, x))
+        if (x == 0)
+            0
+        else if (x `remainder` 2 != 0)
+            bitCount(logicalRightShift(dist = 1, x)) + 1
+        else
+            bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
@@ -158,13 +172,13 @@ pub mod Int32 {
     /// Returns the value obtained by reversing the bits in the
     /// two's complement binary representation of `x`.
     ///
-    pub def reverse(x: Int32): Int32 = reverseHelper(x, 0, size()-1)
+    pub def reverse(x: Int32): Int32 = reverseHelper(x, 0, size() - 1)
 
     ///
     /// Helper function for `reverse`.
     ///
     def reverseHelper(x: Int32, l: Int32, r: Int32): Int32 =
-        if (l >= r) x else reverseHelper(swap(x, l, r), l+1, r-1)
+        if (l >= r) x else reverseHelper(swap(x, l, r), l + 1, r - 1)
 
     ///
     /// Helper function for `reverse`.
@@ -172,7 +186,7 @@ pub mod Int32 {
     def swap(x: Int32, l: Int32, r: Int32): Int32 = match (getBit(pos = l, x), getBit(pos = r, x)) {
         case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
         case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
-        case _ => x
+        case _      => x
     }
 
     ///
@@ -199,11 +213,16 @@ pub mod Int32 {
     /// Otherwise recursively check the next bit in the same way.
     ///
     def oneBitPositionHelper(x: Int32, position: Int32, delta: Int32): Int32 = {
-        if      (position < 0)                   -1
-        else if (position > size() - 1)          -1
-        else if (getBit(pos = position, x) == 1) position
-        else if (delta == 0)                     -1
-        else                                     oneBitPositionHelper(x, position + delta, delta)
+        if (position < 0)
+            -1
+        else if (position > size() - 1)
+            -1
+        else if (getBit(pos = position, x) == 1)
+            position
+        else if (delta == 0)
+            -1
+        else
+            oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -367,7 +386,7 @@ pub mod Int32 {
     /// (i.e. -128 to 127).
     ///
     pub def tryToInt8(x: Int32): Option[Int8] =
-       if (x < Int8.toInt32(Int8.minValue()) or x > Int8.toInt32(Int8.maxValue()))
+        if (x < Int8.toInt32(Int8.minValue()) or x > Int8.toInt32(Int8.maxValue()))
             None
         else
             Some(Integer.valueOf(x).byteValue())
@@ -408,7 +427,7 @@ pub mod Int32 {
     /// The numeric value of `x` may lose precision.
     ///
     pub def toFloat32(x: Int32): Float32 =
-         Integer.valueOf(x).floatValue()
+        Integer.valueOf(x).floatValue()
 
     ///
     /// Convert `x` to a Float64.
@@ -431,12 +450,11 @@ pub mod Int32 {
     ///
     def clamp(min: {min = Int32}, max: {max = Int32}, x: Int32): Int32 =
         if (x < min#min)
-             min#min
+            min#min
+        else if (x > max#max)
+            max#max
         else
-            if (x > max#max)
-                max#max
-            else
-                x
+            x
 
     ///
     /// Convert `x` to an `Int8`.
@@ -447,7 +465,6 @@ pub mod Int32 {
         let mini32 = Int8.toInt32(min#min);
         let maxi32 = Int8.toInt32(max#max);
         Integer.valueOf(clamp(min = mini32, max = maxi32, x)).byteValue()
-
 
     ///
     /// Convert `x` to an `Int16`.

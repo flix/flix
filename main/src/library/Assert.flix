@@ -18,8 +18,9 @@
 pub mod Assert {
 
     use Sys.Console
-    use RichString.{blue, red, text, yellow};
-    import java.lang.AssertionError;
+    use RichString.{blue, red, text, yellow}
+
+    import java.lang.AssertionError
 
     ///
     /// An effect used to perform assertions during program execution.

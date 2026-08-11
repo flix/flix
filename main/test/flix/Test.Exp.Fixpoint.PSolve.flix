@@ -1,4 +1,4 @@
-mod Test.Exp.Fixpoint.PQuery {
+mod Test.Exp.Fixpoint.PSolve {
 
     use Assert.{assertEq, assertTrue};
 

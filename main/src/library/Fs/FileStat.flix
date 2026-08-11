@@ -129,7 +129,7 @@ pub mod Fs.FileStat {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileStat) + {FileStat, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileStat) + { FileStat, Logger } =
         run { f() } with handler FileStat {
             def exists(filename, k) = {
                 logPre("exists", filename);

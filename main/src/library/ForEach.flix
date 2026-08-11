@@ -38,29 +38,32 @@ pub mod ForEach {
 
     }
 
-     ///
-     /// A view for `ForEach` instance `t` that wraps each element with its index.
-     ///
-     pub enum WithIndex[t](t)
+    ///
+    /// A view for `ForEach` instance `t` that wraps each element with its index.
+    ///
+    pub enum WithIndex[t](t)
 
-     instance ForEach[WithIndex[t]] with ForEach[t] {
-         type Elm = (Int32, ForEach.Elm[t])
-         type Aef = ForEach.Aef[t]
-         pub def forEach(f: ((Int32, ForEach.Elm[t])) -> Unit \ ef, t: WithIndex[t]): Unit \ ef + ForEach.Aef[t] = region rc {
-             let WithIndex.WithIndex(base) = t;
-             let indexRef = Ref.fresh(rc, 0);
-             base |> ForEach.forEach(elm -> {
-                 let index = indexRef |> Ref.get;
-                 f((index, elm));
-                 indexRef |> Ref.put(index + 1)
-             })
-         }
-     }
+    instance ForEach[WithIndex[t]] with ForEach[t] {
+        type Elm = (Int32, ForEach.Elm[t])
+        type Aef = ForEach.Aef[t]
+        pub def forEach(f: ((Int32, ForEach.Elm[t])) -> Unit \ ef, t: WithIndex[t]): Unit \ ef + ForEach.Aef[t] = region rc {
+            let WithIndex.WithIndex(base) = t;
+            let indexRef = Ref.fresh(rc, 0);
+            base
+                |> ForEach.forEach(
+                    elm -> {
+                        let index = indexRef |> Ref.get;
+                        f((index, elm));
+                        indexRef |> Ref.put(index + 1)
+                    }
+                )
+        }
+    }
 
-     ///
-     /// Returns a view for `m` that wraps each element with its index.
-     ///
-     pub def withIndex(m: t): WithIndex[t] with ForEach[t] = WithIndex.WithIndex(m)
+    ///
+    /// Returns a view for `m` that wraps each element with its index.
+    ///
+    pub def withIndex(m: t): WithIndex[t] with ForEach[t] = WithIndex.WithIndex(m)
 
     ///
     /// A view for `ForEach` instance `t` that filters out elements that don't match the predicate.

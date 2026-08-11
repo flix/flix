@@ -110,9 +110,9 @@ pub mod Float32 {
     ///
     pub def fromString(s: String): Option[Float32] = try {
         Some(Float.parseFloat(s.strip()))
-     } catch {
-         case _: NumberFormatException => None
-     }
+    } catch {
+        case _: NumberFormatException => None
+    }
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -212,12 +212,11 @@ pub mod Float32 {
     ///
     def clamp(min: {min = Float32}, max: {max = Float32}, x: Float32): Float32 =
         if (x < min#min)
-             min#min
+            min#min
+        else if (x > max#max)
+            max#max
         else
-            if (x > max#max)
-                max#max
-            else
-                x
+            x
 
     ///
     /// Convert `x` to an `Int8`.

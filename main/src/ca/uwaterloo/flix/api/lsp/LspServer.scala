@@ -39,8 +39,11 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 object LspServer {
-  def run(o: Options): Unit = {
+  def run(opts: Options): Unit = {
     System.err.println(s"Starting Default LSP Server...")
+
+    // Explicitly ensure that the progressbar is disabled.
+    val o = opts.copy(progress = false)
 
     val server = new FlixLanguageServer(o)
     val launcher = LSPLauncher.createServerLauncher(server, System.in, System.out)
@@ -196,13 +199,14 @@ object LspServer {
       serverCapabilities.setWorkspaceSymbolProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
       serverCapabilities.setDocumentFormattingProvider(true)
+      serverCapabilities.setFoldingRangeProvider(true)
 
       serverCapabilities
     }
 
     override def shutdown(): CompletableFuture[AnyRef] = {
       System.err.println("shutdown")
-      CompletableFuture.completedFuture(new Object)
+      CompletableFuture.completedFuture(null)
     }
 
     override def exit(): Unit = {
@@ -423,6 +427,12 @@ object LspServer {
       val uri = params.getTextDocument.getUri
       val symbols = SymbolProvider.processDocumentSymbols(uri)(flixLanguageServer.root)
       CompletableFuture.completedFuture(symbols.map(_.toLsp4j).map(messages.Either.forRight[SymbolInformation, DocumentSymbol]).asJava)
+    }
+
+    override def foldingRange(params: FoldingRangeRequestParams): CompletableFuture[util.List[FoldingRange]] = {
+      val uri = params.getTextDocument.getUri
+      val foldingRanges = FoldingRangeProvider.getFoldingRanges(uri)(flixLanguageServer.root).map(_.toLsp4j).asJava
+      CompletableFuture.completedFuture(foldingRanges)
     }
 
     /**

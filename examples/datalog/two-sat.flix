@@ -1,7 +1,6 @@
 // https://github.com/souffle-lang/souffle/tree/master/tests/example/2sat
 
 def main(): Unit \ IO =
-
     let clauses = #{
         Clause("Pos", "x0", "Pos", "x2").
         Clause("Pos", "x0", "Neg", "x3").
@@ -20,7 +19,6 @@ def main(): Unit \ IO =
     };
 
     let lp = #{
-
         // Added for Flix
         AnyIncon() :- Incon(_).
 
@@ -42,7 +40,6 @@ def main(): Unit \ IO =
         // Original Form
         //Satisfiable("Yes") :- not Incon(_).
         //Satisfiable("No") :- Incon(_).
-
     };
 
     query lp <+> clauses select x from Satisfiable(x) |> println

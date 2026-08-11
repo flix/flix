@@ -1,14 +1,14 @@
 enum Color {
-    case Red,
-    case Green,
+    case Red
+    case Green
     case Blue
 }
 
 mod Color {
     pub def isWarm(c: Color): Bool = match c {
-        case Red    => true
-        case Green  => false
-        case Blue   => false
+        case Red   => true
+        case Green => false
+        case Blue  => false
     }
 }
 

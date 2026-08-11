@@ -104,4 +104,55 @@ class TestJvmUtils extends AnyFunSuite {
     assert(result == Map.empty)
   }
 
+  // --- resolveTypeParamMapping: renamed type parameters ---
+
+  test("resolveTypeParamMapping.Renamed.TestGenericChildInterface.testMethod") {
+    // TestGenericChildInterface<T> extends TestGenericInterface<T1>, so the inherited
+    // method's type parameter is spelled differently from the instantiated class's.
+    val method = classOf[dev.flix.test.TestGenericChildInterface[_]].getMethod("testMethod", classOf[Object])
+    val result = JvmUtils.resolveTypeParamMapping(method, classOf[dev.flix.test.TestGenericChildInterface[_]])
+    assert(result == Map("T1" -> 0))
+  }
+
+  test("resolveTypeParamMapping.Renamed.TestGenericSubInterface.compareTo") {
+    // TestGenericSubInterface<T extends Comparable<T>> extends Comparable<T>.
+    val method = classOf[dev.flix.test.TestGenericSubInterface[_]].getMethod("compareTo", classOf[Object])
+    val result = JvmUtils.resolveTypeParamMapping(method, classOf[dev.flix.test.TestGenericSubInterface[_]])
+    assert(result == Map("T" -> 0))
+  }
+
+  // --- resolveTypeParamMapping: inherited through an intermediate supertype ---
+
+  test("resolveTypeParamMapping.TwoLevel.TestGenericGrandchildInterface.testMethod") {
+    // Grandchild<U> -> TestGenericChildInterface<U> -> TestGenericInterface<T1>.
+    // T1 must be traced through the intermediate interface back to index 0.
+    val method = classOf[dev.flix.test.TestGenericGrandchildInterface[_]].getMethod("testMethod", classOf[Object])
+    val result = JvmUtils.resolveTypeParamMapping(method, classOf[dev.flix.test.TestGenericGrandchildInterface[_]])
+    assert(result == Map("T1" -> 0))
+  }
+
+  test("resolveTypeParamMapping.TwoLevel.TestGenericGrandchildInterface.describe") {
+    // describe is declared one level up, on TestGenericChildInterface<T>.
+    val method = classOf[dev.flix.test.TestGenericGrandchildInterface[_]].getMethod("describe")
+    val result = JvmUtils.resolveTypeParamMapping(method, classOf[dev.flix.test.TestGenericGrandchildInterface[_]])
+    assert(result == Map("T" -> 0))
+  }
+
+  test("resolveTypeParamMapping.TwoLevel.TestGenericGrandchildInterface.identity") {
+    // identity is declared directly on the instantiated interface.
+    val method = classOf[dev.flix.test.TestGenericGrandchildInterface[_]].getMethod("identity", classOf[Object])
+    val result = JvmUtils.resolveTypeParamMapping(method, classOf[dev.flix.test.TestGenericGrandchildInterface[_]])
+    assert(result == Map("U" -> 0))
+  }
+
+  // --- resolveTypeParamMapping: reordered type parameters ---
+
+  test("resolveTypeParamMapping.Reordered.TestGenericSwappedInterface.apply") {
+    // TestGenericSwappedInterface<A, B> extends TestGenericInterface2<B, A>, so the
+    // declaring interface's A comes from index 1 and its B from index 0.
+    val method = classOf[dev.flix.test.TestGenericSwappedInterface[_, _]].getMethod("apply", classOf[Object])
+    val result = JvmUtils.resolveTypeParamMapping(method, classOf[dev.flix.test.TestGenericSwappedInterface[_, _]])
+    assert(result == Map("A" -> 1, "B" -> 0))
+  }
+
 }

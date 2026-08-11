@@ -25,8 +25,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
   */
 case class Doc(lines: List[String], loc: SourceLocation) {
   def text: String = lines.
-    dropWhile(_.trim.isEmpty).
-    map(_.trim).
+    dropWhile(_.isBlank).
     mkString("\n")
 
   /**

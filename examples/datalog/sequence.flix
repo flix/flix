@@ -1,25 +1,23 @@
 // https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/sequences
 
 def main(): Unit \ IO =
-
     let numLetters = #{ NumLetters(20). };
 
     let lp = #{
-
         ////////////// Arithmetic ////////////////
 
         N(0).
         N(x + 1) :- N(x), NumLetters(n), if (x < n).
 
-        S(x, x+1) :- N(x).
+        S(x, x + 1) :- N(x).
 
         Add(x, 0, x) :- N(x).
-        Add(x, y, r) :- S(py,y), Add(x, py, pr), S(pr, r).
+        Add(x, y, r) :- S(py, y), Add(x, py, pr), S(pr, r).
 
-        Mul(x,0,0) :- N(x).
+        Mul(x, 0, 0) :- N(x).
         Mul(x, y, r) :- S(py, y), Mul(x, py, pr), Add(pr, x, r).
 
-        Exp(x,0,1) :- N(x).
+        Exp(x, 0, 1) :- N(x).
         Exp(x, y, r) :- S(py, y), Exp(x, py, pr), Mul(pr, x, r).
 
         Log(x, b, r) :- Exp(b, r, y), S(r, sr), Exp(b, sr, y2), N(x), if (y <= x and x < y2).
@@ -45,7 +43,7 @@ def main(): Unit \ IO =
 
         TrieRoot(0).
 
-        Trie(x) :- TrieLetter(x,_).
+        Trie(x) :- TrieLetter(x, _).
 
         ////////////// all Strings over the alphabet ////////////////
 
@@ -62,7 +60,7 @@ def main(): Unit \ IO =
 
         // search all Palindrome
         PalinAux(s, x, x) :- Str(s), N(x), StrLen(s, l), if (x <= l).
-        PalinAux(s, x, x+1) :- StrLetterAt(s, x, _).
+        PalinAux(s, x, x + 1) :- StrLetterAt(s, x, _).
         PalinAux(s, x, sy) :- StrLetterAt(s, x, a), S(x, sx), PalinAux(s, sx, y), StrLetterAt(s, y, a), S(y, sy).
 
         Palindrome(s) :- StrLen(s, 0).
@@ -70,7 +68,6 @@ def main(): Unit \ IO =
 
         DebugStr(18).
 
-        Read(x,y) :- DebugStr(s), StrLetterAt(s,x,y).
-
+        Read(x, y) :- DebugStr(s), StrLetterAt(s, x, y).
     };
     query lp <+> numLetters select (x, y) from Read(x, y) |> println

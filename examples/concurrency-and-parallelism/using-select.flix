@@ -10,7 +10,7 @@ def meow(tx: Sender[String], n: Int32): Unit \ Chan =
         case x => Channel.send("Meow!", tx); meow(tx, x - 1)
     }
 
-def main(): Unit \ {Chan, NonDet, IO} =
+def main(): Unit \ { Chan, NonDet, IO } =
     region rc {
         let (s1, r1) = Channel.buffered(10);
         let (s2, r2) = Channel.buffered(10);

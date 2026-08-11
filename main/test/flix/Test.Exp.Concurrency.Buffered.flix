@@ -254,4 +254,18 @@ mod Test.Exp.Concurrency.Buffered {
         assertEq(expected = 42, r)
     }
 
+    // A channel put `%%CHANNEL_PUT%%(channel, value)` must evaluate its channel
+    // expression before its value expression, matching left-to-right source order.
+    // See https://github.com/flix/flix/issues/10378.
+    @Test
+    def testBufferedChannelPutEvalOrder01(): Unit \ (Assert + Chan) = region rc {
+        let order = Ref.fresh(rc, "");
+        let (tx, _rx) = Channel.buffered(1);
+        %%CHANNEL_PUT%%(
+            { Ref.put(Ref.get(order) + "channel", order); tx },
+            { Ref.put(Ref.get(order) + "value", order); () }
+        );
+        assertEq(expected = "channelvalue", Ref.get(order))
+    }
+
 }

@@ -31,6 +31,33 @@ sealed trait KindError extends CompilationMessage {
 object KindError {
 
   /**
+    * An error raised to indicate wrong number of type arguments for an effect.
+    *
+    * @param sym           the effect symbol.
+    * @param expectedArity the expected number of type arguments.
+    * @param actualArity   the actual number of type arguments.
+    * @param loc           the location where the error occurred.
+    */
+  case class MismatchedArityOfEffect(sym: Symbol.EffSym, expectedArity: Int, actualArity: Int, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3417
+
+    private val expected = Grammar.n_things(expectedArity, "type argument")
+    private val actual = Grammar.n_things(actualArity, "type argument")
+    private val wasOrWere = if (actualArity == 1) "was" else "were"
+
+    def summary: String =
+      s"Mismatched arity: effect '${sym.name}' expects $expected but $actual $wasOrWere given."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched arity: effect '${cyan(sym.name)}' expects $expected but $actual $wasOrWere given.
+         |
+         |${highlight(loc, "wrong number of type arguments", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate wrong number of type arguments for an enum.
     *
     * @param sym           the enum symbol.

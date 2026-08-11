@@ -105,6 +105,7 @@ object Resolver {
             mapN(checkSuperTraitDag(table.traits)) {
               case () =>
                 ResolvedAst.Root(
+                  table.modules,
                   table.traits,
                   table.instances,
                   table.defs,
@@ -138,7 +139,7 @@ object Resolver {
     * Builds a symbol table from the declaration.
     */
   private def tableDecl(decl: ResolvedAst.Declaration): SymbolTable = decl match {
-    case ResolvedAst.Declaration.Mod(_, _, decls, _) => SymbolTable.traverse(decls)(tableDecl)
+    case m @ ResolvedAst.Declaration.Mod(_, _, _, _, _, decls, _) => SymbolTable.traverse(decls)(tableDecl).addMod(m)
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
@@ -195,7 +196,7 @@ object Resolver {
     * Semi-resolves the type aliases in the namespace.
     */
   private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Mod, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
-    case NamedAst.Declaration.Mod(_, _, sym, _, usesAndImports0, decls, _) =>
+    case NamedAst.Declaration.Mod(_, _, _, sym, _, usesAndImports0, decls, _) =>
       val ns0 = Name.mkUnlocatedNName(sym.ns)
       val usesAndImportsVal = Validation.traverse(usesAndImports0)(u => visitUseOrImport(u, ns0, root).toValidation)
       flatMapN(usesAndImportsVal) {
@@ -259,7 +260,7 @@ object Resolver {
     case _: UnkindedType.UnappliedNative => Nil
     case _: UnkindedType.Cst => Nil
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
-    case _: UnkindedType.Arrow => Nil
+    case UnkindedType.Arrow(eff, _, _) => eff.toList.flatMap(getAliasUses)
     case _: UnkindedType.CaseSet => Nil
     case UnkindedType.CaseComplement(tpe, _) => getAliasUses(tpe)
     case UnkindedType.CaseUnion(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
@@ -335,7 +336,7 @@ object Resolver {
     * Performs name resolution on the declaration.
     */
   private def visitDecl(decl: NamedAst.Declaration, scp0: LocalScope, ns0: Name.NName, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
-    case NamedAst.Declaration.Mod(_, _, sym, _, usesAndImports0, decls0, loc) =>
+    case NamedAst.Declaration.Mod(doc, ann, mod, sym, _, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
       val ns = Name.mkUnlocatedNNameWithLoc(sym.ns, loc)
@@ -346,10 +347,10 @@ object Resolver {
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
           val declsVal = traverse(decls0)(visitDecl(_, scp, ns, defaultUses))
           mapN(declsVal) {
-            case decls => ResolvedAst.Declaration.Mod(sym, usesAndImports, decls, loc)
+            case decls => ResolvedAst.Declaration.Mod(doc, ann, mod, sym, usesAndImports, decls, loc)
           }
       }
-    case trt@NamedAst.Declaration.Trait(_, _, _, _, _, _, _, _, _, _) =>
+    case trt@NamedAst.Declaration.Trait(_, _, _, _, _, _, _, _, _) =>
       resolveTrait(trt, scp0, ns0)
     case inst@NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, _) =>
       resolveInstance(inst, scp0, ns0)
@@ -413,19 +414,17 @@ object Resolver {
     * Resolves all the traits in the given root.
     */
   private def resolveTrait(c0: NamedAst.Declaration.Trait, scp0: LocalScope, ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Trait, ResolutionError] = c0 match {
-    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures, laws0, loc) =>
+    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures, loc) =>
       val tparam = resolveTypeParam(tparam0, scp0, ns0, root)
       val scp = scp0 ++ mkTypeParamScp(List(tparam))
       // ignore the parameter of the super traits; we don't use it
       val superTraitsVal = traverse(superTraits0)(tconstr => resolveSuperTrait(tconstr, scp, taenv, ns0, root))
-      val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
       val assocs = assocs0.map(resolveAssocTypeSig(_, scp, taenv, ns0, root))
       val sigsList = signatures.map(resolveSig(_, sym, tparam.sym, scp)(ns0, taenv, sctx, root, flix))
-      val laws = laws0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
       mapN(superTraitsVal) {
         case superTraits =>
           val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-          ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
+          ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, loc)
       }
   }
 
@@ -444,7 +443,7 @@ object Resolver {
         case trt =>
           val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
           val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
-          val defs = defs0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
+          val defs = checkDuplicateInstanceDefs(defs0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix)), trt.sym)
           val tconstrs = optTconstrs.collect { case Some(t) => t }
           mapN(assocsVal) {
             case assocs =>
@@ -452,6 +451,33 @@ object Resolver {
               ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
           }
       }
+  }
+
+  /**
+    * Checks for duplicate definitions (by name) within an instance.
+    *
+    * Reports a [[ResolutionError.DuplicateInstanceDef]] for each duplicate and returns the
+    * definitions with later duplicates removed, keeping the first occurrence of each name.
+    * Instance defs are given distinct symbols by the [[Namer]], so duplicates are not caught
+    * by the usual symbol table machinery and must be detected here.
+    */
+  private def checkDuplicateInstanceDefs(defs: List[ResolvedAst.Declaration.Def], traitSym: Symbol.TraitSym)(implicit sctx: SharedContext): List[ResolvedAst.Declaration.Def] = {
+    val seen = mutable.Map.empty[String, ResolvedAst.Declaration.Def]
+    val result = mutable.ArrayBuffer.empty[ResolvedAst.Declaration.Def]
+    for (defn <- defs) {
+      val name = defn.sym.text
+      seen.get(name) match {
+        case None =>
+          seen.put(name, defn)
+          result += defn
+        case Some(firstDefn) =>
+          val loc1 = firstDefn.sym.loc
+          val loc2 = defn.sym.loc
+          sctx.errors.add(ResolutionError.DuplicateInstanceDef(name, traitSym, loc1, loc2))
+          sctx.errors.add(ResolutionError.DuplicateInstanceDef(name, traitSym, loc2, loc1))
+      }
+    }
+    result.toList
   }
 
   /**
@@ -472,10 +498,12 @@ object Resolver {
     */
   private def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Def = d0 match {
     case NamedAst.Declaration.Def(sym, spec0, exp0, loc) =>
-      val spec = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
-      val scp = scp0 ++ mkSpecScp(spec)
-      val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
-      ResolvedAst.Declaration.Def(sym, spec, exp, loc)
+      flix.profile(sym, loc) {
+        val spec = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
+        val scp = scp0 ++ mkSpecScp(spec)
+        val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
+        ResolvedAst.Declaration.Def(sym, spec, exp, loc)
+      }
   }
 
   /**
@@ -1013,38 +1041,16 @@ object Resolver {
       val b = resolveExp(exp, scp0)
       ResolvedAst.Expr.ArrayLength(b, loc)
 
-    case NamedAst.Expr.StructNew(name, fields0, region0, loc) =>
-      lookupStruct(name, scp0, ns0, root) match {
-        case Result.Ok(st0) =>
-          checkStructIsAccessible(st0, ns0, loc)
-          val fields = fields0.map {
-            case (f, exp) =>
-              val e = resolveExp(exp, scp0)
-              // Lookup the field symbol or make up a fictitious one.
-              val label = st0.fields.find(_.sym.name == f.name) match {
-                case Some(field) => Name.Label(field.sym.name, field.sym.loc)
-                case None => Name.Label(f.name, SourceLocation.Unknown)
-              }
-              val fieldSym = Symbol.mkStructFieldSym(st0.sym, label)
-              val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
-              (fieldSymUse, e)
-          }
-          val regionOpt = region0.map(resolveExp(_, scp0))
-          // Potential errors
-          val providedFieldNames = fields0.map { case (k, _) => Name.Label(k.name, k.loc) }
-          val expectedFieldNames = st0.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
-          val extraFields = providedFieldNames.diff(expectedFieldNames)
-          val missingFields = expectedFieldNames.diff(providedFieldNames)
-
-          val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
-          val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
-          val errors = extraFieldErrors ++ missingFieldErrors
-          errors.foreach(sctx.errors.add)
-          ResolvedAst.Expr.StructNew(st0.sym, fields, regionOpt, loc)
-        case Result.Err(error) =>
-          sctx.errors.add(error)
-          ResolvedAst.Expr.Error(error)
+    case NamedAst.Expr.AmbiguousNew(tpe, region0, fields0, constructors, methods, loc) =>
+      val qnameOpt = tpe match {
+        case NamedAst.Type.Ambiguous(qname, _) => Some(qname)
+        case _ => None
       }
+      val isStructShape = region0.isDefined || fields0.nonEmpty
+      if (isStructShape)
+        resolveAmbiguousNewAsStruct(qnameOpt, tpe, region0, fields0, scp0, loc)
+      else
+        resolveAmbiguousNewAsObject(qnameOpt, tpe, constructors, methods, scp0, loc)
 
     case NamedAst.Expr.StructGet(exp, field0, loc) =>
       lookupStructField(field0, scp0, ns0, root) match {
@@ -1198,26 +1204,6 @@ object Resolver {
     case NamedAst.Expr.GetField(exp, name, loc) =>
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.GetField(e, name, loc)
-
-    case NamedAst.Expr.NewObject(name, tpe, constructors, methods, loc) =>
-      //
-      // Fully resolve the type and extract the native class and type arguments.
-      //
-      val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
-      getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
-        case Some(clazz) =>
-          val targs = UnkindedType.eraseAliases(t).typeArguments
-          val superScp = scp0.withSuperClass(Some(clazz)).withSuperTargs(targs)
-          val cs = constructors.map(visitJvmConstructor(_, superScp))
-          val ms = methods.map(visitJvmMethod(_, superScp))
-          ResolvedAst.Expr.NewObject(name, clazz, targs, cs, ms, loc)
-        case None =>
-          val cs = constructors.map(visitJvmConstructor(_, scp0))
-          val ms = methods.map(visitJvmMethod(_, scp0))
-          val error = ResolutionError.IllegalNonJavaType(t, t.loc)
-          sctx.errors.add(error)
-          ResolvedAst.Expr.Error(error)
-      }
 
     case NamedAst.Expr.NewChannel(exp, loc) =>
       val e = resolveExp(exp, scp0)
@@ -1611,6 +1597,116 @@ object Resolver {
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
       ResolvedAst.JvmMethod(ann, ident, fparams, e, t, p, loc)
+  }
+
+  /**
+    * Resolves an ambiguous `new` expression where the body is struct-shaped (has a region or fields).
+    * The name must refer to a Flix struct. If it resolves to a Java class instead, emits `NewObjectWithStructBody`.
+    */
+  private def resolveAmbiguousNewAsStruct(qnameOpt: Option[Name.QName], tpe: NamedAst.Type, region0: Option[NamedAst.Expr], fields0: List[(Name.Label, NamedAst.Expr)], scp0: LocalScope, loc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    qnameOpt match {
+      case Some(qname) =>
+        lookupStruct(qname, scp0, ns0, root) match {
+          case Result.Ok(st0) =>
+            checkStructIsAccessible(st0, ns0, loc)
+            val fields = fields0.map {
+              case (f, exp) =>
+                val e = resolveExp(exp, scp0)
+                val label = st0.fields.find(_.sym.name == f.name) match {
+                  case Some(field) => Name.Label(field.sym.name, field.sym.loc)
+                  case None => Name.Label(f.name, SourceLocation.Unknown)
+                }
+                val fieldSym = Symbol.mkStructFieldSym(st0.sym, label)
+                val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
+                (fieldSymUse, e)
+            }
+            val regionOpt = region0.map(resolveExp(_, scp0))
+            val providedFieldNames = fields0.map { case (k, _) => Name.Label(k.name, k.loc) }
+            val expectedFieldNames = st0.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
+            val extraFields = providedFieldNames.diff(expectedFieldNames)
+            val missingFields = expectedFieldNames.diff(providedFieldNames)
+            val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
+            val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
+            (extraFieldErrors ++ missingFieldErrors).foreach(sctx.errors.add)
+            ResolvedAst.Expr.StructNew(st0.sym, fields, regionOpt, loc)
+          case Result.Err(error) =>
+            // Probe whether the name actually refers to a Java class — if so, body shape mismatched.
+            val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
+            getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
+              case Some(_) =>
+                if (region0.isDefined) sctx.errors.add(ResolutionError.NewObjectWithStructRegion(qname, loc))
+                if (fields0.nonEmpty) sctx.errors.add(ResolutionError.NewObjectWithStructFields(qname, loc))
+
+                val primaryErr = if (region0.isDefined)
+                  ResolutionError.NewObjectWithStructRegion(qname, loc)
+                else
+                  ResolutionError.NewObjectWithStructFields(qname, loc)
+                ResolvedAst.Expr.Error(primaryErr)
+              case None =>
+                sctx.errors.add(error)
+                ResolvedAst.Expr.Error(error)
+            }
+        }
+      case None =>
+        val err = ResolutionError.IllegalNonJavaType(resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root), loc)
+        sctx.errors.add(err)
+        ResolvedAst.Expr.Error(err)
+    }
+  }
+
+  /**
+    * Resolves an ambiguous `new` expression where the body is object-shaped (JVM constructors/methods or empty).
+    * The name must refer to a Java class. If it resolves to a Flix struct instead, emits `NewStructWithObjectConstructors` or `NewStructWithObjectMethods`.
+    */
+  private def resolveAmbiguousNewAsObject(qnameOpt: Option[Name.QName], tpe: NamedAst.Type, constructors: List[NamedAst.JvmConstructor], methods: List[NamedAst.JvmMethod], scp0: LocalScope, loc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    val structOpt = qnameOpt.flatMap { qname =>
+      lookupStruct(qname, scp0, ns0, root) match {
+        case Result.Ok(st) => Some(st)
+        case Result.Err(_) => None
+      }
+    }
+    structOpt match {
+      case Some(_) =>
+        if (constructors.nonEmpty) sctx.errors.add(ResolutionError.NewStructWithObjectConstructors(qnameOpt.get, loc))
+        if (methods.nonEmpty) sctx.errors.add(ResolutionError.NewStructWithObjectMethods(qnameOpt.get, loc))
+
+        val primaryErr = if (constructors.nonEmpty)
+          ResolutionError.NewStructWithObjectConstructors(qnameOpt.get, loc)
+        else
+          ResolutionError.NewStructWithObjectMethods(qnameOpt.get, loc)
+        ResolvedAst.Expr.Error(primaryErr)
+      case None =>
+        val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
+        val erased = UnkindedType.eraseAliases(t)
+        getNativeClassFromType(erased) match {
+          case Some(clazz) =>
+            val targs = erased.typeArguments
+            val superScp = scp0.withSuperClass(Some(clazz)).withSuperTargs(targs)
+            val cs = constructors.map(visitJvmConstructor(_, superScp))
+            val ms = methods.map(visitJvmMethod(_, superScp))
+            val anonClassSym = Symbol.mkFreshAnonClassSym(loc);
+            ResolvedAst.Expr.NewObject(anonClassSym, clazz, targs, cs, ms, loc)
+          case None =>
+            erased match {
+              case _: UnkindedType.Error =>
+                // Type was undefined — emit a clean UndefinedName for the user.
+                qnameOpt match {
+                  case Some(qname) =>
+                    val err = ResolutionError.UndefinedName(qname, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, qname.loc)
+                    sctx.errors.add(err)
+                    ResolvedAst.Expr.Error(err)
+                  case None =>
+                    val err = ResolutionError.IllegalNonJavaType(t, t.loc)
+                    sctx.errors.add(err)
+                    ResolvedAst.Expr.Error(err)
+                }
+              case _ =>
+                val err = ResolutionError.IllegalNonJavaType(t, t.loc)
+                sctx.errors.add(err)
+                ResolvedAst.Expr.Error(err)
+            }
+        }
+    }
   }
 
   /**
@@ -2808,8 +2904,8 @@ object Resolver {
     }.orElse {
       // Then see if there's a module with this name declared in our namespace
       root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Mod(_, _, sym, _, _, _, _) => sym.ns
-        case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Mod(_, _, _, sym, _, _, _, _) => sym.ns
+        case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
@@ -2818,8 +2914,8 @@ object Resolver {
     }.orElse {
       // Then see if there's a module with this name declared in the root namespace
       root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Mod(_, _, sym, _, _, _, _) => sym.ns
-        case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Mod(_, _, _, sym, _, _, _, _) => sym.ns
+        case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
@@ -3241,8 +3337,8 @@ object Resolver {
     * Gets the proper symbol from the given named symbol.
     */
   private def getSym(symbol: NamedAst.Declaration): Symbol = symbol match {
-    case NamedAst.Declaration.Mod(_, _, sym, _, _, _, _) => sym
-    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym
+    case NamedAst.Declaration.Mod(_, _, _, sym, _, _, _, _) => sym
+    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym
     case NamedAst.Declaration.Def(sym, _, _, _) => sym
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym
@@ -3283,6 +3379,7 @@ object Resolver {
     case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol $sym", SourceLocation.Unknown)
     case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
+    case sym: Symbol.AnonClassSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
   }
 
   /**
@@ -3449,11 +3546,16 @@ object Resolver {
 
   /**
     * Checks that the operator's arity matches the number of arguments given.
+    *
+    * Reports [[ResolutionError.OverAppliedOp]] if too many arguments are given and
+    * [[ResolutionError.UnderAppliedOp]] if too few arguments are given.
     */
   private def checkOpArity(op: Declaration.Op, numArgs: Int, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    if (op.spec.fparams.length != numArgs) {
-      val error = ResolutionError.MismatchedOpArity(op.sym, op.spec.fparams.length, numArgs, loc)
-      sctx.errors.add(error)
+    val expected = op.spec.fparams.length
+    if (numArgs > expected) {
+      sctx.errors.add(ResolutionError.OverAppliedOp(op.sym, expected, numArgs, loc))
+    } else if (numArgs < expected) {
+      sctx.errors.add(ResolutionError.UnderAppliedOp(op.sym, expected, numArgs, loc))
     }
   }
 
@@ -3523,7 +3625,8 @@ object Resolver {
   /**
     * A table of all the symbols in the program.
     */
-  private case class SymbolTable(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait],
+  private case class SymbolTable(modules: Map[Symbol.ModuleSym, ResolvedAst.Declaration.Mod],
+                                 traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait],
                                  instances: ListMap[Symbol.TraitSym, ResolvedAst.Declaration.Instance],
                                  defs: Map[Symbol.DefnSym, ResolvedAst.Declaration.Def],
                                  enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
@@ -3532,6 +3635,8 @@ object Resolver {
                                  restrictableEnums: Map[Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum],
                                  effects: Map[Symbol.EffSym, ResolvedAst.Declaration.Effect],
                                  typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
+    def addMod(m: ResolvedAst.Declaration.Mod): SymbolTable = copy(modules = modules + (m.sym -> m))
+
     def addTrait(trt: ResolvedAst.Declaration.Trait): SymbolTable = copy(traits = traits + (trt.sym -> trt))
 
     def addDef(defn: ResolvedAst.Declaration.Def): SymbolTable = copy(defs = defs + (defn.sym -> defn))
@@ -3586,8 +3691,26 @@ object Resolver {
         Some(ResolvedAst.Declaration.Enum(doc1, ann1, mod1, sym, combinedTparams, combinedDerivations, combinedCases, loc1))
     }
 
+    /**
+      * Optionally merges `eff1` and `eff2`. If `eff2` is [[None]] `eff1` is returned. If `eff2`
+      * is [[Some]] it indicates that it is a duplicate, and we merge the 2 effects.
+      *
+      * This is done to ensure that all operations of the effect are included.
+      * This is assumed to be the case by later phases which can cause crashes.
+      *
+      * No guarantees about whether operations from `eff1` or `eff2` are kept.
+      */
+    private def resilientMergeEffects(eff1: ResolvedAst.Declaration.Effect, eff2: Option[ResolvedAst.Declaration.Effect]): Option[ResolvedAst.Declaration.Effect] = (eff1, eff2) match {
+      case (_, None) => Some(eff1)
+      case (ResolvedAst.Declaration.Effect(doc1, ann1, mod1, sym, tparams1, ops1, loc1), Some(ResolvedAst.Declaration.Effect(_, _, _, _, tparams2, ops2, _))) =>
+        val combinedTparams = (tparams1 ++ tparams2).distinctBy(_.name.name)
+        val combinedOps = (ops1 ++ ops2).distinctBy(_.sym)
+        Some(ResolvedAst.Declaration.Effect(doc1, ann1, mod1, sym, combinedTparams, combinedOps, loc1))
+    }
+
     private def ++(that: SymbolTable): SymbolTable = {
       SymbolTable(
+        modules = this.modules ++ that.modules,
         traits = this.traits ++ that.traits,
         instances = this.instances ++ that.instances,
         defs = this.defs ++ that.defs,
@@ -3597,14 +3720,16 @@ object Resolver {
         structs = this.structs ++ that.structs,
         structFields = this.structFields ++ that.structFields,
         restrictableEnums = this.restrictableEnums ++ that.restrictableEnums,
-        effects = this.effects ++ that.effects,
+        effects = that.effects.foldLeft(this.effects) {
+          case (acc, (newSym, eff0)) => acc.updatedWith(newSym)(resilientMergeEffects(eff0, _))
+        },
         typeAliases = this.typeAliases ++ that.typeAliases
       )
     }
   }
 
   private object SymbolTable {
-    val empty: SymbolTable = SymbolTable(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
+    val empty: SymbolTable = SymbolTable(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
 
     /**
       * Traverses `xs`, gathering the symbols from each element by applying the function `f`.

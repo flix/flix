@@ -27,6 +27,7 @@ object Options {
   val Default: Options = Options(
     lib = LibLevel.All,
     build = Build.Development,
+    compilerTop = false,
     entryPoint = None,
     githubToken = None,
     installDeps = false,
@@ -42,6 +43,7 @@ object Options {
     xnodeprecated = false,
     xsummary = false,
     xsubeffecting = Set.empty,
+    xnewmono = false,
     XPerfN = None,
     XPerfFrontend = false,
     XPerfPar = false,
@@ -74,6 +76,7 @@ object Options {
   *
   * @param lib            selects the level of libraries to include.
   * @param build          selects development or production mode.
+  * @param compilerTop    shows a live TUI of where the compiler spends its time.
   * @param entryPoint     specifies the main entry point.
   * @param githubToken    the API key to use for GitHub dependency resolution.
   * @param incremental    enables incremental compilation.
@@ -88,6 +91,7 @@ object Options {
   */
 case class Options(lib: LibLevel,
                    build: Build,
+                   compilerTop: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
                    githubToken: Option[String],
                    incremental: Boolean,
@@ -103,6 +107,7 @@ case class Options(lib: LibLevel,
                    xnodeprecated: Boolean,
                    xsummary: Boolean,
                    xsubeffecting: Set[Subeffecting],
+                   xnewmono: Boolean,
                    XPerfFrontend: Boolean,
                    XPerfPar: Boolean,
                    XPerfN: Option[Int],

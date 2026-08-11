@@ -25,7 +25,8 @@ pub mod Net.Ipv4Addr {
     ///
     /// Represents a V4 Ip Address.
     ///
-    pub enum Ipv4Addr with Eq { // 32 bits
+    pub enum Ipv4Addr with Eq {
+        // 32 bits
         case Ipv4Addr(Int8, Int8, Int8, Int8)
     }
 
@@ -61,10 +62,10 @@ pub mod Net.Ipv4Addr {
     ///
     pub def fromString(s: String): Option[Ipv4Addr] =
         let bytes = s
-            |> String.split({regex = "[.]" })
+            |> String.split({regex = "[.]"})
             |> List.traverse(parseInt8NoLeading0);
         match bytes {
-            case Some(b1::b2::b3::b4::Nil) => {
+            case Some(b1 :: b2 :: b3 :: b4 :: Nil) => {
                 Some(Ipv4Addr.Ipv4Addr(b1, b2, b3, b4))
             }
             case _ => None
@@ -86,22 +87,25 @@ pub mod Net.Ipv4Addr {
     /// Attempt to convert `x` from Int32 to Int8.
     ///
     def toSigned8(x: Int32): Option[Int8] =
-        forM(
-            bu8 <- Some(x); if 0 <= x and x < 256;
+        forM (
+            bu8 <- Some(x);
+            if 0 <= x and x < 256;
             bi8 <- Int32.tryToInt8(
-                    Int32.bitwiseXor(
-                        Int32.bitwiseAnd(bu8, 0xFF),
-                        0x80
-                    ) - 0x80
+                Int32.bitwiseXor(
+                    Int32.bitwiseAnd(bu8, 0xFF),
+                    0x80
                 )
+                    - 0x80
+            )
         ) yield bi8
 
     ///
     /// Attempt to parse `b` from String to Int8.
     ///
     def parseInt8NoLeading0(b: String): Option[Int8] =
-        forM(
-            s <- Some(b); if not (String.length(b) > 1 and String.startsWith({prefix = "0"}, b));
+        forM (
+            s <- Some(b);
+            if not (String.length(b) > 1 and String.startsWith({prefix = "0"}, b));
             u8 <- Int32.fromString(s);
             i8 <- toSigned8(u8)
         ) yield i8

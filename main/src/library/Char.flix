@@ -61,16 +61,16 @@ pub mod Char {
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
     pub def isOctDigit(c: Char): Bool =
-        '0' <= c and c <= '7'     // '0'..'7'
+        '0' <= c and c <= '7' // '0'..'7'
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...9, A...F, or a...f.
     ///
     pub def isHexDigit(c: Char): Bool = match c {
-        case i if '0' <= i and i <= '9' => true        // '0'..'9'
-        case i if 'A' <= i and i <= 'F' => true        // 'A'..'F'
-        case i if 'a' <= i and i <= 'f' => true        // 'a'..'f'
-        case _ => false
+        case i if '0' <= i and i <= '9' => true // '0'..'9'
+        case i if 'A' <= i and i <= 'F' => true // 'A'..'F'
+        case i if 'a' <= i and i <= 'f' => true // 'a'..'f'
+        case _                          => false
     }
 
     ///
@@ -159,7 +159,10 @@ pub mod Char {
     /// Returns the code point representation of Char `c`.
     ///
     pub def toBmpCodePoint(c: Char): Int32 =
-        unchecked_cast(c as Int16) |> Int16.toInt32
+        // Flix has no zero-extending `char`-to-`int` cast (the JVM `i2c` instruction); the only
+        // permitted reinterpretation is `Char` to `Int16`, which sign-extends and goes negative for
+        // code points >= 0x8000. We instead mask the low 16 bits with `& 0xFFFF` to zero-extend.
+        Int32.bitwiseAnd(unchecked_cast(c as Int16) |> Int16.toInt32, 0xFFFF)
 
     ///
     /// Returns the supplementary code point value of the surrogate pair `high` and `low`.

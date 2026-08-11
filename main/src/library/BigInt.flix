@@ -73,9 +73,12 @@ pub mod BigInt {
     /// Returns `1` if `x > y`, `-1` if `x < y`, and `0` if `x = y`.
     ///
     pub def compare(x: BigInt, y: BigInt): Int32 = {
-        if (x == y)     0
-        else if (x < y) -1
-        else            1
+        if (x == y)
+            0
+        else if (x < y)
+            -1
+        else
+            1
     }
 
     ///
@@ -180,7 +183,7 @@ pub mod BigInt {
         try {
             Some(x.byteValueExact())
         } catch {
-            case _ : ArithmeticException => None
+            case _: ArithmeticException => None
         }
 
     ///
@@ -195,7 +198,7 @@ pub mod BigInt {
         try {
             Some(x.shortValueExact())
         } catch {
-            case _ : ArithmeticException => None
+            case _: ArithmeticException => None
         }
 
     ///
@@ -210,7 +213,7 @@ pub mod BigInt {
         try {
             Some(x.intValueExact())
         } catch {
-            case _ : ArithmeticException => None
+            case _: ArithmeticException => None
         }
 
     ///
@@ -225,7 +228,7 @@ pub mod BigInt {
         try {
             Some(x.longValueExact())
         } catch {
-            case _ : ArithmeticException => None
+            case _: ArithmeticException => None
         }
 
     ///
@@ -277,12 +280,11 @@ pub mod BigInt {
     ///
     def clamp(min: {min = BigInt}, max: {max = BigInt}, x: BigInt): BigInt =
         if (x < min#min)
-             min#min
+            min#min
+        else if (x > max#max)
+            max#max
         else
-            if (x > max#max)
-                max#max
-            else
-                x
+            x
 
     ///
     /// Convert `x` to an `Int8`.
@@ -297,7 +299,7 @@ pub mod BigInt {
             y.byteValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => min#min
+            case _: ArithmeticException => min#min
         }
 
     ///
@@ -313,7 +315,7 @@ pub mod BigInt {
             y.shortValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => min#min
+            case _: ArithmeticException => min#min
         }
 
     ///
@@ -329,7 +331,7 @@ pub mod BigInt {
             y.intValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => min#min
+            case _: ArithmeticException => min#min
         }
 
     ///
@@ -345,7 +347,7 @@ pub mod BigInt {
             y.longValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => min#min
+            case _: ArithmeticException => min#min
         }
 
     ///
@@ -365,7 +367,7 @@ pub mod BigInt {
             }
         };
         match step() {
-            case None => Float32.nan()
+            case None    => Float32.nan()
             case Some(d) => d
         }
 
@@ -386,7 +388,7 @@ pub mod BigInt {
             }
         };
         match step() {
-            case None => Float64.nan()
+            case None    => Float64.nan()
             case Some(d) => d
         }
 

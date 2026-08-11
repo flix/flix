@@ -740,4 +740,34 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.DuplicateLowerName](result)
     rejectError[ResolutionError.UndefinedUse](result)
   }
+
+  test("IllegalSealedTrait.01") {
+    val input =
+      """
+        |sealed trait C[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalSealedTrait](result)
+  }
+
+  test("IllegalSealedTrait.02") {
+    val input =
+      """
+        |pub sealed trait C[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalSealedTrait](result)
+  }
+
+  test("IllegalSealedTrait.03") {
+    // A companion trait in the root namespace is also top-level.
+    val input =
+      """
+        |mod C {
+        |    sealed trait C[a]
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalSealedTrait](result)
+  }
 }
