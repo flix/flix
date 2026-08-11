@@ -487,6 +487,67 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectOneError[TypeError.UnhandledEffect](result)
   }
+  test("Test.EffectfulFunctionUsesOtherEffect.10") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |eff F {
+        |    def op(): Unit
+        |}
+        |
+        |def handleE(f: Unit -> Unit \ ef + F): Unit \ ef = {
+        |    run f() with handler E {
+        |        def op(_k) = ()
+        |    }
+        |}
+        """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+  test("Test.EffectfulFunctionUsesOtherEffect.11") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |eff F {
+        |    def op(): Unit
+        |}
+        |
+        |def handleE(f: Unit -> Unit \ ef + F): Unit \ ef - E = {
+        |    run f() with handler E {
+        |        def op(_k) = ()
+        |    }
+        |}
+        """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.EffectfulFunctionUsesOtherEffect.12") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |eff F {
+        |    def op(): Unit
+        |}
+        |
+        |def handleE(f: Unit -> Unit \ ef + F): Unit \ ef - E - F = {
+        |    run f() with handler E {
+        |        def op(_k) = ()
+        |    }
+        |}
+        """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
 
   test("Test.UnusedEffectInSignature.01") {
     val input =
