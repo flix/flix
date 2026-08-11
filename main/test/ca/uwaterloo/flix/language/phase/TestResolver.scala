@@ -344,6 +344,202 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
+  test("InaccessibleModule.01") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B {
+         |        pub def foo(): Int32 = 123
+         |    }
+         |}
+         |
+         |mod D {
+         |    def g(): Int32 = A.B.foo()
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.02") {
+    val input =
+      s"""
+         |mod A {
+         |    pub mod B {
+         |        mod C {
+         |            pub def foo(): Int32 = 123
+         |        }
+         |    }
+         |}
+         |
+         |mod D {
+         |    def g(): Int32 = A.B.C.foo()
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.03") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B {
+         |        pub mod C {
+         |            pub def foo(): Int32 = 123
+         |        }
+         |    }
+         |}
+         |
+         |mod D {
+         |    def g(): Int32 = A.B.C.foo()
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.04") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B {
+         |        pub enum Color {
+         |            case Red,
+         |            case Blue
+         |        }
+         |    }
+         |}
+         |
+         |mod C {
+         |    def f(): A.B.Color = A.B.Color.Red
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.05") {
+    val input =
+      s"""
+         |mod A {
+         |    pub mod B {
+         |        mod C {
+         |            pub enum Color {
+         |                case Red,
+         |                case Blue
+         |            }
+         |        }
+         |    }
+         |}
+         |
+         |mod D {
+         |    def f(): A.B.C.Color = A.B.C.Color.Red
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.06") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B {
+         |        pub struct S[r] {
+         |            x: Int32
+         |        }
+         |    }
+         |}
+         |
+         |mod C {
+         |    def f(): A.B.S = ???
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.07") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B {
+         |        mod C {
+         |            pub struct S[r] {
+         |                x: Int32
+         |            }
+         |        }
+         |    }
+         |}
+         |
+         |mod D {
+         |    def f(): A.B.C.S = ???
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.08") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B {
+         |        pub eff Print {
+         |            def print(s: String): Unit
+         |        }
+         |    }
+         |}
+         |
+         |mod C {
+         |    def f(): Unit \\ A.B.Print = A.B.Print.print("hi")
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.09") {
+    val input =
+      s"""
+         |mod A {
+         |    mod B {
+         |        pub trait Show[a] {
+         |            pub def show(x: a): String
+         |        }
+         |    }
+         |}
+         |
+         |mod C {
+         |    def f(x: a): String with A.B.Show[a] = ???
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.10") {
+    val input =
+      s"""
+         |mod A {
+         |    pub mod B {
+         |        mod C {
+         |            pub trait Show[a] {
+         |                pub def show(x: a): String
+         |            }
+         |        }
+         |    }
+         |}
+         |
+         |mod D {
+         |    def f(x: a): String with A.B.C.Show[a] = ???
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
   test("SealedTrait.01") {
     val input =
       """

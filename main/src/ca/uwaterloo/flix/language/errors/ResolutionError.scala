@@ -417,6 +417,29 @@ object ResolutionError {
   }
 
   /**
+    * Inaccessible Module Error.
+    *
+    * @param sym the module symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleModule(sym: Symbol.ModuleSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2544
+
+    def summary: String = s"Inaccessible module: '${sym.toString}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Module '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+         |
+         |${highlight(loc, "inaccessible module", fmt)}
+         |
+         |${underline("Tip:")} Mark the module as 'pub'.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Inaccessible Struct Error
     *
     * @param sym the struct symbol
