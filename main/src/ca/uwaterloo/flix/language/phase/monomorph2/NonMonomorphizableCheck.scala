@@ -16,28 +16,108 @@
 
 package ca.uwaterloo.flix.language.phase.monomorph2
 
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
+import ca.uwaterloo.flix.util.{Graph, InternalCompilerException}
+
 /**
-  * Rejects non-monomorphizable programs (flow sets with no finite solution) before
-  * [[ConstraintSolver.solve]]'s fixpoint loop, which would otherwise grow without bound.
+  * The purpose of this phase is to reject non-monomorphizable programs (i.e. programs with
+  * polymorphic recursion). This is needed to ensure that the subsequent [[ConstraintSolver]]
+  * phase does not attempt to create a solution that will grow without bound.
   *
-  * Following "The Simple Essence of Monomorphization" (§3.3.2), the flow set is reinterpreted as
-  * a graph over `(MonoVar, tuple-position)` vertices, and we look for a "growing cycle": a reachable
-  * cycle with at least one edge that wraps the flowing type in an additional type constructor
-  * (`a` flowing into `List[a]`). Such a cycle arises from polymorphic recursion
-  * (e.g. `def f(x: a): List[a] = f(x::Nil)`) or a non-regular recursive enum/struct
-  * (`enum T[a] { case Base(a); case Recurse(T[Poly[a]]) }`). A cycle of only direct-copy edges is
-  * ordinary, convergent self-recursion and is fine.
+  * Following "The Simple Essence of Monomorphization" (§3.3.2), the collection of [[FlowConstraint]]s
+  * is reinterpreted as a graph where edges are annotated with whether they are growing or not.
   *
-  * The check over-approximates in one known way: a non-regular enum whose growing case is declared
-  * but never constructed is still rejected once any other case of it is constructed, even though
-  * demand-driven specialization would not need the growing case.
+  * Take the following program containing polymorphic recursion:
+  * {{{
+  *  enum PerfectTree[a] {
+  *      case Leaf(a)
+  *      case Node(PerfectTree[(a, a)])
+  *  }
+  *  def size(t: PerfectTree[b]): Int32 = match t {
+  *     case PerfectTree.Leaf(_)     => 1
+  *     case PerfectTree.Node(inner) => 2 * size(inner)
+  *  }
+  *  def main(): Unit \ IO = {
+  *      let t = PerfectTree.Node(PerfectTree.Leaf((1, 2)));
+  *      println(size(t))
+  *  }
+  * }}}
+  * The problematic [[FlowConstraint]]s for this program are (with nicer formatting):
+  * {{{
+  *   [(a,a)] ~> a // Stemming from `case Node(PerfectTree[(a, a)])`
+  *   [(b,b)] ~> b // Stemming from the recursive `size(inner)` call
+  * }}}
+  * These are problematic because they establish a cycle (self-loop) with a "growing"
+  * edge. Where "growing" means that the type-variable in the cycle is nested in another
+  * type. When we reinterpret the [[FlowConstraint]]s of a program with polymorphic
+  * recursion as a graph there will be at least one cycle with some "growing" edge.
+  *
+  * N.B. Because of [[TreeShaker1]], unreachable occurrences of polymorphic recursive function
+  * definitions (`def`, `sig`, instance `def`) will not be detected, whereas unreachable
+  * polymorphic recursive enum/struct declarations will still be rejected.
   */
 object NonMonomorphizableCheck {
 
+  /** One tracked slot: the `pos`'th type-parameter position of `mvar`. */
+  private case class Vertex(mvar: MonoVar, pos: Int)
+
+  /** A graph edge: `src` flows into `dst`, `growing` iff it does so wrapped in a type constructor. */
+  private case class Edge(src: Vertex, dst: Vertex, growing: Boolean)
+
   // TODO Make it a proper compiler error-message
+  /** Checks whether `flows` contains a growing cycle and throws [[InternalCompilerException]] if so. */
+  def checkMonomorphizable(flows: List[FlowConstraint]): Unit = {
+    val edges = for {
+      FlowConstraint(Instantiation(args), dst) <- flows
+      (arg, i) <- args.zipWithIndex
+      (v, j) <- MonoArg.collectParams(arg).distinct
+    } yield Edge(Vertex(v, j), Vertex(dst, i), growing = isGrowingHead(arg))
+
+    val adjacency = edges.groupMap(_.src)(_.dst)
+    val getAdj = (v: Vertex) => adjacency.getOrElse(v, Nil)
+    val vertices = edges.iterator.flatMap(e => Iterator(e.src, e.dst)).toSet
+    val scc = Graph.stronglyConnectedComponents(vertices, getAdj)
+
+    // Detect polymorphic recursion: If a growing edge is on a cycle (i.e. endpoints share SCC).
+    edges.find(e => e.growing && scc(e.src) == scc(e.dst)) match {
+      case Some(edge) =>
+        throw InternalCompilerException(
+          s"Program is not monomorphizable: found an infinitely-growing recursive type " +
+          s"involving ${edge.src.mvar}. This indicates polymorphic recursion " +
+          s"(e.g. `def f(x: a): List[a] = ...f(lst)...`) or a genuinely non-regular recursive " +
+          s"enum/struct (e.g. `enum T[a] { ...case Recurse(T[List[a]])... }`) — Flix " +
+          s"cannot generate a finite number of monomorphized copies for this definition.",
+          monoVarLoc(edge.src.mvar)
+        )
+      case None => ()
+    }
+  }
+
   /**
-    * Checks whether `flows` contains a reachable growing cycle and throws
-    * [[InternalCompilerException]] if so.
+    * Returns `true` iff `arg`'s outermost wrapping is growing.
     */
-  def checkMonomorphizable(flows: List[FlowConstraint]): Unit = ???
+  private def isGrowingHead(arg: MonoArg): Boolean = arg match {
+    // a direct copy, never growth
+    case MonoArg.Param(_, _)                => false
+    // set algebra doesn't count as nesting
+    case MonoArg.App(MonoArg.Const(tpe), _) =>
+      Kind.resultKind(tpe.kind) match {
+        case Kind.Eff        => false
+        case Kind.Bool       => false
+        case Kind.CaseSet(_) => false
+        case _               => true
+      }
+    case MonoArg.App(_, _)                  => true
+    case MonoArg.Const(_)                   => true
+    case MonoArg.Assoc(_, _, _, _)          => true
+  }
+
+  /** Returns the source location of `mvar`'s declaration. */
+  private def monoVarLoc(mvar: MonoVar): SourceLocation = mvar match {
+    case MonoVar.Def(sym)              => sym.loc
+    case MonoVar.Enum(sym)             => sym.loc
+    case MonoVar.Sig(sym)              => sym.loc
+    case MonoVar.RestrictableEnum(sym) => sym.loc
+    case MonoVar.Struct(sym)           => sym.loc
+  }
 }
