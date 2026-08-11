@@ -91,16 +91,21 @@ object ListOps {
     list.mapConserve(f)
 
   /**
-    * Applies `f` to each element of `list`, short-circuiting to `None` if any application
-    * does. Otherwise returns `Some` of the results, in order.
+    * Applies `f` to each element of `list` (left-to-right), short-circuiting to `None` if any
+    * application does. Otherwise returns `Some` of the results, in order.
     */
-  def traverse[A, B](list: List[A])(f: A => Option[B]): Option[List[B]] =
-    list.foldRight(Option(List.empty[B])) { (x, acc) =>
-      for {
-        v  <- f(x)
-        vs <- acc
-      } yield v :: vs
+  def traverse[A, B](list: List[A])(f: A => Option[B]): Option[List[B]] = {
+    @tailrec
+    def loop(l: List[A], acc: List[B]): Option[List[B]] = l match {
+      case x :: xs =>
+        f(x) match {
+          case Some(v) => loop(xs, v::acc)
+          case None => None
+        }
+      case Nil => Some(acc.reverse)
     }
+    loop(list, List.empty[B])
+  }
 
   /**
     * Applies the one-to-many function `f` to each element of `list`,
