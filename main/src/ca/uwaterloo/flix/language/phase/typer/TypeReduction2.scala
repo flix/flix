@@ -21,7 +21,8 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
-import ca.uwaterloo.flix.util.JvmUtils
+import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
+import ca.uwaterloo.flix.util.collection.ListOps
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
@@ -59,18 +60,15 @@ object TypeReduction2 {
       val assocDefs = eqenv.getAssocDefs(symUse.sym, s)
 
       // Find the instance that matches
-      // MATT docs
-      val matches = assocDefs.view.map {
-        case AssocTypeDef(tparams, assocSel0, assocTpes0, ret0) if assocTpes0.length == ts.length =>
+      val matches = assocDefs.flatMap {
+        case AssocTypeDef(tparams, assocSel0, assocTpes0, ret0) =>
 
-
-          // We fully rigidify the arguments, because we need the substitution to go from instance type to constraint type.
-          // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
+          // We fully rigidify the arguments, because we need the substitution to go from definition type to instantiation type
+          // For example, if our instantiation is Elm[Map[Int32, a]] and our definition is Elm[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
           val assocRenv = (s :: ts).flatMap(_.typeVars).map(_.sym).foldLeft(renv)(_.markRigid(_))
 
-
-          // Refresh the flexible variables in the instance
+          // Refresh the flexible variables in the definition
           // (variables may be rigid if the instance comes from a constraint on the definition)
           val assocVarMap = tparams.map {
             case fromSym => fromSym -> Type.freshVar(fromSym.kind, fromSym.loc)(scope, flix)
@@ -80,18 +78,21 @@ object TypeReduction2 {
           val assocTpes = assocTpes0.map(assocSubst.apply)
           val ret = assocSubst(ret0)
 
-          // MATT docs
           // Instantiate all the instance constraints according to the resulting substitution.
-          val init: Option[Substitution] = Some(Substitution.empty)
-          (s :: ts).zip(assocSel :: assocTpes).foldLeft(init) {
-            case (None, _) => None
-            case (Some(acc), (t, assocTpe)) =>
-              ConstraintSolver2.fullyUnify(acc(t), acc(assocTpe), scope, assocRenv).map(_ @@ acc)
-          }.map(subst => subst(ret))
+          // We zip-truncate as a simple resilience measure.
+          val constraints = ListOps.zipTruncate(s :: ts, assocSel :: assocTpes).map {
+            case (t1, t2) => TypeConstraint.Equality(t1, t2, TypeConstraint.Provenance.Match(t1, t2, SourceLocation.Unknown))
+          }
+          val substOpt = ConstraintSolver2.solveAllTypes(constraints)(scope, assocRenv, eqenv, flix) match {
+            case (Nil, subst) => Some(subst)
+            case (_ :: _, _) => None
+          }
+
+          substOpt.map {
+            case subst => subst(ret)
+          }
 
         case _ => None
-      }.collectFirst {
-        case Some(tpe) => tpe
       }
 
       matches match {
@@ -101,16 +102,19 @@ object TypeReduction2 {
         // `tpe0` here would signal progress without changing the type, causing
         // the constraint solver to loop forever (see issue #11213).
         // Performance: Reuse `tpe0` if the arguments were unchanged.
-        case None =>
+        case Nil =>
           if ((s eq sel0) && ts.lazyZip(tpes).forall(_ eq _))
             (tpe0, cs)
           else
             (Type.AssocType(symUse, s, ts, kind, loc), cs)
 
         // Case 2: One match. Use it.
-        case Some(newTpe) =>
+        case newTpe :: Nil =>
           progress.markProgress()
           (newTpe, cs)
+
+        // Case 3: Multiple matches. Bug
+        case _ :: _ :: Nil => throw InternalCompilerException("unexpected overlapping equality constraints", loc)
       }
 
     case Type.JvmToType(tpe, loc) =>
