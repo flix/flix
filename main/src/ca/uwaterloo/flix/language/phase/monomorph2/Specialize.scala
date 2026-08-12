@@ -28,24 +28,27 @@ import scala.jdk.CollectionConverters.*
   * Solution-driven specialization: uses the solver's solution to specialize every def/enum/
   * struct/restrictable-enum in a single parallel pass.
   *
-  * `run` builds the `SharedContext` lookup tables; [[SpecializeAndLower.visitDef]] does the actual
-  * per-def specialize+lower walk, resolving each call/tag/struct site through them.
+  * `run` builds the `LookupTables`; [[SpecializeAndLower.visitDef]] does the actual per-def
+  * specialize+lower walk, resolving each call/tag/struct site through them.
   */
 object Specialize {
+
+  /** Immutable lookup tables built once by `run`, before any specialization/lowering happens. */
+  private[monomorph2] case class LookupTables(
+    defTable: Map[(Symbol.DefnSym, Type), Symbol.DefnSym],
+    allDefs: Map[Symbol.DefnSym, TypedAst.Def],
+    enumTable: Map[(Symbol.EnumSym, List[Type]), Symbol.EnumSym],
+    structTable: Map[(Symbol.StructSym, List[Type]), Symbol.StructSym],
+    restrictableEnumTable: Map[(Symbol.RestrictableEnumSym, List[Type]), Symbol.EnumSym],
+    instances: Map[(Symbol.TraitSym, TypeConstructor), Instance]
+  )
 
   /**
     * The mutable data used throughout specialization.
     *
     * This class is thread-safe.
     */
-  private[monomorph2] class SharedContext(
-    val defTable: Map[(Symbol.DefnSym, Type), Symbol.DefnSym],
-    val allDefs: Map[Symbol.DefnSym, TypedAst.Def],
-    val enumTable: Map[(Symbol.EnumSym, List[Type]), Symbol.EnumSym],
-    val structTable: Map[(Symbol.StructSym, List[Type]), Symbol.StructSym],
-    val restrictableEnumTable: Map[(Symbol.RestrictableEnumSym, List[Type]), Symbol.EnumSym],
-    val instances: Map[(Symbol.TraitSym, TypeConstructor), Instance]
-  ) {
+  private[monomorph2] class SharedContext {
     private val specializedDefsQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, MonoAst.Def)] = new ConcurrentLinkedQueue()
 
     /** Records `defn` under its fresh specialized `sym`. */
@@ -61,11 +64,11 @@ object Specialize {
     * Returns the sym to use for a call to `sym` at ground arrow type `groundArrowTpe`.
     */
   private[monomorph2] def lookupSym(sym: Symbol.DefnSym, groundArrowTpe: Type)
-                       (implicit sctx: SharedContext): Symbol.DefnSym = {
-    val defn = sctx.allDefs.getOrElse(sym, throw InternalCompilerException(s"lookupSym: sym not in allDefs: $sym", sym.loc))
+                       (implicit tables: LookupTables): Symbol.DefnSym = {
+    val defn = tables.allDefs.getOrElse(sym, throw InternalCompilerException(s"lookupSym: sym not in allDefs: $sym", sym.loc))
     // instance/default-sig defs can have empty spec.tparams but still need specialization
-    // therefore we first look it up in `sctx.defTable`
-    sctx.defTable.get((sym, groundArrowTpe)) match {
+    // therefore we first look it up in `tables.defTable`
+    tables.defTable.get((sym, groundArrowTpe)) match {
       case Some(specializedSym) => specializedSym
       case None =>
         if (defn.spec.tparams.isEmpty) {
@@ -81,9 +84,9 @@ object Specialize {
   /**
     * Returns the case sym to use for a `Tag`/`Pattern.Tag` at ground enum type `groundEnumTpe`.
     */
-  private[monomorph2] def lookupCaseSym(caseSym: Symbol.CaseSym, groundEnumTpe: Type)(implicit sctx: SharedContext): Symbol.CaseSym = {
+  private[monomorph2] def lookupCaseSym(caseSym: Symbol.CaseSym, groundEnumTpe: Type)(implicit tables: LookupTables): Symbol.CaseSym = {
     val argTypes = groundEnumTpe.typeArguments
-    sctx.enumTable.get((caseSym.enumSym, argTypes)) match {
+    tables.enumTable.get((caseSym.enumSym, argTypes)) match {
       case Some(freshEnumSym) => new Symbol.CaseSym(freshEnumSym, caseSym.name, caseSym.ordinal, caseSym.loc)
       case None  =>
         if (argTypes.isEmpty) {
@@ -105,9 +108,9 @@ object Specialize {
     * Returns the (regular) case sym for a restrictable tag/pattern at ground restrictable-enum
     * type `groundRestrictableEnumTpe`.
     */
-  private[monomorph2] def lookupRestrictableCaseSym(caseSym: Symbol.RestrictableCaseSym, groundRestrictableEnumTpe: Type)(implicit sctx: SharedContext): Symbol.CaseSym = {
+  private[monomorph2] def lookupRestrictableCaseSym(caseSym: Symbol.RestrictableCaseSym, groundRestrictableEnumTpe: Type)(implicit tables: LookupTables): Symbol.CaseSym = {
     val argTypes = groundRestrictableEnumTpe.typeArguments
-    sctx.restrictableEnumTable.get((caseSym.enumSym, argTypes)) match {
+    tables.restrictableEnumTable.get((caseSym.enumSym, argTypes)) match {
       case Some(freshEnumSym) => new Symbol.CaseSym(freshEnumSym, caseSym.name, NoOrdinal, caseSym.loc)
       case None =>
         throw InternalCompilerException(
@@ -120,9 +123,9 @@ object Specialize {
     * Returns the struct sym for a `StructNew`/`StructGet`/`StructPut` at ground type
     * `groundStructTpe`.
     */
-  private[monomorph2] def lookupStructSym(sym: Symbol.StructSym, groundStructTpe: Type)(implicit sctx: SharedContext): Symbol.StructSym = {
+  private[monomorph2] def lookupStructSym(sym: Symbol.StructSym, groundStructTpe: Type)(implicit tables: LookupTables): Symbol.StructSym = {
     val argTypes = groundStructTpe.typeArguments
-    sctx.structTable.get((sym, argTypes)) match {
+    tables.structTable.get((sym, argTypes)) match {
       case Some(freshStructSym) => freshStructSym
       case None =>
         if (argTypes.isEmpty) {
