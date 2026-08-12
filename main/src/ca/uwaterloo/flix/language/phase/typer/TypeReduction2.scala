@@ -91,8 +91,6 @@ object TypeReduction2 {
           substOpt.map {
             case subst => subst(ret)
           }
-
-        case _ => None
       }
 
       matches match {
