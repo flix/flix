@@ -102,11 +102,6 @@ object Specialize {
     }
   }
 
-  /** `RestrictableCaseSym` has no ordinal of its own to carry over when it is rebuilt as a `CaseSym`.
-    * But we must use this same value, since ordinal is part of `CaseSym`'s equality.
-    */
-  private val NoOrdinal: Int = -1
-
   /**
     * Returns the (regular) case sym for a restrictable tag/pattern at ground restrictable-enum
     * type `groundRestrictableEnumTpe`.
@@ -114,7 +109,7 @@ object Specialize {
   private[monomorph2] def lookupRestrictableCaseSym(caseSym: Symbol.RestrictableCaseSym, groundRestrictableEnumTpe: Type)(implicit tables: LookupTables): Symbol.CaseSym = {
     val argTypes = groundRestrictableEnumTpe.typeArguments
     tables.restrictableEnumTable.get((caseSym.enumSym, argTypes)) match {
-      case Some(freshEnumSym) => new Symbol.CaseSym(freshEnumSym, caseSym.name, NoOrdinal, caseSym.loc)
+      case Some(freshEnumSym) => new Symbol.CaseSym(freshEnumSym, caseSym.name, Symbol.CaseSym.NoOrdinal, caseSym.loc)
       case None =>
         throw InternalCompilerException(
           s"Solver gap: no restrictable enum specialization for ${caseSym.enumSym} at $argTypes. " +
