@@ -55,11 +55,12 @@ object TypeReduction2 {
       val ts = reduced.map(_._1)
       val cs = cs0 ::: reduced.flatMap(_._2)
 
-      // Get the matching associated type from context, using the selector.
-      val assocOpt = eqenv.getAssocDef(symUse.sym, s)
+      // Get the candidate associated types from context, using the selector.
+      val assocDefs = eqenv.getAssocDefs(symUse.sym, s)
 
       // Find the instance that matches
-      val matches = assocOpt.flatMap {
+      // MATT docs
+      val matches = assocDefs.view.map {
         case AssocTypeDef(tparams, assocSel0, assocTpes0, ret0) if assocTpes0.length == ts.length =>
 
 
@@ -89,6 +90,8 @@ object TypeReduction2 {
           }.map(subst => subst(ret))
 
         case _ => None
+      }.collectFirst {
+        case Some(tpe) => tpe
       }
 
       matches match {

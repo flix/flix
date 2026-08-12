@@ -183,7 +183,8 @@ object Typer {
       ((assocSig.sym, head), assocDef)
     }
 
-    EqualityEnv(assocs.toMap)
+    // MATT docs
+    EqualityEnv(assocs.toList.groupMap(_._1)(_._2))
   }
 
   /**
