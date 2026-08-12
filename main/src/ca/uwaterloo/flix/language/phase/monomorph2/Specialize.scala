@@ -55,17 +55,6 @@ object Specialize {
     /** Returns all specialized defs recorded so far. */
     def specializedDefs: Map[Symbol.DefnSym, MonoAst.Def] =
       specializedDefsQueue.asScala.toMap
-
-    /** Diagnostic only, for MonomorphBench's Xmonobench table. */
-    private val defCategoryCountsQueue: ConcurrentLinkedQueue[String] = new ConcurrentLinkedQueue()
-
-    /** Increments the count for `category` (one of "regularDefs"/"instanceDefs"/"defaultSigImpls"). */
-    def incrementDefCategory(category: String): Unit =
-      defCategoryCountsQueue.add(category)
-
-    /** Returns the per-category specialized-def counts. */
-    def defCategoryCounts: Map[String, Int] =
-      defCategoryCountsQueue.asScala.groupMapReduce(identity)(_ => 1)(_ + _)
   }
 
   /**
