@@ -217,13 +217,13 @@ object Specialize {
 
   /** Returns the `def` that implements signature `sym` for the instance at ground arrow type `groundArrowTpe`, or its trait-level default. */
   private[monomorph2] def resolveSigSym(sym: Symbol.SigSym, groundArrowTpe: Type)
-                            (implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+                            (implicit tables: LookupTables, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
     val sig = root.sigs(sym)
     val trt = root.traits(sym.trt)
     val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, groundArrowTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
     val traitType = subst.m(trt.tparam.sym)
     val tyCon = traitType.typeConstructor.get
-    val instance = sctx.instances((sym.trt, tyCon))
+    val instance = tables.instances((sym.trt, tyCon))
     val defns = instance.defs.filter(_.sym.text == sig.sym.name)
     (sig.exp, defns) match {
       case (_, defn :: Nil) => defn
