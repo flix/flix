@@ -316,8 +316,9 @@ object UnkindedType {
 
   /**
     * A fully resolved associated type.
+    *
+    * `sel` is the selector which determines the associated type definition used for reduction.
     */
-  // MATT docs
   case class AssocType(assocTypeSymUse: AssocTypeSymUse, sel: UnkindedType, args: List[UnkindedType], loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case AssocType(AssocTypeSymUse(sym2, _), sel2, args2, _) => assocTypeSymUse.sym == sym2 && sel == sel2 && args == args2

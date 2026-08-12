@@ -1246,7 +1246,14 @@ object ResolutionError {
     }
   }
 
-  // MATT docs
+  /**
+    * An error raised to indicate that an associated type definition has too many or too few parameters.
+    *
+    * @param sym the associated type.
+    * @param expected the expected number of parameters
+    * @param actual the actual number of parameters
+    * @param loc the location where the error occurred.
+    */
   case class MismatchedAssocTypeArity(sym: Symbol.AssocTypeSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3250
 
@@ -1272,7 +1279,12 @@ object ResolutionError {
     }
   }
 
-  // MATT docs
+  /**
+    * An error raised to indicate an illegal associated type parameter.
+    *
+    * @param sym the associated type.
+    * @param loc the location where the error occurred.
+    */
   case class IllegalAssocTypeParam(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3251
 

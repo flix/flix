@@ -1978,7 +1978,7 @@ object Kinder {
     * @param effectKinds           the kind of each effect.
     * @param restrictableEnumKinds the kind of each restrictable enum.
     * @param traitKinds            the kind of each trait.
-    * @param assocTypeKinds        MATT docs
+    * @param assocTypeKinds        the kinds of each associated type
     */
   private case class DeclKinds(
                                 enumKinds: Map[Symbol.EnumSym, Kind],
@@ -1989,7 +1989,6 @@ object Kinder {
                                 assocTypeKinds: Map[Symbol.AssocTypeSym, AssocTypeKinds]
                               )
 
-  // MATT docs
   private case class AssocTypeKinds(sel: Kind, args: List[Kind], ret: Kind)
 
 

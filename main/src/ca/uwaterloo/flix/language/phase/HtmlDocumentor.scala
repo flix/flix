@@ -1295,7 +1295,13 @@ object HtmlDocumentor {
     sb.append("</div>")
   }
 
-  // MATT docs
+  /**
+    * Documents the given associated type parameters.
+    *
+    * The first parameter is the selector and is elided if the remaining parameters are empty.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docAssocTypeParams(tparam: TypedAst.TypeParam, tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (tparams.isEmpty) {
       return

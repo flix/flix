@@ -55,8 +55,7 @@ object TypeReduction2 {
       val ts = reduced.map(_._1)
       val cs = cs0 ::: reduced.flatMap(_._2)
 
-      // Get all the associated types from the context.
-      // MATT docs
+      // Get the matching associated type from context, using the selector.
       val assocOpt = eqenv.getAssocDef(symUse.sym, s)
 
       // Find the instance that matches

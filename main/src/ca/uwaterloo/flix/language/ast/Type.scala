@@ -560,8 +560,9 @@ object Type {
 
   /**
     * An associated type.
+    *
+    * `sel` is the selector which determines the associated type definition used for reduction.
     */
-  // MATT docs
   case class AssocType(symUse: AssocTypeSymUse, sel: Type, args: List[Type], kind: Kind, loc: SourceLocation) extends Type {
     override def equals(obj: Any): Boolean = obj match {
       case that: AssocType => this.symUse.sym == that.symUse.sym && this.sel == that.sel && this.args == that.args
