@@ -63,7 +63,7 @@ object TypeReduction2 {
         case AssocTypeDef(tparams, assocSel0, assocTpes0, ret0) if assocTpes0.length == ts.length =>
 
 
-          // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
+          // We fully rigidify the arguments, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
           val assocRenv = (s :: ts).flatMap(_.typeVars).map(_.sym).foldLeft(renv)(_.markRigid(_))
