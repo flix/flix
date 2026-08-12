@@ -250,6 +250,40 @@ object Specialize {
     (TypedAst.FormalParam(Binder(freshSym, subst0(bnd.tpe)), subst0(tpe), src, decreasing, loc), Map(bnd.sym -> freshSym))
   }
 
+  /**
+    * Rewrites any specialized `Enum`/`Struct`/`RestrictableEnum` reference in `tpe` to its fresh sym.
+    * `tpe` must already be substituted and lowered (i.e. only ever called via `visitType`/`visitTypeSubstituted`).
+    */
+  private[monomorph2] def rewriteEnumStructType(tpe: Type)(implicit tables: LookupTables): Type = tpe match {
+    case Type.Cst(_, _)                    => tpe
+
+    case Type.Apply(_, _, loc)             =>
+      val args = tpe.typeArguments
+      tpe.baseType match {
+        case Type.Cst(TypeConstructor.Enum(sym, _), _) if tables.enumTable.contains((sym, args)) =>
+          Type.mkEnum(tables.enumTable((sym, args)), Nil, loc)
+        case Type.Cst(TypeConstructor.RestrictableEnum(sym, _), _) if tables.restrictableEnumTable.contains((sym, args)) =>
+          Type.mkEnum(tables.restrictableEnumTable((sym, args)), Nil, loc)
+        case Type.Cst(TypeConstructor.Struct(sym, _), _) if tables.structTable.contains((sym, args)) =>
+          Type.mkStruct(tables.structTable((sym, args)), Nil, loc)
+        case _ =>
+          Type.mkApply(rewriteEnumStructType(tpe.baseType), args.map(rewriteEnumStructType), loc)
+      }
+
+    case Type.Alias(sym, args, inner, loc) =>
+      Type.Alias(sym, args.map(rewriteEnumStructType), rewriteEnumStructType(inner), loc)
+
+    case Type.Var(_, loc)                  => throw InternalCompilerException("Unexpected type variable", loc)
+    case Type.AssocType(_, _, _, loc)      => throw InternalCompilerException("Unexpected associated type", loc)
+    case Type.JvmToType(_, loc)            => throw InternalCompilerException("Unexpected JVM type", loc)
+    case Type.JvmToEff(_, loc)             => throw InternalCompilerException("Unexpected JVM eff", loc)
+    case Type.UnresolvedJvmType(_, loc)    => throw InternalCompilerException("Unexpected JVM type", loc)
+  }
+
+  /** Applies [[rewriteEnumStructType]] to `fp`'s type. */
+  private[monomorph2] def rewriteFormalParam(fp: MonoAst.FormalParam)(implicit tables: LookupTables): MonoAst.FormalParam =
+    fp.copy(tpe = rewriteEnumStructType(fp.tpe))
+
   /** Specializes `root` per `solution`, the constraint solver's output. */
   def run(root: TypedAst.Root, solution: Solution)(implicit flix: Flix): MonoAst.Root = ???
 }
