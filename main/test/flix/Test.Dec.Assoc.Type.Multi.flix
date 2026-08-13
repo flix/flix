@@ -63,6 +63,10 @@ mod Test.Dec.Assoc.Type.Multi {
         }
 
     // MATT docs
+    pub def decomposeUnconstrained(x: a, y: b): b with Twice[a] =
+        Twice.first(x, Twice.dup(x, y))
+
+    // MATT docs
 
     trait Runner[a] {
         type Aef[a: Type, r: Region]: Eff
@@ -102,6 +106,10 @@ mod Test.Dec.Assoc.Type.Multi {
     @Test
     pub def testDecompose01(): Unit \ Assert =
         assertEq(expected = true, roundTrip(1, "x"))
+
+    @Test
+    pub def testDecompose02(): Unit \ Assert =
+        assertEq(expected = "x", decomposeUnconstrained(1, "x"))
 
     @Test
     pub def testRunner01(): Unit \ Assert = region rc {
