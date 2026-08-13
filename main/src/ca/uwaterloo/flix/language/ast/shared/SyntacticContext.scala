@@ -50,6 +50,7 @@ object SyntacticContext {
     case object OtherExpr extends Expr
   }
 
+  case object MatchBody extends SyntacticContext
 
   case object Unknown extends SyntacticContext
 
