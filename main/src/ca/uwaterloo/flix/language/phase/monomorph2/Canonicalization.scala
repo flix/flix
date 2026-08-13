@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.phase.typer.{Progress, TypeReduction2}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.CofiniteSet
 
+import scala.collection.immutable.SortedSet
+
 /**
   * Shared definition of what a given (possibly non-ground) monomorph type becomes:
   * effect canonicalization and associated-type reduction.
@@ -136,9 +138,37 @@ private[monomorph2] object Canonicalization {
   }
 
   /**
-    * Returns a sorted record, assuming that `rest` is sorted.
-    *
-    * labels of the same name are not reordered.
+    * Defaults an unresolved (stray) type to its kind's ground default:
+    * - `Star` (and other value-like kinds) becomes `AnyType`
+    * - `Eff` becomes `Pure`
+    * - `CaseSet`/`SchemaRow`/`RecordRow` becomes empty
+    * This is safe because a var is only stray when nothing in the program constrained
+    * it to a concrete type. E.g.
+    * {{{
+    *   def main(): Unit \ IO =
+    *       match None { // This is `Option[a]` but with no restrictions on `a`, therefore it defaults to `AnyType`
+    *           case None => println("None")
+    *           case Some(_) => println("Some - what?")
+    *       }
+    * }}}
+    */
+  def default(tpe0: Type): Type = tpe0.kind match {
+    case Kind.Wild          => Type.mkAnyType(tpe0.loc)
+    case Kind.WildCaseSet   => Type.mkAnyType(tpe0.loc)
+    case Kind.Star          => Type.mkAnyType(tpe0.loc)
+    case Kind.Bool          => Type.mkAnyType(tpe0.loc)
+    case Kind.Predicate     => Type.mkAnyType(tpe0.loc)
+    case Kind.Arrow(_, _)   => Type.mkAnyType(tpe0.loc)
+    case Kind.Eff           => Type.Pure
+    case Kind.RecordRow     => Type.RecordRowEmpty
+    case Kind.SchemaRow     => Type.SchemaRowEmpty
+    case Kind.CaseSet(sym)  => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
+    case Kind.Jvm           => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
+    case Kind.Error         => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
+  }
+
+  /**
+    * Returns a (stable) sorted record, assuming that `rest` is sorted.
     *
     * N.B. `rest` must not contain [[Type.AssocType]] or [[Type.Alias]].
     */
