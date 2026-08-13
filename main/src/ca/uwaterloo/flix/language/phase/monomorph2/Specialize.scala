@@ -241,16 +241,16 @@ object Specialize {
   /** Specializes `fparams0` under `subst0`, returning the fresh params and the old-to-fresh var-sym renaming. */
   private[monomorph2] def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: StrictSubstitution)
                                      (implicit root: TypedAst.Root, flix: Flix): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
-    val (params, envs) = fparams0.map(specializeFormalParam(_, subst0)).unzip
-    (params, envs.flatten.toMap)
+    val (params, pairs) = fparams0.map(specializeFormalParam(_, subst0)).unzip
+    (params, pairs.toMap)
   }
 
-  /** Specializes `fparam0` under `subst0`, returning the fresh param and its old-to-fresh var-sym renaming. */
+  /** Specializes `fparam0` under `subst0`, returning the fresh param and its old-to-fresh var-sym binding. */
   private[monomorph2] def specializeFormalParam(fparam0: TypedAst.FormalParam, subst0: StrictSubstitution)
-                                    (implicit root: TypedAst.Root, flix: Flix): (TypedAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
+                                    (implicit root: TypedAst.Root, flix: Flix): (TypedAst.FormalParam, (Symbol.VarSym, Symbol.VarSym)) = {
     val TypedAst.FormalParam(bnd, tpe, src, decreasing, loc) = fparam0
     val freshSym = Symbol.freshVarSym(bnd.sym)
-    (TypedAst.FormalParam(Binder(freshSym, subst0(bnd.tpe)), subst0(tpe), src, decreasing, loc), Map(bnd.sym -> freshSym))
+    (TypedAst.FormalParam(Binder(freshSym, subst0(bnd.tpe)), subst0(tpe), src, decreasing, loc), bnd.sym -> freshSym)
   }
 
   /**
