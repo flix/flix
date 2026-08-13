@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
 import java.nio.file.{FileSystemNotFoundException, Path}
@@ -1689,7 +1689,7 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: List[DesugaredAst.TypeParam], fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def getTypeParamsFromFormalParams(tparams0: List[DesugaredAst.TypeParam], fparams: Nel[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     tparams0 match {
       case Nil => visitImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
       case tparams@(_ :: _) => visitExplicitTypeParams(tparams)
@@ -1723,7 +1723,7 @@ object Namer {
     *
     * Does not include wildcard parameters. These are handled by the Resolver.
     */
-  private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def visitImplicitTypeParamsFromFormalParams(fparams: Nel[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
       case DesugaredAst.FormalParam(_, Some(tpe1), _) => freeTypeVars(tpe1)

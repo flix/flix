@@ -37,6 +37,13 @@ private[monomorph2] object Symbols {
         lazy val NewChannelTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
         lazy val SelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
         lazy val UnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
+
+        /**
+          * Defs whose instantiation args may contain a raw Sender/Receiver reintroduced by
+          * [[ConstraintSolver]]'s param substitution — those need [[MonomorphHelpers.lowerChannelType]]
+          * re-applied so the key matches [[SpecializeAndLower]]'s lookup.
+          */
+        lazy val NeedsRelowering: Set[Symbol.DefnSym] = Set(Get, Put, NewChannelTuple, MpmcAdmin, UnsafeGetAndUnlock)
       }
     }
 

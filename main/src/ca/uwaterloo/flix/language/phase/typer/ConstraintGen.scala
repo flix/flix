@@ -104,7 +104,7 @@ object ConstraintGen {
         // If no effect specified, we assume the function is pure
         val declaredEff = subst(defn.spec.eff.getOrElse(Type.Pure))
         val declaredResultType = generalizeVoid(subst(defn.spec.tpe))
-        val declaredArgumentTypes = defn.spec.fparams.map(_.tpe).map(subst.apply)
+        val declaredArgumentTypes = defn.spec.fparams.toList.map(_.tpe).map(subst.apply)
         val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc2)
 
         val (tpes, effs) = exps.map(visitExp).unzip
@@ -160,7 +160,7 @@ object ConstraintGen {
 
         val declaredEff = subst(sig.spec.eff.getOrElse(Type.Pure))
         val declaredResultType = subst(sig.spec.tpe)
-        val declaredArgumentTypes = sig.spec.fparams.map(_.tpe).map(subst.apply)
+        val declaredArgumentTypes = sig.spec.fparams.toList.map(_.tpe).map(subst.apply)
         val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc1)
 
         val (tpes, effs) = exps.map(visitExp).unzip
@@ -489,7 +489,7 @@ object ConstraintGen {
           enabled && !useless
         }
         val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshEffSlackVar(loc), loc) else eff1
-        val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
+        val defTpe = Type.mkUncurriedArrowWithEffect(fparams.toList.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
         val resTpe = tpe2
@@ -1295,14 +1295,16 @@ object ConstraintGen {
       val ops = effect.ops.map(op => op.sym -> op).toMap
       // Don't need to generalize since ops are monomorphic
       // Don't need to handle unknown op because resolver would have caught this
-      val (actualFparams, List(resumptionFparam)) = actualFparams0.splitAt(actualFparams0.length - 1)
+      // The last formal parameter is the resumption, the rest correspond to the operation's parameters.
+      val actualFparams = actualFparams0.init
+      val resumptionFparam = actualFparams0.last
       ops(symUse.sym) match {
         case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _), _) =>
           val resumptionArgType = opTpe
           val resumptionResType = tryBlockTpe
           val resumptionEff = continuationEffect
           val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
-          unifyFormalParams(symUse.sym, expected = expectedFparams, actual = actualFparams)
+          unifyFormalParams(symUse.sym, expected = expectedFparams.toList, actual = actualFparams)
           c.expectType(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
           val (actualTpe, actualEff) = visitExp(body)
 

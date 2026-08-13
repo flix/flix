@@ -1295,7 +1295,7 @@ object Specialization {
     * Specializes `fparams0` w.r.t. `subst0` and returns a mapping from variable symbols to fresh
     * variable symbols.
     */
-  private def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+  private def specializeFormalParams(fparams0: Nel[TypedAst.FormalParam], subst0: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): (Nel[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
     // Specialize each formal parameter and recombine the results.
     val (params, envs) = fparams0.map(p => specializeFormalParam(p, subst0)).unzip
     (params, combineEnvs(envs))

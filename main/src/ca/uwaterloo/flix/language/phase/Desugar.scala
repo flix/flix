@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.annotation.tailrec
 
@@ -373,9 +374,9 @@ object Desugar {
   }
 
   /**
-    * Desugars the given list of [[WeededAst.FormalParam]] `fparams0`.
+    * Desugars the given non-empty list of [[WeededAst.FormalParam]] `fparams0`.
     */
-  private def visitFormalParams(fparams0: List[WeededAst.FormalParam]): List[DesugaredAst.FormalParam] =
+  private def visitFormalParams(fparams0: Nel[WeededAst.FormalParam]): Nel[DesugaredAst.FormalParam] =
     fparams0.map(visitFormalParam)
 
   /**
