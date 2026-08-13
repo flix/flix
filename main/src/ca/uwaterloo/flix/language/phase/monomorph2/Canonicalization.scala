@@ -168,9 +168,7 @@ private[monomorph2] object Canonicalization {
   }
 
   /**
-    * Returns a sorted record, assuming that `rest` is sorted.
-    *
-    * labels of the same name are not reordered.
+    * Returns a (stable) sorted record, assuming that `rest` is sorted.
     *
     * N.B. `rest` must not contain [[Type.AssocType]] or [[Type.Alias]].
     */

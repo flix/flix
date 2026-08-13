@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Occur}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, RegionScope}
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
-import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
@@ -77,16 +77,17 @@ object LambdaDrop {
     * (a) it contains at least one recursive call and
     * (b) is a higher-order function, i.e., it has at least one formal parameter
     * with a function type and
-    * (c) has at least one constant parameter.
+    * (c) has at least one constant parameter and
+    * (d) has at least one non-constant parameter.
     *
-    * The latter condition can be checked by the [[isHigherOrder]] predicate.
+    * Condition (b) can be checked by the [[isHigherOrder]] predicate.
     */
   private def isDroppable(defn: MonoAst.Def)(implicit lctx: LocalContext): Boolean = {
     if (!isHigherOrder(defn)) {
       return false
     }
     visitExp(defn.exp)(defn.sym, lctx)
-    lctx.recursiveCalls.nonEmpty && hasConstantParameter(lctx.recursiveCalls.toList, defn.spec.fparams)
+    lctx.recursiveCalls.nonEmpty && hasDroppableParameters(lctx.recursiveCalls.toList, defn.spec.fparams)
   }
 
   /** Returns `true` if at least one formal parameter of `defn` has an arrow type. */
@@ -365,8 +366,8 @@ object LambdaDrop {
     *
     * Otherwise, it is marked [[ParamKind.NonConst]]
     */
-  private def paramKinds(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
-    val matrix = calls.map(call => ListOps.zip(fparams, call.exps)).transpose
+  private def paramKinds(calls: List[Expr.ApplyDef], fparams: Nel[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
+    val matrix = calls.map(call => ListOps.zip(fparams.toList, call.exps)).transpose
     matrix.map {
       case invocations =>
         val allConstant = invocations.forall {
@@ -381,11 +382,17 @@ object LambdaDrop {
     }
   }
 
-  /** Returns `true` if there exists at least one constant parameter. */
-  private def hasConstantParameter(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): Boolean = {
-    paramKinds(calls, fparams).exists {
-      case (_, pkind) => pkind == ParamKind.Const
-    }
+  /**
+    * Returns `true` if there exists at least one constant parameter and at least one
+    * non-constant parameter.
+    *
+    * The latter is required because the introduced local def takes the non-constant
+    * parameters as its formal parameters, and a def must have at least one.
+    */
+  private def hasDroppableParameters(calls: List[Expr.ApplyDef], fparams: Nel[MonoAst.FormalParam]): Boolean = {
+    val kinds = paramKinds(calls, fparams)
+    kinds.exists { case (_, pkind) => pkind == ParamKind.Const } &&
+      kinds.exists { case (_, pkind) => pkind == ParamKind.NonConst }
   }
 
   /** Returns a fresh [[Symbol.VarSym]] for a local def. */
@@ -414,9 +421,10 @@ object LambdaDrop {
     }
     val applyLocalDefExpr = Expr.ApplyLocalDef(sym, args, exp0.tpe, exp0.eff, exp0.loc.asSynthetic)
 
-    val localDefParams = nonConstantParams.map {
+    // Non-empty by the (d) condition of `isDroppable`.
+    val localDefParams = Nel.unsafeFrom(nonConstantParams.map {
       case (fp, _) => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic)
-    }
+    })
     val tpe = applyLocalDefExpr.tpe
     val eff = applyLocalDefExpr.eff
     val loc = applyLocalDefExpr.loc.asSynthetic
