@@ -238,14 +238,11 @@ object Specialize {
   }
 
   /** Merges `envs` into a single var-sym renaming map. */
-  private def combineEnvs(envs: Iterable[Map[Symbol.VarSym, Symbol.VarSym]]): Map[Symbol.VarSym, Symbol.VarSym] =
-    envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
-
   /** Specializes `fparams0` under `subst0`, returning the fresh params and the old-to-fresh var-sym renaming. */
   private[monomorph2] def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: StrictSubstitution)
                                      (implicit root: TypedAst.Root, flix: Flix): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
     val (params, envs) = fparams0.map(specializeFormalParam(_, subst0)).unzip
-    (params, combineEnvs(envs))
+    (params, envs.flatten.toMap)
   }
 
   /** Specializes `fparam0` under `subst0`, returning the fresh param and its old-to-fresh var-sym renaming. */
