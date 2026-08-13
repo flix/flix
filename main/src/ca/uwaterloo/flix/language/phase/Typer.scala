@@ -164,27 +164,29 @@ object Typer {
       assocSig <- trt.assocs
       head <- TypeHead.fromType(inst.tpe)
       assocDefOpt = inst.assocs.find(_.symUse.sym == assocSig.sym)
-      tparams = inst.tparams.map(_.sym)
+      instTparams = inst.tparams.map(_.sym)
       assocDef = assocDefOpt match {
         // If there's no definition, then we fall back to the default
         case None =>
-          // MATT docs
+          // We build a subst trait tparam -> inst type to instantiate the default definition
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
+          // The tparams include both the instance tparams and tparams from the associated type
+          val tparams = instTparams ++ assocSig.tparams.map(_.sym)
+          val args = assocSig.tparams.map(tp => Type.Var(tp.sym, tp.loc))
           val tpe = subst(assocSig.tpe.get)
-          val binders = assocSig.tparams
-          val args = binders.map(tp => Type.Var(tp.sym, tp.loc))
-          AssocTypeDef(tparams ++ binders.map(_.sym), inst.tpe, args, tpe)
-        case Some(KindedAst.AssocTypeDef(_, _, _, arg, binders, tpe, _)) =>
-          // MATT docs
-          val args = binders.map(b => Type.Var(b.sym, b.loc))
-          AssocTypeDef(tparams ++ binders.map(_.sym), arg, args, tpe)
+          AssocTypeDef(tparams, inst.tpe, args, tpe)
+        case Some(KindedAst.AssocTypeDef(_, _, _, arg, assocTparams, tpe, _)) =>
+          // The tparams include both the instance tparams and tparams from the associated type
+          val args = assocTparams.map(b => Type.Var(b.sym, b.loc))
+          AssocTypeDef(instTparams ++ assocTparams.map(_.sym), arg, args, tpe)
       }
     } yield {
       ((assocSig.sym, head), assocDef)
     }
 
+    val x = ListMap.from(assocs.toSeq)
     // MATT docs
-    EqualityEnv(assocs.toList.groupMap(_._1)(_._2))
+    EqualityEnv(x.m)
   }
 
   /**

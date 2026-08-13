@@ -80,6 +80,8 @@ object ListOps {
     }
   }
 
+  def
+
   /**
     * Applies `f` to each element of `list`, returning `list` itself if `f`
     * returns a reference-equal (`eq`) element for every entry.
