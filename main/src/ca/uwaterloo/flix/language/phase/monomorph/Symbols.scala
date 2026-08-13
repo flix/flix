@@ -108,20 +108,18 @@ object Symbols {
     // Function Types.
     //
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog, SourceLocation.Unknown)
-    lazy val MergeType: Type = Type.mkPureUncurriedArrow(Nel(Datalog, List(Datalog)), Datalog, SourceLocation.Unknown)
-    lazy val FilterType: Type = Type.mkPureUncurriedArrow(Nel(PredSym, List(Datalog)), Datalog, SourceLocation.Unknown)
-    lazy val RenameType: Type = Type.mkPureUncurriedArrow(Nel(mkList(PredSym, SourceLocation.Unknown), List(Datalog)), Datalog, SourceLocation.Unknown)
+    lazy val MergeType: Type = Type.mkPureUncurriedArrow(Nel.of(Datalog, Datalog), Datalog, SourceLocation.Unknown)
+    lazy val FilterType: Type = Type.mkPureUncurriedArrow(Nel.of(PredSym, Datalog), Datalog, SourceLocation.Unknown)
+    lazy val RenameType: Type = Type.mkPureUncurriedArrow(Nel.of(mkList(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
 
     def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
       Type.mkPureUncurriedArrow(
-        Nel(
+        Nel.of(
           PredSym,
-          List(
-            Type.mkVector(Boxed, loc),
-            Type.mkVector(PredSym, loc),
-            Type.mkPureCurriedArrow(Nel(PredSym, List(Type.mkVector(Boxed, loc))), t, loc),
-            Datalog
-          )
+          Type.mkVector(Boxed, loc),
+          Type.mkVector(PredSym, loc),
+          Type.mkPureCurriedArrow(Nel.of(PredSym, Type.mkVector(Boxed, loc)), t, loc),
+          Datalog
         ),
         Type.mkVector(t, loc), loc
       )
