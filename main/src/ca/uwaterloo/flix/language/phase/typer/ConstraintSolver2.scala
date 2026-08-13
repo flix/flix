@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypeHead}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
@@ -307,13 +307,21 @@ object ConstraintSolver2 {
         args1.nonEmpty &&
         args1.length == args2.length &&
         sel1 == sel2 &&
-        sel1.typeVars.forall(tvar => renv.isRigid(tvar.sym)) =>
+        isUnconstrainedSelector(symUse1.sym, sel1) =>
       progress.markProgress()
       Some(args1.zip(args2).flatMap {
         case (t1, t2) => simplify(TypeConstraint.Equality(t1, t2, prov), progress)
       })
 
     case _ => None
+  }
+
+  // MATT docs
+  private def isUnconstrainedSelector(sym: Symbol.AssocTypeSym, sel: Type)(implicit renv: RigidityEnv, eqenv: EqualityEnv): Boolean = {
+    TypeHead.fromType(sel) match {
+      case Some(TypeHead.Var(tvar)) => renv.isRigid(tvar) && eqenv.getAssocDefs(sym, sel).isEmpty
+      case _ => false
+    }
   }
 
   /**
