@@ -137,6 +137,9 @@ object CompletionProvider {
       case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords(range)
       case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords(range)
 
+      // Match body.
+      case SyntacticContext.MatchBody => KeywordCompleter.getMatchBodyKeywords(range)
+
       case SyntacticContext.Unknown => Nil
     }
   }
