@@ -103,8 +103,7 @@ object ConstraintGen {
       val traitTparam = trt.tparam
       val allTparams = traitTparam :: sig.spec.tparams
       // We synthesize a DefnSym so their own tparams classify as Param, not  wrongly-ground Const. (As for fromEffects)
-      val ns = sig.sym.trt.namespace :+ sig.sym.trt.name
-      val defnSym = new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
+      val defnSym = MonomorphHelpers.defaultSigImplSym(sig)
       val mvar = MonoVar.Def(defnSym)
       implicit val tparamEnv: TparamEnv = mkTparamEnv(mvar, allTparams)
       flix.profile(defnSym, sig.sym.loc) {
