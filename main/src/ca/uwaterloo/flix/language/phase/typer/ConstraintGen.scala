@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, 
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, RegionScope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Subeffecting}
 
 import java.lang.reflect.{Modifier, ParameterizedType, TypeVariable}
@@ -104,13 +104,13 @@ object ConstraintGen {
         // If no effect specified, we assume the function is pure
         val declaredEff = subst(defn.spec.eff.getOrElse(Type.Pure))
         val declaredResultType = generalizeVoid(subst(defn.spec.tpe))
-        val declaredArgumentTypes = defn.spec.fparams.toList.map(_.tpe).map(subst.apply)
+        val declaredArgumentTypes = defn.spec.fparams.map(_.tpe).map(subst.apply)
         val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc2)
 
         val (tpes, effs) = exps.map(visitExp).unzip
 
         c.unifyType(itvar, declaredType, loc2)
-        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
@@ -123,7 +123,7 @@ object ConstraintGen {
       case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, evar, loc2) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val defEff = freshVar(Kind.Eff, loc1)
-        val actualDefTpe = Type.mkUncurriedArrowWithEffect(tpes, defEff, tvar, loc1)
+        val actualDefTpe = Type.mkUncurriedArrowWithEffect(Nel.unsafeFrom(tpes), defEff, tvar, loc1)
         c.unifyType(actualDefTpe, arrowTvar, loc1)
         c.expectType(sym.tvar, actualDefTpe, loc1)
         c.unifyType(evar, Type.mkUnion(defEff :: effs, loc2), loc2)
@@ -160,11 +160,11 @@ object ConstraintGen {
 
         val declaredEff = subst(sig.spec.eff.getOrElse(Type.Pure))
         val declaredResultType = subst(sig.spec.tpe)
-        val declaredArgumentTypes = sig.spec.fparams.toList.map(_.tpe).map(subst.apply)
+        val declaredArgumentTypes = sig.spec.fparams.map(_.tpe).map(subst.apply)
         val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc1)
 
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(itvar, declaredType, loc2)
@@ -489,7 +489,7 @@ object ConstraintGen {
           enabled && !useless
         }
         val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshEffSlackVar(loc), loc) else eff1
-        val defTpe = Type.mkUncurriedArrowWithEffect(fparams.toList.map(_.tpe), defEff, tpe1, sym.loc)
+        val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
         val resTpe = tpe2
@@ -582,7 +582,11 @@ object ConstraintGen {
 
         // The tag type is a function from the types of terms to the type of the enum.
         val (tpes, effs) = exps.map(visitExp).unzip
-        val constructorBase = Type.mkPureUncurriedArrow(tpes, tvar, loc)
+        // A nullary tag is not a function, but the enum type itself.
+        val constructorBase = tpes match {
+          case Nil => tvar
+          case t :: ts => Type.mkPureUncurriedArrow(Nel(t, ts), tvar, loc)
+        }
         c.unifyType(tagType, constructorBase, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(effs, loc)
@@ -1152,7 +1156,11 @@ object ConstraintGen {
 
         // The tag type is a function from the type of variant to the type of the enum.
         val tpes = pats.map(visitPattern)
-        val constructorBase = if (tpes.nonEmpty) Type.mkPureUncurriedArrow(tpes, tvar, loc) else tvar
+        // A nullary tag is not a function, but the enum type itself.
+        val constructorBase = tpes match {
+          case Nil => tvar
+          case t :: ts => Type.mkPureUncurriedArrow(Nel(t, ts), tvar, loc)
+        }
         c.unifyType(tagType, constructorBase, loc)
         tvar
 

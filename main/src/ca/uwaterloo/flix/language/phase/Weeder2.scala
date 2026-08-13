@@ -691,7 +691,7 @@ object Weeder2 {
         case Some(t) =>
           val params = pickAll(TreeKind.Parameter, t)
           if (params.isEmpty) {
-            Nel(unitFormalParameter(t.loc), Nil)
+            Nel.of(unitFormalParameter(t.loc))
           } else {
             val fparams = params.map(visitParameter(_, presence))
             // Check for duplicates
@@ -706,7 +706,7 @@ object Weeder2 {
         case None =>
           val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc)
           sctx.errors.add(error)
-          Nel(unitFormalParameter(tree.loc), Nil)
+          Nel.of(unitFormalParameter(tree.loc))
       }
     }
 
@@ -1827,7 +1827,7 @@ object Weeder2 {
           // The new param has the zero-width location of the actual argument.
           val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.source, fparam.loc.start)
           val unitParam = Decls.unitFormalParameter(loc)
-          HandlerRule(ident, Nel(unitParam, List(fparam)), expr, tree.loc)
+          HandlerRule(ident, Nel.of(unitParam, fparam), expr, tree.loc)
         case fparams =>
           HandlerRule(ident, fparams, expr, tree.loc)
       }
@@ -2402,7 +2402,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.TagBody)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       patterns.map(visitPattern(_, seen)) match {
-        case Nil => Nel(Pattern.Cst(Constant.Unit, tree.loc), Nil)
+        case Nil => Nel.of(Pattern.Cst(Constant.Unit, tree.loc))
         case x :: xs => Nel(x, xs)
       }
     }
