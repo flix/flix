@@ -91,4 +91,9 @@ object Nel {
     case x :: xs => Nel(x, xs)
   }
 
+  /**
+    * Returns a [[Nel]] containing the given elements.
+    */
+  def of[T](x: T, xs: T*): Nel[T] = Nel(x, xs.toList)
+
 }

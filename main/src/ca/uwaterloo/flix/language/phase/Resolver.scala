@@ -893,7 +893,7 @@ object Resolver {
 
     case NamedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = resolveFormalParam(fparam, Wildness.AllowWild, scp0, taenv, ns0, root)
-      val scp = (scp0 ++ mkFormalParamScp(Nel(p, Nil))).withSuperClass(None) // super calls not allowed inside lambdas
+      val scp = (scp0 ++ mkFormalParamScp(Nel.of(p))).withSuperClass(None) // super calls not allowed inside lambdas
       val e = resolveExp(exp, scp)
       ResolvedAst.Expr.Lambda(p, e, allowSubeffecting = true, loc)
 
