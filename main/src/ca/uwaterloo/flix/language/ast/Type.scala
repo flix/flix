@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.ast.shared.VarText.Absent
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
-import ca.uwaterloo.flix.util.collection.CofiniteSet
+import ca.uwaterloo.flix.util.collection.{CofiniteSet, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.util.Objects
@@ -851,72 +851,48 @@ object Type {
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
-    *
-    * Returns `b` if `as` is empty.
     */
-  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
+  def mkPureCurriedArrow(as: Nel[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ e.
-    *
-    * Returns `b` if `as` is empty.
     */
-  def mkCurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
-    if (as.isEmpty) {
-      b
-    } else {
-      val a = as.last
-      val base = mkArrowWithEffect(a, p, b, loc)
-      as.init.foldRight(base)(mkPureArrow(_, _, loc))
-    }
+  def mkCurriedArrowWithEffect(as: Nel[Type], p: Type, b: Type, loc: SourceLocation): Type = {
+    val a = as.last
+    val base = mkArrowWithEffect(a, p, b, loc)
+    as.init.foldRight(base)(mkPureArrow(_, _, loc))
   }
 
   /**
     * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
-    *
-    * Returns `b` if `as` is empty.
     */
-  def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
+  def mkPureUncurriedArrow(as: Nel[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
     * Constructs the IO uncurried arrow type (A_1, ..., A_n) -> B \ IO.
-    *
-    * Returns `b` if `as` is empty.
     */
-  def mkIoUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, IO, b, loc)
+  def mkIoUncurriedArrow(as: Nel[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, IO, b, loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ p.
-    *
-    * Returns `b` if `as` is empty.
     */
-  def mkUncurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
-    if (as.isEmpty) {
-      b
-    } else {
-      val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
-      val inner = as.foldLeft(arrow: Type) {
-        case (acc, x) => Apply(acc, x, loc)
-      }
-      Apply(inner, b, loc)
+  def mkUncurriedArrowWithEffect(as: Nel[Type], p: Type, b: Type, loc: SourceLocation): Type = {
+    val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
+    val inner = as.foldLeft(arrow: Type) {
+      case (acc, x) => Apply(acc, x, loc)
     }
+    Apply(inner, b, loc)
   }
 
   /**
     * Constructs the backend arrow type (A_1, ..., A_n) -> B.
-    *
-    * Returns `b` if `as` is empty.
     */
-  def mkArrowWithoutEffect(as: List[Type], b: Type, loc: SourceLocation): Type = {
-    if (as.isEmpty) {
-      b
-    } else {
-      val arrow = Type.Cst(TypeConstructor.ArrowWithoutEffect(as.length + 1), loc)
-      val inner = as.foldLeft(arrow: Type) {
-        case (acc, x) => Apply(acc, x, loc)
-      }
-      Apply(inner, b, loc)
+  def mkArrowWithoutEffect(as: Nel[Type], b: Type, loc: SourceLocation): Type = {
+    val arrow = Type.Cst(TypeConstructor.ArrowWithoutEffect(as.length + 1), loc)
+    val inner = as.foldLeft(arrow: Type) {
+      case (acc, x) => Apply(acc, x, loc)
     }
+    Apply(inner, b, loc)
   }
 
   /**

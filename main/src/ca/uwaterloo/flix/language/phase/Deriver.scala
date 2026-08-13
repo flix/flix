@@ -208,7 +208,7 @@ object Deriver {
           Nil,
           List(TraitConstraint(TraitSymUse(eqTraitSym, loc), tpe, loc)),
           Nil,
-          Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkBool(loc), loc)
+          Type.mkPureUncurriedArrow(Nel(tpe, List(tpe)), Type.mkBool(loc), loc)
         ),
         tpe = Type.mkBool(loc),
         eff = Some(Type.Cst(TypeConstructor.Pure, loc)),
@@ -393,7 +393,7 @@ object Deriver {
           Nil,
           List(TraitConstraint(TraitSymUse(orderTraitSym, loc), tpe, loc)),
           Nil,
-          Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
+          Type.mkPureUncurriedArrow(Nel(tpe, List(tpe)), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         eff = Some(Type.Cst(TypeConstructor.Pure, loc)),

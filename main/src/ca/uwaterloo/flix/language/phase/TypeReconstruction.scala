@@ -193,7 +193,7 @@ object TypeReconstruction {
       val e2 = visitExp(exp2)
       val tpe = e2.tpe
       val eff = e2.eff
-      val boundType = Type.mkUncurriedArrowWithEffect(fps.toList.map(_.tpe), e1.tpe, e1.eff, SourceLocation.Unknown)
+      val boundType = Type.mkUncurriedArrowWithEffect(fps.map(_.tpe), e1.tpe, e1.eff, SourceLocation.Unknown)
       val bnd = TypedAst.Binder(sym, boundType)
       TypedAst.Expr.LocalDef(ann, bnd, fps, e1, e2, tpe, eff, loc)
 

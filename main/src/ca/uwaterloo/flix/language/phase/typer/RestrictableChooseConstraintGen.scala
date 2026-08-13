@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.RestrictableEnumSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.visitExp
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 
 import scala.collection.immutable.SortedSet
 
@@ -246,7 +246,11 @@ object RestrictableChooseConstraintGen {
         //
         // Γ ⊢ e: τ
         val (tpes, effs) = exps.map(visitExp).unzip
-        val constructorBase = Type.mkPureUncurriedArrow(tpes, enumType, loc)
+        // A nullary tag is not a function, but the enum type itself.
+        val constructorBase = tpes match {
+          case Nil => enumType
+          case t :: ts => Type.mkPureUncurriedArrow(Nel(t, ts), enumType, loc)
+        }
         c.unifyType(tagType, constructorBase, loc)
         ListOps.zip(targs, targsOut).foreach { case (targ, targOut) => c.unifyType(targ, targOut, loc) }
         //        _ <- indexUnification // TODO ASSOC-TYPES here is where we did the index unification before
@@ -354,7 +358,11 @@ object RestrictableChooseConstraintGen {
         // The tag type is a function from the type of variant to the type of the enum.
         //
         val tpes = pat.map(visitVarOrWild)
-        val constructorBase = Type.mkPureUncurriedArrow(tpes, tvar, loc)
+        // A nullary tag is not a function, but the enum type itself.
+        val constructorBase = tpes match {
+          case Nil => tvar
+          case t :: ts => Type.mkPureUncurriedArrow(Nel(t, ts), tvar, loc)
+        }
         c.unifyType(tagType, constructorBase, loc)
         val resTpe = tvar
         resTpe
