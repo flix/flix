@@ -591,6 +591,13 @@ object Symbol {
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
   }
 
+  object CaseSym {
+    /** The `ordinal` to use for a `CaseSym` that has no real one. Must be used consistently,
+      * since `ordinal` is part of `CaseSym`'s equality.
+      */
+    val NoOrdinal: Int = -1
+  }
+
   /**
     * Case Symbol.
     */
