@@ -184,9 +184,7 @@ object Typer {
       ((assocSig.sym, head), assocDef)
     }
 
-    val x = ListMap.from(assocs.toSeq)
-    // MATT docs
-    EqualityEnv(x.m)
+    EqualityEnv(ListMap.from(assocs.toSeq))
   }
 
   /**

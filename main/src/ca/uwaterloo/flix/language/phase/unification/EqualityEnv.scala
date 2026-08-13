@@ -17,15 +17,16 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.shared.AssocTypeDef
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeHead}
+import ca.uwaterloo.flix.util.collection.ListMap
 
 /**
   * Maintains information about associated type definitions.
   */
 object EqualityEnv {
-  val empty: EqualityEnv = EqualityEnv(Map.empty)
+  val empty: EqualityEnv = EqualityEnv(ListMap.empty)
 }
 
-case class EqualityEnv(private val m: Map[(Symbol.AssocTypeSym, TypeHead), List[AssocTypeDef]]) {
+case class EqualityEnv(private val m: ListMap[(Symbol.AssocTypeSym, TypeHead), AssocTypeDef]) {
 
   /**
     * Returns the definitions of the associated type for the given selector type.
@@ -33,7 +34,7 @@ case class EqualityEnv(private val m: Map[(Symbol.AssocTypeSym, TypeHead), List[
   def getAssocDefs(sym: Symbol.AssocTypeSym, sel: Type): List[AssocTypeDef] = {
     TypeHead.fromType(sel) match {
       case None => Nil
-      case Some(head) => m.getOrElse((sym, head), Nil)
+      case Some(head) => m((sym, head))
     }
   }
 
@@ -51,8 +52,7 @@ case class EqualityEnv(private val m: Map[(Symbol.AssocTypeSym, TypeHead), List[
         val tparams = Nil
         val defn = AssocTypeDef(tparams, sel, args, ret)
 
-        val key = (sym, head)
-        EqualityEnv(m + (key -> (defn :: m.getOrElse(key, Nil))))
+        EqualityEnv(m + ((sym, head) -> defn))
     }
   }
 }
