@@ -136,10 +136,6 @@ object Specialize {
     }
   }
 
-  /** The effect that all [[TypeConstructor.Region]] are instantiated to. */
-  private val RegionInstantiation: TypeConstructor.Effect =
-    TypeConstructor.Effect(Symbol.IO, Kind.Eff)
-
   private[monomorph2] object StrictSubstitution {
     /** The empty substitution. */
     val empty: StrictSubstitution = StrictSubstitution(Substitution.empty)
@@ -155,22 +151,25 @@ object Specialize {
 
   private[monomorph2] case class StrictSubstitution(s: Substitution) {
     /** Applies this substitution to `tpe0`, defaulting any free type variable to its kind's default type. */
-    def apply(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = tpe0 match {
+    def apply(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = applySubst(MonomorphHelpers.rewriteRegionToIO(tpe0))
+
+    /** N.B. `tpe0` must already have every `Region` rewritten to `IO`. */
+    private def applySubst(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = tpe0 match {
       case Type.Var(sym, _)                         => s.m.get(sym) match {
         case None    => Canonicalization.default(tpe0)
         case Some(t) => t
       }
 
-      case Type.Cst(TypeConstructor.Region(_), loc) => Type.Cst(RegionInstantiation, loc)
+      case Type.Cst(TypeConstructor.Region(_), loc) => throw InternalCompilerException("unexpected Region: should have been rewritten to IO already", loc)
 
       case Type.Cst(_, _)                           => tpe0
 
-      case app@Type.Apply(_, _, _)                  => Canonicalization.normalizeApply(apply, app, isGround = true)
+      case app@Type.Apply(_, _, _)                  => Canonicalization.normalizeApply(applySubst, app, isGround = true)
 
-      case Type.Alias(_, _, t, _)                   => apply(t)
+      case Type.Alias(_, _, t, _)                   => applySubst(t)
 
       case Type.AssocType(symUse, arg0, kind, loc)  =>
-        val arg = apply(arg0)
+        val arg = applySubst(arg0)
         val assoc = Type.AssocType(symUse, arg, kind, loc)
         val reducedType = Canonicalization.reduceAssocType(assoc)
         Canonicalization.simplify(reducedType, isGround = true)
@@ -195,18 +194,18 @@ object Specialize {
         TypedAst.Case(sym, tpes.map(Canonicalization.simplify(_, isGround = false)), sc, loc)
     }
 
-  /** Applies `StrictSubstitution.empty` to the types embedded in `op`. */
+  /** Simplifies the types embedded in `op`. */
   private def visitEffectOp(op: TypedAst.Op)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Op =
     op match {
       case TypedAst.Op(sym, TypedAst.Spec(doc, ann, mod, tparams, fparams0, declaredScheme, retTpe, eff, tconstrs, econstrs), loc) =>
         val fparams = fparams0.map {
           case TypedAst.FormalParam(varSym, tpe, src, decreasing, fpLoc) =>
-            TypedAst.FormalParam(varSym, StrictSubstitution.empty(tpe), src, decreasing, fpLoc)
+            TypedAst.FormalParam(varSym, MonomorphHelpers.groundType(tpe), src, decreasing, fpLoc)
         }
         // declaredScheme.base needs the same canonicalization as fparams/retTpe/eff because
         // enumTable/structTable lookups are keyed on canonicalized types.
-        val canonScheme = declaredScheme.copy(base = StrictSubstitution.empty(declaredScheme.base))
-        val spec = TypedAst.Spec(doc, ann, mod, tparams, fparams, canonScheme, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff), tconstrs, econstrs)
+        val canonScheme = declaredScheme.copy(base = MonomorphHelpers.groundType(declaredScheme.base))
+        val spec = TypedAst.Spec(doc, ann, mod, tparams, fparams, canonScheme, MonomorphHelpers.groundType(retTpe), MonomorphHelpers.groundType(eff), tconstrs, econstrs)
         TypedAst.Op(sym, spec, loc)
     }
 

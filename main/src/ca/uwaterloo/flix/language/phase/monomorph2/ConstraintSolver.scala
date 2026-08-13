@@ -154,19 +154,6 @@ object ConstraintSolver {
       }
   }
 
-  /** Rewrites every `Region` constant in `t` to `IO`. */
-  private def rewriteRegionToIO(t: Type): Type = t match {
-    case Type.Cst(TypeConstructor.Region(_), loc) => Type.Cst(TypeConstructor.Effect(Symbol.IO, Kind.Eff), loc)
-    case Type.Cst(_, _)                           => t
-    case Type.Var(_, _)                           => t
-    case Type.Apply(t1, t2, loc)                  => Type.Apply(rewriteRegionToIO(t1), rewriteRegionToIO(t2), loc)
-    case Type.Alias(sym, args, inner, loc)        => Type.Alias(sym, args.map(rewriteRegionToIO), rewriteRegionToIO(inner), loc)
-    case Type.AssocType(sym, arg, kind, loc)      => Type.AssocType(sym, rewriteRegionToIO(arg), kind, loc)
-    case Type.JvmToType(tpe, loc)                 => Type.JvmToType(rewriteRegionToIO(tpe), loc)
-    case Type.JvmToEff(tpe, loc)                  => Type.JvmToEff(rewriteRegionToIO(tpe), loc)
-    case Type.UnresolvedJvmType(_, _)             => t
-  }
-
   /** Grounds `fc`'s args to a ground instantiation, or `None` if any position is not ready. */
   private def groundArgs(fc: FlowConstraint, bindings: Map[MonoVar, GroundInstantiation], root: TypedAst.Root)
                          (implicit flix: Flix): Option[GroundInstantiation] =
@@ -179,8 +166,7 @@ object ConstraintSolver {
                           (implicit flix: Flix): Option[Type] =
     substArg(arg, bindings).map {
       raw =>
-        val defaulted = rewriteRegionToIO(raw).map(Canonicalization.default)
-        val result = Canonicalization.simplify(defaulted, isGround = true)(root, flix)
+        val result = MonomorphHelpers.groundType(raw)(root, flix)
         if (result.typeVars.nonEmpty) {
           throw InternalCompilerException(s"Defaulted arg did not fully ground: $result", result.loc)
         }
