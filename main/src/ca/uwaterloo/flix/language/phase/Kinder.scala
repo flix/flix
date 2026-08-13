@@ -374,7 +374,7 @@ object Kinder {
           visitEqualityConstraint(symUse, arg, tpe2, loc, kenv, root)
       }
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
-      val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff.getOrElse(Type.Pure), tpe, tpe.loc)
+      val base = Type.mkUncurriedArrowWithEffect(fparams.toList.map(_.tpe), eff.getOrElse(Type.Pure), tpe, tpe.loc)
       val sc = Scheme(allQuantifiers, tconstrs, econstrs, base)
       KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
   }
@@ -514,7 +514,7 @@ object Kinder {
       case ResolvedAst.Expr.LocalDef(ann, sym, fparams0, exp10, exp20, loc) =>
         // we must infer the formal parameters because the may contain wildcard types
         // which would not appear in the function's kenv
-        val fparamKenvs = fparams0.map(inferFormalParam(_, kenv0, root))
+        val fparamKenvs = fparams0.toList.map(inferFormalParam(_, kenv0, root))
         val kenv1 = KindEnv.merge(kenv0 :: fparamKenvs)
         val fparams = fparams0.map(visitFormalParam(_, kenv1, root))
         val exp1 = visitExp(exp10, kenv1, root)
@@ -1478,7 +1478,7 @@ object Kinder {
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext): KindEnv = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs) =>
-      val fparamKenv = KindEnv.merge(fparams.map(inferFormalParam(_, kenv, root)))
+      val fparamKenv = KindEnv.merge(fparams.toList.map(inferFormalParam(_, kenv, root)))
       val tpeKenv = inferType(tpe, Kind.Star, kenv, root)
       val effKenv = eff0.map(inferType(_, Kind.Eff, kenv, root)).getOrElse(KindEnv.empty)
       val tconstrsKenv = KindEnv.merge(tconstrs.map(inferTraitConstraint(_, kenv, root)))

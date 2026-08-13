@@ -18,7 +18,7 @@ object TypedAstPrinter {
     }.toList
     val defs = root.defs.values.map {
       case TypedAst.Def(sym, TypedAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _), exp, _) =>
-        DocAst.Def(ann, mod, sym, fparams.map(printFormalParam), TypePrinter.print(retTpe), TypePrinter.print(eff), print(exp))
+        DocAst.Def(ann, mod, sym, fparams.toList.map(printFormalParam), TypePrinter.print(retTpe), TypePrinter.print(eff), print(exp))
     }.toList
     DocAst.Program(enums, defs, Nil)
   }
@@ -42,7 +42,7 @@ object TypedAstPrinter {
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(bnd, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(bnd.sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
+    case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.toList.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Region(TypedAst.Binder(sym, _), _, exp, _, _, _) => DocAst.Expr.Region(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exps, exp, _, _, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
@@ -119,14 +119,14 @@ object TypedAstPrinter {
     */
   private def printJvmMethod(method: TypedAst.JvmMethod): DocAst.JvmMethod = method match {
     case TypedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 
   /**
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printHandlerRule(rule: TypedAst.HandlerRule): (Symbol.OpSym, List[DocAst.Expr.AscriptionTpe], DocAst.Expr) = rule match {
-    case TypedAst.HandlerRule(op, fparams, exp, _) => (op.sym, fparams.map(printFormalParam), print(exp))
+    case TypedAst.HandlerRule(op, fparams, exp, _) => (op.sym, fparams.toList.map(printFormalParam), print(exp))
   }
 
   /**

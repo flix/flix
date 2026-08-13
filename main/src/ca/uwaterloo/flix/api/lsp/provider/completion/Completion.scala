@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{Command, CompletionItem, CompletionItemKind, C
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
+import ca.uwaterloo.flix.util.collection.Nel
 
 import java.lang.reflect.{Field, Method}
 
@@ -518,7 +519,7 @@ sealed trait Completion {
 
     case Completion.HoleCompletion(sym, decl, priority, loc) =>
       val name = decl.sym.toString
-      val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
+      val args = decl.spec.fparams.init.zipWithIndex.map {
         case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
       } ::: sym.text :: Nil
       val params = args.mkString(", ")
@@ -690,7 +691,7 @@ object Completion {
     * @param range    the range of the completion.
     * @param priority the priority of the completion.
     */
-  case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam], range: Range, priority: Priority) extends Completion
+  case class LocalDefCompletion(sym: Symbol.VarSym, fparams: Nel[ResolvedAst.FormalParam], range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a Def completion
