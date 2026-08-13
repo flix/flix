@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, RegionScope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
+import ca.uwaterloo.flix.util.collection.{ListOps, MapOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -540,7 +540,7 @@ object Simplifier {
             // Arrow type arguments are ordered (effect, args.., result type).
             val _ :: targs = tpe.typeArguments
             val (args, List(res)) = targs.splitAt(targs.length - 1)
-            Type.mkArrowWithoutEffect(args.map(visitPolyType), visitPolyType(res), loc)
+            Type.mkArrowWithoutEffect(Nel.unsafeFrom(args.map(visitPolyType)), visitPolyType(res), loc)
 
           case TypeConstructor.RecordRowExtend(label) =>
             val List(labelType, restType) = tpe.typeArguments

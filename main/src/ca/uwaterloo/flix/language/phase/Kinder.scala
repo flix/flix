@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse,
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
-import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -189,7 +189,11 @@ object Kinder {
     case ResolvedAst.Declaration.Case(sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, root))
       val quants = tparams.map(_.sym)
-      val schemeBase = Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic)
+      // A nullary case is not a function, but the enum type itself.
+      val schemeBase = ts match {
+        case Nil => resTpe
+        case t :: tail => Type.mkPureUncurriedArrow(Nel(t, tail), resTpe, sym.loc.asSynthetic)
+      }
       val sc = Scheme(quants, Nil, Nil, schemeBase)
       KindedAst.Case(sym, ts, sc, loc)
   }
@@ -210,7 +214,11 @@ object Kinder {
     case ResolvedAst.Declaration.RestrictableCase(sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, root))
       val quants = (index :: tparams).map(_.sym)
-      val schemeBase = Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic)
+      // A nullary case is not a function, but the enum type itself.
+      val schemeBase = ts match {
+        case Nil => resTpe
+        case t :: tail => Type.mkPureUncurriedArrow(Nel(t, tail), resTpe, sym.loc.asSynthetic)
+      }
       val sc = Scheme(quants, Nil, Nil, schemeBase)
       KindedAst.RestrictableCase(sym, ts, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
   }
@@ -374,7 +382,7 @@ object Kinder {
           visitEqualityConstraint(symUse, arg, tpe2, loc, kenv, root)
       }
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
-      val base = Type.mkUncurriedArrowWithEffect(fparams.toList.map(_.tpe), eff.getOrElse(Type.Pure), tpe, tpe.loc)
+      val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff.getOrElse(Type.Pure), tpe, tpe.loc)
       val sc = Scheme(allQuantifiers, tconstrs, econstrs, base)
       KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
   }
