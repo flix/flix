@@ -323,65 +323,77 @@ object Typer {
   /**
     * Reconstructs types in the given enums.
     */
-  private def visitEnums(root: KindedAst.Root): Map[Symbol.EnumSym, TypedAst.Enum] = {
+  private def visitEnums(root: KindedAst.Root)(implicit sctx: SharedContext): Map[Symbol.EnumSym, TypedAst.Enum] = {
     MapOps.mapValues(root.enums)(visitEnum)
   }
 
   /**
     * Reconstructs types in the given enum.
     */
-  private def visitEnum(enum0: KindedAst.Enum): TypedAst.Enum = enum0 match {
+  private def visitEnum(enum0: KindedAst.Enum)(implicit sctx: SharedContext): TypedAst.Enum = enum0 match {
     case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
-      val cases = MapOps.mapValues(cases0) {
-        case KindedAst.Case(caseSym, tagTypes, sc, caseLoc) =>
-          TypedAst.Case(caseSym, tagTypes, sc, caseLoc)
-      }
+      val cases = MapOps.mapValues(cases0)(visitCase)
 
       TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, loc)
+  }
+
+  // MATT docs
+  private def visitCase(caze: KindedAst.Case)(implicit sctx: SharedContext): TypedAst.Case = caze match {
+    case KindedAst.Case(caseSym, tagTypes, sc, caseLoc) =>
+      tagTypes.foreach(checkNoAssocTypes)
+      TypedAst.Case(caseSym, tagTypes, sc, caseLoc)
   }
 
   /**
     * Reconstructs types in the given structs.
     */
-  private def visitStructs(root: KindedAst.Root): Map[Symbol.StructSym, TypedAst.Struct] = {
+  private def visitStructs(root: KindedAst.Root)(implicit sctx: SharedContext): Map[Symbol.StructSym, TypedAst.Struct] = {
     MapOps.mapValues(root.structs)(visitStruct)
   }
 
   /**
     * Reconstructs types in the given struct.
     */
-  private def visitStruct(struct0: KindedAst.Struct): TypedAst.Struct = struct0 match {
+  private def visitStruct(struct0: KindedAst.Struct)(implicit sctx: SharedContext): TypedAst.Struct = struct0 match {
     case KindedAst.Struct(doc, ann, mod, sym, tparams0, sc, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
-      val fields = fields0.zipWithIndex.map {
-        case (field, _) =>
-          field.sym -> TypedAst.StructField(field.sym, field.tpe, field.loc)
-      }
+      val fields = fields0.map(field => field.sym -> visitStructField(field))
 
       TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields.toMap, loc)
+  }
+
+  // MATT docs
+  private def visitStructField(field: KindedAst.StructField)(implicit sctx: SharedContext): TypedAst.StructField = field match {
+    case KindedAst.StructField(_, sym, tpe, loc) =>
+      checkNoAssocTypes(tpe)
+      TypedAst.StructField(sym, tpe, loc)
   }
 
   /**
     * Reconstructs types in the given restrictable enums.
     */
-  private def visitRestrictableEnums(root: KindedAst.Root): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] = {
+  private def visitRestrictableEnums(root: KindedAst.Root)(implicit sctx: SharedContext): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] = {
     MapOps.mapValues(root.restrictableEnums)(visitRestrictableEnum)
   }
 
   /**
     * Reconstructs types in the given restrictable enum.
     */
-  private def visitRestrictableEnum(enum0: KindedAst.RestrictableEnum): TypedAst.RestrictableEnum = enum0 match {
+  private def visitRestrictableEnum(enum0: KindedAst.RestrictableEnum)(implicit sctx: SharedContext): TypedAst.RestrictableEnum = enum0 match {
     case KindedAst.RestrictableEnum(doc, ann, mod, enumSym, index0, tparams0, derives, cases0, _, loc) =>
       val index = TypedAst.TypeParam(index0.name, index0.sym, index0.loc)
       val tparams = tparams0.map(visitTypeParam)
-      val cases = MapOps.mapValues(cases0) {
-        case KindedAst.RestrictableCase(caseSym, tagTypes, sc, caseLoc) =>
-          TypedAst.RestrictableCase(caseSym, tagTypes, sc, caseLoc)
-      }
+      val cases = MapOps.mapValues(cases0)(visitRestrictableCase)
 
       TypedAst.RestrictableEnum(doc, ann, mod, enumSym, index, tparams, derives, cases, loc)
+  }
+
+  // MATT docs
+  private def visitRestrictableCase(caze: KindedAst.RestrictableCase)(implicit sctx: SharedContext): TypedAst.RestrictableCase = caze match {
+    case KindedAst.RestrictableCase(caseSym, tagTypes, sc, caseLoc) =>
+      tagTypes.foreach(checkNoAssocTypes)
+      TypedAst.RestrictableCase(caseSym, tagTypes, sc, caseLoc)
   }
 
   /**
@@ -404,15 +416,16 @@ object Typer {
   /**
     * Reconstructs types in the given type aliases.
     */
-  private def visitTypeAliases(root: KindedAst.Root): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] = {
+  private def visitTypeAliases(root: KindedAst.Root)(implicit sctx: SharedContext): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] = {
     MapOps.mapValues(root.typeAliases)(visitTypeAlias)
   }
 
   /**
     * Reconstructs types in the given type alias.
     */
-  private def visitTypeAlias(alias: KindedAst.TypeAlias): TypedAst.TypeAlias = alias match {
+  private def visitTypeAlias(alias: KindedAst.TypeAlias)(implicit sctx: SharedContext): TypedAst.TypeAlias = alias match {
     case KindedAst.TypeAlias(doc, ann, mod, sym, tparams0, tpe, loc) =>
+      checkNoAssocTypes(tpe)
       val tparams = tparams0.map(visitTypeParam)
       TypedAst.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
   }
@@ -459,6 +472,13 @@ object Typer {
       }
   }
 
+  // MATT docs
+  private def checkNoAssocTypes(tpe: Type)(implicit sctx: SharedContext): Unit = {
+    for (assoc <- getAssocTypes(tpe)) {
+      sctx.errors.add(TypeError.IllegalAssocType(assoc.symUse.sym, assoc.loc))
+    }
+  }
+
   /**
     * Collects all associated types from the type.
     */
@@ -466,7 +486,7 @@ object Typer {
     case Type.Var(_, _) => Nil
     case Type.Cst(_, _) => Nil
     case Type.Apply(tpe1, tpe2, _) => getAssocTypes(tpe1) ::: getAssocTypes(tpe2)
-    case Type.Alias(_, args, _, _) => args.flatMap(getAssocTypes) // TODO ASSOC-TYPES what to do about alias
+    case Type.Alias(_, args, _, _) => args.flatMap(getAssocTypes)
     case assoc: Type.AssocType => List(assoc)
     case Type.JvmToType(tpe, _) => getAssocTypes(tpe)
     case Type.JvmToEff(tpe, _) => getAssocTypes(tpe)

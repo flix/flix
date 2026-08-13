@@ -1669,6 +1669,79 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MissingTraitConstraint](result)
   }
 
+  test("TypeError.IllegalAssocType.Enum.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |enum E[a] {
+        |    case D(C.T[a])
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.Enum.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |enum E[a] {
+        |    case D(C.T[a] -> Int32)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.Struct.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |struct S[a, r] {
+        |    f: C.T[a]
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.TypeAlias.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |type alias A[a] = C.T[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.RestrictableEnum.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |restrictable enum E[s][a] {
+        |    case D(C.T[a])
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
   test("TypeError.NewStruct.01") {
     val input =
       """
