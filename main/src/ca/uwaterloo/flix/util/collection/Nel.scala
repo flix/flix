@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   * @param xs the remaining elements
   * @tparam T the type of the elements
   */
-case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
+case class Nel[+T](x: T, xs: List[T]) extends Iterable[T] {
 
   /** Returns the number of elements in `this` (always at least 1). */
   def length: Int = 1 + xs.length
@@ -95,5 +95,12 @@ object Nel {
     * Returns a [[Nel]] containing the given elements.
     */
   def of[T](x: T, xs: T*): Nel[T] = Nel(x, xs.toList)
+
+  // MATT docs
+  def mapWithReuse[T <: AnyRef](nel: Nel[T])(f: T => T): Nel[T] = {
+    val x = f(nel.x)
+    val xs = ListOps.mapWithReuse(nel.xs)(f)
+    if ((x eq nel.x) && (xs eq nel.xs)) nel else Nel(x, xs)
+  }
 
 }

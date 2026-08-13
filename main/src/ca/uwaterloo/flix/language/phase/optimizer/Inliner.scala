@@ -197,12 +197,12 @@ object Inliner {
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
-      if (shouldInlineDef(root.defs(sym), es, ctx0)) {
+      if (shouldInlineDef(root.defs(sym), es.toList, ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
         flix.emitEvent(FlixEvent.InlinedDef(sym))
         val defn = root.defs(sym)
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
-        val letBinding = bindArgs(defn.exp, defn.spec.fparams, es, loc)
+        val letBinding = bindArgs(defn.exp, defn.spec.fparams, es.toList, loc)
         visitExp(letBinding, ctx)
       } else {
         sctx.live.putIfAbsent(sym, ())
@@ -216,7 +216,7 @@ object Inliner {
       ctx0.subst.get(sym1) match {
         case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
           val es = exps.map(visitExp(_, ctx0))
-          val letBinding = bindArgs(exp, fparams, es, loc)
+          val letBinding = bindArgs(exp, fparams, es.toList, loc)
           visitExp(letBinding, ctx0.withSubst(subst))
 
         case None | Some(_) =>

@@ -391,25 +391,25 @@ object Redundancy {
       if (!rc.defn.contains(sym)) {
         sctx.defSyms.put(sym, ())
       }
-      visitExps(exps, env0, rc)
+      visitExps(exps.toList, env0, rc)
 
     case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _, _) =>
       if (rc.vars.contains(sym)) {
-        visitExps(exps, env0, rc)
+        visitExps(exps.toList, env0, rc)
       } else {
-        Used.of(sym) ++ visitExps(exps, env0, rc)
+        Used.of(sym) ++ visitExps(exps.toList, env0, rc)
       }
 
     case Expr.ApplyOp(opUse, exps, _, _, _, _) =>
       sctx.effSyms.put(opUse.sym.eff, ())
-      visitExps(exps, env0, rc)
+      visitExps(exps.toList, env0, rc)
 
     case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.sigSyms.put(sym, ())
       }
-      visitExps(exps, env0, rc)
+      visitExps(exps.toList, env0, rc)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)

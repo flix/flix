@@ -243,11 +243,12 @@ object LambdaDrop {
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       if (sym == oldDefnSym) {
         // Rewrite call to new function symbol and drop constant parameters
-        val es = ListOps.zip(exps, fparams0).filter {
+        // Non-empty by the (d) condition of `isDroppable`.
+        val es = Nel.unsafeFrom(ListOps.zip(exps.toList, fparams0).filter {
           case (_, (_, pkind)) => pkind == ParamKind.NonConst
         }.map {
           case (e, (_, _)) => rewriteExp(e)
-        }
+        })
         Expr.ApplyLocalDef(newDefnSym, es, tpe, eff, loc)
       } else {
         // Preserve call as is
@@ -367,7 +368,7 @@ object LambdaDrop {
     * Otherwise, it is marked [[ParamKind.NonConst]]
     */
   private def paramKinds(calls: List[Expr.ApplyDef], fparams: Nel[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
-    val matrix = calls.map(call => ListOps.zip(fparams.toList, call.exps)).transpose
+    val matrix = calls.map(call => ListOps.zip(fparams.toList, call.exps.toList)).transpose
     matrix.map {
       case invocations =>
         val allConstant = invocations.forall {
@@ -416,9 +417,10 @@ object LambdaDrop {
     val nonConstantParams = params.filter {
       case (_, pkind) => pkind == ParamKind.NonConst
     }
-    val args = nonConstantParams.map {
+    // Non-empty by the (d) condition of `isDroppable`.
+    val args = Nel.unsafeFrom(nonConstantParams.map {
       case (fp, _) => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic)
-    }
+    })
     val applyLocalDefExpr = Expr.ApplyLocalDef(sym, args, exp0.tpe, exp0.eff, exp0.loc.asSynthetic)
 
     // Non-empty by the (d) condition of `isDroppable`.

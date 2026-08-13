@@ -238,7 +238,7 @@ object Deriver {
         val eqs = ListOps.zip(varSyms1, varSyms2).map {
           case (varSym1, varSym2) =>
             KindedAst.Expr.ApplySig(SigSymUse(eqSym, loc),
-              List(mkVarExpr(varSym1, loc), mkVarExpr(varSym2, loc)),
+              Nel.of(mkVarExpr(varSym1, loc), mkVarExpr(varSym2, loc)),
               Type.freshVar(Kind.Star, loc), List.empty,
               Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc), loc
@@ -424,7 +424,7 @@ object Deriver {
         case (varSym1, varSym2) =>
           KindedAst.Expr.ApplySig(
             SigSymUse(compareSigSym, loc),
-            List(
+            Nel.of(
               mkVarExpr(varSym1, loc),
               mkVarExpr(varSym2, loc)
             ),
@@ -590,7 +590,7 @@ object Deriver {
         varSym =>
           KindedAst.Expr.ApplySig(
             SigSymUse(toStringSym, loc),
-            List(mkVarExpr(varSym, loc)),
+            Nel.of(mkVarExpr(varSym, loc)),
             Type.freshVar(Kind.Star, loc),
             List.empty,
             Type.freshVar(Kind.Star, loc),
@@ -643,7 +643,7 @@ object Deriver {
           case (varSym1, varSym2) =>
             KindedAst.Expr.ApplySig(
               SigSymUse(compareSigSym, loc),
-              List(mkVarExpr(varSym1, loc), mkVarExpr(varSym2, loc)),
+              Nel.of(mkVarExpr(varSym1, loc), mkVarExpr(varSym2, loc)),
               Type.freshVar(Kind.Star, loc), List.empty,
               Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc), loc
@@ -800,11 +800,11 @@ object Deriver {
           // `acc `combine` hash(varSym)
           KindedAst.Expr.ApplyDef(
             DefSymUse(combineDefSym, loc),
-            List(
+            Nel.of(
               acc,
               KindedAst.Expr.ApplySig(
                 SigSymUse(hashSigSym, loc),
-                List(mkVarExpr(varSym, loc)),
+                Nel.of(mkVarExpr(varSym, loc)),
                 Type.freshVar(Kind.Star, loc),
                 List.empty,
                 Type.freshVar(Kind.Star, loc),

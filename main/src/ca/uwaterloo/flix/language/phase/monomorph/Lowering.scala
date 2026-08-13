@@ -626,13 +626,13 @@ object Lowering {
       val resultType = Types.Datalog
       val defn = lookup(Defs.Rename, resultType)
       val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.PredSym, loc)
-      val argExps = predExps :: lowerExp(exp) :: Nil
+      val argExps = Nel.of(predExps, lowerExp(exp))
       MonoAst.Expr.ApplyDef(defn, argExps, Types.RenameType, resultType, eff, loc)
 
     case TypedAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
       val resultType = Types.Datalog
       val defn = lookup(Defs.Merge, resultType)
-      val argExps = lowerExp(exp1) :: lowerExp(exp2) :: Nil
+      val argExps = Nel.of(lowerExp(exp1), lowerExp(exp2))
       MonoAst.Expr.ApplyDef(defn, argExps, Types.MergeType, resultType, eff, loc)
 
     case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe0, eff, loc) =>
@@ -937,7 +937,7 @@ object Lowering {
     // Create HandledEff.handle(_ -> exp)
     val defnSym = lookup(defaultHandler.handlerSym, handlerArrowType)
     val handlerDefSymUse = SymUse.DefSymUse(defnSym, expLoc)
-    val handlerCall = TypedAst.Expr.ApplyDef(handlerDefSymUse, List(innerLambda), List(innerLambda.tpe), handlerArrowType, defn.spec.retTpe, eff, ApplyPosition.NonTail, expLoc)
+    val handlerCall = TypedAst.Expr.ApplyDef(handlerDefSymUse, Nel.of(innerLambda), List(innerLambda.tpe), handlerArrowType, defn.spec.retTpe, eff, ApplyPosition.NonTail, expLoc)
     defn.copy(spec = spec, exp = handlerCall)
   }
 
@@ -1152,7 +1152,7 @@ object Lowering {
   private def lowerNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
     val defnSym = lookup(Defs.ChannelNewTuple, itpe)
-    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, itpe, lowerType(tpe), eff, loc)
+    MonoAst.Expr.ApplyDef(defnSym, Nel.of(exp), itpe, lowerType(tpe), eff, loc)
   }
 
   /**
@@ -1166,7 +1166,7 @@ object Lowering {
   private def mkGetChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
     val defnSym = lookup(Defs.ChannelGet, itpe)
-    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, itpe, lowerType(tpe), eff, loc)
+    MonoAst.Expr.ApplyDef(defnSym, Nel.of(exp), itpe, lowerType(tpe), eff, loc)
   }
 
   /**
@@ -1190,7 +1190,7 @@ object Lowering {
     val valueVar = MonoAst.Expr.Var(valueSym, exp2.tpe, loc)
     val itpe = lowerType(Type.mkIoUncurriedArrow(Nel.of(exp2.tpe, exp1.tpe), Type.Unit, loc))
     val defnSym = lookup(Defs.ChannelPut, itpe)
-    val putExp = MonoAst.Expr.ApplyDef(defnSym, List(valueVar, chanVar), itpe, Type.Unit, eff, loc)
+    val putExp = MonoAst.Expr.ApplyDef(defnSym, Nel.of(valueVar, chanVar), itpe, Type.Unit, eff, loc)
     // The channel binding is the outermost let, so the channel is evaluated before the value.
     val valueLet = MonoAst.Expr.Let(valueSym, exp2, putExp, Type.Unit, eff, Occur.Unknown, loc)
     MonoAst.Expr.Let(chanSym, exp1, valueLet, Type.Unit, eff, Occur.Unknown, loc)
@@ -1251,7 +1251,7 @@ object Lowering {
       case ((_, c, _), (chanSym, _)) =>
         val itpe = lowerType(Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc))
         val defnSym = lookup(Defs.ChannelMpmcAdmin, itpe)
-        MonoAst.Expr.ApplyDef(defnSym, List(MonoAst.Expr.Var(chanSym, lowerType(c.tpe), loc)), itpe, Types.ChannelMpmcAdmin, Type.Pure, loc)
+        MonoAst.Expr.ApplyDef(defnSym, Nel.of(MonoAst.Expr.Var(chanSym, lowerType(c.tpe), loc)), itpe, Types.ChannelMpmcAdmin, Type.Pure, loc)
     }
     mkList(admins, Types.ChannelMpmcAdmin, loc)
   }
@@ -1276,7 +1276,7 @@ object Lowering {
       case None => MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, loc)
     }
     val defnSym = lookup(Defs.ChannelSelectFrom, itpe)
-    MonoAst.Expr.ApplyDef(defnSym, List(admins, blocking), lowerType(itpe), selectRetTpe, Type.IO, loc)
+    MonoAst.Expr.ApplyDef(defnSym, Nel.of(admins, blocking), lowerType(itpe), selectRetTpe, Type.IO, loc)
   }
 
   /**
@@ -1300,7 +1300,7 @@ object Lowering {
         val pat = mkTuplePattern(Nel.of(MonoAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), MonoAst.Pattern.Var(locksSym, locksType, Occur.Unknown, loc)), loc)
         val getTpe = extractChannelTpe(chan.tpe)
         val itpe = lowerType(Type.mkIoUncurriedArrow(Nel.of(chan.tpe, locksType), getTpe, loc))
-        val args = List(MonoAst.Expr.Var(chSym, lowerType(chan.tpe), loc), MonoAst.Expr.Var(locksSym, locksType, loc))
+        val args = Nel.of(MonoAst.Expr.Var(chSym, lowerType(chan.tpe), loc), MonoAst.Expr.Var(locksSym, locksType, loc))
         val defnSym = lookup(Defs.ChannelUnsafeGetAndUnlock, itpe)
         val getExp = MonoAst.Expr.ApplyDef(defnSym, args, lowerType(itpe), lowerType(getTpe), eff, loc)
         val e = MonoAst.Expr.Let(sym, getExp, exp, lowerType(exp.tpe), eff, Occur.Unknown, loc)
@@ -1382,7 +1382,7 @@ object Lowering {
   private def mkNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
     val defnSym = lookup(Defs.ChannelNew, itpe)
-    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, itpe, tpe, eff, loc)
+    MonoAst.Expr.ApplyDef(defnSym, Nel.of(exp), itpe, tpe, eff, loc)
   }
 
   /**
@@ -1551,7 +1551,7 @@ object Lowering {
     val extVarType = unwrapVectorType(tpe, loc)
     val preds = predicatesOfExtVar(extVarType, loc)
     val lambdaExp = mkExtVarLambda(preds, extVarType, loc)
-    val argExps = goalPredSym :: goalTerms :: withPredSyms :: lambdaExp :: mergedExp :: Nil
+    val argExps = Nel.of(goalPredSym, goalTerms, withPredSyms, lambdaExp, mergedExp)
     val itpe = Types.mkProvenanceOf(extVarType, loc)
     val defn = lookup(Defs.ProvenanceOf, itpe)
     MonoAst.Expr.ApplyDef(defn, argExps, itpe, tpe, eff, loc)
@@ -1570,10 +1570,10 @@ object Lowering {
     // Merge and solve exps
     val mergedExp = mergeExps(loweredQueryExp :: loweredExps, loc)
     val solveDefn = lookup(Defs.Solve, Types.SolveType)
-    val solvedExp = MonoAst.Expr.ApplyDef(solveDefn, mergedExp :: Nil, Types.SolveType, Types.Datalog, eff, loc)
+    val solvedExp = MonoAst.Expr.ApplyDef(solveDefn, Nel.of(mergedExp), Types.SolveType, Types.Datalog, eff, loc)
 
     // Put everything together
-    val argExps = mkPredSym(pred) :: solvedExp :: Nil
+    val argExps = Nel.of(mkPredSym(pred), solvedExp)
     MonoAst.Expr.ApplyDef(sym, argExps, defTpe, tpe, eff, loc)
 
   }
@@ -1596,7 +1596,7 @@ object Lowering {
     }
     val exps = exps0.map(lowerExp)
     val mergedExp = mergeExps(exps, loc)
-    val argExps = mergedExp :: Nil
+    val argExps = Nel.of(mergedExp)
     val solvedExp = MonoAst.Expr.ApplyDef(defn, argExps, Types.SolveType, Types.Datalog, eff, loc)
     val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)(RegionScope.Top, flix)
     val letBodyExp = optPreds match {
@@ -1621,7 +1621,7 @@ object Lowering {
         val sym = lookup(Defs.ProjectInto(arity), defTpe)
 
         // Put everything together.
-        val argExps = mkPredSym(pred) :: lowerExp(exp) :: Nil
+        val argExps = Nel.of(mkPredSym(pred), lowerExp(exp))
         MonoAst.Expr.ApplyDef(sym, argExps, defTpe, Types.Datalog, exp.eff, loc)
     }
     mergeExps(loweredExps, loc)
@@ -1754,7 +1754,7 @@ object Lowering {
       (exp, acc) =>
         val resultType = Types.Datalog
         val defn = lookup(Defs.Merge, resultType)
-        val argExps = exp :: acc :: Nil
+        val argExps = Nel.of(exp, acc)
         val itpe = Types.MergeType
         MonoAst.Expr.ApplyDef(defn, argExps, itpe, resultType, exp.eff, loc)
     }
@@ -1766,7 +1766,7 @@ object Lowering {
   private def projectSym(predSymExp: MonoAst.Expr, datalogExp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val resultType = Types.Datalog
     val defn = lookup(Defs.Filter, resultType)
-    val argExps = predSymExp :: datalogExp :: Nil
+    val argExps = Nel.of(predSymExp, datalogExp)
     val itpe = Types.FilterType
     MonoAst.Expr.ApplyDef(defn, argExps, itpe, resultType, datalogExp.eff, loc)
   }
@@ -1796,7 +1796,7 @@ object Lowering {
     val sym = lookup(Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${argTypes.length}"), liftType)
 
     // Construct a call to the liftX function.
-    MonoAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, exp0.loc)
+    MonoAst.Expr.ApplyDef(sym, Nel.of(exp0), liftType, returnType, Type.Pure, exp0.loc)
   }
 
   /**
@@ -1822,7 +1822,7 @@ object Lowering {
     val sym = lookup(Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${argTypes.length}b"), liftType)
 
     // Construct a call to the liftXb function.
-    MonoAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, exp0.loc)
+    MonoAst.Expr.ApplyDef(sym, Nel.of(exp0), liftType, returnType, Type.Pure, exp0.loc)
   }
 
   /**
@@ -1858,7 +1858,7 @@ object Lowering {
     val sym = lookup(Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${numberOfInVars}X$numberOfOutVars"), liftType)
 
     // Construct a call to the liftXY function.
-    MonoAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, loc)
+    MonoAst.Expr.ApplyDef(sym, Nel.of(exp0), liftType, returnType, Type.Pure, loc)
   }
 
   /**
@@ -1931,8 +1931,8 @@ object Lowering {
           val boxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
           val boxSym: Symbol.DefnSym = lookup(Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Ast.Shared.box"), boxType)
 
-          val innerApply = MonoAst.Expr.ApplyDef(latticeSym, List(MonoAst.Expr.Cst(Constant.Unit, Type.Unit, loc)), latticeType, unboxedDenotationType, Type.Pure, loc)
-          MonoAst.Expr.ApplyDef(boxSym, List(innerApply), boxType, boxedDenotationType, Type.Pure, loc)
+          val innerApply = MonoAst.Expr.ApplyDef(latticeSym, Nel.of(MonoAst.Expr.Cst(Constant.Unit, Type.Unit, loc)), latticeType, unboxedDenotationType, Type.Pure, loc)
+          MonoAst.Expr.ApplyDef(boxSym, Nel.of(innerApply), boxType, boxedDenotationType, Type.Pure, loc)
       }
   }
 
@@ -2107,7 +2107,7 @@ object Lowering {
   private def box(exp: MonoAst.Expr)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
-    MonoAst.Expr.ApplyDef(lookup(Defs.Box, tpe), List(exp), tpe, Types.Boxed, Type.Pure, loc)
+    MonoAst.Expr.ApplyDef(lookup(Defs.Box, tpe), Nel.of(exp), tpe, Types.Boxed, Type.Pure, loc)
   }
 
   /**
@@ -2503,10 +2503,10 @@ object Lowering {
     val innerItpe = Type.mkPureUncurriedArrow(Nel.of(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc)
     MonoAst.Expr.ApplyDef(
       sym = lookup(Defs.Unbox, outerItpe),
-      exps = List(
+      exps = Nel.of(
         MonoAst.Expr.ApplyDef(
           sym = lookup(Symbol.mkDefnSym(s"Vector.get"), innerItpe),
-          exps = List(
+          exps = Nel.of(
             MonoAst.Expr.Cst(Constant.Int32(i), Type.Int32, loc),
             MonoAst.Expr.Var(termsVar, Types.VectorOfBoxed, loc)
           ),

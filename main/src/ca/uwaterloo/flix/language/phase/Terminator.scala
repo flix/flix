@@ -315,11 +315,11 @@ object Terminator {
     */
   private def matchSelf(selfSym: SelfSym, exp: Expr): Option[(List[Expr], SourceLocation)] =
     (selfSym, exp) match {
-      case (SelfDef(sym), Expr.ApplyDef(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
-      case (SelfSig(sym), Expr.ApplySig(symUse, exps, _, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
-      case (SelfInstanceDef(defSym, _), Expr.ApplyDef(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == defSym => Some((exps, loc))
-      case (SelfInstanceDef(_, sigSym), Expr.ApplySig(symUse, exps, _, _, _, _, _, _, loc)) if symUse.sym == sigSym => Some((exps, loc))
-      case (SelfLocalDef(varSym, _), Expr.ApplyLocalDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == varSym => Some((exps, loc))
+      case (SelfDef(sym), Expr.ApplyDef(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps.toList, loc))
+      case (SelfSig(sym), Expr.ApplySig(symUse, exps, _, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps.toList, loc))
+      case (SelfInstanceDef(defSym, _), Expr.ApplyDef(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == defSym => Some((exps.toList, loc))
+      case (SelfInstanceDef(_, sigSym), Expr.ApplySig(symUse, exps, _, _, _, _, _, _, loc)) if symUse.sym == sigSym => Some((exps.toList, loc))
+      case (SelfLocalDef(varSym, _), Expr.ApplyLocalDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == varSym => Some((exps.toList, loc))
       case _ => None
     }
 
@@ -487,7 +487,7 @@ object Terminator {
           }
           val isSelfCall = lctx.tailRecSym.contains(symUse.sym)
           val ap = if (isSelfCall && pos != ApplyPosition.NonTail) ApplyPosition.SelfTail else pos
-          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = Nel.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
           if ((es eq exps0) && (pos0 == ap)) exp0 else Expr.ApplyDef(symUse, es, itpe, tpe, eff, purity, ap, loc)
 
         // --- All other expressions (TypedAst declaration order) ---
@@ -523,17 +523,17 @@ object Terminator {
           }
           val isSelfCall = lctx.currentLocalDefSym.contains(symUse.sym)
           val ap = if (isSelfCall && pos != ApplyPosition.NonTail) ApplyPosition.SelfTail else pos
-          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = Nel.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
           if ((es eq exps0) && (pos0 == ap)) exp0 else Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, ap, loc)
 
         case Expr.ApplyOp(symUse, exps0, tpe, eff, pos0, loc) =>
           checkForbidden(contexts, loc)
-          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = Nel.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
           if ((es eq exps0) && (pos0 == pos)) exp0 else Expr.ApplyOp(symUse, es, tpe, eff, pos, loc)
 
         case Expr.ApplySig(symUse, exps0, itpe, tpe, eff, purity, isEq, pos0, loc) =>
           // TODO: Difficult to disallow due to e.g. +, -, == and so on.
-          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = Nel.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
           if ((es eq exps0) && (pos0 == pos)) exp0 else Expr.ApplySig(symUse, es, itpe, tpe, eff, purity, isEq, pos, loc)
 
         case Expr.Unary(sop, exp1, tpe, eff, loc) =>

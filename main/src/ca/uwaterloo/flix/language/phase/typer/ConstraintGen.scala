@@ -110,12 +110,12 @@ object ConstraintGen {
         val (tpes, effs) = exps.map(visitExp).unzip
 
         c.unifyType(itvar, declaredType, loc2)
-        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
+        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes.toList, exps.map(_.loc).toList)
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
         c.unifySource(pvar, declaredEff, loc2)
-        c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
+        c.unifyType(evar, Type.mkUnion(pvar :: effs.toList, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -123,10 +123,10 @@ object ConstraintGen {
       case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, evar, loc2) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val defEff = freshVar(Kind.Eff, loc1)
-        val actualDefTpe = Type.mkUncurriedArrowWithEffect(Nel.unsafeFrom(tpes), defEff, tvar, loc1)
+        val actualDefTpe = Type.mkUncurriedArrowWithEffect(tpes, defEff, tvar, loc1)
         c.unifyType(actualDefTpe, arrowTvar, loc1)
         c.expectType(sym.tvar, actualDefTpe, loc1)
-        c.unifyType(evar, Type.mkUnion(defEff :: effs, loc2), loc2)
+        c.unifyType(evar, Type.mkUnion(defEff :: effs.toList, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -140,11 +140,11 @@ object ConstraintGen {
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = generalizeVoid(declaredType.arrowResultType)
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.expectTypeArguments(sym, declaredArgumentTypes, tpes.toList, exps.map(_.loc).toList)
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs.toList, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -164,12 +164,12 @@ object ConstraintGen {
         val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc1)
 
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
+        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes.toList, exps.map(_.loc).toList)
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(itvar, declaredType, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs.toList, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)

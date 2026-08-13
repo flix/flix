@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
-import ca.uwaterloo.flix.util.collection.{ListOps, OptionOps}
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel, OptionOps}
 import ca.uwaterloo.flix.util.{ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -128,19 +128,19 @@ object Stratifier {
       if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.ApplyClo(e1, e2, tpe, eff, pos, loc)
 
     case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, pos, loc) =>
-      val es = ListOps.mapWithReuse(exps)(visitExp)
+      val es = Nel.mapWithReuse(exps)(visitExp)
       if (es eq exps) exp0 else Expr.ApplyDef(symUse, es, targs, itpe, tpe, eff, pos, loc)
 
     case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, pos, loc) =>
-      val es = ListOps.mapWithReuse(exps)(visitExp)
+      val es = Nel.mapWithReuse(exps)(visitExp)
       if (es eq exps) exp0 else Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, pos, loc)
 
     case Expr.ApplyOp(sym, exps, tpe, eff, pos, loc) =>
-      val es = ListOps.mapWithReuse(exps)(visitExp)
+      val es = Nel.mapWithReuse(exps)(visitExp)
       if (es eq exps) exp0 else Expr.ApplyOp(sym, es, tpe, eff, pos, loc)
 
     case Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, pos, loc) =>
-      val es = ListOps.mapWithReuse(exps)(visitExp)
+      val es = Nel.mapWithReuse(exps)(visitExp)
       if (es eq exps) exp0 else Expr.ApplySig(symUse, es, targ, targs, itpe, tpe, eff, pos, loc)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) =>

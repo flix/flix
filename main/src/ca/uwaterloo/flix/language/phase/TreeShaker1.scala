@@ -112,16 +112,16 @@ object TreeShaker1 {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(bnd, exps, _, _, _, _, _, _) =>
-      Set(Reachable.DefnSym(bnd.sym)) ++ visitExps(exps)
+      Set(Reachable.DefnSym(bnd.sym)) ++ visitExps(exps.toList)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
-      visitExps(exps)
+      visitExps(exps.toList)
 
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
-      visitExps(exps)
+      visitExps(exps.toList)
 
     case Expr.ApplySig(bnd, exps, _, _, _, _, _, _, _) =>
-      Set(Reachable.SigSym(bnd.sym)) ++ visitExps(exps)
+      Set(Reachable.SigSym(bnd.sym)) ++ visitExps(exps.toList)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)

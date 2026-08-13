@@ -77,16 +77,16 @@ object UseGraph {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(SymUse.DefSymUse(sym, _), exps, _, _, _, _, _, _) =>
-      visitExps(exps) + (sym0 -> UsedSym.DefnSym(sym))
+      visitExps(exps.toList) + (sym0 -> UsedSym.DefnSym(sym))
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
-      visitExps(exps)
+      visitExps(exps.toList)
 
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
-      visitExps(exps)
+      visitExps(exps.toList)
 
     case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, _, _, _, _, _, _, _) =>
-      visitExps(exps) + (sym0 -> UsedSym.SigSym(sym))
+      visitExps(exps.toList) + (sym0 -> UsedSym.SigSym(sym))
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)

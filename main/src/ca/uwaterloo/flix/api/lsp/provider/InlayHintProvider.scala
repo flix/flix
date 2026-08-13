@@ -228,14 +228,14 @@ object InlayHintProvider {
             if (root.defs(symUse.sym).spec.ann.isTailRecursive) {
               hints = mkTailRecHint(loc) :: hints
               val fparams = root.defs(symUse.sym).spec.fparams
-              hints = mkDecreasingArgHints(exps, fparams) ::: hints
+              hints = mkDecreasingArgHints(exps.toList, fparams) ::: hints
             }
 
           case Expr.ApplyLocalDef(symUse, exps, _, _, _, pos, loc) if pos == ApplyPosition.SelfTail =>
             localDefFparams.get(symUse.sym) match {
               case Some(fparams) =>
                 hints = mkTailRecHint(loc) :: hints
-                hints = mkDecreasingArgHints(exps, fparams) ::: hints
+                hints = mkDecreasingArgHints(exps.toList, fparams) ::: hints
               case None =>
                 // The local def has not been visited yet, which cannot happen because
                 // the visitor traverses LocalDef before its body where self-calls appear.

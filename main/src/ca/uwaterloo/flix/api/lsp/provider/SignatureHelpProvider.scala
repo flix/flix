@@ -30,15 +30,15 @@ object SignatureHelpProvider {
     LspUtil.getStack(uri, pos).collectFirst {
       case TypedAst.Expr.ApplyDef(defnSymUse, exps, _, _, _, _, _, _) =>
         // The lookup is guaranteed to succeed because otherwise the expression would be replaced by Expr.Error.
-        mkSignatureHelp(defnSymUse.sym, root.defs(defnSymUse.sym).spec, exps, pos)
+        mkSignatureHelp(defnSymUse.sym, root.defs(defnSymUse.sym).spec, exps.toList, pos)
       case TypedAst.Expr.ApplyOp(opSymUse, exps, _, _, _, _) =>
         // The lookup is guaranteed to succeed because otherwise the expression would be replaced by Expr.Error.
         val ops = root.effects(opSymUse.sym.eff).ops
         val op = ops.find(thatOp => thatOp.sym == opSymUse.sym).get
-        mkSignatureHelp(opSymUse.sym, op.spec, exps, pos)
+        mkSignatureHelp(opSymUse.sym, op.spec, exps.toList, pos)
       case TypedAst.Expr.ApplySig(sigSymUse, exps, _, _, _, _, _, _, _) =>
         // The lookup is guaranteed to succeed because otherwise the expression would be replaced by Expr.Error.
-        mkSignatureHelp(sigSymUse.sym, root.sigs(sigSymUse.sym).spec, exps, pos)
+        mkSignatureHelp(sigSymUse.sym, root.sigs(sigSymUse.sym).spec, exps.toList, pos)
     }
   }
 
