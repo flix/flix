@@ -41,7 +41,6 @@ case class EqualityEnv(private val m: ListMap[(Symbol.AssocTypeSym, TypeHead), A
   /**
     * Adds the given associate type to the environment.
     */
-  // MATT docs
   def addAssocTypeDef(sym: Symbol.AssocTypeSym, sel: Type, args: List[Type], ret: Type): EqualityEnv = {
     TypeHead.fromType(sel) match {
       // Resiliency: Ignore this instance if it's not well-formed
