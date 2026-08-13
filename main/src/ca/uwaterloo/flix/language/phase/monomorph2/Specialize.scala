@@ -214,18 +214,25 @@ object Specialize {
                             (implicit tables: LookupTables, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
     val sig = root.sigs(sym)
     val trt = root.traits(sym.trt)
+    // groundArrowTpe comes from an already-solved, reachable call site, so it must unify with
+    // the sig's own declared scheme.
     val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, groundArrowTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
     val traitType = subst.m(trt.tparam.sym)
+    // traitType is ground (groundArrowTpe has no free vars), so it always has a type constructor.
     val tyCon = traitType.typeConstructor.get
     val instance = tables.instances((sym.trt, tyCon))
     val defns = instance.defs.filter(_.sym.text == sig.sym.name)
     (sig.exp, defns) match {
+      // An instance implementation exists. Use it.
       case (_, defn :: Nil) => defn
+      // No instance implementation, but a default implementation exists. Use it.
       case (Some(impl), Nil) =>
         val ns = sig.sym.trt.namespace :+ sig.sym.trt.name
         val defnSym = new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
         TypedAst.Def(defnSym, sig.spec, impl, sig.loc)
+      // Multiple matching defs. Should have been caught previously.
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
+      // No matching defs and no default. Should have been caught previously.
       case (None, Nil)       => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
     }
   }
