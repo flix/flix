@@ -39,6 +39,9 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
   /** Returns all elements of `this` except the last. */
   override def init: List[T] = if (xs.isEmpty) Nil else x :: xs.init
 
+  /** Returns the last element of `this`. */
+  override def last: T = if (xs.isEmpty) x else xs.last
+
   /** Builds a new [[Nel]] by applying `f` to all elements of `this`. */
   override def map[S](f: T => S): Nel[S] = Nel(f(x), xs.map(f))
 

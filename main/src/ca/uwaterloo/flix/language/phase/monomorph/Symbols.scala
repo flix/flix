@@ -18,6 +18,7 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.collection.Nel
 
 object Symbols {
   protected[monomorph] object Defs {
@@ -107,18 +108,20 @@ object Symbols {
     // Function Types.
     //
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog, SourceLocation.Unknown)
-    lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
-    lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog, SourceLocation.Unknown)
-    lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(mkList(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
+    lazy val MergeType: Type = Type.mkPureUncurriedArrow(Nel(Datalog, List(Datalog)), Datalog, SourceLocation.Unknown)
+    lazy val FilterType: Type = Type.mkPureUncurriedArrow(Nel(PredSym, List(Datalog)), Datalog, SourceLocation.Unknown)
+    lazy val RenameType: Type = Type.mkPureUncurriedArrow(Nel(mkList(PredSym, SourceLocation.Unknown), List(Datalog)), Datalog, SourceLocation.Unknown)
 
     def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
       Type.mkPureUncurriedArrow(
-        List(
+        Nel(
           PredSym,
-          Type.mkVector(Boxed, loc),
-          Type.mkVector(PredSym, loc),
-          Type.mkPureCurriedArrow(List(PredSym, Type.mkVector(Boxed, loc)), t, loc),
-          Datalog
+          List(
+            Type.mkVector(Boxed, loc),
+            Type.mkVector(PredSym, loc),
+            Type.mkPureCurriedArrow(Nel(PredSym, List(Type.mkVector(Boxed, loc))), t, loc),
+            Datalog
+          )
         ),
         Type.mkVector(t, loc), loc
       )
