@@ -138,12 +138,12 @@ private[monomorph2] object Canonicalization {
   }
 
   /**
-    * Defaults an unresolved (stray) type to its kind's ground default:
+    * Default type used for an unconstrained type variable with kind:
     * - `Star` (and other value-like kinds) becomes `AnyType`
     * - `Eff` becomes `Pure`
     * - `CaseSet`/`SchemaRow`/`RecordRow` becomes empty
-    * This is safe because a var is only stray when nothing in the program constrained
-    * it to a concrete type. E.g.
+    * This is safe because a var is only unconstrained when nothing in the program depends on it
+    * being a concrete type. E.g.
     * {{{
     *   def main(): Unit \ IO =
     *       match None { // This is `Option[a]` but with no restrictions on `a`, therefore it defaults to `AnyType`

@@ -17,8 +17,11 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst.Instance
-import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Instance}
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
+import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, RigidityEnv, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -131,6 +134,123 @@ object Specialize {
               "Extend the constraint generator to cover this call site.", groundStructTpe.loc)
         }
     }
+  }
+
+  private[monomorph2] object StrictSubstitution {
+    /** The empty substitution. */
+    val empty: StrictSubstitution = StrictSubstitution(Substitution.empty)
+
+    /** Returns `s` as a [[StrictSubstitution]], with every type in its image simplified and grounded. */
+    def mk(s: Substitution)(implicit root: TypedAst.Root, flix: Flix): StrictSubstitution = {
+      val m = s.m.map {
+        case (sym, tpe) => sym -> Canonicalization.simplify(tpe.map(Canonicalization.default), isGround = true)
+      }
+      StrictSubstitution(Substitution(m))
+    }
+  }
+
+  private[monomorph2] case class StrictSubstitution(s: Substitution) {
+    /** Applies this substitution to `tpe0`, defaulting any free type variable to its kind's default type. */
+    def apply(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = applySubst(MonomorphHelpers.rewriteRegionToIO(tpe0))
+
+    /** N.B. `tpe0` must already have every `Region` rewritten to `IO`. */
+    private def applySubst(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = tpe0 match {
+      case Type.Var(sym, _)                         => s.m.get(sym) match {
+        case None    => Canonicalization.default(tpe0)
+        case Some(t) => t
+      }
+
+      case Type.Cst(TypeConstructor.Region(_), loc) => throw InternalCompilerException("unexpected Region: should have been rewritten to IO already", loc)
+
+      case Type.Cst(_, _)                           => tpe0
+
+      case app@Type.Apply(_, _, _)                  => Canonicalization.normalizeApply(applySubst, app, isGround = true)
+
+      case Type.Alias(_, _, t, _)                   => applySubst(t)
+
+      case Type.AssocType(symUse, arg0, kind, loc)  =>
+        val arg = applySubst(arg0)
+        val assoc = Type.AssocType(symUse, arg, kind, loc)
+        val reducedType = Canonicalization.reduceAssocType(assoc)
+        Canonicalization.simplify(reducedType, isGround = true)
+
+      case Type.JvmToType(_, loc)                   => throw InternalCompilerException("unexpected JVM type", loc)
+      case Type.JvmToEff(_, loc)                    => throw InternalCompilerException("unexpected JVM eff", loc)
+      case Type.UnresolvedJvmType(_, loc)           => throw InternalCompilerException("unexpected JVM type", loc)
+    }
+  }
+
+  /** Simplifies the types embedded in `field`. */
+  private def visitStructField(field: TypedAst.StructField)(implicit root: TypedAst.Root, flix: Flix): TypedAst.StructField =
+    field match {
+      case TypedAst.StructField(fieldSym, tpe, loc) =>
+        TypedAst.StructField(fieldSym, Canonicalization.simplify(tpe, isGround = false), loc)
+    }
+
+  /** Simplifies the types embedded in `caze`. */
+  private def visitEnumCase(caze: TypedAst.Case)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Case =
+    caze match {
+      case TypedAst.Case(sym, tpes, sc, loc) =>
+        TypedAst.Case(sym, tpes.map(Canonicalization.simplify(_, isGround = false)), sc, loc)
+    }
+
+  /** Simplifies the types embedded in `op`. */
+  private def visitEffectOp(op: TypedAst.Op)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Op =
+    op match {
+      case TypedAst.Op(sym, TypedAst.Spec(doc, ann, mod, tparams, fparams0, declaredScheme, retTpe, eff, tconstrs, econstrs), loc) =>
+        val fparams = fparams0.map {
+          case TypedAst.FormalParam(varSym, tpe, src, decreasing, fpLoc) =>
+            TypedAst.FormalParam(varSym, MonomorphHelpers.groundType(tpe), src, decreasing, fpLoc)
+        }
+        // declaredScheme.base needs the same canonicalization as fparams/retTpe/eff because
+        // enumTable/structTable lookups are keyed on canonicalized types.
+        val canonScheme = declaredScheme.copy(base = MonomorphHelpers.groundType(declaredScheme.base))
+        val spec = TypedAst.Spec(doc, ann, mod, tparams, fparams, canonScheme, MonomorphHelpers.groundType(retTpe), MonomorphHelpers.groundType(eff), tconstrs, econstrs)
+        TypedAst.Op(sym, spec, loc)
+    }
+
+  /** Returns the `def` that implements signature `sym` for the instance at ground arrow type `groundArrowTpe`, or its trait-level default. */
+  private[monomorph2] def resolveSigSym(sym: Symbol.SigSym, groundArrowTpe: Type)
+                            (implicit tables: LookupTables, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+    val sig = root.sigs(sym)
+    val trt = root.traits(sym.trt)
+    // groundArrowTpe comes from an already-solved, reachable call site, so it must unify with
+    // the sig's own declared scheme.
+    val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, groundArrowTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
+    val traitType = subst.m(trt.tparam.sym)
+    // traitType is ground (groundArrowTpe has no free vars), so it always has a type constructor.
+    val tyCon = traitType.typeConstructor.get
+    val instance = tables.instances((sym.trt, tyCon))
+    val defns = instance.defs.filter(_.sym.text == sig.sym.name)
+    (sig.exp, defns) match {
+      // An instance implementation exists. Use it.
+      case (_, defn :: Nil) => defn
+      // No instance implementation, but a default implementation exists. Use it.
+      case (Some(impl), Nil) =>
+        val ns = sig.sym.trt.namespace :+ sig.sym.trt.name
+        val defnSym = new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
+        TypedAst.Def(defnSym, sig.spec, impl, sig.loc)
+      // Multiple matching defs. Should have been caught previously.
+      case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
+      // No matching defs and no default. Should have been caught previously.
+      case (None, Nil)       => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
+    }
+  }
+
+  /** Merges `envs` into a single var-sym renaming map. */
+  /** Specializes `fparams0` under `subst0`, returning the fresh params and the old-to-fresh var-sym renaming. */
+  private[monomorph2] def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: StrictSubstitution)
+                                     (implicit root: TypedAst.Root, flix: Flix): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+    val (params, pairs) = fparams0.map(specializeFormalParam(_, subst0)).unzip
+    (params, pairs.toMap)
+  }
+
+  /** Specializes `fparam0` under `subst0`, returning the fresh param and its old-to-fresh var-sym binding. */
+  private[monomorph2] def specializeFormalParam(fparam0: TypedAst.FormalParam, subst0: StrictSubstitution)
+                                    (implicit root: TypedAst.Root, flix: Flix): (TypedAst.FormalParam, (Symbol.VarSym, Symbol.VarSym)) = {
+    val TypedAst.FormalParam(bnd, tpe, src, decreasing, loc) = fparam0
+    val freshSym = Symbol.freshVarSym(bnd.sym)
+    (TypedAst.FormalParam(Binder(freshSym, subst0(bnd.tpe)), subst0(tpe), src, decreasing, loc), bnd.sym -> freshSym)
   }
 
   /** Specializes `root` per `solution`, the constraint solver's output. */
