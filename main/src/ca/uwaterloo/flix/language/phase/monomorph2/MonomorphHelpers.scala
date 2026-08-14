@@ -16,9 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase.monomorph2
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 /**
@@ -52,4 +53,21 @@ private[monomorph2] object MonomorphHelpers {
       Type.Alias(sym, args.map(lowerChannelType), lowerChannelType(inner), loc)
     case other => other
   }
+
+  /** Rewrites every `Region` constant in `t` to `IO`. */
+  def rewriteRegionToIO(t: Type): Type = t match {
+    case Type.Cst(TypeConstructor.Region(_), loc) => Type.Cst(TypeConstructor.Effect(Symbol.IO, Kind.Eff), loc)
+    case Type.Cst(_, _)                           => t
+    case Type.Var(_, _)                           => t
+    case Type.Apply(t1, t2, loc)                  => Type.Apply(rewriteRegionToIO(t1), rewriteRegionToIO(t2), loc)
+    case Type.Alias(sym, args, inner, loc)        => Type.Alias(sym, args.map(rewriteRegionToIO), rewriteRegionToIO(inner), loc)
+    case Type.AssocType(sym, arg, kind, loc)      => Type.AssocType(sym, rewriteRegionToIO(arg), kind, loc)
+    case Type.JvmToType(tpe, loc)                 => Type.JvmToType(rewriteRegionToIO(tpe), loc)
+    case Type.JvmToEff(tpe, loc)                  => Type.JvmToEff(rewriteRegionToIO(tpe), loc)
+    case Type.UnresolvedJvmType(_, _)             => t
+  }
+
+  /** Rewrites `tpe`'s regions to `IO`, defaults its free vars, and reduces/normalizes the result. */
+  def groundType(tpe: Type)(implicit root: TypedAst.Root, flix: Flix): Type =
+    Canonicalization.simplify(rewriteRegionToIO(tpe).map(Canonicalization.default), isGround = true)
 }

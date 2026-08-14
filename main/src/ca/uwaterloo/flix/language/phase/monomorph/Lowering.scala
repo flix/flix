@@ -1188,7 +1188,7 @@ object Lowering {
     val valueSym = mkLetSym("value", loc)
     val chanVar = MonoAst.Expr.Var(chanSym, exp1.tpe, loc)
     val valueVar = MonoAst.Expr.Var(valueSym, exp2.tpe, loc)
-    val itpe = lowerType(Type.mkIoUncurriedArrow(Nel(exp2.tpe, List(exp1.tpe)), Type.Unit, loc))
+    val itpe = lowerType(Type.mkIoUncurriedArrow(Nel.of(exp2.tpe, exp1.tpe), Type.Unit, loc))
     val defnSym = lookup(Defs.ChannelPut, itpe)
     val putExp = MonoAst.Expr.ApplyDef(defnSym, List(valueVar, chanVar), itpe, Type.Unit, eff, loc)
     // The channel binding is the outermost let, so the channel is evaluated before the value.
@@ -1270,7 +1270,7 @@ object Lowering {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
-    val itpe = Type.mkIoUncurriedArrow(Nel(admins.tpe, List(Type.Bool)), selectRetTpe, loc)
+    val itpe = Type.mkIoUncurriedArrow(Nel.of(admins.tpe, Type.Bool), selectRetTpe, loc)
     val blocking = default match {
       case Some(_) => MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc)
       case None => MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, loc)
@@ -1297,9 +1297,9 @@ object Lowering {
     ListOps.zip(rs, channels).zipWithIndex map {
       case (((sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
-        val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), List(MonoAst.Pattern.Var(locksSym, locksType, Occur.Unknown, loc))), loc)
+        val pat = mkTuplePattern(Nel.of(MonoAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), MonoAst.Pattern.Var(locksSym, locksType, Occur.Unknown, loc)), loc)
         val getTpe = extractChannelTpe(chan.tpe)
-        val itpe = lowerType(Type.mkIoUncurriedArrow(Nel(chan.tpe, List(locksType)), getTpe, loc))
+        val itpe = lowerType(Type.mkIoUncurriedArrow(Nel.of(chan.tpe, locksType), getTpe, loc))
         val args = List(MonoAst.Expr.Var(chSym, lowerType(chan.tpe), loc), MonoAst.Expr.Var(locksSym, locksType, loc))
         val defnSym = lookup(Defs.ChannelUnsafeGetAndUnlock, itpe)
         val getExp = MonoAst.Expr.ApplyDef(defnSym, args, lowerType(itpe), lowerType(getTpe), eff, loc)
@@ -1319,7 +1319,7 @@ object Lowering {
     default match {
       case Some(defaultExp) =>
         val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
-        val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), List(MonoAst.Pattern.Wild(locksType, loc))), loc)
+        val pat = mkTuplePattern(Nel.of(MonoAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), MonoAst.Pattern.Wild(locksType, loc)), loc)
         val defaultMatch = MonoAst.MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
@@ -1564,7 +1564,7 @@ object Lowering {
     val predArity = selects.length
 
     // Define the name and type of the appropriate factsX function in Solver.flix
-    val defTpe = Type.mkPureUncurriedArrow(Nel(Types.PredSym, List(Types.Datalog)), tpe, loc)
+    val defTpe = Type.mkPureUncurriedArrow(Nel.of(Types.PredSym, Types.Datalog), tpe, loc)
     val sym = lookup(Defs.Facts(predArity), defTpe)
 
     // Merge and solve exps
@@ -1615,7 +1615,7 @@ object Lowering {
     val loweredExps = exps.zip(predsAndArities).map {
       case (exp, PredicateAndArity(pred, arity)) =>
         // The type of the function.
-        val defTpe = Type.mkPureUncurriedArrow(Nel(Types.PredSym, List(lowerType(exp.tpe))), Types.Datalog, loc)
+        val defTpe = Type.mkPureUncurriedArrow(Nel.of(Types.PredSym, lowerType(exp.tpe)), Types.Datalog, loc)
 
         // Compute the symbol of the function.
         val sym = lookup(Defs.ProjectInto(arity), defTpe)
@@ -2499,8 +2499,8 @@ object Lowering {
     * where `"terms" == termsVar.text`.
     */
   private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
-    val outerItpe = Type.mkPureUncurriedArrow(Nel(Types.Boxed, Nil), tpe, loc)
-    val innerItpe = Type.mkPureUncurriedArrow(Nel(Type.Int32, List(Types.VectorOfBoxed)), Types.Boxed, loc)
+    val outerItpe = Type.mkPureUncurriedArrow(Nel.of(Types.Boxed), tpe, loc)
+    val innerItpe = Type.mkPureUncurriedArrow(Nel.of(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc)
     MonoAst.Expr.ApplyDef(
       sym = lookup(Defs.Unbox, outerItpe),
       exps = List(

@@ -145,20 +145,18 @@ private[monomorph2] object Symbols {
       object Solver {
         // Synthetic, these are not real stdlib declarations, just the corresponding def's arrow type.
         lazy val SolveType: Type = Type.mkPureArrow(Types.Fixpoint.Ast.Datalog.Datalog, Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
-        lazy val MergeType: Type = Type.mkPureUncurriedArrow(Nel(Types.Fixpoint.Ast.Datalog.Datalog, scala.collection.immutable.List(Types.Fixpoint.Ast.Datalog.Datalog)), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
-        lazy val FilterType: Type = Type.mkPureUncurriedArrow(Nel(Types.Fixpoint.Ast.Shared.PredSym, scala.collection.immutable.List(Types.Fixpoint.Ast.Datalog.Datalog)), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
-        lazy val RenameType: Type = Type.mkPureUncurriedArrow(Nel(Types.List.mkList(Types.Fixpoint.Ast.Shared.PredSym, SourceLocation.Unknown), scala.collection.immutable.List(Types.Fixpoint.Ast.Datalog.Datalog)), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
+        lazy val MergeType: Type = Type.mkPureUncurriedArrow(Nel.of(Types.Fixpoint.Ast.Datalog.Datalog, Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
+        lazy val FilterType: Type = Type.mkPureUncurriedArrow(Nel.of(Types.Fixpoint.Ast.Shared.PredSym, Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
+        lazy val RenameType: Type = Type.mkPureUncurriedArrow(Nel.of(Types.List.mkList(Types.Fixpoint.Ast.Shared.PredSym, SourceLocation.Unknown), Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
 
         def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
           Type.mkPureUncurriedArrow(
-            Nel(
+            Nel.of(
               Types.Fixpoint.Ast.Shared.PredSym,
-              scala.collection.immutable.List(
-                Type.mkVector(Types.Fixpoint.Boxed, loc),
-                Type.mkVector(Types.Fixpoint.Ast.Shared.PredSym, loc),
-                Type.mkPureCurriedArrow(Nel(Types.Fixpoint.Ast.Shared.PredSym, scala.collection.immutable.List(Type.mkVector(Boxed, loc))), t, loc),
-                Types.Fixpoint.Ast.Datalog.Datalog
-              )
+              Type.mkVector(Types.Fixpoint.Boxed, loc),
+              Type.mkVector(Types.Fixpoint.Ast.Shared.PredSym, loc),
+              Type.mkPureCurriedArrow(Nel.of(Types.Fixpoint.Ast.Shared.PredSym, Type.mkVector(Boxed, loc)), t, loc),
+              Types.Fixpoint.Ast.Datalog.Datalog
             ),
             Type.mkVector(t, loc), loc
           )

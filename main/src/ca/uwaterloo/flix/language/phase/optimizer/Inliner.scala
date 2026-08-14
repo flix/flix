@@ -187,7 +187,7 @@ object Inliner {
         case Expr.Lambda(fparam, e1, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
-          val letBinding = bindArgs(e1, Nel(fparam, Nil), List(e2), loc)
+          val letBinding = bindArgs(e1, Nel.of(fparam), List(e2), loc)
           visitExp(letBinding, ctx0)
 
         case e1 =>
