@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.Chain
-import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.collection.Nel
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -187,7 +186,7 @@ object Inliner {
         case Expr.Lambda(fparam, e1, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
-          val letBinding = bindArgs(e1, Nel.of(fparam), List(e2), loc)
+          val letBinding = bindArgs(e1, Nel.of(fparam), Nel.of(e2), loc)
           visitExp(letBinding, ctx0)
 
         case e1 =>
@@ -202,7 +201,7 @@ object Inliner {
         flix.emitEvent(FlixEvent.InlinedDef(sym))
         val defn = root.defs(sym)
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
-        val letBinding = bindArgs(defn.exp, defn.spec.fparams, es.toList, loc)
+        val letBinding = bindArgs(defn.exp, defn.spec.fparams, es, loc)
         visitExp(letBinding, ctx)
       } else {
         sctx.live.putIfAbsent(sym, ())
@@ -216,7 +215,7 @@ object Inliner {
       ctx0.subst.get(sym1) match {
         case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
           val es = exps.map(visitExp(_, ctx0))
-          val letBinding = bindArgs(exp, fparams, es.toList, loc)
+          val letBinding = bindArgs(exp, fparams, es, loc)
           visitExp(letBinding, ctx0.withSubst(subst))
 
         case None | Some(_) =>
@@ -754,8 +753,8 @@ object Inliner {
     * where `symi` is the symbol of the i-th formal parameter and `exp` is the body of the function.
     *
     */
-  private def bindArgs(exp: Expr, fparams: Nel[FormalParam], exps: List[Expr], loc: SourceLocation): Expr = {
-    ListOps.zip(fparams.toList, exps).foldRight(exp) {
+  private def bindArgs(exp: Expr, fparams: Nel[FormalParam], exps: Nel[Expr], loc: SourceLocation): Expr = {
+    fparams.zip(exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)

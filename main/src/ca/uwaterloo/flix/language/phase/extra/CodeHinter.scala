@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
+import ca.uwaterloo.flix.util.collection.Nel
 
 object CodeHinter {
 
@@ -50,7 +51,7 @@ object CodeHinter {
     * @param root The root AST node of the Flix project
     * @return A collection of code quality hints.
     */
-  private def visitApplyDef(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
+  private def visitApplyDef(sym: Symbol.DefnSym, exps: Nel[Expr])(implicit root: Root): List[CodeHint] = {
     exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
   }
 
@@ -119,7 +120,7 @@ object CodeHinter {
     * @param enumOccurs     All occurrences of enums.
     * @param traitOccurs    All occurrences of traits.
     */
-  private case class Occurrences(applyDefOccurs: List[(Symbol.DefnSym, List[Expr])], defOccurs: List[DefSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], traitOccurs: List[TraitSymUse])
+  private case class Occurrences(applyDefOccurs: List[(Symbol.DefnSym, Nel[Expr])], defOccurs: List[DefSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], traitOccurs: List[TraitSymUse])
 
   /**
     * Returns a [[Occurrences]] for the Flix project.
@@ -128,7 +129,7 @@ object CodeHinter {
     * @return A [[Occurrences]] for the Flix project.
     */
   private def getOccurrences(implicit root: Root): Occurrences = {
-    var applyDefOccurs: List[(Symbol.DefnSym, List[Expr])] = Nil
+    var applyDefOccurs: List[(Symbol.DefnSym, Nel[Expr])] = Nil
     var defOccurs: List[DefSymUse] = Nil
     var enumOccurs: List[(Symbol.EnumSym, SourceLocation)] = Nil
     var traitOccurs: List[TraitSymUse] = Nil
@@ -139,7 +140,7 @@ object CodeHinter {
       override def consumeDefSymUse(symUse: DefSymUse): Unit = defOccurs = symUse :: defOccurs
 
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _, _, _) => applyDefOccurs = (symUse.sym, exps.toList) :: applyDefOccurs
+        case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _, _, _) => applyDefOccurs = (symUse.sym, exps) :: applyDefOccurs
         case _ => ()
       }
 

@@ -368,7 +368,7 @@ object LambdaDrop {
     * Otherwise, it is marked [[ParamKind.NonConst]]
     */
   private def paramKinds(calls: List[Expr.ApplyDef], fparams: Nel[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
-    val matrix = calls.map(call => ListOps.zip(fparams.toList, call.exps.toList)).transpose
+    val matrix = calls.map(call => fparams.zip(call.exps).toList).transpose
     matrix.map {
       case invocations =>
         val allConstant = invocations.forall {

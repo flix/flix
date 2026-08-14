@@ -313,13 +313,13 @@ object Terminator {
   /**
     * If `exp` is a self-recursive call matching `selfSym`, returns the call arguments and location.
     */
-  private def matchSelf(selfSym: SelfSym, exp: Expr): Option[(List[Expr], SourceLocation)] =
+  private def matchSelf(selfSym: SelfSym, exp: Expr): Option[(Nel[Expr], SourceLocation)] =
     (selfSym, exp) match {
-      case (SelfDef(sym), Expr.ApplyDef(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps.toList, loc))
-      case (SelfSig(sym), Expr.ApplySig(symUse, exps, _, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps.toList, loc))
-      case (SelfInstanceDef(defSym, _), Expr.ApplyDef(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == defSym => Some((exps.toList, loc))
-      case (SelfInstanceDef(_, sigSym), Expr.ApplySig(symUse, exps, _, _, _, _, _, _, loc)) if symUse.sym == sigSym => Some((exps.toList, loc))
-      case (SelfLocalDef(varSym, _), Expr.ApplyLocalDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == varSym => Some((exps.toList, loc))
+      case (SelfDef(sym), Expr.ApplyDef(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
+      case (SelfSig(sym), Expr.ApplySig(symUse, exps, _, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
+      case (SelfInstanceDef(defSym, _), Expr.ApplyDef(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == defSym => Some((exps, loc))
+      case (SelfInstanceDef(_, sigSym), Expr.ApplySig(symUse, exps, _, _, _, _, _, _, loc)) if symUse.sym == sigSym => Some((exps, loc))
+      case (SelfLocalDef(varSym, _), Expr.ApplyLocalDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == varSym => Some((exps, loc))
       case _ => None
     }
 
@@ -396,7 +396,7 @@ object Terminator {
         }
         val hasDecreasingArg = argInfos.exists(_.status == TerminationError.ArgStatus.Decreasing)
         if (!hasDecreasingArg) {
-          sctx.errors.add(TerminationError.NonStructuralRecursion(ctx.selfSym.sym, argInfos, loc))
+          sctx.errors.add(TerminationError.NonStructuralRecursion(ctx.selfSym.sym, argInfos.toList, loc))
         }
         argInfos.zipWithIndex.foreach {
           case (info, idx) if info.status == TerminationError.ArgStatus.Decreasing =>
@@ -877,7 +877,7 @@ object Terminator {
   /**
     * If `exp` is a self-recursive call matching any context, returns the context, call arguments, and location.
     */
-  private def findSelfRecursiveCall(contexts: List[RecursionContext], exp: Expr): Option[(RecursionContext, List[Expr], SourceLocation)] =
+  private def findSelfRecursiveCall(contexts: List[RecursionContext], exp: Expr): Option[(RecursionContext, Nel[Expr], SourceLocation)] =
     contexts.iterator.flatMap { ctx =>
       matchSelf(ctx.selfSym, exp).map { case (exps, loc) => (ctx, exps, loc) }
     }.nextOption()

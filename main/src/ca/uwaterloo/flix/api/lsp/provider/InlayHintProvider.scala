@@ -228,14 +228,14 @@ object InlayHintProvider {
             if (root.defs(symUse.sym).spec.ann.isTailRecursive) {
               hints = mkTailRecHint(loc) :: hints
               val fparams = root.defs(symUse.sym).spec.fparams
-              hints = mkDecreasingArgHints(exps.toList, fparams) ::: hints
+              hints = mkDecreasingArgHints(exps, fparams) ::: hints
             }
 
           case Expr.ApplyLocalDef(symUse, exps, _, _, _, pos, loc) if pos == ApplyPosition.SelfTail =>
             localDefFparams.get(symUse.sym) match {
               case Some(fparams) =>
                 hints = mkTailRecHint(loc) :: hints
-                hints = mkDecreasingArgHints(exps.toList, fparams) ::: hints
+                hints = mkDecreasingArgHints(exps, fparams) ::: hints
               case None =>
                 // The local def has not been visited yet, which cannot happen because
                 // the visitor traverses LocalDef before its body where self-calls appear.
@@ -266,7 +266,7 @@ object InlayHintProvider {
   /**
     * Creates inlay hints for arguments corresponding to structurally decreasing parameters.
     */
-  private def mkDecreasingArgHints(exps: List[Expr], fparams: Nel[FormalParam]): List[InlayHint] = {
+  private def mkDecreasingArgHints(exps: Nel[Expr], fparams: Nel[FormalParam]): List[InlayHint] = {
     exps.zip(fparams).collect {
       case (arg, fparam) if fparam.decreasing == Decreasing.StrictlyDecreasing =>
         InlayHint(

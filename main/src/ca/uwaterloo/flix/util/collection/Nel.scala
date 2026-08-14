@@ -51,6 +51,9 @@ case class Nel[+T](x: T, xs: List[T]) extends Iterable[T] {
   /** Builds a new [[List]] by applying `pf` to all elements of `this` on which it is defined. */
   override def collect[S](pf: PartialFunction[T, S]): List[S] = toList.collect(pf)
 
+  // MATT docs
+  def ::[S >: T](y: S): Nel[S] = Nel(y, toList)
+
   /** Returns a [[Nel]] of pairs of the elements of `this` and their indices. */
   override def zipWithIndex: Nel[(T, Int)] = Nel((x, 0), xs.zipWithIndex.map { case (y, i) => (y, i + 1) })
 

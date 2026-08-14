@@ -1072,6 +1072,10 @@ object Type {
     case x :: xs => mkUnion(x, mkUnion(xs, loc), loc)
   }
 
+  // MATT docs
+  def mkUnion(tpes: Nel[Type], loc: SourceLocation): Type =
+    mkUnion(tpes.x, mkUnion(tpes.xs, loc), loc)
+
   /**
     * Returns the type `Or(tpe1, tpe2)`.
     */
