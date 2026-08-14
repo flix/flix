@@ -338,7 +338,9 @@ object Typer {
       TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, loc)
   }
 
-  // MATT docs
+  /**
+    * Reconstructs types in the given case.
+    */
   private def visitCase(caze: KindedAst.Case)(implicit sctx: SharedContext): TypedAst.Case = caze match {
     case KindedAst.Case(caseSym, tagTypes, sc, caseLoc) =>
       tagTypes.foreach(checkNoAssocTypes)
@@ -363,7 +365,9 @@ object Typer {
       TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields.toMap, loc)
   }
 
-  // MATT docs
+  /**
+    * Reconstructs types in the given struct field.
+    */
   private def visitStructField(field: KindedAst.StructField)(implicit sctx: SharedContext): TypedAst.StructField = field match {
     case KindedAst.StructField(_, sym, tpe, loc) =>
       checkNoAssocTypes(tpe)
@@ -389,7 +393,9 @@ object Typer {
       TypedAst.RestrictableEnum(doc, ann, mod, enumSym, index, tparams, derives, cases, loc)
   }
 
-  // MATT docs
+  /**
+    * Reconstructs types in the given restrictable case.
+    */
   private def visitRestrictableCase(caze: KindedAst.RestrictableCase)(implicit sctx: SharedContext): TypedAst.RestrictableCase = caze match {
     case KindedAst.RestrictableCase(caseSym, tagTypes, sc, caseLoc) =>
       tagTypes.foreach(checkNoAssocTypes)
@@ -472,7 +478,9 @@ object Typer {
       }
   }
 
-  // MATT docs
+  /**
+    * Issues an error for each associated type found in the given type.
+    */
   private def checkNoAssocTypes(tpe: Type)(implicit sctx: SharedContext): Unit = {
     for (assoc <- getAssocTypes(tpe)) {
       sctx.errors.add(TypeError.IllegalAssocType(assoc.symUse.sym, assoc.loc))

@@ -327,7 +327,12 @@ object TypeError {
     }
   }
 
-  // MATT docs
+  /**
+    * Associated type used where not allowed.
+    *
+    * @param sym the symbol of the associated type.
+    * @param loc the location where the error occurred.
+    */
   case class IllegalAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6221
 
