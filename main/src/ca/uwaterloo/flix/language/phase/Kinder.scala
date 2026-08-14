@@ -859,12 +859,16 @@ object Kinder {
         val s = visitHeadPredicate(select, kenv0, root)
         KindedAst.Expr.FixpointQueryWithProvenance(es, s, withh, Type.freshVar(Kind.Star, loc), loc)
 
-      case ResolvedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+      case ResolvedAst.Expr.FixpointQueryWithSelect(exps, queryExp, _, _, _, pred, loc) =>
         val es = exps.map(visitExp(_, kenv0, root))
         val qe = visitExp(queryExp, kenv0, root)
-        val ss = selects.map(visitExp(_, kenv0, root))
-        val f = from.map(visitBodyPredicate(_, kenv0, root))
-        val w = where.map(visitExp(_, kenv0, root))
+        val (ss, f, w) = qe match {
+          case KindedAst.Expr.FixpointConstraintSet(List(KindedAst.Constraint(_, KindedAst.Predicate.Head.Atom(_, _, terms, _, _), body, _)), _, _) =>
+            val guards = body.collect { case KindedAst.Predicate.Body.Guard(exp, _) => exp }
+            val atoms = body.collect { case a: KindedAst.Predicate.Body.Atom => a }
+            (terms, atoms, guards)
+          case _ => throw InternalCompilerException("Unexpected FixpointQueryWithSelect pseudo-query shape", loc)
+        }
         KindedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, Type.freshVar(Kind.Star, loc), loc)
 
       case ResolvedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
