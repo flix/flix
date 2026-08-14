@@ -339,9 +339,6 @@ object Specialize {
   /**
     * Returns one `(freshSym, defn, subst, instantiatedType)` entry per solved `GroundInstantiation`
     * of a parametric def. Instance/default-sig args are `[inst.tparams..., sig-own tparams...]`.
-    *
-    * N.B. Instantiations that fail to reduce (e.g. a defaulted `AnyType` needing a nonexistent instance)
-    * are dropped, since such failures only arise for unreachable/speculative instantiations.
     */
   private def mkDefEntries(
     solution: Solution,
@@ -358,12 +355,7 @@ object Specialize {
       if defn.spec.tparams.nonEmpty || prefixTparams.nonEmpty
       freshSym        = Symbol.freshDefnSym(defn.sym)
       subst           = StrictSubstitution.mk(Substitution(substMap))
-      it             <- try {
-                          List(subst(defn.spec.declaredScheme.base))
-                        } catch {
-                          case _: InternalCompilerException => Nil
-                        }
-    } yield (freshSym, defn, subst, it)
+    } yield (freshSym, defn, subst, subst(defn.spec.declaredScheme.base))
 
   /**
     * Returns one `(sym, args, freshSym, newEnum)` entry per solved `GroundInstantiation` of a
