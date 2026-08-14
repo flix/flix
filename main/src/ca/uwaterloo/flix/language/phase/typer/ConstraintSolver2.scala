@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypeHead}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
@@ -246,7 +246,7 @@ object ConstraintSolver2 {
           val (r1, cs1) = reduce(tpe1)(scope, renv, progress, eqenv, flix)
           val (r2, cs2) = reduce(tpe2)(scope, renv, progress, eqenv, flix)
           // (assocU)
-          decomposeStuckAssocType(r1, r2, prov, progress) match {
+          eliminateEquivalentAssocType(r1, r2, progress) match {
             case Some(cs) => cs ::: cs1 ::: cs2
             case None =>
               // Performance: Reuse this, if possible.
@@ -301,26 +301,29 @@ object ConstraintSolver2 {
 
   // MATT docs
   // (assocU)
-  private def decomposeStuckAssocType(tpe1: Type, tpe2: Type, prov: Provenance, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): Option[List[TypeConstraint]] = (tpe1, tpe2) match {
+  private def eliminateEquivalentAssocType(tpe1: Type, tpe2: Type, progress: Progress)(implicit scope: RegionScope, eqenv: EqualityEnv, flix: Flix): Option[List[TypeConstraint]] = (tpe1, tpe2) match {
+    // Performance: We only attempt this for multiparameter associated types, so that unary
+    // associated types pay nothing for a rule that cannot help them.
     case (Type.AssocType(symUse1, sel1, args1, _, _), Type.AssocType(symUse2, sel2, args2, _, _))
       if symUse1.sym == symUse2.sym &&
         args1.nonEmpty &&
         args1.length == args2.length &&
-        sel1 == sel2 &&
-        isUnconstrainedSelector(symUse1.sym, sel1) =>
+        ((sel1, sel2) :: args1.zip(args2)).forall { case (t1, t2) => isProvablyEquivalent(t1, t2) } =>
       progress.markProgress()
-      Some(args1.zip(args2).flatMap {
-        case (t1, t2) => simplify(TypeConstraint.Equality(t1, t2, prov), progress)
-      })
+      Some(Nil)
 
     case _ => None
   }
 
   // MATT docs
-  private def isUnconstrainedSelector(sym: Symbol.AssocTypeSym, sel: Type)(implicit renv: RigidityEnv, eqenv: EqualityEnv): Boolean = {
-    TypeHead.fromType(sel) match {
-      case Some(TypeHead.Var(tvar)) => renv.isRigid(tvar) && eqenv.getAssocDefs(sym, sel).isEmpty
-      case _ => false
+  private def isProvablyEquivalent(tpe1: Type, tpe2: Type)(implicit scope: RegionScope, eqenv: EqualityEnv, flix: Flix): Boolean = {
+    if (tpe1 == tpe2) {
+      true
+    } else {
+      // Mark everything as rigid, so that nothing can be bound. Success then means the equality is
+      // proven, rather than merely satisfiable under some commitment we are not entitled to make.
+      val renv = RigidityEnv.ofRigidVars(tpe1.typeVars.map(_.sym) ++ tpe2.typeVars.map(_.sym))
+      fullyUnify(tpe1, tpe2, scope, renv).isDefined
     }
   }
 

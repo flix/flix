@@ -489,6 +489,7 @@ object Resolver {
       val spec = resolveSpec(spec0, Some(tconstr), scp0, taenv, ns0, root)
       val scp = scp0 ++ mkSpecScp(spec)
       checkSigSpec(sym, spec, traitTvar)
+      checkAssocTypeArgs(spec)
       val exp = exp0.map(resolveExp(_, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix))
       ResolvedAst.Declaration.Sig(sym, spec, exp, loc)
   }
@@ -501,6 +502,7 @@ object Resolver {
       flix.profile(sym, loc) {
         val spec = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
         val scp = scp0 ++ mkSpecScp(spec)
+        checkAssocTypeArgs(spec)
         val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
         ResolvedAst.Declaration.Def(sym, spec, exp, loc)
       }
@@ -740,6 +742,18 @@ object Resolver {
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (!tvars.contains(tvar)) {
         val error = ResolutionError.IllegalSignature(sym, tvar, sym.loc)
+        sctx.errors.add(error)
+      }
+  }
+
+  // MATT docs
+  private def checkAssocTypeArgs(spec0: ResolvedAst.Spec)(implicit sctx: SharedContext): Unit = spec0 match {
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff, _, _) =>
+      val tpes = tpe :: eff.toList ::: fparams.flatMap(_.tpe).toList
+      val determined = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
+      val required = tpes.flatMap(_.assocArgTypeVars).to(SortedSet)
+      for (tvar <- required -- determined) {
+        val error = ResolutionError.UndeterminedAssocTypeArg(tvar, tvar.loc)
         sctx.errors.add(error)
       }
   }

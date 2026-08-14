@@ -1623,6 +1623,35 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalSignature](result)
   }
 
+  test("UndeterminedAssocTypeArg.01") {
+    // The type variable `b` appears only as an argument to `C.T`.
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |
+        |    pub def f(x: a, y: C.T[a, b]): String
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndeterminedAssocTypeArg](result)
+  }
+
+  test("UndeterminedAssocTypeArg.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |
+        |    pub def f(x: a, y: b): C.T[a, b]
+        |}
+        |
+        |def g(x: a, y: C.T[a, b]): String with C[a] = "hello"
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndeterminedAssocTypeArg](result)
+  }
+
   test("IllegalWildType.01") {
     val input =
       """

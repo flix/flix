@@ -57,14 +57,30 @@ mod Test.Dec.Assoc.Type.Multi {
     }
 
     // MATT docs
-    pub def roundTrip(x: a, y: b): Bool with Twice[a] =
-        match Twice.first(x, Twice.dup(x, y)) {
-            case _ => true
-        }
-
-    // MATT docs
     pub def decomposeUnconstrained(x: a, y: b): b with Twice[a] =
         Twice.first(x, Twice.dup(x, y))
+
+    // MATT docs
+
+    trait Emit[a] {
+        type Out[a, ef: Eff]: Type
+        pub def emit(x: a, f: Unit -> Unit \ ef): Emit.Out[a, ef]
+        pub def size(x: a, f: Unit -> Unit \ ef, o: Emit.Out[a, ef]): Int32
+    }
+
+    instance Emit[Int32] {
+        type Out[Int32, ef] = Int32
+        pub def emit(x: Int32, _f: Unit -> Unit \ ef): Int32 = x
+        pub def size(_x: Int32, _f: Unit -> Unit \ ef, o: Int32): Int32 = o
+    }
+
+    // MATT docs
+    pub def equivIdempotent(x: a, f: Unit -> Unit \ ef, g: Unit -> Unit \ ef + ef): Int32 with Emit[a] =
+        Emit.size(x, f, Emit.emit(x, g))
+
+    // MATT docs
+    pub def equivCommutative(x: a, f: Unit -> Unit \ ef1 + ef2, g: Unit -> Unit \ ef2 + ef1): Int32 with Emit[a] =
+        Emit.size(x, f, Emit.emit(x, g))
 
     // MATT docs
 
@@ -105,11 +121,15 @@ mod Test.Dec.Assoc.Type.Multi {
 
     @Test
     pub def testDecompose01(): Unit \ Assert =
-        assertEq(expected = true, roundTrip(1, "x"))
+        assertEq(expected = "x", decomposeUnconstrained(1, "x"))
 
     @Test
-    pub def testDecompose02(): Unit \ Assert =
-        assertEq(expected = "x", decomposeUnconstrained(1, "x"))
+    pub def testEquiv01(): Unit \ Assert =
+        assertEq(expected = 1, equivIdempotent(1, _ -> (), _ -> ()))
+
+    @Test
+    pub def testEquiv02(): Unit \ Assert =
+        assertEq(expected = 2, equivCommutative(2, _ -> (), _ -> ()))
 
     @Test
     pub def testRunner01(): Unit \ Assert = region rc {

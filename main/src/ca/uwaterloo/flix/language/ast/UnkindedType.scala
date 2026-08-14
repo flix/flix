@@ -107,6 +107,55 @@ sealed trait UnkindedType {
 
     case UnkindedType.Error(_) => SortedSet.empty
   }
+
+  // MATT docs
+  def typeVarSyms: SortedSet[Symbol.UnkindedTypeVarSym] = this match {
+    case UnkindedType.Var(sym, _) => SortedSet(sym)
+    case UnkindedType.Cst(_, _) => SortedSet.empty
+    case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.Effect(_, _) => SortedSet.empty
+    case UnkindedType.Struct(_, _) => SortedSet.empty
+    case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedNative(_, _) => SortedSet.empty
+    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.typeVarSyms ++ tpe2.typeVarSyms
+    case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.typeVarSyms).to(SortedSet)
+    case UnkindedType.CaseSet(_, _) => SortedSet.empty
+    case UnkindedType.CaseComplement(tpe, _) => tpe.typeVarSyms
+    case UnkindedType.CaseUnion(tpe1, tpe2, _) => tpe1.typeVarSyms ++ tpe2.typeVarSyms
+    case UnkindedType.CaseIntersection(tpe1, tpe2, _) => tpe1.typeVarSyms ++ tpe2.typeVarSyms
+    case UnkindedType.Ascribe(tpe, _, _) => tpe.typeVarSyms
+    case UnkindedType.Alias(_, _, tpe, _) => tpe.typeVarSyms
+    case UnkindedType.AssocType(_, sel, args, _) => sel.typeVarSyms ++ args.flatMap(_.typeVarSyms)
+    case UnkindedType.Error(_) => SortedSet.empty
+  }
+
+  // MATT docs
+  def assocArgTypeVars: SortedSet[Symbol.UnkindedTypeVarSym] = this match {
+    case UnkindedType.Var(_, _) => SortedSet.empty
+    case UnkindedType.Cst(_, _) => SortedSet.empty
+    case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.Effect(_, _) => SortedSet.empty
+    case UnkindedType.Struct(_, _) => SortedSet.empty
+    case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedNative(_, _) => SortedSet.empty
+    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.assocArgTypeVars ++ tpe2.assocArgTypeVars
+    case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.assocArgTypeVars).to(SortedSet)
+    case UnkindedType.CaseSet(_, _) => SortedSet.empty
+    case UnkindedType.CaseComplement(tpe, _) => tpe.assocArgTypeVars
+    case UnkindedType.CaseUnion(tpe1, tpe2, _) => tpe1.assocArgTypeVars ++ tpe2.assocArgTypeVars
+    case UnkindedType.CaseIntersection(tpe1, tpe2, _) => tpe1.assocArgTypeVars ++ tpe2.assocArgTypeVars
+    case UnkindedType.Ascribe(tpe, _, _) => tpe.assocArgTypeVars
+    case UnkindedType.Alias(_, _, tpe, _) => tpe.assocArgTypeVars
+
+    // The selector is not a binder, so it is not collected here. Everything else is.
+    case UnkindedType.AssocType(_, sel, args, _) => sel.assocArgTypeVars ++ args.flatMap(_.typeVarSyms)
+
+    case UnkindedType.Error(_) => SortedSet.empty
+  }
 }
 
 object UnkindedType {

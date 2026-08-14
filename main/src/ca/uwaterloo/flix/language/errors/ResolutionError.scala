@@ -252,6 +252,33 @@ object ResolutionError {
 
   }
 
+  // MATT docs
+  case class UndeterminedAssocTypeArg(tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E9814
+
+    def summary: String = s"Undetermined type variable '${tvar.toString}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> The type variable '${red(tvar.toString)}' is only used as an argument to an associated type.
+         |
+         |${highlight(loc, "undetermined type variable", fmt)}
+         |
+         |${underline("Explanation:")} An associated type cannot be run backwards: from `T[a, b]` we
+         |cannot recover `b`. A type variable used as an argument to an associated type must therefore
+         |also appear somewhere the type checker can determine it -- a formal parameter, the return
+         |type, or the effect.
+         |
+         |  trait T[a] {
+         |      type F[a, b]: Type
+         |      pub def f(x: a, y: b, z: T.F[a, b]): Int32    // OK: b is determined by y
+         |      pub def g(x: a, z: T.F[a, b]): Int32          // not OK: b is undetermined
+         |  }
+         |""".stripMargin
+    }
+
+  }
+
   /**
     * An error raised to indicate a super call outside of a 'new' object body.
     *
