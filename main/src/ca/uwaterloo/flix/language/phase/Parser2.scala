@@ -2135,7 +2135,7 @@ object Parser2 {
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR,
           separation = Separation.Optional(TokenKind.Comma)
-        )(SyntacticContext.MatchBody, s)
+        )(SyntacticContext.Expr.MatchBody, s)
         close(mark, TreeKind.Expr.ExtMatch)
       }  
     }
@@ -2286,7 +2286,7 @@ object Parser2 {
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR,
           separation = Separation.Optional(TokenKind.Comma)
-        )(SyntacticContext.MatchBody, s)
+        )(SyntacticContext.Expr.MatchBody, s)
         close(mark, TreeKind.Expr.Match)
       }
     }
@@ -2337,7 +2337,7 @@ object Parser2 {
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.MatchBody
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.MatchBody
       assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)

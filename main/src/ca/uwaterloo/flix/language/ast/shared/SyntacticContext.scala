@@ -47,10 +47,10 @@ object SyntacticContext {
   object Expr {
     case object Constraint extends Expr
 
+    case object MatchBody extends Expr
+
     case object OtherExpr extends Expr
   }
-
-  case object MatchBody extends SyntacticContext
 
   case object Unknown extends SyntacticContext
 
