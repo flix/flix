@@ -2337,7 +2337,7 @@ object Parser2 {
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.MatchBody;
+      implicit val sctx: SyntacticContext = SyntacticContext.MatchBody
       assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)
