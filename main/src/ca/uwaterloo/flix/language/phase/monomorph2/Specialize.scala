@@ -276,14 +276,10 @@ object Specialize {
     case Type.Apply(_, _, loc)             =>
       val args = tpe.typeArguments
       tpe.baseType match {
-        case Type.Cst(TypeConstructor.Enum(sym, _), _) if tables.enumTable.contains((sym, args)) =>
-          Type.mkEnum(tables.enumTable((sym, args)), Nil, loc)
-        case Type.Cst(TypeConstructor.RestrictableEnum(sym, _), _) if tables.restrictableEnumTable.contains((sym, args)) =>
-          Type.mkEnum(tables.restrictableEnumTable((sym, args)), Nil, loc)
-        case Type.Cst(TypeConstructor.Struct(sym, _), _) if tables.structTable.contains((sym, args)) =>
-          Type.mkStruct(tables.structTable((sym, args)), Nil, loc)
-        case _ =>
-          Type.mkApply(rewriteEnumStructType(tpe.baseType), args.map(rewriteEnumStructType), loc)
+        case Type.Cst(TypeConstructor.Enum(sym, _), _) => Type.mkEnum(tables.enumTable((sym, args)), Nil, loc)
+        case Type.Cst(TypeConstructor.RestrictableEnum(sym, _), _) => Type.mkEnum(tables.restrictableEnumTable((sym, args)), Nil, loc)
+        case Type.Cst(TypeConstructor.Struct(sym, _), _) => Type.mkStruct(tables.structTable((sym, args)), Nil, loc)
+        case _ => Type.mkApply(rewriteEnumStructType(tpe.baseType), args.map(rewriteEnumStructType), loc)
       }
 
     case Type.Alias(sym, args, inner, loc) =>
