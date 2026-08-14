@@ -1158,12 +1158,16 @@ object Namer {
       val es = exps.map(visitExp)
       NamedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
 
-    case DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+    case DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, _, _, _, pred, loc) =>
       val es = exps.map(visitExp)
       val qe = visitExp(queryExp)
-      val ss = selects.map(visitExp)
-      val f = from.map(visitBodyPredicate)
-      val w = where.map(visitExp)
+      val (ss, f, w) = qe match {
+        case NamedAst.Expr.FixpointConstraintSet(List(NamedAst.Constraint(_, NamedAst.Predicate.Head.Atom(_, _, terms, _), body, _)), _) =>
+          val guards = body.collect { case NamedAst.Predicate.Body.Guard(exp, _) => exp }
+          val atoms = body.collect { case a: NamedAst.Predicate.Body.Atom => a }
+          (terms, atoms, guards)
+        case _ => throw InternalCompilerException("Unexpected FixpointQueryWithSelect pseudo-query shape", loc)
+      }
       NamedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, loc)
 
     case DesugaredAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
