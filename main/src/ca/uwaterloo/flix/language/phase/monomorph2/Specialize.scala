@@ -36,7 +36,16 @@ import scala.jdk.CollectionConverters.*
   */
 object Specialize {
 
-  /** Immutable lookup tables built once by `run`, before any specialization/lowering happens. */
+  /**
+    * Immutable lookup tables built once by `run`, before any specialization/lowering happens.
+    *
+    * @param defTable              Fresh syms for parametric defs.
+    * @param allDefs               Every reachable def (top-level, instance, default-sig-impl), parametric or not.
+    * @param enumTable             Fresh syms for parametric enums only.
+    * @param structTable           Fresh syms for parametric structs only.
+    * @param restrictableEnumTable Fresh syms for (parametric) restrictable enums. (Restrictable enums always carry the case-set index as an implicit tparam.)
+    * @param instances             Every instance in `root`, keyed by trait and the type constructor it is defined for.
+    */
   private[monomorph2] case class LookupTables(
     defTable: Map[(Symbol.DefnSym, Type), Symbol.DefnSym],
     allDefs: Map[Symbol.DefnSym, TypedAst.Def],
