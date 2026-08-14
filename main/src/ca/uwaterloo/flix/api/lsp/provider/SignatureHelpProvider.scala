@@ -30,15 +30,15 @@ object SignatureHelpProvider {
     LspUtil.getStack(uri, pos).collectFirst {
       case TypedAst.Expr.ApplyDef(defnSymUse, exps, _, _, _, _, _, _) =>
         // The lookup is guaranteed to succeed because otherwise the expression would be replaced by Expr.Error.
-        mkSignatureHelp(defnSymUse.sym, root.defs(defnSymUse.sym).spec, exps.toList, pos)
+        mkSignatureHelp(defnSymUse.sym, root.defs(defnSymUse.sym).spec, exps, pos)
       case TypedAst.Expr.ApplyOp(opSymUse, exps, _, _, _, _) =>
         // The lookup is guaranteed to succeed because otherwise the expression would be replaced by Expr.Error.
         val ops = root.effects(opSymUse.sym.eff).ops
         val op = ops.find(thatOp => thatOp.sym == opSymUse.sym).get
-        mkSignatureHelp(opSymUse.sym, op.spec, exps.toList, pos)
+        mkSignatureHelp(opSymUse.sym, op.spec, exps, pos)
       case TypedAst.Expr.ApplySig(sigSymUse, exps, _, _, _, _, _, _, _) =>
         // The lookup is guaranteed to succeed because otherwise the expression would be replaced by Expr.Error.
-        mkSignatureHelp(sigSymUse.sym, root.sigs(sigSymUse.sym).spec, exps.toList, pos)
+        mkSignatureHelp(sigSymUse.sym, root.sigs(sigSymUse.sym).spec, exps, pos)
     }
   }
 
@@ -51,7 +51,7 @@ object SignatureHelpProvider {
     * @param pos  the position of the cursor.
     * @return a SignatureHelp object containing the signature information.
     */
-  private def mkSignatureHelp(sym: Symbol, spec: TypedAst.Spec, exps: List[TypedAst.Expr], pos: Position)(implicit flix: Flix): SignatureHelp = {
+  private def mkSignatureHelp(sym: Symbol, spec: TypedAst.Spec, exps: Seq[TypedAst.Expr], pos: Position)(implicit flix: Flix): SignatureHelp = {
     // Count the index of the active parameter, which is the first expression that contains the position of the cursor.
     val activeParameter = exps.indexWhere(exp => pos.containedBy(exp.loc))
     val signatureInfo = SignatureInformation.from(sym, spec, activeParameter)

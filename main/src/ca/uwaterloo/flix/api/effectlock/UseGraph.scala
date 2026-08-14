@@ -77,16 +77,16 @@ object UseGraph {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(SymUse.DefSymUse(sym, _), exps, _, _, _, _, _, _) =>
-      visitExps(exps.toList) + (sym0 -> UsedSym.DefnSym(sym))
+      visitExps(exps) + (sym0 -> UsedSym.DefnSym(sym))
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
-      visitExps(exps.toList)
+      visitExps(exps)
 
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
-      visitExps(exps.toList)
+      visitExps(exps)
 
     case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, _, _, _, _, _, _, _) =>
-      visitExps(exps.toList) + (sym0 -> UsedSym.SigSym(sym))
+      visitExps(exps) + (sym0 -> UsedSym.SigSym(sym))
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -288,7 +288,7 @@ object UseGraph {
   }
 
   /** Returns the all the uses of functions and signatures in `exps`. */
-  private def visitExps(exps: List[Expr])(implicit sym0: UsedSym): ListMap[UsedSym, UsedSym] = {
+  private def visitExps(exps: Seq[Expr])(implicit sym0: UsedSym): ListMap[UsedSym, UsedSym] = {
     exps.map(visitExp).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
   }
 

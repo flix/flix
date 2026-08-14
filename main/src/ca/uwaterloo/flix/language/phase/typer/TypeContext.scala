@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.collection.immutable.LinearSeq
 import scala.collection.mutable
 
 /**
@@ -193,7 +194,7 @@ class TypeContext {
     *
     * We assume that the length of `expectedTypes`, `actualTypes`, and `actualLocs` match.
     */
-  def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation]): Unit = {
+  def expectTypeArguments(sym: Symbol, expectedTypes: LinearSeq[Type], actualTypes: LinearSeq[Type], actualLocs: LinearSeq[SourceLocation]): Unit = {
     // Perf: We use a low-level imperative style for optimal performance.
     var idx = 1
     var es = expectedTypes

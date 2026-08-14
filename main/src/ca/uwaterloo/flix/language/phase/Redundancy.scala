@@ -27,7 +27,6 @@ import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.ParOps
-import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.collection.Nel
 import ca.uwaterloo.flix.util.collection.SeqOps
 
@@ -391,25 +390,25 @@ object Redundancy {
       if (!rc.defn.contains(sym)) {
         sctx.defSyms.put(sym, ())
       }
-      visitExps(exps.toList, env0, rc)
+      visitExps(exps, env0, rc)
 
     case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _, _) =>
       if (rc.vars.contains(sym)) {
-        visitExps(exps.toList, env0, rc)
+        visitExps(exps, env0, rc)
       } else {
-        Used.of(sym) ++ visitExps(exps.toList, env0, rc)
+        Used.of(sym) ++ visitExps(exps, env0, rc)
       }
 
     case Expr.ApplyOp(opUse, exps, _, _, _, _) =>
       sctx.effSyms.put(opUse.sym.eff, ())
-      visitExps(exps.toList, env0, rc)
+      visitExps(exps, env0, rc)
 
     case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.sigSyms.put(sym, ())
       }
-      visitExps(exps.toList, env0, rc)
+      visitExps(exps, env0, rc)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -456,10 +455,10 @@ object Redundancy {
         (used ++ shadowedVar) - sym
 
       // Check if the fparams are dead in exp1
-      val fparamVars = fparams.toList.map(_.bnd.sym)
+      val fparamVars = fparams.map(_.bnd.sym)
       val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
 
-      ListOps.zip(fparamVars, shadowedFparamVars).foldLeft(res1) {
+      fparamVars.zip(shadowedFparamVars).foldLeft(res1) {
         case (acc, (s, shadow)) if deadVarSym(s, innerUsed1) => (acc ++ shadow) - s + UnusedVarSym(s)
         case (acc, (s, shadow)) => (acc ++ shadow) - s
       }
@@ -749,11 +748,11 @@ object Redundancy {
       sctx.effSyms.put(symUse.sym, ())
       rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body, _)) =>
-          val syms = fparams.toList.map(_.bnd.sym)
+          val syms = fparams.map(_.bnd.sym)
           val shadowedFparamVars = syms.map(s => shadowing(s.text, s.loc, env0))
           val env1 = env0 ++ syms
           val usedBody = visitExp(body, env1, rc)
-          ListOps.zip(syms, shadowedFparamVars).foldLeft(acc ++ usedBody) {
+          syms.zip(shadowedFparamVars).foldLeft(acc ++ usedBody) {
             case (acc1, (s, shadow)) =>
               if (deadVarSym(s, usedBody)) {
                 acc1 ++ shadow + UnusedVarSym(s)
@@ -956,7 +955,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
     */
-  private def visitExps(es: List[Expr], env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used =
+  private def visitExps(es: Seq[Expr], env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used =
     es.foldLeft(Used.empty) {
       case (acc, exp) => acc ++ visitExp(exp, env0, rc)
     }

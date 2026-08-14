@@ -112,16 +112,16 @@ object TreeShaker1 {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(bnd, exps, _, _, _, _, _, _) =>
-      Set(Reachable.DefnSym(bnd.sym)) ++ visitExps(exps.toList)
+      Set(Reachable.DefnSym(bnd.sym)) ++ visitExps(exps)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
-      visitExps(exps.toList)
+      visitExps(exps)
 
     case Expr.ApplyOp(_, exps, _, _, _, _) =>
-      visitExps(exps.toList)
+      visitExps(exps)
 
     case Expr.ApplySig(bnd, exps, _, _, _, _, _, _, _) =>
-      Set(Reachable.SigSym(bnd.sym)) ++ visitExps(exps.toList)
+      Set(Reachable.SigSym(bnd.sym)) ++ visitExps(exps)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -326,7 +326,7 @@ object TreeShaker1 {
   }
 
   /** Returns the symbols reachable from `exps`. */
-  private def visitExps(exps: List[Expr]): Set[Reachable] =
+  private def visitExps(exps: Seq[Expr]): Set[Reachable] =
     exps.map(visitExp).fold(Set.empty)(_ ++ _)
 
   /** Returns the symbols reachable from `cs`. */

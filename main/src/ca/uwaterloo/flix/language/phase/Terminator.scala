@@ -956,7 +956,7 @@ object Terminator {
           case None      => env
         }
       case (Expr.Tuple(exps, _, _, _), Pattern.Tuple(pats, _, _)) =>
-        exps.zip(pats.toList).foldLeft(env) {
+        exps.zip(pats).foldLeft(env) {
           case (acc, (expr, subPat)) => extendEnvFromScrutinee(acc, expr, subPat)
         }
       case _ => env
@@ -972,7 +972,7 @@ object Terminator {
     case Pattern.Tag(_, pats, _, _) =>
       pats.foldLeft(env)((acc, p) => collectStrictSubstructures(acc, p, rootParam))
     case Pattern.Tuple(pats, _, _) =>
-      pats.toList.foldLeft(env)((acc, p) => extendEnvFromPattern(acc, p, rootParam))
+      pats.foldLeft(env)((acc, p) => extendEnvFromPattern(acc, p, rootParam))
     case Pattern.Var(bnd, _, _) =>
       env.bind(bnd.sym, ParamRelation(rootParam, Alias))
     case _ => env
@@ -988,7 +988,7 @@ object Terminator {
     case Pattern.Tag(_, pats, _, _) =>
       pats.foldLeft(env)((acc, p) => collectStrictSubstructures(acc, p, rootParam))
     case Pattern.Tuple(pats, _, _) =>
-      pats.toList.foldLeft(env)((acc, p) => collectStrictSubstructures(acc, p, rootParam))
+      pats.foldLeft(env)((acc, p) => collectStrictSubstructures(acc, p, rootParam))
     case Pattern.Wild(_, _) => env
     case Pattern.Cst(_, _, _) => env
     case Pattern.Record(pats, restPat, _, _) =>

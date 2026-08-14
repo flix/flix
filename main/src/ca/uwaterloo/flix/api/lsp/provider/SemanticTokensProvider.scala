@@ -430,7 +430,7 @@ object SemanticTokensProvider {
 
     case Expr.ApplyOp(op, exps, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
-      Iterator(t) ++ visitExps(exps.toList)
+      Iterator(t) ++ visitExps(exps)
 
     case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
@@ -708,7 +708,7 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given expressions `exps0`.
     */
-  private def visitExps(exps0: List[Expr]): Iterator[SemanticToken] =
+  private def visitExps(exps0: Seq[Expr]): Iterator[SemanticToken] =
     exps0.flatMap(visitExp).iterator
 
   /**

@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.util.collection
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.collection.immutable.LinearSeq
+
 /**
   * A non-empty list (Nel) - always has at least one element.
   *
@@ -25,10 +27,10 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   * @param xs the remaining elements
   * @tparam T the type of the elements
   */
-case class Nel[+T](x: T, xs: List[T]) extends Iterable[T] {
+case class Nel[+T](x: T, xs: List[T]) extends LinearSeq[T] {
 
   /** Returns the number of elements in `this` (always at least 1). */
-  def length: Int = 1 + xs.length
+  override def length: Int = 1 + xs.length
 
   /** Returns the first element of `this`. */
   override def head: T = x
@@ -79,7 +81,6 @@ case class Nel[+T](x: T, xs: List[T]) extends Iterable[T] {
 
   /** Returns `this` as a [[List]]. */
   override def toList: List[T] = x :: xs
-
 }
 
 object Nel {

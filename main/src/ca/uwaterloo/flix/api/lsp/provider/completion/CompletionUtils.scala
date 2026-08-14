@@ -29,11 +29,11 @@ object CompletionUtils {
 
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
-  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
+  private def isUnitFunction(fparams: Seq[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
 
   def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
-      val args = if (isUnitFunction(fparams.toList))
+      val args = if (isUnitFunction(fparams))
         Nil
       else
         fparams.map {
@@ -53,7 +53,7 @@ object CompletionUtils {
   /**
     * Generate a snippet which represents calling a function.
     */
-  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
+  def getApplySnippet(name: String, fparams: Seq[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
     val args = fparams.zipWithIndex.map {
@@ -71,12 +71,11 @@ object CompletionUtils {
     * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
     */
   def getOpHandlerSnippet(name: String, fparams: Nel[TypedAst.FormalParam]): String = {
-    val fps = fparams.toList
-    val functionIsUnit = isUnitFunction(fps)
+    val functionIsUnit = isUnitFunction(fparams)
 
-    val args = fps.zipWithIndex.map {
+    val args = fparams.zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
-    } :+ s"$${${fps.length + 1}:resume}"
+    } :+ s"$${${fparams.length + 1}:resume}"
     if (functionIsUnit)
       s"$name($${1:resume}) = "
     else

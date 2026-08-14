@@ -196,7 +196,7 @@ object Inliner {
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
-      if (shouldInlineDef(root.defs(sym), es.toList, ctx0)) {
+      if (shouldInlineDef(root.defs(sym), es, ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
         flix.emitEvent(FlixEvent.InlinedDef(sym))
         val defn = root.defs(sym)
@@ -536,7 +536,7 @@ object Inliner {
     case Pattern.Tuple(pats, _, _) => exp match {
       case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) =>
         // `exps` and `pats` have same length for well-typed programs.
-        matchPatterns(exps, pats.toList)
+        matchPatterns(exps, pats)
       case _ =>
         MatchResult.Unknown
     }
@@ -553,7 +553,7 @@ object Inliner {
     *
     * N.B.: `exps` and `pats` must have the same length, otherwise [[InternalCompilerException]] is thrown.
     */
-  private def matchPatterns(exps: List[MonoAst.Expr], pats: List[MonoAst.Pattern]): MatchResult = {
+  private def matchPatterns(exps: Seq[MonoAst.Expr], pats: Seq[MonoAst.Pattern]): MatchResult = {
     if (exps.lengthCompare(pats) != 0) {
       throw InternalCompilerException(
         s"Match rule has arity ${pats.size} against ${exps.size} expressions.",
@@ -782,7 +782,7 @@ object Inliner {
     * @param exps the arguments to the function.
     * @param ctx0 the local context.
     */
-  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym): Boolean = {
+  private def shouldInlineDef(defn: MonoAst.Def, exps: Seq[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym): Boolean = {
     if (ctx0.currentlyInlining) {
       return false
     }
@@ -806,7 +806,7 @@ object Inliner {
   /**
     * Returns `true` if there exists [[Expr.Lambda]] in `exps`.
     */
-  private def hasKnownLambda(exps: List[Expr]): Boolean = {
+  private def hasKnownLambda(exps: Seq[Expr]): Boolean = {
     exps.exists(isLambda)
   }
 
