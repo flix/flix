@@ -112,7 +112,7 @@ object TypeReduction2 {
           (newTpe, cs)
 
         // Case 3: Multiple matches. Bug
-        case _ :: _ :: Nil => throw InternalCompilerException("unexpected overlapping equality constraints", loc)
+        case _ :: _ :: _ => throw InternalCompilerException("unexpected overlapping equality constraints", loc)
       }
 
     case Type.JvmToType(tpe, loc) =>
