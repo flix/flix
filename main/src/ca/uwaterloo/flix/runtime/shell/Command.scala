@@ -144,7 +144,7 @@ object Command {
     if (input == ":build" || input == ":b")
       return Command.Build
 
-    if (input == ":build-classes" || input == ":classes")
+    if (input == ":build-classes")
       return Command.BuildClasses
 
     if (input == ":check" || input == ":c")
