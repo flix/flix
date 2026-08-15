@@ -1,5 +1,10 @@
 # Changelog
 
+Version 0.75.2:
+- Compiler: Improved tree shaking of lowering-related library functions (thanks Simon!)
+- Compiler: Reduced the size of generated HTML documentation (thanks Magnus!)
+- Compiler: Fixed a few bugs (thanks Matt!)
+
 Version 0.75.1:
 - Compiler: Fixed a few bugs (thanks Magnus!)
 

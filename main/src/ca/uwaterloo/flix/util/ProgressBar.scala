@@ -21,6 +21,11 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class ProgressBar(flix: Flix) {
   /**
+    * The width of the progress bar in visible characters.
+    */
+  private val Width = 80
+
+  /**
     * The characters in the spinner.
     */
   private val SpinnerChars = Array("|", "/", "-", "\\")
@@ -45,7 +50,7 @@ class ProgressBar(flix: Flix) {
     * Used to properly reset the current line.
     */
   def complete(): Unit = {
-    System.out.print(" " * 80 + s"\r")
+    System.out.print(" " * Width + "\r")
     System.out.flush()
   }
 
@@ -69,16 +74,22 @@ class ProgressBar(flix: Flix) {
       case _ => flix.getFormatter.red(memoryPadded)
     }
 
-    // We abbreviate phase and msg if they are too long to fit.
+    // We abbreviate phase and msg if they are too long to fit within `Width`.
+    // The fixed parts (spinner, memory, brackets, and spaces) take up 17 chars.
     val p = abbreviate(phase, 20)
-    val m = abbreviate(msg, 80 - (20 + 10))
+    val m = abbreviate(msg, Width - (20 + 17))
     val s = s" [${flix.getFormatter.green(spinner)}] [$memPart] [${flix.getFormatter.blue(p)}] $m "
+
+    // Clear the current line.
+    // NB: We clear the line with spaces (rather than padding the string) because
+    // the string may contain ANSI escape codes which do not take up any width.
+    System.out.print(" " * Width + "\r")
 
     // Print the string followed by carriage return.
     // NB: We do *NOT* print a newline because then
     // we would not be able to overwrite the current
     // line in the iteration.
-    System.out.print(s.padTo(80, ' ') + "\r")
+    System.out.print(s + "\r")
 
     // Flush to ensure that the string is printed.
     System.out.flush()

@@ -22,7 +22,8 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
-import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
+import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
@@ -31,8 +32,8 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result}
 
-import java.io.PrintStream
-import java.nio.file.{FileSystems, Files, Path, StandardCopyOption}
+import java.io.{IOException, PrintStream}
+import java.nio.file.{FileSystems, Files, LinkOption, Path, StandardCopyOption}
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.collection.mutable
 import scala.io.StdIn.readLine
@@ -258,7 +259,7 @@ object Bootstrap {
   /**
     * Returns the directory of the generated documentation files relative to the given path `p`.
     */
-  private def getDocumentationDirectory(p: Path): Path = getBuildDirectory(p).resolve("./doc/").normalize()
+  def getDocumentationDirectory(p: Path): Path = getBuildDirectory(p).resolve("./doc/").normalize()
 
   /**
     * Returns the path to the artifact directory relative to the given path `p`.
@@ -441,10 +442,33 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /**
     * Builds (compiles) the source files for the project.
+    *
+    * No class files (or other files) are written to the file system.
     */
-  def build(flix: Flix, build: Build = Build.Development): Result[CompilationResult, BootstrapError] = {
+  def build(flix: Flix): Result[CompilationResult, BootstrapError] =
+    compileProject(flix, Build.Development)
+
+  /**
+    * Builds (compiles) the source files for the project in production mode and
+    * writes the generated class files to the build directory.
+    */
+  def buildClasses(flix: Flix): Result[Unit, BootstrapError] = {
+    for {
+      result <- compileProject(flix, Build.Production)
+      _ <- Steps.writeClasses(result.getClasses)
+    } yield {
+      ()
+    }
+  }
+
+  /**
+    * Compiles the source files for the project.
+    *
+    * The generated classes are not loaded into the JVM (see [[JvmLoader.load]]).
+    */
+  private def compileProject(flix: Flix, build: Build): Result[CompilationResult, BootstrapError] = {
     // We disable incremental compilation to ensure a clean compile.
-    val newOptions = flix.options.copy(build = build, incremental = false, outputJvm = true, outputPath = Bootstrap.getBuildDirectory(projectPath))
+    val newOptions = flix.options.copy(build = build, incremental = false)
     flix.setOptions(newOptions)
 
     // We also clear any cached ASTs.
@@ -462,10 +486,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     for {
       _ <- Steps.configureJarOutput(flix)
-      _ <- Steps.compile(flix)
+      result <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
       contents = (zip: ZipOutputStream) => {
-        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
+        Steps.addClassesToZip(result.getClasses, zip)
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
       }
       _ <- Steps.createJar(jarFile, contents)
@@ -483,12 +507,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     for {
       _ <- Steps.configureJarOutput(flix)
-      _ <- Steps.compile(flix)
+      result <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
       _ <- Steps.validateDirectory(libDir)
       _ <- Steps.validateJarFilesIn(libDir)
       contents = (zip: ZipOutputStream) => {
-        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
+        Steps.addClassesToZip(result.getClasses, zip)
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
         Steps.addJarsFromDirToZip(libDir, zip)
       }
@@ -824,7 +848,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def doc(flix: Flix): Result[Unit, BootstrapError] = {
     Steps.updateStaleSources(flix)
-    Steps.check(flix).map(HtmlDocumentor.run(_, getPackageModules)(flix))
+    Steps.check(flix).map(HtmlDocumentor.run(_, getPackageModules, Bootstrap.getDocumentationDirectory(projectPath))(flix))
   }
 
   /**
@@ -844,9 +868,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def run(flix: Flix, args: Array[String]): Result[Unit, BootstrapError] = {
     for {
-      compilationResult <- build(flix)
+      compilationResult <- compileProject(flix, Build.Development)
     } yield {
-      compilationResult.getMain match {
+      JvmLoader.load(compilationResult).main match {
         case None => ()
         case Some(main) => main(args)
       }
@@ -858,8 +882,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def test(flix: Flix): Result[Unit, BootstrapError] = {
     for {
-      compilationResult <- build(flix)
-      res <- Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError("Tester Error"))
+      compilationResult <- compileProject(flix, Build.Development)
+      res <- Tester.run(Nil, JvmLoader.load(compilationResult))(flix).mapErr(_ => BootstrapError.GeneralError("Tester Error"))
     } yield {
       res
     }
@@ -987,14 +1011,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private object Steps {
 
     /**
-      * Adds all class files from `dir` to `zip`.
+      * Adds all `classes` to `zip`, writing the bytecode directly from memory.
       */
-    def addClassFilesFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
-      // Add all class files.
-      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      val classFiles = FileOps.getFilesWithExtIn(dir, EXT_CLASS, Int.MaxValue)
-      for ((buildFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(dir, classFiles)) {
-        FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
+    def addClassesToZip(classes: Map[JvmName, JvmClass], zip: ZipOutputStream): Unit = {
+      // Add all classes.
+      // Here we sort entries by their entry name to apply https://reproducible-builds.org/
+      val entries = classes.values.map(clazz => (clazz.name.toClassFileName, clazz)).toList.sortBy(_._1)
+      for ((entryName, clazz) <- entries) {
+        FileOps.addToZip(zip, entryName, clazz.bytecode)
       }
     }
 
@@ -1178,7 +1202,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Runs the compile function on the `flix` object.
       * It is up to the caller to set the appropriate options on `flix`.
-      * It is often the case that `outputJvm` and `loadClassFiles` must be toggled on or off.
       */
     def compile(flix: Flix): Result[CompilationResult, BootstrapError] = {
       val (optRoot, errors) = flix.check()
@@ -1190,21 +1213,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     /**
-      * Configures `flix` to emit class files to the build directory (on the file system)
-      * in production mode.
+      * Configures `flix` to compile in production mode for jar output.
       *
-      * @see [[Bootstrap.getBuildDirectory]]
+      * The generated classes are kept in memory only (they are not loaded into the JVM).
+      * Instead they are packed directly into the jar file by [[addClassesToZip]].
+      *
       * @see [[Build.Production]]
       */
     def configureJarOutput(flix: Flix): Result[Unit, BootstrapError] = {
-      val buildDir = Bootstrap.getBuildDirectory(projectPath)
-      for {
-        _ <- validateDirectory(buildDir)
-      } yield {
-        val newOptions = flix.options.copy(build = Build.Production, outputJvm = true, outputPath = buildDir)
-        flix.setOptions(newOptions)
-        ()
-      }
+      val newOptions = flix.options.copy(build = Build.Production)
+      flix.setOptions(newOptions)
+      Ok(())
     }
 
     /**
@@ -1508,6 +1527,57 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     def validateJarFilesIn(dir: Path): Result[Unit, BootstrapError] = {
       Result.traverse(FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile).map(_ => ())
+    }
+
+    /**
+      * Writes `classes` to the class directory of the project.
+      *
+      * For example, the class `Foo.Bar.Baz` is written to `build/class/Foo/Bar/Baz.class`.
+      *
+      * @see [[Bootstrap.getClassDirectory]]
+      */
+    def writeClasses(classes: Map[JvmName, JvmClass]): Result[Unit, BootstrapError] = {
+      val classDir = Bootstrap.getClassDirectory(projectPath)
+      Result.traverse(classes.values.toList)(writeClass(classDir, _)).map(_ => ())
+    }
+
+    /**
+      * Writes the given JVM class `clazz` to a sub path under the given `classDir`.
+      *
+      * The class file is written provided that its path either does not exist or is an empty file or a JVM class file.
+      */
+    private def writeClass(classDir: Path, clazz: JvmClass): Result[Unit, BootstrapError] = {
+      // Compute the absolute path of the class file to write.
+      val path = classDir.resolve(clazz.name.toPath).toAbsolutePath
+
+      try {
+        // Create all parent directories (in case they don't exist).
+        Files.createDirectories(path.getParent)
+
+        // Check if the file already exists.
+        if (Files.exists(path)) {
+          // Check that the file is a regular file.
+          if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+            return Err(BootstrapError.FileError(s"Unable to write to non-regular file: '$path'."))
+          }
+
+          // Check if the file is writable.
+          if (!Files.isWritable(path)) {
+            return Err(BootstrapError.FileError(s"Unable to write to read-only file: '$path'."))
+          }
+
+          // Check that the file is empty or a class file.
+          if (!(FileOps.isEmpty(path) || FileOps.isClassFile(path))) {
+            return Err(BootstrapError.FileError(s"Refusing to overwrite non-empty, non-class file: '$path'."))
+          }
+        }
+
+        // Write the bytecode.
+        Files.write(path, clazz.bytecode)
+        Ok(())
+      } catch {
+        case ex: IOException => Err(BootstrapError.FileError(s"Unable to write to path '$path': ${ex.getMessage}"))
+      }
     }
 
   }

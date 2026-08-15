@@ -32,7 +32,7 @@ object ResolvedAstPrinter {
           spec.ann,
           spec.mod,
           sym,
-          spec.fparams.map(printFormalParam),
+          spec.fparams.toList.map(printFormalParam),
           UnkindedTypePrinter.print(spec.tpe),
           spec.eff.map(UnkindedTypePrinter.print).getOrElse(DocAst.Type.Pure),
           print(exp)
@@ -61,7 +61,7 @@ object ResolvedAstPrinter {
     case Expr.Stm(exps, exp, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Expr.Discard(exp, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), None, print(exp1), print(exp2))
-    case Expr.LocalDef(_, sym, fparams, exp1, exp2, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), None, None, print(exp1), print(exp2))
+    case Expr.LocalDef(_, sym, fparams, exp1, exp2, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.toList.map(printFormalParam), None, None, print(exp1), print(exp2))
     case Expr.Region(sym, _, exp, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {
       case ResolvedAst.MatchRule(pat, guard, body, _) => (printPattern(pat), guard.map(print), print(body))
@@ -100,7 +100,7 @@ object ResolvedAstPrinter {
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _) => DocAst.Expr.Handler(symUse.sym, rules.map {
-      case ResolvedAst.HandlerRule(opSymUse, fparams, exp, _) => (opSymUse.sym, fparams.map(printFormalParam), print(exp))
+      case ResolvedAst.HandlerRule(opSymUse, fparams, exp, _) => (opSymUse.sym, fparams.toList.map(printFormalParam), print(exp))
     })
     case Expr.RunWith(exp1, exp2, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
     case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown

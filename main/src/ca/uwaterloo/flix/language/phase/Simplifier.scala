@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, RegionScope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
+import ca.uwaterloo.flix.util.collection.{ListOps, MapOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -47,7 +47,7 @@ object Simplifier {
 
   private def visitDef(decl: MonoAst.Def)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Def = decl match {
     case MonoAst.Def(sym, spec, exp, _) =>
-      val fs = spec.fparams.map(visitFormalParam)
+      val fs = spec.fparams.toList.map(visitFormalParam)
       val e = visitExp(exp)
       val funType = spec.functionType
       val retType = visitType(funType.arrowResultType)
@@ -213,7 +213,7 @@ object Simplifier {
       SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
-      val fps = fparams.map(visitFormalParam)
+      val fps = fparams.toList.map(visitFormalParam)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
@@ -252,7 +252,7 @@ object Simplifier {
       val e = visitExp(exp)
       val rs = rules map {
         case MonoAst.HandlerRule(sym, fparams, body) =>
-          val fps = fparams.map(visitFormalParam)
+          val fps = fparams.toList.map(visitFormalParam)
           val b = visitExp(body)
           SimplifiedAst.HandlerRule(sym, fps, b)
       }
@@ -540,7 +540,7 @@ object Simplifier {
             // Arrow type arguments are ordered (effect, args.., result type).
             val _ :: targs = tpe.typeArguments
             val (args, List(res)) = targs.splitAt(targs.length - 1)
-            Type.mkArrowWithoutEffect(args.map(visitPolyType), visitPolyType(res), loc)
+            Type.mkArrowWithoutEffect(Nel.unsafeFrom(args.map(visitPolyType)), visitPolyType(res), loc)
 
           case TypeConstructor.RecordRowExtend(label) =>
             val List(labelType, restType) = tpe.typeArguments
@@ -635,7 +635,7 @@ object Simplifier {
 
   private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmMethod = method match {
     case MonoAst.JvmMethod(ann, ident, fparams0, exp0, retTpe, eff, loc) =>
-      val fparams = fparams0 map visitFormalParam
+      val fparams = fparams0.toList.map(visitFormalParam)
       val exp = visitExp(exp0)
       val rt = visitType(retTpe)
       SimplifiedAst.JvmMethod(ann, ident, fparams, exp, rt, simplifyEffect(eff), loc)
@@ -1480,7 +1480,7 @@ object Simplifier {
 
   private def visitEffOp(op: MonoAst.Op)(implicit universe: Set[Symbol.EffSym]): SimplifiedAst.Op = op match {
     case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0, _), loc) =>
-      val fparams = fparams0.map(visitFormalParam)
+      val fparams = fparams0.toList.map(visitFormalParam)
       val retTpe = visitType(retTpe0)
       val eff = simplifyEffect(eff0)
       SimplifiedAst.Op(sym, ann, mod, fparams, retTpe, eff, loc)

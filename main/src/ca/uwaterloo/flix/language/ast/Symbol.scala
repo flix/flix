@@ -299,14 +299,6 @@ object Symbol {
   }
 
   /**
-    * Returns the type alias symbol for the given fully qualified name
-    */
-  def mkTypeAliasSym(fqn: String): TypeAliasSym = split(fqn) match {
-    case None => new TypeAliasSym(Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new TypeAliasSym(ns, name, SourceLocation.Unknown)
-  }
-
-  /**
     * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEffSym(ns: NName, ident: Ident): EffSym = {
@@ -589,6 +581,13 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+  }
+
+  object CaseSym {
+    /** The `ordinal` to use for a `CaseSym` that has no real one. Must be used consistently,
+      * since `ordinal` is part of `CaseSym`'s equality.
+      */
+    val NoOrdinal: Int = -1
   }
 
   /**

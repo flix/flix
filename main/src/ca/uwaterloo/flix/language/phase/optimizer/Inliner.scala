@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.Nel
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -186,7 +187,7 @@ object Inliner {
         case Expr.Lambda(fparam, e1, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
-          val letBinding = bindArgs(e1, List(fparam), List(e2), loc)
+          val letBinding = bindArgs(e1, Nel.of(fparam), List(e2), loc)
           visitExp(letBinding, ctx0)
 
         case e1 =>
@@ -753,8 +754,8 @@ object Inliner {
     * where `symi` is the symbol of the i-th formal parameter and `exp` is the body of the function.
     *
     */
-  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation): Expr = {
-    ListOps.zip(fparams, exps).foldRight(exp) {
+  private def bindArgs(exp: Expr, fparams: Nel[FormalParam], exps: List[Expr], loc: SourceLocation): Expr = {
+    ListOps.zip(fparams.toList, exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
@@ -1027,7 +1028,7 @@ object Inliner {
     }
 
     /** Returns a [[LocalContext]] with the mappings of `l` added to [[varSubst]]. */
-    def addVarSubsts(l: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
+    def addVarSubsts(l: Nel[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
       this.copy(varSubst = l.foldLeft(this.varSubst)(_ ++ _))
     }
 

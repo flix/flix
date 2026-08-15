@@ -1188,7 +1188,7 @@ object Lowering {
     val valueSym = mkLetSym("value", loc)
     val chanVar = MonoAst.Expr.Var(chanSym, exp1.tpe, loc)
     val valueVar = MonoAst.Expr.Var(valueSym, exp2.tpe, loc)
-    val itpe = lowerType(Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc))
+    val itpe = lowerType(Type.mkIoUncurriedArrow(Nel.of(exp2.tpe, exp1.tpe), Type.Unit, loc))
     val defnSym = lookup(Defs.ChannelPut, itpe)
     val putExp = MonoAst.Expr.ApplyDef(defnSym, List(valueVar, chanVar), itpe, Type.Unit, eff, loc)
     // The channel binding is the outermost let, so the channel is evaluated before the value.
@@ -1270,7 +1270,7 @@ object Lowering {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
-    val itpe = Type.mkIoUncurriedArrow(List(admins.tpe, Type.Bool), selectRetTpe, loc)
+    val itpe = Type.mkIoUncurriedArrow(Nel.of(admins.tpe, Type.Bool), selectRetTpe, loc)
     val blocking = default match {
       case Some(_) => MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc)
       case None => MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, loc)
@@ -1297,9 +1297,9 @@ object Lowering {
     ListOps.zip(rs, channels).zipWithIndex map {
       case (((sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
-        val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), List(MonoAst.Pattern.Var(locksSym, locksType, Occur.Unknown, loc))), loc)
+        val pat = mkTuplePattern(Nel.of(MonoAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), MonoAst.Pattern.Var(locksSym, locksType, Occur.Unknown, loc)), loc)
         val getTpe = extractChannelTpe(chan.tpe)
-        val itpe = lowerType(Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc))
+        val itpe = lowerType(Type.mkIoUncurriedArrow(Nel.of(chan.tpe, locksType), getTpe, loc))
         val args = List(MonoAst.Expr.Var(chSym, lowerType(chan.tpe), loc), MonoAst.Expr.Var(locksSym, locksType, loc))
         val defnSym = lookup(Defs.ChannelUnsafeGetAndUnlock, itpe)
         val getExp = MonoAst.Expr.ApplyDef(defnSym, args, lowerType(itpe), lowerType(getTpe), eff, loc)
@@ -1319,7 +1319,7 @@ object Lowering {
     default match {
       case Some(defaultExp) =>
         val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
-        val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), List(MonoAst.Pattern.Wild(locksType, loc))), loc)
+        val pat = mkTuplePattern(Nel.of(MonoAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), MonoAst.Pattern.Wild(locksType, loc)), loc)
         val defaultMatch = MonoAst.MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
@@ -1564,7 +1564,7 @@ object Lowering {
     val predArity = selects.length
 
     // Define the name and type of the appropriate factsX function in Solver.flix
-    val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
+    val defTpe = Type.mkPureUncurriedArrow(Nel.of(Types.PredSym, Types.Datalog), tpe, loc)
     val sym = lookup(Defs.Facts(predArity), defTpe)
 
     // Merge and solve exps
@@ -1615,7 +1615,7 @@ object Lowering {
     val loweredExps = exps.zip(predsAndArities).map {
       case (exp, PredicateAndArity(pred, arity)) =>
         // The type of the function.
-        val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, lowerType(exp.tpe)), Types.Datalog, loc)
+        val defTpe = Type.mkPureUncurriedArrow(Nel.of(Types.PredSym, lowerType(exp.tpe)), Types.Datalog, loc)
 
         // Compute the symbol of the function.
         val sym = lookup(Defs.ProjectInto(arity), defTpe)
@@ -1776,7 +1776,7 @@ object Lowering {
     *
     * Note: liftX and liftXb are similar and should probably be maintained together.
     */
-  private def liftX(exp0: MonoAst.Expr, argTypes: List[Type], resultType: Type)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+  private def liftX(exp0: MonoAst.Expr, argTypes: Nel[Type], resultType: Type)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     //
     // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
     // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Boxed`.
@@ -1802,7 +1802,7 @@ object Lowering {
   /**
     * Lifts the given Boolean-valued lambda expression `exp0` with the given argument types `argTypes`.
     */
-  private def liftXb(exp0: MonoAst.Expr, argTypes: List[Type])(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+  private def liftXb(exp0: MonoAst.Expr, argTypes: Nel[Type])(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     //
     // The liftX family of functions are of the form: a -> b -> c -> Bool and
     // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
@@ -1837,7 +1837,11 @@ object Lowering {
     //
 
     // The type of the function argument, i.e. i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)].
-    val argType = Type.mkPureCurriedArrow(argTypes, resultType, loc)
+    // With no in variables the `lift0XY` functions take the vector directly, rather than a function.
+    val argType = argTypes match {
+      case Nil => resultType
+      case t :: ts => Type.mkPureCurriedArrow(Nel(t, ts), resultType, loc)
+    }
 
     // The type of the returned function, i.e. Vector[Boxed] -> Vector[Vector[Boxed]].
     val returnType = Type.mkPureArrow(Type.mkVector(Types.Boxed, loc), Type.mkVector(Type.mkVector(Types.Boxed, loc), loc), loc)
@@ -1994,7 +1998,7 @@ object Lowering {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftXb(lambdaExp, fvs.map(_._2))
+    val liftedExp = liftXb(lambdaExp, Nel.unsafeFrom(fvs.map(_._2)))
 
     // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -2077,7 +2081,8 @@ object Lowering {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftX(lambdaExp, fvs.map(_._2), exp.tpe)
+    // `fvs` is non-empty since the caller falls back to a literal head term when there are no free variables.
+    val liftedExp = liftX(lambdaExp, Nel.unsafeFrom(fvs.map(_._2)), exp.tpe)
 
     // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -2494,8 +2499,8 @@ object Lowering {
     * where `"terms" == termsVar.text`.
     */
   private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
-    val outerItpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe, loc)
-    val innerItpe = Type.mkPureUncurriedArrow(List(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc)
+    val outerItpe = Type.mkPureUncurriedArrow(Nel.of(Types.Boxed), tpe, loc)
+    val innerItpe = Type.mkPureUncurriedArrow(Nel.of(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc)
     MonoAst.Expr.ApplyDef(
       sym = lookup(Defs.Unbox, outerItpe),
       exps = List(

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2026 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.runtime
 
-package ca.uwaterloo.flix.api
-
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 75, revision = 2)
-}
+import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
-  * A case class to represent versions.
+  * A compiled Flix program whose classes have been defined in the JVM.
+  *
+  * Obtained from [[JvmLoader.load]].
+  *
+  * @param main  the reflected main function, if present. Takes the program arguments.
+  * @param tests the reflected test functions in the program.
   */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
-}
+case class LoadedProgram(main: Option[Array[String] => Unit], tests: Map[Symbol.DefnSym, TestFn])

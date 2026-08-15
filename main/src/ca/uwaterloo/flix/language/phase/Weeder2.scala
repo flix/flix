@@ -686,12 +686,12 @@ object Weeder2 {
       loc
     )
 
-    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): List[FormalParam] = {
+    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): Nel[FormalParam] = {
       tryPick(TreeKind.ParameterList, tree) match {
         case Some(t) =>
           val params = pickAll(TreeKind.Parameter, t)
           if (params.isEmpty) {
-            List(unitFormalParameter(t.loc))
+            Nel.of(unitFormalParameter(t.loc))
           } else {
             val fparams = params.map(visitParameter(_, presence))
             // Check for duplicates
@@ -701,12 +701,12 @@ object Weeder2 {
             errors.foreach(sctx.errors.add)
 
             // Check missing or illegal type ascription
-            fparams
+            Nel.unsafeFrom(fparams)
           }
         case None =>
           val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc)
           sctx.errors.add(error)
-          List(unitFormalParameter(tree.loc))
+          Nel.of(unitFormalParameter(tree.loc))
       }
     }
 
@@ -1820,14 +1820,14 @@ object Weeder2 {
       // `def f(x)` becomes `def f(_unit: Unit, x)`.
       // `def f(x, y, ..)` is unchanged.
       fparams0 match {
-        case fparam :: Nil =>
+        case Nel(fparam, Nil) =>
           // Since a continuation argument must always be there, the underlying function needs a
           // unit param. For example `def f(k)` becomes `def f(_unit: Unit, k)`.
 
           // The new param has the zero-width location of the actual argument.
           val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.source, fparam.loc.start)
           val unitParam = Decls.unitFormalParameter(loc)
-          HandlerRule(ident, List(unitParam, fparam), expr, tree.loc)
+          HandlerRule(ident, Nel.of(unitParam, fparam), expr, tree.loc)
         case fparams =>
           HandlerRule(ident, fparams, expr, tree.loc)
       }
@@ -2402,7 +2402,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.TagBody)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       patterns.map(visitPattern(_, seen)) match {
-        case Nil => Nel(Pattern.Cst(Constant.Unit, tree.loc), Nil)
+        case Nil => Nel.of(Pattern.Cst(Constant.Unit, tree.loc))
         case x :: xs => Nel(x, xs)
       }
     }

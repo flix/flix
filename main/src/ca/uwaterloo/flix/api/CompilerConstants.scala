@@ -23,6 +23,16 @@ import java.nio.file.Path
 object CompilerConstants {
 
   /**
+    * The directory where the pretty printed ASTs are written (see `--Xprint-phases`).
+    */
+  val AstDirectory: Path = Path.of("./build/asts/")
+
+  /**
+    * The directory where the recorded type constraint graphs are written.
+    */
+  val ConstraintGraphDirectory: Path = Path.of("./build/constraint-graphs/")
+
+  /**
     * The JVM bytecode version used when generating class files.
     */
   val JvmTargetVersion: Int = org.objectweb.asm.Opcodes.V21
@@ -42,6 +52,11 @@ object CompilerConstants {
     * The maximum amount of fuel the parser can consume without making progress.
     */
   val MaxParserFuel: Int = 2048
+
+  /**
+    * The directory where the compiler performance data and graphs are written (see `Xperf`).
+    */
+  val PerfDirectory: Path = Path.of("./build/perf/")
 
   /**
     * The virtual file name used by the playground.

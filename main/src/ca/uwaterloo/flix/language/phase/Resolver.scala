@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{Chain, ListMap, ListOps, MapOps}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap, ListOps, MapOps, Nel}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.unused
@@ -893,7 +893,7 @@ object Resolver {
 
     case NamedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = resolveFormalParam(fparam, Wildness.AllowWild, scp0, taenv, ns0, root)
-      val scp = (scp0 ++ mkFormalParamScp(List(p))).withSuperClass(None) // super calls not allowed inside lambdas
+      val scp = (scp0 ++ mkFormalParamScp(Nel.of(p))).withSuperClass(None) // super calls not allowed inside lambdas
       val e = resolveExp(exp, scp)
       ResolvedAst.Expr.Lambda(p, e, allowSubeffecting = true, loc)
 
@@ -3378,7 +3378,7 @@ object Resolver {
   /**
     * Creates a use LocalScope from the given formal parameters.
     */
-  private def mkFormalParamScp(fparams: List[ResolvedAst.FormalParam]): LocalScope = {
+  private def mkFormalParamScp(fparams: Nel[ResolvedAst.FormalParam]): LocalScope = {
     fparams.foldLeft(LocalScope.empty) {
       case (acc, fparam) => acc + (fparam.sym.text -> Resolution.Var(fparam.sym))
     }
@@ -3433,7 +3433,7 @@ object Resolver {
   /**
     * Creates an LocalScope from the given local def symbol and formal parameters.
     */
-  private def mkLocalDefScp(ann: Annotations, sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]): LocalScope = {
+  private def mkLocalDefScp(ann: Annotations, sym: Symbol.VarSym, fparams: Nel[ResolvedAst.FormalParam]): LocalScope = {
     LocalScope.singleton(sym.text, Resolution.LocalDef(ann, sym, fparams))
   }
 
@@ -3525,7 +3525,7 @@ object Resolver {
 
     case class Def(defn: NamedAst.Declaration.Def) extends ResolvedQName
 
-    case class LocalDef(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends ResolvedQName
+    case class LocalDef(sym: Symbol.VarSym, fparams: Nel[ResolvedAst.FormalParam]) extends ResolvedQName
 
     case class Sig(sig: NamedAst.Declaration.Sig) extends ResolvedQName
 

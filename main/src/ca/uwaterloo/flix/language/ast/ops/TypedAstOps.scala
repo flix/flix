@@ -202,7 +202,7 @@ object TypedAstOps {
       (freeVars(exp1) ++ freeVars(exp2)) - bnd.sym
 
     case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
-      val bound = sym :: fparams.map(_.bnd.sym)
+      val bound = sym :: fparams.toList.map(_.bnd.sym)
       (freeVars(exp1) -- bound) ++ (freeVars(exp2) - sym)
 
     case Expr.Region(Binder(sym, _), _, exp, _, _, _) =>
