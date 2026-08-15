@@ -608,7 +608,7 @@ object Main {
 
       cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
 
-      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  recursively removes class files from the build directory.")
+      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  removes the build directory (class files and generated documentation).")
 
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
 
@@ -727,7 +727,7 @@ object Main {
 
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
-        text("[experimental] prints the ASTs after the each phase.")
+        text("[experimental] writes the ASTs after each phase to './build/asts/'.")
 
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
