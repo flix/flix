@@ -64,20 +64,24 @@ class ProgressBar(flix: Flix) {
     val index = spinnerTick.getAndIncrement() % SpinnerChars.length
     val spinner = SpinnerChars(index)
 
-    // Compute the total amount of memory in use.
-    val usedMemoryInBytes = Runtime.getRuntime.totalMemory()
+    // Compute the amount of heap memory in use and its percentage of the maximum heap size.
+    val runtime = Runtime.getRuntime
+    val usedMemoryInBytes = runtime.totalMemory() - runtime.freeMemory()
+    val maxMemoryInBytes = runtime.maxMemory()
     val usedMemoryInMegaBytes = (usedMemoryInBytes / (1024L * 1024L)).toInt
-    val memoryPadded = f"$usedMemoryInMegaBytes%4dM"
-    val memPart = usedMemoryInMegaBytes match {
-      case x if x <= 1_000 => memoryPadded
-      case x if x <= 4_000 => flix.getFormatter.yellow(memoryPadded)
+    // We cap the percentage at 99 to keep the field a fixed width.
+    val usedMemoryInPercent = math.min(99, ((100L * usedMemoryInBytes) / maxMemoryInBytes).toInt)
+    val memoryPadded = f"$usedMemoryInMegaBytes%4dM $usedMemoryInPercent%2d%%"
+    val memPart = usedMemoryInPercent match {
+      case x if x < 70 => memoryPadded
+      case x if x < 90 => flix.getFormatter.yellow(memoryPadded)
       case _ => flix.getFormatter.red(memoryPadded)
     }
 
     // We abbreviate phase and msg if they are too long to fit within `Width`.
-    // The fixed parts (spinner, memory, brackets, and spaces) take up 17 chars.
+    // The fixed parts (spinner, memory, brackets, and spaces) take up 21 chars.
     val p = abbreviate(phase, 20)
-    val m = abbreviate(msg, Width - (20 + 17))
+    val m = abbreviate(msg, Width - (20 + 21))
     val s = s" [${flix.getFormatter.green(spinner)}] [$memPart] [${flix.getFormatter.blue(p)}] $m "
 
     // Clear the current line.
