@@ -993,7 +993,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     def addClassesToZip(classes: Iterable[JvmClass], zip: ZipOutputStream): Unit = {
       // Add all classes.
       // Here we sort entries by their entry name to apply https://reproducible-builds.org/
-      val entries = classes.map(clazz => (clazz.name.toInternalName + s".$EXT_CLASS", clazz)).toList.sortBy(_._1)
+      val entries = classes.map(clazz => (clazz.name.toClassFileName, clazz)).toList.sortBy(_._1)
       for ((entryName, clazz) <- entries) {
         FileOps.addToZip(zip, entryName, clazz.bytecode)
       }
