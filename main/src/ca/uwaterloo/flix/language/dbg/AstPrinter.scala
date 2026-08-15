@@ -126,21 +126,21 @@ object AstPrinter {
   }
 
   /**
-    * Writes `content` to the file `<build>/asts/<phaseName>.flixir`. The build folder is taken from
-    * flix options. The existing file is overwritten if present.
+    * Writes `content` to the file `<build>/asts/<phaseName>.flixir`.
+    * The existing file is overwritten if present.
     */
-  private def writeToDisk(phaseName: String, content: String)(implicit flix: Flix): Unit = {
+  private def writeToDisk(phaseName: String, content: String): Unit = {
     val filePath = phaseOutputPath(phaseName)
     FileOps.writeString(filePath, content)
   }
 
   /** Makes sure that the phases file exists and is empty. */
-  def resetPhaseFile()(implicit flix: Flix): Unit = {
+  def resetPhaseFile(): Unit = {
     val filePath = astFolderPath.resolve("0phases.txt")
     FileOps.writeString(filePath, "")
   }
 
-  def appendPhaseToDisk(phaseName: String, hasAst: Boolean)(implicit flix: Flix): Unit = {
+  def appendPhaseToDisk(phaseName: String, hasAst: Boolean): Unit = {
     val filePath = astFolderPath.resolve("0phases.txt")
     val line = s"$phaseName${if (hasAst) "" else " (no output)"}${System.lineSeparator()}"
     FileOps.writeString(filePath, line, append = true)
@@ -151,16 +151,14 @@ object AstPrinter {
     *
     * OBS: this function has no checking so the path might not hold the ast and it might not be readable etc.
     */
-  private def phaseOutputPath(phaseName: String)(implicit flix: Flix): Path = {
+  private def phaseOutputPath(phaseName: String): Path = {
     astFolderPath.resolve(s"$phaseName.$IrFileExtension")
   }
 
   /**
-    * Returns the path to the folder that holds the pretty printed ast files used by [[writeToDisk]].
+    * The path to the folder that holds the pretty printed ast files used by [[writeToDisk]].
     *
-    * OBS: this function has no checking so the path might not exist and it might not be readable etc.
+    * OBS: this path has no checking so it might not exist and it might not be readable etc.
     */
-  def astFolderPath(implicit flix: Flix): Path = {
-    flix.options.outputPath.resolve("asts/")
-  }
+  val astFolderPath: Path = Path.of("./build/asts/")
 }

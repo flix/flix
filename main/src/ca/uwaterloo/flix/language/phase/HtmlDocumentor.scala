@@ -48,11 +48,6 @@ object HtmlDocumentor {
   private val RootFileName: String = "index"
 
   /**
-    * The directory where to write the ouput.
-    */
-  private def OutputDirectory(implicit flix: Flix): Path = flix.options.outputPath.resolve("doc/")
-
-  /**
     * The path to the stylesheet, relative to the resources folder.
     */
   private val Stylesheet: String = "/doc/styles.css"
@@ -94,14 +89,17 @@ object HtmlDocumentor {
     "open" -> "menu",
   )
 
-  def run(root: TypedAst.Root, packageModules: PackageModules)(implicit flix: Flix): Unit = {
+  /**
+    * Generates the API documentation for `root` and writes it to `outputDir`.
+    */
+  def run(root: TypedAst.Root, packageModules: PackageModules, outputDir: Path)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
     val filteredModulesRoot = filterModules(modulesRoot, packageModules)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
-    visitMod(pairedModulesRoot)
+    visitMod(pairedModulesRoot, outputDir)
 
-    writeAssets()
+    writeAssets(outputDir)
   }
 
   /**
@@ -109,15 +107,15 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitMod(mod: Module)(implicit flix: Flix): List[String] = {
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix): List[String] = {
     val out = documentModule(mod)
-    writeDocFile(mod.fileName, out)
+    writeDocFile(mod.fileName, out, outputDir)
 
     val generatedPages = List(mod.fileName) :::
-      mod.submodules.flatMap(visitMod) :::
-      mod.traits.flatMap(visitTrait) :::
-      mod.effects.flatMap(visitEffect) :::
-      mod.enums.flatMap(visitEnum)
+      mod.submodules.flatMap(visitMod(_, outputDir)) :::
+      mod.traits.flatMap(visitTrait(_, outputDir)) :::
+      mod.effects.flatMap(visitEffect(_, outputDir)) :::
+      mod.enums.flatMap(visitEnum(_, outputDir))
 
     generatedPages
   }
@@ -127,16 +125,16 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitTrait(trt: Trait)(implicit flix: Flix): List[String] = {
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix): List[String] = {
     val out = documentTrait(trt)
-    writeDocFile(trt.fileName, out)
+    writeDocFile(trt.fileName, out, outputDir)
 
     val generatedPages = List(trt.fileName) :::
       trt.companionMod.map { mod =>
-        mod.submodules.flatMap(visitMod) :::
-          mod.traits.flatMap(visitTrait) :::
-          mod.effects.flatMap(visitEffect) :::
-          mod.enums.flatMap(visitEnum)
+        mod.submodules.flatMap(visitMod(_, outputDir)) :::
+          mod.traits.flatMap(visitTrait(_, outputDir)) :::
+          mod.effects.flatMap(visitEffect(_, outputDir)) :::
+          mod.enums.flatMap(visitEnum(_, outputDir))
       }.getOrElse(Nil)
 
     generatedPages
@@ -147,16 +145,16 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitEffect(eff: Effect)(implicit flix: Flix): List[String] = {
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix): List[String] = {
     val out = documentEffect(eff)
-    writeDocFile(eff.fileName, out)
+    writeDocFile(eff.fileName, out, outputDir)
 
     val generatedPages = List(eff.fileName) :::
       eff.companionMod.map { mod =>
-        mod.submodules.flatMap(visitMod) :::
-          mod.traits.flatMap(visitTrait) :::
-          mod.effects.flatMap(visitEffect) :::
-          mod.enums.flatMap(visitEnum)
+        mod.submodules.flatMap(visitMod(_, outputDir)) :::
+          mod.traits.flatMap(visitTrait(_, outputDir)) :::
+          mod.effects.flatMap(visitEffect(_, outputDir)) :::
+          mod.enums.flatMap(visitEnum(_, outputDir))
       }.getOrElse(Nil)
 
     generatedPages
@@ -167,16 +165,16 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitEnum(enm: Enum)(implicit flix: Flix): List[String] = {
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix): List[String] = {
     val out = documentEnum(enm)
-    writeDocFile(enm.fileName, out)
+    writeDocFile(enm.fileName, out, outputDir)
 
     val generatedPages = List(enm.fileName) :::
       enm.companionMod.map { mod =>
-        mod.submodules.flatMap(visitMod)
-        mod.traits.flatMap(visitTrait)
-        mod.effects.flatMap(visitEffect)
-        mod.enums.flatMap(visitEnum)
+        mod.submodules.flatMap(visitMod(_, outputDir))
+        mod.traits.flatMap(visitTrait(_, outputDir))
+        mod.effects.flatMap(visitEffect(_, outputDir))
+        mod.enums.flatMap(visitEnum(_, outputDir))
       }.getOrElse(Nil)
 
     generatedPages
@@ -1479,15 +1477,15 @@ object HtmlDocumentor {
   /**
     * Make a copy of the static assets into the output directory.
     */
-  private def writeAssets()(implicit flix: Flix): Unit = {
+  private def writeAssets(outputDir: Path): Unit = {
     val stylesheet = readResourceString(Stylesheet) + mkIconStyles()
-    writeFile("styles.css", stylesheet.getBytes)
+    writeFile("styles.css", stylesheet.getBytes, outputDir)
 
     val favicon = readResource(FavIcon)
-    writeFile("favicon.png", favicon)
+    writeFile("favicon.png", favicon, outputDir)
 
     val script = readResource(Script)
-    writeFile("index.js", script)
+    writeFile("index.js", script, outputDir)
   }
 
   /**
@@ -1522,17 +1520,17 @@ object HtmlDocumentor {
   /**
     * Write the documentation output string into the output directory with the given `name`.
     */
-  private def writeDocFile(name: String, output: String)(implicit flix: Flix): Unit = {
-    writeFile(s"$name", output.getBytes)
+  private def writeDocFile(name: String, output: String, outputDir: Path): Unit = {
+    writeFile(s"$name", output.getBytes, outputDir)
   }
 
   /**
     * Write the file to the output directory with the given file name.
     */
-  private def writeFile(name: String, output: Array[Byte])(implicit flix: Flix): Unit = {
-    val path = OutputDirectory.resolve(name)
+  private def writeFile(name: String, output: Array[Byte], outputDir: Path): Unit = {
+    val path = outputDir.resolve(name)
     try {
-      Files.createDirectories(OutputDirectory)
+      Files.createDirectories(outputDir)
       Files.write(path, output)
     } catch {
       case ex: IOException => throw new RuntimeException(s"Unable to write to path '$path'.", ex)

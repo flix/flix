@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
   * @param main      the reflected main function, if present.
   * @param tests     the tests in the program.
   * @param sources   the sources of the program.
-  * @param totalTime the total compilation time, excluding class writing/loading.
+  * @param totalTime the total compilation time, excluding class loading.
   * @param codeSize   the number of bytes the compiler generated.
   */
 class CompilationResult(classes: Map[JvmName, JvmClass],

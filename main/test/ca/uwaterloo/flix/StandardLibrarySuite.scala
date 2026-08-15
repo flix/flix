@@ -32,7 +32,7 @@ class StandardLibrarySuite extends AnyFunSuite {
   private val Path = "main/test/ca/uwaterloo/flix/library/"
 
   /** The default options. */
-  private val Opts = Options.DefaultTest.copy(incremental = false, outputJvm = false)
+  private val Opts = Options.DefaultTest.copy(incremental = false)
 
   private def init(): Unit = try {
     // Create a new Flix compiler.

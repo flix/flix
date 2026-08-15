@@ -47,6 +47,11 @@ object CompilerPerf {
   private val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
 
   /**
+    * The directory where the performance data and graphs are written.
+    */
+  private val PerfDirectory: Path = Path.of("./build/perf/")
+
+  /**
     * The Python program used to generate graphs.
     */
   private val Python =
@@ -377,7 +382,7 @@ object CompilerPerf {
     //
     // Python Plot
     //
-    FileOps.writeString(o.outputPath.resolve("perf/").resolve("plots.py"), Python)
+    FileOps.writeString(PerfDirectory.resolve("plots.py"), Python)
 
     println("~~~~ Flix Compiler Performance ~~~~")
     println()
@@ -526,8 +531,7 @@ object CompilerPerf {
     * Writes the given `json` to the given `file`.
     */
   private def writeFile(file: String, json: JValue, opts: Options): Unit = {
-    val directory = opts.outputPath.resolve("perf/")
-    val filePath = directory.resolve(s"$file")
+    val filePath = PerfDirectory.resolve(s"$file")
     FileOps.writeJSON(filePath, json)
   }
 

@@ -68,8 +68,6 @@ object Main {
       json = cmdOpts.json,
       progress = true,
       installDeps = cmdOpts.installDeps,
-      outputJvm = false,
-      outputPath = Options.Default.outputPath,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       compilerTop = cmdOpts.top,
       loadClassFiles = Options.Default.loadClassFiles,
@@ -226,6 +224,19 @@ object Main {
             }
           }
 
+        case Command.BuildClasses =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build-classes' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.buildClasses(flix)
+            }
+          }
+
         case Command.BuildJar =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'build-jar' command does not support file arguments.")
@@ -287,7 +298,7 @@ object Main {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
             val (optRoot, errors) = flix.check()
             if (errors.isEmpty) {
-              HtmlDocumentor.run(optRoot.get, PackageModules.All)(flix)
+              HtmlDocumentor.run(optRoot.get, PackageModules.All, Bootstrap.getDocumentationDirectory(cwd))(flix)
               System.exit(0)
             } else exitWithErrors(flix, errors, optRoot)
           }
@@ -509,6 +520,8 @@ object Main {
 
     case object Build extends Command
 
+    case object BuildClasses extends Command
+
     case object BuildJar extends Command
 
     case object BuildFatJar extends Command
@@ -586,6 +599,8 @@ object Main {
       cmd("check").action((_, c) => c.copy(command = Command.Check)).text("  checks the current project for errors.")
 
       cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  builds (i.e. compiles) the current project.")
+
+      cmd("build-classes").action((_, c) => c.copy(command = Command.BuildClasses)).text("  builds the current project and writes the class files to the build directory.")
 
       cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  builds a jar-file from the current project.")
 

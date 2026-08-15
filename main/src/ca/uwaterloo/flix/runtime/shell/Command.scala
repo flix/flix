@@ -44,6 +44,11 @@ object Command {
   case object Build extends Command
 
   /**
+    * Builds the current project and writes the class files to the build directory.
+    */
+  case object BuildClasses extends Command
+
+  /**
     * Builds a jar file from the current project.
     */
   case object BuildJar extends Command
@@ -138,6 +143,9 @@ object Command {
 
     if (input == ":build" || input == ":b")
       return Command.Build
+
+    if (input == ":build-classes" || input == ":classes")
+      return Command.BuildClasses
 
     if (input == ":check" || input == ":c")
       return Command.Check
