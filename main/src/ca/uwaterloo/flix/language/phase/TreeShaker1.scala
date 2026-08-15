@@ -326,7 +326,7 @@ object TreeShaker1 {
   }
 
   /** Returns the symbols reachable from `exps`. */
-  private def visitExps(exps: List[Expr]): Set[Reachable] =
+  private def visitExps(exps: Seq[Expr]): Set[Reachable] =
     exps.map(visitExp).fold(Set.empty)(_ ++ _)
 
   /** Returns the symbols reachable from `cs`. */

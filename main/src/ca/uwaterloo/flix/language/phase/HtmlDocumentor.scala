@@ -1321,7 +1321,7 @@ object HtmlDocumentor {
       // For a function declared with zero formal parameters,
       // the compiler will introduce a single parameter of the unit type
       case _ =>
-        docList(fparams.toList.sortBy(_.loc)) { p =>
+        docList(fparams.sortBy(_.loc)) { p =>
           sb.append(s"<span><span>${esc(p.bnd.sym.text)}</span>: ")
           docType(p.tpe)
           sb.append("</span>")
@@ -1465,7 +1465,7 @@ object HtmlDocumentor {
   /**
     * Runs the given `docElt` on each element of `list`, separated by the string: ", " (comma + space)
     */
-  private def docList[T](list: List[T])(docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
+  private def docList[T](list: Seq[T])(docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     for ((e, i) <- list.zipWithIndex) {
       docElt(e)
       if (i < list.length - 1) {

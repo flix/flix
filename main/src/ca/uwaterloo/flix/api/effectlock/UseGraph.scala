@@ -288,7 +288,7 @@ object UseGraph {
   }
 
   /** Returns the all the uses of functions and signatures in `exps`. */
-  private def visitExps(exps: List[Expr])(implicit sym0: UsedSym): ListMap[UsedSym, UsedSym] = {
+  private def visitExps(exps: Seq[Expr])(implicit sym0: UsedSym): ListMap[UsedSym, UsedSym] = {
     exps.map(visitExp).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
   }
 

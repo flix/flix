@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.Chain
-import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.collection.Nel
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -187,7 +186,7 @@ object Inliner {
         case Expr.Lambda(fparam, e1, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
-          val letBinding = bindArgs(e1, Nel.of(fparam), List(e2), loc)
+          val letBinding = bindArgs(e1, Nel.of(fparam), Nel.of(e2), loc)
           visitExp(letBinding, ctx0)
 
         case e1 =>
@@ -537,7 +536,7 @@ object Inliner {
     case Pattern.Tuple(pats, _, _) => exp match {
       case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) =>
         // `exps` and `pats` have same length for well-typed programs.
-        matchPatterns(exps, pats.toList)
+        matchPatterns(exps, pats)
       case _ =>
         MatchResult.Unknown
     }
@@ -554,7 +553,7 @@ object Inliner {
     *
     * N.B.: `exps` and `pats` must have the same length, otherwise [[InternalCompilerException]] is thrown.
     */
-  private def matchPatterns(exps: List[MonoAst.Expr], pats: List[MonoAst.Pattern]): MatchResult = {
+  private def matchPatterns(exps: Seq[MonoAst.Expr], pats: Seq[MonoAst.Pattern]): MatchResult = {
     if (exps.lengthCompare(pats) != 0) {
       throw InternalCompilerException(
         s"Match rule has arity ${pats.size} against ${exps.size} expressions.",
@@ -754,8 +753,8 @@ object Inliner {
     * where `symi` is the symbol of the i-th formal parameter and `exp` is the body of the function.
     *
     */
-  private def bindArgs(exp: Expr, fparams: Nel[FormalParam], exps: List[Expr], loc: SourceLocation): Expr = {
-    ListOps.zip(fparams.toList, exps).foldRight(exp) {
+  private def bindArgs(exp: Expr, fparams: Nel[FormalParam], exps: Nel[Expr], loc: SourceLocation): Expr = {
+    fparams.zip(exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
@@ -783,7 +782,7 @@ object Inliner {
     * @param exps the arguments to the function.
     * @param ctx0 the local context.
     */
-  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym): Boolean = {
+  private def shouldInlineDef(defn: MonoAst.Def, exps: Seq[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym): Boolean = {
     if (ctx0.currentlyInlining) {
       return false
     }
@@ -807,7 +806,7 @@ object Inliner {
   /**
     * Returns `true` if there exists [[Expr.Lambda]] in `exps`.
     */
-  private def hasKnownLambda(exps: List[Expr]): Boolean = {
+  private def hasKnownLambda(exps: Seq[Expr]): Boolean = {
     exps.exists(isLambda)
   }
 

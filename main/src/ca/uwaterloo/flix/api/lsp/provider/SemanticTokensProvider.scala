@@ -708,7 +708,7 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given expressions `exps0`.
     */
-  private def visitExps(exps0: List[Expr]): Iterator[SemanticToken] =
+  private def visitExps(exps0: Seq[Expr]): Iterator[SemanticToken] =
     exps0.flatMap(visitExp).iterator
 
   /**

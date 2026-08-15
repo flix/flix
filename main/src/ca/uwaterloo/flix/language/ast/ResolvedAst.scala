@@ -103,13 +103,13 @@ object ResolvedAst {
 
     case class ApplyClo(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ApplyDef(symUse: DefSymUse, exps: Nel[Expr], loc: SourceLocation) extends Expr
 
-    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: Nel[Expr], loc: SourceLocation) extends Expr
 
-    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ApplyOp(symUse: OpSymUse, exps: Nel[Expr], loc: SourceLocation) extends Expr
 
-    case class ApplySig(symUse: SigSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ApplySig(symUse: SigSymUse, exps: Nel[Expr], loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, allowSubeffecting: Boolean, loc: SourceLocation) extends Expr
 

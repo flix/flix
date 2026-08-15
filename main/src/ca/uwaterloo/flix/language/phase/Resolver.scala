@@ -1461,7 +1461,7 @@ object Resolver {
     *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
     */
   private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.ApplyDef(DefSymUse(defn.sym, loc), es, loc.asSynthetic)
+    val base = (es: List[ResolvedAst.Expr]) => ResolvedAst.Expr.ApplyDef(DefSymUse(defn.sym, loc), Nel.unsafeFrom(es), loc.asSynthetic)
     visitApplyFull(base, defn.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
@@ -1476,7 +1476,7 @@ object Resolver {
     */
   private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
-    val base = args => ResolvedAst.Expr.ApplyDef(DefSymUse(defn.sym, innerLoc), args, outerLoc)
+    val base = (args: List[ResolvedAst.Expr]) => ResolvedAst.Expr.ApplyDef(DefSymUse(defn.sym, innerLoc), Nel.unsafeFrom(args), outerLoc)
     visitApplyFull(base, defn.spec.fparams.length, es, outerLoc)
   }
 
@@ -1486,7 +1486,7 @@ object Resolver {
     *   - `Add.add ===> x -> y -> Add.add(x, y)`
     */
   private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.ApplySig(SigSymUse(sig.sym, loc), es, loc.asSynthetic)
+    val base = (es: List[ResolvedAst.Expr]) => ResolvedAst.Expr.ApplySig(SigSymUse(sig.sym, loc), Nel.unsafeFrom(es), loc.asSynthetic)
     visitApplyFull(base, sig.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
@@ -1501,7 +1501,7 @@ object Resolver {
     */
   private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
-    val base = args => ResolvedAst.Expr.ApplySig(SigSymUse(sig.sym, innerLoc), args, outerLoc)
+    val base = (args: List[ResolvedAst.Expr]) => ResolvedAst.Expr.ApplySig(SigSymUse(sig.sym, innerLoc), Nel.unsafeFrom(args), outerLoc)
     visitApplyFull(base, sig.spec.fparams.length, es, outerLoc)
   }
 
@@ -1511,7 +1511,7 @@ object Resolver {
     *   - `loop ===> x -> y -> loop(x, y)`
     */
   private def visitLocalDef(sym: Symbol.VarSym, arity: Int, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, loc), es, loc.asSynthetic)
+    val base = (es: List[ResolvedAst.Expr]) => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, loc), Nel.unsafeFrom(es), loc.asSynthetic)
     visitApplyFull(base, arity, Nil, loc.asSynthetic)
   }
 
@@ -1526,7 +1526,7 @@ object Resolver {
     */
   private def visitApplyLocalDef(sym: Symbol.VarSym, arity: Int, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
-    val base = args => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, innerLoc), args, outerLoc)
+    val base = (args: List[ResolvedAst.Expr]) => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, innerLoc), Nel.unsafeFrom(args), outerLoc)
     visitApplyFull(base, arity, es, outerLoc)
   }
 
@@ -1536,7 +1536,7 @@ object Resolver {
     *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
     */
   private def visitOp(op: NamedAst.Declaration.Op, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.ApplyOp(OpSymUse(op.sym, loc), es, loc.asSynthetic)
+    val base = (es: List[ResolvedAst.Expr]) => ResolvedAst.Expr.ApplyOp(OpSymUse(op.sym, loc), Nel.unsafeFrom(es), loc.asSynthetic)
     visitApplyFull(base, op.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
@@ -1551,7 +1551,7 @@ object Resolver {
     */
   private def visitApplyOp(op: NamedAst.Declaration.Op, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
-    val base = args => ResolvedAst.Expr.ApplyOp(OpSymUse(op.sym, innerLoc), args, outerLoc)
+    val base = (args: List[ResolvedAst.Expr]) => ResolvedAst.Expr.ApplyOp(OpSymUse(op.sym, innerLoc), Nel.unsafeFrom(args), outerLoc)
     visitApplyFull(base, op.spec.fparams.length, es, outerLoc)
   }
 

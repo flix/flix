@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.util.collection
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.collection.immutable.LinearSeq
+
 /**
   * A non-empty list (Nel) - always has at least one element.
   *
@@ -25,10 +27,10 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   * @param xs the remaining elements
   * @tparam T the type of the elements
   */
-case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
+case class Nel[+T](x: T, xs: List[T]) extends LinearSeq[T] {
 
   /** Returns the number of elements in `this` (always at least 1). */
-  def length: Int = 1 + xs.length
+  override def length: Int = 1 + xs.length
 
   /** Returns the first element of `this`. */
   override def head: T = x
@@ -50,6 +52,9 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
 
   /** Builds a new [[List]] by applying `pf` to all elements of `this` on which it is defined. */
   override def collect[S](pf: PartialFunction[T, S]): List[S] = toList.collect(pf)
+
+  // MATT docs
+  def ::[S >: T](y: S): Nel[S] = Nel(y, toList)
 
   /** Returns a [[Nel]] of pairs of the elements of `this` and their indices. */
   override def zipWithIndex: Nel[(T, Int)] = Nel((x, 0), xs.zipWithIndex.map { case (y, i) => (y, i + 1) })
@@ -76,7 +81,6 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
 
   /** Returns `this` as a [[List]]. */
   override def toList: List[T] = x :: xs
-
 }
 
 object Nel {
@@ -95,5 +99,12 @@ object Nel {
     * Returns a [[Nel]] containing the given elements.
     */
   def of[T](x: T, xs: T*): Nel[T] = Nel(x, xs.toList)
+
+  // MATT docs
+  def mapWithReuse[T <: AnyRef](nel: Nel[T])(f: T => T): Nel[T] = {
+    val x = f(nel.x)
+    val xs = ListOps.mapWithReuse(nel.xs)(f)
+    if ((x eq nel.x) && (xs eq nel.xs)) nel else Nel(x, xs)
+  }
 
 }

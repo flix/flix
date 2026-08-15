@@ -90,13 +90,13 @@ object KindedAst {
 
     case class ApplyClo(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], targs: List[Type.Var], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyDef(symUse: DefSymUse, exps: Nel[Expr], targs: List[Type.Var], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: Nel[Expr], arrowTvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyOp(symUse: OpSymUse, exps: Nel[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ApplySig(symUse: SigSymUse, exps: List[Expr], targ: Type.Var, targs: List[Type.Var], itvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplySig(symUse: SigSymUse, exps: Nel[Expr], targ: Type.Var, targs: List[Type.Var], itvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, allowSubeffecting: Boolean, loc: SourceLocation) extends Expr
 

@@ -313,7 +313,7 @@ object Terminator {
   /**
     * If `exp` is a self-recursive call matching `selfSym`, returns the call arguments and location.
     */
-  private def matchSelf(selfSym: SelfSym, exp: Expr): Option[(List[Expr], SourceLocation)] =
+  private def matchSelf(selfSym: SelfSym, exp: Expr): Option[(Nel[Expr], SourceLocation)] =
     (selfSym, exp) match {
       case (SelfDef(sym), Expr.ApplyDef(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
       case (SelfSig(sym), Expr.ApplySig(symUse, exps, _, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
@@ -396,7 +396,7 @@ object Terminator {
         }
         val hasDecreasingArg = argInfos.exists(_.status == TerminationError.ArgStatus.Decreasing)
         if (!hasDecreasingArg) {
-          sctx.errors.add(TerminationError.NonStructuralRecursion(ctx.selfSym.sym, argInfos, loc))
+          sctx.errors.add(TerminationError.NonStructuralRecursion(ctx.selfSym.sym, argInfos.toList, loc))
         }
         argInfos.zipWithIndex.foreach {
           case (info, idx) if info.status == TerminationError.ArgStatus.Decreasing =>
@@ -487,7 +487,7 @@ object Terminator {
           }
           val isSelfCall = lctx.tailRecSym.contains(symUse.sym)
           val ap = if (isSelfCall && pos != ApplyPosition.NonTail) ApplyPosition.SelfTail else pos
-          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = Nel.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
           if ((es eq exps0) && (pos0 == ap)) exp0 else Expr.ApplyDef(symUse, es, itpe, tpe, eff, purity, ap, loc)
 
         // --- All other expressions (TypedAst declaration order) ---
@@ -523,17 +523,17 @@ object Terminator {
           }
           val isSelfCall = lctx.currentLocalDefSym.contains(symUse.sym)
           val ap = if (isSelfCall && pos != ApplyPosition.NonTail) ApplyPosition.SelfTail else pos
-          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = Nel.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
           if ((es eq exps0) && (pos0 == ap)) exp0 else Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, ap, loc)
 
         case Expr.ApplyOp(symUse, exps0, tpe, eff, pos0, loc) =>
           checkForbidden(contexts, loc)
-          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = Nel.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
           if ((es eq exps0) && (pos0 == pos)) exp0 else Expr.ApplyOp(symUse, es, tpe, eff, pos, loc)
 
         case Expr.ApplySig(symUse, exps0, itpe, tpe, eff, purity, isEq, pos0, loc) =>
           // TODO: Difficult to disallow due to e.g. +, -, == and so on.
-          val es = ListOps.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
+          val es = Nel.mapWithReuse(exps0)(visitExp(contexts, _, ApplyPosition.NonTail))
           if ((es eq exps0) && (pos0 == pos)) exp0 else Expr.ApplySig(symUse, es, itpe, tpe, eff, purity, isEq, pos, loc)
 
         case Expr.Unary(sop, exp1, tpe, eff, loc) =>
@@ -877,7 +877,7 @@ object Terminator {
   /**
     * If `exp` is a self-recursive call matching any context, returns the context, call arguments, and location.
     */
-  private def findSelfRecursiveCall(contexts: List[RecursionContext], exp: Expr): Option[(RecursionContext, List[Expr], SourceLocation)] =
+  private def findSelfRecursiveCall(contexts: List[RecursionContext], exp: Expr): Option[(RecursionContext, Nel[Expr], SourceLocation)] =
     contexts.iterator.flatMap { ctx =>
       matchSelf(ctx.selfSym, exp).map { case (exps, loc) => (ctx, exps, loc) }
     }.nextOption()
@@ -956,7 +956,7 @@ object Terminator {
           case None      => env
         }
       case (Expr.Tuple(exps, _, _, _), Pattern.Tuple(pats, _, _)) =>
-        exps.zip(pats.toList).foldLeft(env) {
+        exps.zip(pats).foldLeft(env) {
           case (acc, (expr, subPat)) => extendEnvFromScrutinee(acc, expr, subPat)
         }
       case _ => env
@@ -972,7 +972,7 @@ object Terminator {
     case Pattern.Tag(_, pats, _, _) =>
       pats.foldLeft(env)((acc, p) => collectStrictSubstructures(acc, p, rootParam))
     case Pattern.Tuple(pats, _, _) =>
-      pats.toList.foldLeft(env)((acc, p) => extendEnvFromPattern(acc, p, rootParam))
+      pats.foldLeft(env)((acc, p) => extendEnvFromPattern(acc, p, rootParam))
     case Pattern.Var(bnd, _, _) =>
       env.bind(bnd.sym, ParamRelation(rootParam, Alias))
     case _ => env
@@ -988,7 +988,7 @@ object Terminator {
     case Pattern.Tag(_, pats, _, _) =>
       pats.foldLeft(env)((acc, p) => collectStrictSubstructures(acc, p, rootParam))
     case Pattern.Tuple(pats, _, _) =>
-      pats.toList.foldLeft(env)((acc, p) => collectStrictSubstructures(acc, p, rootParam))
+      pats.foldLeft(env)((acc, p) => collectStrictSubstructures(acc, p, rootParam))
     case Pattern.Wild(_, _) => env
     case Pattern.Cst(_, _, _) => env
     case Pattern.Record(pats, restPat, _, _) =>

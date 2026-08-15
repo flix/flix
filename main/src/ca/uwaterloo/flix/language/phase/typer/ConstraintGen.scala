@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Subeffecting}
 
 import java.lang.reflect.{Modifier, ParameterizedType, TypeVariable}
+import scala.collection.immutable.LinearSeq
 
 /**
   * This phase generates a list of type constraints, which include
@@ -110,7 +111,7 @@ object ConstraintGen {
         val (tpes, effs) = exps.map(visitExp).unzip
 
         c.unifyType(itvar, declaredType, loc2)
-        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
+        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
@@ -123,7 +124,7 @@ object ConstraintGen {
       case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, evar, loc2) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val defEff = freshVar(Kind.Eff, loc1)
-        val actualDefTpe = Type.mkUncurriedArrowWithEffect(Nel.unsafeFrom(tpes), defEff, tvar, loc1)
+        val actualDefTpe = Type.mkUncurriedArrowWithEffect(tpes, defEff, tvar, loc1)
         c.unifyType(actualDefTpe, arrowTvar, loc1)
         c.expectType(sym.tvar, actualDefTpe, loc1)
         c.unifyType(evar, Type.mkUnion(defEff :: effs, loc2), loc2)
@@ -164,7 +165,7 @@ object ConstraintGen {
         val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc1)
 
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
+        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(itvar, declaredType, loc2)
@@ -1284,7 +1285,7 @@ object ConstraintGen {
   /**
     * Generates constraints unifying the given expected and actual formal parameters.
     */
-  private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam])(implicit c: TypeContext): Unit = {
+  private def unifyFormalParams(op: Symbol.OpSym, expected: LinearSeq[KindedAst.FormalParam], actual: LinearSeq[KindedAst.FormalParam])(implicit c: TypeContext): Unit = {
     // length check done in Resolver
     c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc))
   }
@@ -1312,7 +1313,7 @@ object ConstraintGen {
           val resumptionResType = tryBlockTpe
           val resumptionEff = continuationEffect
           val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
-          unifyFormalParams(symUse.sym, expected = expectedFparams.toList, actual = actualFparams)
+          unifyFormalParams(symUse.sym, expected = expectedFparams, actual = actualFparams)
           c.expectType(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
           val (actualTpe, actualEff) = visitExp(body)
 

@@ -266,7 +266,7 @@ object InlayHintProvider {
   /**
     * Creates inlay hints for arguments corresponding to structurally decreasing parameters.
     */
-  private def mkDecreasingArgHints(exps: List[Expr], fparams: Nel[FormalParam]): List[InlayHint] = {
+  private def mkDecreasingArgHints(exps: Nel[Expr], fparams: Nel[FormalParam]): List[InlayHint] = {
     exps.zip(fparams).collect {
       case (arg, fparam) if fparam.decreasing == Decreasing.StrictlyDecreasing =>
         InlayHint(

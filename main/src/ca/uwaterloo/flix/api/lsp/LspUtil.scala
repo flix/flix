@@ -85,6 +85,6 @@ object LspUtil {
     case ExprContext.InsideApply => CompletionUtils.getApplySnippet(label, Nil)
     case ExprContext.InsidePipeline => CompletionUtils.getApplySnippet(label, spec.fparams.init)
     case ExprContext.InsideRunWith => CompletionUtils.getApplySnippet(label, spec.fparams.init)
-    case ExprContext.Unknown => CompletionUtils.getApplySnippet(label, spec.fparams.toList)
+    case ExprContext.Unknown => CompletionUtils.getApplySnippet(label, spec.fparams)
   }
 }

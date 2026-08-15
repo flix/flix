@@ -98,7 +98,7 @@ object OccurrenceAnalyzer {
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx1 = if (sym == sym0) ExprContext.RecursiveOnce else ExprContext.Empty
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
-        if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
+        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx2) // Reuse exp0.
         } else {
           (Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx2)
@@ -107,7 +107,7 @@ object OccurrenceAnalyzer {
       case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq).addVar(sym, Occur.Once)
-        if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
+        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
           (Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
