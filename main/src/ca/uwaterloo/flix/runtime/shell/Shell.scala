@@ -200,13 +200,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  :init                       Creates a new project in the current directory.")
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
     w.println("  :build-classes              Builds the current project and writes the class files to the build directory.")
-    w.println("  :build-jar :jar             Builds a jar-file from the current project.")
-    w.println("  :build-fatjar :fatjar       Builds a fatjar-file from the current project.")
-    w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
+    w.println("  :build-jar                  Builds a jar-file from the current project.")
+    w.println("  :build-fatjar               Builds a fatjar-file from the current project.")
+    w.println("  :build-pkg                  Builds a fpkg-file from the current project.")
     w.println("  :release                    Publishes a release of the current project to GitHub.")
     w.println("  :check :c                   Checks the current project for errors.")
     w.println("  :doc :d                     Generates API documentation for the current project.")
-    w.println("  :format :fmt                Formats the source code of the current project.")
+    w.println("  :format                     Formats the source code of the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
     w.println("  :outdated                   Shows dependencies which have newer versions available.")
     w.println("  :quit :q                    Terminates the Flix shell.")
@@ -289,9 +289,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Executes the given bootstrap function and prints any errors.
     */
-  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = f match {
-    case Validation.Success(_) => ()
-    case Validation.Failure(errors) => errors.map(_.message(formatter)).foreach(out.println)
+  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
+    // Reset the options: a previous command may have changed e.g. the build mode on the shared Flix instance.
+    flix.setOptions(options)
+    f match {
+      case Validation.Success(_) => ()
+      case Validation.Failure(errors) => errors.map(_.message(formatter)).foreach(out.println)
+    }
   }
 
   /**

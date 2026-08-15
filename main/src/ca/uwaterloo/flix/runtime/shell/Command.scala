@@ -142,16 +142,16 @@ object Command {
     if (input == ":doc" || input == ":d")
       return Command.Doc
 
-    if (input == ":format" || input == ":fmt")
+    if (input == ":format")
       return Command.Format
 
-    if (input == ":build-jar" || input == ":jar")
+    if (input == ":build-jar")
       return Command.BuildJar
 
-    if (input == ":build-fatjar" || input == ":fatjar")
+    if (input == ":build-fatjar")
       return Command.BuildFatJar
 
-    if (input == ":build-pkg" || input == ":pkg")
+    if (input == ":build-pkg")
       return Command.BuildPkg
 
     if (input == ":release")
