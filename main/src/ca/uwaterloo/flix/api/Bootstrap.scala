@@ -441,11 +441,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Builds (compiles) the source files for the project.
+    * Builds (compiles) the source files for the project and writes the generated class files to the build directory.
     */
-  def build(flix: Flix, build: Build = Build.Development): Result[CompilationResult, BootstrapError] = {
+  def build(flix: Flix, build: Build = Build.Development): Result[CompilationResult, BootstrapError] =
+    compileProject(flix, build, outputJvm = true)
+
+  /**
+    * Compiles the source files for the project.
+    *
+    * If `outputJvm` is `true` the generated class files are written to the build directory.
+    * Otherwise the generated classes are kept in memory only.
+    */
+  private def compileProject(flix: Flix, build: Build, outputJvm: Boolean): Result[CompilationResult, BootstrapError] = {
     // We disable incremental compilation to ensure a clean compile.
-    val newOptions = flix.options.copy(build = build, incremental = false, outputJvm = true, outputPath = Bootstrap.getBuildDirectory(projectPath))
+    val newOptions = flix.options.copy(build = build, incremental = false, outputJvm = outputJvm, outputPath = Bootstrap.getBuildDirectory(projectPath))
     flix.setOptions(newOptions)
 
     // We also clear any cached ASTs.
@@ -845,7 +854,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def run(flix: Flix, args: Array[String]): Result[Unit, BootstrapError] = {
     for {
-      compilationResult <- build(flix)
+      compilationResult <- compileProject(flix, Build.Development, outputJvm = false)
     } yield {
       compilationResult.getMain match {
         case None => ()
@@ -859,7 +868,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def test(flix: Flix): Result[Unit, BootstrapError] = {
     for {
-      compilationResult <- build(flix)
+      compilationResult <- compileProject(flix, Build.Development, outputJvm = false)
       res <- Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError("Tester Error"))
     } yield {
       res
