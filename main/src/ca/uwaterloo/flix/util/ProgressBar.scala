@@ -75,23 +75,18 @@ class ProgressBar(flix: Flix) {
     }
 
     // We abbreviate phase and msg if they are too long to fit within `Width`.
+    // The fixed parts (spinner, memory, brackets, and spaces) take up 17 chars.
     val p = abbreviate(phase, 20)
-    val prefix = s" [${flix.getFormatter.green(spinner)}] [$memPart] [${flix.getFormatter.blue(p)}] "
-    val m = abbreviate(msg, Width - visibleLength(prefix) - 1)
-    val s = prefix + m + " "
+    val m = abbreviate(msg, Width - (20 + 17))
+    val s = s" [${flix.getFormatter.green(spinner)}] [$memPart] [${flix.getFormatter.blue(p)}] $m "
 
-    // Pad the string with spaces up to `Width` so that it fully overwrites the previous line.
-    //
-    // NB: The padding must be computed from the *visible* length of the string,
-    // i.e. excluding ANSI escape codes. Otherwise the padded string may be
-    // visibly shorter than the previous line, leaving stray characters behind.
-    val padding = " " * math.max(0, Width - visibleLength(s))
-
-    // Print the string followed by carriage return.
+    // Clear the current line and then print the string followed by carriage return.
+    // NB: We clear the line with spaces (rather than padding the string) because
+    // the string may contain ANSI escape codes which do not take up any width.
     // NB: We do *NOT* print a newline because then
     // we would not be able to overwrite the current
     // line in the iteration.
-    System.out.print(s + padding + "\r")
+    System.out.print(" " * Width + "\r" + s + "\r")
 
     // Flush to ensure that the string is printed.
     System.out.flush()
@@ -107,11 +102,5 @@ class ProgressBar(flix: Flix) {
       s
     else
       s.substring(0, l - 3) + "..."
-
-  /**
-    * Returns the number of visible characters in `s`, i.e. the length of `s` excluding ANSI escape codes.
-    */
-  private def visibleLength(s: String): Int =
-    s.replaceAll("\u001b\\[[0-9;]*m", "").length
 
 }
