@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
-import ca.uwaterloo.flix.language.phase.jvm.JvmClass
+import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
@@ -466,7 +466,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       result <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
       contents = (zip: ZipOutputStream) => {
-        Steps.addClassesToZip(result.getClasses.values, zip)
+        Steps.addClassesToZip(result.getClasses, zip)
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
       }
       _ <- Steps.createJar(jarFile, contents)
@@ -489,7 +489,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Steps.validateDirectory(libDir)
       _ <- Steps.validateJarFilesIn(libDir)
       contents = (zip: ZipOutputStream) => {
-        Steps.addClassesToZip(result.getClasses.values, zip)
+        Steps.addClassesToZip(result.getClasses, zip)
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
         Steps.addJarsFromDirToZip(libDir, zip)
       }
@@ -990,10 +990,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Adds all `classes` to `zip`, writing the bytecode directly from memory.
       */
-    def addClassesToZip(classes: Iterable[JvmClass], zip: ZipOutputStream): Unit = {
+    def addClassesToZip(classes: Map[JvmName, JvmClass], zip: ZipOutputStream): Unit = {
       // Add all classes.
       // Here we sort entries by their entry name to apply https://reproducible-builds.org/
-      val entries = classes.map(clazz => (clazz.name.toClassFileName, clazz)).toList.sortBy(_._1)
+      val entries = classes.values.map(clazz => (clazz.name.toClassFileName, clazz)).toList.sortBy(_._1)
       for ((entryName, clazz) <- entries) {
         FileOps.addToZip(zip, entryName, clazz.bytecode)
       }
