@@ -798,7 +798,7 @@ object Namer {
       // Give the def an id only if it is an instance def.
       // This distinguishes instance defs that could share a namespace.
       val id = defKind match {
-        case DefKind.Member => Some(flix.genSym.freshId())
+        case DefKind.Member => Some(flix.genSym.freshId().toString)
         case DefKind.NonMember => None
       }
       val sym = Symbol.mkDefnSym(ns0, ident, id)

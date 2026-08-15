@@ -78,7 +78,7 @@ object Symbol {
     * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {
-    val id = Some(flix.genSym.freshId())
+    val id = Some(flix.genSym.freshId().toString)
     new DefnSym(id, sym.namespace, sym.text, sym.loc)
   }
 
@@ -172,7 +172,7 @@ object Symbol {
   /**
     * Returns the definition symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkDefnSym(ns: NName, ident: Ident, id: Option[Int]): DefnSym = {
+  def mkDefnSym(ns: NName, ident: Ident, id: Option[String]): DefnSym = {
     new DefnSym(id, ns.parts, ident.name, ident.loc)
   }
 
@@ -187,7 +187,7 @@ object Symbol {
   /**
     * Returns the definition symbol for the given fully qualified name and ID.
     */
-  def mkDefnSym(fqn: String, id: Option[Int]): DefnSym = split(fqn) match {
+  def mkDefnSym(fqn: String, id: Option[String]): DefnSym = split(fqn) match {
     case None => new DefnSym(id, Nil, fqn, SourceLocation.Unknown)
     case Some((ns, name)) => new DefnSym(id, ns, name, SourceLocation.Unknown)
   }
@@ -449,7 +449,7 @@ object Symbol {
   /**
     * Definition Symbol.
     */
-  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
+  final class DefnSym(val id: Option[String], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.

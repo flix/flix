@@ -123,7 +123,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
-      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(flix.genSym.freshId()))
+      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(flix.genSym.freshId().toString))
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val param2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
@@ -304,7 +304,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
-      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(flix.genSym.freshId()))
+      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(flix.genSym.freshId().toString))
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val param2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
@@ -502,7 +502,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
-      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(flix.genSym.freshId()))
+      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(flix.genSym.freshId().toString))
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkToStringImpl(enum0, param, loc, root)
@@ -711,7 +711,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
-      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(flix.genSym.freshId()))
+      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(flix.genSym.freshId().toString))
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkHashImpl(enum0, param, loc, root)
@@ -852,7 +852,7 @@ object Deriver {
 
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
-        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(flix.genSym.freshId()))
+        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(flix.genSym.freshId().toString))
 
         val (_, caze) = cases.head
 
