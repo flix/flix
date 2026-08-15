@@ -29,11 +29,6 @@ object Command {
   case object Nop extends Command
 
   /**
-    * Displays documentation about the fqn s
-    */
-  case class Info(s: String) extends Command
-
-  /**
     * Creates a new project in the current directory
     */
   case object Init extends Command
@@ -131,12 +126,6 @@ object Command {
 
     if (input.trim == "")
       return Command.Nop
-
-    val infoPattern = raw":i(nfo)?\s+(\S+)\s*".r
-    input match {
-      case infoPattern(_, s) => return Command.Info(s)
-      case _ => // no-op
-    }
 
     if (input == ":init")
       return Command.Init
