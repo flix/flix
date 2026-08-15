@@ -74,9 +74,6 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
-    // Use new bootstrap and flix instances for each build to reset symbol generation.
-    // A bootstrap tracks the timestamps of the source files it has already added to a flix instance,
-    // so reusing a bootstrap for a fresh flix instance would not add the source files again.
     val b1 = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix1 = PkgTestUtils.mkFlix
     // Use 1 thread for deterministic symbols
