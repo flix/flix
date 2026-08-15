@@ -80,13 +80,16 @@ class ProgressBar(flix: Flix) {
     val m = abbreviate(msg, Width - (20 + 17))
     val s = s" [${flix.getFormatter.green(spinner)}] [$memPart] [${flix.getFormatter.blue(p)}] $m "
 
-    // Clear the current line and then print the string followed by carriage return.
+    // Clear the current line.
     // NB: We clear the line with spaces (rather than padding the string) because
     // the string may contain ANSI escape codes which do not take up any width.
+    System.out.print(" " * Width + "\r")
+
+    // Print the string followed by carriage return.
     // NB: We do *NOT* print a newline because then
     // we would not be able to overwrite the current
     // line in the iteration.
-    System.out.print(" " * Width + "\r" + s + "\r")
+    System.out.print(s + "\r")
 
     // Flush to ensure that the string is printed.
     System.out.flush()
