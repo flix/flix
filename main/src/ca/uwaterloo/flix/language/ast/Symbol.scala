@@ -97,15 +97,31 @@ object Symbol {
     * Returns a fresh enum symbol based on the given symbol.
     */
   def freshEnumSym(sym: EnumSym)(implicit flix: Flix): EnumSym = {
-    val id = Some(flix.genSym.freshId())
+    val id = Some(flix.genSym.freshId().toString)
     new EnumSym(id, sym.namespace, sym.text, sym.loc)
   }
+
+  /**
+    * Returns the enum symbol for the specialization of `sym` identified by `key`.
+    *
+    * Consumes no [[ca.uwaterloo.flix.language.GenSym]] id; see [[specializedDefnSym]].
+    */
+  def specializedEnumSym(sym: EnumSym, key: String): EnumSym =
+    new EnumSym(Some(StableName.suffix(key)), sym.namespace, sym.text, sym.loc)
+
+  /**
+    * Returns the struct symbol for the specialization of `sym` identified by `key`.
+    *
+    * Consumes no [[ca.uwaterloo.flix.language.GenSym]] id; see [[specializedDefnSym]].
+    */
+  def specializedStructSym(sym: StructSym, key: String): StructSym =
+    new StructSym(Some(StableName.suffix(key)), sym.namespace, sym.text, sym.loc)
 
   /**
     * Returns a fresh struct symbol based on the given symbol.
     */
   def freshStructSym(sym: StructSym)(implicit flix: Flix): StructSym = {
-    val id = Some(flix.genSym.freshId())
+    val id = Some(flix.genSym.freshId().toString)
     new StructSym(id, sym.namespace, sym.text, sym.loc)
   }
 
@@ -492,7 +508,7 @@ object Symbol {
   /**
     * Enum Symbol.
     */
-  final class EnumSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class EnumSym(val id: Option[String], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.
@@ -529,7 +545,7 @@ object Symbol {
   /**
     * Struct Symbol.
     */
-  final class StructSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class StructSym(val id: Option[String], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.

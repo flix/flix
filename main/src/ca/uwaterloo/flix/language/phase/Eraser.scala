@@ -387,7 +387,7 @@ object Eraser {
           enumSpecializations.computeIfAbsent((sym, targs), _ => sym)
         case _ =>
           // Do specialization.
-          enumSpecializations.computeIfAbsent((sym, targs), _ => Symbol.freshEnumSym(sym))
+          enumSpecializations.computeIfAbsent((sym, targs), _ => Symbol.specializedEnumSym(sym, ErasureKey.ofEnum(sym, targs)))
       }
     }
 
@@ -406,7 +406,7 @@ object Eraser {
           structSpecializations.computeIfAbsent((sym, targs), _ => sym)
         case _ =>
           // Do specialization.
-          structSpecializations.computeIfAbsent((sym, targs), _ => Symbol.freshStructSym(sym))
+          structSpecializations.computeIfAbsent((sym, targs), _ => Symbol.specializedStructSym(sym, ErasureKey.ofStruct(sym, targs)))
       }
     }
 
