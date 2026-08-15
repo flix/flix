@@ -339,9 +339,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Executes the given bootstrap function and prints any errors.
     */
-  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = f match {
-    case Validation.Success(_) => ()
-    case Validation.Failure(errors) => errors.map(_.message(formatter)).foreach(out.println)
+  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
+    // Reset the options: a previous command may have changed e.g. the build mode on the shared Flix instance.
+    flix.setOptions(options)
+    f match {
+      case Validation.Success(_) => ()
+      case Validation.Failure(errors) => errors.map(_.message(formatter)).foreach(out.println)
+    }
   }
 
   /**
