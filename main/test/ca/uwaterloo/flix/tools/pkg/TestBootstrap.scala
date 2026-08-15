@@ -34,6 +34,23 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.build(PkgTestUtils.mkFlix)
+
+    // The build command does not write anything to disk.
+    val buildDir = p.resolve("./build/").normalize()
+    assert(!Files.exists(buildDir))
+  }
+
+  test("build-classes") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.buildClasses(PkgTestUtils.mkFlix)
+
+    val classDir = p.resolve("./build/class/").normalize()
+    val classFiles = FileOps.getFilesIn(classDir, Int.MaxValue)
+    assert(classFiles.nonEmpty)
+    assert(classFiles.forall(FileOps.isClassFile))
+    assert(Files.exists(classDir.resolve("Main.class")))
   }
 
   test("build-jar") {
@@ -165,7 +182,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(PkgTestUtils.mkFlix)
+    b.buildClasses(PkgTestUtils.mkFlix)
     val buildDir = p.resolve("./build/").normalize()
     val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
     if (buildFiles.isEmpty || buildFiles.exists(!FileOps.checkExt(_, "class"))) {
@@ -188,7 +205,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(PkgTestUtils.mkFlix)
+    b.buildClasses(PkgTestUtils.mkFlix)
     val buildDir = p.resolve("./build/").normalize()
     FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello")
     b.clean() match {

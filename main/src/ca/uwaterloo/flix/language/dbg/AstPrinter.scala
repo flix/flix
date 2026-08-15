@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.printer.*
@@ -126,22 +126,22 @@ object AstPrinter {
   }
 
   /**
-    * Writes `content` to the file `<build>/asts/<phaseName>.flixir`. The build folder is taken from
-    * flix options. The existing file is overwritten if present.
+    * Writes `content` to the file `<build>/asts/<phaseName>.flixir`.
+    * The existing file is overwritten if present.
     */
-  private def writeToDisk(phaseName: String, content: String)(implicit flix: Flix): Unit = {
+  private def writeToDisk(phaseName: String, content: String): Unit = {
     val filePath = phaseOutputPath(phaseName)
     FileOps.writeString(filePath, content)
   }
 
   /** Makes sure that the phases file exists and is empty. */
-  def resetPhaseFile()(implicit flix: Flix): Unit = {
-    val filePath = astFolderPath.resolve("0phases.txt")
+  def resetPhaseFile(): Unit = {
+    val filePath = CompilerConstants.AstDirectory.resolve("0phases.txt")
     FileOps.writeString(filePath, "")
   }
 
-  def appendPhaseToDisk(phaseName: String, hasAst: Boolean)(implicit flix: Flix): Unit = {
-    val filePath = astFolderPath.resolve("0phases.txt")
+  def appendPhaseToDisk(phaseName: String, hasAst: Boolean): Unit = {
+    val filePath = CompilerConstants.AstDirectory.resolve("0phases.txt")
     val line = s"$phaseName${if (hasAst) "" else " (no output)"}${System.lineSeparator()}"
     FileOps.writeString(filePath, line, append = true)
   }
@@ -151,16 +151,7 @@ object AstPrinter {
     *
     * OBS: this function has no checking so the path might not hold the ast and it might not be readable etc.
     */
-  private def phaseOutputPath(phaseName: String)(implicit flix: Flix): Path = {
-    astFolderPath.resolve(s"$phaseName.$IrFileExtension")
-  }
-
-  /**
-    * Returns the path to the folder that holds the pretty printed ast files used by [[writeToDisk]].
-    *
-    * OBS: this function has no checking so the path might not exist and it might not be readable etc.
-    */
-  def astFolderPath(implicit flix: Flix): Path = {
-    flix.options.outputPath.resolve("asts/")
+  private def phaseOutputPath(phaseName: String): Path = {
+    CompilerConstants.AstDirectory.resolve(s"$phaseName.$IrFileExtension")
   }
 }

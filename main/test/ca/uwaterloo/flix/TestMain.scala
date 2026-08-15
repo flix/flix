@@ -33,6 +33,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.Build)
   }
 
+  test("build-classes") {
+    val args = Array("build-classes")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.BuildClasses)
+  }
+
   test("build-jar") {
     val args = Array("build-jar")
     val opts = Main.parseCmdOpts(args).get

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityC
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
-import ca.uwaterloo.flix.language.phase.jvm.{CodeGen, JvmLoader, JvmWriter}
+import ca.uwaterloo.flix.language.phase.jvm.{CodeGen, JvmLoader}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.monomorph2.ConstraintMonomorphization
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
@@ -694,7 +694,6 @@ class Flix {
 
     val totalTime = flix.getTotalTime
 
-    JvmWriter.run(bytecodeAst)
     // (Optionally) load generated JVM classes.
     val loaderResult = JvmLoader.run(bytecodeAst)
 
