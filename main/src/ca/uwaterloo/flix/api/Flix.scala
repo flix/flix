@@ -700,7 +700,7 @@ class Flix {
 
     // Construct the compilation result.
     val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
-    val result = new CompilationResult(loaderResult.main, loaderResult.tests, loaderResult.sources, bytecodeAst.classes, totalTime, totalSize)
+    val result = new CompilationResult(bytecodeAst.classes, loaderResult.main, loaderResult.tests, loaderResult.sources, totalTime, totalSize)
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()

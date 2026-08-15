@@ -23,20 +23,24 @@ import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
 /**
   * A class representing the result of a compilation.
   *
+  * @param classes   the generated JVM classes.
   * @param main      the reflected main function, if present.
   * @param tests     the tests in the program.
   * @param sources   the sources of the program.
-  * @param classes   the generated JVM classes.
   * @param totalTime the total compilation time, excluding class writing/loading.
   * @param codeSize   the number of bytes the compiler generated.
   */
-class CompilationResult(main: Option[Array[String] => Unit],
+class CompilationResult(classes: Map[JvmName, JvmClass],
+                        main: Option[Array[String] => Unit],
                         tests: Map[Symbol.DefnSym, TestFn],
                         sources: Map[Source, SourceLocation],
-                        classes: Map[JvmName, JvmClass],
                         val totalTime: Long,
                         val codeSize: Int
                        ) {
+
+  /** Returns the generated JVM classes. */
+  def getClasses: Map[JvmName, JvmClass] =
+    classes
 
   /** Optionally returns the main function. */
   def getMain: Option[Array[String] => Unit] =
@@ -45,10 +49,6 @@ class CompilationResult(main: Option[Array[String] => Unit],
   /** Returns all the test functions in the program. */
   def getTests: Map[Symbol.DefnSym, TestFn] =
     tests
-
-  /** Returns the generated JVM classes. */
-  def getClasses: Map[JvmName, JvmClass] =
-    classes
 
   /** Returns the total number of lines of compiled code. */
   def getTotalLines: Int = sources.foldLeft(0) {
