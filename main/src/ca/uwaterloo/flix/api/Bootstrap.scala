@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
+import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
@@ -471,10 +472,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     for {
       _ <- Steps.configureJarOutput(flix)
-      _ <- Steps.compile(flix)
+      result <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
       contents = (zip: ZipOutputStream) => {
-        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
+        Steps.addClassesToZip(result.getClasses, zip)
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
       }
       _ <- Steps.createJar(jarFile, contents)
@@ -492,12 +493,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     for {
       _ <- Steps.configureJarOutput(flix)
-      _ <- Steps.compile(flix)
+      result <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
       _ <- Steps.validateDirectory(libDir)
       _ <- Steps.validateJarFilesIn(libDir)
       contents = (zip: ZipOutputStream) => {
-        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
+        Steps.addClassesToZip(result.getClasses, zip)
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
         Steps.addJarsFromDirToZip(libDir, zip)
       }
@@ -996,14 +997,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private object Steps {
 
     /**
-      * Adds all class files from `dir` to `zip`.
+      * Adds all `classes` to `zip`, writing the bytecode directly from memory.
       */
-    def addClassFilesFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
-      // Add all class files.
-      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      val classFiles = FileOps.getFilesWithExtIn(dir, EXT_CLASS, Int.MaxValue)
-      for ((buildFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(dir, classFiles)) {
-        FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
+    def addClassesToZip(classes: Map[JvmName, JvmClass], zip: ZipOutputStream): Unit = {
+      // Add all classes.
+      // Here we sort entries by their entry name to apply https://reproducible-builds.org/
+      val entries = classes.values.map(clazz => (clazz.name.toClassFileName, clazz)).toList.sortBy(_._1)
+      for ((entryName, clazz) <- entries) {
+        FileOps.addToZip(zip, entryName, clazz.bytecode)
       }
     }
 
@@ -1199,21 +1200,18 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     /**
-      * Configures `flix` to emit class files to the build directory (on the file system)
-      * in production mode.
+      * Configures `flix` to compile in production mode for jar output.
       *
-      * @see [[Bootstrap.getBuildDirectory]]
+      * The generated classes are kept in memory only: they are neither written to the
+      * build directory nor loaded into the JVM. Instead they are packed directly into
+      * the jar file by [[addClassesToZip]].
+      *
       * @see [[Build.Production]]
       */
     def configureJarOutput(flix: Flix): Result[Unit, BootstrapError] = {
-      val buildDir = Bootstrap.getBuildDirectory(projectPath)
-      for {
-        _ <- validateDirectory(buildDir)
-      } yield {
-        val newOptions = flix.options.copy(build = Build.Production, outputJvm = true, outputPath = buildDir)
-        flix.setOptions(newOptions)
-        ()
-      }
+      val newOptions = flix.options.copy(build = Build.Production, outputJvm = false, loadClassFiles = false)
+      flix.setOptions(newOptions)
+      Ok(())
     }
 
     /**
