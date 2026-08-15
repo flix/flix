@@ -19,9 +19,7 @@ package ca.uwaterloo.flix.runtime.shell
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, CompilerConstants, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.*
@@ -53,11 +51,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * The Flix instance (the same instance is used for incremental compilation).
     */
   private implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
-
-  /**
-    * The result of the most recent compilation
-    */
-  private var root: Option[Root] = None
 
   /**
     * Is this the first compile
@@ -174,7 +167,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     implicit val out: PrintStream = new PrintStream(terminal.output())
     cmd match {
       case Command.Nop => // nop
-      case Command.Info(s) => execInfo(s)
       case Command.Quit => execQuit()
       case Command.Help => execHelp()
       case Command.Praise => execPraise()
@@ -196,42 +188,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   }
 
   /**
-    * Displays documentation for the given identifier
-    */
-  private def execInfo(s: String)(implicit terminal: Terminal): Unit = {
-    val w = terminal.writer()
-    val traitSym = Symbol.mkTraitSym(s)
-    val defnSym = Symbol.mkDefnSym(s)
-    val enumSym = Symbol.mkEnumSym(s)
-    val aliasSym = Symbol.mkTypeAliasSym(s)
-
-    root match {
-      case Some(r) =>
-        if (r.traits.contains(traitSym)) {
-          val traitDecl = r.traits(traitSym)
-          w.println(FormatDoc.asMarkDown(traitDecl.doc))
-        } else if (r.defs.contains(defnSym)) {
-          val defDecl = r.defs(defnSym)
-          w.println(FormatSignature.asMarkDown(defDecl))
-          w.println(FormatDoc.asMarkDown(defDecl.spec.doc))
-        } else if (r.enums.contains(enumSym)) {
-          val enumDecl = r.enums(enumSym)
-          w.println(FormatDoc.asMarkDown(enumDecl.doc))
-        } else if (r.typeAliases.contains(aliasSym)) {
-          val aliasDecl = r.typeAliases(aliasSym)
-          w.println(FormatType.formatType(aliasDecl.tpe))
-          w.println()
-          w.println(FormatDoc.asMarkDown(aliasDecl.doc))
-        } else {
-          w.println(s"$s not found")
-        }
-
-      case None =>
-        w.println("Error: No compilation results available")
-    }
-  }
-
-  /**
     * Exits the shell.
     */
   private def execQuit(): Unit = {
@@ -246,7 +202,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
 
     w.println("  Command       Arguments     Purpose")
     w.println()
-    w.println("  :info :i      <fqn>         Displays documentation for <fqn>.")
     w.println("  :init                       Creates a new project in the current directory.")
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
     w.println("  :build-classes              Builds the current project and writes the class files to the build directory.")
@@ -364,7 +319,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
 
     flix.check() match {
       case (Some(r), Nil) =>
-        this.root = Some(r)
         Validation.Success(flix.codeGen(r))
       case (rootOpt, errors) =>
         printErrors(errors, rootOpt)

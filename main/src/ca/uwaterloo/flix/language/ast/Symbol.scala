@@ -299,14 +299,6 @@ object Symbol {
   }
 
   /**
-    * Returns the type alias symbol for the given fully qualified name
-    */
-  def mkTypeAliasSym(fqn: String): TypeAliasSym = split(fqn) match {
-    case None => new TypeAliasSym(Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new TypeAliasSym(ns, name, SourceLocation.Unknown)
-  }
-
-  /**
     * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEffSym(ns: NName, ident: Ident): EffSym = {
