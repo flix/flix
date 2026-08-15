@@ -252,6 +252,33 @@ object ResolutionError {
 
   }
 
+  // MATT docs
+  case class UndeterminedAssocTypeArg(tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E9814
+
+    def summary: String = s"Undetermined type variable '${tvar.toString}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> The type variable '${red(tvar.toString)}' is only used as an argument to an associated type.
+         |
+         |${highlight(loc, "undetermined type variable", fmt)}
+         |
+         |${underline("Explanation:")} An associated type cannot be run backwards: from `T[a, b]` we
+         |cannot recover `b`. A type variable used as an argument to an associated type must therefore
+         |also appear somewhere the type checker can determine it -- a formal parameter, the return
+         |type, or the effect.
+         |
+         |  trait T[a] {
+         |      type F[a, b]: Type
+         |      pub def f(x: a, y: b, z: T.F[a, b]): Int32    // OK: b is determined by y
+         |      pub def g(x: a, z: T.F[a, b]): Int32          // not OK: b is undetermined
+         |  }
+         |""".stripMargin
+    }
+
+  }
+
   /**
     * An error raised to indicate a super call outside of a 'new' object body.
     *
@@ -1242,6 +1269,68 @@ object ResolutionError {
          |  }
          |  def f(x: T.S): Unit = ...      // not OK: T.S is under-applied
          |  def f(x: T.S[a]): Unit = ...   // OK
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an associated type definition has too many or too few parameters.
+    *
+    * @param sym the associated type.
+    * @param expected the expected number of parameters
+    * @param actual the actual number of parameters
+    * @param loc the location where the error occurred.
+    */
+  case class MismatchedAssocTypeArity(sym: Symbol.AssocTypeSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3250
+
+    def summary: String = s"Associated type '${sym.name}' expects $expected parameter(s), but found $actual."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Associated type '${red(sym.name)}' expects ${cyan(expected.toString)} parameter(s), but found ${red(actual.toString)}.
+         |
+         |${highlight(loc, s"expected $expected parameter(s)", fmt)}
+         |
+         |${underline("Explanation:")} An associated type definition must take the same number of
+         |parameters as its declaration in the trait.
+         |
+         |  trait T[a] {
+         |      type S[a, b]: Type
+         |  }
+         |  instance T[Int32] {
+         |      type S[Int32] = Int32         // not OK: missing a parameter
+         |      type S[Int32, b] = (Int32, b) // OK
+         |  }
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal associated type parameter.
+    *
+    * @param sym the associated type.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalAssocTypeParam(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3251
+
+    def summary: String = s"Illegal parameter of associated type '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Illegal parameter of associated type '${red(sym.name)}'.
+         |
+         |${highlight(loc, "must be a distinct type variable", fmt)}
+         |
+         |${underline("Explanation:")} Only the first parameter of an associated type definition is
+         |matched against the instance. Every other parameter must be a distinct type variable.
+         |
+         |  instance T[Int32] {
+         |      type S[Int32, String] = Int32 // not OK: not a type variable
+         |      type S[Int32, b, b] = Int32   // not OK: repeated type variable
+         |      type S[Int32, b, c] = (b, c)  // OK
+         |  }
          |""".stripMargin
     }
   }

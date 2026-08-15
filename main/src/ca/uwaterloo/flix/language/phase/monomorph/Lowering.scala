@@ -83,7 +83,7 @@ object Lowering {
     case Type.Alias(sym, args, t, loc) =>
       Type.Alias(sym, args.map(lowerType), lowerType(t), loc)
 
-    case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc)
+    case Type.AssocType(_, _, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc)
 
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
 
@@ -998,7 +998,7 @@ object Lowering {
     case Type.Apply(_, _, _) => false
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
@@ -1022,7 +1022,7 @@ object Lowering {
     case Type.Apply(_, _, _) => "Object"
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)

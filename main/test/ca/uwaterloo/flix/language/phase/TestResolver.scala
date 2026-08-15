@@ -1194,6 +1194,20 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UnderAppliedAssocType](result)
   }
 
+  test("UnderAppliedAssocType.02") {
+    // MATT docs
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |}
+        |
+        |def f(x: C.T[a]): String = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedAssocType](result)
+  }
+
   test("IllegalRawJavaType.List") {
     val input =
       """
@@ -1609,6 +1623,35 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalSignature](result)
   }
 
+  test("UndeterminedAssocTypeArg.01") {
+    // The type variable `b` appears only as an argument to `C.T`.
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |
+        |    pub def f(x: a, y: C.T[a, b]): String
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndeterminedAssocTypeArg](result)
+  }
+
+  test("UndeterminedAssocTypeArg.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |
+        |    pub def f(x: a, y: b): C.T[a, b]
+        |}
+        |
+        |def g(x: a, y: C.T[a, b]): String with C[a] = "hello"
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndeterminedAssocTypeArg](result)
+  }
+
   test("IllegalWildType.01") {
     val input =
       """
@@ -1800,6 +1843,80 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
+  }
+
+  test("MismatchedAssocTypeArity.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String] = String
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedAssocTypeArity](result)
+  }
+
+  test("MismatchedAssocTypeArity.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String, b] = String
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedAssocTypeArity](result)
+  }
+
+  test("MismatchedAssocTypeArity.03") {
+    // MATT docs
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |}
+        |
+        |def f(x: a): String with C[a] where C.T[a] ~ String = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedAssocTypeArity](result)
+  }
+
+  test("IllegalAssocTypeParam.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String, Int32] = String
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeParam](result)
+  }
+
+  test("IllegalAssocTypeParam.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a, b, c]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String, b, b] = String
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeParam](result)
   }
 
   test("Test.OverAppliedOp.Handler.01") {

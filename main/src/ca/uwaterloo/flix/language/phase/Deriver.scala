@@ -863,6 +863,7 @@ object Deriver {
           Modifiers.Empty,
           AssocTypeSymUse(outSym, loc),
           tpe,
+          Nil,
           outTpe,
           loc
         )

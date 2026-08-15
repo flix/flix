@@ -50,9 +50,10 @@ object TypeSimplifier {
       val as = args.map(visitType)
       val t = visitType(tpe)
       Type.Alias(symUse, as, t, loc)
-    case Type.AssocType(symUse, arg, kind, loc) =>
-      val a = visitType(arg)
-      Type.AssocType(symUse, a, kind, loc)
+    case Type.AssocType(symUse, sel, args, kind, loc) =>
+      val s = visitType(sel)
+      val as = args.map(visitType)
+      Type.AssocType(symUse, s, as, kind, loc)
     case Type.JvmToType(tpe, loc) =>
       val t = visitType(tpe)
       Type.JvmToType(t, loc)

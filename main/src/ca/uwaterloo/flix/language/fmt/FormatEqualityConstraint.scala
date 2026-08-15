@@ -31,10 +31,10 @@ object FormatEqualityConstraint {
     * Formats the given `econstr` as `Assoc[Arg] ~ Type`.
     */
   def formatEqualityConstraintWithOptions(tconstr: EqualityConstraint, fmt: FormatOptions): String = tconstr match {
-    case EqualityConstraint(symUse, tpe1, tpe2, _) =>
+    case EqualityConstraint(symUse, sel, args, tpe2, _) =>
       val assocString = symUse.sym.name
-      val tpe1String = FormatType.formatTypeWithOptions(tpe1, fmt)
+      val argsString = (sel :: args).map(FormatType.formatTypeWithOptions(_, fmt)).mkString(", ")
       val tpe2String = FormatType.formatTypeWithOptions(tpe2, fmt)
-      s"$assocString[$tpe1String] ~ $tpe2String"
+      s"$assocString[$argsString] ~ $tpe2String"
   }
 }

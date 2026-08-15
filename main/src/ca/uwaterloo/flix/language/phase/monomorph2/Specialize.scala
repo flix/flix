@@ -168,9 +168,10 @@ object Specialize {
 
       case Type.Alias(_, _, t, _)                   => applySubst(t)
 
-      case Type.AssocType(symUse, arg0, kind, loc)  =>
-        val arg = applySubst(arg0)
-        val assoc = Type.AssocType(symUse, arg, kind, loc)
+      case Type.AssocType(symUse, sel0, args0, kind, loc) =>
+        val sel = applySubst(sel0)
+        val args = args0.map(applySubst)
+        val assoc = Type.AssocType(symUse, sel, args, kind, loc)
         val reducedType = Canonicalization.reduceAssocType(assoc)
         Canonicalization.simplify(reducedType, isGround = true)
 

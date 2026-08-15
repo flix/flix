@@ -3025,4 +3025,24 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
+  test("Test.UndeterminedAssocTypeArg.Neg.01") {
+    // `first` and `dup` both have legal signatures, but discarding the result of `first`
+    // leaves nothing to determine `b` at this call site.
+    val input =
+      """
+        |trait C[a] {
+        |    type P[a, b]: Type
+        |    pub def dup(x: a, y: b): C.P[a, b]
+        |    pub def first(x: a, p: C.P[a, b]): b
+        |}
+        |
+        |def f(x: a, y: b): Bool with C[a] =
+        |    match C.first(x, C.dup(x, y)) {
+        |        case _ => true
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
 }

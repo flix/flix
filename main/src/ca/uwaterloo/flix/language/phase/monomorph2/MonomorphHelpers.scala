@@ -61,7 +61,7 @@ private[monomorph2] object MonomorphHelpers {
     case Type.Var(_, _)                           => t
     case Type.Apply(t1, t2, loc)                  => Type.Apply(rewriteRegionToIO(t1), rewriteRegionToIO(t2), loc)
     case Type.Alias(sym, args, inner, loc)        => Type.Alias(sym, args.map(rewriteRegionToIO), rewriteRegionToIO(inner), loc)
-    case Type.AssocType(sym, arg, kind, loc)      => Type.AssocType(sym, rewriteRegionToIO(arg), kind, loc)
+    case Type.AssocType(sym, sel, args, kind, loc) => Type.AssocType(sym, rewriteRegionToIO(sel), args.map(rewriteRegionToIO), kind, loc)
     case Type.JvmToType(tpe, loc)                 => Type.JvmToType(rewriteRegionToIO(tpe), loc)
     case Type.JvmToEff(tpe, loc)                  => Type.JvmToEff(rewriteRegionToIO(tpe), loc)
     case Type.UnresolvedJvmType(_, _)             => t

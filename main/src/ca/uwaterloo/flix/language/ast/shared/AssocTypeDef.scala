@@ -20,6 +20,6 @@ import ca.uwaterloo.flix.language.ast.{Type, Symbol}
 /**
   * Represents the definition of an associated type.
   * If this associated type is named `Assoc`, then
-  * Assoc[arg] = ret.
+  * Assoc[sel, args...] = ret.
   */
-case class AssocTypeDef(tparams: List[Symbol.KindedTypeVarSym], arg: Type, ret: Type)
+case class AssocTypeDef(tparams: List[Symbol.KindedTypeVarSym], sel: Type, args: List[Type], ret: Type)

@@ -164,21 +164,27 @@ object Typer {
       assocSig <- trt.assocs
       head <- TypeHead.fromType(inst.tpe)
       assocDefOpt = inst.assocs.find(_.symUse.sym == assocSig.sym)
-      tparams = inst.tparams.map(_.sym)
+      instTparams = inst.tparams.map(_.sym)
       assocDef = assocDefOpt match {
         // If there's no definition, then we fall back to the default
         case None =>
+          // We build a subst trait tparam -> inst type to instantiate the default definition
           val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
+          // The tparams include both the instance tparams and tparams from the associated type
+          val tparams = instTparams ++ assocSig.tparams.map(_.sym)
+          val args = assocSig.tparams.map(tp => Type.Var(tp.sym, tp.loc))
           val tpe = subst(assocSig.tpe.get)
-          AssocTypeDef(tparams, inst.tpe, tpe)
-        case Some(KindedAst.AssocTypeDef(_, _, _, arg, tpe, _)) =>
-          AssocTypeDef(tparams, arg, tpe)
+          AssocTypeDef(tparams, inst.tpe, args, tpe)
+        case Some(KindedAst.AssocTypeDef(_, _, _, arg, assocTparams, tpe, _)) =>
+          // The tparams include both the instance tparams and tparams from the associated type
+          val args = assocTparams.map(b => Type.Var(b.sym, b.loc))
+          AssocTypeDef(instTparams ++ assocTparams.map(_.sym), arg, args, tpe)
       }
     } yield {
       ((assocSig.sym, head), assocDef)
     }
 
-    EqualityEnv(assocs.toMap)
+    EqualityEnv(ListMap.from(assocs.toSeq))
   }
 
   /**
@@ -238,9 +244,10 @@ object Typer {
       val renv = RigidityEnv.empty.markRigid(tparam0.sym)
       val superTraits = superTraits0 // no subst to be done
       val assocs = assocs0.map {
-        case KindedAst.AssocTypeSig(sigDoc, sigMod, sigSym, tp0, kind, tpe, sigLoc) =>
+        case KindedAst.AssocTypeSig(sigDoc, sigMod, sigSym, tp0, tps0, kind, tpe, sigLoc) =>
           val tp = visitTypeParam(tp0)
-          TypedAst.AssocTypeSig(sigDoc, sigMod, sigSym, tp, kind, tpe, sigLoc)
+          val tps = tps0.map(visitTypeParam)
+          TypedAst.AssocTypeSig(sigDoc, sigMod, sigSym, tp, tps, kind, tpe, sigLoc)
       }
       val tconstr = TraitConstraint(TraitSymUse(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val sigs = sigs0.values.map(visitSig(_, renv, List(tconstr), root, traitEnv, eqEnv)).toList
@@ -302,8 +309,9 @@ object Typer {
       val econstrs = econstrs0 // no subst to be done
       checkInstAssocTypes(inst, traitEnv)
       val assocs = assocs0.map {
-        case KindedAst.AssocTypeDef(defDoc, defMod, defSymUse, args, defTpe, defLoc) =>
-          TypedAst.AssocTypeDef(defDoc, defMod, defSymUse, args, defTpe, defLoc)
+        case KindedAst.AssocTypeDef(defDoc, defMod, defSymUse, defArg, defTparams0, defTpe, defLoc) =>
+          val defTparams = defTparams0.map(visitTypeParam)
+          TypedAst.AssocTypeDef(defDoc, defMod, defSymUse, defArg, defTparams, defTpe, defLoc)
       }
 
       val defs = defs0.map {
@@ -316,7 +324,7 @@ object Typer {
             visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
           }
       }
-      val typedEconstrs = econstrs.map(ec => TypedAst.EqualityConstraint(Type.AssocType(ec.symUse, ec.tpe1, ec.tpe2.kind, ec.loc), ec.tpe2, ec.loc))
+      val typedEconstrs = econstrs.map(ec => TypedAst.EqualityConstraint(Type.AssocType(ec.symUse, ec.sel, ec.args, ec.tpe2.kind, ec.loc), ec.tpe2, ec.loc))
       TypedAst.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, typedEconstrs, assocs, defs, ns, loc)
   }
 
@@ -505,16 +513,16 @@ object Typer {
     * Returns a list containing both types in the constraint.
     */
   private def getTypes(econstr: EqualityConstraint): List[Type] = econstr match {
-    case EqualityConstraint(cst, tpe1, tpe2, _) =>
+    case EqualityConstraint(cst, sel, args, tpe2, loc) =>
       // Kind is irrelevant for our purposes
-      List(Type.AssocType(cst, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
+      List(Type.AssocType(cst, sel, args, Kind.Wild, sel.loc), tpe2)
   }
 
   /**
     * Verifies that the associated type is resolvable, according to the declared type constraints.
     */
   private def checkAssocType(assocType: Type.AssocType, tparams: List[KindedAst.TypeParam], tconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = assocType match {
-    case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
+    case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, _, loc) =>
       val trtSym = assocSym.trt
       val matches = tconstrs.flatMap(withSupers(_, tenv)).exists {
         case TraitConstraint(TraitSymUse(tconstrSym, _), Type.Var(tvarSym2, _), _) =>

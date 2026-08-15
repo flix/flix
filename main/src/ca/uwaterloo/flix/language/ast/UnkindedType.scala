@@ -50,7 +50,7 @@ sealed trait UnkindedType {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
-    case UnkindedType.AssocType(cst, arg, loc) => UnkindedType.AssocType(cst, arg.map(f), loc)
+    case UnkindedType.AssocType(cst, sel, args, loc) => UnkindedType.AssocType(cst, sel.map(f), args.map(_.map(f)), loc)
     case t: UnkindedType.Error => t
   }
 
@@ -103,7 +103,56 @@ sealed trait UnkindedType {
     // For aliases we used the reduced type
     case UnkindedType.Alias(_, _, tpe, _) => tpe.definiteTypeVars
     // For associated types we cannot yet reduce, so we are conservative and say none.
-    case UnkindedType.AssocType(_, _, _) => SortedSet.empty
+    case UnkindedType.AssocType(_, _, _, _) => SortedSet.empty
+
+    case UnkindedType.Error(_) => SortedSet.empty
+  }
+
+  // MATT docs
+  def typeVarSyms: SortedSet[Symbol.UnkindedTypeVarSym] = this match {
+    case UnkindedType.Var(sym, _) => SortedSet(sym)
+    case UnkindedType.Cst(_, _) => SortedSet.empty
+    case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.Effect(_, _) => SortedSet.empty
+    case UnkindedType.Struct(_, _) => SortedSet.empty
+    case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedNative(_, _) => SortedSet.empty
+    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.typeVarSyms ++ tpe2.typeVarSyms
+    case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.typeVarSyms).to(SortedSet)
+    case UnkindedType.CaseSet(_, _) => SortedSet.empty
+    case UnkindedType.CaseComplement(tpe, _) => tpe.typeVarSyms
+    case UnkindedType.CaseUnion(tpe1, tpe2, _) => tpe1.typeVarSyms ++ tpe2.typeVarSyms
+    case UnkindedType.CaseIntersection(tpe1, tpe2, _) => tpe1.typeVarSyms ++ tpe2.typeVarSyms
+    case UnkindedType.Ascribe(tpe, _, _) => tpe.typeVarSyms
+    case UnkindedType.Alias(_, _, tpe, _) => tpe.typeVarSyms
+    case UnkindedType.AssocType(_, sel, args, _) => sel.typeVarSyms ++ args.flatMap(_.typeVarSyms)
+    case UnkindedType.Error(_) => SortedSet.empty
+  }
+
+  // MATT docs
+  def assocArgTypeVars: SortedSet[Symbol.UnkindedTypeVarSym] = this match {
+    case UnkindedType.Var(_, _) => SortedSet.empty
+    case UnkindedType.Cst(_, _) => SortedSet.empty
+    case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.Effect(_, _) => SortedSet.empty
+    case UnkindedType.Struct(_, _) => SortedSet.empty
+    case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedNative(_, _) => SortedSet.empty
+    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.assocArgTypeVars ++ tpe2.assocArgTypeVars
+    case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.assocArgTypeVars).to(SortedSet)
+    case UnkindedType.CaseSet(_, _) => SortedSet.empty
+    case UnkindedType.CaseComplement(tpe, _) => tpe.assocArgTypeVars
+    case UnkindedType.CaseUnion(tpe1, tpe2, _) => tpe1.assocArgTypeVars ++ tpe2.assocArgTypeVars
+    case UnkindedType.CaseIntersection(tpe1, tpe2, _) => tpe1.assocArgTypeVars ++ tpe2.assocArgTypeVars
+    case UnkindedType.Ascribe(tpe, _, _) => tpe.assocArgTypeVars
+    case UnkindedType.Alias(_, _, tpe, _) => tpe.assocArgTypeVars
+
+    // The selector is not a binder, so it is not collected here. Everything else is.
+    case UnkindedType.AssocType(_, sel, args, _) => sel.assocArgTypeVars ++ args.flatMap(_.typeVarSyms)
 
     case UnkindedType.Error(_) => SortedSet.empty
   }
@@ -316,14 +365,16 @@ object UnkindedType {
 
   /**
     * A fully resolved associated type.
+    *
+    * `sel` is the selector which determines the associated type definition used for reduction.
     */
-  case class AssocType(assocTypeSymUse: AssocTypeSymUse, arg: UnkindedType, loc: SourceLocation) extends UnkindedType {
+  case class AssocType(assocTypeSymUse: AssocTypeSymUse, sel: UnkindedType, args: List[UnkindedType], loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case AssocType(AssocTypeSymUse(sym2, _), arg2, _) => assocTypeSymUse.sym == sym2 && arg == arg2
+      case AssocType(AssocTypeSymUse(sym2, _), sel2, args2, _) => assocTypeSymUse.sym == sym2 && sel == sel2 && args == args2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(assocTypeSymUse, arg)
+    override def hashCode(): Int = Objects.hash(assocTypeSymUse, sel, args)
   }
 
   /**
@@ -559,7 +610,7 @@ object UnkindedType {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case AssocType(cst, arg, loc) => AssocType(cst, eraseAliases(arg), loc) // TODO ASSOC-TYPES check that this is valid
+    case AssocType(cst, sel, args, loc) => AssocType(cst, eraseAliases(sel), args.map(eraseAliases), loc) // TODO ASSOC-TYPES check that this is valid
     case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)

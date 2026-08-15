@@ -214,6 +214,7 @@ object ConstraintSolver2 {
     *   - (reflU): eliminates trivial equalities: `τ ~ τ` becomes `∅`
     *   - eliminates constraints containing unrecoverable errors (see [[isEliminable]])
     *   - (redU): reduces the types in the constraint
+    *   - (assocU): // MATT docs
     *
     * The rules are applied in the listed order to each constraint:
     * applications are broken down exhaustively, and then the remaining
@@ -244,11 +245,16 @@ object ConstraintSolver2 {
           // (redU)
           val (r1, cs1) = reduce(tpe1)(scope, renv, progress, eqenv, flix)
           val (r2, cs2) = reduce(tpe2)(scope, renv, progress, eqenv, flix)
-          // Performance: Reuse this, if possible.
-          if ((r1 eq tpe1) && (r2 eq tpe2) && cs1.isEmpty && cs2.isEmpty)
-            constr :: Nil
-          else
-            TypeConstraint.Equality(r1, r2, prov) :: cs1 ::: cs2
+          // (assocU)
+          eliminateEquivalentAssocType(r1, r2, progress) match {
+            case Some(cs) => cs ::: cs1 ::: cs2
+            case None =>
+              // Performance: Reuse this, if possible.
+              if ((r1 eq tpe1) && (r2 eq tpe2) && cs1.isEmpty && cs2.isEmpty)
+                constr :: Nil
+              else
+                TypeConstraint.Equality(r1, r2, prov) :: cs1 ::: cs2
+          }
         }
     }
 
@@ -291,6 +297,34 @@ object ConstraintSolver2 {
       }
 
     case TypeConstraint.EffConflicted(_) => constr :: Nil
+  }
+
+  // MATT docs
+  // (assocU)
+  private def eliminateEquivalentAssocType(tpe1: Type, tpe2: Type, progress: Progress)(implicit scope: RegionScope, eqenv: EqualityEnv, flix: Flix): Option[List[TypeConstraint]] = (tpe1, tpe2) match {
+    // Performance: We only attempt this for multiparameter associated types, so that unary
+    // associated types pay nothing for a rule that cannot help them.
+    case (Type.AssocType(symUse1, sel1, args1, _, _), Type.AssocType(symUse2, sel2, args2, _, _))
+      if symUse1.sym == symUse2.sym &&
+        args1.nonEmpty &&
+        args1.length == args2.length &&
+        ((sel1, sel2) :: args1.zip(args2)).forall { case (t1, t2) => isProvablyEquivalent(t1, t2) } =>
+      progress.markProgress()
+      Some(Nil)
+
+    case _ => None
+  }
+
+  // MATT docs
+  private def isProvablyEquivalent(tpe1: Type, tpe2: Type)(implicit scope: RegionScope, eqenv: EqualityEnv, flix: Flix): Boolean = {
+    if (tpe1 == tpe2) {
+      true
+    } else {
+      // Mark everything as rigid, so that nothing can be bound. Success then means the equality is
+      // proven, rather than merely satisfiable under some commitment we are not entitled to make.
+      val renv = RigidityEnv.ofRigidVars(tpe1.typeVars.map(_.sym) ++ tpe2.typeVars.map(_.sym))
+      fullyUnify(tpe1, tpe2, scope, renv).isDefined
+    }
   }
 
   /**
@@ -683,9 +717,9 @@ object ConstraintSolver2 {
     * Replaces the location with the given location.
     */
   private def equalityConstraintToTypeConstraint(constr: EqualityConstraint, loc: SourceLocation): TypeConstraint = constr match {
-    case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      val assoc = Type.AssocType(cst, tpe1, tpe2.kind, tpe1.loc)
-      TypeConstraint.Equality(assoc, tpe2, Provenance.Match(tpe1, tpe2, loc))
+    case EqualityConstraint(cst, sel, args, tpe2, _) =>
+      val assoc = Type.AssocType(cst, sel, args, tpe2.kind, sel.loc)
+      TypeConstraint.Equality(assoc, tpe2, Provenance.Match(assoc, tpe2, loc))
   }
 
   /**

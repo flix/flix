@@ -147,11 +147,11 @@ object ConstraintSolver {
         h  <- substArg(head, bindings)
         as <- ListOps.traverse(args)(substArg(_, bindings))
       } yield Type.mkApply(h, as, h.loc)
-    case MonoArg.Assoc(sym, a, kind, loc) =>
-      substArg(a, bindings).map {
-        t =>
-          Type.AssocType(SymUse.AssocTypeSymUse(sym, loc), t, kind, loc)
-      }
+    case MonoArg.Assoc(sym, sel, args, kind, loc) =>
+      for {
+        s  <- substArg(sel, bindings)
+        as <- ListOps.traverse(args)(substArg(_, bindings))
+      } yield Type.AssocType(SymUse.AssocTypeSymUse(sym, loc), s, as, kind, loc)
   }
 
   /** Grounds `fc`'s args to a ground instantiation, or `None` if any position is not ready. */

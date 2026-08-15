@@ -21,7 +21,8 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
-import ca.uwaterloo.flix.util.JvmUtils
+import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
+import ca.uwaterloo.flix.util.collection.ListOps
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
@@ -49,55 +50,69 @@ object TypeReduction2 {
 
     case Type.Alias(_, _, tpe, _) => (tpe, Nil)
 
-    case Type.AssocType(symUse, tpe, kind, loc) =>
-      val (t, cs) = reduce(tpe)
+    case Type.AssocType(symUse, sel0, tpes, kind, loc) =>
+      val (s, cs0) = reduce(sel0)
+      val reduced = tpes.map(reduce)
+      val ts = reduced.map(_._1)
+      val cs = cs0 ::: reduced.flatMap(_._2)
 
-      // Get all the associated types from the context
-      val assocOpt = eqenv.getAssocDef(symUse.sym, t)
+      // Get the candidate associated types from context, using the selector.
+      val assocDefs = eqenv.getAssocDefs(symUse.sym, s)
 
       // Find the instance that matches
-      val matches = assocOpt.flatMap {
-        case AssocTypeDef(tparams, assocTpe0, ret0) =>
+      val matches = assocDefs.flatMap {
+        case AssocTypeDef(tparams, assocSel0, assocTpes0, ret0) =>
 
-
-          // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
-          // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
+          // We fully rigidify the arguments, because we need the substitution to go from definition type to instantiation type
+          // For example, if our instantiation is Elm[Map[Int32, a]] and our definition is Elm[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
-          val assocRenv = t.typeVars.map(_.sym).foldLeft(renv)(_.markRigid(_))
+          val assocRenv = (s :: ts).flatMap(_.typeVars).map(_.sym).foldLeft(renv)(_.markRigid(_))
 
-
-          // Refresh the flexible variables in the instance
+          // Refresh the flexible variables in the definition
           // (variables may be rigid if the instance comes from a constraint on the definition)
           val assocVarMap = tparams.map {
             case fromSym => fromSym -> Type.freshVar(fromSym.kind, fromSym.loc)(scope, flix)
           }.toMap
           val assocSubst = Substitution(assocVarMap)
-          val assocTpe = assocSubst(assocTpe0)
+          val assocSel = assocSubst(assocSel0)
+          val assocTpes = assocTpes0.map(assocSubst.apply)
           val ret = assocSubst(ret0)
 
-          // Instantiate all the instance constraints according to the substitution.
-          ConstraintSolver2.fullyUnify(t, assocTpe, scope, assocRenv).map {
+          // Instantiate all the instance constraints according to the resulting substitution.
+          // We zip-truncate as a simple resilience measure.
+          val constraints = ListOps.zipTruncate(s :: ts, assocSel :: assocTpes).map {
+            case (t1, t2) => TypeConstraint.Equality(t1, t2, TypeConstraint.Provenance.Match(t1, t2, SourceLocation.Unknown))
+          }
+          val substOpt = ConstraintSolver2.solveAllTypes(constraints)(scope, assocRenv, eqenv, flix) match {
+            case (Nil, subst) => Some(subst)
+            case (_ :: _, _) => None
+          }
+
+          substOpt.map {
             case subst => subst(ret)
           }
       }
 
       matches match {
-        // Case 1: No match. We cannot reduce the head, but the argument may have
-        // been reduced. We must reflect that in the returned type: reducing the
+        // Case 1: No match. We cannot reduce the head, but the arguments may have
+        // been reduced. We must reflect that in the returned type: reducing an
         // argument calls `progress.markProgress()`, so returning the original
         // `tpe0` here would signal progress without changing the type, causing
         // the constraint solver to loop forever (see issue #11213).
-        // Performance: Reuse `tpe0` if the argument was unchanged.
-        case None =>
-          if (t eq tpe)
+        // Performance: Reuse `tpe0` if the arguments were unchanged.
+        case Nil =>
+          if ((s eq sel0) && ts.lazyZip(tpes).forall(_ eq _))
             (tpe0, cs)
           else
-            (Type.AssocType(symUse, t, kind, loc), cs)
+            (Type.AssocType(symUse, s, ts, kind, loc), cs)
 
         // Case 2: One match. Use it.
-        case Some(newTpe) =>
+        case newTpe :: Nil =>
           progress.markProgress()
           (newTpe, cs)
+
+        // Case 3: Multiple matches. Bug
+        case _ :: _ :: _ => throw InternalCompilerException("unexpected overlapping equality constraints", loc)
       }
 
     case Type.JvmToType(tpe, loc) =>
@@ -359,7 +374,7 @@ object TypeReduction2 {
       // so the type arguments do not affect method/field resolution.
       isNativeBase(tpe) || (isKnown(t1) && isKnown(t2))
     case Type.Alias(_, _, t, _) => isKnown(t)
-    case Type.AssocType(_, _, _, _) => false
+    case Type.AssocType(_, _, _, _, _) => false
   }
 
   /** A lookup result of a Java field. */

@@ -84,9 +84,9 @@ object Scheme {
         // Performance: Few aliases, not worth optimizing.
         Type.Alias(sym, args.map(visitType), visitType(tpe), loc)
 
-      case Type.AssocType(sym, args, kind, _) =>
+      case Type.AssocType(sym, sel, args, kind, _) =>
         // // Performance: Few associated types, not worth optimizing.
-        Type.AssocType(sym, args.map(visitType), kind, loc)
+        Type.AssocType(sym, visitType(sel), args.map(visitType), kind, loc)
 
       case Type.JvmToType(tpe, _) =>
         Type.JvmToType(visitType(tpe), loc)
@@ -107,8 +107,8 @@ object Scheme {
     }
 
     val newEconstrs = sc.econstrs.map {
-      case EqualityConstraint(symUse, tpe1, tpe2, _) =>
-        EqualityConstraint(symUse, visitType(tpe1), visitType(tpe2), loc)
+      case EqualityConstraint(symUse, sel, args, tpe2, _) =>
+        EqualityConstraint(symUse, visitType(sel), args.map(visitType), visitType(tpe2), loc)
     }
 
     (newTconstrs, newEconstrs, newBase, substMap)
@@ -118,7 +118,7 @@ object Scheme {
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
   def generalize(tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], tpe0: Type, renv: RigidityEnv)(implicit scope: RegionScope): Scheme = {
-    val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
+    val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.args.flatMap(_.typeVars) ++ econstr.tpe2.typeVars)
     val quantifiers = renv.getFlexibleVarsOf(tvars.toList)
     Scheme(quantifiers.map(_.sym), tconstrs, econstrs, tpe0)
   }
@@ -155,13 +155,13 @@ object Scheme {
     val eenv0 = ConstraintSolverInterface.expandEqualityEnv(globalEqEnv0, localEconstrs.map(subst0.apply))
 
     // Resolve what we can from the new econstrs
-    val tconstrs2_0 = econstrs2_0.map { case EqualityConstraint(symUse, t1, t2, loc) => TypeConstraint.Equality(Type.AssocType(symUse, t1, t2.kind, loc), t2, Provenance.Match(t1, t2, loc)) }
+    val tconstrs2_0 = econstrs2_0.map { case EqualityConstraint(symUse, s, ts, t2, loc) => val assoc = Type.AssocType(symUse, s, ts, t2.kind, loc); TypeConstraint.Equality(assoc, t2, Provenance.Match(assoc, t2, loc)) }
     val (econstrs2_1, subst) = ConstraintSolver2.solveAllTypes(tconstrs2_0)(scope, RigidityEnv.empty, eenv0, flix)
 
     // Anything we didn't solve must be a standard equality constraint
     // Apply the substitution to the new scheme 2
     val econstrs2 = econstrs2_1.map {
-      case TypeConstraint.Equality(Type.AssocType(symUse, t1, _, _), t2, prov) => EqualityConstraint(symUse, subst(t1), subst(t2), prov.loc)
+      case TypeConstraint.Equality(Type.AssocType(symUse, s, ts, _, _), t2, prov) => EqualityConstraint(symUse, subst(s), ts.map(subst.apply), subst(t2), prov.loc)
       case _ => throw InternalCompilerException("unexpected constraint", SourceLocation.Unknown)
     }
     val tpe2 = subst(tpe2_0)
@@ -179,14 +179,14 @@ object Scheme {
 
     // Mark all the constraints from sc2 as rigid
     val tvars = cconstrs2.flatMap(_.arg.typeVars) ++
-      econstrs2.flatMap { econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars } ++
+      econstrs2.flatMap { econstr => econstr.args.flatMap(_.typeVars) ++ econstr.tpe2.typeVars } ++
       tpe2.typeVars
     val renv = tvars.foldLeft(RigidityEnv.empty) { case (r, tvar) => r.markRigid(tvar.sym) }
 
     // Check that the constraints from sc1 hold
     // And that the bases unify
     val cconstrs = sc1.tconstrs.map { case TraitConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg, loc) }
-    val econstrs = sc1.econstrs.map { case EqualityConstraint(symUse, t1, t2, loc) => TypeConstraint.Equality(Type.AssocType(symUse, t1, t2.kind, loc), t2, Provenance.Match(t1, t2, loc)) }
+    val econstrs = sc1.econstrs.map { case EqualityConstraint(symUse, s, ts, t2, loc) => val assoc = Type.AssocType(symUse, s, ts, t2.kind, loc); TypeConstraint.Equality(assoc, t2, Provenance.Match(assoc, t2, loc)) }
     val baseConstr = TypeConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
     ConstraintSolver2.solveAll(baseConstr :: cconstrs ::: econstrs, SubstitutionTree.shallow(subst))(scope, renv, cenv, eenv, flix) match {
       // We succeed only if there are no leftover constraints

@@ -50,9 +50,9 @@ object DesugaredAst {
 
     case class TypeAlias(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Declaration
 
-    case class AssocTypeSig(doc: Doc, mod: Modifiers, ident: Name.Ident, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
+    case class AssocTypeSig(doc: Doc, mod: Modifiers, ident: Name.Ident, tparam: TypeParam, tparams: List[TypeParam], kind: Kind, tpe: Option[Type], loc: SourceLocation)
 
-    case class AssocTypeDef(doc: Doc, mod: Modifiers, ident: Name.Ident, arg: Type, tpe: Type, loc: SourceLocation)
+    case class AssocTypeDef(doc: Doc, mod: Modifiers, ident: Name.Ident, arg: Type, args: List[Type], tpe: Type, loc: SourceLocation)
 
     case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
 
@@ -419,7 +419,7 @@ object DesugaredAst {
 
   case class TraitConstraint(trt: Name.QName, tpe: Type, loc: SourceLocation)
 
-  case class EqualityConstraint(qname: Name.QName, tpe1: Type, tpe2: Type, loc: SourceLocation)
+  case class EqualityConstraint(qname: Name.QName, sel: Type, args: List[Type], tpe2: Type, loc: SourceLocation)
 
   case class Constraint(head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 

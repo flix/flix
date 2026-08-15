@@ -152,8 +152,8 @@ object Resolver {
     case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.Op(sym, _, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
     case ResolvedAst.Declaration.Sig(sym, _, _, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
-    case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
-    case ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $symUse", symUse.loc)
+    case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
+    case ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $symUse", symUse.loc)
   }
 
   /**
@@ -243,7 +243,7 @@ object Resolver {
         flatMapN(findResolutionOrder(semiResolved.values)) {
           case orderedSyms =>
             val orderedSemiResolved = orderedSyms.map(semiResolved)
-            val aliases = finishResolveTypeAliases(orderedSemiResolved)
+            val aliases = finishResolveTypeAliases(orderedSemiResolved, root)
             Validation.Success((aliases, orderedSyms))
         }
     }
@@ -307,10 +307,10 @@ object Resolver {
     *
     * The given aliases must be in resolution order.
     */
-  private def finishResolveTypeAliases(aliases0: List[ResolvedAst.Declaration.TypeAlias])(implicit sctx: SharedContext): Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias] = {
+  private def finishResolveTypeAliases(aliases0: List[ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root)(implicit sctx: SharedContext): Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias] = {
     aliases0.foldLeft(Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
       case (taenv, ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe0, loc)) =>
-        val tpe = finishResolveType(tpe0, taenv)
+        val tpe = finishResolveType(tpe0, taenv, root)
         val alias = ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
         taenv + (sym -> alias)
     }
@@ -371,8 +371,8 @@ object Resolver {
     case NamedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.StructField(_, sym, _, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
-    case NamedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
-    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
+    case NamedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _, _) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
+    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _, _) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
   }
 
   /**
@@ -489,6 +489,7 @@ object Resolver {
       val spec = resolveSpec(spec0, Some(tconstr), scp0, taenv, ns0, root)
       val scp = scp0 ++ mkSpecScp(spec)
       checkSigSpec(sym, spec, traitTvar)
+      checkAssocTypeArgs(spec)
       val exp = exp0.map(resolveExp(_, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix))
       ResolvedAst.Declaration.Sig(sym, spec, exp, loc)
   }
@@ -501,6 +502,7 @@ object Resolver {
       flix.profile(sym, loc) {
         val spec = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
         val scp = scp0 ++ mkSpecScp(spec)
+        checkAssocTypeArgs(spec)
         val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
         ResolvedAst.Declaration.Def(sym, spec, exp, loc)
       }
@@ -614,11 +616,14 @@ object Resolver {
     * Performs name resolution on the given associated type signature `s0` in the given namespace `ns0`.
     */
   private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.AssocTypeSig = s0 match {
-    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind0, tpe0, loc) =>
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, tparams0, kind0, tpe0, loc) =>
       val tparam = resolveTypeParam(tparam0, scp0, ns0, root)
+      val tparams = tparams0.map(resolveTypeParam(_, scp0, ns0, root))
       val kind = resolveKind(kind0, scp0, ns0, root)
-      val tpe = tpe0.map(resolveType(_, Some(kind), Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix))
-      ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc)
+      // MATT docs
+      val scp = scp0 ++ mkTypeParamScp(tparams)
+      val tpe = tpe0.map(resolveType(_, Some(kind), Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix))
+      ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, tparams, kind, tpe, loc)
   }
 
   /**
@@ -635,7 +640,7 @@ object Resolver {
         val errors = mutable.ArrayBuffer.empty[ResolutionError]
 
         // Build the map `m` and check for [[DuplicateAssocTypeDef]].
-        for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
+        for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, _, loc1) <- xs) {
           val sym = symUse.sym
           m.get(sym) match {
             case None =>
@@ -648,7 +653,7 @@ object Resolver {
         }
 
         // Check for [[MissingAssocTypeDef]] and recover.
-        for (NamedAst.Declaration.AssocTypeSig(_, _, ascSym, _, _, tpe, _) <- trt.assocs) {
+        for (NamedAst.Declaration.AssocTypeSig(_, _, ascSym, _, _, _, tpe, _) <- trt.assocs) {
           if (!m.contains(ascSym) && tpe.isEmpty) {
             // Missing associated type.
             errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
@@ -657,9 +662,8 @@ object Resolver {
             val doc = Doc(Nil, loc)
             val mod = Modifiers.Empty
             val symUse = AssocTypeSymUse(ascSym, loc)
-            val arg = targ
             val tpe = UnkindedType.Error(loc)
-            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
+            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, targ, Nil, tpe, loc)
             m.put(ascSym, ascDef)
           }
         }
@@ -674,27 +678,56 @@ object Resolver {
     }
   }
 
+  // MATT docs
+  private def mkAssocTypeDefBinders(sym: Symbol.AssocTypeSym, args: List[NamedAst.Type])(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.TypeParam] = {
+    val (binders, _) = args.foldLeft((List.empty[ResolvedAst.TypeParam], Set.empty[String])) {
+      case ((acc, seen), NamedAst.Type.Var(ident, loc)) if !seen.contains(ident.name) =>
+        val tvarSym = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)(RegionScope.Top, flix)
+        (acc :+ ResolvedAst.TypeParam.Implicit(ident, tvarSym, loc), seen + ident.name)
+      case ((acc, seen), arg) =>
+        sctx.errors.add(ResolutionError.IllegalAssocTypeParam(sym, arg.loc))
+        (acc, seen)
+    }
+    binders
+  }
+
+  // MATT docs
+  private def checkAssocTypeDefArity(sym: Symbol.AssocTypeSym, args: List[NamedAst.Type], trt: NamedAst.Declaration.Trait, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    trt.assocs.find(_.sym == sym).foreach {
+      assocSig =>
+        if (args.length != assocSig.tparams.length) {
+          sctx.errors.add(ResolutionError.MismatchedAssocTypeArity(sym, 1 + assocSig.tparams.length, 1 + args.length, loc))
+        }
+    }
+  }
+
   /**
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
     */
   private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
-    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, args0, tpe0, loc) =>
 
-      // For now, we don't add any tvars from the args. We should have gotten those directly from the instance
-      val arg = resolveType(arg0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
-      val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
       val symVal: Result[Symbol.AssocTypeSym, ResolutionError] = trt.assocs.collectFirst {
-        case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
+        case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _, _) if sym.name == ident.name => sym
       } match {
         case None =>
-          val assocs = trt.assocs.map { case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym }
+          val assocs = trt.assocs.map { case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _, _) => sym }
           Result.Err(ResolutionError.UndefinedAssocType(trt.sym, Name.QName(Name.RootNS, ident, ident.loc), assocs, ident.loc))
         case Some(sym) => Result.Ok(sym)
       }
       mapN(symVal.toValidation) {
         sym =>
+          checkAssocTypeDefArity(sym, args0, trt, ident.loc)
+
+          // MATT docs
+          val tparams = mkAssocTypeDefBinders(sym, args0)
+          val scp = scp0 ++ mkTypeParamScp(tparams)
+
+          val arg = resolveType(arg0, None, Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+          val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+
           val symUse = AssocTypeSymUse(sym, ident.loc)
-          ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
+          ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tparams, tpe, loc)
       }
   }
 
@@ -709,6 +742,18 @@ object Resolver {
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (!tvars.contains(tvar)) {
         val error = ResolutionError.IllegalSignature(sym, tvar, sym.loc)
+        sctx.errors.add(error)
+      }
+  }
+
+  // MATT docs
+  private def checkAssocTypeArgs(spec0: ResolvedAst.Spec)(implicit sctx: SharedContext): Unit = spec0 match {
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff, _, _) =>
+      val tpes = tpe :: eff.toList ::: fparams.flatMap(_.tpe).toList
+      val determined = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
+      val required = tpes.flatMap(_.assocArgTypeVars).to(SortedSet)
+      for (tvar <- required -- determined) {
+        val error = ResolutionError.UndeterminedAssocTypeArg(tvar, tvar.loc)
         sctx.errors.add(error)
       }
   }
@@ -2075,14 +2120,18 @@ object Resolver {
     * Performs name resolution on the given equality constraint `econstr0`.
     */
   private def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.EqualityConstraint = tconstr0 match {
-    case NamedAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
-      val t1 = resolveType(tpe1, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+    case NamedAst.EqualityConstraint(qname, sel0, args, tpe2, loc) =>
+      val t1 = resolveType(sel0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+      val ts = args.map(resolveType(_, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix))
       val t2 = resolveType(tpe2, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
 
       lookupAssocType(qname, scp0, ns0, root) match {
         case Result.Ok(assoc) =>
           val symUse = AssocTypeSymUse(assoc.sym, qname.loc)
-          val head = UnkindedType.AssocType(symUse, t1, qname.loc)
+          if (ts.length != assoc.tparams.length) {
+            sctx.errors.add(ResolutionError.MismatchedAssocTypeArity(assoc.sym, 1 + assoc.tparams.length, 1 + ts.length, qname.loc))
+          }
+          val head = UnkindedType.AssocType(symUse, t1, ts, qname.loc)
           ResolvedAst.EqualityConstraint(head, t2, loc)
         case Result.Err(error) =>
           sctx.errors.add(error)
@@ -2537,12 +2586,23 @@ object Resolver {
     visit(tpe0)
   }
 
+  // MATT docs
+  private def assocTypeArity(sym: Symbol.AssocTypeSym, root: NamedAst.Root): Int = {
+    root.symbols
+      .getOrElse(Name.mkUnlocatedNName(sym.namespace), Map.empty)
+      .getOrElse(sym.name, Nil)
+      .collectFirst {
+        case NamedAst.Declaration.AssocTypeSig(_, _, s, _, tparams, _, _, _) if s == sym => tparams.length
+      }
+      .getOrElse(0)
+  }
+
   /**
     * Finishes resolving the partially resolved type `tpe0`.
     *
     * Replaces type alias placeholders with the real type aliases.
     */
-  private def finishResolveType(tpe0: UnkindedType, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias])(implicit sctx: SharedContext): UnkindedType = {
+  private def finishResolveType(tpe0: UnkindedType, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root)(implicit sctx: SharedContext): UnkindedType = {
 
     /**
       * Performs beta-reduction on the given type alias.
@@ -2571,34 +2631,42 @@ object Resolver {
         } else {
           // Case 2: The type alias is fully applied.
           // Apply the types within the alias, then apply any leftover types.
-          val resolvedArgs = targs.map(finishResolveType(_, taenv))
+          val resolvedArgs = targs.map(finishResolveType(_, taenv, root))
           val (usedArgs, extraArgs) = resolvedArgs.splitAt(numParams)
           UnkindedType.mkApply(applyAlias(alias, usedArgs, loc), extraArgs, tpe0.loc)
         }
 
       case UnkindedType.UnappliedAssocType(sym, loc) =>
-        targs match {
+        // MATT docs
+        val arity = 1 + assocTypeArity(sym, root)
+        targs.splitAt(arity) match {
           // Case 1: The associated type is under-applied.
-          case Nil =>
+          case (used0, _) if used0.lengthIs < arity =>
             val error = ResolutionError.UnderAppliedAssocType(sym, loc)
             sctx.errors.add(error)
             UnkindedType.Error(loc)
 
           // Case 2: The associated type is fully applied.
-          // Apply the types first type inside the assoc type, then apply any leftover types.
-          case targHead :: targTail =>
-            val targHd = finishResolveType(targHead, taenv)
-            val targTl = targTail.map(finishResolveType(_, taenv))
-            targHd match {
-              case targHd: UnkindedType.Var =>
+          // Resolve the arguments inside the assoc type, then apply any leftover types.
+          case (sel0 :: args0, extra0) =>
+            val sel = finishResolveType(sel0, taenv, root)
+            val args = args0.map(finishResolveType(_, taenv, root))
+            val extra = extra0.map(finishResolveType(_, taenv, root))
+            // MATT docs
+            sel match {
+              case _: UnkindedType.Var =>
                 val cst = AssocTypeSymUse(sym, loc)
-                val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
-                UnkindedType.mkApply(assoc, targTl, tpe0.loc)
+                val assoc = UnkindedType.AssocType(cst, sel, args, tpe0.loc)
+                UnkindedType.mkApply(assoc, extra, tpe0.loc)
               case _ =>
                 val error = ResolutionError.IllegalAssocTypeApplication(tpe0.loc)
                 sctx.errors.add(error)
                 UnkindedType.Error(loc)
             }
+
+          // Case 3: MATT docs
+          case (Nil, _) =>
+            throw InternalCompilerException("unexpected empty associated type application", loc)
         }
 
       case UnkindedType.UnappliedNative(clazz, loc) =>
@@ -2608,60 +2676,60 @@ object Resolver {
           UnkindedType.Error(loc)
         } else {
           val cst = UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
-          val resolvedArgs = targs.map(finishResolveType(_, taenv))
+          val resolvedArgs = targs.map(finishResolveType(_, taenv, root))
           UnkindedType.mkApply(cst, resolvedArgs, tpe0.loc)
         }
 
       case _: UnkindedType.Var =>
-        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv)), tpe0.loc)
+        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv, root)), tpe0.loc)
 
       case _: UnkindedType.Cst =>
-        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv)), tpe0.loc)
+        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv, root)), tpe0.loc)
 
       case _: UnkindedType.Enum =>
-        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv)), tpe0.loc)
+        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv, root)), tpe0.loc)
 
       case _: UnkindedType.Effect =>
-        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv)), tpe0.loc)
+        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv, root)), tpe0.loc)
 
       case _: UnkindedType.Struct =>
-        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv)), tpe0.loc)
+        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv, root)), tpe0.loc)
 
       case _: UnkindedType.RestrictableEnum =>
-        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv)), tpe0.loc)
+        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv, root)), tpe0.loc)
 
       case _: UnkindedType.CaseSet =>
-        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv)), tpe0.loc)
+        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv, root)), tpe0.loc)
 
       case UnkindedType.Arrow(eff, arity, loc) =>
-        val p = eff.map(finishResolveType(_, taenv))
-        val ts = targs.map(finishResolveType(_, taenv))
+        val p = eff.map(finishResolveType(_, taenv, root))
+        val ts = targs.map(finishResolveType(_, taenv, root))
         UnkindedType.mkApply(UnkindedType.Arrow(p, arity, loc), ts, tpe0.loc)
 
       case UnkindedType.CaseComplement(tpe, loc) =>
-        val t = finishResolveType(tpe, taenv)
-        val ts = targs.map(finishResolveType(_, taenv))
+        val t = finishResolveType(tpe, taenv, root)
+        val ts = targs.map(finishResolveType(_, taenv, root))
         UnkindedType.mkApply(UnkindedType.CaseComplement(t, loc), ts, tpe0.loc)
 
       case UnkindedType.CaseUnion(tpe1, tpe2, loc) =>
-        val t1 = finishResolveType(tpe1, taenv)
-        val t2 = finishResolveType(tpe2, taenv)
-        val ts = targs.map(finishResolveType(_, taenv))
+        val t1 = finishResolveType(tpe1, taenv, root)
+        val t2 = finishResolveType(tpe2, taenv, root)
+        val ts = targs.map(finishResolveType(_, taenv, root))
         UnkindedType.mkApply(UnkindedType.CaseUnion(t1, t2, loc), ts, tpe0.loc)
 
       case UnkindedType.CaseIntersection(tpe1, tpe2, loc) =>
-        val t1 = finishResolveType(tpe1, taenv)
-        val t2 = finishResolveType(tpe2, taenv)
-        val ts = targs.map(finishResolveType(_, taenv))
+        val t1 = finishResolveType(tpe1, taenv, root)
+        val t2 = finishResolveType(tpe2, taenv, root)
+        val ts = targs.map(finishResolveType(_, taenv, root))
         UnkindedType.mkApply(UnkindedType.CaseIntersection(t1, t2, loc), ts, tpe0.loc)
 
       case UnkindedType.Ascribe(tpe, kind, loc) =>
-        val t = finishResolveType(tpe, taenv)
-        val ts = targs.map(finishResolveType(_, taenv))
+        val t = finishResolveType(tpe, taenv, root)
+        val ts = targs.map(finishResolveType(_, taenv, root))
         UnkindedType.mkApply(UnkindedType.Ascribe(t, kind, loc), ts, tpe0.loc)
 
       case _: UnkindedType.Error =>
-        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv)), tpe0.loc)
+        UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv, root)), tpe0.loc)
 
       case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", baseType.loc)
       case _: UnkindedType.Alias => throw InternalCompilerException("unexpected resolved alias", baseType.loc)
@@ -2676,7 +2744,7 @@ object Resolver {
     */
   private def resolveType(tpe0: NamedAst.Type, kindOpt: Option[Kind], wildness: Wildness, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit scope: RegionScope, sctx: SharedContext, flix: Flix): UnkindedType = {
     val t = semiResolveType(tpe0, kindOpt, wildness, scp0, ns0, root)
-    finishResolveType(t, taenv)
+    finishResolveType(t, taenv, root)
   }
 
   /**
@@ -3289,12 +3357,12 @@ object Resolver {
     case NamedAst.Declaration.StructField(_, sym, _, _) => sym
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym
-    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym
+    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _, _) => sym
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _, _) => sym
     case NamedAst.Declaration.Op(sym, _, _) => sym
     case NamedAst.Declaration.Case(sym, _, _) => sym
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym
-    case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
+    case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, _, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("unexpected instance", loc)
   }
 

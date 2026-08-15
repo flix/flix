@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.math.Ordering.Implicits.seqOrdering
 
 /**
   * Atomic effects that can be represented as atoms in
@@ -28,7 +29,7 @@ import scala.collection.mutable
   * variables, effects, errors, or simple associated effects, described in the grammar below.
   *
   * atom ::= VarFlex | VarRigid | Eff | Error | atomAssoc
-  * atomAssoc ::= Assoc atomAssoc | VarRigid
+  * atomAssoc ::= Assoc atomAssoc+ | VarRigid
   */
 private sealed trait EffAtom extends Ordered[EffAtom] {
   override def compare(that: EffAtom): Int = (this, that) match {
@@ -36,9 +37,13 @@ private sealed trait EffAtom extends Ordered[EffAtom] {
     case (EffAtom.VarRigid(sym1), EffAtom.VarRigid(sym2)) => sym1.id - sym2.id
     case (EffAtom.Eff(sym1), EffAtom.Eff(sym2)) => sym1.compare(sym2)
     case (EffAtom.Region(sym1), EffAtom.Region(sym2)) => sym1.compare(sym2)
-    case (EffAtom.Assoc(sym1, arg1), EffAtom.Assoc(sym2, arg2)) =>
+    case (EffAtom.Assoc(sym1, sel1, args1), EffAtom.Assoc(sym2, sel2, args2)) =>
       val symCmp = sym1.compare(sym2)
-      if (symCmp != 0) symCmp else arg1.compare(arg2)
+      if (symCmp != 0) symCmp
+      else {
+        val selCmp = sel1.compare(sel2)
+        if (selCmp != 0) selCmp else Ordering[List[EffAtom]].compare(args1, args2)
+      }
     case (EffAtom.Error(id1), EffAtom.Error(id2)) => id1 - id2
     case _ =>
       def ordinal(a: EffAtom): Int = a match {
@@ -46,7 +51,7 @@ private sealed trait EffAtom extends Ordered[EffAtom] {
         case EffAtom.VarRigid(_) => 1
         case EffAtom.Region(_) => 2
         case EffAtom.Eff(_) => 3
-        case EffAtom.Assoc(_, _) => 4
+        case EffAtom.Assoc(_, _, _) => 4
         case EffAtom.Error(_) => 5
       }
 
@@ -65,7 +70,7 @@ private object EffAtom {
   case class Eff(sym: Symbol.EffSym) extends EffAtom
 
   /** Represents an associated effect. */
-  case class Assoc(sym: Symbol.AssocTypeSym, arg: EffAtom) extends EffAtom
+  case class Assoc(sym: Symbol.AssocTypeSym, sel: EffAtom, args: List[EffAtom]) extends EffAtom
 
   /** Represents a region. */
   case class Region(sym: Symbol.RegionSym) extends EffAtom
@@ -80,7 +85,7 @@ private object EffAtom {
     case Type.Var(sym, _) => EffAtom.VarFlex(sym)
     case Type.Cst(TypeConstructor.Effect(sym, _), _) => EffAtom.Eff(sym)
     case Type.Cst(TypeConstructor.Region(sym), _) => EffAtom.Region(sym)
-    case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
+    case assoc@Type.AssocType(_, _, _, _, _) => assocFromType(assoc)
     case Type.Cst(TypeConstructor.Error(id, _), _) => EffAtom.Error(id)
     case Type.Alias(_, _, tpe, _) => fromType(tpe)
     case _ => throw InvalidType(t)
@@ -89,7 +94,7 @@ private object EffAtom {
   /** Returns the [[EffAtom]] representation of `t` or throws [[InvalidType]]. */
   private def assocFromType(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): EffAtom = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => EffAtom.VarRigid(sym)
-    case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => EffAtom.Assoc(sym, assocFromType(arg))
+    case Type.AssocType(AssocTypeSymUse(sym, _), sel, args, _, _) => EffAtom.Assoc(sym, assocFromType(sel), args.map(assocFromType))
     case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
     case _ => throw InvalidType(t)
   }
@@ -118,7 +123,7 @@ private object EffAtom {
       collectAtoms(tpe1, acc)
       collectAtoms(tpe2, acc)
     case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc)
-    case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).foreach(acc += _)
+    case assoc@Type.AssocType(_, _, _, _, _) => getAssocAtoms(assoc).foreach(acc += _)
     case _ => ()
   }
 
@@ -128,8 +133,13 @@ private object EffAtom {
     */
   private def getAssocAtoms(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): Option[EffAtom] = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => Some(EffAtom.VarRigid(sym))
-    case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) =>
-      getAssocAtoms(arg).map(EffAtom.Assoc(sym, _))
+    case Type.AssocType(AssocTypeSymUse(sym, _), sel, args, _, _) =>
+      // MATT docs
+      for {
+        s <- getAssocAtoms(sel)
+        atoms = args.map(getAssocAtoms)
+        if atoms.forall(_.isDefined)
+      } yield EffAtom.Assoc(sym, s, atoms.map(_.get))
     case Type.Alias(_, _, tpe, _) => getAssocAtoms(tpe)
     case _ => None
   }
@@ -143,8 +153,8 @@ private object EffAtom {
     case EffAtom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
     case EffAtom.VarRigid(sym) => Type.Var(sym, loc)
     case EffAtom.VarFlex(sym) => Type.Var(sym, loc)
-    case EffAtom.Assoc(sym, arg0) =>
-      Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
+    case EffAtom.Assoc(sym, sel0, args0) =>
+      Type.AssocType(AssocTypeSymUse(sym, loc), toType(sel0, loc), args0.map(toType(_, loc)), Kind.Eff, loc)
     case EffAtom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
   }
 }
