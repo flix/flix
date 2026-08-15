@@ -59,19 +59,22 @@ class TestSpecializationKey extends AnyFunSuite {
     assert(SpecializationKey.of(defnSym("A.f"), Int32) != SpecializationKey.of(defnSym("B.f"), Int32))
   }
 
-  test("ignoresDefnId.01") {
-    // The def's own id is excluded: it is a counter for instance defs, and the type the
-    // instance is specialized at already separates them.
-    val withId = defnSym("Eq.eq", Some("229042"))
-    val withOther = defnSym("Eq.eq", Some("991"))
-    assert(SpecializationKey.of(withId, Int32) == SpecializationKey.of(withOther, Int32))
-    assert(SpecializationKey.of(withId, Int32) == SpecializationKey.of(defnSym("Eq.eq"), Int32))
+  test("includesDefnId.01") {
+    // A trait's default implementation and an instance's share a qualified name and can be
+    // specialized at the identical type, so the id is the only thing separating them.
+    val instance = defnSym("Option.point", Some("41712"))
+    val default = defnSym("Option.point")
+    assert(SpecializationKey.of(instance, Int32) != SpecializationKey.of(default, Int32))
   }
 
-  test("ignoresDefnId.02") {
-    // Two instances of one trait method still differ, because their types do.
-    val eq = defnSym("Eq.eq", Some("1"))
-    assert(SpecializationKey.of(eq, Int32) != SpecializationKey.of(eq, Str))
+  test("includesDefnId.02") {
+    val a = defnSym("Eq.eq", Some("1"))
+    val b = defnSym("Eq.eq", Some("2"))
+    assert(SpecializationKey.of(a, Int32) != SpecializationKey.of(b, Int32))
+  }
+
+  test("includesDefnId.03") {
+    assert(SpecializationKey.of(defnSym("f", Some("7")), Int32) == "f$7|Int32")
   }
 
   test("ignoresRegion.01") {

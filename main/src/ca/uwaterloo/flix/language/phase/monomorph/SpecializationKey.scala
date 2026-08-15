@@ -27,14 +27,18 @@ import scala.collection.mutable
   * in [[Specialization]]. Hashing that string gives a name that depends on what the
   * specialization *is* rather than on how many symbols preceded it.
   *
-  * Three things are deliberately excluded, because each would reintroduce the instability
+  * Two things are deliberately excluded, because each would reintroduce the instability
   * the key exists to remove:
   *
-  *   - The definition's own id. Instance defs carry a [[ca.uwaterloo.flix.language.GenSym]]
-  *     counter assigned in the namer; two instances of one trait method are told apart by
-  *     the type they are specialized at, which is in the key already.
   *   - Region symbols, which carry a counter and are erased before code generation.
   *   - Error types, which carry a counter and only occur in programs that do not compile.
+  *
+  * The definition's own id is *included*, and cannot be dropped: a trait's default
+  * implementation and an instance's implementation share a qualified name and can be
+  * specialized at the identical type, so the id is the only thing separating them. That
+  * id is a [[ca.uwaterloo.flix.language.GenSym]] counter assigned in the namer, so a
+  * specialized name is stable only once those ids are stable too. Specializations of
+  * plain definitions, which have no id, are already stable.
   *
   * The renderer does not use `Type.toString`, which formats types for humans through
   * [[ca.uwaterloo.flix.language.fmt.FormatType]]. Keying on that would mean improving an
@@ -56,6 +60,9 @@ object SpecializationKey {
     sb.append(sym.namespace.mkString("."))
     if (sym.namespace.nonEmpty) sb.append('.')
     sb.append(sym.text)
+    // The id distinguishes a trait's default implementation from an instance's, which can
+    // be specialized at the very same type. Leaving it out merges them.
+    sym.id.foreach(id => sb.append('$').append(id))
     sb.append('|')
     render(tpe, mutable.Map.empty, sb)
     sb.toString()

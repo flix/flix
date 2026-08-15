@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, StableName}
 
 import java.util.Objects
 import scala.collection.immutable.SortedSet
@@ -81,6 +81,17 @@ object Symbol {
     val id = Some(flix.genSym.freshId().toString)
     new DefnSym(id, sym.namespace, sym.text, sym.loc)
   }
+
+  /**
+    * Returns the def symbol for the specialization of `sym` identified by `key`.
+    *
+    * Unlike [[freshDefnSym]] this consumes no [[ca.uwaterloo.flix.language.GenSym]] id: the
+    * suffix is derived from `key`, so the same specialization is named the same way in
+    * every compilation. `key` must identify the specialization uniquely; see
+    * [[ca.uwaterloo.flix.language.phase.monomorph.SpecializationKey]].
+    */
+  def specializedDefnSym(sym: DefnSym, key: String): DefnSym =
+    new DefnSym(Some(StableName.suffix(key)), sym.namespace, sym.text, sym.loc)
 
   /**
     * Returns a fresh enum symbol based on the given symbol.

@@ -255,6 +255,34 @@ object Specialization {
         specializedNames.put((sym1, tpe), sym2)
       }
 
+    /**
+      * What each specialized symbol was minted for.
+      *
+      * A counter could not repeat, but a name derived from a key can, either because two
+      * specializations hash alike or because the key does not tell them apart. The
+      * invariant is on the pair the specialization cache is keyed on, not on the key
+      * string: comparing keys would be blind to exactly the case where the key loses
+      * information.
+      */
+    private val claimedNames: mutable.Map[Symbol.DefnSym, (Symbol.DefnSym, Type)] = mutable.Map.empty
+
+    /**
+      * Records that `specializedSym` names the specialization of `sym` at `tpe`.
+      *
+      * Throws if that name is already taken by a different specialization.
+      */
+    def claimSpecializedName(specializedSym: Symbol.DefnSym, key: String, sym: Symbol.DefnSym, tpe: Type): Unit =
+      synchronized {
+        claimedNames.get(specializedSym) match {
+          case Some((otherSym, otherTpe)) if otherSym != sym || otherTpe != tpe =>
+            throw InternalCompilerException(
+              s"Specialization name collision on '$specializedSym' from key '$key':" +
+                s" '$otherSym' at '$otherTpe' and '$sym' at '$tpe'.", sym.loc)
+          case _ =>
+            claimedNames.put(specializedSym, (sym, tpe))
+        }
+      }
+
     /** A map of specialized definitions. */
     private val specializedDefns: mutable.Map[Symbol.DefnSym, MonoAst.Def] =
       mutable.Map.empty
@@ -1263,8 +1291,11 @@ object Specialization {
       ctx.getSpecializedName(defn.sym, tpe) match {
         case None =>
           // The function has not been specialized.
-          // Generate a fresh specialized definition symbol.
-          val freshSym = Symbol.freshDefnSym(defn.sym)
+          // Derive the specialized definition symbol from what is being specialized, so
+          // that it is named the same way in every compilation.
+          val key = SpecializationKey.of(defn.sym, tpe)
+          val freshSym = Symbol.specializedDefnSym(defn.sym, key)
+          ctx.claimSpecializedName(freshSym, key, defn.sym, tpe)
 
           // Register the fresh symbol (and actual type).
           ctx.addSpecializedName(defn.sym, tpe, freshSym)
