@@ -21,6 +21,11 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class ProgressBar(flix: Flix) {
   /**
+    * The width of the progress bar in visible characters.
+    */
+  private val Width = 80
+
+  /**
     * The characters in the spinner.
     */
   private val SpinnerChars = Array("|", "/", "-", "\\")
@@ -45,7 +50,7 @@ class ProgressBar(flix: Flix) {
     * Used to properly reset the current line.
     */
   def complete(): Unit = {
-    System.out.print(" " * 80 + s"\r")
+    System.out.print(" " * Width + "\r")
     System.out.flush()
   }
 
@@ -69,16 +74,24 @@ class ProgressBar(flix: Flix) {
       case _ => flix.getFormatter.red(memoryPadded)
     }
 
-    // We abbreviate phase and msg if they are too long to fit.
+    // We abbreviate phase and msg if they are too long to fit within `Width`.
     val p = abbreviate(phase, 20)
-    val m = abbreviate(msg, 80 - (20 + 10))
-    val s = s" [${flix.getFormatter.green(spinner)}] [$memPart] [${flix.getFormatter.blue(p)}] $m "
+    val prefix = s" [${flix.getFormatter.green(spinner)}] [$memPart] [${flix.getFormatter.blue(p)}] "
+    val m = abbreviate(msg, Width - visibleLength(prefix) - 1)
+    val s = prefix + m + " "
+
+    // Pad the string with spaces up to `Width` so that it fully overwrites the previous line.
+    //
+    // NB: The padding must be computed from the *visible* length of the string,
+    // i.e. excluding ANSI escape codes. Otherwise the padded string may be
+    // visibly shorter than the previous line, leaving stray characters behind.
+    val padding = " " * math.max(0, Width - visibleLength(s))
 
     // Print the string followed by carriage return.
     // NB: We do *NOT* print a newline because then
     // we would not be able to overwrite the current
     // line in the iteration.
-    System.out.print(s.padTo(80, ' ') + "\r")
+    System.out.print(s + padding + "\r")
 
     // Flush to ensure that the string is printed.
     System.out.flush()
@@ -94,5 +107,11 @@ class ProgressBar(flix: Flix) {
       s
     else
       s.substring(0, l - 3) + "..."
+
+  /**
+    * Returns the number of visible characters in `s`, i.e. the length of `s` excluding ANSI escape codes.
+    */
+  private def visibleLength(s: String): Int =
+    s.replaceAll("\u001b\\[[0-9;]*m", "").length
 
 }
