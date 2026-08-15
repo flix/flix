@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.printer.*
@@ -136,12 +136,12 @@ object AstPrinter {
 
   /** Makes sure that the phases file exists and is empty. */
   def resetPhaseFile(): Unit = {
-    val filePath = astFolderPath.resolve("0phases.txt")
+    val filePath = CompilerConstants.AstDirectory.resolve("0phases.txt")
     FileOps.writeString(filePath, "")
   }
 
   def appendPhaseToDisk(phaseName: String, hasAst: Boolean): Unit = {
-    val filePath = astFolderPath.resolve("0phases.txt")
+    val filePath = CompilerConstants.AstDirectory.resolve("0phases.txt")
     val line = s"$phaseName${if (hasAst) "" else " (no output)"}${System.lineSeparator()}"
     FileOps.writeString(filePath, line, append = true)
   }
@@ -152,13 +152,6 @@ object AstPrinter {
     * OBS: this function has no checking so the path might not hold the ast and it might not be readable etc.
     */
   private def phaseOutputPath(phaseName: String): Path = {
-    astFolderPath.resolve(s"$phaseName.$IrFileExtension")
+    CompilerConstants.AstDirectory.resolve(s"$phaseName.$IrFileExtension")
   }
-
-  /**
-    * The path to the folder that holds the pretty printed ast files used by [[writeToDisk]].
-    *
-    * OBS: this path has no checking so it might not exist and it might not be readable etc.
-    */
-  val astFolderPath: Path = Path.of("./build/asts/")
 }

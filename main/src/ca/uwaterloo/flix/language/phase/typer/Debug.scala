@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
+import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
@@ -47,7 +48,7 @@ object Debug {
     * Activates recording of constraint resolution.
     */
   def startRecording(): Unit = {
-    graphDir = Path.of("./build/constraint-graphs/")
+    graphDir = CompilerConstants.ConstraintGraphDirectory
     Files.createDirectories(graphDir)
     record = true
   }

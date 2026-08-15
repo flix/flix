@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.{Flix, PhaseTime}
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix, PhaseTime}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
@@ -45,11 +45,6 @@ object CompilerPerf {
     * The number of threads to use for the multi-threaded experiment.
     */
   private val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
-
-  /**
-    * The directory where the performance data and graphs are written.
-    */
-  private val PerfDirectory: Path = Path.of("./build/perf/")
 
   /**
     * The Python program used to generate graphs.
@@ -382,7 +377,7 @@ object CompilerPerf {
     //
     // Python Plot
     //
-    FileOps.writeString(PerfDirectory.resolve("plots.py"), Python)
+    FileOps.writeString(CompilerConstants.PerfDirectory.resolve("plots.py"), Python)
 
     println("~~~~ Flix Compiler Performance ~~~~")
     println()
@@ -531,7 +526,7 @@ object CompilerPerf {
     * Writes the given `json` to the given `file`.
     */
   private def writeFile(file: String, json: JValue, opts: Options): Unit = {
-    val filePath = PerfDirectory.resolve(s"$file")
+    val filePath = CompilerConstants.PerfDirectory.resolve(s"$file")
     FileOps.writeJSON(filePath, json)
   }
 
