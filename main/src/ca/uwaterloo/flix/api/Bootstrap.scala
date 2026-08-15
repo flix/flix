@@ -443,7 +443,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds (compiles) the source files for the project.
     *
-    * The generated classes are kept in memory only.
+    * No class files (or other files) are written to the file system.
     */
   def build(flix: Flix): Result[CompilationResult, BootstrapError] =
     compileProject(flix, Build.Development, loadClassFiles = false)
