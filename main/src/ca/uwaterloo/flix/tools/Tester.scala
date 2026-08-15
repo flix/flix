@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
+import ca.uwaterloo.flix.runtime.{LoadedProgram, TestFn}
 import ca.uwaterloo.flix.util.{Duration, Result}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -34,11 +34,11 @@ object Tester {
   /**
     * Runs all tests.
     */
-  def run(filters: List[Regex], compilationResult: CompilationResult)(implicit flix: Flix): Result[Unit, Int] = {
+  def run(filters: List[Regex], program: LoadedProgram)(implicit flix: Flix): Result[Unit, Int] = {
     //
     // Find all test cases (both active and ignored).
     //
-    val tests = getTestCases(filters, compilationResult)
+    val tests = getTestCases(filters, program)
 
     // Start the TestRunner and TestReporter.
     val queue = new ConcurrentLinkedQueue[TestEvent]()
@@ -315,9 +315,9 @@ object Tester {
   }
 
   /**
-    * Returns all test cases from the given compilation `result` which satisfy at least one filter.
+    * Returns all test cases from the given loaded `program` which satisfy at least one filter.
     */
-  private def getTestCases(filters: List[Regex], compilationResult: CompilationResult): Vector[TestCase] = {
+  private def getTestCases(filters: List[Regex], program: LoadedProgram): Vector[TestCase] = {
     /**
       * Returns `true` if at least one filter matches the given symbol _OR_ if there are no filters.
       */
@@ -326,7 +326,7 @@ object Tester {
       filters.isEmpty || filters.exists(regex => regex.matches(name))
     }
 
-    val allTests = compilationResult.getTests.map {
+    val allTests = program.tests.map {
       case (sym, TestFn(_, skip, run)) => TestCase(sym, skip, run)
     }
 

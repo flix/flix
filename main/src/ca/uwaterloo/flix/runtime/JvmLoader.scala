@@ -15,41 +15,54 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase.jvm
+package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.BytecodeAst.*
-import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.runtime.TestFn
+import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
 
 import java.lang.reflect.{InvocationTargetException, Method}
 
+/**
+  * Loads the classes of a [[CompilationResult]] into the JVM.
+  *
+  * This is not part of the compiler pipeline: `Flix.codeGen` stops at bytecode.
+  * Callers that want to *run* the compiled program (or its tests) invoke [[load]] explicitly.
+  */
 object JvmLoader {
 
-  case class LoaderResult(
-                           main: Option[Array[String] => Unit],
-                           tests: Map[Symbol.DefnSym, TestFn],
-                           sources: Map[Source, SourceLocation]
-                         )
-
   /**
-    * Loads `classes` if enabled by [[Flix.options.loadClassFiles]] and returns handles to the methods.
+    * Loads the classes of `result` into a fresh class loader and returns reflected handles to `main` and the tests.
     *
-    * Additionally computes the total byte size of `classes`
+    * The class loader falls back to `result.flix.jarLoader` for classes from external JARs.
+    *
+    * A failure to load (or to find an entry point) is a compiler bug and is reported via [[CrashHandler]].
+    * Exceptions thrown by the *program* itself, when `main` or a test is invoked, are not caught here.
     */
-  def run(root: Root)(implicit flix: Flix): LoaderResult = {
-    if (flix.options.loadClassFiles) {
-      val (main, tests) = load(root)
-      LoaderResult(main, tests, root.sources)
-    } else {
-      LoaderResult(None, Map.empty, root.sources)
+  def load(result: CompilationResult): LoadedProgram = try {
+    implicit val flix: Flix = result.flix
+    val root = result.root
+
+    // Load each class into the JVM in a fresh class loader.
+    implicit val loadedClasses: Map[JvmName, Class[?]] = loadAll(root.classes.values, flix.jarLoader)
+
+    val tests = MapOps.mapValuesWithKey(root.tests) {
+      case (sym, defn) => TestFn(sym, defn.isSkip, wrapTest(loadMethod(defn.className, defn.methodName)))
     }
+    val main = root.main.map {
+      case defn => wrapMain(loadMethod(defn.className, defn.methodName))
+    }
+
+    LoadedProgram(main, tests)
+  } catch {
+    case ex: Throwable =>
+      CrashHandler.handleCrash(ex)(result.flix)
+      throw ex
   }
 
-  /** Returns the tests of `root`. */
+  /** Wraps the reflected test `method` (of type `Unit -> t`) into a thunk. */
   private def wrapTest(method: Method): () => AnyRef = {
     val parameterCount = method.getParameterCount
     val argsArray = Array(null: AnyRef)
@@ -71,22 +84,7 @@ object JvmLoader {
     }
   }
 
-  /** Loads the classes of `root` into the JVM. Returns `(main, tests)` reflected methods, based on `root`. */
-  private def load(root: Root)(implicit flix: Flix): (Option[Array[String] => Unit], Map[Symbol.DefnSym, TestFn]) = {
-    // Load each class into the JVM in a fresh class loader.
-    implicit val loadedClasses: Map[JvmName, Class[?]] = loadAll(root.classes.values)
-
-    val tests = MapOps.mapValuesWithKey(root.tests) {
-      case (sym, defn) => TestFn(sym, defn.isSkip, wrapTest(loadMethod(defn.className, defn.methodName)))
-    }
-    val main = root.main.map {
-      case defn => wrapMain(loadMethod(defn.className, defn.methodName))
-    }
-
-    (main, tests)
-  }
-
-  /** Returns the [[Method]] object of the main function of `root` if it is defined. */
+  /** Wraps the reflected main `method` (of type `Array[String] -> Unit`) into a function. */
   private def wrapMain(method: Method): Array[String] => Unit = {
     val parameterCount = method.getParameterCount
     val argumentCount = 1 // A single Array[String] argument.
@@ -119,15 +117,15 @@ object JvmLoader {
     }
   }
 
-  /** Loads the given JVM `classes` using a custom class loader. */
-  private def loadAll(classes: Iterable[JvmClass])(implicit flix: Flix): Map[JvmName, Class[?]] = {
+  /** Loads the given JVM `classes` using a custom class loader that falls back to `jarLoader`. */
+  private def loadAll(classes: Iterable[JvmClass], jarLoader: ClassLoader): Map[JvmName, Class[?]] = {
     // Compute a map from binary names (strings) to JvmClasses.
     val m = classes.foldLeft(Map.empty[String, JvmClass]) {
       case (macc, jvmClass) => macc + (jvmClass.name.toBinaryName -> jvmClass)
     }
 
     // Instantiate the Flix class loader with this map.
-    val loader = new FlixClassLoader(m)
+    val loader = new FlixClassLoader(m, jarLoader)
 
     // Attempt to load each class using its internal name.
     classes.foldLeft(Map.empty[JvmName, Class[?]]) {

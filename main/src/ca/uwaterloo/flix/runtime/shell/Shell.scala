@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, CompilerConstants, Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.Chain
@@ -340,7 +341,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     // Recompile the program.
     check(entryPoint = Some(main), progress = false).toResult match {
       case Result.Ok(root) =>
-        flix.codeGen(root).getMain match {
+        JvmLoader.load(flix.codeGen(root)).main match {
           case Some(m) =>
             // Evaluate the main function
             try {

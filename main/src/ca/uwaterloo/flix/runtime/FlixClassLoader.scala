@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase.jvm
+package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 
 import scala.collection.mutable
 
 /**
   * A custom class loader to load generated class files.
   *
-  * @param classes A map from internal names (strings) to JvmClasses.
+  * @param classes   A map from internal names (strings) to JvmClasses.
+  * @param jarLoader The class loader used to resolve classes from external JARs.
   *
   * We pass the platform class loader as the parent to avoid it delegating to the system classloader
   * (otherwise compiled Flix code has access to all classes within the compiler)
   */
-class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) extends ClassLoader(ClassLoader.getPlatformClassLoader) {
+class FlixClassLoader(classes: Map[String, JvmClass], jarLoader: ClassLoader) extends ClassLoader(ClassLoader.getPlatformClassLoader) {
 
   /**
     * An internal cache of already loaded classes.
@@ -47,7 +48,7 @@ class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) exten
           case None =>
             // Case 1.1: The internal name does not exist. Try the external JAR loader.
             try {
-              val clazz = flix.jarLoader.loadClass(name)
+              val clazz = jarLoader.loadClass(name)
               cache.put(name, clazz)
               clazz
             } catch {

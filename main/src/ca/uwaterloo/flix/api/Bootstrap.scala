@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
-import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
@@ -446,7 +446,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * No class files (or other files) are written to the file system.
     */
   def build(flix: Flix): Result[CompilationResult, BootstrapError] =
-    compileProject(flix, Build.Development, loadClassFiles = false)
+    compileProject(flix, Build.Development)
 
   /**
     * Builds (compiles) the source files for the project in production mode and
@@ -454,7 +454,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def buildClasses(flix: Flix): Result[Unit, BootstrapError] = {
     for {
-      result <- compileProject(flix, Build.Production, loadClassFiles = false)
+      result <- compileProject(flix, Build.Production)
       _ <- Steps.writeClasses(result.getClasses)
     } yield {
       ()
@@ -464,11 +464,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Compiles the source files for the project.
     *
-    * If `loadClassFiles` is `true` the generated classes are loaded into the JVM.
+    * The generated classes are not loaded into the JVM (see [[JvmLoader.load]]).
     */
-  private def compileProject(flix: Flix, build: Build, loadClassFiles: Boolean): Result[CompilationResult, BootstrapError] = {
+  private def compileProject(flix: Flix, build: Build): Result[CompilationResult, BootstrapError] = {
     // We disable incremental compilation to ensure a clean compile.
-    val newOptions = flix.options.copy(build = build, incremental = false, loadClassFiles = loadClassFiles)
+    val newOptions = flix.options.copy(build = build, incremental = false)
     flix.setOptions(newOptions)
 
     // We also clear any cached ASTs.
@@ -868,9 +868,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def run(flix: Flix, args: Array[String]): Result[Unit, BootstrapError] = {
     for {
-      compilationResult <- compileProject(flix, Build.Development, loadClassFiles = true)
+      compilationResult <- compileProject(flix, Build.Development)
     } yield {
-      compilationResult.getMain match {
+      JvmLoader.load(compilationResult).main match {
         case None => ()
         case Some(main) => main(args)
       }
@@ -882,8 +882,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def test(flix: Flix): Result[Unit, BootstrapError] = {
     for {
-      compilationResult <- compileProject(flix, Build.Development, loadClassFiles = true)
-      res <- Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError("Tester Error"))
+      compilationResult <- compileProject(flix, Build.Development)
+      res <- Tester.run(Nil, JvmLoader.load(compilationResult))(flix).mapErr(_ => BootstrapError.GeneralError("Tester Error"))
     } yield {
       res
     }
@@ -1202,7 +1202,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Runs the compile function on the `flix` object.
       * It is up to the caller to set the appropriate options on `flix`.
-      * It is often the case that `loadClassFiles` must be toggled on or off.
       */
     def compile(flix: Flix): Result[CompilationResult, BootstrapError] = {
       val (optRoot, errors) = flix.check()
@@ -1222,7 +1221,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * @see [[Build.Production]]
       */
     def configureJarOutput(flix: Flix): Result[Unit, BootstrapError] = {
-      val newOptions = flix.options.copy(build = Build.Production, loadClassFiles = false)
+      val newOptions = flix.options.copy(build = Build.Production)
       flix.setOptions(newOptions)
       Ok(())
     }

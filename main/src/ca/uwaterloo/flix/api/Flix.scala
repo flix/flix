@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityC
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
-import ca.uwaterloo.flix.language.phase.jvm.{CodeGen, JvmLoader}
+import ca.uwaterloo.flix.language.phase.jvm.CodeGen
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.monomorph2.ConstraintMonomorphization
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
@@ -694,12 +694,10 @@ class Flix {
 
     val totalTime = flix.getTotalTime
 
-    // (Optionally) load generated JVM classes.
-    val loaderResult = JvmLoader.run(bytecodeAst)
-
-    // Construct the compilation result.
+    // Construct the compilation result. The generated classes are not loaded into the JVM;
+    // that is the caller's responsibility (see [[ca.uwaterloo.flix.runtime.JvmLoader]]).
     val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
-    val result = new CompilationResult(bytecodeAst.classes, loaderResult.main, loaderResult.tests, loaderResult.sources, totalTime, totalSize)
+    val result = new CompilationResult(bytecodeAst, totalTime, totalSize, this)
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
