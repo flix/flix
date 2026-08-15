@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
+import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.tools.pkg.PackageModules
@@ -70,7 +71,6 @@ object Main {
       installDeps = cmdOpts.installDeps,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       compilerTop = cmdOpts.top,
-      loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
@@ -176,7 +176,7 @@ object Main {
           // evaluate main.
           flix.check() match {
             case (Some(root), Nil) =>
-              flix.codeGen(root).getMain match {
+              JvmLoader.load(flix.codeGen(root)).main match {
                 case None => // nop
                 case Some(m) =>
                   // Invoke main with the supplied arguments.
@@ -219,7 +219,7 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
+              flix.setOptions(options)
               bootstrap.build(flix)
             }
           }
@@ -232,7 +232,7 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
+              flix.setOptions(options)
               bootstrap.buildClasses(flix)
             }
           }
@@ -245,7 +245,7 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
+              flix.setOptions(options)
               bootstrap.buildJar(flix)
             }
           }
@@ -258,7 +258,7 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
+              flix.setOptions(options)
               bootstrap.buildFatJar(flix)
             }
           }
@@ -349,7 +349,7 @@ object Main {
             val flix = mkFlixWithFiles(cmdOpts.files, options.copy(progress = false))
             flix.compile() match {
               case Validation.Success(compilationResult) =>
-                Tester.run(Nil, compilationResult)(flix) match {
+                Tester.run(Nil, JvmLoader.load(compilationResult))(flix) match {
                   case Result.Ok(_) => System.exit(0)
                   case Result.Err(_) => System.exit(1)
                 }

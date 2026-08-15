@@ -215,7 +215,7 @@ object CompilerPerf {
     */
   def run(opts: Options): Unit = {
     // Options
-    val o = opts.copy(progress = false, loadClassFiles = false)
+    val o = opts.copy(progress = false)
 
     // The number of iterations.
     val N = o.XPerfN.getOrElse(DefaultN)
