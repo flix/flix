@@ -328,6 +328,29 @@ object TypeError {
   }
 
   /**
+    * Associated type used where not allowed.
+    *
+    * @param sym the symbol of the associated type.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6221
+
+    def summary: String = s"Illegal associated type '$sym'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Illegal associated type '${red(sym.toString)}'.
+         |
+         |${highlight(loc, "associated type not allowed here", fmt)}
+         |
+         |${underline("Explanation:")} An associated type is not allowed in an enum,
+         |struct, or type alias.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that the signature of a default handler is illegal.
     *
     * @param effSym     the symbol of the effect.
