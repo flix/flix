@@ -697,7 +697,7 @@ class Flix {
     // Construct the compilation result. The generated classes are not loaded into the JVM;
     // that is the caller's responsibility (see [[ca.uwaterloo.flix.runtime.JvmLoader]]).
     val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
-    val result = new CompilationResult(bytecodeAst, this, totalTime, totalSize)
+    val result = new CompilationResult(bytecodeAst, totalTime, totalSize, this)
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()

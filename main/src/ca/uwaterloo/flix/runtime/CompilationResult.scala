@@ -27,14 +27,14 @@ import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
   * The generated classes are *not* loaded into the JVM. Use [[JvmLoader.load]] to obtain a [[LoadedProgram]].
   *
   * @param root      the generated JVM classes together with the main and test entry points.
-  * @param flix      the Flix instance that produced this result (provides the external JAR class loader and crash reporting).
   * @param totalTime the total compilation time.
   * @param codeSize  the number of bytes the compiler generated.
+  * @param flix      the Flix instance that produced this result (provides the external JAR class loader and crash reporting).
   */
 class CompilationResult(val root: BytecodeAst.Root,
-                        val flix: Flix,
                         val totalTime: Long,
-                        val codeSize: Int
+                        val codeSize: Int,
+                        val flix: Flix
                        ) {
 
   /** Returns the generated JVM classes. */
