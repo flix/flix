@@ -53,11 +53,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   private implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
   /**
-    * Is this the first compile
-    */
-  private var isFirstCompile = true
-
-  /**
     * Remove any line continuation backslashes from the given string
     */
   private def unescapeLine(s: String): String = {
@@ -101,9 +96,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     // Print the welcome banner.
     printWelcomeBanner()
 
-    // Perform the initial compilation.
-    compile(progress = true)
-    isFirstCompile = false
+    // Perform the initial check. This loads the project sources into the Flix
+    // instance (which must happen before the file watcher starts), reports any
+    // errors, and warms the incremental caches. Code generation is not needed.
+    check(progress = true)
 
     // Start watching for file system changes.
     bootstrap.startWatching()
@@ -249,13 +245,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         // Add the source code fragment to Flix.
         flix.addVirtualPath(Path.of(name), s)(SecurityContext.Unrestricted)
 
-        // And try to compile!
-        compile(progress = false).toResult match {
+        // And try to check it! (No code generation is needed for a declaration.)
+        check(progress = false).toResult match {
           case Result.Ok(_) =>
-            // Compilation succeeded.
+            // Check succeeded.
             w.println("Ok.")
           case Result.Err(_) =>
-            // Compilation failed. Ignore the last fragment.
+            // Check failed. Ignore the last fragment.
             fragments.pop()
             flix.remVirtualPath(Path.of(name))
             w.println("Error: Declaration ignored due to previous error(s).")
@@ -307,10 +303,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   }
 
   /**
-    * Compiles the current files and packages (first time from scratch, subsequent times incrementally).
-    * Automatically picks up any file changes detected by the file watcher before compiling.
+    * Type checks the current files and packages (first time from scratch, subsequent times incrementally).
+    * Automatically picks up any file changes detected by the file watcher before checking.
     */
-  private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
+  private def check(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[TypedAst.Root, CompilationMessage] = {
     // Apply any pending file system changes (new, modified, or deleted files).
     bootstrap.applyFileChanges(flix)
 
@@ -318,13 +314,20 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
     flix.check() match {
-      case (Some(r), Nil) =>
-        Validation.Success(flix.codeGen(r))
+      case (Some(root), Nil) =>
+        Validation.Success(root)
       case (rootOpt, errors) =>
         printErrors(errors, rootOpt)
         Validation.Failure(Chain.from(errors))
     }
   }
+
+  /**
+    * Compiles the current files and packages (first time from scratch, subsequent times incrementally).
+    * Automatically picks up any file changes detected by the file watcher before compiling.
+    */
+  private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] =
+    Validation.mapN(check(entryPoint, progress))(flix.codeGen)
 
   /**
     * Prints the list of errors using the `flix` instance to the implicit terminal.
