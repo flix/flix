@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, CompilerConstants, Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.Chain
@@ -323,13 +322,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   }
 
   /**
-    * Compiles the current files and packages (first time from scratch, subsequent times incrementally).
-    * Automatically picks up any file changes detected by the file watcher before compiling.
-    */
-  private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] =
-    Validation.mapN(check(entryPoint, progress))(flix.codeGen)
-
-  /**
     * Prints the list of errors using the `flix` instance to the implicit terminal.
     */
   private def printErrors(errors: List[CompilationMessage], root: Option[TypedAst.Root])(implicit terminal: Terminal): Unit = {
@@ -342,9 +334,9 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
-    compile(entryPoint = Some(main), progress = false).toResult match {
-      case Result.Ok(result) =>
-        result.getMain match {
+    check(entryPoint = Some(main), progress = false).toResult match {
+      case Result.Ok(root) =>
+        flix.codeGen(root).getMain match {
           case Some(m) =>
             // Evaluate the main function
             try {
