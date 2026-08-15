@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
-import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps, StableName}
 
 import java.nio.file.{FileSystemNotFoundException, Path}
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -725,8 +725,24 @@ object Namer {
       val tcsts = tconstrs.map(visitTraitConstraint)
       val ecsts = econstrs.map(visitEqualityConstraint)
       val ascs = assocs.map(visitAssocTypeDef)
-      val ds = defs.map(visitDef(_, ns0, DefKind.Member))
+      val ds = defs.map(visitDef(_, ns0, DefKind.Member(s"$clazz[${instanceHead(tpe)}]")))
       NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ecsts, ascs, ds, ns0.parts, loc)
+  }
+
+  /**
+    * Returns the name of the outermost type constructor of an instance head.
+    *
+    * Instances of one trait must be distinguishable by their head constructor — that is
+    * what makes them non-overlapping — so the head is enough to identify an instance
+    * without rendering the whole type.
+    */
+  private def instanceHead(tpe: DesugaredAst.Type): String = tpe match {
+    case DesugaredAst.Type.Apply(tpe1, _, _) => instanceHead(tpe1)
+    case DesugaredAst.Type.Ambiguous(qname, _) => qname.toString
+    case DesugaredAst.Type.Var(ident, _) => ident.name
+    case DesugaredAst.Type.Unit(_) => "Unit"
+    case DesugaredAst.Type.Tuple(tpes, _) => s"Tuple${tpes.length}"
+    case other => other.getClass.getSimpleName.stripSuffix("$")
   }
 
   /**
@@ -795,10 +811,10 @@ object Namer {
       // Then visit the parts depending on the parameters
       val e = visitExp(exp)(RegionScope.Top, sctx, flix)
 
-      // Give the def an id only if it is an instance def.
-      // This distinguishes instance defs that could share a namespace.
+      // The id is derived from the instance rather than taken from a counter, so that it
+      // is the same in every compilation; specialized names are built on top of it.
       val id = defKind match {
-        case DefKind.Member => Some(flix.genSym.freshId().toString)
+        case DefKind.Member(instance) => Some(StableName.suffix(s"$instance#${ident.name}"))
         case DefKind.NonMember => None
       }
       val sym = Symbol.mkDefnSym(ns0, ident, id)
@@ -1801,8 +1817,11 @@ object Namer {
   private object DefKind {
     /**
       * A def that is a member of an instance or trait.
+      *
+      * @param instance identifies the enclosing instance, so that its members can be given
+      *                 ids that do not depend on how many symbols preceded them.
       */
-    case object Member extends DefKind
+    case class Member(instance: String) extends DefKind
 
     /**
       * A def that is not a member of an instance or trait.

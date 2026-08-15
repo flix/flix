@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{ParOps, StableName}
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -123,7 +123,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
-      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(flix.genSym.freshId().toString))
+      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(StableName.suffix(s"Eq[${sym}]#eq")))
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val param2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
@@ -304,7 +304,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
-      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(flix.genSym.freshId().toString))
+      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(StableName.suffix(s"Order[${sym}]#compare")))
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val param2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
@@ -502,7 +502,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
-      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(flix.genSym.freshId().toString))
+      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(StableName.suffix(s"ToString[${sym}]#toString")))
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkToStringImpl(enum0, param, loc, root)
@@ -711,7 +711,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
-      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(flix.genSym.freshId().toString))
+      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(StableName.suffix(s"Hash[${sym}]#hash")))
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkHashImpl(enum0, param, loc, root)
@@ -852,7 +852,7 @@ object Deriver {
 
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
-        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(flix.genSym.freshId().toString))
+        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(StableName.suffix(s"Coerce[${sym}]#coerce")))
 
         val (_, caze) = cases.head
 
