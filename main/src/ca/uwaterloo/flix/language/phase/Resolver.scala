@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.{Chain, ListMap, ListOps, MapOps, Nel}
+import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.unused
@@ -93,37 +93,30 @@ object Resolver {
         new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone) -> uses0.flatMap(visitUseOrImport(_, ns, root).toOption)
     }
 
-    val resolvedRoot: Validation[ResolvedAst.Root, ResolutionError] = try {
-      // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-      val (taenv, taOrder) = resolveTypeAliases(defaultUses, root)
-      val units = ParOps.parMap(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
-      val table = SymbolTable.traverse(units)(tableUnit)
-      val traits = findReportAndBreakSuperTraitCycles(table.traits)
-      Validation.Success(ResolvedAst.Root(
-        table.modules,
-        traits,
-        table.instances,
-        table.defs,
-        table.enums,
-        table.structs,
-        table.restrictableEnums,
-        table.effects,
-        table.typeAliases,
-        ListMap(uses),
-        taOrder,
-        root.mainEntryPoint,
-        root.sources,
-        root.availableClasses,
-        root.tokens
-      ))
-    } catch {
-      case CyclicTypeAliasesException(cycle) =>
-        // Report one CyclicTypeAliases error per alias in the cycle.
-        val errors = cycle.map(sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc))
-        Validation.Failure(Chain.from(errors))
-    }
+    // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
+    val (taenv, taOrder) = resolveTypeAliases(defaultUses, root)
+    val units = ParOps.parMap(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
+    val table = SymbolTable.traverse(units)(tableUnit)
+    val traits = findReportAndBreakSuperTraitCycles(table.traits)
+    val resolvedRoot = ResolvedAst.Root(
+      table.modules,
+      traits,
+      table.instances,
+      table.defs,
+      table.enums,
+      table.structs,
+      table.restrictableEnums,
+      table.effects,
+      table.typeAliases,
+      ListMap(uses),
+      taOrder,
+      root.mainEntryPoint,
+      root.sources,
+      root.availableClasses,
+      root.tokens
+    )
 
-    (resolvedRoot, sctx.errors.asScala.toList)
+    (Validation.Success(resolvedRoot), sctx.errors.asScala.toList)
   }
 
   /**
@@ -228,7 +221,7 @@ object Resolver {
     *     such that any alias only depends on those earlier in the list
     */
   private def resolveTypeAliases(defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): (Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]) = {
-    val semiResolved = semiResolveTypeAliases(defaultUses, root)
+    val semiResolved = findReportAndBreakTypeAliasCycles(semiResolveTypeAliases(defaultUses, root))
     val orderedSyms = findResolutionOrder(semiResolved.values)
     val orderedSemiResolved = orderedSyms.map(semiResolved)
     val aliases = finishResolveTypeAliases(orderedSemiResolved)
@@ -261,11 +254,81 @@ object Resolver {
   }
 
   /**
+    * Ensures that the type aliases do not (transitively) refer to themselves.
+    *
+    * A cycle is a strongly connected component of the type alias dependency graph with more than one
+    * alias, or a single alias that refers to itself. For every such component we report a
+    * [[CyclicTypeAliases]] error for each alias in it and recover by replacing the references to aliases
+    * in the same component by error types. References to aliases outside the component are kept, as
+    * are references from outside into the component.
+    *
+    * [[findResolutionOrder]] and [[finishResolveTypeAliases]] expand aliases inline and would not
+    * terminate on a cyclic alias, so the returned aliases are guaranteed to be acyclic.
+    */
+  private def findReportAndBreakTypeAliasCycles(aliases: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias])(implicit sctx: SharedContext): Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias] = {
+    /** Returns the symbols of the type aliases directly used by the type alias `sym`. */
+    def getUses(sym: Symbol.TypeAliasSym): List[Symbol.TypeAliasSym] = getAliasUses(aliases(sym).tpe)
+
+    /** Returns `true` if the strongly connected component `syms` contains a cycle. */
+    def isCyclic(syms: Iterable[Symbol.TypeAliasSym]): Boolean = syms.sizeIs > 1 || syms.exists(sym => getUses(sym).contains(sym))
+
+    // Group the type aliases by strongly connected component.
+    val components = Graph.stronglyConnectedComponents(aliases.keys, getUses).groupMap(_._2)(_._1)
+
+    components.values.foldLeft(aliases) {
+      case (acc, syms) =>
+        if (!isCyclic(syms)) {
+          acc
+        } else {
+          // The aliases in the cycle, in source order (used for the error message).
+          val cycle = syms.toList.sortBy(_.loc)
+          // The aliases in the cycle as a set (used to erase the cyclic references).
+          val cycleSet = cycle.toSet
+          cycle.foldLeft(acc) {
+            case (innerAcc, sym) =>
+              sctx.errors.add(ResolutionError.CyclicTypeAliases(cycle, sym.loc))
+              val alias = innerAcc(sym)
+              innerAcc + (sym -> alias.copy(tpe = eraseAliasUses(alias.tpe, cycleSet)))
+          }
+        }
+    }
+  }
+
+  /**
+    * Replaces every use of a type alias in `syms` within the partially resolved type `tpe0` by an error type.
+    *
+    * The arguments of an applied alias are kept, so that e.g. `type alias L[a] = Option[L[a]]` becomes
+    * `Option[Error[a]]` and the type parameter `a` remains used.
+    */
+  private def eraseAliasUses(tpe0: UnkindedType, syms: Set[Symbol.TypeAliasSym]): UnkindedType = tpe0 match {
+    case UnkindedType.UnappliedAlias(sym, loc) if syms.contains(sym) => UnkindedType.Error(loc)
+    case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(eraseAliasUses(tpe1, syms), eraseAliasUses(tpe2, syms), loc)
+    case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(eraseAliasUses(tpe, syms), kind, loc)
+    case UnkindedType.Arrow(eff, arity, loc) => UnkindedType.Arrow(eff.map(eraseAliasUses(_, syms)), arity, loc)
+    case UnkindedType.CaseComplement(tpe, loc) => UnkindedType.CaseComplement(eraseAliasUses(tpe, syms), loc)
+    case UnkindedType.CaseUnion(tpe1, tpe2, loc) => UnkindedType.CaseUnion(eraseAliasUses(tpe1, syms), eraseAliasUses(tpe2, syms), loc)
+    case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliasUses(tpe1, syms), eraseAliasUses(tpe2, syms), loc)
+    case _: UnkindedType.UnappliedAlias => tpe0
+    case _: UnkindedType.Var => tpe0
+    case _: UnkindedType.Cst => tpe0
+    case _: UnkindedType.Enum => tpe0
+    case _: UnkindedType.Effect => tpe0
+    case _: UnkindedType.Struct => tpe0
+    case _: UnkindedType.RestrictableEnum => tpe0
+    case _: UnkindedType.CaseSet => tpe0
+    case _: UnkindedType.UnappliedAssocType => tpe0
+    case _: UnkindedType.UnappliedNative => tpe0
+    case _: UnkindedType.Error => tpe0
+    case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
+    case assoc: UnkindedType.AssocType => throw InternalCompilerException("unexpected applied associated type", assoc.loc)
+  }
+
+  /**
     * Gets the resolution order for the aliases.
     *
     * Any alias only depends on those earlier in the list.
     *
-    * Throws [[CyclicTypeAliasesException]] if the aliases form a cycle.
+    * The aliases must be acyclic (see [[findReportAndBreakTypeAliasCycles]]).
     */
   private def findResolutionOrder(aliases: Iterable[ResolvedAst.Declaration.TypeAlias]): List[Symbol.TypeAliasSym] = {
     val aliasSyms = aliases.map(_.sym)
@@ -274,7 +337,7 @@ object Resolver {
 
     Graph.topologicalSort(aliasSyms, getUses) match {
       case Graph.TopologicalSort.Sorted(sorted) => sorted
-      case Graph.TopologicalSort.Cycle(path) => throw CyclicTypeAliasesException(path)
+      case Graph.TopologicalSort.Cycle(path) => throw InternalCompilerException(s"Unexpected cyclic type aliases: ${path.mkString(", ")}", path.head.loc)
     }
   }
 
@@ -3724,17 +3787,6 @@ object Resolver {
     * @param errors the [[ResolutionError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[ResolutionError])
-
-  /**
-    * An exception thrown by [[findResolutionOrder]] when the type aliases form a cycle.
-    *
-    * This bypasses the [[Validation]] machinery: the exception is thrown from type alias resolution and
-    * caught in [[run]], where it is converted into a [[Validation.Failure]]. It exists so that the
-    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
-    *
-    * @param cycle the type alias symbols that form the cycle.
-    */
-  private case class CyclicTypeAliasesException(cycle: List[Symbol.TypeAliasSym]) extends RuntimeException
 
   /**
     * A type represented by a lowercase name.

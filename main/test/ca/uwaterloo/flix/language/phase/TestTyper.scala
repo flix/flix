@@ -2392,6 +2392,59 @@ class TestTyper extends AnyFunSuite with TestUtils {
     rejectError[TypeError](result)
   }
 
+  test("ErrorType.19") {
+    // There should be no type error because the type aliases `A` and `B` are cyclic.
+    // The Resolver reports CyclicTypeAliases and recovers by replacing the cyclic references
+    // with error types, so `A` is `(Int32, Error)` and `f` type checks against it.
+    val input =
+      """
+        |type alias A = (Int32, B)
+        |type alias B = A
+        |type alias C = A
+        |
+        |def f(x: A): Int32 = fst(x)
+        |
+        |def g(x: C): Int32 = fst(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.20") {
+    // There should be no type error because the type alias `L` refers to itself.
+    // The Resolver reports CyclicTypeAliases and recovers by replacing the cyclic reference
+    // with an error type, keeping the argument: `L[a]` is `Option[Error[a]]`.
+    val input =
+      """
+        |type alias L[a] = Option[L[a]]
+        |
+        |def f(x: L[Int32]): Int32 = match x {
+        |    case Some(y) => y
+        |    case None => 0
+        |}
+        |
+        |def g(): L[Bool] = Some(Some(None))
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.21") {
+    // There should be no type error because the type aliases `P`, `Q` and `R` are cyclic through
+    // a function type and a record type. The Resolver reports CyclicTypeAliases and recovers by
+    // replacing the cyclic references with error types.
+    val input =
+      """
+        |type alias P = Q -> Int32
+        |type alias Q = {x = R}
+        |type alias R = P
+        |
+        |def f(x: P): Int32 = x({x = 1})
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
   test("UndefinedLabel.01") {
     val input =
       """
