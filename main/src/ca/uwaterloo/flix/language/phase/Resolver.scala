@@ -77,7 +77,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root, @unused oldRoot: ResolvedAst.Root, @unused changeSet: ChangeSet)(implicit flix: Flix): (Validation[ResolvedAst.Root, ResolutionError], List[ResolutionError]) = flix.phaseNew("Resolver") {
+  def run(root: NamedAst.Root, @unused oldRoot: ResolvedAst.Root, @unused changeSet: ChangeSet)(implicit flix: Flix): (Validation[ResolvedAst.Root, ResolutionError], List[ResolutionError]) = flix.phase("Resolver") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Get the default uses.
@@ -136,7 +136,7 @@ object Resolver {
     }
 
     (resolvedRoot, sctx.errors.asScala.toList)
-  }(DebugValidation())
+  }
 
   /**
     * Builds a symbol table from the compilation unit.

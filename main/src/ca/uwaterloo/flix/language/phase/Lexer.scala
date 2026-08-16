@@ -222,7 +222,7 @@ object Lexer {
 
   /** Run the lexer on multiple `Source`s in parallel. */
   def run(root: ReadAst.Root, oldTokens: Map[Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): (Map[Source, Array[Token]], List[LexerError]) =
-    flix.phaseNew("Lexer") {
+    flix.phase("Lexer") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
 

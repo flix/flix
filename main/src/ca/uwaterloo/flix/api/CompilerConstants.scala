@@ -28,7 +28,7 @@ object CompilerConstants {
   val AstDirectory: Path = Path.of("./build/asts/")
 
   /**
-    * The number of backend phases, i.e. the number of `phase` / `phaseNew` calls made by [[Flix.codeGen]].
+    * The number of backend phases, i.e. the number of `phase` calls made by [[Flix.codeGen]].
     *
     * Must be updated when a phase is added to or removed from `codeGen`.
     */
@@ -40,7 +40,7 @@ object CompilerConstants {
   val ConstraintGraphDirectory: Path = Path.of("./build/constraint-graphs/")
 
   /**
-    * The number of frontend phases, i.e. the number of `phase` / `phaseNew` calls made by [[Flix.check]].
+    * The number of frontend phases, i.e. the number of `phase` calls made by [[Flix.check]].
     *
     * Must be updated when a phase is added to or removed from `check`.
     */
