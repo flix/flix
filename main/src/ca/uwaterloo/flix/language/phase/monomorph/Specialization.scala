@@ -331,9 +331,25 @@ object Specialization {
     private val specializedDefns: mutable.Map[Symbol.DefnSym, MonoAst.Def] =
       mutable.Map.empty
 
-    /** Add a new specialized definition. */
-    def addSpecializedDef(sym: Symbol.DefnSym, defn: MonoAst.Def): Unit =
+    /**
+      * What each entry in `specializedDefns` was added for. Two different call sites
+      * write into that map: non-parametric defs, which keep their original symbol, and
+      * freshly specialized defs, whose symbol is already collision-checked against other
+      * specializations via `claimedNames` -- but never against the non-parametric defs
+      * sharing the same final map. Without this, a collision here would not throw; it
+      * would silently drop one of the two definitions from the compiled program.
+      */
+    private val claimedDefSyms: mutable.Map[Symbol.DefnSym, String] = mutable.Map.empty
+
+    /** Add a new specialized definition, claimed under `origin` for the collision check above. */
+    def addSpecializedDef(sym: Symbol.DefnSym, defn: MonoAst.Def, origin: String): Unit =
       synchronized {
+        claimedDefSyms.get(sym) match {
+          case Some(otherOrigin) if otherOrigin != origin =>
+            throw InternalCompilerException(s"Definition symbol collision on '$sym': '$otherOrigin' and '$origin'.", sym.loc)
+          case _ =>
+            claimedDefSyms.put(sym, origin)
+        }
         specializedDefns.put(sym, defn)
       }
 
@@ -409,7 +425,7 @@ object Specialization {
         // invalidate the set of entryPoints functions.
         val specializedDefn = specializeDef(sym, defn, StrictSubstitution.empty)
         val loweredDefn = Lowering.lowerDef(specializedDefn)
-        ctx.addSpecializedDef(sym, loweredDefn)
+        ctx.addSpecializedDef(sym, loweredDefn, s"non-parametric def $sym")
       }
     }
 
@@ -422,7 +438,7 @@ object Specialization {
         case (freshSym, defn, subst) => flix.profile(defn.sym, defn.loc) {
           val specializedDefn = specializeDef(freshSym, defn, subst)
           val loweredDefn = Lowering.lowerDef(specializedDefn)
-          ctx.addSpecializedDef(freshSym, loweredDefn)
+          ctx.addSpecializedDef(freshSym, loweredDefn, s"specialization of ${defn.sym}")
         }
       }
     }
