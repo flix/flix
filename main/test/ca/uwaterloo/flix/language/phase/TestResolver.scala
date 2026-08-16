@@ -1194,6 +1194,46 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
+  test("CyclicTraitHierarchy.06") {
+    // One error is reported per trait in the cycle. `C` is not in the cycle and must not be reported.
+    val input =
+      """
+        |trait A[a] with B[a]
+        |trait B[a] with A[a]
+        |trait C[a] with A[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.CyclicTraitHierarchy]) == 2)
+  }
+
+  test("CyclicTraitHierarchy.07") {
+    // Two independent cycles are both reported (three errors: two for A/B and one for the self loop of S).
+    val input =
+      """
+        |trait A[a] with B[a]
+        |trait B[a] with A[a]
+        |trait S[a] with S[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.CyclicTraitHierarchy]) == 3)
+  }
+
+  test("CyclicTraitHierarchy.08") {
+    // The cycle is broken and resolution continues, so the unrelated error in `f` is also reported.
+    val input =
+      """
+        |trait A[a] with B[a]
+        |trait B[a] with A[a]
+        |
+        |def f(): Int32 = undefinedName()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
   test("DuplicateDerivation.01") {
     val input =
       """

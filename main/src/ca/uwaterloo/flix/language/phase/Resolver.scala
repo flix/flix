@@ -98,10 +98,10 @@ object Resolver {
       val (taenv, taOrder) = resolveTypeAliases(defaultUses, root)
       val units = ParOps.parMap(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
       val table = SymbolTable.traverse(units)(tableUnit)
-      checkSuperTraitDag(table.traits)
+      val traits = findReportAndBreakSuperTraitCycles(table.traits)
       Validation.Success(ResolvedAst.Root(
         table.modules,
-        table.traits,
+        traits,
         table.instances,
         table.defs,
         table.enums,
@@ -120,11 +120,6 @@ object Resolver {
       case CyclicTypeAliasesException(cycle) =>
         // Report one CyclicTypeAliases error per alias in the cycle.
         val errors = cycle.map(sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc))
-        Validation.Failure(Chain.from(errors))
-
-      case CyclicTraitHierarchyException(cycle) =>
-        // Report one CyclicTraitHierarchy error per trait in the cycle.
-        val errors = cycle.map(sym => ResolutionError.CyclicTraitHierarchy(cycle, sym.loc))
         Validation.Failure(Chain.from(errors))
     }
 
@@ -352,16 +347,43 @@ object Resolver {
   }
 
   /**
-    * Checks that the super traits form a DAG (no cycles).
+    * Ensures that the super traits form a DAG (no cycles).
     *
-    * Throws [[CyclicTraitHierarchyException]] if the super traits form a cycle.
+    * A cycle is a strongly connected component of the super trait graph with more than one trait,
+    * or a single trait that is its own super trait. For every such component we report a
+    * [[CyclicTraitHierarchy]] error for each trait in it and recover by dropping the super traits
+    * that point back into the same component. Super traits outside the component are kept.
+    *
+    * Later phases (e.g. the trait environment) compute the transitive super traits and would not
+    * terminate on a cyclic hierarchy, so the returned traits are guaranteed to be acyclic.
     */
-  private def checkSuperTraitDag(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait]): Unit = {
-    val traitSyms = traits.values.map(_.sym)
-    val getSuperTraits = (trt: Symbol.TraitSym) => traits(trt).superTraits.map(_.symUse.sym)
-    Graph.topologicalSort(traitSyms, getSuperTraits) match {
-      case Graph.TopologicalSort.Cycle(path) => throw CyclicTraitHierarchyException(path)
-      case Graph.TopologicalSort.Sorted(_) => ()
+  private def findReportAndBreakSuperTraitCycles(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait])(implicit sctx: SharedContext): Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait] = {
+    /** Returns the symbols of the direct super traits of the trait `sym`. */
+    def getSuperTraits(sym: Symbol.TraitSym): List[Symbol.TraitSym] = traits(sym).superTraits.map(_.symUse.sym)
+
+    /** Returns `true` if the strongly connected component `syms` contains a cycle. */
+    def isCyclic(syms: Iterable[Symbol.TraitSym]): Boolean = syms.sizeIs > 1 || syms.exists(sym => getSuperTraits(sym).contains(sym))
+
+    // Group the traits by strongly connected component.
+    val components = Graph.stronglyConnectedComponents(traits.keys, getSuperTraits).groupMap(_._2)(_._1)
+
+    components.values.foldLeft(traits) {
+      case (acc, syms) =>
+        if (!isCyclic(syms)) {
+          acc
+        } else {
+          // The traits in the cycle, in source order (used for the error message).
+          val cycle = syms.toList.sortBy(_.loc)
+          // The traits in the cycle as a set (used to drop the cyclic super traits).
+          val cycleSet = cycle.toSet
+          cycle.foldLeft(acc) {
+            case (innerAcc, sym) =>
+              sctx.errors.add(ResolutionError.CyclicTraitHierarchy(cycle, sym.loc))
+              val trt = innerAcc(sym)
+              val superTraits = trt.superTraits.filterNot(tconstr => cycleSet.contains(tconstr.symUse.sym))
+              innerAcc + (sym -> trt.copy(superTraits = superTraits))
+          }
+        }
     }
   }
 
@@ -3713,17 +3735,6 @@ object Resolver {
     * @param cycle the type alias symbols that form the cycle.
     */
   private case class CyclicTypeAliasesException(cycle: List[Symbol.TypeAliasSym]) extends RuntimeException
-
-  /**
-    * An exception thrown by [[checkSuperTraitDag]] when the super traits form a cycle.
-    *
-    * This bypasses the [[Validation]] machinery: the exception is thrown from the super trait check and
-    * caught in [[run]], where it is converted into a [[Validation.Failure]]. It exists so that the
-    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
-    *
-    * @param cycle the trait symbols that form the cycle.
-    */
-  private case class CyclicTraitHierarchyException(cycle: List[Symbol.TraitSym]) extends RuntimeException
 
   /**
     * A type represented by a lowercase name.

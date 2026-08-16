@@ -196,4 +196,32 @@ mod Test.Dec.Trait {
         trait E[a: Type -> Type]
     }
 
+    mod Test18 {
+        // A diamond: the shared super trait A is reachable from D through both B and C.
+        trait A[a] {
+            pub def a(x: a): Int32
+        }
+
+        trait B[a] with A[a]
+
+        trait C[a] with A[a]
+
+        trait D[a] with B[a], C[a]
+
+        instance A[Int32] {
+            pub def a(x: Int32): Int32 = x
+        }
+
+        instance B[Int32]
+
+        instance C[Int32]
+
+        instance D[Int32]
+
+        pub def f(x: a): Int32 with D[a] = Test.Dec.Trait.Test18.A.a(x)
+
+        @CompileTest
+        def testDiamond01(): Bool = Test.Dec.Trait.Test18.f(42) == 42
+    }
+
 }
