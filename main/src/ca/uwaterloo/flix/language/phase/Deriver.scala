@@ -123,7 +123,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
-      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(StableName.suffix(s"Eq[${sym}]#eq")))
+      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(StableName.of(s"Eq[${sym}]#eq")))
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val param2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
@@ -304,7 +304,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
-      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(StableName.suffix(s"Order[${sym}]#compare")))
+      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(StableName.of(s"Order[${sym}]#compare")))
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val param2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
@@ -502,7 +502,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
-      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(StableName.suffix(s"ToString[${sym}]#toString")))
+      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(StableName.of(s"ToString[${sym}]#toString")))
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkToStringImpl(enum0, param, loc, root)
@@ -711,7 +711,7 @@ object Deriver {
       val tpe = getEnumType(sym, tparams)
 
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
-      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(StableName.suffix(s"Hash[${sym}]#hash")))
+      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(StableName.of(s"Hash[${sym}]#hash")))
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkHashImpl(enum0, param, loc, root)
@@ -852,7 +852,7 @@ object Deriver {
 
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
-        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(StableName.suffix(s"Coerce[${sym}]#coerce")))
+        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(StableName.of(s"Coerce[${sym}]#coerce")))
 
         val (_, caze) = cases.head
 

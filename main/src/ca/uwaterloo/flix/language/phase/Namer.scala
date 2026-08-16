@@ -814,7 +814,7 @@ object Namer {
       // The id is derived from the instance rather than taken from a counter, so that it
       // is the same in every compilation; specialized names are built on top of it.
       val id = defKind match {
-        case DefKind.Member(instance) => Some(StableName.suffix(s"$instance#${ident.name}"))
+        case DefKind.Member(instance) => Some(StableName.of(s"$instance#${ident.name}"))
         case DefKind.NonMember => None
       }
       val sym = Symbol.mkDefnSym(ns0, ident, id)

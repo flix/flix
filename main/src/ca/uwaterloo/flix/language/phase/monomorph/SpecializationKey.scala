@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.StableName
 
 import scala.collection.mutable
 
@@ -36,9 +37,10 @@ import scala.collection.mutable
   * The definition's own id is *included*, and cannot be dropped: a trait's default
   * implementation and an instance's implementation share a qualified name and can be
   * specialized at the identical type, so the id is the only thing separating them. That
-  * id is a [[ca.uwaterloo.flix.language.GenSym]] counter assigned in the namer, so a
-  * specialized name is stable only once those ids are stable too. Specializations of
-  * plain definitions, which have no id, are already stable.
+  * id is itself content-addressed, derived in the namer from the instance the definition
+  * belongs to, so it carries no counter into the key. The raw value is appended rather
+  * The rendered form is appended rather than the raw value, so the key does not move if
+  * the id changes representation.
   *
   * The renderer does not use `Type.toString`, which formats types for humans through
   * [[ca.uwaterloo.flix.language.fmt.FormatType]]. Keying on that would mean improving an
@@ -62,7 +64,7 @@ object SpecializationKey {
     sb.append(sym.text)
     // The id distinguishes a trait's default implementation from an instance's, which can
     // be specialized at the very same type. Leaving it out merges them.
-    sym.id.foreach(id => sb.append('$').append(id))
+    sym.id.foreach(id => sb.append(0x24.toChar).append(StableName.render(id)))
     sb.append('|')
     render(tpe, mutable.Map.empty, sb)
     sb.toString()

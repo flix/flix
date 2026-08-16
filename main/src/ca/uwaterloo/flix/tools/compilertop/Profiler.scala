@@ -32,8 +32,8 @@ import scala.jdk.CollectionConverters.*
   * [[Profiler.track]] entry point is called from inside instrumented
   * phases and is safe to invoke from multiple threads.
   *
-  * A fresh sym minted from an existing one via [[Symbol.freshDefnSym]] is
-  * folded back to its source sym (see [[Profiler.sourceOf]]) so the
+  * A sym derived from an existing one, by [[Symbol.specializedDefnSym]] or
+  * [[Symbol.liftedDefnSym]], is folded back to its source sym (see [[Profiler.sourceOf]]) so the
   * user-facing table shows one row per source-level definition rather than
   * one row per refresh.
   *
@@ -134,8 +134,8 @@ object Profiler {
     *
     * Why this exists: `Symbol.DefnSym.equals` (Symbol.scala) compares
     * `(id, namespace, text)` and intentionally ignores `loc`. That's fine for
-    * most of the compiler — fresh syms produced by `freshDefnSym` (e.g. during
-    * specialization) keep the source `(namespace, text, loc)` triple, and
+    * most of the compiler — derived syms (e.g. during specialization) keep the
+    * source `(namespace, text, loc)` triple, and
     * after `sourceOf` strips `id` they collapse onto one source-sym. But
     * Namer also assigns fresh ids to *instance* defs to distinguish them
     * within a shared namespace (Namer.scala:797–802). Those instance methods
@@ -354,10 +354,10 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
     * written. A sym that is already a source sym (`id.isEmpty`) is returned
     * unchanged.
     *
-    * Correct only as long as [[Symbol.freshDefnSym]] keeps the triple
-    * identical to its argument; if a future change starts varying any of
-    * those three, the roll-up here would silently cross-attribute time
-    * between unrelated defs.
+    * Correct only as long as [[Symbol.specializedDefnSym]] and
+    * [[Symbol.liftedDefnSym]] keep the triple identical to their argument; if a
+    * future change starts varying any of those three, the roll-up here would
+    * silently cross-attribute time between unrelated defs.
     */
   private def sourceOf(sym: Symbol.DefnSym): Symbol.DefnSym =
     if (sym.id.isEmpty) sym
