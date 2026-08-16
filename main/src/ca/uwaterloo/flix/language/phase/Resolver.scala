@@ -95,34 +95,41 @@ object Resolver {
     }
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    val resolvedRoot = flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
-      case (uses, (taenv, taOrder)) =>
+    val resolvedRoot: Validation[ResolvedAst.Root, ResolutionError] = try {
+      flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
+        case (uses, (taenv, taOrder)) =>
 
-        val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
-        flatMapN(unitsVal) {
-          case units =>
-            val table = SymbolTable.traverse(units)(tableUnit)
-            mapN(checkSuperTraitDag(table.traits)) {
-              case () =>
-                ResolvedAst.Root(
-                  table.modules,
-                  table.traits,
-                  table.instances,
-                  table.defs,
-                  table.enums,
-                  table.structs,
-                  table.restrictableEnums,
-                  table.effects,
-                  table.typeAliases,
-                  ListMap(uses.toMap),
-                  taOrder,
-                  root.mainEntryPoint,
-                  root.sources,
-                  root.availableClasses,
-                  root.tokens
-                )
-            }
-        }
+          val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
+          flatMapN(unitsVal) {
+            case units =>
+              val table = SymbolTable.traverse(units)(tableUnit)
+              mapN(checkSuperTraitDag(table.traits)) {
+                case () =>
+                  ResolvedAst.Root(
+                    table.modules,
+                    table.traits,
+                    table.instances,
+                    table.defs,
+                    table.enums,
+                    table.structs,
+                    table.restrictableEnums,
+                    table.effects,
+                    table.typeAliases,
+                    ListMap(uses.toMap),
+                    taOrder,
+                    root.mainEntryPoint,
+                    root.sources,
+                    root.availableClasses,
+                    root.tokens
+                  )
+              }
+          }
+      }
+    } catch {
+      case CyclicTypeAliasesException(cycle) =>
+        // Report one CyclicTypeAliases error per alias in the cycle.
+        val errors = cycle.map(sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc))
+        Validation.Failure(Chain.from(errors))
     }
 
     (resolvedRoot, sctx.errors.asScala.toList)
@@ -238,14 +245,12 @@ object Resolver {
     *     such that any alias only depends on those earlier in the list
     */
   private def resolveTypeAliases(defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
-    flatMapN(semiResolveTypeAliases(defaultUses, root)) {
+    mapN(semiResolveTypeAliases(defaultUses, root)) {
       case semiResolved =>
-        flatMapN(findResolutionOrder(semiResolved.values)) {
-          case orderedSyms =>
-            val orderedSemiResolved = orderedSyms.map(semiResolved)
-            val aliases = finishResolveTypeAliases(orderedSemiResolved)
-            Validation.Success((aliases, orderedSyms))
-        }
+        val orderedSyms = findResolutionOrder(semiResolved.values)
+        val orderedSemiResolved = orderedSyms.map(semiResolved)
+        val aliases = finishResolveTypeAliases(orderedSemiResolved)
+        (aliases, orderedSyms)
     }
   }
 
@@ -275,28 +280,20 @@ object Resolver {
   }
 
   /**
-    * Create a list of CyclicTypeAliases errors, one for each type alias.
-    */
-  private def mkCycleErrors[T](cycle: List[Symbol.TypeAliasSym]): Validation.Failure[T, ResolutionError] = {
-    val errors = cycle.map {
-      sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc)
-    }
-    Validation.Failure(Chain.from(errors))
-  }
-
-  /**
     * Gets the resolution order for the aliases.
     *
-    * Any alias only depends on those earlier in the list
+    * Any alias only depends on those earlier in the list.
+    *
+    * Throws [[CyclicTypeAliasesException]] if the aliases form a cycle.
     */
-  private def findResolutionOrder(aliases: Iterable[ResolvedAst.Declaration.TypeAlias]): Validation[List[Symbol.TypeAliasSym], ResolutionError] = {
+  private def findResolutionOrder(aliases: Iterable[ResolvedAst.Declaration.TypeAlias]): List[Symbol.TypeAliasSym] = {
     val aliasSyms = aliases.map(_.sym)
     val aliasLookup = aliases.map(alias => alias.sym -> alias).toMap
     val getUses = (sym: Symbol.TypeAliasSym) => getAliasUses(aliasLookup(sym).tpe)
 
     Graph.topologicalSort(aliasSyms, getUses) match {
-      case Graph.TopologicalSort.Sorted(sorted) => Validation.Success(sorted)
-      case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
+      case Graph.TopologicalSort.Sorted(sorted) => sorted
+      case Graph.TopologicalSort.Cycle(path) => throw CyclicTypeAliasesException(path)
     }
   }
 
@@ -3712,6 +3709,17 @@ object Resolver {
     * @param errors the [[ResolutionError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[ResolutionError])
+
+  /**
+    * An exception thrown by [[findResolutionOrder]] when the type aliases form a cycle.
+    *
+    * This bypasses the [[Validation]] machinery: the exception is thrown from type alias resolution and
+    * caught in [[run]], where it is converted into a [[Validation.Failure]]. It exists so that the
+    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
+    *
+    * @param cycle the type alias symbols that form the cycle.
+    */
+  private case class CyclicTypeAliasesException(cycle: List[Symbol.TypeAliasSym]) extends RuntimeException
 
   /**
     * A type represented by a lowercase name.
