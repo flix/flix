@@ -23,10 +23,10 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
-import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps, StableName}
+import ca.uwaterloo.flix.util.{ChaosMonkey, CollisionRegistry, InternalCompilerException, ParOps, StableName}
 
 import java.nio.file.{FileSystemNotFoundException, Path}
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
@@ -791,23 +791,6 @@ object Namer {
   }
 
   /**
-    * Throws if `sym` is already claimed by a `key` other than this one.
-    *
-    * Claimed by the full symbol, not by its id alone: two members whose ids happen to
-    * collide are only a real problem if they also share a namespace and text, since that
-    * is what makes them render to the same JVM name. Different text disambiguates them
-    * regardless of the id.
-    */
-  private def claimDefId(sym: Symbol.DefnSym, key: String)(implicit sctx: SharedContext): Unit = {
-    sctx.claimedIds.merge(sym, key, (existing, incoming) =>
-      if (existing == incoming) existing
-      else throw InternalCompilerException(
-        s"Instance-member id collision on '$sym': '$existing' and '$incoming'.", SourceLocation.Unknown
-      )
-    )
-  }
-
-  /**
     * Performs naming on the given definition declaration `decl0`.
     */
   private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Def = decl0 match {
@@ -837,7 +820,12 @@ object Namer {
         case DefKind.NonMember => (None, None)
       }
       val sym = Symbol.mkDefnSym(ns0, ident, id)
-      memberKey.foreach(key => claimDefId(sym, key))
+      // Claimed by the full symbol, not by its id alone: two members whose ids happen to
+      // collide are only a real problem if they also share a namespace and text, since
+      // that is what makes them render to the same JVM name.
+      memberKey.foreach(key => sctx.claimedIds.claim(sym, key, SourceLocation.Unknown)(
+        (existing, incoming) => s"Instance-member id collision on '$sym': '$existing' and '$incoming'."
+      ))
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts)
       NamedAst.Declaration.Def(sym, spec, e, loc)
   }
@@ -1856,7 +1844,7 @@ object Namer {
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue(), new ConcurrentHashMap())
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue(), new CollisionRegistry())
   }
 
   /**
@@ -1868,6 +1856,6 @@ object Namer {
     *                   ids happen to collide only matter if they also share a namespace
     *                   and text, since that is what determines the final JVM name.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[NameError], claimedIds: ConcurrentHashMap[Symbol.DefnSym, String])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[NameError], claimedIds: CollisionRegistry[Symbol.DefnSym, String])
 
 }

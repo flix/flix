@@ -23,10 +23,10 @@ import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, StableName}
+import ca.uwaterloo.flix.util.{CollisionRegistry, ParOps, StableName}
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -1107,7 +1107,7 @@ object Deriver {
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue(), new ConcurrentHashMap())
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue(), new CollisionRegistry())
   }
 
   /**
@@ -1122,18 +1122,14 @@ object Deriver {
     *                   key hashing alike is not a real collision, because "Eq.eq" and
     *                   "Order.compare" are different symbols regardless of id.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[DerivationError], claimedIds: ConcurrentHashMap[Symbol.DefnSym, String])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[DerivationError], claimedIds: CollisionRegistry[Symbol.DefnSym, String])
 
   /**
     * Throws if `sym` is already claimed by a `key` other than this one.
     */
-  private def claimDefId(sym: Symbol.DefnSym, key: String)(implicit sctx: SharedContext): Unit = {
-    sctx.claimedIds.merge(sym, key, (existing, incoming) =>
-      if (existing == incoming) existing
-      else throw InternalCompilerException(
-        s"Derived-def id collision on '$sym': '$existing' and '$incoming'.", SourceLocation.Unknown
-      )
+  private def claimDefId(sym: Symbol.DefnSym, key: String)(implicit sctx: SharedContext): Unit =
+    sctx.claimedIds.claim(sym, key, SourceLocation.Unknown)(
+      (existing, incoming) => s"Derived-def id collision on '$sym': '$existing' and '$incoming'."
     )
-  }
 
 }

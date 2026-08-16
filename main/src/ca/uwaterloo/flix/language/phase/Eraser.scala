@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast.SimpleType.erase
 import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, Purity, ReducedAst, SimpleType, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{CollisionRegistry, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.BiConsumer
@@ -374,15 +374,13 @@ object Eraser {
       new ConcurrentHashMap()
 
     /**
-      * What each specialized enum symbol was minted for.
-      *
-      * A hash can repeat, either because two specializations hash alike or because the
-      * key does not tell them apart. The invariant is on the pair `enumSpecializations`
-      * is keyed on, not on the key string: comparing keys would be blind to exactly the
-      * case where the key loses information.
+      * What each specialized enum symbol was minted for. See [[CollisionRegistry]]: a hash
+      * can repeat, either because two specializations hash alike or because the key does
+      * not tell them apart, and the invariant is on the pair `enumSpecializations` is
+      * keyed on, not on the key string.
       */
-    private val claimedEnumNames: ConcurrentHashMap[Symbol.EnumSym, (Symbol.EnumSym, List[SimpleType])] =
-      new ConcurrentHashMap()
+    private val claimedEnumNames: CollisionRegistry[Symbol.EnumSym, (Symbol.EnumSym, List[SimpleType])] =
+      new CollisionRegistry()
 
     /**
       * `(MutList, List(Int32)) -> MutList$42` means that `MutList` is specialized wrt. `Int32` under the name `MutList$42`.
@@ -393,22 +391,12 @@ object Eraser {
     /**
       * What each specialized struct symbol was minted for. See [[claimedEnumNames]].
       */
-    private val claimedStructNames: ConcurrentHashMap[Symbol.StructSym, (Symbol.StructSym, List[SimpleType])] =
-      new ConcurrentHashMap()
+    private val claimedStructNames: CollisionRegistry[Symbol.StructSym, (Symbol.StructSym, List[SimpleType])] =
+      new CollisionRegistry()
 
-    /**
-      * Records in `claimed` that `specializedSym` names the specialization of `sym` at
-      * `targs`. Throws if `specializedSym` is already claimed by a different `(sym, targs)`.
-      */
-    private def claimName[S](claimed: ConcurrentHashMap[S, (S, List[SimpleType])], specializedSym: S, sym: S, targs: List[SimpleType]): Unit = {
-      claimed.merge(specializedSym, (sym, targs), (existing, incoming) =>
-        if (existing == incoming) existing
-        else throw InternalCompilerException(
-          s"Erasure name collision on '$specializedSym': '${existing._1}' at '${existing._2}' and '${incoming._1}' at '${incoming._2}'.",
-          SourceLocation.Unknown
-        )
-      )
-    }
+    /** Returns a message describing an erasure name collision on `specializedSym`. */
+    private def describeCollision[S](specializedSym: S)(existing: (S, List[SimpleType]), incoming: (S, List[SimpleType])): String =
+      s"Erasure name collision on '$specializedSym': '${existing._1}' at '${existing._2}' and '${incoming._1}' at '${incoming._2}'."
 
     /** Returns the specialized version of `sym` according to `targs`, creating a new symbol if not done already. */
     def getSpecializedEnumName(sym: Symbol.EnumSym, targs: List[SimpleType])(implicit flix: Flix): Symbol.EnumSym = {
@@ -421,7 +409,7 @@ object Eraser {
           // Do specialization.
           enumSpecializations.computeIfAbsent((sym, targs), _ => {
             val specializedSym = Symbol.specializedEnumSym(sym, ErasureKey.ofEnum(sym, targs))
-            claimName(claimedEnumNames, specializedSym, sym, targs)
+            claimedEnumNames.claim(specializedSym, (sym, targs), SourceLocation.Unknown)(describeCollision(specializedSym))
             specializedSym
           })
       }
@@ -445,7 +433,7 @@ object Eraser {
           // Do specialization.
           structSpecializations.computeIfAbsent((sym, targs), _ => {
             val specializedSym = Symbol.specializedStructSym(sym, ErasureKey.ofStruct(sym, targs))
-            claimName(claimedStructNames, specializedSym, sym, targs)
+            claimedStructNames.claim(specializedSym, (sym, targs), SourceLocation.Unknown)(describeCollision(specializedSym))
             specializedSym
           })
       }

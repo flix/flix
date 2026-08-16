@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap, ListOps, MapOps, Nel}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{CollisionRegistry, InternalCompilerException, ParOps}
 
 
 import scala.collection.immutable.SortedSet
@@ -284,7 +284,7 @@ object Specialization {
       * string: comparing keys would be blind to exactly the case where the key loses
       * information.
       */
-    private val claimedNames: mutable.Map[Symbol.DefnSym, (Symbol.DefnSym, Type)] = mutable.Map.empty
+    private val claimedNames: CollisionRegistry[Symbol.DefnSym, (Symbol.DefnSym, Type)] = new CollisionRegistry()
 
     /**
       * Records that `specializedSym` names the specialization of `sym` at `tpe`.
@@ -292,23 +292,17 @@ object Specialization {
       * Throws if that name is already taken by a different specialization.
       */
     def claimSpecializedName(specializedSym: Symbol.DefnSym, key: String, sym: Symbol.DefnSym, tpe: Type): Unit =
-      synchronized {
-        claimedNames.get(specializedSym) match {
-          case Some((otherSym, otherTpe)) if otherSym != sym || otherTpe != tpe =>
-            throw InternalCompilerException(
-              s"Specialization name collision on '$specializedSym' from key '$key':" +
-                s" '$otherSym' at '$otherTpe' and '$sym' at '$tpe'.", sym.loc)
-          case _ =>
-            claimedNames.put(specializedSym, (sym, tpe))
-        }
-      }
+      claimedNames.claim(specializedSym, (sym, tpe), sym.loc)((existing, _) =>
+        s"Specialization name collision on '$specializedSym' from key '$key':" +
+          s" '${existing._1}' at '${existing._2}' and '$sym' at '$tpe'."
+      )
 
     /**
       * What each specialized anonymous-class symbol was minted for. Guarded the same way
       * as [[claimedNames]], and for the same reason: a hash can repeat, either because two
       * anonymous classes hash alike or because the key does not tell them apart.
       */
-    private val claimedAnonNames: mutable.Map[Symbol.AnonClassSym, (Symbol.DefnSym, Int)] = mutable.Map.empty
+    private val claimedAnonNames: CollisionRegistry[Symbol.AnonClassSym, (Symbol.DefnSym, Int)] = new CollisionRegistry()
 
     /**
       * Records that `anonSym` names the `index`th anonymous class of `enclosing`.
@@ -316,16 +310,10 @@ object Specialization {
       * Throws if that name is already taken by a different `(enclosing, index)` pair.
       */
     def claimAnonClassName(anonSym: Symbol.AnonClassSym, enclosing: Symbol.DefnSym, index: Int): Unit =
-      synchronized {
-        claimedAnonNames.get(anonSym) match {
-          case Some((otherEnclosing, otherIndex)) if otherEnclosing != enclosing || otherIndex != index =>
-            throw InternalCompilerException(
-              s"Anonymous-class name collision on '$anonSym':" +
-                s" '$otherEnclosing'#anon$otherIndex and '$enclosing'#anon$index.", anonSym.loc)
-          case _ =>
-            claimedAnonNames.put(anonSym, (enclosing, index))
-        }
-      }
+      claimedAnonNames.claim(anonSym, (enclosing, index), anonSym.loc)((existing, _) =>
+        s"Anonymous-class name collision on '$anonSym':" +
+          s" '${existing._1}'#anon${existing._2} and '$enclosing'#anon$index."
+      )
 
     /** A map of specialized definitions. */
     private val specializedDefns: mutable.Map[Symbol.DefnSym, MonoAst.Def] =
@@ -339,19 +327,19 @@ object Specialization {
       * sharing the same final map. Without this, a collision here would not throw; it
       * would silently drop one of the two definitions from the compiled program.
       */
-    private val claimedDefSyms: mutable.Map[Symbol.DefnSym, String] = mutable.Map.empty
+    private val claimedDefSyms: CollisionRegistry[Symbol.DefnSym, String] = new CollisionRegistry()
 
     /** Add a new specialized definition, claimed under `origin` for the collision check above. */
-    def addSpecializedDef(sym: Symbol.DefnSym, defn: MonoAst.Def, origin: String): Unit =
+    def addSpecializedDef(sym: Symbol.DefnSym, defn: MonoAst.Def, origin: String): Unit = {
+      claimedDefSyms.claim(sym, origin, sym.loc)((existing, incoming) =>
+        s"Definition symbol collision on '$sym': '$existing' and '$incoming'."
+      )
+      // specializedDefns is a plain mutable.Map, unlike the CollisionRegistry-backed
+      // claims above, so its own mutation still needs an explicit lock.
       synchronized {
-        claimedDefSyms.get(sym) match {
-          case Some(otherOrigin) if otherOrigin != origin =>
-            throw InternalCompilerException(s"Definition symbol collision on '$sym': '$otherOrigin' and '$origin'.", sym.loc)
-          case _ =>
-            claimedDefSyms.put(sym, origin)
-        }
         specializedDefns.put(sym, defn)
       }
+    }
 
     /** Returns the specialized definitions as an immutable map. */
     def getSpecializedDefs: Map[Symbol.DefnSym, MonoAst.Def] =
