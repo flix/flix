@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.{Options, Result}
 import ca.uwaterloo.flix.verifier.{EffectVerifier, TokenVerifier, TypeVerifier}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -50,8 +50,8 @@ class RunVerifiers extends AnyFunSuite with TestUtils {
     flix.addFile(Paths.get(path))(SecurityContext.Unrestricted)
 
     flix.compile() match {
-      case Validation.Success(_) => ()
-      case Validation.Failure(errors) => fail(CompilationMessage.formatAll(errors.toList)(NoFormatter, None))
+      case Result.Ok(_) => ()
+      case Result.Err(errors) => fail(CompilationMessage.formatAll(errors)(NoFormatter, None))
     }
   }
 

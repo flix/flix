@@ -31,7 +31,7 @@ import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.tools.compilertop.{CompilerTop, Profiler}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
+import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.tc.Debug
 
 import java.net.URI
@@ -716,12 +716,12 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def compile(): Validation[CompilationResult, CompilationMessage] = {
+  def compile(): Result[CompilationResult, List[CompilationMessage]] = {
     val (result, errors) = check()
     if (errors.isEmpty) {
-      Validation.Success(codeGen(result.get))
+      Result.Ok(codeGen(result.get))
     } else {
-      Validation.Failure(Chain.from(errors))
+      Result.Err(errors)
     }
   }
 
