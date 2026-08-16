@@ -1742,6 +1742,37 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.DuplicateInstanceDef](result)
   }
 
+  test("DuplicateInstanceDef.04") {
+    // Instance-member ids are content-addressed from (instance, member name) -- see
+    // StableName and Namer.claimDefId -- so two duplicate members of the same instance
+    // mint the identical id and therefore an equal DefnSym, not two distinct ones. This
+    // does not regress duplicate detection: checkDuplicateInstanceDefs (Resolver) groups
+    // by member *name*, not by symbol equality, so it reports the duplicate and filters
+    // it out before any symbol-keyed structure downstream ever sees both. Namer's
+    // claimDefId does not throw either, since both declarations claim the identical key
+    // (not two different origins racing for one id) -- this test's real assertion is that
+    // resolution still fails cleanly with the expected diagnostic, not with an unexpected
+    // InternalCompilerException from the collision-detection machinery.
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance C[String] {
+        |    pub def f(x: String): String = x
+        |    pub def f(x: String): String = x
+        |}
+        |
+        |instance C[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateInstanceDef](result)
+  }
+
   test("MissingAssocTypeDef.01") {
     val input =
       """
