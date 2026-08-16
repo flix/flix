@@ -51,10 +51,10 @@ object Weeder2 {
   /**
     * Weeds the given syntax tree `root`.
     *
-    * Returns the weeded root together with the soft errors, or, if any compilation unit
-    * failed hard, the hard errors (one per failing unit) together with the soft errors.
+    * Returns the weeded root and the errors. The root is `None` if any compilation unit
+    * failed hard, in which case the list of errors is non-empty.
     */
-  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Result[WeededAst.Root, List[CompilationMessage]], List[CompilationMessage]) = {
+  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Option[WeededAst.Root], List[CompilationMessage]) = {
     flix.phase("Weeder2") {
       implicit val sctx: SharedContext = SharedContext.mk()
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
@@ -62,33 +62,33 @@ object Weeder2 {
       // Schedule the biggest sources first to increase throughput.
       def sortBy(p: (Source, SyntaxTree.Tree)): Int = -p._1.data.length
 
-      // Weed each source file in parallel.
+      // Weed each source file in parallel. A unit that fails hard yields `None`.
       val refreshed = ParOps.parMapWithPriority(stale, sortBy) {
         case (src, tree) => weed(tree).map(src -> _)
       }
 
-      // Split into successfully weeded units and hard errors. We collect *all* hard errors,
-      // one per failing unit, rather than stopping at the first.
-      val (units, hardErrors) = refreshed.partitionMap {
-        case Result.Ok(unit) => Left(unit)
-        case Result.Err(error) => Right(error)
-      }
-
-      val result = hardErrors.toList match {
-        case Nil => Result.Ok(WeededAst.Root(units.toMap ++ fresh, entryPoint, readRoot.availableClasses, root.tokens))
-        case errors => Result.Err(errors)
+      // The root is only available if every unit was weeded successfully.
+      val result = Option.when(refreshed.forall(_.isDefined)) {
+        WeededAst.Root(refreshed.flatten.toMap ++ fresh, entryPoint, readRoot.availableClasses, root.tokens)
       }
       (result, sctx.errors.asScala.toList)
     }
   }
 
-  private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Result[CompilationUnit, CompilationMessage] = {
+  /**
+    * Weeds the given compilation unit `tree`.
+    *
+    * Returns `None` if the unit fails hard, in which case the error has been added to `sctx`.
+    */
+  private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Option[CompilationUnit] = {
     try {
       val usesAndImports = pickAllUsesAndImports(tree)
       val declarations = Decls.pickAllDeclarations(tree)
-      Result.Ok(CompilationUnit(usesAndImports, declarations, tree.loc))
+      Some(CompilationUnit(usesAndImports, declarations, tree.loc))
     } catch {
-      case PickException(error) => Result.Err(error)
+      case PickException(error) =>
+        sctx.errors.add(error)
+        None
     }
   }
 
@@ -3521,8 +3521,8 @@ object Weeder2 {
   /**
     * An exception thrown by [[pick]] and [[pickToken]] when a required sub-tree or token is missing.
     *
-    * The exception is thrown deep inside weeding and caught in [[weed]], where it is converted
-    * into a [[Result.Err]] for the enclosing compilation unit.
+    * The exception is thrown deep inside weeding and caught in [[weed]], where the error is
+    * reported and the enclosing compilation unit is dropped.
     */
   private case class PickException(error: NeedAtleastOne) extends RuntimeException
 
