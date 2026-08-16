@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -28,7 +28,14 @@ class ProgressBar(flix: Flix) {
   /**
     * The characters in the spinner.
     */
-  private val SpinnerChars = Array("|", "/", "-", "\\")
+  private val SpinnerChars = Array("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")
+
+  /**
+    * The width of the phase name column in visible characters.
+    *
+    * Set by the longest phase names: "Dependencies" and "EffectBinder".
+    */
+  private val PhaseWidth = 12
 
   /**
     * An internal counter used to print the spinner.
@@ -38,10 +45,15 @@ class ProgressBar(flix: Flix) {
   private val spinnerTick = new AtomicInteger(0)
 
   /**
-    * Updates the progress with the given message `msg` in the given `phase`.
+    * The time (in nanoseconds) at which the first phase of the current compilation was observed.
     */
-  def observe(phase: String, msg: String): Unit = {
-    print(phase, msg)
+  private var startNanos: Long = System.nanoTime()
+
+  /**
+    * Updates the progress to the given `phase`.
+    */
+  def observe(phase: String): Unit = {
+    print(phase)
   }
 
   /**
@@ -55,11 +67,13 @@ class ProgressBar(flix: Flix) {
   }
 
   /**
-    * Prints the given string `msg` from the given `phase` to the terminal.
+    * Prints the progress line for the given `phase` to the terminal.
     *
     * This function flushes the output and should not be called too often.
     */
-  private def print(phase: String, msg: String): Unit = {
+  private def print(phase: String): Unit = {
+    val fmt = flix.getFormatter
+
     // Compute the next character in the spinner.
     val index = spinnerTick.getAndIncrement() % SpinnerChars.length
     val spinner = SpinnerChars(index)
@@ -73,26 +87,43 @@ class ProgressBar(flix: Flix) {
     val memoryPadded = f"$usedMemoryInMegaBytes%4dM"
     val memPart = usedMemoryInPercent match {
       case x if x < 70 => memoryPadded
-      case x if x < 90 => flix.getFormatter.yellow(memoryPadded)
-      case _ => flix.getFormatter.red(memoryPadded)
+      case x if x < 90 => fmt.yellow(memoryPadded)
+      case _ => fmt.red(memoryPadded)
     }
 
-    // We abbreviate phase and msg if they are too long to fit within `Width`.
-    // The fixed parts (spinner, memory, brackets, and spaces) take up 17 chars.
-    val p = abbreviate(phase, 20)
-    val m = abbreviate(msg, Width - (20 + 17))
-    val s = s" [${flix.getFormatter.green(spinner)}] [$memPart] [${flix.getFormatter.blue(p)}] $m "
+    // The phase name is abbreviated and padded to `PhaseWidth` so the columns to its right do not jitter.
+    val phasePadded = abbreviate(phase, PhaseWidth).padTo(PhaseWidth, ' ')
 
-    // Clear the current line.
-    // NB: We clear the line with spaces (rather than padding the string) because
-    // the string may contain ANSI escape codes which do not take up any width.
-    System.out.print(" " * Width + "\r")
+    // The phase progress bar has one cell per phase: the frontend cells (blue), a divider, and the backend cells (magenta).
+    // The finished phases are recorded in `phaseTimers`, so the current phase is number `phaseTimers.size + 1`.
+    // We cap at `TotalPhases` in case some phase is not instrumented.
+    val current = (flix.phaseTimers.size + 1).min(CompilerConstants.TotalPhases)
+    val frontendDone = current.min(CompilerConstants.FrontendPhaseCount)
+    val backendDone = current - frontendDone
+    val frontendBar = fmt.blue("█" * frontendDone) + "░" * (CompilerConstants.FrontendPhaseCount - frontendDone)
+    val backendBar = fmt.magenta("█" * backendDone) + "░" * (CompilerConstants.BackendPhaseCount - backendDone)
+    val bar = s"$frontendBar│$backendBar"
+    val count = f"$current%2d/${CompilerConstants.TotalPhases}%2d"
 
-    // Print the string followed by carriage return.
-    // NB: We do *NOT* print a newline because then
-    // we would not be able to overwrite the current
-    // line in the iteration.
-    System.out.print(s + "\r")
+    // Compute the time elapsed since the first phase of the current compilation, in tenths of a second.
+    // `phaseTimers` is reset when a compilation starts, so an empty list marks its first phase.
+    // NB: We format the tenths ourselves (rather than with `%.1f`) so the decimal separator is locale-independent.
+    if (flix.phaseTimers.isEmpty) startNanos = System.nanoTime()
+    val elapsedTenths = (System.nanoTime() - startNanos) / 100_000_000L
+    val elapsed = f"${elapsedTenths / 10}%3d.${elapsedTenths % 10}%ds"
+
+    val s = s" [${fmt.green(spinner)}] [$memPart] [${fmt.blue(phasePadded)}] [$bar] $count $elapsed"
+
+    // The visible width of the line, i.e. excluding ANSI escape codes: the spinner, memory, phase, bar, count,
+    // and elapsed fields together with their brackets and spaces. Typically 76 chars, which fits within `Width`.
+    val visibleWidth = 5 + (memoryPadded.length + 3) + (PhaseWidth + 3) + (CompilerConstants.TotalPhases + 4) + (count.length + 1) + elapsed.length
+
+    // Print the line, padded with spaces to `Width`, followed by a carriage return.
+    // NB: We pad the line (rather than first clearing it) so that each frame overwrites the previous
+    // one in a single write. Clearing first would briefly leave the line blank, which flickers, since
+    // `System.out` is auto-flushed and hence every `print` is a separate write to the terminal.
+    // NB: We do *NOT* print a newline because then we would not be able to overwrite the current line.
+    System.out.print(s + " " * (Width - visibleWidth) + "\r")
 
     // Flush to ensure that the string is printed.
     System.out.flush()

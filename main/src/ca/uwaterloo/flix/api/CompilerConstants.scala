@@ -28,9 +28,23 @@ object CompilerConstants {
   val AstDirectory: Path = Path.of("./build/asts/")
 
   /**
+    * The number of backend phases, i.e. the number of `phase` / `phaseNew` calls made by [[Flix.codeGen]].
+    *
+    * Must be updated when a phase is added to or removed from `codeGen`.
+    */
+  val BackendPhaseCount: Int = 13
+
+  /**
     * The directory where the recorded type constraint graphs are written.
     */
   val ConstraintGraphDirectory: Path = Path.of("./build/constraint-graphs/")
+
+  /**
+    * The number of frontend phases, i.e. the number of `phase` / `phaseNew` calls made by [[Flix.check]].
+    *
+    * Must be updated when a phase is added to or removed from `check`.
+    */
+  val FrontendPhaseCount: Int = 19
 
   /**
     * The JVM bytecode version used when generating class files.
@@ -57,6 +71,11 @@ object CompilerConstants {
     * The directory where the compiler performance data and graphs are written (see `Xperf`).
     */
   val PerfDirectory: Path = Path.of("./build/perf/")
+
+  /**
+    * The total number of phases run by a full compilation, i.e. by [[Flix.compile]].
+    */
+  val TotalPhases: Int = FrontendPhaseCount + BackendPhaseCount
 
   /**
     * The virtual file name used by the playground.
