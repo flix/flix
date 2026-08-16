@@ -42,6 +42,17 @@ object LambdaLift {
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
+    // A lifted symbol must be claimed by exactly one lambda. The fold below is last
+    // writer wins over a concurrent queue, so a repeat would not be an error but a
+    // silent coin flip: the same generated class would hold a different body depending
+    // on which thread got there first.
+    val liftedBySym = sctx.liftedDefs.asScala.toList.groupBy(_._1)
+    val collisions = liftedBySym.filter(_._2.sizeIs > 1)
+    if (collisions.nonEmpty) {
+      val (sym, defns) = collisions.head
+      throw InternalCompilerException(s"Lifted name collision on '$sym': ${defns.size} definitions.", defns.head._2.loc)
+    }
+
     // Add lifted defs from the shared context to the existing defs.
     val newDefs = sctx.liftedDefs.asScala.foldLeft(defs) {
       case (macc, (sym, defn)) => macc + (sym -> defn)

@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Muta
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps, Nel}
+
+import scala.collection.immutable.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -803,7 +805,13 @@ object Simplifier {
     val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
 
     // Assemble all the branches together.
-    val branch = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
+    //
+    // The map preserves insertion order. A plain Map is keyed by LabelSym, whose hash is
+    // derived from a GenSym counter, so its iteration order depends on how many symbols
+    // preceded it. Later phases walk the branches in that order, and LambdaLift numbers
+    // the lambdas it finds, so an unordered map here makes generated names depend on the
+    // interleaving of the parallel phases that ran before.
+    val branch = SimplifiedAst.Expr.Branch(entry, ListMap.from(branches) + errorBranch, t, branchPurity, loc)
 
     // The purity of the match exp
     val matchPurity = Purity.combine(matchExp.purity, branch.purity)
@@ -1034,7 +1042,8 @@ object Simplifier {
 
     val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
     val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
-    val branch = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
+    // Insertion-ordered, for the reason given in `visitMatch`.
+    val branch = SimplifiedAst.Expr.Branch(entry, ListMap.from(branches) + errorBranch, t, branchPurity, loc)
 
     // Wrap in let-bindings for each match variable: let mv0 = e1; let mv1 = e2; ... branch
     val bodyPurity = Purity.combine(Purity.combineAll(matchExps.map(_.purity)), branch.purity)
