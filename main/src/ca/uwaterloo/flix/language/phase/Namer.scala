@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps, StableName}
 
 import java.nio.file.{FileSystemNotFoundException, Path}
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
@@ -791,6 +791,18 @@ object Namer {
   }
 
   /**
+    * Throws if `id` is already claimed by a `key` other than this one.
+    */
+  private def claimDefId(id: Long, key: String)(implicit sctx: SharedContext): Unit = {
+    sctx.claimedIds.merge(id, key, (existing, incoming) =>
+      if (existing == incoming) existing
+      else throw InternalCompilerException(
+        s"Instance/derived-def id collision on '$id': '$existing' and '$incoming'.", SourceLocation.Unknown
+      )
+    )
+  }
+
+  /**
     * Performs naming on the given definition declaration `decl0`.
     */
   private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Def = decl0 match {
@@ -814,7 +826,11 @@ object Namer {
       // The id is derived from the instance rather than taken from a counter, so that it
       // is the same in every compilation; specialized names are built on top of it.
       val id = defKind match {
-        case DefKind.Member(instance) => Some(StableName.of(s"$instance#${ident.name}"))
+        case DefKind.Member(instance) =>
+          val key = s"$instance#${ident.name}"
+          val stableId = StableName.of(key)
+          claimDefId(stableId, key)
+          Some(stableId)
         case DefKind.NonMember => None
       }
       val sym = Symbol.mkDefnSym(ns0, ident, id)
@@ -1836,14 +1852,18 @@ object Namer {
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue(), new ConcurrentHashMap())
   }
 
   /**
     * A global shared context. Must be thread-safe.
     *
-    * @param errors the [[NameError]]s in the AST, if any.
+    * @param errors     the [[NameError]]s in the AST, if any.
+    * @param claimedIds what each content-addressed instance/derived-def id was minted for.
+    *                   A hash can repeat, either because two members hash alike or because
+    *                   the key does not tell them apart; this catches that rather than
+    *                   letting two unrelated defs silently share one id.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[NameError])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[NameError], claimedIds: ConcurrentHashMap[Long, String])
 
 }
