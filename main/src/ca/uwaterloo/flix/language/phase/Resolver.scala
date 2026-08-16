@@ -100,35 +100,38 @@ object Resolver {
         case (uses, (taenv, taOrder)) =>
 
           val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
-          flatMapN(unitsVal) {
+          mapN(unitsVal) {
             case units =>
               val table = SymbolTable.traverse(units)(tableUnit)
-              mapN(checkSuperTraitDag(table.traits)) {
-                case () =>
-                  ResolvedAst.Root(
-                    table.modules,
-                    table.traits,
-                    table.instances,
-                    table.defs,
-                    table.enums,
-                    table.structs,
-                    table.restrictableEnums,
-                    table.effects,
-                    table.typeAliases,
-                    ListMap(uses.toMap),
-                    taOrder,
-                    root.mainEntryPoint,
-                    root.sources,
-                    root.availableClasses,
-                    root.tokens
-                  )
-              }
+              checkSuperTraitDag(table.traits)
+              ResolvedAst.Root(
+                table.modules,
+                table.traits,
+                table.instances,
+                table.defs,
+                table.enums,
+                table.structs,
+                table.restrictableEnums,
+                table.effects,
+                table.typeAliases,
+                ListMap(uses.toMap),
+                taOrder,
+                root.mainEntryPoint,
+                root.sources,
+                root.availableClasses,
+                root.tokens
+              )
           }
       }
     } catch {
       case CyclicTypeAliasesException(cycle) =>
         // Report one CyclicTypeAliases error per alias in the cycle.
         val errors = cycle.map(sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc))
+        Validation.Failure(Chain.from(errors))
+
+      case CyclicTraitHierarchyException(cycle) =>
+        // Report one CyclicTraitHierarchy error per trait in the cycle.
+        val errors = cycle.map(sym => ResolutionError.CyclicTraitHierarchy(cycle, sym.loc))
         Validation.Failure(Chain.from(errors))
     }
 
@@ -374,24 +377,15 @@ object Resolver {
 
   /**
     * Checks that the super traits form a DAG (no cycles).
+    *
+    * Throws [[CyclicTraitHierarchyException]] if the super traits form a cycle.
     */
-  private def checkSuperTraitDag(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait]): Validation[Unit, ResolutionError] = {
-
-    /**
-      * Create a list of CyclicTraitHierarchy errors, one for each trait.
-      */
-    def mkCycleErrors[T](cycle: List[Symbol.TraitSym]): Validation.Failure[T, ResolutionError] = {
-      val errors = cycle.map {
-        sym => ResolutionError.CyclicTraitHierarchy(cycle, sym.loc)
-      }
-      Validation.Failure(Chain.from(errors))
-    }
-
+  private def checkSuperTraitDag(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait]): Unit = {
     val traitSyms = traits.values.map(_.sym)
     val getSuperTraits = (trt: Symbol.TraitSym) => traits(trt).superTraits.map(_.symUse.sym)
     Graph.topologicalSort(traitSyms, getSuperTraits) match {
-      case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
-      case Graph.TopologicalSort.Sorted(_) => Validation.Success(())
+      case Graph.TopologicalSort.Cycle(path) => throw CyclicTraitHierarchyException(path)
+      case Graph.TopologicalSort.Sorted(_) => ()
     }
   }
 
@@ -3720,6 +3714,17 @@ object Resolver {
     * @param cycle the type alias symbols that form the cycle.
     */
   private case class CyclicTypeAliasesException(cycle: List[Symbol.TypeAliasSym]) extends RuntimeException
+
+  /**
+    * An exception thrown by [[checkSuperTraitDag]] when the super traits form a cycle.
+    *
+    * This bypasses the [[Validation]] machinery: the exception is thrown from the super trait check and
+    * caught in [[run]], where it is converted into a [[Validation.Failure]]. It exists so that the
+    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
+    *
+    * @param cycle the trait symbols that form the cycle.
+    */
+  private case class CyclicTraitHierarchyException(cycle: List[Symbol.TraitSym]) extends RuntimeException
 
   /**
     * A type represented by a lowercase name.
