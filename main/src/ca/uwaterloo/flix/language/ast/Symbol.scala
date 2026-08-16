@@ -94,6 +94,16 @@ object Symbol {
     new DefnSym(Some(StableName.suffix(key)), sym.namespace, sym.text, sym.loc)
 
   /**
+    * Returns the def symbol for the `index`th definition lifted out of `sym`.
+    *
+    * Consumes no [[ca.uwaterloo.flix.language.GenSym]] id. The index counts occurrences
+    * within the enclosing definition rather than across the program, so editing one
+    * definition cannot rename the lambdas of another.
+    */
+  def liftedDefnSym(sym: DefnSym, index: Int): DefnSym =
+    new DefnSym(Some(StableName.suffix(s"$sym#lift$index")), sym.namespace, sym.text, sym.loc)
+
+  /**
     * Returns a fresh enum symbol based on the given symbol.
     */
   def freshEnumSym(sym: EnumSym)(implicit flix: Flix): EnumSym = {

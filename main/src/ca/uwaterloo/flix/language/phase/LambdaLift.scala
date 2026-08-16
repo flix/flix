@@ -53,7 +53,9 @@ object LambdaLift {
   private def visitDef(def0: SimplifiedAst.Def)(implicit sctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
     case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, _, loc) =>
       val fs = fparams.map(visitFormalParam)
-      val e = visitExp(exp)(sym, Map.empty, sctx, flix)
+      // Lifted definitions are numbered within their enclosing definition, so that editing
+      // one definition cannot renumber the lambdas of another.
+      val e = visitExp(exp)(sym, Map.empty, new java.util.concurrent.atomic.AtomicInteger(0), sctx, flix)
       LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, loc)
   }
 
@@ -91,7 +93,7 @@ object LambdaLift {
       LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
-  private def visitExp(e: SimplifiedAst.Expr)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.Expr = e match {
+  private def visitExp(e: SimplifiedAst.Expr)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], lifted: java.util.concurrent.atomic.AtomicInteger, sctx: SharedContext, flix: Flix): LiftedAst.Expr = e match {
     case SimplifiedAst.Expr.Cst(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
     case SimplifiedAst.Expr.Var(sym, tpe, loc) => LiftedAst.Expr.Var(sym, tpe, loc)
@@ -106,7 +108,7 @@ object LambdaLift {
       val liftedExp = visitExp(exp)
 
       // Generate a fresh symbol for the new lifted definition.
-      val freshSymbol = Symbol.freshDefnSym(sym0)
+      val freshSymbol = Symbol.liftedDefnSym(sym0, lifted.getAndIncrement())
 
       // Construct annotations and modifiers for the fresh definition.
       val ann = Annotations.Empty
@@ -195,20 +197,20 @@ object LambdaLift {
       LiftedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
 
     case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
-      val freshDefnSym = Symbol.freshDefnSym(sym0)
+      val freshDefnSym = Symbol.liftedDefnSym(sym0, lifted.getAndIncrement())
       val updatedLiftedLocalDefs = liftedLocalDefs + (sym -> freshDefnSym)
       // It is **very important** we add the mapping `sym -> freshDefnSym` to liftedLocalDefs
       // before visiting the body since exp1 may contain recursive calls to `sym`
       // so they need to be substituted for `freshDefnSym` in `exp1` which
       // `visitExp` handles for us.
-      val body = visitExp(exp1)(sym0, updatedLiftedLocalDefs, sctx, flix)
+      val body = visitExp(exp1)(sym0, updatedLiftedLocalDefs, lifted, sctx, flix)
       val ann = Annotations.Empty
       val mod = Modifiers(Modifier.Synthetic :: Nil)
       val fps = fparams.map(visitFormalParam)
       val defTpe = exp1.tpe
       val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, List.empty, fps, body, defTpe, loc.asSynthetic)
       sctx.liftedDefs.add(freshDefnSym -> liftedDef)
-      visitExp(exp2)(sym0, updatedLiftedLocalDefs, sctx, flix) // LocalDef node is erased here
+      visitExp(exp2)(sym0, updatedLiftedLocalDefs, lifted, sctx, flix) // LocalDef node is erased here
 
     case SimplifiedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -242,12 +244,12 @@ object LambdaLift {
 
   }
 
-  private def visitJvmConstructor(constructor: SimplifiedAst.JvmConstructor)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmConstructor = constructor match {
+  private def visitJvmConstructor(constructor: SimplifiedAst.JvmConstructor)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], lifted: java.util.concurrent.atomic.AtomicInteger, sctx: SharedContext, flix: Flix): LiftedAst.JvmConstructor = constructor match {
     case SimplifiedAst.JvmConstructor(exp, retTpe, purity, loc) =>
       LiftedAst.JvmConstructor(visitExp(exp), retTpe, purity, loc)
   }
 
-  private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], lifted: java.util.concurrent.atomic.AtomicInteger, sctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
     case SimplifiedAst.JvmMethod(ann, ident, fparams0, exp, retTpe, purity, loc) =>
       val fparams = fparams0 map visitFormalParam
       LiftedAst.JvmMethod(ann, ident, fparams, visitExp(exp), retTpe, purity, loc)
