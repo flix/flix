@@ -76,7 +76,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root, @unused oldRoot: ResolvedAst.Root, @unused changeSet: ChangeSet)(implicit flix: Flix): (Validation[ResolvedAst.Root, ResolutionError], List[ResolutionError]) = flix.phase("Resolver") {
+  def run(root: NamedAst.Root, @unused oldRoot: ResolvedAst.Root, @unused changeSet: ChangeSet)(implicit flix: Flix): (ResolvedAst.Root, List[ResolutionError]) = flix.phase("Resolver") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Get the default uses.
@@ -116,7 +116,7 @@ object Resolver {
       root.tokens
     )
 
-    (Validation.Success(resolvedRoot), sctx.errors.asScala.toList)
+    (resolvedRoot, sctx.errors.asScala.toList)
   }
 
   /**
