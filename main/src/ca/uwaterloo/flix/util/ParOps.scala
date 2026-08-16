@@ -27,7 +27,7 @@ import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 /**
-  * Parallel versions of common operations — `map`, `traverse`, aggregation, and reachability —
+  * Parallel versions of common operations — `map`, aggregation, and reachability —
   * that run on the compiler's shared thread pool. Each operation falls back to a sequential
   * implementation when the compiler runs single-threaded.
   *
@@ -162,14 +162,6 @@ object ParOps {
         case (k, v) => (k, f(v))
       }.toMap
     )
-
-  /**
-    * Applies the function `f` to every element of `xs` in parallel. Aggregates the result using the applicative instance for [[Validation]].
-    */
-  def parTraverse[A, B, E](xs: Iterable[A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Iterable[B], E] = {
-    val results = parMap(xs)(f)
-    Validation.sequence(results)
-  }
 
   /**
     * Aggregates the result of applying `seq` and `comb` to `xs`.

@@ -34,7 +34,7 @@
 
 - No shadowed variables.
 - No unused local variables.
-- When using monads like `Validation` use `mapN` over `for ... yield` whenever possible
+- When using monads like `Result` use `mapN` over `for ... yield` whenever possible
 - Write single-variable `mapN` cases open to additional variables with `mapN ... { case ... => ... }`
 - Never use toString for anything other than debugging.
 - Leave the code in better state than you found it in.
