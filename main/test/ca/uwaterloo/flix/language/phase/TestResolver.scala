@@ -1774,6 +1774,23 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MissingAssocTypeDef](result)
   }
 
+  test("MissingAssocTypeDef.03") {
+    // The undefined `U` is dropped and the required `T` is reported as missing: both errors are reported.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |    type U = Int32
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
   test("IllegalAssocTypeApplication.01") {
     val input =
       """

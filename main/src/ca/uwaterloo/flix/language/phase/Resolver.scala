@@ -642,13 +642,14 @@ object Resolver {
         // Missing associated type.
         sctx.errors.add(ResolutionError.MissingAssocTypeDef(ascSym.name, loc))
 
-        // We recover by introducing a dummy associated type definition.
-        val doc = Doc(Nil, loc)
+        // We recover by introducing a dummy associated type definition (with a synthetic location).
+        val synthLoc = loc.asSynthetic
+        val doc = Doc(Nil, synthLoc)
         val mod = Modifiers.Empty
-        val symUse = AssocTypeSymUse(ascSym, loc)
+        val symUse = AssocTypeSymUse(ascSym, synthLoc)
         val arg = targ
-        val tpe = UnkindedType.Error(loc)
-        val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
+        val tpe = UnkindedType.Error(synthLoc)
+        val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, synthLoc)
         m.put(ascSym, ascDef)
       }
     }
