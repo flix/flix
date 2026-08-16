@@ -23,28 +23,6 @@ import java.lang.management.ManagementFactory
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{LinkedBlockingQueue, ThreadFactory, ThreadPoolExecutor, TimeUnit}
 
-/**
-  * The thread pool used by the compiler: a fixed-size pool of `threads` worker threads, each
-  * created with a stack of at least [[CompilerConstants.ThreadStackSize]] bytes.
-  *
-  * We use a plain [[ThreadPoolExecutor]] rather than a `ForkJoinPool` because the latter offers
-  * no way to control the stack size of its worker threads: `ForkJoinWorkerThread` always requests
-  * the JVM default. Here we supply our own [[ThreadFactory]] which requests a larger stack for
-  * every worker.
-  *
-  * Idle workers exit after [[CompilerConstants.ThreadKeepAliveSeconds]] so that a pool which is
-  * never shut down (e.g. because a compilation crashed) does not pin its threads and their stacks
-  * forever.
-  */
-class ThreadPool(threads: Int) extends ThreadPoolExecutor(
-  threads, threads,
-  CompilerConstants.ThreadKeepAliveSeconds, TimeUnit.SECONDS,
-  new LinkedBlockingQueue[Runnable](),
-  new ThreadPool.WorkerFactory
-) {
-  allowCoreThreadTimeOut(true)
-}
-
 object ThreadPool {
 
   /**
@@ -87,4 +65,26 @@ object ThreadPool {
     }
   }
 
+}
+
+/**
+  * The thread pool used by the compiler: a fixed-size pool of `threads` worker threads, each
+  * created with a stack of at least [[CompilerConstants.ThreadStackSize]] bytes.
+  *
+  * We use a plain [[ThreadPoolExecutor]] rather than a `ForkJoinPool` because the latter offers
+  * no way to control the stack size of its worker threads: `ForkJoinWorkerThread` always requests
+  * the JVM default. Here we supply our own [[ThreadFactory]] which requests a larger stack for
+  * every worker.
+  *
+  * Idle workers exit after [[CompilerConstants.ThreadKeepAliveSeconds]] so that a pool which is
+  * never shut down (e.g. because a compilation crashed) does not pin its threads and their stacks
+  * forever.
+  */
+class ThreadPool(threads: Int) extends ThreadPoolExecutor(
+  threads, threads,
+  CompilerConstants.ThreadKeepAliveSeconds, TimeUnit.SECONDS,
+  new LinkedBlockingQueue[Runnable](),
+  new ThreadPool.WorkerFactory
+) {
+  allowCoreThreadTimeOut(true)
 }
