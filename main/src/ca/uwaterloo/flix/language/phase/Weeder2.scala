@@ -50,7 +50,7 @@ object Weeder2 {
   import WeededAst.*
 
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[WeededAst.Root, CompilationMessage], List[CompilationMessage]) = {
-    flix.phaseNew("Weeder2") {
+    flix.phase("Weeder2") {
       implicit val sctx: SharedContext = SharedContext.mk()
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
@@ -64,7 +64,7 @@ object Weeder2 {
 
       val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
       (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.availableClasses, root.tokens)), sctx.errors.asScala.toList)
-    }(DebugValidation())
+    }
   }
 
   private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[CompilationUnit, CompilationMessage] = {

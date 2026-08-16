@@ -147,7 +147,7 @@ class Flix {
   /**
     * The current phase we are in. Initially `None`. Volatile so the compiler
     * profiler renderer thread sees each store made by the compile thread in
-    * [[phase]] / [[phaseNew]].
+    * [[phase]].
     */
   @volatile private var currentPhase: Option[PhaseTime] = None
 
@@ -750,35 +750,10 @@ class Flix {
 
   /**
     * Enters the phase with the given name.
-    */
-  def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
-    // Initialize the phase time object.
-    currentPhase = Some(PhaseTime(phase, 0))
-
-    if (options.progress) {
-      progressBar.observe(phase)
-    }
-
-    // Measure the execution time.
-    val t = System.nanoTime()
-    val (root, errs) = f
-    val e = System.nanoTime() - t
-
-    // Update the phase time and add it to the list of executed phases.
-    val finished = PhaseTime(phase, e)
-    currentPhase = Some(finished)
-    phaseTimers += finished
-
-    if (this.options.xprintphases) {
-      d.output(phase, root)(this)
-    }
-
-    // Return the result computed by the phase.
-    (root, errs)
-  }
-
-  /**
-    * Enters the phase with the given name.
+    *
+    * Runs `f`, records its execution time, and, if `--Xprint-phases` is enabled,
+    * hands the result to `d`. Phases returning a `(root, errors)` pair get their
+    * [[Debug]] instance from [[Debug.debugPair]], which debugs only the root.
     */
   def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
