@@ -523,15 +523,15 @@ class Flix {
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
     errors ++= parserErrors
 
-    val (weederValidation, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+    val (weederResult, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
     errors ++= weederErrors
 
-    val result = weederValidation match {
-      case Validation.Failure(failures) =>
-        errors ++= failures.toList
+    val result = weederResult match {
+      case Result.Err(failures) =>
+        errors ++= failures
         None
 
-      case Validation.Success(afterWeeder) =>
+      case Result.Ok(afterWeeder) =>
         val afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
 
         val (afterNamer, nameErrors) = Namer.run(afterDesugar)
