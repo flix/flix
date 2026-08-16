@@ -374,20 +374,64 @@ object Eraser {
       new ConcurrentHashMap()
 
     /**
+      * What each specialized enum symbol was minted for.
+      *
+      * A hash can repeat, either because two specializations hash alike or because the
+      * key does not tell them apart. The invariant is on the pair `enumSpecializations`
+      * is keyed on, not on the key string: comparing keys would be blind to exactly the
+      * case where the key loses information.
+      */
+    private val claimedEnumNames: ConcurrentHashMap[Symbol.EnumSym, (Symbol.EnumSym, List[SimpleType])] =
+      new ConcurrentHashMap()
+
+    /** Throws if `specializedSym` is already claimed by a different `(sym, targs)`. */
+    private def claimEnumName(specializedSym: Symbol.EnumSym, sym: Symbol.EnumSym, targs: List[SimpleType]): Unit = {
+      claimedEnumNames.merge(specializedSym, (sym, targs), (existing, incoming) =>
+        if (existing == incoming) existing
+        else throw InternalCompilerException(
+          s"Erasure name collision on '$specializedSym': '${existing._1}' at '${existing._2}' and '${incoming._1}' at '${incoming._2}'.",
+          SourceLocation.Unknown
+        )
+      )
+    }
+
+    /**
       * `(MutList, List(Int32)) -> MutList$42` means that `MutList` is specialized wrt. `Int32` under the name `MutList$42`.
       */
     private val structSpecializations: ConcurrentHashMap[(Symbol.StructSym, List[SimpleType]), Symbol.StructSym] =
       new ConcurrentHashMap()
 
+    /**
+      * What each specialized struct symbol was minted for. See [[claimedEnumNames]].
+      */
+    private val claimedStructNames: ConcurrentHashMap[Symbol.StructSym, (Symbol.StructSym, List[SimpleType])] =
+      new ConcurrentHashMap()
+
+    /** Throws if `specializedSym` is already claimed by a different `(sym, targs)`. */
+    private def claimStructName(specializedSym: Symbol.StructSym, sym: Symbol.StructSym, targs: List[SimpleType]): Unit = {
+      claimedStructNames.merge(specializedSym, (sym, targs), (existing, incoming) =>
+        if (existing == incoming) existing
+        else throw InternalCompilerException(
+          s"Erasure name collision on '$specializedSym': '${existing._1}' at '${existing._2}' and '${incoming._1}' at '${incoming._2}'.",
+          SourceLocation.Unknown
+        )
+      )
+    }
+
     /** Returns the specialized version of `sym` according to `targs`, creating a new symbol if not done already. */
     def getSpecializedEnumName(sym: Symbol.EnumSym, targs: List[SimpleType])(implicit flix: Flix): Symbol.EnumSym = {
+      assertErased(targs)
       targs match {
         case Nil =>
           // No specialization required.
           enumSpecializations.computeIfAbsent((sym, targs), _ => sym)
         case _ =>
           // Do specialization.
-          enumSpecializations.computeIfAbsent((sym, targs), _ => Symbol.specializedEnumSym(sym, ErasureKey.ofEnum(sym, targs)))
+          enumSpecializations.computeIfAbsent((sym, targs), _ => {
+            val specializedSym = Symbol.specializedEnumSym(sym, ErasureKey.ofEnum(sym, targs))
+            claimEnumName(specializedSym, sym, targs)
+            specializedSym
+          })
       }
     }
 
@@ -400,13 +444,18 @@ object Eraser {
 
     /** Returns the specialized version of `sym` according to `targs`, creating a new symbol if not done already. */
     def getSpecializedStructName(sym: Symbol.StructSym, targs: List[SimpleType])(implicit flix: Flix): Symbol.StructSym = {
+      assertErased(targs)
       targs match {
         case Nil =>
           // No specialization required.
           structSpecializations.computeIfAbsent((sym, targs), _ => sym)
         case _ =>
           // Do specialization.
-          structSpecializations.computeIfAbsent((sym, targs), _ => Symbol.specializedStructSym(sym, ErasureKey.ofStruct(sym, targs)))
+          structSpecializations.computeIfAbsent((sym, targs), _ => {
+            val specializedSym = Symbol.specializedStructSym(sym, ErasureKey.ofStruct(sym, targs))
+            claimStructName(specializedSym, sym, targs)
+            specializedSym
+          })
       }
     }
 
@@ -416,6 +465,23 @@ object Eraser {
       */
     def getStructSpecializations: List[(Symbol.StructSym, List[SimpleType], Symbol.StructSym)] =
       toList(structSpecializations)
+
+    /**
+      * Asserts that every type in `targs` is one [[ErasureKey]] can actually be given:
+      * [[SimpleType.erase]] only ever produces a JVM primitive or `Object`, so a `targs`
+      * containing anything else means a caller stopped erasing partway through, and
+      * [[ErasureKey]]'s broader rendering would silently accept the wider input instead
+      * of catching the bug that produced it.
+      */
+    private def assertErased(targs: List[SimpleType]): Unit = {
+      val nonErased = targs.filterNot(SimpleType.ErasedTypes.contains)
+      if (nonErased.nonEmpty) {
+        throw InternalCompilerException(
+          s"Expected erased type arguments (one of ${SimpleType.ErasedTypes.mkString(", ")}), got: ${nonErased.mkString(", ")}",
+          SourceLocation.Unknown
+        )
+      }
+    }
 
     /** Returns the entries of `m`. */
     private def toList[A, B](m: ConcurrentHashMap[(A, B), A]): List[(A, B, A)] = {
