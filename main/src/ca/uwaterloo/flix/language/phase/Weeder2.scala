@@ -3412,6 +3412,7 @@ object Weeder2 {
       case Some(t) => t
       case None =>
         val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
+        System.err.println(s"Unexpected PickException near ${tree.loc.format}. If you see this error, please report it to https://github.com/flix/flix/issues")
         throw PickException(error)
     }
   }
@@ -3426,6 +3427,7 @@ object Weeder2 {
       case Some(t) => t
       case _ =>
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
+        System.err.println(s"Unexpected PickException near ${tree.loc.format}. If you see this error, please report it to https://github.com/flix/flix/issues")
         throw PickException(error)
     }
   }
