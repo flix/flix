@@ -64,13 +64,16 @@ class ProgressBar(flix: Flix) {
     val index = spinnerTick.getAndIncrement() % SpinnerChars.length
     val spinner = SpinnerChars(index)
 
-    // Compute the total amount of memory in use.
-    val usedMemoryInBytes = Runtime.getRuntime.totalMemory()
+    // Compute the amount of heap memory in use and color it by its percentage of the maximum heap size.
+    val runtime = Runtime.getRuntime
+    val usedMemoryInBytes = runtime.totalMemory() - runtime.freeMemory()
+    val maxMemoryInBytes = runtime.maxMemory()
     val usedMemoryInMegaBytes = (usedMemoryInBytes / (1024L * 1024L)).toInt
+    val usedMemoryInPercent = ((100L * usedMemoryInBytes) / maxMemoryInBytes).toInt
     val memoryPadded = f"$usedMemoryInMegaBytes%4dM"
-    val memPart = usedMemoryInMegaBytes match {
-      case x if x <= 1_000 => memoryPadded
-      case x if x <= 4_000 => flix.getFormatter.yellow(memoryPadded)
+    val memPart = usedMemoryInPercent match {
+      case x if x < 70 => memoryPadded
+      case x if x < 90 => flix.getFormatter.yellow(memoryPadded)
       case _ => flix.getFormatter.red(memoryPadded)
     }
 
