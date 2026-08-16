@@ -791,13 +791,18 @@ object Namer {
   }
 
   /**
-    * Throws if `id` is already claimed by a `key` other than this one.
+    * Throws if `sym` is already claimed by a `key` other than this one.
+    *
+    * Claimed by the full symbol, not by its id alone: two members whose ids happen to
+    * collide are only a real problem if they also share a namespace and text, since that
+    * is what makes them render to the same JVM name. Different text disambiguates them
+    * regardless of the id.
     */
-  private def claimDefId(id: Long, key: String)(implicit sctx: SharedContext): Unit = {
-    sctx.claimedIds.merge(id, key, (existing, incoming) =>
+  private def claimDefId(sym: Symbol.DefnSym, key: String)(implicit sctx: SharedContext): Unit = {
+    sctx.claimedIds.merge(sym, key, (existing, incoming) =>
       if (existing == incoming) existing
       else throw InternalCompilerException(
-        s"Instance-member id collision on '$id': '$existing' and '$incoming'.", SourceLocation.Unknown
+        s"Instance-member id collision on '$sym': '$existing' and '$incoming'.", SourceLocation.Unknown
       )
     )
   }
@@ -825,15 +830,14 @@ object Namer {
 
       // The id is derived from the instance rather than taken from a counter, so that it
       // is the same in every compilation; specialized names are built on top of it.
-      val id = defKind match {
+      val (id, memberKey) = defKind match {
         case DefKind.Member(instance) =>
           val key = s"$instance#${ident.name}"
-          val stableId = StableName.of(key)
-          claimDefId(stableId, key)
-          Some(stableId)
-        case DefKind.NonMember => None
+          (Some(StableName.of(key)), Some(key))
+        case DefKind.NonMember => (None, None)
       }
       val sym = Symbol.mkDefnSym(ns0, ident, id)
+      memberKey.foreach(key => claimDefId(sym, key))
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts)
       NamedAst.Declaration.Def(sym, spec, e, loc)
   }
@@ -1859,11 +1863,11 @@ object Namer {
     * A global shared context. Must be thread-safe.
     *
     * @param errors     the [[NameError]]s in the AST, if any.
-    * @param claimedIds what each content-addressed instance-member id was minted for. A
-    *                   hash can repeat, either because two members hash alike or because
-    *                   the key does not tell them apart; this catches that rather than
-    *                   letting two unrelated members silently share one id.
+    * @param claimedIds what each content-addressed instance-member symbol was minted for.
+    *                   Keyed by the full symbol, not by its id alone: two members whose
+    *                   ids happen to collide only matter if they also share a namespace
+    *                   and text, since that is what determines the final JVM name.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[NameError], claimedIds: ConcurrentHashMap[Long, String])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[NameError], claimedIds: ConcurrentHashMap[Symbol.DefnSym, String])
 
 }

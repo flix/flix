@@ -124,9 +124,8 @@ object Deriver {
 
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       val eqKey = s"Eq[${sym}]#eq"
-      val eqId = StableName.of(eqKey)
-      claimDefId(eqId, eqKey)
-      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(eqId))
+      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(StableName.of(eqKey)))
+      claimDefId(eqDefSym, eqKey)
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val param2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
@@ -308,9 +307,8 @@ object Deriver {
 
       val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
       val compareKey = s"Order[${sym}]#compare"
-      val compareId = StableName.of(compareKey)
-      claimDefId(compareId, compareKey)
-      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(compareId))
+      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(StableName.of(compareKey)))
+      claimDefId(compareDefSym, compareKey)
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val param2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
@@ -509,9 +507,8 @@ object Deriver {
 
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
       val toStringKey = s"ToString[${sym}]#toString"
-      val toStringId = StableName.of(toStringKey)
-      claimDefId(toStringId, toStringKey)
-      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(toStringId))
+      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(StableName.of(toStringKey)))
+      claimDefId(toStringDefSym, toStringKey)
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkToStringImpl(enum0, param, loc, root)
@@ -721,9 +718,8 @@ object Deriver {
 
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
       val hashKey = s"Hash[${sym}]#hash"
-      val hashId = StableName.of(hashKey)
-      claimDefId(hashId, hashKey)
-      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(hashId))
+      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(StableName.of(hashKey)))
+      claimDefId(hashDefSym, hashKey)
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkHashImpl(enum0, param, loc, root)
@@ -865,9 +861,8 @@ object Deriver {
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
         val coerceKey = s"Coerce[${sym}]#coerce"
-        val coerceId = StableName.of(coerceKey)
-        claimDefId(coerceId, coerceKey)
-        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(coerceId))
+        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(StableName.of(coerceKey)))
+        claimDefId(coerceDefSym, coerceKey)
 
         val (_, caze) = cases.head
 
@@ -1119,21 +1114,24 @@ object Deriver {
     * A global shared context. Must be thread-safe.
     *
     * @param errors     the [[DerivationError]]s in the AST, if any.
-    * @param claimedIds what each content-addressed derived-def id was minted for. A hash
-    *                   can repeat, either because two derived defs hash alike or because
-    *                   the key does not tell them apart; this catches that rather than
-    *                   letting two unrelated derived defs silently share one id.
+    * @param claimedIds what each content-addressed derived-def symbol was minted for.
+    *                   Keyed by the full symbol, not by its id alone: two derived defs
+    *                   whose ids happen to collide only matter if they also share a
+    *                   namespace and text, since that is what determines the final JVM
+    *                   name -- e.g. an Eq[Foo]#eq key and an unrelated Order[Bar]#compare
+    *                   key hashing alike is not a real collision, because "Eq.eq" and
+    *                   "Order.compare" are different symbols regardless of id.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[DerivationError], claimedIds: ConcurrentHashMap[Long, String])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[DerivationError], claimedIds: ConcurrentHashMap[Symbol.DefnSym, String])
 
   /**
-    * Throws if `id` is already claimed by a `key` other than this one.
+    * Throws if `sym` is already claimed by a `key` other than this one.
     */
-  private def claimDefId(id: Long, key: String)(implicit sctx: SharedContext): Unit = {
-    sctx.claimedIds.merge(id, key, (existing, incoming) =>
+  private def claimDefId(sym: Symbol.DefnSym, key: String)(implicit sctx: SharedContext): Unit = {
+    sctx.claimedIds.merge(sym, key, (existing, incoming) =>
       if (existing == incoming) existing
       else throw InternalCompilerException(
-        s"Derived-def id collision on '$id': '$existing' and '$incoming'.", SourceLocation.Unknown
+        s"Derived-def id collision on '$sym': '$existing' and '$incoming'.", SourceLocation.Unknown
       )
     )
   }
