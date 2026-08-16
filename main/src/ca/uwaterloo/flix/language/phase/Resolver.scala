@@ -430,17 +430,14 @@ object Resolver {
       val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix)
       val optTconstrs = tconstrs0.map(resolveTraitConstraint(_, scp, taenv, ns0, root))
       val econstrs = econstrs0.map(resolveEqualityConstraint(_, scp, taenv, ns0, root))
-      flatMapN(traitVal) {
+      mapN(traitVal) {
         case trt =>
-          val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
+          val assocs = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
           val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
           val defs = checkDuplicateInstanceDefs(defs0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix)), trt.sym)
           val tconstrs = optTconstrs.collect { case Some(t) => t }
-          mapN(assocsVal) {
-            case assocs =>
-              val symUse = TraitSymUse(trt.sym, trt0.loc)
-              ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
-          }
+          val symUse = TraitSymUse(trt.sym, trt0.loc)
+          ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
       }
   }
 
@@ -615,77 +612,73 @@ object Resolver {
   /**
     * Performs name resolution on the given associated type definitions `d0` in the given namespace `ns0`.
     * `loc` is the location of the instance symbol for reporting errors.
+    *
+    * Reports [[DuplicateAssocTypeDef]] and [[MissingAssocTypeDef]] errors and recovers:
+    * duplicates are dropped (the first definition is kept) and missing definitions are
+    * replaced by a dummy definition whose type is [[UnkindedType.Error]].
     */
-  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], trt: NamedAst.Declaration.Trait, targ: UnkindedType, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
-    flatMapN(Validation.traverse(d0)(resolveAssocTypeDef(_, trt, scp0, taenv, ns0, root))) {
-      case xs =>
-        // Computes a map from associated type symbols to their definitions.
-        val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
+  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], trt: NamedAst.Declaration.Trait, targ: UnkindedType, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.Declaration.AssocTypeDef] = {
+    val xs = d0.flatMap(resolveAssocTypeDef(_, trt, scp0, taenv, ns0, root))
 
-        // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
-        val errors = mutable.ArrayBuffer.empty[ResolutionError]
+    // Computes a map from associated type symbols to their definitions.
+    val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
-        // Build the map `m` and check for [[DuplicateAssocTypeDef]].
-        for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
-          val sym = symUse.sym
-          m.get(sym) match {
-            case None =>
-              m.put(sym, d)
-            case Some(otherDecl) =>
-              val loc2 = otherDecl.loc
-              errors += ResolutionError.DuplicateAssocTypeDef(sym, loc1, loc2)
-              errors += ResolutionError.DuplicateAssocTypeDef(sym, loc2, loc1)
-          }
-        }
-
-        // Check for [[MissingAssocTypeDef]] and recover.
-        for (NamedAst.Declaration.AssocTypeSig(_, _, ascSym, _, _, tpe, _) <- trt.assocs) {
-          if (!m.contains(ascSym) && tpe.isEmpty) {
-            // Missing associated type.
-            errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
-
-            // We recover by introducing a dummy associated type definition.
-            val doc = Doc(Nil, loc)
-            val mod = Modifiers.Empty
-            val symUse = AssocTypeSymUse(ascSym, loc)
-            val arg = targ
-            val tpe = UnkindedType.Error(loc)
-            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
-            m.put(ascSym, ascDef)
-          }
-        }
-
-        // TODO ASSOC-TYPES this should be a soft failure once we know how to handle error types in unification
-        // We use `m.values` here because we have eliminated duplicates and introduced missing associated type defs.
-        if (errors.isEmpty) {
-          Validation.Success(m.values.toList)
-        } else {
-          Validation.Failure(Chain.from(errors))
-        }
+    // Build the map `m` and check for [[DuplicateAssocTypeDef]].
+    for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
+      val sym = symUse.sym
+      m.get(sym) match {
+        case None =>
+          m.put(sym, d)
+        case Some(otherDecl) =>
+          val loc2 = otherDecl.loc
+          sctx.errors.add(ResolutionError.DuplicateAssocTypeDef(sym, loc1, loc2))
+          sctx.errors.add(ResolutionError.DuplicateAssocTypeDef(sym, loc2, loc1))
+      }
     }
+
+    // Check for [[MissingAssocTypeDef]] and recover.
+    for (NamedAst.Declaration.AssocTypeSig(_, _, ascSym, _, _, tpe, _) <- trt.assocs) {
+      if (!m.contains(ascSym) && tpe.isEmpty) {
+        // Missing associated type.
+        sctx.errors.add(ResolutionError.MissingAssocTypeDef(ascSym.name, loc))
+
+        // We recover by introducing a dummy associated type definition (with a synthetic location).
+        val synthLoc = loc.asSynthetic
+        val doc = Doc(Nil, synthLoc)
+        val mod = Modifiers.Empty
+        val symUse = AssocTypeSymUse(ascSym, synthLoc)
+        val arg = targ
+        val tpe = UnkindedType.Error(synthLoc)
+        val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, synthLoc)
+        m.put(ascSym, ascDef)
+      }
+    }
+
+    // We use `m.values` here because we have eliminated duplicates and introduced missing associated type defs.
+    m.values.toList
   }
 
   /**
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
+    *
+    * Returns `None` (after reporting [[UndefinedAssocType]]) if the trait `trt` has no such associated type.
     */
-  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
+  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Option[ResolvedAst.Declaration.AssocTypeDef] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
 
       // For now, we don't add any tvars from the args. We should have gotten those directly from the instance
       val arg = resolveType(arg0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
       val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
-      val symVal: Result[Symbol.AssocTypeSym, ResolutionError] = trt.assocs.collectFirst {
+      trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
       } match {
         case None =>
           val assocs = trt.assocs.map { case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym }
-          Result.Err(ResolutionError.UndefinedAssocType(trt.sym, Name.QName(Name.RootNS, ident, ident.loc), assocs, ident.loc))
-        case Some(sym) => Result.Ok(sym)
-      }
-      mapN(symVal.toValidation) {
-        sym =>
+          sctx.errors.add(ResolutionError.UndefinedAssocType(trt.sym, Name.QName(Name.RootNS, ident, ident.loc), assocs, ident.loc))
+          None
+        case Some(sym) =>
           val symUse = AssocTypeSymUse(sym, ident.loc)
-          ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
+          Some(ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc))
       }
   }
 
