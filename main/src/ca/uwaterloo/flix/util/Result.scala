@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.util.collection.Chain
-
 import scala.annotation.{tailrec, unused}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
@@ -62,14 +60,6 @@ sealed trait Result[+T, +E] {
   final def flatMap[R >: E, B](f: T => Result[B, R]): Result[B, R] = this match {
     case Result.Ok(t) => f(t)
     case Result.Err(e) => Result.Err(e)
-  }
-
-  /**
-    * Returns `this` result as a [[Validation]].
-    */
-  final def toValidation: Validation[T, E] = this match {
-    case Result.Ok(t) => Validation.Success(t)
-    case Result.Err(e) => Validation.Failure(Chain(e))
   }
 
   /**

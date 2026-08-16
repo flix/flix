@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.Chain
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -167,18 +166,18 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Help => execHelp()
       case Command.Praise => execPraise()
       case Command.Eval(s) => execEval(s)
-      case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath).toValidation)
-      case Command.Build => execBootstrap(bootstrap.build(flix).toValidation)
-      case Command.BuildClasses => execBootstrap(bootstrap.buildClasses(flix).toValidation)
-      case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix).toValidation)
-      case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix).toValidation)
-      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg().toValidation)
-      case Command.Release => execBootstrap(bootstrap.release(flix).toValidation)
-      case Command.Check => execBootstrap(bootstrap.check(flix).toValidation)
-      case Command.Doc => execBootstrap(bootstrap.doc(flix).toValidation)
-      case Command.Format => execBootstrap(bootstrap.format(flix).toValidation)
-      case Command.Test => execBootstrap(bootstrap.test(flix).toValidation)
-      case Command.Outdated => execBootstrap(bootstrap.outdated(flix).toValidation)
+      case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath))
+      case Command.Build => execBootstrap(bootstrap.build(flix))
+      case Command.BuildClasses => execBootstrap(bootstrap.buildClasses(flix))
+      case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix))
+      case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix))
+      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg())
+      case Command.Release => execBootstrap(bootstrap.release(flix))
+      case Command.Check => execBootstrap(bootstrap.check(flix))
+      case Command.Doc => execBootstrap(bootstrap.doc(flix))
+      case Command.Format => execBootstrap(bootstrap.format(flix))
+      case Command.Test => execBootstrap(bootstrap.test(flix))
+      case Command.Outdated => execBootstrap(bootstrap.outdated(flix))
       case Command.Unknown(s) => execUnknown(s)
     }
   }
@@ -246,7 +245,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         flix.addVirtualPath(Path.of(name), s)(SecurityContext.Unrestricted)
 
         // And try to check it! (No code generation is needed for a declaration.)
-        check(progress = false).toResult match {
+        check(progress = false) match {
           case Result.Ok(_) =>
             // Check succeeded.
             w.println("Ok.")
@@ -290,12 +289,12 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Executes the given bootstrap function and prints any errors.
     */
-  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
+  private def execBootstrap[T](f: => Result[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
     // Reset the options: a previous command may have changed e.g. the build mode on the shared Flix instance.
     flix.setOptions(options)
     f match {
-      case Validation.Success(_) => ()
-      case Validation.Failure(errors) => errors.map(_.message(formatter)).foreach(out.println)
+      case Result.Ok(_) => ()
+      case Result.Err(error) => out.println(error.message(formatter))
     }
   }
 
@@ -310,7 +309,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Type checks the current files and packages (first time from scratch, subsequent times incrementally).
     * Automatically picks up any file changes detected by the file watcher before checking.
     */
-  private def check(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[TypedAst.Root, CompilationMessage] = {
+  private def check(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Result[TypedAst.Root, List[CompilationMessage]] = {
     // Apply any pending file system changes (new, modified, or deleted files).
     bootstrap.applyFileChanges(flix)
 
@@ -319,10 +318,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
 
     flix.check() match {
       case (Some(root), Nil) =>
-        Validation.Success(root)
+        Result.Ok(root)
       case (rootOpt, errors) =>
         printErrors(errors, rootOpt)
-        Validation.Failure(Chain.from(errors))
+        Result.Err(errors)
     }
   }
 
@@ -339,7 +338,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
-    check(entryPoint = Some(main), progress = false).toResult match {
+    check(entryPoint = Some(main), progress = false) match {
       case Result.Ok(root) =>
         JvmLoader.load(flix.codeGen(root)).main match {
           case Some(m) =>
