@@ -73,6 +73,26 @@ object CompilerConstants {
   val PerfDirectory: Path = Path.of("./build/perf/")
 
   /**
+    * How long (in seconds) an idle worker thread in the compiler's thread pool stays alive
+    * before it exits.
+    *
+    * Ensures that a pool which is never shut down (e.g. because a compilation crashed)
+    * does not pin its threads and their stacks forever.
+    */
+  val ThreadKeepAliveSeconds: Long = 60L
+
+  /**
+    * The minimum stack size (in bytes) of each worker thread in the compiler's thread pool.
+    * Workers get the larger of this value and the JVM's default thread stack size (`-Xss`).
+    *
+    * The JVM default (typically 1-2 MB) is easily exhausted by the deeply recursive visitors
+    * in the compiler when given large or deeply nested inputs. Only address space is reserved
+    * up front; physical memory is committed lazily as the stack grows, so a generous size is
+    * essentially free unless it is actually used.
+    */
+  val ThreadStackSize: Long = 64L * 1024L * 1024L
+
+  /**
     * The total number of phases run by a full compilation, i.e. by [[Flix.compile]].
     */
   val TotalPhases: Int = FrontendPhaseCount + BackendPhaseCount
