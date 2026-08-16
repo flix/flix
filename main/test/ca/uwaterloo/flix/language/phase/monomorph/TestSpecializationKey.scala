@@ -137,20 +137,39 @@ class TestSpecializationKey extends AnyFunSuite {
 
   test("jvmMethod.01") {
     // A JVM descriptor, not reflection's own toString: declaring class + length-prefixed
-    // name + parameter types, no return type.
+    // name + parameter types + return type.
     val method = classOf[String].getMethod("length")
     val tpe = cst(TypeConstructor.JvmMethod(method))
-    assert(SpecializationKey.of(defnSym("f"), tpe) == "f|JvmMethod(Ljava/lang/String;6:length())")
+    assert(SpecializationKey.of(defnSym("f"), tpe) == "f|JvmMethod(Ljava/lang/String;6:length()I)")
   }
 
   test("jvmMethod.02") {
-    // Two overloads distinguished by parameter types alone, since a Java compiler never
-    // emits two overloads differing only by return type.
+    // Two overloads distinguished by parameter types alone.
     val indexOf1 = classOf[String].getMethod("indexOf", classOf[String])
     val indexOf2 = classOf[String].getMethod("indexOf", classOf[String], classOf[Int])
     val tpe1 = cst(TypeConstructor.JvmMethod(indexOf1))
     val tpe2 = cst(TypeConstructor.JvmMethod(indexOf2))
     assert(SpecializationKey.of(defnSym("f"), tpe1) != SpecializationKey.of(defnSym("f"), tpe2))
+  }
+
+  test("jvmMethod.03") {
+    // The return type must be part of the key: a JVM class can contain two real, distinct
+    // methods that share a declaring class, name, and parameter types but differ only in
+    // return type -- a Java *source* compiler never emits this for a hand-written overload,
+    // but it emits exactly this for a covariant-return override, as a synthetic bridge
+    // method carrying the overridden (non-covariant) signature alongside the real one.
+    // Verified against a real JDK example rather than a constructed one: CharBuffer.mark()
+    // (added in JDK 9 to return CharBuffer instead of Buffer, for fluent chaining) compiles
+    // to both the real, non-bridge `CharBuffer mark()` and a synthetic bridge `Buffer
+    // mark()`, both declared on CharBuffer, both taking no arguments.
+    val methods = classOf[java.nio.CharBuffer].getMethods.filter(m => m.getName == "mark" && m.getParameterCount == 0)
+    val real = methods.find(!_.isBridge).getOrElse(fail("expected a non-bridge mark() on CharBuffer"))
+    val bridge = methods.find(_.isBridge).getOrElse(fail("expected a bridge mark() on CharBuffer -- has the JDK changed CharBuffer's hierarchy?"))
+    assert(real.getReturnType == classOf[java.nio.CharBuffer])
+    assert(bridge.getReturnType == classOf[java.nio.Buffer])
+    val realKey = SpecializationKey.of(defnSym("f"), cst(TypeConstructor.JvmMethod(real)))
+    val bridgeKey = SpecializationKey.of(defnSym("f"), cst(TypeConstructor.JvmMethod(bridge)))
+    assert(realKey != bridgeKey)
   }
 
   test("jvmConstructor.01") {
