@@ -756,7 +756,7 @@ class Flix {
     currentPhase = Some(PhaseTime(phase, 0))
 
     if (options.progress) {
-      progressBar.observe(phase, "")
+      progressBar.observe(phase)
     }
 
     // Measure the execution time.
@@ -785,7 +785,7 @@ class Flix {
     currentPhase = Some(PhaseTime(phase, 0))
 
     if (options.progress) {
-      progressBar.observe(phase, "")
+      progressBar.observe(phase)
     }
 
     // Measure the execution time.
