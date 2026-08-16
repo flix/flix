@@ -654,35 +654,34 @@ object Type {
     *   or error types and hence reduces to a single Cofinite set.
     * - Returns `Err[()]` otherwise.
     */
-  def eval(eff: Type): Result[CofiniteSet[Symbol.EffSym], Unit] = eff match {
-    case Type.Cst(tc, _) => tc match {
-      case TypeConstructor.Pure => Result.Ok(CofiniteSet.empty)
-      case TypeConstructor.Univ => Result.Ok(CofiniteSet.universe)
-      case TypeConstructor.Effect(sym, _) => Result.Ok(CofiniteSet.mkSet(sym))
-      case _ => Result.Err(())
+  def eval(eff: Type): Result[CofiniteSet[Symbol.EffSym], Unit] = {
+    /** Thrown by `visit` when the effect does not reduce to a set of effect symbols. Never escapes `eval`. */
+    case object NonGroundEffect extends RuntimeException
+
+    def visit(t: Type): CofiniteSet[Symbol.EffSym] = t match {
+      case Type.Cst(tc, _) => tc match {
+        case TypeConstructor.Pure => CofiniteSet.empty
+        case TypeConstructor.Univ => CofiniteSet.universe
+        case TypeConstructor.Effect(sym, _) => CofiniteSet.mkSet(sym)
+        case _ => throw NonGroundEffect
+      }
+      case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x, _) =>
+        CofiniteSet.complement(visit(x))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
+        CofiniteSet.union(visit(x), visit(y))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
+        CofiniteSet.intersection(visit(x), visit(y))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
+        CofiniteSet.difference(visit(x), visit(y))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
+        CofiniteSet.xor(visit(x), visit(y))
+      case Type.Alias(_, _, tpe, _) => visit(tpe)
+      case _ => throw NonGroundEffect
     }
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
-      Result.mapN(eval(x0)) {
-        case x => CofiniteSet.complement(x)
-      }
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
-      Result.mapN(eval(x0), eval(y0)) {
-        case (x, y) => CofiniteSet.union(x, y)
-      }
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
-      Result.mapN(eval(x0), eval(y0)) {
-        case (x, y) => CofiniteSet.intersection(x, y)
-      }
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
-      Result.mapN(eval(x0), eval(y0)) {
-        case (x, y) => CofiniteSet.difference(x, y)
-      }
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
-      Result.mapN(eval(x0), eval(y0)) {
-        case (x, y) => CofiniteSet.xor(x, y)
-      }
-    case Type.Alias(_, _, tpe, _) => eval(tpe)
-    case _ => Result.Err(())
+
+    try Result.Ok(visit(eff)) catch {
+      case NonGroundEffect => Result.Err(())
+    }
   }
 
   /**
