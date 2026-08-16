@@ -360,13 +360,15 @@ object Resolver {
   private def findReportAndBreakSuperTraitCycles(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait])(implicit sctx: SharedContext): Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait] = {
     val getSuperTraits = (sym: Symbol.TraitSym) => traits(sym).superTraits.map(_.symUse.sym)
 
+    /** Returns `true` if the strongly connected component `syms` contains a cycle. */
+    def isCyclic(syms: Iterable[Symbol.TraitSym]): Boolean = syms.sizeIs > 1 || syms.exists(sym => getSuperTraits(sym).contains(sym))
+
     // Group the traits by strongly connected component.
     val components = Graph.stronglyConnectedComponents(traits.keys, getSuperTraits).groupMap(_._2)(_._1)
 
     components.values.foldLeft(traits) {
       case (acc, syms) =>
-        val isCyclic = syms.sizeIs > 1 || syms.exists(sym => getSuperTraits(sym).contains(sym))
-        if (!isCyclic) {
+        if (!isCyclic(syms)) {
           acc
         } else {
           val cycle = syms.toList.sortBy(_.loc)
