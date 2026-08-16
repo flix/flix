@@ -24,9 +24,8 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain, Nel, SeqOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.collection.{ArrayOps, Nel, SeqOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.lang.{Byte as JByte, Integer as JInt, Long as JLong, Short as JShort}
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -49,7 +48,13 @@ object Weeder2 {
 
   import WeededAst.*
 
-  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[WeededAst.Root, CompilationMessage], List[CompilationMessage]) = {
+  /**
+    * Weeds the given syntax tree `root`.
+    *
+    * Returns the weeded root together with the soft errors, or, if any compilation unit
+    * failed hard, the hard errors (one per failing unit) together with the soft errors.
+    */
+  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Result[WeededAst.Root, List[CompilationMessage]], List[CompilationMessage]) = {
     flix.phase("Weeder2") {
       implicit val sctx: SharedContext = SharedContext.mk()
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
@@ -57,23 +62,33 @@ object Weeder2 {
       // Schedule the biggest sources first to increase throughput.
       def sortBy(p: (Source, SyntaxTree.Tree)): Int = -p._1.data.length
 
-      // Parse each source file in parallel and join them into a WeededAst.Root
+      // Weed each source file in parallel.
       val refreshed = ParOps.parMapWithPriority(stale, sortBy) {
-        case (src, tree) => mapN(weed(tree))(tree => src -> tree)
+        case (src, tree) => weed(tree).map(src -> _)
       }
 
-      val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
-      (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.availableClasses, root.tokens)), sctx.errors.asScala.toList)
+      // Split into successfully weeded units and hard errors. We collect *all* hard errors,
+      // one per failing unit, rather than stopping at the first.
+      val (units, hardErrors) = refreshed.partitionMap {
+        case Result.Ok(unit) => Left(unit)
+        case Result.Err(error) => Right(error)
+      }
+
+      val result = hardErrors.toList match {
+        case Nil => Result.Ok(WeededAst.Root(units.toMap ++ fresh, entryPoint, readRoot.availableClasses, root.tokens))
+        case errors => Result.Err(errors)
+      }
+      (result, sctx.errors.asScala.toList)
     }
   }
 
-  private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[CompilationUnit, CompilationMessage] = {
+  private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Result[CompilationUnit, CompilationMessage] = {
     try {
       val usesAndImports = pickAllUsesAndImports(tree)
       val declarations = Decls.pickAllDeclarations(tree)
-      Validation.Success(CompilationUnit(usesAndImports, declarations, tree.loc))
+      Result.Ok(CompilationUnit(usesAndImports, declarations, tree.loc))
     } catch {
-      case PickException(error) => Validation.Failure(Chain(error))
+      case PickException(error) => Result.Err(error)
     }
   }
 
@@ -3506,9 +3521,8 @@ object Weeder2 {
   /**
     * An exception thrown by [[pick]] and [[pickToken]] when a required sub-tree or token is missing.
     *
-    * This bypasses the [[Validation]] machinery: the exception is thrown deep inside weeding and
-    * caught in [[weed]], where it is converted into a [[Validation.Failure]]. It exists so that the
-    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
+    * The exception is thrown deep inside weeding and caught in [[weed]], where it is converted
+    * into a [[Result.Err]] for the enclosing compilation unit.
     */
   private case class PickException(error: NeedAtleastOne) extends RuntimeException
 
