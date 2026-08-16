@@ -358,7 +358,8 @@ object Resolver {
     * terminate on a cyclic hierarchy, so the returned traits are guaranteed to be acyclic.
     */
   private def findReportAndBreakSuperTraitCycles(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait])(implicit sctx: SharedContext): Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait] = {
-    val getSuperTraits = (sym: Symbol.TraitSym) => traits(sym).superTraits.map(_.symUse.sym)
+    /** Returns the symbols of the direct super traits of the trait `sym`. */
+    def getSuperTraits(sym: Symbol.TraitSym): List[Symbol.TraitSym] = traits(sym).superTraits.map(_.symUse.sym)
 
     /** Returns `true` if the strongly connected component `syms` contains a cycle. */
     def isCyclic(syms: Iterable[Symbol.TraitSym]): Boolean = syms.sizeIs > 1 || syms.exists(sym => getSuperTraits(sym).contains(sym))
