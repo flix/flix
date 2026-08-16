@@ -372,8 +372,9 @@ object Resolver {
         if (!isCyclic(syms)) {
           acc
         } else {
-          // The traits in the cycle, in source order (used for the error message), and as a set (used to drop the cyclic super traits).
+          // The traits in the cycle, in source order (used for the error message).
           val cycle = syms.toList.sortBy(_.loc)
+          // The traits in the cycle as a set (used to drop the cyclic super traits).
           val cycleSet = cycle.toSet
           cycle.foldLeft(acc) {
             case (innerAcc, sym) =>
