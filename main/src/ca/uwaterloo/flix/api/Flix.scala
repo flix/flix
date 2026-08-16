@@ -37,7 +37,6 @@ import ca.uwaterloo.flix.util.tc.Debug
 import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
-import java.util.concurrent.ForkJoinPool
 import java.util.zip.ZipFile
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -179,9 +178,9 @@ class Flix {
   var options: Options = Options.Default
 
   /**
-    * The thread pool executor service for `this` Flix instance.
+    * The thread pool for `this` Flix instance.
     */
-  var threadPool: java.util.concurrent.ForkJoinPool = _
+  var threadPool: ThreadPool = _
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -488,8 +487,8 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork-join thread pool.
-    initForkJoinPool()
+    // Initialize the thread pool.
+    initThreadPool()
 
     // Reset the phase information.
     phaseTimers = ArrayBuffer.empty
@@ -592,8 +591,8 @@ class Flix {
         Some(afterDependencies)
     }
 
-    // Shutdown fork-join thread pool.
-    shutdownForkJoinPool()
+    // Shutdown the thread pool.
+    shutdownThreadPool()
 
     // Reset the progress bar.
     if (options.progress) {
@@ -636,8 +635,8 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork-join thread pool.
-    initForkJoinPool()
+    // Initialize the thread pool.
+    initThreadPool()
 
     var treeShaker1Ast = TreeShaker1.run(typedAst)
     // Note: Do not null typedAst. It is used later.
@@ -690,8 +689,8 @@ class Flix {
     val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
     val result = new CompilationResult(bytecodeAst, totalTime, totalSize, this)
 
-    // Shutdown fork-join thread pool.
-    shutdownForkJoinPool()
+    // Shutdown the thread pool.
+    shutdownThreadPool()
 
     // Reset the progress bar.
     if (options.progress) {
@@ -825,16 +824,16 @@ class Flix {
   }
 
   /**
-    * Initializes the fork-join thread pool.
+    * Initializes the thread pool.
     */
-  private def initForkJoinPool(): Unit = {
-    threadPool = new ForkJoinPool(options.threads)
+  private def initThreadPool(): Unit = {
+    threadPool = new ThreadPool(options.threads)
   }
 
   /**
-    * Shuts down the fork-join thread pools.
+    * Shuts down the thread pool.
     */
-  private def shutdownForkJoinPool(): Unit = {
+  private def shutdownThreadPool(): Unit = {
     threadPool.shutdown()
   }
 

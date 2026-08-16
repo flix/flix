@@ -132,6 +132,20 @@ object ParOps {
     *
     * Every task folds the elements it claims with `seq` (starting from `z`), and the resulting
     * partial results are then combined with `comb` on the calling thread.
+    *
+    * == Contract ==
+    *
+    * The elements are partitioned across the tasks nondeterministically (see [[parFold]]), so the
+    * result is only well-defined if:
+    *
+    *   - `comb` is associative '''and commutative''', and `z` is its neutral element, and
+    *   - `seq(comb(s1, s2), x) == comb(s1, seq(s2, x))`, i.e. folding an element into an
+    *     accumulator with `seq` agrees with combining it in with `comb`.
+    *
+    * In particular, the order in which the elements reach `seq` is unspecified. This is a stronger
+    * requirement than that of e.g. `Iterable.aggregate`, which preserves the order of the elements
+    * and hence only needs `comb` to be associative. It is met by e.g. set union and by merging maps
+    * with pairwise disjoint keys, but not by e.g. list concatenation.
     */
   def parAgg[A: ClassTag, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
     // Just fold if we're single-threaded.
@@ -191,6 +205,12 @@ object ParOps {
     * Claiming indices from a shared counter balances the work dynamically across the tasks, and
     * bounds the number of tasks handed to the pool by the number of threads rather than by `size`.
     * The latter keeps the scheduling overhead low even for many tiny work items.
+    *
+    * The price of dynamic balancing is that '''which''' indices end up in '''which''' accumulator
+    * is nondeterministic: it depends on the timing of the tasks. Callers must therefore either
+    * treat each index independently (as [[parMap]] does, writing to a distinct slot per index) or
+    * fold with an operation whose result does not depend on how the indices are grouped and
+    * ordered (as [[parAgg]] and [[parReach]] do; see the contract of [[parAgg]]).
     */
   private def parFold[S](size: Int, z: => S)(step: (S, Int) => S)(implicit flix: Flix): List[S] = {
     // The number of tasks: at most one per thread, and never more than there are indices.

@@ -425,8 +425,8 @@ final class Renderer {
     sb.append(dim("] "))
     sb.append(f"$done%2d/${CompilerConstants.TotalPhases}%2d")
     sb.append(dim("   threads "))
-    // With parallelism=1 ForkJoin runs work inline on the submitter, leaving
-    // `getActiveThreadCount` at 0 most of the time — sparkline goes flat,
+    // With parallelism=1 ParOps runs all work inline on the submitter, leaving
+    // `getActiveCount` at 0 most of the time — sparkline goes flat,
     // field reads `0/1` continuously. Show a label instead.
     if (state.parallelism > 1) {
       sb.append(dim(cyan(renderSparkline(state.parallelism.toDouble))))
