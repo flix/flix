@@ -135,6 +135,36 @@ class TestSpecializationKey extends AnyFunSuite {
     assert(SpecializationKey.of(defnSym("f"), tpe) == SpecializationKey.of(defnSym("f"), tpe))
   }
 
+  test("jvmMethod.01") {
+    // A JVM descriptor, not reflection's own toString: declaring class + length-prefixed
+    // name + parameter types, no return type.
+    val method = classOf[String].getMethod("length")
+    val tpe = cst(TypeConstructor.JvmMethod(method))
+    assert(SpecializationKey.of(defnSym("f"), tpe) == "f|JvmMethod(Ljava/lang/String;6:length())")
+  }
+
+  test("jvmMethod.02") {
+    // Two overloads distinguished by parameter types alone, since a Java compiler never
+    // emits two overloads differing only by return type.
+    val indexOf1 = classOf[String].getMethod("indexOf", classOf[String])
+    val indexOf2 = classOf[String].getMethod("indexOf", classOf[String], classOf[Int])
+    val tpe1 = cst(TypeConstructor.JvmMethod(indexOf1))
+    val tpe2 = cst(TypeConstructor.JvmMethod(indexOf2))
+    assert(SpecializationKey.of(defnSym("f"), tpe1) != SpecializationKey.of(defnSym("f"), tpe2))
+  }
+
+  test("jvmConstructor.01") {
+    val ctor = classOf[java.lang.Object].getConstructor()
+    val tpe = cst(TypeConstructor.JvmConstructor(ctor))
+    assert(SpecializationKey.of(defnSym("f"), tpe) == "f|JvmConstructor(Ljava/lang/Object;())")
+  }
+
+  test("jvmField.01") {
+    val field = classOf[Integer].getField("MAX_VALUE")
+    val tpe = cst(TypeConstructor.JvmField(field))
+    assert(SpecializationKey.of(defnSym("f"), tpe) == "f|JvmField(Ljava/lang/Integer;9:MAX_VALUEI)")
+  }
+
   /**
     * Returns a kinded type variable symbol with the given id.
     */

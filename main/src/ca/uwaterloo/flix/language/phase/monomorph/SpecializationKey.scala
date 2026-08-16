@@ -16,8 +16,9 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.StableName
+import ca.uwaterloo.flix.util.{InternalCompilerException, StableName}
 
+import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.mutable
 
 /**
@@ -118,8 +119,14 @@ object SpecializationKey {
       render(t, vars, sb)
       sb.append(')')
 
-    case Type.UnresolvedJvmType(member, _) =>
-      sb.append("UnresolvedJvm(").append(member).append(')')
+    case Type.UnresolvedJvmType(member, loc) =>
+      // Unlike Alias, this is not tolerated: TypeReduction2 resolves every JVM member
+      // into a concrete TypeConstructor.Jvm* during type checking, or the constraint
+      // solver reports it as a TypeError (ConstraintSolverInterface.mkTypeError) and
+      // compilation stops before Specialization runs. A well-typed program can never
+      // reach this case, so reaching it here means a real compiler bug, not a case to
+      // render around.
+      throw InternalCompilerException(s"Unresolved JVM member reached SpecializationKey.of: $member", loc)
   }
 
   /**
@@ -151,9 +158,9 @@ object SpecializationKey {
     case TypeConstructor.CaseSet(syms, enumSym) => s"CaseSet($enumSym:${syms.mkString(",")})"
 
     case TypeConstructor.Native(clazz) => s"Native(${clazz.getName})"
-    case TypeConstructor.JvmConstructor(constructor) => s"JvmConstructor($constructor)"
-    case TypeConstructor.JvmMethod(method) => s"JvmMethod($method)"
-    case TypeConstructor.JvmField(field) => s"JvmField($field)"
+    case TypeConstructor.JvmConstructor(ctor) => s"JvmConstructor(${jvmConstructorDescriptor(ctor)})"
+    case TypeConstructor.JvmMethod(method) => s"JvmMethod(${jvmMethodDescriptor(method)})"
+    case TypeConstructor.JvmField(field) => s"JvmField(${jvmFieldDescriptor(field)})"
 
     // Regions carry a counter and are erased before code generation, so all regions are
     // one region as far as a generated name is concerned.
@@ -166,5 +173,45 @@ object SpecializationKey {
     case nullary: Product => nullary.productPrefix
     case other => other.getClass.getSimpleName.stripSuffix("$")
   }
+
+  /**
+    * Returns the JVM field descriptor (JVMS §4.3.2) for `clazz` — e.g. `Ljava/lang/String;`
+    * for a reference type, `I` for `int`, `[I` for `int[]`. `Class.descriptorString` is the
+    * JDK's own encoding, not a formatting decision made here, and it is specified: unlike
+    * [[Constructor]]/[[Method]]/[[Field]]'s `toString`, which the JDK documents only as an
+    * aid to readability with no format guarantee across versions.
+    */
+  private def classDescriptor(clazz: Class[?]): String = clazz.descriptorString()
+
+  /**
+    * Returns `name` prefixed with its length, so it cannot be confused with the descriptor
+    * text appended after it regardless of what characters `name` contains.
+    */
+  private def lengthPrefixed(name: String): String = s"${name.length}:$name"
+
+  /**
+    * Returns a JVM-descriptor-based identity for `ctor`: its declaring class plus its
+    * parameter types.
+    */
+  private def jvmConstructorDescriptor(ctor: Constructor[?]): String =
+    s"${classDescriptor(ctor.getDeclaringClass)}(${ctor.getParameterTypes.map(classDescriptor).mkString})"
+
+  /**
+    * Returns a JVM-descriptor-based identity for `method`: its declaring class, its
+    * length-prefixed name, and its parameter types.
+    *
+    * The return type is deliberately excluded: a Java compiler never emits two overloads
+    * differing only by return type, so the parameter types alone already identify which
+    * overload this is.
+    */
+  private def jvmMethodDescriptor(method: Method): String =
+    s"${classDescriptor(method.getDeclaringClass)}${lengthPrefixed(method.getName)}(${method.getParameterTypes.map(classDescriptor).mkString})"
+
+  /**
+    * Returns a JVM-descriptor-based identity for `field`: its declaring class, its
+    * length-prefixed name, and its own type.
+    */
+  private def jvmFieldDescriptor(field: Field): String =
+    s"${classDescriptor(field.getDeclaringClass)}${lengthPrefixed(field.getName)}${classDescriptor(field.getType)}"
 
 }
