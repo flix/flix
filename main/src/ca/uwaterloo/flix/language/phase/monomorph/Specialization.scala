@@ -198,8 +198,10 @@ object Specialization {
     private var index: Int = 0
 
     /** Returns the symbol for the next anonymous class in the enclosing specialization. */
-    def next(loc: SourceLocation): Symbol.AnonClassSym = {
-      val sym = Symbol.specializedAnonClassSym(enclosing, index, loc)
+    def next(loc: SourceLocation)(implicit ctx: Context): Symbol.AnonClassSym = {
+      val thisIndex = index
+      val sym = Symbol.specializedAnonClassSym(enclosing, thisIndex, loc)
+      ctx.claimAnonClassName(sym, enclosing, thisIndex)
       index = index + 1
       sym
     }
@@ -298,6 +300,30 @@ object Specialization {
                 s" '$otherSym' at '$otherTpe' and '$sym' at '$tpe'.", sym.loc)
           case _ =>
             claimedNames.put(specializedSym, (sym, tpe))
+        }
+      }
+
+    /**
+      * What each specialized anonymous-class symbol was minted for. Guarded the same way
+      * as [[claimedNames]], and for the same reason: a hash can repeat, either because two
+      * anonymous classes hash alike or because the key does not tell them apart.
+      */
+    private val claimedAnonNames: mutable.Map[Symbol.AnonClassSym, (Symbol.DefnSym, Int)] = mutable.Map.empty
+
+    /**
+      * Records that `anonSym` names the `index`th anonymous class of `enclosing`.
+      *
+      * Throws if that name is already taken by a different `(enclosing, index)` pair.
+      */
+    def claimAnonClassName(anonSym: Symbol.AnonClassSym, enclosing: Symbol.DefnSym, index: Int): Unit =
+      synchronized {
+        claimedAnonNames.get(anonSym) match {
+          case Some((otherEnclosing, otherIndex)) if otherEnclosing != enclosing || otherIndex != index =>
+            throw InternalCompilerException(
+              s"Anonymous-class name collision on '$anonSym':" +
+                s" '$otherEnclosing'#anon$otherIndex and '$enclosing'#anon$index.", anonSym.loc)
+          case _ =>
+            claimedAnonNames.put(anonSym, (enclosing, index))
         }
       }
 

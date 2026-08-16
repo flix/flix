@@ -56,6 +56,13 @@ object SpecializationKey {
     * [[Specialization.specializeDefCallsite]] is: alias-free, associated types reduced,
     * record and schema rows sorted, and effects in canonical form. The key is only as
     * stable as that normalization.
+    *
+    * An alias surviving into `tpe` is deliberately tolerated rather than rejected: see
+    * `render`'s [[Type.Alias]] case and `TestSpecializationKey.followsAlias.01`, which
+    * pins that behavior. Associated types, `JvmToType`/`JvmToEff`, and unresolved JVM
+    * types are likewise rendered rather than rejected, each under its own tag, so a
+    * boundary check here would have nothing left to reject that isn't already a
+    * deliberately-supported case.
     */
   def of(sym: Symbol.DefnSym, tpe: Type): String = {
     val sb = new mutable.StringBuilder()
