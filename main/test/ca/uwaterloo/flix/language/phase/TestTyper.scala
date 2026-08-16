@@ -2196,6 +2196,80 @@ class TestTyper extends AnyFunSuite with TestUtils {
     rejectError[TypeError](result)
   }
 
+  test("ErrorType.09") {
+    // There should be no type error because the trait `C` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the instance.
+    val input =
+      """
+        |instance C[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.10") {
+    // There should be no type error because the trait `C` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the instance,
+    // including its trait constraint and associated type definition.
+    val input =
+      """
+        |enum MyBox[a](a)
+        |
+        |trait D[a] {
+        |    pub def h(x: a): a
+        |}
+        |
+        |instance C[MyBox[a]] with D[a] {
+        |    type T = a
+        |    pub def f(x: MyBox[a]): a = let MyBox.MyBox(y) = x; D.h(y)
+        |}
+        |
+        |def g(): Int32 = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.11") {
+    // There should be no type error because the super trait `B` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the super trait,
+    // so the instance `A[Int32]` does not require an instance of `B`.
+    val input =
+      """
+        |trait A[a] with B[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance A[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = A.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.12") {
+    // There should be no type error because the super trait `B` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the super trait;
+    // the constraint `A[a]` on `g` still resolves and `A.f(x)` type checks against it.
+    val input =
+      """
+        |trait A[a] with B[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |def g(x: a): a with A[a] = A.f(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
   test("UndefinedLabel.01") {
     val input =
       """
