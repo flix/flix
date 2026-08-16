@@ -505,6 +505,46 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
+  test("CyclicTypeAliases.09") {
+    // One error is reported per alias in the cycle. `Baz` is not in the cycle and must not be reported.
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Foo
+         |type alias Baz = Foo
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.CyclicTypeAliases]) == 2)
+  }
+
+  test("CyclicTypeAliases.10") {
+    // Two independent cycles are both reported (three errors: two for Foo/Bar and one for the self loop of Baz).
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Foo
+         |type alias Baz = Baz
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.CyclicTypeAliases]) == 3)
+  }
+
+  test("CyclicTypeAliases.11") {
+    // The cycle is broken and resolution continues, so the unrelated error in `f` is also reported.
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Foo
+         |
+         |def f(): Int32 = undefinedName()
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
   test("UndefinedName.01") {
     val input = "def f(): Int32 = x"
     val result = check(input, Options.TestWithLibNix)
