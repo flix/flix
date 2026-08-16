@@ -195,7 +195,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       // Compile the program.
       flix.addVirtualPath(CompilerConstants.VirtualPlaygroundFile, input)(SecurityContext.Plain)
 
-      flix.compile().toResult match {
+      flix.compile() match {
         case Result.Ok(compilationResult) =>
           // Compilation was successful.
 
@@ -214,7 +214,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
         case Result.Err(errors) =>
           // Compilation failed. Format and return all the errors.
-          Err(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None))
+          Err(CompilationMessage.formatAll(errors)(flix.getFormatter, None))
       }
     } catch {
       // Catch `Throwable` (not just `RuntimeException`): a successfully compiled

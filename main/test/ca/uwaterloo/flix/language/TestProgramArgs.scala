@@ -42,7 +42,7 @@ class TestProgramArgs extends AnyFunSuite {
       .setOptions(Options.TestWithLibAll)
       .addVirtualPath(CompilerConstants.VirtualTestFile, input)
       .compile()
-    result.toResult match {
+    result match {
       case Result.Ok(r) => JvmLoader.load(r).main match {
         case Some(main) => try {
           main.apply(Array(arg))

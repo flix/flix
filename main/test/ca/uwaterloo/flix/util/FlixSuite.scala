@@ -118,11 +118,11 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
     try {
       // Compile the program, load it into the JVM, and run its tests.
-      Flix.compile().toResult match {
+      Flix.compile() match {
         case Result.Ok(compilationResult) =>
           runTests(JvmLoader.load(compilationResult))
         case Result.Err(errors) =>
-          fail(CompilationMessage.formatAll(errors.toList)(Flix.getFormatter, None))
+          fail(CompilationMessage.formatAll(errors)(Flix.getFormatter, None))
       }
     } finally {
       // Remove the source path.
