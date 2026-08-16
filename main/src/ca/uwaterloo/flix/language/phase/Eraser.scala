@@ -384,17 +384,6 @@ object Eraser {
     private val claimedEnumNames: ConcurrentHashMap[Symbol.EnumSym, (Symbol.EnumSym, List[SimpleType])] =
       new ConcurrentHashMap()
 
-    /** Throws if `specializedSym` is already claimed by a different `(sym, targs)`. */
-    private def claimEnumName(specializedSym: Symbol.EnumSym, sym: Symbol.EnumSym, targs: List[SimpleType]): Unit = {
-      claimedEnumNames.merge(specializedSym, (sym, targs), (existing, incoming) =>
-        if (existing == incoming) existing
-        else throw InternalCompilerException(
-          s"Erasure name collision on '$specializedSym': '${existing._1}' at '${existing._2}' and '${incoming._1}' at '${incoming._2}'.",
-          SourceLocation.Unknown
-        )
-      )
-    }
-
     /**
       * `(MutList, List(Int32)) -> MutList$42` means that `MutList` is specialized wrt. `Int32` under the name `MutList$42`.
       */
@@ -407,9 +396,12 @@ object Eraser {
     private val claimedStructNames: ConcurrentHashMap[Symbol.StructSym, (Symbol.StructSym, List[SimpleType])] =
       new ConcurrentHashMap()
 
-    /** Throws if `specializedSym` is already claimed by a different `(sym, targs)`. */
-    private def claimStructName(specializedSym: Symbol.StructSym, sym: Symbol.StructSym, targs: List[SimpleType]): Unit = {
-      claimedStructNames.merge(specializedSym, (sym, targs), (existing, incoming) =>
+    /**
+      * Records in `claimed` that `specializedSym` names the specialization of `sym` at
+      * `targs`. Throws if `specializedSym` is already claimed by a different `(sym, targs)`.
+      */
+    private def claimName[S](claimed: ConcurrentHashMap[S, (S, List[SimpleType])], specializedSym: S, sym: S, targs: List[SimpleType]): Unit = {
+      claimed.merge(specializedSym, (sym, targs), (existing, incoming) =>
         if (existing == incoming) existing
         else throw InternalCompilerException(
           s"Erasure name collision on '$specializedSym': '${existing._1}' at '${existing._2}' and '${incoming._1}' at '${incoming._2}'.",
@@ -429,7 +421,7 @@ object Eraser {
           // Do specialization.
           enumSpecializations.computeIfAbsent((sym, targs), _ => {
             val specializedSym = Symbol.specializedEnumSym(sym, ErasureKey.ofEnum(sym, targs))
-            claimEnumName(specializedSym, sym, targs)
+            claimName(claimedEnumNames, specializedSym, sym, targs)
             specializedSym
           })
       }
@@ -453,7 +445,7 @@ object Eraser {
           // Do specialization.
           structSpecializations.computeIfAbsent((sym, targs), _ => {
             val specializedSym = Symbol.specializedStructSym(sym, ErasureKey.ofStruct(sym, targs))
-            claimStructName(specializedSym, sym, targs)
+            claimName(claimedStructNames, specializedSym, sym, targs)
             specializedSym
           })
       }

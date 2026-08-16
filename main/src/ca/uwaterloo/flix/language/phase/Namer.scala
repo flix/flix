@@ -797,7 +797,7 @@ object Namer {
     sctx.claimedIds.merge(id, key, (existing, incoming) =>
       if (existing == incoming) existing
       else throw InternalCompilerException(
-        s"Instance/derived-def id collision on '$id': '$existing' and '$incoming'.", SourceLocation.Unknown
+        s"Instance-member id collision on '$id': '$existing' and '$incoming'.", SourceLocation.Unknown
       )
     )
   }
@@ -1859,10 +1859,10 @@ object Namer {
     * A global shared context. Must be thread-safe.
     *
     * @param errors     the [[NameError]]s in the AST, if any.
-    * @param claimedIds what each content-addressed instance/derived-def id was minted for.
-    *                   A hash can repeat, either because two members hash alike or because
+    * @param claimedIds what each content-addressed instance-member id was minted for. A
+    *                   hash can repeat, either because two members hash alike or because
     *                   the key does not tell them apart; this catches that rather than
-    *                   letting two unrelated defs silently share one id.
+    *                   letting two unrelated members silently share one id.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[NameError], claimedIds: ConcurrentHashMap[Long, String])
 
