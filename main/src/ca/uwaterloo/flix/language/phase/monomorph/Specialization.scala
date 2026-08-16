@@ -187,6 +187,24 @@ object Specialization {
     *
     * This class is thread-safe.
     */
+  /**
+    * Numbers the anonymous classes of one specialization.
+    *
+    * A counter is safe here where a global one was not: it counts within a single
+    * specialization, whose symbol is itself content-addressed, so the resulting name does
+    * not depend on anything outside the definition being specialized.
+    */
+  protected[monomorph] class AnonCounter(enclosing: Symbol.DefnSym) {
+    private var index: Int = 0
+
+    /** Returns the symbol for the next anonymous class in the enclosing specialization. */
+    def next(loc: SourceLocation): Symbol.AnonClassSym = {
+      val sym = Symbol.specializedAnonClassSym(enclosing, index, loc)
+      index = index + 1
+      sym
+    }
+  }
+
   protected[monomorph] class Context {
 
     /**
@@ -484,6 +502,9 @@ object Specialization {
 
   /** Returns a specialization of `defn` with the name `freshSym` according to `subst`. */
   private def specializeDef(freshSym: Symbol.DefnSym, defn: TypedAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+    // Anonymous classes are numbered within the specialization that encloses them, so that
+    // distinct specializations of one generic definition do not share a generated class.
+    implicit val anon: AnonCounter = new AnonCounter(freshSym)
     val (specializedFparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
     val specializedExp = specializeExp(defn.exp, env0, subst)
@@ -517,7 +538,7 @@ object Specialization {
     *
     * Replaces every local variable symbol with a fresh local variable symbol.
     */
-  private def specializeExp(exp0: TypedAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.Expr = exp0 match {
+  private def specializeExp(exp0: TypedAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], anon: AnonCounter, root: TypedAst.Root, flix: Flix): TypedAst.Expr = exp0 match {
     case Expr.Var(sym, tpe, loc) =>
       Expr.Var(env0(sym), subst(tpe), loc)
 
@@ -927,11 +948,11 @@ object Specialization {
     case Expr.NewObject(sym, clazz, tpe, eff, constructors0, methods0, loc) =>
       val constructors = constructors0.map(specializeJvmConstructor(_, env0, subst))
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
-      // Mint a fresh anonymous class symbol for each specialization. Otherwise distinct
+      // Derive an anonymous class symbol for each specialization. Otherwise distinct
       // specializations of an enclosing generic def (e.g. `mk[String]` and `mk[Int32]`)
       // would reuse the same anonymous class name and collide, so one specialization would
-      // run with the other's generated class.
-      val freshSym = Symbol.mkFreshAnonClassSym(sym.loc)
+      // run with the other.s generated class.
+      val freshSym = anon.next(sym.loc)
       Expr.NewObject(freshSym, clazz, subst(tpe), subst(eff), constructors, methods, loc)
 
     case Expr.NewChannel(innerExp, tpe, eff, loc) =>
@@ -1036,7 +1057,7 @@ object Specialization {
   /**
     * Specializes `p`.
     */
-  private def specializeHeadPred(p: TypedAst.Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.Predicate.Head = p match {
+  private def specializeHeadPred(p: TypedAst.Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], anon: AnonCounter, root: TypedAst.Root, flix: Flix): TypedAst.Predicate.Head = p match {
     case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
       val t = subst(tpe)
       val visitedTerms = terms.map(specializeExp(_, env0, subst))
@@ -1046,7 +1067,7 @@ object Specialization {
   /**
     * Specializes the given body predicate `p0`.
     */
-  private def specializeBodyPred(b0: TypedAst.Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): (TypedAst.Predicate.Body, Map[Symbol.VarSym, Symbol.VarSym]) = b0 match {
+  private def specializeBodyPred(b0: TypedAst.Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], anon: AnonCounter, root: TypedAst.Root, flix: Flix): (TypedAst.Predicate.Body, Map[Symbol.VarSym, Symbol.VarSym]) = b0 match {
     case TypedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms0, tpe, loc) =>
       val (terms, env) = specializePats(terms0, env0, subst)
       val t = subst(tpe)
@@ -1068,7 +1089,7 @@ object Specialization {
     }
   }
 
-  private def specializeBodies(bodies: List[TypedAst.Predicate.Body], env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): (List[TypedAst.Predicate.Body], Map[Symbol.VarSym, Symbol.VarSym]) = {
+  private def specializeBodies(bodies: List[TypedAst.Predicate.Body], env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], anon: AnonCounter, root: TypedAst.Root, flix: Flix): (List[TypedAst.Predicate.Body], Map[Symbol.VarSym, Symbol.VarSym]) = {
     bodies.foldRight((Nil: List[TypedAst.Predicate.Body], env0)) {
       case (body, (res, env1)) =>
         val (pat, env) = specializeBodyPred(body, env1, subst)
@@ -1079,7 +1100,7 @@ object Specialization {
   /**
     * Specializes the given constraint `c0`.
     */
-  private def specializeConstraint(c0: TypedAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.Constraint = c0 match {
+  private def specializeConstraint(c0: TypedAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], anon: AnonCounter, root: TypedAst.Root, flix: Flix): TypedAst.Constraint = c0 match {
     case TypedAst.Constraint(cparams0, head0, body0, loc0) =>
       // For every parameter of the constraint add it to `env0` with a new mapping if it has not been encountered before.
       val env = cparams0.foldLeft(env0) {
@@ -1103,7 +1124,7 @@ object Specialization {
   /**
     * Specializes the given restrictable choice rule `rule0` to a match rule.
     */
-  private def specializeRestrictableChooseRule(rule0: TypedAst.RestrictableChooseRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.RestrictableChooseRule = rule0 match {
+  private def specializeRestrictableChooseRule(rule0: TypedAst.RestrictableChooseRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], anon: AnonCounter, root: TypedAst.Root, flix: Flix): TypedAst.RestrictableChooseRule = rule0 match {
     case TypedAst.RestrictableChooseRule(pat, exp) =>
       pat match {
         case TypedAst.RestrictableChoosePattern.Tag(symUse, pat0, tpe, loc) =>
@@ -1206,14 +1227,14 @@ object Specialization {
   }
 
   /** Specializes `constructor` w.r.t. `subst`. */
-  private def specializeJvmConstructor(constructor: TypedAst.JvmConstructor, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.JvmConstructor = constructor match {
+  private def specializeJvmConstructor(constructor: TypedAst.JvmConstructor, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], anon: AnonCounter, root: TypedAst.Root, flix: Flix): TypedAst.JvmConstructor = constructor match {
     case TypedAst.JvmConstructor(exp0, tpe, eff, loc) =>
       val exp = specializeExp(exp0, env0, subst)
       TypedAst.JvmConstructor(exp, subst(tpe), subst(eff), loc)
   }
 
   /** Specializes `method` w.r.t. `subst`. */
-  private def specializeJvmMethod(method: TypedAst.JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.JvmMethod = method match {
+  private def specializeJvmMethod(method: TypedAst.JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], anon: AnonCounter, root: TypedAst.Root, flix: Flix): TypedAst.JvmMethod = method match {
     case TypedAst.JvmMethod(ann, ident, fparams0, exp0, tpe, eff, loc) =>
       val (fparams, env1) = specializeFormalParams(fparams0, subst)
       val exp = specializeExp(exp0, env0 ++ env1, subst)
@@ -1240,7 +1261,7 @@ object Specialization {
     *
     * N.B.: `tpe` must be normalized.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], anon: AnonCounter, root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
     val defn = resolveSigSym(sym, tpe)
     specializeDefCallsite(defn, tpe)
   }

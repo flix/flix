@@ -361,10 +361,20 @@ object Symbol {
     * Returns a fresh uniquely generated name for a anonymous Java class.
     */
   def mkFreshAnonClassSym(loc: SourceLocation)(implicit flix: Flix): AnonClassSym = {
-    val id = flix.genSym.freshId();
-    new AnonClassSym(id, loc);
+    val id = flix.genSym.freshId()
+    new AnonClassSym(id.toString, loc)
   }
   
+
+  /**
+    * Returns the anonymous class symbol for the `index`th such class in `enclosing`.
+    *
+    * Like [[specializedDefnSym]] this consumes no [[ca.uwaterloo.flix.language.GenSym]] id.
+    * Distinct specializations of one generic definition must not share an anonymous class,
+    * so the enclosing specialized symbol — itself content-addressed — is part of the key.
+    */
+  def specializedAnonClassSym(enclosing: DefnSym, index: Int, loc: SourceLocation): AnonClassSym =
+    new AnonClassSym(StableName.suffix(s"$enclosing#anon$index"), loc)
 
   /**
     * Variable Symbol.
@@ -1021,7 +1031,7 @@ object Symbol {
     /**
     * Anonymous Java class symbol.
     */
-  final class AnonClassSym(val id: Int, val loc: SourceLocation) extends Symbol with Locatable {
+  final class AnonClassSym(val id: String, val loc: SourceLocation) extends Symbol with Locatable {
 
     /**
       * Returns the name of `this` symbol.
