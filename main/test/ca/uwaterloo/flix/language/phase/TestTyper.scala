@@ -2053,6 +2053,149 @@ class TestTyper extends AnyFunSuite with TestUtils {
     rejectError[TypeError](result)
   }
 
+  test("ErrorType.03") {
+    // There should be no type error because the associated type `T` is missing.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.04") {
+    // There should be no type error because the associated effect `E` is missing.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |eff Out {
+        |    def out(x: Int32): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    pub def exec(x: Int32): Unit \ Out = Out.out(x)
+        |}
+        |
+        |def g(): Unit \ Out = Runner.exec(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.05") {
+    // There should be no type error because the higher-kinded associated type `T` is missing.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |enum Maybe[a] {
+        |    case Just(a),
+        |    case Nothing
+        |}
+        |
+        |trait C[a] {
+        |    type S: Type
+        |    type T: Type -> Type
+        |    pub def f(x: a): C.T[a][C.S[a]]
+        |}
+        |
+        |instance C[Int32] {
+        |    type S = Int32
+        |    pub def f(x: Int32): Maybe[Int32] = Maybe.Just(x)
+        |}
+        |
+        |def g(): Maybe[Int32] = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.06") {
+    // There should be no type error because the associated type `T` is defined twice.
+    // The Resolver reports DuplicateAssocTypeDef and recovers by keeping the first definition.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    type T = Int32
+        |    type T = String
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.07") {
+    // There should be no type error because the associated type `U` is undefined.
+    // The Resolver reports UndefinedAssocType and recovers by dropping the definition;
+    // the default for `T` still applies.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type = Int32
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    type U = String
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.08") {
+    // There should be no type error because the associated type `T` is missing on `C[Int32]`
+    // and is reached through the nested instance `C[MyBox[a]]`.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |enum MyBox[a](a)
+        |
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |instance C[MyBox[a]] with C[a] {
+        |    type T = C.T[a]
+        |    pub def f(x: MyBox[a]): C.T[a] = let MyBox.MyBox(y) = x; C.f(y)
+        |}
+        |
+        |def g(): Int32 = C.f(MyBox.MyBox(42))
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
   test("UndefinedLabel.01") {
     val input =
       """

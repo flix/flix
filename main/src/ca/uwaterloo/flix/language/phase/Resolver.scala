@@ -95,34 +95,44 @@ object Resolver {
     }
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    val resolvedRoot = flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
-      case (uses, (taenv, taOrder)) =>
+    val resolvedRoot: Validation[ResolvedAst.Root, ResolutionError] = try {
+      flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
+        case (uses, (taenv, taOrder)) =>
 
-        val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
-        flatMapN(unitsVal) {
-          case units =>
-            val table = SymbolTable.traverse(units)(tableUnit)
-            mapN(checkSuperTraitDag(table.traits)) {
-              case () =>
-                ResolvedAst.Root(
-                  table.modules,
-                  table.traits,
-                  table.instances,
-                  table.defs,
-                  table.enums,
-                  table.structs,
-                  table.restrictableEnums,
-                  table.effects,
-                  table.typeAliases,
-                  ListMap(uses.toMap),
-                  taOrder,
-                  root.mainEntryPoint,
-                  root.sources,
-                  root.availableClasses,
-                  root.tokens
-                )
-            }
-        }
+          val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
+          mapN(unitsVal) {
+            case units =>
+              val table = SymbolTable.traverse(units)(tableUnit)
+              checkSuperTraitDag(table.traits)
+              ResolvedAst.Root(
+                table.modules,
+                table.traits,
+                table.instances,
+                table.defs,
+                table.enums,
+                table.structs,
+                table.restrictableEnums,
+                table.effects,
+                table.typeAliases,
+                ListMap(uses.toMap),
+                taOrder,
+                root.mainEntryPoint,
+                root.sources,
+                root.availableClasses,
+                root.tokens
+              )
+          }
+      }
+    } catch {
+      case CyclicTypeAliasesException(cycle) =>
+        // Report one CyclicTypeAliases error per alias in the cycle.
+        val errors = cycle.map(sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc))
+        Validation.Failure(Chain.from(errors))
+
+      case CyclicTraitHierarchyException(cycle) =>
+        // Report one CyclicTraitHierarchy error per trait in the cycle.
+        val errors = cycle.map(sym => ResolutionError.CyclicTraitHierarchy(cycle, sym.loc))
+        Validation.Failure(Chain.from(errors))
     }
 
     (resolvedRoot, sctx.errors.asScala.toList)
@@ -238,14 +248,12 @@ object Resolver {
     *     such that any alias only depends on those earlier in the list
     */
   private def resolveTypeAliases(defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
-    flatMapN(semiResolveTypeAliases(defaultUses, root)) {
+    mapN(semiResolveTypeAliases(defaultUses, root)) {
       case semiResolved =>
-        flatMapN(findResolutionOrder(semiResolved.values)) {
-          case orderedSyms =>
-            val orderedSemiResolved = orderedSyms.map(semiResolved)
-            val aliases = finishResolveTypeAliases(orderedSemiResolved)
-            Validation.Success((aliases, orderedSyms))
-        }
+        val orderedSyms = findResolutionOrder(semiResolved.values)
+        val orderedSemiResolved = orderedSyms.map(semiResolved)
+        val aliases = finishResolveTypeAliases(orderedSemiResolved)
+        (aliases, orderedSyms)
     }
   }
 
@@ -275,28 +283,20 @@ object Resolver {
   }
 
   /**
-    * Create a list of CyclicTypeAliases errors, one for each type alias.
-    */
-  private def mkCycleErrors[T](cycle: List[Symbol.TypeAliasSym]): Validation.Failure[T, ResolutionError] = {
-    val errors = cycle.map {
-      sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc)
-    }
-    Validation.Failure(Chain.from(errors))
-  }
-
-  /**
     * Gets the resolution order for the aliases.
     *
-    * Any alias only depends on those earlier in the list
+    * Any alias only depends on those earlier in the list.
+    *
+    * Throws [[CyclicTypeAliasesException]] if the aliases form a cycle.
     */
-  private def findResolutionOrder(aliases: Iterable[ResolvedAst.Declaration.TypeAlias]): Validation[List[Symbol.TypeAliasSym], ResolutionError] = {
+  private def findResolutionOrder(aliases: Iterable[ResolvedAst.Declaration.TypeAlias]): List[Symbol.TypeAliasSym] = {
     val aliasSyms = aliases.map(_.sym)
     val aliasLookup = aliases.map(alias => alias.sym -> alias).toMap
     val getUses = (sym: Symbol.TypeAliasSym) => getAliasUses(aliasLookup(sym).tpe)
 
     Graph.topologicalSort(aliasSyms, getUses) match {
-      case Graph.TopologicalSort.Sorted(sorted) => Validation.Success(sorted)
-      case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
+      case Graph.TopologicalSort.Sorted(sorted) => sorted
+      case Graph.TopologicalSort.Cycle(path) => throw CyclicTypeAliasesException(path)
     }
   }
 
@@ -377,24 +377,15 @@ object Resolver {
 
   /**
     * Checks that the super traits form a DAG (no cycles).
+    *
+    * Throws [[CyclicTraitHierarchyException]] if the super traits form a cycle.
     */
-  private def checkSuperTraitDag(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait]): Validation[Unit, ResolutionError] = {
-
-    /**
-      * Create a list of CyclicTraitHierarchy errors, one for each trait.
-      */
-    def mkCycleErrors[T](cycle: List[Symbol.TraitSym]): Validation.Failure[T, ResolutionError] = {
-      val errors = cycle.map {
-        sym => ResolutionError.CyclicTraitHierarchy(cycle, sym.loc)
-      }
-      Validation.Failure(Chain.from(errors))
-    }
-
+  private def checkSuperTraitDag(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait]): Unit = {
     val traitSyms = traits.values.map(_.sym)
     val getSuperTraits = (trt: Symbol.TraitSym) => traits(trt).superTraits.map(_.symUse.sym)
     Graph.topologicalSort(traitSyms, getSuperTraits) match {
-      case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
-      case Graph.TopologicalSort.Sorted(_) => Validation.Success(())
+      case Graph.TopologicalSort.Cycle(path) => throw CyclicTraitHierarchyException(path)
+      case Graph.TopologicalSort.Sorted(_) => ()
     }
   }
 
@@ -439,17 +430,14 @@ object Resolver {
       val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix)
       val optTconstrs = tconstrs0.map(resolveTraitConstraint(_, scp, taenv, ns0, root))
       val econstrs = econstrs0.map(resolveEqualityConstraint(_, scp, taenv, ns0, root))
-      flatMapN(traitVal) {
+      mapN(traitVal) {
         case trt =>
-          val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
+          val assocs = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
           val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
           val defs = checkDuplicateInstanceDefs(defs0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix)), trt.sym)
           val tconstrs = optTconstrs.collect { case Some(t) => t }
-          mapN(assocsVal) {
-            case assocs =>
-              val symUse = TraitSymUse(trt.sym, trt0.loc)
-              ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
-          }
+          val symUse = TraitSymUse(trt.sym, trt0.loc)
+          ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
       }
   }
 
@@ -624,77 +612,73 @@ object Resolver {
   /**
     * Performs name resolution on the given associated type definitions `d0` in the given namespace `ns0`.
     * `loc` is the location of the instance symbol for reporting errors.
+    *
+    * Reports [[DuplicateAssocTypeDef]] and [[MissingAssocTypeDef]] errors and recovers:
+    * duplicates are dropped (the first definition is kept) and missing definitions are
+    * replaced by a dummy definition whose type is [[UnkindedType.Error]].
     */
-  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], trt: NamedAst.Declaration.Trait, targ: UnkindedType, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
-    flatMapN(Validation.traverse(d0)(resolveAssocTypeDef(_, trt, scp0, taenv, ns0, root))) {
-      case xs =>
-        // Computes a map from associated type symbols to their definitions.
-        val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
+  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], trt: NamedAst.Declaration.Trait, targ: UnkindedType, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.Declaration.AssocTypeDef] = {
+    val xs = d0.flatMap(resolveAssocTypeDef(_, trt, scp0, taenv, ns0, root))
 
-        // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
-        val errors = mutable.ArrayBuffer.empty[ResolutionError]
+    // Computes a map from associated type symbols to their definitions.
+    val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
-        // Build the map `m` and check for [[DuplicateAssocTypeDef]].
-        for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
-          val sym = symUse.sym
-          m.get(sym) match {
-            case None =>
-              m.put(sym, d)
-            case Some(otherDecl) =>
-              val loc2 = otherDecl.loc
-              errors += ResolutionError.DuplicateAssocTypeDef(sym, loc1, loc2)
-              errors += ResolutionError.DuplicateAssocTypeDef(sym, loc2, loc1)
-          }
-        }
-
-        // Check for [[MissingAssocTypeDef]] and recover.
-        for (NamedAst.Declaration.AssocTypeSig(_, _, ascSym, _, _, tpe, _) <- trt.assocs) {
-          if (!m.contains(ascSym) && tpe.isEmpty) {
-            // Missing associated type.
-            errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
-
-            // We recover by introducing a dummy associated type definition.
-            val doc = Doc(Nil, loc)
-            val mod = Modifiers.Empty
-            val symUse = AssocTypeSymUse(ascSym, loc)
-            val arg = targ
-            val tpe = UnkindedType.Error(loc)
-            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
-            m.put(ascSym, ascDef)
-          }
-        }
-
-        // TODO ASSOC-TYPES this should be a soft failure once we know how to handle error types in unification
-        // We use `m.values` here because we have eliminated duplicates and introduced missing associated type defs.
-        if (errors.isEmpty) {
-          Validation.Success(m.values.toList)
-        } else {
-          Validation.Failure(Chain.from(errors))
-        }
+    // Build the map `m` and check for [[DuplicateAssocTypeDef]].
+    for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
+      val sym = symUse.sym
+      m.get(sym) match {
+        case None =>
+          m.put(sym, d)
+        case Some(otherDecl) =>
+          val loc2 = otherDecl.loc
+          sctx.errors.add(ResolutionError.DuplicateAssocTypeDef(sym, loc1, loc2))
+          sctx.errors.add(ResolutionError.DuplicateAssocTypeDef(sym, loc2, loc1))
+      }
     }
+
+    // Check for [[MissingAssocTypeDef]] and recover.
+    for (NamedAst.Declaration.AssocTypeSig(_, _, ascSym, _, _, tpe, _) <- trt.assocs) {
+      if (!m.contains(ascSym) && tpe.isEmpty) {
+        // Missing associated type.
+        sctx.errors.add(ResolutionError.MissingAssocTypeDef(ascSym.name, loc))
+
+        // We recover by introducing a dummy associated type definition (with a synthetic location).
+        val synthLoc = loc.asSynthetic
+        val doc = Doc(Nil, synthLoc)
+        val mod = Modifiers.Empty
+        val symUse = AssocTypeSymUse(ascSym, synthLoc)
+        val arg = targ
+        val tpe = UnkindedType.Error(synthLoc)
+        val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, synthLoc)
+        m.put(ascSym, ascDef)
+      }
+    }
+
+    // We use `m.values` here because we have eliminated duplicates and introduced missing associated type defs.
+    m.values.toList
   }
 
   /**
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
+    *
+    * Returns `None` (after reporting [[UndefinedAssocType]]) if the trait `trt` has no such associated type.
     */
-  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
+  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Option[ResolvedAst.Declaration.AssocTypeDef] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
 
       // For now, we don't add any tvars from the args. We should have gotten those directly from the instance
       val arg = resolveType(arg0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
       val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
-      val symVal: Result[Symbol.AssocTypeSym, ResolutionError] = trt.assocs.collectFirst {
+      trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
       } match {
         case None =>
           val assocs = trt.assocs.map { case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym }
-          Result.Err(ResolutionError.UndefinedAssocType(trt.sym, Name.QName(Name.RootNS, ident, ident.loc), assocs, ident.loc))
-        case Some(sym) => Result.Ok(sym)
-      }
-      mapN(symVal.toValidation) {
-        sym =>
+          sctx.errors.add(ResolutionError.UndefinedAssocType(trt.sym, Name.QName(Name.RootNS, ident, ident.loc), assocs, ident.loc))
+          None
+        case Some(sym) =>
           val symUse = AssocTypeSymUse(sym, ident.loc)
-          ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
+          Some(ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc))
       }
   }
 
@@ -3712,6 +3696,28 @@ object Resolver {
     * @param errors the [[ResolutionError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[ResolutionError])
+
+  /**
+    * An exception thrown by [[findResolutionOrder]] when the type aliases form a cycle.
+    *
+    * This bypasses the [[Validation]] machinery: the exception is thrown from type alias resolution and
+    * caught in [[run]], where it is converted into a [[Validation.Failure]]. It exists so that the
+    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
+    *
+    * @param cycle the type alias symbols that form the cycle.
+    */
+  private case class CyclicTypeAliasesException(cycle: List[Symbol.TypeAliasSym]) extends RuntimeException
+
+  /**
+    * An exception thrown by [[checkSuperTraitDag]] when the super traits form a cycle.
+    *
+    * This bypasses the [[Validation]] machinery: the exception is thrown from the super trait check and
+    * caught in [[run]], where it is converted into a [[Validation.Failure]]. It exists so that the
+    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
+    *
+    * @param cycle the trait symbols that form the cycle.
+    */
+  private case class CyclicTraitHierarchyException(cycle: List[Symbol.TraitSym]) extends RuntimeException
 
   /**
     * A type represented by a lowercase name.
