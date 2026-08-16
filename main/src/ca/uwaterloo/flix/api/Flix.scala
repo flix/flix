@@ -527,11 +527,9 @@ class Flix {
     errors ++= weederErrors
 
     val result = weederResult match {
-      case Result.Err(failures) =>
-        errors ++= failures
-        None
+      case None => None
 
-      case Result.Ok(afterWeeder) =>
+      case Some(afterWeeder) =>
         val afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
 
         val (afterNamer, nameErrors) = Namer.run(afterDesugar)
@@ -593,6 +591,7 @@ class Flix {
 
         Some(afterDependencies)
     }
+
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
 

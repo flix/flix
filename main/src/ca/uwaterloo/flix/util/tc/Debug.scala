@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.util.tc
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.dbg.AstPrinter
-import ca.uwaterloo.flix.util.Result
 
 /** Trait for values logged to disk. */
 trait Debug[-A] {
@@ -48,15 +47,15 @@ object Debug {
   }
 
   /**
-    * A [[Debug]] instance for a [[Result]] that emits the value on [[Result.Ok]] and nothing on [[Result.Err]].
+    * A [[Debug]] instance for an [[Option]] that emits the value if present and nothing otherwise.
     */
-  implicit def debugResult[T, E](implicit d: Debug[T]): Debug[Result[T, E]] = new Debug[Result[T, E]] {
+  implicit def debugOption[T](implicit d: Debug[T]): Debug[Option[T]] = new Debug[Option[T]] {
     override def hasAst: Boolean = d.hasAst
 
-    override def output(name: String, r: Result[T, E])(implicit flix: Flix): Unit =
-      r.map(x => d.output(name, x))
+    override def output(name: String, o: Option[T])(implicit flix: Flix): Unit =
+      o.foreach(x => d.output(name, x))
 
-    override protected def emit(name: String, r: Result[T, E])(implicit flix: Flix): Unit = ()
+    override protected def emit(name: String, o: Option[T])(implicit flix: Flix): Unit = ()
   }
 
 }
