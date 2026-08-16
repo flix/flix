@@ -53,6 +53,15 @@ object LambdaLift {
       throw InternalCompilerException(s"Lifted name collision on '$sym': ${defns.size} definitions.", defns.head._2.loc)
     }
 
+    // A lifted symbol must also not already name a definition that survived unlifted:
+    // the fold below is a plain map union, which would silently let whichever one loses
+    // that merge disappear from the compiled program instead of raising any error.
+    liftedBySym.keys.find(defs.contains) match {
+      case Some(sym) =>
+        throw InternalCompilerException(s"Lifted name collision on '$sym': collides with an existing definition.", sym.loc)
+      case None => ()
+    }
+
     // Add lifted defs from the shared context to the existing defs.
     val newDefs = sctx.liftedDefs.asScala.foldLeft(defs) {
       case (macc, (sym, defn)) => macc + (sym -> defn)
