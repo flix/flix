@@ -2270,6 +2270,57 @@ class TestTyper extends AnyFunSuite with TestUtils {
     rejectError[TypeError](result)
   }
 
+  test("ErrorType.13") {
+    // There should be no type error because the import `java.io.Fil` is undefined.
+    // The Resolver reports UndefinedJvmImport and recovers by dropping the import,
+    // so `Fil` is an undefined type which resolves to an error type.
+    val input =
+      """
+        |import java.io.Fil
+        |
+        |def f(): Fil = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.14") {
+    // There should be no type error because the use `A.fo` is undefined.
+    // The Resolver reports UndefinedUse and recovers by dropping the use,
+    // so `fo` is an undefined name which resolves to an error expression.
+    val input =
+      """
+        |mod A {
+        |    pub def foo(): Int32 = 42
+        |}
+        |
+        |mod B {
+        |    use A.fo
+        |    pub def g(): Int32 = fo()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.15") {
+    // There should be no type error because the import `java.util.Nope` is undefined.
+    // The Resolver reports UndefinedJvmImport and recovers by dropping the import,
+    // so the type alias `T` and the signature of `f` mention an error type.
+    val input =
+      """
+        |mod A {
+        |    import java.util.Nope
+        |    pub type alias T = Nope
+        |    pub def f(x: T): T = x
+        |}
+        |
+        |def g(): Int32 = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
   test("UndefinedLabel.01") {
     val input =
       """

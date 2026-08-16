@@ -552,6 +552,44 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedUse](result)
   }
 
+  test("UndefinedUse.02") {
+    // The undefined use is dropped and resolution continues, so `f` is undefined at the call site.
+    // The use is resolved by several passes but the error must only be reported once.
+    val input =
+      s"""
+         |mod A {
+         |    pub def g(): Int32 = 42
+         |}
+         |
+         |mod B {
+         |    use A.f
+         |    def h(): Int32 = f()
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedUse](result)
+    expectError[ResolutionError.UndefinedName](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.UndefinedUse]) == 1)
+  }
+
+  test("UndefinedUse.03") {
+    // A top-level (compilation unit) undefined use.
+    val input =
+      s"""
+         |use A.f
+         |
+         |mod A {
+         |    pub def g(): Int32 = 42
+         |}
+         |
+         |def h(): Int32 = f()
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedUse](result)
+    expectError[ResolutionError.UndefinedName](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.UndefinedUse]) == 1)
+  }
+
   test("UndefinedEffect.01") {
     val input =
       """
@@ -732,6 +770,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmImport](result)
+  }
+
+  test("UndefinedJvmImport.04") {
+    // The undefined import is dropped and resolution continues, so `Baz` is an undefined type.
+    // The import is resolved by several passes but the error must only be reported once.
+    val input =
+      raw"""
+           |mod A {
+           |    import foo.bar.Baz
+           |    pub def foo(x: Baz): Baz = x
+           |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmImport](result)
+    expectError[ResolutionError.UndefinedType](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.UndefinedJvmImport]) == 1)
   }
 
   test("UndefinedNew.01") {
