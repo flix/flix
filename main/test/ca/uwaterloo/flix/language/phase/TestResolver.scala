@@ -625,6 +625,26 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
+  test("UndefinedTrait.05") {
+    val input =
+      """
+        |trait K[a] with U[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTrait](result)
+  }
+
+  test("UndefinedTrait.06") {
+    // The instance of the undefined trait `C` is dropped, but its type is still resolved: both errors are reported.
+    val input =
+      """
+        |instance C[Nope]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTrait](result)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
   test("UndefinedJvmConstructor.01") {
     val input =
       """
