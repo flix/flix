@@ -23,10 +23,10 @@ import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
-import ca.uwaterloo.flix.util.{ParOps, StableName}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, StableName}
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -116,14 +116,17 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkEqInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
+  private def mkEqInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
       assert(loc.isSynthetic)
 
       val tpe = getEnumType(sym, tparams)
 
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
-      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(StableName.of(s"Eq[${sym}]#eq")))
+      val eqKey = s"Eq[${sym}]#eq"
+      val eqId = StableName.of(eqKey)
+      claimDefId(eqId, eqKey)
+      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(eqId))
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val param2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
@@ -298,13 +301,16 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkOrderInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
+  private def mkOrderInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
       assert(loc.isSynthetic)
       val tpe = getEnumType(sym, tparams)
 
       val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
-      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(StableName.of(s"Order[${sym}]#compare")))
+      val compareKey = s"Order[${sym}]#compare"
+      val compareId = StableName.of(compareKey)
+      claimDefId(compareId, compareKey)
+      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(compareId))
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val param2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
@@ -496,13 +502,16 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
+  private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
       assert(loc.isSynthetic)
       val tpe = getEnumType(sym, tparams)
 
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
-      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(StableName.of(s"ToString[${sym}]#toString")))
+      val toStringKey = s"ToString[${sym}]#toString"
+      val toStringId = StableName.of(toStringKey)
+      claimDefId(toStringId, toStringKey)
+      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(toStringId))
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkToStringImpl(enum0, param, loc, root)
@@ -705,13 +714,16 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkHashInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
+  private def mkHashInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
       assert(loc.isSynthetic)
       val tpe = getEnumType(sym, tparams)
 
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
-      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(StableName.of(s"Hash[${sym}]#hash")))
+      val hashKey = s"Hash[${sym}]#hash"
+      val hashId = StableName.of(hashKey)
+      claimDefId(hashId, hashKey)
+      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(hashId))
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkHashImpl(enum0, param, loc, root)
@@ -852,7 +864,10 @@ object Deriver {
 
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
-        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(StableName.of(s"Coerce[${sym}]#coerce")))
+        val coerceKey = s"Coerce[${sym}]#coerce"
+        val coerceId = StableName.of(coerceKey)
+        claimDefId(coerceId, coerceKey)
+        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(coerceId))
 
         val (_, caze) = cases.head
 
@@ -1097,14 +1112,30 @@ object Deriver {
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue(), new ConcurrentHashMap())
   }
 
   /**
     * A global shared context. Must be thread-safe.
     *
-    * @param errors the [[DerivationError]]s in the AST, if any.
+    * @param errors     the [[DerivationError]]s in the AST, if any.
+    * @param claimedIds what each content-addressed derived-def id was minted for. A hash
+    *                   can repeat, either because two derived defs hash alike or because
+    *                   the key does not tell them apart; this catches that rather than
+    *                   letting two unrelated derived defs silently share one id.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[DerivationError])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[DerivationError], claimedIds: ConcurrentHashMap[Long, String])
+
+  /**
+    * Throws if `id` is already claimed by a `key` other than this one.
+    */
+  private def claimDefId(id: Long, key: String)(implicit sctx: SharedContext): Unit = {
+    sctx.claimedIds.merge(id, key, (existing, incoming) =>
+      if (existing == incoming) existing
+      else throw InternalCompilerException(
+        s"Derived-def id collision on '$id': '$existing' and '$incoming'.", SourceLocation.Unknown
+      )
+    )
+  }
 
 }
