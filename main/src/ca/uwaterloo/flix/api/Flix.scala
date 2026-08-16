@@ -537,61 +537,69 @@ class Flix {
         val (afterNamer, nameErrors) = Namer.run(afterDesugar)
         errors ++= nameErrors
 
-        val (afterResolver, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
+        val (resolverValidation, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
         errors ++= resolutionErrors
 
-        val (afterKinder, kindErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
-        errors ++= kindErrors
+        resolverValidation match {
+          case Validation.Failure(failures) =>
+            errors ++= failures.toList
+            None
 
-        val (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
-        errors ++= derivationErrors
+          case Validation.Success(afterResolver) =>
 
-        val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
-        errors ++= typeErrors
+            val (afterKinder, kindErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
+            errors ++= kindErrors
 
-        val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
-        errors ++= entryPointErrors
+            val (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
+            errors ++= derivationErrors
 
-        val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-        errors ++= instanceErrors
+            val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
+            errors ++= typeErrors
 
-        val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances, cachedTyperAst, changeSet)
-        errors ++= predDepErrors
+            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
+            errors ++= entryPointErrors
 
-        val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
-        errors ++= stratificationErrors
+            val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+            errors ++= instanceErrors
 
-        val (afterPatMatch, patMatchErrors) = PatMatch2.run(afterStratifier, cachedTyperAst, changeSet)
-        errors ++= patMatchErrors
+            val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances, cachedTyperAst, changeSet)
+            errors ++= predDepErrors
 
-        val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
-        errors ++= redundancyErrors
+            val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
+            errors ++= stratificationErrors
 
-        val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
-        errors ++= safetyErrors
+            val (afterPatMatch, patMatchErrors) = PatMatch2.run(afterStratifier, cachedTyperAst, changeSet)
+            errors ++= patMatchErrors
 
-        val (afterTerminator, terminationErrors) = Terminator.run(afterRedundancy, cachedTyperAst, changeSet)
-        errors ++= terminationErrors
+            val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
+            errors ++= redundancyErrors
 
-        val (afterDependencies, _) = Dependencies.run(afterTerminator, cachedTyperAst, changeSet)
+            val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
+            errors ++= safetyErrors
 
-        if (options.incremental) {
-          this.cachedLexerTokens = afterLexer
-          this.cachedParserCst = afterParser
-          this.cachedWeederAst = afterWeeder
-          this.cachedDesugarAst = afterDesugar
-          this.cachedKinderAst = afterKinder
-          this.cachedResolverAst = afterResolver
-          this.cachedTyperAst = afterDependencies
+            val (afterTerminator, terminationErrors) = Terminator.run(afterRedundancy, cachedTyperAst, changeSet)
+            errors ++= terminationErrors
 
-          // We record that no files are dirty in the change set.
-          this.changeSet = ChangeSet.Dirty(Set.empty)
+            val (afterDependencies, _) = Dependencies.run(afterTerminator, cachedTyperAst, changeSet)
 
-          // We save all the current errors.
-          this.cachedErrors = errors.toList
+            if (options.incremental) {
+              this.cachedLexerTokens = afterLexer
+              this.cachedParserCst = afterParser
+              this.cachedWeederAst = afterWeeder
+              this.cachedDesugarAst = afterDesugar
+              this.cachedKinderAst = afterKinder
+              this.cachedResolverAst = afterResolver
+              this.cachedTyperAst = afterDependencies
+
+              // We record that no files are dirty in the change set.
+              this.changeSet = ChangeSet.Dirty(Set.empty)
+
+              // We save all the current errors.
+              this.cachedErrors = errors.toList
+            }
+
+            Some(afterDependencies)
         }
-
-        Some(afterDependencies)
     }
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
