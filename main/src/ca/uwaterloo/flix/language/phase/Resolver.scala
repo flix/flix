@@ -98,7 +98,7 @@ object Resolver {
       val (taenv, taOrder) = resolveTypeAliases(defaultUses, root)
       val units = ParOps.parMap(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
       val table = SymbolTable.traverse(units)(tableUnit)
-      val traits = breakSuperTraitCycles(table.traits)
+      val traits = findReportAndBreakSuperTraitCycles(table.traits)
       Validation.Success(ResolvedAst.Root(
         table.modules,
         traits,
@@ -357,7 +357,7 @@ object Resolver {
     * Later phases (e.g. the trait environment) compute the transitive super traits and would not
     * terminate on a cyclic hierarchy, so the returned traits are guaranteed to be acyclic.
     */
-  private def breakSuperTraitCycles(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait])(implicit sctx: SharedContext): Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait] = {
+  private def findReportAndBreakSuperTraitCycles(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait])(implicit sctx: SharedContext): Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait] = {
     val getSuperTraits = (sym: Symbol.TraitSym) => traits(sym).superTraits.map(_.symUse.sym)
 
     // Group the traits by strongly connected component.
