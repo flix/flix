@@ -3299,10 +3299,7 @@ object Weeder2 {
     val ident = pickNameIdent(tree)
     val arity = tryPickToken(TokenKind.LiteralInt, tree) match {
       case Some(token) => tryParsePredicateArity(token)
-      case None =>
-        // Soft failure: the parser has already reported the missing integer literal.
-        sctx.errors.add(WeederError.IllegalPredicateArity(tree.loc))
-        0
+      case None => 0 // The parser has already reported the missing integer literal.
     }
     PredicateAndArity(Name.mkPred(ident), arity)
   }
