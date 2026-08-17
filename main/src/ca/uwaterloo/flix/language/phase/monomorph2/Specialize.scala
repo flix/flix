@@ -28,16 +28,19 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.*
 
 /**
-  * Solution-driven specialization: uses the solver's solution to specialize every def/enum/
+  * Solution-driven specialization uses [[ConstraintSolver]]'s solution to specialize every def/enum/
   * struct/restrictable-enum in a single parallel pass.
   *
-  * `run` builds the `LookupTables`; [[SpecializeAndLower.visitDef]] does the actual per-def
-  * specialize+lower walk, resolving each call/tag/struct site through them.
+  * `run` builds the [[SpecializationTables]].
+  *
+  * [[SpecializeAndLower.visitDef]] does the actual per-def specialize+lower walk, resolving each
+  * call/tag/struct site via `lookupSym`/`lookupCaseSym`/`lookupRestrictableCaseSym`/
+  * `lookupStructSym`/`resolveSigSym`.
   */
 object Specialize {
-
   /**
-    * Immutable lookup tables built once by `run`, before any specialization/lowering happens.
+    * Lookup tables mapping each parametric def/enum/struct/restrictable-enum's original sym,
+    * at a given ground instantiation, to its fresh specialized sym.
     *
     * @param defTable              Fresh syms for parametric defs.
     * @param enumTable             Fresh syms for parametric enums only.
@@ -45,7 +48,7 @@ object Specialize {
     * @param restrictableEnumTable Fresh syms for (parametric) restrictable enums. (Restrictable enums always carry the case-set index as an implicit tparam.)
     * @param instances             Every instance in `root`, keyed by trait and the type constructor it is defined for.
     */
-  private[monomorph2] case class LookupTables(
+  private[monomorph2] case class SpecializationTables(
     defTable: Map[(Symbol.DefnSym, Type), Symbol.DefnSym],
     enumTable: Map[(Symbol.EnumSym, List[Type]), Symbol.EnumSym],
     structTable: Map[(Symbol.StructSym, List[Type]), Symbol.StructSym],
@@ -74,7 +77,7 @@ object Specialize {
     * Returns the sym to use for a call to `sym` at ground arrow type `groundArrowTpe`.
     */
   private[monomorph2] def lookupSym(sym: Symbol.DefnSym, groundArrowTpe: Type)
-                       (implicit tables: LookupTables, root: TypedAst.Root): Symbol.DefnSym =
+                       (implicit tables: SpecializationTables, root: TypedAst.Root): Symbol.DefnSym =
     tables.defTable.get((sym, groundArrowTpe)) match {
       case Some(specializedSym) => specializedSym
       case None =>
@@ -90,7 +93,7 @@ object Specialize {
   /**
     * Returns the case sym to use for a `Tag`/`Pattern.Tag` at ground enum type `groundEnumTpe`.
     */
-  private[monomorph2] def lookupCaseSym(caseSym: Symbol.CaseSym, groundEnumTpe: Type)(implicit tables: LookupTables): Symbol.CaseSym = {
+  private[monomorph2] def lookupCaseSym(caseSym: Symbol.CaseSym, groundEnumTpe: Type)(implicit tables: SpecializationTables): Symbol.CaseSym = {
     val argTypes = groundEnumTpe.typeArguments
     tables.enumTable.get((caseSym.enumSym, argTypes)) match {
       case Some(freshEnumSym) => new Symbol.CaseSym(freshEnumSym, caseSym.name, caseSym.ordinal, caseSym.loc)
@@ -109,7 +112,7 @@ object Specialize {
     * Returns the (regular) case sym for a restrictable tag/pattern at ground restrictable-enum
     * type `groundRestrictableEnumTpe`.
     */
-  private[monomorph2] def lookupRestrictableCaseSym(caseSym: Symbol.RestrictableCaseSym, groundRestrictableEnumTpe: Type)(implicit tables: LookupTables): Symbol.CaseSym = {
+  private[monomorph2] def lookupRestrictableCaseSym(caseSym: Symbol.RestrictableCaseSym, groundRestrictableEnumTpe: Type)(implicit tables: SpecializationTables): Symbol.CaseSym = {
     val argTypes = groundRestrictableEnumTpe.typeArguments
     tables.restrictableEnumTable.get((caseSym.enumSym, argTypes)) match {
       case Some(freshEnumSym) => new Symbol.CaseSym(freshEnumSym, caseSym.name, Symbol.CaseSym.NoOrdinal, caseSym.loc)
@@ -124,7 +127,7 @@ object Specialize {
     * Returns the struct sym for a `StructNew`/`StructGet`/`StructPut` at ground type
     * `groundStructTpe`.
     */
-  private[monomorph2] def lookupStructSym(sym: Symbol.StructSym, groundStructTpe: Type)(implicit tables: LookupTables): Symbol.StructSym = {
+  private[monomorph2] def lookupStructSym(sym: Symbol.StructSym, groundStructTpe: Type)(implicit tables: SpecializationTables): Symbol.StructSym = {
     val argTypes = groundStructTpe.typeArguments
     tables.structTable.get((sym, argTypes)) match {
       case Some(freshStructSym) => freshStructSym
@@ -214,7 +217,7 @@ object Specialize {
 
   /** Returns the sym to use for a call to signature `sym`'s instance implementation (or trait-level default) at ground arrow type `groundArrowTpe`. */
   private[monomorph2] def resolveSigSym(sym: Symbol.SigSym, groundArrowTpe: Type)
-                            (implicit tables: LookupTables, root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
+                            (implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
     val sig = root.sigs(sym)
     val trt = root.traits(sym.trt)
     // groundArrowTpe comes from an already-solved, reachable call site, so it must unify with
@@ -267,7 +270,7 @@ object Specialize {
     * Rewrites any specialized `Enum`/`Struct`/`RestrictableEnum` reference in `tpe` to its fresh sym.
     * `tpe` must already be substituted and lowered (i.e. only ever called via `visitType`/`visitTypeSubstituted`).
     */
-  private[monomorph2] def rewriteEnumStructType(tpe: Type)(implicit tables: LookupTables): Type = tpe match {
+  private[monomorph2] def rewriteEnumStructType(tpe: Type)(implicit tables: SpecializationTables): Type = tpe match {
     case Type.Cst(_, _)                    => tpe
 
     case Type.Apply(_, _, loc)             =>
@@ -290,7 +293,7 @@ object Specialize {
   }
 
   /** Applies [[rewriteEnumStructType]] to `fp`'s type. */
-  private[monomorph2] def rewriteFormalParam(fp: MonoAst.FormalParam)(implicit tables: LookupTables): MonoAst.FormalParam =
+  private[monomorph2] def rewriteFormalParam(fp: MonoAst.FormalParam)(implicit tables: SpecializationTables): MonoAst.FormalParam =
     fp.copy(tpe = rewriteEnumStructType(fp.tpe))
 
   /** Specializes `root` per `solution`, the constraint solver's output. */
