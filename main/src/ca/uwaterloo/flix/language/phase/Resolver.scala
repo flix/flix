@@ -459,15 +459,15 @@ object Resolver {
     * Reports a [[ResolutionError.DuplicateInstanceDef]] for each duplicate and returns the
     * definitions with later duplicates removed, keeping the first occurrence of each name.
     *
-    * Grouped by name rather than by symbol equality, deliberately: an instance member's id
-    * is content-addressed from `(instance, member name)`, so two duplicate members of the
-    * same instance mint the identical id and end up with an equal [[Symbol.DefnSym]], not
-    * two distinct ones. That is not why this check exists here rather than in the usual
-    * symbol table machinery, though -- instance members never pass through that machinery
-    * at all, distinct symbols or not: the [[Namer]] tables ordinary declarations by
-    * `(namespace, name)` in a flat scope, but an instance's members live in that instance's
-    * own `defs` list, never in a symbol-keyed table, so nothing there ever gets a chance to
-    * notice a duplicate. This is the one place that does.
+    * Grouped by name, not by symbol equality: an instance member's id is derived from
+    * `(instance, member name)`, so two duplicates of the same member mint the identical id
+    * and become equal [[Symbol.DefnSym]]s rather than two distinct ones -- symbol equality
+    * would silently merge them instead of catching the duplicate.
+    *
+    * This check has to live here specifically because instance members never reach the
+    * usual symbol-table machinery at all: the [[Namer]] tables ordinary declarations by
+    * `(namespace, name)` in a flat scope, but an instance's members live only in that
+    * instance's own `defs` list.
     */
   private def checkDuplicateInstanceDefs(defs: List[ResolvedAst.Declaration.Def], traitSym: Symbol.TraitSym)(implicit sctx: SharedContext): List[ResolvedAst.Declaration.Def] = {
     val seen = mutable.Map.empty[String, ResolvedAst.Declaration.Def]
