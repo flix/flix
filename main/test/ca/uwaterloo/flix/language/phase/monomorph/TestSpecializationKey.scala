@@ -16,16 +16,15 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.language.ast.shared.{RegionScope, VarText}
-import ca.uwaterloo.flix.util.StableName
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, SymId, Type, TypeConstructor}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestSpecializationKey extends AnyFunSuite {
 
   private val loc: SourceLocation = SourceLocation.Unknown
 
-  private def defnSym(fqn: String, id: Option[Long] = None): Symbol.DefnSym =
-    Symbol.mkDefnSym(fqn, id)
+  private def defnSym(fqn: String, id: Option[String] = None): Symbol.DefnSym =
+    Symbol.mkDefnSym(fqn, id.map(SymId.Hash.apply))
 
   private def cst(tc: TypeConstructor): Type = Type.Cst(tc, loc)
 
@@ -63,19 +62,19 @@ class TestSpecializationKey extends AnyFunSuite {
   test("includesDefnId.01") {
     // A trait's default implementation and an instance's share a qualified name and can be
     // specialized at the identical type, so the id is the only thing separating them.
-    val instance = defnSym("Option.point", Some(41712L))
+    val instance = defnSym("Option.point", Some("41712"))
     val default = defnSym("Option.point")
     assert(SpecializationKey.of(instance, Int32) != SpecializationKey.of(default, Int32))
   }
 
   test("includesDefnId.02") {
-    val a = defnSym("Eq.eq", Some(1L))
-    val b = defnSym("Eq.eq", Some(2L))
+    val a = defnSym("Eq.eq", Some("1"))
+    val b = defnSym("Eq.eq", Some("2"))
     assert(SpecializationKey.of(a, Int32) != SpecializationKey.of(b, Int32))
   }
 
   test("includesDefnId.03") {
-    assert(SpecializationKey.of(defnSym("f", Some(7L)), Int32) == s"f$$${StableName.render(7L)}|Int32")
+    assert(SpecializationKey.of(defnSym("f", Some("7")), Int32) == "f$7|Int32")
   }
 
   test("ignoresRegion.01") {

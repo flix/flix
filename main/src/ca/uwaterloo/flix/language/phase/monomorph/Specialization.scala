@@ -198,7 +198,7 @@ object Specialization {
     private var index: Int = 0
 
     /** Returns the symbol for the next anonymous class in the enclosing specialization. */
-    def next(loc: SourceLocation)(implicit ctx: Context): Symbol.AnonClassSym = {
+    def next(loc: SourceLocation)(implicit ctx: Context, flix: Flix): Symbol.AnonClassSym = {
       val thisIndex = index
       val sym = Symbol.specializedAnonClassSym(enclosing, thisIndex, loc)
       ctx.claimAnonClassName(sym, enclosing, thisIndex)
@@ -981,7 +981,7 @@ object Specialization {
       // Derive an anonymous class symbol for each specialization. Otherwise distinct
       // specializations of an enclosing generic def (e.g. `mk[String]` and `mk[Int32]`)
       // would reuse the same anonymous class name and collide, so one specialization would
-      // run with the other.s generated class.
+      // run with the other's generated class.
       val freshSym = anon.next(sym.loc)
       Expr.NewObject(freshSym, clazz, subst(tpe), subst(eff), constructors, methods, loc)
 

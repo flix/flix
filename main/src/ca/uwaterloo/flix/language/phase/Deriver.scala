@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.TypeParam
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, SymId, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
@@ -124,7 +124,7 @@ object Deriver {
 
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       val eqKey = s"Eq[${sym}]#eq"
-      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(StableName.of(eqKey)))
+      val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(SymId.Hash(StableName.suffix(eqKey))))
       claimDefId(eqDefSym, eqKey)
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -307,7 +307,7 @@ object Deriver {
 
       val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
       val compareKey = s"Order[${sym}]#compare"
-      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(StableName.of(compareKey)))
+      val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(SymId.Hash(StableName.suffix(compareKey))))
       claimDefId(compareDefSym, compareKey)
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -507,7 +507,7 @@ object Deriver {
 
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
       val toStringKey = s"ToString[${sym}]#toString"
-      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(StableName.of(toStringKey)))
+      val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(SymId.Hash(StableName.suffix(toStringKey))))
       claimDefId(toStringDefSym, toStringKey)
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -718,7 +718,7 @@ object Deriver {
 
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
       val hashKey = s"Hash[${sym}]#hash"
-      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(StableName.of(hashKey)))
+      val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(SymId.Hash(StableName.suffix(hashKey))))
       claimDefId(hashDefSym, hashKey)
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -861,7 +861,7 @@ object Deriver {
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
         val coerceKey = s"Coerce[${sym}]#coerce"
-        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(StableName.of(coerceKey)))
+        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(SymId.Hash(StableName.suffix(coerceKey))))
         claimDefId(coerceDefSym, coerceKey)
 
         val (_, caze) = cases.head
@@ -1115,17 +1115,19 @@ object Deriver {
     *
     * @param errors     the [[DerivationError]]s in the AST, if any.
     * @param claimedIds what each content-addressed derived-def symbol was minted for.
-    *                   Keyed by the full symbol, not by its id alone: two derived defs
-    *                   whose ids happen to collide only matter if they also share a
-    *                   namespace and text, since that is what determines the final JVM
-    *                   name -- e.g. an Eq[Foo]#eq key and an unrelated Order[Bar]#compare
-    *                   key hashing alike is not a real collision, because "Eq.eq" and
-    *                   "Order.compare" are different symbols regardless of id.
+    *                   Two different keys happening to hash alike is harmless as long as
+    *                   the resulting symbols differ; this catches the case where they don't,
+    *                   rather than letting two unrelated derived defs silently share one symbol.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[DerivationError], claimedIds: CollisionRegistry[Symbol.DefnSym, String])
 
   /**
     * Throws if `sym` is already claimed by a `key` other than this one.
+    *
+    * Keyed on the full symbol, not the raw hash: two different-family keys can hash
+    * alike without ever colliding as symbols, since `sym`'s namespace and text still
+    * tell them apart. Only a same-namespace, same-text sym minted from two different
+    * keys is a real collision.
     */
   private def claimDefId(sym: Symbol.DefnSym, key: String)(implicit sctx: SharedContext): Unit =
     sctx.claimedIds.claim(sym, key, SourceLocation.Unknown)(

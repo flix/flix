@@ -813,17 +813,17 @@ object Namer {
 
       // The id is derived from the instance rather than taken from a counter, so that it
       // is the same in every compilation; specialized names are built on top of it.
-      val (id, memberKey) = defKind match {
+      val (id, claimKey) = defKind match {
         case DefKind.Member(instance) =>
           val key = s"$instance#${ident.name}"
-          (Some(StableName.of(key)), Some(key))
+          (Some(SymId.Hash(StableName.suffix(key))), Some(key))
         case DefKind.NonMember => (None, None)
       }
       val sym = Symbol.mkDefnSym(ns0, ident, id)
       // Claimed by the full symbol, not by its id alone: two members whose ids happen to
       // collide are only a real problem if they also share a namespace and text, since
       // that is what makes them render to the same JVM name.
-      memberKey.foreach(key => sctx.claimedIds.claim(sym, key, SourceLocation.Unknown)(
+      claimKey.foreach(key => sctx.claimedIds.claim(sym, key, SourceLocation.Unknown)(
         (existing, incoming) => s"Instance-member id collision on '$sym': '$existing' and '$incoming'."
       ))
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts)
@@ -1852,9 +1852,9 @@ object Namer {
     *
     * @param errors     the [[NameError]]s in the AST, if any.
     * @param claimedIds what each content-addressed instance-member symbol was minted for.
-    *                   Keyed by the full symbol, not by its id alone: two members whose
-    *                   ids happen to collide only matter if they also share a namespace
-    *                   and text, since that is what determines the final JVM name.
+    *                   Two different keys happening to hash alike is harmless as long as
+    *                   the resulting symbols differ; this catches the case where they don't,
+    *                   rather than letting two unrelated members silently share one symbol.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[NameError], claimedIds: CollisionRegistry[Symbol.DefnSym, String])
 

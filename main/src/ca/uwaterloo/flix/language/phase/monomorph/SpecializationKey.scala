@@ -39,8 +39,8 @@ import scala.collection.mutable
   * implementation and an instance's implementation share a qualified name and can be
   * specialized at the identical type, so the id is the only thing separating them. That
   * id is itself content-addressed, derived in the namer from the instance the definition
-  * belongs to, so it carries no counter into the key. The rendered form is appended rather
-  * than the raw value, so the key does not move if the id changes representation.
+  * belongs to, so it carries no counter into the key. The rendered form is appended
+  * rather than the raw value, so the key does not move if the id changes representation.
   *
   * The renderer does not use `Type.toString`, which formats types for humans through
   * [[ca.uwaterloo.flix.language.fmt.FormatType]]. Keying on that would mean improving an
@@ -58,16 +58,11 @@ object SpecializationKey {
     * stable as that normalization.
     *
     * An alias surviving into `tpe` is deliberately tolerated rather than rejected: see
-    * `render`'s [[Type.Alias]] case and `TestSpecializationKey.followsAlias.01`, which pins
-    * that behavior. Associated types and `JvmToType`/`JvmToEff` are likewise rendered
-    * rather than rejected, each under its own tag.
-    *
-    * An unresolved JVM member is different: it is not tolerated, because there is no
-    * legitimate way for one to reach here. `TypeReduction2.reduce` resolves every JVM
-    * member into a concrete `TypeConstructor.Jvm*` during type checking, or the constraint
-    * solver reports it as a `TypeError` (`ConstraintSolverInterface.mkTypeError`) and
-    * compilation stops before `Specialization` ever runs. `render`'s [[Type.UnresolvedJvmType]]
-    * case throws rather than rendering it, on that basis.
+    * `render`'s [[Type.Alias]] case and `TestSpecializationKey.followsAlias.01`, which
+    * pins that behavior. Associated types, `JvmToType`/`JvmToEff`, and unresolved JVM
+    * types are likewise rendered rather than rejected, each under its own tag, so a
+    * boundary check here would have nothing left to reject that isn't already a
+    * deliberately-supported case.
     */
   def of(sym: Symbol.DefnSym, tpe: Type): String = {
     val sb = new mutable.StringBuilder()
@@ -76,7 +71,7 @@ object SpecializationKey {
     sb.append(sym.text)
     // The id distinguishes a trait's default implementation from an instance's, which can
     // be specialized at the very same type. Leaving it out merges them.
-    sym.id.foreach(id => sb.append(0x24.toChar).append(StableName.render(id)))
+    sym.id.foreach(id => sb.append('$').append(id.render))
     sb.append('|')
     render(tpe, mutable.Map.empty, sb)
     sb.toString()
@@ -204,14 +199,13 @@ object SpecializationKey {
     * Returns a JVM-descriptor-based identity for `method`: its declaring class, its
     * length-prefixed name, its parameter types, and its return type.
     *
-    * The return type is included, even though a Java *source* compiler never emits two
-    * overloads differing only by return type: the JVM itself does not enforce that rule,
-    * and javac's own output routinely breaks it for exactly this reason. A covariant
-    * return override (`Dog reproduce()` overriding `Animal reproduce()`) compiles to two
-    * real, differently-behaving methods in the same class -- the actual override plus a
-    * synthetic `ACC_BRIDGE` method with the original erased signature, both named
-    * `reproduce`, both taking no arguments, differing only in return type. Excluding it
-    * would have rendered both to the identical key.
+    * The return type must be included: "a Java compiler never emits two overloads
+    * differing only by return type" holds for hand-written Java source, but not for the
+    * JVM itself, which javac routinely violates via covariant-return overrides. Overriding
+    * a method with a covariant return type compiles to two real, differently-behaving
+    * methods sharing declaring class, name, and parameter types -- the actual override plus
+    * a synthetic `ACC_BRIDGE` method carrying the original, non-covariant signature.
+    * Without the return type, both would render to the identical key.
     */
   private def jvmMethodDescriptor(method: Method): String =
     s"${classDescriptor(method.getDeclaringClass)}${lengthPrefixed(method.getName)}" +
