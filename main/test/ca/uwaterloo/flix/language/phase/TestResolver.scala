@@ -574,6 +574,12 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
+  test("UndefinedName.04") {
+    val input = "def f(): #{ A[Int32] } = ???"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedNameUnrecoverable](result)
+  }
+
   test("UndefinedUse.01") {
     val input =
       s"""
