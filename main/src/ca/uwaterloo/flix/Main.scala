@@ -80,7 +80,8 @@ object Main {
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
-      xchaosMonkey = Options.Default.xchaosMonkey
+      xchaosMonkey = Options.Default.xchaosMonkey,
+      xstableNameLength = cmdOpts.xstableNameLength
     )
 
     // Don't use progress bar if benchmarking.
@@ -499,6 +500,7 @@ object Main {
     xsummary: Boolean = false,
     xsubeffecting: Set[Subeffecting] = Set.empty,
     xnewmono: Boolean = false,
+    xstableNameLength: Int = Options.Default.xstableNameLength,
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
     XPerfPar: Boolean = false,
@@ -740,6 +742,16 @@ object Main {
       // Xnewmono
       opt[Unit]("Xnewmono").action((_, c) => c.copy(xnewmono = true)).
         text("[experimental] uses the constraint-based monomorphization pipeline instead of the demand-driven one.")
+
+      // Xstable-name-length
+      opt[Int]("Xstable-name-length").action((arg, c) => c.copy(xstableNameLength = arg)).
+        validate(arg =>
+          if (arg < 0) failure("Xstable-name-length must be at least 0")
+          else if (arg > StableName.MaxWidth) failure(s"Xstable-name-length must be at most ${StableName.MaxWidth}")
+          else success
+        ).
+        text(s"[experimental] sets the number of base-36 characters (0-${StableName.MaxWidth}) used for content-addressed name suffixes. " +
+          s"0 opts out of content-addressing and falls back to classic incrementing ids (default: ${Options.Default.xstableNameLength}).")
 
       note("")
 

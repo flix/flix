@@ -42,7 +42,8 @@ object Options {
     XPerfN = None,
     XPerfFrontend = false,
     XPerfPar = false,
-    xchaosMonkey = false
+    xchaosMonkey = false,
+    xstableNameLength = StableName.DefaultWidth
   )
 
   /**
@@ -100,7 +101,8 @@ case class Options(lib: LibLevel,
                    XPerfFrontend: Boolean,
                    XPerfPar: Boolean,
                    XPerfN: Option[Int],
-                   xchaosMonkey: Boolean
+                   xchaosMonkey: Boolean,
+                   xstableNameLength: Int
                   )
 
 /**

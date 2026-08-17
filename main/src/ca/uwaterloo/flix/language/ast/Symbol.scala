@@ -75,6 +75,19 @@ object Symbol {
   }
 
   /**
+    * Returns the id for a content-addressed symbol derived from `key`, honoring
+    * `--Xstable-name-length`: `0` opts out of content-addressing entirely and mints a
+    * [[SymId.Counter]] instead, so the resulting name depends on allocation order again,
+    * exactly like before this scheme existed. Any other configured value is the width, in
+    * base-36 digits, that [[StableName.suffix]] renders `key` to.
+    */
+  private def stableOrCounterId(key: => String)(implicit flix: Flix): SymId = {
+    val width = flix.options.xstableNameLength
+    if (width == 0) SymId.Counter(flix.genSym.freshId())
+    else SymId.Hash(StableName.suffix(key, width))
+  }
+
+  /**
     * Returns the def symbol for the specialization of `sym` identified by `key`.
     *
     * Consumes no [[ca.uwaterloo.flix.language.GenSym]] id: the
@@ -82,8 +95,8 @@ object Symbol {
     * every compilation. `key` must identify the specialization uniquely; see
     * [[ca.uwaterloo.flix.language.phase.monomorph.SpecializationKey]].
     */
-  def specializedDefnSym(sym: DefnSym, key: String): DefnSym =
-    new DefnSym(Some(StableName.of(key)), sym.namespace, sym.text, sym.loc)
+  def specializedDefnSym(sym: DefnSym, key: String)(implicit flix: Flix): DefnSym =
+    new DefnSym(Some(stableOrCounterId(key)), sym.namespace, sym.text, sym.loc)
 
   /**
     * Returns the def symbol for the `index`th definition lifted out of `sym`.
@@ -92,24 +105,24 @@ object Symbol {
     * within the enclosing definition rather than across the program, so editing one
     * definition cannot rename the lambdas of another.
     */
-  def liftedDefnSym(sym: DefnSym, index: Int): DefnSym =
-    new DefnSym(Some(StableName.of(s"$sym#lift$index")), sym.namespace, sym.text, sym.loc)
+  def liftedDefnSym(sym: DefnSym, index: Int)(implicit flix: Flix): DefnSym =
+    new DefnSym(Some(stableOrCounterId(s"$sym#lift$index")), sym.namespace, sym.text, sym.loc)
 
   /**
     * Returns the enum symbol for the specialization of `sym` identified by `key`.
     *
     * Consumes no [[ca.uwaterloo.flix.language.GenSym]] id; see [[specializedDefnSym]].
     */
-  def specializedEnumSym(sym: EnumSym, key: String): EnumSym =
-    new EnumSym(Some(StableName.of(key)), sym.namespace, sym.text, sym.loc)
+  def specializedEnumSym(sym: EnumSym, key: String)(implicit flix: Flix): EnumSym =
+    new EnumSym(Some(stableOrCounterId(key)), sym.namespace, sym.text, sym.loc)
 
   /**
     * Returns the struct symbol for the specialization of `sym` identified by `key`.
     *
     * Consumes no [[ca.uwaterloo.flix.language.GenSym]] id; see [[specializedDefnSym]].
     */
-  def specializedStructSym(sym: StructSym, key: String): StructSym =
-    new StructSym(Some(StableName.of(key)), sym.namespace, sym.text, sym.loc)
+  def specializedStructSym(sym: StructSym, key: String)(implicit flix: Flix): StructSym =
+    new StructSym(Some(stableOrCounterId(key)), sym.namespace, sym.text, sym.loc)
 
   /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
@@ -185,7 +198,7 @@ object Symbol {
   /**
     * Returns the definition symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkDefnSym(ns: NName, ident: Ident, id: Option[Long]): DefnSym = {
+  def mkDefnSym(ns: NName, ident: Ident, id: Option[SymId]): DefnSym = {
     new DefnSym(id, ns.parts, ident.name, ident.loc)
   }
 
@@ -200,7 +213,7 @@ object Symbol {
   /**
     * Returns the definition symbol for the given fully qualified name and ID.
     */
-  def mkDefnSym(fqn: String, id: Option[Long]): DefnSym = split(fqn) match {
+  def mkDefnSym(fqn: String, id: Option[SymId]): DefnSym = split(fqn) match {
     case None => new DefnSym(id, Nil, fqn, SourceLocation.Unknown)
     case Some((ns, name)) => new DefnSym(id, ns, name, SourceLocation.Unknown)
   }
@@ -343,8 +356,8 @@ object Symbol {
     * reaches a generated name.
     */
   def mkFreshAnonClassSym(loc: SourceLocation)(implicit flix: Flix): AnonClassSym = {
-    val id = flix.genSym.freshId()
-    new AnonClassSym(id.toLong, loc)
+    val id = SymId.Counter(flix.genSym.freshId())
+    new AnonClassSym(Some(id), loc)
   }
   
 
@@ -355,8 +368,8 @@ object Symbol {
     * Distinct specializations of one generic definition must not share an anonymous class,
     * so the enclosing specialized symbol — itself content-addressed — is part of the key.
     */
-  def specializedAnonClassSym(enclosing: DefnSym, index: Int, loc: SourceLocation): AnonClassSym =
-    new AnonClassSym(StableName.of(s"$enclosing#anon$index"), loc)
+  def specializedAnonClassSym(enclosing: DefnSym, index: Int, loc: SourceLocation)(implicit flix: Flix): AnonClassSym =
+    new AnonClassSym(Some(stableOrCounterId(s"$enclosing#anon$index")), loc)
 
   /**
     * Variable Symbol.
@@ -478,14 +491,14 @@ object Symbol {
   /**
     * Definition Symbol.
     */
-  final class DefnSym(val id: Option[Long], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
+  final class DefnSym(val id: Option[SymId], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.
       */
     def name: String = id match {
       case None => text
-      case Some(i) => text + Flix.Delimiter + StableName.render(i)
+      case Some(symId) => text + Flix.Delimiter + symId.render
     }
 
     /**
@@ -510,14 +523,14 @@ object Symbol {
   /**
     * Enum Symbol.
     */
-  final class EnumSym(val id: Option[Long], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class EnumSym(val id: Option[SymId], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.
       */
     def name: String = id match {
       case None => text
-      case Some(i) => text + Flix.Delimiter + StableName.render(i)
+      case Some(symId) => text + Flix.Delimiter + symId.render
     }
 
     /**
@@ -547,14 +560,14 @@ object Symbol {
   /**
     * Struct Symbol.
     */
-  final class StructSym(val id: Option[Long], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class StructSym(val id: Option[SymId], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.
       */
     def name: String = id match {
       case None => text
-      case Some(i) => text + Flix.Delimiter + StableName.render(i)
+      case Some(symId) => text + Flix.Delimiter + symId.render
     }
 
     /**
@@ -1013,12 +1026,15 @@ object Symbol {
     /**
     * Anonymous Java class symbol.
     */
-  final class AnonClassSym(val id: Long, val loc: SourceLocation) extends Symbol with Locatable {
+  final class AnonClassSym(val id: Option[SymId], val loc: SourceLocation) extends Symbol with Locatable {
 
     /**
       * Returns the name of `this` symbol.
       */
-    def name: String = "Anon" + Flix.Delimiter + StableName.render(id)
+    def name: String = id match {
+      case None => "Anon"
+      case Some(symId) => s"Anon${Flix.Delimiter}${symId.render}"
+    }
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
