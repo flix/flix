@@ -3296,9 +3296,14 @@ object Weeder2 {
   }
 
   private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): PredicateAndArity = {
-    val arityToken = pickToken(TokenKind.LiteralInt, tree)
     val ident = pickNameIdent(tree)
-    val arity = tryParsePredicateArity(arityToken)
+    val arity = tryPickToken(TokenKind.LiteralInt, tree) match {
+      case Some(token) => tryParsePredicateArity(token)
+      case None =>
+        // Soft failure: the parser has already reported the missing integer literal.
+        sctx.errors.add(WeederError.IllegalPredicateArity(tree.loc))
+        0
+    }
     PredicateAndArity(Name.mkPred(ident), arity)
   }
 
@@ -3435,13 +3440,20 @@ object Weeder2 {
     * Picks out the first token of a specific [[TokenKind]].
     */
   private def pickToken(kind: TokenKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Token = {
-    tree.children.collectFirst {
-      case token: Token if token.kind == kind => token
-    } match {
+    tryPickToken(kind, tree) match {
       case Some(t) => t
       case _ =>
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
         throw PickException(error)
+    }
+  }
+
+  /**
+    * Tries to pick out the first token of a specific [[TokenKind]].
+    */
+  private def tryPickToken(kind: TokenKind, tree: Tree): Option[Token] = {
+    tree.children.collectFirst {
+      case token: Token if token.kind == kind => token
     }
   }
 
