@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -2009,6 +2009,12 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibAll)
     expectError[ParseError.UnexpectedToken](result)
     rejectError[WeederError.IllegalPredicateArity](result)
+  }
+
+  test("PredicateWithAlias.01") {
+    val input = "def f(): #{ A[Int32] } = ???"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedNameUnrecoverable](result)
   }
 
   test("IllegalConstantPattern.LetMatch.01") {

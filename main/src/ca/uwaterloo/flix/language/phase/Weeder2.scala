@@ -2969,7 +2969,7 @@ object Weeder2 {
       }
       pickAllTrees(parentTree).foldRight(rest) {
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
-          val qname = pickQName(parentTree)
+          val qname = pickQName(tree)
           val targs = Types.pickArguments(tree)
           Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
 
