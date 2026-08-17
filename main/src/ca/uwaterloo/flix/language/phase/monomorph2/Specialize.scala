@@ -45,7 +45,6 @@ object Specialize {
     * Immutable lookup tables built once by `run`, before any specialization/lowering happens.
     *
     * @param defTable              Fresh syms for parametric defs.
-    * @param allDefs               Every reachable def (top-level, instance, default-sig-impl), parametric or not.
     * @param enumTable             Fresh syms for parametric enums only.
     * @param structTable           Fresh syms for parametric structs only.
     * @param restrictableEnumTable Fresh syms for (parametric) restrictable enums. (Restrictable enums always carry the case-set index as an implicit tparam.)
@@ -53,7 +52,6 @@ object Specialize {
     */
   private[monomorph2] case class LookupTables(
     defTable: Map[(Symbol.DefnSym, Type), Symbol.DefnSym],
-    allDefs: Map[Symbol.DefnSym, TypedAst.Def],
     enumTable: Map[(Symbol.EnumSym, List[Type]), Symbol.EnumSym],
     structTable: Map[(Symbol.StructSym, List[Type]), Symbol.StructSym],
     restrictableEnumTable: Map[(Symbol.RestrictableEnumSym, List[Type]), Symbol.EnumSym],
@@ -81,22 +79,18 @@ object Specialize {
     * Returns the sym to use for a call to `sym` at ground arrow type `groundArrowTpe`.
     */
   private[monomorph2] def lookupSym(sym: Symbol.DefnSym, groundArrowTpe: Type)
-                       (implicit tables: LookupTables): Symbol.DefnSym = {
-    val defn = tables.allDefs.getOrElse(sym, throw InternalCompilerException(s"lookupSym: sym not in allDefs: $sym", sym.loc))
-    // instance/default-sig defs can have empty spec.tparams but still need specialization
-    // therefore we first look it up in `tables.defTable`
+                       (implicit tables: LookupTables, root: TypedAst.Root): Symbol.DefnSym =
     tables.defTable.get((sym, groundArrowTpe)) match {
       case Some(specializedSym) => specializedSym
       case None =>
-        if (defn.spec.tparams.isEmpty) {
-          defn.sym
+        if (root.defs(sym).spec.tparams.isEmpty) {
+          sym
         } else {
           throw InternalCompilerException(
             s"Solver gap: no specialization for $sym at type $groundArrowTpe. " +
               "Extend the constraint generator to cover this call site.", sym.loc)
         }
     }
-  }
 
   /**
     * Returns the case sym to use for a `Tag`/`Pattern.Tag` at ground enum type `groundEnumTpe`.
@@ -223,9 +217,9 @@ object Specialize {
         TypedAst.Op(sym, spec, loc)
     }
 
-  /** Returns the `def` that implements signature `sym` for the instance at ground arrow type `groundArrowTpe`, or its trait-level default. */
+  /** Returns the sym to use for a call to signature `sym`'s instance implementation (or trait-level default) at ground arrow type `groundArrowTpe`. */
   private[monomorph2] def resolveSigSym(sym: Symbol.SigSym, groundArrowTpe: Type)
-                            (implicit tables: LookupTables, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+                            (implicit tables: LookupTables, root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
     val sig = root.sigs(sym)
     val trt = root.traits(sym.trt)
     // groundArrowTpe comes from an already-solved, reachable call site, so it must unify with
@@ -236,21 +230,26 @@ object Specialize {
     val tyCon = traitType.typeConstructor.get
     val instance = tables.instances((sym.trt, tyCon))
     val defns = instance.defs.filter(_.sym.text == sig.sym.name)
-    (sig.exp, defns) match {
+    val (resolvedSym, isParametric) = (sig.exp, defns) match {
       // An instance implementation exists. Use it.
-      case (_, defn :: Nil) => defn
+      case (_, defn :: Nil) => (defn.sym, defn.spec.tparams.nonEmpty || instance.tparams.nonEmpty)
       // No instance implementation, but a default implementation exists. Use it.
-      case (Some(impl), Nil) =>
-        val defnSym = MonomorphHelpers.defaultSigImplSym(sig)
-        TypedAst.Def(defnSym, sig.spec, impl, sig.loc)
+      case (Some(_), Nil)   => (MonomorphHelpers.defaultSigImplSym(sig), true)
       // Multiple matching defs. Should have been caught previously.
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
       // No matching defs and no default. Should have been caught previously.
-      case (None, Nil)       => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
+      case (None, Nil)      => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
+    }
+    tables.defTable.get((resolvedSym, groundArrowTpe)) match {
+      case Some(specializedSym) => specializedSym
+      case None if !isParametric => resolvedSym
+      case None =>
+        throw InternalCompilerException(
+          s"Solver gap: no specialization for $resolvedSym at type $groundArrowTpe. " +
+            "Extend the constraint generator to cover this call site.", sym.loc)
     }
   }
 
-  /** Merges `envs` into a single var-sym renaming map. */
   /** Specializes `fparams0` under `subst0`, returning the fresh params and the old-to-fresh var-sym renaming. */
   private[monomorph2] def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: StrictSubstitution)
                                      (implicit root: TypedAst.Root, flix: Flix): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
