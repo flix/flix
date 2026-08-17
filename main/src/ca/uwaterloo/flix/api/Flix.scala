@@ -494,6 +494,10 @@ class Flix {
     phaseTimers = ArrayBuffer.empty
     currentPhase = None
 
+    if (options.progress) {
+      progressBar.start()
+    }
+
     // Reset the phase list file if relevant
     if (this.options.xprintphases) {
       AstPrinter.resetPhaseFile()
@@ -618,7 +622,11 @@ class Flix {
     (result, errors.toList)
   } catch {
     case ex: InternalCompilerException =>
+      if (options.progress) progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
+      throw ex
+    case ex: Throwable =>
+      if (options.progress) progressBar.complete()
       throw ex
   }
 
@@ -637,6 +645,10 @@ class Flix {
 
     // Initialize the thread pool.
     initThreadPool()
+
+    if (options.progress) {
+      progressBar.start()
+    }
 
     var treeShaker1Ast = TreeShaker1.run(typedAst)
     // Note: Do not null typedAst. It is used later.
@@ -704,9 +716,11 @@ class Flix {
     result
   } catch {
     case ex: InternalCompilerException =>
+      if (options.progress) progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
       throw ex
     case ex: Throwable =>
+      if (options.progress) progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
       throw ex
   }
