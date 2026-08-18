@@ -487,14 +487,15 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
+    // Begin drawing the progress bar (if enabled).
+    progressBar.start()
+
     // Initialize the thread pool.
     initThreadPool()
 
     // Reset the phase information.
     phaseTimers = ArrayBuffer.empty
     currentPhase = None
-
-    progressBar.start()
 
     // Reset the phase list file if relevant
     if (this.options.xprintphases) {
@@ -639,10 +640,11 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
+    // Begin drawing the progress bar (if enabled).
+    progressBar.start()
+
     // Initialize the thread pool.
     initThreadPool()
-
-    progressBar.start()
 
     var treeShaker1Ast = TreeShaker1.run(typedAst)
     // Note: Do not null typedAst. It is used later.
