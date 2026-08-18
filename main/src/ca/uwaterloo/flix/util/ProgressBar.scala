@@ -102,7 +102,7 @@ class ProgressBar(flix: Flix) {
   private var memorySampleMillis: Long = 0L
 
   /**
-    * Starts the animation thread if it is not already running.
+    * Starts the animation thread if progress is enabled and the animator is not already running.
     */
   def start(): Unit = {
     if (flix.options.progress && animator == null) {
@@ -139,7 +139,7 @@ class ProgressBar(flix: Flix) {
     if (executor != null) executor.shutdownNow()
 
     if (executor != null) {
-      // Wait only for an in-flight terminal write, never for phase-state computation.
+      // Wait for an in-flight terminal write.
       renderLock.lock()
       try {
         memorySampleMillis = 0L
