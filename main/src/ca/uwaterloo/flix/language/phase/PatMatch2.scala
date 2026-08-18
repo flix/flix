@@ -610,7 +610,7 @@ object PatMatch2 {
     * Returns the (unmodified) root together with any errors found.
     */
   def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[CompilationMessage]) =
-    flix.phaseNew("PatMatch") {
+    flix.phase("PatMatch") {
       implicit val r: Root = root
       implicit val sctx: SharedContext = SharedContext.mk()
 

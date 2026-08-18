@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
+import ca.uwaterloo.flix.runtime.{JvmLoader, LoadedProgram, TestFn}
 import ca.uwaterloo.flix.util.{FileOps, Options, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -32,7 +32,7 @@ class StandardLibrarySuite extends AnyFunSuite {
   private val Path = "main/test/ca/uwaterloo/flix/library/"
 
   /** The default options. */
-  private val Opts = Options.DefaultTest.copy(incremental = false, outputJvm = false)
+  private val Opts = Options.DefaultTest.copy(incremental = false)
 
   private def init(): Unit = try {
     // Create a new Flix compiler.
@@ -47,11 +47,11 @@ class StandardLibrarySuite extends AnyFunSuite {
     }
 
     // Compile the program with all test suites.
-    flix.compile().toResult match {
+    flix.compile() match {
       case Result.Ok(compilationResult) =>
-        runTests(compilationResult)
+        runTests(JvmLoader.load(compilationResult))
       case Result.Err(errors) =>
-        fail(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None))
+        fail(CompilationMessage.formatAll(errors)(flix.getFormatter, None))
     }
   } catch {
     case ex: Throwable =>
@@ -62,9 +62,9 @@ class StandardLibrarySuite extends AnyFunSuite {
       }
   }
 
-  private def runTests(r: CompilationResult): Unit = {
+  private def runTests(program: LoadedProgram): Unit = {
     // Group the tests by namespace.
-    val testsByNamespace = r.getTests.groupBy {
+    val testsByNamespace = program.tests.groupBy {
       case (sym, _) => sym.namespace
     }
 

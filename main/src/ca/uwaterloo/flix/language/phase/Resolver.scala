@@ -29,8 +29,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{Chain, ListMap, ListOps, MapOps, Nel}
+import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.unused
@@ -77,7 +76,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root, @unused oldRoot: ResolvedAst.Root, @unused changeSet: ChangeSet)(implicit flix: Flix): (Validation[ResolvedAst.Root, ResolutionError], List[ResolutionError]) = flix.phaseNew("Resolver") {
+  def run(root: NamedAst.Root, @unused oldRoot: ResolvedAst.Root, @unused changeSet: ChangeSet)(implicit flix: Flix): (ResolvedAst.Root, List[ResolutionError]) = flix.phase("Resolver") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Get the default uses.
@@ -87,46 +86,38 @@ object Resolver {
       case sym => root.symbols.getOrElse(Name.mkUnlocatedNName(sym.namespace), Map.empty).getOrElse(sym.name, Nil).map(Resolution.Declaration.apply)
     }))
 
-    val usesVal = root.uses.map {
+    // The module-level uses, keyed by module. These are also resolved (and any errors reported)
+    // by `visitDecl` when the modules themselves are resolved, so we do not report errors here.
+    val uses = root.uses.map {
       case (ns, uses0) =>
-        mapN(Validation.traverse(uses0)(u => visitUseOrImport(u, ns, root).toValidation)) {
-          u => new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone) -> u
-        }
+        new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone) -> uses0.flatMap(visitUseOrImport(_, ns, root).toOption)
     }
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    val resolvedRoot = flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
-      case (uses, (taenv, taOrder)) =>
-
-        val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
-        flatMapN(unitsVal) {
-          case units =>
-            val table = SymbolTable.traverse(units)(tableUnit)
-            mapN(checkSuperTraitDag(table.traits)) {
-              case () =>
-                ResolvedAst.Root(
-                  table.modules,
-                  table.traits,
-                  table.instances,
-                  table.defs,
-                  table.enums,
-                  table.structs,
-                  table.restrictableEnums,
-                  table.effects,
-                  table.typeAliases,
-                  ListMap(uses.toMap),
-                  taOrder,
-                  root.mainEntryPoint,
-                  root.sources,
-                  root.availableClasses,
-                  root.tokens
-                )
-            }
-        }
-    }
+    val (taenv, taOrder) = resolveTypeAliases(defaultUses, root)
+    val units = ParOps.parMap(root.units.values)(visitUnit(_, defaultUses)(taenv, sctx, root, flix))
+    val table = SymbolTable.traverse(units)(tableUnit)
+    val traits = findReportAndBreakSuperTraitCycles(table.traits)
+    val resolvedRoot = ResolvedAst.Root(
+      table.modules,
+      traits,
+      table.instances,
+      table.defs,
+      table.enums,
+      table.structs,
+      table.restrictableEnums,
+      table.effects,
+      table.typeAliases,
+      ListMap(uses),
+      taOrder,
+      root.mainEntryPoint,
+      root.sources,
+      root.availableClasses,
+      root.tokens
+    )
 
     (resolvedRoot, sctx.errors.asScala.toList)
-  }(DebugValidation())
+  }
 
   /**
     * Builds a symbol table from the compilation unit.
@@ -159,61 +150,53 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the root.
     */
-  private def semiResolveTypeAliases(defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
-    fold(root.units.values, Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
-      case (acc, unit) => mapN(semiResolveTypeAliasesInUnit(unit, defaultUses, root)) {
-        case aliases => aliases.foldLeft(acc) {
-          case (innerAcc, alias) => innerAcc + (alias.sym -> alias)
-        }
+  private def semiResolveTypeAliases(defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias] = {
+    root.units.values.foldLeft(Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
+      case (acc, unit) => semiResolveTypeAliasesInUnit(unit, defaultUses, root).foldLeft(acc) {
+        case (innerAcc, alias) => innerAcc + (alias.sym -> alias)
       }
     }
   }
 
   /**
     * Semi-resolves the type aliases in the unit.
+    *
+    * The uses and imports of the unit are resolved silently: any errors are reported by [[visitUnit]].
     */
-  private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = unit match {
+  private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.Declaration.TypeAlias] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls, _) =>
-      val usesAndImportsVal = Validation.traverse(usesAndImports0)(u => visitUseOrImport(u, Name.RootNS, root).toValidation)
-      flatMapN(usesAndImportsVal) {
-        case usesAndImports =>
-          val scp = appendAllUseScp(defaultUses, usesAndImports, root)
-          val namespaces = decls.collect {
-            case ns: NamedAst.Declaration.Mod => ns
-          }
-          val aliases0 = decls.collect {
-            case alias: NamedAst.Declaration.TypeAlias => alias
-          }
-          val aliases = aliases0.map(semiResolveTypeAlias(_, scp, Name.RootNS, root))
-          val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
-          mapN(nsVal) {
-            case ns => aliases ::: ns.flatten
-          }
+      val usesAndImports = usesAndImports0.flatMap(visitUseOrImport(_, Name.RootNS, root).toOption)
+      val scp = appendAllUseScp(defaultUses, usesAndImports, root)
+      val namespaces = decls.collect {
+        case ns: NamedAst.Declaration.Mod => ns
       }
+      val aliases0 = decls.collect {
+        case alias: NamedAst.Declaration.TypeAlias => alias
+      }
+      val aliases = aliases0.map(semiResolveTypeAlias(_, scp, Name.RootNS, root))
+      val ns = namespaces.flatMap(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
+      aliases ::: ns
   }
 
   /**
     * Semi-resolves the type aliases in the namespace.
+    *
+    * The uses and imports of the namespace are resolved silently: any errors are reported by [[visitDecl]].
     */
-  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Mod, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
+  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Mod, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.Declaration.TypeAlias] = ns0 match {
     case NamedAst.Declaration.Mod(_, _, _, sym, _, usesAndImports0, decls, _) =>
       val ns0 = Name.mkUnlocatedNName(sym.ns)
-      val usesAndImportsVal = Validation.traverse(usesAndImports0)(u => visitUseOrImport(u, ns0, root).toValidation)
-      flatMapN(usesAndImportsVal) {
-        case usesAndImports =>
-          val scp = appendAllUseScp(defaultUses, usesAndImports, root)
-          val namespaces = decls.collect {
-            case ns: NamedAst.Declaration.Mod => ns
-          }
-          val aliases0 = decls.collect {
-            case alias: NamedAst.Declaration.TypeAlias => alias
-          }
-          val aliases = aliases0.map(semiResolveTypeAlias(_, scp, ns0, root))
-          val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
-          mapN(nsVal) {
-            case ns => aliases ::: ns.flatten
-          }
+      val usesAndImports = usesAndImports0.flatMap(visitUseOrImport(_, ns0, root).toOption)
+      val scp = appendAllUseScp(defaultUses, usesAndImports, root)
+      val namespaces = decls.collect {
+        case ns: NamedAst.Declaration.Mod => ns
       }
+      val aliases0 = decls.collect {
+        case alias: NamedAst.Declaration.TypeAlias => alias
+      }
+      val aliases = aliases0.map(semiResolveTypeAlias(_, scp, ns0, root))
+      val ns = namespaces.flatMap(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
+      aliases ::: ns
   }
 
   /**
@@ -237,16 +220,12 @@ object Resolver {
     *   - a list of the aliases in a processing order,
     *     such that any alias only depends on those earlier in the list
     */
-  private def resolveTypeAliases(defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
-    flatMapN(semiResolveTypeAliases(defaultUses, root)) {
-      case semiResolved =>
-        flatMapN(findResolutionOrder(semiResolved.values)) {
-          case orderedSyms =>
-            val orderedSemiResolved = orderedSyms.map(semiResolved)
-            val aliases = finishResolveTypeAliases(orderedSemiResolved)
-            Validation.Success((aliases, orderedSyms))
-        }
-    }
+  private def resolveTypeAliases(defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): (Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]) = {
+    val semiResolved = findReportAndBreakTypeAliasCycles(semiResolveTypeAliases(defaultUses, root))
+    val orderedSyms = findResolutionOrder(semiResolved.values)
+    val orderedSemiResolved = orderedSyms.map(semiResolved)
+    val aliases = finishResolveTypeAliases(orderedSemiResolved)
+    (aliases, orderedSyms)
   }
 
   /**
@@ -275,28 +254,90 @@ object Resolver {
   }
 
   /**
-    * Create a list of CyclicTypeAliases errors, one for each type alias.
+    * Ensures that the type aliases do not (transitively) refer to themselves.
+    *
+    * A cycle is a strongly connected component of the type alias dependency graph with more than one
+    * alias, or a single alias that refers to itself. For every such component we report a
+    * [[CyclicTypeAliases]] error for each alias in it and recover by replacing the references to aliases
+    * in the same component by error types. References to aliases outside the component are kept, as
+    * are references from outside into the component.
+    *
+    * [[findResolutionOrder]] and [[finishResolveTypeAliases]] expand aliases inline and would not
+    * terminate on a cyclic alias, so the returned aliases are guaranteed to be acyclic.
     */
-  private def mkCycleErrors[T](cycle: List[Symbol.TypeAliasSym]): Validation.Failure[T, ResolutionError] = {
-    val errors = cycle.map {
-      sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc)
+  private def findReportAndBreakTypeAliasCycles(aliases: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias])(implicit sctx: SharedContext): Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias] = {
+    /** Returns the symbols of the type aliases directly used by the type alias `sym`. */
+    def getUses(sym: Symbol.TypeAliasSym): List[Symbol.TypeAliasSym] = getAliasUses(aliases(sym).tpe)
+
+    /** Returns `true` if the strongly connected component `syms` contains a cycle. */
+    def isCyclic(syms: Iterable[Symbol.TypeAliasSym]): Boolean = syms.sizeIs > 1 || syms.exists(sym => getUses(sym).contains(sym))
+
+    // Group the type aliases by strongly connected component.
+    val components = Graph.stronglyConnectedComponents(aliases.keys, getUses).groupMap(_._2)(_._1)
+
+    components.values.foldLeft(aliases) {
+      case (acc, syms) =>
+        if (!isCyclic(syms)) {
+          acc
+        } else {
+          // The aliases in the cycle, in source order (used for the error message).
+          val cycle = syms.toList.sortBy(_.loc)
+          // The aliases in the cycle as a set (used to erase the cyclic references).
+          val cycleSet = cycle.toSet
+          cycle.foldLeft(acc) {
+            case (innerAcc, sym) =>
+              sctx.errors.add(ResolutionError.CyclicTypeAliases(cycle, sym.loc))
+              val alias = innerAcc(sym)
+              innerAcc + (sym -> alias.copy(tpe = eraseAliasUses(alias.tpe, cycleSet)))
+          }
+        }
     }
-    Validation.Failure(Chain.from(errors))
+  }
+
+  /**
+    * Replaces every use of a type alias in `syms` within the partially resolved type `tpe0` by an error type.
+    *
+    * The arguments of an applied alias are kept, so that e.g. `type alias L[a] = Option[L[a]]` becomes
+    * `Option[Error[a]]` and the type parameter `a` remains used.
+    */
+  private def eraseAliasUses(tpe0: UnkindedType, syms: Set[Symbol.TypeAliasSym]): UnkindedType = tpe0 match {
+    case UnkindedType.UnappliedAlias(sym, loc) if syms.contains(sym) => UnkindedType.Error(loc)
+    case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(eraseAliasUses(tpe1, syms), eraseAliasUses(tpe2, syms), loc)
+    case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(eraseAliasUses(tpe, syms), kind, loc)
+    case UnkindedType.Arrow(eff, arity, loc) => UnkindedType.Arrow(eff.map(eraseAliasUses(_, syms)), arity, loc)
+    case UnkindedType.CaseComplement(tpe, loc) => UnkindedType.CaseComplement(eraseAliasUses(tpe, syms), loc)
+    case UnkindedType.CaseUnion(tpe1, tpe2, loc) => UnkindedType.CaseUnion(eraseAliasUses(tpe1, syms), eraseAliasUses(tpe2, syms), loc)
+    case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliasUses(tpe1, syms), eraseAliasUses(tpe2, syms), loc)
+    case _: UnkindedType.UnappliedAlias => tpe0
+    case _: UnkindedType.Var => tpe0
+    case _: UnkindedType.Cst => tpe0
+    case _: UnkindedType.Enum => tpe0
+    case _: UnkindedType.Effect => tpe0
+    case _: UnkindedType.Struct => tpe0
+    case _: UnkindedType.RestrictableEnum => tpe0
+    case _: UnkindedType.CaseSet => tpe0
+    case _: UnkindedType.UnappliedAssocType => tpe0
+    case _: UnkindedType.UnappliedNative => tpe0
+    case _: UnkindedType.Error => tpe0
+    case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
+    case assoc: UnkindedType.AssocType => throw InternalCompilerException("unexpected applied associated type", assoc.loc)
   }
 
   /**
     * Gets the resolution order for the aliases.
     *
-    * Any alias only depends on those earlier in the list
+    * Any alias only depends on those earlier in the list.
+    *
+    * The aliases must be acyclic (see [[findReportAndBreakTypeAliasCycles]]).
     */
-  private def findResolutionOrder(aliases: Iterable[ResolvedAst.Declaration.TypeAlias]): Validation[List[Symbol.TypeAliasSym], ResolutionError] = {
+  private def findResolutionOrder(aliases: Iterable[ResolvedAst.Declaration.TypeAlias]): List[Symbol.TypeAliasSym] = {
     val aliasSyms = aliases.map(_.sym)
     val aliasLookup = aliases.map(alias => alias.sym -> alias).toMap
     val getUses = (sym: Symbol.TypeAliasSym) => getAliasUses(aliasLookup(sym).tpe)
 
     Graph.topologicalSort(aliasSyms, getUses) match {
-      case Graph.TopologicalSort.Sorted(sorted) => Validation.Success(sorted)
-      case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
+      case Graph.TopologicalSort.Sorted(sorted) => sorted
+      case Graph.TopologicalSort.Cycle(path) => throw InternalCompilerException(s"Unexpected cyclic type aliases: ${path.mkString(", ")}", path.head.loc)
     }
   }
 
@@ -319,53 +360,46 @@ object Resolver {
   /**
     * Performs name resolution on the compilation unit.
     */
-  private def visitUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
+  private def visitUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.CompilationUnit = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
-      val usesAndImportsVal = Validation.traverse(usesAndImports0)(u => visitUseOrImport(u, Name.RootNS, root).toValidation)
-      flatMapN(usesAndImportsVal) {
-        case usesAndImports =>
-          val scp = appendAllUseScp(defaultUses, usesAndImports, root)
-          val declsVal = traverse(decls0)(visitDecl(_, scp, Name.RootNS.copy(loc = loc), defaultUses))
-          mapN(declsVal) {
-            case decls => ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
-          }
-      }
+      val usesAndImports = resolveUsesAndImports(usesAndImports0, Name.RootNS, root)
+      val scp = appendAllUseScp(defaultUses, usesAndImports, root)
+      val decls = decls0.flatMap(visitDecl(_, scp, Name.RootNS.copy(loc = loc), defaultUses))
+      ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
   }
 
   /**
     * Performs name resolution on the declaration.
+    *
+    * Returns `None` if the declaration is dropped as part of error recovery
+    * (currently only an instance of an undefined trait, see [[resolveInstance]]).
     */
-  private def visitDecl(decl: NamedAst.Declaration, scp0: LocalScope, ns0: Name.NName, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
+  private def visitDecl(decl: NamedAst.Declaration, scp0: LocalScope, ns0: Name.NName, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Option[ResolvedAst.Declaration] = decl match {
     case NamedAst.Declaration.Mod(doc, ann, mod, sym, _, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
       val ns = Name.mkUnlocatedNNameWithLoc(sym.ns, loc)
-      val usesAndImportsVal = Validation.traverse(usesAndImports0)(u => visitUseOrImport(u, ns, root).toValidation)
-      flatMapN(usesAndImportsVal) {
-        case usesAndImports =>
-          // reset the scp
-          val scp = appendAllUseScp(defaultUses, usesAndImports, root)
-          val declsVal = traverse(decls0)(visitDecl(_, scp, ns, defaultUses))
-          mapN(declsVal) {
-            case decls => ResolvedAst.Declaration.Mod(doc, ann, mod, sym, usesAndImports, decls, loc)
-          }
-      }
+      val usesAndImports = resolveUsesAndImports(usesAndImports0, ns, root)
+      // reset the scp
+      val scp = appendAllUseScp(defaultUses, usesAndImports, root)
+      val decls = decls0.flatMap(visitDecl(_, scp, ns, defaultUses))
+      Some(ResolvedAst.Declaration.Mod(doc, ann, mod, sym, usesAndImports, decls, loc))
     case trt@NamedAst.Declaration.Trait(_, _, _, _, _, _, _, _, _) =>
-      resolveTrait(trt, scp0, ns0)
+      Some(resolveTrait(trt, scp0, ns0))
     case inst@NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, _) =>
       resolveInstance(inst, scp0, ns0)
     case defn@NamedAst.Declaration.Def(_, _, _, _) =>
-      Validation.Success(resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix))
+      Some(resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix))
     case enum0@NamedAst.Declaration.Enum(_, _, _, _, _, _, _, _) =>
-      Validation.Success(resolveEnum(enum0, scp0, taenv, ns0, root))
+      Some(resolveEnum(enum0, scp0, taenv, ns0, root))
     case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
-      Validation.Success(resolveStruct(struct, scp0, taenv, ns0, root))
+      Some(resolveStruct(struct, scp0, taenv, ns0, root))
     case enum0@NamedAst.Declaration.RestrictableEnum(_, _, _, _, _, _, _, _, _) =>
-      Validation.Success(resolveRestrictableEnum(enum0, scp0, taenv, ns0, root))
+      Some(resolveRestrictableEnum(enum0, scp0, taenv, ns0, root))
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
-      Validation.Success(taenv(sym))
+      Some(taenv(sym))
     case eff@NamedAst.Declaration.Effect(_, _, _, _, _, _, _) =>
-      Validation.Success(resolveEffect(eff, scp0, taenv, ns0, root))
+      Some(resolveEffect(eff, scp0, taenv, ns0, root))
     case NamedAst.Declaration.Op(sym, _, _) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, _, _, _) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
@@ -376,25 +410,43 @@ object Resolver {
   }
 
   /**
-    * Checks that the super traits form a DAG (no cycles).
+    * Ensures that the super traits form a DAG (no cycles).
+    *
+    * A cycle is a strongly connected component of the super trait graph with more than one trait,
+    * or a single trait that is its own super trait. For every such component we report a
+    * [[CyclicTraitHierarchy]] error for each trait in it and recover by dropping the super traits
+    * that point back into the same component. Super traits outside the component are kept.
+    *
+    * Later phases (e.g. the trait environment) compute the transitive super traits and would not
+    * terminate on a cyclic hierarchy, so the returned traits are guaranteed to be acyclic.
     */
-  private def checkSuperTraitDag(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait]): Validation[Unit, ResolutionError] = {
+  private def findReportAndBreakSuperTraitCycles(traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait])(implicit sctx: SharedContext): Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait] = {
+    /** Returns the symbols of the direct super traits of the trait `sym`. */
+    def getSuperTraits(sym: Symbol.TraitSym): List[Symbol.TraitSym] = traits(sym).superTraits.map(_.symUse.sym)
 
-    /**
-      * Create a list of CyclicTraitHierarchy errors, one for each trait.
-      */
-    def mkCycleErrors[T](cycle: List[Symbol.TraitSym]): Validation.Failure[T, ResolutionError] = {
-      val errors = cycle.map {
-        sym => ResolutionError.CyclicTraitHierarchy(cycle, sym.loc)
-      }
-      Validation.Failure(Chain.from(errors))
-    }
+    /** Returns `true` if the strongly connected component `syms` contains a cycle. */
+    def isCyclic(syms: Iterable[Symbol.TraitSym]): Boolean = syms.sizeIs > 1 || syms.exists(sym => getSuperTraits(sym).contains(sym))
 
-    val traitSyms = traits.values.map(_.sym)
-    val getSuperTraits = (trt: Symbol.TraitSym) => traits(trt).superTraits.map(_.symUse.sym)
-    Graph.topologicalSort(traitSyms, getSuperTraits) match {
-      case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
-      case Graph.TopologicalSort.Sorted(_) => Validation.Success(())
+    // Group the traits by strongly connected component.
+    val components = Graph.stronglyConnectedComponents(traits.keys, getSuperTraits).groupMap(_._2)(_._1)
+
+    components.values.foldLeft(traits) {
+      case (acc, syms) =>
+        if (!isCyclic(syms)) {
+          acc
+        } else {
+          // The traits in the cycle, in source order (used for the error message).
+          val cycle = syms.toList.sortBy(_.loc)
+          // The traits in the cycle as a set (used to drop the cyclic super traits).
+          val cycleSet = cycle.toSet
+          cycle.foldLeft(acc) {
+            case (innerAcc, sym) =>
+              sctx.errors.add(ResolutionError.CyclicTraitHierarchy(cycle, sym.loc))
+              val trt = innerAcc(sym)
+              val superTraits = trt.superTraits.filterNot(tconstr => cycleSet.contains(tconstr.symUse.sym))
+              innerAcc + (sym -> trt.copy(superTraits = superTraits))
+          }
+        }
     }
   }
 
@@ -413,43 +465,43 @@ object Resolver {
   /**
     * Resolves all the traits in the given root.
     */
-  private def resolveTrait(c0: NamedAst.Declaration.Trait, scp0: LocalScope, ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Trait, ResolutionError] = c0 match {
+  private def resolveTrait(c0: NamedAst.Declaration.Trait, scp0: LocalScope, ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Trait = c0 match {
     case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures, loc) =>
       val tparam = resolveTypeParam(tparam0, scp0, ns0, root)
       val scp = scp0 ++ mkTypeParamScp(List(tparam))
       // ignore the parameter of the super traits; we don't use it
-      val superTraitsVal = traverse(superTraits0)(tconstr => resolveSuperTrait(tconstr, scp, taenv, ns0, root))
+      val superTraits = superTraits0.flatMap(tconstr => resolveSuperTrait(tconstr, scp, taenv, ns0, root))
       val assocs = assocs0.map(resolveAssocTypeSig(_, scp, taenv, ns0, root))
       val sigsList = signatures.map(resolveSig(_, sym, tparam.sym, scp)(ns0, taenv, sctx, root, flix))
-      mapN(superTraitsVal) {
-        case superTraits =>
-          val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-          ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, loc)
-      }
+      val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
+      ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, loc)
   }
 
   /**
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
+    *
+    * Returns `None` (after [[UndefinedTrait]] has been reported) if the trait of the instance
+    * does not resolve. The instance is dropped: without a trait symbol there is nothing to
+    * attach it to, and since instances are only reachable through the trait no other
+    * declaration can refer to it. The instance type, trait constraints and equality
+    * constraints are still resolved so that errors in them are reported.
     */
-  private def resolveInstance(i0: NamedAst.Declaration.Instance, scp0: LocalScope, ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
+  private def resolveInstance(i0: NamedAst.Declaration.Instance, scp0: LocalScope, ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Option[ResolvedAst.Declaration.Instance] = i0 match {
     case NamedAst.Declaration.Instance(doc, ann, mod, trt0, tparams0, tpe0, tconstrs0, econstrs0, assocs0, defs0, ns, loc) =>
       val tparams = resolveTypeParams(tparams0, scp0, ns0, root)
       val scp = scp0 ++ mkTypeParamScp(tparams)
-      val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Implementation, scp, ns0, root).toValidation
+      val optTrait = lookupTraitForImplementation(trt0, TraitUsageKind.Implementation, scp, ns0, root)
       val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp, taenv, ns0, root)(RegionScope.Top, sctx, flix)
       val optTconstrs = tconstrs0.map(resolveTraitConstraint(_, scp, taenv, ns0, root))
       val econstrs = econstrs0.map(resolveEqualityConstraint(_, scp, taenv, ns0, root))
-      flatMapN(traitVal) {
-        case trt =>
-          val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
+      optTrait.map {
+        trt =>
+          val assocs = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
           val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
           val defs = checkDuplicateInstanceDefs(defs0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix)), trt.sym)
           val tconstrs = optTconstrs.collect { case Some(t) => t }
-          mapN(assocsVal) {
-            case assocs =>
-              val symUse = TraitSymUse(trt.sym, trt0.loc)
-              ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
-          }
+          val symUse = TraitSymUse(trt.sym, trt0.loc)
+          ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
       }
   }
 
@@ -624,77 +676,73 @@ object Resolver {
   /**
     * Performs name resolution on the given associated type definitions `d0` in the given namespace `ns0`.
     * `loc` is the location of the instance symbol for reporting errors.
+    *
+    * Reports [[DuplicateAssocTypeDef]] and [[MissingAssocTypeDef]] errors and recovers:
+    * duplicates are dropped (the first definition is kept) and missing definitions are
+    * replaced by a dummy definition whose type is [[UnkindedType.Error]].
     */
-  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], trt: NamedAst.Declaration.Trait, targ: UnkindedType, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
-    flatMapN(Validation.traverse(d0)(resolveAssocTypeDef(_, trt, scp0, taenv, ns0, root))) {
-      case xs =>
-        // Computes a map from associated type symbols to their definitions.
-        val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
+  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], trt: NamedAst.Declaration.Trait, targ: UnkindedType, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.Declaration.AssocTypeDef] = {
+    val xs = d0.flatMap(resolveAssocTypeDef(_, trt, scp0, taenv, ns0, root))
 
-        // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
-        val errors = mutable.ArrayBuffer.empty[ResolutionError]
+    // Computes a map from associated type symbols to their definitions.
+    val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
-        // Build the map `m` and check for [[DuplicateAssocTypeDef]].
-        for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
-          val sym = symUse.sym
-          m.get(sym) match {
-            case None =>
-              m.put(sym, d)
-            case Some(otherDecl) =>
-              val loc2 = otherDecl.loc
-              errors += ResolutionError.DuplicateAssocTypeDef(sym, loc1, loc2)
-              errors += ResolutionError.DuplicateAssocTypeDef(sym, loc2, loc1)
-          }
-        }
-
-        // Check for [[MissingAssocTypeDef]] and recover.
-        for (NamedAst.Declaration.AssocTypeSig(_, _, ascSym, _, _, tpe, _) <- trt.assocs) {
-          if (!m.contains(ascSym) && tpe.isEmpty) {
-            // Missing associated type.
-            errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
-
-            // We recover by introducing a dummy associated type definition.
-            val doc = Doc(Nil, loc)
-            val mod = Modifiers.Empty
-            val symUse = AssocTypeSymUse(ascSym, loc)
-            val arg = targ
-            val tpe = UnkindedType.Error(loc)
-            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
-            m.put(ascSym, ascDef)
-          }
-        }
-
-        // TODO ASSOC-TYPES this should be a soft failure once we know how to handle error types in unification
-        // We use `m.values` here because we have eliminated duplicates and introduced missing associated type defs.
-        if (errors.isEmpty) {
-          Validation.Success(m.values.toList)
-        } else {
-          Validation.Failure(Chain.from(errors))
-        }
+    // Build the map `m` and check for [[DuplicateAssocTypeDef]].
+    for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
+      val sym = symUse.sym
+      m.get(sym) match {
+        case None =>
+          m.put(sym, d)
+        case Some(otherDecl) =>
+          val loc2 = otherDecl.loc
+          sctx.errors.add(ResolutionError.DuplicateAssocTypeDef(sym, loc1, loc2))
+          sctx.errors.add(ResolutionError.DuplicateAssocTypeDef(sym, loc2, loc1))
+      }
     }
+
+    // Check for [[MissingAssocTypeDef]] and recover.
+    for (NamedAst.Declaration.AssocTypeSig(_, _, ascSym, _, _, tpe, _) <- trt.assocs) {
+      if (!m.contains(ascSym) && tpe.isEmpty) {
+        // Missing associated type.
+        sctx.errors.add(ResolutionError.MissingAssocTypeDef(ascSym.name, loc))
+
+        // We recover by introducing a dummy associated type definition (with a synthetic location).
+        val synthLoc = loc.asSynthetic
+        val doc = Doc(Nil, synthLoc)
+        val mod = Modifiers.Empty
+        val symUse = AssocTypeSymUse(ascSym, synthLoc)
+        val arg = targ
+        val tpe = UnkindedType.Error(synthLoc)
+        val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, synthLoc)
+        m.put(ascSym, ascDef)
+      }
+    }
+
+    // We use `m.values` here because we have eliminated duplicates and introduced missing associated type defs.
+    m.values.toList
   }
 
   /**
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
+    *
+    * Returns `None` (after reporting [[UndefinedAssocType]]) if the trait `trt` has no such associated type.
     */
-  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
+  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, trt: NamedAst.Declaration.Trait, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Option[ResolvedAst.Declaration.AssocTypeDef] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
 
       // For now, we don't add any tvars from the args. We should have gotten those directly from the instance
       val arg = resolveType(arg0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
       val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
-      val symVal: Result[Symbol.AssocTypeSym, ResolutionError] = trt.assocs.collectFirst {
+      trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
       } match {
         case None =>
           val assocs = trt.assocs.map { case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym }
-          Result.Err(ResolutionError.UndefinedAssocType(trt.sym, Name.QName(Name.RootNS, ident, ident.loc), assocs, ident.loc))
-        case Some(sym) => Result.Ok(sym)
-      }
-      mapN(symVal.toValidation) {
-        sym =>
+          sctx.errors.add(ResolutionError.UndefinedAssocType(trt.sym, Name.QName(Name.RootNS, ident, ident.loc), assocs, ident.loc))
+          None
+        case Some(sym) =>
           val symUse = AssocTypeSymUse(sym, ident.loc)
-          ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
+          Some(ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc))
       }
   }
 
@@ -2092,13 +2140,16 @@ object Resolver {
 
   /**
     * Performs name resolution on the given supertrait constraint `tconstr0`.
+    *
+    * Returns `None` (after [[UndefinedTrait]] has been reported) if the super trait does not
+    * resolve, in which case the super trait is dropped.
     */
-  private def resolveSuperTrait(tconstr0: NamedAst.TraitConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.TraitConstraint, ResolutionError] = tconstr0 match {
+  private def resolveSuperTrait(tconstr0: NamedAst.TraitConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Option[ResolvedAst.TraitConstraint] = tconstr0 match {
     case NamedAst.TraitConstraint(trt0, tpe0, loc) =>
-      val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Constraint, scp0, ns0, root).toValidation
+      val optTrait = lookupTraitForImplementation(trt0, TraitUsageKind.Constraint, scp0, ns0, root)
       val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
 
-      mapN(traitVal) {
+      optTrait.map {
         trt =>
           val symUse = TraitSymUse(trt.sym, trt0.loc)
           ResolvedAst.TraitConstraint(symUse, tpe, loc)
@@ -2146,8 +2197,12 @@ object Resolver {
 
   /**
     * Finds the trait with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
+    *
+    * Unlike [[lookupTrait]], this reports [[SealedTrait]] if the trait is sealed and declared in another namespace.
+    *
+    * Returns `None` (after [[UndefinedTrait]] has been reported) if no such trait exists.
     */
-  private def lookupTraitForImplementation(qname: Name.QName, traitUseKind: TraitUsageKind, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Result[NamedAst.Declaration.Trait, ResolutionError] = {
+  private def lookupTraitForImplementation(qname: Name.QName, traitUseKind: TraitUsageKind, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[NamedAst.Declaration.Trait] = {
     val traitOpt = tryLookupName(qname, scp0, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
@@ -2155,18 +2210,20 @@ object Resolver {
       case Some(trt) =>
         getTraitAccessibility(trt, ns0) match {
           case TraitAccessibility.Accessible =>
-            Result.Ok(trt)
+            Some(trt)
           case TraitAccessibility.Sealed =>
             val error = ResolutionError.SealedTrait(trt.sym, ns0, qname.loc)
             sctx.errors.add(error)
-            Result.Ok(trt)
+            Some(trt)
           case TraitAccessibility.Inaccessible =>
             val error = ResolutionError.InaccessibleTrait(trt.sym, ns0, qname.loc)
             sctx.errors.add(error)
-            Result.Ok(trt)
+            Some(trt)
         }
       case None =>
-        Result.Err(ResolutionError.UndefinedTrait(qname, traitUseKind, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, ns0, qname.loc))
+        val error = ResolutionError.UndefinedTrait(qname, traitUseKind, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, ns0, qname.loc)
+        sctx.errors.add(error)
+        None
     }
   }
 
@@ -3345,6 +3402,24 @@ object Resolver {
         case Result.Ok(clazz) => Result.Ok(UseOrImport.Import(clazz, alias, loc))
         case Result.Err(error) => Result.Err(error)
       }
+  }
+
+  /**
+    * Resolves the given uses and imports.
+    *
+    * A use or import that cannot be resolved is reported ([[UndefinedUse]] or [[UndefinedJvmImport]])
+    * and dropped, so that names it would have brought into scope are simply undefined.
+    */
+  private def resolveUsesAndImports(usesAndImports0: List[NamedAst.UseOrImport], ns: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[UseOrImport] = {
+    usesAndImports0.flatMap {
+      u =>
+        visitUseOrImport(u, ns, root) match {
+          case Result.Ok(useOrImport) => Some(useOrImport)
+          case Result.Err(error) =>
+            sctx.errors.add(error)
+            None
+        }
+    }
   }
 
   /**

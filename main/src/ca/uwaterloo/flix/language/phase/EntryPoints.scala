@@ -56,7 +56,7 @@ object EntryPoints {
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: RegionScope = RegionScope.Top
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phase("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
     val (root2, errs2) = checkEntryPoints(root1)
     val root3 = findEntryPoints(root2)

@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
+import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.tools.pkg.PackageModules
@@ -68,11 +69,8 @@ object Main {
       json = cmdOpts.json,
       progress = true,
       installDeps = cmdOpts.installDeps,
-      outputJvm = false,
-      outputPath = Options.Default.outputPath,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       compilerTop = cmdOpts.top,
-      loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
@@ -178,7 +176,7 @@ object Main {
           // evaluate main.
           flix.check() match {
             case (Some(root), Nil) =>
-              flix.codeGen(root).getMain match {
+              JvmLoader.load(flix.codeGen(root)).main match {
                 case None => // nop
                 case Some(m) =>
                   // Invoke main with the supplied arguments.
@@ -221,8 +219,21 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
+              flix.setOptions(options)
               bootstrap.build(flix)
+            }
+          }
+
+        case Command.BuildClasses =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build-classes' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.buildClasses(flix)
             }
           }
 
@@ -234,7 +245,7 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
+              flix.setOptions(options)
               bootstrap.buildJar(flix)
             }
           }
@@ -247,7 +258,7 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
+              flix.setOptions(options)
               bootstrap.buildFatJar(flix)
             }
           }
@@ -287,7 +298,7 @@ object Main {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
             val (optRoot, errors) = flix.check()
             if (errors.isEmpty) {
-              HtmlDocumentor.run(optRoot.get, PackageModules.All)(flix)
+              HtmlDocumentor.run(optRoot.get, PackageModules.All, Bootstrap.getDocumentationDirectory(cwd))(flix)
               System.exit(0)
             } else exitWithErrors(flix, errors, optRoot)
           }
@@ -337,12 +348,12 @@ object Main {
           } else {
             val flix = mkFlixWithFiles(cmdOpts.files, options.copy(progress = false))
             flix.compile() match {
-              case Validation.Success(compilationResult) =>
-                Tester.run(Nil, compilationResult)(flix) match {
+              case Result.Ok(compilationResult) =>
+                Tester.run(Nil, JvmLoader.load(compilationResult))(flix) match {
                   case Result.Ok(_) => System.exit(0)
                   case Result.Err(_) => System.exit(1)
                 }
-              case Validation.Failure(errors) => exitWithErrors(flix, errors.toList, None)
+              case Result.Err(errors) => exitWithErrors(flix, errors, None)
             }
           }
 
@@ -509,6 +520,8 @@ object Main {
 
     case object Build extends Command
 
+    case object BuildClasses extends Command
+
     case object BuildJar extends Command
 
     case object BuildFatJar extends Command
@@ -587,13 +600,15 @@ object Main {
 
       cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  builds (i.e. compiles) the current project.")
 
+      cmd("build-classes").action((_, c) => c.copy(command = Command.BuildClasses)).text("  builds the current project and writes the class files to the build directory.")
+
       cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  builds a jar-file from the current project.")
 
       cmd("build-fatjar").action((_, c) => c.copy(command = Command.BuildFatJar)).text("  builds a fatjar-file from the current project.")
 
       cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
 
-      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  recursively removes class files from the build directory.")
+      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  removes the build directory (class files and generated documentation).")
 
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
 
@@ -712,7 +727,7 @@ object Main {
 
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
-        text("[experimental] prints the ASTs after the each phase.")
+        text("[experimental] writes the ASTs after each phase to './build/asts/'.")
 
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).

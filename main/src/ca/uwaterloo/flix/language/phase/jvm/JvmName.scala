@@ -283,6 +283,13 @@ case class JvmName(pkg: List[String], name: String) {
   lazy val toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
 
   /**
+    * Returns the class file name of `this` Java name.
+    *
+    * The class file name is of the form `java/lang/String.class`.
+    */
+  lazy val toClassFileName: String = toInternalName + ".class"
+
+  /**
     * Wraps this name in `BackendType.Reference(BackendObjType.Native(...))`.
     */
   def toTpe: BackendType.Reference = BackendObjType.Native(this).toTpe

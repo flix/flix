@@ -24,7 +24,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 object Safety {
 
   /** Checks the safety and well-formedness of `root`. */
-  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[SafetyError]) = flix.phaseNew("Safety") {
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[SafetyError]) = flix.phase("Safety") {
     implicit val sctx: SharedContext = SharedContext.mk()
     implicit val _r: Root = root
 

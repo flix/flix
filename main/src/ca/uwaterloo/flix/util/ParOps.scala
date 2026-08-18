@@ -19,41 +19,34 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.collection.ListMap
 
-import java.util
-import java.util.concurrent.{Callable, CountDownLatch, ExecutionException, RecursiveTask}
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.collection.immutable.ArraySeq
-import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 /**
-  * Parallel versions of common operations — `map`, `traverse`, aggregation, and reachability —
+  * Parallel versions of common operations — `map`, aggregation, and reachability —
   * that run on the compiler's shared thread pool. Each operation falls back to a sequential
   * implementation when the compiler runs single-threaded.
+  *
+  * == Scheduling ==
+  *
+  * All operations are built on [[parFold]], which schedules at most one task per thread and lets
+  * the tasks claim work items from a shared counter. This keeps the number of tasks handed to the
+  * pool small even for phases with many thousands of tiny work items, and balances the work
+  * dynamically across the threads.
   *
   * == Exception Handling ==
   *
   * The user-supplied functions (e.g. `f`, `seq`, `comb`, and `next`) may throw — in the compiler
   * almost always an [[InternalCompilerException]], which the top-level driver in [[Flix]] catches
   * to produce a crash report. Because these functions run on worker threads rather than on the
-  * calling thread, every operation here is careful to propagate a thrown exception back to the
-  * caller *unchanged*, preserving its original type, message, and source location, so that the
-  * crash handler still recognizes it.
-  *
-  * Running on a thread pool introduces two complications, both handled here:
-  *
-  *   - Some thread pool APIs (notably `Future.get`) wrap the original exception in an
-  *     [[ExecutionException]]. We strip this wrapper with [[unwrap]] before rethrowing.
-  *
-  *   - When several tasks fail concurrently, we rethrow the first exception and attach the rest to
-  *     it as suppressed exceptions, so that none are silently lost.
+  * calling thread, [[parFold]] is careful to propagate a thrown exception back to the caller
+  * *unchanged*, preserving its original type, message, and source location, so that the crash
+  * handler still recognizes it. When several tasks fail concurrently, we rethrow the first
+  * exception and attach the rest to it as suppressed exceptions, so that none are silently lost.
   */
 object ParOps {
-
-  /**
-    * The threshold at which `parAgg` switches from parallel to sequential evaluation.
-    */
-  private val SequentialThreshold: Int = 4
 
   /**
     * Applies the function `f` to every element of `xs` in parallel.
@@ -64,41 +57,12 @@ object ParOps {
       return xs.map(f)
     }
 
-    // Compute the size of the input and construct a new empty array to hold the result.
-    val size = xs.size
-    val out: Array[B] = new Array(size)
+    // Copy the input into an array (for O(1) indexing) and construct a new empty array to hold the result.
+    val in = xs.toArray[Any]
+    val out: Array[B] = new Array(in.length)
 
-    // Construct a new count down latch to track the number of threads.
-    val latch = new CountDownLatch(size)
-
-    // Holds the first thrown exception (if any). Any subsequent exceptions are attached to it
-    // as suppressed exceptions so that none are silently lost.
-    val exception = new AtomicReference[Throwable](null)
-
-    // Iterate through the elements of `xs`. Use a local variable to track the index.
-    var idx = 0
-    for (elm <- xs) {
-      val i = idx // Ensure proper scope of i.
-      flix.threadPool.execute(() => {
-        try {
-          out(i) = f(elm)
-        } catch {
-          case ex: Throwable =>
-            // Keep the first exception; record any later ones as suppressed.
-            if (!exception.compareAndSet(null, ex)) exception.get().addSuppressed(ex)
-        } finally {
-          latch.countDown()
-        }
-      })
-      idx = idx + 1
-    }
-
-    // Await all threads to finish and return the result.
-    latch.await()
-
-    // Rethrow the first exception (if any).
-    val ex = exception.get()
-    if (ex != null) throw ex
+    // Compute every element in parallel. The (unit) accumulators are irrelevant.
+    parFold(in.length, ())((_, i) => out(i) = f(in(i).asInstanceOf[A]))
 
     out
   }
@@ -164,53 +128,40 @@ object ParOps {
     )
 
   /**
-    * Applies the function `f` to every element of `xs` in parallel. Aggregates the result using the applicative instance for [[Validation]].
-    */
-  def parTraverse[A, B, E](xs: Iterable[A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Iterable[B], E] = {
-    val results = parMap(xs)(f)
-    Validation.sequence(results)
-  }
-
-  /**
     * Aggregates the result of applying `seq` and `comb` to `xs`.
+    *
+    * Every task folds the elements it claims with `seq` (starting from `z`), and the resulting
+    * partial results are then combined with `comb` on the calling thread.
+    *
+    * == Contract ==
+    *
+    * The elements are partitioned across the tasks nondeterministically (see [[parFold]]), so the
+    * result is only well-defined if:
+    *
+    *   - `comb` is associative '''and commutative''', and `z` is its neutral element, and
+    *   - `seq(comb(s1, s2), x) == comb(s1, seq(s2, x))`, i.e. folding an element into an
+    *     accumulator with `seq` agrees with combining it in with `comb`.
+    *
+    * In particular, the order in which the elements reach `seq` is unspecified. This is a stronger
+    * requirement than that of e.g. `Iterable.aggregate`, which preserves the order of the elements
+    * and hence only needs `comb` to be associative. It is met by e.g. set union and by merging maps
+    * with pairwise disjoint keys, but not by e.g. list concatenation.
     */
   def parAgg[A: ClassTag, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
     // Just fold if we're single-threaded.
     if (singleThreaded) {
       return xs.foldLeft(z)(seq)
     }
-    /**
-      * A ForkJoin task that operates on the array `a` from the interval `b` to `e`.
-      */
-    case class Task(a: Array[A], b: Int, e: Int) extends RecursiveTask[S] {
-      override def compute(): S = {
-        val span = e - b
 
-        if (span < SequentialThreshold) {
-          // Case: Sequential, fold over the `Limit` elements.
-          (b until e).foldLeft(z) {
-            case (acc, idx) => seq(acc, a(idx))
-          }
-        } else {
-          // Case: Parallel, Fork-Join style.
-          val m = span / 2
-          val left = Task(a, b, b + m)
-          left.fork()
-          val right = Task(a, b + m, e)
-          right.fork()
-          comb(left.join(), right.join())
-        }
-      }
-    }
-
+    // Case 1: The iterable `xs` is empty. We simply return the neutral element z.
     if (xs.isEmpty) {
-      // Case 1: The iterable `xs` is empty. We simply return the neutral element z.
-      z
-    } else {
-      // Case 2: We convert `xs` to an array and start a recursive task.
-      val a = xs.toArray
-      flix.threadPool.invoke(Task(a, 0, a.length))
+      return z
     }
+
+    // Case 2: We convert `xs` to an array, fold it in parallel, and combine the partial results.
+    // There is at least one partial result since `xs` is non-empty.
+    val a = xs.toArray
+    parFold(a.length, z)((acc, i) => seq(acc, a(i))).reduce(comb)
   }
 
   /**
@@ -220,13 +171,6 @@ object ParOps {
     if (singleThreaded) {
       return seqReach(init, next)
     }
-    // A wrapper for the next function.
-    class NextCallable(t: T) extends Callable[Set[T]] {
-      override def call(): Set[T] = next(t)
-    }
-
-    // Use global thread pool.
-    val threadPool = flix.threadPool
 
     // A mutable variable that holds the currently reachable Ts.
     var reach = init
@@ -236,27 +180,11 @@ object ParOps {
 
     // Iterate until the fixpoint is reached.
     while (delta.nonEmpty) {
-
-      // Construct a collection of callables.
-      val callables = new util.ArrayList[NextCallable]
-      for (sym <- delta) {
-        callables.add(new NextCallable(sym))
-      }
-
-      // Invoke all callables in parallel.
-      val futures = threadPool.invokeAll(callables)
-
       // Compute the set of all inferred Ts in this iteration.
       // May include Ts discovered in previous iterations.
-      val newReach = futures.asScala.foldLeft(Set.empty[T]) {
-        case (acc, future) =>
-          try {
-            acc ++ future.get()
-          } catch {
-            // Unwrap the ExecutionException added by `Future.get` so the original exception propagates.
-            case e: ExecutionException => throw unwrap(e)
-          }
-      }
+      val a = delta.toArray[Any]
+      val partials = parFold(a.length, Set.empty[T])((acc, i) => acc ++ next(a(i).asInstanceOf[T]))
+      val newReach = partials.foldLeft(Set.empty[T])(_ ++ _)
 
       // Update delta and reach.
       delta = newReach -- reach
@@ -268,18 +196,76 @@ object ParOps {
   }
 
   /**
+    * Folds the indices `0 until size` in parallel and returns the partial results.
+    *
+    * Schedules `min(threads, size)` tasks on the thread pool. Each task starts from its own `z` and
+    * repeatedly claims the next unclaimed index from a shared counter and folds it into its
+    * accumulator with `step`. Returns the final accumulator of every task (in no particular order).
+    *
+    * Claiming indices from a shared counter balances the work dynamically across the tasks, and
+    * bounds the number of tasks handed to the pool by the number of threads rather than by `size`.
+    * The latter keeps the scheduling overhead low even for many tiny work items.
+    *
+    * The price of dynamic balancing is that '''which''' indices end up in '''which''' accumulator
+    * is nondeterministic: it depends on the timing of the tasks. Callers must therefore either
+    * treat each index independently (as [[parMap]] does, writing to a distinct slot per index) or
+    * fold with an operation whose result does not depend on how the indices are grouped and
+    * ordered (as [[parAgg]] and [[parReach]] do; see the contract of [[parAgg]]).
+    */
+  private def parFold[S](size: Int, z: => S)(step: (S, Int) => S)(implicit flix: Flix): List[S] = {
+    // The number of tasks: at most one per thread, and never more than there are indices.
+    val tasks = math.min(flix.options.threads, size)
+    if (tasks == 0) {
+      return Nil
+    }
+
+    // The next unclaimed index.
+    val next = new AtomicInteger(0)
+
+    // The partial result of every task.
+    val partials = new Array[Any](tasks)
+
+    // Construct a new count down latch to track the number of tasks.
+    val latch = new CountDownLatch(tasks)
+
+    // Holds the first thrown exception (if any). Any subsequent exceptions are attached to it
+    // as suppressed exceptions so that none are silently lost.
+    val exception = new AtomicReference[Throwable](null)
+
+    for (t <- 0 until tasks) {
+      flix.threadPool.execute(() => {
+        try {
+          var acc = z
+          var i = next.getAndIncrement()
+          while (i < size) {
+            acc = step(acc, i)
+            i = next.getAndIncrement()
+          }
+          partials(t) = acc
+        } catch {
+          case ex: Throwable =>
+            // Keep the first exception; record any later ones as suppressed.
+            if (!exception.compareAndSet(null, ex)) exception.get().addSuppressed(ex)
+        } finally {
+          latch.countDown()
+        }
+      })
+    }
+
+    // Await all tasks to finish.
+    latch.await()
+
+    // Rethrow the first exception (if any).
+    val ex = exception.get()
+    if (ex != null) throw ex
+
+    partials.toList.asInstanceOf[List[S]]
+  }
+
+  /**
     * Returns true if the compiler is running on a single thread.
     */
   private def singleThreaded(implicit flix: Flix): Boolean = flix.options.threads == 1
-
-  /**
-    * Returns the underlying cause of `ex` if it is an [[ExecutionException]], and `ex` itself
-    * otherwise. See the note on exception handling in the [[ParOps]] documentation.
-    */
-  private def unwrap(ex: Throwable): Throwable = ex match {
-    case e: ExecutionException if e.getCause != null => e.getCause
-    case _ => ex
-  }
 
   /**
     * Computes the set of reachables Ts starting from `init` and using the `next` function.
