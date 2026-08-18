@@ -494,9 +494,7 @@ class Flix {
     phaseTimers = ArrayBuffer.empty
     currentPhase = None
 
-    if (options.progress) {
-      progressBar.start()
-    }
+    progressBar.start()
 
     // Reset the phase list file if relevant
     if (this.options.xprintphases) {
@@ -599,9 +597,7 @@ class Flix {
     shutdownThreadPool()
 
     // Reset the progress bar.
-    if (options.progress) {
-      progressBar.complete()
-    }
+    progressBar.complete()
 
     // Stop the live compiler profiler TUI only if there are errors and no
     // `codeGen` will follow. On the success path, leave it running so
@@ -622,11 +618,11 @@ class Flix {
     (result, errors.toList)
   } catch {
     case ex: InternalCompilerException =>
-      if (options.progress) progressBar.complete()
+      progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
       throw ex
     case ex: Throwable =>
-      if (options.progress) progressBar.complete()
+      progressBar.complete()
       throw ex
   }
 
@@ -646,9 +642,7 @@ class Flix {
     // Initialize the thread pool.
     initThreadPool()
 
-    if (options.progress) {
-      progressBar.start()
-    }
+    progressBar.start()
 
     var treeShaker1Ast = TreeShaker1.run(typedAst)
     // Note: Do not null typedAst. It is used later.
@@ -705,9 +699,7 @@ class Flix {
     shutdownThreadPool()
 
     // Reset the progress bar.
-    if (options.progress) {
-      progressBar.complete()
-    }
+    progressBar.complete()
 
     // Stop the live compiler profiler TUI, if it is running.
     compilerTop.foreach(_.stop())
@@ -716,11 +708,11 @@ class Flix {
     result
   } catch {
     case ex: InternalCompilerException =>
-      if (options.progress) progressBar.complete()
+      progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
       throw ex
     case ex: Throwable =>
-      if (options.progress) progressBar.complete()
+      progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
       throw ex
   }
@@ -763,9 +755,7 @@ class Flix {
     // Initialize the phase time object.
     currentPhase = Some(PhaseTime(phase, 0))
 
-    if (options.progress) {
-      progressBar.observe(phase)
-    }
+    progressBar.observe(phase)
 
     // Measure the execution time.
     val t = System.nanoTime()

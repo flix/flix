@@ -107,7 +107,7 @@ class ProgressBar(flix: Flix) {
     * Locking: Acquires `lifecycleLock`. Does not acquire `renderLock`.
     */
   def start(): Unit = lifecycleLock.synchronized {
-    if (animator.get() == null) {
+    if (flix.options.progress && animator.get() == null) {
       val executor = Executors.newSingleThreadScheduledExecutor((r: Runnable) => {
         val thread = new Thread(r, "flix-progress-bar")
         thread.setDaemon(true)
@@ -124,10 +124,12 @@ class ProgressBar(flix: Flix) {
     * Locking: Acquires no locks. Publishes the new state atomically.
     */
   def observe(phase: String): Unit = {
-    val now = nowMillis()
-    if (flix.phaseTimers.isEmpty) startMillis = now
-    val current = (flix.phaseTimers.size + 1).min(CompilerConstants.TotalPhases)
-    state.set(State(phase, current, now, startMillis))
+    if (animator.get() != null) {
+      val now = nowMillis()
+      if (flix.phaseTimers.isEmpty) startMillis = now
+      val current = (flix.phaseTimers.size + 1).min(CompilerConstants.TotalPhases)
+      state.set(State(phase, current, now, startMillis))
+    }
   }
 
   /**
@@ -139,17 +141,20 @@ class ProgressBar(flix: Flix) {
     * The locks are never held simultaneously.
     */
   def complete(): Unit = {
-    lifecycleLock.synchronized {
+    val wasRunning = lifecycleLock.synchronized {
       state.set(null)
       val executor = animator.getAndSet(null)
       if (executor != null) executor.shutdownNow()
+      executor != null
     }
 
-    // Wait only for an in-flight terminal write, never for phase-state computation.
-    renderLock.synchronized {
-      memorySampleMillis = 0L
-      System.out.print(" " * Width + "\r")
-      System.out.flush()
+    if (wasRunning) {
+      // Wait only for an in-flight terminal write, never for phase-state computation.
+      renderLock.synchronized {
+        memorySampleMillis = 0L
+        System.out.print(" " * Width + "\r")
+        System.out.flush()
+      }
     }
   }
 
