@@ -365,8 +365,8 @@ object GitHub {
       * Reusing the instance yields better performance since it can
       * keep connections open.
       *
-      * This field should only be accessed in a thread-safe manner, e.g.,
-      * such as using `this.synchronized` blocks or some other locking mechanism.
+      * The client is immutable once built and manages its own connection pool,
+      * so it can be shared across threads without external locking.
       */
     private val HTTP_CLIENT: HttpClient =
       // Follows redirects: a release download address redirects to the storage the asset lives on.
@@ -379,16 +379,14 @@ object GitHub {
       *
       * May throw [[IOException]].
       */
-    def sendRequest(request: HttpRequest): HttpResponse[String] = this.synchronized {
+    def sendRequest(request: HttpRequest): HttpResponse[String] =
       HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
-    }
 
     /**
       * As [[sendRequest]], but with a streamed body. May throw [[IOException]].
       */
-    def sendStreamingRequest(request: HttpRequest): HttpResponse[InputStream] = this.synchronized {
+    def sendStreamingRequest(request: HttpRequest): HttpResponse[InputStream] =
       HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream())
-    }
 
   }
 }
