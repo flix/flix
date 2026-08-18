@@ -19,13 +19,10 @@ package ca.uwaterloo.flix.runtime.shell
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, CompilerConstants, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.fmt.*
-import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.Chain
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -53,16 +50,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * The Flix instance (the same instance is used for incremental compilation).
     */
   private implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
-
-  /**
-    * The result of the most recent compilation
-    */
-  private var root: Option[Root] = None
-
-  /**
-    * Is this the first compile
-    */
-  private var isFirstCompile = true
 
   /**
     * Remove any line continuation backslashes from the given string
@@ -108,9 +95,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     // Print the welcome banner.
     printWelcomeBanner()
 
-    // Perform the initial compilation.
-    compile(progress = true)
-    isFirstCompile = false
+    // Perform the initial check. This loads the project sources into the Flix
+    // instance (which must happen before the file watcher starts), reports any
+    // errors, and warms the incremental caches. Code generation is not needed.
+    check(progress = true)
 
     // Start watching for file system changes.
     bootstrap.startWatching()
@@ -174,59 +162,23 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     implicit val out: PrintStream = new PrintStream(terminal.output())
     cmd match {
       case Command.Nop => // nop
-      case Command.Info(s) => execInfo(s)
       case Command.Quit => execQuit()
       case Command.Help => execHelp()
       case Command.Praise => execPraise()
       case Command.Eval(s) => execEval(s)
-      case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath).toValidation)
-      case Command.Build => execBootstrap(bootstrap.build(flix).toValidation)
-      case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix).toValidation)
-      case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix).toValidation)
-      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg().toValidation)
-      case Command.Release => execBootstrap(bootstrap.release(flix).toValidation)
-      case Command.Check => execBootstrap(bootstrap.check(flix).toValidation)
-      case Command.Doc => execBootstrap(bootstrap.doc(flix).toValidation)
-      case Command.Format => execBootstrap(bootstrap.format(flix).toValidation)
-      case Command.Test => execBootstrap(bootstrap.test(flix).toValidation)
-      case Command.Outdated => execBootstrap(bootstrap.outdated(flix).toValidation)
+      case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath))
+      case Command.Build => execBootstrap(bootstrap.build(flix))
+      case Command.BuildClasses => execBootstrap(bootstrap.buildClasses(flix))
+      case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix))
+      case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix))
+      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg())
+      case Command.Release => execBootstrap(bootstrap.release(flix))
+      case Command.Check => execBootstrap(bootstrap.check(flix))
+      case Command.Doc => execBootstrap(bootstrap.doc(flix))
+      case Command.Format => execBootstrap(bootstrap.format(flix))
+      case Command.Test => execBootstrap(bootstrap.test(flix))
+      case Command.Outdated => execBootstrap(bootstrap.outdated(flix))
       case Command.Unknown(s) => execUnknown(s)
-    }
-  }
-
-  /**
-    * Displays documentation for the given identifier
-    */
-  private def execInfo(s: String)(implicit terminal: Terminal): Unit = {
-    val w = terminal.writer()
-    val traitSym = Symbol.mkTraitSym(s)
-    val defnSym = Symbol.mkDefnSym(s)
-    val enumSym = Symbol.mkEnumSym(s)
-    val aliasSym = Symbol.mkTypeAliasSym(s)
-
-    root match {
-      case Some(r) =>
-        if (r.traits.contains(traitSym)) {
-          val traitDecl = r.traits(traitSym)
-          w.println(FormatDoc.asMarkDown(traitDecl.doc))
-        } else if (r.defs.contains(defnSym)) {
-          val defDecl = r.defs(defnSym)
-          w.println(FormatSignature.asMarkDown(defDecl))
-          w.println(FormatDoc.asMarkDown(defDecl.spec.doc))
-        } else if (r.enums.contains(enumSym)) {
-          val enumDecl = r.enums(enumSym)
-          w.println(FormatDoc.asMarkDown(enumDecl.doc))
-        } else if (r.typeAliases.contains(aliasSym)) {
-          val aliasDecl = r.typeAliases(aliasSym)
-          w.println(FormatType.formatType(aliasDecl.tpe))
-          w.println()
-          w.println(FormatDoc.asMarkDown(aliasDecl.doc))
-        } else {
-          w.println(s"$s not found")
-        }
-
-      case None =>
-        w.println("Error: No compilation results available")
     }
   }
 
@@ -245,16 +197,16 @@ class Shell(bootstrap: Bootstrap, options: Options) {
 
     w.println("  Command       Arguments     Purpose")
     w.println()
-    w.println("  :info :i      <fqn>         Displays documentation for <fqn>.")
     w.println("  :init                       Creates a new project in the current directory.")
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
-    w.println("  :build-jar :jar             Builds a jar-file from the current project.")
-    w.println("  :build-fatjar :fatjar       Builds a fatjar-file from the current project.")
-    w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
+    w.println("  :build-classes              Builds the current project and writes the class files to the build directory.")
+    w.println("  :build-jar                  Builds a jar-file from the current project.")
+    w.println("  :build-fatjar               Builds a fatjar-file from the current project.")
+    w.println("  :build-pkg                  Builds a fpkg-file from the current project.")
     w.println("  :release                    Publishes a release of the current project to GitHub.")
     w.println("  :check :c                   Checks the current project for errors.")
     w.println("  :doc :d                     Generates API documentation for the current project.")
-    w.println("  :format :fmt                Formats the source code of the current project.")
+    w.println("  :format                     Formats the source code of the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
     w.println("  :outdated                   Shows dependencies which have newer versions available.")
     w.println("  :quit :q                    Terminates the Flix shell.")
@@ -292,13 +244,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         // Add the source code fragment to Flix.
         flix.addVirtualPath(Path.of(name), s)(SecurityContext.Unrestricted)
 
-        // And try to compile!
-        compile(progress = false).toResult match {
+        // And try to check it! (No code generation is needed for a declaration.)
+        check(progress = false) match {
           case Result.Ok(_) =>
-            // Compilation succeeded.
+            // Check succeeded.
             w.println("Ok.")
           case Result.Err(_) =>
-            // Compilation failed. Ignore the last fragment.
+            // Check failed. Ignore the last fragment.
             fragments.pop()
             flix.remVirtualPath(Path.of(name))
             w.println("Error: Declaration ignored due to previous error(s).")
@@ -337,9 +289,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Executes the given bootstrap function and prints any errors.
     */
-  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = f match {
-    case Validation.Success(_) => ()
-    case Validation.Failure(errors) => errors.map(_.message(formatter)).foreach(out.println)
+  private def execBootstrap[T](f: => Result[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
+    // Reset the options: a previous command may have changed e.g. the build mode on the shared Flix instance.
+    flix.setOptions(options)
+    f match {
+      case Result.Ok(_) => ()
+      case Result.Err(error) => out.println(error.message(formatter))
+    }
   }
 
   /**
@@ -350,10 +306,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   }
 
   /**
-    * Compiles the current files and packages (first time from scratch, subsequent times incrementally).
-    * Automatically picks up any file changes detected by the file watcher before compiling.
+    * Type checks the current files and packages (first time from scratch, subsequent times incrementally).
+    * Automatically picks up any file changes detected by the file watcher before checking.
     */
-  private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
+  private def check(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Result[TypedAst.Root, List[CompilationMessage]] = {
     // Apply any pending file system changes (new, modified, or deleted files).
     bootstrap.applyFileChanges(flix)
 
@@ -361,12 +317,11 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
     flix.check() match {
-      case (Some(r), Nil) =>
-        this.root = Some(r)
-        Validation.Success(flix.codeGen(r))
+      case (Some(root), Nil) =>
+        Result.Ok(root)
       case (rootOpt, errors) =>
         printErrors(errors, rootOpt)
-        Validation.Failure(Chain.from(errors))
+        Result.Err(errors)
     }
   }
 
@@ -383,9 +338,9 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
-    compile(entryPoint = Some(main), progress = false).toResult match {
-      case Result.Ok(result) =>
-        result.getMain match {
+    check(entryPoint = Some(main), progress = false) match {
+      case Result.Ok(root) =>
+        JvmLoader.load(flix.codeGen(root)).main match {
           case Some(m) =>
             // Evaluate the main function
             try {

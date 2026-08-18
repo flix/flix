@@ -89,7 +89,7 @@ object Model {
   /**
     * Phase-name strings that count as "frontend" — i.e. phases that run
     * inside `Flix.check`. Strings must match the literals each phase passes
-    * to `flix.phase("…")` / `flix.phaseNew("…")`. Verified against the
+    * to `flix.phase("…")`. Verified against the
     * `run` methods under `main/src/ca/uwaterloo/flix/language/phase`.
     *
     * Phases not in this set (and not the unknown-phase fallback `"?"`) are

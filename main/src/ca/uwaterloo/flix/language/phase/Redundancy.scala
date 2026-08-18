@@ -54,7 +54,7 @@ object Redundancy {
   /**
     * Checks the given AST `root` for redundancies.
     */
-  def run(root: Root)(implicit flix: Flix): (Root, List[RedundancyError]) = flix.phaseNew("Redundancy") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[RedundancyError]) = flix.phase("Redundancy") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val errorsFromDefs = ParOps.parAgg(root.defs, Used.empty)({

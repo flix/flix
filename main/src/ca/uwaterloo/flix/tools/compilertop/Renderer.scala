@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.compilertop
 
+import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.tools.compilertop.Aggregation.*
 import ca.uwaterloo.flix.tools.compilertop.Ansi.*
 import ca.uwaterloo.flix.tools.compilertop.Formatting.*
@@ -40,7 +41,7 @@ import scala.collection.mutable
   * @param currentPhase    already-resolved phase label (e.g. `"Typer"`,
   *                        `"done"`, or `"starting"`).
   * @param phaseTimersSize raw `flix.phaseTimers.size`; the renderer caps to
-  *                        [[Renderer.TotalPhases]] for the progress bar.
+  *                        [[CompilerConstants.TotalPhases]] for the progress bar.
   * @param coverage        accounted/unaccounted phase-wall split behind the
   *                        stats-line `observed` figure (see [[Model.Coverage]]).
   * @param activeFilter    user-toggled phase filter (drives the legend).
@@ -75,9 +76,6 @@ final case class FrameState(parallelism: Int,
                             coverage: Coverage)
 
 object Renderer {
-
-  /** Total number of phases the compiler runs. Bump when `Flix.check` / `Flix.codeGen` adds or removes a `phase` / `phaseNew` call. */
-  private val TotalPhases: Int = 32
 
   /** Longest phase-name length, used to pad the phase column. Currently set by `"Dependencies"` / `"EffectBinder"`. */
   private val MaxPhaseLen: Int = 12
@@ -412,8 +410,8 @@ final class Renderer {
     // Once compilation has finished, force the bar to 100% rather than relying
     // on `phaseTimers.size + 1` (which is +1 ahead of reality during execution
     // and would still under-fill if any phase is uninstrumented).
-    val done = if (state.isDone) TotalPhases else (state.phaseTimersSize + 1).min(TotalPhases)
-    val filled = (BarWidth.toLong * done / TotalPhases).toInt
+    val done = if (state.isDone) CompilerConstants.TotalPhases else (state.phaseTimersSize + 1).min(CompilerConstants.TotalPhases)
+    val filled = (BarWidth.toLong * done / CompilerConstants.TotalPhases).toInt
 
     sb.append("  ")
     sb.append(bold(rpad(state.currentPhase, MaxPhaseLen)))
@@ -425,10 +423,10 @@ final class Renderer {
     sb.append(if (state.isDone) green(filledBar) else blue(filledBar))
     sb.append(dim("░" * (BarWidth - filled)))
     sb.append(dim("] "))
-    sb.append(f"$done%2d/$TotalPhases%2d")
+    sb.append(f"$done%2d/${CompilerConstants.TotalPhases}%2d")
     sb.append(dim("   threads "))
-    // With parallelism=1 ForkJoin runs work inline on the submitter, leaving
-    // `getActiveThreadCount` at 0 most of the time — sparkline goes flat,
+    // With parallelism=1 ParOps runs all work inline on the submitter, leaving
+    // `getActiveCount` at 0 most of the time — sparkline goes flat,
     // field reads `0/1` continuously. Show a label instead.
     if (state.parallelism > 1) {
       sb.append(dim(cyan(renderSparkline(state.parallelism.toDouble))))

@@ -18,8 +18,6 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.Symbol
 
-import java.nio.file.Path
-
 object Options {
   /**
     * Default options.
@@ -33,11 +31,8 @@ object Options {
     installDeps = false,
     incremental = true,
     json = false,
-    outputJvm = false,
-    outputPath = Path.of("./build/"),
     progress = false,
     threads = Runtime.getRuntime.availableProcessors(),
-    loadClassFiles = true,
     assumeYes = false,
     xprintphases = false,
     xnodeprecated = false,
@@ -82,11 +77,8 @@ object Options {
   * @param incremental    enables incremental compilation.
   * @param installDeps    enables automatic installation of dependencies.
   * @param json           enable json output.
-  * @param outputJvm      Enable JVM bytecode output.
-  * @param outputPath     The path to the output folder.
   * @param progress       print progress during compilation.
   * @param threads        selects the number of threads to use.
-  * @param loadClassFiles loads the generated class files into the JVM.
   * @param assumeYes      run non-interactively and assume answer to all prompts is yes.
   */
 case class Options(lib: LibLevel,
@@ -98,10 +90,7 @@ case class Options(lib: LibLevel,
                    installDeps: Boolean,
                    json: Boolean,
                    progress: Boolean,
-                   outputJvm: Boolean,
-                   outputPath: Path,
                    threads: Int,
-                   loadClassFiles: Boolean,
                    assumeYes: Boolean,
                    xprintphases: Boolean,
                    xnodeprecated: Boolean,

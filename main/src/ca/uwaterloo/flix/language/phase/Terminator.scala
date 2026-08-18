@@ -83,7 +83,7 @@ object Terminator {
     * Checks termination properties of `root`.
     */
   def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[TerminationError]) =
-    flix.phaseNew("Terminator") {
+    flix.phase("Terminator") {
       implicit val sctx: SharedContext = SharedContext.mk()
       implicit val _r: Root = root
       val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(

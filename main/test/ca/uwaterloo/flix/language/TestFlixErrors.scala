@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType
-import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.{Options, Result, Validation}
+import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
+import ca.uwaterloo.flix.util.{Options, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestFlixErrors extends AnyFunSuite {
@@ -45,9 +45,9 @@ class TestFlixErrors extends AnyFunSuite {
     expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
-  def expectRuntimeError(v: Validation[CompilationResult, CompilationMessage], name: String): Unit = {
-    v.toResult match {
-      case Result.Ok(t) => t.getMain match {
+  def expectRuntimeError(v: Result[CompilationResult, List[CompilationMessage]], name: String): Unit = {
+    v match {
+      case Result.Ok(t) => JvmLoader.load(t).main match {
         case Some(main) => try {
           main.apply(Array.empty)
           fail("No runtime error thrown")

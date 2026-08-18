@@ -242,7 +242,7 @@ object BenchmarkCompilerOld {
 
     val flix = new Flix()
 
-    flix.setOptions(opts = o.copy(incremental = false, loadClassFiles = false))
+    flix.setOptions(opts = o.copy(incremental = false))
 
     addInputs(flix)
 

@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
+import ca.uwaterloo.flix.runtime.{JvmLoader, LoadedProgram, TestFn}
 import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -117,12 +117,12 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     }
 
     try {
-      // Compile and Evaluate the program to obtain the compilationResult.
-      Flix.compile().toResult match {
+      // Compile the program, load it into the JVM, and run its tests.
+      Flix.compile() match {
         case Result.Ok(compilationResult) =>
-          runTests(compilationResult)
+          runTests(JvmLoader.load(compilationResult))
         case Result.Err(errors) =>
-          fail(CompilationMessage.formatAll(errors.toList)(Flix.getFormatter, None))
+          fail(CompilationMessage.formatAll(errors)(Flix.getFormatter, None))
       }
     } finally {
       // Remove the source path.
@@ -132,9 +132,9 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     }
   }
 
-  private def runTests(compilationResult: CompilationResult): Unit = {
+  private def runTests(program: LoadedProgram): Unit = {
     // Group the tests by namespace.
-    val testsByNamespace = compilationResult.getTests.groupBy(_._1.namespace)
+    val testsByNamespace = program.tests.groupBy(_._1.namespace)
 
     // Iterate through each namespace.
     for ((_, tests) <- testsByNamespace) {

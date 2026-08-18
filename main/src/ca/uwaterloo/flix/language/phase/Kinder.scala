@@ -59,7 +59,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object Kinder {
 
-  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (KindedAst.Root, List[KindError]) = flix.phaseNew("Kinder") {
+  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (KindedAst.Root, List[KindError]) = flix.phase("Kinder") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Precompute the kind of every declaration once, so it is not recomputed at each occurrence of the type.

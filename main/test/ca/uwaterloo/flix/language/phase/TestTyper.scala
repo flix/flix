@@ -1669,6 +1669,79 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MissingTraitConstraint](result)
   }
 
+  test("TypeError.IllegalAssocType.Enum.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |enum E[a] {
+        |    case D(C.T[a])
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.Enum.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |enum E[a] {
+        |    case D(C.T[a] -> Int32)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.Struct.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |struct S[a, r] {
+        |    f: C.T[a]
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.TypeAlias.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |type alias A[a] = C.T[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.RestrictableEnum.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |restrictable enum E[s][a] {
+        |    case D(C.T[a])
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
   test("TypeError.NewStruct.01") {
     val input =
       """
@@ -1975,6 +2048,398 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): Abc = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.03") {
+    // There should be no type error because the associated type `T` is missing.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.04") {
+    // There should be no type error because the associated effect `E` is missing.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |eff Out {
+        |    def out(x: Int32): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    pub def exec(x: Int32): Unit \ Out = Out.out(x)
+        |}
+        |
+        |def g(): Unit \ Out = Runner.exec(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.05") {
+    // There should be no type error because the higher-kinded associated type `T` is missing.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |enum Maybe[a] {
+        |    case Just(a),
+        |    case Nothing
+        |}
+        |
+        |trait C[a] {
+        |    type S: Type
+        |    type T: Type -> Type
+        |    pub def f(x: a): C.T[a][C.S[a]]
+        |}
+        |
+        |instance C[Int32] {
+        |    type S = Int32
+        |    pub def f(x: Int32): Maybe[Int32] = Maybe.Just(x)
+        |}
+        |
+        |def g(): Maybe[Int32] = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.06") {
+    // There should be no type error because the associated type `T` is defined twice.
+    // The Resolver reports DuplicateAssocTypeDef and recovers by keeping the first definition.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    type T = Int32
+        |    type T = String
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.07") {
+    // There should be no type error because the associated type `U` is undefined.
+    // The Resolver reports UndefinedAssocType and recovers by dropping the definition;
+    // the default for `T` still applies.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type = Int32
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    type U = String
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.08") {
+    // There should be no type error because the associated type `T` is missing on `C[Int32]`
+    // and is reached through the nested instance `C[MyBox[a]]`.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |enum MyBox[a](a)
+        |
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |instance C[MyBox[a]] with C[a] {
+        |    type T = C.T[a]
+        |    pub def f(x: MyBox[a]): C.T[a] = let MyBox.MyBox(y) = x; C.f(y)
+        |}
+        |
+        |def g(): Int32 = C.f(MyBox.MyBox(42))
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.09") {
+    // There should be no type error because the trait `C` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the instance.
+    val input =
+      """
+        |instance C[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.10") {
+    // There should be no type error because the trait `C` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the instance,
+    // including its trait constraint and associated type definition.
+    val input =
+      """
+        |enum MyBox[a](a)
+        |
+        |trait D[a] {
+        |    pub def h(x: a): a
+        |}
+        |
+        |instance C[MyBox[a]] with D[a] {
+        |    type T = a
+        |    pub def f(x: MyBox[a]): a = let MyBox.MyBox(y) = x; D.h(y)
+        |}
+        |
+        |def g(): Int32 = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.11") {
+    // There should be no type error because the super trait `B` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the super trait,
+    // so the instance `A[Int32]` does not require an instance of `B`.
+    val input =
+      """
+        |trait A[a] with B[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance A[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = A.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.12") {
+    // There should be no type error because the super trait `B` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the super trait;
+    // the constraint `A[a]` on `g` still resolves and `A.f(x)` type checks against it.
+    val input =
+      """
+        |trait A[a] with B[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |def g(x: a): a with A[a] = A.f(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.13") {
+    // There should be no type error because the import `java.io.Fil` is undefined.
+    // The Resolver reports UndefinedJvmImport and recovers by dropping the import,
+    // so `Fil` is an undefined type which resolves to an error type.
+    val input =
+      """
+        |import java.io.Fil
+        |
+        |def f(): Fil = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.14") {
+    // There should be no type error because the use `A.fo` is undefined.
+    // The Resolver reports UndefinedUse and recovers by dropping the use,
+    // so `fo` is an undefined name which resolves to an error expression.
+    val input =
+      """
+        |mod A {
+        |    pub def foo(): Int32 = 42
+        |}
+        |
+        |mod B {
+        |    use A.fo
+        |    pub def g(): Int32 = fo()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.15") {
+    // There should be no type error because the import `java.util.Nope` is undefined.
+    // The Resolver reports UndefinedJvmImport and recovers by dropping the import,
+    // so the type alias `T` and the signature of `f` mention an error type.
+    val input =
+      """
+        |mod A {
+        |    import java.util.Nope
+        |    pub type alias T = Nope
+        |    pub def f(x: T): T = x
+        |}
+        |
+        |def g(): Int32 = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.16") {
+    // There should be no type error because the trait hierarchy A <-> B is cyclic.
+    // The Resolver reports CyclicTraitHierarchy and recovers by dropping the cyclic super traits,
+    // so the instances and the constrained def type check against the repaired hierarchy.
+    val input =
+      """
+        |trait A[a] with B[a] {
+        |    pub def fa(x: a): Int32
+        |}
+        |
+        |trait B[a] with A[a] {
+        |    pub def fb(x: a): Int32
+        |}
+        |
+        |instance A[Int32] {
+        |    pub def fa(x: Int32): Int32 = x
+        |}
+        |
+        |instance B[Int32] {
+        |    pub def fb(x: Int32): Int32 = x
+        |}
+        |
+        |def g(x: a): Int32 with A[a], B[a] = A.fa(x) + B.fb(x)
+        |
+        |def h(): Int32 = g(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.17") {
+    // There should be no type error because the trait `S` is its own super trait.
+    // The Resolver reports CyclicTraitHierarchy and recovers by dropping the self loop.
+    val input =
+      """
+        |trait S[a] with S[a] {
+        |    pub def fs(x: a): Int32
+        |}
+        |
+        |instance S[Int32] {
+        |    pub def fs(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = S.fs(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.18") {
+    // There should be no type error because the trait hierarchy C -> D -> E -> C is cyclic.
+    // The Resolver reports CyclicTraitHierarchy and recovers by dropping the cyclic super traits,
+    // while the super trait C of F (outside the cycle) is kept: F[a] implies C[a] in `g`.
+    val input =
+      """
+        |trait C[a] with D[a] { pub def fc(x: a): Int32 }
+        |trait D[a] with E[a] { pub def fd(x: a): Int32 }
+        |trait E[a] with C[a] { pub def fe(x: a): Int32 }
+        |trait F[a] with C[a] { pub def ff(x: a): Int32 }
+        |
+        |instance C[Int32] { pub def fc(x: Int32): Int32 = x }
+        |instance F[Int32] { pub def ff(x: Int32): Int32 = x }
+        |
+        |def g(x: a): Int32 with F[a] = F.ff(x) + C.fc(x)
+        |
+        |def h(): Int32 = g(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.19") {
+    // There should be no type error because the type aliases `A` and `B` are cyclic.
+    // The Resolver reports CyclicTypeAliases and recovers by replacing the cyclic references
+    // with error types, so `A` is `(Int32, Error)` and `f` type checks against it.
+    val input =
+      """
+        |type alias A = (Int32, B)
+        |type alias B = A
+        |type alias C = A
+        |
+        |def f(x: A): Int32 = fst(x)
+        |
+        |def g(x: C): Int32 = fst(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.20") {
+    // There should be no type error because the type alias `L` refers to itself.
+    // The Resolver reports CyclicTypeAliases and recovers by replacing the cyclic reference
+    // with an error type, keeping the argument: `L[a]` is `Option[Error[a]]`.
+    val input =
+      """
+        |type alias L[a] = Option[L[a]]
+        |
+        |def f(x: L[Int32]): Int32 = match x {
+        |    case Some(y) => y
+        |    case None => 0
+        |}
+        |
+        |def g(): L[Bool] = Some(Some(None))
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.21") {
+    // There should be no type error because the type aliases `P`, `Q` and `R` are cyclic through
+    // a function type and a record type. The Resolver reports CyclicTypeAliases and recovers by
+    // replacing the cyclic references with error types.
+    val input =
+      """
+        |type alias P = Q -> Int32
+        |type alias Q = {x = R}
+        |type alias R = P
+        |
+        |def f(x: P): Int32 = x({x = 1})
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
