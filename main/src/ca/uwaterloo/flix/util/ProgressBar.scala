@@ -23,24 +23,9 @@ import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
 class ProgressBar(flix: Flix) {
   /**
-    * An immutable snapshot passed from the compiler thread to the animation thread.
-    *
-    * @param phase                  the name of the current compiler phase.
-    * @param current                the one-based index of the current compiler phase.
-    * @param phaseStartMillis       the monotonic time at which the current phase started.
-    * @param compilationStartMillis the monotonic time at which the compilation started.
-    */
-  private case class State(phase: String, current: Int, phaseStartMillis: Long, compilationStartMillis: Long)
-
-  /**
     * The width of the progress bar in visible characters.
     */
   private val Width = 80
-
-  /**
-    * The characters in the spinner.
-    */
-  private val SpinnerChars = Array("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")
 
   /**
     * The width of the phase name column in visible characters.
@@ -48,6 +33,11 @@ class ProgressBar(flix: Flix) {
     * Set by the longest phase names: "Dependencies" and "EffectBinder".
     */
   private val PhaseWidth = 12
+
+  /**
+    * The characters in the spinner.
+    */
+  private val SpinnerChars = Array("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")
 
   /**
     * The delay between frames. At 80 ms the animation runs at 12.5 frames per second.
@@ -66,17 +56,14 @@ class ProgressBar(flix: Flix) {
   private val MemorySampleIntervalMillis = 750L
 
   /**
-    * An internal counter used to print the spinner.
+    * An immutable snapshot passed from the compiler thread to the animation thread.
     *
-    * Monotonically increasing.
+    * @param phase                  the name of the current compiler phase.
+    * @param current                the one-based index of the current compiler phase.
+    * @param phaseStartMillis       the monotonic time at which the current phase started.
+    * @param compilationStartMillis the monotonic time at which the compilation started.
     */
-  private val spinnerTick = new AtomicInteger(0)
-
-  /**
-    * Guards writes to the terminal and the render-thread-owned memory sample cache
-    * (`cachedMemory` and `memorySampleMillis`).
-    */
-  private val renderLock = new ReentrantLock()
+  private case class State(phase: String, current: Int, phaseStartMillis: Long, compilationStartMillis: Long)
 
   /**
     * Guards animator lifecycle transitions, ensuring that creation, publication, removal,
@@ -85,14 +72,32 @@ class ProgressBar(flix: Flix) {
   private val lifecycleLock = new ReentrantLock()
 
   /**
+    * The executor responsible for refreshing the current progress line.
+    */
+  private val animator = new AtomicReference[ScheduledExecutorService](null)
+
+  /**
     * The latest phase snapshot published by the compiler thread.
     */
   private val state = new AtomicReference[State](null)
 
   /**
-    * The executor responsible for refreshing the current progress line.
+    * The time (in milliseconds) at which the first phase of the current compilation was observed.
     */
-  private val animator = new AtomicReference[ScheduledExecutorService](null)
+  private var startMillis: Long = nowMillis()
+
+  /**
+    * Guards writes to the terminal and the render-thread-owned memory sample cache
+    * (`cachedMemory` and `memorySampleMillis`).
+    */
+  private val renderLock = new ReentrantLock()
+
+  /**
+    * An internal counter used to print the spinner.
+    *
+    * Monotonically increasing.
+    */
+  private val spinnerTick = new AtomicInteger(0)
 
   /**
     * The most recently sampled heap-memory display and its percentage of the maximum heap.
@@ -103,11 +108,6 @@ class ProgressBar(flix: Flix) {
     * The time at which `cachedMemory` was last updated, or zero if no sample is cached.
     */
   private var memorySampleMillis: Long = 0L
-
-  /**
-    * The time (in milliseconds) at which the first phase of the current compilation was observed.
-    */
-  private var startMillis: Long = nowMillis()
 
   /**
     * Starts the animation thread if it is not already running.
@@ -265,6 +265,26 @@ class ProgressBar(flix: Flix) {
   }
 
   /**
+    * Colors each character of `phase` independently, producing a soft highlight that travels
+    * from left to right. The highlight begins and ends outside the text so consecutive pulses
+    * join without a visible jump.
+    */
+  private def pulsePhase(phase: String, progress: Double, fmt: Formatter): String = {
+    val margin = 3.0
+    val center = progress * (phase.length + 2.0 * margin) - margin
+    phase.zipWithIndex.map { case (char, index) =>
+      val distance = index - center
+      val intensity = Math.exp(-(distance * distance) / 4.0)
+      fmt.fgColor(
+        interpolate(68, 120, intensity),
+        interpolate(147, 210, intensity),
+        interpolate(200, 255, intensity),
+        char.toString
+      )
+    }.mkString
+  }
+
+  /**
     * Returns `s` if it less than or equal to `l` chars.
     *
     * Otherwise returns a prefix of `s` with ...
@@ -285,25 +305,5 @@ class ProgressBar(flix: Flix) {
     * Returns monotonic time in milliseconds.
     */
   private def nowMillis(): Long = TimeUnit.NANOSECONDS.toMillis(System.nanoTime())
-
-  /**
-    * Colors each character of `phase` independently, producing a soft highlight that travels
-    * from left to right. The highlight begins and ends outside the text so consecutive pulses
-    * join without a visible jump.
-    */
-  private def pulsePhase(phase: String, progress: Double, fmt: Formatter): String = {
-    val margin = 3.0
-    val center = progress * (phase.length + 2.0 * margin) - margin
-    phase.zipWithIndex.map { case (char, index) =>
-      val distance = index - center
-      val intensity = Math.exp(-(distance * distance) / 4.0)
-      fmt.fgColor(
-        interpolate(68, 120, intensity),
-        interpolate(147, 210, intensity),
-        interpolate(200, 255, intensity),
-        char.toString
-      )
-    }.mkString
-  }
 
 }
