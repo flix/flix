@@ -309,14 +309,18 @@ object Specialize {
     val defaultSigDefs: Map[Symbol.DefnSym, TypedAst.Def] = (for {
       sig    <- root.sigs.values
       exp    <- sig.exp
-      defnSym = MonomorphHelpers.defaultSigImplSym(sig)
-    } yield defnSym -> TypedAst.Def(defnSym, sig.spec, exp, sig.sym.loc)).toMap
+    } yield {
+      val defnSym = MonomorphHelpers.defaultSigImplSym(sig)
+      defnSym -> TypedAst.Def(defnSym, sig.spec, exp, sig.sym.loc)
+    }).toMap
 
     val defaultSigTraitTparams: Map[Symbol.DefnSym, List[TypedAst.TypeParam]] = (for {
       sig    <- root.sigs.values
       _      <- sig.exp // Filters out sigs without a default impl.
-      defnSym = MonomorphHelpers.defaultSigImplSym(sig)
-    } yield defnSym -> List(root.traits(sig.sym.trt).tparam)).toMap
+    } yield {
+      val defnSym = MonomorphHelpers.defaultSigImplSym(sig)
+      defnSym -> List(root.traits(sig.sym.trt).tparam)
+    }).toMap
 
     val prefixTparams: Map[Symbol.DefnSym, List[TypedAst.TypeParam]] =
       MapOps.mapValues(defToInst)(_.tparams) ++ defaultSigTraitTparams
@@ -335,15 +339,17 @@ object Specialize {
   )(implicit root: TypedAst.Root, flix: Flix): List[(Symbol.DefnSym, TypedAst.Def, StrictSubstitution, Type)] =
     for {
       (sym, instantiations)  <- solution.defs.toList
-      defn           <- allDefs.get(sym).toList
-      args           <- instantiations.map(_.args)
-      prefixTparams   = prefixTparamsMap.getOrElse(sym, Nil)
-      substMap        = (prefixTparams.zip(args) ++ defn.spec.tparams.zip(args.drop(prefixTparams.length)))
-                          .map { case (tp, ty) => tp.sym -> ty }.toMap
+      defn                   <- allDefs.get(sym).toList
+      args                   <- instantiations.map(_.args)
+      prefixTparams           = prefixTparamsMap.getOrElse(sym, Nil)
       if defn.spec.tparams.nonEmpty || prefixTparams.nonEmpty
-      freshSym        = Symbol.freshDefnSym(defn.sym)
-      subst           = StrictSubstitution.mk(Substitution(substMap))
-    } yield (freshSym, defn, subst, subst(defn.spec.declaredScheme.base))
+    } yield {
+      val substMap = (prefixTparams.zip(args) ++ defn.spec.tparams.zip(args.drop(prefixTparams.length)))
+        .map { case (tp, ty) => tp.sym -> ty }.toMap
+      val freshSym = Symbol.freshDefnSym(defn.sym)
+      val subst = StrictSubstitution.mk(Substitution(substMap))
+      (freshSym, defn, subst, subst(defn.spec.declaredScheme.base))
+    }
 
   /**
     * Returns one `(sym, args, freshSym, newEnum)` entry per solved `GroundInstantiation` of a
@@ -352,18 +358,20 @@ object Specialize {
   private def mkEnumEntries(solution: Solution)(implicit root: TypedAst.Root, flix: Flix): List[(Symbol.EnumSym, List[Type], Symbol.EnumSym, TypedAst.Enum)] =
     for {
       (sym, instantiations) <- solution.enums.toList
-      enm           <- root.enums.get(sym).toList
+      enm                   <- root.enums.get(sym).toList
       if enm.tparams.nonEmpty
-      args         <- instantiations.map(_.args)
-      substMap       = enm.tparams.zip(args).map { case (tp, ty) => tp.sym -> ty }.toMap
-      freshSym       = Symbol.freshEnumSym(enm.sym)
-      subst          = StrictSubstitution.mk(Substitution(substMap))
-      newCases       = enm.cases.map { case (caseSym, TypedAst.Case(_, tpes, sc, cloc)) =>
-                          val newCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, caseSym.ordinal, caseSym.loc)
-                          newCaseSym -> TypedAst.Case(newCaseSym, tpes.map(subst.apply), sc, cloc)
-                        }
-      newEnum        = TypedAst.Enum(enm.doc, enm.ann, enm.mod, freshSym, Nil, enm.derives, newCases, enm.loc)
-    } yield (sym, args, freshSym, newEnum)
+      args                  <- instantiations.map(_.args)
+    } yield {
+      val substMap = enm.tparams.zip(args).map { case (tp, ty) => tp.sym -> ty }.toMap
+      val freshSym = Symbol.freshEnumSym(enm.sym)
+      val subst = StrictSubstitution.mk(Substitution(substMap))
+      val newCases = enm.cases.map { case (caseSym, TypedAst.Case(_, tpes, sc, cloc)) =>
+        val newCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, caseSym.ordinal, caseSym.loc)
+        newCaseSym -> TypedAst.Case(newCaseSym, tpes.map(subst.apply), sc, cloc)
+      }
+      val newEnum = TypedAst.Enum(enm.doc, enm.ann, enm.mod, freshSym, Nil, enm.derives, newCases, enm.loc)
+      (sym, args, freshSym, newEnum)
+    }
 
   /**
     * Returns one `(sym, args, freshSym, newEnum)` entry per solved `GroundInstantiation` of a
@@ -373,17 +381,19 @@ object Specialize {
   private def mkRestrictableEnumEntries(solution: Solution)(implicit root: TypedAst.Root, flix: Flix): List[(Symbol.RestrictableEnumSym, List[Type], Symbol.EnumSym, TypedAst.Enum)] =
     for {
       (sym, instantiations) <- solution.restrictableEnums.toList
-      enm           <- root.restrictableEnums.get(sym).toList
-      args         <- instantiations.map(_.args)
-      substMap       = (enm.index :: enm.tparams).zip(args).map { case (tp, ty) => tp.sym -> ty }.toMap
-      freshSym       = Symbol.freshEnumSym(SpecializeAndLower.lowerRestrictableEnumSym(sym))
-      subst          = StrictSubstitution.mk(Substitution(substMap))
-      newCases       = enm.cases.map { case (caseSym, TypedAst.RestrictableCase(_, tpes, sc, cloc)) =>
-                          val newCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, Symbol.CaseSym.NoOrdinal, caseSym.loc)
-                          newCaseSym -> TypedAst.Case(newCaseSym, tpes.map(subst.apply), sc, cloc)
-                        }
-      newEnum        = TypedAst.Enum(enm.doc, enm.ann, enm.mod, freshSym, Nil, enm.derives, newCases, enm.loc)
-    } yield (sym, args, freshSym, newEnum)
+      enm                   <- root.restrictableEnums.get(sym).toList
+      args                  <- instantiations.map(_.args)
+    } yield {
+      val substMap = (enm.index :: enm.tparams).zip(args).map { case (tp, ty) => tp.sym -> ty }.toMap
+      val freshSym = Symbol.freshEnumSym(SpecializeAndLower.lowerRestrictableEnumSym(sym))
+      val subst = StrictSubstitution.mk(Substitution(substMap))
+      val newCases = enm.cases.map { case (caseSym, TypedAst.RestrictableCase(_, tpes, sc, cloc)) =>
+        val newCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, Symbol.CaseSym.NoOrdinal, caseSym.loc)
+        newCaseSym -> TypedAst.Case(newCaseSym, tpes.map(subst.apply), sc, cloc)
+      }
+      val newEnum = TypedAst.Enum(enm.doc, enm.ann, enm.mod, freshSym, Nil, enm.derives, newCases, enm.loc)
+      (sym, args, freshSym, newEnum)
+    }
 
   /**
     * Returns one `(sym, args, freshSym, newEnum)` entry per solved `GroundInstantiation` of a
@@ -392,18 +402,20 @@ object Specialize {
   private def mkStructEntries(solution: Solution)(implicit root: TypedAst.Root, flix: Flix): List[(Symbol.StructSym, List[Type], Symbol.StructSym, TypedAst.Struct)] =
     for {
       (sym, instantiations) <- solution.structs.toList
-      struct        <- root.structs.get(sym).toList
+      struct                <- root.structs.get(sym).toList
       if struct.tparams.nonEmpty
-      args         <- instantiations.map(_.args)
-      substMap       = struct.tparams.zip(args).map { case (tp, ty) => tp.sym -> ty }.toMap
-      freshSym       = Symbol.freshStructSym(struct.sym)
-      subst          = StrictSubstitution.mk(Substitution(substMap))
-      newFields      = struct.fields.map { case (fieldSym, TypedAst.StructField(_, tpe, floc)) =>
-                          val newFieldSym = new Symbol.StructFieldSym(freshSym, fieldSym.name, fieldSym.loc)
-                          newFieldSym -> TypedAst.StructField(newFieldSym, subst(tpe), floc)
-                        }
-      newStruct      = TypedAst.Struct(struct.doc, struct.ann, struct.mod, freshSym, Nil, struct.sc, newFields, struct.loc)
-    } yield (sym, args, freshSym, newStruct)
+      args                  <- instantiations.map(_.args)
+    } yield {
+      val substMap = struct.tparams.zip(args).map { case (tp, ty) => tp.sym -> ty }.toMap
+      val freshSym = Symbol.freshStructSym(struct.sym)
+      val subst = StrictSubstitution.mk(Substitution(substMap))
+      val newFields = struct.fields.map { case (fieldSym, TypedAst.StructField(_, tpe, floc)) =>
+        val newFieldSym = new Symbol.StructFieldSym(freshSym, fieldSym.name, fieldSym.loc)
+        newFieldSym -> TypedAst.StructField(newFieldSym, subst(tpe), floc)
+      }
+      val newStruct = TypedAst.Struct(struct.doc, struct.ann, struct.mod, freshSym, Nil, struct.sc, newFields, struct.loc)
+      (sym, args, freshSym, newStruct)
+    }
 
   // TODO: THIS WILL BE FILLED IN PROPERLY LATER.
   def run(root: TypedAst.Root, solution: Solution)(implicit flix: Flix): MonoAst.Root = ???
