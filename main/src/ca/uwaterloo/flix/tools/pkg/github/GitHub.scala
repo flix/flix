@@ -235,6 +235,45 @@ object GitHub {
   }
 
   /**
+    * Opens a stream over `url`, following redirects. The caller closes the stream.
+    *
+    * Kept apart: a refusal (403/429, usually a rate limit), any other unexpected status, and never
+    * reaching a server at all.
+    */
+  def download(url: URL): Result[InputStream, PackageError] = {
+    val request = HttpRequest.newBuilder(url.toURI).GET().build()
+
+    val response = try {
+      Client.sendStreamingRequest(request)
+    } catch {
+      case ex: IOException => return Err(PackageError.DownloadUnreachable(url, ex.getMessage))
+      case ex: InterruptedException =>
+        Thread.currentThread().interrupt()
+        return Err(PackageError.DownloadUnreachable(url, ex.getMessage))
+    }
+
+    response.statusCode() match {
+      case status if status >= 200 && status < 300 =>
+        Ok(response.body())
+      case status =>
+        // A close failure must not shadow the status being reported.
+        try response.body().close() catch { case _: IOException => () }
+        status match {
+          case 403 | 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
+          case _ => Err(PackageError.DownloadFailed(url, status))
+        }
+    }
+  }
+
+  /**
+    * Returns `response`'s `Retry-After` header, if it has one.
+    */
+  private def retryAfter(response: HttpResponse[InputStream]): Option[String] = {
+    val header = response.headers().firstValue("Retry-After")
+    if (header.isPresent) Some(header.get()) else None
+  }
+
+  /**
     * Gets the project release with the relevant semantic version.
     */
   def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError] = {
@@ -328,7 +367,9 @@ object GitHub {
       * This field should only be accessed in a thread-safe manner, e.g.,
       * such as using `this.synchronized` blocks or some other locking mechanism.
       */
-    private val HTTP_CLIENT: HttpClient = HttpClient.newHttpClient()
+    private val HTTP_CLIENT: HttpClient =
+      // Follows redirects: a release download address redirects to the storage the asset lives on.
+      HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()
 
     /**
       * Sends the HTTP request, `request`, and returns the response.
@@ -339,6 +380,13 @@ object GitHub {
       */
     def sendRequest(request: HttpRequest): HttpResponse[String] = this.synchronized {
       HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
+    }
+
+    /**
+      * As [[sendRequest]], but with a streamed body. May throw [[IOException]].
+      */
+    def sendStreamingRequest(request: HttpRequest): HttpResponse[InputStream] = this.synchronized {
+      HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream())
     }
 
   }
