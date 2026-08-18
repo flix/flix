@@ -275,6 +275,48 @@ object GitHub {
   }
 
   /**
+    * Opens a stream over the `assetName` asset of `project`'s `version` release, without consulting
+    * the REST API -- a release asset's address is fully predictable from owner/repo/tag/name.
+    * The caller closes the stream. See [[findReleaseAsset]] for the fallback when this 404s.
+    */
+  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String): Result[InputStream, PackageError] = {
+    val url = releaseAssetUrl(project, version, assetName)
+    download(url) match {
+      case Err(PackageError.DownloadFailed(_, 404)) =>
+        Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
+      case other => other
+    }
+  }
+
+  /**
+    * Finds the single `extension` asset in `project`'s `version` release by reading the REST API --
+    * the fallback for when [[downloadReleaseAsset]]'s guessed name 404s.
+    */
+  def findReleaseAsset(project: Project, version: SemVer, extension: String, apiKey: Option[String]): Result[Asset, PackageError] = {
+    getReleases(project, apiKey).flatMap { releases =>
+      releases.find(r => r.version == version) match {
+        case None => Err(PackageError.VersionDoesNotExist(version, project))
+        case Some(release) =>
+          release.assets.filter(_.name.endsWith(s".$extension")) match {
+            case Nil => Err(PackageError.NoSuchFile(project.toString, extension))
+            case asset :: Nil => Ok(asset)
+            case _ => Err(PackageError.TooManyFiles(project.toString, extension))
+          }
+      }
+    }
+  }
+
+  /**
+    * The permanent, non-REST address of a release asset.
+    */
+  private def releaseAssetUrl(project: Project, version: SemVer, assetName: String): URL = {
+    // The 4-arg constructor percent-encodes the path, so a name with a space or "#" (legal in a
+    // manifest's declared name, which this can be built from) can't produce a malformed URL.
+    val path = s"/${project.owner}/${project.repo}/releases/download/v$version/$assetName"
+    new URI("https", "github.com", path, null).toURL
+  }
+
+  /**
     * Gets the project release with the relevant semantic version.
     */
   def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError] = {
