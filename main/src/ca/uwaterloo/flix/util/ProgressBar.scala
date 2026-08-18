@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
+import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
 class ProgressBar(flix: Flix) {
@@ -72,14 +73,16 @@ class ProgressBar(flix: Flix) {
   private val spinnerTick = new AtomicInteger(0)
 
   /**
-    * Ensures that terminal frames and line clearing never interleave.
+    * Guards writes to the terminal and the render-thread-owned memory sample cache
+    * (`cachedMemory` and `memorySampleMillis`).
     */
-  private val renderLock = new Object
+  private val renderLock = new ReentrantLock()
 
   /**
-    * Guards the infrequent start and completion transitions of the animator.
+    * Guards animator lifecycle transitions, ensuring that creation, publication, removal,
+    * and shutdown of the scheduled executor occur atomically with respect to one another.
     */
-  private val lifecycleLock = new Object
+  private val lifecycleLock = new ReentrantLock()
 
   /**
     * The latest phase snapshot published by the compiler thread.
@@ -111,15 +114,20 @@ class ProgressBar(flix: Flix) {
     *
     * Locking: Acquires `lifecycleLock`. Does not acquire `renderLock`.
     */
-  def start(): Unit = lifecycleLock.synchronized {
-    if (flix.options.progress && animator.get() == null) {
-      val executor = Executors.newSingleThreadScheduledExecutor((r: Runnable) => {
-        val thread = new Thread(r, "flix-progress-bar")
-        thread.setDaemon(true)
-        thread
-      })
-      executor.scheduleAtFixedRate(() => renderFrame(executor), FrameDelayMillis, FrameDelayMillis, TimeUnit.MILLISECONDS)
-      animator.set(executor)
+  def start(): Unit = {
+    lifecycleLock.lock()
+    try {
+      if (flix.options.progress && animator.get() == null) {
+        val executor = Executors.newSingleThreadScheduledExecutor((r: Runnable) => {
+          val thread = new Thread(r, "flix-progress-bar")
+          thread.setDaemon(true)
+          thread
+        })
+        executor.scheduleAtFixedRate(() => renderFrame(executor), FrameDelayMillis, FrameDelayMillis, TimeUnit.MILLISECONDS)
+        animator.set(executor)
+      }
+    } finally {
+      lifecycleLock.unlock()
     }
   }
 
@@ -146,19 +154,25 @@ class ProgressBar(flix: Flix) {
     * The locks are never held simultaneously.
     */
   def complete(): Unit = {
-    val wasRunning = lifecycleLock.synchronized {
+    lifecycleLock.lock()
+    val wasRunning = try {
       state.set(null)
       val executor = animator.getAndSet(null)
       if (executor != null) executor.shutdownNow()
       executor != null
+    } finally {
+      lifecycleLock.unlock()
     }
 
     if (wasRunning) {
       // Wait only for an in-flight terminal write, never for phase-state computation.
-      renderLock.synchronized {
+      renderLock.lock()
+      try {
         memorySampleMillis = 0L
         System.out.print(" " * Width + "\r")
         System.out.flush()
+      } finally {
+        renderLock.unlock()
       }
     }
   }
@@ -168,10 +182,15 @@ class ProgressBar(flix: Flix) {
     *
     * Locking: Acquires `renderLock`. Does not acquire `lifecycleLock`.
     */
-  private def renderFrame(executor: ScheduledExecutorService): Unit = renderLock.synchronized {
-    if (animator.get() eq executor) {
-      val snapshot = state.get()
-      if (snapshot != null) print(snapshot)
+  private def renderFrame(executor: ScheduledExecutorService): Unit = {
+    renderLock.lock()
+    try {
+      if (animator.get() eq executor) {
+        val snapshot = state.get()
+        if (snapshot != null) print(snapshot)
+      }
+    } finally {
+      renderLock.unlock()
     }
   }
 
