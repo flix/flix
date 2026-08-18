@@ -1328,16 +1328,27 @@ object Resolver {
       val s = resolvePredicateHead(select, scp0)
       ResolvedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
-    case NamedAst.Expr.FixpointQueryWithSelect(exps, queryExp, _, _, _, pred, loc) =>
+    case NamedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
       val es = exps.map(resolveExp(_, scp0))
       val qe = resolveExp(queryExp, scp0)
-      val (s, f, w) = qe match {
-        case ResolvedAst.Expr.FixpointConstraintSet(List(ResolvedAst.Constraint(_, ResolvedAst.Predicate.Head.Atom(_, _, terms, _), body, _)), _) =>
-          val guards = body.collect { case ResolvedAst.Predicate.Body.Guard(exp, _) => exp }
-          val atoms = body.collect { case a: ResolvedAst.Predicate.Body.Atom => a }
-          (terms, atoms, guards)
-        case _ => throw InternalCompilerException("Unexpected FixpointQueryWithSelect pseudo-query shape", loc)
+      // We cannot call resolvePredicateBody as it does not allow new variables to be introduced
+      val f = from.map {
+        case NamedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms, loc1) =>
+          val ts = terms.map(resolvePattern(_, scp0, ns0, root))
+          ResolvedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, ts, loc1)
+        case _ => throw InternalCompilerException("Unexpected predicate body when expecting body atom", loc)
       }
+      // We have to bind variables appearing in the atoms before resolving the select and where exps
+      // Collect all variables appearing in atoms and bind them
+      val ts = f.flatMap(_.terms)
+      val scp1 = ts.foldLeft(scp0)(
+        (acc, t) => t match {
+          case ResolvedAst.Pattern.Var(sym, _) => acc ++ mkVarScp(sym)
+          case _ => acc
+        })
+      // Resolve select and where exps
+      val s = selects.map(resolveExp(_, scp1))
+      val w = where.map(resolveExp(_, scp1))
       ResolvedAst.Expr.FixpointQueryWithSelect(es, qe, s, f, w, pred, loc)
 
     case NamedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
