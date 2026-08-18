@@ -76,18 +76,34 @@ object PackageError {
 
   /**
     * A download refused (403/429), which for an anonymous request usually means a rate limit.
+    *
+    * `retryAfter` is GitHub's secondary rate limit signal; `rateLimitReset` and
+    * `rateLimitRemaining` come from `X-RateLimit-Reset`/`X-RateLimit-Remaining` and describe the
+    * primary REST quota. Both are preserved rather than collapsed into one message, since they
+    * answer different questions -- "when can I retry this exact request" versus "how much of the
+    * hourly budget is left".
     */
-  case class DownloadRefused(url: URL, status: Int, retryAfter: Option[String])
-    extends PackageError {
+  case class DownloadRefused(
+    url: URL,
+    status: Int,
+    retryAfter: Option[String],
+    rateLimitReset: Option[String],
+    rateLimitRemaining: Option[String]
+  ) extends PackageError {
     override def message(f: Formatter): String = {
-      // Retry-After is delta-seconds per RFC 9110, but may also be an HTTP-date.
-      val when = retryAfter match {
-        case Some(s) if s.forall(_.isDigit) => s"Retry after $s seconds."
-        case Some(s) => s"Retry after $s."
-        case None => "This is usually a rate limit."
+      // Retry-After is delta-seconds per RFC 9110, but may also be an HTTP-date; only the former
+      // has a "seconds" unit to name.
+      val when = (retryAfter, rateLimitReset) match {
+        case (Some(s), _) if s.forall(_.isDigit) => s"Retry after $s seconds."
+        case (Some(s), _) => s"Retry after $s."
+        case (None, Some(reset)) => s"The rate limit resets at epoch second $reset."
+        case (None, None) => "This is usually a rate limit."
       }
+      val remaining = rateLimitRemaining
+        .map(r => s" $r requests remain in the current window.")
+        .getOrElse("")
       s"""Refused (HTTP ${f.red(status.toString)}) by ${f.cyan(url.toString)}.
-         |$when
+         |$when$remaining
          |""".stripMargin
     }
   }
@@ -114,6 +130,30 @@ object PackageError {
     override def message(f: Formatter): String =
       s"""Could not reach ${f.cyan(url.toString)}.
          |$message
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised when a response's body could not be fully read, e.g. because the connection
+    * dropped partway through.
+    */
+  case class ResponseBodyUnreadable(url: URL, message: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""Could not read the response from ${f.cyan(url.toString)}.
+         |$message
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised when a request is refused for a reason other than a confirmed rate limit --
+    * an invalid token, a private repository, or anything else GitHub answers with 403 or 429
+    * without the headers that would identify it as quota exhaustion. `message` is GitHub's own
+    * explanation, when the body parses as JSON and has one.
+    */
+  case class RequestRefused(url: URL, status: Int, message: Option[String]) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""Refused (HTTP ${f.red(status.toString)}) by ${f.cyan(url.toString)}.
+         |${message.getOrElse("No further detail was given.")}
          |""".stripMargin
   }
 
