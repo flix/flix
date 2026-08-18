@@ -23,6 +23,11 @@ import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 class ProgressBar(flix: Flix) {
   /**
     * An immutable snapshot passed from the compiler thread to the animation thread.
+    *
+    * @param phase                  the name of the current compiler phase.
+    * @param current                the one-based index of the current compiler phase.
+    * @param phaseStartMillis       the monotonic time at which the current phase started.
+    * @param compilationStartMillis the monotonic time at which the compilation started.
     */
   private case class State(phase: String, current: Int, phaseStartMillis: Long, compilationStartMillis: Long)
 
