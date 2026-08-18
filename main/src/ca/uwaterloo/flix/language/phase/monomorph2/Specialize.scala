@@ -84,9 +84,7 @@ object Specialize {
         if (root.defs(sym).spec.tparams.isEmpty) {
           sym
         } else {
-          throw InternalCompilerException(
-            s"Solver gap: no specialization for $sym at type $groundArrowTpe. " +
-              "Extend the constraint generator to cover this call site.", sym.loc)
+          throw InternalCompilerException(s"No specialization for $sym at type $groundArrowTpe.", sym.loc)
         }
     }
 
@@ -101,9 +99,7 @@ object Specialize {
         if (argTypes.isEmpty) {
           caseSym
         } else {
-          throw InternalCompilerException(
-            s"Solver gap: no enum specialization for ${caseSym.enumSym} at $argTypes. " +
-              "Extend the constraint generator to cover this call site.", caseSym.loc)
+          throw InternalCompilerException(s"No enum specialization for ${caseSym.enumSym} at $argTypes. ", caseSym.loc)
         }
     }
   }
@@ -117,9 +113,7 @@ object Specialize {
     tables.restrictableEnumTable.get((caseSym.enumSym, argTypes)) match {
       case Some(freshEnumSym) => new Symbol.CaseSym(freshEnumSym, caseSym.name, Symbol.CaseSym.NoOrdinal, caseSym.loc)
       case None =>
-        throw InternalCompilerException(
-          s"Solver gap: no restrictable enum specialization for ${caseSym.enumSym} at $argTypes. " +
-            "Extend the constraint generator to cover this call site.", caseSym.loc)
+        throw InternalCompilerException(s"No restrictable enum specialization for ${caseSym.enumSym} at $argTypes. ", caseSym.loc)
     }
   }
 
@@ -135,9 +129,7 @@ object Specialize {
         if (argTypes.isEmpty) {
           sym
         } else {
-          throw InternalCompilerException(
-            s"Solver gap: no struct specialization for $sym at $argTypes. " +
-              "Extend the constraint generator to cover this call site.", groundStructTpe.loc)
+          throw InternalCompilerException(s"No struct specialization for $sym at $argTypes.", groundStructTpe.loc)
         }
     }
   }
@@ -244,10 +236,7 @@ object Specialize {
     tables.defTable.get((resolvedSym, groundArrowTpe)) match {
       case Some(specializedSym) => specializedSym
       case None if !isParametric => resolvedSym
-      case None =>
-        throw InternalCompilerException(
-          s"Solver gap: no specialization for $resolvedSym at type $groundArrowTpe. " +
-            "Extend the constraint generator to cover this call site.", sym.loc)
+      case None => throw InternalCompilerException(s"No specialization for $resolvedSym at type $groundArrowTpe.", sym.loc)
     }
   }
 
