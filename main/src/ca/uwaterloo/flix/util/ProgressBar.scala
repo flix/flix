@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
@@ -66,20 +65,15 @@ class ProgressBar(flix: Flix) {
   private case class State(phase: String, current: Int, phaseStartMillis: Long, compilationStartMillis: Long)
 
   /**
-    * Guards animator lifecycle transitions, ensuring that creation, publication, removal,
-    * and shutdown of the scheduled executor occur atomically with respect to one another.
-    */
-  private val lifecycleLock = new ReentrantLock()
-
-  /**
     * The executor responsible for refreshing the current progress line.
+    * Only accessed by the compiler thread.
     */
-  private val animator = new AtomicReference[ScheduledExecutorService](null)
+  private var animator: ScheduledExecutorService = null
 
   /**
-    * The latest phase snapshot published by the compiler thread.
+    * The latest phase snapshot published by the compiler thread and read by the animation thread.
     */
-  private val state = new AtomicReference[State](null)
+  @volatile private var state: State = null
 
   /**
     * The time (in milliseconds) at which the first phase of the current compilation was observed.
@@ -87,17 +81,15 @@ class ProgressBar(flix: Flix) {
   private var startMillis: Long = nowMillis()
 
   /**
-    * Guards writes to the terminal and the render-thread-owned memory sample cache
-    * (`cachedMemory` and `memorySampleMillis`).
+    * Guards terminal writes against line clearing and protects the render-thread-owned fields
+    * `spinnerTick`, `cachedMemory`, and `memorySampleMillis`.
     */
   private val renderLock = new ReentrantLock()
 
   /**
-    * An internal counter used to print the spinner.
-    *
-    * Monotonically increasing.
+    * The index of the spinner character to print in the next frame.
     */
-  private val spinnerTick = new AtomicInteger(0)
+  private var spinnerTick: Int = 0
 
   /**
     * The most recently sampled heap-memory display and its percentage of the maximum heap.
@@ -111,37 +103,27 @@ class ProgressBar(flix: Flix) {
 
   /**
     * Starts the animation thread if it is not already running.
-    *
-    * Locking: Acquires `lifecycleLock`. Does not acquire `renderLock`.
     */
   def start(): Unit = {
-    lifecycleLock.lock()
-    try {
-      if (flix.options.progress && animator.get() == null) {
-        val executor = Executors.newSingleThreadScheduledExecutor((r: Runnable) => {
-          val thread = new Thread(r, "flix-progress-bar")
-          thread.setDaemon(true)
-          thread
-        })
-        executor.scheduleAtFixedRate(() => renderFrame(executor), FrameDelayMillis, FrameDelayMillis, TimeUnit.MILLISECONDS)
-        animator.set(executor)
-      }
-    } finally {
-      lifecycleLock.unlock()
+    if (flix.options.progress && animator == null) {
+      animator = Executors.newSingleThreadScheduledExecutor((r: Runnable) => {
+        val thread = new Thread(r, "flix-progress-bar")
+        thread.setDaemon(true)
+        thread
+      })
+      animator.scheduleAtFixedRate(() => renderFrame(), FrameDelayMillis, FrameDelayMillis, TimeUnit.MILLISECONDS)
     }
   }
 
   /**
     * Updates the progress to the given `phase`.
-    *
-    * Locking: Acquires no locks. Publishes the new state atomically.
     */
   def observe(phase: String): Unit = {
-    if (animator.get() != null) {
+    if (animator != null) {
       val now = nowMillis()
       if (flix.phaseTimers.isEmpty) startMillis = now
       val current = (flix.phaseTimers.size + 1).min(CompilerConstants.TotalPhases)
-      state.set(State(phase, current, now, startMillis))
+      state = State(phase, current, now, startMillis)
     }
   }
 
@@ -149,22 +131,14 @@ class ProgressBar(flix: Flix) {
     * Indicates that no further events will be observed.
     *
     * Used to properly reset the current line.
-    *
-    * Locking: Acquires and releases `lifecycleLock`, then acquires `renderLock`.
-    * The locks are never held simultaneously.
     */
   def complete(): Unit = {
-    lifecycleLock.lock()
-    val wasRunning = try {
-      state.set(null)
-      val executor = animator.getAndSet(null)
-      if (executor != null) executor.shutdownNow()
-      executor != null
-    } finally {
-      lifecycleLock.unlock()
-    }
+    state = null
+    val executor = animator
+    animator = null
+    if (executor != null) executor.shutdownNow()
 
-    if (wasRunning) {
+    if (executor != null) {
       // Wait only for an in-flight terminal write, never for phase-state computation.
       renderLock.lock()
       try {
@@ -178,17 +152,13 @@ class ProgressBar(flix: Flix) {
   }
 
   /**
-    * Renders the latest state, if this executor is still the active animator.
-    *
-    * Locking: Acquires `renderLock`. Does not acquire `lifecycleLock`.
+    * Renders the latest state.
     */
-  private def renderFrame(executor: ScheduledExecutorService): Unit = {
+  private def renderFrame(): Unit = {
     renderLock.lock()
     try {
-      if (animator.get() eq executor) {
-        val snapshot = state.get()
-        if (snapshot != null) print(snapshot)
-      }
+      val snapshot = state
+      if (snapshot != null) print(snapshot)
     } finally {
       renderLock.unlock()
     }
@@ -205,8 +175,8 @@ class ProgressBar(flix: Flix) {
     val fmt = flix.getFormatter
 
     // Compute the next character in the spinner.
-    val index = spinnerTick.getAndIncrement() % SpinnerChars.length
-    val spinner = SpinnerChars(index)
+    val spinner = SpinnerChars(spinnerTick)
+    spinnerTick = (spinnerTick + 1) % SpinnerChars.length
 
     // Sample heap memory less frequently than animation frames so the value remains readable.
     val now = nowMillis()
