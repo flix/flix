@@ -31,6 +31,47 @@ import scala.util.Using
 object FlixPackageManager {
 
   /**
+    * The manifest asset's fixed name -- `Bootstrap.release` uploads `flix.toml` unchanged.
+    */
+  private val ManifestAssetName = "flix.toml"
+
+  /**
+    * Opens a stream over the first of `candidates` the release actually publishes, falling back to
+    * a rate-limited listing when none of them do. See [[installAll]] for the guessed candidates.
+    */
+  private def openAsset(
+    project: GitHub.Project,
+    version: SemVer,
+    extension: String,
+    candidates: List[String],
+    apiKey: Option[String]
+  ): Result[java.io.InputStream, PackageError] =
+    tryCandidates(project, version, candidates) match {
+      case Some(result) => result
+      case None =>
+        GitHub.findReleaseAsset(project, version, extension, apiKey)
+          .flatMap(asset => GitHub.download(asset.url))
+    }
+
+  /**
+    * Opens the first candidate the release publishes, or `None` if it publishes none of them.
+    */
+  private def tryCandidates(
+    project: GitHub.Project,
+    version: SemVer,
+    candidates: List[String]
+  ): Option[Result[java.io.InputStream, PackageError]] =
+    candidates match {
+      case Nil => None
+      case assetName :: rest =>
+        GitHub.downloadReleaseAsset(project, version, assetName) match {
+          case Ok(stream) => Some(Ok(stream))
+          case Err(_: PackageError.ReleaseAssetNotFound) => tryCandidates(project, version, rest)
+          case Err(e) => Some(Err(e))
+        }
+    }
+
+  /**
     * Represents the dependency resolution of [[origin]].
     * All fields should be considered private except [[origin]] and [[manifests]].
     *
@@ -125,11 +166,23 @@ object FlixPackageManager {
   def installAll(resolution: SecureResolution, projectRoot: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, SecurityContext)], PackageError] = {
     out.println("Downloading Flix dependencies...")
 
-    val allFlixDeps = ListMap.from(resolution.manifestToFlixDeps.map { case (manifest, flixDep) => resolution.security(manifest) -> flixDep })
+    // The manifest's declared name travels along too: it's the second guess at the asset's name.
+    val allFlixDeps = ListMap.from(resolution.manifestToFlixDeps.map {
+      case (manifest, flixDep) => (resolution.security(manifest), manifest.name) -> flixDep
+    })
 
-    val flixPaths = allFlixDeps.map { case (sctx, dep) =>
+    val flixPaths = allFlixDeps.map { case ((sctx, packageName), dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
-      install(depName, dep.version, "fpkg", projectRoot, apiKey) match {
+      // Three strategies, tried in this order, each falling through to the next only on a 404:
+      //   1. Guess the repository name -- `release` publishes under it, so this is exact for
+      //      anything published from now on, and it is an unmetered request either way.
+      //   2. Guess the manifest's declared name -- covers releases published before (1) was true,
+      //      when the asset was named after the directory `release` ran in. Also unmetered.
+      //   3. Fall back to the listing (inside `install`, via `openAsset`/`findReleaseAsset`) --
+      //      reads whatever name the release actually used. The only one of the three that spends
+      //      REST quota, which is why it is last.
+      val candidates = List(s"${dep.projectName}.fpkg", s"$packageName.fpkg")
+      install(depName, dep.version, "fpkg", candidates, projectRoot, apiKey) match {
         case Ok(p) => (p, sctx)
         case Err(e) =>
           out.println(s"ERROR: Installation of `$depName' failed.")
@@ -147,51 +200,55 @@ object FlixPackageManager {
     *
     * The package is installed at `lib/<owner>/<repo>`
     *
-    * There should be only one file with the given extension.
+    * `candidates` are tried against the asset's computed address first, each an unmetered request;
+    * a rate-limited listing is read only if none of them are what the release actually published.
     *
     * Returns the path to the downloaded file.
     */
-  private def install(project: String, version: SemVer, extension: String, p: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Path, PackageError] = {
+  private def install(
+    project: String,
+    version: SemVer,
+    extension: String,
+    candidates: List[String],
+    p: Path,
+    apiKey: Option[String]
+  )(implicit formatter: Formatter, out: PrintStream): Result[Path, PackageError] = {
     GitHub.parseProject(project).flatMap { proj =>
       val lib = Bootstrap.getLibraryDirectory(p)
-      val assetName = s"${proj.repo}-$version.$extension"
+      val localName = s"${proj.repo}-$version.$extension"
       val dirPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
       // create the directory if it does not exist
       Files.createDirectories(dirPath)
-      val assetPath = dirPath.resolve(assetName)
+      val assetPath = dirPath.resolve(localName)
 
       if (Files.exists(assetPath)) {
         out.println(s"  Cached `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")}).")
         Ok(assetPath)
       } else {
-        GitHub.getSpecificRelease(proj, version, apiKey).flatMap { release =>
-          val assets = release.assets.filter(_.name.endsWith(s".$extension"))
-          if (assets.isEmpty) {
-            Err(PackageError.NoSuchFile(project, extension))
-          } else if (assets.length != 1) {
-            Err(PackageError.TooManyFiles(project, extension))
-          } else {
-            // download asset to the directory
-            val asset = assets.head
-            out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
-            out.flush()
+        val name = formatter.blue(s"${proj.owner}/${proj.repo}.$extension")
+        val label = s"$name` (${formatter.cyan(s"v$version")})"
+        out.print(s"  Downloading `$label... ")
+        out.flush()
+        openAsset(proj, version, extension, candidates.distinct, apiKey) match {
+          case Err(e) =>
+            out.println("ERROR.")
+            Err(e)
+          case Ok(stream) =>
             try {
-              Using(GitHub.downloadAsset(asset)) {
-                stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
-              }
+              Using(stream) { s => Files.copy(s, assetPath, StandardCopyOption.REPLACE_EXISTING) }
             } catch {
               case e: IOException =>
                 out.println(s"ERROR: ${e.getMessage}.")
-                return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
+                val msg = Some(e.getMessage)
+                return Err(PackageError.DownloadIncomplete(proj, version, localName, msg))
             }
             if (Files.exists(assetPath)) {
               out.println(s"OK.")
               Ok(assetPath)
             } else {
               out.println(s"ERROR: File was not created.")
-              Err(PackageError.DownloadError(asset, None))
+              Err(PackageError.DownloadIncomplete(proj, version, localName, None))
             }
-          }
         }
       }
     }
@@ -211,7 +268,9 @@ object FlixPackageManager {
       // download toml files
       tomlPaths <- traverse(flixDeps) { dep =>
         val depName = s"${dep.username}/${dep.projectName}"
-        install(depName, dep.version, "toml", path, apiKey).map(p => (p, dep))
+        // The manifest's asset name is fixed, not guessed, so a miss goes straight to the listing.
+        val candidates = List(ManifestAssetName)
+        install(depName, dep.version, "toml", candidates, path, apiKey).map(p => (p, dep))
       }
 
       // parse manifests
