@@ -317,25 +317,6 @@ object GitHub {
   }
 
   /**
-    * Gets the project release with the relevant semantic version.
-    */
-  def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError] = {
-    getReleases(project, apiKey).flatMap {
-      releases =>
-        releases.find(r => r.version == version) match {
-          case None => Err(PackageError.VersionDoesNotExist(version, project))
-          case Some(release) => Ok(release)
-        }
-    }
-  }
-
-  /**
-    * Downloads the given asset.
-    */
-  def downloadAsset(asset: Asset): InputStream =
-    asset.url.openStream()
-
-  /**
     * Returns the URL that returns data related to the project's releases.
     */
   private def releasesUrl(project: Project): URL = {
