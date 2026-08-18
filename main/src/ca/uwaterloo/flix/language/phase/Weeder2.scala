@@ -2969,7 +2969,7 @@ object Weeder2 {
       }
       pickAllTrees(parentTree).foldRight(rest) {
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
-          val qname = pickQName(parentTree)
+          val qname = pickQName(tree)
           val targs = Types.pickArguments(tree)
           Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
 
@@ -3296,9 +3296,11 @@ object Weeder2 {
   }
 
   private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): PredicateAndArity = {
-    val arityToken = pickToken(TokenKind.LiteralInt, tree)
     val ident = pickNameIdent(tree)
-    val arity = tryParsePredicateArity(arityToken)
+    val arity = tryPickToken(TokenKind.LiteralInt, tree) match {
+      case Some(token) => tryParsePredicateArity(token)
+      case None => 0 // The parser has already reported the missing integer literal.
+    }
     PredicateAndArity(Name.mkPred(ident), arity)
   }
 
@@ -3435,13 +3437,20 @@ object Weeder2 {
     * Picks out the first token of a specific [[TokenKind]].
     */
   private def pickToken(kind: TokenKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Token = {
-    tree.children.collectFirst {
-      case token: Token if token.kind == kind => token
-    } match {
+    tryPickToken(kind, tree) match {
       case Some(t) => t
       case _ =>
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
         throw PickException(error)
+    }
+  }
+
+  /**
+    * Tries to pick out the first token of a specific [[TokenKind]].
+    */
+  private def tryPickToken(kind: TokenKind, tree: Tree): Option[Token] = {
+    tree.children.collectFirst {
+      case token: Token if token.kind == kind => token
     }
   }
 
