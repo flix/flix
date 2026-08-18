@@ -584,8 +584,7 @@ object ConstraintGen {
           case t => throw InternalCompilerException(s"Unexpected non-foldable type: '$t'.", loc)
         }
       }
-
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, tpe0, _, _) =>
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, _, tpe0, _, _) =>
       // Generates: Fixpoint3.Solver.factsN(p: PredSym, d: Datalog): Vector[(t1, ..., tN)] with
       // Order[t1], ..., Order[tN] — the `t1..tN` flow args must come from the resolved result type
       // `tpe0`, NOT from `selects`' own term types, which may still carry locally-scoped type vars.
@@ -596,19 +595,6 @@ object ConstraintGen {
         visitExp(exp)
       }
       visitExp(queryExp)
-      for (exp <- selects) {
-        visitExp(exp)
-      }
-      for (p <- from) {
-        p match {
-          case Predicate.Body.Guard(e, _)               => visitExp(e)
-          case Predicate.Body.Functional(_, e, _)       => visitExp(e)
-          case Predicate.Body.Atom(_, _, _, _, _, _, _) => ()
-        }
-      }
-      for (exp <- where) {
-        visitExp(exp)
-      }
       sctx.addFlowConstraint(FlowConstraint(Instantiation(argTypes.map(typeToMonoArg)), MonoVar.Def(Defs.Fixpoint.Solver.Facts(arity))))
 
     case Expr.FixpointQueryWithProvenance(exps, select, _, tpe0, _, _) =>
