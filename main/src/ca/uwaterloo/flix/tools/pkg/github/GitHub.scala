@@ -259,7 +259,8 @@ object GitHub {
         // A close failure must not shadow the status being reported.
         try response.body().close() catch { case _: IOException => () }
         status match {
-          case 403 | 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
+          case 403 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
+          case 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
           case _ => Err(PackageError.DownloadFailed(url, status))
         }
     }
