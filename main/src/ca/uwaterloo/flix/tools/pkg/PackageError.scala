@@ -60,6 +60,49 @@ object PackageError {
          |""".stripMargin
   }
 
+  /**
+    * A download refused (403/429), which for an anonymous request usually means a rate limit.
+    */
+  case class DownloadRefused(url: URL, status: Int, retryAfter: Option[String])
+    extends PackageError {
+    override def message(f: Formatter): String = {
+      // Retry-After is delta-seconds per RFC 9110, but may also be an HTTP-date.
+      val when = retryAfter match {
+        case Some(s) if s.forall(_.isDigit) => s"Retry after $s seconds."
+        case Some(s) => s"Retry after $s."
+        case None => "This is usually a rate limit."
+      }
+      s"""Refused (HTTP ${f.red(status.toString)}) by ${f.cyan(url.toString)}.
+         |$when
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * A download answered with a status that is neither success nor a refusal.
+    */
+  case class DownloadFailed(url: URL, status: Int) extends PackageError {
+    override def message(f: Formatter): String = {
+      val detail =
+        if (status >= 300 && status < 400)
+          "The address redirected somewhere that could not be followed."
+        else "Unexpected response."
+      s"""Could not download ${f.cyan(url.toString)}: HTTP ${f.red(status.toString)}.
+         |$detail
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * A download never reached a server at all.
+    */
+  case class DownloadUnreachable(url: URL, message: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""Could not reach ${f.cyan(url.toString)}.
+         |$message
+         |""".stripMargin
+  }
+
   case class DownloadError(asset: Asset, message: Option[String]) extends PackageError {
     override def message(f: Formatter): String =
       s"""A download error occurred while downloading ${f.bold(asset.name)}
