@@ -26,9 +26,6 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
-import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters.*
-
 /**
   * Solution-driven specialization uses [[ConstraintSolver]]'s solution to specialize every def/enum/
   * struct/restrictable-enum in a single parallel pass.
@@ -57,23 +54,6 @@ object Specialize {
     restrictableEnumTable: Map[(Symbol.RestrictableEnumSym, List[Type]), Symbol.EnumSym],
     instances: Map[(Symbol.TraitSym, TypeConstructor), Instance]
   )
-
-  /**
-    * The mutable data used throughout specialization.
-    *
-    * This class is thread-safe.
-    */
-  private[monomorph2] class SharedContext {
-    private val specializedDefsQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, MonoAst.Def)] = new ConcurrentLinkedQueue()
-
-    /** Records `defn` under its fresh specialized `sym`. */
-    def addSpecializedDef(sym: Symbol.DefnSym, defn: MonoAst.Def): Unit =
-      specializedDefsQueue.add((sym, defn))
-
-    /** Returns all specialized defs recorded so far. */
-    def specializedDefs: Map[Symbol.DefnSym, MonoAst.Def] =
-      specializedDefsQueue.asScala.toMap
-  }
 
   /**
     * Returns the sym to use for a call to `sym` at ground arrow type `groundArrowTpe`.
@@ -179,20 +159,6 @@ object Specialize {
       case Type.UnresolvedJvmType(_, loc)           => throw InternalCompilerException("unexpected JVM type", loc)
     }
   }
-
-  /** Simplifies the types embedded in `field`. */
-  private def visitStructField(field: TypedAst.StructField)(implicit root: TypedAst.Root, flix: Flix): TypedAst.StructField =
-    field match {
-      case TypedAst.StructField(fieldSym, tpe, loc) =>
-        TypedAst.StructField(fieldSym, Canonicalization.simplify(tpe, isGround = false), loc)
-    }
-
-  /** Simplifies the types embedded in `caze`. */
-  private def visitEnumCase(caze: TypedAst.Case)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Case =
-    caze match {
-      case TypedAst.Case(sym, tpes, sc, loc) =>
-        TypedAst.Case(sym, tpes.map(Canonicalization.simplify(_, isGround = false)), sc, loc)
-    }
 
   /** Simplifies the types embedded in `op`. */
   private def visitEffectOp(op: TypedAst.Op)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Op =
@@ -417,6 +383,92 @@ object Specialize {
       (sym, args, freshSym, newStruct)
     }
 
-  // TODO: THIS WILL BE FILLED IN PROPERLY LATER.
-  def run(root: TypedAst.Root, solution: Solution)(implicit flix: Flix): MonoAst.Root = ???
+  /** Specializes `root` per [[ConstraintSolver]]'s [[Solution]]. */
+  def run(root: TypedAst.Root, solution: Solution)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
+    implicit val r: TypedAst.Root = root
+    // Prepare [[SpecializationTables]]
+    val AllDefs(allDefs, defToInst, defaultSigDefs, prefixTparams) = mkAllDefs(root)
+
+    val entries = mkDefEntries(solution, allDefs, prefixTparams)
+    val defTableMap: Map[(Symbol.DefnSym, Type), Symbol.DefnSym] =
+      entries.map { case (freshSym, defn, _, it) => (defn.sym, it) -> freshSym }.toMap
+
+    val enumEntries = mkEnumEntries(solution)
+    val enumTableMap: Map[(Symbol.EnumSym, List[Type]), Symbol.EnumSym] =
+      enumEntries.map { case (sym, args, freshSym, _) => (sym, args) -> freshSym }.toMap
+
+    val structEntries = mkStructEntries(solution)
+    val structTableMap: Map[(Symbol.StructSym, List[Type]), Symbol.StructSym] =
+      structEntries.map { case (sym, args, freshSym, _) => (sym, args) -> freshSym }.toMap
+
+    val restrictableEnumEntries = mkRestrictableEnumEntries(solution)
+    val restrictableEnumTableMap: Map[(Symbol.RestrictableEnumSym, List[Type]), Symbol.EnumSym] =
+      restrictableEnumEntries.map { case (sym, args, freshSym, _) => (sym, args) -> freshSym }.toMap
+
+    val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = MonomorphHelpers.mkInstanceMap(root.instances)
+
+    implicit val tables: SpecializationTables = SpecializationTables(defTableMap, enumTableMap, structTableMap, restrictableEnumTableMap, is)
+
+    // Create specialized and lowered versions of the different families of declarations
+
+    // Biggest-first scheduling to preload long-tailed jobs
+    def sortByLineSpan(defn: TypedAst.Def): Int = defn.loc.startLine - defn.loc.endLine
+
+    val nonParametricDefs: Map[Symbol.DefnSym, MonoAst.Def] =
+      ParOps.parMapWithPriority(allDefs.filter {
+        case (sym, defn) =>
+          defn.spec.tparams.isEmpty &&
+            defToInst.get(sym).forall(_.tparams.isEmpty) &&
+            !defaultSigDefs.contains(sym)
+        },
+        sortBy = ({ case (_, defn) => sortByLineSpan(defn) }: ((Symbol.DefnSym, TypedAst.Def)) => Int)) {
+        case (sym, defn) => sym -> flix.profile(defn.sym, defn.loc) {
+          SpecializeAndLower.visitDef(sym, defn, StrictSubstitution.empty)
+        }
+      }.toMap
+
+    val specializedDefs: Map[Symbol.DefnSym, MonoAst.Def] =
+      ParOps.parMapWithPriority(entries, sortBy = ({ case (_, defn, _, _) => sortByLineSpan(defn) }: ((Symbol.DefnSym, TypedAst.Def, StrictSubstitution, Type)) => Int)) {
+        case (freshSym, defn, subst, _) => freshSym -> flix.profile(defn.sym, defn.loc) {
+          SpecializeAndLower.visitDef(freshSym, defn, subst)
+        }
+      }.toMap
+
+    val nonParametricEnums =
+      ParOps.parMapValues(root.enums.filter { case (_, e) => e.tparams.isEmpty })(SpecializeAndLower.lowerEnum)
+
+    val specializedEnums: Map[Symbol.EnumSym, MonoAst.Enum] =
+      ParOps.parMap(enumEntries) {
+        case (_, _, freshSym, newEnum) => freshSym -> SpecializeAndLower.lowerEnum(newEnum)
+      }.toMap
+
+    val specializedRestrictableEnums: Map[Symbol.EnumSym, MonoAst.Enum] =
+      ParOps.parMap(restrictableEnumEntries) {
+        case (_, _, freshSym, newEnum) => freshSym -> SpecializeAndLower.lowerEnum(newEnum)
+      }.toMap
+
+    val nonParametricStructs =
+      ParOps.parMapValues(root.structs.filter { case (_, s) => s.tparams.isEmpty })(SpecializeAndLower.lowerStruct)
+
+    val specializedStructs: Map[Symbol.StructSym, MonoAst.Struct] =
+      ParOps.parMap(structEntries) {
+        case (_, _, freshSym, newStruct) => freshSym -> SpecializeAndLower.lowerStruct(newStruct)
+      }.toMap
+
+    val effects = ParOps.parMapValues(root.effects) {
+      case TypedAst.Effect(doc, ann, mod, sym, targs, ops0, loc) =>
+        val ops = ops0.map(visitEffectOp)
+        SpecializeAndLower.lowerEffect(TypedAst.Effect(doc, ann, mod, sym, targs, ops, loc))
+    }
+
+    MonoAst.Root(
+      nonParametricDefs ++ specializedDefs,
+      nonParametricEnums ++ specializedEnums ++ specializedRestrictableEnums,
+      nonParametricStructs ++ specializedStructs,
+      effects,
+      root.mainEntryPoint,
+      root.entryPoints,
+      root.sources
+    )
+  }
 }
