@@ -183,9 +183,9 @@ object FlixPackageManager {
               }.get
             } catch {
               case e: IOException =>
-                // A copy or close failure can leave a truncated file at assetPath -- exactly what
-                // the cache check above trusts on the next run. Remove it rather than risk that.
-                Files.deleteIfExists(assetPath)
+                // Remove a truncated file so the cache check above doesn't trust it next run.
+                // Best-effort: a failure here must not mask the error being reported below.
+                try Files.deleteIfExists(assetPath) catch { case _: IOException => () }
                 out.println(s"ERROR: ${e.getMessage}.")
                 return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
             }
