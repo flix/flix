@@ -68,7 +68,7 @@ object GitHub {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
       case ex: InterruptedException =>
         Thread.currentThread().interrupt()
-        return Err(PackageError.ProjectNotFound(url, project, new IOException(ex)))
+        return Err(PackageError.ProjectNotFound(url, project, new IOException("Interrupted while waiting for a response", ex)))
     }
     val releaseJsons = try {
       parse(json).asInstanceOf[JArray]
