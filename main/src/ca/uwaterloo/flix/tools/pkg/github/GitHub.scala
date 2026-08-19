@@ -360,7 +360,10 @@ object GitHub {
     * Returns the URL that release assets can be uploaded to.
     */
   private def releaseAssetUploadUrl(project: Project, releaseId: String, assetName: String): URL = {
-    new URI(s"https://uploads.github.com/repos/${project.owner}/${project.repo}/releases/$releaseId/assets?name=$assetName").toURL
+    // The 5-arg constructor percent-encodes the path and query, so an assetName with a space or "#"
+    // (legal in a filename) can't produce a malformed URL, as it could with raw string interpolation.
+    val path = s"/repos/${project.owner}/${project.repo}/releases/$releaseId/assets"
+    new URI("https", "uploads.github.com", path, s"name=$assetName", null).toURL
   }
 
   /**
