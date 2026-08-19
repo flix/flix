@@ -176,11 +176,16 @@ object FlixPackageManager {
             out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
             out.flush()
             try {
+              // Using(...) traps a copy failure into a Failure instead of throwing it; .get
+              // rethrows it so the catch below sees it and the partial file gets cleaned up.
               Using(GitHub.downloadAsset(asset)) {
                 stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
-              }
+              }.get
             } catch {
               case e: IOException =>
+                // A copy or close failure can leave a truncated file at assetPath -- exactly what
+                // the cache check above trusts on the next run. Remove it rather than risk that.
+                Files.deleteIfExists(assetPath)
                 out.println(s"ERROR: ${e.getMessage}.")
                 return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
             }
