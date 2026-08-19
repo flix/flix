@@ -26,7 +26,8 @@ import org.json4s.native.JsonMethods.{compact, parse, render}
 import java.io.{IOException, InputStream}
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.net.{URI, URL}
+import java.net.{URI, URL, URLEncoder}
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
 /**
@@ -360,7 +361,12 @@ object GitHub {
     * Returns the URL that release assets can be uploaded to.
     */
   private def releaseAssetUploadUrl(project: Project, releaseId: String, assetName: String): URL = {
-    new URI(s"https://uploads.github.com/repos/${project.owner}/${project.repo}/releases/$releaseId/assets?name=$assetName").toURL
+    // "&" and "=" are legal query characters, so the URI constructor won't escape them -- an
+    // assetName containing one could inject an extra query parameter. URLEncoder escapes them.
+    val path = s"/repos/${project.owner}/${project.repo}/releases/$releaseId/assets"
+    val base = new URI("https", "uploads.github.com", path, null, null)
+    val encodedName = URLEncoder.encode(assetName, StandardCharsets.UTF_8)
+    new URI(s"$base?name=$encodedName").toURL
   }
 
   /**
