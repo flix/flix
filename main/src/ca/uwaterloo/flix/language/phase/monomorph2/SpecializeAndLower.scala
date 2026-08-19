@@ -99,12 +99,12 @@ object SpecializeAndLower {
   protected[monomorph2] def visitDef(freshSym: Symbol.DefnSym, defn0: TypedAst.Def, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Def = ???
 
   /** Lowers the given enum `enum0`. */
-  protected[monomorph2] def lowerEnum(enum0: TypedAst.Enum)(implicit tables: SpecializationTables): MonoAst.Enum = enum0 match {
+  protected[monomorph2] def lowerEnum(enum0: TypedAst.Enum)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Enum = enum0 match {
     case TypedAst.Enum(doc, ann, mod, sym, tparams0, _, cases0, loc) =>
       val tparams = tparams0.map(lowerTypeParam)
       val cases = cases0.map {
         case (_, TypedAst.Case(caseSym, tpes0, _, caseLoc)) =>
-          val tpes = tpes0.map(visitTypeSubstituted)
+          val tpes = tpes0.map(tpe => visitTypeSubstituted(Canonicalization.simplify(tpe, isGround = false)))
           (caseSym, MonoAst.Case(caseSym, tpes, caseLoc))
       }
       MonoAst.Enum(doc, ann, mod, sym, tparams, cases, loc)
@@ -119,11 +119,11 @@ object SpecializeAndLower {
   }
 
   /** Lowers the given struct `struct0`. */
-  protected[monomorph2] def lowerStruct(struct0: TypedAst.Struct)(implicit tables: SpecializationTables): MonoAst.Struct = struct0 match {
+  protected[monomorph2] def lowerStruct(struct0: TypedAst.Struct)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Struct = struct0 match {
     case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fields0, loc) =>
       val tparams = tparams0.map(lowerTypeParam)
       val fields = fields0.map {
-        case (fieldSym, field) => MonoAst.StructField(fieldSym, visitTypeSubstituted(field.tpe), loc)
+        case (fieldSym, field) => MonoAst.StructField(fieldSym, visitTypeSubstituted(Canonicalization.simplify(field.tpe, isGround = false)), loc)
       }
       MonoAst.Struct(doc, ann, mod, sym, tparams, fields.toList, loc)
   }

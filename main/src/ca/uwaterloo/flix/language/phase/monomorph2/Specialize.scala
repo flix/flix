@@ -160,20 +160,6 @@ object Specialize {
     }
   }
 
-  /** Simplifies the types embedded in `field`. */
-  private def visitStructField(field: TypedAst.StructField)(implicit root: TypedAst.Root, flix: Flix): TypedAst.StructField =
-    field match {
-      case TypedAst.StructField(fieldSym, tpe, loc) =>
-        TypedAst.StructField(fieldSym, Canonicalization.simplify(tpe, isGround = false), loc)
-    }
-
-  /** Simplifies the types embedded in `caze`. */
-  private def visitEnumCase(caze: TypedAst.Case)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Case =
-    caze match {
-      case TypedAst.Case(sym, tpes, sc, loc) =>
-        TypedAst.Case(sym, tpes.map(Canonicalization.simplify(_, isGround = false)), sc, loc)
-    }
-
   /** Simplifies the types embedded in `op`. */
   private def visitEffectOp(op: TypedAst.Op)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Op =
     op match {
@@ -448,10 +434,8 @@ object Specialize {
         }
       }.toMap
 
-    val nonParametricEnums = ParOps.parMapValues(root.enums.filter { case (_, e) => e.tparams.isEmpty }) {
-      case TypedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
-        SpecializeAndLower.lowerEnum(TypedAst.Enum(doc, ann, mod, sym, tparams, derives, MapOps.mapValues(cases)(visitEnumCase), loc))
-    }
+    val nonParametricEnums =
+      ParOps.parMapValues(root.enums.filter { case (_, e) => e.tparams.isEmpty })(SpecializeAndLower.lowerEnum)
 
     val specializedEnums: Map[Symbol.EnumSym, MonoAst.Enum] =
       ParOps.parMap(enumEntries) {
@@ -463,10 +447,8 @@ object Specialize {
         case (_, _, freshSym, newEnum) => freshSym -> SpecializeAndLower.lowerEnum(newEnum)
       }.toMap
 
-    val nonParametricStructs = ParOps.parMapValues(root.structs.filter { case (_, s) => s.tparams.isEmpty }) {
-      case TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc) =>
-        SpecializeAndLower.lowerStruct(TypedAst.Struct(doc, ann, mod, sym, tparams, sc, MapOps.mapValues(fields)(visitStructField), loc))
-    }
+    val nonParametricStructs =
+      ParOps.parMapValues(root.structs.filter { case (_, s) => s.tparams.isEmpty })(SpecializeAndLower.lowerStruct)
 
     val specializedStructs: Map[Symbol.StructSym, MonoAst.Struct] =
       ParOps.parMap(structEntries) {
