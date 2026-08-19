@@ -30,6 +30,37 @@ import scala.collection.mutable
 object FlixPackageManager {
 
   /**
+    * The manifest asset's fixed name -- `Bootstrap.release` uploads `flix.toml` unchanged.
+    */
+  private val ManifestAssetName = "flix.toml"
+
+  /**
+    * Opens a stream over the first of `candidates` the release actually publishes, falling back to
+    * a rate-limited listing when none of them do. See [[installAll]] for the guessed candidates.
+    */
+  private def openAsset(project: GitHub.Project, version: SemVer, extension: String, candidates: List[String], apiKey: Option[String]): Result[java.io.InputStream, PackageError] =
+    tryCandidates(project, version, candidates) match {
+      case Some(result) => result
+      case None =>
+        GitHub.findReleaseAsset(project, version, extension, apiKey)
+          .flatMap(asset => GitHub.download(asset.url))
+    }
+
+  /**
+    * Opens the first candidate the release publishes, or `None` if it publishes none of them.
+    */
+  private def tryCandidates(project: GitHub.Project, version: SemVer, candidates: List[String]): Option[Result[java.io.InputStream, PackageError]] =
+    candidates match {
+      case Nil => None
+      case assetName :: rest =>
+        GitHub.downloadReleaseAsset(project, version, assetName) match {
+          case Ok(stream) => Some(Ok(stream))
+          case Err(_: PackageError.ReleaseAssetNotFound) => tryCandidates(project, version, rest)
+          case Err(e) => Some(Err(e))
+        }
+    }
+
+  /**
     * Represents the dependency resolution of [[origin]].
     * All fields should be considered private except [[origin]] and [[manifests]].
     *
