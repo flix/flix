@@ -156,11 +156,16 @@ object SpecializeAndLower {
       MonoAst.TypeParam(name, sym, loc)
   }
 
+  /**
+    * The type of a channel which can transmit variables of type `tpe`.
+    */
   private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
     Type.Apply(Type.Apply(Types.Concurrent.Channel.Mpmc, tpe, loc), Type.IO, loc)
   }
 
-  /** A restrictable enum lowers to a regular enum under the same namespace/name, no case-set index. */
+  /**
+    * Lowers `sym` from a restrictable enum sym into a regular enum sym.
+    */
   private[monomorph2] def lowerRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
     new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
 }
