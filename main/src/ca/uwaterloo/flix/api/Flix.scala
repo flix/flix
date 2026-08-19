@@ -487,6 +487,9 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
+    // Begin drawing the progress bar (if enabled).
+    progressBar.start()
+
     // Initialize the thread pool.
     initThreadPool()
 
@@ -595,9 +598,7 @@ class Flix {
     shutdownThreadPool()
 
     // Reset the progress bar.
-    if (options.progress) {
-      progressBar.complete()
-    }
+    progressBar.complete()
 
     // Stop the live compiler profiler TUI only if there are errors and no
     // `codeGen` will follow. On the success path, leave it running so
@@ -618,7 +619,11 @@ class Flix {
     (result, errors.toList)
   } catch {
     case ex: InternalCompilerException =>
+      progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
+      throw ex
+    case ex: Throwable =>
+      progressBar.complete()
       throw ex
   }
 
@@ -634,6 +639,9 @@ class Flix {
   def codeGen(typedAst: TypedAst.Root): CompilationResult = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
+
+    // Begin drawing the progress bar (if enabled).
+    progressBar.start()
 
     // Initialize the thread pool.
     initThreadPool()
@@ -693,9 +701,7 @@ class Flix {
     shutdownThreadPool()
 
     // Reset the progress bar.
-    if (options.progress) {
-      progressBar.complete()
-    }
+    progressBar.complete()
 
     // Stop the live compiler profiler TUI, if it is running.
     compilerTop.foreach(_.stop())
@@ -704,9 +710,11 @@ class Flix {
     result
   } catch {
     case ex: InternalCompilerException =>
+      progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
       throw ex
     case ex: Throwable =>
+      progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
       throw ex
   }
@@ -749,9 +757,7 @@ class Flix {
     // Initialize the phase time object.
     currentPhase = Some(PhaseTime(phase, 0))
 
-    if (options.progress) {
-      progressBar.observe(phase)
-    }
+    progressBar.observe(phase)
 
     // Measure the execution time.
     val t = System.nanoTime()
