@@ -426,7 +426,7 @@ object Specialize {
     // Create specialized and lowered versions of the different families of declarations
 
     // Biggest-first scheduling to preload long-tailed jobs
-    def sortBySize(defn: TypedAst.Def): Int = defn.loc.startLine - defn.loc.endLine
+    def sortByLineSpan(defn: TypedAst.Def): Int = defn.loc.startLine - defn.loc.endLine
 
     val nonParametricDefs: Map[Symbol.DefnSym, MonoAst.Def] =
       ParOps.parMapWithPriority(allDefs.filter {
@@ -435,14 +435,14 @@ object Specialize {
             defToInst.get(sym).forall(_.tparams.isEmpty) &&
             !defaultSigDefs.contains(sym)
         },
-        sortBy = (p: (Symbol.DefnSym, TypedAst.Def)) => sortBySize(p._2)) {
+        sortBy = (p: (Symbol.DefnSym, TypedAst.Def)) => sortByLineSpan(p._2)) {
         case (sym, defn) => sym -> flix.profile(defn.sym, defn.loc) {
           SpecializeAndLower.visitDef(sym, defn, StrictSubstitution.empty)
         }
       }.toMap
 
     val specializedDefs: Map[Symbol.DefnSym, MonoAst.Def] =
-      ParOps.parMapWithPriority(entries, sortBy = (e: (Symbol.DefnSym, TypedAst.Def, StrictSubstitution, Type)) => sortBySize(e._2)) {
+      ParOps.parMapWithPriority(entries, sortBy = (e: (Symbol.DefnSym, TypedAst.Def, StrictSubstitution, Type)) => sortByLineSpan(e._2)) {
         case (freshSym, defn, subst, _) => freshSym -> flix.profile(defn.sym, defn.loc) {
           SpecializeAndLower.visitDef(freshSym, defn, subst)
         }
