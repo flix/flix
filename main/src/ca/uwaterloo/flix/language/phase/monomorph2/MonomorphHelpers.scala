@@ -31,6 +31,12 @@ private[monomorph2] object MonomorphHelpers {
   def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[TypedAst.ConstraintParam]): Boolean =
     cparams0.exists(p => p.bnd.sym == sym)
 
+  /** Returns the synthesized `DefnSym` for `sig`'s default (trait-level) implementation. */
+  def defaultSigImplSym(sig: TypedAst.Sig): Symbol.DefnSym = {
+    val ns = sig.sym.trt.namespace :+ sig.sym.trt.name
+    new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
+  }
+
   /** Returns the free variables of `exp0` that are quantified (bound by `cparams0`). */
   def quantifiedVars(cparams0: List[TypedAst.ConstraintParam], exp0: Expr): List[(Symbol.VarSym, Type)] =
     TypedAstOps.freeVars(exp0).toList.filter { case (sym, _) => isQuantifiedVar(sym, cparams0) }
