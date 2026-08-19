@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, RigidityEnv, Symbol, Type,
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.collection.MapOps
+import ca.uwaterloo.flix.util.collection.{MapOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -206,8 +206,8 @@ object Specialize {
   }
 
   /** Specializes `fparams0` under `subst0`, returning the fresh params and the old-to-fresh var-sym renaming. */
-  private[monomorph2] def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: StrictSubstitution)
-                                     (implicit root: TypedAst.Root, flix: Flix): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+  private[monomorph2] def specializeFormalParams(fparams0: Nel[TypedAst.FormalParam], subst0: StrictSubstitution)
+                                     (implicit root: TypedAst.Root, flix: Flix): (Nel[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
     val (params, pairs) = fparams0.map(specializeFormalParam(_, subst0)).unzip
     (params, pairs.toMap)
   }
