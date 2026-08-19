@@ -20,8 +20,8 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, specializeFormalParams}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.Types
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -133,8 +133,166 @@ object SpecializeAndLower {
     *   - def/sig/case/struct symbols are resolved against the solver solution,
     *   - types are lowered and Datalog/channel expressions are lowered to the primitives.
     */
-  // TODO: THIS WILL BE FILLED IN PROPERLY LATER.
-  private def visitExp(exp0: TypedAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = ???
+  private def visitExp(exp0: TypedAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
+    case TypedAst.Expr.Cst(cst, tpe, loc) =>
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.Cst(cst, t, loc)
+
+    case TypedAst.Expr.Var(sym, tpe, loc) =>
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.Var(env0(sym), t, loc)
+
+    case TypedAst.Expr.Hole(sym, _, tpe, eff, loc) =>
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, subst(eff), loc)
+
+    case TypedAst.Expr.HoleWithExp(_, _, tpe, _, loc) =>
+      val sym = Symbol.freshHoleSym(loc)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
+
+    case TypedAst.Expr.OpenAs(_, exp, _, _) =>
+      visitExp(exp, env0, subst) // TODO RESTR-VARS maybe add to monoAST
+
+    case TypedAst.Expr.Use(_, _, exp, _) =>
+      visitExp(exp, env0, subst)
+
+    case TypedAst.Expr.Lambda(fparam, exp, tpe, loc) =>
+      val (fp, binding) = specializeFormalParam(fparam, subst)
+      val p = Specialize.rewriteFormalParam(lowerFormalParam(fp))
+      val e = visitExp(exp, env0 + binding, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.Lambda(p, e, t, loc)
+
+    case TypedAst.Expr.ApplyClo(exp1, exp2, tpe, eff, _, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyClo(e1, e2, t, subst(eff), loc)
+
+    case TypedAst.Expr.ApplyDef(symUse, exps, _, itpe0, tpe, eff, _, loc) =>
+      val groundArrowTpe = subst(itpe0)
+      val newSym = lookupSym(symUse.sym, groundArrowTpe)
+      val es = exps.map(visitExp(_, env0, subst))
+      MonoAst.Expr.ApplyDef(newSym, es, visitTypeSubstituted(groundArrowTpe), visitType(tpe, subst), subst(eff), loc)
+
+    case TypedAst.Expr.ApplyLocalDef(symUse, exps, _, tpe, eff, _, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyLocalDef(env0(symUse.sym), es, t, subst(eff), loc)
+
+    case TypedAst.Expr.ApplyOp(symUse, exps, tpe, eff, _, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyOp(symUse.sym, es, t, subst(eff), loc)
+
+    case TypedAst.Expr.Unary(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), t, subst(eff), loc)
+
+    case TypedAst.Expr.Let(bnd, exp1, exp2, tpe, eff, loc) =>
+      val freshSym = Symbol.freshVarSym(bnd.sym)
+      val env1 = env0 + (bnd.sym -> freshSym)
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env1, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.Let(freshSym, e1, e2, t, subst(eff), Occur.Unknown, loc)
+
+    case TypedAst.Expr.LocalDef(_, bnd, fparams, exp1, exp2, tpe, eff, loc) =>
+      val freshSym = Symbol.freshVarSym(bnd.sym)
+      val env1 = env0 + (bnd.sym -> freshSym)
+      val (fparams1, env2) = specializeFormalParams(fparams, subst)
+      val fps = fparams1.map(lowerFormalParam).map(Specialize.rewriteFormalParam)
+      val e1 = visitExp(exp1, env1 ++ env2, subst)
+      val e2 = visitExp(exp2, env1, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, subst(eff), Occur.Unknown, loc)
+
+    case TypedAst.Expr.Region(bnd, regSym, exp, tpe, eff, loc) =>
+      val freshSym = Symbol.freshVarSym(bnd.sym)
+      val env1 = env0 + (bnd.sym -> freshSym)
+      val e = visitExp(exp, env1, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.Region(freshSym, regSym, e, t, subst(eff), loc)
+
+    case TypedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val e3 = visitExp(exp3, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.IfThenElse(e1, e2, e3, t, subst(eff), loc)
+
+    case TypedAst.Expr.Stm(_, _, _, _, _) => ???
+    case TypedAst.Expr.Discard(_, _, _) => ???
+    case TypedAst.Expr.Match(_, _, _, _, _) => ???
+    case TypedAst.Expr.RestrictableChoose(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.ExtMatch(_, _, _, _, _) => ???
+    case TypedAst.Expr.Tag(_, _, _, _, _) => ???
+    case TypedAst.Expr.RestrictableTag(_, _, _, _, _) => ???
+    case TypedAst.Expr.ExtTag(_, _, _, _, _) => ???
+    case TypedAst.Expr.Tuple(_, _, _, _) => ???
+    case TypedAst.Expr.RecordSelect(_, _, _, _, _) => ???
+    case TypedAst.Expr.RecordExtend(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.RecordRestrict(_, _, _, _, _) => ???
+    case TypedAst.Expr.ArrayLit(_, _, _, _, _) => ???
+    case TypedAst.Expr.ArrayNew(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.ArrayLoad(_, _, _, _, _) => ???
+    case TypedAst.Expr.ArrayLength(_, _, _) => ???
+    case TypedAst.Expr.ArrayStore(_, _, _, _, _) => ???
+    case TypedAst.Expr.StructNew(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.StructGet(_, _, _, _, _) => ???
+    case TypedAst.Expr.StructPut(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.VectorLit(_, _, _, _) => ???
+    case TypedAst.Expr.VectorLoad(_, _, _, _, _) => ???
+    case TypedAst.Expr.VectorLength(_, _) => ???
+    case TypedAst.Expr.Ascribe(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.InstanceOf(_, _, _) => ???
+    case TypedAst.Expr.CheckedCast(_, _, _, _, _) => ???
+    case TypedAst.Expr.UncheckedCast(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.Unsafe(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.Throw(_, _, _, _) => ???
+    case TypedAst.Expr.TryCatch(_, _, _, _, _) => ???
+    case TypedAst.Expr.Handler(_, _, _, _, _, _, _) => ???
+    case TypedAst.Expr.RunWith(_, _, _, _, _) => ???
+    case TypedAst.Expr.InvokeConstructor(_, _, _, _, _) => ???
+    case TypedAst.Expr.InvokeSuperConstructor(_, _, _, _, _) => ???
+    case TypedAst.Expr.InvokeMethod(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.InvokeSuperMethod(_, _, _, _, _) => ???
+    case TypedAst.Expr.InvokeStaticMethod(_, _, _, _, _) => ???
+    case TypedAst.Expr.GetField(_, _, _, _, _) => ???
+    case TypedAst.Expr.PutField(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.GetStaticField(_, _, _, _) => ???
+    case TypedAst.Expr.PutStaticField(_, _, _, _, _) => ???
+    case TypedAst.Expr.NewObject(_, _, _, _, _, _, _) => ???
+    case TypedAst.Expr.NewChannel(_, _, _, _) => ???
+    case TypedAst.Expr.GetChannel(_, _, _, _) => ???
+    case TypedAst.Expr.PutChannel(_, _, _, _, _) => ???
+    case TypedAst.Expr.SelectChannel(_, _, _, _, _) => ???
+    case TypedAst.Expr.Spawn(_, _, _, _, _) => ???
+    case TypedAst.Expr.ParYield(_, _, _, _, _) => ???
+    case TypedAst.Expr.Lazy(_, _, _) => ???
+    case TypedAst.Expr.Force(_, _, _, _) => ???
+    case TypedAst.Expr.FixpointConstraintSet(_, _, _) => ???
+    case TypedAst.Expr.FixpointLambda(_, _, _, _, _) => ???
+    case TypedAst.Expr.FixpointMerge(_, _, _, _, _) => ???
+    case TypedAst.Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _, _, _) => ???
+    case TypedAst.Expr.FixpointSolveWithProject(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.FixpointInjectInto(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.ApplySig(symUse, exps, _, _, itpe0, tpe, eff, _, loc) =>
+      val groundArrowTpe = subst(itpe0)
+      val newSym = resolveSigSym(symUse.sym, groundArrowTpe)
+      val es = exps.map(visitExp(_, env0, subst))
+      MonoAst.Expr.ApplyDef(newSym, es, visitTypeSubstituted(groundArrowTpe), visitType(tpe, subst), subst(eff), loc)
+
+    case TypedAst.Expr.Error(m, _, _) =>
+      throw InternalCompilerException(s"Unexpected error expression near", m.loc)
+  }
 
   /**
     * Wraps an entry point function with calls to the default handlers of each of the effects appearing in
