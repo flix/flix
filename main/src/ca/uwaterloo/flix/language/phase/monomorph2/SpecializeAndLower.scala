@@ -34,7 +34,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   *  Every call/tag/struct site here is resolved via [[Specialize]]'s `lookupSym`/`lookupCaseSym`/
   *  `lookupStructSym`/`resolveSigSym`.
   *
-  * N.B. [[ConstraintGen]] needs to predict every specialized symbol synthesized here.
+  * N.B.: [[ConstraintGen]] needs to predict every specialized symbol synthesized here.
   */
 object SpecializeAndLower {
 
