@@ -19,8 +19,9 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
-import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.{MonoAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, specializeFormalParams}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.Types
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -95,8 +96,83 @@ object SpecializeAndLower {
   private def visitTypeSubstituted(t: Type)(implicit tables: SpecializationTables): Type =
     Specialize.rewriteEnumStructType(lowerType(t))
 
+  /** Specializes and lowers `defn0` under `subst` into a `MonoAst.Def` with the specialized symbol `freshSym`. */
+  protected[monomorph2] def visitDef(freshSym: Symbol.DefnSym, defn0: TypedAst.Def, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Def = {
+    implicit val lctx: LocalContext = LocalContext.empty
+    val defn = wrapIfEntryPoint(defn0, subst)
+    defn match {
+      case TypedAst.Def(_, spec0, exp, loc) =>
+        val (fparams, env0) = specializeFormalParams(spec0.fparams, subst)
+        val fs = fparams.map(lowerFormalParam).map(Specialize.rewriteFormalParam)
+        val spec = spec0 match {
+          case TypedAst.Spec(doc, ann, mod, _, _, declaredScheme, retTpe, eff, _, _) =>
+            MonoAst.Spec(doc, ann, mod, fs, visitType(declaredScheme.base, subst), visitType(retTpe, subst), subst(eff), DefContext.Unknown)
+        }
+        val e = visitExp(exp, env0, subst)
+        MonoAst.Def(freshSym, spec, e, loc)
+    }
+  }
+
+  /**
+    * If `defn0` is an entry point, substitutes its spec's types and wraps it with its required
+    * default handlers before the rest of lowering; otherwise returns `defn0` unchanged.
+    */
+  private def wrapIfEntryPoint(defn0: TypedAst.Def, subst: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Def =
+    if (!TypedAstOps.isEntryPoint(defn0)) {
+      defn0
+    } else {
+      defn0 match {
+        case TypedAst.Def(sym, spec0, exp, loc) =>
+          val spec = spec0 match {
+            case TypedAst.Spec(doc, ann, mod, tparams, fparams0, declaredScheme0, retTpe, eff, tconstrs, econstrs) =>
+              val fparams = fparams0.map {
+                case TypedAst.FormalParam(bnd, tpe, src, decreasing, floc) =>
+                  TypedAst.FormalParam(bnd, subst(tpe), src, decreasing, floc)
+              }
+              val declaredScheme = declaredScheme0 match {
+                case Scheme(quantifiers, tconstrs1, econstrs1, base) =>
+                  Scheme(quantifiers, tconstrs1, econstrs1, subst(base))
+              }
+              TypedAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, subst(retTpe), subst(eff), tconstrs, econstrs)
+          }
+          wrapDefWithDefaultHandlers(TypedAst.Def(sym, spec, exp, loc))
+      }
+    }
+
+  /**
+    * Specializes and lowers `exp0` in one fused walk:
+    *   - variables are renamed via `env0`,
+    *   - every type is ground-instantiated via `subst`,
+    *   - def/sig/case/struct symbols are resolved against the solver solution,
+    *   - types are lowered and Datalog/channel expressions are lowered to the primitives.
+    */
   // TODO: THIS WILL BE FILLED IN PROPERLY LATER.
-  protected[monomorph2] def visitDef(freshSym: Symbol.DefnSym, defn0: TypedAst.Def, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Def = ???
+  private def visitExp(exp0: TypedAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = ???
+
+  /**
+    * Wraps an entry point function with calls to the default handlers of each of the effects appearing in
+    * its signature. The order in which the handlers are applied is not defined and should not be relied upon.
+    */
+  // TODO: THIS WILL BE FILLED IN PROPERLY LATER.
+  private def wrapDefWithDefaultHandlers(currentDef: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Def = ???
+
+  /**
+    * A local context threaded through `visitExp` to carry information from an
+    * enclosing `NewObject` to nested `InvokeSuperMethod` expressions.
+    *
+    * @param sym       The internal name of the enclosing anonymous class.
+    *                  Set to `Some` when lowering a `NewObject` method body; `None` otherwise.
+    *                  Injected into `AtomicOp.InvokeSuperMethod` so the backend can generate
+    *                  the `CHECKCAST` and `INVOKEVIRTUAL super$methodName` instructions.
+    * @param thisRef   A `Var` expression referencing the `_this` parameter (the first formal
+    *                  parameter of the JvmMethod). Prepended to `InvokeSuperMethod` arguments
+    *                  so the backend receives the receiver object as the first expression.
+    */
+  private case class LocalContext(sym: Option[Symbol.AnonClassSym], thisRef: Option[MonoAst.Expr])
+
+  private object LocalContext {
+    val empty: LocalContext = LocalContext(None, None)
+  }
 
   /** Lowers the given enum `enum0`. */
   protected[monomorph2] def lowerEnum(enum0: TypedAst.Enum)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Enum = enum0 match {
