@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{MonoAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, specializeFormalParams}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.Types
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -99,20 +99,7 @@ object SpecializeAndLower {
   /** Specializes and lowers `defn0` under `subst` into a `MonoAst.Def` with the specialized symbol `freshSym`. */
   protected[monomorph2] def visitDef(freshSym: Symbol.DefnSym, defn0: TypedAst.Def, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Def = {
     implicit val lctx: LocalContext = LocalContext.empty
-    // If `defn0` is an entry point, wrap it with its required default handlers before the rest of lowering.
-    val defn =
-      if (TypedAstOps.isEntryPoint(defn0)) {
-        val spec0 = defn0.spec
-        val spec = spec0.copy(
-          fparams = spec0.fparams.map(fp => fp.copy(tpe = subst(fp.tpe))),
-          declaredScheme = spec0.declaredScheme.copy(base = subst(spec0.declaredScheme.base)),
-          retTpe = subst(spec0.retTpe),
-          eff = subst(spec0.eff)
-        )
-        wrapDefWithDefaultHandlers(defn0.copy(spec = spec))
-      } else {
-        defn0
-      }
+    val defn = wrapIfEntryPoint(defn0, subst)
     defn match {
       case TypedAst.Def(_, spec0, exp, loc) =>
         val (fparams, env0) = specializeFormalParams(spec0.fparams, subst)
@@ -125,6 +112,32 @@ object SpecializeAndLower {
         MonoAst.Def(freshSym, spec, e, loc)
     }
   }
+
+  /**
+    * If `defn0` is an entry point, substitutes its spec's types and wraps it with its required
+    * default handlers before the rest of lowering; otherwise returns `defn0` unchanged.
+    */
+  private def wrapIfEntryPoint(defn0: TypedAst.Def, subst: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Def =
+    if (!TypedAstOps.isEntryPoint(defn0)) {
+      defn0
+    } else {
+      defn0 match {
+        case TypedAst.Def(sym, spec0, exp, loc) =>
+          val spec = spec0 match {
+            case TypedAst.Spec(doc, ann, mod, tparams, fparams0, declaredScheme0, retTpe, eff, tconstrs, econstrs) =>
+              val fparams = fparams0.map {
+                case TypedAst.FormalParam(bnd, tpe, src, decreasing, floc) =>
+                  TypedAst.FormalParam(bnd, subst(tpe), src, decreasing, floc)
+              }
+              val declaredScheme = declaredScheme0 match {
+                case Scheme(quantifiers, tconstrs1, econstrs1, base) =>
+                  Scheme(quantifiers, tconstrs1, econstrs1, subst(base))
+              }
+              TypedAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, subst(retTpe), subst(eff), tconstrs, econstrs)
+          }
+          wrapDefWithDefaultHandlers(TypedAst.Def(sym, spec, exp, loc))
+      }
+    }
 
   /**
     * Specializes and lowers `exp0` in one fused walk:
