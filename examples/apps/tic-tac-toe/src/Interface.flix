@@ -22,12 +22,12 @@ mod Interface {
     /// Recursive helper function to read and return only valid moves.
     ///
     def getMoveFromConsole(): Int32 \ Console = {
-        let line = Console.readln();
-        if (Object.isNull(line)) {
-            Console.println("Invalid move. Move must be a positive integer between 0 and 8");
-            getMoveFromConsole()
-        } else {
-            match Int32.parse(10, line) {
+        match Console.readln() {
+            case None => {
+                Console.println("Invalid move. Move must be a positive integer between 0 and 8");
+                getMoveFromConsole()
+            }
+            case Some(line) => match Int32.parse(10, line) {
                 case Result.Ok(move) if (0 <= move and move <= 8) => move
                 case _ => {
                     Console.println("Invalid move. Move must be a positive integer between 0 and 8");
