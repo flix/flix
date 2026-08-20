@@ -96,6 +96,51 @@ object SpecializeAndLower {
   private def visitTypeSubstituted(t: Type)(implicit tables: SpecializationTables): Type =
     Specialize.rewriteEnumStructType(lowerType(t))
 
+  private def lowerTypeNonSchema(tpe0: Type): Type = tpe0 match {
+    case Type.Cst(_, _) => tpe0 // Reuse tpe0.
+
+    case Type.Var(_, _) => tpe0
+
+    // Sender[t] -> Concurrent.Channel.Mpmc[t, IO]
+    case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _) =>
+      val t = lowerType(tpe)
+      mkChannelTpe(t, loc)
+
+    // Receiver[t] -> Concurrent.Channel.Mpmc[t, IO]
+    case Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _) =>
+      val t = lowerType(tpe)
+      mkChannelTpe(t, loc)
+
+    case Type.Apply(tpe1, tpe2, loc) =>
+      val t1 = lowerType(tpe1)
+      val t2 = lowerType(tpe2)
+      // Performance: Reuse tpe0, if possible.
+      if ((t1 eq tpe1) && (t2 eq tpe2)) {
+        tpe0
+      } else {
+        Type.Apply(t1, t2, loc)
+      }
+
+    case Type.Alias(_, _, _, loc) => throw InternalCompilerException("unexpected type alias", loc)
+
+    case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc)
+
+    case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+
+    case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
+
+    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+
+  }
+
+  /** Grounds, lowers, and rewrites `t` to its specialized form. */
+  private def visitType(t: Type, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): Type =
+    Specialize.rewriteEnumStructType(lowerType(subst(t)))
+
+  /** Lowers and rewrites `t` that has already been grounded. */
+  private def visitTypeSubstituted(t: Type)(implicit tables: SpecializationTables): Type =
+    Specialize.rewriteEnumStructType(lowerType(t))
+
   /** Specializes and lowers `defn0` under `subst` into a `MonoAst.Def` with the specialized symbol `freshSym`. */
   protected[monomorph2] def visitDef(freshSym: Symbol.DefnSym, defn0: TypedAst.Def, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Def = {
     implicit val lctx: LocalContext = LocalContext.empty
