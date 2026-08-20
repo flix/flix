@@ -20,11 +20,13 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Mutability, RegionScope}
+import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Decreasing, Mutability, RegionScope, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupCaseSym, lookupRestrictableCaseSym, lookupStructSym, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.Types
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.collection.CofiniteSet
 
 /**
   * Fuses specialization and lowering into a single AST walk: instantiates a declaration's
@@ -467,8 +469,57 @@ object SpecializeAndLower {
     * Wraps an entry point function with calls to the default handlers of each of the effects appearing in
     * its signature. The order in which the handlers are applied is not defined and should not be relied upon.
     */
-  // TODO: THIS WILL BE FILLED IN PROPERLY LATER.
-  private def wrapDefWithDefaultHandlers(currentDef: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Def = ???
+  private def wrapDefWithDefaultHandlers(currentDef: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+    // Entry points are expected to have a concrete (ground) effect set.
+    val defEffects: CofiniteSet[Symbol.EffSym] = Type.eval(currentDef.spec.eff) match {
+      case Result.Ok(s) => s
+      case Result.Err(_) => throw InternalCompilerException("Unexpected illegal effect set on entry point", currentDef.spec.eff.loc)
+    }
+    // Order of application follows the order of root.defaultHandlers and is otherwise unspecified.
+    val requiredHandlers = root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
+    requiredHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler))
+  }
+
+  /**
+    * Wraps `defn` with `defaultHandler`: `def f(...): tpe \ ef = exp` becomes
+    * `def f(...): tpe \ (ef - handledEffect) + IO = handler(_ -> exp)`.
+    */
+  private def wrapInHandler(defn: TypedAst.Def, defaultHandler: DefaultHandler)(implicit flix: Flix): TypedAst.Def = defn match {
+    case TypedAst.Def(sym, spec0, exp, defLoc) =>
+      val effLoc = spec0.eff.loc.asSynthetic
+      val baseTypeLoc = spec0.declaredScheme.base.loc.asSynthetic
+      val expLoc = exp.loc.asSynthetic
+      val effDif = Type.mkDifference(spec0.eff, defaultHandler.handledEff, effLoc)
+      // Canonicalized to match defTable's canonicalized keys.
+      val eff = Canonicalization.canonicalEffect(Type.mkUnion(effDif, Type.IO, effLoc))
+      val tpe = Type.mkCurriedArrowWithEffect(spec0.fparams.map(_.tpe), eff, spec0.retTpe, baseTypeLoc)
+      val spec = spec0 match {
+        case TypedAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme0, retTpe, _, tconstrs, econstrs) =>
+          val declaredScheme = declaredScheme0 match {
+            case Scheme(quantifiers, tconstrs1, econstrs1, _) => Scheme(quantifiers, tconstrs1, econstrs1, tpe)
+          }
+          TypedAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, tconstrs, econstrs)
+      }
+      val innerLambda =
+        TypedAst.Expr.Lambda(
+          TypedAst.FormalParam(
+            TypedAst.Binder(Symbol.freshVarSym("_", BoundBy.FormalParam, expLoc)(RegionScope.Top, flix), Type.Unit),
+            Type.Unit,
+            TypeSource.Inferred,
+            Decreasing.NonDecreasing,
+            expLoc
+          ),
+          exp,
+          Type.mkArrowWithEffect(Type.Unit, spec0.eff, spec0.retTpe, expLoc),
+          expLoc
+        )
+      val handlerArrowType = Type.mkArrowWithEffect(innerLambda.tpe, eff, spec0.retTpe, expLoc)
+      // Left unresolved: visitExp's ApplyDef case resolves it later, like any other call site —
+      // pre-resolving here would crash, since root.defs has no entry for a fresh sym.
+      val handlerDefSymUse = SymUse.DefSymUse(defaultHandler.handlerSym, expLoc)
+      val handlerCall = TypedAst.Expr.ApplyDef(handlerDefSymUse, List(innerLambda), List(innerLambda.tpe), handlerArrowType, spec0.retTpe, eff, ApplyPosition.NonTail, expLoc)
+      TypedAst.Def(sym, spec, handlerCall, defLoc)
+  }
 
   /**
     * A local context threaded through `visitExp` to carry information from an
