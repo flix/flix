@@ -24,9 +24,9 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Mutability, RegionScope, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupCaseSym, lookupRestrictableCaseSym, lookupStructSym, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
-import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Enums, Types}
+import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Result}
-import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps}
+import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
 /**
   * Fuses specialization and lowering into a single AST walk: instantiates a declaration's
@@ -296,9 +296,25 @@ object SpecializeAndLower {
       // Strip auto-unboxing: same reason as Stm above — discarded results must not be unboxed.
       val e = stripAutoUnbox(visitExp(exp, env0, subst))
       MonoAst.Expr.Discard(e, subst(eff), loc)
-    case TypedAst.Expr.Match(_, _, _, _, _) => ???
-    case TypedAst.Expr.RestrictableChoose(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.ExtMatch(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val rs = rules.map(visitMatchRule(_, env0, subst))
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.Match(e, rs, t, subst(eff), loc)
+
+    case TypedAst.Expr.RestrictableChoose(_, exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val rs = rules.map(visitRestrictableChooseRule(_, env0, subst))
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.Match(e, rs, t, subst(eff), loc)
+
+    case TypedAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val rs = rules.map(visitExtMatchRule(_, env0, subst))
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ExtMatch(e, rs, t, subst(eff), loc)
+
     case TypedAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val t = subst(tpe)
       val newSym = lookupCaseSym(symUse.sym, t)
@@ -446,8 +462,28 @@ object SpecializeAndLower {
       val t = visitType(tpe, subst)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, subst(eff), loc)
 
-    case TypedAst.Expr.TryCatch(_, _, _, _, _) => ???
-    case TypedAst.Expr.Handler(_, _, _, _, _, _, _) => ???
+    case TypedAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      val rs = rules.map(visitCatchRule(_, env0, subst))
+      MonoAst.Expr.TryCatch(e, rs, t, subst(eff), loc)
+
+    case TypedAst.Expr.Handler(symUse, rules, bodyTpe, bodyEff0, handledEff, tpe, loc) =>
+      // `handler sym { rules }` lowers to `handlerBody -> try handlerBody() with sym { rules }`.
+      val bodySym = Symbol.freshVarSym("handlerBody", BoundBy.FormalParam, loc.asSynthetic)(RegionScope.Top, flix)
+      val bodyEff = subst(bodyEff0)
+      val bt = visitType(bodyTpe, subst)
+      val bodyThunkType = Type.mkArrowWithEffect(Type.Unit, bodyEff, bt, loc.asSynthetic)
+      val param = MonoAst.FormalParam(bodySym, bodyThunkType, Occur.Unknown, loc.asSynthetic)
+
+      val bodyVar = MonoAst.Expr.Var(bodySym, bodyThunkType, loc.asSynthetic)
+      val body = MonoAst.Expr.ApplyClo(bodyVar, MonoAst.Expr.Cst(Constant.Unit, Type.Unit, loc.asSynthetic), bt, bodyEff, loc.asSynthetic)
+      val rs = rules.map(visitHandlerRule(_, env0, subst))
+      val runWith = MonoAst.Expr.RunWith(body, symUse, rs, bt, subst(handledEff), loc)
+
+      val t = visitType(tpe, subst)
+
+      MonoAst.Expr.Lambda(param, runWith, t, loc)
 
     case TypedAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
       // `run exp1 with exp2` lowers to `exp2(_runWith -> exp1)`.
@@ -542,9 +578,22 @@ object SpecializeAndLower {
       }
       val t = visitType(tpe, subst)
       MonoAst.Expr.NewObject(freshSym, clazz, t, subst(eff), cs, ms, loc)
-    case TypedAst.Expr.NewChannel(_, _, _, _) => ???
-    case TypedAst.Expr.GetChannel(_, _, _, _) => ???
-    case TypedAst.Expr.PutChannel(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      lowerNewChannel(e, subst(tpe), subst(eff), loc)
+
+    case TypedAst.Expr.GetChannel(innerExp, tpe, eff, loc) =>
+      // N.B.: innerExp.tpe is threaded in RAW, since e.tpe is already enum/struct-rewritten.
+      val e = visitExp(innerExp, env0, subst)
+      mkGetChannel(e, subst(innerExp.tpe), subst(tpe), subst(eff), loc)
+
+    case TypedAst.Expr.PutChannel(innerExp1, innerExp2, _, eff, loc) =>
+      // N.B.: innerExp1/2.tpe is threaded in RAW, since exp1/2.tpe is already enum/struct-rewritten.
+      val exp1 = visitExp(innerExp1, env0, subst)
+      val exp2 = visitExp(innerExp2, env0, subst)
+      SpecializeAndLower.mkPutChannel(exp1, exp2, subst(innerExp1.tpe), subst(innerExp2.tpe), subst(eff), loc)
+
     case TypedAst.Expr.SelectChannel(_, _, _, _, _) => ???
 
     case TypedAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
@@ -580,6 +629,168 @@ object SpecializeAndLower {
 
     case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
+  }
+
+  /**
+    * Specializes and lowers the given catch rule `rule0` (fresh binder).
+    */
+  private def visitCatchRule(rule: TypedAst.CatchRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
+    case TypedAst.CatchRule(bnd, clazz, exp, _) =>
+      val freshSym = Symbol.freshVarSym(bnd.sym)
+      val env1 = env0 + (bnd.sym -> freshSym)
+      val e = visitExp(exp, env1, subst)
+      MonoAst.CatchRule(freshSym, clazz, e)
+  }
+
+  /**
+    * Specializes and lowers the given handler rule `rule0` (fresh formal params).
+    */
+  private def visitHandlerRule(rule0: TypedAst.HandlerRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.HandlerRule = rule0 match {
+    case TypedAst.HandlerRule(opSymUse, fparams0, body0, _) =>
+      val (fparams1, env1) = specializeFormalParams(fparams0, subst)
+      val fparams = fparams1.map(lowerFormalParam).map(Specialize.rewriteFormalParam)
+      val body = visitExp(body0, env0 ++ env1, subst)
+      MonoAst.HandlerRule(opSymUse, fparams, body)
+  }
+
+  /**
+    * Specializes and lowers the given match rule `rule0`. The pattern's fresh binders extend the
+    * env for both the guard and the body.
+    */
+  private def visitMatchRule(rule0: TypedAst.MatchRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.MatchRule = rule0 match {
+    case TypedAst.MatchRule(pat, guard, body, _) =>
+      val (p, env1) = visitPat(pat, Map.empty, subst)
+      val extendedEnv = env0 ++ env1
+      val g = guard.map(visitExp(_, extendedEnv, subst))
+      val b = visitExp(body, extendedEnv, subst)
+      MonoAst.MatchRule(p, g, b)
+  }
+
+  /**
+    * Specializes and lowers the given pattern `pat0`, returning the fresh-binder env extension
+    * alongside.
+    */
+  private def visitPat(pat0: TypedAst.Pattern, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): (MonoAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case TypedAst.Pattern.Wild(tpe, loc) =>
+      (MonoAst.Pattern.Wild(visitType(tpe, subst), loc), env0)
+
+    case TypedAst.Pattern.Var(bnd, tpe, loc) =>
+      val newSym = Symbol.freshVarSym(bnd.sym)
+      val env =
+        if (env0.contains(bnd.sym)) {
+          env0
+        } else {
+          env0 + (bnd.sym -> newSym)
+        }
+      (MonoAst.Pattern.Var(newSym, visitType(tpe, subst), Occur.Unknown, loc), env)
+
+    case TypedAst.Pattern.Cst(cst, tpe, loc) =>
+      (MonoAst.Pattern.Cst(cst, visitType(tpe, subst), loc), env0)
+
+    case TypedAst.Pattern.Tag(symUse, pats, tpe, loc) =>
+      val (ps, env) = visitPats(pats, env0, subst)
+      val t = subst(tpe)
+      val newSym = lookupCaseSym(symUse.sym, t)
+      (MonoAst.Pattern.Tag(SymUse.CaseSymUse(newSym, symUse.loc), ps, visitTypeSubstituted(t), loc), env)
+
+    case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
+      val (ps, env) = visitPats(elms.toList, env0, subst)
+      (MonoAst.Pattern.Tuple(Nel(ps.head, ps.tail), visitType(tpe, subst), loc), env)
+
+    case TypedAst.Pattern.Record(pats, pat, tpe, loc) =>
+      val (psVal, envs) = pats.map {
+        case TypedAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
+          val (p1, env1) = visitPat(pat1, env0, subst)
+          (MonoAst.Pattern.Record.RecordLabelPattern(label, p1, visitType(tpe1, subst), loc1), env1)
+      }.unzip
+      val (patVal, env1) = visitPat(pat, env0, subst)
+      val env = (env1 :: envs).flatten.toMap
+      (MonoAst.Pattern.Record(psVal, patVal, visitType(tpe, subst), loc), env)
+
+    case TypedAst.Pattern.Error(_, loc) =>
+      throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+  }
+
+  /**
+    * Specializes and lowers `ps`, threading the env through binder freshening.
+    */
+  private def visitPats(ps: List[TypedAst.Pattern], env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): (List[MonoAst.Pattern], Map[Symbol.VarSym, Symbol.VarSym]) =
+    ps.foldRight((Nil: List[MonoAst.Pattern], env0)) {
+      case (pat0, (res, env1)) =>
+        val (pat, env) = visitPat(pat0, env1, subst)
+        (pat :: res, env)
+    }
+
+  /**
+    * Specializes and lowers the given restrictable choice rule `rule0` to a match rule.
+    */
+  private def visitRestrictableChooseRule(rule0: TypedAst.RestrictableChooseRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.MatchRule = rule0 match {
+    case TypedAst.RestrictableChooseRule(pat, exp) =>
+      pat match {
+        case TypedAst.RestrictableChoosePattern.Tag(symUse, pat0, tpe, loc) =>
+          val env = pat0.foldLeft(env0) {
+            case (env1, TypedAst.RestrictableChoosePattern.Var(bnd, _, _)) =>
+              env1 + (bnd.sym -> Symbol.freshVarSym(bnd.sym))
+            case (env1, TypedAst.RestrictableChoosePattern.Wild(_, _)) => env1
+            case (_, TypedAst.RestrictableChoosePattern.Error(_, errLoc)) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
+          }
+          val termPatterns = pat0.map {
+            case TypedAst.RestrictableChoosePattern.Var(TypedAst.Binder(varSym, _), varTpe, varLoc) => MonoAst.Pattern.Var(env(varSym), subst(varTpe), Occur.Unknown, varLoc)
+            case TypedAst.RestrictableChoosePattern.Wild(wildTpe, wildLoc) => MonoAst.Pattern.Wild(subst(wildTpe), wildLoc)
+            case TypedAst.RestrictableChoosePattern.Error(_, errLoc) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
+          }
+          val t = subst(tpe)
+          val newSym = lookupRestrictableCaseSym(symUse.sym, t)
+          val p = MonoAst.Pattern.Tag(SymUse.CaseSymUse(newSym, symUse.loc), termPatterns, visitTypeSubstituted(t), loc)
+          MonoAst.MatchRule(p, None, visitExp(exp, env, subst))
+
+        case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
+      }
+  }
+
+  /**
+    * Specializes and lowers the given `ematch` pattern `pat0`, returning the fresh-binder env
+    * extension alongside.
+    */
+  private def visitExtPat(pat0: TypedAst.ExtPattern, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case TypedAst.ExtPattern.Default(loc) =>
+      (MonoAst.ExtPattern.Default(loc), Map.empty)
+
+    case TypedAst.ExtPattern.Tag(label, pats, loc) =>
+      val (ps, symMaps) = pats.map(visitExtTagPat(_, subst)).unzip
+      (MonoAst.ExtPattern.Tag(label, ps, loc), symMaps.flatten.toMap)
+
+    case TypedAst.ExtPattern.Error(loc) =>
+      throw InternalCompilerException("unexpected error ext pattern", loc)
+  }
+
+  /**
+    * Specializes and lowers the given `ematch` tag-argument pattern `pat0`, returning the
+    * fresh-binder env extension alongside.
+    */
+  private def visitExtTagPat(pat0: TypedAst.ExtTagPattern, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): (MonoAst.ExtTagPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case TypedAst.ExtTagPattern.Wild(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Wild(visitType(tpe, subst), loc), Map.empty)
+
+    case TypedAst.ExtTagPattern.Var(bnd, tpe, loc) =>
+      val freshSym = Symbol.freshVarSym(bnd.sym)
+      (MonoAst.ExtTagPattern.Var(freshSym, visitType(tpe, subst), Occur.Unknown, loc), Map(bnd.sym -> freshSym))
+
+    case TypedAst.ExtTagPattern.Unit(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Unit(visitType(tpe, subst), loc), Map.empty)
+
+    case TypedAst.ExtTagPattern.Error(_, loc) =>
+      throw InternalCompilerException("unexpected error ext pattern", loc)
+  }
+
+  /**
+    * Specializes and lowers the given `ematch` rule `rule0`.
+    */
+  private def visitExtMatchRule(rule0: TypedAst.ExtMatchRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.ExtMatchRule = rule0 match {
+    case TypedAst.ExtMatchRule(pat, exp, loc) =>
+      val (p, env1) = visitExtPat(pat, subst)
+      val e = visitExp(exp, env0 ++ env1, subst)
+      MonoAst.ExtMatchRule(p, e, loc)
   }
 
   /**
@@ -719,6 +930,67 @@ object SpecializeAndLower {
     */
   private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
     Type.Apply(Type.Apply(Types.Concurrent.Channel.Mpmc, tpe, loc), Type.IO, loc)
+  }
+
+  /**
+    * Returns a new channel tuple (sender, receiver) expression:
+    * {{{ %%CHANNEL_NEW%%(m) }}}
+    * becomes a call to the standard library function:
+    * {{{ Concurrent/Channel.newChannel(10) }}}
+    *
+    * @param tpe The specialized type of the result.
+    */
+  private def lowerNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    val groundArrowTpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
+    val defnSym = lookupSym(Defs.Concurrent.Channel.NewChannelTuple, groundArrowTpe)
+    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, Specialize.rewriteEnumStructType(groundArrowTpe), visitTypeSubstituted(tpe), eff, loc)
+  }
+
+  /**
+    * Returns a channel get expression:
+    * {{{ <- c }}}
+    * becomes a call to the standard library function:
+    * {{{ Concurrent/Channel.get(c) }}}
+    */
+  private def mkGetChannel(exp: MonoAst.Expr, chanTpe: Type, tpe: Type, eff: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    val groundArrowTpe = lowerType(Type.mkIoArrow(chanTpe, tpe, loc))
+    val defnSym = lookupSym(Defs.Concurrent.Channel.Get, groundArrowTpe)
+    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, Specialize.rewriteEnumStructType(groundArrowTpe), visitTypeSubstituted(tpe), eff, loc)
+  }
+
+  /**
+    * Returns a channel put expression:
+    * {{{ c <- 42 }}}
+    * becomes a call to the standard library function:
+    * {{{ let chan = c; let value = 42; Concurrent/Channel.put(value, chan) }}}
+    *
+    * Here `exp1` is the channel and `exp2` is the value (i.e. `exp1 <- exp2`). In source order
+    * the channel is evaluated before the value, but `Channel.put` takes the value before the
+    * channel. We let-bind both expressions in source order so that reordering them into the
+    * argument list does not change their evaluation order. See:
+    * https://github.com/flix/flix/issues/10378
+    */
+  private def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, chanTpe: Type, valTpe: Type, eff: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val groundArrowTpe = lowerType(Type.mkIoUncurriedArrow(Nel.of(valTpe, chanTpe), Type.Unit, loc))
+    val defnSym = lookupSym(Defs.Concurrent.Channel.Put, groundArrowTpe)
+    val chanSym = mkLetSym("chan", loc)
+    val valueSym = mkLetSym("value", loc)
+    val chanVar = MonoAst.Expr.Var(chanSym, exp1.tpe, loc)
+    val valueVar = MonoAst.Expr.Var(valueSym, exp2.tpe, loc)
+    val putExp = MonoAst.Expr.ApplyDef(defnSym, List(valueVar, chanVar), Specialize.rewriteEnumStructType(groundArrowTpe), Type.Unit, eff, loc)
+    // The channel binding is the outermost let, so the channel is evaluated before the value.
+    val valueLet = MonoAst.Expr.Let(valueSym, exp2, putExp, Type.Unit, eff, Occur.Unknown, loc)
+    MonoAst.Expr.Let(chanSym, exp1, valueLet, Type.Unit, eff, Occur.Unknown, loc)
+  }
+
+  /**
+    * Returns a new `VarSym` for use in a let-binding.
+    *
+    * This function is called `mkLetSym` to avoid confusion with [[mkVarSym]].
+    */
+  private def mkLetSym(prefix: String, loc: SourceLocation)(implicit flix: Flix): Symbol.VarSym = {
+    val name = prefix + Flix.Delimiter + flix.genSym.freshId()
+    Symbol.freshVarSym(name, BoundBy.Let, loc)(RegionScope.Top, flix)
   }
 
   /**
