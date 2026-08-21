@@ -475,6 +475,7 @@ object SpecializeAndLower {
       val exp1 = visitExp(innerExp1, env0, subst)
       val exp2 = visitExp(innerExp2, env0, subst)
       SpecializeAndLower.mkPutChannel(exp1, exp2, subst(innerExp1.tpe), subst(innerExp2.tpe), subst(eff), loc)
+
     case TypedAst.Expr.SelectChannel(rules0, default0, tpe, eff, loc) =>
       // N.B.: Each rule's RAW substituted channel type is threaded alongside the visited `chan` expr,
       // since `chan`'s own `.tpe` is already enum/struct-rewritten.
