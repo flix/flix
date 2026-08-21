@@ -202,7 +202,49 @@ object SpecializeAndLower {
       val t = visitType(tpe, subst)
       MonoAst.Expr.ApplyOp(symUse.sym, es, t, subst(eff), loc)
 
-    case TypedAst.Expr.Unary(_, _, _, _, _) => ???
+    case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) => sop match {
+      // ReflectOps are resolved here at specialization time since the reflected type is only known when it is grounded.
+      case SemanticOp.ReflectOp.ReflectEff =>
+        val expTpe = subst(exp.tpe)
+        val typeArg = expTpe.typeArguments.headOption.getOrElse(
+          throw InternalCompilerException(s"Expected ProxyEff[ef] type, got $expTpe", loc))
+        val purityEnumSym = Enums.Reflect.Purity
+        val caseName = typeArg match {
+          case Type.Cst(TypeConstructor.Pure, _) => "Pure"
+          case _                                 => "Impure"
+        }
+        val caseSym = findCaseSym(purityEnumSym, caseName)
+        MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), Nil, Type.mkEnum(purityEnumSym, Nil, loc), Type.Pure, loc)
+
+      case SemanticOp.ReflectOp.ReflectType =>
+        val expTpe = subst(exp.tpe)
+        val typeArg = expTpe.typeArguments.headOption.getOrElse(
+          throw InternalCompilerException(s"Expected Proxy[t] type, got $expTpe", loc))
+        val jvmTypeEnumSym = Enums.Reflect.JvmType
+        val caseName = jvmTypeCaseName(typeArg.baseType)
+        val caseSym = findCaseSym(jvmTypeEnumSym, caseName)
+        MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), Nil, Type.mkEnum(jvmTypeEnumSym, Nil, loc), Type.Pure, loc)
+
+      case SemanticOp.ReflectOp.ReflectValue =>
+        val e = visitExp(exp, env0, subst)
+        val expTpe = subst(exp.tpe)
+        val jvmValueEnumSym = Enums.Reflect.JvmValue
+        val resultType = Type.mkEnum(jvmValueEnumSym, Nil, loc)
+        val caseName = jvmTypeCaseName(expTpe.baseType)
+        val caseSym = findCaseSym(jvmValueEnumSym, caseName)
+        val tagArg = if (caseName == "JvmObject") {
+          val objType = Type.mkNative(classOf[java.lang.Object], loc)
+          mkCast(e, objType, Type.Pure, loc)
+        } else {
+          e
+        }
+        MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), List(tagArg), resultType, subst(eff), loc)
+
+      case _ =>
+        val e = visitExp(exp, env0, subst)
+        val t = visitType(tpe, subst)
+        MonoAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), t, subst(eff), loc)
+    }
 
     case TypedAst.Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
@@ -242,8 +284,18 @@ object SpecializeAndLower {
       val t = visitType(tpe, subst)
       MonoAst.Expr.IfThenElse(e1, e2, e3, t, subst(eff), loc)
 
-    case TypedAst.Expr.Stm(_, _, _, _, _) => ???
-    case TypedAst.Expr.Discard(_, _, _) => ???
+    case TypedAst.Expr.Stm(exps, exp, tpe, eff, loc) =>
+      // Strip auto-unboxing: `m.put("k", 42);` discards the result, so we must not unbox the
+      // null that `HashMap.put` returns on first insert (would NPE).
+      val es = exps.map(e => stripAutoUnbox(visitExp(e, env0, subst)))
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.Stm(es, e, t, subst(eff), loc)
+
+    case TypedAst.Expr.Discard(exp, eff, loc) =>
+      // Strip auto-unboxing: same reason as Stm above — discarded results must not be unboxed.
+      val e = stripAutoUnbox(visitExp(exp, env0, subst))
+      MonoAst.Expr.Discard(e, subst(eff), loc)
 
     case TypedAst.Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
@@ -262,6 +314,7 @@ object SpecializeAndLower {
       val rs = rules.map(visitExtMatchRule(_, env0, subst))
       val t = visitType(tpe, subst)
       MonoAst.Expr.ExtMatch(e, rs, t, subst(eff), loc)
+
     case TypedAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val t = subst(tpe)
       val newSym = lookupCaseSym(symUse.sym, t)
@@ -377,10 +430,33 @@ object SpecializeAndLower {
 
     case TypedAst.Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp, env0, subst)
-    case TypedAst.Expr.InstanceOf(_, _, _) => ???
-    case TypedAst.Expr.CheckedCast(_, _, _, _, _) => ???
-    case TypedAst.Expr.UncheckedCast(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.Unsafe(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.InstanceOf(exp, clazz, loc) =>
+      // Primitives never satisfy an instanceof check: evaluate for side effects and return false.
+      val e = visitExp(exp, env0, subst)
+      if (isPrimType(e.tpe)) {
+        // If it's a primitive type, evaluate the expression but return false
+        MonoAst.Expr.Stm(List(e), MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
+      } else {
+        // If it's a reference type, then do the instanceof check
+        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
+      }
+
+    case TypedAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
+      // Note: We do *NOT* erase checked (i.e. safe) casts.
+      // In Java, `String` is a subtype of `Object`, but the Flix IR makes this upcast _explicit_.
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      mkCast(e, t, subst(eff), loc)
+
+    case TypedAst.Expr.UncheckedCast(exp, _, _, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      mkCast(e, t, subst(eff), loc)
+
+    case TypedAst.Expr.Unsafe(exp, _, _, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      mkCast(e, t, subst(eff), loc)
     case TypedAst.Expr.Throw(exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       val t = visitType(tpe, subst)
@@ -418,14 +494,24 @@ object SpecializeAndLower {
       val t = visitType(tpe, subst)
       MonoAst.Expr.ApplyClo(visitExp(exp2, env0, subst), thunk, t, subst(eff), loc)
 
-    case TypedAst.Expr.InvokeConstructor(_, _, _, _, _) => ???
+    case TypedAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = visitType(tpe, subst)
+      // Box primitive args to match the constructor's Object-typed parameters.
+      val javaParamTypes = constructor.getParameterTypes
+      val boxedArgs = ListOps.zip(es, javaParamTypes.toList).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), boxedArgs, t, subst(eff), loc)
 
     case TypedAst.Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       val t = visitType(tpe, subst)
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), es, t, subst(eff), loc)
 
-    case TypedAst.Expr.InvokeMethod(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = visitType(tpe, subst)
+      mkJavaInvoke(method, List(e), es, t, subst(eff), loc, AtomicOp.InvokeMethod.apply)
 
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
@@ -437,7 +523,10 @@ object SpecializeAndLower {
           throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
       }
 
-    case TypedAst.Expr.InvokeStaticMethod(_, _, _, _, _) => ???
+    case TypedAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = visitType(tpe, subst)
+      mkJavaInvoke(method, Nil, es, t, subst(eff), loc, AtomicOp.InvokeStaticMethod.apply)
 
     case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
@@ -459,7 +548,36 @@ object SpecializeAndLower {
       val t = visitType(tpe, subst)
       MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, subst(eff), loc)
 
-    case TypedAst.Expr.NewObject(_, _, _, _, _, _, _) => ???
+    case TypedAst.Expr.NewObject(sym, clazz, tpe, eff, constructors, methods, loc) =>
+      // Mint a fresh anonymous class symbol for each specialization. Otherwise distinct
+      // specializations of an enclosing generic def (e.g. `mk[String]` and `mk[Int32]`)
+      // would reuse the same anonymous class name and collide, so one specialization would
+      // run with the other's generated class.
+      val freshSym = Symbol.mkFreshAnonClassSym(sym.loc)
+      val cs = constructors.map {
+        case TypedAst.JvmConstructor(cExp, cRetTpe, cEff, cLoc) =>
+          MonoAst.JvmConstructor(visitExp(cExp, env0, subst), visitType(cRetTpe, subst), subst(cEff), cLoc)
+      }
+      val ms = methods.map {
+        case TypedAst.JvmMethod(mAnn, mIdent, mFparams0, mExp, mRetTpe, mEff, mLoc) =>
+          val (mFparams, env1) = specializeFormalParams(mFparams0, subst)
+          val fs = mFparams.map(lowerFormalParam).map(Specialize.rewriteFormalParam)
+          val thisParam = fs.head
+          val thisRef = MonoAst.Expr.Var(thisParam.sym, thisParam.tpe, loc)
+          implicit val lctx: LocalContext = LocalContext(Some(freshSym), Some(thisRef))
+          val e0 = visitExp(mExp, env0 ++ env1, subst)
+          // If this overrides a Java method whose erased return type is a reference (e.g. `Object`
+          // for a generic interface method) but the Flix result is primitive, box it to match the
+          // erased signature. This mirrors the boxing applied to generic Java method calls (see
+          // `boxIfNecessary` in `mkJavaInvoke`), and the call site unboxes the result symmetrically.
+          val e = overriddenJavaReturnType(clazz, mIdent.name, fs.tail.length) match {
+            case Some(javaReturnType) => boxIfNecessary(e0, javaReturnType)
+            case None => e0
+          }
+          MonoAst.JvmMethod(mAnn, mIdent, fs, e, e.tpe, subst(mEff), mLoc)
+      }
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.NewObject(freshSym, clazz, t, subst(eff), cs, ms, loc)
 
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
@@ -475,6 +593,7 @@ object SpecializeAndLower {
       val exp1 = visitExp(innerExp1, env0, subst)
       val exp2 = visitExp(innerExp2, env0, subst)
       SpecializeAndLower.mkPutChannel(exp1, exp2, subst(innerExp1.tpe), subst(innerExp2.tpe), subst(eff), loc)
+
     case TypedAst.Expr.SelectChannel(_, _, _, _, _) => ???
 
     case TypedAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
