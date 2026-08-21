@@ -905,6 +905,8 @@ object GenExpression {
         // If the method is void, put a unit on top of the stack
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        } else {
+          castFromJavaType(method.getReturnType, tpe)
         }
 
       case AtomicOp.InvokeSuperMethod(sym, method) =>
@@ -933,6 +935,8 @@ object GenExpression {
         // If the method is void, put a unit on top of the stack
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        } else {
+          castFromJavaType(method.getReturnType, tpe)
         }
 
       case AtomicOp.InvokeStaticMethod(method) =>
@@ -953,6 +957,8 @@ object GenExpression {
         }
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        } else {
+          castFromJavaType(method.getReturnType, tpe)
         }
 
       case AtomicOp.GetField(field) =>
@@ -1633,6 +1639,24 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+  }
+
+  /**
+    * Casts the value on top of the stack from the Java type `javaTpe` to the Flix type `tpe`,
+    * if the two do not already agree.
+    *
+    * Java generics are erased, so the declared type of a Java method may be less precise than
+    * the type Flix has inferred for the call. For example, `JComboBox[(String, String)].getItemAt`
+    * is declared to return `Object`, but Flix knows that the result is a tuple. Without the cast,
+    * the JVM verifier rejects any subsequent use of the value at its Flix type.
+    */
+  private def castFromJavaType(javaTpe: Class[?], tpe: SimpleType)(implicit mv: MethodVisitor, root: Root): Unit = {
+    if (!javaTpe.isPrimitive) {
+      val expectedTpe = BackendType.toBackendType(tpe)
+      if (expectedTpe.toDescriptor != asm.Type.getDescriptor(javaTpe)) {
+        BytecodeInstructions.castIfNotPrim(expectedTpe)
+      }
+    }
   }
 
   private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {
