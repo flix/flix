@@ -67,6 +67,9 @@ object GitHub {
       Client.sendRequest(req).body()
     } catch {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
+      case ex: InterruptedException =>
+        Thread.currentThread().interrupt()
+        return Err(PackageError.ProjectNotFound(url, project, new IOException("Interrupted while waiting for a response", ex)))
     }
     val releaseJsons = try {
       parse(json).asInstanceOf[JArray]
@@ -111,6 +114,9 @@ object GitHub {
       }
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
+      case _: InterruptedException =>
+        Thread.currentThread().interrupt()
+        Err(ReleaseError.NetworkError)
     }
   }
 
@@ -151,6 +157,9 @@ object GitHub {
 
     } catch {
       case _: IOException => return Err(ReleaseError.NetworkError)
+      case _: InterruptedException =>
+        Thread.currentThread().interrupt()
+        return Err(ReleaseError.NetworkError)
     }
 
     // Extract URL from returned JSON
@@ -192,6 +201,9 @@ object GitHub {
 
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
+      case _: InterruptedException =>
+        Thread.currentThread().interrupt()
+        Err(ReleaseError.NetworkError)
     }
   }
 
@@ -224,6 +236,9 @@ object GitHub {
       }
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
+      case _: InterruptedException =>
+        Thread.currentThread().interrupt()
+        Err(ReleaseError.NetworkError)
     }
   }
 
