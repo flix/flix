@@ -16,17 +16,17 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.Bootstrap
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.util.{Formatter, Result}
+import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
 import scala.collection.mutable
-import scala.util.Using
 
 object FlixPackageManager {
 
@@ -176,16 +176,25 @@ object FlixPackageManager {
             out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
             out.flush()
             try {
-              // Using(...) traps a copy failure into a Failure instead of throwing it; .get
-              // rethrows it so the catch below sees it and the partial file gets cleaned up.
-              Using(GitHub.downloadAsset(asset)) {
-                stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
-              }.get
+              val stream = GitHub.downloadAsset(asset)
+              try {
+                Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
+              } finally {
+                // Best-effort: the stream is already broken if the copy above failed, so a
+                // close failure here must not mask that error.
+                try stream.close() catch { case _: IOException => () }
+              }
             } catch {
               case e: IOException =>
                 // Remove a truncated file so the cache check above doesn't trust it next run.
-                // Best-effort: a failure here must not mask the error being reported below.
-                try Files.deleteIfExists(assetPath) catch { case _: IOException => () }
+                // Unlike closing an already-broken stream, a failure to delete a file means the
+                // filesystem itself is in an unexpected state, so it is not swallowed.
+                try {
+                  Files.deleteIfExists(assetPath)
+                } catch {
+                  case e2: IOException =>
+                    throw InternalCompilerException(s"Unable to remove truncated download '$assetPath': ${e2.getMessage}", SourceLocation.Unknown)
+                }
                 out.println(s"ERROR: ${e.getMessage}.")
                 return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
             }
