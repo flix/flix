@@ -802,6 +802,226 @@ object SpecializeAndLower {
   }
 
   /**
+    * Returns the cast of `e` to `tpe` and `eff`.
+    *
+    * If `exp` and `tpe` is bytecode incompatible, a runtime crash is inserted to appease the
+    * bytecode verifier.
+    */
+  private def mkCast(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
+    (exp.tpe, tpe) match {
+      case (Type.Char, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Char, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int16, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Bool, Type.Bool) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int8, Type.Int8) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int16, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int32, Type.Int32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int64, Type.Int64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float32, Type.Float32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) =>
+        val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
+        MonoAst.Expr.Stm(List(exp), crash, tpe, eff, loc)
+    }
+  }
+
+  /**
+    * Returns `true` if `tpe` is a primitive type.
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def isPrimType(tpe: Type): Boolean = tpe match {
+    case Type.Char => true
+    case Type.Bool => true
+    case Type.Int8 => true
+    case Type.Int16 => true
+    case Type.Int32 => true
+    case Type.Int64 => true
+    case Type.Float32 => true
+    case Type.Float64 => true
+    case Type.Cst(_, _) => false
+    case Type.Apply(_, _, _) => false
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the erased string representation of `tpe`
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def erasedString(tpe: Type): String = tpe match {
+    case Type.Char => "Char"
+    case Type.Bool => "Bool"
+    case Type.Int8 => "Int8"
+    case Type.Int16 => "Int16"
+    case Type.Int32 => "Int32"
+    case Type.Int64 => "Int64"
+    case Type.Float32 => "Float32"
+    case Type.Float64 => "Float64"
+    case Type.Cst(_, _) => "Object"
+    case Type.Apply(_, _, _) => "Object"
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the `JvmType`/`JvmValue` case name for the primitive base type `tpe`, or `"JvmObject"`
+    * for anything else.
+    */
+  private def jvmTypeCaseName(tpe: Type): String = tpe match {
+    case Type.Cst(TypeConstructor.Bool, _)    => "JvmBool"
+    case Type.Cst(TypeConstructor.Char, _)    => "JvmChar"
+    case Type.Cst(TypeConstructor.Int8, _)    => "JvmInt8"
+    case Type.Cst(TypeConstructor.Int16, _)   => "JvmInt16"
+    case Type.Cst(TypeConstructor.Int32, _)   => "JvmInt32"
+    case Type.Cst(TypeConstructor.Int64, _)   => "JvmInt64"
+    case Type.Cst(TypeConstructor.Float32, _) => "JvmFloat32"
+    case Type.Cst(TypeConstructor.Float64, _) => "JvmFloat64"
+    case _                                    => "JvmObject"
+  }
+
+  /**
+    * Returns the `valueOf` boxing method for a Flix primitive type.
+    * This is the same mechanism javac uses to implement autoboxing.
+    */
+  private def javaBoxMethod(tpe: Type): java.lang.reflect.Method = tpe match {
+    case Type.Bool => classOf[java.lang.Boolean].getMethod("valueOf", java.lang.Boolean.TYPE)
+    case Type.Char => classOf[java.lang.Character].getMethod("valueOf", java.lang.Character.TYPE)
+    case Type.Int8 => classOf[java.lang.Byte].getMethod("valueOf", java.lang.Byte.TYPE)
+    case Type.Int16 => classOf[java.lang.Short].getMethod("valueOf", java.lang.Short.TYPE)
+    case Type.Int32 => classOf[java.lang.Integer].getMethod("valueOf", java.lang.Integer.TYPE)
+    case Type.Int64 => classOf[java.lang.Long].getMethod("valueOf", java.lang.Long.TYPE)
+    case Type.Float32 => classOf[java.lang.Float].getMethod("valueOf", java.lang.Float.TYPE)
+    case Type.Float64 => classOf[java.lang.Double].getMethod("valueOf", java.lang.Double.TYPE)
+    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the unboxing method (e.g., `intValue`) for a Flix primitive type.
+    * This is the same mechanism javac uses to implement auto-unboxing.
+    */
+  private def javaUnboxMethod(tpe: Type): java.lang.reflect.Method = tpe match {
+    case Type.Bool => classOf[java.lang.Boolean].getMethod("booleanValue")
+    case Type.Char => classOf[java.lang.Character].getMethod("charValue")
+    case Type.Int8 => classOf[java.lang.Byte].getMethod("byteValue")
+    case Type.Int16 => classOf[java.lang.Short].getMethod("shortValue")
+    case Type.Int32 => classOf[java.lang.Integer].getMethod("intValue")
+    case Type.Int64 => classOf[java.lang.Long].getMethod("longValue")
+    case Type.Float32 => classOf[java.lang.Float].getMethod("floatValue")
+    case Type.Float64 => classOf[java.lang.Double].getMethod("doubleValue")
+    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the Flix Type for the Java wrapper class of a primitive type.
+    * E.g., `Bool` -> `Native(java.lang.Boolean)`, `Int32` -> `Native(java.lang.Integer)`.
+    */
+  private def boxedWrapperType(tpe: Type, loc: SourceLocation): Type = tpe match {
+    case Type.Bool => Type.Cst(TypeConstructor.Native(classOf[java.lang.Boolean]), loc)
+    case Type.Char => Type.Cst(TypeConstructor.Native(classOf[java.lang.Character]), loc)
+    case Type.Int8 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Byte]), loc)
+    case Type.Int16 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Short]), loc)
+    case Type.Int32 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Integer]), loc)
+    case Type.Int64 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Long]), loc)
+    case Type.Float32 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Float]), loc)
+    case Type.Float64 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Double]), loc)
+    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Boxes `arg` if the actual arg type (Flix primitive) mismatches the expected param type (Object).
+    * E.g., in `m.put("k", 42)` on a `HashMap[String, Int32]`, the actual type is `Int32`
+    * but the expected type is `Object` (erased), so `42` is boxed via `Integer.valueOf(42)`.
+    */
+  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: Class[?]): MonoAst.Expr = {
+    val actualArgType = arg.tpe
+    if (isPrimType(actualArgType) && !expectedParamType.isPrimitive) {
+      MonoAst.Expr.ApplyAtomic(
+        AtomicOp.InvokeStaticMethod(javaBoxMethod(actualArgType)),
+        List(arg),
+        boxedWrapperType(actualArgType, arg.loc),
+        arg.eff,
+        arg.loc.asSynthetic
+      )
+    } else arg
+  }
+
+  /** Returns the erased return type of the Java method on `clazz` matching `name` and `arity` (excluding the receiver). */
+  private def overriddenJavaReturnType(clazz: Class[?], name: String, arity: Int): Option[Class[?]] =
+    JvmUtils.getOverridableInstanceMethods(clazz).collectFirst {
+      case m if m.getName == name && m.getParameterCount == arity => m.getReturnType
+    }
+
+  /**
+    * Unboxes `expr` if the expected return type (Flix primitive) mismatches the actual return type (Object).
+    * E.g., in `let v: Int32 = m.get("k")` on a `HashMap[String, Int32]`, the expected type is
+    * `Int32` but the actual Java return type is `Object` (erased), so the result is unboxed via `intValue()`.
+    */
+  private def unboxIfNecessary(expr: MonoAst.Expr, expectedReturnType: Type, actualReturnType: Class[?]): MonoAst.Expr = {
+    if (isPrimType(expectedReturnType) && !actualReturnType.isPrimitive) {
+      MonoAst.Expr.ApplyAtomic(
+        AtomicOp.InvokeMethod(javaUnboxMethod(expectedReturnType)),
+        List(expr),
+        expectedReturnType,
+        expr.eff,
+        expr.loc.asSynthetic
+      )
+    } else expr
+  }
+
+  /**
+    * Returns a call to Java `method`, boxing `args` and unboxing the result symmetrically.
+    */
+  private def mkJavaInvoke(method: java.lang.reflect.Method, receiver: List[MonoAst.Expr], args: List[MonoAst.Expr], t: Type, eff: Type, loc: SourceLocation, mkOp: java.lang.reflect.Method => AtomicOp): MonoAst.Expr = {
+    val boxedArgs = ListOps.zip(args, method.getParameterTypes.toList).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
+    val javaReturnType = method.getReturnType
+    val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
+    val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
+    val invoke = MonoAst.Expr.ApplyAtomic(mkOp(method), receiver ++ boxedArgs, invokeType, eff, loc)
+    unboxIfNecessary(invoke, t, javaReturnType)
+  }
+
+  /**
+    * Strips an auto-unboxing wrapper (e.g., `intValue()`) from `expr` if present.
+    */
+  private def stripAutoUnbox(expr: MonoAst.Expr): MonoAst.Expr = expr match {
+    case MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), List(inner), _, _, _)
+      if isAutoUnboxMethod(method) => inner
+    case _ => expr
+  }
+
+  /** Returns `true` if `method` is a Java auto-unboxing method (e.g., `intValue`, `booleanValue`). */
+  private def isAutoUnboxMethod(method: java.lang.reflect.Method): Boolean = {
+    method.getParameterCount == 0 && (method.getName match {
+      case "booleanValue" => true
+      case "charValue"    => true
+      case "byteValue"    => true
+      case "shortValue"   => true
+      case "intValue"     => true
+      case "longValue"    => true
+      case "floatValue"   => true
+      case "doubleValue"  => true
+      case _              => false
+    })
+  }
+
+  /**
+    * Returns the case symbol named `name` in the enum `sym`.
+    */
+  private def findCaseSym(sym: Symbol.EnumSym, name: String)(implicit root: TypedAst.Root): Symbol.CaseSym =
+    root.enums(sym).cases.values.find(_.sym.name == name).get.sym
+
+  /**
     * Lowers `sym` from a restrictable enum sym into a regular enum sym.
     */
   private[monomorph2] def lowerRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
