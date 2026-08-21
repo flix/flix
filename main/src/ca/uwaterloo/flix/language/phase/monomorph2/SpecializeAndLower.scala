@@ -21,9 +21,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Decreasing, RegionScope, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Decreasing, Mutability, RegionScope, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
+import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupCaseSym, lookupRestrictableCaseSym, lookupStructSym, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.Types
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.CofiniteSet
@@ -247,51 +247,206 @@ object SpecializeAndLower {
     case TypedAst.Expr.Match(_, _, _, _, _) => ???
     case TypedAst.Expr.RestrictableChoose(_, _, _, _, _, _) => ???
     case TypedAst.Expr.ExtMatch(_, _, _, _, _) => ???
-    case TypedAst.Expr.Tag(_, _, _, _, _) => ???
-    case TypedAst.Expr.RestrictableTag(_, _, _, _, _) => ???
-    case TypedAst.Expr.ExtTag(_, _, _, _, _) => ???
-    case TypedAst.Expr.Tuple(_, _, _, _) => ???
-    case TypedAst.Expr.RecordSelect(_, _, _, _, _) => ???
-    case TypedAst.Expr.RecordExtend(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.RecordRestrict(_, _, _, _, _) => ???
-    case TypedAst.Expr.ArrayLit(_, _, _, _, _) => ???
-    case TypedAst.Expr.ArrayNew(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.ArrayLoad(_, _, _, _, _) => ???
-    case TypedAst.Expr.ArrayLength(_, _, _) => ???
-    case TypedAst.Expr.ArrayStore(_, _, _, _, _) => ???
-    case TypedAst.Expr.StructNew(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.StructGet(_, _, _, _, _) => ???
-    case TypedAst.Expr.StructPut(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.VectorLit(_, _, _, _) => ???
-    case TypedAst.Expr.VectorLoad(_, _, _, _, _) => ???
-    case TypedAst.Expr.VectorLength(_, _) => ???
-    case TypedAst.Expr.Ascribe(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
+      val t = subst(tpe)
+      val newSym = lookupCaseSym(symUse.sym, t)
+      val es = exps.map(visitExp(_, env0, subst))
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(newSym), es, visitTypeSubstituted(t), subst(eff), loc)
+
+    case TypedAst.Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
+      val t = subst(tpe)
+      val newSym = lookupRestrictableCaseSym(symUse.sym, t)
+      val es = exps.map(visitExp(_, env0, subst))
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(newSym), es, visitTypeSubstituted(t), subst(eff), loc)
+
+    case TypedAst.Expr.ExtTag(label, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ExtTag(label), es, t, subst(eff), loc)
+
+    case TypedAst.Expr.Tuple(exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Tuple, es, t, subst(eff), loc)
+
+    case TypedAst.Expr.RecordSelect(exp, label, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(e), t, subst(eff), loc)
+
+    case TypedAst.Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.RecordExtend(label), List(e1, e2), t, subst(eff), loc)
+
+    case TypedAst.Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(e), t, subst(eff), loc)
+
+    case TypedAst.Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, e :: es, t, subst(eff), loc)
+
+    case TypedAst.Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val e3 = visitExp(exp3, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayNew, List(e1, e2, e3), t, subst(eff), loc)
+
+    case TypedAst.Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), t, subst(eff), loc)
+
+    case TypedAst.Expr.ArrayLength(exp, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, subst(eff), loc)
+
+    case TypedAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val e3 = visitExp(exp3, env0, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, subst(eff), loc)
+
+    case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+      val t = subst(tpe)
+      val newStructSym = lookupStructSym(sym, t)
+      val fields = fields0.map {
+        case (symUse, v) =>
+          (new Symbol.StructFieldSym(newStructSym, symUse.sym.name, symUse.loc), visitExp(v, env0, subst))
+      }
+      val (names, es) = fields.unzip
+      val tLow = visitTypeSubstituted(t)
+      region0.map(visitExp(_, env0, subst)) match {
+        case Some(region) =>
+          MonoAst.Expr.ApplyAtomic(AtomicOp.StructNew(newStructSym, Mutability.Mutable, names), region :: es, tLow, subst(eff), loc)
+        case None =>
+          MonoAst.Expr.ApplyAtomic(AtomicOp.StructNew(newStructSym, Mutability.Immutable, names), es, tLow, subst(eff), loc)
+      }
+
+    case TypedAst.Expr.StructGet(exp, field, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val newStructSym = lookupStructSym(field.sym.structSym, subst(exp.tpe))
+      val newFieldSym = new Symbol.StructFieldSym(newStructSym, field.sym.name, field.loc)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.StructGet(newFieldSym), List(e), t, subst(eff), loc)
+
+    case TypedAst.Expr.StructPut(exp, field, exp1, tpe, eff, loc) =>
+      val struct = visitExp(exp, env0, subst)
+      val newStructSym = lookupStructSym(field.sym.structSym, subst(exp.tpe))
+      val newFieldSym = new Symbol.StructFieldSym(newStructSym, field.sym.name, field.loc)
+      val rhs = visitExp(exp1, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.StructPut(newFieldSym), List(struct, rhs), t, subst(eff), loc)
+
+    case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLit, es, t, subst(eff), loc)
+
+    case TypedAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLoad, List(e1, e2), t, subst(eff), loc)
+
+    case TypedAst.Expr.VectorLength(exp, loc) =>
+      val e = visitExp(exp, env0, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLength, List(e), Type.Int32, e.eff, loc)
+
+    case TypedAst.Expr.Ascribe(exp, _, _, _, _, _) =>
+      visitExp(exp, env0, subst)
     case TypedAst.Expr.InstanceOf(_, _, _) => ???
     case TypedAst.Expr.CheckedCast(_, _, _, _, _) => ???
     case TypedAst.Expr.UncheckedCast(_, _, _, _, _, _) => ???
     case TypedAst.Expr.Unsafe(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.Throw(_, _, _, _) => ???
+    case TypedAst.Expr.Throw(exp, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, subst(eff), loc)
+
     case TypedAst.Expr.TryCatch(_, _, _, _, _) => ???
     case TypedAst.Expr.Handler(_, _, _, _, _, _, _) => ???
-    case TypedAst.Expr.RunWith(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      // `run exp1 with exp2` lowers to `exp2(_runWith -> exp1)`.
+      val e1 = visitExp(exp1, env0, subst)
+      val unitParam = MonoAst.FormalParam(Symbol.freshVarSym("_runWith", BoundBy.FormalParam, loc.asSynthetic)(RegionScope.Top, flix), Type.Unit, Occur.Unknown, loc.asSynthetic)
+      val thunkType = Type.mkArrowWithEffect(Type.Unit, e1.eff, e1.tpe, loc.asSynthetic)
+      val thunk = MonoAst.Expr.Lambda(unitParam, e1, thunkType, loc.asSynthetic)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyClo(visitExp(exp2, env0, subst), thunk, t, subst(eff), loc)
+
     case TypedAst.Expr.InvokeConstructor(_, _, _, _, _) => ???
-    case TypedAst.Expr.InvokeSuperConstructor(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), es, t, subst(eff), loc)
+
     case TypedAst.Expr.InvokeMethod(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.InvokeSuperMethod(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      val t = visitType(tpe, subst)
+      (lctx.sym, lctx.thisRef) match {
+        case (Some(sym), Some(thisRef)) =>
+          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, method), thisRef :: es, t, subst(eff), loc)
+        case _ =>
+          throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
+      }
+
     case TypedAst.Expr.InvokeStaticMethod(_, _, _, _, _) => ???
-    case TypedAst.Expr.GetField(_, _, _, _, _) => ???
-    case TypedAst.Expr.PutField(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.GetStaticField(_, _, _, _) => ???
-    case TypedAst.Expr.PutStaticField(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.GetField(field), List(e), t, subst(eff), loc)
+
+    case TypedAst.Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.PutField(field), List(e1, e2), t, subst(eff), loc)
+
+    case TypedAst.Expr.GetStaticField(field, tpe, eff, loc) =>
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.GetStaticField(field), List.empty, t, subst(eff), loc)
+
+    case TypedAst.Expr.PutStaticField(field, exp, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, subst(eff), loc)
+
     case TypedAst.Expr.NewObject(_, _, _, _, _, _, _) => ???
     case TypedAst.Expr.NewChannel(_, _, _, _) => ???
     case TypedAst.Expr.GetChannel(_, _, _, _) => ???
     case TypedAst.Expr.PutChannel(_, _, _, _, _) => ???
     case TypedAst.Expr.SelectChannel(_, _, _, _, _) => ???
-    case TypedAst.Expr.Spawn(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), t, subst(eff), loc)
+
     case TypedAst.Expr.ParYield(_, _, _, _, _) => ???
-    case TypedAst.Expr.Lazy(_, _, _) => ???
-    case TypedAst.Expr.Force(_, _, _, _) => ???
+
+    case TypedAst.Expr.Lazy(exp, tpe, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(e), t, Type.Pure, loc)
+
+    case TypedAst.Expr.Force(exp, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, subst(eff), loc)
     case TypedAst.Expr.FixpointConstraintSet(_, _, _) => ???
     case TypedAst.Expr.FixpointLambda(_, _, _, _, _) => ???
     case TypedAst.Expr.FixpointMerge(_, _, _, _, _) => ???
