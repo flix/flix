@@ -187,7 +187,7 @@ object Bootstrap {
   private val EXT_JAR: String = "jar"
 
   /** The manifest / flix toml file name. */
-  private val FLIX_TOML: String = "flix.toml"
+  val FLIX_TOML: String = "flix.toml"
 
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
