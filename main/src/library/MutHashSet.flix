@@ -33,7 +33,7 @@ pub mod MutHashSet {
     instance Iterable[MutHashSet[a, r]] {
         type Elm = a
         type Aef = r
-        pub def iterator(rc: Region[r1], s: MutHashSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
+        pub def iterator(rc: Region[r1], s: MutHashSet[a, r]): Iterator[a, r, r1] \ (r + r1) =
             MutHashSet.iterator(rc, s)
     }
 
@@ -92,7 +92,7 @@ pub mod MutHashSet {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r1], s: MutHashSet[t, r]): Iterator[t, r + r1, r1] \ { r, r1 } =
+    pub def iterator(rc: Region[r1], s: MutHashSet[t, r]): Iterator[t, r, r1] \ { r, r1 } =
         MutHashMap.iteratorKeys(rc, s->inner)
 
     ///

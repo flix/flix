@@ -127,7 +127,7 @@ pub mod Nel {
 
     instance Iterable[Nel[a]] {
         type Elm = a
-        pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
+        pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, {}, r] \ r = Nel.iterator(rc, l)
     }
 
     instance ForEach[Nel[a]] {
@@ -649,7 +649,7 @@ pub mod Nel {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r =
+    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, {}, r] \ r =
         let Nel(x, xs) = l;
         List.iterator(rc, x :: xs)
 

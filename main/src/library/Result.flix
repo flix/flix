@@ -430,7 +430,7 @@ pub mod Result {
     ///
     /// Returns an iterator over `r` with 1 element or an empty iterator if `r` is `Err`.
     ///
-    pub def iterator(rc: Region[r], r: Result[e, t]): Iterator[t, r, r] \ r = match r {
+    pub def iterator(rc: Region[r], r: Result[e, t]): Iterator[t, {}, r] \ r = match r {
         case Err(_) => Iterator.empty(rc)
         case Ok(x)  => Iterator.singleton(rc, x)
     }
