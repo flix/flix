@@ -130,8 +130,8 @@ object Bootstrap {
         |""".stripMargin
     }
 
-    FileOps.newFileIfAbsent(buildAndTestWorkflowFile) {
-      ("""name: Build and Test
+    FileOps.newFileIfAbsent(buildAndTestWorkflowFile) {(
+      """name: Build and Test
         |
         |on:
         |  pull_request:
