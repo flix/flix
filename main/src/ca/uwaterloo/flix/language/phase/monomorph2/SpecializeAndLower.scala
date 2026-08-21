@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Mutability, RegionScope, SymUse, TypeSource}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, Mutability, Polarity, RegionScope, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupCaseSym, lookupRestrictableCaseSym, lookupStructSym, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Result}
@@ -1235,6 +1235,351 @@ object SpecializeAndLower {
     */
   private def findCaseSym(sym: Symbol.EnumSym, name: String)(implicit root: TypedAst.Root): Symbol.CaseSym =
     root.enums(sym).cases.values.find(_.sym.name == name).get.sym
+
+  /**
+    * Returns an expression merging `exps` using `Defs.Fixpoint.Solver.Merge`.
+    */
+  private def mergeExps(exps: List[MonoAst.Expr], loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr =
+    exps.reduceRight {
+      (exp, acc) =>
+        val resultType = Types.Fixpoint.Ast.Datalog.Datalog
+        val defn = lookupSym(Defs.Fixpoint.Solver.Union, resultType)
+        val argExps = exp :: acc :: Nil
+        val groundArrowTpe = Types.Fixpoint.Solver.MergeType
+        MonoAst.Expr.ApplyDef(defn, argExps, groundArrowTpe, resultType, exp.eff, loc)
+    }
+
+  /**
+    * Returns a new `Datalog` from `datalogExp` containing only facts from the predicate given by the `PredSym` `predSymExp`
+    * using `Defs.Fixpoint.Solver.Filter`.
+    */
+  private def projectSym(predSymExp: MonoAst.Expr, datalogExp: MonoAst.Expr, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    val resultType = Types.Fixpoint.Ast.Datalog.Datalog
+    val defn = lookupSym(Defs.Fixpoint.Solver.ProjectSym, resultType)
+    val argExps = predSymExp :: datalogExp :: Nil
+    val groundArrowTpe = Types.Fixpoint.Solver.FilterType
+    MonoAst.Expr.ApplyDef(defn, argExps, groundArrowTpe, resultType, datalogExp.eff, loc)
+  }
+
+  /**
+    * Lifts the given lambda expression `exp0` with the given argument types `argTypes`.
+    *
+    * Note: liftX and liftXb are similar and should probably be maintained together.
+    */
+  private def liftX(exp0: MonoAst.Expr, argTypes: Nel[Type], resultType: Type)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    //
+    // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
+    // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Boxed`.
+    // That is, the function accepts a *curried* function and returns a *curried* function.
+    //
+
+    // The type of the function argument, i.e. a -> b -> c -> `resultType`.
+    val argType = Type.mkPureCurriedArrow(argTypes, resultType, exp0.loc)
+
+    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Boxed.
+    val returnType = Type.mkPureCurriedArrow(argTypes.map(_ => Types.Fixpoint.Boxed), Types.Fixpoint.Boxed, exp0.loc)
+
+    // The type of the overall liftX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> Boxed).
+    val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
+
+    // Compute the liftXb symbol.
+    val sym = lookupSym(Defs.Fixpoint.Boxable.Lift(argTypes.length), liftType)
+
+    // Construct a call to the liftX function.
+    MonoAst.Expr.ApplyDef(sym, List(exp0), Specialize.rewriteEnumStructType(liftType), returnType, Type.Pure, exp0.loc)
+  }
+
+  /**
+    * Lifts the given Boolean-valued lambda expression `exp0` with the given argument types `argTypes`.
+    */
+  private def liftXb(exp0: MonoAst.Expr, argTypes: Nel[Type])(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    //
+    // The liftX family of functions are of the form: a -> b -> c -> Bool and
+    // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
+    // That is, the function accepts a *curried* function and returns a *curried* function.
+    //
+
+    // The type of the function argument, i.e. a -> b -> c -> Bool.
+    val argType = Type.mkPureCurriedArrow(argTypes, Type.Bool, exp0.loc)
+
+    // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Bool.
+    val returnType = Type.mkPureCurriedArrow(argTypes.map(_ => Types.Fixpoint.Boxed), Type.Bool, exp0.loc)
+
+    // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> (Boxed -> Boxed -> Boxed -> Bool).
+    val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
+
+    // Compute the liftXb symbol.
+    val sym = lookupSym(Defs.Fixpoint.Boxable.LiftB(argTypes.length), liftType)
+
+    // Construct a call to the liftXb function.
+    MonoAst.Expr.ApplyDef(sym, List(exp0), Specialize.rewriteEnumStructType(liftType), returnType, Type.Pure, exp0.loc)
+  }
+
+  /**
+    * Lifts the given lambda expression `exp0` with the given argument types `argTypes` and `resultType`.
+    */
+  private def liftXY(outVars: List[Symbol.VarSym], exp0: MonoAst.Expr, argTypes: List[Type], resultType: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    //
+    // The liftXY family of functions are of the form: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)] and
+    // returns a function of the form Vector[Boxed] -> Vector[Vector[Boxed]].
+    // That is, the function accepts a *curried* function and an uncurried function that takes
+    // its input as a boxed Vector and return its output as a vector of vectors.
+    //
+
+    // The type of the function argument, i.e. i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)].
+    // With no in variables the `lift0XY` functions take the vector directly, rather than a function.
+    val argType = argTypes match {
+      case Nil => resultType
+      case t :: ts => Type.mkPureCurriedArrow(Nel(t, ts), resultType, loc)
+    }
+
+    // The type of the returned function, i.e. Vector[Boxed] -> Vector[Vector[Boxed]].
+    val returnType = Type.mkPureArrow(Type.mkVector(Types.Fixpoint.Boxed, loc), Type.mkVector(Type.mkVector(Types.Fixpoint.Boxed, loc), loc), loc)
+
+    // The type of the overall liftXY function, i.e. (i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)]) -> (Vector[Boxed] -> Vector[Vector[Boxed]]).
+    val liftType = Type.mkPureArrow(argType, returnType, loc)
+
+    // Compute the number of bound ("output") and free ("input") variables.
+    val numberOfInVars = argTypes.length
+    val numberOfOutVars = outVars.length
+
+    // Compute the liftXY symbol.
+    // For example, lift3X2 is a function from three arguments to a Vector of pairs.
+    val sym = lookupSym(Defs.Fixpoint.Boxable.LiftXM(numberOfInVars, numberOfOutVars), liftType)
+
+    // Construct a call to the liftXY function.
+    MonoAst.Expr.ApplyDef(sym, List(exp0), Specialize.rewriteEnumStructType(liftType), returnType, Type.Pure, loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Datalog.HeadTerm.Var` from the given variable symbol `sym`.
+    */
+  private def mkHeadTermVar(sym: Symbol.VarSym)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    val innerExp = List(mkVarSym(sym))
+    mkTag(Enums.Fixpoint.Ast.Datalog.HeadTerm, "Var", innerExp, Types.Fixpoint.Ast.Datalog.HeadTerm, sym.loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Datalog.HeadTerm.Lit` value which wraps the given expression `exp`.
+    */
+  private def mkHeadTermLit(exp: MonoAst.Expr)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    mkTag(Enums.Fixpoint.Ast.Datalog.HeadTerm, "Lit", List(exp), Types.Fixpoint.Ast.Datalog.HeadTerm, exp.loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Wild` from the given source location `loc`.
+    */
+  private def mkBodyTermWild(loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    mkTag(Enums.Fixpoint.Ast.Datalog.BodyTerm, "Wild", Nil, Types.Fixpoint.Ast.Datalog.BodyTerm, loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Var` from the given variable symbol `sym`.
+    */
+  private def mkBodyTermVar(sym: Symbol.VarSym)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    val innerExp = List(mkVarSym(sym))
+    mkTag(Enums.Fixpoint.Ast.Datalog.BodyTerm, "Var", innerExp, Types.Fixpoint.Ast.Datalog.BodyTerm, sym.loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Lit` from the given expression `exp0`.
+    */
+  private def mkBodyTermLit(exp: MonoAst.Expr)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    mkTag(Enums.Fixpoint.Ast.Datalog.BodyTerm, "Lit", List(exp), Types.Fixpoint.Ast.Datalog.BodyTerm, exp.loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Datalog.VarSym` from the given variable symbol `sym`.
+    */
+  private def mkVarSym(sym: Symbol.VarSym)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    val nameExp = MonoAst.Expr.Cst(Constant.Str(sym.text), Type.Str, sym.loc)
+    mkTag(Enums.Fixpoint.Ast.Datalog.VarSym, "VarSym", List(nameExp), Types.Fixpoint.Ast.Datalog.VarSym, sym.loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Shared.Denotation` from the given denotation `d` and type `tpeOpt`
+    * (which must be the optional type of the last term).
+    */
+  private def mkDenotation(d: Denotation, tpeOpt: Option[Type], loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = d match {
+    case Denotation.Relational =>
+      mkTag(Enums.Fixpoint.Ast.Shared.Denotation, "Relational", Nil, Types.Fixpoint.Ast.Shared.Denotation, loc)
+
+    case Denotation.Latticenal =>
+      tpeOpt match {
+        case None => throw InternalCompilerException("Unexpected nullary lattice predicate.", loc)
+        case Some(tpe) =>
+          val innerType = lowerType(tpe)
+          // The type `Denotation[tpe]`.
+          val unboxedDenotationType = Type.mkEnum(Enums.Fixpoint.Ast.Shared.Denotation, innerType :: Nil, loc)
+
+          // The type `Denotation[Boxed]`.
+          val boxedDenotationType = Types.Fixpoint.Ast.Shared.Denotation
+
+          val latticeType: Type = Type.mkPureArrow(Type.Unit, unboxedDenotationType, loc)
+          val latticeSym: Symbol.DefnSym = lookupSym(Symbol.mkDefnSym(s"Fixpoint${Symbols.fixpointVersion}.Ast.Shared.lattice"), latticeType)
+
+          val boxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
+          val boxSym: Symbol.DefnSym = lookupSym(Symbol.mkDefnSym(s"Fixpoint${Symbols.fixpointVersion}.Ast.Shared.box"), boxType)
+
+          val innerApply = MonoAst.Expr.ApplyDef(latticeSym, List(MonoAst.Expr.Cst(Constant.Unit, Type.Unit, loc)), Specialize.rewriteEnumStructType(latticeType), Specialize.rewriteEnumStructType(unboxedDenotationType), Type.Pure, loc)
+          MonoAst.Expr.ApplyDef(boxSym, List(innerApply), Specialize.rewriteEnumStructType(boxType), Specialize.rewriteEnumStructType(boxedDenotationType), Type.Pure, loc)
+      }
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Datalog.Polarity` from the given polarity `p`.
+    */
+  private def mkPolarity(p: Polarity, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = p match {
+    case Polarity.Positive =>
+      mkTag(Enums.Fixpoint.Ast.Datalog.Polarity, "Positive", Nil, Types.Fixpoint.Ast.Datalog.Polarity, loc)
+
+    case Polarity.Negative =>
+      mkTag(Enums.Fixpoint.Ast.Datalog.Polarity, "Negative", Nil, Types.Fixpoint.Ast.Datalog.Polarity, loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Datalog.Fixity` from the given fixity `f`.
+    */
+  private def mkFixity(f: Fixity, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = f match {
+    case Fixity.Loose =>
+      mkTag(Enums.Fixpoint.Ast.Datalog.Fixity, "Loose", Nil, Types.Fixpoint.Ast.Datalog.Fixity, loc)
+
+    case Fixity.Fixed =>
+      mkTag(Enums.Fixpoint.Ast.Datalog.Fixity, "Fixed", Nil, Types.Fixpoint.Ast.Datalog.Fixity, loc)
+  }
+
+  /**
+    * Freshens every symbol in `vars`, renames them in `exp`, and curries the result into a
+    * lambda per var (outermost var first). Shared by [[mkGuard]]/[[mkFunctional]]/[[mkAppTerm]],
+    * which each then lift the result to operate on boxed values.
+    */
+  private def curryFreshLambda(vars: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, loc: SourceLocation)(implicit tables: SpecializationTables, flix: Flix): MonoAst.Expr = {
+    // Introduce a fresh variable for each free variable.
+    val freshVars = vars.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
+      case (acc, (oldSym, _)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+    }
+    // Rename every symbol in `exp` for its fresh equivalent.
+    val freshExp = renameExp(exp, freshVars)
+    // Curry `freshExp` in a lambda expression for each free variable.
+    vars.foldRight(freshExp) {
+      case ((oldSym, tpe), acc) =>
+        val freshSym = freshVars(oldSym)
+        val rewrittenTpe = Specialize.rewriteEnumStructType(tpe)
+        val fparam = MonoAst.FormalParam(freshSym, rewrittenTpe, Occur.Unknown, loc)
+        val lambdaType = Type.mkPureArrow(rewrittenTpe, acc.tpe, loc)
+        MonoAst.Expr.Lambda(fparam, acc, lambdaType, loc)
+    }
+  }
+
+  /**
+    * Returns a `Fixpoint/Ast/Datalog.BodyPredicate.GuardX`. At most 5 free variables are supported.
+    */
+  private def mkGuard(fvs: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    // Compute the number of free variables.
+    val arity = fvs.length
+
+    // Check that we have <= 5 free variables.
+    if (arity > 5) {
+      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.", loc)
+    }
+
+    // Special case: No free variables.
+    if (fvs.isEmpty) {
+      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)(RegionScope.Top, flix)
+      // Construct a lambda that takes the unit argument.
+      val fparam = MonoAst.FormalParam(sym, Type.Unit, Occur.Unknown, loc)
+      val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
+      val lambdaExp = MonoAst.Expr.Lambda(fparam, exp, tpe, loc)
+      return mkTag(Enums.Fixpoint.Ast.Datalog.BodyPredicate, s"Guard0", List(lambdaExp), Types.Fixpoint.Ast.Datalog.BodyPredicate, loc)
+    }
+
+    val lambdaExp = curryFreshLambda(fvs, exp, loc)
+
+    // Lift the lambda expression to operate on boxed values.
+    val liftedExp = liftXb(lambdaExp, Nel.unsafeFrom(fvs.map(_._2)))
+
+    // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
+    val varExps = fvs.map(kv => mkVarSym(kv._1))
+    val innerExp = liftedExp :: varExps
+    mkTag(Enums.Fixpoint.Ast.Datalog.BodyPredicate, s"Guard$arity", innerExp, Types.Fixpoint.Ast.Datalog.BodyPredicate, loc)
+  }
+
+  /**
+    * Returns a `Fixpoint/Ast/Datalog.BodyPredicate.Functional`.
+    */
+  private def mkFunctional(outVars: List[Symbol.VarSym], inVars: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, rawResultTpe: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    if (inVars.length > 5) {
+      throw InternalCompilerException("Does not support more than 5 in variables.", loc)
+    }
+    if (outVars.isEmpty) {
+      throw InternalCompilerException("Requires at least one out variable.", loc)
+    }
+    if (outVars.length > 5) {
+      throw InternalCompilerException("Does not support more than 5 out variables.", loc)
+    }
+
+    val lambdaExp = curryFreshLambda(inVars, exp, loc)
+
+    // Lift the lambda expression to operate on boxed values.
+    val liftedExp = liftXY(outVars, lambdaExp, inVars.map(_._2), rawResultTpe, exp.loc)
+
+    // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
+    val boundVarVector = mkVector(outVars.map(mkVarSym), Types.Fixpoint.Ast.Datalog.VarSym, loc)
+    val freeVarVector = mkVector(inVars.map(kv => mkVarSym(kv._1)), Types.Fixpoint.Ast.Datalog.VarSym, loc)
+    val innerExp = List(boundVarVector, liftedExp, freeVarVector)
+    mkTag(Enums.Fixpoint.Ast.Datalog.BodyPredicate, s"Functional", innerExp, Types.Fixpoint.Ast.Datalog.BodyPredicate, loc)
+  }
+
+  /**
+    * Returns a `Fixpoint/Ast/Datalog.HeadTerm.AppX`.
+    */
+  private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, rawResultTpe: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    // Compute the number of free variables.
+    val arity = fvs.length
+
+    // Check that we have <= 5 free variables.
+    if (arity > 5) {
+      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.", loc)
+    }
+
+    val lambdaExp = curryFreshLambda(fvs, exp, loc)
+
+    // Lift the lambda expression to operate on boxed values.
+    // `fvs` is non-empty since the caller falls back to a literal head term when there are no free variables.
+    val liftedExp = liftX(lambdaExp, Nel.unsafeFrom(fvs.map(_._2)), rawResultTpe)
+
+    // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
+    val varExps = fvs.map(kv => mkVarSym(kv._1))
+    val innerExp = liftedExp :: varExps
+    mkTag(Enums.Fixpoint.Ast.Datalog.HeadTerm, s"App$arity", innerExp, Types.Fixpoint.Ast.Datalog.HeadTerm, loc)
+  }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Shared.PredSym` from the given predicate `pred`.
+    */
+  private def mkPredSym(pred: Name.Pred)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = pred match {
+    case Name.Pred(sym, loc) =>
+      val nameExp = MonoAst.Expr.Cst(Constant.Str(sym), Type.Str, loc)
+      val idExp = MonoAst.Expr.Cst(Constant.Int64(0), Type.Int64, loc)
+      val inner = List(nameExp, idExp)
+      mkTag(Enums.Fixpoint.Ast.Shared.PredSym, "PredSym", inner, Types.Fixpoint.Ast.Shared.PredSym, loc)
+  }
+
+  /**
+    * Returns the given expression `exp` in a box.
+    */
+  private def box(exp: MonoAst.Expr, rawTpe: Type)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    val loc = exp.loc
+    val tpe = Type.mkPureArrow(rawTpe, Types.Fixpoint.Boxed, loc)
+    MonoAst.Expr.ApplyDef(lookupSym(Defs.Fixpoint.Boxable.Box, tpe), List(exp), Specialize.rewriteEnumStructType(tpe), Types.Fixpoint.Boxed, Type.Pure, loc)
+  }
+
+  /**
+    * Returns a vector expression constructed from the given `exps` with type list of `elmType`.
+    */
+  private def mkVector(exps: List[MonoAst.Expr], elmType: Type, loc: SourceLocation): MonoAst.Expr = {
+    MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLit, exps, Type.mkVector(elmType, loc), Type.Pure, loc)
+  }
 
   /*
    * Methods for renaming
