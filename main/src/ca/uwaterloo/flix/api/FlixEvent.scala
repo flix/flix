@@ -61,6 +61,13 @@ object FlixEvent {
   case class NewConstraintsDef(sym: Symbol.DefnSym, tconstrs: List[TypeConstraint]) extends FlixEvent
 
   /**
+   * An event fired with the deterministic constraint-solver work for the given
+   * def symbol `sym`: the number of [[ca.uwaterloo.flix.language.phase.typer.TypeReduction2]]
+   * `reduces` performed while typing it. Backs the compiler-top `rpv` column.
+   */
+  case class SolverWorkDef(sym: Symbol.DefnSym, reduces: Long) extends FlixEvent
+
+  /**
    * An event that is fired when a new system of Boolean equation is about to be solved.
    */
   case class SolveEffEquations(econstrs: List[Equation]) extends FlixEvent
