@@ -16,11 +16,10 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.Bootstrap
-import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -186,14 +185,14 @@ object FlixPackageManager {
               }
             } catch {
               case e: IOException =>
-                // Remove a truncated file so the cache check above doesn't trust it next run.
-                // Unlike closing an already-broken stream, a failure to delete a file means the
-                // filesystem itself is in an unexpected state, so it is not swallowed.
+                // Remove a truncated file so the cache check above doesn't trust it next run. A
+                // failure here is attached rather than swallowed, since it means the filesystem
+                // itself is in an unexpected state -- but it must not prevent the original
+                // download error from being reported below.
                 try {
                   Files.deleteIfExists(assetPath)
                 } catch {
-                  case e2: IOException =>
-                    throw InternalCompilerException(s"Unable to remove truncated download '$assetPath': ${e2.getMessage}", SourceLocation.Unknown)
+                  case e2: IOException => e.addSuppressed(e2)
                 }
                 out.println(s"ERROR: ${e.getMessage}.")
                 return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
