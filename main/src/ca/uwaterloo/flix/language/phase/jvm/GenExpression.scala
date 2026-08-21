@@ -100,12 +100,59 @@ object GenExpression {
   ) extends MethodContext
 
   /**
+    * Describes what the caller intends to do with the result of [[compileExpr]].
+    */
+  sealed trait Destination
+
+  object Destination {
+    /** Leave the value on the JVM operand stack (default). */
+    case object Stack extends Destination
+
+    /** The value is unused — skip pushing it when possible. */
+    case object Discard extends Destination
+
+    /** Emit a branch directly instead of materializing a boolean (future work). */
+    case class Branch(trueLabel: Label, falseLabel: Label) extends Destination
+  }
+
+  /**
+    * Returns `true` if compiling `e` with [[Destination.Discard]] is guaranteed
+    * to leave nothing on the operand stack, i.e. every leaf in the expression
+    * tree is a unit-returning operation that can skip its `GETSTATIC Unit.INSTANCE`.
+    */
+  private def isDiscardable(e: Expr): Boolean = e match {
+    case Expr.Cst(Constant.Unit, _) => true
+    case Expr.ApplyAtomic(op, _, _, _, _) => isUnitReturningOp(op)
+    case Expr.IfThenElse(_, e2, e3, _, _, _) => isDiscardable(e2) && isDiscardable(e3)
+    case Expr.Let(_, _, _, e2, _) => isDiscardable(e2)
+    case Expr.Stm(_, e, _) => isDiscardable(e)
+    case Expr.Branch(_, branches, _, _, _) => branches.values.forall(isDiscardable)
+    case Expr.Switch(_, _, cases, default, _, _, _) => cases.forall(c => isDiscardable(c._2)) && isDiscardable(default)
+    case Expr.TryCatch(e, rules, _, _, _) => isDiscardable(e) && rules.forall(r => isDiscardable(r.exp))
+    case Expr.Region(_, _, e, _, _, _) => isDiscardable(e)
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if the given atomic operation returns Unit by explicitly
+    * pushing `GETSTATIC Unit$.INSTANCE` onto the stack.
+    */
+  private def isUnitReturningOp(op: AtomicOp): Boolean = op match {
+    case AtomicOp.ArrayStore | AtomicOp.StructPut(_) | AtomicOp.PutField(_) | AtomicOp.PutStaticField(_) | AtomicOp.Spawn => true
+    case AtomicOp.InvokeMethod(m) => asm.Type.getType(m.getReturnType) == asm.Type.VOID_TYPE
+    case AtomicOp.InvokeStaticMethod(m) => asm.Type.getType(m.getReturnType) == asm.Type.VOID_TYPE
+    case AtomicOp.InvokeSuperMethod(m, _) => asm.Type.getType(m.getReturnType) == asm.Type.VOID_TYPE
+    case _ => false
+  }
+
+  /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
-  def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
+  def compileExpr(exp0: Expr, dest: Destination = Destination.Stack)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(cst, loc) => cst match {
       case Constant.Unit =>
-        BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
+        if (dest != Destination.Discard)
+          BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case Constant.Null =>
         import BytecodeInstructions.*
@@ -637,7 +684,7 @@ object GenExpression {
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
         NEW(tupleType.jvmName)
         DUP()
-        exps.foreach(compileExpr)
+        exps.foreach((e) => compileExpr(e))
         INVOKESPECIAL(tupleType.Constructor)
 
       case AtomicOp.RecordSelect(field) =>
@@ -748,7 +795,8 @@ object GenExpression {
         compileExpr(exp2) // Evaluating the index
         compileExpr(exp3) // Evaluating the element
         xArrayStore(elmTpe)
-        GETSTATIC(BackendObjType.Unit.SingletonField)
+        if (dest != Destination.Discard)
+          GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case AtomicOp.ArrayLength =>
         import BytecodeInstructions.*
@@ -774,7 +822,7 @@ object GenExpression {
         }
         NEW(structType.jvmName)
         DUP()
-        fieldExps.foreach(compileExpr)
+        fieldExps.foreach((e) => compileExpr(e))
         INVOKESPECIAL(structType.Constructor)
 
       case AtomicOp.StructGet(field) =>
@@ -800,7 +848,8 @@ object GenExpression {
         compileExpr(exp1)
         compileExpr(exp2)
         PUTFIELD(structType.IndexField(idx))
-        GETSTATIC(BackendObjType.Unit.SingletonField)
+        if (dest != Destination.Discard)
+          GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case AtomicOp.InstanceOf(clazz) =>
         import BytecodeInstructions.*
@@ -904,7 +953,8 @@ object GenExpression {
 
         // If the method is void, put a unit on top of the stack
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+          if (dest != Destination.Discard)
+            mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
       case AtomicOp.InvokeSuperMethod(sym, method) =>
@@ -932,7 +982,8 @@ object GenExpression {
 
         // If the method is void, put a unit on top of the stack
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+          if (dest != Destination.Discard)
+            mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
       case AtomicOp.InvokeStaticMethod(method) =>
@@ -952,7 +1003,8 @@ object GenExpression {
           mv.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
         }
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+          if (dest != Destination.Discard)
+            mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
       case AtomicOp.GetField(field) =>
@@ -973,7 +1025,8 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, declaration, field.getName, BackendType.toBackendType(exp2.tpe).toDescriptor)
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        if (dest != Destination.Discard)
+          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
       case AtomicOp.GetStaticField(field) =>
         // Add source line number for debugging (can fail when calling java)
@@ -990,7 +1043,8 @@ object GenExpression {
         mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, BackendType.toBackendType(exp.tpe).toDescriptor)
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        if (dest != Destination.Discard)
+          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
       case AtomicOp.Throw =>
         import BytecodeInstructions.*
@@ -1011,7 +1065,8 @@ object GenExpression {
             CHECKCAST(JvmName.Runnable)
             INVOKESTATIC(ClassConstants.Thread.StartVirtualThreadMethod)
             POP()
-            GETSTATIC(BackendObjType.Unit.SingletonField)
+            if (dest != Destination.Discard)
+              GETSTATIC(BackendObjType.Unit.SingletonField)
           case _ =>
             addLoc(loc)
             compileExpr(exp2)
@@ -1019,7 +1074,8 @@ object GenExpression {
             compileExpr(exp1)
             CHECKCAST(JvmName.Runnable)
             INVOKEVIRTUAL(BackendObjType.Region.SpawnMethod)
-            GETSTATIC(BackendObjType.Unit.SingletonField)
+            if (dest != Destination.Discard)
+              GETSTATIC(BackendObjType.Unit.SingletonField)
         }
 
       case AtomicOp.Lazy =>
@@ -1262,7 +1318,7 @@ object GenExpression {
         PUTFIELD(Suspension.EffSymField)
         DUP()
         // --- eff op ---
-        exps.foreach(compileExpr)
+        exps.foreach((e) => compileExpr(e))
         mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2)
         // --------------
         PUTFIELD(Suspension.EffOpField)
@@ -1344,8 +1400,8 @@ object GenExpression {
       import BytecodeInstructions.*
       compileExpr(exp1)
       branch(Condition.Bool) {
-        case Branch.TrueBranch => compileExpr(exp2)
-        case Branch.FalseBranch => compileExpr(exp3)
+        case Branch.TrueBranch => compileExpr(exp2, dest)
+        case Branch.FalseBranch => compileExpr(exp3, dest)
       }
 
     case Expr.Branch(exp, branches, _, _, _) =>
@@ -1353,7 +1409,7 @@ object GenExpression {
       val updatedJumpLabels = branches.map(branch => branch._1 -> new Label())
       val ctx1 = ctx.addLabels(updatedJumpLabels)
       // Compiling the exp
-      compileExpr(exp)(mv, ctx1, root, flix)
+      compileExpr(exp, dest)(mv, ctx1, root, flix)
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
@@ -1363,7 +1419,7 @@ object GenExpression {
         // Label for the start of the branch
         mv.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
-        compileExpr(branchExp)(mv, ctx1, root, flix)
+        compileExpr(branchExp, dest)(mv, ctx1, root, flix)
         // Skip the rest of the branches
         mv.visitJumpInsn(GOTO, endLabel)
       }
@@ -1420,12 +1476,12 @@ object GenExpression {
       // Emit each case branch
       cases.foreach { case (sym, body) =>
         mv.visitLabel(caseLabels(sym.ordinal))
-        compileExpr(body)
+        compileExpr(body, dest)
         mv.visitJumpInsn(GOTO, endLabel)
       }
       // Default branch
       mv.visitLabel(defaultLabel)
-      compileExpr(defaultExp)
+      compileExpr(defaultExp, dest)
       // End label
       mv.visitLabel(endLabel)
 
@@ -1443,15 +1499,19 @@ object GenExpression {
         case _ => ()
       }
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
-      compileExpr(exp2)
+      compileExpr(exp2, dest)
 
     case Expr.Stm(exps, exp, _) =>
       import BytecodeInstructions.*
       exps.foreach { e =>
-        compileExpr(e)
-        xPop(BackendType.toBackendType(e.tpe))
+        if (isDiscardable(e)) {
+          compileExpr(e, Destination.Discard)
+        } else {
+          compileExpr(e)
+          xPop(BackendType.toBackendType(e.tpe))
+        }
       }
-      compileExpr(exp)
+      compileExpr(exp, dest)
 
     case Expr.Region(_, offset, exp, _, _, loc) =>
       // Adding source line number for debugging
@@ -1479,7 +1539,7 @@ object GenExpression {
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
-      compileExpr(exp)
+      compileExpr(exp, dest)
 
       // Emit try finally block. It's important to do this after compiling sub-expressions to ensure
       // correct catch case ordering.
@@ -1528,7 +1588,7 @@ object GenExpression {
 
       // Emit code for the try block.
       mv.visitLabel(beforeTryBlock)
-      compileExpr(exp)
+      compileExpr(exp, dest)
       mv.visitLabel(afterTryBlock)
       mv.visitJumpInsn(GOTO, afterTryAndCatch)
 
@@ -1541,7 +1601,7 @@ object GenExpression {
         BytecodeInstructions.xStore(BackendType.Object, JvmOps.getIndex(offset, ctx.localOffset))
 
         // Emit code for the handler body expression.
-        compileExpr(body)
+        compileExpr(body, dest)
         mv.visitJumpInsn(GOTO, afterTryAndCatch)
       }
 
