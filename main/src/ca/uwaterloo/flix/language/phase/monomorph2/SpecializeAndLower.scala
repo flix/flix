@@ -24,9 +24,9 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Decreasing, Mutability, RegionScope, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupCaseSym, lookupRestrictableCaseSym, lookupStructSym, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
-import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.Types
+import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Result}
-import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps}
+import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
 /**
   * Fuses specialization and lowering into a single AST walk: instantiates a declaration's
@@ -425,9 +425,21 @@ object SpecializeAndLower {
       MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, subst(eff), loc)
 
     case TypedAst.Expr.NewObject(_, _, _, _, _, _, _) => ???
-    case TypedAst.Expr.NewChannel(_, _, _, _) => ???
-    case TypedAst.Expr.GetChannel(_, _, _, _) => ???
-    case TypedAst.Expr.PutChannel(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      lowerNewChannel(e, subst(tpe), subst(eff), loc)
+
+    case TypedAst.Expr.GetChannel(innerExp, tpe, eff, loc) =>
+      // N.B.: innerExp.tpe is threaded in RAW, since e.tpe is already enum/struct-rewritten.
+      val e = visitExp(innerExp, env0, subst)
+      mkGetChannel(e, subst(innerExp.tpe), subst(tpe), subst(eff), loc)
+
+    case TypedAst.Expr.PutChannel(innerExp1, innerExp2, _, eff, loc) =>
+      // N.B.: innerExp1/2.tpe is threaded in RAW, since exp1/2.tpe is already enum/struct-rewritten.
+      val exp1 = visitExp(innerExp1, env0, subst)
+      val exp2 = visitExp(innerExp2, env0, subst)
+      SpecializeAndLower.mkPutChannel(exp1, exp2, subst(innerExp1.tpe), subst(innerExp2.tpe), subst(eff), loc)
     case TypedAst.Expr.SelectChannel(_, _, _, _, _) => ???
 
     case TypedAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
@@ -602,6 +614,67 @@ object SpecializeAndLower {
     */
   private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
     Type.Apply(Type.Apply(Types.Concurrent.Channel.Mpmc, tpe, loc), Type.IO, loc)
+  }
+
+  /**
+    * Returns a new channel tuple (sender, receiver) expression:
+    * {{{ %%CHANNEL_NEW%%(m) }}}
+    * becomes a call to the standard library function:
+    * {{{ Concurrent/Channel.newChannel(10) }}}
+    *
+    * @param tpe The specialized type of the result.
+    */
+  private def lowerNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    val groundArrowTpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
+    val defnSym = lookupSym(Defs.Concurrent.Channel.NewChannelTuple, groundArrowTpe)
+    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, Specialize.rewriteEnumStructType(groundArrowTpe), visitTypeSubstituted(tpe), eff, loc)
+  }
+
+  /**
+    * Returns a channel get expression:
+    * {{{ <- c }}}
+    * becomes a call to the standard library function:
+    * {{{ Concurrent/Channel.get(c) }}}
+    */
+  private def mkGetChannel(exp: MonoAst.Expr, chanTpe: Type, tpe: Type, eff: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    val groundArrowTpe = lowerType(Type.mkIoArrow(chanTpe, tpe, loc))
+    val defnSym = lookupSym(Defs.Concurrent.Channel.Get, groundArrowTpe)
+    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, Specialize.rewriteEnumStructType(groundArrowTpe), visitTypeSubstituted(tpe), eff, loc)
+  }
+
+  /**
+    * Returns a channel put expression:
+    * {{{ c <- 42 }}}
+    * becomes a call to the standard library function:
+    * {{{ let chan = c; let value = 42; Concurrent/Channel.put(value, chan) }}}
+    *
+    * Here `exp1` is the channel and `exp2` is the value (i.e. `exp1 <- exp2`). In source order
+    * the channel is evaluated before the value, but `Channel.put` takes the value before the
+    * channel. We let-bind both expressions in source order so that reordering them into the
+    * argument list does not change their evaluation order. See:
+    * https://github.com/flix/flix/issues/10378
+    */
+  private def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, chanTpe: Type, valTpe: Type, eff: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val groundArrowTpe = lowerType(Type.mkIoUncurriedArrow(Nel.of(valTpe, chanTpe), Type.Unit, loc))
+    val defnSym = lookupSym(Defs.Concurrent.Channel.Put, groundArrowTpe)
+    val chanSym = mkLetSym("chan", loc)
+    val valueSym = mkLetSym("value", loc)
+    val chanVar = MonoAst.Expr.Var(chanSym, exp1.tpe, loc)
+    val valueVar = MonoAst.Expr.Var(valueSym, exp2.tpe, loc)
+    val putExp = MonoAst.Expr.ApplyDef(defnSym, List(valueVar, chanVar), Specialize.rewriteEnumStructType(groundArrowTpe), Type.Unit, eff, loc)
+    // The channel binding is the outermost let, so the channel is evaluated before the value.
+    val valueLet = MonoAst.Expr.Let(valueSym, exp2, putExp, Type.Unit, eff, Occur.Unknown, loc)
+    MonoAst.Expr.Let(chanSym, exp1, valueLet, Type.Unit, eff, Occur.Unknown, loc)
+  }
+
+  /**
+    * Returns a new `VarSym` for use in a let-binding.
+    *
+    * This function is called `mkLetSym` to avoid confusion with [[mkVarSym]].
+    */
+  private def mkLetSym(prefix: String, loc: SourceLocation)(implicit flix: Flix): Symbol.VarSym = {
+    val name = prefix + Flix.Delimiter + flix.genSym.freshId()
+    Symbol.freshVarSym(name, BoundBy.Let, loc)(RegionScope.Top, flix)
   }
 
   /**
