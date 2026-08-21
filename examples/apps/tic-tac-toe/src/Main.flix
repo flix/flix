@@ -56,4 +56,5 @@ def main(): Unit \ IO = {
         gameLoop(board, Symbol.X)
     } with Interface.interfaceWithConsole
     with Console.runWithIO
+    with Sys.Exit.runWithIO
 }
