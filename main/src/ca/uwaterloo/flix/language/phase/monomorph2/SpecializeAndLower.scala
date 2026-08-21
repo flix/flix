@@ -1213,6 +1213,201 @@ object SpecializeAndLower {
   private def findCaseSym(sym: Symbol.EnumSym, name: String)(implicit root: TypedAst.Root): Symbol.CaseSym =
     root.enums(sym).cases.values.find(_.sym.name == name).get.sym
 
+  /*
+   * Methods for renaming
+   */
+
+  /**
+    * Renames the given expression `exp0` per `env`.
+    */
+  private def renameExp(exp0: MonoAst.Expr, env: Map[Symbol.VarSym, Symbol.VarSym]): MonoAst.Expr = exp0 match {
+    case MonoAst.Expr.Cst(_, _, _) => exp0
+
+    case MonoAst.Expr.Var(sym, tpe, loc) =>
+      val s = env.getOrElse(sym, sym)
+      MonoAst.Expr.Var(s, tpe, loc)
+
+    case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
+      val p = renameFormalParam(fparam, env)
+      val e = renameExp(exp, env)
+      MonoAst.Expr.Lambda(p, e, tpe, loc)
+
+    case MonoAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = renameExp(exp1, env)
+      val e2 = renameExp(exp2, env)
+      MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
+
+    case MonoAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(renameExp(_, env))
+      MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+
+    case MonoAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(renameExp(_, env))
+      MonoAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
+
+    case MonoAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(renameExp(_, env))
+      MonoAst.Expr.ApplyOp(sym, es, tpe, eff, loc)
+
+    case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val es = exps.map(renameExp(_, env))
+      MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc)
+
+    case MonoAst.Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
+      val s = env.getOrElse(sym, sym)
+      val e1 = renameExp(exp1, env)
+      val e2 = renameExp(exp2, env)
+      MonoAst.Expr.Let(s, e1, e2, tpe, eff, occur, loc)
+
+    case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
+      val s = env.getOrElse(sym, sym)
+      val fps = fparams.map(renameFormalParam(_, env))
+      val e1 = renameExp(exp1, env)
+      val e2 = renameExp(exp2, env)
+      MonoAst.Expr.LocalDef(s, fps, e1, e2, tpe, eff, occur, loc)
+
+    case MonoAst.Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
+      val s = env.getOrElse(sym, sym)
+      val e = renameExp(exp, env)
+      MonoAst.Expr.Region(s, regionVar, e, tpe, eff, loc)
+
+    case MonoAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = renameExp(exp1, env)
+      val e2 = renameExp(exp2, env)
+      val e3 = renameExp(exp3, env)
+      MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+
+    case MonoAst.Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(renameExp(_, env))
+      val e = renameExp(exp, env)
+      MonoAst.Expr.Stm(es, e, tpe, eff, loc)
+
+    case MonoAst.Expr.Discard(exp, eff, loc) =>
+      val e = renameExp(exp, env)
+      MonoAst.Expr.Discard(e, eff, loc)
+
+    case MonoAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+      val e = renameExp(exp, env)
+      val rs = rules.map {
+        case MonoAst.MatchRule(pat, guard, exp1) =>
+          val p = renamePattern(pat, env)
+          val g = guard.map(renameExp(_, env))
+          val e1 = renameExp(exp1, env)
+          MonoAst.MatchRule(p, g, e1)
+      }
+      MonoAst.Expr.Match(e, rs, tpe, eff, loc)
+
+    case MonoAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = renameExp(exp, env)
+      val rs = rules.map {
+        case MonoAst.ExtMatchRule(pat, exp1, loc1) =>
+          val p = renameExtPattern(pat, env)
+          val e1 = renameExp(exp1, env)
+          MonoAst.ExtMatchRule(p, e1, loc1)
+      }
+      MonoAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
+
+    case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
+      val e = renameExp(exp, env)
+      MonoAst.Expr.Cast(e, tpe, eff, loc)
+
+    case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = renameExp(exp, env)
+      val rs = rules.map {
+        case MonoAst.CatchRule(sym, clazz, exp1) =>
+          val s = env.getOrElse(sym, sym)
+          val e1 = renameExp(exp1, env)
+          MonoAst.CatchRule(s, clazz, e1)
+      }
+      MonoAst.Expr.TryCatch(e, rs, tpe, eff, loc)
+
+    case MonoAst.Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
+      val e = renameExp(exp, env)
+      val rs = rules.map {
+        case MonoAst.HandlerRule(opSymUse, fparams, hexp) =>
+          val fps = fparams.map(renameFormalParam(_, env))
+          val he = renameExp(hexp, env)
+          MonoAst.HandlerRule(opSymUse, fps, he)
+      }
+      MonoAst.Expr.RunWith(e, effSymUse, rs, tpe, eff, loc)
+
+    case MonoAst.Expr.NewObject(_, _, _, _, _, _, _) => exp0
+
+  }
+
+  /**
+    * Renames the given formal param `fparam0` per `env`.
+    */
+  private def renameFormalParam(fparam0: MonoAst.FormalParam, env: Map[Symbol.VarSym, Symbol.VarSym]): MonoAst.FormalParam = fparam0 match {
+    case MonoAst.FormalParam(sym, tpe, occur, loc) =>
+      val s = env.getOrElse(sym, sym)
+      MonoAst.FormalParam(s, tpe, occur, loc)
+  }
+
+  /**
+    * Renames the given pattern `pattern0` per `env`.
+    */
+  private def renamePattern(pattern0: MonoAst.Pattern, env: Map[Symbol.VarSym, Symbol.VarSym]): MonoAst.Pattern = pattern0 match {
+    case MonoAst.Pattern.Wild(tpe, loc) =>
+      MonoAst.Pattern.Wild(tpe, loc)
+
+    case MonoAst.Pattern.Var(sym, tpe, occur, loc) =>
+      val s = env.getOrElse(sym, sym)
+      MonoAst.Pattern.Var(s, tpe, occur, loc)
+
+    case MonoAst.Pattern.Cst(cst, tpe, loc) =>
+      MonoAst.Pattern.Cst(cst, tpe, loc)
+
+    case MonoAst.Pattern.Tag(symUse, pats, tpe, loc) =>
+      val ps = pats.map(renamePattern(_, env))
+      MonoAst.Pattern.Tag(symUse, ps, tpe, loc)
+
+    case MonoAst.Pattern.Tuple(pats, tpe, loc) =>
+      val ps = pats.map(renamePattern(_, env))
+      MonoAst.Pattern.Tuple(ps, tpe, loc)
+
+    case MonoAst.Pattern.Record(pats, pat, tpe, loc) =>
+      val ps = pats.map(renameRecordLabelPattern(_, env))
+      val p = renamePattern(pat, env)
+      MonoAst.Pattern.Record(ps, p, tpe, loc)
+  }
+
+  /**
+    * Renames the given record label pattern `pattern0` per `env`.
+    */
+  private def renameRecordLabelPattern(pattern0: MonoAst.Pattern.Record.RecordLabelPattern, env: Map[Symbol.VarSym, Symbol.VarSym]): MonoAst.Pattern.Record.RecordLabelPattern = pattern0 match {
+    case MonoAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
+      val p = renamePattern(pat, env)
+      MonoAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc)
+  }
+
+  /**
+    * Renames the given ext pattern `pattern0` per `env`.
+    */
+  private def renameExtPattern(pattern0: MonoAst.ExtPattern, env: Map[Symbol.VarSym, Symbol.VarSym]): MonoAst.ExtPattern = pattern0 match {
+    case MonoAst.ExtPattern.Default(loc) =>
+      MonoAst.ExtPattern.Default(loc)
+
+    case MonoAst.ExtPattern.Tag(label, pats, loc) =>
+      val ps = pats.map(renameVarOrWild(_, env))
+      MonoAst.ExtPattern.Tag(label, ps, loc)
+  }
+
+  /**
+    * Renames the given ext tag pattern `pattern0` per `env`.
+    */
+  private def renameVarOrWild(pattern0: MonoAst.ExtTagPattern, env: Map[Symbol.VarSym, Symbol.VarSym]): MonoAst.ExtTagPattern = pattern0 match {
+    case MonoAst.ExtTagPattern.Wild(tpe, loc) =>
+      MonoAst.ExtTagPattern.Wild(tpe, loc)
+
+    case MonoAst.ExtTagPattern.Var(sym, tpe, occur, loc) =>
+      val s = env.getOrElse(sym, sym)
+      MonoAst.ExtTagPattern.Var(s, tpe, occur, loc)
+
+    case MonoAst.ExtTagPattern.Unit(tpe, loc) =>
+      MonoAst.ExtTagPattern.Unit(tpe, loc)
+  }
+
   /**
     * Lowers `sym` from a restrictable enum sym into a regular enum sym.
     */
