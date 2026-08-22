@@ -23,12 +23,47 @@ import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
 
-import java.io.{IOException, PrintStream}
+import java.io.{IOException, InputStream, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
 import scala.collection.mutable
 import scala.util.Using
 
 object FlixPackageManager {
+
+  /**
+    * The manifest asset's fixed name -- `Bootstrap.release` uploads `flix.toml` unchanged.
+    */
+  private val ManifestAssetName = "flix.toml"
+
+  /**
+    * Opens a stream over the first of `candidateNames` the release actually publishes, falling back
+    * to a rate-limited listing when none of them do. See [[installAll]] for the guessed names.
+    *
+    * `candidateNames` are full asset file names (e.g. `"myrepo.fpkg"`), each already carrying its
+    * own extension; `extension` is used only by the fallback listing lookup, to pick the one asset
+    * of that kind out of the release's full asset list.
+    */
+  private def openAsset(project: GitHub.Project, version: SemVer, candidateNames: List[String], extension: String, apiKey: Option[String]): Result[InputStream, PackageError] =
+    tryCandidates(project, version, candidateNames) match {
+      case Some(result) => result
+      case None =>
+        GitHub.findReleaseAsset(project, version, extension, apiKey)
+          .flatMap(asset => GitHub.download(asset.url))
+    }
+
+  /**
+    * Opens the first of `candidateNames` the release publishes, or `None` if it publishes none of them.
+    */
+  private def tryCandidates(project: GitHub.Project, version: SemVer, candidateNames: List[String]): Option[Result[InputStream, PackageError]] =
+    candidateNames match {
+      case Nil => None
+      case assetName :: rest =>
+        GitHub.downloadReleaseAsset(project, version, assetName) match {
+          case Ok(stream) => Some(Ok(stream))
+          case Err(_: PackageError.ReleaseAssetNotFound) => tryCandidates(project, version, rest)
+          case Err(e) => Some(Err(e))
+        }
+    }
 
   /**
     * Represents the dependency resolution of [[origin]].
