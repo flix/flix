@@ -30,6 +30,8 @@ import org.objectweb.asm
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
 
+import scala.jdk.CollectionConverters.*
+
 /**
   * Generate expression
   */
@@ -936,20 +938,13 @@ object GenExpression {
       case AtomicOp.InvokeStaticMethod(method) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
         BytecodeInstructions.addLoc(loc)
-        for ((arg, argType) <- exps.zip(method.getParameterTypes)) {
+        for ((arg, argType) <- exps.zip(method.descriptor.parameterList.asScala)) {
           compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
         }
-        val declaration = asm.Type.getInternalName(method.getDeclaringClass)
-        val name = method.getName
-        val descriptor = asm.Type.getMethodDescriptor(method)
-        // Check if we are invoking an interface or class.
-        if (method.getDeclaringClass.isInterface) {
-          mv.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, true)
-        } else {
-          mv.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
-        }
-        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        val declaration = internalNameOf(method.owner)
+        mv.visitMethodInsn(INVOKESTATIC, declaration, method.name, method.descriptor.descriptorString(), method.isInterface)
+        if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
@@ -1633,11 +1628,19 @@ object GenExpression {
 
   }
 
-  /** Returns the JVM internal name of the class or interface descriptor `desc`, e.g. `java/lang/String`. */
+  /**
+    * Returns the JVM internal name of the class, interface, or array descriptor `desc`,
+    * e.g. `java/lang/String` or `[Ljava/lang/String;`.
+    */
   private def internalNameOf(desc: java.lang.constant.ClassDesc): String = {
-    // Strip the leading `L` and trailing `;` of the descriptor.
-    val descriptor = desc.descriptorString()
-    descriptor.substring(1, descriptor.length - 1)
+    if (desc.isArray) {
+      // The internal name of an array type is its descriptor.
+      desc.descriptorString()
+    } else {
+      // Strip the leading `L` and trailing `;` of the descriptor.
+      val descriptor = desc.descriptorString()
+      descriptor.substring(1, descriptor.length - 1)
+    }
   }
 
   private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {

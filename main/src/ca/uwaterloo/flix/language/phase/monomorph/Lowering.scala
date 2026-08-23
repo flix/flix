@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JField, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JField, JMethod, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
@@ -535,7 +535,7 @@ object Lowering {
       val javaReturnType = method.getReturnType
       val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
       val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
-      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), boxedArgs, invokeType, eff, loc)
+      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(JMethod.of(method)), boxedArgs, invokeType, eff, loc)
       unboxIfNecessary(invoke, t, javaReturnType)
 
     case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
@@ -1032,16 +1032,21 @@ object Lowering {
     * Returns the `valueOf` boxing method for a Flix primitive type.
     * This is the same mechanism javac uses to implement autoboxing.
     */
-  private def javaBoxMethod(tpe: Type): java.lang.reflect.Method = tpe match {
-    case Type.Bool => classOf[java.lang.Boolean].getMethod("valueOf", java.lang.Boolean.TYPE)
-    case Type.Char => classOf[java.lang.Character].getMethod("valueOf", java.lang.Character.TYPE)
-    case Type.Int8 => classOf[java.lang.Byte].getMethod("valueOf", java.lang.Byte.TYPE)
-    case Type.Int16 => classOf[java.lang.Short].getMethod("valueOf", java.lang.Short.TYPE)
-    case Type.Int32 => classOf[java.lang.Integer].getMethod("valueOf", java.lang.Integer.TYPE)
-    case Type.Int64 => classOf[java.lang.Long].getMethod("valueOf", java.lang.Long.TYPE)
-    case Type.Float32 => classOf[java.lang.Float].getMethod("valueOf", java.lang.Float.TYPE)
-    case Type.Float64 => classOf[java.lang.Double].getMethod("valueOf", java.lang.Double.TYPE)
-    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+  private def javaBoxMethod(tpe: Type): JMethod = {
+    import java.lang.constant.ConstantDescs.*
+    def valueOf(box: java.lang.constant.ClassDesc, prim: java.lang.constant.ClassDesc): JMethod =
+      JMethod(box, "valueOf", java.lang.constant.MethodTypeDesc.of(box, prim), isInterface = false)
+    tpe match {
+      case Type.Bool => valueOf(CD_Boolean, CD_boolean)
+      case Type.Char => valueOf(CD_Character, CD_char)
+      case Type.Int8 => valueOf(CD_Byte, CD_byte)
+      case Type.Int16 => valueOf(CD_Short, CD_short)
+      case Type.Int32 => valueOf(CD_Integer, CD_int)
+      case Type.Int64 => valueOf(CD_Long, CD_long)
+      case Type.Float32 => valueOf(CD_Float, CD_float)
+      case Type.Float64 => valueOf(CD_Double, CD_double)
+      case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+    }
   }
 
   /**

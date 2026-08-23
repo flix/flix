@@ -465,7 +465,7 @@ object TypeVerifier {
           tpe
 
         case AtomicOp.InvokeStaticMethod(method) =>
-          checkArity(ts, method.getParameterCount, loc)
+          checkArity(ts, method.descriptor.parameterCount(), loc)
           tpe
 
         // Vector operations are simplified to array operations in the Simplifier.

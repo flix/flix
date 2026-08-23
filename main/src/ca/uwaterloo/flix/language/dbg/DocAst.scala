@@ -328,6 +328,10 @@ object DocAst {
       App(Dot(Native(m.getDeclaringClass), AsIs(m.getName)), ds)
     }
 
+    def JavaInvokeStaticMethod(m: JMethod, ds: List[Expr]): Expr = {
+      App(Dot(AsIs(javaClassName(m.owner)), AsIs(m.name)), ds)
+    }
+
     def JavaGetStaticField(f: Field): Expr = {
       Dot(Native(f.getDeclaringClass), AsIs(f.getName))
     }
