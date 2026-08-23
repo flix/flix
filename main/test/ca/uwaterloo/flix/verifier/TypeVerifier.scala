@@ -23,6 +23,9 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, SemanticOp, SimpleType, SourceL
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
+import java.lang.constant.ClassDesc
+import java.lang.invoke.MethodHandles
+
 import scala.annotation.tailrec
 
 object TypeVerifier {
@@ -420,21 +423,21 @@ object TypeVerifier {
 
         case AtomicOp.GetField(field) =>
           val List(t) = ts
-          checkJavaSubtype(t, field.getDeclaringClass, loc)
-          checkJavaSubtype(tpe, field.getType, loc)
+          checkJavaSubtype(t, resolveClassDesc(field.owner), loc)
+          checkJavaSubtype(tpe, resolveClassDesc(field.tpe), loc)
 
         case AtomicOp.GetStaticField(field) =>
-          checkJavaSubtype(tpe, field.getType, loc)
+          checkJavaSubtype(tpe, resolveClassDesc(field.tpe), loc)
 
         case AtomicOp.PutField(field) =>
           val List(t1, t2) = ts
-          checkJavaSubtype(t1, field.getDeclaringClass, loc)
-          checkJavaSubtype(t2, field.getType, loc)
+          checkJavaSubtype(t1, resolveClassDesc(field.owner), loc)
+          checkJavaSubtype(t2, resolveClassDesc(field.tpe), loc)
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
         case AtomicOp.PutStaticField(field) =>
           val List(t) = ts
-          checkJavaSubtype(t, field.getType, loc)
+          checkJavaSubtype(t, resolveClassDesc(field.tpe), loc)
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
         case AtomicOp.Throw =>
@@ -645,6 +648,16 @@ object TypeVerifier {
       case _ => failMismatchedShape(tpe, "Struct", loc)
     }
   }
+
+  /**
+    * Resolves the class descriptor `desc` to a loaded class.
+    *
+    * The verifier needs loaded classes to check Java subtyping, so it re-resolves the
+    * nominal descriptors carried by the AST. Resolution uses the classloader of this
+    * class, which in the test JVM also has the `dev.flix.test` classes on its classpath.
+    */
+  private def resolveClassDesc(desc: ClassDesc): Class[?] =
+    desc.resolveConstantDesc(MethodHandles.lookup())
 
   /**
     * Asserts that `tpe` is a subtype of the java class type `klazz`.

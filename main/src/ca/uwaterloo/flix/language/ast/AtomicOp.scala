@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Mutability
+import ca.uwaterloo.flix.language.ast.shared.{JField, Mutability}
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.{Constructor, Method}
 
 /**
   * A common super-type for control pure expressions.
@@ -94,13 +94,13 @@ object AtomicOp {
 
   case class InvokeStaticMethod(method: Method) extends AtomicOp
 
-  case class GetField(field: Field) extends AtomicOp
+  case class GetField(field: JField) extends AtomicOp
 
-  case class PutField(field: Field) extends AtomicOp
+  case class PutField(field: JField) extends AtomicOp
 
-  case class GetStaticField(field: Field) extends AtomicOp
+  case class GetStaticField(field: JField) extends AtomicOp
 
-  case class PutStaticField(field: Field) extends AtomicOp
+  case class PutStaticField(field: JField) extends AtomicOp
 
   case object Throw extends AtomicOp
 
