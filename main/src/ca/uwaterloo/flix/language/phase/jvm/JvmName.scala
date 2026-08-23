@@ -20,7 +20,6 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm
 
 import java.nio.file.{Path, Paths}
 
@@ -28,32 +27,6 @@ import java.nio.file.{Path, Paths}
   * Companion object for the [[JvmName]] class.
   */
 object JvmName {
-
-  // TODO: Would be nice to allow BackendObjType here to avoid conversions
-  case class MethodDescriptor(arguments: List[BackendType], result: VoidableType) {
-    /**
-      * Returns the type descriptor of this method.
-      */
-    val toDescriptor: String = {
-      // Descriptor of result
-      val resultDescriptor = result.toDescriptor
-
-      // Descriptor of arguments
-      val argumentDescriptor = arguments.map(_.toDescriptor).mkString
-
-      // Descriptor of the method
-      s"($argumentDescriptor)$resultDescriptor"
-    }
-
-    def toAsmType: asm.Type = asm.Type.getType(toDescriptor)
-  }
-
-  object MethodDescriptor {
-    val NothingToVoid: MethodDescriptor = MethodDescriptor(Nil, VoidableType.Void)
-
-    def mkDescriptor(argument: BackendType*)(result: VoidableType): MethodDescriptor =
-      MethodDescriptor(argument.toList, result)
-  }
 
   /**
     * The name of the static constructor method `<clinit>`.

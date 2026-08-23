@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
