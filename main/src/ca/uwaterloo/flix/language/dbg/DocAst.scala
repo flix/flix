@@ -359,7 +359,7 @@ object DocAst {
       Assign(Dot(AsIs(javaClassName(f.owner)), AsIs(f.name)), d)
 
     /** Returns the fully-qualified dotted name of the class descriptor `desc`. */
-    private def javaClassName(desc: ClassDesc): String = {
+    private[dbg] def javaClassName(desc: ClassDesc): String = {
       val pkg = desc.packageName()
       if (pkg.isEmpty) desc.displayName() else s"$pkg.${desc.displayName()}"
     }
