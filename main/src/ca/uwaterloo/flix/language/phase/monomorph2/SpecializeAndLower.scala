@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, JField, JMethod, Mutability, RegionScope, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, JConstructor, JField, JMethod, Mutability, RegionScope, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupCaseSym, lookupRestrictableCaseSym, lookupStructSym, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
@@ -500,12 +500,12 @@ object SpecializeAndLower {
       // Box primitive args to match the constructor's Object-typed parameters.
       val javaParamTypes = constructor.getParameterTypes
       val boxedArgs = ListOps.zip(es, javaParamTypes.toList).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
-      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), boxedArgs, t, subst(eff), loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(JConstructor.of(constructor)), boxedArgs, t, subst(eff), loc)
 
     case TypedAst.Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       val t = visitType(tpe, subst)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), es, t, subst(eff), loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(JConstructor.of(constructor)), es, t, subst(eff), loc)
 
     case TypedAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)

@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JField, JMethod, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JConstructor, JField, JMethod, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
@@ -495,12 +495,12 @@ object Lowering {
       // Box primitive args where Java expects Object (e.g., `new SimpleEntry(42, true)`).
       val javaParamTypes = constructor.getParameterTypes
       val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
-      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), boxedArgs, t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(JConstructor.of(constructor)), boxedArgs, t, eff, loc)
 
     case TypedAst.Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), es, t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(JConstructor.of(constructor)), es, t, eff, loc)
 
     case TypedAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = lowerExp(exp)

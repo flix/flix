@@ -165,6 +165,21 @@ object BackendType {
     }
   }
 
+  /** Converts the given Java class or array descriptor `desc` into its [[BackendType]] representation. */
+  def toBackendType(desc: java.lang.constant.ClassDesc): BackendType = {
+    import java.lang.constant.ConstantDescs.*
+    if (desc == CD_boolean) BackendType.Bool
+    else if (desc == CD_char) BackendType.Char
+    else if (desc == CD_byte) BackendType.Int8
+    else if (desc == CD_short) BackendType.Int16
+    else if (desc == CD_int) BackendType.Int32
+    else if (desc == CD_long) BackendType.Int64
+    else if (desc == CD_float) BackendType.Float32
+    else if (desc == CD_double) BackendType.Float64
+    else if (desc.isArray) Array(toBackendType(desc.componentType()))
+    else Reference(BackendObjType.Native(JvmName.ofClassDesc(desc)))
+  }
+
   /**
     * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
     */

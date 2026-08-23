@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.JConstructor
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
@@ -26,6 +27,8 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
 import org.objectweb.asm.{MethodVisitor, Opcodes}
+
+import scala.jdk.CollectionConverters.*
 
 /** Generates bytecode for anonymous classes (created through NewObject). */
 object GenAnonymousClasses {
@@ -58,7 +61,7 @@ object GenAnonymousClasses {
       c.exp match {
         case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), _, _, _, _) =>
           // Super-only: no closure field needed, parameterized <init>
-          val argTypes = constructor.getParameterTypes.toList.map(javaClassToBackendType)
+          val argTypes = constructor.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
           cm.mkConstructor(ClassMaker.ConstructorMethod(className, argTypes), IsPublic, constructorInsWithSuperCall(superClass, constructor)(_))
         case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", c.loc)
       }
@@ -108,9 +111,9 @@ object GenAnonymousClasses {
   }
 
   /** Creates constructor bytecode that forwards parameters directly to the super constructor. */
-  private def constructorInsWithSuperCall(superClass: JvmName, constructor: java.lang.reflect.Constructor[?])(implicit mv: MethodVisitor): Unit = {
+  private def constructorInsWithSuperCall(superClass: JvmName, constructor: JConstructor)(implicit mv: MethodVisitor): Unit = {
     import BytecodeInstructions.*
-    val paramTypes = constructor.getParameterTypes.toList.map(javaClassToBackendType)
+    val paramTypes = constructor.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
     // ALOAD 0 (this)
     thisLoad()
     // Load each <init> parameter (starting at slot 1)
