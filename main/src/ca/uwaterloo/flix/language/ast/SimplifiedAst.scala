@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.IntroducedBy
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, JMethod, JvmAnnotation, Modifiers, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, JClass, JMethod, JvmAnnotation, Modifiers, Source}
 import ca.uwaterloo.flix.language.phase.ClosureConv
 
 object SimplifiedAst {
@@ -102,7 +102,7 @@ object SimplifiedAst {
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, tpe: SimpleType, purity: Purity, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 

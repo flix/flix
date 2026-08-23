@@ -46,10 +46,10 @@ object GenAnonymousClasses {
     val superClass = if (obj.clazz.isInterface)
       JvmName.Object
     else
-      JvmName.ofClass(obj.clazz)
+      JvmName.ofClassDesc(obj.clazz.desc)
 
     val interfaces = if (obj.clazz.isInterface)
-      List(JvmName.ofClass(obj.clazz))
+      List(JvmName.ofClassDesc(obj.clazz.desc))
     else
       Nil
 

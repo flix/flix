@@ -103,15 +103,13 @@ object ErasedAst {
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, tpe: SimpleType, purity: Purity, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
   case class Case(sym: Symbol.CaseSym, tpes: List[SimpleType], loc: SourceLocation)
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: SimpleType, loc: SourceLocation)
-
-  case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation)
 
   case class JvmConstructor(exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 

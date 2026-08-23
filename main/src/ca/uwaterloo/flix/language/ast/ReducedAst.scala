@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, JMethod, JvmAnnotation, Modifiers, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, JClass, JMethod, JvmAnnotation, Modifiers, Source}
 
-import java.lang.reflect.Method
 
 object ReducedAst {
 
@@ -100,7 +99,7 @@ object ReducedAst {
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, tpe: SimpleType, purity: Purity, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
@@ -109,8 +108,6 @@ object ReducedAst {
 
   /** [[Type]] is used here because [[Struct]] declarations are not monomorphized. */
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
-
-  case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation)
 
   case class JvmConstructor(exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
