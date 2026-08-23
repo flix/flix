@@ -94,8 +94,8 @@ object Bootstrap {
     }
 
     FileOps.newFileIfAbsent(gitignoreFile) {
-      s"""*.fpkg
-         |*.jar
+      s"""*.$EXT_FPKG
+         |*.$EXT_JAR
          |.GITHUB_TOKEN
          |$artifactDirectoryRaw
          |$buildDirectoryRaw
