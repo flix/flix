@@ -166,7 +166,7 @@ object MonoAst {
 
   case class JvmConstructor(exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: Nel[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
+  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: Nel[FormalParam], exp: Expr, retTpe: Type, eff: Type, javaSig: Option[JMethod], loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.constant.ClassDesc, exp: Expr)
 

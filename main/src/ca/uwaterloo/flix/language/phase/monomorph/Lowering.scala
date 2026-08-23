@@ -677,17 +677,23 @@ object Lowering {
       // box it so the value matches the erased JVM signature. This mirrors the boxing applied
       // to generic Java method *calls* above (see `boxIfNecessary` in InvokeMethod), and the
       // call site unboxes the result symmetrically.
-      val e = overriddenJavaReturnType(clazz, ident.name, fparams.tail.length) match {
-        case Some(javaReturnType) => boxIfNecessary(e0, javaReturnType)
+      val overridden = overriddenJavaMethod(clazz, ident.name, fparams.tail.length)
+      val e = overridden match {
+        case Some(m) => boxIfNecessary(e0, m.getReturnType)
         case None => e0
       }
-      MonoAst.JvmMethod(ann, ident, fs, e, e.tpe, eff, loc)
+      MonoAst.JvmMethod(ann, ident, fs, e, e.tpe, eff, overridden.map(JMethod.of), loc)
   }
 
-  /** Returns the erased return type of the Java method on `clazz` matching `name` and `arity` (excluding the receiver). */
-  private def overriddenJavaReturnType(clazz: Class[?], name: String, arity: Int): Option[Class[?]] =
+  /**
+    * Returns the Java method on `clazz` matching `name` and `arity` (excluding the receiver), if any.
+    *
+    * The resolved method's erased signature is carried on the [[MonoAst.JvmMethod]] so the
+    * backend can emit matching descriptors without reflection.
+    */
+  private def overriddenJavaMethod(clazz: Class[?], name: String, arity: Int): Option[java.lang.reflect.Method] =
     JvmUtils.getOverridableInstanceMethods(clazz).collectFirst {
-      case m if m.getName == name && m.getParameterCount == arity => m.getReturnType
+      case m if m.getName == name && m.getParameterCount == arity => m
     }
 
   /**

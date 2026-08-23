@@ -650,11 +650,11 @@ object Simplifier {
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmMethod = method match {
-    case MonoAst.JvmMethod(ann, ident, fparams0, exp0, retTpe, eff, loc) =>
+    case MonoAst.JvmMethod(ann, ident, fparams0, exp0, retTpe, eff, javaSig, loc) =>
       val fparams = fparams0.toList.map(visitFormalParam)
       val exp = visitExp(exp0)
       val rt = visitType(retTpe)
-      SimplifiedAst.JvmMethod(ann, ident, fparams, exp, rt, simplifyEffect(eff), loc)
+      SimplifiedAst.JvmMethod(ann, ident, fparams, exp, rt, simplifyEffect(eff), javaSig, loc)
   }
 
   private def pat2exp(pat0: MonoAst.Pattern): SimplifiedAst.Expr = pat0 match {

@@ -570,11 +570,12 @@ object SpecializeAndLower {
           // for a generic interface method) but the Flix result is primitive, box it to match the
           // erased signature. This mirrors the boxing applied to generic Java method calls (see
           // `boxIfNecessary` in `mkJavaInvoke`), and the call site unboxes the result symmetrically.
-          val e = overriddenJavaReturnType(clazz, mIdent.name, fs.tail.length) match {
-            case Some(javaReturnType) => boxIfNecessary(e0, javaReturnType)
+          val overridden = overriddenJavaMethod(clazz, mIdent.name, fs.tail.length)
+          val e = overridden match {
+            case Some(m) => boxIfNecessary(e0, m.getReturnType)
             case None => e0
           }
-          MonoAst.JvmMethod(mAnn, mIdent, fs, e, e.tpe, subst(mEff), mLoc)
+          MonoAst.JvmMethod(mAnn, mIdent, fs, e, e.tpe, subst(mEff), overridden.map(JMethod.of), mLoc)
       }
       val t = visitType(tpe, subst)
       MonoAst.Expr.NewObject(freshSym, clazz, t, subst(eff), cs, ms, loc)
@@ -1158,10 +1159,15 @@ object SpecializeAndLower {
     } else arg
   }
 
-  /** Returns the erased return type of the Java method on `clazz` matching `name` and `arity` (excluding the receiver). */
-  private def overriddenJavaReturnType(clazz: Class[?], name: String, arity: Int): Option[Class[?]] =
+  /**
+    * Returns the Java method on `clazz` matching `name` and `arity` (excluding the receiver), if any.
+    *
+    * The resolved method's erased signature is carried on the [[MonoAst.JvmMethod]] so the
+    * backend can emit matching descriptors without reflection.
+    */
+  private def overriddenJavaMethod(clazz: Class[?], name: String, arity: Int): Option[java.lang.reflect.Method] =
     JvmUtils.getOverridableInstanceMethods(clazz).collectFirst {
-      case m if m.getName == name && m.getParameterCount == arity => m.getReturnType
+      case m if m.getName == name && m.getParameterCount == arity => m
     }
 
   /**

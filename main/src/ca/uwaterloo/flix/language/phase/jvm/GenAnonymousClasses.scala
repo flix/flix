@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
-import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 import java.lang.constant.ConstantDescs.CD_void
@@ -75,17 +75,16 @@ object GenAnonymousClasses {
       // Create the field that will store the closure implementing the body of the method.
       val cloField = ClassMaker.InstanceField(className, s"clo$i", abstractClass.toTpe)
       cm.mkField(cloField, IsPublic, NotFinal, NotVolatile)
-      // Use the Java interface's erased method signature for the JVM descriptor.
-      // This ensures the generated method matches the interface even when the user
-      // declares generic parameter types (e.g., String instead of Object).
-      val javaMethod = findJavaMethod(obj.clazz, m.ident.name, m.fparams.tail.length)
-      val actualArgs = javaMethod match {
-        case Some(jm) => jm.getParameterTypes.toList.map(javaClassToBackendType)
+      // Use the Java interface's erased method signature (resolved during lowering) for the
+      // JVM descriptor. This ensures the generated method matches the interface even when the
+      // user declares generic parameter types (e.g., String instead of Object).
+      val actualArgs = m.javaSig match {
+        case Some(jm) => jm.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
         case None => m.fparams.tail.map(_.tpe).map(BackendType.toBackendType)
       }
-      val actualres = javaMethod match {
-        case Some(jm) if jm.getReturnType == java.lang.Void.TYPE => VoidableType.Void
-        case Some(jm) => javaClassToBackendType(jm.getReturnType)
+      val actualres = m.javaSig match {
+        case Some(jm) if jm.descriptor.returnType() == CD_void => VoidableType.Void
+        case Some(jm) => BackendType.toBackendType(jm.descriptor.returnType())
         case None => if (m.tpe == SimpleType.Unit) VoidableType.Void else BackendType.toBackendType(m.tpe)
       }
       cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, actualres, m)(_, root))
@@ -124,25 +123,6 @@ object GenAnonymousClasses {
     // INVOKESPECIAL superClass.<init>(paramTypes...)
     INVOKESPECIAL(ClassMaker.ConstructorMethod(superClass, paramTypes))
     RETURN()
-  }
-
-  /** Finds the Java method matching the given name and parameter count on `clazz`. */
-  private def findJavaMethod(clazz: Class[?], name: String, arity: Int): Option[java.lang.reflect.Method] = {
-    JvmUtils.getOverridableInstanceMethods(clazz).find(m => m.getName == name && m.getParameterCount == arity)
-  }
-
-  /** Maps a Java `Class[?]` to a `BackendType`. */
-  private def javaClassToBackendType(clazz: Class[?]): BackendType = {
-    if      (clazz == java.lang.Boolean.TYPE)   BackendType.Bool
-    else if (clazz == java.lang.Byte.TYPE)      BackendType.Int8
-    else if (clazz == java.lang.Short.TYPE)     BackendType.Int16
-    else if (clazz == java.lang.Integer.TYPE)   BackendType.Int32
-    else if (clazz == java.lang.Long.TYPE)      BackendType.Int64
-    else if (clazz == java.lang.Float.TYPE)     BackendType.Float32
-    else if (clazz == java.lang.Double.TYPE)    BackendType.Float64
-    else if (clazz == java.lang.Character.TYPE) BackendType.Char
-    else if (clazz.isArray)                     BackendType.Array(javaClassToBackendType(clazz.getComponentType))
-    else BackendType.Reference(BackendObjType.Native(JvmName.ofClass(clazz)))
   }
 
   /** Returns the erased abstract arrow class for the given parameter types and return type. */
