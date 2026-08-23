@@ -132,8 +132,8 @@ object TypedAstPrinter {
   /**
     * Returns the [[DocAst]] representation of `rule`.
     */
-  private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, Class[?], DocAst.Expr) = rule match {
-    case TypedAst.CatchRule(bnd, clazz, exp, _) => (bnd.sym, clazz, print(exp))
+  private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, String, DocAst.Expr) = rule match {
+    case TypedAst.CatchRule(bnd, clazz, exp, _) => (bnd.sym, clazz.getName, print(exp))
   }
 
   /**

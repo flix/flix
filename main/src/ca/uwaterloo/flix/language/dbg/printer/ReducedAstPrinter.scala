@@ -64,7 +64,7 @@ object ReducedAstPrinter {
     case Expr.Stm(exps, exp, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Expr.Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case ReducedAst.CatchRule(sym, clazz, body) => (sym, clazz, print(body))
+      case ReducedAst.CatchRule(sym, clazz, body) => (sym, DocAst.Expr.javaClassName(clazz), print(body))
     })
     case Expr.RunWith(exp, effUse, rules, _, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case ReducedAst.HandlerRule(op, fparams, body) =>

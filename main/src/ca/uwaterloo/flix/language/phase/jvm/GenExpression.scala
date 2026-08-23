@@ -1546,7 +1546,7 @@ object GenExpression {
       // Emit a try catch block for each catch rule. It's important to do this after compiling
       // sub-expressions to ensure correct catch case ordering.
       for ((CatchRule(_, _, clazz, _), handlerLabel) <- rulesAndLabels) {
-        mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
+        mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, internalNameOf(clazz))
       }
 
       // Add the label after both the try and catch rules.

@@ -696,7 +696,7 @@ object Lowering {
   private def lowerCatchRule(rule: TypedAst.CatchRule)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
     case TypedAst.CatchRule(bnd, clazz, exp, _) =>
       val e = lowerExp(exp)
-      MonoAst.CatchRule(bnd.sym, clazz, e)
+      MonoAst.CatchRule(bnd.sym, ClassDescs.of(clazz), e)
   }
 
   /**

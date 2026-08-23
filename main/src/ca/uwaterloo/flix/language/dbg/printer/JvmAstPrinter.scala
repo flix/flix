@@ -60,7 +60,7 @@ object JvmAstPrinter {
     case Expr.Stm(exps, exp, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Expr.Region(sym, _, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case JvmAst.CatchRule(sym, _, clazz, body) => (sym, clazz, print(body))
+      case JvmAst.CatchRule(sym, _, clazz, body) => (sym, DocAst.Expr.javaClassName(clazz), print(body))
     })
     case Expr.RunWith(exp, effUse, rules, _, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case JvmAst.HandlerRule(op, fparams, body) =>

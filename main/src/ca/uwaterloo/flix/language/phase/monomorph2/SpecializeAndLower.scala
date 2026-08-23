@@ -635,11 +635,11 @@ object SpecializeAndLower {
     * Specializes and lowers the given catch rule `rule0` (fresh binder).
     */
   private def visitCatchRule(rule: TypedAst.CatchRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
-    case TypedAst.CatchRule(bnd, clazz, exp, _) =>
+    case TypedAst.CatchRule(bnd, clazz0, exp, _) =>
       val freshSym = Symbol.freshVarSym(bnd.sym)
       val env1 = env0 + (bnd.sym -> freshSym)
       val e = visitExp(exp, env1, subst)
-      MonoAst.CatchRule(freshSym, clazz, e)
+      MonoAst.CatchRule(freshSym, ClassDescs.of(clazz0), e)
   }
 
   /**
