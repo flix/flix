@@ -94,6 +94,6 @@ object JvmAstPrinter {
   /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: JvmAst.JvmMethod): DocAst.JvmMethod = method match {
     case JvmAst.JvmMethod(ann, ident, fparams, exp, tpe, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
+      DocAst.JvmMethod(ann.map(_.clazz.displayName()), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
   }
 }
