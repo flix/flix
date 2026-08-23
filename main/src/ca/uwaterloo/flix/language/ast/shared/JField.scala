@@ -25,7 +25,7 @@ object JField {
 
   /** Returns the [[JField]] of the given reflective `field`. */
   def of(field: Field): JField =
-    JField(classDescOf(field.getDeclaringClass), field.getName, classDescOf(field.getType))
+    JField(classDescOf(field.getDeclaringClass), field.getName)
 
   /** Returns the [[ClassDesc]] of `clazz`. */
   private def classDescOf(clazz: Class[?]): ClassDesc =
@@ -36,8 +36,8 @@ object JField {
 }
 
 /**
-  * A nominal reference to the Java field `name` declared by the class `owner` with type `tpe`.
+  * A nominal reference to the Java field `name` declared by the class `owner`.
   *
   * Unlike [[java.lang.reflect.Field]], a [[JField]] does not retain a loaded [[Class]].
   */
-case class JField(owner: ClassDesc, name: String, tpe: ClassDesc)
+case class JField(owner: ClassDesc, name: String)
