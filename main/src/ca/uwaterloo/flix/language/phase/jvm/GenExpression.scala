@@ -29,6 +29,7 @@ import org.objectweb.asm
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
 
+import java.lang.constant.ClassDesc
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -1624,7 +1625,7 @@ object GenExpression {
     * Returns the JVM internal name of the class, interface, or array descriptor `desc`,
     * e.g. `java/lang/String` or `[Ljava/lang/String;`.
     */
-  private def internalNameOf(desc: java.lang.constant.ClassDesc): String = {
+  private def internalNameOf(desc: ClassDesc): String = {
     if (desc.isArray) {
       // The internal name of an array type is its descriptor.
       desc.descriptorString()

@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.lang.constant.ClassDesc
 import java.nio.file.{Path, Paths}
 
 /**
@@ -46,7 +47,7 @@ object JvmName {
 
   /** Returns the [[JvmName]] of `clazz`. Crashes if `clazz` is primitive, an array, or unnamed. */
   /** Returns the JvmName of the given class or interface descriptor `desc`. */
-  def ofClassDesc(desc: java.lang.constant.ClassDesc): JvmName = {
+  def ofClassDesc(desc: ClassDesc): JvmName = {
     if (desc.isPrimitive) throw InternalCompilerException(s"Cannot create a JvmName from the primitive type '${desc.displayName()}'", SourceLocation.Unknown)
     if (desc.isArray) throw InternalCompilerException(s"Cannot create a JvmName from the array type '${desc.displayName()}'", SourceLocation.Unknown)
 

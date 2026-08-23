@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps, Nel}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, ParOps}
 
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import scala.annotation.tailrec
 
 /**
@@ -37,19 +38,19 @@ object Simplifier {
   /** The `String.concat(String)` method. */
   private val StringConcatMethod: JMethod = {
     import java.lang.constant.ConstantDescs.*
-    JMethod(CD_String, "concat", java.lang.constant.MethodTypeDesc.of(CD_String, CD_String), isInterface = false)
+    JMethod(CD_String, "concat", MethodTypeDesc.of(CD_String, CD_String), isInterface = false)
   }
 
   /** The `String.equals(Object)` method. */
   private val StringEqualsMethod: JMethod = {
     import java.lang.constant.ConstantDescs.*
-    JMethod(CD_String, "equals", java.lang.constant.MethodTypeDesc.of(CD_boolean, CD_Object), isInterface = false)
+    JMethod(CD_String, "equals", MethodTypeDesc.of(CD_boolean, CD_Object), isInterface = false)
   }
 
   /** The `BigInteger.equals(Object)` method. */
   private val BigIntEqualsMethod: JMethod = {
     import java.lang.constant.ConstantDescs.*
-    JMethod(java.lang.constant.ClassDesc.of("java.math.BigInteger"), "equals", java.lang.constant.MethodTypeDesc.of(CD_boolean, CD_Object), isInterface = false)
+    JMethod(ClassDesc.of("java.math.BigInteger"), "equals", MethodTypeDesc.of(CD_boolean, CD_Object), isInterface = false)
   }
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
