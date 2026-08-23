@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.util.{ConcurrentCache, InternalCompilerException}
 
+import java.lang.constant.ClassDesc
 import scala.annotation.tailrec
 
 /**
@@ -102,7 +103,7 @@ object SimpleType {
 
   case class ExtensibleExtend(cons: Name.Pred, tpes: List[SimpleType], rest: SimpleType) extends SimpleType
 
-  case class Native(clazz: java.lang.constant.ClassDesc) extends SimpleType
+  case class Native(clazz: ClassDesc) extends SimpleType
 
   /**
     * Smart constructor for [[SimpleType.Array]].

@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, EffSymUse, OpSy
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.util.collection.Nel
 
+import java.lang.constant.ClassDesc
+
 object MonoAst {
 
   val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
@@ -168,7 +170,7 @@ object MonoAst {
 
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: Nel[FormalParam], exp: Expr, retTpe: Type, eff: Type, javaSig: Option[JMethod], loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.constant.ClassDesc, exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: ClassDesc, exp: Expr)
 
   case class HandlerRule(op: OpSymUse, fparams: Nel[FormalParam], exp: Expr)
 

@@ -28,6 +28,8 @@ import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Result}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
+
 /**
   * Fuses specialization and lowering into a single AST walk: instantiates a declaration's
   * types/symbols to their concrete (ground) form and lowers Datalog, channel, JVM-interop, and
@@ -1089,8 +1091,8 @@ object SpecializeAndLower {
     */
   private def javaBoxMethod(tpe: Type): JMethod = {
     import java.lang.constant.ConstantDescs.*
-    def valueOf(box: java.lang.constant.ClassDesc, prim: java.lang.constant.ClassDesc): JMethod =
-      JMethod(box, "valueOf", java.lang.constant.MethodTypeDesc.of(box, prim), isInterface = false)
+    def valueOf(box: ClassDesc, prim: ClassDesc): JMethod =
+      JMethod(box, "valueOf", MethodTypeDesc.of(box, prim), isInterface = false)
     tpe match {
       case Type.Bool => valueOf(CD_Boolean, CD_boolean)
       case Type.Char => valueOf(CD_Character, CD_char)
@@ -1110,8 +1112,8 @@ object SpecializeAndLower {
     */
   private def javaUnboxMethod(tpe: Type): JMethod = {
     import java.lang.constant.ConstantDescs.*
-    def unbox(box: java.lang.constant.ClassDesc, name: String, prim: java.lang.constant.ClassDesc): JMethod =
-      JMethod(box, name, java.lang.constant.MethodTypeDesc.of(prim), isInterface = false)
+    def unbox(box: ClassDesc, name: String, prim: ClassDesc): JMethod =
+      JMethod(box, name, MethodTypeDesc.of(prim), isInterface = false)
     tpe match {
       case Type.Bool => unbox(CD_Boolean, "booleanValue", CD_boolean)
       case Type.Char => unbox(CD_Character, "charValue", CD_char)

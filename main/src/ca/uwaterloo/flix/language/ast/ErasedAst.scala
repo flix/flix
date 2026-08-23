@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.*
 
+import java.lang.constant.ClassDesc
+
 object ErasedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
@@ -115,7 +117,7 @@ object ErasedAst {
 
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, javaSig: Option[JMethod], loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.constant.ClassDesc, exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: ClassDesc, exp: Expr)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 

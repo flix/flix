@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, JClass, JMethod, JvmAnnotation, Modifiers, Source}
 
+import java.lang.constant.ClassDesc
 
 object ReducedAst {
 
@@ -113,7 +114,7 @@ object ReducedAst {
 
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, javaSig: Option[JMethod], loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.constant.ClassDesc, exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: ClassDesc, exp: Expr)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
