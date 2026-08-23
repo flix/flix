@@ -72,16 +72,6 @@ object JvmName {
   val StaticApply: String = "staticApply"
 
   /** Returns the [[JvmName]] of `clazz`. Crashes if `clazz` is primitive, an array, or unnamed. */
-  def ofClass(clazz: Class[?]): JvmName = {
-    if (clazz.isPrimitive) throw InternalCompilerException(s"Cannot create a JvmName from the primitive type '${clazz.getName}'", SourceLocation.Unknown)
-    if (clazz.isArray) throw InternalCompilerException(s"Cannot create a JvmName from the array type '${clazz.getName}'", SourceLocation.Unknown)
-    val isUnnamed = clazz.getSimpleName == ""
-    if (isUnnamed) throw InternalCompilerException(s"Cannot create a JvmName from the anonymous class '${clazz.getName}'", SourceLocation.Unknown)
-
-    val parts = asm.Type.getInternalName(clazz).split("/")
-    JvmName(parts.init.toList, parts.last)
-  }
-
   /** Returns the JvmName of the given class or interface descriptor `desc`. */
   def ofClassDesc(desc: java.lang.constant.ClassDesc): JvmName = {
     if (desc.isPrimitive) throw InternalCompilerException(s"Cannot create a JvmName from the primitive type '${desc.displayName()}'", SourceLocation.Unknown)

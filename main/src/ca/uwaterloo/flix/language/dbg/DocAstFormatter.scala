@@ -219,9 +219,9 @@ object DocAstFormatter {
         group(
           text("handler") +: text(eff.toString) +: curly(rs)
         )
-      case NewObject(_, clazz, _, constructors, methods) =>
+      case NewObject(_, className, _, constructors, methods) =>
         val allFormatted = constructors.map(formatJvmConstructor) ++ methods.map(formatJvmMethod)
-        group(text("new") +: formatJavaClass(clazz) +: curly(
+        group(text("new") +: text(className) +: curly(
           semiSepOpt(allFormatted)
         ))
       case Native(clazz) =>

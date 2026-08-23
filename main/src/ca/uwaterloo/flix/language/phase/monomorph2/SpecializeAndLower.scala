@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, JConstructor, JField, JMethod, Mutability, RegionScope, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, JClass, JConstructor, JField, JMethod, Mutability, RegionScope, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupCaseSym, lookupRestrictableCaseSym, lookupStructSym, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
@@ -578,7 +578,7 @@ object SpecializeAndLower {
           MonoAst.JvmMethod(mAnn, mIdent, fs, e, e.tpe, subst(mEff), overridden.map(JMethod.of), mLoc)
       }
       val t = visitType(tpe, subst)
-      MonoAst.Expr.NewObject(freshSym, clazz, t, subst(eff), cs, ms, loc)
+      MonoAst.Expr.NewObject(freshSym, JClass.of(clazz), t, subst(eff), cs, ms, loc)
 
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)

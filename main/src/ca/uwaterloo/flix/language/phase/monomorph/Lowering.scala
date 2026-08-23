@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JConstructor, JField, JMethod, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JClass, JConstructor, JField, JMethod, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
@@ -568,7 +568,7 @@ object Lowering {
         lowerJvmMethod(m, clazz)
       }
       val t = lowerType(tpe)
-      MonoAst.Expr.NewObject(sym, clazz, t, eff, cs, ms, loc)
+      MonoAst.Expr.NewObject(sym, JClass.of(clazz), t, eff, cs, ms, loc)
 
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)

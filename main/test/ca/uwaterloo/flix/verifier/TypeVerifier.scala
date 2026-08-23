@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Mutability}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SemanticOp, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
 
@@ -598,7 +598,7 @@ object TypeVerifier {
         val signature = SimpleType.mkArrow(m.fparams.map(_.tpe), m.tpe)
         checkEq(signature, exptype, m.loc)
       }
-      checkEq(tpe, SimpleType.Native(ClassDescs.of(clazz)), loc)
+      checkEq(tpe, SimpleType.Native(clazz.desc), loc)
 
   }
 
