@@ -80,7 +80,7 @@ object SimpleType {
   // Compound Types.
   //
 
-  val Object: SimpleType = Native(classOf[java.lang.Object])
+  val Object: SimpleType = Native(java.lang.constant.ConstantDescs.CD_Object)
 
   case class Array(tpe: SimpleType) extends SimpleType
 
@@ -102,7 +102,7 @@ object SimpleType {
 
   case class ExtensibleExtend(cons: Name.Pred, tpes: List[SimpleType], rest: SimpleType) extends SimpleType
 
-  case class Native(clazz: Class[?]) extends SimpleType
+  case class Native(clazz: java.lang.constant.ClassDesc) extends SimpleType
 
   /**
     * Smart constructor for [[SimpleType.Array]].

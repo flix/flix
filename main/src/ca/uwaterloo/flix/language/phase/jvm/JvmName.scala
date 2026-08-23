@@ -82,6 +82,17 @@ object JvmName {
     JvmName(parts.init.toList, parts.last)
   }
 
+  /** Returns the JvmName of the given class or interface descriptor `desc`. */
+  def ofClassDesc(desc: java.lang.constant.ClassDesc): JvmName = {
+    if (desc.isPrimitive) throw InternalCompilerException(s"Cannot create a JvmName from the primitive type '${desc.displayName()}'", SourceLocation.Unknown)
+    if (desc.isArray) throw InternalCompilerException(s"Cannot create a JvmName from the array type '${desc.displayName()}'", SourceLocation.Unknown)
+
+    // Strip the leading `L` and trailing `;` of the descriptor to obtain the internal name.
+    val descriptor = desc.descriptorString()
+    val parts = descriptor.substring(1, descriptor.length - 1).split("/")
+    JvmName(parts.init.toList, parts.last)
+  }
+
   val RootPackage: List[String] = Nil
 
   /**
