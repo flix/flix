@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.ExpPosition
+import ca.uwaterloo.flix.language.ast.shared.{ExpPosition, JMethod}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, JvmAst, Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -318,7 +318,7 @@ object Reducer {
     private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
 
     /** Maps anonymous class names to the super methods they invoke, so the backend can generate `invokespecial` bridge methods. */
-    private val superMethods: ConcurrentHashMap[(String, java.lang.reflect.Method), Unit] = new ConcurrentHashMap()
+    private val superMethods: ConcurrentHashMap[(String, JMethod), Unit] = new ConcurrentHashMap()
 
     def addAnonClass(clazz: JvmAst.AnonClass): Unit =
       anonClasses.add(clazz)
@@ -326,10 +326,10 @@ object Reducer {
     def getAnonClasses: List[JvmAst.AnonClass] =
       anonClasses.asScala.toList.map(ac => ac.copy(superMethods = getSuperMethods(ac.name)))
 
-    def addSuperMethod(className: String, method: java.lang.reflect.Method): Unit =
+    def addSuperMethod(className: String, method: JMethod): Unit =
       superMethods.putIfAbsent((className, method), ())
 
-    def getSuperMethods(className: String): List[java.lang.reflect.Method] =
+    def getSuperMethods(className: String): List[JMethod] =
       superMethods.keySet.asScala.collect { case (cn, m) if cn == className => m }.toList
 
     def addDefType(tpe: SimpleType): Unit =

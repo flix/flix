@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JField, JMethod, Mutability}
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Method
 
 /**
   * A common super-type for control pure expressions.
@@ -91,7 +90,7 @@ object AtomicOp {
 
   case class InvokeMethod(method: JMethod) extends AtomicOp
 
-  case class InvokeSuperMethod(sym: Symbol.AnonClassSym, method: Method) extends AtomicOp
+  case class InvokeSuperMethod(sym: Symbol.AnonClassSym, method: JMethod) extends AtomicOp
 
   case class InvokeStaticMethod(method: JMethod) extends AtomicOp
 

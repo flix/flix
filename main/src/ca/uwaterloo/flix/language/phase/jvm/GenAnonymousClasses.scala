@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.JConstructor
+import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JMethod}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPacka
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
+import java.lang.constant.ConstantDescs.CD_void
 import scala.jdk.CollectionConverters.*
 
 /** Generates bytecode for anonymous classes (created through NewObject). */
@@ -93,9 +94,9 @@ object GenAnonymousClasses {
     // Generate bridge methods for super method calls.
     val superMethods = obj.superMethods
     for (method <- superMethods) {
-      val bridgeName = s"super$$${method.getName}"
-      val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
-      val returnTpe = if (method.getReturnType == java.lang.Void.TYPE) VoidableType.Void else javaClassToBackendType(method.getReturnType)
+      val bridgeName = s"super$$${method.name}"
+      val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
+      val returnTpe = if (method.descriptor.returnType() == CD_void) VoidableType.Void else BackendType.toBackendType(method.descriptor.returnType())
       val descriptor = MethodDescriptor(paramTypes, returnTpe)
       cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
     }
@@ -168,10 +169,10 @@ object GenAnonymousClasses {
     *   }
     * }}}
     */
-  private def superBridgeIns(superClass: JvmName, method: java.lang.reflect.Method)(implicit mv: MethodVisitor): Unit = {
-    val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
-    val returnTpe = javaClassToBackendType(method.getReturnType)
-    val descriptor = MethodDescriptor(paramTypes, if (method.getReturnType == java.lang.Void.TYPE) VoidableType.Void else returnTpe)
+  private def superBridgeIns(superClass: JvmName, method: JMethod)(implicit mv: MethodVisitor): Unit = {
+    val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
+    val isVoid = method.descriptor.returnType() == CD_void
+    val descriptor = MethodDescriptor(paramTypes, if (isVoid) VoidableType.Void else BackendType.toBackendType(method.descriptor.returnType()))
 
     // ALOAD 0 (this)
     thisLoad()
@@ -180,13 +181,13 @@ object GenAnonymousClasses {
       for (arg <- args) arg.load()
     }
     // INVOKESPECIAL superClass.methodName(descriptor)
-    INVOKESPECIAL(superClass, method.getName, descriptor)
+    INVOKESPECIAL(superClass, method.name, descriptor)
 
     // Return
-    if (method.getReturnType == java.lang.Void.TYPE) {
+    if (isVoid) {
       RETURN()
     } else {
-      xReturn(returnTpe)
+      xReturn(BackendType.toBackendType(method.descriptor.returnType()))
     }
   }
 

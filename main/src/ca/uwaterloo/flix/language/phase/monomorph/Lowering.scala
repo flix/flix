@@ -521,7 +521,7 @@ object Lowering {
       val t = lowerType(tpe)
       (lctx.sym, lctx.thisRef) match {
         case (Some(sym), Some(thisRef)) =>
-          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, method), thisRef :: es, t, eff, loc)
+          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, JMethod.of(method)), thisRef :: es, t, eff, loc)
         case _ =>
           throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
       }
