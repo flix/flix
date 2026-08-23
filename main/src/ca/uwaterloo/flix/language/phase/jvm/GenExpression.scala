@@ -857,19 +857,18 @@ object GenExpression {
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
         BytecodeInstructions.addLoc(loc)
-        val descriptor = asm.Type.getConstructorDescriptor(constructor)
-        val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
+        val declaration = internalNameOf(constructor.owner)
         // Create a new object of the declaration type
         mv.visitTypeInsn(NEW, declaration)
         // Duplicate the reference since the first argument for a constructor call is the reference to the object
         mv.visitInsn(DUP)
-        for ((arg, argType) <- exps.zip(constructor.getParameterTypes)) {
+        for ((arg, argType) <- exps.zip(constructor.descriptor.parameterList.asScala)) {
           compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
         }
 
         // Call the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, descriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, constructor.descriptor.descriptorString(), false)
 
       case AtomicOp.InvokeSuperConstructor(constructor) =>
         // A InvokeSuperConstructor is handled directly in NewObject.
@@ -1603,12 +1602,11 @@ object GenExpression {
         constructors.head.exp match {
           case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), superArgs, _, _, _) =>
             // Super-only: compile args and call parameterized <init>
-            val descriptor = asm.Type.getConstructorDescriptor(constructor)
-            for ((arg, argType) <- superArgs.zip(constructor.getParameterTypes)) {
+            for ((arg, argType) <- superArgs.zip(constructor.descriptor.parameterList.asScala)) {
               compileExpr(arg)
-              if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+              if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
             }
-            mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, descriptor, false)
+            mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, constructor.descriptor.descriptorString(), false)
           case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructors.head.loc)
         }
       } else {

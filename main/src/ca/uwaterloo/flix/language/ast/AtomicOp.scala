@@ -15,10 +15,10 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{JField, JMethod, Mutability}
+import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JField, JMethod, Mutability}
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.{Constructor, Method}
+import java.lang.reflect.Method
 
 /**
   * A common super-type for control pure expressions.
@@ -85,9 +85,9 @@ object AtomicOp {
 
   case object Box extends AtomicOp
 
-  case class InvokeConstructor(constructor: Constructor[?]) extends AtomicOp
+  case class InvokeConstructor(constructor: JConstructor) extends AtomicOp
 
-  case class InvokeSuperConstructor(constructor: Constructor[?]) extends AtomicOp
+  case class InvokeSuperConstructor(constructor: JConstructor) extends AtomicOp
 
   case class InvokeMethod(method: JMethod) extends AtomicOp
 

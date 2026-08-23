@@ -347,6 +347,10 @@ object DocAst {
       App(Native(c.getDeclaringClass), ds)
     }
 
+    def JavaInvokeConstructor(c: JConstructor, ds: List[Expr]): Expr = {
+      App(AsIs(javaClassName(c.owner)), ds)
+    }
+
     def JavaGetField(f: Field, d: Expr): Expr =
       DoubleDot(d, AsIs(f.getName))
 

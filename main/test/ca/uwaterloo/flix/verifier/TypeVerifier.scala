@@ -447,11 +447,11 @@ object TypeVerifier {
           check(expected = SimpleType.Bool)(actual = tpe, loc)
 
         case AtomicOp.InvokeConstructor(constructor) =>
-          checkArity(ts, constructor.getParameterCount, loc)
+          checkArity(ts, constructor.descriptor.parameterCount(), loc)
           tpe
 
         case AtomicOp.InvokeSuperConstructor(constructor) =>
-          checkArity(ts, constructor.getParameterCount, loc)
+          checkArity(ts, constructor.descriptor.parameterCount(), loc)
           tpe
 
         case AtomicOp.InvokeMethod(method) =>
