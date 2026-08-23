@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.ast.shared
+package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.util.ClassDescs
+import ca.uwaterloo.flix.language.ast.SourceLocation
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Field
 
-object JField {
+object ClassDescs {
 
-  /** Returns the [[JField]] of the given reflective `field`. */
-  def of(field: Field): JField =
-    JField(ClassDescs.of(field.getDeclaringClass), field.getName)
+  /**
+    * Returns the [[ClassDesc]] of the given loaded class `clazz`.
+    *
+    * Throws an [[InternalCompilerException]] if `clazz` has no nominal descriptor (e.g. a hidden class).
+    */
+  def of(clazz: Class[?]): ClassDesc =
+    clazz.describeConstable().orElseThrow(() =>
+      InternalCompilerException(s"The class '${clazz.getName}' has no nominal descriptor.", SourceLocation.Unknown)
+    )
 
 }
-
-/**
-  * A nominal reference to the Java field `name` declared by the class `owner`.
-  *
-  * Unlike [[java.lang.reflect.Field]], a [[JField]] does not retain a loaded [[Class]].
-  */
-case class JField(owner: ClassDesc, name: String)
