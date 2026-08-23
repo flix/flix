@@ -17,8 +17,13 @@ package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
+import java.lang.constant.ClassDesc
+
 /**
   * Represents a resolved JVM annotation (after name resolution).
   * Used from ResolvedAst through JvmAst.
+  *
+  * `isRuntimeVisible` holds whether the annotation has runtime retention. It is computed
+  * during resolution, where the annotation class is loaded, so the backend needs no reflection.
   */
-case class JvmAnnotation(clazz: java.lang.Class[?], loc: SourceLocation)
+case class JvmAnnotation(clazz: ClassDesc, isRuntimeVisible: Boolean, loc: SourceLocation)

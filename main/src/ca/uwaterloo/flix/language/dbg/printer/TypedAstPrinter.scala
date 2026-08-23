@@ -119,7 +119,7 @@ object TypedAstPrinter {
     */
   private def printJvmMethod(method: TypedAst.JvmMethod): DocAst.JvmMethod = method match {
     case TypedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+      DocAst.JvmMethod(ann.map(_.clazz.displayName()), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 
   /**
