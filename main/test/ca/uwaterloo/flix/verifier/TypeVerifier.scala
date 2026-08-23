@@ -456,7 +456,7 @@ object TypeVerifier {
 
         case AtomicOp.InvokeMethod(method) =>
           val _ :: pts = ts
-          checkArity(pts, method.getParameterCount, loc)
+          checkArity(pts, method.descriptor.parameterCount(), loc)
           tpe
 
         case AtomicOp.InvokeSuperMethod(_, method) =>

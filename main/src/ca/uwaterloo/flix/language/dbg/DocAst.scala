@@ -324,6 +324,9 @@ object DocAst {
     def JavaInvokeMethod(m: Method, d: Expr, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(m.getName)), ds)
 
+    def JavaInvokeMethod(m: JMethod, d: Expr, ds: List[Expr]): Expr =
+      App(DoubleDot(d, AsIs(m.name)), ds)
+
     def JavaInvokeStaticMethod(m: Method, ds: List[Expr]): Expr = {
       App(Dot(Native(m.getDeclaringClass), AsIs(m.getName)), ds)
     }
