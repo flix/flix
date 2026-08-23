@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.lang.constant.ClassDesc
 import scala.annotation.tailrec
 
 /**
@@ -166,7 +167,7 @@ object BackendType {
   }
 
   /** Converts the given Java class or array descriptor `desc` into its [[BackendType]] representation. */
-  def toBackendType(desc: java.lang.constant.ClassDesc): BackendType = {
+  def toBackendType(desc: ClassDesc): BackendType = {
     import java.lang.constant.ConstantDescs.*
     if (desc == CD_boolean) BackendType.Bool
     else if (desc == CD_char) BackendType.Char
