@@ -61,6 +61,20 @@ object PackageError {
   }
 
   /**
+    * A release asset isn't where its address says: either the release doesn't exist, or it exists
+    * without that asset -- a 404 can't say which, so the message names both possibilities.
+    */
+  case class ReleaseAssetNotFound(project: Project, version: SemVer, assetName: String, url: URL)
+    extends PackageError {
+    override def message(f: Formatter): String =
+      s"""Could not find ${f.bold(assetName)} in release ${f.bold(s"v$version")}
+         |of ${f.bold(project.toString)}.
+         |Either the release does not exist, or it does not publish that file.
+         |Looked at ${f.cyan(url.toString)}.
+         |""".stripMargin
+  }
+
+  /**
     * A download refused (403/429), which for an anonymous request usually means a rate limit.
     */
   case class DownloadRefused(url: URL, status: Int, retryAfter: Option[String])
