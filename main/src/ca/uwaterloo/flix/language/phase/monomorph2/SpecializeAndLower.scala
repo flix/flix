@@ -511,7 +511,7 @@ object SpecializeAndLower {
       val e = visitExp(exp, env0, subst)
       val es = exps.map(visitExp(_, env0, subst))
       val t = visitType(tpe, subst)
-      mkJavaInvoke(method, List(e), es, t, subst(eff), loc, AtomicOp.InvokeMethod.apply)
+      mkJavaInvoke(method, List(e), es, t, subst(eff), loc, m => AtomicOp.InvokeMethod(JMethod.of(m)))
 
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
@@ -1107,16 +1107,21 @@ object SpecializeAndLower {
     * Returns the unboxing method (e.g., `intValue`) for a Flix primitive type.
     * This is the same mechanism javac uses to implement auto-unboxing.
     */
-  private def javaUnboxMethod(tpe: Type): java.lang.reflect.Method = tpe match {
-    case Type.Bool => classOf[java.lang.Boolean].getMethod("booleanValue")
-    case Type.Char => classOf[java.lang.Character].getMethod("charValue")
-    case Type.Int8 => classOf[java.lang.Byte].getMethod("byteValue")
-    case Type.Int16 => classOf[java.lang.Short].getMethod("shortValue")
-    case Type.Int32 => classOf[java.lang.Integer].getMethod("intValue")
-    case Type.Int64 => classOf[java.lang.Long].getMethod("longValue")
-    case Type.Float32 => classOf[java.lang.Float].getMethod("floatValue")
-    case Type.Float64 => classOf[java.lang.Double].getMethod("doubleValue")
-    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+  private def javaUnboxMethod(tpe: Type): JMethod = {
+    import java.lang.constant.ConstantDescs.*
+    def unbox(box: java.lang.constant.ClassDesc, name: String, prim: java.lang.constant.ClassDesc): JMethod =
+      JMethod(box, name, java.lang.constant.MethodTypeDesc.of(prim), isInterface = false)
+    tpe match {
+      case Type.Bool => unbox(CD_Boolean, "booleanValue", CD_boolean)
+      case Type.Char => unbox(CD_Character, "charValue", CD_char)
+      case Type.Int8 => unbox(CD_Byte, "byteValue", CD_byte)
+      case Type.Int16 => unbox(CD_Short, "shortValue", CD_short)
+      case Type.Int32 => unbox(CD_Integer, "intValue", CD_int)
+      case Type.Int64 => unbox(CD_Long, "longValue", CD_long)
+      case Type.Float32 => unbox(CD_Float, "floatValue", CD_float)
+      case Type.Float64 => unbox(CD_Double, "doubleValue", CD_double)
+      case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+    }
   }
 
   /**
@@ -1198,8 +1203,8 @@ object SpecializeAndLower {
   }
 
   /** Returns `true` if `method` is a Java auto-unboxing method (e.g., `intValue`, `booleanValue`). */
-  private def isAutoUnboxMethod(method: java.lang.reflect.Method): Boolean = {
-    method.getParameterCount == 0 && (method.getName match {
+  private def isAutoUnboxMethod(method: JMethod): Boolean = {
+    method.descriptor.parameterCount() == 0 && (method.name match {
       case "booleanValue" => true
       case "charValue"    => true
       case "byteValue"    => true

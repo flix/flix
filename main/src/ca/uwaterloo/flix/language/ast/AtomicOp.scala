@@ -89,7 +89,7 @@ object AtomicOp {
 
   case class InvokeSuperConstructor(constructor: Constructor[?]) extends AtomicOp
 
-  case class InvokeMethod(method: Method) extends AtomicOp
+  case class InvokeMethod(method: JMethod) extends AtomicOp
 
   case class InvokeSuperMethod(sym: Symbol.AnonClassSym, method: Method) extends AtomicOp
 

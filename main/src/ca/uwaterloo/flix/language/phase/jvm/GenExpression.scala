@@ -883,27 +883,23 @@ object GenExpression {
 
         // Evaluate the receiver object.
         compileExpr(exp)
-        val thisType = asm.Type.getInternalName(method.getDeclaringClass)
-        mv.visitTypeInsn(CHECKCAST, thisType)
+        val declaration = internalNameOf(method.owner)
+        mv.visitTypeInsn(CHECKCAST, declaration)
 
-        for ((arg, argType) <- args.zip(method.getParameterTypes)) {
+        for ((arg, argType) <- args.zip(method.descriptor.parameterList.asScala)) {
           compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
         }
 
-        val declaration = asm.Type.getInternalName(method.getDeclaringClass)
-        val name = method.getName
-        val descriptor = asm.Type.getMethodDescriptor(method)
-
         // Check if we are invoking an interface or class.
-        if (method.getDeclaringClass.isInterface) {
-          mv.visitMethodInsn(INVOKEINTERFACE, declaration, name, descriptor, true)
+        if (method.isInterface) {
+          mv.visitMethodInsn(INVOKEINTERFACE, declaration, method.name, method.descriptor.descriptorString(), true)
         } else {
-          mv.visitMethodInsn(INVOKEVIRTUAL, declaration, name, descriptor, false)
+          mv.visitMethodInsn(INVOKEVIRTUAL, declaration, method.name, method.descriptor.descriptorString(), false)
         }
 
         // If the method is void, put a unit on top of the stack
-        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
