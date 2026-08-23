@@ -100,7 +100,7 @@ object LiftedAst {
 
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: SimpleType, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.constant.ClassDesc, exp: Expr)
 
   case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr)
 

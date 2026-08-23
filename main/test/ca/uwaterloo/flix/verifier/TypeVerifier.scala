@@ -559,7 +559,7 @@ object TypeVerifier {
 
     case Expr.TryCatch(exp, rules, tpe, _, loc) =>
       for (CatchRule(sym, clazz, exp) <- rules) {
-        checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Native(ClassDescs.of(clazz))), lenv), exp.loc)
+        checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Native(clazz)), lenv), exp.loc)
       }
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)

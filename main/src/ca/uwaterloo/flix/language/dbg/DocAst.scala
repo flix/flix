@@ -109,7 +109,7 @@ object DocAst {
       */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
-    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
+    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, String, Expr)]) extends Atom
 
     case class Handler(eff: Symbol.EffSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
 

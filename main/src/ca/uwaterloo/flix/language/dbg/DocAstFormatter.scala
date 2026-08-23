@@ -199,10 +199,10 @@ object DocAstFormatter {
         group(aux(d1, paren = false) +\: text(word) +: formatType(d2, paren = false))
       case TryCatch(d, rules) =>
         val rs = semiSepOpt(rules.map {
-          case (sym, clazz, rule) =>
+          case (sym, className, rule) =>
             val rulef = aux(rule, paren = false, inBlock = true)
             text("case") +: text(sym.toString) |:: text(":") +:
-              formatJavaClass(clazz) +: text("=>") |:: breakIndent(rulef)
+              text(className) +: text("=>") |:: breakIndent(rulef)
         })
         val bodyf = aux(d, paren = false, inBlock = true)
         group(
