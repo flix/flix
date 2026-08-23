@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
 
+import java.lang.constant.ClassDesc
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
 
@@ -328,6 +329,10 @@ object DocAst {
       Dot(Native(f.getDeclaringClass), AsIs(f.getName))
     }
 
+    def JavaGetStaticField(f: JField): Expr = {
+      Dot(AsIs(javaClassName(f.owner)), AsIs(f.name))
+    }
+
     def JavaInvokeConstructor(c: Constructor[?], ds: List[Expr]): Expr = {
       App(Native(c.getDeclaringClass), ds)
     }
@@ -335,11 +340,26 @@ object DocAst {
     def JavaGetField(f: Field, d: Expr): Expr =
       DoubleDot(d, AsIs(f.getName))
 
+    def JavaGetField(f: JField, d: Expr): Expr =
+      DoubleDot(d, AsIs(f.name))
+
     def JavaPutField(f: Field, d1: Expr, d2: Expr): Expr =
       Assign(DoubleDot(d1, AsIs(f.getName)), d2)
 
+    def JavaPutField(f: JField, d1: Expr, d2: Expr): Expr =
+      Assign(DoubleDot(d1, AsIs(f.name)), d2)
+
     def JavaPutStaticField(f: Field, d: Expr): Expr =
       Assign(Dot(Native(f.getDeclaringClass), AsIs(f.getName)), d)
+
+    def JavaPutStaticField(f: JField, d: Expr): Expr =
+      Assign(Dot(AsIs(javaClassName(f.owner)), AsIs(f.name)), d)
+
+    /** Returns the fully-qualified dotted name of the class descriptor `desc`. */
+    private def javaClassName(desc: ClassDesc): String = {
+      val pkg = desc.packageName()
+      if (pkg.isEmpty) desc.displayName() else s"$pkg.${desc.displayName()}"
+    }
 
     def JumpTo(sym: Symbol.LabelSym): Expr =
       Keyword("goto", AsIs(sym.toString))

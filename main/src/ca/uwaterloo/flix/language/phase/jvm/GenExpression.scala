@@ -960,8 +960,8 @@ object GenExpression {
         // Add source line number for debugging (can fail when calling java)
         BytecodeInstructions.addLoc(loc)
         compileExpr(exp)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(GETFIELD, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(GETFIELD, declaration, field.name, BackendType.toBackendType(tpe).toDescriptor)
 
       case AtomicOp.PutField(field) =>
         val List(exp1, exp2) = exps
@@ -969,8 +969,8 @@ object GenExpression {
         BytecodeInstructions.addLoc(loc)
         compileExpr(exp1)
         compileExpr(exp2)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(PUTFIELD, declaration, field.getName, BackendType.toBackendType(exp2.tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(PUTFIELD, declaration, field.name, BackendType.toBackendType(exp2.tpe).toDescriptor)
 
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
@@ -978,16 +978,16 @@ object GenExpression {
       case AtomicOp.GetStaticField(field) =>
         // Add source line number for debugging (can fail when calling java)
         BytecodeInstructions.addLoc(loc)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(GETSTATIC, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(GETSTATIC, declaration, field.name, BackendType.toBackendType(tpe).toDescriptor)
 
       case AtomicOp.PutStaticField(field) =>
         val List(exp) = exps
         // Add source line number for debugging (can fail when calling java)
         BytecodeInstructions.addLoc(loc)
         compileExpr(exp)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, BackendType.toBackendType(exp.tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(PUTSTATIC, declaration, field.name, BackendType.toBackendType(exp.tpe).toDescriptor)
 
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
@@ -1633,6 +1633,13 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+  }
+
+  /** Returns the JVM internal name of the class or interface descriptor `desc`, e.g. `java/lang/String`. */
+  private def internalNameOf(desc: java.lang.constant.ClassDesc): String = {
+    // Strip the leading `L` and trailing `;` of the descriptor.
+    val descriptor = desc.descriptorString()
+    descriptor.substring(1, descriptor.length - 1)
   }
 
   private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {

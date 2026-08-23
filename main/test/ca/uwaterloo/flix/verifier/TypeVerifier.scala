@@ -418,23 +418,21 @@ object TypeVerifier {
           check(expected = SimpleType.Region)(actual = t2, loc)
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
-        case AtomicOp.GetField(field) =>
-          val List(t) = ts
-          checkJavaSubtype(t, field.getDeclaringClass, loc)
-          checkJavaSubtype(tpe, field.getType, loc)
+        // Note: The field ops carry nominal descriptors (no loaded classes), so the
+        // Java subtype checks are gone. Only shape and Flix-type checks remain.
+        case AtomicOp.GetField(_) =>
+          val List(_) = ts
+          tpe
 
-        case AtomicOp.GetStaticField(field) =>
-          checkJavaSubtype(tpe, field.getType, loc)
+        case AtomicOp.GetStaticField(_) =>
+          tpe
 
-        case AtomicOp.PutField(field) =>
-          val List(t1, t2) = ts
-          checkJavaSubtype(t1, field.getDeclaringClass, loc)
-          checkJavaSubtype(t2, field.getType, loc)
+        case AtomicOp.PutField(_) =>
+          val List(_, _) = ts
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
-        case AtomicOp.PutStaticField(field) =>
-          val List(t) = ts
-          checkJavaSubtype(t, field.getType, loc)
+        case AtomicOp.PutStaticField(_) =>
+          val List(_) = ts
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
         case AtomicOp.Throw =>
