@@ -221,9 +221,9 @@ object Reducer {
             JvmAst.JvmConstructor(c, retTpe, cnsPurity, cnsLoc)
         }
         val specs = methods.map {
-          case ErasedAst.JvmMethod(ann, ident, fparams, clo, retTpe, methPurity, methLoc) =>
+          case ErasedAst.JvmMethod(ann, ident, fparams, clo, retTpe, methPurity, javaSig, methLoc) =>
             val c = visitExpr(clo)
-            JvmAst.JvmMethod(ann, ident, fparams.map(visitFormalParam), c, retTpe, methPurity, methLoc)
+            JvmAst.JvmMethod(ann, ident, fparams.map(visitFormalParam), c, retTpe, methPurity, javaSig, methLoc)
         }
         ctx.addAnonClass(JvmAst.AnonClass(sym.name, clazz, tpe, cs, specs, Nil, loc))
 
