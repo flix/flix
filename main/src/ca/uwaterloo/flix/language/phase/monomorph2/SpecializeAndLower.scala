@@ -518,7 +518,7 @@ object SpecializeAndLower {
       val t = visitType(tpe, subst)
       (lctx.sym, lctx.thisRef) match {
         case (Some(sym), Some(thisRef)) =>
-          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, method), thisRef :: es, t, subst(eff), loc)
+          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, JMethod.of(method)), thisRef :: es, t, subst(eff), loc)
         case _ =>
           throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
       }

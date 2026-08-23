@@ -915,18 +915,17 @@ object GenExpression {
         mv.visitTypeInsn(CHECKCAST, anonClassInternalName)
 
         // Evaluate and cast each argument.
-        for ((arg, argType) <- args.zip(method.getParameterTypes)) {
+        for ((arg, argType) <- args.zip(method.descriptor.parameterList.asScala)) {
           compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
         }
 
         // Call the bridge method super$methodName on the anonymous class.
-        val bridgeName = s"super$$${method.getName}"
-        val descriptor = asm.Type.getMethodDescriptor(method)
-        mv.visitMethodInsn(INVOKEVIRTUAL, anonClassInternalName, bridgeName, descriptor, false)
+        val bridgeName = s"super$$${method.name}"
+        mv.visitMethodInsn(INVOKEVIRTUAL, anonClassInternalName, bridgeName, method.descriptor.descriptorString(), false)
 
         // If the method is void, put a unit on top of the stack
-        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
