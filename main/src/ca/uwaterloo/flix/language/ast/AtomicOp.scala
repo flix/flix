@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.{JField, Mutability}
 
+import java.lang.constant.ClassDesc
 import java.lang.reflect.{Constructor, Method}
 
 /**
@@ -76,7 +77,7 @@ object AtomicOp {
 
   case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
 
-  case class InstanceOf(clazz: Class[?]) extends AtomicOp
+  case class InstanceOf(clazz: ClassDesc) extends AtomicOp
 
   case object Cast extends AtomicOp
 

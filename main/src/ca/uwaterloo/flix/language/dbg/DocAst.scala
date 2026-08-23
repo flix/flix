@@ -252,6 +252,9 @@ object DocAst {
     def InstanceOf(d: Expr, clazz: Class[?]): Expr =
       Binary(d, "instanceof", Native(clazz))
 
+    def InstanceOf(d: Expr, clazz: ClassDesc): Expr =
+      Binary(d, "instanceof", AsIs(javaClassName(clazz)))
+
     def ClosureLifted(sym: Symbol.DefnSym, ds: List[Expr]): Expr = {
       val defName = AsIs(sym.toString)
       if (ds.isEmpty) defName else App(defName, ds)

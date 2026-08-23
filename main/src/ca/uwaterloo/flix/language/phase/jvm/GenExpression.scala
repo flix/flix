@@ -803,11 +803,9 @@ object GenExpression {
         GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case AtomicOp.InstanceOf(clazz) =>
-        import BytecodeInstructions.*
         val List(exp) = exps
-        val jvmName = JvmName.ofClass(clazz)
         compileExpr(exp)
-        INSTANCEOF(jvmName)
+        mv.visitTypeInsn(INSTANCEOF, internalNameOf(clazz))
 
       case AtomicOp.Cast =>
         import BytecodeInstructions.*
