@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{JField, Mutability}
+import ca.uwaterloo.flix.language.ast.shared.{JField, JMethod, Mutability}
 
 import java.lang.constant.ClassDesc
 import java.lang.reflect.{Constructor, Method}
@@ -93,7 +93,7 @@ object AtomicOp {
 
   case class InvokeSuperMethod(sym: Symbol.AnonClassSym, method: Method) extends AtomicOp
 
-  case class InvokeStaticMethod(method: Method) extends AtomicOp
+  case class InvokeStaticMethod(method: JMethod) extends AtomicOp
 
   case class GetField(field: JField) extends AtomicOp
 
