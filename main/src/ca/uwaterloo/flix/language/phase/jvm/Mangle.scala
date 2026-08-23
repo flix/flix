@@ -24,8 +24,10 @@ import ca.uwaterloo.flix.api.Flix
   */
 object Mangle {
 
+  /** The root (unnamed) package. */
   val RootPackage: List[String] = Nil
 
+  /** The `dev.flix.runtime` package of the Flix runtime classes. */
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
 
   /**
@@ -39,9 +41,11 @@ object Mangle {
     else s"$cPrefix${Flix.Delimiter}${args.map(mangle).mkString(Flix.Delimiter)}"
   }
 
+  /** Constructs a class name from `prefix` and the single argument `arg`. */
   def mkClassName(prefix: String, arg: String): String =
     mkClassName(prefix, List(arg))
 
+  /** Constructs a class name from `prefix` alone. */
   def mkClassName(prefix: String): String =
     mkClassName(prefix, Nil)
 
