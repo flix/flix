@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.util.ClassDescs
 import org.objectweb.asm
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
@@ -31,7 +32,7 @@ object BytecodeInstructions {
   /** A wrapper of [[MethodVisitor]] to improve its interface. */
   implicit class RichMethodVisitor(visitor: MethodVisitor) {
     def visitTypeInstruction(opcode: Int, tpe: ClassDesc): Unit =
-      visitor.visitTypeInsn(opcode, AsmOps.internalNameOf(tpe))
+      visitor.visitTypeInsn(opcode, ClassDescs.internalNameOf(tpe))
 
     def visitTypeInstructionDirect(opcode: Int, tpe: String): Unit =
       visitor.visitTypeInsn(opcode, tpe)
@@ -39,14 +40,14 @@ object BytecodeInstructions {
     def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
     def visitMethodInstruction(opcode: Int, owner: ClassDesc, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): Unit =
-      visitor.visitMethodInsn(opcode, AsmOps.internalNameOf(owner), methodName, descriptor.toDescriptor, isInterface)
+      visitor.visitMethodInsn(opcode, ClassDescs.internalNameOf(owner), methodName, descriptor.toDescriptor, isInterface)
 
     // TODO: sanitize varags
     def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
       visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments *)
 
     def visitFieldInstruction(opcode: Int, owner: ClassDesc, fieldName: String, fieldType: BackendType): Unit =
-      visitor.visitFieldInsn(opcode, AsmOps.internalNameOf(owner), fieldName, fieldType.toDescriptor)
+      visitor.visitFieldInsn(opcode, ClassDescs.internalNameOf(owner), fieldName, fieldType.toDescriptor)
 
     def visitVarInstruction(opcode: Int, v: Int): Unit =
       visitor.visitVarInsn(opcode, v)
@@ -73,11 +74,11 @@ object BytecodeInstructions {
   sealed case class Handle(handle: asm.Handle)
 
   def mkStaticHandle(m: StaticMethod): Handle = {
-    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, AsmOps.internalNameOf(m.clazz), m.name, m.d.toDescriptor, false))
+    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, ClassDescs.internalNameOf(m.clazz), m.name, m.d.toDescriptor, false))
   }
 
   def mkStaticHandle(m: StaticInterfaceMethod): Handle = {
-    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, AsmOps.internalNameOf(m.clazz), m.name, m.d.toDescriptor, true))
+    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, ClassDescs.internalNameOf(m.clazz), m.name, m.d.toDescriptor, true))
   }
 
   //

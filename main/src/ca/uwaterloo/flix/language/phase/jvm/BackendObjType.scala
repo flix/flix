@@ -2128,7 +2128,7 @@ object BackendObjType {
         case BackendType.Bool =>
           // Use cached Value.TRUE / Value.FALSE singletons
           thisLoad()
-          mv.visitFieldInsn(Opcodes.GETFIELD, AsmOps.internalNameOf(desc), "arg0", tpe.toErased.toDescriptor)
+          mv.visitFieldInsn(Opcodes.GETFIELD, ClassDescs.internalNameOf(desc), "arg0", tpe.toErased.toDescriptor)
           val falseLabel = new Label()
           val doneLabel = new Label()
           mv.visitJumpInsn(Opcodes.IFEQ, falseLabel)
@@ -2143,7 +2143,7 @@ object BackendObjType {
           INVOKESPECIAL(Value.Constructor)
           DUP()
           thisLoad()
-          mv.visitFieldInsn(Opcodes.GETFIELD, AsmOps.internalNameOf(desc), "arg0", tpe.toErased.toDescriptor)
+          mv.visitFieldInsn(Opcodes.GETFIELD, ClassDescs.internalNameOf(desc), "arg0", tpe.toErased.toDescriptor)
           PUTFIELD(Value.fieldFromType(tpe.toErased))
       }
       INVOKEINTERFACE(Resumption.RewindMethod)

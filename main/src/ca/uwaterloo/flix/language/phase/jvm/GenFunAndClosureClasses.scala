@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendType.RichClassDesc
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{ClassDescs, ParOps}
 import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
@@ -97,8 +97,8 @@ object GenFunAndClosureClasses {
 
     // Header
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).desc
-    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, AsmOps.internalNameOf(className), null,
-      AsmOps.internalNameOf(functionInterface), null)
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, ClassDescs.internalNameOf(className), null,
+      ClassDescs.internalNameOf(functionInterface), null)
     visitor.visitSource(defn.loc.source.name, null)
 
     compileConstructor(functionInterface, visitor)
@@ -158,8 +158,8 @@ object GenFunAndClosureClasses {
     // Header
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).desc
     val frameInterface = BackendObjType.Frame
-    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, AsmOps.internalNameOf(className), null,
-      AsmOps.internalNameOf(functionInterface), Array(AsmOps.internalNameOf(frameInterface.desc)))
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, ClassDescs.internalNameOf(className), null,
+      ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.desc)))
     visitor.visitSource(defn.loc.source.name, null)
 
     // Fields — lparams use erased types (like fparams) so setPc can store without casting
@@ -240,8 +240,8 @@ object GenFunAndClosureClasses {
     // Header
     val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).desc
     val frameInterface = BackendObjType.Frame
-    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, AsmOps.internalNameOf(className), null,
-      AsmOps.internalNameOf(functionInterface), Array(AsmOps.internalNameOf(frameInterface.desc)))
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, ClassDescs.internalNameOf(className), null,
+      ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.desc)))
     visitor.visitSource(defn.loc.source.name, null)
 
     // Fields
@@ -272,7 +272,7 @@ object GenFunAndClosureClasses {
     val constructor = visitor.visitMethod(ACC_PUBLIC, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, AsmOps.internalNameOf(superClass), ClassMaker.ConstructorMethodName,
+    constructor.visitMethodInsn(INVOKESPECIAL, ClassDescs.internalNameOf(superClass), ClassMaker.ConstructorMethodName,
       MethodDescriptor.NothingToVoid.toDescriptor, false)
     constructor.visitInsn(RETURN)
 
@@ -319,7 +319,7 @@ object GenFunAndClosureClasses {
       // Load the `this` pointer
       m.visitVarInsn(ALOAD, 0)
       // Load arg i
-      m.visitFieldInsn(GETFIELD, AsmOps.internalNameOf(functionInterface),
+      m.visitFieldInsn(GETFIELD, ClassDescs.internalNameOf(functionInterface),
         s"arg$i", BackendType.toErasedBackendType(fp.tpe).toDescriptor)
       // Insert cast to concrete type
       val bTpe = BackendType.toBackendType(fp.tpe)
@@ -327,7 +327,7 @@ object GenFunAndClosureClasses {
     }
 
     val method = staticApplyMethod(className, defn)
-    m.visitMethodInsn(INVOKESTATIC, AsmOps.internalNameOf(className), method.name, method.d.toDescriptor, false)
+    m.visitMethodInsn(INVOKESTATIC, ClassDescs.internalNameOf(className), method.name, method.d.toDescriptor, false)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
 
@@ -343,7 +343,7 @@ object GenFunAndClosureClasses {
     val applyMethod = BackendObjType.Frame.ApplyMethod
     m.visitVarInsn(ALOAD, 0)
     m.visitInsn(ACONST_NULL)
-    m.visitMethodInsn(INVOKEVIRTUAL, AsmOps.internalNameOf(className), applyMethod.name, applyMethod.d.toDescriptor, false)
+    m.visitMethodInsn(INVOKEVIRTUAL, ClassDescs.internalNameOf(className), applyMethod.name, applyMethod.d.toDescriptor, false)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
 
@@ -355,7 +355,7 @@ object GenFunAndClosureClasses {
                                  className: ClassDesc,
                                  defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val classInternalName = AsmOps.internalNameOf(className)
+    val classInternalName = ClassDescs.internalNameOf(className)
     val applyMethod = BackendObjType.Frame.ApplyMethod
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
@@ -451,7 +451,7 @@ object GenFunAndClosureClasses {
     implicit val mm: MethodVisitor = m
     // retrieve the erased field
     m.visitVarInsn(ALOAD, 0)
-    m.visitFieldInsn(GETFIELD, AsmOps.internalNameOf(className), name, fieldType.toDescriptor)
+    m.visitFieldInsn(GETFIELD, ClassDescs.internalNameOf(className), name, fieldType.toDescriptor)
     // cast the value and store it
     castTo match {
       case Some(targetType) =>
@@ -468,7 +468,7 @@ object GenFunAndClosureClasses {
     */
   private def mkCopy(className: ClassDesc, defn: Def)(implicit mv: MethodVisitor, root: Root): Unit = {
     import BytecodeInstructions.*
-    val classInternalName = AsmOps.internalNameOf(className)
+    val classInternalName = ClassDescs.internalNameOf(className)
     val pc = List(("pc", BackendType.Int32))
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", BackendType.toBackendType(p._1.tpe)))
