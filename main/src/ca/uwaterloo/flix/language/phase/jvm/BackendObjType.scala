@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, RootPackage}
+import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, RootPackage}
 import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
@@ -42,14 +42,14 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
     case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
-    case BackendObjType.NullaryTag(enumName, sym, _) => JvmName(RootPackage, JvmName.mkClassName(enumName, sym))
+    case BackendObjType.NullaryTag(enumName, sym, _) => JvmName(RootPackage, Mangle.mkClassName(enumName, sym))
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
     case BackendObjType.Tag(tpes) => JvmName(RootPackage, mkClassName("Tag", tpes))
     case BackendObjType.ExtTagged => JvmName(RootPackage, mkClassName("ExtTagged"))
     case BackendObjType.ExtTag(tpes) => JvmName(RootPackage, mkClassName("ExtTag", tpes))
     case BackendObjType.AbstractArrow(args, result) => JvmName(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
-    case BackendObjType.Defn(sym) => JvmName(sym.namespace, JvmName.mkClassName("Def", sym.name))
+    case BackendObjType.Defn(sym) => JvmName(sym.namespace, Mangle.mkClassName("Def", sym.name))
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(value) => JvmName(RootPackage, mkClassName("RecordExtend", value))
     case BackendObjType.Record => JvmName(RootPackage, mkClassName("Record"))
@@ -112,15 +112,15 @@ sealed trait BackendObjType {
 object BackendObjType {
 
   private def mkClassName(prefix: String, tpe: BackendType): String = {
-    JvmName.mkClassName(prefix, tpe.toErasedString)
+    Mangle.mkClassName(prefix, tpe.toErasedString)
   }
 
   private def mkClassName(prefix: String, tpes: List[BackendType]): String = {
-    JvmName.mkClassName(prefix, tpes.map(_.toErasedString))
+    Mangle.mkClassName(prefix, tpes.map(_.toErasedString))
   }
 
   private def mkClassName(prefix: String): String = {
-    JvmName.mkClassName(prefix)
+    Mangle.mkClassName(prefix)
   }
 
   case object Unit extends BackendObjType {
@@ -1429,7 +1429,7 @@ object BackendObjType {
       val erasedArgs = defn.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
       val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
       // Exported names are checked in Safety, so no mangling is needed.
-      val name = if (defn.ann.isExport) defn.sym.name else "m_" + JvmName.mangle(defn.sym.name)
+      val name = if (defn.ann.isExport) defn.sym.name else "m_" + Mangle.mangle(defn.sym.name)
       StaticMethod(this.jvmName, name, MethodDescriptor(erasedArgs, erasedResult))
     }
 
