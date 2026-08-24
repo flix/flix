@@ -1764,7 +1764,9 @@ object Resolver {
     lookupJvmClass2(ann.name, ns0, scp0) match {
       case Result.Ok(clazz) =>
         if (clazz.isAnnotation) {
-          Some(JvmAnnotation(clazz, ann.loc))
+          val retention = clazz.getAnnotation(classOf[java.lang.annotation.Retention])
+          val isRuntimeVisible = retention != null && retention.value() == java.lang.annotation.RetentionPolicy.RUNTIME
+          Some(JvmAnnotation(ClassDescs.of(clazz), isRuntimeVisible, ann.loc))
         } else {
           sctx.errors.add(ResolutionError.IllegalNonJavaAnnotation(ann.name.name, ann.loc))
           None

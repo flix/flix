@@ -17,15 +17,19 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JMethod}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
-import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{MethodVisitor, Opcodes}
+
+import java.lang.constant.ConstantDescs.CD_void
+import scala.jdk.CollectionConverters.*
 
 /** Generates bytecode for anonymous classes (created through NewObject). */
 object GenAnonymousClasses {
@@ -42,10 +46,10 @@ object GenAnonymousClasses {
     val superClass = if (obj.clazz.isInterface)
       JvmName.Object
     else
-      JvmName.ofClass(obj.clazz)
+      JvmName.ofClassDesc(obj.clazz.desc)
 
     val interfaces = if (obj.clazz.isInterface)
-      List(JvmName.ofClass(obj.clazz))
+      List(JvmName.ofClassDesc(obj.clazz.desc))
     else
       Nil
 
@@ -58,7 +62,7 @@ object GenAnonymousClasses {
       c.exp match {
         case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), _, _, _, _) =>
           // Super-only: no closure field needed, parameterized <init>
-          val argTypes = constructor.getParameterTypes.toList.map(javaClassToBackendType)
+          val argTypes = constructor.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
           cm.mkConstructor(ClassMaker.ConstructorMethod(className, argTypes), IsPublic, constructorInsWithSuperCall(superClass, constructor)(_))
         case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", c.loc)
       }
@@ -71,17 +75,16 @@ object GenAnonymousClasses {
       // Create the field that will store the closure implementing the body of the method.
       val cloField = ClassMaker.InstanceField(className, s"clo$i", abstractClass.toTpe)
       cm.mkField(cloField, IsPublic, NotFinal, NotVolatile)
-      // Use the Java interface's erased method signature for the JVM descriptor.
-      // This ensures the generated method matches the interface even when the user
-      // declares generic parameter types (e.g., String instead of Object).
-      val javaMethod = findJavaMethod(obj.clazz, m.ident.name, m.fparams.tail.length)
-      val actualArgs = javaMethod match {
-        case Some(jm) => jm.getParameterTypes.toList.map(javaClassToBackendType)
+      // Use the Java interface's erased method signature (resolved during lowering) for the
+      // JVM descriptor. This ensures the generated method matches the interface even when the
+      // user declares generic parameter types (e.g., String instead of Object).
+      val actualArgs = m.javaSig match {
+        case Some(jm) => jm.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
         case None => m.fparams.tail.map(_.tpe).map(BackendType.toBackendType)
       }
-      val actualres = javaMethod match {
-        case Some(jm) if jm.getReturnType == java.lang.Void.TYPE => VoidableType.Void
-        case Some(jm) => javaClassToBackendType(jm.getReturnType)
+      val actualres = m.javaSig match {
+        case Some(jm) if jm.descriptor.returnType() == CD_void => VoidableType.Void
+        case Some(jm) => BackendType.toBackendType(jm.descriptor.returnType())
         case None => if (m.tpe == SimpleType.Unit) VoidableType.Void else BackendType.toBackendType(m.tpe)
       }
       cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, actualres, m)(_, root))
@@ -90,9 +93,9 @@ object GenAnonymousClasses {
     // Generate bridge methods for super method calls.
     val superMethods = obj.superMethods
     for (method <- superMethods) {
-      val bridgeName = s"super$$${method.getName}"
-      val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
-      val returnTpe = if (method.getReturnType == java.lang.Void.TYPE) VoidableType.Void else javaClassToBackendType(method.getReturnType)
+      val bridgeName = s"super$$${method.name}"
+      val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
+      val returnTpe = if (method.descriptor.returnType() == CD_void) VoidableType.Void else BackendType.toBackendType(method.descriptor.returnType())
       val descriptor = MethodDescriptor(paramTypes, returnTpe)
       cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
     }
@@ -108,9 +111,9 @@ object GenAnonymousClasses {
   }
 
   /** Creates constructor bytecode that forwards parameters directly to the super constructor. */
-  private def constructorInsWithSuperCall(superClass: JvmName, constructor: java.lang.reflect.Constructor[?])(implicit mv: MethodVisitor): Unit = {
+  private def constructorInsWithSuperCall(superClass: JvmName, constructor: JConstructor)(implicit mv: MethodVisitor): Unit = {
     import BytecodeInstructions.*
-    val paramTypes = constructor.getParameterTypes.toList.map(javaClassToBackendType)
+    val paramTypes = constructor.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
     // ALOAD 0 (this)
     thisLoad()
     // Load each <init> parameter (starting at slot 1)
@@ -120,25 +123,6 @@ object GenAnonymousClasses {
     // INVOKESPECIAL superClass.<init>(paramTypes...)
     INVOKESPECIAL(ClassMaker.ConstructorMethod(superClass, paramTypes))
     RETURN()
-  }
-
-  /** Finds the Java method matching the given name and parameter count on `clazz`. */
-  private def findJavaMethod(clazz: Class[?], name: String, arity: Int): Option[java.lang.reflect.Method] = {
-    JvmUtils.getOverridableInstanceMethods(clazz).find(m => m.getName == name && m.getParameterCount == arity)
-  }
-
-  /** Maps a Java `Class[?]` to a `BackendType`. */
-  private def javaClassToBackendType(clazz: Class[?]): BackendType = {
-    if      (clazz == java.lang.Boolean.TYPE)   BackendType.Bool
-    else if (clazz == java.lang.Byte.TYPE)      BackendType.Int8
-    else if (clazz == java.lang.Short.TYPE)     BackendType.Int16
-    else if (clazz == java.lang.Integer.TYPE)   BackendType.Int32
-    else if (clazz == java.lang.Long.TYPE)      BackendType.Int64
-    else if (clazz == java.lang.Float.TYPE)     BackendType.Float32
-    else if (clazz == java.lang.Double.TYPE)    BackendType.Float64
-    else if (clazz == java.lang.Character.TYPE) BackendType.Char
-    else if (clazz.isArray)                     BackendType.Array(javaClassToBackendType(clazz.getComponentType))
-    else BackendType.Reference(BackendObjType.Native(JvmName.ofClass(clazz)))
   }
 
   /** Returns the erased abstract arrow class for the given parameter types and return type. */
@@ -165,10 +149,10 @@ object GenAnonymousClasses {
     *   }
     * }}}
     */
-  private def superBridgeIns(superClass: JvmName, method: java.lang.reflect.Method)(implicit mv: MethodVisitor): Unit = {
-    val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
-    val returnTpe = javaClassToBackendType(method.getReturnType)
-    val descriptor = MethodDescriptor(paramTypes, if (method.getReturnType == java.lang.Void.TYPE) VoidableType.Void else returnTpe)
+  private def superBridgeIns(superClass: JvmName, method: JMethod)(implicit mv: MethodVisitor): Unit = {
+    val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
+    val isVoid = method.descriptor.returnType() == CD_void
+    val descriptor = MethodDescriptor(paramTypes, if (isVoid) VoidableType.Void else BackendType.toBackendType(method.descriptor.returnType()))
 
     // ALOAD 0 (this)
     thisLoad()
@@ -177,13 +161,13 @@ object GenAnonymousClasses {
       for (arg <- args) arg.load()
     }
     // INVOKESPECIAL superClass.methodName(descriptor)
-    INVOKESPECIAL(superClass, method.getName, descriptor)
+    INVOKESPECIAL(superClass, method.name, descriptor)
 
     // Return
-    if (method.getReturnType == java.lang.Void.TYPE) {
+    if (isVoid) {
       RETURN()
     } else {
-      xReturn(returnTpe)
+      xReturn(BackendType.toBackendType(method.descriptor.returnType()))
     }
   }
 

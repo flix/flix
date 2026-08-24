@@ -314,14 +314,14 @@ object OccurrenceAnalyzer {
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit sym0: Symbol.DefnSym): (MonoAst.JvmMethod, ExprContext) = method match {
-    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff, loc) =>
+    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff, javaSig, loc) =>
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
       val ctx2 = ctx1.removeVars(fps.map(_.sym))
       if ((e eq exp) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
         (method, ctx2) // Reuse method.
       } else {
-        (MonoAst.JvmMethod(ann, ident, fparams, e, retTpe, eff, loc), ctx2)
+        (MonoAst.JvmMethod(ann, ident, fparams, e, retTpe, eff, javaSig, loc), ctx2)
       }
   }
 
