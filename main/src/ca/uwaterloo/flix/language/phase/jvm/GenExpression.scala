@@ -48,6 +48,9 @@ object GenExpression {
 
     def localOffset: Int
 
+    /** Returns the absolute index of the local variable `varOffset` by adding this context's local offset. */
+    def getIndex(varOffset: Int): Int = varOffset + localOffset
+
     def addLabels(labels: Map[Symbol.LabelSym, Label]): MethodContext = {
       val updatedLabels = this.lenv ++ labels
       this match {
@@ -187,13 +190,13 @@ object GenExpression {
     }
 
     case Expr.Var(_, offset, tpe, _) =>
-      BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), JvmOps.getIndex(offset, ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), ctx.getIndex(offset))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
       case AtomicOp.Closure(sym) =>
         // JvmType of the closure
-        val closureName = internalNameOf(JvmOps.getClosureClassName(sym))
+        val closureName = internalNameOf(BackendObjType.Closure(sym).desc)
         // new closure instance
         mv.visitTypeInsn(NEW, closureName)
         // Duplicate
@@ -1083,8 +1086,8 @@ object GenExpression {
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       // Type of the function abstract class
-      val functionInterface = JvmOps.getErasedFunctionInterfaceType(exp1.tpe)
-      val closureAbstractClass = JvmOps.getErasedClosureAbstractClassType(exp1.tpe)
+      val functionInterface = BackendObjType.Arrow.fromArrowType(exp1.tpe)
+      val closureAbstractClass = BackendObjType.AbstractArrow.fromArrowType(exp1.tpe)
       ct match {
         case ExpPosition.Tail =>
           // Evaluating the closure
@@ -1145,7 +1148,7 @@ object GenExpression {
       case ExpPosition.Tail =>
         val defInternalName = internalNameOf(BackendObjType.Defn(sym).desc)
         // Type of the function abstract class
-        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
+        val functionInterface = BackendObjType.Arrow.fromArrowType(root.defs(sym).arrowType)
 
         // Put the def on the stack
         mv.visitTypeInsn(NEW, defInternalName)
@@ -1236,10 +1239,10 @@ object GenExpression {
         val erasedResult = BackendType.toErasedBackendType(tpe)
         pcCounter(0) += 1
 
-        val effectName = JvmOps.getEffectDefinitionClassName(sym.eff)
+        val effectName = BackendObjType.Effect(sym.eff).desc
         val effectStaticMethod = ClassMaker.StaticMethod(
           effectName,
-          JvmOps.getEffectOpName(sym),
+          GenEffectClasses.opName(sym),
           GenEffectClasses.opStaticFunctionDescriptor(sym)
         )
         NEW(Suspension.desc)
@@ -1285,7 +1288,7 @@ object GenExpression {
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
       case EffectContext(_, _, _, setPc, _, _, _, _) =>
         // The function abstract class name
-        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
+        val functionInterface = BackendObjType.Arrow.fromArrowType(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
         for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(ALOAD, 0)
@@ -1301,7 +1304,7 @@ object GenExpression {
 
       case DirectInstanceContext(_, _, _) =>
         // The function abstract class name
-        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
+        val functionInterface = BackendObjType.Arrow.fromArrowType(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
         for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(ALOAD, 0)
@@ -1321,7 +1324,7 @@ object GenExpression {
         for ((arg, fp) <- ListOps.zip(exps, defn.fparams).reverse) {
           // Store it in the ith parameter.
           val tpe = BackendType.toBackendType(arg.tpe)
-          val offset = JvmOps.getIndex(fp.offset, ctx.localOffset)
+          val offset = ctx.getIndex(fp.offset)
           BytecodeInstructions.xStore(tpe, offset)
         }
         // Jump to the entry point of the method.
@@ -1430,7 +1433,7 @@ object GenExpression {
         case _: Expr.NewObject => castIfNotPrim(bType)
         case _ => ()
       }
-      xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
+      xStore(bType, ctx.getIndex(offset))
       compileExpr(exp2)
 
     case Expr.Stm(exps, exp, _) =>
@@ -1463,7 +1466,7 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, internalNameOf(BackendObjType.Region.desc), ClassMaker.ConstructorMethodName,
         MethodDescriptor.NothingToVoid.toDescriptor, false)
 
-      BytecodeInstructions.xStore(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
+      BytecodeInstructions.xStore(BackendObjType.Region.toTpe, ctx.getIndex(offset))
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
@@ -1474,14 +1477,14 @@ object GenExpression {
       mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, ctx.getIndex(offset))
       mv.visitTypeInsn(CHECKCAST, internalNameOf(BackendObjType.Region.desc))
       mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, ctx.getIndex(offset))
       mv.visitTypeInsn(CHECKCAST, internalNameOf(BackendObjType.Region.desc))
       mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
@@ -1489,7 +1492,7 @@ object GenExpression {
 
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, ctx.getIndex(offset))
       mv.visitTypeInsn(CHECKCAST, internalNameOf(BackendObjType.Region.desc))
       mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
@@ -1526,7 +1529,7 @@ object GenExpression {
         mv.visitLabel(handlerLabel)
 
         // Store the exception in a local variable.
-        BytecodeInstructions.xStore(BackendType.Object, JvmOps.getIndex(offset, ctx.localOffset))
+        BytecodeInstructions.xStore(BackendType.Object, ctx.getIndex(offset))
 
         // Emit code for the handler body expression.
         compileExpr(body)
@@ -1545,7 +1548,7 @@ object GenExpression {
     case Expr.RunWith(exp, effUse, rules, ct, _, _, loc) =>
       import BytecodeInstructions.*
       // exp is a Unit -> exp.tpe closure
-      val effectName = JvmOps.getEffectDefinitionClassName(effUse.sym)
+      val effectName = BackendObjType.Effect(effUse.sym).desc
       val effectInternalName = internalNameOf(effectName)
       // eff name
       pushString(effUse.sym.toString)
@@ -1557,7 +1560,7 @@ object GenExpression {
       for (HandlerRule(op, _, body) <- rules) {
         mv.visitInsn(Opcodes.DUP)
         compileExpr(body)
-        mv.visitFieldInsn(Opcodes.PUTFIELD, effectInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
+        mv.visitFieldInsn(Opcodes.PUTFIELD, effectInternalName, GenEffectClasses.opName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
       }
       // frames
       NEW(BackendObjType.FramesNil.desc)
@@ -1618,7 +1621,7 @@ object GenExpression {
       methodExps.zipWithIndex.foreach { case (e, i) =>
         mv.visitInsn(DUP)
         compileExpr(e)
-        mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, className, s"clo$i", BackendObjType.AbstractArrow.fromArrowType(e.tpe).toDescriptor)
       }
 
   }
