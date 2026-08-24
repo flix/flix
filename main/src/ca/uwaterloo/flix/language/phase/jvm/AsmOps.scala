@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.util.ClassDescs
 import org.objectweb.asm.ClassWriter
 
 object AsmOps {
@@ -27,7 +28,7 @@ object AsmOps {
     */
   def mkClassWriter(): ClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
     override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
-      JvmName.Object.toInternalName
+      ClassDescs.internalNameOf(JavaClasses.Object)
     }
   }
 
