@@ -54,6 +54,9 @@ sealed trait BackendType extends VoidableType {
     }
   }
 
+  /** Returns the [[ClassDesc]] of `this` type. */
+  def toClassDesc: ClassDesc = ClassDesc.ofDescriptor(toDescriptor)
+
   /**
     * Returns the erased type, either itself if `this` is primitive or `java.lang.Object`
     * if `this` is an array or a reference.

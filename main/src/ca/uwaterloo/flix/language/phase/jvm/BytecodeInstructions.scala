@@ -342,14 +342,6 @@ object BytecodeInstructions {
     mv.visitLabel(skipLabel)
   }
 
-  def castIfNotPrim(tpe: BackendType)(implicit mv: MethodVisitor): Unit = {
-    tpe match {
-      case arr: BackendType.Array => mv.visitTypeInstructionDirect(Opcodes.CHECKCAST, arr.toDescriptor)
-      case BackendType.Reference(ref) => CHECKCAST(ref.desc)
-      case _: BackendType.PrimitiveType => nop()
-    }
-  }
-
   /// while(c(t)) { i }
   def whileLoop(c: Condition)(t: => Unit)(i: => Unit)(implicit mv: MethodVisitor): Unit = {
     val startLabel = new Label()
@@ -465,32 +457,6 @@ object BytecodeInstructions {
       variable
     })
     body(runningIndex, variables)
-  }
-
-  def xArrayLoad(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
-    case BackendType.Array(_) => mv.visitInstruction(Opcodes.AALOAD)
-    case BackendType.Reference(_) => mv.visitInstruction(Opcodes.AALOAD)
-    case BackendType.Bool => mv.visitInstruction(Opcodes.BALOAD)
-    case BackendType.Char => mv.visitInstruction(Opcodes.CALOAD)
-    case BackendType.Int8 => mv.visitInstruction(Opcodes.BALOAD)
-    case BackendType.Int16 => mv.visitInstruction(Opcodes.SALOAD)
-    case BackendType.Int32 => mv.visitInstruction(Opcodes.IALOAD)
-    case BackendType.Int64 => mv.visitInstruction(Opcodes.LALOAD)
-    case BackendType.Float32 => mv.visitInstruction(Opcodes.FALOAD)
-    case BackendType.Float64 => mv.visitInstruction(Opcodes.DALOAD)
-  }
-
-  def xArrayStore(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
-    case BackendType.Array(_) => mv.visitInstruction(Opcodes.AASTORE)
-    case BackendType.Reference(_) => mv.visitInstruction(Opcodes.AASTORE)
-    case BackendType.Bool => mv.visitInstruction(Opcodes.BASTORE)
-    case BackendType.Char => mv.visitInstruction(Opcodes.CASTORE)
-    case BackendType.Int8 => mv.visitInstruction(Opcodes.BASTORE)
-    case BackendType.Int16 => mv.visitInstruction(Opcodes.SASTORE)
-    case BackendType.Int32 => mv.visitInstruction(Opcodes.IASTORE)
-    case BackendType.Int64 => mv.visitInstruction(Opcodes.LASTORE)
-    case BackendType.Float32 => mv.visitInstruction(Opcodes.FASTORE)
-    case BackendType.Float64 => mv.visitInstruction(Opcodes.DASTORE)
   }
 
   def xLoad(tpe: BackendType, index: Int)(implicit mv: MethodVisitor): Unit = tpe match {
