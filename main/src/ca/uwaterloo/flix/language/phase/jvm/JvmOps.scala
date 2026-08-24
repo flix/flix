@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
+import ca.uwaterloo.flix.language.phase.jvm.Mangle.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
 
@@ -71,7 +71,7 @@ object JvmOps {
     */
   def getClosureClassName(sym: Symbol.DefnSym): JvmName = {
     // The JVM name is of the form Clo$sym.name
-    val name = JvmName.mkClassName(s"Clo", sym.name)
+    val name = Mangle.mkClassName(s"Clo", sym.name)
 
     // The JVM package is the namespace of the symbol.
     val pkg = sym.namespace
@@ -90,7 +90,7 @@ object JvmOps {
     */
   def getEffectDefinitionClassName(sym: Symbol.EffSym): JvmName = {
     val pkg = sym.namespace
-    val name = JvmName.mkClassName("Eff", sym.name)
+    val name = Mangle.mkClassName("Eff", sym.name)
     JvmName(pkg, name)
   }
 
