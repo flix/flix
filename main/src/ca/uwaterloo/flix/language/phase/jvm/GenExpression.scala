@@ -22,13 +22,15 @@ import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
 import org.objectweb.asm
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
+
+import java.lang.constant.ClassDesc
+import scala.jdk.CollectionConverters.*
 
 /**
   * Generate expression
@@ -803,11 +805,9 @@ object GenExpression {
         GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case AtomicOp.InstanceOf(clazz) =>
-        import BytecodeInstructions.*
         val List(exp) = exps
-        val jvmName = JvmName.ofClass(clazz)
         compileExpr(exp)
-        INSTANCEOF(jvmName)
+        mv.visitTypeInsn(INSTANCEOF, internalNameOf(clazz))
 
       case AtomicOp.Cast =>
         import BytecodeInstructions.*
@@ -857,19 +857,18 @@ object GenExpression {
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
         BytecodeInstructions.addLoc(loc)
-        val descriptor = asm.Type.getConstructorDescriptor(constructor)
-        val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
+        val declaration = internalNameOf(constructor.owner)
         // Create a new object of the declaration type
         mv.visitTypeInsn(NEW, declaration)
         // Duplicate the reference since the first argument for a constructor call is the reference to the object
         mv.visitInsn(DUP)
-        for ((arg, argType) <- exps.zip(constructor.getParameterTypes)) {
+        for ((arg, argType) <- exps.zip(constructor.descriptor.parameterList.asScala)) {
           compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
         }
 
         // Call the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, descriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, constructor.descriptor.descriptorString(), false)
 
       case AtomicOp.InvokeSuperConstructor(constructor) =>
         // A InvokeSuperConstructor is handled directly in NewObject.
@@ -883,27 +882,23 @@ object GenExpression {
 
         // Evaluate the receiver object.
         compileExpr(exp)
-        val thisType = asm.Type.getInternalName(method.getDeclaringClass)
-        mv.visitTypeInsn(CHECKCAST, thisType)
+        val declaration = internalNameOf(method.owner)
+        mv.visitTypeInsn(CHECKCAST, declaration)
 
-        for ((arg, argType) <- args.zip(method.getParameterTypes)) {
+        for ((arg, argType) <- args.zip(method.descriptor.parameterList.asScala)) {
           compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
         }
 
-        val declaration = asm.Type.getInternalName(method.getDeclaringClass)
-        val name = method.getName
-        val descriptor = asm.Type.getMethodDescriptor(method)
-
         // Check if we are invoking an interface or class.
-        if (method.getDeclaringClass.isInterface) {
-          mv.visitMethodInsn(INVOKEINTERFACE, declaration, name, descriptor, true)
+        if (method.isInterface) {
+          mv.visitMethodInsn(INVOKEINTERFACE, declaration, method.name, method.descriptor.descriptorString(), true)
         } else {
-          mv.visitMethodInsn(INVOKEVIRTUAL, declaration, name, descriptor, false)
+          mv.visitMethodInsn(INVOKEVIRTUAL, declaration, method.name, method.descriptor.descriptorString(), false)
         }
 
         // If the method is void, put a unit on top of the stack
-        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
@@ -920,38 +915,30 @@ object GenExpression {
         mv.visitTypeInsn(CHECKCAST, anonClassInternalName)
 
         // Evaluate and cast each argument.
-        for ((arg, argType) <- args.zip(method.getParameterTypes)) {
+        for ((arg, argType) <- args.zip(method.descriptor.parameterList.asScala)) {
           compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
         }
 
         // Call the bridge method super$methodName on the anonymous class.
-        val bridgeName = s"super$$${method.getName}"
-        val descriptor = asm.Type.getMethodDescriptor(method)
-        mv.visitMethodInsn(INVOKEVIRTUAL, anonClassInternalName, bridgeName, descriptor, false)
+        val bridgeName = s"super$$${method.name}"
+        mv.visitMethodInsn(INVOKEVIRTUAL, anonClassInternalName, bridgeName, method.descriptor.descriptorString(), false)
 
         // If the method is void, put a unit on top of the stack
-        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
       case AtomicOp.InvokeStaticMethod(method) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
         BytecodeInstructions.addLoc(loc)
-        for ((arg, argType) <- exps.zip(method.getParameterTypes)) {
+        for ((arg, argType) <- exps.zip(method.descriptor.parameterList.asScala)) {
           compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
         }
-        val declaration = asm.Type.getInternalName(method.getDeclaringClass)
-        val name = method.getName
-        val descriptor = asm.Type.getMethodDescriptor(method)
-        // Check if we are invoking an interface or class.
-        if (method.getDeclaringClass.isInterface) {
-          mv.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, true)
-        } else {
-          mv.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
-        }
-        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        val declaration = internalNameOf(method.owner)
+        mv.visitMethodInsn(INVOKESTATIC, declaration, method.name, method.descriptor.descriptorString(), method.isInterface)
+        if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
@@ -960,8 +947,8 @@ object GenExpression {
         // Add source line number for debugging (can fail when calling java)
         BytecodeInstructions.addLoc(loc)
         compileExpr(exp)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(GETFIELD, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(GETFIELD, declaration, field.name, BackendType.toBackendType(tpe).toDescriptor)
 
       case AtomicOp.PutField(field) =>
         val List(exp1, exp2) = exps
@@ -969,8 +956,8 @@ object GenExpression {
         BytecodeInstructions.addLoc(loc)
         compileExpr(exp1)
         compileExpr(exp2)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(PUTFIELD, declaration, field.getName, BackendType.toBackendType(exp2.tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(PUTFIELD, declaration, field.name, BackendType.toBackendType(exp2.tpe).toDescriptor)
 
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
@@ -978,16 +965,16 @@ object GenExpression {
       case AtomicOp.GetStaticField(field) =>
         // Add source line number for debugging (can fail when calling java)
         BytecodeInstructions.addLoc(loc)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(GETSTATIC, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(GETSTATIC, declaration, field.name, BackendType.toBackendType(tpe).toDescriptor)
 
       case AtomicOp.PutStaticField(field) =>
         val List(exp) = exps
         // Add source line number for debugging (can fail when calling java)
         BytecodeInstructions.addLoc(loc)
         compileExpr(exp)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, BackendType.toBackendType(exp.tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(PUTSTATIC, declaration, field.name, BackendType.toBackendType(exp.tpe).toDescriptor)
 
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
@@ -1548,7 +1535,7 @@ object GenExpression {
       // Emit a try catch block for each catch rule. It's important to do this after compiling
       // sub-expressions to ensure correct catch case ordering.
       for ((CatchRule(_, _, clazz, _), handlerLabel) <- rulesAndLabels) {
-        mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
+        mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, internalNameOf(clazz))
       }
 
       // Add the label after both the try and catch rules.
@@ -1614,12 +1601,11 @@ object GenExpression {
         constructors.head.exp match {
           case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), superArgs, _, _, _) =>
             // Super-only: compile args and call parameterized <init>
-            val descriptor = asm.Type.getConstructorDescriptor(constructor)
-            for ((arg, argType) <- superArgs.zip(constructor.getParameterTypes)) {
+            for ((arg, argType) <- superArgs.zip(constructor.descriptor.parameterList.asScala)) {
               compileExpr(arg)
-              if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+              if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
             }
-            mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, descriptor, false)
+            mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, constructor.descriptor.descriptorString(), false)
           case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructors.head.loc)
         }
       } else {
@@ -1633,6 +1619,21 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+  }
+
+  /**
+    * Returns the JVM internal name of the class, interface, or array descriptor `desc`,
+    * e.g. `java/lang/String` or `[Ljava/lang/String;`.
+    */
+  private def internalNameOf(desc: ClassDesc): String = {
+    if (desc.isArray) {
+      // The internal name of an array type is its descriptor.
+      desc.descriptorString()
+    } else {
+      // Strip the leading `L` and trailing `;` of the descriptor.
+      val descriptor = desc.descriptorString()
+      descriptor.substring(1, descriptor.length - 1)
+    }
   }
 
   private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {

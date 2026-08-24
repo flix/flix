@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
 
+import java.lang.constant.ClassDesc
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
 
@@ -108,7 +109,7 @@ object DocAst {
       */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
-    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
+    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, String, Expr)]) extends Atom
 
     case class Handler(eff: Symbol.EffSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
 
@@ -134,7 +135,7 @@ object DocAst {
 
     case class Unsafe(d: Expr, runEff: Type, asEff: Option[Type]) extends Composite
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: Class[?], tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod]) extends Composite
+    case class NewObject(sym: Symbol.AnonClassSym, className: String, tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod]) extends Composite
 
     case class Lambda(fparams: List[Expr.AscriptionTpe], body: Expr) extends Composite
 
@@ -251,6 +252,9 @@ object DocAst {
     def InstanceOf(d: Expr, clazz: Class[?]): Expr =
       Binary(d, "instanceof", Native(clazz))
 
+    def InstanceOf(d: Expr, clazz: ClassDesc): Expr =
+      Binary(d, "instanceof", AsIs(javaClassName(clazz)))
+
     def ClosureLifted(sym: Symbol.DefnSym, ds: List[Expr]): Expr = {
       val defName = AsIs(sym.toString)
       if (ds.isEmpty) defName else App(defName, ds)
@@ -320,26 +324,56 @@ object DocAst {
     def JavaInvokeMethod(m: Method, d: Expr, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(m.getName)), ds)
 
+    def JavaInvokeMethod(m: JMethod, d: Expr, ds: List[Expr]): Expr =
+      App(DoubleDot(d, AsIs(m.name)), ds)
+
     def JavaInvokeStaticMethod(m: Method, ds: List[Expr]): Expr = {
       App(Dot(Native(m.getDeclaringClass), AsIs(m.getName)), ds)
+    }
+
+    def JavaInvokeStaticMethod(m: JMethod, ds: List[Expr]): Expr = {
+      App(Dot(AsIs(javaClassName(m.owner)), AsIs(m.name)), ds)
     }
 
     def JavaGetStaticField(f: Field): Expr = {
       Dot(Native(f.getDeclaringClass), AsIs(f.getName))
     }
 
+    def JavaGetStaticField(f: JField): Expr = {
+      Dot(AsIs(javaClassName(f.owner)), AsIs(f.name))
+    }
+
     def JavaInvokeConstructor(c: Constructor[?], ds: List[Expr]): Expr = {
       App(Native(c.getDeclaringClass), ds)
+    }
+
+    def JavaInvokeConstructor(c: JConstructor, ds: List[Expr]): Expr = {
+      App(AsIs(javaClassName(c.owner)), ds)
     }
 
     def JavaGetField(f: Field, d: Expr): Expr =
       DoubleDot(d, AsIs(f.getName))
 
+    def JavaGetField(f: JField, d: Expr): Expr =
+      DoubleDot(d, AsIs(f.name))
+
     def JavaPutField(f: Field, d1: Expr, d2: Expr): Expr =
       Assign(DoubleDot(d1, AsIs(f.getName)), d2)
 
+    def JavaPutField(f: JField, d1: Expr, d2: Expr): Expr =
+      Assign(DoubleDot(d1, AsIs(f.name)), d2)
+
     def JavaPutStaticField(f: Field, d: Expr): Expr =
       Assign(Dot(Native(f.getDeclaringClass), AsIs(f.getName)), d)
+
+    def JavaPutStaticField(f: JField, d: Expr): Expr =
+      Assign(Dot(AsIs(javaClassName(f.owner)), AsIs(f.name)), d)
+
+    /** Returns the fully-qualified dotted name of the class descriptor `desc`. */
+    private[dbg] def javaClassName(desc: ClassDesc): String = {
+      val pkg = desc.packageName()
+      if (pkg.isEmpty) desc.displayName() else s"$pkg.${desc.displayName()}"
+    }
 
     def JumpTo(sym: Symbol.LabelSym): Expr =
       Keyword("goto", AsIs(sym.toString))

@@ -18,12 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, RegionScope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, JMethod, Modifiers, Mutability, RegionScope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps, Nel}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, ParOps}
 
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import scala.annotation.tailrec
 
 /**
@@ -33,6 +34,24 @@ object Simplifier {
 
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
   private implicit val S: RegionScope = RegionScope.Top
+
+  /** The `String.concat(String)` method. */
+  private val StringConcatMethod: JMethod = {
+    import java.lang.constant.ConstantDescs.*
+    JMethod(CD_String, "concat", MethodTypeDesc.of(CD_String, CD_String), isInterface = false)
+  }
+
+  /** The `String.equals(Object)` method. */
+  private val StringEqualsMethod: JMethod = {
+    import java.lang.constant.ConstantDescs.*
+    JMethod(CD_String, "equals", MethodTypeDesc.of(CD_boolean, CD_Object), isInterface = false)
+  }
+
+  /** The `BigInteger.equals(Object)` method. */
+  private val BigIntEqualsMethod: JMethod = {
+    import java.lang.constant.ConstantDescs.*
+    JMethod(ClassDesc.of("java.math.BigInteger"), "equals", MethodTypeDesc.of(CD_boolean, CD_Object), isInterface = false)
+  }
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffSym] = root.effects.keys.toSet
@@ -125,10 +144,8 @@ object Simplifier {
       op match {
         case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
           // Translate to InvokeMethod exp
-          val strClass = Class.forName("java.lang.String")
-          val method = strClass.getMethod("concat", strClass)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), es, t, purity, loc)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(StringConcatMethod), es, t, purity, loc)
 
         case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
           // The region expression is dropped (head of exps / es)
@@ -343,7 +360,7 @@ object Simplifier {
             val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
             SimpleType.mkEnum(enumSym, targs.map(visitType))
 
-          case TypeConstructor.Native(clazz) => SimpleType.Native(clazz)
+          case TypeConstructor.Native(clazz) => SimpleType.Native(ClassDescs.of(clazz))
 
           case TypeConstructor.Array =>
             // Remove the region from the array.
@@ -634,11 +651,11 @@ object Simplifier {
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmMethod = method match {
-    case MonoAst.JvmMethod(ann, ident, fparams0, exp0, retTpe, eff, loc) =>
+    case MonoAst.JvmMethod(ann, ident, fparams0, exp0, retTpe, eff, javaSig, loc) =>
       val fparams = fparams0.toList.map(visitFormalParam)
       val exp = visitExp(exp0)
       val rt = visitType(retTpe)
-      SimplifiedAst.JvmMethod(ann, ident, fparams, exp, rt, simplifyEffect(eff), loc)
+      SimplifiedAst.JvmMethod(ann, ident, fparams, exp, rt, simplifyEffect(eff), javaSig, loc)
   }
 
   private def pat2exp(pat0: MonoAst.Pattern): SimplifiedAst.Expr = pat0 match {
@@ -674,17 +691,11 @@ object Simplifier {
         return SimplifiedAst.Expr.Cst(Constant.Bool(true), SimpleType.Bool, loc)
 
       case (SimpleType.String, _) =>
-        val strClass = Class.forName("java.lang.String")
-        val objClass = Class.forName("java.lang.Object")
-        val method = strClass.getMethod("equals", objClass)
-        val op = AtomicOp.InvokeMethod(method)
+        val op = AtomicOp.InvokeMethod(StringEqualsMethod)
         return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), SimpleType.Bool, Purity.combine(e1.purity, e2.purity), loc)
 
       case (SimpleType.BigInt, _) =>
-        val bigIntClass = Class.forName("java.math.BigInteger")
-        val objClass = Class.forName("java.lang.Object")
-        val method = bigIntClass.getMethod("equals", objClass)
-        val op = AtomicOp.InvokeMethod(method)
+        val op = AtomicOp.InvokeMethod(BigIntEqualsMethod)
         return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), SimpleType.Bool, Purity.combine(e1.purity, e2.purity), loc)
 
       case _ => // fallthrough

@@ -418,58 +418,55 @@ object TypeVerifier {
           check(expected = SimpleType.Region)(actual = t2, loc)
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
-        case AtomicOp.GetField(field) =>
-          val List(t) = ts
-          checkJavaSubtype(t, field.getDeclaringClass, loc)
-          checkJavaSubtype(tpe, field.getType, loc)
+        // Note: The field ops carry nominal descriptors (no loaded classes), so the
+        // Java subtype checks are gone. Only shape and Flix-type checks remain.
+        case AtomicOp.GetField(_) =>
+          val List(_) = ts
+          tpe
 
-        case AtomicOp.GetStaticField(field) =>
-          checkJavaSubtype(tpe, field.getType, loc)
+        case AtomicOp.GetStaticField(_) =>
+          tpe
 
-        case AtomicOp.PutField(field) =>
-          val List(t1, t2) = ts
-          checkJavaSubtype(t1, field.getDeclaringClass, loc)
-          checkJavaSubtype(t2, field.getType, loc)
+        case AtomicOp.PutField(_) =>
+          val List(_, _) = ts
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
-        case AtomicOp.PutStaticField(field) =>
-          val List(t) = ts
-          checkJavaSubtype(t, field.getType, loc)
+        case AtomicOp.PutStaticField(_) =>
+          val List(_) = ts
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
+        // Note: The Java subtype checks are gone (they need loaded classes, and the AST
+        // moves to nominal descriptors). Only shape and Flix-type checks remain.
         case AtomicOp.Throw =>
-          val List(t) = ts
-          checkJavaSubtype(t, classOf[Throwable], loc)
+          val List(_) = ts
           tpe
 
         case AtomicOp.InstanceOf(_) =>
           val List(t) = ts
-          checkJavaSubtype(t, new Object().getClass, loc) // must not be primitive type
+          checkReferenceType(t, loc)
           check(expected = SimpleType.Bool)(actual = tpe, loc)
 
         case AtomicOp.InvokeConstructor(constructor) =>
-          checkJavaParameters(ts, constructor.getParameterTypes.toList, loc)
-          checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
+          checkArity(ts, constructor.descriptor.parameterCount(), loc)
+          tpe
 
         case AtomicOp.InvokeSuperConstructor(constructor) =>
-          checkJavaParameters(ts, constructor.getParameterTypes.toList, loc)
-          checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
+          checkArity(ts, constructor.descriptor.parameterCount(), loc)
+          tpe
 
         case AtomicOp.InvokeMethod(method) =>
-          val t :: pts = ts
-          checkJavaParameters(pts, method.getParameterTypes.toList, loc)
-          checkJavaSubtype(t, method.getDeclaringClass, loc)
-          checkJavaSubtype(tpe, method.getReturnType, loc)
+          val _ :: pts = ts
+          checkArity(pts, method.descriptor.parameterCount(), loc)
+          tpe
 
         case AtomicOp.InvokeSuperMethod(_, method) =>
-          val t :: pts = ts
-          checkJavaParameters(pts, method.getParameterTypes.toList, loc)
-          checkJavaSubtype(t, method.getDeclaringClass, loc)
-          checkJavaSubtype(tpe, method.getReturnType, loc)
+          val _ :: pts = ts
+          checkArity(pts, method.descriptor.parameterCount(), loc)
+          tpe
 
         case AtomicOp.InvokeStaticMethod(method) =>
-          checkJavaParameters(ts, method.getParameterTypes.toList, loc)
-          checkJavaSubtype(tpe, method.getReturnType, loc)
+          checkArity(ts, method.descriptor.parameterCount(), loc)
+          tpe
 
         // Vector operations are simplified to array operations in the Simplifier.
         case AtomicOp.VectorLit => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
@@ -601,7 +598,7 @@ object TypeVerifier {
         val signature = SimpleType.mkArrow(m.fparams.map(_.tpe), m.tpe)
         checkEq(signature, exptype, m.loc)
       }
-      checkEq(tpe, SimpleType.Native(clazz), loc)
+      checkEq(tpe, SimpleType.Native(clazz.desc), loc)
 
   }
 
@@ -624,13 +621,21 @@ object TypeVerifier {
   }
 
   /**
-    * Asserts that the list of types `ts` matches the list of java classes `cs`
+    * Asserts that the list of types `ts` has exactly `arity` elements.
     */
-  private def checkJavaParameters(ts: List[SimpleType], cs: List[Class[?]], loc: SourceLocation): Unit = {
-    ListOps.zipOption(ts, cs) match {
-      case None => throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
-      case Some(zipped) => zipped.foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
-    }
+  private def checkArity(ts: List[SimpleType], arity: Int, loc: SourceLocation): Unit = {
+    if (ts.length != arity)
+      throw InternalCompilerException(s"Number of argument types (${ts.length}) mismatch with parameter count ($arity)", loc)
+  }
+
+  /**
+    * Asserts that `tpe` is represented as a reference (non-primitive) type at runtime.
+    */
+  private def checkReferenceType(tpe: SimpleType, loc: SourceLocation): Unit = tpe match {
+    case SimpleType.Bool | SimpleType.Char | SimpleType.Int8 | SimpleType.Int16 |
+         SimpleType.Int32 | SimpleType.Int64 | SimpleType.Float32 | SimpleType.Float64 =>
+      failMismatchedShape(tpe, "a reference type", loc)
+    case _ => ()
   }
 
   /**
@@ -643,78 +648,6 @@ object TypeVerifier {
           throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
         }
       case _ => failMismatchedShape(tpe, "Struct", loc)
-    }
-  }
-
-  /**
-    * Asserts that `tpe` is a subtype of the java class type `klazz`.
-    */
-  private def checkJavaSubtype(tpe: SimpleType, klazz: Class[?], loc: SourceLocation): SimpleType = {
-    if (isJavaSubtype(tpe, klazz))
-      tpe
-    else
-      failMismatchedTypes(tpe, klazz, loc)
-  }
-
-  /**
-    * Returns `true` if `tpe` is a subtype of the java class type `klazz`.
-    */
-  private def isJavaSubtype(tpe: SimpleType, klazz: Class[?]): Boolean = {
-    tpe match {
-      case SimpleType.Array(elmt) =>
-        (klazz.isArray && isJavaSubtype(elmt, klazz.getComponentType)) || klazz == classOf[Object]
-
-      case SimpleType.Native(k) => klazz.isAssignableFrom(k)
-
-      case SimpleType.Int8 => klazz == classOf[Byte]
-      case SimpleType.Int16 => klazz == classOf[Short]
-      case SimpleType.Int32 => klazz == classOf[Int]
-      case SimpleType.Int64 => klazz == classOf[Long]
-      case SimpleType.Float32 => klazz == classOf[Float]
-      case SimpleType.Float64 => klazz == classOf[Double]
-      case SimpleType.Bool => klazz == classOf[Boolean]
-      case SimpleType.Char => klazz == classOf[Char]
-      // Unit is represented as a reference (the Unit singleton) at runtime, so it is a
-      // subtype of any non-primitive Java type, e.g. the erased `Object` return of a
-      // generic interface method implemented by an anonymous class.
-      case SimpleType.Unit => klazz == classOf[Unit] || !klazz.isPrimitive
-      case SimpleType.Null => !klazz.isPrimitive
-
-      case SimpleType.String => klazz.isAssignableFrom(classOf[java.lang.String])
-      case SimpleType.BigInt => klazz.isAssignableFrom(classOf[java.math.BigInteger])
-      case SimpleType.BigDecimal => klazz.isAssignableFrom(classOf[java.math.BigDecimal])
-      case SimpleType.Regex => klazz.isAssignableFrom(classOf[java.util.regex.Pattern])
-      case SimpleType.Arrow(List(SimpleType.Object), SimpleType.Unit) => klazz.isAssignableFrom(classOf[java.util.function.Consumer[Object]])
-      case SimpleType.Arrow(List(SimpleType.Object), SimpleType.Bool) => klazz.isAssignableFrom(classOf[java.util.function.Predicate[Object]])
-      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Unit) => klazz.isAssignableFrom(classOf[java.util.function.IntConsumer])
-      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Object) => klazz.isAssignableFrom(classOf[java.util.function.IntFunction[Object]])
-      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Bool) => klazz.isAssignableFrom(classOf[java.util.function.IntPredicate])
-      case SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Int32) => klazz.isAssignableFrom(classOf[java.util.function.IntUnaryOperator])
-      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Unit) => klazz.isAssignableFrom(classOf[java.util.function.LongConsumer])
-      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Object) => klazz.isAssignableFrom(classOf[java.util.function.LongFunction[Object]])
-      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Bool) => klazz.isAssignableFrom(classOf[java.util.function.LongPredicate])
-      case SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Int64) => klazz.isAssignableFrom(classOf[java.util.function.LongUnaryOperator])
-      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Unit) => klazz.isAssignableFrom(classOf[java.util.function.DoubleConsumer])
-      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Object) => klazz.isAssignableFrom(classOf[java.util.function.DoubleFunction[Object]])
-      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Bool) => klazz.isAssignableFrom(classOf[java.util.function.DoublePredicate])
-      case SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Float64) => klazz.isAssignableFrom(classOf[java.util.function.DoubleUnaryOperator])
-
-      case SimpleType.AnyType => klazz == classOf[Object]
-
-      // Every Flix reference type (enums, tuples, structs, records, lazies, lambdas, lists,
-      // BigInt, ...) is represented as a reference (an object) at runtime, so it is a subtype of
-      // `java.lang.Object`
-      case SimpleType.Arrow(_, _) => klazz == classOf[Object]
-      case SimpleType.Void => klazz == classOf[Object]
-      case SimpleType.Region => klazz == classOf[Object]
-      case SimpleType.Lazy(_) => klazz == classOf[Object]
-      case SimpleType.Tuple(_) => klazz == classOf[Object]
-      case SimpleType.Enum(_, _) => klazz == classOf[Object]
-      case SimpleType.Struct(_, _) => klazz == classOf[Object]
-      case SimpleType.RecordEmpty => klazz == classOf[Object]
-      case SimpleType.RecordExtend(_, _, _) => klazz == classOf[Object]
-      case SimpleType.ExtensibleEmpty => klazz == classOf[Object]
-      case SimpleType.ExtensibleExtend(_, _, _) => klazz == classOf[Object]
     }
   }
 

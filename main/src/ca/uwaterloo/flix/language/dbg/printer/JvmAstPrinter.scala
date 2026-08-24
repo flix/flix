@@ -60,13 +60,13 @@ object JvmAstPrinter {
     case Expr.Stm(exps, exp, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Expr.Region(sym, _, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case JvmAst.CatchRule(sym, _, clazz, body) => (sym, clazz, print(body))
+      case JvmAst.CatchRule(sym, _, clazz, body) => (sym, DocAst.Expr.javaClassName(clazz), print(body))
     })
     case Expr.RunWith(exp, effUse, rules, _, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case JvmAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, clazz, SimpleTypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
+    case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, DocAst.Expr.javaClassName(clazz.desc), SimpleTypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
   }
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
@@ -93,7 +93,7 @@ object JvmAstPrinter {
 
   /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: JvmAst.JvmMethod): DocAst.JvmMethod = method match {
-    case JvmAst.JvmMethod(ann, ident, fparams, exp, tpe, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
+    case JvmAst.JvmMethod(ann, ident, fparams, exp, tpe, _, _, _) =>
+      DocAst.JvmMethod(ann.map(_.clazz.displayName()), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
   }
 }

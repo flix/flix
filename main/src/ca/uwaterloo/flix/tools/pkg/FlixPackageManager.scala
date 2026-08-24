@@ -26,7 +26,6 @@ import ca.uwaterloo.flix.util.collection.ListMap
 import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
 import scala.collection.mutable
-import scala.util.Using
 
 object FlixPackageManager {
 
@@ -176,11 +175,25 @@ object FlixPackageManager {
             out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
             out.flush()
             try {
-              Using(GitHub.downloadAsset(asset)) {
-                stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
+              val stream = GitHub.downloadAsset(asset)
+              try {
+                Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
+              } finally {
+                // Best-effort: the stream is already broken if the copy above failed, so a
+                // close failure here must not mask that error.
+                try stream.close() catch { case _: IOException => () }
               }
             } catch {
               case e: IOException =>
+                // Remove a truncated file so the cache check above doesn't trust it next run. A
+                // failure here is attached rather than swallowed, since it means the filesystem
+                // itself is in an unexpected state -- but it must not prevent the original
+                // download error from being reported below.
+                try {
+                  Files.deleteIfExists(assetPath)
+                } catch {
+                  case e2: IOException => e.addSuppressed(e2)
+                }
                 out.println(s"ERROR: ${e.getMessage}.")
                 return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
             }
