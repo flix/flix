@@ -157,8 +157,19 @@ object ClassMaker {
     new InterfaceMaker(mkClassWriter(interfaceName, IsPublic, NotFinal, IsAbstract, IsInterface, CD_Object, interfaces))
   }
 
+  /**
+    * Returns a freshly created class writer object.
+    *
+    * The object is constructed to compute stack map frames automatically.
+    */
+  private[jvm] def mkClassWriter(): ClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
+    override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
+      ClassDescs.internalNameOf(JavaClasses.Object)
+    }
+  }
+
   private def mkClassWriter(name: ClassDesc, v: Visibility, f: Final, a: Abstract, i: Interface, superClass: ClassDesc, interfaces: List[ClassDesc])(implicit flix: Flix): ClassWriter = {
-    val cw = AsmOps.mkClassWriter()
+    val cw = mkClassWriter()
     val m = v.toInt + f.toInt + a.toInt + i.toInt
     val internalName = ClassDescs.internalNameOf(name)
     cw.visit(CompilerConstants.JvmTargetVersion, m, internalName, null, ClassDescs.internalNameOf(superClass), interfaces.map(ClassDescs.internalNameOf).toArray)
