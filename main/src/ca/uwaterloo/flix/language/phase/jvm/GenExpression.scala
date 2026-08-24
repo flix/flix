@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
+import ca.uwaterloo.flix.language.phase.jvm.AsmOps.internalNameOf
 import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -138,7 +139,7 @@ object GenExpression {
         import BytecodeInstructions.*
         // Can fail with NumberFormatException
         addLoc(loc)
-        NEW(JvmName.BigDecimal)
+        NEW(JvmName.BigDecimal.toClassDesc)
         DUP()
         pushString(dd.toString)
         INVOKESPECIAL(ClassConstants.BigDecimal.Constructor)
@@ -159,7 +160,7 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (can fail with NumberFormatException)
         addLoc(loc)
-        NEW(JvmName.BigInteger)
+        NEW(JvmName.BigInteger.toClassDesc)
         DUP()
         pushString(ii.toString)
         INVOKESPECIAL(ClassConstants.BigInteger.Constructor)
@@ -181,7 +182,7 @@ object GenExpression {
         import BytecodeInstructions.*
         //!TODO: For now, just emit null
         ACONST_NULL()
-        CHECKCAST(BackendObjType.Region.jvmName)
+        CHECKCAST(BackendObjType.Region.desc)
 
     }
 
@@ -637,7 +638,7 @@ object GenExpression {
         import BytecodeInstructions.*
         val SimpleType.Tuple(elmTypes) = tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
-        NEW(tupleType.jvmName)
+        NEW(tupleType.desc)
         DUP()
         exps.foreach(compileExpr)
         INVOKESPECIAL(tupleType.Constructor)
@@ -651,7 +652,7 @@ object GenExpression {
         pushString(field.name)
         INVOKEINTERFACE(BackendObjType.Record.LookupFieldMethod)
         // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
-        CHECKCAST(recordType.jvmName)
+        CHECKCAST(recordType.desc)
         GETFIELD(recordType.ValueField)
         castIfNotPrim(BackendType.toBackendType(tpe))
 
@@ -659,7 +660,7 @@ object GenExpression {
         import BytecodeInstructions.*
         val List(exp1, exp2) = exps
         val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(exp1.tpe))
-        NEW(recordType.jvmName)
+        NEW(recordType.desc)
         DUP()
         INVOKESPECIAL(recordType.Constructor)
         DUP()
@@ -718,7 +719,7 @@ object GenExpression {
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
-        val fillMethod = ClassMaker.StaticMethod(JvmName.Arrays, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
+        val fillMethod = ClassMaker.StaticMethod(JvmName.Arrays.toClassDesc, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
         compileExpr(exp1) // default
         compileExpr(exp2) // default, length
         xNewArray(backendType) // default, arr
@@ -774,7 +775,7 @@ object GenExpression {
             compileExpr(region)
             xPop(BackendType.toBackendType(region.tpe))
         }
-        NEW(structType.jvmName)
+        NEW(structType.desc)
         DUP()
         fieldExps.foreach(compileExpr)
         INVOKESPECIAL(structType.Constructor)
@@ -820,7 +821,7 @@ object GenExpression {
         val List(exp) = exps
         val bType = BackendType.toBackendType(tpe)
         compileExpr(exp)
-        CHECKCAST(BackendObjType.Value.jvmName)
+        CHECKCAST(BackendObjType.Value.desc)
         GETFIELD(BackendObjType.Value.fieldFromType(bType))
         castIfNotPrim(bType)
 
@@ -846,7 +847,7 @@ object GenExpression {
             val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
             val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
             compileExpr(exp)
-            NEW(BackendObjType.Value.jvmName)
+            NEW(BackendObjType.Value.desc)
             DUP()
             INVOKESPECIAL(BackendObjType.Value.Constructor)
             DUP()
@@ -995,16 +996,16 @@ object GenExpression {
           case Expr.Cst(Constant.Static, _) =>
             addLoc(loc)
             compileExpr(exp1)
-            CHECKCAST(JvmName.Runnable)
+            CHECKCAST(JvmName.Runnable.toClassDesc)
             INVOKESTATIC(ClassConstants.Thread.StartVirtualThreadMethod)
             POP()
             GETSTATIC(BackendObjType.Unit.SingletonField)
           case _ =>
             addLoc(loc)
             compileExpr(exp2)
-            CHECKCAST(BackendObjType.Region.jvmName)
+            CHECKCAST(BackendObjType.Region.desc)
             compileExpr(exp1)
-            CHECKCAST(JvmName.Runnable)
+            CHECKCAST(JvmName.Runnable.toClassDesc)
             INVOKEVIRTUAL(BackendObjType.Region.SpawnMethod)
             GETSTATIC(BackendObjType.Unit.SingletonField)
         }
@@ -1017,7 +1018,7 @@ object GenExpression {
         val SimpleType.Lazy(elmType) = tpe
         val lazyType = BackendObjType.Lazy(BackendType.toBackendType(elmType))
 
-        NEW(lazyType.jvmName)
+        NEW(lazyType.desc)
         DUP()
         compileExpr(exp)
         INVOKESPECIAL(lazyType.Constructor)
@@ -1033,7 +1034,7 @@ object GenExpression {
 
         // Emit code for the lazy expression.
         compileExpr(exp)
-        CHECKCAST(lazyType.jvmName)
+        CHECKCAST(lazyType.desc)
         DUP()
         GETFIELD(lazyType.ExpField)
         ifConditionElse(Condition.NONNULL)(
@@ -1046,7 +1047,7 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design).
         addLoc(loc)
-        NEW(BackendObjType.HoleError.jvmName) // HoleError
+        NEW(BackendObjType.HoleError.desc) // HoleError
         DUP() // HoleError, HoleError
         pushString(sym.toString) // HoleError, HoleError, Sym
         pushLoc(loc) // HoleError, HoleError, Sym, Loc
@@ -1057,7 +1058,7 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc)
-        NEW(BackendObjType.MatchError.jvmName) // MatchError
+        NEW(BackendObjType.MatchError.desc) // MatchError
         DUP() // MatchError, MatchError
         pushLoc(loc) // MatchError, MatchError, Loc
         INVOKESPECIAL(BackendObjType.MatchError.Constructor) // MatchError
@@ -1067,7 +1068,7 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc)
-        NEW(BackendObjType.CastError.jvmName) // CastError
+        NEW(BackendObjType.CastError.desc) // CastError
         DUP() // CastError, CastError
         pushLoc(loc) // CastError, CastError, Loc
         pushString(s"Cannot cast from type '$from' to '$to'") // CastError, CastError, Loc, String
@@ -1237,11 +1238,11 @@ object GenExpression {
 
         val effectName = JvmOps.getEffectDefinitionClassName(sym.eff)
         val effectStaticMethod = ClassMaker.StaticMethod(
-          effectName,
+          effectName.toClassDesc,
           JvmOps.getEffectOpName(sym),
           GenEffectClasses.opStaticFunctionDescriptor(sym)
         )
-        NEW(Suspension.jvmName)
+        NEW(Suspension.desc)
         DUP()
         INVOKESPECIAL(Suspension.Constructor)
         DUP()
@@ -1255,7 +1256,7 @@ object GenExpression {
         PUTFIELD(Suspension.EffOpField)
         DUP()
         // create continuation
-        NEW(BackendObjType.FramesNil.jvmName)
+        NEW(BackendObjType.FramesNil.desc)
         DUP()
         INVOKESPECIAL(BackendObjType.FramesNil.Constructor)
         newFrame(mv)
@@ -1266,7 +1267,7 @@ object GenExpression {
         // store continuation
         PUTFIELD(Suspension.PrefixField)
         DUP()
-        NEW(BackendObjType.ResumptionNil.jvmName)
+        NEW(BackendObjType.ResumptionNil.desc)
         DUP()
         INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor)
         PUTFIELD(Suspension.ResumptionField)
@@ -1548,7 +1549,7 @@ object GenExpression {
       // eff name
       pushString(effUse.sym.toString)
       // handler
-      NEW(effectJvmName)
+      NEW(effectJvmName.toClassDesc)
       DUP()
       mv.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
       // bind handler closures
@@ -1558,7 +1559,7 @@ object GenExpression {
         mv.visitFieldInsn(Opcodes.PUTFIELD, effectJvmName.toInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
       }
       // frames
-      NEW(BackendObjType.FramesNil.jvmName)
+      NEW(BackendObjType.FramesNil.desc)
       DUP()
       INVOKESPECIAL(BackendObjType.FramesNil.Constructor)
       // continuation
@@ -1621,21 +1622,6 @@ object GenExpression {
 
   }
 
-  /**
-    * Returns the JVM internal name of the class, interface, or array descriptor `desc`,
-    * e.g. `java/lang/String` or `[Ljava/lang/String;`.
-    */
-  private def internalNameOf(desc: ClassDesc): String = {
-    if (desc.isArray) {
-      // The internal name of an array type is its descriptor.
-      desc.descriptorString()
-    } else {
-      // Strip the leading `L` and trailing `;` of the descriptor.
-      val descriptor = desc.descriptorString()
-      descriptor.substring(1, descriptor.length - 1)
-    }
-  }
-
   private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {
     BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
   }
@@ -1643,7 +1629,7 @@ object GenExpression {
   private def compileIsTag(ordinal: Int, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     compileExpr(exp)
-    CHECKCAST(BackendObjType.Tagged.jvmName)
+    CHECKCAST(BackendObjType.Tagged.desc)
     GETFIELD(BackendObjType.Tagged.OrdinalField)
     pushInt(ordinal)
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
@@ -1656,7 +1642,7 @@ object GenExpression {
         GETSTATIC(BackendObjType.NullaryTag(enumName, name, -1).SingletonField)
       case _ =>
         val tagType = BackendObjType.Tag(tpes)
-        NEW(tagType.jvmName)
+        NEW(tagType.desc)
         DUP()
         INVOKESPECIAL(tagType.Constructor)
         DUP()
@@ -1676,14 +1662,14 @@ object GenExpression {
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
     val tagType = BackendObjType.Tag(tpes)
     compileExpr(exp)
-    CHECKCAST(tagType.jvmName)
+    CHECKCAST(tagType.desc)
     GETFIELD(tagType.IndexField(idx))
   }
 
   private def compileExtIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     compileExpr(exp)
-    CHECKCAST(BackendObjType.ExtTagged.jvmName)
+    CHECKCAST(BackendObjType.ExtTagged.desc)
     GETFIELD(BackendObjType.ExtTagged.NameField)
     BackendObjType.ExtTagged.mkTagName(name)
     BackendObjType.ExtTagged.eqTagName()
@@ -1692,7 +1678,7 @@ object GenExpression {
   private def compileExtTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     val tagType = BackendObjType.ExtTag(tpes)
-    NEW(tagType.jvmName)
+    NEW(tagType.desc)
     DUP()
     INVOKESPECIAL(tagType.Constructor)
     DUP()
@@ -1709,7 +1695,7 @@ object GenExpression {
     import BytecodeInstructions.*
     val tagType = BackendObjType.ExtTag(tpes)
     compileExpr(exp)
-    CHECKCAST(tagType.jvmName)
+    CHECKCAST(tagType.desc)
     GETFIELD(tagType.IndexField(idx))
   }
 

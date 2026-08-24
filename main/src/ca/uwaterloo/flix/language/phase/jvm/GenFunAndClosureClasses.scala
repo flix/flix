@@ -278,7 +278,7 @@ object GenFunAndClosureClasses {
   }
 
   private def staticApplyMethod(className: JvmName, defn: Def)(implicit root: Root): StaticMethod =
-    StaticMethod(className, JvmName.StaticApply, MethodDescriptor(defn.fparams.map(fp => BackendType.toBackendType(fp.tpe)), BackendObjType.Result.toTpe))
+    StaticMethod(className.toClassDesc, JvmName.StaticApply, MethodDescriptor(defn.fparams.map(fp => BackendType.toBackendType(fp.tpe)), BackendObjType.Result.toTpe))
 
   private def compileStaticApplyMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
@@ -470,9 +470,9 @@ object GenFunAndClosureClasses {
     val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
     val params = pc ++ fparams ++ cparams ++ lparams
 
-    NEW(className)
+    NEW(className.toClassDesc)
     DUP()
-    INVOKESPECIAL(className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
+    INVOKESPECIAL(className.toClassDesc, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
     for ((name, fieldType) <- params) {
       DUP()
       thisLoad()

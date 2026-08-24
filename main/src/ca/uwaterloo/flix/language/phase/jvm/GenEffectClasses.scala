@@ -10,6 +10,8 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.MethodVisitor
 
+import java.lang.constant.ClassDesc
+
 /** An effect class like this:
   * {{{
   * eff SomeEffect {
@@ -52,12 +54,12 @@ object GenEffectClasses {
   def gen(effects: Iterable[Effect])(implicit root: Root, flix: Flix): List[JvmClass] = {
     for (effect <- effects.toList) yield {
       val className = JvmOps.getEffectDefinitionClassName(effect.sym)
-      JvmClass(className, genByteCode(className, effect))
+      JvmClass(className, genByteCode(className.toClassDesc, effect))
     }
   }
 
-  private def genByteCode(effectName: JvmName, effect: Effect)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(effectName, IsFinal, interfaces = List(BackendObjType.Handler.jvmName))
+  private def genByteCode(effectName: ClassDesc, effect: Effect)(implicit root: Root, flix: Flix): Array[Byte] = {
+    val cm = ClassMaker.mkClass(effectName, IsFinal, interfaces = List(BackendObjType.Handler.desc))
 
     cm.mkConstructor(ClassMaker.ConstructorMethod(effectName, Nil), IsPublic, constructorIns(_))
 
@@ -82,7 +84,7 @@ object GenEffectClasses {
     RETURN()
   }
 
-  private def methodIns(effectName: JvmName, opFunction: BackendObjType.Arrow, opField: InstanceField, erasedParams: List[BackendType], returnType: BackendType)(implicit mv: MethodVisitor): Unit = {
+  private def methodIns(effectName: ClassDesc, opFunction: BackendObjType.Arrow, opField: InstanceField, erasedParams: List[BackendType], returnType: BackendType)(implicit mv: MethodVisitor): Unit = {
     import BytecodeInstructions.*
     val wrapperType = BackendObjType.ResumptionWrapper(returnType)
 
@@ -97,7 +99,7 @@ object GenEffectClasses {
           // copy (preserving captures, but with fresh argument/local/pc slots) so that re-entrant
           // invocations from deep or multi-shot resumptions do not clobber each other's arguments.
           val absArrow = BackendObjType.AbstractArrow(opFunction.args, opFunction.result)
-          CHECKCAST(absArrow.jvmName)
+          CHECKCAST(absArrow.desc)
           INVOKEVIRTUAL(absArrow.GetUniqueThreadClosureMethod)
           for ((par, i) <- params.zipWithIndex) {
             DUP()
@@ -106,11 +108,11 @@ object GenEffectClasses {
           }
           // Convert the resumption to a function.
           DUP()
-          NEW(wrapperType.jvmName)
+          NEW(wrapperType.desc)
           DUP()
           resumption.load()
           INVOKESPECIAL(wrapperType.Constructor)
-          PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, s"arg${params.size}", BackendObjType.Resumption.toTpe.toErased))
+          PUTFIELD(ClassMaker.InstanceField(opFunction.desc, s"arg${params.size}", BackendObjType.Resumption.toTpe.toErased))
           // Call invoke.
           INVOKEINTERFACE(BackendObjType.Thunk.InvokeMethod)
           ARETURN()

@@ -23,29 +23,30 @@ import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
 import org.objectweb.asm
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
+import java.lang.constant.ClassDesc
 import scala.annotation.tailrec
 
 object BytecodeInstructions {
 
   /** A wrapper of [[MethodVisitor]] to improve its interface. */
   implicit class RichMethodVisitor(visitor: MethodVisitor) {
-    def visitTypeInstruction(opcode: Int, tpe: JvmName): Unit =
-      visitor.visitTypeInsn(opcode, tpe.toInternalName)
+    def visitTypeInstruction(opcode: Int, tpe: ClassDesc): Unit =
+      visitor.visitTypeInsn(opcode, AsmOps.internalNameOf(tpe))
 
     def visitTypeInstructionDirect(opcode: Int, tpe: String): Unit =
       visitor.visitTypeInsn(opcode, tpe)
 
     def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
-    def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): Unit =
-      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, isInterface)
+    def visitMethodInstruction(opcode: Int, owner: ClassDesc, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): Unit =
+      visitor.visitMethodInsn(opcode, AsmOps.internalNameOf(owner), methodName, descriptor.toDescriptor, isInterface)
 
     // TODO: sanitize varags
     def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
       visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments *)
 
-    def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: BackendType): Unit =
-      visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
+    def visitFieldInstruction(opcode: Int, owner: ClassDesc, fieldName: String, fieldType: BackendType): Unit =
+      visitor.visitFieldInsn(opcode, AsmOps.internalNameOf(owner), fieldName, fieldType.toDescriptor)
 
     def visitVarInstruction(opcode: Int, v: Int): Unit =
       visitor.visitVarInsn(opcode, v)
@@ -72,11 +73,11 @@ object BytecodeInstructions {
   sealed case class Handle(handle: asm.Handle)
 
   def mkStaticHandle(m: StaticMethod): Handle = {
-    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, m.clazz.toInternalName, m.name, m.d.toDescriptor, false))
+    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, AsmOps.internalNameOf(m.clazz), m.name, m.d.toDescriptor, false))
   }
 
   def mkStaticHandle(m: StaticInterfaceMethod): Handle = {
-    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, m.clazz.toInternalName, m.name, m.d.toDescriptor, true))
+    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, AsmOps.internalNameOf(m.clazz), m.name, m.d.toDescriptor, true))
   }
 
   //
@@ -136,7 +137,7 @@ object BytecodeInstructions {
 
   def ALOAD(index: Int)(implicit mv: MethodVisitor): Unit = mv.visitVarInstruction(Opcodes.ALOAD, index)
 
-  def ANEWARRAY(className: JvmName)(implicit mv: MethodVisitor): Unit = mv.visitTypeInstruction(Opcodes.ANEWARRAY, className)
+  def ANEWARRAY(className: ClassDesc)(implicit mv: MethodVisitor): Unit = mv.visitTypeInstruction(Opcodes.ANEWARRAY, className)
 
   def ARETURN()(implicit mv: MethodVisitor): Unit = mv.visitInstruction(Opcodes.ARETURN)
 
@@ -151,7 +152,7 @@ object BytecodeInstructions {
   def BIPUSH(i: Byte)(implicit mv: MethodVisitor): Unit =
     mv.visitIntInstruction(Opcodes.BIPUSH, i)
 
-  def CHECKCAST(className: JvmName)(implicit mv: MethodVisitor): Unit =
+  def CHECKCAST(className: ClassDesc)(implicit mv: MethodVisitor): Unit =
     mv.visitTypeInstruction(Opcodes.CHECKCAST, className)
 
   def DLOAD(index: Int)(implicit mv: MethodVisitor): Unit =
@@ -205,7 +206,7 @@ object BytecodeInstructions {
   def ILOAD(index: Int)(implicit mv: MethodVisitor): Unit =
     mv.visitVarInstruction(Opcodes.ILOAD, index)
 
-  def INSTANCEOF(tpe: JvmName)(implicit mv: MethodVisitor): Unit =
+  def INSTANCEOF(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit =
     mv.visitTypeInstruction(Opcodes.INSTANCEOF, tpe)
 
   /**
@@ -230,7 +231,7 @@ object BytecodeInstructions {
   def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle, drop: Int)(implicit mv: MethodVisitor): Unit =
     mv.visitInvokeDynamicInstruction(
       lambdaMethod.name,
-      mkDescriptor(callD.arguments.dropRight(drop) *)(lambdaMethod.clazz.toTpe),
+      mkDescriptor(callD.arguments.dropRight(drop) *)(BackendType.toBackendType(lambdaMethod.clazz)),
       mkStaticHandle(ClassConstants.LambdaMetafactory.MetafactoryMethod),
       lambdaMethod.d.toAsmType,
       callHandle.handle,
@@ -243,13 +244,13 @@ object BytecodeInstructions {
   def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticInterfaceMethod, drop: Int)(implicit mv: MethodVisitor): Unit =
     mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
 
-  def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit =
+  def INVOKEINTERFACE(interfaceName: ClassDesc, methodName: String, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor, isInterface = true)
 
   def INVOKEINTERFACE(m: InterfaceMethod)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d, isInterface = true)
 
-  def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit = {
+  def INVOKESPECIAL(className: ClassDesc, methodName: String, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit = {
     val isInterface = false // OBS this is not technically true if you use it to call private interface methods(?)
     mv.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor, isInterface = isInterface)
   }
@@ -257,7 +258,7 @@ object BytecodeInstructions {
   def INVOKESPECIAL(c: ConstructorMethod)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d, isInterface = false)
 
-  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false)(implicit mv: MethodVisitor): Unit =
+  def INVOKESTATIC(className: ClassDesc, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor, isInterface)
 
   def INVOKESTATIC(m: StaticMethod)(implicit mv: MethodVisitor): Unit =
@@ -266,7 +267,7 @@ object BytecodeInstructions {
   def INVOKESTATIC(m: StaticInterfaceMethod)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = true)
 
-  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false)(implicit mv: MethodVisitor): Unit =
+  def INVOKEVIRTUAL(className: ClassDesc, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor, isInterface)
 
   def INVOKEVIRTUAL(m: AbstractMethod)(implicit mv: MethodVisitor): Unit =
@@ -293,7 +294,7 @@ object BytecodeInstructions {
   def LRETURN()(implicit mv: MethodVisitor): Unit =
     mv.visitInstruction(Opcodes.LRETURN)
 
-  def NEW(className: JvmName)(implicit mv: MethodVisitor): Unit =
+  def NEW(className: ClassDesc)(implicit mv: MethodVisitor): Unit =
     mv.visitTypeInstruction(Opcodes.NEW, className)
 
   def POP()(implicit mv: MethodVisitor): Unit =
@@ -343,7 +344,7 @@ object BytecodeInstructions {
   def castIfNotPrim(tpe: BackendType)(implicit mv: MethodVisitor): Unit = {
     tpe match {
       case arr: BackendType.Array => mv.visitTypeInstructionDirect(Opcodes.CHECKCAST, arr.toDescriptor)
-      case BackendType.Reference(ref) => CHECKCAST(ref.jvmName)
+      case BackendType.Reference(ref) => CHECKCAST(ref.desc)
       case _: BackendType.PrimitiveType => nop()
     }
   }
@@ -397,7 +398,7 @@ object BytecodeInstructions {
     mv.visitLabel(afterEverything)
   }
 
-  def invokeConstructor(className: JvmName, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit =
+  def invokeConstructor(className: ClassDesc, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit =
     INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
 
   def nop(): Unit =
@@ -426,7 +427,7 @@ object BytecodeInstructions {
   }
 
   def pushLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
-    NEW(BackendObjType.ReifiedSourceLocation.jvmName)
+    NEW(BackendObjType.ReifiedSourceLocation.desc)
     DUP()
     pushString(loc.source.name)
     pushInt(loc.startLine)
@@ -444,10 +445,10 @@ object BytecodeInstructions {
   def thisLoad()(implicit mv: MethodVisitor): Unit = ALOAD(0)
 
   def throwUnsupportedOperationException(msg: String)(implicit mv: MethodVisitor): Unit = {
-    NEW(JvmName.UnsupportedOperationException)
+    NEW(JvmName.UnsupportedOperationException.toClassDesc)
     DUP()
     pushString(msg)
-    INVOKESPECIAL(JvmName.UnsupportedOperationException, JvmName.ConstructorMethod,
+    INVOKESPECIAL(JvmName.UnsupportedOperationException.toClassDesc, JvmName.ConstructorMethod,
       mkDescriptor(BackendType.String)(VoidableType.Void))
     ATHROW()
   }
@@ -501,7 +502,7 @@ object BytecodeInstructions {
 
   def xNewArray(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
     case BackendType.Array(_) => mv.visitTypeInsn(Opcodes.ANEWARRAY, elmTpe.toDescriptor)
-    case BackendType.Reference(ref) => ANEWARRAY(ref.jvmName)
+    case BackendType.Reference(ref) => ANEWARRAY(ref.desc)
     case tpe: BackendType.PrimitiveType => tpe match {
       case BackendType.Bool => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN)
       case BackendType.Char => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_CHAR)
