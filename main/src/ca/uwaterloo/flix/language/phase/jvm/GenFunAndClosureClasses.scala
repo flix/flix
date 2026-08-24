@@ -289,7 +289,7 @@ object GenFunAndClosureClasses {
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     implicit val m: MethodVisitor = visitor.visitMethod(modifiers, method.name, method.d.descriptorString(), null, null)
     m.visitCode()
-    BytecodeInstructions.addLoc(defn.loc)
+    Instructions.addLoc(defn.loc)
 
     // used for self-recursive tail calls
     val enterLabel = new Label()
@@ -368,7 +368,7 @@ object GenFunAndClosureClasses {
     }
 
     m.visitCode()
-    BytecodeInstructions.addLoc(defn.loc)
+    Instructions.addLoc(defn.loc)
     loadParamsOf(lparams)
 
     // used for self-recursive tail calls
@@ -394,12 +394,12 @@ object GenFunAndClosureClasses {
 
       // Generating the expression
       def newFrame(mv: MethodVisitor): Unit = {
-        BytecodeInstructions.thisLoad()(mv)
+        Instructions.thisLoad()(mv)
         mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, copyName, nothingToTDescriptor(className).descriptorString(), false)
       }
 
       def setPc(mv: MethodVisitor): Unit = {
-        import BytecodeInstructions.*
+        import Instructions.*
         SWAP()(mv)
         DUP_X1()(mv)
         SWAP()(mv) // clo, pc ---> clo, clo, pc
@@ -466,7 +466,7 @@ object GenFunAndClosureClasses {
     * A partial copy is without local parameters and without pc
     */
   private def mkCopy(className: ClassDesc, defn: Def)(implicit mv: MethodVisitor, root: Root): Unit = {
-    import BytecodeInstructions.*
+    import Instructions.*
     val classInternalName = ClassDescs.internalNameOf(className)
     val pc = List(("pc", BackendType.Int32))
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
