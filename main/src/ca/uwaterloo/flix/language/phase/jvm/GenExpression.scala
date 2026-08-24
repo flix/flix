@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
-import ca.uwaterloo.flix.language.phase.jvm.AsmOps.internalNameOf
+import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
 import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps

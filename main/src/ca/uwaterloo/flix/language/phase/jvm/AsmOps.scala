@@ -16,9 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.util.ClassDescs
 import org.objectweb.asm.ClassWriter
-
-import java.lang.constant.ClassDesc
 
 object AsmOps {
 
@@ -29,22 +28,7 @@ object AsmOps {
     */
   def mkClassWriter(): ClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
     override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
-      internalNameOf(JavaClasses.Object)
-    }
-  }
-
-  /**
-    * Returns the JVM internal name of the class, interface, or array descriptor `desc`,
-    * e.g. `java/lang/String` or `[Ljava/lang/String;`.
-    */
-  def internalNameOf(desc: ClassDesc): String = {
-    if (desc.isArray) {
-      // The internal name of an array type is its descriptor.
-      desc.descriptorString()
-    } else {
-      // Strip the leading `L` and trailing `;` of the descriptor.
-      val descriptor = desc.descriptorString()
-      descriptor.substring(1, descriptor.length - 1)
+      ClassDescs.internalNameOf(JavaClasses.Object)
     }
   }
 

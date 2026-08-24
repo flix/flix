@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import ca.uwaterloo.flix.util.collection.MapOps
 
 
@@ -159,7 +159,7 @@ object CodeGen {
     // Check for duplicate JVM class names.
     val duplicates = allClasses.groupBy(_.name).collect { case (name, classes) if classes.length > 1 => name }
     if (duplicates.nonEmpty) {
-      val names = duplicates.map(AsmOps.internalNameOf).mkString(", ")
+      val names = duplicates.map(ClassDescs.internalNameOf).mkString(", ")
       throw InternalCompilerException(s"Duplicate JVM class names: $names", SourceLocation.Unknown)
     }
 
