@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.phase.jvm.Mangle.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
 
+import java.lang.constant.ClassDesc
+
 object JvmOps {
 
   /** Returns the index of `varOffset` combined with the context offset. */
@@ -69,7 +71,7 @@ object JvmOps {
     * List.length       =>    List/Clo$length
     * List.map          =>    List/Clo$map
     */
-  def getClosureClassName(sym: Symbol.DefnSym): JvmName = {
+  def getClosureClassName(sym: Symbol.DefnSym): ClassDesc = {
     // The JVM name is of the form Clo$sym.name
     val name = Mangle.mkClassName(s"Clo", sym.name)
 
@@ -77,7 +79,7 @@ object JvmOps {
     val pkg = sym.namespace
 
     // The result type.
-    JvmName(pkg, name)
+    ClassDesc.ofInternalName((pkg :+ name).mkString("/"))
   }
 
   /**
@@ -88,10 +90,10 @@ object JvmOps {
     * Print       =>  Eff$Print
     * List.Crash  =>  List.Eff$Crash
     */
-  def getEffectDefinitionClassName(sym: Symbol.EffSym): JvmName = {
+  def getEffectDefinitionClassName(sym: Symbol.EffSym): ClassDesc = {
     val pkg = sym.namespace
     val name = Mangle.mkClassName("Eff", sym.name)
-    JvmName(pkg, name)
+    ClassDesc.ofInternalName((pkg :+ name).mkString("/"))
   }
 
   /**

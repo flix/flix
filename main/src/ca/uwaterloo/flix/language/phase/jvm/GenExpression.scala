@@ -193,19 +193,19 @@ object GenExpression {
 
       case AtomicOp.Closure(sym) =>
         // JvmType of the closure
-        val jvmName = JvmOps.getClosureClassName(sym)
+        val closureName = internalNameOf(JvmOps.getClosureClassName(sym))
         // new closure instance
-        mv.visitTypeInsn(NEW, jvmName.toInternalName)
+        mv.visitTypeInsn(NEW, closureName)
         // Duplicate
         mv.visitInsn(DUP)
-        mv.visitMethodInsn(INVOKESPECIAL, jvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, closureName, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, false)
         // Capturing free args
         for ((arg, i) <- exps.zipWithIndex) {
           val argType = BackendType.toBackendType(arg.tpe)
           mv.visitInsn(DUP)
           compileExpr(arg)
           BytecodeInstructions.castIfNotPrim(argType)
-          mv.visitFieldInsn(PUTFIELD, jvmName.toInternalName, s"clo$i", argType.toDescriptor)
+          mv.visitFieldInsn(PUTFIELD, closureName, s"clo$i", argType.toDescriptor)
         }
 
       case AtomicOp.Unary(sop) =>
@@ -869,7 +869,7 @@ object GenExpression {
         }
 
         // Call the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, constructor.descriptor.descriptorString(), false)
+        mv.visitMethodInsn(INVOKESPECIAL, declaration, ClassMaker.ConstructorMethodName, constructor.descriptor.descriptorString(), false)
 
       case AtomicOp.InvokeSuperConstructor(constructor) =>
         // A InvokeSuperConstructor is handled directly in NewObject.
@@ -1150,7 +1150,7 @@ object GenExpression {
         // Put the def on the stack
         mv.visitTypeInsn(NEW, defInternalName)
         mv.visitInsn(DUP)
-        mv.visitMethodInsn(INVOKESPECIAL, defInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, defInternalName, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, false)
         // Putting args on the Fn class
         for ((arg, i) <- exps.zipWithIndex) {
           // Duplicate the FunctionInterface
@@ -1176,7 +1176,7 @@ object GenExpression {
           val resultTpe = BackendObjType.Result.toTpe
           val desc = MethodDescriptor(paramTpes, resultTpe)
           val className = internalNameOf(BackendObjType.Defn(sym).desc)
-          mv.visitMethodInsn(INVOKESTATIC, className, JvmName.StaticApply, desc.toDescriptor, false)
+          mv.visitMethodInsn(INVOKESTATIC, className, ClassMaker.StaticApplyMethodName, desc.toDescriptor, false)
           BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
         } else {
           // JvmType of Def
@@ -1185,7 +1185,7 @@ object GenExpression {
           // Put the def on the stack
           mv.visitTypeInsn(NEW, defInternalName)
           mv.visitInsn(DUP)
-          mv.visitMethodInsn(INVOKESPECIAL, defInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+          mv.visitMethodInsn(INVOKESPECIAL, defInternalName, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, false)
 
           // Putting args on the Fn class
           for ((arg, i) <- exps.zipWithIndex) {
@@ -1238,7 +1238,7 @@ object GenExpression {
 
         val effectName = JvmOps.getEffectDefinitionClassName(sym.eff)
         val effectStaticMethod = ClassMaker.StaticMethod(
-          effectName.toClassDesc,
+          effectName,
           JvmOps.getEffectOpName(sym),
           GenEffectClasses.opStaticFunctionDescriptor(sym)
         )
@@ -1460,7 +1460,7 @@ object GenExpression {
       // Create an instance of Region
       mv.visitTypeInsn(NEW, internalNameOf(BackendObjType.Region.desc))
       mv.visitInsn(DUP)
-      mv.visitMethodInsn(INVOKESPECIAL, internalNameOf(BackendObjType.Region.desc), JvmName.ConstructorMethod,
+      mv.visitMethodInsn(INVOKESPECIAL, internalNameOf(BackendObjType.Region.desc), ClassMaker.ConstructorMethodName,
         MethodDescriptor.NothingToVoid.toDescriptor, false)
 
       BytecodeInstructions.xStore(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
@@ -1545,18 +1545,19 @@ object GenExpression {
     case Expr.RunWith(exp, effUse, rules, ct, _, _, loc) =>
       import BytecodeInstructions.*
       // exp is a Unit -> exp.tpe closure
-      val effectJvmName = JvmOps.getEffectDefinitionClassName(effUse.sym)
+      val effectName = JvmOps.getEffectDefinitionClassName(effUse.sym)
+      val effectInternalName = internalNameOf(effectName)
       // eff name
       pushString(effUse.sym.toString)
       // handler
-      NEW(effectJvmName.toClassDesc)
+      NEW(effectName)
       DUP()
-      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, effectInternalName, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, false)
       // bind handler closures
       for (HandlerRule(op, _, body) <- rules) {
         mv.visitInsn(Opcodes.DUP)
         compileExpr(body)
-        mv.visitFieldInsn(Opcodes.PUTFIELD, effectJvmName.toInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
+        mv.visitFieldInsn(Opcodes.PUTFIELD, effectInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
       }
       // frames
       NEW(BackendObjType.FramesNil.desc)
@@ -1593,7 +1594,7 @@ object GenExpression {
 
     case Expr.NewObject(sym, _, _, _, constructors, methods, _) =>
       val methodExps = methods.map(_.exp)
-      val className = JvmName(Mangle.RootPackage, sym.name).toInternalName
+      val className = sym.name
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
 
@@ -1606,11 +1607,11 @@ object GenExpression {
               compileExpr(arg)
               if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
             }
-            mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, constructor.descriptor.descriptorString(), false)
+            mv.visitMethodInsn(INVOKESPECIAL, className, ClassMaker.ConstructorMethodName, constructor.descriptor.descriptorString(), false)
           case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructors.head.loc)
         }
       } else {
-        mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, className, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, false)
       }
 
       // For each method, compile the closure which implements the body of that method and store it in a field

@@ -32,6 +32,15 @@ object ClassDescs {
     )
 
   /**
+    * Returns the class file name (e.g. `java/lang/String.class`) of the class or interface `desc`.
+    */
+  def classFileNameOf(desc: ClassDesc): String = {
+    // Strip the leading `L` and trailing `;` of the descriptor.
+    val descriptor = desc.descriptorString()
+    descriptor.substring(1, descriptor.length - 1) + ".class"
+  }
+
+  /**
     * Returns the binary name (e.g. `java.lang.String`) of the class or interface `desc`.
     */
   def binaryNameOf(desc: ClassDesc): String = {

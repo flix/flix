@@ -17,7 +17,9 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
+import ca.uwaterloo.flix.language.phase.jvm.JvmClass
+
+import java.lang.constant.ClassDesc
 
 object BytecodeAst {
 
@@ -28,14 +30,14 @@ object BytecodeAst {
     * @param main  main (if present) refers to a function of type `Array[String] -> Unit`
     */
   case class Root(
-                   classes: Map[JvmName, JvmClass],
+                   classes: Map[ClassDesc, JvmClass],
                    tests: Map[Symbol.DefnSym, Test],
                    main: Option[Def],
                    sources: Map[Source, SourceLocation]
                  )
 
-  case class Def(className: JvmName, methodName: String)
+  case class Def(className: ClassDesc, methodName: String)
 
-  case class Test(className: JvmName, methodName: String, isSkip: Boolean)
+  case class Test(className: ClassDesc, methodName: String, isSkip: Boolean)
 
 }

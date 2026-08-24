@@ -399,7 +399,7 @@ object BytecodeInstructions {
   }
 
   def invokeConstructor(className: ClassDesc, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit =
-    INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
+    INVOKESPECIAL(className, ConstructorMethodName, descriptor)
 
   def nop(): Unit =
     ()
@@ -448,7 +448,7 @@ object BytecodeInstructions {
     NEW(JavaClasses.UnsupportedOperationException)
     DUP()
     pushString(msg)
-    INVOKESPECIAL(JavaClasses.UnsupportedOperationException, JvmName.ConstructorMethod,
+    INVOKESPECIAL(JavaClasses.UnsupportedOperationException, ConstructorMethodName,
       mkDescriptor(BackendType.String)(VoidableType.Void))
     ATHROW()
   }
