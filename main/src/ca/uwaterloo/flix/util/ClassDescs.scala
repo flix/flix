@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Flix authors
+ * Copyright 2026 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.ast.shared
+package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
 import java.lang.constant.ClassDesc
 
-/**
-  * Represents a resolved JVM annotation (after name resolution).
-  * Used from ResolvedAst through JvmAst.
-  *
-  * `isRuntimeVisible` holds whether the annotation has runtime retention. It is computed
-  * during resolution, where the annotation class is loaded, so the backend needs no reflection.
-  */
-case class JvmAnnotation(clazz: ClassDesc, isRuntimeVisible: Boolean, loc: SourceLocation)
+object ClassDescs {
+
+  /**
+    * Returns the [[ClassDesc]] of the given loaded class `clazz`.
+    *
+    * Throws an [[InternalCompilerException]] if `clazz` has no nominal descriptor (e.g. a hidden class).
+    */
+  def of(clazz: Class[?]): ClassDesc =
+    clazz.describeConstable().orElseThrow(() =>
+      InternalCompilerException(s"The class '${clazz.getName}' has no nominal descriptor.", SourceLocation.Unknown)
+    )
+
+}

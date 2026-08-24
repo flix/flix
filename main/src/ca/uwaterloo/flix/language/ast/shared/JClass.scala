@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Flix authors
+ * Copyright 2026 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,24 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.ClassDescs
 
 import java.lang.constant.ClassDesc
 
+object JClass {
+
+  /** Returns the [[JClass]] of the given loaded class `clazz`. */
+  def of(clazz: Class[?]): JClass =
+    JClass(ClassDescs.of(clazz), clazz.isInterface)
+
+}
+
 /**
-  * Represents a resolved JVM annotation (after name resolution).
-  * Used from ResolvedAst through JvmAst.
+  * A nominal reference to the Java class or interface `desc`.
   *
-  * `isRuntimeVisible` holds whether the annotation has runtime retention. It is computed
-  * during resolution, where the annotation class is loaded, so the backend needs no reflection.
+  * `isInterface` holds whether `desc` is an interface; the JVM needs the distinction to
+  * decide between extending a superclass and implementing an interface.
+  *
+  * Unlike [[Class]], a [[JClass]] does not retain a loaded class.
   */
-case class JvmAnnotation(clazz: ClassDesc, isRuntimeVisible: Boolean, loc: SourceLocation)
+case class JClass(desc: ClassDesc, isInterface: Boolean)
