@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.ast.shared.JvmAnnotation
 import ca.uwaterloo.flix.util.ClassDescs
 import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
 
-import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import java.lang.constant.{ClassDesc, ConstantDescs, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.CD_Object
 
 
@@ -49,9 +49,9 @@ sealed trait ClassMaker {
 
   protected val visitor: ClassWriter
 
-  protected def makeField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final, vol: Volatility, s: Static): Unit = {
+  protected def makeField(fieldName: String, fieldType: ClassDesc, v: Visibility, f: Final, vol: Volatility, s: Static): Unit = {
     val m = v.toInt + f.toInt + s.toInt + vol.toInt
-    val field = visitor.visitField(m, fieldName, fieldType.toDescriptor, null, null)
+    val field = visitor.visitField(m, fieldName, fieldType.descriptorString(), null, null)
     field.visitEnd()
   }
 
@@ -264,12 +264,12 @@ object ClassMaker {
 
     def name: String
 
-    def tpe: BackendType
+    def tpe: ClassDesc
   }
 
-  sealed case class InstanceField(clazz: ClassDesc, name: String, tpe: BackendType) extends Field
+  sealed case class InstanceField(clazz: ClassDesc, name: String, tpe: ClassDesc) extends Field
 
-  sealed case class StaticField(clazz: ClassDesc, name: String, tpe: BackendType) extends Field
+  sealed case class StaticField(clazz: ClassDesc, name: String, tpe: ClassDesc) extends Field
 
   sealed trait Method {
     def clazz: ClassDesc
@@ -279,10 +279,10 @@ object ClassMaker {
     def d: MethodTypeDesc
   }
 
-  sealed case class ConstructorMethod(clazz: ClassDesc, args: List[BackendType]) extends Method {
+  sealed case class ConstructorMethod(clazz: ClassDesc, args: List[ClassDesc]) extends Method {
     override def name: String = ConstructorMethodName
 
-    override def d: MethodTypeDesc = MethodTypeDescs.mkVoidDescriptor(args *)
+    override def d: MethodTypeDesc = MethodTypeDesc.of(ConstantDescs.CD_void, args *)
   }
 
   case class StaticConstructorMethod(clazz: ClassDesc) extends Method {
