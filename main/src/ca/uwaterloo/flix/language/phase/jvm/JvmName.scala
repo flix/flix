@@ -175,6 +175,13 @@ case class JvmName(pkg: List[String], name: String) {
   lazy val toClassFileName: String = toInternalName + ".class"
 
   /**
+    * Returns `this` Java name as a [[ClassDesc]].
+    *
+    * Temporary bridge while the backend migrates from [[JvmName]] to [[ClassDesc]].
+    */
+  lazy val toClassDesc: ClassDesc = ClassDesc.ofDescriptor(toDescriptor)
+
+  /**
     * Wraps this name in `BackendType.Reference(BackendObjType.Native(...))`.
     */
   def toTpe: BackendType.Reference = BackendObjType.Native(this).toTpe
