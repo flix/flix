@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.{CD_Object, CD_String}
 import scala.annotation.tailrec
 
 /**
@@ -119,11 +120,11 @@ object BackendType {
     * Holds a reference to some object type.
     */
   case class Reference(ref: BackendObjType) extends BackendType {
-    def name: JvmName = ref.jvmName
+    def name: ClassDesc = ref.desc
   }
 
-  val Object: BackendType = Reference(BackendObjType.Native(JvmName.Object))
-  val String: BackendType = Reference(BackendObjType.Native(JvmName.String))
+  val Object: BackendType = Reference(BackendObjType.Native(CD_Object))
+  val String: BackendType = Reference(BackendObjType.Native(CD_String))
 
   /**
     * Converts the given [[SimpleType]] into its [[BackendType]] representation.
@@ -160,7 +161,7 @@ object BackendType {
       case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
       case SimpleType.ExtensibleEmpty => BackendObjType.ExtTagged.toTpe
       case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.ExtTagged.toTpe
-      case SimpleType.Native(clazz) => BackendObjType.Native(JvmName.ofClassDesc(clazz)).toTpe
+      case SimpleType.Native(clazz) => BackendObjType.Native(clazz).toTpe
       case SimpleType.Enum(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
       case SimpleType.Struct(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
     }
@@ -178,11 +179,11 @@ object BackendType {
     else if (desc == CD_float) BackendType.Float32
     else if (desc == CD_double) BackendType.Float64
     else if (desc.isArray) Array(toBackendType(desc.componentType()))
-    else Reference(BackendObjType.Native(JvmName.ofClassDesc(desc)))
+    else Reference(BackendObjType.Native(desc))
   }
 
   /**
-    * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
+    * Contains all the primitive types and `Reference(Native(CD_Object))`.
     */
   def erasedTypes: List[BackendType] = List(
     BackendType.Bool,
