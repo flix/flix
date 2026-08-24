@@ -775,7 +775,7 @@ object GenExpression {
           case None => ()
           case Some(region) =>
             compileExpr(region)
-            xPop(BackendType.toBackendType(region.tpe))
+            Bytecode.xPop(BackendType.toClassDesc(region.tpe))
         }
         NEW(structType.desc)
         DUP()
@@ -1273,7 +1273,7 @@ object GenExpression {
         DUP()
         INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor)
         PUTFIELD(Suspension.ResumptionField)
-        xReturn(Suspension.toTpe)
+        Bytecode.xReturn(Suspension.desc)
 
         mv.visitLabel(pcPointLabel)
         narrowLocals(mv)
@@ -1439,7 +1439,7 @@ object GenExpression {
       import BytecodeInstructions.*
       exps.foreach { e =>
         compileExpr(e)
-        xPop(BackendType.toBackendType(e.tpe))
+        Bytecode.xPop(BackendType.toClassDesc(e.tpe))
       }
       compileExpr(exp)
 
