@@ -176,7 +176,7 @@ object BackendObjType {
 
     /** `[] --> return` */
     private def constructorIns(implicit mv: MethodVisitor): Unit =
-      withName(1, BackendType.Object)(exp => {
+      Instructions.withName(1, CD_Object)(exp => {
         // super()
         thisLoad()
         INVOKESPECIAL(ClassConstants.Object.Constructor)
@@ -254,7 +254,7 @@ object BackendObjType {
 
     /** `[] --> return` */
     private def constructorIns(implicit mv: MethodVisitor): Unit =
-      withNames(1, elms) { case (_, variables) =>
+      Instructions.withNames(1, elms.map(_.toClassDesc)) { case (_, variables) =>
         thisLoad()
         // super()
         DUP()
@@ -292,7 +292,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, elms)
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withNames(1, elms) { case (_, variables) =>
+      Instructions.withNames(1, elms.map(_.toClassDesc)) { case (_, variables) =>
         thisLoad()
         // super()
         DUP()
@@ -1080,8 +1080,8 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(BackendType.String, ReifiedSourceLocation.toTpe))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, BackendType.String) { hole =>
-        withName(2, ReifiedSourceLocation.toTpe) { loc =>
+      Instructions.withName(1, JavaClasses.String) { hole =>
+        Instructions.withName(2, ReifiedSourceLocation.desc) { loc =>
           thisLoad()
           // create an error msg
           NEW(JavaClasses.StringBuilder)
@@ -1160,7 +1160,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(ReifiedSourceLocation.toTpe, BackendType.String))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, BackendType.String)(msg => {
+      Instructions.withName(1, ReifiedSourceLocation.desc)(loc => Instructions.withName(2, JavaClasses.String)(msg => {
         thisLoad()
         NEW(JavaClasses.StringBuilder)
         DUP()
@@ -1199,7 +1199,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(Suspension.toTpe, BackendType.String, ReifiedSourceLocation.toTpe))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Suspension.toTpe)(suspension => withName(2, BackendType.String)(info => withName(3, ReifiedSourceLocation.toTpe)(loc => {
+      Instructions.withName(1, Suspension.desc)(suspension => Instructions.withName(2, JavaClasses.String)(info => Instructions.withName(3, ReifiedSourceLocation.desc)(loc => {
         def appendString(): Unit = INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
 
         thisLoad()
@@ -1305,7 +1305,7 @@ object BackendObjType {
       INVOKESTATIC(ClassConstants.Thread.OfVirtualMethod)
       ALOAD(1)
       INVOKEINTERFACE(ClassConstants.ThreadBuilderOfVirtual.UnstartedMethod)
-      storeWithName(2, JavaClasses.Thread.toTpe) { thread =>
+      Instructions.storeWithName(2, JavaClasses.Thread) { thread =>
         thread.load()
         NEW(BackendObjType.UncaughtExceptionHandler.desc)
         DUP()
@@ -1333,7 +1333,7 @@ object BackendObjType {
     def ExitMethod: InstanceMethod = InstanceMethod(this.desc, "exit", MethodDescriptor.NothingToVoid)
 
     private def exitIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, JavaClasses.Thread.toTpe) { t =>
+      Instructions.withName(1, JavaClasses.Thread) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad()
           GETFIELD(ThreadsField)
@@ -1345,7 +1345,7 @@ object BackendObjType {
           t.load()
           INVOKEVIRTUAL(ClassConstants.Thread.JoinMethod)
         }
-        withName(2, JavaClasses.Iterator.toTpe) { i =>
+        Instructions.withName(2, JavaClasses.Iterator) { i =>
           thisLoad()
           GETFIELD(OnExitField)
           INVOKEVIRTUAL(ClassConstants.LinkedList.IteratorMethod)
@@ -1465,7 +1465,7 @@ object BackendObjType {
 
     private def mainIns(sym: Symbol.DefnSym)(implicit mv: MethodVisitor): Unit = {
       val defName = BackendObjType.Defn(sym).desc
-      withName(0, BackendType.Array(BackendType.String))(args => {
+      Instructions.withName(0, JavaClasses.String.arrayType())(args => {
         args.load()
         INVOKESTATIC(Global.SetArgsMethod)
         NEW(defName)
@@ -1508,7 +1508,7 @@ object BackendObjType {
     private def shimIns(defn: JvmAst.Def)(implicit mv: MethodVisitor): Unit = {
       val defnT = Defn(defn.sym)
       val paramTypes = defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
-      withNames(0, paramTypes) {
+      Instructions.withNames(0, paramTypes.map(_.toClassDesc)) {
         case (_, args) =>
           val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
           NEW(defnT.desc)
@@ -1517,7 +1517,7 @@ object BackendObjType {
           for ((arg, index) <- args.zipWithIndex) {
             DUP()
             arg.load()
-            PUTFIELD(InstanceField(defnT.desc, s"arg$index", arg.tpe))
+            PUTFIELD(InstanceField(defnT.desc, s"arg$index", paramTypes(index)))
           }
           Result.unwindSuspensionFreeThunkToType(erasedResult, s"in shim method of ${defn.sym}", defn.loc)
           Instructions.xReturn(erasedResult.toClassDesc)
@@ -1769,8 +1769,8 @@ object BackendObjType {
     )
 
     private def staticApplyIns(implicit mv: MethodVisitor): Unit = {
-      withName(0, Frame.toTpe) { fun =>
-        withName(1, Value.toTpe) { resumeArg =>
+      Instructions.withName(0, Frame.desc) { fun =>
+        Instructions.withName(1, Value.desc) { resumeArg =>
           fun.load()
           resumeArg.load()
           INVOKEINTERFACE(Frame.ApplyMethod)
@@ -1845,7 +1845,7 @@ object BackendObjType {
     def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.desc, "reverseOnto", mkDescriptor(Frames.toTpe)(Frames.toTpe))
 
     def pushImplementation(implicit mv: MethodVisitor): Unit = {
-      withName(1, Frame.toTpe) { frame =>
+      Instructions.withName(1, Frame.desc) { frame =>
         NEW(FramesCons.desc)
         DUP()
         INVOKESPECIAL(FramesCons.Constructor)
@@ -1883,7 +1883,7 @@ object BackendObjType {
     def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.desc)
 
     private def reverseOntoIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Frames.toTpe) { rest =>
+      Instructions.withName(1, Frames.desc) { rest =>
         thisLoad()
         GETFIELD(TailField)
         NEW(FramesCons.desc)
@@ -1919,9 +1919,9 @@ object BackendObjType {
     def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.desc)
 
     private def reverseOntoIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Frames.toTpe) { rest =>
+      Instructions.withName(1, Frames.desc) { rest =>
         rest.load()
-        Instructions.xReturn(rest.tpe.toClassDesc)
+        Instructions.xReturn(rest.tpe)
       }
     }
   }
@@ -1939,8 +1939,8 @@ object BackendObjType {
     def StaticRewindMethod: StaticInterfaceMethod = StaticInterfaceMethod(this.desc, "staticRewind", mkDescriptor(Resumption.toTpe, Value.toTpe)(Result.toTpe))
 
     private def staticRewindIns(implicit mv: MethodVisitor): Unit = {
-      withName(0, Resumption.toTpe) { resumption =>
-        withName(1, Value.toTpe) { v =>
+      Instructions.withName(0, Resumption.desc) { resumption =>
+        Instructions.withName(1, Value.desc) { v =>
           resumption.load()
           v.load()
           INVOKEINTERFACE(Resumption.RewindMethod)
@@ -1978,7 +1978,7 @@ object BackendObjType {
     def TailField: InstanceField = InstanceField(this.desc, "tail", Resumption.toTpe)
 
     private def rewindIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Value.toTpe) { v =>
+      Instructions.withName(1, Value.desc) { v =>
         thisLoad()
         GETFIELD(SymField)
         thisLoad()
@@ -2010,9 +2010,9 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
     private def rewindIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Value.toTpe) { v =>
+      Instructions.withName(1, Value.desc) { v =>
         v.load()
-        Instructions.xReturn(v.tpe.toClassDesc)
+        Instructions.xReturn(v.tpe)
       }
     }
   }
@@ -2032,10 +2032,10 @@ object BackendObjType {
     )
 
     private def installHandlerIns(implicit mv: MethodVisitor): Unit = {
-      withName(0, BackendType.String) { effSym =>
-        withName(1, Handler.toTpe) { handler =>
-          withName(2, Frames.toTpe) { frames =>
-            withName(3, Thunk.toTpe) { thunk =>
+      Instructions.withName(0, JavaClasses.String) { effSym =>
+        Instructions.withName(1, Handler.desc) { handler =>
+          Instructions.withName(2, Frames.desc) { frames =>
+            Instructions.withName(3, Thunk.desc) { thunk =>
               thunk.load()
               // Thunk|Value|Suspension
               Result.unwindThunk()
@@ -2046,7 +2046,7 @@ object BackendObjType {
               ifCondition(Condition.NE) {
                 DUP()
                 CHECKCAST(Suspension.desc)
-                storeWithName(4, Suspension.toTpe) { s =>
+                Instructions.storeWithName(4, Suspension.desc) { s =>
                   NEW(ResumptionCons.desc)
                   DUP()
                   INVOKESPECIAL(ResumptionCons.Constructor)
@@ -2066,7 +2066,7 @@ object BackendObjType {
                   s.load()
                   GETFIELD(Suspension.ResumptionField)
                   PUTFIELD(ResumptionCons.TailField)
-                  storeWithName(5, ResumptionCons.toTpe) { r =>
+                  Instructions.storeWithName(5, ResumptionCons.desc) { r =>
                     s.load()
                     GETFIELD(Suspension.EffSymField)
                     effSym.load()
@@ -2105,7 +2105,7 @@ object BackendObjType {
 
               // Value
               CHECKCAST(Value.desc)
-              storeWithName(6, Value.toTpe) { res =>
+              Instructions.storeWithName(6, Value.desc) { res =>
                 //
                 // Case on frames
                 // FramesNil
@@ -2118,7 +2118,7 @@ object BackendObjType {
                 // FramesCons
                 frames.load()
                 CHECKCAST(FramesCons.desc)
-                storeWithName(7, FramesCons.toTpe) { cons => {
+                Instructions.storeWithName(7, FramesCons.desc) { cons => {
                   effSym.load()
                   handler.load()
                   cons.load()
@@ -2169,7 +2169,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(Resumption.toTpe))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Resumption.toTpe) { resumption =>
+      Instructions.withName(1, Resumption.desc) { resumption =>
         thisLoad()
         INVOKESPECIAL(superClass.desc, ConstructorMethodName, MethodDescriptor.NothingToVoid)
         thisLoad()
