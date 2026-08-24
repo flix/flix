@@ -445,10 +445,10 @@ object BytecodeInstructions {
   def thisLoad()(implicit mv: MethodVisitor): Unit = ALOAD(0)
 
   def throwUnsupportedOperationException(msg: String)(implicit mv: MethodVisitor): Unit = {
-    NEW(JvmName.UnsupportedOperationException.toClassDesc)
+    NEW(JavaClasses.UnsupportedOperationException)
     DUP()
     pushString(msg)
-    INVOKESPECIAL(JvmName.UnsupportedOperationException.toClassDesc, JvmName.ConstructorMethod,
+    INVOKESPECIAL(JavaClasses.UnsupportedOperationException, JvmName.ConstructorMethod,
       mkDescriptor(BackendType.String)(VoidableType.Void))
     ATHROW()
   }

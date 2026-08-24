@@ -31,4 +31,13 @@ object ClassDescs {
       InternalCompilerException(s"The class '${clazz.getName}' has no nominal descriptor.", SourceLocation.Unknown)
     )
 
+  /**
+    * Returns the binary name (e.g. `java.lang.String`) of the class or interface `desc`.
+    */
+  def binaryNameOf(desc: ClassDesc): String = {
+    // Strip the leading `L` and trailing `;` of the descriptor and replace `/` with `.`.
+    val descriptor = desc.descriptorString()
+    descriptor.substring(1, descriptor.length - 1).replace('/', '.')
+  }
+
 }

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
+import ca.uwaterloo.flix.language.phase.jvm.BackendType.RichClassDesc
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceMethod, InterfaceMethod, StaticMethod}
 import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
 import org.objectweb.asm.MethodVisitor
@@ -31,7 +32,7 @@ object ClassConstants {
     val Constructor: ConstructorMethod = ConstructorMethod(JvmName.FlixError.toClassDesc, List(BackendType.String))
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkAbstractClass(JvmName.FlixError.toClassDesc, JvmName.Error.toClassDesc)
+      val cm = ClassMaker.mkAbstractClass(JvmName.FlixError.toClassDesc, JavaClasses.Error)
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       cm.closeClassMaker()
     }
@@ -40,7 +41,7 @@ object ClassConstants {
       import BytecodeInstructions.*
       thisLoad()
       ALOAD(1)
-      invokeConstructor(JvmName.Error.toClassDesc, mkDescriptor(BackendType.String)(VoidableType.Void))
+      invokeConstructor(JavaClasses.Error, mkDescriptor(BackendType.String)(VoidableType.Void))
       RETURN()
     }
 
@@ -49,125 +50,125 @@ object ClassConstants {
   // Java Constants.
 
   object BigDecimal {
-    val Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JvmName.BigDecimal.toClassDesc, List(BackendType.String))
+    val Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JavaClasses.BigDecimal, List(BackendType.String))
   }
 
   object BigInteger {
-    val Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JvmName.BigInteger.toClassDesc, List(BackendType.String))
+    val Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JavaClasses.BigInteger, List(BackendType.String))
   }
 
   object ConcurrentLinkedQueue {
 
     val AddMethod: InstanceMethod =
-      InstanceMethod(JvmName.ConcurrentLinkedQueue.toClassDesc, "add", mkDescriptor(BackendType.Object)(BackendType.Bool))
+      InstanceMethod(JavaClasses.ConcurrentLinkedQueue, "add", mkDescriptor(BackendType.Object)(BackendType.Bool))
 
     val PollMethod: InstanceMethod =
-      InstanceMethod(JvmName.ConcurrentLinkedQueue.toClassDesc, "poll", mkDescriptor()(BackendType.Object))
+      InstanceMethod(JavaClasses.ConcurrentLinkedQueue, "poll", mkDescriptor()(BackendType.Object))
 
   }
 
   object Iterator {
 
     val HasNextMethod: InterfaceMethod =
-      InterfaceMethod(JvmName.Iterator.toClassDesc, "hasNext", mkDescriptor()(BackendType.Bool))
+      InterfaceMethod(JavaClasses.Iterator, "hasNext", mkDescriptor()(BackendType.Bool))
 
     val NextMethod: InterfaceMethod =
-      InterfaceMethod(JvmName.Iterator.toClassDesc, "next", mkDescriptor()(BackendType.Object))
+      InterfaceMethod(JavaClasses.Iterator, "next", mkDescriptor()(BackendType.Object))
 
   }
 
   object LambdaMetafactory {
     val MetafactoryMethod: StaticMethod =
-      StaticMethod(JvmName.LambdaMetafactory.toClassDesc, "metafactory", mkDescriptor(JvmName.MethodHandles$Lookup.toTpe, BackendType.String, JvmName.MethodType.toTpe, JvmName.MethodType.toTpe, JvmName.MethodHandle.toTpe, JvmName.MethodType.toTpe)(JvmName.CallSite.toTpe))
+      StaticMethod(JavaClasses.LambdaMetafactory, "metafactory", mkDescriptor(JavaClasses.MethodHandles$Lookup.toTpe, BackendType.String, JavaClasses.MethodType.toTpe, JavaClasses.MethodType.toTpe, JavaClasses.MethodHandle.toTpe, JavaClasses.MethodType.toTpe)(JavaClasses.CallSite.toTpe))
   }
 
   object LinkedList {
 
     val AddFirstMethod: InstanceMethod =
-      InstanceMethod(JvmName.LinkedList.toClassDesc, "addFirst", mkDescriptor(BackendType.Object)(VoidableType.Void))
+      InstanceMethod(JavaClasses.LinkedList, "addFirst", mkDescriptor(BackendType.Object)(VoidableType.Void))
 
     val IteratorMethod: InstanceMethod =
-      InstanceMethod(JvmName.LinkedList.toClassDesc, "iterator", mkDescriptor()(JvmName.Iterator.toTpe))
+      InstanceMethod(JavaClasses.LinkedList, "iterator", mkDescriptor()(JavaClasses.Iterator.toTpe))
 
   }
 
   object Object {
 
-    val Constructor: ConstructorMethod = ConstructorMethod(JvmName.Object.toClassDesc, Nil)
+    val Constructor: ConstructorMethod = ConstructorMethod(JavaClasses.Object, Nil)
 
     val EqualsMethod: InstanceMethod =
-      InstanceMethod(JvmName.Object.toClassDesc, "equals", mkDescriptor(BackendType.Object)(BackendType.Bool))
+      InstanceMethod(JavaClasses.Object, "equals", mkDescriptor(BackendType.Object)(BackendType.Bool))
 
     val ToStringMethod: InstanceMethod =
-      InstanceMethod(JvmName.Object.toClassDesc, "toString", mkDescriptor()(BackendType.String))
+      InstanceMethod(JavaClasses.Object, "toString", mkDescriptor()(BackendType.String))
 
   }
 
   object ReentrantLock {
 
-    val Constructor: ConstructorMethod = ConstructorMethod(JvmName.ReentrantLock.toClassDesc, Nil)
+    val Constructor: ConstructorMethod = ConstructorMethod(JavaClasses.ReentrantLock, Nil)
 
-    val UnlockMethod: InstanceMethod = InstanceMethod(JvmName.ReentrantLock.toClassDesc, "unlock", MethodDescriptor.NothingToVoid)
+    val UnlockMethod: InstanceMethod = InstanceMethod(JavaClasses.ReentrantLock, "unlock", MethodDescriptor.NothingToVoid)
 
     val LockInterruptiblyMethod: InstanceMethod =
-      InstanceMethod(JvmName.ReentrantLock.toClassDesc, "lockInterruptibly", MethodDescriptor.NothingToVoid)
+      InstanceMethod(JavaClasses.ReentrantLock, "lockInterruptibly", MethodDescriptor.NothingToVoid)
 
   }
 
   object Regex {
     val CompileMethod: StaticMethod =
-      StaticMethod(JvmName.Regex.toClassDesc, "compile", mkDescriptor(BackendType.String)(JvmName.Regex.toTpe))
+      StaticMethod(JavaClasses.Regex, "compile", mkDescriptor(BackendType.String)(JavaClasses.Regex.toTpe))
   }
 
   object Runnable {
-    val RunMethod: InterfaceMethod = InterfaceMethod(JvmName.Runnable.toClassDesc, "run", MethodDescriptor.NothingToVoid)
+    val RunMethod: InterfaceMethod = InterfaceMethod(JavaClasses.Runnable, "run", MethodDescriptor.NothingToVoid)
   }
 
   object StringBuilder {
 
-    val Constructor: ConstructorMethod = ConstructorMethod(JvmName.StringBuilder.toClassDesc, Nil)
+    val Constructor: ConstructorMethod = ConstructorMethod(JavaClasses.StringBuilder, Nil)
 
     val AppendStringMethod: InstanceMethod =
-      InstanceMethod(JvmName.StringBuilder.toClassDesc, "append", mkDescriptor(BackendType.String)(JvmName.StringBuilder.toTpe))
+      InstanceMethod(JavaClasses.StringBuilder, "append", mkDescriptor(BackendType.String)(JavaClasses.StringBuilder.toTpe))
 
     val AppendInt32Method: InstanceMethod =
-      InstanceMethod(JvmName.StringBuilder.toClassDesc, "append", mkDescriptor(BackendType.Int32)(JvmName.StringBuilder.toTpe))
+      InstanceMethod(JavaClasses.StringBuilder, "append", mkDescriptor(BackendType.Int32)(JavaClasses.StringBuilder.toTpe))
 
   }
 
   object Thread {
 
     val CurrentThreadMethod: StaticMethod =
-      StaticMethod(JvmName.Thread.toClassDesc, "currentThread", mkDescriptor()(JvmName.Thread.toTpe))
+      StaticMethod(JavaClasses.Thread, "currentThread", mkDescriptor()(JavaClasses.Thread.toTpe))
 
     val InterruptMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread.toClassDesc, "interrupt", MethodDescriptor.NothingToVoid)
+      InstanceMethod(JavaClasses.Thread, "interrupt", MethodDescriptor.NothingToVoid)
 
     val JoinMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread.toClassDesc, "join", MethodDescriptor.NothingToVoid)
+      InstanceMethod(JavaClasses.Thread, "join", MethodDescriptor.NothingToVoid)
 
     val OfVirtualMethod: StaticMethod =
-      StaticMethod(JvmName.Thread.toClassDesc, "ofVirtual", mkDescriptor()(JvmName.Thread$Builder$OfVirtual.toTpe))
+      StaticMethod(JavaClasses.Thread, "ofVirtual", mkDescriptor()(JavaClasses.Thread$Builder$OfVirtual.toTpe))
 
     val SetUncaughtExceptionHandlerMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread.toClassDesc, "setUncaughtExceptionHandler", mkDescriptor(JvmName.Thread$UncaughtExceptionHandler.toTpe)(VoidableType.Void))
+      InstanceMethod(JavaClasses.Thread, "setUncaughtExceptionHandler", mkDescriptor(JavaClasses.Thread$UncaughtExceptionHandler.toTpe)(VoidableType.Void))
 
     val StartMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread.toClassDesc, "start", MethodDescriptor.NothingToVoid)
+      InstanceMethod(JavaClasses.Thread, "start", MethodDescriptor.NothingToVoid)
 
     val StartVirtualThreadMethod: StaticMethod =
-      ClassMaker.StaticMethod(JvmName.Thread.toClassDesc, "startVirtualThread", MethodDescriptor.mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe))
+      ClassMaker.StaticMethod(JavaClasses.Thread, "startVirtualThread", MethodDescriptor.mkDescriptor(JavaClasses.Runnable.toTpe)(JavaClasses.Thread.toTpe))
 
   }
 
   object ThreadBuilderOfVirtual {
     val UnstartedMethod: InterfaceMethod =
-      InterfaceMethod(JvmName.Thread$Builder$OfVirtual.toClassDesc, "unstarted", mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe))
+      InterfaceMethod(JavaClasses.Thread$Builder$OfVirtual, "unstarted", mkDescriptor(JavaClasses.Runnable.toTpe)(JavaClasses.Thread.toTpe))
   }
 
   object ThreadUncaughtExceptionHandler {
     val UncaughtExceptionMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread$UncaughtExceptionHandler.toClassDesc, "uncaughtException", mkDescriptor(JvmName.Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
+      InstanceMethod(JavaClasses.Thread$UncaughtExceptionHandler, "uncaughtException", mkDescriptor(JavaClasses.Thread.toTpe, JavaClasses.Throwable.toTpe)(VoidableType.Void))
   }
 
 }
