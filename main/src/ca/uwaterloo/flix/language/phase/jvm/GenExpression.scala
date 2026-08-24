@@ -23,7 +23,9 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
-import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
+import java.lang.constant.MethodTypeDesc
+import java.lang.constant.ConstantDescs.{CD_double, CD_long, CD_void}
+import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
 import org.objectweb.asm
@@ -203,11 +205,11 @@ object GenExpression {
         mv.visitMethodInsn(INVOKESPECIAL, closureName, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
         // Capturing free args
         for ((arg, i) <- exps.zipWithIndex) {
-          val argType = BackendType.toBackendType(arg.tpe)
+          val argType = BackendType.toClassDesc(arg.tpe)
           mv.visitInsn(DUP)
           compileExpr(arg)
-          Instructions.castIfNotPrim(argType.toClassDesc)
-          mv.visitFieldInsn(PUTFIELD, closureName, s"clo$i", argType.toDescriptor)
+          Instructions.castIfNotPrim(argType)
+          mv.visitFieldInsn(PUTFIELD, closureName, s"clo$i", argType.descriptorString())
         }
 
       case AtomicOp.Unary(sop) =>
@@ -720,13 +722,14 @@ object GenExpression {
         val List(exp1, exp2) = exps
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
-        val backendType = BackendType.toBackendType(innerType)
-        val fillMethod = ClassMaker.StaticMethod(JavaClasses.Arrays, "fill", mkVoidDescriptor(BackendType.Array(backendType.toErased), backendType.toErased))
+        val erasedElmTpe = BackendType.toErasedClassDesc(innerType)
+        val elmIs64BitWidth = erasedElmTpe == CD_long || erasedElmTpe == CD_double
+        val fillMethod = ClassMaker.StaticMethod(JavaClasses.Arrays, "fill", MethodTypeDesc.of(CD_void, erasedElmTpe.arrayType(), erasedElmTpe))
         compileExpr(exp1) // default
         compileExpr(exp2) // default, length
         Instructions.xNewArray(BackendType.toClassDesc(innerType)) // default, arr
-        if (backendType.is64BitWidth) DUP_X2() else DUP_X1() // arr, default, arr
-        xSwap(lowerLarge = backendType.is64BitWidth, higherLarge = false) // arr, arr, default
+        if (elmIs64BitWidth) DUP_X2() else DUP_X1() // arr, default, arr
+        xSwap(lowerLarge = elmIs64BitWidth, higherLarge = false) // arr, arr, default
         INVOKESTATIC(fillMethod)
 
       case AtomicOp.ArrayLoad =>
@@ -951,7 +954,7 @@ object GenExpression {
         Instructions.addLoc(loc)
         compileExpr(exp)
         val declaration = internalNameOf(field.owner)
-        mv.visitFieldInsn(GETFIELD, declaration, field.name, BackendType.toBackendType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETFIELD, declaration, field.name, BackendType.toClassDesc(tpe).descriptorString())
 
       case AtomicOp.PutField(field) =>
         val List(exp1, exp2) = exps
@@ -960,7 +963,7 @@ object GenExpression {
         compileExpr(exp1)
         compileExpr(exp2)
         val declaration = internalNameOf(field.owner)
-        mv.visitFieldInsn(PUTFIELD, declaration, field.name, BackendType.toBackendType(exp2.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, declaration, field.name, BackendType.toClassDesc(exp2.tpe).descriptorString())
 
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
@@ -969,7 +972,7 @@ object GenExpression {
         // Add source line number for debugging (can fail when calling java)
         Instructions.addLoc(loc)
         val declaration = internalNameOf(field.owner)
-        mv.visitFieldInsn(GETSTATIC, declaration, field.name, BackendType.toBackendType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETSTATIC, declaration, field.name, BackendType.toClassDesc(tpe).descriptorString())
 
       case AtomicOp.PutStaticField(field) =>
         val List(exp) = exps
@@ -977,7 +980,7 @@ object GenExpression {
         Instructions.addLoc(loc)
         compileExpr(exp)
         val declaration = internalNameOf(field.owner)
-        mv.visitFieldInsn(PUTSTATIC, declaration, field.name, BackendType.toBackendType(exp.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTSTATIC, declaration, field.name, BackendType.toClassDesc(exp.tpe).descriptorString())
 
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)

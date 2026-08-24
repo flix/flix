@@ -26,6 +26,7 @@ import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import java.lang.constant.ConstantDescs.CD_int
 
 /**
   * Generates byte code for the function and closure classes.
@@ -164,9 +165,9 @@ object GenFunAndClosureClasses {
 
     // Fields — lparams use erased types (like fparams) so setPc can store without casting
     for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toErasedBackendType(x.tpe).toDescriptor, null, null)
+      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toErasedClassDesc(x.tpe).descriptorString(), null, null)
     }
-    visitor.visitField(ACC_PUBLIC, "pc", BackendType.Int32.toDescriptor, null, null)
+    visitor.visitField(ACC_PUBLIC, "pc", CD_int.descriptorString(), null, null)
 
     compileConstructor(functionInterface, visitor)
 
@@ -252,9 +253,9 @@ object GenFunAndClosureClasses {
     }
     // lparams use erased types (like fparams) so setPc can store without casting
     for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toErasedBackendType(x.tpe).toDescriptor, null, null)
+      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toErasedClassDesc(x.tpe).descriptorString(), null, null)
     }
-    visitor.visitField(ACC_PUBLIC, "pc", BackendType.Int32.toDescriptor, null, null)
+    visitor.visitField(ACC_PUBLIC, "pc", CD_int.descriptorString(), null, null)
 
     compileConstructor(functionInterface, visitor)
 
@@ -320,7 +321,7 @@ object GenFunAndClosureClasses {
       m.visitVarInsn(ALOAD, 0)
       // Load arg i
       m.visitFieldInsn(GETFIELD, ClassDescs.internalNameOf(functionInterface),
-        s"arg$i", BackendType.toErasedBackendType(fp.tpe).toDescriptor)
+        s"arg$i", BackendType.toErasedClassDesc(fp.tpe).descriptorString())
       // Insert cast to concrete type
       Instructions.castIfNotPrim(BackendType.toClassDesc(fp.tpe))
     }
@@ -359,11 +360,11 @@ object GenFunAndClosureClasses {
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.descriptorString(), null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.offset + localOffset, lp.sym.isWild, BackendType.toErasedBackendType(lp.tpe), Some(BackendType.toBackendType(lp.tpe))) }
-    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.offset + localOffset, false, BackendType.toBackendType(cp.tpe), None) }
-    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.offset + localOffset, false, BackendType.toErasedBackendType(fp.tpe), Some(BackendType.toBackendType(fp.tpe))) }
+    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.offset + localOffset, lp.sym.isWild, BackendType.toErasedClassDesc(lp.tpe), Some(BackendType.toClassDesc(lp.tpe))) }
+    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.offset + localOffset, false, BackendType.toClassDesc(cp.tpe), None) }
+    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.offset + localOffset, false, BackendType.toErasedClassDesc(fp.tpe), Some(BackendType.toClassDesc(fp.tpe))) }
 
-    def loadParamsOf(params: List[(String, Int, Boolean, BackendType, Option[BackendType])]): Unit = {
+    def loadParamsOf(params: List[(String, Int, Boolean, ClassDesc, Option[ClassDesc])]): Unit = {
       params.foreach { case (name, offset, _, fieldType, castTo) => loadFromField(m, className, name, offset, fieldType, castTo) }
     }
 
@@ -387,7 +388,7 @@ object GenFunAndClosureClasses {
         // the default label is the starting point of the function if pc = 0
         val defaultLabel = new Label()
         m.visitVarInsn(ALOAD, 0)
-        m.visitFieldInsn(GETFIELD, classInternalName, "pc", BackendType.Int32.toDescriptor)
+        m.visitFieldInsn(GETFIELD, classInternalName, "pc", CD_int.descriptorString())
         m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels *)
         m.visitLabel(defaultLabel)
       }
@@ -403,15 +404,15 @@ object GenFunAndClosureClasses {
         SWAP()(mv)
         DUP_X1()(mv)
         SWAP()(mv) // clo, pc ---> clo, clo, pc
-        mv.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, "pc", BackendType.Int32.toDescriptor)
+        mv.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, "pc", CD_int.descriptorString())
         for ((name, index, isWild, fieldType, _) <- lparams) {
           if (isWild) {
             nop()
           } else {
             DUP()(mv)
             // fieldType is erased (Object for refs), so xLoad always matches the verifier type
-            Instructions.xLoad(fieldType.toClassDesc, index)(mv)
-            mv.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, name, fieldType.toDescriptor)
+            Instructions.xLoad(fieldType, index)(mv)
+            mv.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, name, fieldType.descriptorString())
           }
         }
         POP()(mv)
@@ -424,12 +425,10 @@ object GenFunAndClosureClasses {
       def narrowLocals(mv: MethodVisitor): Unit = {
         for ((_, index, isWild, erasedType, Some(realType)) <- lparams) {
           if (!isWild) {
-            realType match {
-              case _: BackendType.PrimitiveType => () // primitives don't need narrowing
-              case _ =>
-                Instructions.xLoad(erasedType.toClassDesc, index)(mv)
-                Instructions.castIfNotPrim(realType.toClassDesc)(mv)
-                Instructions.xStore(realType.toClassDesc, index)(mv)
+            if (!realType.isPrimitive) { // primitives don't need narrowing
+              Instructions.xLoad(erasedType, index)(mv)
+              Instructions.castIfNotPrim(realType)(mv)
+              Instructions.xStore(realType, index)(mv)
             }
           }
         }
@@ -446,18 +445,18 @@ object GenFunAndClosureClasses {
     m.visitEnd()
   }
 
-  private def loadFromField(m: MethodVisitor, className: ClassDesc, name: String, localIndex: Int, fieldType: BackendType, castTo: Option[BackendType]): Unit = {
+  private def loadFromField(m: MethodVisitor, className: ClassDesc, name: String, localIndex: Int, fieldType: ClassDesc, castTo: Option[ClassDesc]): Unit = {
     implicit val mm: MethodVisitor = m
     // retrieve the erased field
     m.visitVarInsn(ALOAD, 0)
-    m.visitFieldInsn(GETFIELD, ClassDescs.internalNameOf(className), name, fieldType.toDescriptor)
+    m.visitFieldInsn(GETFIELD, ClassDescs.internalNameOf(className), name, fieldType.descriptorString())
     // cast the value and store it
     castTo match {
       case Some(targetType) =>
-        Instructions.castIfNotPrim(targetType.toClassDesc)
-        Instructions.xStore(targetType.toClassDesc, localIndex)
+        Instructions.castIfNotPrim(targetType)
+        Instructions.xStore(targetType, localIndex)
       case None =>
-        Instructions.xStore(fieldType.toClassDesc, localIndex)
+        Instructions.xStore(fieldType, localIndex)
     }
   }
 
@@ -468,10 +467,10 @@ object GenFunAndClosureClasses {
   private def mkCopy(className: ClassDesc, defn: Def)(implicit mv: MethodVisitor, root: Root): Unit = {
     import Instructions.*
     val classInternalName = ClassDescs.internalNameOf(className)
-    val pc = List(("pc", BackendType.Int32))
-    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
-    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", BackendType.toBackendType(p._1.tpe)))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
+    val pc = List(("pc", CD_int))
+    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", BackendType.toErasedClassDesc(p._1.tpe)))
+    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", BackendType.toClassDesc(p._1.tpe)))
+    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", BackendType.toErasedClassDesc(p._1.tpe)))
     val params = pc ++ fparams ++ cparams ++ lparams
 
     NEW(className)
@@ -480,8 +479,8 @@ object GenFunAndClosureClasses {
     for ((name, fieldType) <- params) {
       DUP()
       thisLoad()
-      mv.visitFieldInsn(Opcodes.GETFIELD, classInternalName, name, fieldType.toDescriptor)
-      mv.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, name, fieldType.toDescriptor)
+      mv.visitFieldInsn(Opcodes.GETFIELD, classInternalName, name, fieldType.descriptorString())
+      mv.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, name, fieldType.descriptorString())
     }
   }
 
