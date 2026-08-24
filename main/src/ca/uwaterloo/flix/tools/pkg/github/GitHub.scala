@@ -248,9 +248,6 @@ object GitHub {
       Client.sendStreamingRequest(request)
     } catch {
       case ex: IOException => return Err(PackageError.DownloadUnreachable(url, ex.getMessage))
-      case ex: InterruptedException =>
-        Thread.currentThread().interrupt()
-        return Err(PackageError.DownloadUnreachable(url, ex.getMessage))
     }
 
     response.statusCode() match {
