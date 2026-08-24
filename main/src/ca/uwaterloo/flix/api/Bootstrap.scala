@@ -184,7 +184,7 @@ object Bootstrap {
   private val EXT_FLIX: String = "flix"
 
   /** The flix package file extension. Does not contain leading '.' */
-  private val EXT_FPKG: String = "fpkg"
+  val EXT_FPKG: String = "fpkg"
 
   /** The jar file extension. Does not contain leading '.' */
   private val EXT_JAR: String = "jar"
