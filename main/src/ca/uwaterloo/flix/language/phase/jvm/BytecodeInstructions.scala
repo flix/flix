@@ -123,13 +123,6 @@ object BytecodeInstructions {
     case object FalseBranch extends Branch
   }
 
-  // TODO: do this for methods
-  class Variable(val tpe: BackendType, index: Int) {
-    def load()(implicit mv: MethodVisitor): Unit = xLoad(tpe, index)
-
-    def store()(implicit mv: MethodVisitor): Unit = xStore(tpe, index)
-  }
-
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~ Direct JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~
   //
@@ -430,11 +423,6 @@ object BytecodeInstructions {
     INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
   }
 
-  def storeWithName(index: Int, tpe: BackendType)(body: Variable => Unit)(implicit mv: MethodVisitor): Unit = {
-    xStore(tpe, index)
-    body(new Variable(tpe, index))
-  }
-
   def thisLoad()(implicit mv: MethodVisitor): Unit = ALOAD(0)
 
   def throwUnsupportedOperationException(msg: String)(implicit mv: MethodVisitor): Unit = {
@@ -444,36 +432,6 @@ object BytecodeInstructions {
     INVOKESPECIAL(JavaClasses.UnsupportedOperationException, ConstructorMethodName,
       mkDescriptor(BackendType.String)(VoidableType.Void))
     ATHROW()
-  }
-
-  def withName(index: Int, tpe: BackendType)(body: Variable => Unit): Unit =
-    body(new Variable(tpe, index))
-
-  def withNames(index: Int, tpes: List[BackendType])(body: (Int, List[Variable]) => Unit): Unit = {
-    var runningIndex = index
-    val variables = tpes.map(tpe => {
-      val variable = new Variable(tpe, runningIndex)
-      runningIndex = runningIndex + tpe.stackSlots
-      variable
-    })
-    body(runningIndex, variables)
-  }
-
-  def xLoad(tpe: BackendType, index: Int)(implicit mv: MethodVisitor): Unit = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
-    case BackendType.Int64 => LLOAD(index)
-    case BackendType.Float32 => mv.visitVarInstruction(Opcodes.FLOAD, index)
-    case BackendType.Float64 => DLOAD(index)
-    case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
-  }
-
-  def xStore(tpe: BackendType, index: Int)(implicit mv: MethodVisitor): Unit = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 =>
-      mv.visitVarInstruction(Opcodes.ISTORE, index)
-    case BackendType.Int64 => mv.visitVarInstruction(Opcodes.LSTORE, index)
-    case BackendType.Float32 => mv.visitVarInstruction(Opcodes.FSTORE, index)
-    case BackendType.Float64 => mv.visitVarInstruction(Opcodes.DSTORE, index)
-    case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
   }
 
   def xSwap(lowerLarge: Boolean, higherLarge: Boolean)(implicit mv: MethodVisitor): Unit = (lowerLarge, higherLarge) match {

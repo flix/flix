@@ -189,7 +189,7 @@ object GenExpression {
     }
 
     case Expr.Var(_, offset, tpe, _) =>
-      BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), ctx.getIndex(offset))
+      Instructions.xLoad(BackendType.toClassDesc(tpe), ctx.getIndex(offset))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
@@ -1322,9 +1322,9 @@ object GenExpression {
         }
         for ((arg, fp) <- ListOps.zip(exps, defn.fparams).reverse) {
           // Store it in the ith parameter.
-          val tpe = BackendType.toBackendType(arg.tpe)
+          val tpe = BackendType.toClassDesc(arg.tpe)
           val offset = ctx.getIndex(fp.offset)
-          BytecodeInstructions.xStore(tpe, offset)
+          Instructions.xStore(tpe, offset)
         }
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
@@ -1421,7 +1421,7 @@ object GenExpression {
 
     case Expr.Let(_, offset, exp1, exp2, _) =>
       import BytecodeInstructions.*
-      val bType = BackendType.toBackendType(exp1.tpe)
+      val bType = BackendType.toClassDesc(exp1.tpe)
       compileExpr(exp1)
       // No cast needed in most cases: operations self-cast (Untag, Index, etc.),
       // function calls are wrapped in Cast by the Eraser, and effect resume
@@ -1429,10 +1429,10 @@ object GenExpression {
       // classes) where the JVM verifier cannot resolve the generated subclass
       // name and needs an explicit cast to the declared superclass type.
       exp1 match {
-        case _: Expr.NewObject => Instructions.castIfNotPrim(bType.toClassDesc)
+        case _: Expr.NewObject => Instructions.castIfNotPrim(bType)
         case _ => ()
       }
-      xStore(bType, ctx.getIndex(offset))
+      Instructions.xStore(bType, ctx.getIndex(offset))
       compileExpr(exp2)
 
     case Expr.Stm(exps, exp, _) =>
@@ -1465,7 +1465,7 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, internalNameOf(BackendObjType.Region.desc), ClassMaker.ConstructorMethodName,
         MethodDescriptor.NothingToVoid.toDescriptor, false)
 
-      BytecodeInstructions.xStore(BackendObjType.Region.toTpe, ctx.getIndex(offset))
+      Instructions.xStore(BackendObjType.Region.desc, ctx.getIndex(offset))
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
@@ -1476,14 +1476,14 @@ object GenExpression {
       mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, ctx.getIndex(offset))
+      Instructions.xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
       mv.visitTypeInsn(CHECKCAST, internalNameOf(BackendObjType.Region.desc))
       mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, ctx.getIndex(offset))
+      Instructions.xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
       mv.visitTypeInsn(CHECKCAST, internalNameOf(BackendObjType.Region.desc))
       mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
@@ -1491,7 +1491,7 @@ object GenExpression {
 
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, ctx.getIndex(offset))
+      Instructions.xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
       mv.visitTypeInsn(CHECKCAST, internalNameOf(BackendObjType.Region.desc))
       mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
@@ -1528,7 +1528,7 @@ object GenExpression {
         mv.visitLabel(handlerLabel)
 
         // Store the exception in a local variable.
-        BytecodeInstructions.xStore(BackendType.Object, ctx.getIndex(offset))
+        Instructions.xStore(JavaClasses.Object, ctx.getIndex(offset))
 
         // Emit code for the handler body expression.
         compileExpr(body)

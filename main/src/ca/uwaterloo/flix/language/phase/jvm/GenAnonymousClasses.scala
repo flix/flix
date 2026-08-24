@@ -117,7 +117,7 @@ object GenAnonymousClasses {
     // ALOAD 0 (this)
     thisLoad()
     // Load each <init> parameter (starting at slot 1)
-    withNames(1, paramTypes) { case (_, args) =>
+    Instructions.withNames(1, paramTypes.map(_.toClassDesc)) { case (_, args) =>
       for (arg <- args) arg.load()
     }
     // INVOKESPECIAL superClass.<init>(paramTypes...)
@@ -157,7 +157,7 @@ object GenAnonymousClasses {
     // ALOAD 0 (this)
     thisLoad()
     // Load each parameter (starting at slot 1)
-    withNames(1, paramTypes) { case (_, args) =>
+    Instructions.withNames(1, paramTypes.map(_.toClassDesc)) { case (_, args) =>
       for (arg <- args) arg.load()
     }
     // INVOKESPECIAL superClass.methodName(descriptor)
@@ -180,7 +180,7 @@ object GenAnonymousClasses {
     GETFIELD(cloField)
     INVOKEVIRTUAL(abstractClass.GetUniqueThreadClosureMethod)
     // Load the actual arguments into the erased closure arguments.
-    withNames(0, m.fparams.map(_.tpe).map(BackendType.toBackendType)) {
+    Instructions.withNames(0, m.fparams.map(_.tpe).map(BackendType.toClassDesc)) {
       case (_, args) =>
         for ((arg, i) <- args.zipWithIndex) {
           DUP()
