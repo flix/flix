@@ -69,6 +69,23 @@ object Bytecode {
     else mv.visitTypeInsn(Opcodes.ANEWARRAY, ClassDescs.internalNameOf(elmTpe))
   }
 
+  /** Emits a `POP` or `POP2` instruction that pops a value of type `tpe` off the stack. */
+  def xPop(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    if (tpe == CD_long || tpe == CD_double) mv.visitInsn(Opcodes.POP2)
+    else mv.visitInsn(Opcodes.POP)
+  }
+
+  /** Emits a `?RETURN` instruction that returns a value of type `tpe`. */
+  def xReturn(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    if (tpe == CD_boolean || tpe == CD_char || tpe == CD_byte || tpe == CD_short || tpe == CD_int) mv.visitInsn(Opcodes.IRETURN)
+    else if (tpe == CD_long) mv.visitInsn(Opcodes.LRETURN)
+    else if (tpe == CD_float) mv.visitInsn(Opcodes.FRETURN)
+    else if (tpe == CD_double) mv.visitInsn(Opcodes.DRETURN)
+    else mv.visitInsn(Opcodes.ARETURN)
+  }
+
   /** Returns the `NEWARRAY` type operand (e.g. [[Opcodes.T_INT]]) of the primitive type `tpe`. */
   private def newArrayOperandOf(tpe: ClassDesc): Int = {
     import java.lang.constant.ConstantDescs.*

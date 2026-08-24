@@ -301,7 +301,7 @@ object GenFunAndClosureClasses {
     val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
-    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
+    Bytecode.xReturn(BackendObjType.Result.desc)
 
 
     m.visitMaxs(999, 999)
@@ -328,7 +328,7 @@ object GenFunAndClosureClasses {
     val method = staticApplyMethod(className, defn)
     m.visitMethodInsn(INVOKESTATIC, ClassDescs.internalNameOf(className), method.name, method.d.toDescriptor, false)
 
-    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
+    Bytecode.xReturn(BackendObjType.Result.desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -344,7 +344,7 @@ object GenFunAndClosureClasses {
     m.visitInsn(ACONST_NULL)
     m.visitMethodInsn(INVOKEVIRTUAL, ClassDescs.internalNameOf(className), applyMethod.name, applyMethod.d.toDescriptor, false)
 
-    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
+    Bytecode.xReturn(BackendObjType.Result.desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -440,7 +440,7 @@ object GenFunAndClosureClasses {
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
 
-    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
+    Bytecode.xReturn(BackendObjType.Result.desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()

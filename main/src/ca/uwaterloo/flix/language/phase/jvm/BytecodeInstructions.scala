@@ -467,23 +467,6 @@ object BytecodeInstructions {
     case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
   }
 
-  /**
-    * Pops the top of the stack using `POP` or `POP2` depending on the value size.
-    */
-  def xPop(tpe: BackendType)(implicit mv: MethodVisitor): Unit = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 |
-         BackendType.Float32 | BackendType.Array(_) | BackendType.Reference(_) => POP()
-    case BackendType.Int64 | BackendType.Float64 => POP2()
-  }
-
-  def xReturn(tpe: BackendType)(implicit mv: MethodVisitor): Unit = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => IRETURN()
-    case BackendType.Int64 => LRETURN()
-    case BackendType.Float32 => mv.visitInstruction(Opcodes.FRETURN)
-    case BackendType.Float64 => DRETURN()
-    case BackendType.Array(_) | BackendType.Reference(_) => ARETURN()
-  }
-
   def xStore(tpe: BackendType, index: Int)(implicit mv: MethodVisitor): Unit = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 =>
       mv.visitVarInstruction(Opcodes.ISTORE, index)
