@@ -2423,6 +2423,8 @@ object SpecializeAndLower {
       itpe = Specialize.rewriteEnumStructType(outerGroundArrowTpe),
       tpe = Specialize.rewriteEnumStructType(tpe), eff = Type.Pure, loc = loc
     )
+  }
+
   /** Constructs a `Fixpoint/Ast/Datalog.Datalog` value from the Datalog constraints `cs`. */
   private def lowerConstraintSet(cs: List[TypedAst.Constraint], loc: SourceLocation, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val factExps = cs.filter(c => c.body.isEmpty).map(lowerConstraint(_, env0, subst))
