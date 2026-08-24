@@ -398,19 +398,19 @@ object Specialize {
     val AllDefs(allDefs, defToInst, defaultSigDefs, prefixTparams) = mkAllDefs(root)
 
     val entries = mkDefEntries(solution, allDefs, prefixTparams)
-    val defTableMap: Map[(Symbol.DefnSym, Type), Symbol.DefnSym] =
+    val defTableMap =
       entries.map { case (freshSym, defn, _, it) => (defn.sym, it) -> freshSym }.toMap
 
     val enumEntries = mkEnumEntries(solution)
-    val enumTableMap: Map[(Symbol.EnumSym, List[Type]), Symbol.EnumSym] =
+    val enumTableMap =
       enumEntries.map { case (sym, args, freshSym, _) => (sym, args) -> freshSym }.toMap
 
     val structEntries = mkStructEntries(solution)
-    val structTableMap: Map[(Symbol.StructSym, List[Type]), Symbol.StructSym] =
+    val structTableMap =
       structEntries.map { case (sym, args, freshSym, _) => (sym, args) -> freshSym }.toMap
 
     val restrictableEnumEntries = mkRestrictableEnumEntries(solution)
-    val restrictableEnumTableMap: Map[(Symbol.RestrictableEnumSym, List[Type]), Symbol.EnumSym] =
+    val restrictableEnumTableMap =
       restrictableEnumEntries.map { case (sym, args, freshSym, _) => (sym, args) -> freshSym }.toMap
 
     val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = MonomorphHelpers.mkInstanceMap(root.instances)
@@ -420,23 +420,23 @@ object Specialize {
     // Create specialized and lowered versions of the different families of declarations
 
     // Biggest-first scheduling to preload long-tailed jobs
-    def sortByLineSpan(defn: TypedAst.Def): Int = defn.loc.startLine - defn.loc.endLine
+    def negativeLineCount(defn: TypedAst.Def): Int = defn.loc.startLine - defn.loc.endLine
 
+    val nonParametricDefEntries = allDefs.filter {
+      case (sym, defn) =>
+        defn.spec.tparams.isEmpty &&
+          defToInst.get(sym).forall(_.tparams.isEmpty) &&
+          !defaultSigDefs.contains(sym)
+    }
     val nonParametricDefs: Map[Symbol.DefnSym, MonoAst.Def] =
-      ParOps.parMapWithPriority(allDefs.filter {
-        case (sym, defn) =>
-          defn.spec.tparams.isEmpty &&
-            defToInst.get(sym).forall(_.tparams.isEmpty) &&
-            !defaultSigDefs.contains(sym)
-        },
-        sortBy = ({ case (_, defn) => sortByLineSpan(defn) }: ((Symbol.DefnSym, TypedAst.Def)) => Int)) {
+      ParOps.parMapWithPriority(nonParametricDefEntries, sortBy = ({ case (_, defn) => negativeLineCount(defn) }: ((Symbol.DefnSym, TypedAst.Def)) => Int)) {
         case (sym, defn) => sym -> flix.profile(defn.sym, defn.loc) {
           SpecializeAndLower.visitDef(sym, defn, StrictSubstitution.empty)
         }
       }.toMap
 
     val specializedDefs: Map[Symbol.DefnSym, MonoAst.Def] =
-      ParOps.parMapWithPriority(entries, sortBy = ({ case (_, defn, _, _) => sortByLineSpan(defn) }: ((Symbol.DefnSym, TypedAst.Def, StrictSubstitution, Type)) => Int)) {
+      ParOps.parMapWithPriority(entries, sortBy = ({ case (_, defn, _, _) => negativeLineCount(defn) }: ((Symbol.DefnSym, TypedAst.Def, StrictSubstitution, Type)) => Int)) {
         case (freshSym, defn, subst, _) => freshSym -> flix.profile(defn.sym, defn.loc) {
           SpecializeAndLower.visitDef(freshSym, defn, subst)
         }
