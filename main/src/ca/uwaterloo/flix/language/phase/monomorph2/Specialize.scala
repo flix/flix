@@ -336,9 +336,10 @@ object Specialize {
       val substMap = ListOps.zip(enm.tparams, args).map { case (tp, ty) => tp.sym -> ty }.toMap
       val freshSym = Symbol.freshEnumSym(enm.sym)
       val subst = StrictSubstitution.mk(Substitution(substMap))
-      val newCases = enm.cases.map { case (caseSym, TypedAst.Case(_, tpes, sc, cloc)) =>
-        val newCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, caseSym.ordinal, caseSym.loc)
-        newCaseSym -> TypedAst.Case(newCaseSym, tpes.map(subst.apply), sc, cloc)
+      val newCases = enm.cases.map {
+        case (caseSym, TypedAst.Case(_, tpes, sc, cloc)) =>
+          val newCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, caseSym.ordinal, caseSym.loc)
+          newCaseSym -> TypedAst.Case(newCaseSym, tpes.map(subst.apply), sc, cloc)
       }
       val newEnum = TypedAst.Enum(enm.doc, enm.ann, enm.mod, freshSym, Nil, enm.derives, newCases, enm.loc)
       (sym, args, freshSym, newEnum)
@@ -358,9 +359,10 @@ object Specialize {
       val substMap = ListOps.zip(enm.index :: enm.tparams, args).map { case (tp, ty) => tp.sym -> ty }.toMap
       val freshSym = Symbol.freshEnumSym(SpecializeAndLower.lowerRestrictableEnumSym(sym))
       val subst = StrictSubstitution.mk(Substitution(substMap))
-      val newCases = enm.cases.map { case (caseSym, TypedAst.RestrictableCase(_, tpes, sc, cloc)) =>
-        val newCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, Symbol.CaseSym.NoOrdinal, caseSym.loc)
-        newCaseSym -> TypedAst.Case(newCaseSym, tpes.map(subst.apply), sc, cloc)
+      val newCases = enm.cases.map {
+        case (caseSym, TypedAst.RestrictableCase(_, tpes, sc, cloc)) =>
+          val newCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, Symbol.CaseSym.NoOrdinal, caseSym.loc)
+          newCaseSym -> TypedAst.Case(newCaseSym, tpes.map(subst.apply), sc, cloc)
       }
       val newEnum = TypedAst.Enum(enm.doc, enm.ann, enm.mod, freshSym, Nil, enm.derives, newCases, enm.loc)
       (sym, args, freshSym, newEnum)
@@ -380,9 +382,10 @@ object Specialize {
       val substMap = ListOps.zip(struct.tparams, args).map { case (tp, ty) => tp.sym -> ty }.toMap
       val freshSym = Symbol.freshStructSym(struct.sym)
       val subst = StrictSubstitution.mk(Substitution(substMap))
-      val newFields = struct.fields.map { case (fieldSym, TypedAst.StructField(_, tpe, floc)) =>
-        val newFieldSym = new Symbol.StructFieldSym(freshSym, fieldSym.name, fieldSym.loc)
-        newFieldSym -> TypedAst.StructField(newFieldSym, subst(tpe), floc)
+      val newFields = struct.fields.map {
+        case (fieldSym, TypedAst.StructField(_, tpe, floc)) =>
+          val newFieldSym = new Symbol.StructFieldSym(freshSym, fieldSym.name, fieldSym.loc)
+          newFieldSym -> TypedAst.StructField(newFieldSym, subst(tpe), floc)
       }
       val newStruct = TypedAst.Struct(struct.doc, struct.ann, struct.mod, freshSym, Nil, struct.sc, newFields, struct.loc)
       (sym, args, freshSym, newStruct)
