@@ -93,7 +93,7 @@ object GenFunAndClosureClasses {
     * }}}
     */
   private def genControlPureFunction(className: ClassDesc, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val visitor = AsmOps.mkClassWriter()
+    val visitor = ClassMaker.mkClassWriter()
 
     // Header
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).desc
@@ -153,7 +153,7 @@ object GenFunAndClosureClasses {
     * }}}
     */
   private def genControlImpureFunction(className: ClassDesc, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val visitor = AsmOps.mkClassWriter()
+    val visitor = ClassMaker.mkClassWriter()
 
     // Header
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).desc
@@ -235,7 +235,7 @@ object GenFunAndClosureClasses {
     * }}}
     */
   private def genClosure(className: ClassDesc, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val visitor = AsmOps.mkClassWriter()
+    val visitor = ClassMaker.mkClassWriter()
 
     // Header
     val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).desc
