@@ -139,7 +139,7 @@ object GenExpression {
         import BytecodeInstructions.*
         // Can fail with NumberFormatException
         addLoc(loc)
-        NEW(JvmName.BigDecimal.toClassDesc)
+        NEW(JavaClasses.BigDecimal)
         DUP()
         pushString(dd.toString)
         INVOKESPECIAL(ClassConstants.BigDecimal.Constructor)
@@ -160,7 +160,7 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (can fail with NumberFormatException)
         addLoc(loc)
-        NEW(JvmName.BigInteger.toClassDesc)
+        NEW(JavaClasses.BigInteger)
         DUP()
         pushString(ii.toString)
         INVOKESPECIAL(ClassConstants.BigInteger.Constructor)
@@ -276,14 +276,14 @@ object GenExpression {
             mv.visitInsn(F2D) // Convert to double since "pow" is only defined for doubles
             compileExpr(exp2)
             mv.visitInsn(F2D) // Convert to double since "pow" is only defined for doubles
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+            mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2F) // Convert double to float
 
           case Float64Op.Exp =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+            mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
 
           case Int8Op.Exp =>
@@ -291,7 +291,7 @@ object GenExpression {
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             compileExpr(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+            mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2I) // Convert to int
             mv.visitInsn(I2B) // Convert int to byte
@@ -301,7 +301,7 @@ object GenExpression {
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             compileExpr(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+            mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2I) // Convert to int
             mv.visitInsn(I2S) // Convert int to short
@@ -311,7 +311,7 @@ object GenExpression {
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             compileExpr(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+            mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2I) // Convert to int
 
@@ -320,7 +320,7 @@ object GenExpression {
             mv.visitInsn(L2D) // Convert to double since "pow" is only defined for doubles
             compileExpr(exp2)
             mv.visitInsn(L2D) // Convert to double since "pow" is only defined for doubles
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+            mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2L) // Convert to long
 
@@ -719,7 +719,7 @@ object GenExpression {
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
-        val fillMethod = ClassMaker.StaticMethod(JvmName.Arrays.toClassDesc, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
+        val fillMethod = ClassMaker.StaticMethod(JavaClasses.Arrays, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
         compileExpr(exp1) // default
         compileExpr(exp2) // default, length
         xNewArray(backendType) // default, arr
@@ -996,7 +996,7 @@ object GenExpression {
           case Expr.Cst(Constant.Static, _) =>
             addLoc(loc)
             compileExpr(exp1)
-            CHECKCAST(JvmName.Runnable.toClassDesc)
+            CHECKCAST(JavaClasses.Runnable)
             INVOKESTATIC(ClassConstants.Thread.StartVirtualThreadMethod)
             POP()
             GETSTATIC(BackendObjType.Unit.SingletonField)
@@ -1005,7 +1005,7 @@ object GenExpression {
             compileExpr(exp2)
             CHECKCAST(BackendObjType.Region.desc)
             compileExpr(exp1)
-            CHECKCAST(JvmName.Runnable.toClassDesc)
+            CHECKCAST(JavaClasses.Runnable)
             INVOKEVIRTUAL(BackendObjType.Region.SpawnMethod)
             GETSTATIC(BackendObjType.Unit.SingletonField)
         }

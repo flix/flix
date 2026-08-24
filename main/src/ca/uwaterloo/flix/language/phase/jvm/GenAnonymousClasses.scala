@@ -45,7 +45,7 @@ object GenAnonymousClasses {
 
   private def genByteCode(className: ClassDesc, obj: AnonClass)(implicit root: Root, flix: Flix): Array[Byte] = {
     val superClass = if (obj.clazz.isInterface)
-      JvmName.Object.toClassDesc
+      JavaClasses.Object
     else
       obj.clazz.desc
 

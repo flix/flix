@@ -126,6 +126,12 @@ object BackendType {
   val Object: BackendType = Reference(BackendObjType.Native(CD_Object))
   val String: BackendType = Reference(BackendObjType.Native(CD_String))
 
+  /** Enriches a class or interface descriptor with a shorthand for its reference type. */
+  implicit class RichClassDesc(private val desc: ClassDesc) extends AnyVal {
+    /** Wraps `desc` in `BackendType.Reference(BackendObjType.Native(...))`. */
+    def toTpe: BackendType.Reference = Reference(BackendObjType.Native(desc))
+  }
+
   /**
     * Converts the given [[SimpleType]] into its [[BackendType]] representation.
     *
@@ -141,14 +147,14 @@ object BackendType {
       case SimpleType.Char => BackendType.Char
       case SimpleType.Float32 => BackendType.Float32
       case SimpleType.Float64 => BackendType.Float64
-      case SimpleType.BigDecimal => JvmName.BigDecimal.toTpe
+      case SimpleType.BigDecimal => JavaClasses.BigDecimal.toTpe
       case SimpleType.Int8 => BackendType.Int8
       case SimpleType.Int16 => BackendType.Int16
       case SimpleType.Int32 => BackendType.Int32
       case SimpleType.Int64 => BackendType.Int64
-      case SimpleType.BigInt => JvmName.BigInteger.toTpe
+      case SimpleType.BigInt => JavaClasses.BigInteger.toTpe
       case SimpleType.String => BackendType.String
-      case SimpleType.Regex => JvmName.Regex.toTpe
+      case SimpleType.Regex => JavaClasses.Regex.toTpe
       case SimpleType.Region => BackendObjType.Region.toTpe
       case SimpleType.Null => BackendType.Object
       case SimpleType.Array(tpe) => Array(toBackendType(tpe))

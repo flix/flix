@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{JvmAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.{mkClassName, mkDesc}
+import ca.uwaterloo.flix.language.phase.jvm.BackendType.RichClassDesc
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
@@ -27,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, Is
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, RootPackage}
 import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 import java.lang.constant.ClassDesc
@@ -174,7 +175,7 @@ object BackendObjType {
 
     def ValueField: InstanceField = InstanceField(this.desc, "value", tpe)
 
-    private def LockField: InstanceField = InstanceField(this.desc, "lock", JvmName.ReentrantLock.toTpe)
+    private def LockField: InstanceField = InstanceField(this.desc, "lock", JavaClasses.ReentrantLock.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(BackendType.Object))
 
@@ -190,7 +191,7 @@ object BackendObjType {
         PUTFIELD(ExpField)
         // this.lock = new ReentrantLock()
         thisLoad()
-        NEW(JvmName.ReentrantLock.toClassDesc)
+        NEW(JavaClasses.ReentrantLock)
         DUP()
         INVOKESPECIAL(ClassConstants.ReentrantLock.Constructor)
         PUTFIELD(LockField)
@@ -449,30 +450,25 @@ object BackendObjType {
       */
     sealed trait FunctionInterface {
       /**
-        * The JvmName of the interface.
-        */
-      def jvmName: JvmName = this match {
-        case ObjFunction => JvmName.ObjFunction
-        case ObjConsumer => JvmName.ObjConsumer
-        case ObjPredicate => JvmName.ObjPredicate
-        case IntFunction => JvmName.IntFunction
-        case IntConsumer => JvmName.IntConsumer
-        case IntPredicate => JvmName.IntPredicate
-        case IntUnaryOperator => JvmName.IntUnaryOperator
-        case LongFunction => JvmName.LongFunction
-        case LongConsumer => JvmName.LongConsumer
-        case LongPredicate => JvmName.LongPredicate
-        case LongUnaryOperator => JvmName.LongUnaryOperator
-        case DoubleFunction => JvmName.DoubleFunction
-        case DoubleConsumer => JvmName.DoubleConsumer
-        case DoublePredicate => JvmName.DoublePredicate
-        case DoubleUnaryOperator => JvmName.DoubleUnaryOperator
-      }
-
-      /**
         * The [[ClassDesc]] of the interface.
         */
-      def desc: ClassDesc = jvmName.toClassDesc
+      def desc: ClassDesc = this match {
+        case ObjFunction => JavaClasses.ObjFunction
+        case ObjConsumer => JavaClasses.ObjConsumer
+        case ObjPredicate => JavaClasses.ObjPredicate
+        case IntFunction => JavaClasses.IntFunction
+        case IntConsumer => JavaClasses.IntConsumer
+        case IntPredicate => JavaClasses.IntPredicate
+        case IntUnaryOperator => JavaClasses.IntUnaryOperator
+        case LongFunction => JavaClasses.LongFunction
+        case LongConsumer => JavaClasses.LongConsumer
+        case LongPredicate => JavaClasses.LongPredicate
+        case LongUnaryOperator => JavaClasses.LongUnaryOperator
+        case DoubleFunction => JavaClasses.DoubleFunction
+        case DoubleConsumer => JavaClasses.DoubleConsumer
+        case DoublePredicate => JavaClasses.DoublePredicate
+        case DoubleUnaryOperator => JavaClasses.DoubleUnaryOperator
+      }
 
       /**
         * The required method of the interface.
@@ -521,105 +517,105 @@ object BackendObjType {
           DUP()
           ALOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           ARETURN()
         case ObjConsumer =>
           thisLoad()
           DUP()
           ALOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           RETURN()
         case ObjPredicate =>
           thisLoad()
           DUP()
           ALOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           IRETURN()
         case IntFunction =>
           thisLoad()
           DUP()
           ILOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           ARETURN()
         case IntConsumer =>
           thisLoad()
           DUP()
           ILOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           RETURN()
         case IntPredicate =>
           thisLoad()
           DUP()
           ILOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           IRETURN()
         case IntUnaryOperator =>
           thisLoad()
           DUP()
           ILOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Int32, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Int32, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           IRETURN()
         case LongFunction =>
           thisLoad()
           DUP()
           LLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           ARETURN()
         case LongConsumer =>
           thisLoad()
           DUP()
           LLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           RETURN()
         case LongPredicate =>
           thisLoad()
           DUP()
           LLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           IRETURN()
         case LongUnaryOperator =>
           thisLoad()
           DUP()
           LLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Int64, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Int64, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           LRETURN()
         case DoubleFunction =>
           thisLoad()
           DUP()
           DLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           ARETURN()
         case DoubleConsumer =>
           thisLoad()
           DUP()
           DLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           RETURN()
         case DoublePredicate =>
           thisLoad()
           DUP()
           DLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           IRETURN()
         case DoubleUnaryOperator =>
           thisLoad()
           DUP()
           DLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Float64, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Float64, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           DRETURN()
       }
     }
@@ -690,7 +686,7 @@ object BackendObjType {
       val specializedInterface = specialization()
       val interfaces = Thunk.desc :: specializedInterface.map(_.desc)
 
-      val cm = ClassMaker.mkAbstractClass(this.desc, superClass = JvmName.Object.toClassDesc, interfaces)
+      val cm = ClassMaker.mkAbstractClass(this.desc, superClass = CD_Object, interfaces)
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex), IsPublic, NotFinal, NotVolatile))
@@ -898,7 +894,7 @@ object BackendObjType {
 
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       // create string builder
-      NEW(JvmName.StringBuilder.toClassDesc)
+      NEW(JavaClasses.StringBuilder)
       DUP()
       INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
       // build string
@@ -941,12 +937,12 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
     private def staticConstructorIns(implicit mv: MethodVisitor): Unit = {
-      NEW(JvmName.AtomicLong.toClassDesc)
+      NEW(JavaClasses.AtomicLong)
       DUP()
-      invokeConstructor(JvmName.AtomicLong.toClassDesc, MethodDescriptor.NothingToVoid)
+      invokeConstructor(JavaClasses.AtomicLong, MethodDescriptor.NothingToVoid)
       PUTSTATIC(CounterField)
       ICONST_0()
-      ANEWARRAY(JvmName.String.toClassDesc)
+      ANEWARRAY(JavaClasses.String)
       PUTSTATIC(ArgsField)
       RETURN()
     }
@@ -955,7 +951,7 @@ object BackendObjType {
 
     private def newIdIns(implicit mv: MethodVisitor): Unit = {
       GETSTATIC(CounterField)
-      INVOKEVIRTUAL(JvmName.AtomicLong.toClassDesc, "getAndIncrement",
+      INVOKEVIRTUAL(JavaClasses.AtomicLong, "getAndIncrement",
         MethodDescriptor(Nil, BackendType.Int64))
       LRETURN()
     }
@@ -965,7 +961,7 @@ object BackendObjType {
     private def getArgsIns(implicit mv: MethodVisitor): Unit = {
       GETSTATIC(ArgsField)
       ARRAYLENGTH()
-      ANEWARRAY(JvmName.String.toClassDesc)
+      ANEWARRAY(JavaClasses.String)
       ASTORE(0)
       // the new array is now created, now to copy the args
       GETSTATIC(ArgsField)
@@ -985,7 +981,7 @@ object BackendObjType {
     private def setArgsIns(implicit mv: MethodVisitor): Unit = {
       ALOAD(0)
       ARRAYLENGTH()
-      ANEWARRAY(JvmName.String.toClassDesc)
+      ANEWARRAY(JavaClasses.String)
       ASTORE(1)
       ALOAD(0)
       ICONST_0()
@@ -999,12 +995,12 @@ object BackendObjType {
       RETURN()
     }
 
-    private def CounterField: StaticField = StaticField(this.desc, "counter", JvmName.AtomicLong.toTpe)
+    private def CounterField: StaticField = StaticField(this.desc, "counter", JavaClasses.AtomicLong.toTpe)
 
     private def ArgsField: StaticField = StaticField(this.desc, "args", BackendType.Array(BackendType.String))
 
     private def arrayCopy()(implicit mv: MethodVisitor): Unit = {
-      mv.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System.toClassDesc, "arraycopy",
+      mv.visitMethodInstruction(Opcodes.INVOKESTATIC, JavaClasses.System, "arraycopy",
         MethodDescriptor(List(BackendType.Object, BackendType.Int32, BackendType.Object, BackendType.Int32,
           BackendType.Int32), VoidableType.Void), isInterface = false)
     }
@@ -1033,7 +1029,7 @@ object BackendObjType {
         withName(2, ReifiedSourceLocation.toTpe) { loc =>
           thisLoad()
           // create an error msg
-          NEW(JvmName.StringBuilder.toClassDesc)
+          NEW(JavaClasses.StringBuilder)
           DUP()
           INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
           pushString("Hole '")
@@ -1078,7 +1074,7 @@ object BackendObjType {
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
-      NEW(JvmName.StringBuilder.toClassDesc)
+      NEW(JavaClasses.StringBuilder)
       DUP()
       INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
       pushString("Non-exhaustive match at ")
@@ -1111,7 +1107,7 @@ object BackendObjType {
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, BackendType.String)(msg => {
         thisLoad()
-        NEW(JvmName.StringBuilder.toClassDesc)
+        NEW(JavaClasses.StringBuilder)
         DUP()
         INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
         msg.load()
@@ -1152,7 +1148,7 @@ object BackendObjType {
         def appendString(): Unit = INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
 
         thisLoad()
-        NEW(JvmName.StringBuilder.toClassDesc)
+        NEW(JavaClasses.StringBuilder)
         DUP()
         INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
         pushString("Unhandled effect '")
@@ -1207,16 +1203,16 @@ object BackendObjType {
     }
 
     // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
-    private def ThreadsField: InstanceField = InstanceField(this.desc, "threads", JvmName.ConcurrentLinkedQueue.toTpe)
+    private def ThreadsField: InstanceField = InstanceField(this.desc, "threads", JavaClasses.ConcurrentLinkedQueue.toTpe)
 
     // private final LinkedList<Runnable> onExit = new LinkedList<Runnable>();
-    private def OnExitField: InstanceField = InstanceField(this.desc, "onExit", JvmName.LinkedList.toTpe)
+    private def OnExitField: InstanceField = InstanceField(this.desc, "onExit", JavaClasses.LinkedList.toTpe)
 
     // private final Thread regionThread = Thread.currentThread();
-    private def RegionThreadField: InstanceField = InstanceField(this.desc, "regionThread", JvmName.Thread.toTpe)
+    private def RegionThreadField: InstanceField = InstanceField(this.desc, "regionThread", JavaClasses.Thread.toTpe)
 
     // private volatile Throwable childException = null;
-    private def ChildExceptionField: InstanceField = InstanceField(this.desc, "childException", JvmName.Throwable.toTpe)
+    private def ChildExceptionField: InstanceField = InstanceField(this.desc, "childException", JavaClasses.Throwable.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
@@ -1224,9 +1220,9 @@ object BackendObjType {
       thisLoad()
       INVOKESPECIAL(ClassConstants.Object.Constructor)
       thisLoad()
-      NEW(JvmName.ConcurrentLinkedQueue.toClassDesc)
+      NEW(JavaClasses.ConcurrentLinkedQueue)
       DUP()
-      invokeConstructor(JvmName.ConcurrentLinkedQueue.toClassDesc, MethodDescriptor.NothingToVoid)
+      invokeConstructor(JavaClasses.ConcurrentLinkedQueue, MethodDescriptor.NothingToVoid)
       PUTFIELD(ThreadsField)
       thisLoad()
       INVOKESTATIC(ClassConstants.Thread.CurrentThreadMethod)
@@ -1235,9 +1231,9 @@ object BackendObjType {
       ACONST_NULL()
       PUTFIELD(ChildExceptionField)
       thisLoad()
-      NEW(JvmName.LinkedList.toClassDesc)
+      NEW(JavaClasses.LinkedList)
       DUP()
-      invokeConstructor(JvmName.LinkedList.toClassDesc, MethodDescriptor.NothingToVoid)
+      invokeConstructor(JavaClasses.LinkedList, MethodDescriptor.NothingToVoid)
       PUTFIELD(OnExitField)
       RETURN()
     }
@@ -1248,13 +1244,13 @@ object BackendObjType {
     //   t.start();
     //   threads.add(t);
     // }
-    def SpawnMethod: InstanceMethod = InstanceMethod(this.desc, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
+    def SpawnMethod: InstanceMethod = InstanceMethod(this.desc, "spawn", mkDescriptor(JavaClasses.Runnable.toTpe)(VoidableType.Void))
 
     private def spawnIns(implicit mv: MethodVisitor): Unit = {
       INVOKESTATIC(ClassConstants.Thread.OfVirtualMethod)
       ALOAD(1)
       INVOKEINTERFACE(ClassConstants.ThreadBuilderOfVirtual.UnstartedMethod)
-      storeWithName(2, JvmName.Thread.toTpe) { thread =>
+      storeWithName(2, JavaClasses.Thread.toTpe) { thread =>
         thread.load()
         NEW(BackendObjType.UncaughtExceptionHandler.desc)
         DUP()
@@ -1282,19 +1278,19 @@ object BackendObjType {
     def ExitMethod: InstanceMethod = InstanceMethod(this.desc, "exit", MethodDescriptor.NothingToVoid)
 
     private def exitIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, JvmName.Thread.toTpe) { t =>
+      withName(1, JavaClasses.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad()
           GETFIELD(ThreadsField)
           INVOKEVIRTUAL(ClassConstants.ConcurrentLinkedQueue.PollMethod)
-          CHECKCAST(JvmName.Thread.toClassDesc)
+          CHECKCAST(JavaClasses.Thread)
           DUP()
           t.store()
         } {
           t.load()
           INVOKEVIRTUAL(ClassConstants.Thread.JoinMethod)
         }
-        withName(2, JvmName.Iterator.toTpe) { i =>
+        withName(2, JavaClasses.Iterator.toTpe) { i =>
           thisLoad()
           GETFIELD(OnExitField)
           INVOKEVIRTUAL(ClassConstants.LinkedList.IteratorMethod)
@@ -1305,7 +1301,7 @@ object BackendObjType {
           } {
             i.load()
             INVOKEINTERFACE(ClassConstants.Iterator.NextMethod)
-            CHECKCAST(JvmName.Runnable.toClassDesc)
+            CHECKCAST(JavaClasses.Runnable)
             INVOKEINTERFACE(ClassConstants.Runnable.RunMethod)
           }
         }
@@ -1317,7 +1313,7 @@ object BackendObjType {
     //   childException = e;
     //   regionThread.interrupt();
     // }
-    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.desc, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void))
+    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.desc, "reportChildException", mkDescriptor(JavaClasses.Throwable.toTpe)(VoidableType.Void))
 
     private def reportChildExceptionIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -1349,7 +1345,7 @@ object BackendObjType {
     // final public void runOnExit(Runnable r) {
     //   onExit.addFirst(r);
     // }
-    private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.desc, "runOnExit", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
+    private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.desc, "runOnExit", mkDescriptor(JavaClasses.Runnable.toTpe)(VoidableType.Void))
 
     private def runOnExitIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -1363,7 +1359,7 @@ object BackendObjType {
   case object UncaughtExceptionHandler extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal, interfaces = List(JvmName.Thread$UncaughtExceptionHandler.toClassDesc))
+      val cm = mkClass(this.desc, IsFinal, interfaces = List(JavaClasses.Thread$UncaughtExceptionHandler))
 
       cm.mkField(RegionField, IsPrivate, IsFinal, NotVolatile)
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
@@ -1423,7 +1419,7 @@ object BackendObjType {
         DUP()
         GETSTATIC(Unit.SingletonField)
         PUTFIELD(InstanceField(defName, "arg0", BackendType.Object))
-        Result.unwindSuspensionFreeThunk(s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+        Result.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
         POP()
         RETURN()
       })
@@ -1732,7 +1728,7 @@ object BackendObjType {
   case object Thunk extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.desc, interfaces = List(Result.desc, JvmName.Runnable.toClassDesc))
+      val cm = mkInterface(this.desc, interfaces = List(Result.desc, JavaClasses.Runnable))
 
       cm.mkInterfaceMethod(InvokeMethod)
       cm.mkDefaultMethod(RunMethod, IsPublic, NotFinal, runIns(_))
@@ -1746,7 +1742,7 @@ object BackendObjType {
 
     private def runIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
-      Result.unwindSuspensionFreeThunk(s"in ${JvmName.Runnable.toBinaryName}", SourceLocation.Unknown)
+      Result.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(JavaClasses.Runnable)}", SourceLocation.Unknown)
       POP()
       RETURN()
     }
