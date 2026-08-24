@@ -42,7 +42,7 @@ object ClassConstants {
     }
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      import BytecodeInstructions.*
+      import Instructions.*
       thisLoad()
       ALOAD(1)
       invokeConstructor(JavaClasses.Error, mkVoidDescriptor(BackendType.String))

@@ -110,17 +110,17 @@ object GenExpression {
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(cst, loc) => cst match {
       case Constant.Unit =>
-        BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
+        Instructions.GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case Constant.Null =>
-        import BytecodeInstructions.*
+        import Instructions.*
         ACONST_NULL()
 
       case Constant.Bool(b) =>
-        BytecodeInstructions.pushBool(b)
+        Instructions.pushBool(b)
 
       case Constant.Char(c) =>
-        BytecodeInstructions.pushInt(c)
+        Instructions.pushInt(c)
 
       case Constant.Float32(f) =>
         f match {
@@ -138,7 +138,7 @@ object GenExpression {
         }
 
       case Constant.BigDecimal(dd) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         // Can fail with NumberFormatException
         addLoc(loc)
         NEW(JavaClasses.BigDecimal)
@@ -147,19 +147,19 @@ object GenExpression {
         INVOKESPECIAL(ClassConstants.BigDecimal.Constructor)
 
       case Constant.Int8(b) =>
-        BytecodeInstructions.pushInt(b)
+        Instructions.pushInt(b)
 
       case Constant.Int16(s) =>
-        BytecodeInstructions.pushInt(s)
+        Instructions.pushInt(s)
 
       case Constant.Int32(i) =>
-        BytecodeInstructions.pushInt(i)
+        Instructions.pushInt(i)
 
       case Constant.Int64(l) =>
         compileLong(l)
 
       case Constant.BigInt(ii) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         // Add source line number for debugging (can fail with NumberFormatException)
         addLoc(loc)
         NEW(JavaClasses.BigInteger)
@@ -168,20 +168,20 @@ object GenExpression {
         INVOKESPECIAL(ClassConstants.BigInteger.Constructor)
 
       case Constant.Str(s) =>
-        BytecodeInstructions.pushString(s)
+        Instructions.pushString(s)
 
       case Constant.Regex(patt) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         // Add source line number for debugging (can fail with PatternSyntaxException)
         addLoc(loc)
         pushString(patt.pattern)
         INVOKESTATIC(ClassConstants.Regex.CompileMethod)
 
       case Constant.RecordEmpty =>
-        BytecodeInstructions.GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
+        Instructions.GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
 
       case Constant.Static =>
-        import BytecodeInstructions.*
+        import Instructions.*
         //!TODO: For now, just emit null
         ACONST_NULL()
         CHECKCAST(BackendObjType.Region.desc)
@@ -619,7 +619,7 @@ object GenExpression {
         compileTag(sym.enumSym.toString, sym.name, caze.sym.ordinal, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
         val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
 
@@ -627,7 +627,7 @@ object GenExpression {
         Instructions.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.Index(idx) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
         val SimpleType.Tuple(elmTypes) = exp.tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
@@ -637,7 +637,7 @@ object GenExpression {
         Instructions.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.Tuple =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val SimpleType.Tuple(elmTypes) = tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
         NEW(tupleType.desc)
@@ -646,7 +646,7 @@ object GenExpression {
         INVOKESPECIAL(tupleType.Constructor)
 
       case AtomicOp.RecordSelect(field) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
         val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
 
@@ -659,7 +659,7 @@ object GenExpression {
         Instructions.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.RecordExtend(field) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp1, exp2) = exps
         val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(exp1.tpe))
         NEW(recordType.desc)
@@ -676,7 +676,7 @@ object GenExpression {
         PUTFIELD(recordType.RestField)
 
       case AtomicOp.RecordRestrict(field) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
 
         compileExpr(exp)
@@ -693,7 +693,7 @@ object GenExpression {
         compileExtTag(sym.name, exps, tpes)
 
       case AtomicOp.ExtUntag(sym, idx) =>
-        import BytecodeInstructions.*
+        import Instructions.*
 
         val List(exp) = exps
         val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
@@ -702,7 +702,7 @@ object GenExpression {
         Instructions.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.ArrayLit =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
         val elmTpe = BackendType.toClassDesc(innerType)
 
@@ -716,7 +716,7 @@ object GenExpression {
         }
 
       case AtomicOp.ArrayNew =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp1, exp2) = exps
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
@@ -730,7 +730,7 @@ object GenExpression {
         INVOKESTATIC(fillMethod)
 
       case AtomicOp.ArrayLoad =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp1, exp2) = exps
         val elmTpe = BackendType.toClassDesc(tpe)
 
@@ -742,7 +742,7 @@ object GenExpression {
         Instructions.castIfNotPrim(elmTpe)
 
       case AtomicOp.ArrayStore =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp1, exp2, exp3) = exps
         val elmTpe = BackendType.toClassDesc(exp3.tpe)
 
@@ -756,13 +756,13 @@ object GenExpression {
         GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case AtomicOp.ArrayLength =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
         compileExpr(exp)
         ARRAYLENGTH()
 
       case AtomicOp.StructNew(sym, mutability, _) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val structType = getStructType(root.structs(sym))
         val (fieldExps, regionOpt) = mutability match {
           case Mutability.Immutable => (exps, None)
@@ -783,7 +783,7 @@ object GenExpression {
         INVOKESPECIAL(structType.Constructor)
 
       case AtomicOp.StructGet(field) =>
-        import BytecodeInstructions.*
+        import Instructions.*
 
         val List(exp) = exps
         val struct = root.structs(field.structSym)
@@ -795,7 +795,7 @@ object GenExpression {
         Instructions.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.StructPut(field) =>
-        import BytecodeInstructions.*
+        import Instructions.*
 
         val List(exp1, exp2) = exps
         val struct = root.structs(field.structSym)
@@ -813,13 +813,13 @@ object GenExpression {
         mv.visitTypeInsn(INSTANCEOF, internalNameOf(clazz))
 
       case AtomicOp.Cast =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
         compileExpr(exp)
         Instructions.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.Unbox =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
         val bType = BackendType.toBackendType(tpe)
         compileExpr(exp)
@@ -828,7 +828,7 @@ object GenExpression {
         Instructions.castIfNotPrim(bType.toClassDesc)
 
       case AtomicOp.Box =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
         exp.tpe match {
           case SimpleType.Unit =>
@@ -859,7 +859,7 @@ object GenExpression {
 
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
-        BytecodeInstructions.addLoc(loc)
+        Instructions.addLoc(loc)
         val declaration = internalNameOf(constructor.owner)
         // Create a new object of the declaration type
         mv.visitTypeInsn(NEW, declaration)
@@ -881,7 +881,7 @@ object GenExpression {
         val exp :: args = exps
 
         // Add source line number for debugging (can fail when calling unsafe java methods)
-        BytecodeInstructions.addLoc(loc)
+        Instructions.addLoc(loc)
 
         // Evaluate the receiver object.
         compileExpr(exp)
@@ -907,7 +907,7 @@ object GenExpression {
 
       case AtomicOp.InvokeSuperMethod(sym, method) =>
         // Add source line number for debugging
-        BytecodeInstructions.addLoc(loc)
+        Instructions.addLoc(loc)
 
         // The first expression is the receiver (the anonymous class instance, i.e. `_this`).
         val receiver :: args = exps
@@ -934,7 +934,7 @@ object GenExpression {
 
       case AtomicOp.InvokeStaticMethod(method) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
-        BytecodeInstructions.addLoc(loc)
+        Instructions.addLoc(loc)
         for ((arg, argType) <- exps.zip(method.descriptor.parameterList.asScala)) {
           compileExpr(arg)
           if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, internalNameOf(argType))
@@ -948,7 +948,7 @@ object GenExpression {
       case AtomicOp.GetField(field) =>
         val List(exp) = exps
         // Add source line number for debugging (can fail when calling java)
-        BytecodeInstructions.addLoc(loc)
+        Instructions.addLoc(loc)
         compileExpr(exp)
         val declaration = internalNameOf(field.owner)
         mv.visitFieldInsn(GETFIELD, declaration, field.name, BackendType.toBackendType(tpe).toDescriptor)
@@ -956,7 +956,7 @@ object GenExpression {
       case AtomicOp.PutField(field) =>
         val List(exp1, exp2) = exps
         // Add source line number for debugging (can fail when calling java)
-        BytecodeInstructions.addLoc(loc)
+        Instructions.addLoc(loc)
         compileExpr(exp1)
         compileExpr(exp2)
         val declaration = internalNameOf(field.owner)
@@ -967,14 +967,14 @@ object GenExpression {
 
       case AtomicOp.GetStaticField(field) =>
         // Add source line number for debugging (can fail when calling java)
-        BytecodeInstructions.addLoc(loc)
+        Instructions.addLoc(loc)
         val declaration = internalNameOf(field.owner)
         mv.visitFieldInsn(GETSTATIC, declaration, field.name, BackendType.toBackendType(tpe).toDescriptor)
 
       case AtomicOp.PutStaticField(field) =>
         val List(exp) = exps
         // Add source line number for debugging (can fail when calling java)
-        BytecodeInstructions.addLoc(loc)
+        Instructions.addLoc(loc)
         compileExpr(exp)
         val declaration = internalNameOf(field.owner)
         mv.visitFieldInsn(PUTSTATIC, declaration, field.name, BackendType.toBackendType(exp.tpe).toDescriptor)
@@ -983,7 +983,7 @@ object GenExpression {
         mv.visitFieldInsn(GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
 
       case AtomicOp.Throw =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
         // Add source line number for debugging (can fail when handling exception).
         addLoc(loc)
@@ -991,7 +991,7 @@ object GenExpression {
         ATHROW()
 
       case AtomicOp.Spawn =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp1, exp2) = exps
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
@@ -1013,7 +1013,7 @@ object GenExpression {
         }
 
       case AtomicOp.Lazy =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
 
         // Find the Lazy class name (Lazy$tpe).
@@ -1026,7 +1026,7 @@ object GenExpression {
         INVOKESPECIAL(lazyType.Constructor)
 
       case AtomicOp.Force =>
-        import BytecodeInstructions.*
+        import Instructions.*
         val List(exp) = exps
 
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
@@ -1046,7 +1046,7 @@ object GenExpression {
         )
 
       case AtomicOp.HoleError(sym) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         // Add source line number for debugging (failable by design).
         addLoc(loc)
         NEW(BackendObjType.HoleError.desc) // HoleError
@@ -1057,7 +1057,7 @@ object GenExpression {
         ATHROW()
 
       case AtomicOp.MatchError =>
-        import BytecodeInstructions.*
+        import Instructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc)
         NEW(BackendObjType.MatchError.desc) // MatchError
@@ -1067,7 +1067,7 @@ object GenExpression {
         ATHROW()
 
       case AtomicOp.CastError(from, to) =>
-        import BytecodeInstructions.*
+        import Instructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc)
         NEW(BackendObjType.CastError.desc) // CastError
@@ -1100,7 +1100,7 @@ object GenExpression {
           mv.visitInsn(DUP)
           // Evaluating the expression
           compileExpr(exp2)
-          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(0))
+          Instructions.PUTFIELD(functionInterface.ArgField(0))
           // Return the closure
           mv.visitInsn(ARETURN)
 
@@ -1115,7 +1115,7 @@ object GenExpression {
           mv.visitInsn(DUP)
           // Evaluating the expression
           compileExpr(exp2)
-          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(0))
+          Instructions.PUTFIELD(functionInterface.ArgField(0))
 
           // Calling unwind and unboxing
           if (Purity.isControlPure(purity)) {
@@ -1159,7 +1159,7 @@ object GenExpression {
           mv.visitInsn(DUP)
           // Evaluating the expression
           compileExpr(arg)
-          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
+          Instructions.PUTFIELD(functionInterface.ArgField(i))
         }
         // Return the def
         mv.visitInsn(ARETURN)
@@ -1230,7 +1230,7 @@ object GenExpression {
 
       case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
         import BackendObjType.Suspension
-        import BytecodeInstructions.*
+        import Instructions.*
 
         val pcPoint = pcCounter(0) + 1
         val pcPointLabel = pcLabels(pcPoint)
@@ -1293,10 +1293,10 @@ object GenExpression {
           mv.visitVarInsn(ALOAD, 0)
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
-          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
+          Instructions.PUTFIELD(functionInterface.ArgField(i))
         }
         mv.visitVarInsn(ALOAD, 0)
-        BytecodeInstructions.pushInt(0)
+        Instructions.pushInt(0)
         setPc(mv)
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
@@ -1309,7 +1309,7 @@ object GenExpression {
           mv.visitVarInsn(ALOAD, 0)
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
-          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
+          Instructions.PUTFIELD(functionInterface.ArgField(i))
         }
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
@@ -1331,7 +1331,7 @@ object GenExpression {
     }
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      import BytecodeInstructions.*
+      import Instructions.*
       compileExpr(exp1)
       branch(Condition.Bool) {
         case Branch.TrueBranch => compileExpr(exp2)
@@ -1420,7 +1420,7 @@ object GenExpression {
       mv.visitLabel(endLabel)
 
     case Expr.Let(_, offset, exp1, exp2, _) =>
-      import BytecodeInstructions.*
+      import Instructions.*
       val bType = BackendType.toClassDesc(exp1.tpe)
       compileExpr(exp1)
       // No cast needed in most cases: operations self-cast (Untag, Index, etc.),
@@ -1436,7 +1436,7 @@ object GenExpression {
       compileExpr(exp2)
 
     case Expr.Stm(exps, exp, _) =>
-      import BytecodeInstructions.*
+      import Instructions.*
       exps.foreach { e =>
         compileExpr(e)
         Instructions.xPop(BackendType.toClassDesc(e.tpe))
@@ -1445,7 +1445,7 @@ object GenExpression {
 
     case Expr.Region(_, offset, exp, _, _, loc) =>
       // Adding source line number for debugging
-      BytecodeInstructions.addLoc(loc)
+      Instructions.addLoc(loc)
 
       // Introduce a label for before the try block.
       val beforeTryBlock = new Label()
@@ -1500,7 +1500,7 @@ object GenExpression {
 
     case Expr.TryCatch(exp, rules, _, _, loc) =>
       // Add source line number for debugging.
-      BytecodeInstructions.addLoc(loc)
+      Instructions.addLoc(loc)
 
       // Introduce a label for before the try block.
       val beforeTryBlock = new Label()
@@ -1545,7 +1545,7 @@ object GenExpression {
       mv.visitLabel(afterTryAndCatch)
 
     case Expr.RunWith(exp, effUse, rules, ct, _, _, loc) =>
-      import BytecodeInstructions.*
+      import Instructions.*
       // exp is a Unit -> exp.tpe closure
       val effectName = BackendObjType.Effect(effUse.sym).desc
       val effectInternalName = internalNameOf(effectName)
@@ -1587,7 +1587,7 @@ object GenExpression {
 
             mv.visitLabel(pcPointLabel)
             narrowLocals(mv)
-            BytecodeInstructions.ALOAD(1)
+            Instructions.ALOAD(1)
             mv.visitLabel(afterUnboxing)
         }
       } else {
@@ -1630,7 +1630,7 @@ object GenExpression {
   }
 
   private def compileIsTag(ordinal: Int, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
+    import Instructions.*
     compileExpr(exp)
     CHECKCAST(BackendObjType.Tagged.desc)
     GETFIELD(BackendObjType.Tagged.OrdinalField)
@@ -1639,7 +1639,7 @@ object GenExpression {
   }
 
   private def compileTag(enumName: String, name: String, ordinal: Int, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
+    import Instructions.*
     tpes match {
       case Nil =>
         GETSTATIC(BackendObjType.NullaryTag(enumName, name, -1).SingletonField)
@@ -1660,7 +1660,7 @@ object GenExpression {
   }
 
   private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
+    import Instructions.*
     // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
     val tagType = BackendObjType.Tag(tpes)
@@ -1670,7 +1670,7 @@ object GenExpression {
   }
 
   private def compileExtIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
+    import Instructions.*
     compileExpr(exp)
     CHECKCAST(BackendObjType.ExtTagged.desc)
     GETFIELD(BackendObjType.ExtTagged.NameField)
@@ -1679,7 +1679,7 @@ object GenExpression {
   }
 
   private def compileExtTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
+    import Instructions.*
     val tagType = BackendObjType.ExtTag(tpes)
     NEW(tagType.desc)
     DUP()
@@ -1695,7 +1695,7 @@ object GenExpression {
   }
 
   private def compileExtUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
+    import Instructions.*
     val tagType = BackendObjType.ExtTag(tpes)
     compileExpr(exp)
     CHECKCAST(tagType.desc)

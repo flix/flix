@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.{mkClassName, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.BackendType.RichClassDesc
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.*
+import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
+import ca.uwaterloo.flix.language.phase.jvm.Instructions.Branch.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
