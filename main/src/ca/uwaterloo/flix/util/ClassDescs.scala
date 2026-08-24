@@ -31,4 +31,37 @@ object ClassDescs {
       InternalCompilerException(s"The class '${clazz.getName}' has no nominal descriptor.", SourceLocation.Unknown)
     )
 
+  /**
+    * Returns the JVM internal name of the class, interface, or array descriptor `desc`,
+    * e.g. `java/lang/String` or `[Ljava/lang/String;`.
+    */
+  def internalNameOf(desc: ClassDesc): String = {
+    if (desc.isArray) {
+      // The internal name of an array type is its descriptor.
+      desc.descriptorString()
+    } else {
+      // Strip the leading `L` and trailing `;` of the descriptor.
+      val descriptor = desc.descriptorString()
+      descriptor.substring(1, descriptor.length - 1)
+    }
+  }
+
+  /**
+    * Returns the class file name (e.g. `java/lang/String.class`) of the class or interface `desc`.
+    */
+  def classFileNameOf(desc: ClassDesc): String = {
+    // Strip the leading `L` and trailing `;` of the descriptor.
+    val descriptor = desc.descriptorString()
+    descriptor.substring(1, descriptor.length - 1) + ".class"
+  }
+
+  /**
+    * Returns the binary name (e.g. `java.lang.String`) of the class or interface `desc`.
+    */
+  def binaryNameOf(desc: ClassDesc): String = {
+    // Strip the leading `L` and trailing `;` of the descriptor and replace `/` with `.`.
+    val descriptor = desc.descriptorString()
+    descriptor.substring(1, descriptor.length - 1).replace('/', '.')
+  }
+
 }
