@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.{CD_Object, CD_String}
 import scala.annotation.tailrec
 
 /**
@@ -118,11 +120,17 @@ object BackendType {
     * Holds a reference to some object type.
     */
   case class Reference(ref: BackendObjType) extends BackendType {
-    def name: JvmName = ref.jvmName
+    def name: ClassDesc = ref.desc
   }
 
-  val Object: BackendType = Reference(BackendObjType.Native(JvmName.Object))
-  val String: BackendType = Reference(BackendObjType.Native(JvmName.String))
+  val Object: BackendType = Reference(BackendObjType.Native(CD_Object))
+  val String: BackendType = Reference(BackendObjType.Native(CD_String))
+
+  /** Enriches a class or interface descriptor with a shorthand for its reference type. */
+  implicit class RichClassDesc(private val desc: ClassDesc) extends AnyVal {
+    /** Wraps `desc` in `BackendType.Reference(BackendObjType.Native(...))`. */
+    def toTpe: BackendType.Reference = Reference(BackendObjType.Native(desc))
+  }
 
   /**
     * Converts the given [[SimpleType]] into its [[BackendType]] representation.
@@ -139,34 +147,53 @@ object BackendType {
       case SimpleType.Char => BackendType.Char
       case SimpleType.Float32 => BackendType.Float32
       case SimpleType.Float64 => BackendType.Float64
-      case SimpleType.BigDecimal => JvmName.BigDecimal.toTpe
+      case SimpleType.BigDecimal => JavaClasses.BigDecimal.toTpe
       case SimpleType.Int8 => BackendType.Int8
       case SimpleType.Int16 => BackendType.Int16
       case SimpleType.Int32 => BackendType.Int32
       case SimpleType.Int64 => BackendType.Int64
-      case SimpleType.BigInt => JvmName.BigInteger.toTpe
+      case SimpleType.BigInt => JavaClasses.BigInteger.toTpe
       case SimpleType.String => BackendType.String
-      case SimpleType.Regex => JvmName.Regex.toTpe
+      case SimpleType.Regex => JavaClasses.Regex.toTpe
       case SimpleType.Region => BackendObjType.Region.toTpe
       case SimpleType.Null => BackendType.Object
       case SimpleType.Array(tpe) => Array(toBackendType(tpe))
       case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
       case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
       case SimpleType.Enum(_, Nil) => BackendObjType.Tagged.toTpe
-      case SimpleType.Struct(sym, Nil) => JvmOps.getStructType(root.structs(sym)).toTpe
+      case SimpleType.Struct(sym, Nil) => BackendObjType.Struct.fromStruct(root.structs(sym)).toTpe
       case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case SimpleType.RecordEmpty => BackendObjType.Record.toTpe
       case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
       case SimpleType.ExtensibleEmpty => BackendObjType.ExtTagged.toTpe
       case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.ExtTagged.toTpe
-      case SimpleType.Native(clazz) => BackendObjType.Native(JvmName.ofClassDesc(clazz)).toTpe
+      case SimpleType.Native(clazz) => BackendObjType.Native(clazz).toTpe
       case SimpleType.Enum(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
       case SimpleType.Struct(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
     }
   }
 
+  /** Converts the given [[SimpleType]] into the [[ClassDesc]] of its JVM representation. */
+  def toClassDesc(tpe0: SimpleType)(implicit root: JvmAst.Root): ClassDesc =
+    ClassDesc.ofDescriptor(toBackendType(tpe0).toDescriptor)
+
+  /** Converts the given Java class or array descriptor `desc` into its [[BackendType]] representation. */
+  def toBackendType(desc: ClassDesc): BackendType = {
+    import java.lang.constant.ConstantDescs.*
+    if (desc == CD_boolean) BackendType.Bool
+    else if (desc == CD_char) BackendType.Char
+    else if (desc == CD_byte) BackendType.Int8
+    else if (desc == CD_short) BackendType.Int16
+    else if (desc == CD_int) BackendType.Int32
+    else if (desc == CD_long) BackendType.Int64
+    else if (desc == CD_float) BackendType.Float32
+    else if (desc == CD_double) BackendType.Float64
+    else if (desc.isArray) Array(toBackendType(desc.componentType()))
+    else Reference(BackendObjType.Native(desc))
+  }
+
   /**
-    * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
+    * Contains all the primitive types and `Reference(Native(CD_Object))`.
     */
   def erasedTypes: List[BackendType] = List(
     BackendType.Bool,

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Mutability}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SemanticOp, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
 
@@ -447,25 +447,25 @@ object TypeVerifier {
           check(expected = SimpleType.Bool)(actual = tpe, loc)
 
         case AtomicOp.InvokeConstructor(constructor) =>
-          checkArity(ts, constructor.getParameterCount, loc)
+          checkArity(ts, constructor.descriptor.parameterCount(), loc)
           tpe
 
         case AtomicOp.InvokeSuperConstructor(constructor) =>
-          checkArity(ts, constructor.getParameterCount, loc)
+          checkArity(ts, constructor.descriptor.parameterCount(), loc)
           tpe
 
         case AtomicOp.InvokeMethod(method) =>
           val _ :: pts = ts
-          checkArity(pts, method.getParameterCount, loc)
+          checkArity(pts, method.descriptor.parameterCount(), loc)
           tpe
 
         case AtomicOp.InvokeSuperMethod(_, method) =>
           val _ :: pts = ts
-          checkArity(pts, method.getParameterCount, loc)
+          checkArity(pts, method.descriptor.parameterCount(), loc)
           tpe
 
         case AtomicOp.InvokeStaticMethod(method) =>
-          checkArity(ts, method.getParameterCount, loc)
+          checkArity(ts, method.descriptor.parameterCount(), loc)
           tpe
 
         // Vector operations are simplified to array operations in the Simplifier.
@@ -559,7 +559,7 @@ object TypeVerifier {
 
     case Expr.TryCatch(exp, rules, tpe, _, loc) =>
       for (CatchRule(sym, clazz, exp) <- rules) {
-        checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Native(ClassDescs.of(clazz))), lenv), exp.loc)
+        checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Native(clazz)), lenv), exp.loc)
       }
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
@@ -598,7 +598,7 @@ object TypeVerifier {
         val signature = SimpleType.mkArrow(m.fparams.map(_.tpe), m.tpe)
         checkEq(signature, exptype, m.loc)
       }
-      checkEq(tpe, SimpleType.Native(ClassDescs.of(clazz)), loc)
+      checkEq(tpe, SimpleType.Native(clazz.desc), loc)
 
   }
 
