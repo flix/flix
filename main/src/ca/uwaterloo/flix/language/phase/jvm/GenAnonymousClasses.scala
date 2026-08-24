@@ -78,24 +78,20 @@ object GenAnonymousClasses {
       // Use the Java interface's erased method signature (resolved during lowering) for the
       // JVM descriptor. This ensures the generated method matches the interface even when the
       // user declares generic parameter types (e.g., String instead of Object).
-      val actualArgs = m.javaSig match {
-        case Some(jm) => jm.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
-        case None => m.fparams.tail.map(_.tpe).map(BackendType.toBackendType)
+      val descriptor = m.javaSig match {
+        case Some(jm) => jm.descriptor
+        case None =>
+          val ret = if (m.tpe == SimpleType.Unit) CD_void else BackendType.toClassDesc(m.tpe)
+          MethodTypeDesc.of(ret, m.fparams.tail.map(fp => BackendType.toClassDesc(fp.tpe)) *)
       }
-      val actualres = m.javaSig match {
-        case Some(jm) => jm.descriptor.returnType()
-        case None => if (m.tpe == SimpleType.Unit) CD_void else BackendType.toClassDesc(m.tpe)
-      }
-      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, MethodTypeDesc.of(actualres, actualArgs.map(_.toClassDesc) *)), IsPublic, NotFinal, methodIns(abstractClass, cloField, actualres, m)(_, root))
+      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, descriptor), IsPublic, NotFinal, methodIns(abstractClass, cloField, descriptor.returnType(), m)(_, root))
     }
 
     // Generate bridge methods for super method calls.
     val superMethods = obj.superMethods
     for (method <- superMethods) {
       val bridgeName = s"super$$${method.name}"
-      val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
-      val descriptor = MethodTypeDesc.of(method.descriptor.returnType(), paramTypes.map(_.toClassDesc) *)
-      cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
+      cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, method.descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
     }
 
     cm.closeClassMaker()
@@ -111,15 +107,14 @@ object GenAnonymousClasses {
   /** Creates constructor bytecode that forwards parameters directly to the super constructor. */
   private def constructorInsWithSuperCall(superClass: ClassDesc, constructor: JConstructor)(implicit mv: MethodVisitor): Unit = {
     import BytecodeInstructions.*
-    val paramTypes = constructor.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
     // ALOAD 0 (this)
     thisLoad()
     // Load each <init> parameter (starting at slot 1)
-    Instructions.withNames(1, paramTypes.map(_.toClassDesc)) { case (_, args) =>
+    Instructions.withNames(1, constructor.descriptor.parameterList.asScala.toList) { case (_, args) =>
       for (arg <- args) arg.load()
     }
     // INVOKESPECIAL superClass.<init>(paramTypes...)
-    INVOKESPECIAL(ClassMaker.ConstructorMethod(superClass, paramTypes))
+    INVOKESPECIAL(superClass, ClassMaker.ConstructorMethodName, constructor.descriptor)
     RETURN()
   }
 
@@ -148,18 +143,16 @@ object GenAnonymousClasses {
     * }}}
     */
   private def superBridgeIns(superClass: ClassDesc, method: JMethod)(implicit mv: MethodVisitor): Unit = {
-    val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
     val isVoid = method.descriptor.returnType() == CD_void
-    val descriptor = MethodTypeDesc.of(method.descriptor.returnType(), paramTypes.map(_.toClassDesc) *)
 
     // ALOAD 0 (this)
     thisLoad()
     // Load each parameter (starting at slot 1)
-    Instructions.withNames(1, paramTypes.map(_.toClassDesc)) { case (_, args) =>
+    Instructions.withNames(1, method.descriptor.parameterList.asScala.toList) { case (_, args) =>
       for (arg <- args) arg.load()
     }
     // INVOKESPECIAL superClass.methodName(descriptor)
-    INVOKESPECIAL(superClass, method.name, descriptor)
+    INVOKESPECIAL(superClass, method.name, method.descriptor)
 
     // Return
     if (isVoid) {
