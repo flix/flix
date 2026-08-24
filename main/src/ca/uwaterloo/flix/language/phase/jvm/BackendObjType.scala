@@ -1615,7 +1615,7 @@ object BackendObjType {
       crashIfSuspension(errorHint, loc)
       CHECKCAST(Value.desc) // Cannot fail
       GETFIELD(Value.fieldFromType(tpe))
-      castIfNotPrim(tpe)
+      Bytecode.castIfNotPrim(tpe.toClassDesc)
     }
 
     /**

@@ -322,8 +322,7 @@ object GenFunAndClosureClasses {
       m.visitFieldInsn(GETFIELD, ClassDescs.internalNameOf(functionInterface),
         s"arg$i", BackendType.toErasedBackendType(fp.tpe).toDescriptor)
       // Insert cast to concrete type
-      val bTpe = BackendType.toBackendType(fp.tpe)
-      BytecodeInstructions.castIfNotPrim(bTpe)
+      Bytecode.castIfNotPrim(BackendType.toClassDesc(fp.tpe))
     }
 
     val method = staticApplyMethod(className, defn)
@@ -429,7 +428,7 @@ object GenFunAndClosureClasses {
               case _: BackendType.PrimitiveType => () // primitives don't need narrowing
               case _ =>
                 BytecodeInstructions.xLoad(erasedType, index)(mv)
-                BytecodeInstructions.castIfNotPrim(realType)(mv)
+                Bytecode.castIfNotPrim(realType.toClassDesc)(mv)
                 BytecodeInstructions.xStore(realType, index)(mv)
             }
           }
@@ -455,7 +454,7 @@ object GenFunAndClosureClasses {
     // cast the value and store it
     castTo match {
       case Some(targetType) =>
-        BytecodeInstructions.castIfNotPrim(targetType)
+        Bytecode.castIfNotPrim(targetType.toClassDesc)
         BytecodeInstructions.xStore(targetType, localIndex)
       case None =>
         BytecodeInstructions.xStore(fieldType, localIndex)
