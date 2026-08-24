@@ -49,7 +49,7 @@ object CodeGen {
       main => JvmClass(BackendObjType.Main.desc, BackendObjType.Main.genByteCode(main.sym))
     ).toList
 
-    val namespaceClasses = JvmOps.namespacesOf(root).map(
+    val namespaceClasses = namespacesOf(root).map(
       ns => {
         val nsClass = BackendObjType.Namespace(ns.ns)
         val entrypointDefs = ns.defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
@@ -58,25 +58,25 @@ object CodeGen {
 
     // Generate function classes.
     val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs).values.toList
-    val erasedFunctionTypes = JvmOps.getErasedArrowsOf(allTypes)
+    val erasedFunctionTypes = getErasedArrowsOf(allTypes)
     val functionInterfaces = erasedFunctionTypes.map(bt => JvmClass(bt.desc, bt.genByteCode()))
     val closureAbstractClasses = erasedFunctionTypes.map {
       case BackendObjType.Arrow(args, result) => BackendObjType.AbstractArrow(args, result)
     }.map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
 
     val taggedAbstractClass = List(JvmClass(BackendObjType.Tagged.desc, BackendObjType.Tagged.genByteCode()))
-    val tagClasses = root.enums.values.flatMap(JvmOps.getTagsOf).toList.distinctBy(_.desc).map(bt => JvmClass(bt.desc, bt.genByteCode()))
+    val tagClasses = root.enums.values.flatMap(getTagsOf).toList.distinctBy(_.desc).map(bt => JvmClass(bt.desc, bt.genByteCode()))
     val extTaggedAbstractClass = List(JvmClass(BackendObjType.ExtTagged.desc, BackendObjType.ExtTagged.genByteCode()))
-    val extensibleTagClasses = JvmOps.getExtensibleTagTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
+    val extensibleTagClasses = getExtensibleTagTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
 
-    val tupleClasses = JvmOps.getTupleTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
+    val tupleClasses = getTupleTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
     val structClasses = root.structs.values.map(JvmOps.getStructType).toList.distinctBy(_.desc).map(bt => JvmClass(bt.desc, bt.genByteCode()))
 
     val recordInterfaces = List(JvmClass(BackendObjType.Record.desc, BackendObjType.Record.genByteCode()))
     val recordEmptyClasses = List(JvmClass(BackendObjType.RecordEmpty.desc, BackendObjType.RecordEmpty.genByteCode()))
-    val recordExtendClasses = JvmOps.getRecordExtendsOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
+    val recordExtendClasses = getRecordExtendsOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
 
-    val lazyClasses = JvmOps.getLazyTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
+    val lazyClasses = getLazyTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
 
     val anonClasses = GenAnonymousClasses.gen(root.anonClasses.distinctBy(_.name))
 
@@ -177,5 +177,65 @@ object CodeGen {
     }
     BytecodeAst.Root(classMap, tests, main, root.sources)
   }(DebugNoOp())
+
+  /** Returns the set of namespaces in the given AST `root`. */
+  private def namespacesOf(root: Root): Set[NamespaceInfo] = {
+    // Group every symbol by namespace.
+    root.defs.groupBy(_._1.namespace).map {
+      case (ns, defs) =>
+        NamespaceInfo(ns, defs)
+    }.toSet
+  }
+
+  /** Returns the set of erased function types in `types` without searching recursively. */
+  private def getErasedArrowsOf(types: Iterable[SimpleType]): Set[BackendObjType.Arrow] =
+    types.foldLeft(Set.empty[BackendObjType.Arrow]) {
+      case (acc, SimpleType.Arrow(args, result)) =>
+        acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
+      case (acc, _) => acc
+    }
+
+  /** Returns the tag type of each case in `enm`. */
+  private def getTagsOf(enm: Enum)(implicit root: Root): List[BackendObjType.TagType] = {
+    enm.cases.values.map {
+      case caze => caze.tpes match {
+        case Nil =>
+          BackendObjType.NullaryTag(caze.sym.enumSym.toString, caze.sym.name, caze.sym.ordinal)
+        case elms =>
+          BackendObjType.Tag(elms.map(BackendType.toBackendType))
+      }
+    }.toList
+  }
+
+  /** Returns the set of extensible tag types in `types` without searching recursively. */
+  private def getExtensibleTagTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.ExtTag] =
+    types.foldLeft(Set.empty[BackendObjType.ExtTag]) {
+      case (acc, SimpleType.ExtensibleExtend(_, targs, _)) =>
+        acc + BackendObjType.ExtTag(targs.map(BackendType.toBackendType))
+      case (acc, _) => acc
+    }
+
+  /** Returns the set of tuple types in `types` without searching recursively. */
+  private def getTupleTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Tuple] =
+    types.foldLeft(Set.empty[BackendObjType.Tuple]) {
+      case (acc, SimpleType.Tuple(elms)) =>
+        acc + BackendObjType.Tuple(elms.map(BackendType.toBackendType))
+      case (acc, _) => acc
+    }
+
+  /** Returns the set of record extend types in `types` without searching recursively. */
+  private def getRecordExtendsOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.RecordExtend] =
+    types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
+      case (acc, SimpleType.RecordExtend(_, value, _)) =>
+        acc + BackendObjType.RecordExtend(BackendType.toBackendType(value))
+      case (acc, _) => acc
+    }
+
+  /** Returns the set of lazy types in `types` without searching recursively. */
+  private def getLazyTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Lazy] =
+    types.foldLeft(Set.empty[BackendObjType.Lazy]) {
+      case (acc, SimpleType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.toBackendType(tpe))
+      case (acc, _) => acc
+    }
 
 }

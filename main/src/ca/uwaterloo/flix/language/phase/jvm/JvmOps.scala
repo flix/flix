@@ -18,10 +18,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.JvmAst.*
-import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.ListOps
 
 import java.lang.constant.ClassDesc
 
@@ -105,71 +104,8 @@ object JvmOps {
   def getTagName(name: String): String =
     mangle(name)
 
-  /** Returns the set of namespaces in the given AST `root`. */
-  def namespacesOf(root: Root): Set[NamespaceInfo] = {
-    // Group every symbol by namespace.
-    root.defs.groupBy(_._1.namespace).map {
-      case (ns, defs) =>
-        NamespaceInfo(ns, defs)
-    }.toSet
-  }
-
-  /** Returns the set of lazy types in `types` without searching recursively. */
-  def getLazyTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Lazy] =
-    types.foldLeft(Set.empty[BackendObjType.Lazy]) {
-      case (acc, SimpleType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.toBackendType(tpe))
-      case (acc, _) => acc
-    }
-
-  /** Returns the set of record extend types in `types` without searching recursively. */
-  def getRecordExtendsOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.RecordExtend] =
-    types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
-      case (acc, SimpleType.RecordExtend(_, value, _)) =>
-        acc + BackendObjType.RecordExtend(BackendType.toBackendType(value))
-      case (acc, _) => acc
-    }
-
-  /** Returns the set of erased function types in `types` without searching recursively. */
-  def getErasedArrowsOf(types: Iterable[SimpleType]): Set[BackendObjType.Arrow] =
-    types.foldLeft(Set.empty[BackendObjType.Arrow]) {
-      case (acc, SimpleType.Arrow(args, result)) =>
-        acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
-      case (acc, _) => acc
-    }
-
-  /** Returns the set of tuple types in `types` without searching recursively. */
-  def getTupleTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Tuple] =
-    types.foldLeft(Set.empty[BackendObjType.Tuple]) {
-      case (acc, SimpleType.Tuple(elms)) =>
-        acc + BackendObjType.Tuple(elms.map(BackendType.toBackendType))
-      case (acc, _) => acc
-    }
-
   /** Returns the struct type of `struct`. */
   def getStructType(struct: JvmAst.Struct)(implicit root: Root): BackendObjType.Struct =
     BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
-
-
-  /** Returns the tag type of each case in `enm`. */
-  def getTagsOf(enm: JvmAst.Enum)(implicit root: Root): List[BackendObjType.TagType] = {
-    enm.cases.values.map {
-      case caze => caze.tpes match {
-        case Nil =>
-          BackendObjType.NullaryTag(caze.sym.enumSym.toString, caze.sym.name, caze.sym.ordinal)
-        case elms =>
-          BackendObjType.Tag(elms.map(BackendType.toBackendType))
-      }
-    }.toList
-  }
-
-  /**
-    * Returns the set of extensible tag types in `types` without searching recursively.
-    */
-  def getExtensibleTagTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.ExtTag] =
-    types.foldLeft(Set.empty[BackendObjType.ExtTag]) {
-      case (acc, SimpleType.ExtensibleExtend(_, targs, _)) =>
-        acc + BackendObjType.ExtTag(targs.map(BackendType.toBackendType))
-      case (acc, _) => acc
-    }
 
 }
