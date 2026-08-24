@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
-import java.lang.constant.ClassDesc
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.CD_void
 import scala.jdk.CollectionConverters.*
 
@@ -83,11 +83,10 @@ object GenAnonymousClasses {
         case None => m.fparams.tail.map(_.tpe).map(BackendType.toBackendType)
       }
       val actualres = m.javaSig match {
-        case Some(jm) if jm.descriptor.returnType() == CD_void => VoidableType.Void
-        case Some(jm) => BackendType.toBackendType(jm.descriptor.returnType())
-        case None => if (m.tpe == SimpleType.Unit) VoidableType.Void else BackendType.toBackendType(m.tpe)
+        case Some(jm) => jm.descriptor.returnType()
+        case None => if (m.tpe == SimpleType.Unit) CD_void else BackendType.toClassDesc(m.tpe)
       }
-      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, actualres, m)(_, root))
+      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, MethodTypeDesc.of(actualres, actualArgs.map(_.toClassDesc) *)), IsPublic, NotFinal, methodIns(abstractClass, cloField, actualres, m)(_, root))
     }
 
     // Generate bridge methods for super method calls.
@@ -95,8 +94,7 @@ object GenAnonymousClasses {
     for (method <- superMethods) {
       val bridgeName = s"super$$${method.name}"
       val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
-      val returnTpe = if (method.descriptor.returnType() == CD_void) VoidableType.Void else BackendType.toBackendType(method.descriptor.returnType())
-      val descriptor = MethodDescriptor(paramTypes, returnTpe)
+      val descriptor = MethodTypeDesc.of(method.descriptor.returnType(), paramTypes.map(_.toClassDesc) *)
       cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
     }
 
@@ -152,7 +150,7 @@ object GenAnonymousClasses {
   private def superBridgeIns(superClass: ClassDesc, method: JMethod)(implicit mv: MethodVisitor): Unit = {
     val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
     val isVoid = method.descriptor.returnType() == CD_void
-    val descriptor = MethodDescriptor(paramTypes, if (isVoid) VoidableType.Void else BackendType.toBackendType(method.descriptor.returnType()))
+    val descriptor = MethodTypeDesc.of(method.descriptor.returnType(), paramTypes.map(_.toClassDesc) *)
 
     // ALOAD 0 (this)
     thisLoad()
@@ -172,7 +170,7 @@ object GenAnonymousClasses {
   }
 
   /** Creates code to read the arguments, load it into the `cloField` closure, call that function, and returns. */
-  private def methodIns(abstractClass: BackendObjType.AbstractArrow, cloField: ClassMaker.InstanceField, actualRes: VoidableType, m: JvmMethod)(implicit mv: MethodVisitor, root: Root): Unit = {
+  private def methodIns(abstractClass: BackendObjType.AbstractArrow, cloField: ClassMaker.InstanceField, actualRes: ClassDesc, m: JvmMethod)(implicit mv: MethodVisitor, root: Root): Unit = {
     val functionAbstractClass = abstractClass.superClass
     val returnType = BackendType.toBackendType(m.tpe)
 
@@ -194,9 +192,10 @@ object GenAnonymousClasses {
     // Return the value using the method's erased JVM return type (`actualRes`). Any boxing
     // needed to feed a primitive result into a reference (e.g. `Object`) return has already
     // been applied in Lowering, so the value on the stack already matches `actualRes`.
-    actualRes match {
-      case VoidableType.Void => RETURN()
-      case res: BackendType => Instructions.xReturn(res.toClassDesc)
+    if (actualRes == CD_void) {
+      RETURN()
+    } else {
+      Instructions.xReturn(actualRes)
     }
   }
 

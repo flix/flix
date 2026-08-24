@@ -26,7 +26,7 @@ import scala.annotation.tailrec
 /**
   * Represents all Flix types that are not objects on the JVM (array is an exception).
   */
-sealed trait BackendType extends VoidableType {
+sealed trait BackendType {
 
   def toDescriptor: String = {
     /** Returns the nesting degree of the array type together with the element type. */
