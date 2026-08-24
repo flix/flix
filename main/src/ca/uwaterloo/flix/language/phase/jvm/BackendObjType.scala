@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, RootPackage}
-import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
@@ -516,13 +516,13 @@ object BackendObjType {
         case ObjFunction => InstanceMethod(this.desc, "apply",
           mkDescriptor(BackendType.Object)(BackendType.Object))
         case ObjConsumer => InstanceMethod(this.desc, "accept",
-          mkDescriptor(BackendType.Object)(VoidableType.Void))
+          mkVoidDescriptor(BackendType.Object))
         case ObjPredicate => InstanceMethod(this.desc, "test",
           mkDescriptor(BackendType.Object)(BackendType.Bool))
         case IntFunction => InstanceMethod(this.desc, "apply",
           mkDescriptor(BackendType.Int32)(BackendType.Object))
         case IntConsumer => InstanceMethod(this.desc, "accept",
-          mkDescriptor(BackendType.Int32)(VoidableType.Void))
+          mkVoidDescriptor(BackendType.Int32))
         case IntPredicate => InstanceMethod(this.desc, "test",
           mkDescriptor(BackendType.Int32)(BackendType.Bool))
         case IntUnaryOperator => InstanceMethod(this.desc, "applyAsInt",
@@ -530,7 +530,7 @@ object BackendObjType {
         case LongFunction => InstanceMethod(this.desc, "apply",
           mkDescriptor(BackendType.Int64)(BackendType.Object))
         case LongConsumer => InstanceMethod(this.desc, "accept",
-          mkDescriptor(BackendType.Int64)(VoidableType.Void))
+          mkVoidDescriptor(BackendType.Int64))
         case LongPredicate => InstanceMethod(this.desc, "test",
           mkDescriptor(BackendType.Int64)(BackendType.Bool))
         case LongUnaryOperator => InstanceMethod(this.desc, "applyAsLong",
@@ -538,7 +538,7 @@ object BackendObjType {
         case DoubleFunction => InstanceMethod(this.desc, "apply",
           mkDescriptor(BackendType.Float64)(BackendType.Object))
         case DoubleConsumer => InstanceMethod(this.desc, "accept",
-          mkDescriptor(BackendType.Float64)(VoidableType.Void))
+          mkVoidDescriptor(BackendType.Float64))
         case DoublePredicate => InstanceMethod(this.desc, "test",
           mkDescriptor(BackendType.Float64)(BackendType.Bool))
         case DoubleUnaryOperator => InstanceMethod(this.desc, "applyAsDouble",
@@ -994,7 +994,7 @@ object BackendObjType {
     private def staticConstructorIns(implicit mv: MethodVisitor): Unit = {
       NEW(JavaClasses.AtomicLong)
       DUP()
-      invokeConstructor(JavaClasses.AtomicLong, MethodDescriptor.NothingToVoid)
+      invokeConstructor(JavaClasses.AtomicLong, MethodTypeDescs.NothingToVoid)
       PUTSTATIC(CounterField)
       ICONST_0()
       ANEWARRAY(JavaClasses.String)
@@ -1007,7 +1007,7 @@ object BackendObjType {
     private def newIdIns(implicit mv: MethodVisitor): Unit = {
       GETSTATIC(CounterField)
       INVOKEVIRTUAL(JavaClasses.AtomicLong, "getAndIncrement",
-        MethodDescriptor(Nil, BackendType.Int64))
+        mkDescriptor()(BackendType.Int64))
       LRETURN()
     }
 
@@ -1031,7 +1031,7 @@ object BackendObjType {
     }
 
     def SetArgsMethod: StaticMethod =
-      StaticMethod(this.desc, "setArgs", mkDescriptor(BackendType.Array(BackendType.String))(VoidableType.Void))
+      StaticMethod(this.desc, "setArgs", mkVoidDescriptor(BackendType.Array(BackendType.String)))
 
     private def setArgsIns(implicit mv: MethodVisitor): Unit = {
       ALOAD(0)
@@ -1056,8 +1056,8 @@ object BackendObjType {
 
     private def arrayCopy()(implicit mv: MethodVisitor): Unit = {
       mv.visitMethodInstruction(Opcodes.INVOKESTATIC, JavaClasses.System, "arraycopy",
-        MethodDescriptor(List(BackendType.Object, BackendType.Int32, BackendType.Object, BackendType.Int32,
-          BackendType.Int32), VoidableType.Void), isInterface = false)
+        mkVoidDescriptor(BackendType.Object, BackendType.Int32, BackendType.Object, BackendType.Int32,
+          BackendType.Int32), isInterface = false)
     }
   }
 
@@ -1277,7 +1277,7 @@ object BackendObjType {
       thisLoad()
       NEW(JavaClasses.ConcurrentLinkedQueue)
       DUP()
-      invokeConstructor(JavaClasses.ConcurrentLinkedQueue, MethodDescriptor.NothingToVoid)
+      invokeConstructor(JavaClasses.ConcurrentLinkedQueue, MethodTypeDescs.NothingToVoid)
       PUTFIELD(ThreadsField)
       thisLoad()
       INVOKESTATIC(ClassConstants.Thread.CurrentThreadMethod)
@@ -1288,7 +1288,7 @@ object BackendObjType {
       thisLoad()
       NEW(JavaClasses.LinkedList)
       DUP()
-      invokeConstructor(JavaClasses.LinkedList, MethodDescriptor.NothingToVoid)
+      invokeConstructor(JavaClasses.LinkedList, MethodTypeDescs.NothingToVoid)
       PUTFIELD(OnExitField)
       RETURN()
     }
@@ -1299,7 +1299,7 @@ object BackendObjType {
     //   t.start();
     //   threads.add(t);
     // }
-    def SpawnMethod: InstanceMethod = InstanceMethod(this.desc, "spawn", mkDescriptor(JavaClasses.Runnable.toTpe)(VoidableType.Void))
+    def SpawnMethod: InstanceMethod = InstanceMethod(this.desc, "spawn", mkVoidDescriptor(JavaClasses.Runnable.toTpe))
 
     private def spawnIns(implicit mv: MethodVisitor): Unit = {
       INVOKESTATIC(ClassConstants.Thread.OfVirtualMethod)
@@ -1310,7 +1310,7 @@ object BackendObjType {
         NEW(BackendObjType.UncaughtExceptionHandler.desc)
         DUP()
         thisLoad()
-        invokeConstructor(BackendObjType.UncaughtExceptionHandler.desc, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void))
+        invokeConstructor(BackendObjType.UncaughtExceptionHandler.desc, mkVoidDescriptor(BackendObjType.Region.toTpe))
         INVOKEVIRTUAL(ClassConstants.Thread.SetUncaughtExceptionHandlerMethod)
         thread.load()
         INVOKEVIRTUAL(ClassConstants.Thread.StartMethod)
@@ -1330,7 +1330,7 @@ object BackendObjType {
     //   for (Runnable r: onExit)
     //     r.run();
     // }
-    def ExitMethod: InstanceMethod = InstanceMethod(this.desc, "exit", MethodDescriptor.NothingToVoid)
+    def ExitMethod: InstanceMethod = InstanceMethod(this.desc, "exit", MethodTypeDescs.NothingToVoid)
 
     private def exitIns(implicit mv: MethodVisitor): Unit = {
       Instructions.withName(1, JavaClasses.Thread) { t =>
@@ -1368,7 +1368,7 @@ object BackendObjType {
     //   childException = e;
     //   regionThread.interrupt();
     // }
-    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.desc, "reportChildException", mkDescriptor(JavaClasses.Throwable.toTpe)(VoidableType.Void))
+    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.desc, "reportChildException", mkVoidDescriptor(JavaClasses.Throwable.toTpe))
 
     private def reportChildExceptionIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -1384,7 +1384,7 @@ object BackendObjType {
     //   if (childException != null)
     //     throw childException;
     // }
-    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.desc, "reThrowChildException", MethodDescriptor.NothingToVoid)
+    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.desc, "reThrowChildException", MethodTypeDescs.NothingToVoid)
 
     private def reThrowChildExceptionIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -1400,7 +1400,7 @@ object BackendObjType {
     // final public void runOnExit(Runnable r) {
     //   onExit.addFirst(r);
     // }
-    private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.desc, "runOnExit", mkDescriptor(JavaClasses.Runnable.toTpe)(VoidableType.Void))
+    private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.desc, "runOnExit", mkVoidDescriptor(JavaClasses.Runnable.toTpe))
 
     private def runOnExitIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -1461,7 +1461,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def MainMethod: StaticMethod = StaticMethod(this.desc, "main", mkDescriptor(BackendType.Array(BackendType.String))(VoidableType.Void))
+    def MainMethod: StaticMethod = StaticMethod(this.desc, "main", mkVoidDescriptor(BackendType.Array(BackendType.String)))
 
     private def mainIns(sym: Symbol.DefnSym)(implicit mv: MethodVisitor): Unit = {
       val defName = BackendObjType.Defn(sym).desc
@@ -1470,7 +1470,7 @@ object BackendObjType {
         INVOKESTATIC(Global.SetArgsMethod)
         NEW(defName)
         DUP()
-        INVOKESPECIAL(defName, ConstructorMethodName, MethodDescriptor.NothingToVoid)
+        INVOKESPECIAL(defName, ConstructorMethodName, MethodTypeDescs.NothingToVoid)
         DUP()
         GETSTATIC(Unit.SingletonField)
         PUTFIELD(InstanceField(defName, "arg0", BackendType.Object))
@@ -1502,7 +1502,7 @@ object BackendObjType {
       val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
       // Exported names are checked in Safety, so no mangling is needed.
       val name = if (defn.ann.isExport) defn.sym.name else "m_" + Mangle.mangle(defn.sym.name)
-      StaticMethod(this.desc, name, MethodDescriptor(erasedArgs, erasedResult))
+      StaticMethod(this.desc, name, mkDescriptor(erasedArgs *)(erasedResult))
     }
 
     private def shimIns(defn: JvmAst.Def)(implicit mv: MethodVisitor): Unit = {
@@ -1793,7 +1793,7 @@ object BackendObjType {
 
     def InvokeMethod: InterfaceMethod = InterfaceMethod(this.desc, "invoke", mkDescriptor()(Result.toTpe))
 
-    private def RunMethod: DefaultMethod = DefaultMethod(this.desc, "run", mkDescriptor()(VoidableType.Void))
+    private def RunMethod: DefaultMethod = DefaultMethod(this.desc, "run", mkVoidDescriptor())
 
     private def runIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -2171,7 +2171,7 @@ object BackendObjType {
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       Instructions.withName(1, Resumption.desc) { resumption =>
         thisLoad()
-        INVOKESPECIAL(superClass.desc, ConstructorMethodName, MethodDescriptor.NothingToVoid)
+        INVOKESPECIAL(superClass.desc, ConstructorMethodName, MethodTypeDescs.NothingToVoid)
         thisLoad()
         resumption.load()
         PUTFIELD(ResumptionField)

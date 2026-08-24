@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.BackendType.RichClassDesc
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceMethod, InterfaceMethod, StaticMethod}
-import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc
@@ -45,7 +45,7 @@ object ClassConstants {
       import BytecodeInstructions.*
       thisLoad()
       ALOAD(1)
-      invokeConstructor(JavaClasses.Error, mkDescriptor(BackendType.String)(VoidableType.Void))
+      invokeConstructor(JavaClasses.Error, mkVoidDescriptor(BackendType.String))
       RETURN()
     }
 
@@ -89,7 +89,7 @@ object ClassConstants {
   object LinkedList {
 
     val AddFirstMethod: InstanceMethod =
-      InstanceMethod(JavaClasses.LinkedList, "addFirst", mkDescriptor(BackendType.Object)(VoidableType.Void))
+      InstanceMethod(JavaClasses.LinkedList, "addFirst", mkVoidDescriptor(BackendType.Object))
 
     val IteratorMethod: InstanceMethod =
       InstanceMethod(JavaClasses.LinkedList, "iterator", mkDescriptor()(JavaClasses.Iterator.toTpe))
@@ -112,10 +112,10 @@ object ClassConstants {
 
     val Constructor: ConstructorMethod = ConstructorMethod(JavaClasses.ReentrantLock, Nil)
 
-    val UnlockMethod: InstanceMethod = InstanceMethod(JavaClasses.ReentrantLock, "unlock", MethodDescriptor.NothingToVoid)
+    val UnlockMethod: InstanceMethod = InstanceMethod(JavaClasses.ReentrantLock, "unlock", MethodTypeDescs.NothingToVoid)
 
     val LockInterruptiblyMethod: InstanceMethod =
-      InstanceMethod(JavaClasses.ReentrantLock, "lockInterruptibly", MethodDescriptor.NothingToVoid)
+      InstanceMethod(JavaClasses.ReentrantLock, "lockInterruptibly", MethodTypeDescs.NothingToVoid)
 
   }
 
@@ -125,7 +125,7 @@ object ClassConstants {
   }
 
   object Runnable {
-    val RunMethod: InterfaceMethod = InterfaceMethod(JavaClasses.Runnable, "run", MethodDescriptor.NothingToVoid)
+    val RunMethod: InterfaceMethod = InterfaceMethod(JavaClasses.Runnable, "run", MethodTypeDescs.NothingToVoid)
   }
 
   object StringBuilder {
@@ -146,22 +146,22 @@ object ClassConstants {
       StaticMethod(JavaClasses.Thread, "currentThread", mkDescriptor()(JavaClasses.Thread.toTpe))
 
     val InterruptMethod: InstanceMethod =
-      InstanceMethod(JavaClasses.Thread, "interrupt", MethodDescriptor.NothingToVoid)
+      InstanceMethod(JavaClasses.Thread, "interrupt", MethodTypeDescs.NothingToVoid)
 
     val JoinMethod: InstanceMethod =
-      InstanceMethod(JavaClasses.Thread, "join", MethodDescriptor.NothingToVoid)
+      InstanceMethod(JavaClasses.Thread, "join", MethodTypeDescs.NothingToVoid)
 
     val OfVirtualMethod: StaticMethod =
       StaticMethod(JavaClasses.Thread, "ofVirtual", mkDescriptor()(JavaClasses.Thread$Builder$OfVirtual.toTpe))
 
     val SetUncaughtExceptionHandlerMethod: InstanceMethod =
-      InstanceMethod(JavaClasses.Thread, "setUncaughtExceptionHandler", mkDescriptor(JavaClasses.Thread$UncaughtExceptionHandler.toTpe)(VoidableType.Void))
+      InstanceMethod(JavaClasses.Thread, "setUncaughtExceptionHandler", mkVoidDescriptor(JavaClasses.Thread$UncaughtExceptionHandler.toTpe))
 
     val StartMethod: InstanceMethod =
-      InstanceMethod(JavaClasses.Thread, "start", MethodDescriptor.NothingToVoid)
+      InstanceMethod(JavaClasses.Thread, "start", MethodTypeDescs.NothingToVoid)
 
     val StartVirtualThreadMethod: StaticMethod =
-      ClassMaker.StaticMethod(JavaClasses.Thread, "startVirtualThread", MethodDescriptor.mkDescriptor(JavaClasses.Runnable.toTpe)(JavaClasses.Thread.toTpe))
+      ClassMaker.StaticMethod(JavaClasses.Thread, "startVirtualThread", mkDescriptor(JavaClasses.Runnable.toTpe)(JavaClasses.Thread.toTpe))
 
   }
 
@@ -172,7 +172,7 @@ object ClassConstants {
 
   object ThreadUncaughtExceptionHandler {
     val UncaughtExceptionMethod: InstanceMethod =
-      InstanceMethod(JavaClasses.Thread$UncaughtExceptionHandler, "uncaughtException", mkDescriptor(JavaClasses.Thread.toTpe, JavaClasses.Throwable.toTpe)(VoidableType.Void))
+      InstanceMethod(JavaClasses.Thread$UncaughtExceptionHandler, "uncaughtException", mkVoidDescriptor(JavaClasses.Thread.toTpe, JavaClasses.Throwable.toTpe))
   }
 
 }

@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
-import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
 import org.objectweb.asm
@@ -200,7 +200,7 @@ object GenExpression {
         mv.visitTypeInsn(NEW, closureName)
         // Duplicate
         mv.visitInsn(DUP)
-        mv.visitMethodInsn(INVOKESPECIAL, closureName, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, closureName, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
         // Capturing free args
         for ((arg, i) <- exps.zipWithIndex) {
           val argType = BackendType.toBackendType(arg.tpe)
@@ -279,14 +279,14 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(F2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
             mv.visitInsn(D2F) // Convert double to float
 
           case Float64Op.Exp =>
             compileExpr(exp1)
             compileExpr(exp2)
             mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
 
           case Int8Op.Exp =>
             compileExpr(exp1)
@@ -294,7 +294,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
             mv.visitInsn(D2I) // Convert to int
             mv.visitInsn(I2B) // Convert int to byte
 
@@ -304,7 +304,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
             mv.visitInsn(D2I) // Convert to int
             mv.visitInsn(I2S) // Convert int to short
 
@@ -314,7 +314,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
             mv.visitInsn(D2I) // Convert to int
 
           case Int64Op.Exp =>
@@ -323,7 +323,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(L2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
             mv.visitInsn(D2L) // Convert to long
 
           case Int8Op.And | Int16Op.And | Int32Op.And =>
@@ -721,7 +721,7 @@ object GenExpression {
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
-        val fillMethod = ClassMaker.StaticMethod(JavaClasses.Arrays, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
+        val fillMethod = ClassMaker.StaticMethod(JavaClasses.Arrays, "fill", mkVoidDescriptor(BackendType.Array(backendType.toErased), backendType.toErased))
         compileExpr(exp1) // default
         compileExpr(exp2) // default, length
         Instructions.xNewArray(BackendType.toClassDesc(innerType)) // default, arr
@@ -1094,7 +1094,7 @@ object GenExpression {
           // Casting to JvmType of closure abstract class
           mv.visitTypeInsn(CHECKCAST, internalNameOf(closureAbstractClass.desc))
           // retrieving the unique thread object
-          mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(closureAbstractClass.desc), closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, false)
+          mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(closureAbstractClass.desc), closureAbstractClass.GetUniqueThreadClosureMethod.name, mkDescriptor()(closureAbstractClass.toTpe).descriptorString(), false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
           mv.visitInsn(DUP)
@@ -1109,7 +1109,7 @@ object GenExpression {
           // Casting to JvmType of closure abstract class
           mv.visitTypeInsn(CHECKCAST, internalNameOf(closureAbstractClass.desc))
           // retrieving the unique thread object
-          mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(closureAbstractClass.desc), closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, false)
+          mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(closureAbstractClass.desc), closureAbstractClass.GetUniqueThreadClosureMethod.name, mkDescriptor()(closureAbstractClass.toTpe).descriptorString(), false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
           mv.visitInsn(DUP)
@@ -1152,7 +1152,7 @@ object GenExpression {
         // Put the def on the stack
         mv.visitTypeInsn(NEW, defInternalName)
         mv.visitInsn(DUP)
-        mv.visitMethodInsn(INVOKESPECIAL, defInternalName, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, defInternalName, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
         // Putting args on the Fn class
         for ((arg, i) <- exps.zipWithIndex) {
           // Duplicate the FunctionInterface
@@ -1176,9 +1176,9 @@ object GenExpression {
             Instructions.castIfNotPrim(tpe.toClassDesc)
           }
           val resultTpe = BackendObjType.Result.toTpe
-          val desc = MethodDescriptor(paramTpes, resultTpe)
+          val desc = mkDescriptor(paramTpes *)(resultTpe)
           val className = internalNameOf(BackendObjType.Defn(sym).desc)
-          mv.visitMethodInsn(INVOKESTATIC, className, ClassMaker.StaticApplyMethodName, desc.toDescriptor, false)
+          mv.visitMethodInsn(INVOKESTATIC, className, ClassMaker.StaticApplyMethodName, desc.descriptorString(), false)
           BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
         } else {
           // JvmType of Def
@@ -1187,7 +1187,7 @@ object GenExpression {
           // Put the def on the stack
           mv.visitTypeInsn(NEW, defInternalName)
           mv.visitInsn(DUP)
-          mv.visitMethodInsn(INVOKESPECIAL, defInternalName, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, false)
+          mv.visitMethodInsn(INVOKESPECIAL, defInternalName, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
 
           // Putting args on the Fn class
           for ((arg, i) <- exps.zipWithIndex) {
@@ -1463,7 +1463,7 @@ object GenExpression {
       mv.visitTypeInsn(NEW, internalNameOf(BackendObjType.Region.desc))
       mv.visitInsn(DUP)
       mv.visitMethodInsn(INVOKESPECIAL, internalNameOf(BackendObjType.Region.desc), ClassMaker.ConstructorMethodName,
-        MethodDescriptor.NothingToVoid.toDescriptor, false)
+        MethodTypeDescs.NothingToVoid.descriptorString(), false)
 
       Instructions.xStore(BackendObjType.Region.desc, ctx.getIndex(offset))
 
@@ -1479,14 +1479,14 @@ object GenExpression {
       Instructions.xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
       mv.visitTypeInsn(CHECKCAST, internalNameOf(BackendObjType.Region.desc))
       mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ExitMethod.name,
-        BackendObjType.Region.ExitMethod.d.toDescriptor, false)
+        BackendObjType.Region.ExitMethod.d.descriptorString(), false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
       Instructions.xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
       mv.visitTypeInsn(CHECKCAST, internalNameOf(BackendObjType.Region.desc))
       mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ReThrowChildExceptionMethod.name,
-        BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
+        BackendObjType.Region.ReThrowChildExceptionMethod.d.descriptorString(), false)
       mv.visitJumpInsn(GOTO, afterFinally)
 
       // Compile the finally block which gets called if an exception is thrown
@@ -1494,7 +1494,7 @@ object GenExpression {
       Instructions.xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
       mv.visitTypeInsn(CHECKCAST, internalNameOf(BackendObjType.Region.desc))
       mv.visitMethodInsn(INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ReThrowChildExceptionMethod.name,
-        BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
+        BackendObjType.Region.ReThrowChildExceptionMethod.d.descriptorString(), false)
       mv.visitInsn(ATHROW)
       mv.visitLabel(afterFinally)
 
@@ -1554,7 +1554,7 @@ object GenExpression {
       // handler
       NEW(effectName)
       DUP()
-      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, effectInternalName, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, false)
+      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, effectInternalName, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
       // bind handler closures
       for (HandlerRule(op, _, body) <- rules) {
         mv.visitInsn(Opcodes.DUP)
@@ -1613,7 +1613,7 @@ object GenExpression {
           case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructors.head.loc)
         }
       } else {
-        mv.visitMethodInsn(INVOKESPECIAL, className, ClassMaker.ConstructorMethodName, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, className, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
       }
 
       // For each method, compile the closure which implements the body of that method and store it in a field
