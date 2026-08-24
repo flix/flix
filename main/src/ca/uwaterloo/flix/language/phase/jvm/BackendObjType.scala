@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 import java.lang.constant.ClassDesc
-import java.lang.constant.ConstantDescs.CD_Object
+import java.lang.constant.ConstantDescs.{CD_Object, CD_boolean, CD_byte, CD_char, CD_double, CD_float, CD_int, CD_long, CD_short}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -148,7 +148,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
-    def SingletonField: StaticField = StaticField(this.desc, "INSTANCE", this.toTpe)
+    def SingletonField: StaticField = StaticField(this.desc, "INSTANCE", this.desc)
 
   }
 
@@ -166,13 +166,13 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def ExpField: InstanceField = InstanceField(this.desc, "expression", BackendType.Object)
+    def ExpField: InstanceField = InstanceField(this.desc, "expression", CD_Object)
 
-    def ValueField: InstanceField = InstanceField(this.desc, "value", tpe)
+    def ValueField: InstanceField = InstanceField(this.desc, "value", tpe.toClassDesc)
 
-    private def LockField: InstanceField = InstanceField(this.desc, "lock", JavaClasses.ReentrantLock.toTpe)
+    private def LockField: InstanceField = InstanceField(this.desc, "lock", JavaClasses.ReentrantLock)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(BackendType.Object))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(CD_Object))
 
     /** `[] --> return` */
     private def constructorIns(implicit mv: MethodVisitor): Unit =
@@ -248,9 +248,9 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"field$i", elms(i))
+    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"field$i", elms(i).toClassDesc)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, elms)
+    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, elms.map(_.toClassDesc))
 
     /** `[] --> return` */
     private def constructorIns(implicit mv: MethodVisitor): Unit =
@@ -287,9 +287,9 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"field$i", elms(i))
+    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"field$i", elms(i).toClassDesc)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, elms)
+    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, elms.map(_.toClassDesc))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       Instructions.withNames(1, elms.map(_.toClassDesc)) { case (_, variables) =>
@@ -322,7 +322,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def OrdinalField: InstanceField = InstanceField(this.desc, "ordinal", BackendType.Int32)
+    def OrdinalField: InstanceField = InstanceField(this.desc, "ordinal", CD_int)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
   }
@@ -342,7 +342,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def SingletonField: StaticField = StaticField(this.desc, "singleton", this.toTpe)
+    def SingletonField: StaticField = StaticField(this.desc, "singleton", this.desc)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
@@ -371,7 +371,7 @@ object BackendObjType {
 
     def OrdinalField: InstanceField = Tagged.OrdinalField
 
-    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"v$i", elms(i))
+    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"v$i", elms(i).toClassDesc)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
   }
@@ -387,7 +387,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def NameField: InstanceField = InstanceField(this.desc, "tag", BackendType.String)
+    def NameField: InstanceField = InstanceField(this.desc, "tag", JavaClasses.String)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
@@ -413,7 +413,7 @@ object BackendObjType {
 
     def NameField: InstanceField = ExtTagged.NameField
 
-    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"v$i", elms(i))
+    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"v$i", elms(i).toClassDesc)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
   }
@@ -735,7 +735,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
-    def ArgField(index: Int): InstanceField = InstanceField(this.desc, s"arg$index", args(index))
+    def ArgField(index: Int): InstanceField = InstanceField(this.desc, s"arg$index", args(index).toClassDesc)
   }
 
   case class Defn(sym: Symbol.DefnSym) extends BackendObjType
@@ -774,7 +774,7 @@ object BackendObjType {
 
     def interface: Record.type = Record
 
-    def SingletonField: StaticField = StaticField(this.desc, "INSTANCE", this.toTpe)
+    def SingletonField: StaticField = StaticField(this.desc, "INSTANCE", this.desc)
 
     private def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.desc)
 
@@ -802,11 +802,11 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
-    def LabelField: InstanceField = InstanceField(this.desc, "label", BackendType.String)
+    def LabelField: InstanceField = InstanceField(this.desc, "label", JavaClasses.String)
 
-    def ValueField: InstanceField = InstanceField(this.desc, "value", value)
+    def ValueField: InstanceField = InstanceField(this.desc, "value", value.toClassDesc)
 
-    def RestField: InstanceField = InstanceField(this.desc, "rest", Record.toTpe)
+    def RestField: InstanceField = InstanceField(this.desc, "rest", Record.desc)
 
     private def lookupFieldIns(implicit mv: MethodVisitor): Unit = {
       caseOnLabelEquality {
@@ -906,7 +906,7 @@ object BackendObjType {
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(
-      this.desc, List(BackendType.String, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32)
+      this.desc, List(JavaClasses.String, CD_int, CD_int, CD_int, CD_int)
     )
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
@@ -931,19 +931,19 @@ object BackendObjType {
     }
 
     private def SourceField: InstanceField =
-      InstanceField(this.desc, "source", BackendType.String)
+      InstanceField(this.desc, "source", JavaClasses.String)
 
     private def BeginLineField: InstanceField =
-      InstanceField(this.desc, "beginLine", BackendType.Int32)
+      InstanceField(this.desc, "beginLine", CD_int)
 
     private def BeginColField: InstanceField =
-      InstanceField(this.desc, "beginCol", BackendType.Int32)
+      InstanceField(this.desc, "beginCol", CD_int)
 
     private def EndLineField: InstanceField =
-      InstanceField(this.desc, "endLine", BackendType.Int32)
+      InstanceField(this.desc, "endLine", CD_int)
 
     private def EndColField: InstanceField =
-      InstanceField(this.desc, "endCol", BackendType.Int32)
+      InstanceField(this.desc, "endCol", CD_int)
 
     private def ToStringMethod: InstanceMethod = ClassConstants.Object.ToStringMethod.implementation(this.desc)
 
@@ -1050,9 +1050,9 @@ object BackendObjType {
       RETURN()
     }
 
-    private def CounterField: StaticField = StaticField(this.desc, "counter", JavaClasses.AtomicLong.toTpe)
+    private def CounterField: StaticField = StaticField(this.desc, "counter", JavaClasses.AtomicLong)
 
-    private def ArgsField: StaticField = StaticField(this.desc, "args", BackendType.Array(BackendType.String))
+    private def ArgsField: StaticField = StaticField(this.desc, "args", JavaClasses.String.arrayType())
 
     private def arrayCopy()(implicit mv: MethodVisitor): Unit = {
       mv.visitMethodInstruction(Opcodes.INVOKESTATIC, JavaClasses.System, "arraycopy",
@@ -1073,11 +1073,11 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    private def HoleField: InstanceField = InstanceField(this.desc, "hole", BackendType.String)
+    private def HoleField: InstanceField = InstanceField(this.desc, "hole", JavaClasses.String)
 
-    private def LocationField: InstanceField = InstanceField(this.desc, "location", ReifiedSourceLocation.toTpe)
+    private def LocationField: InstanceField = InstanceField(this.desc, "location", ReifiedSourceLocation.desc)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(BackendType.String, ReifiedSourceLocation.toTpe))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(JavaClasses.String, ReifiedSourceLocation.desc))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       Instructions.withName(1, JavaClasses.String) { hole =>
@@ -1123,9 +1123,9 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    private def LocationField: InstanceField = InstanceField(this.desc, "location", ReifiedSourceLocation.toTpe)
+    private def LocationField: InstanceField = InstanceField(this.desc, "location", ReifiedSourceLocation.desc)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(MatchError.desc, List(ReifiedSourceLocation.toTpe))
+    def Constructor: ConstructorMethod = ConstructorMethod(MatchError.desc, List(ReifiedSourceLocation.desc))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -1157,7 +1157,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(ReifiedSourceLocation.toTpe, BackendType.String))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(ReifiedSourceLocation.desc, JavaClasses.String))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       Instructions.withName(1, ReifiedSourceLocation.desc)(loc => Instructions.withName(2, JavaClasses.String)(msg => {
@@ -1192,11 +1192,11 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    private def EffectNameField: InstanceField = InstanceField(this.desc, "effectName", BackendType.String)
+    private def EffectNameField: InstanceField = InstanceField(this.desc, "effectName", JavaClasses.String)
 
-    private def LocationField: InstanceField = InstanceField(this.desc, "location", ReifiedSourceLocation.toTpe)
+    private def LocationField: InstanceField = InstanceField(this.desc, "location", ReifiedSourceLocation.desc)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(Suspension.toTpe, BackendType.String, ReifiedSourceLocation.toTpe))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(Suspension.desc, JavaClasses.String, ReifiedSourceLocation.desc))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       Instructions.withName(1, Suspension.desc)(suspension => Instructions.withName(2, JavaClasses.String)(info => Instructions.withName(3, ReifiedSourceLocation.desc)(loc => {
@@ -1258,16 +1258,16 @@ object BackendObjType {
     }
 
     // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
-    private def ThreadsField: InstanceField = InstanceField(this.desc, "threads", JavaClasses.ConcurrentLinkedQueue.toTpe)
+    private def ThreadsField: InstanceField = InstanceField(this.desc, "threads", JavaClasses.ConcurrentLinkedQueue)
 
     // private final LinkedList<Runnable> onExit = new LinkedList<Runnable>();
-    private def OnExitField: InstanceField = InstanceField(this.desc, "onExit", JavaClasses.LinkedList.toTpe)
+    private def OnExitField: InstanceField = InstanceField(this.desc, "onExit", JavaClasses.LinkedList)
 
     // private final Thread regionThread = Thread.currentThread();
-    private def RegionThreadField: InstanceField = InstanceField(this.desc, "regionThread", JavaClasses.Thread.toTpe)
+    private def RegionThreadField: InstanceField = InstanceField(this.desc, "regionThread", JavaClasses.Thread)
 
     // private volatile Throwable childException = null;
-    private def ChildExceptionField: InstanceField = InstanceField(this.desc, "childException", JavaClasses.Throwable.toTpe)
+    private def ChildExceptionField: InstanceField = InstanceField(this.desc, "childException", JavaClasses.Throwable)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
@@ -1424,10 +1424,10 @@ object BackendObjType {
     }
 
     // private final Region r;
-    private def RegionField: InstanceField = InstanceField(this.desc, "r", BackendObjType.Region.toTpe)
+    private def RegionField: InstanceField = InstanceField(this.desc, "r", BackendObjType.Region.desc)
 
     // UncaughtExceptionHandler(Region r) { this.r = r; }
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, BackendObjType.Region.toTpe :: Nil)
+    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, BackendObjType.Region.desc :: Nil)
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -1473,7 +1473,7 @@ object BackendObjType {
         INVOKESPECIAL(defName, ConstructorMethodName, MethodTypeDescs.NothingToVoid)
         DUP()
         GETSTATIC(Unit.SingletonField)
-        PUTFIELD(InstanceField(defName, "arg0", BackendType.Object))
+        PUTFIELD(InstanceField(defName, "arg0", CD_Object))
         Result.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
         POP()
         RETURN()
@@ -1517,7 +1517,7 @@ object BackendObjType {
           for ((arg, index) <- args.zipWithIndex) {
             DUP()
             arg.load()
-            PUTFIELD(InstanceField(defnT.desc, s"arg$index", paramTypes(index)))
+            PUTFIELD(InstanceField(defnT.desc, s"arg$index", paramTypes(index).toClassDesc))
           }
           Result.unwindSuspensionFreeThunkToType(erasedResult, s"in shim method of ${defn.sym}", defn.loc)
           Instructions.xReturn(erasedResult.toClassDesc)
@@ -1705,29 +1705,29 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
-    private def BoolField: InstanceField = InstanceField(this.desc, "b", BackendType.Bool)
+    private def BoolField: InstanceField = InstanceField(this.desc, "b", CD_boolean)
 
-    private def CharField: InstanceField = InstanceField(this.desc, "c", BackendType.Char)
+    private def CharField: InstanceField = InstanceField(this.desc, "c", CD_char)
 
-    private def Int8Field: InstanceField = InstanceField(this.desc, "i8", BackendType.Int8)
+    private def Int8Field: InstanceField = InstanceField(this.desc, "i8", CD_byte)
 
-    private def Int16Field: InstanceField = InstanceField(this.desc, "i16", BackendType.Int16)
+    private def Int16Field: InstanceField = InstanceField(this.desc, "i16", CD_short)
 
-    private def Int32Field: InstanceField = InstanceField(this.desc, "i32", BackendType.Int32)
+    private def Int32Field: InstanceField = InstanceField(this.desc, "i32", CD_int)
 
-    private def Int64Field: InstanceField = InstanceField(this.desc, "i64", BackendType.Int64)
+    private def Int64Field: InstanceField = InstanceField(this.desc, "i64", CD_long)
 
-    private def Float32Field: InstanceField = InstanceField(this.desc, "f32", BackendType.Float32)
+    private def Float32Field: InstanceField = InstanceField(this.desc, "f32", CD_float)
 
-    private def Float64Field: InstanceField = InstanceField(this.desc, "f64", BackendType.Float64)
+    private def Float64Field: InstanceField = InstanceField(this.desc, "f64", CD_double)
 
-    private def ObjectField: InstanceField = InstanceField(this.desc, "o", BackendType.Object)
+    private def ObjectField: InstanceField = InstanceField(this.desc, "o", CD_Object)
 
-    def UnitField: StaticField = StaticField(this.desc, "UNIT", this.toTpe)
+    def UnitField: StaticField = StaticField(this.desc, "UNIT", this.desc)
 
-    def TrueField: StaticField = StaticField(this.desc, "TRUE", this.toTpe)
+    def TrueField: StaticField = StaticField(this.desc, "TRUE", this.desc)
 
-    def FalseField: StaticField = StaticField(this.desc, "FALSE", this.toTpe)
+    def FalseField: StaticField = StaticField(this.desc, "FALSE", this.desc)
 
     /**
       * Returns the field of Value corresponding to the given type
@@ -1819,13 +1819,13 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
-    def EffSymField: InstanceField = InstanceField(this.desc, "effSym", BackendType.String)
+    def EffSymField: InstanceField = InstanceField(this.desc, "effSym", JavaClasses.String)
 
-    def EffOpField: InstanceField = InstanceField(this.desc, "effOp", EffectCall.toTpe)
+    def EffOpField: InstanceField = InstanceField(this.desc, "effOp", EffectCall.desc)
 
-    def PrefixField: InstanceField = InstanceField(this.desc, "prefix", Frames.toTpe)
+    def PrefixField: InstanceField = InstanceField(this.desc, "prefix", Frames.desc)
 
-    def ResumptionField: InstanceField = InstanceField(this.desc, "resumption", Resumption.toTpe)
+    def ResumptionField: InstanceField = InstanceField(this.desc, "resumption", Resumption.desc)
 
   }
 
@@ -1874,9 +1874,9 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def HeadField: InstanceField = InstanceField(this.desc, "head", Frame.toTpe)
+    def HeadField: InstanceField = InstanceField(this.desc, "head", Frame.desc)
 
-    def TailField: InstanceField = InstanceField(this.desc, "tail", Frames.toTpe)
+    def TailField: InstanceField = InstanceField(this.desc, "tail", Frames.desc)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
@@ -1969,13 +1969,13 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
-    def SymField: InstanceField = InstanceField(this.desc, "sym", BackendType.String)
+    def SymField: InstanceField = InstanceField(this.desc, "sym", JavaClasses.String)
 
-    def HandlerField: InstanceField = InstanceField(this.desc, "handler", Handler.toTpe)
+    def HandlerField: InstanceField = InstanceField(this.desc, "handler", Handler.desc)
 
-    def FramesField: InstanceField = InstanceField(this.desc, "frames", Frames.toTpe)
+    def FramesField: InstanceField = InstanceField(this.desc, "frames", Frames.desc)
 
-    def TailField: InstanceField = InstanceField(this.desc, "tail", Resumption.toTpe)
+    def TailField: InstanceField = InstanceField(this.desc, "tail", Resumption.desc)
 
     private def rewindIns(implicit mv: MethodVisitor): Unit = {
       Instructions.withName(1, Value.desc) { v =>
@@ -2166,7 +2166,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(Resumption.toTpe))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(Resumption.desc))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       Instructions.withName(1, Resumption.desc) { resumption =>
@@ -2179,7 +2179,7 @@ object BackendObjType {
       }
     }
 
-    def ResumptionField: InstanceField = InstanceField(this.desc, "resumption", Resumption.toTpe)
+    def ResumptionField: InstanceField = InstanceField(this.desc, "resumption", Resumption.desc)
 
     def InvokeMethod: InstanceMethod = Thunk.InvokeMethod.implementation(this.desc)
 

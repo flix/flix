@@ -62,7 +62,7 @@ object GenAnonymousClasses {
       c.exp match {
         case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), _, _, _, _) =>
           // Super-only: no closure field needed, parameterized <init>
-          val argTypes = constructor.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
+          val argTypes = constructor.descriptor.parameterList.asScala.toList
           cm.mkConstructor(ClassMaker.ConstructorMethod(className, argTypes), IsPublic, constructorInsWithSuperCall(superClass, constructor)(_))
         case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", c.loc)
       }
@@ -73,7 +73,7 @@ object GenAnonymousClasses {
     for ((m, i) <- obj.methods.zipWithIndex) {
       val abstractClass = erasedArrowType(m.fparams.map(_.tpe), m.tpe)
       // Create the field that will store the closure implementing the body of the method.
-      val cloField = ClassMaker.InstanceField(className, s"clo$i", abstractClass.toTpe)
+      val cloField = ClassMaker.InstanceField(className, s"clo$i", abstractClass.desc)
       cm.mkField(cloField, IsPublic, NotFinal, NotVolatile)
       // Use the Java interface's erased method signature (resolved during lowering) for the
       // JVM descriptor. This ensures the generated method matches the interface even when the

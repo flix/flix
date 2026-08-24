@@ -19,12 +19,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
-import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkVoidDescriptor
 import ca.uwaterloo.flix.util.ClassDescs
 import org.objectweb.asm
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
-import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import java.lang.constant.{ClassDesc, ConstantDescs, MethodTypeDesc}
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.*
 
@@ -47,8 +46,8 @@ object BytecodeInstructions {
     def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodTypeDesc, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
       visitor.visitInvokeDynamicInsn(methodName, descriptor.descriptorString(), bootstrapMethodHandle.handle, bootstrapMethodArguments *)
 
-    def visitFieldInstruction(opcode: Int, owner: ClassDesc, fieldName: String, fieldType: BackendType): Unit =
-      visitor.visitFieldInsn(opcode, ClassDescs.internalNameOf(owner), fieldName, fieldType.toDescriptor)
+    def visitFieldInstruction(opcode: Int, owner: ClassDesc, fieldName: String, fieldType: ClassDesc): Unit =
+      visitor.visitFieldInsn(opcode, ClassDescs.internalNameOf(owner), fieldName, fieldType.descriptorString())
 
     def visitVarInstruction(opcode: Int, v: Int): Unit =
       visitor.visitVarInsn(opcode, v)
@@ -433,7 +432,7 @@ object BytecodeInstructions {
     DUP()
     pushString(msg)
     INVOKESPECIAL(JavaClasses.UnsupportedOperationException, ConstructorMethodName,
-      mkVoidDescriptor(BackendType.String))
+      MethodTypeDesc.of(ConstantDescs.CD_void, JavaClasses.String))
     ATHROW()
   }
 
