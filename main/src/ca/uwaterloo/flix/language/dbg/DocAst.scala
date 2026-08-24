@@ -109,7 +109,7 @@ object DocAst {
       */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
-    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
+    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, String, Expr)]) extends Atom
 
     case class Handler(eff: Symbol.EffSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
 
@@ -135,7 +135,7 @@ object DocAst {
 
     case class Unsafe(d: Expr, runEff: Type, asEff: Option[Type]) extends Composite
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: Class[?], tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod]) extends Composite
+    case class NewObject(sym: Symbol.AnonClassSym, className: String, tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod]) extends Composite
 
     case class Lambda(fparams: List[Expr.AscriptionTpe], body: Expr) extends Composite
 
@@ -324,8 +324,15 @@ object DocAst {
     def JavaInvokeMethod(m: Method, d: Expr, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(m.getName)), ds)
 
+    def JavaInvokeMethod(m: JMethod, d: Expr, ds: List[Expr]): Expr =
+      App(DoubleDot(d, AsIs(m.name)), ds)
+
     def JavaInvokeStaticMethod(m: Method, ds: List[Expr]): Expr = {
       App(Dot(Native(m.getDeclaringClass), AsIs(m.getName)), ds)
+    }
+
+    def JavaInvokeStaticMethod(m: JMethod, ds: List[Expr]): Expr = {
+      App(Dot(AsIs(javaClassName(m.owner)), AsIs(m.name)), ds)
     }
 
     def JavaGetStaticField(f: Field): Expr = {
@@ -338,6 +345,10 @@ object DocAst {
 
     def JavaInvokeConstructor(c: Constructor[?], ds: List[Expr]): Expr = {
       App(Native(c.getDeclaringClass), ds)
+    }
+
+    def JavaInvokeConstructor(c: JConstructor, ds: List[Expr]): Expr = {
+      App(AsIs(javaClassName(c.owner)), ds)
     }
 
     def JavaGetField(f: Field, d: Expr): Expr =

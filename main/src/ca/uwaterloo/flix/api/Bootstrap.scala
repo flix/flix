@@ -22,7 +22,10 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
-import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
+import ca.uwaterloo.flix.language.phase.jvm.JvmClass
+import ca.uwaterloo.flix.util.ClassDescs
+
+import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
@@ -181,7 +184,7 @@ object Bootstrap {
   private val EXT_FLIX: String = "flix"
 
   /** The flix package file extension. Does not contain leading '.' */
-  private val EXT_FPKG: String = "fpkg"
+  val EXT_FPKG: String = "fpkg"
 
   /** The jar file extension. Does not contain leading '.' */
   private val EXT_JAR: String = "jar"
@@ -1013,10 +1016,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Adds all `classes` to `zip`, writing the bytecode directly from memory.
       */
-    def addClassesToZip(classes: Map[JvmName, JvmClass], zip: ZipOutputStream): Unit = {
+    def addClassesToZip(classes: Map[ClassDesc, JvmClass], zip: ZipOutputStream): Unit = {
       // Add all classes.
       // Here we sort entries by their entry name to apply https://reproducible-builds.org/
-      val entries = classes.values.map(clazz => (clazz.name.toClassFileName, clazz)).toList.sortBy(_._1)
+      val entries = classes.values.map(clazz => (ClassDescs.classFileNameOf(clazz.name), clazz)).toList.sortBy(_._1)
       for ((entryName, clazz) <- entries) {
         FileOps.addToZip(zip, entryName, clazz.bytecode)
       }
@@ -1536,7 +1539,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       *
       * @see [[Bootstrap.getClassDirectory]]
       */
-    def writeClasses(classes: Map[JvmName, JvmClass]): Result[Unit, BootstrapError] = {
+    def writeClasses(classes: Map[ClassDesc, JvmClass]): Result[Unit, BootstrapError] = {
       val classDir = Bootstrap.getClassDirectory(projectPath)
       Result.traverse(classes.values.toList)(writeClass(classDir, _)).map(_ => ())
     }
@@ -1548,7 +1551,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     private def writeClass(classDir: Path, clazz: JvmClass): Result[Unit, BootstrapError] = {
       // Compute the absolute path of the class file to write.
-      val path = classDir.resolve(clazz.name.toPath).toAbsolutePath
+      val path = classDir.resolve(ClassDescs.classFileNameOf(clazz.name)).toAbsolutePath
 
       try {
         // Create all parent directories (in case they don't exist).
