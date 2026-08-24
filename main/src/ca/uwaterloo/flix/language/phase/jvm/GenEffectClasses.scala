@@ -78,14 +78,14 @@ object GenEffectClasses {
   }
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
-    import BytecodeInstructions.*
+    import Instructions.*
     ALOAD(0)
     INVOKESPECIAL(ClassConstants.Object.Constructor)
     RETURN()
   }
 
   private def methodIns(effectName: ClassDesc, opFunction: BackendObjType.Arrow, opField: InstanceField, erasedParams: List[BackendType], returnType: BackendType)(implicit mv: MethodVisitor): Unit = {
-    import BytecodeInstructions.*
+    import Instructions.*
     val wrapperType = BackendObjType.ResumptionWrapper(returnType)
 
     Instructions.withNames(0, erasedParams.map(_.toClassDesc)) { case (paramsOffset, params) =>
