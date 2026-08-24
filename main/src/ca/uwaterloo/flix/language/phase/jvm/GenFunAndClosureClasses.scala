@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
+import java.lang.constant.ClassDesc
+
 /**
   * Generates byte code for the function and closure classes.
   */
@@ -93,9 +95,9 @@ object GenFunAndClosureClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // Header
-    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).desc
     visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
-      functionInterface.toInternalName, null)
+      AsmOps.internalNameOf(functionInterface), null)
     visitor.visitSource(defn.loc.source.name, null)
 
     compileConstructor(functionInterface, visitor)
@@ -153,10 +155,10 @@ object GenFunAndClosureClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // Header
-    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).desc
     val frameInterface = BackendObjType.Frame
     visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
-      functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+      AsmOps.internalNameOf(functionInterface), Array(AsmOps.internalNameOf(frameInterface.desc)))
     visitor.visitSource(defn.loc.source.name, null)
 
     // Fields — lparams use erased types (like fparams) so setPc can store without casting
@@ -235,10 +237,10 @@ object GenFunAndClosureClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // Header
-    val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
+    val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).desc
     val frameInterface = BackendObjType.Frame
     visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
-      functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+      AsmOps.internalNameOf(functionInterface), Array(AsmOps.internalNameOf(frameInterface.desc)))
     visitor.visitSource(defn.loc.source.name, null)
 
     // Fields
@@ -265,11 +267,11 @@ object GenFunAndClosureClasses {
     visitor.toByteArray
   }
 
-  private def compileConstructor(superClass: JvmName, visitor: ClassWriter): Unit = {
+  private def compileConstructor(superClass: ClassDesc, visitor: ClassWriter): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, JvmName.ConstructorMethod,
+    constructor.visitMethodInsn(INVOKESPECIAL, AsmOps.internalNameOf(superClass), JvmName.ConstructorMethod,
       MethodDescriptor.NothingToVoid.toDescriptor, false)
     constructor.visitInsn(RETURN)
 
@@ -310,13 +312,13 @@ object GenFunAndClosureClasses {
       MethodDescriptor.mkDescriptor()(BackendObjType.Result.toTpe).toDescriptor, null, null)
     m.visitCode()
 
-    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).desc
     // Putting args on the Fn class
     for ((fp, i) <- defn.fparams.zipWithIndex) {
       // Load the `this` pointer
       m.visitVarInsn(ALOAD, 0)
       // Load arg i
-      m.visitFieldInsn(GETFIELD, functionInterface.toInternalName,
+      m.visitFieldInsn(GETFIELD, AsmOps.internalNameOf(functionInterface),
         s"arg$i", BackendType.toErasedBackendType(fp.tpe).toDescriptor)
       // Insert cast to concrete type
       val bTpe = BackendType.toBackendType(fp.tpe)

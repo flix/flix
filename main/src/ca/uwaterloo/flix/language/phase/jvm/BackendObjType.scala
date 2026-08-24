@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{JvmAst, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.{mkClassName, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
@@ -31,68 +31,71 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.CD_Object
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
   */
 sealed trait BackendObjType {
   /**
-    * The `JvmName` that represents the type `Ref(Int)` refers to `"Ref$Int"`.
+    * The [[ClassDesc]] of this type, e.g. the type `Ref(Int)` refers to `"Ref$Int"`.
     */
-  val jvmName: JvmName = this match {
-    case BackendObjType.Unit => JvmName(DevFlixRuntime, mkClassName("Unit"))
-    case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
-    case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
-    case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
-    case BackendObjType.NullaryTag(enumName, sym, _) => JvmName(RootPackage, Mangle.mkClassName(enumName, sym))
-    case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
-    case BackendObjType.Tag(tpes) => JvmName(RootPackage, mkClassName("Tag", tpes))
-    case BackendObjType.ExtTagged => JvmName(RootPackage, mkClassName("ExtTagged"))
-    case BackendObjType.ExtTag(tpes) => JvmName(RootPackage, mkClassName("ExtTag", tpes))
-    case BackendObjType.AbstractArrow(args, result) => JvmName(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
-    case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
-    case BackendObjType.Defn(sym) => JvmName(sym.namespace, Mangle.mkClassName("Def", sym.name))
-    case BackendObjType.RecordEmpty => JvmName(RootPackage, mkClassName(s"RecordEmpty"))
-    case BackendObjType.RecordExtend(value) => JvmName(RootPackage, mkClassName("RecordExtend", value))
-    case BackendObjType.Record => JvmName(RootPackage, mkClassName("Record"))
-    case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, mkClassName("ReifiedSourceLocation"))
-    case BackendObjType.Global => JvmName(DevFlixRuntime, "Global") // "Global" is fixed in source code, so should not be mangled and $ suffixed
-    case BackendObjType.HoleError => JvmName(DevFlixRuntime, mkClassName("HoleError"))
-    case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
-    case BackendObjType.CastError => JvmName(DevFlixRuntime, mkClassName("CastError"))
-    case BackendObjType.UnhandledEffectError => JvmName(DevFlixRuntime, mkClassName("UnhandledEffectError"))
-    case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
-    case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
-    case BackendObjType.Main => JvmName(RootPackage, "Main")
-    case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
+  val desc: ClassDesc = this match {
+    case BackendObjType.Unit => mkDesc(DevFlixRuntime, mkClassName("Unit"))
+    case BackendObjType.Lazy(tpe) => mkDesc(RootPackage, mkClassName("Lazy", tpe))
+    case BackendObjType.Tuple(elms) => mkDesc(RootPackage, mkClassName("Tuple", elms))
+    case BackendObjType.Struct(elms) => mkDesc(RootPackage, mkClassName("Struct", elms))
+    case BackendObjType.NullaryTag(enumName, sym, _) => mkDesc(RootPackage, Mangle.mkClassName(enumName, sym))
+    case BackendObjType.Tagged => mkDesc(RootPackage, mkClassName("Tagged"))
+    case BackendObjType.Tag(tpes) => mkDesc(RootPackage, mkClassName("Tag", tpes))
+    case BackendObjType.ExtTagged => mkDesc(RootPackage, mkClassName("ExtTagged"))
+    case BackendObjType.ExtTag(tpes) => mkDesc(RootPackage, mkClassName("ExtTag", tpes))
+    case BackendObjType.AbstractArrow(args, result) => mkDesc(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
+    case BackendObjType.Arrow(args, result) => mkDesc(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
+    case BackendObjType.Defn(sym) => mkDesc(sym.namespace, Mangle.mkClassName("Def", sym.name))
+    case BackendObjType.RecordEmpty => mkDesc(RootPackage, mkClassName(s"RecordEmpty"))
+    case BackendObjType.RecordExtend(value) => mkDesc(RootPackage, mkClassName("RecordExtend", value))
+    case BackendObjType.Record => mkDesc(RootPackage, mkClassName("Record"))
+    case BackendObjType.ReifiedSourceLocation => mkDesc(DevFlixRuntime, mkClassName("ReifiedSourceLocation"))
+    case BackendObjType.Global => mkDesc(DevFlixRuntime, "Global") // "Global" is fixed in source code, so should not be mangled and $ suffixed
+    case BackendObjType.HoleError => mkDesc(DevFlixRuntime, mkClassName("HoleError"))
+    case BackendObjType.MatchError => mkDesc(DevFlixRuntime, mkClassName("MatchError"))
+    case BackendObjType.CastError => mkDesc(DevFlixRuntime, mkClassName("CastError"))
+    case BackendObjType.UnhandledEffectError => mkDesc(DevFlixRuntime, mkClassName("UnhandledEffectError"))
+    case BackendObjType.Region => mkDesc(DevFlixRuntime, mkClassName("Region"))
+    case BackendObjType.UncaughtExceptionHandler => mkDesc(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
+    case BackendObjType.Main => mkDesc(RootPackage, "Main")
+    case BackendObjType.Namespace(ns) => mkDesc(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
-    case BackendObjType.Native(className) => className
+    case BackendObjType.Native(clazz) => clazz
     // Effects Runtime
-    case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
-    case BackendObjType.Value => JvmName(DevFlixRuntime, mkClassName("Value"))
-    case BackendObjType.Frame => JvmName(DevFlixRuntime, mkClassName("Frame"))
-    case BackendObjType.Thunk => JvmName(DevFlixRuntime, mkClassName("Thunk"))
-    case BackendObjType.Suspension => JvmName(DevFlixRuntime, mkClassName("Suspension"))
-    case BackendObjType.Frames => JvmName(DevFlixRuntime, mkClassName("Frames"))
-    case BackendObjType.FramesCons => JvmName(DevFlixRuntime, mkClassName("FramesCons"))
-    case BackendObjType.FramesNil => JvmName(DevFlixRuntime, mkClassName("FramesNil"))
-    case BackendObjType.Resumption => JvmName(DevFlixRuntime, mkClassName("Resumption"))
-    case BackendObjType.ResumptionCons => JvmName(DevFlixRuntime, mkClassName("ResumptionCons"))
-    case BackendObjType.ResumptionNil => JvmName(DevFlixRuntime, mkClassName("ResumptionNil"))
-    case BackendObjType.Handler => JvmName(DevFlixRuntime, mkClassName("Handler"))
-    case BackendObjType.EffectCall => JvmName(DevFlixRuntime, mkClassName("EffectCall"))
-    case BackendObjType.ResumptionWrapper(t) => JvmName(DevFlixRuntime, mkClassName("ResumptionWrapper", t))
+    case BackendObjType.Result => mkDesc(DevFlixRuntime, mkClassName("Result"))
+    case BackendObjType.Value => mkDesc(DevFlixRuntime, mkClassName("Value"))
+    case BackendObjType.Frame => mkDesc(DevFlixRuntime, mkClassName("Frame"))
+    case BackendObjType.Thunk => mkDesc(DevFlixRuntime, mkClassName("Thunk"))
+    case BackendObjType.Suspension => mkDesc(DevFlixRuntime, mkClassName("Suspension"))
+    case BackendObjType.Frames => mkDesc(DevFlixRuntime, mkClassName("Frames"))
+    case BackendObjType.FramesCons => mkDesc(DevFlixRuntime, mkClassName("FramesCons"))
+    case BackendObjType.FramesNil => mkDesc(DevFlixRuntime, mkClassName("FramesNil"))
+    case BackendObjType.Resumption => mkDesc(DevFlixRuntime, mkClassName("Resumption"))
+    case BackendObjType.ResumptionCons => mkDesc(DevFlixRuntime, mkClassName("ResumptionCons"))
+    case BackendObjType.ResumptionNil => mkDesc(DevFlixRuntime, mkClassName("ResumptionNil"))
+    case BackendObjType.Handler => mkDesc(DevFlixRuntime, mkClassName("Handler"))
+    case BackendObjType.EffectCall => mkDesc(DevFlixRuntime, mkClassName("EffectCall"))
+    case BackendObjType.ResumptionWrapper(t) => mkDesc(DevFlixRuntime, mkClassName("ResumptionWrapper", t))
   }
 
   /**
-    * The [[ClassDesc]] of this type.
+    * The [[JvmName]] of this type.
+    *
+    * Kept only for `JvmClass` keying until the output side migrates to [[ClassDesc]].
     */
-  def desc: ClassDesc = jvmName.toClassDesc
+  def jvmName: JvmName = JvmName.ofClassDesc(desc)
 
   /**
-    * The JVM type descriptor of the form `"L<jvmName.toInternalName>;"`.
+    * The JVM type descriptor of the form `"L<internal name>;"`.
     */
-  def toDescriptor: String = jvmName.toDescriptor
+  def toDescriptor: String = desc.descriptorString()
 
   /**
     * Returns `this` wrapped in `BackendType.Reference`.
@@ -117,6 +120,12 @@ sealed trait BackendObjType {
 }
 
 object BackendObjType {
+
+  /** Returns the [[ClassDesc]] of the class `name` in the package `pkg`. */
+  private def mkDesc(pkg: List[String], name: String): ClassDesc = {
+    val prefix = if (pkg.isEmpty) "" else pkg.mkString("", "/", "/")
+    ClassDesc.ofInternalName(prefix + name)
+  }
 
   private def mkClassName(prefix: String, tpe: BackendType): String = {
     Mangle.mkClassName(prefix, tpe.toErasedString)
@@ -665,7 +674,7 @@ object BackendObjType {
       */
     private def specialization(): List[FunctionInterface] = {
       (args, result) match {
-        case (BackendType.Reference(BackendObjType.Native(JvmName.Object)) :: Nil, _) =>
+        case (BackendType.Reference(BackendObjType.Native(CD_Object)) :: Nil, _) =>
           ObjFunction :: ObjConsumer :: ObjPredicate :: Nil
         case (BackendType.Int32 :: Nil, _) =>
           IntFunction :: IntConsumer :: IntPredicate :: IntUnaryOperator :: Nil
@@ -826,7 +835,7 @@ object BackendObjType {
     * This should not be used for `java.lang.String` for example since `BackendObjType.String`
     * represents this type.
     */
-  case class Native(className: JvmName) extends BackendObjType
+  case class Native(clazz: ClassDesc) extends BackendObjType
 
   case object ReifiedSourceLocation extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -2130,7 +2139,7 @@ object BackendObjType {
         case BackendType.Bool =>
           // Use cached Value.TRUE / Value.FALSE singletons
           thisLoad()
-          mv.visitFieldInsn(Opcodes.GETFIELD, jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)
+          mv.visitFieldInsn(Opcodes.GETFIELD, AsmOps.internalNameOf(desc), "arg0", tpe.toErased.toDescriptor)
           val falseLabel = new Label()
           val doneLabel = new Label()
           mv.visitJumpInsn(Opcodes.IFEQ, falseLabel)
@@ -2145,7 +2154,7 @@ object BackendObjType {
           INVOKESPECIAL(Value.Constructor)
           DUP()
           thisLoad()
-          mv.visitFieldInsn(Opcodes.GETFIELD, jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)
+          mv.visitFieldInsn(Opcodes.GETFIELD, AsmOps.internalNameOf(desc), "arg0", tpe.toErased.toDescriptor)
           PUTFIELD(Value.fieldFromType(tpe.toErased))
       }
       INVOKEINTERFACE(Resumption.RewindMethod)
