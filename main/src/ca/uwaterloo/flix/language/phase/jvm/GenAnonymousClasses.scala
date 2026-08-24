@@ -167,7 +167,7 @@ object GenAnonymousClasses {
     if (isVoid) {
       RETURN()
     } else {
-      Bytecode.xReturn(method.descriptor.returnType())
+      Instructions.xReturn(method.descriptor.returnType())
     }
   }
 
@@ -196,7 +196,7 @@ object GenAnonymousClasses {
     // been applied in Lowering, so the value on the stack already matches `actualRes`.
     actualRes match {
       case VoidableType.Void => RETURN()
-      case res: BackendType => Bytecode.xReturn(res.toClassDesc)
+      case res: BackendType => Instructions.xReturn(res.toClassDesc)
     }
   }
 

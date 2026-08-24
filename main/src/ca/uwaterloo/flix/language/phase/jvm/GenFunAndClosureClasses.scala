@@ -301,7 +301,7 @@ object GenFunAndClosureClasses {
     val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
-    Bytecode.xReturn(BackendObjType.Result.desc)
+    Instructions.xReturn(BackendObjType.Result.desc)
 
 
     m.visitMaxs(999, 999)
@@ -322,13 +322,13 @@ object GenFunAndClosureClasses {
       m.visitFieldInsn(GETFIELD, ClassDescs.internalNameOf(functionInterface),
         s"arg$i", BackendType.toErasedBackendType(fp.tpe).toDescriptor)
       // Insert cast to concrete type
-      Bytecode.castIfNotPrim(BackendType.toClassDesc(fp.tpe))
+      Instructions.castIfNotPrim(BackendType.toClassDesc(fp.tpe))
     }
 
     val method = staticApplyMethod(className, defn)
     m.visitMethodInsn(INVOKESTATIC, ClassDescs.internalNameOf(className), method.name, method.d.toDescriptor, false)
 
-    Bytecode.xReturn(BackendObjType.Result.desc)
+    Instructions.xReturn(BackendObjType.Result.desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -344,7 +344,7 @@ object GenFunAndClosureClasses {
     m.visitInsn(ACONST_NULL)
     m.visitMethodInsn(INVOKEVIRTUAL, ClassDescs.internalNameOf(className), applyMethod.name, applyMethod.d.toDescriptor, false)
 
-    Bytecode.xReturn(BackendObjType.Result.desc)
+    Instructions.xReturn(BackendObjType.Result.desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -428,7 +428,7 @@ object GenFunAndClosureClasses {
               case _: BackendType.PrimitiveType => () // primitives don't need narrowing
               case _ =>
                 BytecodeInstructions.xLoad(erasedType, index)(mv)
-                Bytecode.castIfNotPrim(realType.toClassDesc)(mv)
+                Instructions.castIfNotPrim(realType.toClassDesc)(mv)
                 BytecodeInstructions.xStore(realType, index)(mv)
             }
           }
@@ -440,7 +440,7 @@ object GenFunAndClosureClasses {
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
 
-    Bytecode.xReturn(BackendObjType.Result.desc)
+    Instructions.xReturn(BackendObjType.Result.desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -454,7 +454,7 @@ object GenFunAndClosureClasses {
     // cast the value and store it
     castTo match {
       case Some(targetType) =>
-        Bytecode.castIfNotPrim(targetType.toClassDesc)
+        Instructions.castIfNotPrim(targetType.toClassDesc)
         BytecodeInstructions.xStore(targetType, localIndex)
       case None =>
         BytecodeInstructions.xStore(fieldType, localIndex)
