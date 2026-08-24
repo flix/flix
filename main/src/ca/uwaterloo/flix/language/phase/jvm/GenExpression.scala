@@ -704,15 +704,15 @@ object GenExpression {
       case AtomicOp.ArrayLit =>
         import BytecodeInstructions.*
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
-        val backendType = BackendType.toBackendType(innerType)
+        val elmTpe = BackendType.toClassDesc(innerType)
 
         pushInt(exps.length)
-        Bytecode.xNewArray(BackendType.toClassDesc(innerType))
+        Bytecode.xNewArray(elmTpe)
         for ((e, i) <- exps.zipWithIndex) {
           DUP()
           pushInt(i)
           compileExpr(e)
-          xArrayStore(backendType)
+          Bytecode.xArrayStore(elmTpe)
         }
 
       case AtomicOp.ArrayNew =>
@@ -732,27 +732,27 @@ object GenExpression {
       case AtomicOp.ArrayLoad =>
         import BytecodeInstructions.*
         val List(exp1, exp2) = exps
-        val elmTpe = BackendType.toBackendType(tpe)
+        val elmTpe = BackendType.toClassDesc(tpe)
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
         compileExpr(exp1)
         compileExpr(exp2)
-        xArrayLoad(elmTpe)
-        Bytecode.castIfNotPrim(elmTpe.toClassDesc)
+        Bytecode.xArrayLoad(elmTpe)
+        Bytecode.castIfNotPrim(elmTpe)
 
       case AtomicOp.ArrayStore =>
         import BytecodeInstructions.*
         val List(exp1, exp2, exp3) = exps
-        val elmTpe = BackendType.toBackendType(exp3.tpe)
+        val elmTpe = BackendType.toClassDesc(exp3.tpe)
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
         compileExpr(exp1) // Evaluating the array
-        Bytecode.castIfNotPrim(elmTpe.toClassDesc.arrayType())
+        Bytecode.castIfNotPrim(elmTpe.arrayType())
         compileExpr(exp2) // Evaluating the index
         compileExpr(exp3) // Evaluating the element
-        xArrayStore(elmTpe)
+        Bytecode.xArrayStore(elmTpe)
         GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case AtomicOp.ArrayLength =>

@@ -459,32 +459,6 @@ object BytecodeInstructions {
     body(runningIndex, variables)
   }
 
-  def xArrayLoad(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
-    case BackendType.Array(_) => mv.visitInstruction(Opcodes.AALOAD)
-    case BackendType.Reference(_) => mv.visitInstruction(Opcodes.AALOAD)
-    case BackendType.Bool => mv.visitInstruction(Opcodes.BALOAD)
-    case BackendType.Char => mv.visitInstruction(Opcodes.CALOAD)
-    case BackendType.Int8 => mv.visitInstruction(Opcodes.BALOAD)
-    case BackendType.Int16 => mv.visitInstruction(Opcodes.SALOAD)
-    case BackendType.Int32 => mv.visitInstruction(Opcodes.IALOAD)
-    case BackendType.Int64 => mv.visitInstruction(Opcodes.LALOAD)
-    case BackendType.Float32 => mv.visitInstruction(Opcodes.FALOAD)
-    case BackendType.Float64 => mv.visitInstruction(Opcodes.DALOAD)
-  }
-
-  def xArrayStore(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
-    case BackendType.Array(_) => mv.visitInstruction(Opcodes.AASTORE)
-    case BackendType.Reference(_) => mv.visitInstruction(Opcodes.AASTORE)
-    case BackendType.Bool => mv.visitInstruction(Opcodes.BASTORE)
-    case BackendType.Char => mv.visitInstruction(Opcodes.CASTORE)
-    case BackendType.Int8 => mv.visitInstruction(Opcodes.BASTORE)
-    case BackendType.Int16 => mv.visitInstruction(Opcodes.SASTORE)
-    case BackendType.Int32 => mv.visitInstruction(Opcodes.IASTORE)
-    case BackendType.Int64 => mv.visitInstruction(Opcodes.LASTORE)
-    case BackendType.Float32 => mv.visitInstruction(Opcodes.FASTORE)
-    case BackendType.Float64 => mv.visitInstruction(Opcodes.DASTORE)
-  }
-
   def xLoad(tpe: BackendType, index: Int)(implicit mv: MethodVisitor): Unit = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
     case BackendType.Int64 => LLOAD(index)

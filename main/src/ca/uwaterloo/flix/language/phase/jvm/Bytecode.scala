@@ -35,6 +35,34 @@ object Bytecode {
     if (!tpe.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, ClassDescs.internalNameOf(tpe))
   }
 
+  /** Emits a `?ALOAD` instruction that loads an element from an array with element type `elmTpe`. */
+  def xArrayLoad(elmTpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    if (elmTpe == CD_boolean) mv.visitInsn(Opcodes.BALOAD)
+    else if (elmTpe == CD_char) mv.visitInsn(Opcodes.CALOAD)
+    else if (elmTpe == CD_byte) mv.visitInsn(Opcodes.BALOAD)
+    else if (elmTpe == CD_short) mv.visitInsn(Opcodes.SALOAD)
+    else if (elmTpe == CD_int) mv.visitInsn(Opcodes.IALOAD)
+    else if (elmTpe == CD_long) mv.visitInsn(Opcodes.LALOAD)
+    else if (elmTpe == CD_float) mv.visitInsn(Opcodes.FALOAD)
+    else if (elmTpe == CD_double) mv.visitInsn(Opcodes.DALOAD)
+    else mv.visitInsn(Opcodes.AALOAD)
+  }
+
+  /** Emits a `?ASTORE` instruction that stores an element into an array with element type `elmTpe`. */
+  def xArrayStore(elmTpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    if (elmTpe == CD_boolean) mv.visitInsn(Opcodes.BASTORE)
+    else if (elmTpe == CD_char) mv.visitInsn(Opcodes.CASTORE)
+    else if (elmTpe == CD_byte) mv.visitInsn(Opcodes.BASTORE)
+    else if (elmTpe == CD_short) mv.visitInsn(Opcodes.SASTORE)
+    else if (elmTpe == CD_int) mv.visitInsn(Opcodes.IASTORE)
+    else if (elmTpe == CD_long) mv.visitInsn(Opcodes.LASTORE)
+    else if (elmTpe == CD_float) mv.visitInsn(Opcodes.FASTORE)
+    else if (elmTpe == CD_double) mv.visitInsn(Opcodes.DASTORE)
+    else mv.visitInsn(Opcodes.AASTORE)
+  }
+
   /** Emits a `NEWARRAY` or `ANEWARRAY` instruction that creates an array with element type `elmTpe`. */
   def xNewArray(elmTpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     if (elmTpe.isPrimitive) mv.visitIntInsn(Opcodes.NEWARRAY, newArrayOperandOf(elmTpe))
