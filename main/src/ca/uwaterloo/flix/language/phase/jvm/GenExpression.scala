@@ -1592,7 +1592,7 @@ object GenExpression {
 
     case Expr.NewObject(sym, _, _, _, constructors, methods, _) =>
       val methodExps = methods.map(_.exp)
-      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, sym.name).toInternalName
+      val className = JvmName(Mangle.RootPackage, sym.name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
 
