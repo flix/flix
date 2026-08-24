@@ -30,7 +30,6 @@ import org.objectweb.asm
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
 
-import java.lang.constant.ClassDesc
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -708,7 +707,7 @@ object GenExpression {
         val backendType = BackendType.toBackendType(innerType)
 
         pushInt(exps.length)
-        xNewArray(backendType)
+        Bytecode.xNewArray(BackendType.toClassDesc(innerType))
         for ((e, i) <- exps.zipWithIndex) {
           DUP()
           pushInt(i)
@@ -725,7 +724,7 @@ object GenExpression {
         val fillMethod = ClassMaker.StaticMethod(JavaClasses.Arrays, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
         compileExpr(exp1) // default
         compileExpr(exp2) // default, length
-        xNewArray(backendType) // default, arr
+        Bytecode.xNewArray(BackendType.toClassDesc(innerType)) // default, arr
         if (backendType.is64BitWidth) DUP_X2() else DUP_X1() // arr, default, arr
         xSwap(lowerLarge = backendType.is64BitWidth, higherLarge = false) // arr, arr, default
         INVOKESTATIC(fillMethod)

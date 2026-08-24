@@ -173,6 +173,10 @@ object BackendType {
     }
   }
 
+  /** Converts the given [[SimpleType]] into the [[ClassDesc]] of its JVM representation. */
+  def toClassDesc(tpe0: SimpleType)(implicit root: JvmAst.Root): ClassDesc =
+    ClassDesc.ofDescriptor(toBackendType(tpe0).toDescriptor)
+
   /** Converts the given Java class or array descriptor `desc` into its [[BackendType]] representation. */
   def toBackendType(desc: ClassDesc): BackendType = {
     import java.lang.constant.ConstantDescs.*

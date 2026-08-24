@@ -501,21 +501,6 @@ object BytecodeInstructions {
     case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
   }
 
-  def xNewArray(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
-    case BackendType.Array(_) => mv.visitTypeInsn(Opcodes.ANEWARRAY, elmTpe.toDescriptor)
-    case BackendType.Reference(ref) => ANEWARRAY(ref.desc)
-    case tpe: BackendType.PrimitiveType => tpe match {
-      case BackendType.Bool => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN)
-      case BackendType.Char => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_CHAR)
-      case BackendType.Int8 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_BYTE)
-      case BackendType.Int16 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_SHORT)
-      case BackendType.Int32 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_INT)
-      case BackendType.Int64 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_LONG)
-      case BackendType.Float32 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_FLOAT)
-      case BackendType.Float64 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_DOUBLE)
-    }
-  }
-
   /**
     * Pops the top of the stack using `POP` or `POP2` depending on the value size.
     */
