@@ -233,7 +233,7 @@ object BackendObjType {
         ATHROW()
       }
       unlockLock()
-      xReturn(tpe)
+      Bytecode.xReturn(tpe.toClassDesc)
     }
   }
 
@@ -1520,7 +1520,7 @@ object BackendObjType {
             PUTFIELD(InstanceField(defnT.desc, s"arg$index", arg.tpe))
           }
           Result.unwindSuspensionFreeThunkToType(erasedResult, s"in shim method of ${defn.sym}", defn.loc)
-          xReturn(erasedResult)
+          Bytecode.xReturn(erasedResult.toClassDesc)
       }
     }
   }
@@ -1588,7 +1588,7 @@ object BackendObjType {
         PUTFIELD(Suspension.PrefixField) // [..., s', s]
         POP() // [..., s']
         // Return the suspension up the stack
-        xReturn(Suspension.toTpe)
+        Bytecode.xReturn(Suspension.desc)
       }
     }
 
@@ -1855,7 +1855,7 @@ object BackendObjType {
         DUP()
         thisLoad()
         PUTFIELD(FramesCons.TailField)
-        xReturn(FramesCons.toTpe)
+        Bytecode.xReturn(FramesCons.desc)
       }
     }
   }
@@ -1897,7 +1897,7 @@ object BackendObjType {
         rest.load()
         PUTFIELD(TailField)
         INVOKEINTERFACE(Frames.ReverseOntoMethod)
-        xReturn(Frames.toTpe)
+        Bytecode.xReturn(Frames.desc)
       }
     }
   }
@@ -1921,7 +1921,7 @@ object BackendObjType {
     private def reverseOntoIns(implicit mv: MethodVisitor): Unit = {
       withName(1, Frames.toTpe) { rest =>
         rest.load()
-        xReturn(rest.tpe)
+        Bytecode.xReturn(rest.tpe.toClassDesc)
       }
     }
   }
@@ -1991,7 +1991,7 @@ object BackendObjType {
         v.load()
         mkStaticLambda(Thunk.InvokeMethod, Resumption.StaticRewindMethod, drop = 0)
         mkStaticLambda(Thunk.InvokeMethod, Handler.InstallHandlerMethod, drop = 0)
-        xReturn(Thunk.toTpe)
+        Bytecode.xReturn(Thunk.desc)
       }
     }
   }
@@ -2012,7 +2012,7 @@ object BackendObjType {
     private def rewindIns(implicit mv: MethodVisitor): Unit = {
       withName(1, Value.toTpe) { v =>
         v.load()
-        xReturn(v.tpe)
+        Bytecode.xReturn(v.tpe.toClassDesc)
       }
     }
   }
@@ -2077,7 +2077,7 @@ object BackendObjType {
                       handler.load()
                       r.load()
                       INVOKEINTERFACE(EffectCall.ApplyMethod)
-                      xReturn(Result.toTpe)
+                      Bytecode.xReturn(Result.desc)
                     }
                     NEW(Suspension.desc)
                     DUP()
@@ -2098,7 +2098,7 @@ object BackendObjType {
                     DUP()
                     r.load()
                     PUTFIELD(Suspension.ResumptionField)
-                    xReturn(Suspension.toTpe)
+                    Bytecode.xReturn(Suspension.desc)
                   }
                 }
               }
@@ -2113,7 +2113,7 @@ object BackendObjType {
                 INSTANCEOF(FramesNil.desc)
                 ifCondition(Condition.NE) {
                   res.load()
-                  xReturn(Value.toTpe)
+                  Bytecode.xReturn(Value.desc)
                 }
                 // FramesCons
                 frames.load()
@@ -2129,7 +2129,7 @@ object BackendObjType {
                   res.load()
                   mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod, drop = 0)
                   INVOKESTATIC(InstallHandlerMethod)
-                  xReturn(Result.toTpe)
+                  Bytecode.xReturn(Result.desc)
                 }
                 }
               }
@@ -2209,7 +2209,7 @@ object BackendObjType {
           PUTFIELD(Value.fieldFromType(tpe.toErased))
       }
       INVOKEINTERFACE(Resumption.RewindMethod)
-      xReturn(Result.toTpe)
+      Bytecode.xReturn(Result.desc)
     }
 
     private def UniqueMethod: InstanceMethod = InstanceMethod(this.desc, "getUniqueThreadClosure", mkDescriptor()(this.superClass.toTpe))
