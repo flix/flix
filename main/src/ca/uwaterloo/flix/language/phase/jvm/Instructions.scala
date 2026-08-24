@@ -28,7 +28,7 @@ import java.lang.constant.ClassDesc
   *
   * Functions are gradually moved here from [[BytecodeInstructions]].
   */
-object Bytecode {
+object Instructions {
 
   /** Emits a `CHECKCAST` of the top of the stack to `tpe`, unless `tpe` is a primitive type. */
   def castIfNotPrim(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
