@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{JvmAst, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.{mkClassName, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.BackendType.RichClassDesc
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
@@ -54,6 +54,8 @@ sealed trait BackendObjType {
     case BackendObjType.AbstractArrow(args, result) => mkDesc(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
     case BackendObjType.Arrow(args, result) => mkDesc(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
     case BackendObjType.Defn(sym) => mkDesc(sym.namespace, Mangle.mkClassName("Def", sym.name))
+    case BackendObjType.Closure(sym) => mkDesc(sym.namespace, Mangle.mkClassName("Clo", sym.name))
+    case BackendObjType.Effect(sym) => mkDesc(sym.namespace, Mangle.mkClassName("Eff", sym.name))
     case BackendObjType.RecordEmpty => mkDesc(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(value) => mkDesc(RootPackage, mkClassName("RecordExtend", value))
     case BackendObjType.Record => mkDesc(RootPackage, mkClassName("Record"))
@@ -268,6 +270,12 @@ object BackendObjType {
 
   }
 
+  object Struct {
+    /** Returns the struct type of `struct`. */
+    def fromStruct(struct: JvmAst.Struct)(implicit root: JvmAst.Root): Struct =
+      Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
+  }
+
   case class Struct(elms: List[BackendType]) extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -384,7 +392,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
     /** [...] -> [..., tagName] */
-    def mkTagName(name: String)(implicit mv: MethodVisitor): Unit = pushString(JvmOps.getTagName(name))
+    def mkTagName(name: String)(implicit mv: MethodVisitor): Unit = pushString(Mangle.mangle(name))
 
     /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
     def eqTagName()(implicit mv: MethodVisitor): Unit = {
@@ -408,6 +416,24 @@ object BackendObjType {
     def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"v$i", elms(i))
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  }
+
+  object AbstractArrow {
+    /**
+      * Returns the erased closure abstract class type `CloX$Y$Z` for the given [[SimpleType]].
+      *
+      * For example:
+      *
+      * Int -> Int          =>  Clo1$Int$Int
+      * (Int, Int) -> Int   =>  Clo2$Int$Int$Int
+      *
+      * NB: The given type `tpe` must be an arrow type.
+      */
+    def fromArrowType(tpe: SimpleType): AbstractArrow = tpe match {
+      case SimpleType.Arrow(targs, tresult) =>
+        AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
+      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
+    }
   }
 
   /**
@@ -434,6 +460,25 @@ object BackendObjType {
 
     def GetUniqueThreadClosureMethod: AbstractMethod = AbstractMethod(this.desc, "getUniqueThreadClosure", mkDescriptor()(this.toTpe))
 
+  }
+
+  object Arrow {
+    /**
+      * Returns the erased arrow type of `tpe`.
+      *
+      * For example:
+      *
+      * Int -> Int          =>  Fn2$Int$Int
+      * (Int, String) -> Int   =>  Fn3$Int$Obj$Int
+      *
+      * NB: The given type `tpe` must be an arrow type.
+      */
+    def fromArrowType(tpe: SimpleType)(implicit root: JvmAst.Root): Arrow = tpe match {
+      case SimpleType.Arrow(targs, tresult) =>
+        Arrow(targs.map(BackendType.toErasedBackendType), BackendType.toBackendType(tresult))
+      case _ =>
+        throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
+    }
   }
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
@@ -694,6 +739,23 @@ object BackendObjType {
   }
 
   case class Defn(sym: Symbol.DefnSym) extends BackendObjType
+
+  /**
+    * The closure class `Clo$Name` for the given closure.
+    *
+    * String.charAt     =>    String/Clo$charAt
+    * List.length       =>    List/Clo$length
+    * List.map          =>    List/Clo$map
+    */
+  case class Closure(sym: Symbol.DefnSym) extends BackendObjType
+
+  /**
+    * The effect definition class for the given effect symbol.
+    *
+    * Print       =>  Eff$Print
+    * List.Crash  =>  List.Eff$Crash
+    */
+  case class Effect(sym: Symbol.EffSym) extends BackendObjType
 
   case object RecordEmpty extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {

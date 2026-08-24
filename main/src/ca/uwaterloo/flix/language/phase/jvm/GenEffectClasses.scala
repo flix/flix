@@ -53,7 +53,7 @@ object GenEffectClasses {
 
   def gen(effects: Iterable[Effect])(implicit root: Root, flix: Flix): List[JvmClass] = {
     for (effect <- effects.toList) yield {
-      val className = JvmOps.getEffectDefinitionClassName(effect.sym)
+      val className = BackendObjType.Effect(effect.sym).desc
       JvmClass(className, genByteCode(className, effect))
     }
   }
@@ -64,14 +64,14 @@ object GenEffectClasses {
     cm.mkConstructor(ClassMaker.ConstructorMethod(effectName, Nil), IsPublic, constructorIns(_))
 
     for (op <- effect.ops) {
-      val opName = JvmOps.getEffectOpName(op.sym)
+      val name = opName(op.sym)
       val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
       val opFunction = BackendObjType.Arrow(erasedParams :+ BackendType.Object, BackendType.Object)
-      val opField = ClassMaker.InstanceField(effectName, opName, opFunction.toTpe)
+      val opField = ClassMaker.InstanceField(effectName, name, opFunction.toTpe)
       cm.mkField(opField, IsPublic, NotFinal, NotVolatile)
       val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
       val returnType = BackendType.toBackendType(op.tpe)
-      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, opName, MethodDescriptor(methodArgs, BackendObjType.Result.toTpe)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
+      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodDescriptor(methodArgs, BackendObjType.Result.toTpe)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
     }
 
     cm.closeClassMaker()
@@ -128,6 +128,10 @@ object GenEffectClasses {
     val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
     MethodDescriptor(methodArgs, BackendObjType.Result.toTpe)
   }
+
+  /** Returns the JVM field/method name of the effect operation `sym`. */
+  def opName(sym: Symbol.OpSym): String =
+    Mangle.mangle(sym.name)
 
   def opFieldType(sym: Symbol.OpSym)(implicit root: Root): BackendObjType.Arrow = {
     val effect = root.effects(sym.eff)
