@@ -410,7 +410,7 @@ object GenFunAndClosureClasses {
           } else {
             DUP()(mv)
             // fieldType is erased (Object for refs), so xLoad always matches the verifier type
-            xLoad(fieldType, index)(mv)
+            Instructions.xLoad(fieldType.toClassDesc, index)(mv)
             mv.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, name, fieldType.toDescriptor)
           }
         }
@@ -427,9 +427,9 @@ object GenFunAndClosureClasses {
             realType match {
               case _: BackendType.PrimitiveType => () // primitives don't need narrowing
               case _ =>
-                BytecodeInstructions.xLoad(erasedType, index)(mv)
+                Instructions.xLoad(erasedType.toClassDesc, index)(mv)
                 Instructions.castIfNotPrim(realType.toClassDesc)(mv)
-                BytecodeInstructions.xStore(realType, index)(mv)
+                Instructions.xStore(realType.toClassDesc, index)(mv)
             }
           }
         }
@@ -455,9 +455,9 @@ object GenFunAndClosureClasses {
     castTo match {
       case Some(targetType) =>
         Instructions.castIfNotPrim(targetType.toClassDesc)
-        BytecodeInstructions.xStore(targetType, localIndex)
+        Instructions.xStore(targetType.toClassDesc, localIndex)
       case None =>
-        BytecodeInstructions.xStore(fieldType, localIndex)
+        Instructions.xStore(fieldType.toClassDesc, localIndex)
     }
   }
 

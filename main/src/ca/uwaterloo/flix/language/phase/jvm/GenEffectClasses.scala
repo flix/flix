@@ -88,9 +88,9 @@ object GenEffectClasses {
     import BytecodeInstructions.*
     val wrapperType = BackendObjType.ResumptionWrapper(returnType)
 
-    withNames(0, erasedParams) { case (paramsOffset, params) =>
-      withName(paramsOffset, BackendObjType.Handler.toTpe) { handler =>
-        withName(paramsOffset + 1, BackendObjType.Resumption.toTpe) { resumption =>
+    Instructions.withNames(0, erasedParams.map(_.toClassDesc)) { case (paramsOffset, params) =>
+      Instructions.withName(paramsOffset, BackendObjType.Handler.desc) { handler =>
+        Instructions.withName(paramsOffset + 1, BackendObjType.Resumption.desc) { resumption =>
           // Cast the given generic handler to the current effect.
           handler.load()
           CHECKCAST(effectName)
