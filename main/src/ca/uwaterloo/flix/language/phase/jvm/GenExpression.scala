@@ -206,7 +206,7 @@ object GenExpression {
           val argType = BackendType.toBackendType(arg.tpe)
           mv.visitInsn(DUP)
           compileExpr(arg)
-          BytecodeInstructions.castIfNotPrim(argType)
+          Bytecode.castIfNotPrim(argType.toClassDesc)
           mv.visitFieldInsn(PUTFIELD, closureName, s"clo$i", argType.toDescriptor)
         }
 
@@ -624,7 +624,7 @@ object GenExpression {
         val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
 
         compileUntag(exp, idx, termTypes)
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        Bytecode.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
@@ -634,7 +634,7 @@ object GenExpression {
 
         compileExpr(exp)
         GETFIELD(tupleType.IndexField(idx))
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        Bytecode.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.Tuple =>
         import BytecodeInstructions.*
@@ -656,7 +656,7 @@ object GenExpression {
         // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
         CHECKCAST(recordType.desc)
         GETFIELD(recordType.ValueField)
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        Bytecode.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.RecordExtend(field) =>
         import BytecodeInstructions.*
@@ -699,7 +699,7 @@ object GenExpression {
         val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
 
         compileExtUntag(exp, idx, tpes)
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        Bytecode.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.ArrayLit =>
         import BytecodeInstructions.*
@@ -739,7 +739,7 @@ object GenExpression {
         compileExpr(exp1)
         compileExpr(exp2)
         xArrayLoad(elmTpe)
-        castIfNotPrim(elmTpe)
+        Bytecode.castIfNotPrim(elmTpe.toClassDesc)
 
       case AtomicOp.ArrayStore =>
         import BytecodeInstructions.*
@@ -749,7 +749,7 @@ object GenExpression {
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
         compileExpr(exp1) // Evaluating the array
-        castIfNotPrim(BackendType.Array(elmTpe))
+        Bytecode.castIfNotPrim(elmTpe.toClassDesc.arrayType())
         compileExpr(exp2) // Evaluating the index
         compileExpr(exp3) // Evaluating the element
         xArrayStore(elmTpe)
@@ -792,7 +792,7 @@ object GenExpression {
 
         compileExpr(exp)
         GETFIELD(structType.IndexField(idx))
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        Bytecode.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.StructPut(field) =>
         import BytecodeInstructions.*
@@ -816,7 +816,7 @@ object GenExpression {
         import BytecodeInstructions.*
         val List(exp) = exps
         compileExpr(exp)
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        Bytecode.castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.Unbox =>
         import BytecodeInstructions.*
@@ -825,7 +825,7 @@ object GenExpression {
         compileExpr(exp)
         CHECKCAST(BackendObjType.Value.desc)
         GETFIELD(BackendObjType.Value.fieldFromType(bType))
-        castIfNotPrim(bType)
+        Bytecode.castIfNotPrim(bType.toClassDesc)
 
       case AtomicOp.Box =>
         import BytecodeInstructions.*
@@ -1173,7 +1173,7 @@ object GenExpression {
           // Call the static method, using exact types
           for ((arg, tpe) <- ListOps.zip(exps, paramTpes)) {
             compileExpr(arg)
-            BytecodeInstructions.castIfNotPrim(tpe)
+            Bytecode.castIfNotPrim(tpe.toClassDesc)
           }
           val resultTpe = BackendObjType.Result.toTpe
           val desc = MethodDescriptor(paramTpes, resultTpe)
@@ -1281,7 +1281,7 @@ object GenExpression {
         GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))
 
         mv.visitLabel(afterUnboxing)
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        Bytecode.castIfNotPrim(BackendType.toClassDesc(tpe))
     }
 
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
@@ -1429,7 +1429,7 @@ object GenExpression {
       // classes) where the JVM verifier cannot resolve the generated subclass
       // name and needs an explicit cast to the declared superclass type.
       exp1 match {
-        case _: Expr.NewObject => castIfNotPrim(bType)
+        case _: Expr.NewObject => Bytecode.castIfNotPrim(bType.toClassDesc)
         case _ => ()
       }
       xStore(bType, ctx.getIndex(offset))

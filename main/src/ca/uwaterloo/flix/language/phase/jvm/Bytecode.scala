@@ -30,6 +30,11 @@ import java.lang.constant.ClassDesc
   */
 object Bytecode {
 
+  /** Emits a `CHECKCAST` of the top of the stack to `tpe`, unless `tpe` is a primitive type. */
+  def castIfNotPrim(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    if (!tpe.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, ClassDescs.internalNameOf(tpe))
+  }
+
   /** Emits a `NEWARRAY` or `ANEWARRAY` instruction that creates an array with element type `elmTpe`. */
   def xNewArray(elmTpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     if (elmTpe.isPrimitive) mv.visitIntInsn(Opcodes.NEWARRAY, newArrayOperandOf(elmTpe))

@@ -342,14 +342,6 @@ object BytecodeInstructions {
     mv.visitLabel(skipLabel)
   }
 
-  def castIfNotPrim(tpe: BackendType)(implicit mv: MethodVisitor): Unit = {
-    tpe match {
-      case arr: BackendType.Array => mv.visitTypeInstructionDirect(Opcodes.CHECKCAST, arr.toDescriptor)
-      case BackendType.Reference(ref) => CHECKCAST(ref.desc)
-      case _: BackendType.PrimitiveType => nop()
-    }
-  }
-
   /// while(c(t)) { i }
   def whileLoop(c: Condition)(t: => Unit)(i: => Unit)(implicit mv: MethodVisitor): Unit = {
     val startLabel = new Label()
