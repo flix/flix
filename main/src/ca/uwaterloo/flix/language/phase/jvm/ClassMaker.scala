@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.*
 import ca.uwaterloo.flix.language.ast.shared.JvmAnnotation
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
 
 
@@ -61,10 +60,7 @@ sealed trait ClassMaker {
     val m = v.toInt + f.toInt + s.toInt + a.toInt
     val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
     for (a <- ann) {
-      val descriptor = JvmName.ofClass(a.clazz).toDescriptor
-      val retention = a.clazz.getAnnotation(classOf[java.lang.annotation.Retention])
-      val visible = retention != null && retention.value() == java.lang.annotation.RetentionPolicy.RUNTIME
-      val av = mv.visitAnnotation(descriptor, visible)
+      val av = mv.visitAnnotation(a.clazz.descriptorString(), a.isRuntimeVisible)
       av.visitEnd()
     }
     i match {

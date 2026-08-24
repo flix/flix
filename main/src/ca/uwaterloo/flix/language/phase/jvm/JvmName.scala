@@ -20,40 +20,14 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm
 
+import java.lang.constant.ClassDesc
 import java.nio.file.{Path, Paths}
 
 /**
   * Companion object for the [[JvmName]] class.
   */
 object JvmName {
-
-  // TODO: Would be nice to allow BackendObjType here to avoid conversions
-  case class MethodDescriptor(arguments: List[BackendType], result: VoidableType) {
-    /**
-      * Returns the type descriptor of this method.
-      */
-    val toDescriptor: String = {
-      // Descriptor of result
-      val resultDescriptor = result.toDescriptor
-
-      // Descriptor of arguments
-      val argumentDescriptor = arguments.map(_.toDescriptor).mkString
-
-      // Descriptor of the method
-      s"($argumentDescriptor)$resultDescriptor"
-    }
-
-    def toAsmType: asm.Type = asm.Type.getType(toDescriptor)
-  }
-
-  object MethodDescriptor {
-    val NothingToVoid: MethodDescriptor = MethodDescriptor(Nil, VoidableType.Void)
-
-    def mkDescriptor(argument: BackendType*)(result: VoidableType): MethodDescriptor =
-      MethodDescriptor(argument.toList, result)
-  }
 
   /**
     * The name of the static constructor method `<clinit>`.
@@ -72,13 +46,14 @@ object JvmName {
   val StaticApply: String = "staticApply"
 
   /** Returns the [[JvmName]] of `clazz`. Crashes if `clazz` is primitive, an array, or unnamed. */
-  def ofClass(clazz: Class[?]): JvmName = {
-    if (clazz.isPrimitive) throw InternalCompilerException(s"Cannot create a JvmName from the primitive type '${clazz.getName}'", SourceLocation.Unknown)
-    if (clazz.isArray) throw InternalCompilerException(s"Cannot create a JvmName from the array type '${clazz.getName}'", SourceLocation.Unknown)
-    val isUnnamed = clazz.getSimpleName == ""
-    if (isUnnamed) throw InternalCompilerException(s"Cannot create a JvmName from the anonymous class '${clazz.getName}'", SourceLocation.Unknown)
+  /** Returns the JvmName of the given class or interface descriptor `desc`. */
+  def ofClassDesc(desc: ClassDesc): JvmName = {
+    if (desc.isPrimitive) throw InternalCompilerException(s"Cannot create a JvmName from the primitive type '${desc.displayName()}'", SourceLocation.Unknown)
+    if (desc.isArray) throw InternalCompilerException(s"Cannot create a JvmName from the array type '${desc.displayName()}'", SourceLocation.Unknown)
 
-    val parts = asm.Type.getInternalName(clazz).split("/")
+    // Strip the leading `L` and trailing `;` of the descriptor to obtain the internal name.
+    val descriptor = desc.descriptorString()
+    val parts = descriptor.substring(1, descriptor.length - 1).split("/")
     JvmName(parts.init.toList, parts.last)
   }
 
