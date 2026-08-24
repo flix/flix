@@ -83,6 +83,15 @@ sealed trait ClassMaker {
 
 object ClassMaker {
 
+  /** The name of the constructor method `<init>`. */
+  val ConstructorMethodName: String = "<init>"
+
+  /** The name of the static constructor method `<clinit>`. */
+  val StaticConstructorMethodName: String = "<clinit>"
+
+  /** The name of the static method for invoking a function if it is control pure. */
+  val StaticApplyMethodName: String = "staticApply"
+
   class InstanceClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
@@ -91,7 +100,7 @@ object ClassMaker {
     }
 
     def mkConstructor(c: ConstructorMethod, v: Visibility, ins: MethodVisitor => Unit): Unit = {
-      makeMethod(Nil, Some(ins), JvmName.ConstructorMethod, c.d, v, NotFinal, NotStatic, NotAbstract)
+      makeMethod(Nil, Some(ins), ConstructorMethodName, c.d, v, NotFinal, NotStatic, NotAbstract)
     }
 
     def mkMethod(ann: List[JvmAnnotation], m: InstanceMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
@@ -259,13 +268,13 @@ object ClassMaker {
   }
 
   sealed case class ConstructorMethod(clazz: ClassDesc, args: List[BackendType]) extends Method {
-    override def name: String = JvmName.ConstructorMethod
+    override def name: String = ConstructorMethodName
 
     override def d: MethodDescriptor = MethodDescriptor(args, VoidableType.Void)
   }
 
   case class StaticConstructorMethod(clazz: ClassDesc) extends Method {
-    override def name: String = JvmName.StaticConstructorMethod
+    override def name: String = StaticConstructorMethodName
 
     override def d: MethodDescriptor = MethodDescriptor.NothingToVoid
   }

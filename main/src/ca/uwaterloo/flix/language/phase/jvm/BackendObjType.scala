@@ -87,13 +87,6 @@ sealed trait BackendObjType {
   }
 
   /**
-    * The [[JvmName]] of this type.
-    *
-    * Kept only for `JvmClass` keying until the output side migrates to [[ClassDesc]].
-    */
-  def jvmName: JvmName = JvmName.ofClassDesc(desc)
-
-  /**
     * The JVM type descriptor of the form `"L<internal name>;"`.
     */
   def toDescriptor: String = desc.descriptorString()
@@ -1008,7 +1001,7 @@ object BackendObjType {
 
   case object HoleError extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, JvmName.FlixError.toClassDesc)
+      val cm = ClassMaker.mkClass(this.desc, IsFinal, ClassConstants.FlixError.Desc)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       // These fields allow external equality checking.
@@ -1059,7 +1052,7 @@ object BackendObjType {
   case object MatchError extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(MatchError.desc, IsFinal, superClass = JvmName.FlixError.toClassDesc)
+      val cm = ClassMaker.mkClass(MatchError.desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       // This field allows external equality checking.
@@ -1095,7 +1088,7 @@ object BackendObjType {
   case object CastError extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = JvmName.FlixError.toClassDesc)
+      val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
 
@@ -1127,7 +1120,7 @@ object BackendObjType {
   case object UnhandledEffectError extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = JvmName.FlixError.toClassDesc)
+      val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       // This field allows external equality checking.
@@ -1415,7 +1408,7 @@ object BackendObjType {
         INVOKESTATIC(Global.SetArgsMethod)
         NEW(defName)
         DUP()
-        INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
+        INVOKESPECIAL(defName, ConstructorMethodName, MethodDescriptor.NothingToVoid)
         DUP()
         GETSTATIC(Unit.SingletonField)
         PUTFIELD(InstanceField(defName, "arg0", BackendType.Object))
@@ -2116,7 +2109,7 @@ object BackendObjType {
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       withName(1, Resumption.toTpe) { resumption =>
         thisLoad()
-        INVOKESPECIAL(superClass.desc, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
+        INVOKESPECIAL(superClass.desc, ConstructorMethodName, MethodDescriptor.NothingToVoid)
         thisLoad()
         resumption.load()
         PUTFIELD(ResumptionField)

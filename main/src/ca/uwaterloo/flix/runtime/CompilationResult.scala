@@ -19,7 +19,9 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
+import ca.uwaterloo.flix.language.phase.jvm.JvmClass
+
+import java.lang.constant.ClassDesc
 
 /**
   * A class representing the result of a compilation.
@@ -38,7 +40,7 @@ class CompilationResult(val root: BytecodeAst.Root,
                        ) {
 
   /** Returns the generated JVM classes. */
-  def getClasses: Map[JvmName, JvmClass] =
+  def getClasses: Map[ClassDesc, JvmClass] =
     root.classes
 
   /** Optionally returns the main entry point. */

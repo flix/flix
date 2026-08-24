@@ -54,7 +54,7 @@ object GenEffectClasses {
   def gen(effects: Iterable[Effect])(implicit root: Root, flix: Flix): List[JvmClass] = {
     for (effect <- effects.toList) yield {
       val className = JvmOps.getEffectDefinitionClassName(effect.sym)
-      JvmClass(className, genByteCode(className.toClassDesc, effect))
+      JvmClass(className, genByteCode(className, effect))
     }
   }
 

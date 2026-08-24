@@ -23,16 +23,20 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, Insta
 import ca.uwaterloo.flix.language.phase.jvm.MethodDescriptor.mkDescriptor
 import org.objectweb.asm.MethodVisitor
 
+import java.lang.constant.ClassDesc
+
 object ClassConstants {
 
   // Flix Constants.
 
   object FlixError {
 
-    val Constructor: ConstructorMethod = ConstructorMethod(JvmName.FlixError.toClassDesc, List(BackendType.String))
+    val Desc: ClassDesc = ClassDesc.ofInternalName((Mangle.DevFlixRuntime :+ Mangle.mkClassName("FlixError")).mkString("/"))
+
+    val Constructor: ConstructorMethod = ConstructorMethod(Desc, List(BackendType.String))
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkAbstractClass(JvmName.FlixError.toClassDesc, JavaClasses.Error)
+      val cm = ClassMaker.mkAbstractClass(Desc, JavaClasses.Error)
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       cm.closeClassMaker()
     }
