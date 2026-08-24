@@ -639,9 +639,21 @@ object SpecializeAndLower {
       val e = visitExp(exp, env0, subst)
       val t = visitType(tpe, subst)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, subst(eff), loc)
-    case TypedAst.Expr.FixpointConstraintSet(_, _, _) => ???
-    case TypedAst.Expr.FixpointLambda(_, _, _, _, _) => ???
-    case TypedAst.Expr.FixpointMerge(_, _, _, _, _) => ???
+    case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
+      lowerConstraintSet(cs, loc, env0, subst)
+
+    case TypedAst.Expr.FixpointLambda(pparams, exp, _, eff, loc) =>
+      val resultType = Types.Fixpoint.Ast.Datalog.Datalog
+      val defn = lookupSym(Defs.Fixpoint.Solver.Rename, resultType)
+      val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.Fixpoint.Ast.Shared.PredSym, loc)
+      val argExps = predExps :: visitExp(exp, env0, subst) :: Nil
+      MonoAst.Expr.ApplyDef(defn, argExps, Types.Fixpoint.Solver.RenameType, resultType, subst(eff), loc)
+
+    case TypedAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
+      val resultType = Types.Fixpoint.Ast.Datalog.Datalog
+      val defn = lookupSym(Defs.Fixpoint.Solver.Union, resultType)
+      val argExps = visitExp(exp1, env0, subst) :: visitExp(exp2, env0, subst) :: Nil
+      MonoAst.Expr.ApplyDef(defn, argExps, Types.Fixpoint.Solver.MergeType, resultType, subst(eff), loc)
     case TypedAst.Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => ???
     case TypedAst.Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _, _, _) => ???
     case TypedAst.Expr.FixpointSolveWithProject(_, _, _, _, _, _) => ???
@@ -2091,6 +2103,148 @@ object SpecializeAndLower {
     */
   private def mkVector(exps: List[MonoAst.Expr], elmType: Type, loc: SourceLocation): MonoAst.Expr = {
     MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLit, exps, Type.mkVector(elmType, loc), Type.Pure, loc)
+  }
+
+  /*
+   * Datalog lowering
+   */
+
+  /** Constructs a `Fixpoint/Ast/Datalog.Datalog` value from the Datalog constraints `cs`. */
+  private def lowerConstraintSet(cs: List[TypedAst.Constraint], loc: SourceLocation, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val factExps = cs.filter(c => c.body.isEmpty).map(lowerConstraint(_, env0, subst))
+    val ruleExps = cs.filter(c => c.body.nonEmpty).map(lowerConstraint(_, env0, subst))
+
+    val factListExp = mkVector(factExps, Types.Fixpoint.Ast.Datalog.Constraint, loc)
+    val ruleListExp = mkVector(ruleExps, Types.Fixpoint.Ast.Datalog.Constraint, loc)
+
+    val innerExp = List(factListExp, ruleListExp)
+    mkTag(Enums.Fixpoint.Ast.Datalog.Datalog, "Datalog", innerExp, Types.Fixpoint.Ast.Datalog.Datalog, loc)
+  }
+
+  /**
+    * Specializes and lowers the given constraint `c0`.
+    */
+  private def lowerConstraint(c0: TypedAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = c0 match {
+    case TypedAst.Constraint(cparams, head, body, loc) =>
+      // Freshen the constraint params (the quantified vars) up front.
+      val env = cparams.foldLeft(env0) {
+        case (env1, TypedAst.ConstraintParam(bnd, _, _)) =>
+          if (env1.contains(bnd.sym)) env1
+          else { val freshSym = Symbol.freshVarSym(bnd.sym); env1 + (bnd.sym -> freshSym) }
+      }
+      val headExp = lowerHeadPred(cparams, head, env, subst)
+      val bodyExp = mkVector(body.map(lowerBodyPred(cparams, _, env, subst)), Types.Fixpoint.Ast.Datalog.BodyPredicate, loc)
+      val innerExp = List(headExp, bodyExp)
+      mkTag(Enums.Fixpoint.Ast.Datalog.Constraint, "Constraint", innerExp, Types.Fixpoint.Ast.Datalog.Constraint, loc)
+  }
+
+  /**
+    * Lowers the given head predicate `p0`.
+    */
+  private def lowerHeadPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Head, env: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = p0 match {
+    case TypedAst.Predicate.Head.Atom(pred, den, terms, _, loc) =>
+      val predSymExp = mkPredSym(pred)
+      val denotationExp = mkDenotation(den, terms.lastOption.map(t => subst(t.tpe)), loc)
+      val termsExp = mkVector(terms.map(lowerHeadTerm(cparams0, _, env, subst)), Types.Fixpoint.Ast.Datalog.HeadTerm, loc)
+      val innerExp = List(predSymExp, denotationExp, termsExp)
+      mkTag(Enums.Fixpoint.Ast.Datalog.HeadPredicate, "HeadAtom", innerExp, Types.Fixpoint.Ast.Datalog.HeadPredicate, loc)
+  }
+
+  /**
+    * Lowers the given body predicate `p0`.
+    */
+  private def lowerBodyPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Body, env: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = p0 match {
+    case TypedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, _, loc) =>
+      val predSymExp = mkPredSym(pred)
+      val denotationExp = mkDenotation(den, terms.lastOption.map(t => subst(t.tpe)), loc)
+      val polarityExp = mkPolarity(polarity, loc)
+      val fixityExp = mkFixity(fixity, loc)
+      val termsExp = mkVector(terms.map(lowerBodyTerm(cparams0, _, env, subst)), Types.Fixpoint.Ast.Datalog.BodyTerm, loc)
+      val innerExp = List(predSymExp, denotationExp, polarityExp, fixityExp, termsExp)
+      mkTag(Enums.Fixpoint.Ast.Datalog.BodyPredicate, "BodyAtom", innerExp, Types.Fixpoint.Ast.Datalog.BodyPredicate, loc)
+
+    case TypedAst.Predicate.Body.Functional(outVars0, exp0, loc) =>
+      // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
+      val inVars = MonomorphHelpers.quantifiedVars(cparams0, exp0).map { case (sym, tpe) => (env(sym), subst(tpe)) }
+      val exp = visitExp(exp0, env, subst)
+      val outVars = outVars0.map(b => env(b.sym))
+      mkFunctional(outVars, inVars, exp, subst(exp0.tpe), loc)
+
+    case TypedAst.Predicate.Body.Guard(exp0, loc) =>
+      // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
+      val quantifiedFreeVars = MonomorphHelpers.quantifiedVars(cparams0, exp0).map { case (sym, tpe) => (env(sym), subst(tpe)) }
+      val exp = visitExp(exp0, env, subst)
+      mkGuard(quantifiedFreeVars, exp, loc)
+
+  }
+
+  /**
+    * Lowers the given head term `exp0`.
+    */
+  private def lowerHeadTerm(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr, env: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    //
+    // We need to consider four cases:
+    //
+    // Case 1.1: The expression is quantified variable. We translate it to a Var.
+    // Case 1.2: The expression is a lexically bound variable. We translate it to a Lit that captures its value.
+    // Case 2: The expression does not contain a quantified variable. We evaluate it to a (boxed) value.
+    // Case 3: The expression contains quantified variables. We translate it to an application term.
+    //
+    exp0 match {
+      case TypedAst.Expr.Var(sym, _, _) =>
+        // Case 1: Variable term.
+        if (MonomorphHelpers.isQuantifiedVar(sym, cparams0)) {
+          // Case 1.1: Quantified variable.
+          mkHeadTermVar(env(sym))
+        } else {
+          // Case 1.2: Lexically bound variable.
+          mkHeadTermLit(box(visitExp(exp0, env, subst), subst(exp0.tpe)))
+        }
+
+      case _ =>
+        // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
+        val quantifiedFreeVars = MonomorphHelpers.quantifiedVars(cparams0, exp0)
+
+        if (quantifiedFreeVars.isEmpty) {
+          // Case 2: No quantified variables. The expression can be reduced to a value.
+          mkHeadTermLit(box(visitExp(exp0, env, subst), subst(exp0.tpe)))
+        } else {
+          // Case 3: Quantified variables. The expression is translated to an application term.
+          val fvs = quantifiedFreeVars.map { case (sym, tpe) => (env(sym), subst(tpe)) }
+          mkAppTerm(fvs, visitExp(exp0, env, subst), subst(exp0.tpe), exp0.loc)
+        }
+    }
+  }
+
+  /**
+    * Lowers the given body term `pat0`.
+    */
+  private def lowerBodyTerm(cparams0: List[TypedAst.ConstraintParam], pat0: TypedAst.Pattern, env: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Expr = pat0 match {
+    case TypedAst.Pattern.Wild(_, loc) =>
+      mkBodyTermWild(loc)
+
+    case TypedAst.Pattern.Var(bnd, tpe, loc) =>
+      if (MonomorphHelpers.isQuantifiedVar(bnd.sym, cparams0)) {
+        // Case 1: Quantified variable.
+        mkBodyTermVar(env(bnd.sym))
+      } else {
+        // Case 2: Lexically bound variable *expression*.
+        val rawTpe = subst(tpe)
+        mkBodyTermLit(box(MonoAst.Expr.Var(env(bnd.sym), visitTypeSubstituted(rawTpe), loc), rawTpe))
+      }
+
+    case TypedAst.Pattern.Cst(cst, tpe, loc) =>
+      val rawTpe = subst(tpe)
+      mkBodyTermLit(box(MonoAst.Expr.Cst(cst, visitTypeSubstituted(rawTpe), loc), rawTpe))
+
+    case TypedAst.Pattern.Tag(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
+    case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
+    case TypedAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
+    case TypedAst.Pattern.Error(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
   }
 
   /**
