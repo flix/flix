@@ -67,7 +67,7 @@ object GenEffectClasses {
       val name = opName(op.sym)
       val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
       val opFunction = BackendObjType.Arrow(erasedParams :+ BackendType.Object, BackendType.Object)
-      val opField = ClassMaker.InstanceField(effectName, name, opFunction.toTpe)
+      val opField = ClassMaker.InstanceField(effectName, name, opFunction.desc)
       cm.mkField(opField, IsPublic, NotFinal, NotVolatile)
       val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
       val returnType = BackendType.toBackendType(op.tpe)
@@ -112,7 +112,7 @@ object GenEffectClasses {
           DUP()
           resumption.load()
           INVOKESPECIAL(wrapperType.Constructor)
-          PUTFIELD(ClassMaker.InstanceField(opFunction.desc, s"arg${params.size}", BackendObjType.Resumption.toTpe.toErased))
+          PUTFIELD(ClassMaker.InstanceField(opFunction.desc, s"arg${params.size}", JavaClasses.Object))
           // Call invoke.
           INVOKEINTERFACE(BackendObjType.Thunk.InvokeMethod)
           ARETURN()

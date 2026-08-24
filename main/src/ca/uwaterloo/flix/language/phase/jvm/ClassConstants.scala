@@ -33,7 +33,7 @@ object ClassConstants {
 
     val Desc: ClassDesc = ClassDesc.ofInternalName((Mangle.DevFlixRuntime :+ Mangle.mkClassName("FlixError")).mkString("/"))
 
-    val Constructor: ConstructorMethod = ConstructorMethod(Desc, List(BackendType.String))
+    val Constructor: ConstructorMethod = ConstructorMethod(Desc, List(JavaClasses.String))
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(Desc, JavaClasses.Error)
@@ -54,11 +54,11 @@ object ClassConstants {
   // Java Constants.
 
   object BigDecimal {
-    val Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JavaClasses.BigDecimal, List(BackendType.String))
+    val Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JavaClasses.BigDecimal, List(JavaClasses.String))
   }
 
   object BigInteger {
-    val Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JavaClasses.BigInteger, List(BackendType.String))
+    val Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JavaClasses.BigInteger, List(JavaClasses.String))
   }
 
   object ConcurrentLinkedQueue {
