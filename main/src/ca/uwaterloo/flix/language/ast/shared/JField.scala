@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Flix authors
+ * Copyright 2026 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,22 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.ClassDescs
 
 import java.lang.constant.ClassDesc
+import java.lang.reflect.Field
+
+object JField {
+
+  /** Returns the [[JField]] of the given reflective `field`. */
+  def of(field: Field): JField =
+    JField(ClassDescs.of(field.getDeclaringClass), field.getName)
+
+}
 
 /**
-  * Represents a resolved JVM annotation (after name resolution).
-  * Used from ResolvedAst through JvmAst.
+  * A nominal reference to the Java field `name` declared by the class `owner`.
   *
-  * `isRuntimeVisible` holds whether the annotation has runtime retention. It is computed
-  * during resolution, where the annotation class is loaded, so the backend needs no reflection.
+  * Unlike [[java.lang.reflect.Field]], a [[JField]] does not retain a loaded [[Class]].
   */
-case class JvmAnnotation(clazz: ClassDesc, isRuntimeVisible: Boolean, loc: SourceLocation)
+case class JField(owner: ClassDesc, name: String)

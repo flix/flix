@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.lang.constant.ClassDesc
 import scala.annotation.tailrec
 
 /**
@@ -159,10 +160,25 @@ object BackendType {
       case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
       case SimpleType.ExtensibleEmpty => BackendObjType.ExtTagged.toTpe
       case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.ExtTagged.toTpe
-      case SimpleType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
+      case SimpleType.Native(clazz) => BackendObjType.Native(JvmName.ofClassDesc(clazz)).toTpe
       case SimpleType.Enum(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
       case SimpleType.Struct(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
     }
+  }
+
+  /** Converts the given Java class or array descriptor `desc` into its [[BackendType]] representation. */
+  def toBackendType(desc: ClassDesc): BackendType = {
+    import java.lang.constant.ConstantDescs.*
+    if (desc == CD_boolean) BackendType.Bool
+    else if (desc == CD_char) BackendType.Char
+    else if (desc == CD_byte) BackendType.Int8
+    else if (desc == CD_short) BackendType.Int16
+    else if (desc == CD_int) BackendType.Int32
+    else if (desc == CD_long) BackendType.Int64
+    else if (desc == CD_float) BackendType.Float32
+    else if (desc == CD_double) BackendType.Float64
+    else if (desc.isArray) Array(toBackendType(desc.componentType()))
+    else Reference(BackendObjType.Native(JvmName.ofClassDesc(desc)))
   }
 
   /**

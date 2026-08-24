@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.{CompilerConstants, Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}

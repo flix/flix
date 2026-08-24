@@ -43,7 +43,7 @@ object MonoAstPrinter {
     case Expr.Cast(exp, tpe, eff, _) => DocAst.Expr.UncheckedCast(print(exp), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map(printHandlerRule))
-    case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, clazz, TypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
+    case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, DocAst.Expr.javaClassName(clazz.desc), TypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
   }
 
   /** Returns the [[DocAst.JvmConstructor]] representation of `constructor`. */
@@ -54,8 +54,8 @@ object MonoAstPrinter {
 
   /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: MonoAst.JvmMethod): DocAst.JvmMethod = method match {
-    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _, _) =>
+      DocAst.JvmMethod(ann.map(_.clazz.displayName()), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 
   /** Returns the [[DocAst]] representation of `rule`. */
@@ -64,8 +64,8 @@ object MonoAstPrinter {
   }
 
   /** Returns the [[DocAst]] representation of `rule`. */
-  private def printCatchRule(rule: MonoAst.CatchRule): (Symbol.VarSym, Class[?], DocAst.Expr) = rule match {
-    case MonoAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
+  private def printCatchRule(rule: MonoAst.CatchRule): (Symbol.VarSym, String, DocAst.Expr) = rule match {
+    case MonoAst.CatchRule(sym, clazz, exp) => (sym, DocAst.Expr.javaClassName(clazz), print(exp))
   }
 
   /** Returns the [[DocAst]] representation of `rule`. */

@@ -130,7 +130,7 @@ object Bootstrap {
         |""".stripMargin
     }
 
-    FileOps.newFileIfAbsent(buildAndTestWorkflowFile) {
+    FileOps.newFileIfAbsent(buildAndTestWorkflowFile) {(
       """name: Build and Test
         |
         |on:
@@ -151,10 +151,10 @@ object Bootstrap {
         |          distribution: 'temurin'
         |          java-version: '21'
         |
-        |      - name: Read Flix version from flix.toml
+        |      - name: Read Flix version from """ + FLIX_TOML + """
         |        id: flix
         |        run: |
-        |          version=$(grep -E '^"?flix"?[[:space:]]*=' flix.toml \
+        |          version=$(grep -E '^"?flix"?[[:space:]]*=' """ + FLIX_TOML + """ \
         |            | head -n1 \
         |            | sed -E 's/.*"([^"]+)"[[:space:]]*$/\1/')
         |          echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -169,7 +169,7 @@ object Bootstrap {
         |
         |      - name: Test
         |        run: java -jar flix.jar test
-        |""".stripMargin
+        |""").stripMargin
     }
     Result.Ok(())
   }
@@ -187,7 +187,7 @@ object Bootstrap {
   private val EXT_JAR: String = "jar"
 
   /** The manifest / flix toml file name. */
-  private val FLIX_TOML: String = "flix.toml"
+  val FLIX_TOML: String = "flix.toml"
 
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
@@ -571,7 +571,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def checkEffects(flix: Flix): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
-      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-check'"))
+      return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-check'"))
     }
 
     FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
@@ -645,7 +645,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
-      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-lock'"))
+      return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
     }
     Steps.updateStaleSources(flix)
     for {
@@ -677,7 +677,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def clean(): Result[Unit, BootstrapError] = {
     // Ensure project mode
     if (optManifest.isEmpty) {
-      return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'clean' in a non-project directory."))
+      return Err(BootstrapError.FileError(s"No manifest found ('$FLIX_TOML'). Refusing to run 'clean' in a non-project directory."))
     }
 
     // Ensure `cwd` is not dangerous
