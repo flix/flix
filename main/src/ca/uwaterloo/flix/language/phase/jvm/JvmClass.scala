@@ -16,20 +16,22 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import java.lang.constant.ClassDesc
+
 /**
   * Represents a Java class (or interface).
   *
-  * @param name     the name of the class (or interface).
+  * @param name     the descriptor of the class (or interface).
   * @param bytecode the bytecode of the class (or interface).
   */
-case class JvmClass(name: JvmName, bytecode: Array[Byte]) {
+case class JvmClass(name: ClassDesc, bytecode: Array[Byte]) {
   /**
     * Returns the hashCode of `this` JvmClass.
     */
   override def hashCode(): Int = name.hashCode()
 
   /**
-    * Returns `true` if `obj` is a JvmClass with the same JvmName.
+    * Returns `true` if `obj` is a JvmClass with the same name.
     */
   override def equals(obj: scala.Any): Boolean = obj match {
     case that: JvmClass => this.name == that.name

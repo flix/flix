@@ -19,10 +19,11 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
+import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 import ca.uwaterloo.flix.util.collection.MapOps
-import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils}
 
+import java.lang.constant.ClassDesc
 import java.lang.reflect.{InvocationTargetException, Method}
 
 /**
@@ -46,7 +47,7 @@ object JvmLoader {
     val root = result.root
 
     // Load each class into the JVM in a fresh class loader.
-    implicit val loadedClasses: Map[JvmName, Class[?]] = loadAll(root.classes.values, flix.jarLoader)
+    implicit val loadedClasses: Map[ClassDesc, Class[?]] = loadAll(root.classes.values, flix.jarLoader)
 
     val tests = MapOps.mapValuesWithKey(root.tests) {
       case (sym, defn) => TestFn(sym, defn.isSkip, wrapTest(loadMethod(defn.className, defn.methodName)))
@@ -105,9 +106,9 @@ object JvmLoader {
   }
 
   /** Returns the [[Method]] object for `className.methodName`. */
-  private def loadMethod(className: JvmName, methodName: String)(implicit loadedClasses: Map[JvmName, Class[?]]): Method = {
-    val mainClass = loadedClasses.getOrElse(className, throw InternalCompilerException(s"Cannot find class '${className.toBinaryName}'.", SourceLocation.Unknown))
-    findMethod(mainClass, methodName).getOrElse(throw InternalCompilerException(s"Cannot find '$methodName' method of '${className.toBinaryName}'.", SourceLocation.Unknown))
+  private def loadMethod(className: ClassDesc, methodName: String)(implicit loadedClasses: Map[ClassDesc, Class[?]]): Method = {
+    val mainClass = loadedClasses.getOrElse(className, throw InternalCompilerException(s"Cannot find class '${ClassDescs.binaryNameOf(className)}'.", SourceLocation.Unknown))
+    findMethod(mainClass, methodName).getOrElse(throw InternalCompilerException(s"Cannot find '$methodName' method of '${ClassDescs.binaryNameOf(className)}'.", SourceLocation.Unknown))
   }
 
   /** Returns a Method for `clazz.methodName` if possible. */
@@ -118,20 +119,20 @@ object JvmLoader {
   }
 
   /** Loads the given JVM `classes` using a custom class loader that falls back to `jarLoader`. */
-  private def loadAll(classes: Iterable[JvmClass], jarLoader: ClassLoader): Map[JvmName, Class[?]] = {
+  private def loadAll(classes: Iterable[JvmClass], jarLoader: ClassLoader): Map[ClassDesc, Class[?]] = {
     // Compute a map from binary names (strings) to JvmClasses.
     val m = classes.foldLeft(Map.empty[String, JvmClass]) {
-      case (macc, jvmClass) => macc + (jvmClass.name.toBinaryName -> jvmClass)
+      case (macc, jvmClass) => macc + (ClassDescs.binaryNameOf(jvmClass.name) -> jvmClass)
     }
 
     // Instantiate the Flix class loader with this map.
     val loader = new FlixClassLoader(m, jarLoader)
 
-    // Attempt to load each class using its internal name.
-    classes.foldLeft(Map.empty[JvmName, Class[?]]) {
+    // Attempt to load each class using its binary name.
+    classes.foldLeft(Map.empty[ClassDesc, Class[?]]) {
       case (macc, jvmClass) =>
         // Attempt to load class.
-        val loadedClass = loader.loadClass(jvmClass.name.toBinaryName)
+        val loadedClass = loader.loadClass(ClassDescs.binaryNameOf(jvmClass.name))
         macc + (jvmClass.name -> loadedClass)
     }
   }

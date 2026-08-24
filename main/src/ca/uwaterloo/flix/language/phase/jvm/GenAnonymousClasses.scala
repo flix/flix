@@ -24,10 +24,10 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
-import ca.uwaterloo.flix.language.phase.jvm.Mangle.RootPackage
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
+import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.CD_void
 import scala.jdk.CollectionConverters.*
 
@@ -37,19 +37,19 @@ object GenAnonymousClasses {
   /** Returns the generated classes of `objs`. */
   def gen(objs: List[AnonClass])(implicit root: Root, flix: Flix): List[JvmClass] = {
     for (obj <- objs) yield {
-      val className = JvmName(RootPackage, obj.name)
+      val className = ClassDesc.ofInternalName(obj.name)
       JvmClass(className, genByteCode(className, obj))
     }
   }
 
-  private def genByteCode(className: JvmName, obj: AnonClass)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(className: ClassDesc, obj: AnonClass)(implicit root: Root, flix: Flix): Array[Byte] = {
     val superClass = if (obj.clazz.isInterface)
-      JvmName.Object
+      JavaClasses.Object
     else
-      JvmName.ofClassDesc(obj.clazz.desc)
+      obj.clazz.desc
 
     val interfaces = if (obj.clazz.isInterface)
-      List(JvmName.ofClassDesc(obj.clazz.desc))
+      List(obj.clazz.desc)
     else
       Nil
 
@@ -103,7 +103,7 @@ object GenAnonymousClasses {
     cm.closeClassMaker()
   }
 
-  private def constructorIns(superClass: JvmName)(implicit mv: MethodVisitor): Unit = {
+  private def constructorIns(superClass: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     import BytecodeInstructions.*
     ALOAD(0)
     INVOKESPECIAL(ClassMaker.ConstructorMethod(superClass, Nil))
@@ -111,7 +111,7 @@ object GenAnonymousClasses {
   }
 
   /** Creates constructor bytecode that forwards parameters directly to the super constructor. */
-  private def constructorInsWithSuperCall(superClass: JvmName, constructor: JConstructor)(implicit mv: MethodVisitor): Unit = {
+  private def constructorInsWithSuperCall(superClass: ClassDesc, constructor: JConstructor)(implicit mv: MethodVisitor): Unit = {
     import BytecodeInstructions.*
     val paramTypes = constructor.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
     // ALOAD 0 (this)
@@ -149,7 +149,7 @@ object GenAnonymousClasses {
     *   }
     * }}}
     */
-  private def superBridgeIns(superClass: JvmName, method: JMethod)(implicit mv: MethodVisitor): Unit = {
+  private def superBridgeIns(superClass: ClassDesc, method: JMethod)(implicit mv: MethodVisitor): Unit = {
     val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
     val isVoid = method.descriptor.returnType() == CD_void
     val descriptor = MethodDescriptor(paramTypes, if (isVoid) VoidableType.Void else BackendType.toBackendType(method.descriptor.returnType()))
@@ -167,7 +167,7 @@ object GenAnonymousClasses {
     if (isVoid) {
       RETURN()
     } else {
-      xReturn(BackendType.toBackendType(method.descriptor.returnType()))
+      Bytecode.xReturn(method.descriptor.returnType())
     }
   }
 
@@ -196,7 +196,7 @@ object GenAnonymousClasses {
     // been applied in Lowering, so the value on the stack already matches `actualRes`.
     actualRes match {
       case VoidableType.Void => RETURN()
-      case res: BackendType => xReturn(res)
+      case res: BackendType => Bytecode.xReturn(res.toClassDesc)
     }
   }
 
