@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.ast.shared.JvmAnnotation
 import ca.uwaterloo.flix.util.ClassDescs
 import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
 
-import java.lang.constant.ClassDesc
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.CD_Object
 
 
@@ -60,9 +60,9 @@ sealed trait ClassMaker {
     case StaticField(_, name, tpe) => makeField(name, tpe, v, f, vol, IsStatic)
   }
 
-  protected def makeMethod(ann: List[JvmAnnotation], i: Option[MethodVisitor => Unit], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract): Unit = {
+  protected def makeMethod(ann: List[JvmAnnotation], i: Option[MethodVisitor => Unit], methodName: String, d: MethodTypeDesc, v: Visibility, f: Final, s: Static, a: Abstract): Unit = {
     val m = v.toInt + f.toInt + s.toInt + a.toInt
-    val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
+    val mv = visitor.visitMethod(m, methodName, d.descriptorString(), null, null)
     for (a <- ann) {
       val av = mv.visitAnnotation(a.clazz.descriptorString(), a.isRuntimeVisible)
       av.visitEnd()
@@ -77,7 +77,7 @@ sealed trait ClassMaker {
     mv.visitEnd()
   }
 
-  protected def makeAbstractMethod(methodName: String, d: MethodDescriptor): Unit = {
+  protected def makeAbstractMethod(methodName: String, d: MethodTypeDesc): Unit = {
     makeMethod(Nil, None, methodName, d, IsPublic, NotFinal, NotStatic, IsAbstract)
   }
 }
@@ -276,37 +276,37 @@ object ClassMaker {
 
     def name: String
 
-    def d: MethodDescriptor
+    def d: MethodTypeDesc
   }
 
   sealed case class ConstructorMethod(clazz: ClassDesc, args: List[BackendType]) extends Method {
     override def name: String = ConstructorMethodName
 
-    override def d: MethodDescriptor = MethodDescriptor(args, VoidableType.Void)
+    override def d: MethodTypeDesc = MethodTypeDescs.mkVoidDescriptor(args *)
   }
 
   case class StaticConstructorMethod(clazz: ClassDesc) extends Method {
     override def name: String = StaticConstructorMethodName
 
-    override def d: MethodDescriptor = MethodDescriptor.NothingToVoid
+    override def d: MethodTypeDesc = MethodTypeDescs.NothingToVoid
   }
 
-  sealed case class InstanceMethod(clazz: ClassDesc, name: String, d: MethodDescriptor) extends Method {
+  sealed case class InstanceMethod(clazz: ClassDesc, name: String, d: MethodTypeDesc) extends Method {
     def implementation(clazz: ClassDesc): InstanceMethod = InstanceMethod(clazz, name, d)
   }
 
-  sealed case class DefaultMethod(clazz: ClassDesc, name: String, d: MethodDescriptor) extends Method
+  sealed case class DefaultMethod(clazz: ClassDesc, name: String, d: MethodTypeDesc) extends Method
 
-  sealed case class InterfaceMethod(clazz: ClassDesc, name: String, d: MethodDescriptor) extends Method {
+  sealed case class InterfaceMethod(clazz: ClassDesc, name: String, d: MethodTypeDesc) extends Method {
     def implementation(clazz: ClassDesc): InstanceMethod = InstanceMethod(clazz, name, d)
   }
 
-  sealed case class AbstractMethod(clazz: ClassDesc, name: String, d: MethodDescriptor) extends Method {
+  sealed case class AbstractMethod(clazz: ClassDesc, name: String, d: MethodTypeDesc) extends Method {
     def implementation(clazz: ClassDesc): InstanceMethod = InstanceMethod(clazz, name, d)
   }
 
-  sealed case class StaticMethod(clazz: ClassDesc, name: String, d: MethodDescriptor) extends Method
+  sealed case class StaticMethod(clazz: ClassDesc, name: String, d: MethodTypeDesc) extends Method
 
-  sealed case class StaticInterfaceMethod(clazz: ClassDesc, name: String, d: MethodDescriptor) extends Method
+  sealed case class StaticInterfaceMethod(clazz: ClassDesc, name: String, d: MethodTypeDesc) extends Method
 
 }

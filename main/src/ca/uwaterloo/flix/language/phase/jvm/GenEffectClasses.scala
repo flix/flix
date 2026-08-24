@@ -10,7 +10,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.MethodVisitor
 
-import java.lang.constant.ClassDesc
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
 
 /** An effect class like this:
   * {{{
@@ -71,7 +71,7 @@ object GenEffectClasses {
       cm.mkField(opField, IsPublic, NotFinal, NotVolatile)
       val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
       val returnType = BackendType.toBackendType(op.tpe)
-      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodDescriptor(methodArgs, BackendObjType.Result.toTpe)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
+      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodTypeDescs.mkDescriptor(methodArgs *)(BackendObjType.Result.toTpe)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
     }
 
     cm.closeClassMaker()
@@ -88,9 +88,9 @@ object GenEffectClasses {
     import BytecodeInstructions.*
     val wrapperType = BackendObjType.ResumptionWrapper(returnType)
 
-    withNames(0, erasedParams) { case (paramsOffset, params) =>
-      withName(paramsOffset, BackendObjType.Handler.toTpe) { handler =>
-        withName(paramsOffset + 1, BackendObjType.Resumption.toTpe) { resumption =>
+    Instructions.withNames(0, erasedParams.map(_.toClassDesc)) { case (paramsOffset, params) =>
+      Instructions.withName(paramsOffset, BackendObjType.Handler.desc) { handler =>
+        Instructions.withName(paramsOffset + 1, BackendObjType.Resumption.desc) { resumption =>
           // Cast the given generic handler to the current effect.
           handler.load()
           CHECKCAST(effectName)
@@ -121,12 +121,12 @@ object GenEffectClasses {
     }
   }
 
-  def opStaticFunctionDescriptor(sym: Symbol.OpSym)(implicit root: Root): MethodDescriptor = {
+  def opStaticFunctionDescriptor(sym: Symbol.OpSym)(implicit root: Root): MethodTypeDesc = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
     val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
     val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
-    MethodDescriptor(methodArgs, BackendObjType.Result.toTpe)
+    MethodTypeDescs.mkDescriptor(methodArgs *)(BackendObjType.Result.toTpe)
   }
 
   /** Returns the JVM field/method name of the effect operation `sym`. */

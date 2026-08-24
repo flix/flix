@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
-import java.lang.constant.ClassDesc
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.CD_void
 import scala.jdk.CollectionConverters.*
 
@@ -78,26 +78,20 @@ object GenAnonymousClasses {
       // Use the Java interface's erased method signature (resolved during lowering) for the
       // JVM descriptor. This ensures the generated method matches the interface even when the
       // user declares generic parameter types (e.g., String instead of Object).
-      val actualArgs = m.javaSig match {
-        case Some(jm) => jm.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
-        case None => m.fparams.tail.map(_.tpe).map(BackendType.toBackendType)
+      val descriptor = m.javaSig match {
+        case Some(jm) => jm.descriptor
+        case None =>
+          val ret = if (m.tpe == SimpleType.Unit) CD_void else BackendType.toClassDesc(m.tpe)
+          MethodTypeDesc.of(ret, m.fparams.tail.map(fp => BackendType.toClassDesc(fp.tpe)) *)
       }
-      val actualres = m.javaSig match {
-        case Some(jm) if jm.descriptor.returnType() == CD_void => VoidableType.Void
-        case Some(jm) => BackendType.toBackendType(jm.descriptor.returnType())
-        case None => if (m.tpe == SimpleType.Unit) VoidableType.Void else BackendType.toBackendType(m.tpe)
-      }
-      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, actualres, m)(_, root))
+      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, descriptor), IsPublic, NotFinal, methodIns(abstractClass, cloField, descriptor.returnType(), m)(_, root))
     }
 
     // Generate bridge methods for super method calls.
     val superMethods = obj.superMethods
     for (method <- superMethods) {
       val bridgeName = s"super$$${method.name}"
-      val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
-      val returnTpe = if (method.descriptor.returnType() == CD_void) VoidableType.Void else BackendType.toBackendType(method.descriptor.returnType())
-      val descriptor = MethodDescriptor(paramTypes, returnTpe)
-      cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
+      cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, method.descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
     }
 
     cm.closeClassMaker()
@@ -113,15 +107,14 @@ object GenAnonymousClasses {
   /** Creates constructor bytecode that forwards parameters directly to the super constructor. */
   private def constructorInsWithSuperCall(superClass: ClassDesc, constructor: JConstructor)(implicit mv: MethodVisitor): Unit = {
     import BytecodeInstructions.*
-    val paramTypes = constructor.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
     // ALOAD 0 (this)
     thisLoad()
     // Load each <init> parameter (starting at slot 1)
-    withNames(1, paramTypes) { case (_, args) =>
+    Instructions.withNames(1, constructor.descriptor.parameterList.asScala.toList) { case (_, args) =>
       for (arg <- args) arg.load()
     }
     // INVOKESPECIAL superClass.<init>(paramTypes...)
-    INVOKESPECIAL(ClassMaker.ConstructorMethod(superClass, paramTypes))
+    INVOKESPECIAL(superClass, ClassMaker.ConstructorMethodName, constructor.descriptor)
     RETURN()
   }
 
@@ -150,18 +143,16 @@ object GenAnonymousClasses {
     * }}}
     */
   private def superBridgeIns(superClass: ClassDesc, method: JMethod)(implicit mv: MethodVisitor): Unit = {
-    val paramTypes = method.descriptor.parameterList.asScala.toList.map(BackendType.toBackendType)
     val isVoid = method.descriptor.returnType() == CD_void
-    val descriptor = MethodDescriptor(paramTypes, if (isVoid) VoidableType.Void else BackendType.toBackendType(method.descriptor.returnType()))
 
     // ALOAD 0 (this)
     thisLoad()
     // Load each parameter (starting at slot 1)
-    withNames(1, paramTypes) { case (_, args) =>
+    Instructions.withNames(1, method.descriptor.parameterList.asScala.toList) { case (_, args) =>
       for (arg <- args) arg.load()
     }
     // INVOKESPECIAL superClass.methodName(descriptor)
-    INVOKESPECIAL(superClass, method.name, descriptor)
+    INVOKESPECIAL(superClass, method.name, method.descriptor)
 
     // Return
     if (isVoid) {
@@ -172,7 +163,7 @@ object GenAnonymousClasses {
   }
 
   /** Creates code to read the arguments, load it into the `cloField` closure, call that function, and returns. */
-  private def methodIns(abstractClass: BackendObjType.AbstractArrow, cloField: ClassMaker.InstanceField, actualRes: VoidableType, m: JvmMethod)(implicit mv: MethodVisitor, root: Root): Unit = {
+  private def methodIns(abstractClass: BackendObjType.AbstractArrow, cloField: ClassMaker.InstanceField, actualRes: ClassDesc, m: JvmMethod)(implicit mv: MethodVisitor, root: Root): Unit = {
     val functionAbstractClass = abstractClass.superClass
     val returnType = BackendType.toBackendType(m.tpe)
 
@@ -180,7 +171,7 @@ object GenAnonymousClasses {
     GETFIELD(cloField)
     INVOKEVIRTUAL(abstractClass.GetUniqueThreadClosureMethod)
     // Load the actual arguments into the erased closure arguments.
-    withNames(0, m.fparams.map(_.tpe).map(BackendType.toBackendType)) {
+    Instructions.withNames(0, m.fparams.map(_.tpe).map(BackendType.toClassDesc)) {
       case (_, args) =>
         for ((arg, i) <- args.zipWithIndex) {
           DUP()
@@ -194,9 +185,10 @@ object GenAnonymousClasses {
     // Return the value using the method's erased JVM return type (`actualRes`). Any boxing
     // needed to feed a primitive result into a reference (e.g. `Object`) return has already
     // been applied in Lowering, so the value on the stack already matches `actualRes`.
-    actualRes match {
-      case VoidableType.Void => RETURN()
-      case res: BackendType => Instructions.xReturn(res.toClassDesc)
+    if (actualRes == CD_void) {
+      RETURN()
+    } else {
+      Instructions.xReturn(actualRes)
     }
   }
 
