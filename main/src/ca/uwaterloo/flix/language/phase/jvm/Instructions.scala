@@ -406,6 +406,13 @@ object Instructions {
   def nop(): Unit =
     ()
 
+  /** `[] --> return`, the body of a constructor that only calls the nullary `superClass` constructor. */
+  def nullarySuperConstructor(superClass: ConstructorMethod)(implicit mv: MethodVisitor): Unit = {
+    thisLoad()
+    INVOKESPECIAL(superClass)
+    RETURN()
+  }
+
   def pushBool(b: Boolean)(implicit mv: MethodVisitor): Unit =
     if (b) ICONST_1() else ICONST_0()
 
@@ -437,6 +444,15 @@ object Instructions {
     pushInt(loc.endLine)
     pushInt(loc.endCol)
     INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
+  }
+
+  /** `[] --> return`, the body of a static constructor that stores a fresh instance in `singleton`. */
+  def singletonStaticConstructor(thisConstructor: ConstructorMethod, singleton: StaticField)(implicit mv: MethodVisitor): Unit = {
+    NEW(thisConstructor.clazz)
+    DUP()
+    INVOKESPECIAL(thisConstructor)
+    PUTSTATIC(singleton)
+    RETURN()
   }
 
   /** Emits an `xStore` of `tpe` at `index` and runs `body` with the corresponding [[Variable]]. */

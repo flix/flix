@@ -276,14 +276,14 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(Opcodes.F2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
             mv.visitInsn(Opcodes.D2F) // Convert double to float
 
           case Float64Op.Exp =>
             compileExpr(exp1)
             compileExpr(exp2)
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
 
           case Int8Op.Exp =>
             compileExpr(exp1)
@@ -291,7 +291,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(Opcodes.I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
             mv.visitInsn(Opcodes.D2I) // Convert to int
             mv.visitInsn(Opcodes.I2B) // Convert int to byte
 
@@ -301,7 +301,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(Opcodes.I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
             mv.visitInsn(Opcodes.D2I) // Convert to int
             mv.visitInsn(Opcodes.I2S) // Convert int to short
 
@@ -311,7 +311,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(Opcodes.I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
             mv.visitInsn(Opcodes.D2I) // Convert to int
 
           case Int64Op.Exp =>
@@ -320,7 +320,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(Opcodes.L2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).descriptorString(), false)
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
             mv.visitInsn(Opcodes.D2L) // Convert to long
 
           case Int8Op.And | Int16Op.And | Int32Op.And =>
@@ -1067,7 +1067,7 @@ object GenExpression {
           // Casting to JvmType of closure abstract class
           mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(closureAbstractClass.desc))
           // retrieving the unique thread object
-          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(closureAbstractClass.desc), closureAbstractClass.GetUniqueThreadClosureMethod.name, mkDescriptor()(closureAbstractClass.toTpe).descriptorString(), false)
+          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(closureAbstractClass.desc), closureAbstractClass.GetUniqueThreadClosureMethod.name, mkDescriptor()(closureAbstractClass.desc).descriptorString(), false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
           mv.visitInsn(Opcodes.DUP)
@@ -1082,7 +1082,7 @@ object GenExpression {
           // Casting to JvmType of closure abstract class
           mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(closureAbstractClass.desc))
           // retrieving the unique thread object
-          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(closureAbstractClass.desc), closureAbstractClass.GetUniqueThreadClosureMethod.name, mkDescriptor()(closureAbstractClass.toTpe).descriptorString(), false)
+          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(closureAbstractClass.desc), closureAbstractClass.GetUniqueThreadClosureMethod.name, mkDescriptor()(closureAbstractClass.desc).descriptorString(), false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
           mv.visitInsn(Opcodes.DUP)
@@ -1142,14 +1142,13 @@ object GenExpression {
         val targetIsFunction = defn.cparams.isEmpty
         val canCallStaticMethod = Purity.isControlPure(defn.expr.purity) && targetIsFunction
         if (canCallStaticMethod) {
-          val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
+          val paramTpes = defn.fparams.map(fp => BackendType.toClassDesc(fp.tpe))
           // Call the static method, using exact types
           for ((arg, tpe) <- ListOps.zip(exps, paramTpes)) {
             compileExpr(arg)
-            castIfNotPrim(tpe.toClassDesc)
+            castIfNotPrim(tpe)
           }
-          val resultTpe = BackendObjType.Result.toTpe
-          val desc = mkDescriptor(paramTpes *)(resultTpe)
+          val desc = mkDescriptor(paramTpes *)(BackendObjType.Result.desc)
           val className = internalNameOf(BackendObjType.Defn(sym).desc)
           mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, ClassMaker.StaticApplyMethodName, desc.descriptorString(), false)
           BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)

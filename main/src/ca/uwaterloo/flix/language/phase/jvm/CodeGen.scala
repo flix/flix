@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
+import ca.uwaterloo.flix.language.phase.jvm.classes.GenGlobal
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import ca.uwaterloo.flix.util.collection.MapOps
 
@@ -89,7 +90,7 @@ object CodeGen {
     val castErrorClass = List(JvmClass(BackendObjType.CastError.desc, BackendObjType.CastError.genByteCode()))
     val unhandledEffectErrorClass = List(JvmClass(BackendObjType.UnhandledEffectError.desc, BackendObjType.UnhandledEffectError.genByteCode()))
 
-    val globalClass = List(JvmClass(BackendObjType.Global.desc, BackendObjType.Global.genByteCode()))
+    val globalClass = List(JvmClass(GenGlobal.desc, GenGlobal.genByteCode()))
 
     val regionClass = List(JvmClass(BackendObjType.Region.desc, BackendObjType.Region.genByteCode()))
 
