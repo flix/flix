@@ -20,6 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.Branch.{FalseBranch, TrueBranch}
+import ca.uwaterloo.flix.language.phase.jvm.classes.GenReifiedSourceLocation
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import org.objectweb.asm
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
@@ -406,6 +407,13 @@ object Instructions {
   def nop(): Unit =
     ()
 
+  /** `[] --> return`, the body of a constructor that only calls the nullary `superClass` constructor. */
+  def nullarySuperConstructor(superClass: ConstructorMethod)(implicit mv: MethodVisitor): Unit = {
+    thisLoad()
+    INVOKESPECIAL(superClass)
+    RETURN()
+  }
+
   def pushBool(b: Boolean)(implicit mv: MethodVisitor): Unit =
     if (b) ICONST_1() else ICONST_0()
 
@@ -429,14 +437,23 @@ object Instructions {
   }
 
   def pushLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
-    NEW(BackendObjType.ReifiedSourceLocation.desc)
+    NEW(GenReifiedSourceLocation.desc)
     DUP()
     pushString(loc.source.name)
     pushInt(loc.startLine)
     pushInt(loc.startCol)
     pushInt(loc.endLine)
     pushInt(loc.endCol)
-    INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
+    INVOKESPECIAL(GenReifiedSourceLocation.Constructor)
+  }
+
+  /** `[] --> return`, the body of a static constructor that stores a fresh instance in `singleton`. */
+  def singletonStaticConstructor(thisConstructor: ConstructorMethod, singleton: StaticField)(implicit mv: MethodVisitor): Unit = {
+    NEW(thisConstructor.clazz)
+    DUP()
+    INVOKESPECIAL(thisConstructor)
+    PUTSTATIC(singleton)
+    RETURN()
   }
 
   /** Emits an `xStore` of `tpe` at `index` and runs `body` with the corresponding [[Variable]]. */

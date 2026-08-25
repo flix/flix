@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.JvmAst.{Effect, Root}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InstanceField
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
@@ -51,9 +52,18 @@ import java.lang.constant.{ClassDesc, MethodTypeDesc}
   */
 object GenEffectClasses {
 
+  /**
+    * Returns the descriptor of the effect definition class of `sym`.
+    *
+    * Print       =>  Eff$Print
+    * List.Crash  =>  List.Eff$Crash
+    */
+  def effectDesc(sym: Symbol.EffSym): ClassDesc =
+    Mangle.mkDesc(sym.namespace, Mangle.mkClassName("Eff", sym.name))
+
   def gen(effects: Iterable[Effect])(implicit root: Root, flix: Flix): List[JvmClass] = {
     for (effect <- effects.toList) yield {
-      val className = BackendObjType.Effect(effect.sym).desc
+      val className = effectDesc(effect.sym)
       JvmClass(className, genByteCode(className, effect))
     }
   }
@@ -69,28 +79,26 @@ object GenEffectClasses {
       val opFunction = BackendObjType.Arrow(erasedParams :+ BackendType.Object, BackendType.Object)
       val opField = ClassMaker.InstanceField(effectName, name, opFunction.desc)
       cm.mkField(opField, IsPublic, NotFinal, NotVolatile)
-      val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
+      val methodArgs = erasedParams.map(_.toClassDesc) ++ List(BackendObjType.Handler.desc, BackendObjType.Resumption.desc)
       val returnType = BackendType.toBackendType(op.tpe)
-      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodTypeDescs.mkDescriptor(methodArgs *)(BackendObjType.Result.toTpe)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
+      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodTypeDescs.mkDescriptor(methodArgs *)(BackendObjType.Result.desc)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
     }
 
     cm.closeClassMaker()
   }
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
-    import Instructions.*
     ALOAD(0)
     INVOKESPECIAL(ClassConstants.Object.Constructor)
     RETURN()
   }
 
   private def methodIns(effectName: ClassDesc, opFunction: BackendObjType.Arrow, opField: InstanceField, erasedParams: List[BackendType], returnType: BackendType)(implicit mv: MethodVisitor): Unit = {
-    import Instructions.*
     val wrapperType = BackendObjType.ResumptionWrapper(returnType)
 
-    Instructions.withNames(0, erasedParams.map(_.toClassDesc)) { case (paramsOffset, params) =>
-      Instructions.withName(paramsOffset, BackendObjType.Handler.desc) { handler =>
-        Instructions.withName(paramsOffset + 1, BackendObjType.Resumption.desc) { resumption =>
+    withNames(0, erasedParams.map(_.toClassDesc)) { case (paramsOffset, params) =>
+      withName(paramsOffset, BackendObjType.Handler.desc) { handler =>
+        withName(paramsOffset + 1, BackendObjType.Resumption.desc) { resumption =>
           // Cast the given generic handler to the current effect.
           handler.load()
           CHECKCAST(effectName)
@@ -125,8 +133,8 @@ object GenEffectClasses {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
     val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
-    val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
-    MethodTypeDescs.mkDescriptor(methodArgs *)(BackendObjType.Result.toTpe)
+    val methodArgs = erasedParams.map(_.toClassDesc) ++ List(BackendObjType.Handler.desc, BackendObjType.Resumption.desc)
+    MethodTypeDescs.mkDescriptor(methodArgs *)(BackendObjType.Result.desc)
   }
 
   /** Returns the JVM field/method name of the effect operation `sym`. */

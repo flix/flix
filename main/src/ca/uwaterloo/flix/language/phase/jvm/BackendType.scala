@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.constant.ClassDesc
-import java.lang.constant.ConstantDescs.{CD_Object, CD_String}
+import java.lang.constant.ConstantDescs.{CD_Object, CD_String, CD_boolean, CD_byte, CD_char, CD_double, CD_float, CD_int, CD_long, CD_short}
 import scala.annotation.tailrec
 
 /**
@@ -91,11 +91,6 @@ sealed trait BackendType {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
          BackendType.Int32 | BackendType.Float32 | BackendType.Array(_) | BackendType.Reference(_) => false
   }
-
-  /**
-    * Returns `2` if `this` is a 64 bit value, or `1` if it is a 32 bit value.
-    */
-  def stackSlots: Int = if (is64BitWidth) 2 else 1
 
 }
 
@@ -180,21 +175,6 @@ object BackendType {
   def toClassDesc(tpe0: SimpleType)(implicit root: JvmAst.Root): ClassDesc =
     ClassDesc.ofDescriptor(toBackendType(tpe0).toDescriptor)
 
-  /** Converts the given Java class or array descriptor `desc` into its [[BackendType]] representation. */
-  def toBackendType(desc: ClassDesc): BackendType = {
-    import java.lang.constant.ConstantDescs.*
-    if (desc == CD_boolean) BackendType.Bool
-    else if (desc == CD_char) BackendType.Char
-    else if (desc == CD_byte) BackendType.Int8
-    else if (desc == CD_short) BackendType.Int16
-    else if (desc == CD_int) BackendType.Int32
-    else if (desc == CD_long) BackendType.Int64
-    else if (desc == CD_float) BackendType.Float32
-    else if (desc == CD_double) BackendType.Float64
-    else if (desc.isArray) Array(toBackendType(desc.componentType()))
-    else Reference(BackendObjType.Native(desc))
-  }
-
   /**
     * Contains all the primitive types and `Reference(Native(CD_Object))`.
     */
@@ -229,6 +209,25 @@ object BackendType {
          SimpleType.ExtensibleExtend(_, _, _) | SimpleType.ExtensibleEmpty | SimpleType.Native(_) |
          SimpleType.Region | SimpleType.Null =>
       BackendType.Object
+  }
+
+  /** Computes the [[ClassDesc]] of the erased JVM representation of the given [[SimpleType]]. */
+  def toErasedClassDesc(tpe: SimpleType): ClassDesc = tpe match {
+    case SimpleType.Bool => CD_boolean
+    case SimpleType.Char => CD_char
+    case SimpleType.Int8 => CD_byte
+    case SimpleType.Int16 => CD_short
+    case SimpleType.Int32 => CD_int
+    case SimpleType.Int64 => CD_long
+    case SimpleType.Float32 => CD_float
+    case SimpleType.Float64 => CD_double
+    case SimpleType.Void | SimpleType.AnyType | SimpleType.Unit | SimpleType.BigDecimal | SimpleType.BigInt |
+         SimpleType.String | SimpleType.Regex | SimpleType.Array(_) | SimpleType.Lazy(_) |
+         SimpleType.Tuple(_) | SimpleType.Enum(_, _) | SimpleType.Struct(_, _) | SimpleType.Arrow(_, _) |
+         SimpleType.RecordEmpty | SimpleType.RecordExtend(_, _, _) |
+         SimpleType.ExtensibleExtend(_, _, _) | SimpleType.ExtensibleEmpty | SimpleType.Native(_) |
+         SimpleType.Region | SimpleType.Null =>
+      CD_Object
   }
 
   sealed trait PrimitiveType extends BackendType

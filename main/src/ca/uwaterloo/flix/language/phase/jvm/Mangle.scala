@@ -19,6 +19,9 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 
+import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.{CD_boolean, CD_byte, CD_char, CD_double, CD_float, CD_int, CD_long, CD_short}
+
 /**
   * Name mangling and construction of class names for generated classes.
   */
@@ -29,6 +32,30 @@ object Mangle {
 
   /** The `dev.flix.runtime` package of the Flix runtime classes. */
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
+
+  /** Returns the [[ClassDesc]] of the class `name` in the package `pkg`. */
+  def mkDesc(pkg: List[String], name: String): ClassDesc = {
+    val prefix = if (pkg.isEmpty) "" else pkg.mkString("", "/", "/")
+    ClassDesc.ofInternalName(prefix + name)
+  }
+
+  /**
+    * Returns the name of the erased type `desc`, as used in parametrized class names.
+    *
+    * Every reference type erases to `"Obj"`, so `Tuple2$Obj$Int32$Obj` names the tuple
+    * class of any three-element tuple whose middle element is an `Int32`.
+    */
+  def erasedName(desc: ClassDesc): String = desc match {
+    case CD_boolean => "Bool"
+    case CD_char => "Char"
+    case CD_byte => "Int8"
+    case CD_short => "Int16"
+    case CD_int => "Int32"
+    case CD_long => "Int64"
+    case CD_float => "Float32"
+    case CD_double => "Float64"
+    case _ => "Obj"
+  }
 
   /**
     * Constructs a concatenated string using `Flix.Delimiter`. The call
