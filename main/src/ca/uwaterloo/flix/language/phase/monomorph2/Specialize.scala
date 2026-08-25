@@ -180,8 +180,6 @@ object Specialize {
                             (implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
     val sig = root.sigs(sym)
     val trt = root.traits(sym.trt)
-    // groundArrowTpe comes from an already-solved, reachable call site, so it must unify with
-    // the sig's own declared scheme.
     val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, groundArrowTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
     val traitType = subst.m(trt.tparam.sym)
     // traitType is ground (groundArrowTpe has no free vars), so it always has a type constructor.
@@ -230,9 +228,12 @@ object Specialize {
     case Type.Apply(_, _, loc)             =>
       val args = tpe.typeArguments
       tpe.baseType match {
-        case Type.Cst(TypeConstructor.Enum(sym, _), _) => Type.mkEnum(tables.enumTable((sym, args)), Nil, loc)
-        case Type.Cst(TypeConstructor.RestrictableEnum(sym, _), _) => Type.mkEnum(tables.restrictableEnumTable((sym, args)), Nil, loc)
-        case Type.Cst(TypeConstructor.Struct(sym, _), _) => Type.mkStruct(tables.structTable((sym, args)), Nil, loc)
+        case Type.Cst(TypeConstructor.Enum(sym, _), _) =>
+          Type.mkEnum(tables.enumTable((sym, args)), Nil, loc)
+        case Type.Cst(TypeConstructor.RestrictableEnum(sym, _), _) =>
+          Type.mkEnum(tables.restrictableEnumTable((sym, args)), Nil, loc)
+        case Type.Cst(TypeConstructor.Struct(sym, _), _) =>
+          Type.mkStruct(tables.structTable((sym, args)), Nil, loc)
         case _ => Type.mkApply(rewriteEnumStructType(tpe.baseType), args.map(rewriteEnumStructType), loc)
       }
 
