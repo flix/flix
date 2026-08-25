@@ -31,8 +31,8 @@ import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoi
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
-import java.lang.constant.ClassDesc
-import java.lang.constant.ConstantDescs.{CD_Object, CD_boolean, CD_byte, CD_char, CD_double, CD_float, CD_int, CD_long, CD_short}
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import java.lang.constant.ConstantDescs.{CD_Object, CD_boolean, CD_byte, CD_char, CD_double, CD_float, CD_int, CD_long, CD_short, CD_void}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -1031,7 +1031,7 @@ object BackendObjType {
     }
 
     def SetArgsMethod: StaticMethod =
-      StaticMethod(this.desc, "setArgs", mkVoidDescriptor(BackendType.Array(BackendType.String)))
+      StaticMethod(this.desc, "setArgs", MethodTypeDesc.of(CD_void, JavaClasses.String.arrayType()))
 
     private def setArgsIns(implicit mv: MethodVisitor): Unit = {
       ALOAD(0)
@@ -1507,8 +1507,8 @@ object BackendObjType {
 
     private def shimIns(defn: JvmAst.Def)(implicit mv: MethodVisitor): Unit = {
       val defnT = Defn(defn.sym)
-      val paramTypes = defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
-      Instructions.withNames(0, paramTypes.map(_.toClassDesc)) {
+      val paramTypes = defn.fparams.map(fp => BackendType.toErasedClassDesc(fp.tpe))
+      Instructions.withNames(0, paramTypes) {
         case (_, args) =>
           val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
           NEW(defnT.desc)
@@ -1517,7 +1517,7 @@ object BackendObjType {
           for ((arg, index) <- args.zipWithIndex) {
             DUP()
             arg.load()
-            PUTFIELD(InstanceField(defnT.desc, s"arg$index", paramTypes(index).toClassDesc))
+            PUTFIELD(InstanceField(defnT.desc, s"arg$index", paramTypes(index)))
           }
           Result.unwindSuspensionFreeThunkToType(erasedResult, s"in shim method of ${defn.sym}", defn.loc)
           Instructions.xReturn(erasedResult.toClassDesc)
