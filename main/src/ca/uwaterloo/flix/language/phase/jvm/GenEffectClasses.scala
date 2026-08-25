@@ -77,12 +77,12 @@ object GenEffectClasses {
 
     for (op <- effect.ops) {
       val name = opName(op.sym)
-      val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
+      val erasedParams = op.fparams.map(_.tpe).map(TypeDescs.toErasedClassDesc)
       val opFunction = BackendObjType.Arrow(erasedParams :+ CD_Object, CD_Object)
       val opField = ClassMaker.InstanceField(effectName, name, opFunction.desc)
       cm.mkField(opField, IsPublic, NotFinal, NotVolatile)
       val methodArgs = erasedParams ++ List(GenHandler.desc, GenResumption.desc)
-      val returnType = BackendType.toErasedClassDesc(op.tpe)
+      val returnType = TypeDescs.toErasedClassDesc(op.tpe)
       cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodTypeDescs.mkDescriptor(methodArgs *)(GenResult.desc)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
     }
 
@@ -133,7 +133,7 @@ object GenEffectClasses {
   def opStaticFunctionDescriptor(sym: Symbol.OpSym)(implicit root: Root): MethodTypeDesc = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
-    val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
+    val erasedParams = op.fparams.map(_.tpe).map(TypeDescs.toErasedClassDesc)
     val methodArgs = erasedParams ++ List(GenHandler.desc, GenResumption.desc)
     MethodTypeDescs.mkDescriptor(methodArgs *)(GenResult.desc)
   }
@@ -145,7 +145,7 @@ object GenEffectClasses {
   def opFieldType(sym: Symbol.OpSym)(implicit root: Root): BackendObjType.Arrow = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
-    val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
+    val erasedParams = op.fparams.map(_.tpe).map(TypeDescs.toErasedClassDesc)
     BackendObjType.Arrow(erasedParams :+ CD_Object, CD_Object)
   }
 

@@ -61,11 +61,6 @@ sealed trait BackendObjType {
     * The JVM type descriptor of the form `"L<internal name>;"`.
     */
   def toDescriptor: String = desc.descriptorString()
-
-  /**
-    * Returns `this` wrapped in `BackendType.Reference`.
-    */
-  def toTpe: BackendType.Reference = BackendType.Reference(this)
 }
 
 object BackendObjType {
@@ -212,7 +207,7 @@ object BackendObjType {
   object Struct {
     /** Returns the struct type of `struct`. */
     def fromStruct(struct: JvmAst.Struct)(implicit root: JvmAst.Root): Struct =
-      Struct(struct.fields.map(field => BackendType.toErasedClassDesc(field.tpe)))
+      Struct(struct.fields.map(field => TypeDescs.toErasedClassDesc(field.tpe)))
   }
 
   case class Struct(elms: List[ClassDesc]) extends BackendObjType {
@@ -304,7 +299,7 @@ object BackendObjType {
       */
     def fromArrowType(tpe: SimpleType): AbstractArrow = tpe match {
       case SimpleType.Arrow(targs, tresult) =>
-        AbstractArrow(targs.map(BackendType.toErasedClassDesc), BackendType.toErasedClassDesc(tresult))
+        AbstractArrow(targs.map(TypeDescs.toErasedClassDesc), TypeDescs.toErasedClassDesc(tresult))
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
     }
   }
@@ -348,7 +343,7 @@ object BackendObjType {
       */
     def fromArrowType(tpe: SimpleType): Arrow = tpe match {
       case SimpleType.Arrow(targs, tresult) =>
-        Arrow(targs.map(BackendType.toErasedClassDesc), BackendType.toErasedClassDesc(tresult))
+        Arrow(targs.map(TypeDescs.toErasedClassDesc), TypeDescs.toErasedClassDesc(tresult))
       case _ =>
         throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
     }

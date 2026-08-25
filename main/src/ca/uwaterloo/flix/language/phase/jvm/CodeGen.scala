@@ -116,7 +116,7 @@ object CodeGen {
     val handlerInterface = List(JvmClass(GenHandler.desc, GenHandler.genByteCode()))
     val effectCallClass = List(JvmClass(GenEffectCall.desc, GenEffectCall.genByteCode()))
     val effectClasses = GenEffectClasses.gen(root.effects.values)
-    val resumptionWrappers = BackendType.erasedTypes.map(_.toClassDesc).map(tpe => JvmClass(GenResumptionWrapper.desc(tpe), GenResumptionWrapper.genByteCode(tpe)))
+    val resumptionWrappers = TypeDescs.erasedTypes.map(tpe => JvmClass(GenResumptionWrapper.desc(tpe), GenResumptionWrapper.genByteCode(tpe)))
 
     val allClasses = List(
       mainClass,
@@ -197,7 +197,7 @@ object CodeGen {
   private def getErasedArrowsOf(types: Iterable[SimpleType]): Set[BackendObjType.Arrow] =
     types.foldLeft(Set.empty[BackendObjType.Arrow]) {
       case (acc, SimpleType.Arrow(args, result)) =>
-        acc + BackendObjType.Arrow(args.map(BackendType.toErasedClassDesc), BackendType.toErasedClassDesc(result))
+        acc + BackendObjType.Arrow(args.map(TypeDescs.toErasedClassDesc), TypeDescs.toErasedClassDesc(result))
       case (acc, _) => acc
     }
 
@@ -208,14 +208,14 @@ object CodeGen {
   /** Returns the erased term types of each non-nullary case in `enm`. */
   private def getTagsOf(enm: Enum): Set[List[ClassDesc]] =
     enm.cases.values.collect {
-      case caze if caze.tpes.nonEmpty => caze.tpes.map(BackendType.toErasedClassDesc)
+      case caze if caze.tpes.nonEmpty => caze.tpes.map(TypeDescs.toErasedClassDesc)
     }.toSet
 
   /** Returns the set of extensible tag types in `types` without searching recursively. */
   private def getExtensibleTagTypesOf(types: Iterable[SimpleType]): Set[List[ClassDesc]] =
     types.foldLeft(Set.empty[List[ClassDesc]]) {
       case (acc, SimpleType.ExtensibleExtend(_, targs, _)) =>
-        acc + targs.map(BackendType.toErasedClassDesc)
+        acc + targs.map(TypeDescs.toErasedClassDesc)
       case (acc, _) => acc
     }
 
@@ -223,7 +223,7 @@ object CodeGen {
   private def getTupleTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Tuple] =
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, SimpleType.Tuple(elms)) =>
-        acc + BackendObjType.Tuple(elms.map(BackendType.toErasedClassDesc))
+        acc + BackendObjType.Tuple(elms.map(TypeDescs.toErasedClassDesc))
       case (acc, _) => acc
     }
 
@@ -231,14 +231,14 @@ object CodeGen {
   private def getRecordExtendsOf(types: Iterable[SimpleType]): Set[ClassDesc] =
     types.foldLeft(Set.empty[ClassDesc]) {
       case (acc, SimpleType.RecordExtend(_, value, _)) =>
-        acc + BackendType.toErasedClassDesc(value)
+        acc + TypeDescs.toErasedClassDesc(value)
       case (acc, _) => acc
     }
 
   /** Returns the set of lazy types in `types` without searching recursively. */
   private def getLazyTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Lazy] =
     types.foldLeft(Set.empty[BackendObjType.Lazy]) {
-      case (acc, SimpleType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.toErasedClassDesc(tpe))
+      case (acc, SimpleType.Lazy(tpe)) => acc + BackendObjType.Lazy(TypeDescs.toErasedClassDesc(tpe))
       case (acc, _) => acc
     }
 
