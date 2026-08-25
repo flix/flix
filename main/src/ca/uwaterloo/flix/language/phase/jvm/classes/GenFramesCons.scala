@@ -31,33 +31,34 @@ import java.lang.constant.ClassDesc
 /** A non-empty [[GenFrames]] stack: a head [[GenFrame]] and the rest of the stack. */
 object GenFramesCons {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("FramesCons"))
+  /** The JVM class descriptor for the generated `FramesCons` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("FramesCons"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(this.desc, IsFinal, interfaces = List(GenFrames.desc))
+    val cm = mkClass(this.Desc, IsFinal, interfaces = List(GenFrames.Desc))
 
     cm.mkField(HeadField, IsPublic, NotFinal, NotVolatile)
     cm.mkField(TailField, IsPublic, NotFinal, NotVolatile)
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
     cm.mkMethod(Nil, PushMethod, IsPublic, IsFinal, GenFrames.pushImplementation(_))
-    cm.mkMethod(Nil, GenFrames.ReverseOntoMethod.implementation(this.desc), IsPublic, IsFinal, reverseOntoIns(_))
+    cm.mkMethod(Nil, GenFrames.ReverseOntoMethod.implementation(this.Desc), IsPublic, IsFinal, reverseOntoIns(_))
 
     cm.closeClassMaker()
   }
 
-  def HeadField: InstanceField = InstanceField(this.desc, "head", GenFrame.desc)
+  def HeadField: InstanceField = InstanceField(this.Desc, "head", GenFrame.Desc)
 
-  def TailField: InstanceField = InstanceField(this.desc, "tail", GenFrames.desc)
+  def TailField: InstanceField = InstanceField(this.Desc, "tail", GenFrames.Desc)
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
-  def PushMethod: InstanceMethod = GenFrames.PushMethod.implementation(this.desc)
+  def PushMethod: InstanceMethod = GenFrames.PushMethod.implementation(this.Desc)
 
   private def reverseOntoIns(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenFrames.desc) { rest =>
+    withName(1, GenFrames.Desc) { rest =>
       thisLoad()
       GETFIELD(TailField)
-      NEW(GenFramesCons.desc)
+      NEW(GenFramesCons.Desc)
       DUP()
       INVOKESPECIAL(GenFramesCons.Constructor)
       DUP()
@@ -68,7 +69,7 @@ object GenFramesCons {
       rest.load()
       PUTFIELD(TailField)
       INVOKEINTERFACE(GenFrames.ReverseOntoMethod)
-      xReturn(GenFrames.desc)
+      xReturn(GenFrames.Desc)
     }
   }
 

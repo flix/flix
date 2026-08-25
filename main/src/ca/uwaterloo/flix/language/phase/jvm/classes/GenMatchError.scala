@@ -33,10 +33,11 @@ import java.lang.constant.ClassDesc
   */
 object GenMatchError {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("MatchError"))
+  /** The JVM class descriptor for the generated `MatchError` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("MatchError"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
     // This field allows external equality checking.
@@ -45,9 +46,9 @@ object GenMatchError {
     cm.closeClassMaker()
   }
 
-  private def LocationField: InstanceField = InstanceField(this.desc, "location", GenReifiedSourceLocation.desc)
+  private def LocationField: InstanceField = InstanceField(this.Desc, "location", GenReifiedSourceLocation.Desc)
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(GenReifiedSourceLocation.desc))
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, List(GenReifiedSourceLocation.Desc))
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()

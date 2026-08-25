@@ -31,12 +31,13 @@ import java.lang.constant.ClassDesc
 /** The empty record, a singleton implementing [[GenRecord]]. */
 object GenRecordEmpty {
 
-  val desc: ClassDesc = mkDesc(RootPackage, Mangle.mkClassName("RecordEmpty"))
+  /** The JVM class descriptor for the generated `RecordEmpty` class. */
+  val Desc: ClassDesc = mkDesc(RootPackage, Mangle.mkClassName("RecordEmpty"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.desc, IsFinal, interfaces = List(GenRecord.desc))
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal, interfaces = List(GenRecord.Desc))
 
-    cm.mkStaticConstructor(StaticConstructorMethod(this.desc), singletonStaticConstructor(Constructor, SingletonField)(_))
+    cm.mkStaticConstructor(StaticConstructorMethod(this.Desc), singletonStaticConstructor(Constructor, SingletonField)(_))
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
     cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
     cm.mkMethod(Nil, LookupFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
@@ -45,13 +46,13 @@ object GenRecordEmpty {
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
-  def SingletonField: StaticField = StaticField(this.desc, "INSTANCE", this.desc)
+  def SingletonField: StaticField = StaticField(this.Desc, "INSTANCE", this.Desc)
 
-  private def LookupFieldMethod: InstanceMethod = GenRecord.LookupFieldMethod.implementation(this.desc)
+  private def LookupFieldMethod: InstanceMethod = GenRecord.LookupFieldMethod.implementation(this.Desc)
 
-  private def RestrictFieldMethod: InstanceMethod = GenRecord.RestrictFieldMethod.implementation(this.desc)
+  private def RestrictFieldMethod: InstanceMethod = GenRecord.RestrictFieldMethod.implementation(this.Desc)
 
   private def throwUnsupportedExc(implicit mv: MethodVisitor): Unit = {
     throwUnsupportedOperationException(

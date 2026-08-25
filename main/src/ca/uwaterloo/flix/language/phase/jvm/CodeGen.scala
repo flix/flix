@@ -49,7 +49,7 @@ object CodeGen {
     val allTypes = root.types ++ requiredTypes
 
     val mainClass = root.getMain.map(
-      main => JvmClass(GenMain.desc, GenMain.genByteCode(main.sym))
+      main => JvmClass(GenMain.Desc, GenMain.genByteCode(main.sym))
     ).toList
 
     val namespaceClasses = namespacesOf(root).map {
@@ -66,55 +66,55 @@ object CodeGen {
       case (args, result) => JvmClass(GenAbstractArrow.desc(args, result), GenAbstractArrow.genByteCode(args, result))
     }.toList
 
-    val taggedAbstractClass = List(JvmClass(GenTagged.desc, GenTagged.genByteCode()))
+    val taggedAbstractClass = List(JvmClass(GenTagged.Desc, GenTagged.genByteCode()))
     val nullaryTagClasses = root.enums.values.flatMap(getNullaryTagsOf).toList.map { caze =>
       val enumName = caze.sym.enumSym.toString
       JvmClass(GenNullaryTag.desc(enumName, caze.sym.name), GenNullaryTag.genByteCode(enumName, caze.sym.name, caze.sym.ordinal))
     }
     val tagClasses = root.enums.values.flatMap(getTagsOf).toSet[List[ClassDesc]].toList.map(elms => JvmClass(GenTag.desc(elms), GenTag.genByteCode(elms)))
-    val extTaggedAbstractClass = List(JvmClass(GenExtTagged.desc, GenExtTagged.genByteCode()))
+    val extTaggedAbstractClass = List(JvmClass(GenExtTagged.Desc, GenExtTagged.genByteCode()))
     val extensibleTagClasses = getExtensibleTagTypesOf(allTypes).map(elms => JvmClass(GenExtTag.desc(elms), GenExtTag.genByteCode(elms))).toList
 
     val tupleClasses = getTupleTypesOf(allTypes).map(elms => JvmClass(GenTuple.desc(elms), GenTuple.genByteCode(elms))).toList
     val structClasses = root.structs.values.map(TypeDescs.structFields).toSet[List[ClassDesc]].toList.map(elms => JvmClass(GenStruct.desc(elms), GenStruct.genByteCode(elms)))
 
-    val recordInterfaces = List(JvmClass(GenRecord.desc, GenRecord.genByteCode()))
-    val recordEmptyClasses = List(JvmClass(GenRecordEmpty.desc, GenRecordEmpty.genByteCode()))
+    val recordInterfaces = List(JvmClass(GenRecord.Desc, GenRecord.genByteCode()))
+    val recordEmptyClasses = List(JvmClass(GenRecordEmpty.Desc, GenRecordEmpty.genByteCode()))
     val recordExtendClasses = getRecordExtendsOf(allTypes).map(value => JvmClass(GenRecordExtend.desc(value), GenRecordExtend.genByteCode(value))).toList
 
     val lazyClasses = getLazyTypesOf(allTypes).map(tpe => JvmClass(GenLazy.desc(tpe), GenLazy.genByteCode(tpe))).toList
 
     val anonClasses = GenAnonymousClasses.gen(root.anonClasses.distinctBy(_.name))
 
-    val unitClass = List(JvmClass(GenUnit.desc, GenUnit.genByteCode()))
+    val unitClass = List(JvmClass(GenUnit.Desc, GenUnit.genByteCode()))
 
     val flixErrorClass = List(JvmClass(ClassConstants.FlixError.Desc, ClassConstants.FlixError.genByteCode()))
-    val rslClass = List(JvmClass(GenReifiedSourceLocation.desc, GenReifiedSourceLocation.genByteCode()))
-    val holeErrorClass = List(JvmClass(GenHoleError.desc, GenHoleError.genByteCode()))
-    val matchErrorClass = List(JvmClass(GenMatchError.desc, GenMatchError.genByteCode()))
-    val castErrorClass = List(JvmClass(GenCastError.desc, GenCastError.genByteCode()))
-    val unhandledEffectErrorClass = List(JvmClass(GenUnhandledEffectError.desc, GenUnhandledEffectError.genByteCode()))
+    val rslClass = List(JvmClass(GenReifiedSourceLocation.Desc, GenReifiedSourceLocation.genByteCode()))
+    val holeErrorClass = List(JvmClass(GenHoleError.Desc, GenHoleError.genByteCode()))
+    val matchErrorClass = List(JvmClass(GenMatchError.Desc, GenMatchError.genByteCode()))
+    val castErrorClass = List(JvmClass(GenCastError.Desc, GenCastError.genByteCode()))
+    val unhandledEffectErrorClass = List(JvmClass(GenUnhandledEffectError.Desc, GenUnhandledEffectError.genByteCode()))
 
-    val globalClass = List(JvmClass(GenGlobal.desc, GenGlobal.genByteCode()))
+    val globalClass = List(JvmClass(GenGlobal.Desc, GenGlobal.genByteCode()))
 
-    val regionClass = List(JvmClass(GenRegion.desc, GenRegion.genByteCode()))
+    val regionClass = List(JvmClass(GenRegion.Desc, GenRegion.genByteCode()))
 
-    val uncaughtExceptionHandlerClass = List(JvmClass(GenUncaughtExceptionHandler.desc, GenUncaughtExceptionHandler.genByteCode()))
+    val uncaughtExceptionHandlerClass = List(JvmClass(GenUncaughtExceptionHandler.Desc, GenUncaughtExceptionHandler.genByteCode()))
 
     // Effect runtime classes.
-    val resultInterface = List(JvmClass(GenResult.desc, GenResult.genByteCode()))
-    val valueClass = List(JvmClass(GenValue.desc, GenValue.genByteCode()))
-    val frameInterface = List(JvmClass(GenFrame.desc, GenFrame.genByteCode()))
-    val thunkAbstractClass = List(JvmClass(GenThunk.desc, GenThunk.genByteCode()))
-    val suspensionClass = List(JvmClass(GenSuspension.desc, GenSuspension.genByteCode()))
-    val framesInterface = List(JvmClass(GenFrames.desc, GenFrames.genByteCode()))
-    val framesConsClass = List(JvmClass(GenFramesCons.desc, GenFramesCons.genByteCode()))
-    val framesNilClass = List(JvmClass(GenFramesNil.desc, GenFramesNil.genByteCode()))
-    val resumptionInterface = List(JvmClass(GenResumption.desc, GenResumption.genByteCode()))
-    val resumptionConsClass = List(JvmClass(GenResumptionCons.desc, GenResumptionCons.genByteCode()))
-    val resumptionNilClass = List(JvmClass(GenResumptionNil.desc, GenResumptionNil.genByteCode()))
-    val handlerInterface = List(JvmClass(GenHandler.desc, GenHandler.genByteCode()))
-    val effectCallClass = List(JvmClass(GenEffectCall.desc, GenEffectCall.genByteCode()))
+    val resultInterface = List(JvmClass(GenResult.Desc, GenResult.genByteCode()))
+    val valueClass = List(JvmClass(GenValue.Desc, GenValue.genByteCode()))
+    val frameInterface = List(JvmClass(GenFrame.Desc, GenFrame.genByteCode()))
+    val thunkAbstractClass = List(JvmClass(GenThunk.Desc, GenThunk.genByteCode()))
+    val suspensionClass = List(JvmClass(GenSuspension.Desc, GenSuspension.genByteCode()))
+    val framesInterface = List(JvmClass(GenFrames.Desc, GenFrames.genByteCode()))
+    val framesConsClass = List(JvmClass(GenFramesCons.Desc, GenFramesCons.genByteCode()))
+    val framesNilClass = List(JvmClass(GenFramesNil.Desc, GenFramesNil.genByteCode()))
+    val resumptionInterface = List(JvmClass(GenResumption.Desc, GenResumption.genByteCode()))
+    val resumptionConsClass = List(JvmClass(GenResumptionCons.Desc, GenResumptionCons.genByteCode()))
+    val resumptionNilClass = List(JvmClass(GenResumptionNil.Desc, GenResumptionNil.genByteCode()))
+    val handlerInterface = List(JvmClass(GenHandler.Desc, GenHandler.genByteCode()))
+    val effectCallClass = List(JvmClass(GenEffectCall.Desc, GenEffectCall.genByteCode()))
     val effectClasses = GenEffectClasses.gen(root.effects.values)
     val resumptionWrappers = TypeDescs.erasedTypes.map(tpe => JvmClass(GenResumptionWrapper.desc(tpe), GenResumptionWrapper.genByteCode(tpe)))
 
@@ -179,7 +179,7 @@ object CodeGen {
     }
     val main = root.mainEntryPoint.map{
       case _ =>
-        BytecodeAst.Def(GenMain.desc, GenMain.MainMethod.name)
+        BytecodeAst.Def(GenMain.Desc, GenMain.MainMethod.name)
     }
     BytecodeAst.Root(classMap, tests, main, root.sources)
   }(DebugNoOp())

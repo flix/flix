@@ -30,21 +30,22 @@ import java.lang.constant.ClassDesc
 /** The `Unit` class, whose single instance is the Flix unit value. */
 object GenUnit {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Unit"))
+  /** The JVM class descriptor for the generated `Unit` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Unit"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(this.desc, IsFinal)
+    val cm = mkClass(this.Desc, IsFinal)
 
-    cm.mkStaticConstructor(StaticConstructorMethod(this.desc), singletonStaticConstructor(Constructor, SingletonField)(_))
+    cm.mkStaticConstructor(StaticConstructorMethod(this.Desc), singletonStaticConstructor(Constructor, SingletonField)(_))
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
     cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
 
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
-  def SingletonField: StaticField = StaticField(this.desc, "INSTANCE", this.desc)
+  def SingletonField: StaticField = StaticField(this.Desc, "INSTANCE", this.Desc)
 
 
 }

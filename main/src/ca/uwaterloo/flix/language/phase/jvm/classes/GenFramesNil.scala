@@ -30,24 +30,25 @@ import java.lang.constant.ClassDesc
 /** The empty [[GenFrames]] stack. */
 object GenFramesNil {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("FramesNil"))
+  /** The JVM class descriptor for the generated `FramesNil` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("FramesNil"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(this.desc, IsFinal, interfaces = List(GenFrames.desc))
+    val cm = mkClass(this.Desc, IsFinal, interfaces = List(GenFrames.Desc))
 
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
     cm.mkMethod(Nil, PushMethod, IsPublic, IsFinal, GenFrames.pushImplementation(_))
-    cm.mkMethod(Nil, GenFrames.ReverseOntoMethod.implementation(this.desc), IsPublic, IsFinal, reverseOntoIns(_))
+    cm.mkMethod(Nil, GenFrames.ReverseOntoMethod.implementation(this.Desc), IsPublic, IsFinal, reverseOntoIns(_))
 
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
-  def PushMethod: InstanceMethod = GenFrames.PushMethod.implementation(this.desc)
+  def PushMethod: InstanceMethod = GenFrames.PushMethod.implementation(this.Desc)
 
   private def reverseOntoIns(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenFrames.desc) { rest =>
+    withName(1, GenFrames.Desc) { rest =>
       rest.load()
       xReturn(rest.tpe)
     }

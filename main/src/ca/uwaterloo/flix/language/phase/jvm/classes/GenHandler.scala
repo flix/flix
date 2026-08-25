@@ -37,37 +37,38 @@ import java.lang.constant.ClassDesc
   */
 object GenHandler {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Handler"))
+  /** The JVM class descriptor for the generated `Handler` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Handler"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkInterface(this.desc)
+    val cm = mkInterface(this.Desc)
     cm.mkStaticInterfaceMethod(InstallHandlerMethod, IsPublic, NotFinal, installHandlerIns(_))
     cm.closeClassMaker()
   }
 
   def InstallHandlerMethod: StaticInterfaceMethod = StaticInterfaceMethod(
-    this.desc,
+    this.Desc,
     "installHandler",
-    mkDescriptor(JavaClasses.String, GenHandler.desc, GenFrames.desc, GenThunk.desc)(GenResult.desc)
+    mkDescriptor(JavaClasses.String, GenHandler.Desc, GenFrames.Desc, GenThunk.Desc)(GenResult.Desc)
   )
 
   private def installHandlerIns(implicit mv: MethodVisitor): Unit = {
     withName(0, JavaClasses.String) { effSym =>
-      withName(1, GenHandler.desc) { handler =>
-        withName(2, GenFrames.desc) { frames =>
-          withName(3, GenThunk.desc) { thunk =>
+      withName(1, GenHandler.Desc) { handler =>
+        withName(2, GenFrames.Desc) { frames =>
+          withName(3, GenThunk.Desc) { thunk =>
             thunk.load()
             // Thunk|Value|Suspension
             GenResult.unwindThunk()
             // Value|Suspension
             // handle suspension
             DUP()
-            INSTANCEOF(GenSuspension.desc)
+            INSTANCEOF(GenSuspension.Desc)
             ifCondition(Condition.NE) {
               DUP()
-              CHECKCAST(GenSuspension.desc)
-              storeWithName(4, GenSuspension.desc) { s =>
-                NEW(GenResumptionCons.desc)
+              CHECKCAST(GenSuspension.Desc)
+              storeWithName(4, GenSuspension.Desc) { s =>
+                NEW(GenResumptionCons.Desc)
                 DUP()
                 INVOKESPECIAL(GenResumptionCons.Constructor)
                 DUP()
@@ -86,7 +87,7 @@ object GenHandler {
                 s.load()
                 GETFIELD(GenSuspension.ResumptionField)
                 PUTFIELD(GenResumptionCons.TailField)
-                storeWithName(5, GenResumptionCons.desc) { r =>
+                storeWithName(5, GenResumptionCons.Desc) { r =>
                   s.load()
                   GETFIELD(GenSuspension.EffSymField)
                   effSym.load()
@@ -97,9 +98,9 @@ object GenHandler {
                     handler.load()
                     r.load()
                     INVOKEINTERFACE(GenEffectCall.ApplyMethod)
-                    xReturn(GenResult.desc)
+                    xReturn(GenResult.Desc)
                   }
-                  NEW(GenSuspension.desc)
+                  NEW(GenSuspension.Desc)
                   DUP()
                   INVOKESPECIAL(GenSuspension.Constructor)
                   DUP()
@@ -111,34 +112,34 @@ object GenHandler {
                   GETFIELD(GenSuspension.EffOpField)
                   PUTFIELD(GenSuspension.EffOpField)
                   DUP()
-                  NEW(GenFramesNil.desc)
+                  NEW(GenFramesNil.Desc)
                   DUP()
                   INVOKESPECIAL(GenFramesNil.Constructor)
                   PUTFIELD(GenSuspension.PrefixField)
                   DUP()
                   r.load()
                   PUTFIELD(GenSuspension.ResumptionField)
-                  xReturn(GenSuspension.desc)
+                  xReturn(GenSuspension.Desc)
                 }
               }
             }
 
             // Value
-            CHECKCAST(GenValue.desc)
-            storeWithName(6, GenValue.desc) { res =>
+            CHECKCAST(GenValue.Desc)
+            storeWithName(6, GenValue.Desc) { res =>
               //
               // Case on frames
               // FramesNil
               frames.load()
-              INSTANCEOF(GenFramesNil.desc)
+              INSTANCEOF(GenFramesNil.Desc)
               ifCondition(Condition.NE) {
                 res.load()
-                xReturn(GenValue.desc)
+                xReturn(GenValue.Desc)
               }
               // FramesCons
               frames.load()
-              CHECKCAST(GenFramesCons.desc)
-              storeWithName(7, GenFramesCons.desc) { cons => {
+              CHECKCAST(GenFramesCons.Desc)
+              storeWithName(7, GenFramesCons.Desc) { cons => {
                 effSym.load()
                 handler.load()
                 cons.load()
@@ -149,7 +150,7 @@ object GenHandler {
                 res.load()
                 mkStaticLambda(GenThunk.InvokeMethod, GenFrame.StaticApplyMethod, drop = 0)
                 INVOKESTATIC(InstallHandlerMethod)
-                xReturn(GenResult.desc)
+                xReturn(GenResult.Desc)
               }
               }
             }

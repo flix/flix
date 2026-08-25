@@ -34,10 +34,11 @@ import java.lang.constant.ClassDesc
   */
 object GenUncaughtExceptionHandler {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("UncaughtExceptionHandler"))
+  /** The JVM class descriptor for the generated `UncaughtExceptionHandler` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("UncaughtExceptionHandler"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(this.desc, IsFinal, interfaces = List(JavaClasses.Thread$UncaughtExceptionHandler))
+    val cm = mkClass(this.Desc, IsFinal, interfaces = List(JavaClasses.Thread$UncaughtExceptionHandler))
 
     cm.mkField(RegionField, IsPrivate, IsFinal, NotVolatile)
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
@@ -47,10 +48,10 @@ object GenUncaughtExceptionHandler {
   }
 
   // private final Region r;
-  private def RegionField: InstanceField = InstanceField(this.desc, "r", GenRegion.desc)
+  private def RegionField: InstanceField = InstanceField(this.Desc, "r", GenRegion.Desc)
 
   // UncaughtExceptionHandler(Region r) { this.r = r; }
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, GenRegion.desc :: Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, GenRegion.Desc :: Nil)
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()
@@ -63,7 +64,7 @@ object GenUncaughtExceptionHandler {
 
   // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
   private def UncaughtExceptionMethod: InstanceMethod =
-    InstanceMethod(this.desc, "uncaughtException", ClassConstants.ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d)
+    InstanceMethod(this.Desc, "uncaughtException", ClassConstants.ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d)
 
   private def uncaughtExceptionsIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()

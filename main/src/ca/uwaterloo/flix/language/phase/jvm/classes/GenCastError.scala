@@ -32,20 +32,21 @@ import java.lang.constant.ClassDesc
   */
 object GenCastError {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("CastError"))
+  /** The JVM class descriptor for the generated `CastError` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("CastError"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
 
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(GenReifiedSourceLocation.desc, JavaClasses.String))
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, List(GenReifiedSourceLocation.Desc, JavaClasses.String))
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenReifiedSourceLocation.desc)(loc => withName(2, JavaClasses.String)(msg => {
+    withName(1, GenReifiedSourceLocation.Desc)(loc => withName(2, JavaClasses.String)(msg => {
       thisLoad()
       NEW(JavaClasses.StringBuilder)
       DUP()

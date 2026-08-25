@@ -31,10 +31,11 @@ import java.lang.constant.ClassDesc
 /** The abstract base class of every extensible tag class, carrying the tag's name. */
 object GenExtTagged {
 
-  val desc: ClassDesc = mkDesc(RootPackage, Mangle.mkClassName("ExtTagged"))
+  /** The JVM class descriptor for the generated `ExtTagged` class. */
+  val Desc: ClassDesc = mkDesc(RootPackage, Mangle.mkClassName("ExtTagged"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkAbstractClass(this.desc)
+    val cm = ClassMaker.mkAbstractClass(this.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
 
@@ -43,9 +44,9 @@ object GenExtTagged {
     cm.closeClassMaker()
   }
 
-  def NameField: InstanceField = InstanceField(this.desc, "tag", JavaClasses.String)
+  def NameField: InstanceField = InstanceField(this.Desc, "tag", JavaClasses.String)
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
   /** [...] -> [..., tagName] */
   def mkTagName(name: String)(implicit mv: MethodVisitor): Unit = pushString(Mangle.mangle(name))

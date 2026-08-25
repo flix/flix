@@ -30,21 +30,22 @@ import java.lang.constant.ClassDesc
 /** The empty [[GenResumption]]: rewinding it just yields the value it is given. */
 object GenResumptionNil {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("ResumptionNil"))
+  /** The JVM class descriptor for the generated `ResumptionNil` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("ResumptionNil"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(this.desc, IsFinal, interfaces = List(GenResumption.desc))
+    val cm = mkClass(this.Desc, IsFinal, interfaces = List(GenResumption.Desc))
 
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-    cm.mkMethod(Nil, GenResumption.RewindMethod.implementation(this.desc), IsPublic, IsFinal, rewindIns(_))
+    cm.mkMethod(Nil, GenResumption.RewindMethod.implementation(this.Desc), IsPublic, IsFinal, rewindIns(_))
 
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
   private def rewindIns(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenValue.desc) { v =>
+    withName(1, GenValue.Desc) { v =>
       v.load()
       xReturn(v.tpe)
     }

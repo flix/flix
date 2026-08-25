@@ -34,10 +34,11 @@ import java.lang.constant.ClassDesc
   */
 object GenResult {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Result"))
+  /** The JVM class descriptor for the generated `Result` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Result"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkInterface(this.desc)
+    val cm = mkInterface(this.Desc)
     cm.closeClassMaker()
   }
 
@@ -48,9 +49,9 @@ object GenResult {
   def unwindThunk()(implicit mv: MethodVisitor): Unit = {
     whileLoop(Condition.NE) {
       DUP()
-      INSTANCEOF(GenThunk.desc)
+      INSTANCEOF(GenThunk.Desc)
     } {
-      CHECKCAST(GenThunk.desc)
+      CHECKCAST(GenThunk.Desc)
       INVOKEINTERFACE(GenThunk.InvokeMethod)
     }
   }
@@ -64,12 +65,12 @@ object GenResult {
     */
   private def handleSuspension(pc: Int, newFrame: MethodVisitor => Unit, setPc: MethodVisitor => Unit)(implicit mv: MethodVisitor): Unit = {
     DUP()
-    INSTANCEOF(GenSuspension.desc)
+    INSTANCEOF(GenSuspension.Desc)
     ifCondition(Condition.NE) {
       DUP()
-      CHECKCAST(GenSuspension.desc) // [..., s]
+      CHECKCAST(GenSuspension.Desc) // [..., s]
       // Add our new frame
-      NEW(GenSuspension.desc)
+      NEW(GenSuspension.Desc)
       DUP()
       INVOKESPECIAL(GenSuspension.Constructor) // [..., s, s']
       SWAP() // [..., s', s]
@@ -93,7 +94,7 @@ object GenResult {
       PUTFIELD(GenSuspension.PrefixField) // [..., s', s]
       POP() // [..., s']
       // Return the suspension up the stack
-      xReturn(GenSuspension.desc)
+      xReturn(GenSuspension.Desc)
     }
   }
 
@@ -106,7 +107,7 @@ object GenResult {
   def unwindThunkToValue(pc: Int, newFrame: MethodVisitor => Unit, setPc: MethodVisitor => Unit)(implicit mv: MethodVisitor): Unit = {
     unwindThunk()
     handleSuspension(pc, newFrame, setPc)
-    CHECKCAST(GenValue.desc) // Cannot fail
+    CHECKCAST(GenValue.Desc) // Cannot fail
   }
 
   /**
@@ -118,7 +119,7 @@ object GenResult {
   def unwindSuspensionFreeThunkToType(tpe: ClassDesc, errorHint: String, loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
     unwindThunk()
     crashIfSuspension(errorHint, loc)
-    CHECKCAST(GenValue.desc) // Cannot fail
+    CHECKCAST(GenValue.Desc) // Cannot fail
     GETFIELD(GenValue.fieldFromType(tpe))
     castIfNotPrim(tpe)
   }
@@ -132,7 +133,7 @@ object GenResult {
   def unwindSuspensionFreeThunk(errorHint: String, loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
     unwindThunk()
     crashIfSuspension(errorHint, loc)
-    CHECKCAST(GenValue.desc)
+    CHECKCAST(GenValue.Desc)
   }
 
   /**
@@ -141,10 +142,10 @@ object GenResult {
     */
   def crashIfSuspension(errorHint: String, loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
     DUP()
-    INSTANCEOF(GenSuspension.desc)
+    INSTANCEOF(GenSuspension.Desc)
     ifCondition(Condition.NE) {
-      CHECKCAST(GenSuspension.desc)
-      NEW(GenUnhandledEffectError.desc)
+      CHECKCAST(GenSuspension.Desc)
+      NEW(GenUnhandledEffectError.Desc)
       // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
       DUP2()
       SWAP()

@@ -30,14 +30,15 @@ import java.lang.constant.ClassDesc
   */
 object GenEffectCall {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("EffectCall"))
+  /** The JVM class descriptor for the generated `EffectCall` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("EffectCall"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkInterface(this.desc)
+    val cm = mkInterface(this.Desc)
     cm.mkInterfaceMethod(ApplyMethod)
     cm.closeClassMaker()
   }
 
-  def ApplyMethod: InterfaceMethod = InterfaceMethod(this.desc, "apply", mkDescriptor(GenHandler.desc, GenResumption.desc)(GenResult.desc))
+  def ApplyMethod: InterfaceMethod = InterfaceMethod(this.Desc, "apply", mkDescriptor(GenHandler.Desc, GenResumption.Desc)(GenResult.Desc))
 
 }

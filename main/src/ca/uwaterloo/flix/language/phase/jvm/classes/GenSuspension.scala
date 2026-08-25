@@ -34,10 +34,11 @@ import java.lang.constant.ClassDesc
   */
 object GenSuspension {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Suspension"))
+  /** The JVM class descriptor for the generated `Suspension` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Suspension"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(this.desc, IsFinal, interfaces = List(GenResult.desc))
+    val cm = mkClass(this.Desc, IsFinal, interfaces = List(GenResult.Desc))
 
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
     cm.mkField(EffSymField, IsPublic, NotFinal, NotVolatile)
@@ -48,14 +49,14 @@ object GenSuspension {
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
-  def EffSymField: InstanceField = InstanceField(this.desc, "effSym", JavaClasses.String)
+  def EffSymField: InstanceField = InstanceField(this.Desc, "effSym", JavaClasses.String)
 
-  def EffOpField: InstanceField = InstanceField(this.desc, "effOp", GenEffectCall.desc)
+  def EffOpField: InstanceField = InstanceField(this.Desc, "effOp", GenEffectCall.Desc)
 
-  def PrefixField: InstanceField = InstanceField(this.desc, "prefix", GenFrames.desc)
+  def PrefixField: InstanceField = InstanceField(this.Desc, "prefix", GenFrames.Desc)
 
-  def ResumptionField: InstanceField = InstanceField(this.desc, "resumption", GenResumption.desc)
+  def ResumptionField: InstanceField = InstanceField(this.Desc, "resumption", GenResumption.Desc)
 
 }

@@ -41,7 +41,7 @@ object GenExtTag {
     mkDesc(RootPackage, Mangle.mkClassName("ExtTag", elms.map(Mangle.erasedName)))
 
   def genByteCode(elms: List[ClassDesc])(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(desc(elms), IsFinal, superClass = GenExtTagged.desc)
+    val cm = ClassMaker.mkClass(desc(elms), IsFinal, superClass = GenExtTagged.Desc)
 
     cm.mkConstructor(Constructor(elms), IsPublic, nullarySuperConstructor(GenExtTagged.Constructor)(_))
     elms.indices.foreach(i => cm.mkField(IndexField(elms, i), IsPublic, NotFinal, NotVolatile))
