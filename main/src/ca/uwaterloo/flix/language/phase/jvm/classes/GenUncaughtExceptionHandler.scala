@@ -47,10 +47,10 @@ object GenUncaughtExceptionHandler {
   }
 
   // private final Region r;
-  private def RegionField: InstanceField = InstanceField(this.desc, "r", BackendObjType.Region.desc)
+  private def RegionField: InstanceField = InstanceField(this.desc, "r", GenRegion.desc)
 
   // UncaughtExceptionHandler(Region r) { this.r = r; }
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, BackendObjType.Region.desc :: Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, GenRegion.desc :: Nil)
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()
@@ -69,7 +69,7 @@ object GenUncaughtExceptionHandler {
     thisLoad()
     GETFIELD(RegionField)
     ALOAD(2)
-    INVOKEVIRTUAL(BackendObjType.Region.ReportChildExceptionMethod)
+    INVOKEVIRTUAL(GenRegion.ReportChildExceptionMethod)
     RETURN()
   }
 

@@ -41,7 +41,6 @@ sealed trait BackendObjType {
     * The [[ClassDesc]] of this type, e.g. the type `Ref(Int)` refers to `"Ref$Int"`.
     */
   val desc: ClassDesc = this match {
-    case BackendObjType.Unit => mkDesc(DevFlixRuntime, mkClassName("Unit"))
     case BackendObjType.Lazy(tpe) => mkDesc(RootPackage, Mangle.mkClassName("Lazy", Mangle.erasedName(tpe)))
     case BackendObjType.Tuple(elms) => mkDesc(RootPackage, Mangle.mkClassName("Tuple", elms.map(Mangle.erasedName)))
     case BackendObjType.Struct(elms) => mkDesc(RootPackage, Mangle.mkClassName("Struct", elms.map(Mangle.erasedName)))
@@ -51,7 +50,6 @@ sealed trait BackendObjType {
     case BackendObjType.Arrow(args, result) => mkDesc(RootPackage, Mangle.mkClassName(s"Fn${args.length}", (args :+ result).map(Mangle.erasedName)))
     case BackendObjType.RecordEmpty => mkDesc(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.Record => mkDesc(RootPackage, mkClassName("Record"))
-    case BackendObjType.Region => mkDesc(DevFlixRuntime, mkClassName("Region"))
     // Java classes
     case BackendObjType.Native(clazz) => clazz
     // Effects Runtime
@@ -67,23 +65,6 @@ object BackendObjType {
 
   private def mkClassName(prefix: String): String = {
     Mangle.mkClassName(prefix)
-  }
-
-  case object Unit extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal)
-
-      cm.mkStaticConstructor(StaticConstructorMethod(this.desc), singletonStaticConstructor(Constructor, SingletonField)(_))
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    def SingletonField: StaticField = StaticField(this.desc, "INSTANCE", this.desc)
-
   }
 
   case class Lazy(tpe: ClassDesc) extends BackendObjType {
@@ -658,180 +639,4 @@ object BackendObjType {
     * represents this type.
     */
   case class Native(clazz: ClassDesc) extends BackendObjType
-
-
-  case object Region extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal)
-
-      cm.mkField(ThreadsField, IsPrivate, IsFinal, NotVolatile)
-      cm.mkField(RegionThreadField, IsPrivate, IsFinal, NotVolatile)
-      cm.mkField(ChildExceptionField, IsPrivate, NotFinal, IsVolatile)
-      cm.mkField(OnExitField, IsPrivate, IsFinal, NotVolatile)
-
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-
-      cm.mkMethod(Nil, SpawnMethod, IsPublic, IsFinal, spawnIns(_))
-      cm.mkMethod(Nil, ExitMethod, IsPublic, IsFinal, exitIns(_))
-      cm.mkMethod(Nil, ReportChildExceptionMethod, IsPublic, IsFinal, reportChildExceptionIns(_))
-      cm.mkMethod(Nil, ReThrowChildExceptionMethod, IsPublic, IsFinal, reThrowChildExceptionIns(_))
-      cm.mkMethod(Nil, RunOnExitMethod, IsPublic, IsFinal, runOnExitIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
-    private def ThreadsField: InstanceField = InstanceField(this.desc, "threads", JavaClasses.ConcurrentLinkedQueue)
-
-    // private final LinkedList<Runnable> onExit = new LinkedList<Runnable>();
-    private def OnExitField: InstanceField = InstanceField(this.desc, "onExit", JavaClasses.LinkedList)
-
-    // private final Thread regionThread = Thread.currentThread();
-    private def RegionThreadField: InstanceField = InstanceField(this.desc, "regionThread", JavaClasses.Thread)
-
-    // private volatile Throwable childException = null;
-    private def ChildExceptionField: InstanceField = InstanceField(this.desc, "childException", JavaClasses.Throwable)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      INVOKESPECIAL(ClassConstants.Object.Constructor)
-      thisLoad()
-      NEW(JavaClasses.ConcurrentLinkedQueue)
-      DUP()
-      invokeConstructor(JavaClasses.ConcurrentLinkedQueue, MethodTypeDescs.NothingToVoid)
-      PUTFIELD(ThreadsField)
-      thisLoad()
-      INVOKESTATIC(ClassConstants.Thread.CurrentThreadMethod)
-      PUTFIELD(RegionThreadField)
-      thisLoad()
-      ACONST_NULL()
-      PUTFIELD(ChildExceptionField)
-      thisLoad()
-      NEW(JavaClasses.LinkedList)
-      DUP()
-      invokeConstructor(JavaClasses.LinkedList, MethodTypeDescs.NothingToVoid)
-      PUTFIELD(OnExitField)
-      RETURN()
-    }
-
-    // final public void spawn(Runnable r) {
-    //   Thread t = new Thread(r);
-    //   t.setUncaughtExceptionHandler(new UncaughtExceptionHandler(this));
-    //   t.start();
-    //   threads.add(t);
-    // }
-    def SpawnMethod: InstanceMethod = InstanceMethod(this.desc, "spawn", mkVoidDescriptor(JavaClasses.Runnable))
-
-    private def spawnIns(implicit mv: MethodVisitor): Unit = {
-      INVOKESTATIC(ClassConstants.Thread.OfVirtualMethod)
-      ALOAD(1)
-      INVOKEINTERFACE(ClassConstants.ThreadBuilderOfVirtual.UnstartedMethod)
-      storeWithName(2, JavaClasses.Thread) { thread =>
-        thread.load()
-        NEW(GenUncaughtExceptionHandler.desc)
-        DUP()
-        thisLoad()
-        invokeConstructor(GenUncaughtExceptionHandler.desc, mkVoidDescriptor(BackendObjType.Region.desc))
-        INVOKEVIRTUAL(ClassConstants.Thread.SetUncaughtExceptionHandlerMethod)
-        thread.load()
-        INVOKEVIRTUAL(ClassConstants.Thread.StartMethod)
-        thisLoad()
-        GETFIELD(ThreadsField)
-        thread.load()
-        INVOKEVIRTUAL(ClassConstants.ConcurrentLinkedQueue.AddMethod)
-        POP()
-        RETURN()
-      }
-    }
-
-    // final public void exit() throws InterruptedException {
-    //   Thread t;
-    //   while ((t = threads.poll()) != null)
-    //     t.join();
-    //   for (Runnable r: onExit)
-    //     r.run();
-    // }
-    def ExitMethod: InstanceMethod = InstanceMethod(this.desc, "exit", MethodTypeDescs.NothingToVoid)
-
-    private def exitIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, JavaClasses.Thread) { t =>
-        whileLoop(Condition.NONNULL) {
-          thisLoad()
-          GETFIELD(ThreadsField)
-          INVOKEVIRTUAL(ClassConstants.ConcurrentLinkedQueue.PollMethod)
-          CHECKCAST(JavaClasses.Thread)
-          DUP()
-          t.store()
-        } {
-          t.load()
-          INVOKEVIRTUAL(ClassConstants.Thread.JoinMethod)
-        }
-        withName(2, JavaClasses.Iterator) { i =>
-          thisLoad()
-          GETFIELD(OnExitField)
-          INVOKEVIRTUAL(ClassConstants.LinkedList.IteratorMethod)
-          i.store()
-          whileLoop(Condition.NE) {
-            i.load()
-            INVOKEINTERFACE(ClassConstants.Iterator.HasNextMethod)
-          } {
-            i.load()
-            INVOKEINTERFACE(ClassConstants.Iterator.NextMethod)
-            CHECKCAST(JavaClasses.Runnable)
-            INVOKEINTERFACE(ClassConstants.Runnable.RunMethod)
-          }
-        }
-        RETURN()
-      }
-    }
-
-    // final public void reportChildException(Throwable e) {
-    //   childException = e;
-    //   regionThread.interrupt();
-    // }
-    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.desc, "reportChildException", mkVoidDescriptor(JavaClasses.Throwable))
-
-    private def reportChildExceptionIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      ALOAD(1)
-      PUTFIELD(ChildExceptionField)
-      thisLoad()
-      GETFIELD(RegionThreadField)
-      INVOKEVIRTUAL(ClassConstants.Thread.InterruptMethod)
-      RETURN()
-    }
-
-    // final public void reThrowChildException() throws Throwable {
-    //   if (childException != null)
-    //     throw childException;
-    // }
-    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.desc, "reThrowChildException", MethodTypeDescs.NothingToVoid)
-
-    private def reThrowChildExceptionIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      GETFIELD(ChildExceptionField)
-      ifCondition(Condition.NONNULL) {
-        thisLoad()
-        GETFIELD(ChildExceptionField)
-        ATHROW()
-      }
-      RETURN()
-    }
-
-    // final public void runOnExit(Runnable r) {
-    //   onExit.addFirst(r);
-    // }
-    private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.desc, "runOnExit", mkVoidDescriptor(JavaClasses.Runnable))
-
-    private def runOnExitIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      GETFIELD(OnExitField)
-      ALOAD(1)
-      INVOKEVIRTUAL(ClassConstants.LinkedList.AddFirstMethod)
-      RETURN()
-    }
-  }
 }

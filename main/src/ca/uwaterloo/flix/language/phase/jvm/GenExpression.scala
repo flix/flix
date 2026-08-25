@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenMatchError, GenNullaryTag, GenRecordExtend, GenResult, GenResumption, GenResumptionNil, GenSuspension, GenTag, GenThunk, GenValue}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenMatchError, GenNullaryTag, GenRecordExtend, GenRegion, GenResult, GenResumption, GenResumptionNil, GenSuspension, GenTag, GenThunk, GenUnit, GenValue}
 import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.{CD_double, CD_int, CD_long, CD_void}
@@ -113,7 +113,7 @@ object GenExpression {
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(cst, loc) => cst match {
       case Constant.Unit =>
-        GETSTATIC(BackendObjType.Unit.SingletonField)
+        GETSTATIC(GenUnit.SingletonField)
 
       case Constant.Null =>
         ACONST_NULL()
@@ -182,7 +182,7 @@ object GenExpression {
       case Constant.Static =>
         //!TODO: For now, just emit null
         ACONST_NULL()
-        CHECKCAST(BackendObjType.Region.desc)
+        CHECKCAST(GenRegion.desc)
 
     }
 
@@ -739,7 +739,7 @@ object GenExpression {
         compileExpr(exp2) // Evaluating the index
         compileExpr(exp3) // Evaluating the element
         xArrayStore(elmTpe)
-        GETSTATIC(BackendObjType.Unit.SingletonField)
+        GETSTATIC(GenUnit.SingletonField)
 
       case AtomicOp.ArrayLength =>
         val List(exp) = exps
@@ -787,7 +787,7 @@ object GenExpression {
         compileExpr(exp1)
         compileExpr(exp2)
         PUTFIELD(structType.IndexField(idx))
-        GETSTATIC(BackendObjType.Unit.SingletonField)
+        GETSTATIC(GenUnit.SingletonField)
 
       case AtomicOp.InstanceOf(clazz) =>
         val List(exp) = exps
@@ -881,7 +881,7 @@ object GenExpression {
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
-          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.desc), GenUnit.SingletonField.name, GenUnit.desc.descriptorString())
         }
 
       case AtomicOp.InvokeSuperMethod(sym, method) =>
@@ -908,7 +908,7 @@ object GenExpression {
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
-          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.desc), GenUnit.SingletonField.name, GenUnit.desc.descriptorString())
         }
 
       case AtomicOp.InvokeStaticMethod(method) =>
@@ -921,7 +921,7 @@ object GenExpression {
         val declaration = internalNameOf(method.owner)
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, declaration, method.name, method.descriptor.descriptorString(), method.isInterface)
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
-          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.desc), GenUnit.SingletonField.name, GenUnit.desc.descriptorString())
         }
 
       case AtomicOp.GetField(field) =>
@@ -942,7 +942,7 @@ object GenExpression {
         mv.visitFieldInsn(Opcodes.PUTFIELD, declaration, field.name, TypeDescs.toClassDesc(exp2.tpe).descriptorString())
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.desc), GenUnit.SingletonField.name, GenUnit.desc.descriptorString())
 
       case AtomicOp.GetStaticField(field) =>
         // Add source line number for debugging (can fail when calling java)
@@ -959,7 +959,7 @@ object GenExpression {
         mv.visitFieldInsn(Opcodes.PUTSTATIC, declaration, field.name, TypeDescs.toClassDesc(exp.tpe).descriptorString())
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.desc), GenUnit.SingletonField.name, GenUnit.desc.descriptorString())
 
       case AtomicOp.Throw =>
         val List(exp) = exps
@@ -978,15 +978,15 @@ object GenExpression {
             CHECKCAST(JavaClasses.Runnable)
             INVOKESTATIC(ClassConstants.Thread.StartVirtualThreadMethod)
             POP()
-            GETSTATIC(BackendObjType.Unit.SingletonField)
+            GETSTATIC(GenUnit.SingletonField)
           case _ =>
             addLoc(loc)
             compileExpr(exp2)
-            CHECKCAST(BackendObjType.Region.desc)
+            CHECKCAST(GenRegion.desc)
             compileExpr(exp1)
             CHECKCAST(JavaClasses.Runnable)
-            INVOKEVIRTUAL(BackendObjType.Region.SpawnMethod)
-            GETSTATIC(BackendObjType.Unit.SingletonField)
+            INVOKEVIRTUAL(GenRegion.SpawnMethod)
+            GETSTATIC(GenUnit.SingletonField)
         }
 
       case AtomicOp.Lazy =>
@@ -1425,12 +1425,12 @@ object GenExpression {
       val afterFinally = new Label()
 
       // Create an instance of Region
-      mv.visitTypeInsn(Opcodes.NEW, internalNameOf(BackendObjType.Region.desc))
+      mv.visitTypeInsn(Opcodes.NEW, internalNameOf(GenRegion.desc))
       mv.visitInsn(Opcodes.DUP)
-      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, internalNameOf(BackendObjType.Region.desc), ClassMaker.ConstructorMethodName,
+      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, internalNameOf(GenRegion.desc), ClassMaker.ConstructorMethodName,
         MethodTypeDescs.NothingToVoid.descriptorString(), false)
 
-      xStore(BackendObjType.Region.desc, ctx.getIndex(offset))
+      xStore(GenRegion.desc, ctx.getIndex(offset))
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
@@ -1441,25 +1441,25 @@ object GenExpression {
       mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
-      xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(BackendObjType.Region.desc))
-      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ExitMethod.name,
-        BackendObjType.Region.ExitMethod.d.descriptorString(), false)
+      xLoad(GenRegion.desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.desc), GenRegion.ExitMethod.name,
+        GenRegion.ExitMethod.d.descriptorString(), false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
-      xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(BackendObjType.Region.desc))
-      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ReThrowChildExceptionMethod.name,
-        BackendObjType.Region.ReThrowChildExceptionMethod.d.descriptorString(), false)
+      xLoad(GenRegion.desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.desc), GenRegion.ReThrowChildExceptionMethod.name,
+        GenRegion.ReThrowChildExceptionMethod.d.descriptorString(), false)
       mv.visitJumpInsn(Opcodes.GOTO, afterFinally)
 
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
-      xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(BackendObjType.Region.desc))
-      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ReThrowChildExceptionMethod.name,
-        BackendObjType.Region.ReThrowChildExceptionMethod.d.descriptorString(), false)
+      xLoad(GenRegion.desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.desc), GenRegion.ReThrowChildExceptionMethod.name,
+        GenRegion.ReThrowChildExceptionMethod.d.descriptorString(), false)
       mv.visitInsn(Opcodes.ATHROW)
       mv.visitLabel(afterFinally)
 

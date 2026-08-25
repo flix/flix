@@ -69,7 +69,7 @@ object GenValue {
     DUP()
     INVOKESPECIAL(Constructor)
     DUP()
-    GETSTATIC(BackendObjType.Unit.SingletonField)
+    GETSTATIC(GenUnit.SingletonField)
     PUTFIELD(ObjectField)
     PUTSTATIC(UnitField)
     // Value.TRUE = new Value(); Value.TRUE.b = true
