@@ -33,10 +33,11 @@ import java.lang.constant.ClassDesc
   */
 object GenHoleError {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("HoleError"))
+  /** The JVM class descriptor for the generated `HoleError` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("HoleError"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.desc, IsFinal, ClassConstants.FlixError.Desc)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal, ClassConstants.FlixError.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
     // These fields allow external equality checking.
@@ -46,15 +47,15 @@ object GenHoleError {
     cm.closeClassMaker()
   }
 
-  private def HoleField: InstanceField = InstanceField(this.desc, "hole", JavaClasses.String)
+  private def HoleField: InstanceField = InstanceField(this.Desc, "hole", JavaClasses.String)
 
-  private def LocationField: InstanceField = InstanceField(this.desc, "location", GenReifiedSourceLocation.desc)
+  private def LocationField: InstanceField = InstanceField(this.Desc, "location", GenReifiedSourceLocation.Desc)
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(JavaClasses.String, GenReifiedSourceLocation.desc))
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, List(JavaClasses.String, GenReifiedSourceLocation.Desc))
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
     withName(1, JavaClasses.String) { hole =>
-      withName(2, GenReifiedSourceLocation.desc) { loc =>
+      withName(2, GenReifiedSourceLocation.Desc) { loc =>
         thisLoad()
         // create an error msg
         NEW(JavaClasses.StringBuilder)

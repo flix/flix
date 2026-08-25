@@ -34,22 +34,23 @@ import java.lang.constant.ClassDesc
   */
 object GenResumption {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Resumption"))
+  /** The JVM class descriptor for the generated `Resumption` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Resumption"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkInterface(this.desc)
+    val cm = mkInterface(this.Desc)
     cm.mkInterfaceMethod(RewindMethod)
     cm.mkStaticInterfaceMethod(StaticRewindMethod, IsPublic, NotFinal, staticRewindIns(_))
     cm.closeClassMaker()
   }
 
-  def RewindMethod: InterfaceMethod = InterfaceMethod(this.desc, "rewind", mkDescriptor(GenValue.desc)(GenResult.desc))
+  def RewindMethod: InterfaceMethod = InterfaceMethod(this.Desc, "rewind", mkDescriptor(GenValue.Desc)(GenResult.Desc))
 
-  def StaticRewindMethod: StaticInterfaceMethod = StaticInterfaceMethod(this.desc, "staticRewind", mkDescriptor(GenResumption.desc, GenValue.desc)(GenResult.desc))
+  def StaticRewindMethod: StaticInterfaceMethod = StaticInterfaceMethod(this.Desc, "staticRewind", mkDescriptor(GenResumption.Desc, GenValue.Desc)(GenResult.Desc))
 
   private def staticRewindIns(implicit mv: MethodVisitor): Unit = {
-    withName(0, GenResumption.desc) { resumption =>
-      withName(1, GenValue.desc) { v =>
+    withName(0, GenResumption.Desc) { resumption =>
+      withName(1, GenValue.Desc) { v =>
         resumption.load()
         v.load()
         INVOKEINTERFACE(GenResumption.RewindMethod)

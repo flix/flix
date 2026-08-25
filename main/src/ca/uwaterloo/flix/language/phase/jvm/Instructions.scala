@@ -465,7 +465,7 @@ object Instructions {
 
   /** Pushes a reified representation of `loc` onto the operand stack. */
   def pushLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
-    NEW(GenReifiedSourceLocation.desc)
+    NEW(GenReifiedSourceLocation.Desc)
     DUP()
     pushString(loc.source.name)
     pushInt(loc.startLine)

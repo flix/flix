@@ -32,10 +32,11 @@ import java.lang.constant.ConstantDescs.CD_int
 /** The abstract base class of every enum case class, carrying the case's ordinal. */
 object GenTagged {
 
-  val desc: ClassDesc = mkDesc(RootPackage, Mangle.mkClassName("Tagged"))
+  /** The JVM class descriptor for the generated `Tagged` class. */
+  val Desc: ClassDesc = mkDesc(RootPackage, Mangle.mkClassName("Tagged"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkAbstractClass(this.desc)
+    val cm = ClassMaker.mkAbstractClass(this.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
 
@@ -44,8 +45,8 @@ object GenTagged {
     cm.closeClassMaker()
   }
 
-  def OrdinalField: InstanceField = InstanceField(this.desc, "ordinal", CD_int)
+  def OrdinalField: InstanceField = InstanceField(this.Desc, "ordinal", CD_int)
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
 }

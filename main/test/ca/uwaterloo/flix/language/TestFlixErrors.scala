@@ -33,7 +33,7 @@ class TestFlixErrors extends AnyFunSuite {
       .setOptions(Options.TestWithLibMin)
       .addVirtualPath(CompilerConstants.VirtualTestFile, input)
       .compile()
-    expectRuntimeError(result, GenHoleError.desc.displayName())
+    expectRuntimeError(result, GenHoleError.Desc.displayName())
   }
 
   test("HoleError.02") {
@@ -42,7 +42,7 @@ class TestFlixErrors extends AnyFunSuite {
       .setOptions(Options.TestWithLibMin)
       .addVirtualPath(CompilerConstants.VirtualTestFile, input)
       .compile()
-    expectRuntimeError(result, GenHoleError.desc.displayName())
+    expectRuntimeError(result, GenHoleError.Desc.displayName())
   }
 
   def expectRuntimeError(v: Result[CompilationResult, List[CompilationMessage]], name: String): Unit = {

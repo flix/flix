@@ -178,7 +178,7 @@ object GenFunAndClosureClasses {
     val functionInterface = GenArrow.descOfArrowType(defn.arrowType)
     val frameInterface = GenFrame
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
-      ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.desc)))
+      ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.Desc)))
     visitor.visitSource(defn.loc.source.name, null)
 
     // Fields — lparams use erased types (like fparams) so setPc can store without casting
@@ -260,7 +260,7 @@ object GenFunAndClosureClasses {
     val functionInterface = GenAbstractArrow.descOfArrowType(defn.arrowType)
     val frameInterface = GenFrame
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
-      ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.desc)))
+      ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.Desc)))
     visitor.visitSource(defn.loc.source.name, null)
 
     // Fields
@@ -300,7 +300,7 @@ object GenFunAndClosureClasses {
   }
 
   private def staticApplyMethod(className: ClassDesc, defn: Def)(implicit root: Root): StaticMethod =
-    StaticMethod(className, ClassMaker.StaticApplyMethodName, MethodTypeDescs.mkDescriptor(defn.fparams.map(fp => TypeDescs.toClassDesc(fp.tpe)) *)(GenResult.desc))
+    StaticMethod(className, ClassMaker.StaticApplyMethodName, MethodTypeDescs.mkDescriptor(defn.fparams.map(fp => TypeDescs.toClassDesc(fp.tpe)) *)(GenResult.Desc))
 
   private def compileStaticApplyMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
@@ -320,7 +320,7 @@ object GenFunAndClosureClasses {
     val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
-    xReturn(GenResult.desc)
+    xReturn(GenResult.Desc)
 
 
     m.visitMaxs(999, 999)
@@ -329,7 +329,7 @@ object GenFunAndClosureClasses {
 
   private def compileStaticInvokeMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, GenThunk.InvokeMethod.name,
-      MethodTypeDescs.mkDescriptor()(GenResult.desc).descriptorString(), null, null)
+      MethodTypeDescs.mkDescriptor()(GenResult.Desc).descriptorString(), null, null)
     m.visitCode()
 
     val functionInterface = GenArrow.descOfArrowType(defn.arrowType)
@@ -347,7 +347,7 @@ object GenFunAndClosureClasses {
     val method = staticApplyMethod(className, defn)
     m.visitMethodInsn(Opcodes.INVOKESTATIC, ClassDescs.internalNameOf(className), method.name, method.d.descriptorString(), false)
 
-    xReturn(GenResult.desc)
+    xReturn(GenResult.Desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -355,7 +355,7 @@ object GenFunAndClosureClasses {
 
   private def compileInvokeMethod(visitor: ClassWriter, className: ClassDesc): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, GenThunk.InvokeMethod.name,
-      MethodTypeDescs.mkDescriptor()(GenResult.desc).descriptorString(), null, null)
+      MethodTypeDescs.mkDescriptor()(GenResult.Desc).descriptorString(), null, null)
     m.visitCode()
 
     val applyMethod = GenFrame.ApplyMethod
@@ -363,7 +363,7 @@ object GenFunAndClosureClasses {
     m.visitInsn(Opcodes.ACONST_NULL)
     m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ClassDescs.internalNameOf(className), applyMethod.name, applyMethod.d.descriptorString(), false)
 
-    xReturn(GenResult.desc)
+    xReturn(GenResult.Desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -456,7 +456,7 @@ object GenFunAndClosureClasses {
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
 
-    xReturn(GenResult.desc)
+    xReturn(GenResult.Desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()

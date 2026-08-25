@@ -34,10 +34,11 @@ import java.lang.constant.ConstantDescs.CD_int
   */
 object GenReifiedSourceLocation {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("ReifiedSourceLocation"))
+  /** The JVM class descriptor for the generated `ReifiedSourceLocation` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("ReifiedSourceLocation"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.desc, IsFinal)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal)
 
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
 
@@ -53,7 +54,7 @@ object GenReifiedSourceLocation {
   }
 
   def Constructor: ConstructorMethod = ConstructorMethod(
-    this.desc, List(JavaClasses.String, CD_int, CD_int, CD_int, CD_int)
+    this.Desc, List(JavaClasses.String, CD_int, CD_int, CD_int, CD_int)
   )
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
@@ -78,21 +79,21 @@ object GenReifiedSourceLocation {
   }
 
   private def SourceField: InstanceField =
-    InstanceField(this.desc, "source", JavaClasses.String)
+    InstanceField(this.Desc, "source", JavaClasses.String)
 
   private def BeginLineField: InstanceField =
-    InstanceField(this.desc, "beginLine", CD_int)
+    InstanceField(this.Desc, "beginLine", CD_int)
 
   private def BeginColField: InstanceField =
-    InstanceField(this.desc, "beginCol", CD_int)
+    InstanceField(this.Desc, "beginCol", CD_int)
 
   private def EndLineField: InstanceField =
-    InstanceField(this.desc, "endLine", CD_int)
+    InstanceField(this.Desc, "endLine", CD_int)
 
   private def EndColField: InstanceField =
-    InstanceField(this.desc, "endCol", CD_int)
+    InstanceField(this.Desc, "endCol", CD_int)
 
-  private def ToStringMethod: InstanceMethod = ClassConstants.Object.ToStringMethod.implementation(this.desc)
+  private def ToStringMethod: InstanceMethod = ClassConstants.Object.ToStringMethod.implementation(this.Desc)
 
   private def toStringIns(implicit mv: MethodVisitor): Unit = {
     // create string builder

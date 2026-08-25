@@ -27,10 +27,11 @@ import java.lang.constant.ClassDesc
 /** The `Record` interface, implemented by [[GenRecordEmpty]] and [[GenRecordExtend]]. */
 object GenRecord {
 
-  val desc: ClassDesc = mkDesc(RootPackage, Mangle.mkClassName("Record"))
+  /** The JVM class descriptor for the generated `Record` class. */
+  val Desc: ClassDesc = mkDesc(RootPackage, Mangle.mkClassName("Record"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkInterface(this.desc)
+    val cm = ClassMaker.mkInterface(this.Desc)
 
     cm.mkInterfaceMethod(LookupFieldMethod)
     cm.mkInterfaceMethod(RestrictFieldMethod)
@@ -38,10 +39,10 @@ object GenRecord {
     cm.closeClassMaker()
   }
 
-  def LookupFieldMethod: InterfaceMethod = InterfaceMethod(this.desc, "lookupField",
-    mkDescriptor(JavaClasses.String)(this.desc))
+  def LookupFieldMethod: InterfaceMethod = InterfaceMethod(this.Desc, "lookupField",
+    mkDescriptor(JavaClasses.String)(this.Desc))
 
-  def RestrictFieldMethod: InterfaceMethod = InterfaceMethod(this.desc, "restrictField",
-    mkDescriptor(JavaClasses.String)(this.desc))
+  def RestrictFieldMethod: InterfaceMethod = InterfaceMethod(this.Desc, "restrictField",
+    mkDescriptor(JavaClasses.String)(this.Desc))
 
 }

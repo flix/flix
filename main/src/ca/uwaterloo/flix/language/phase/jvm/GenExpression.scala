@@ -182,7 +182,7 @@ object GenExpression {
       case Constant.Static =>
         //!TODO: For now, just emit null
         ACONST_NULL()
-        CHECKCAST(GenRegion.desc)
+        CHECKCAST(GenRegion.Desc)
 
     }
 
@@ -246,8 +246,8 @@ object GenExpression {
             throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
 
           case ObjectOp.Ordinal =>
-            mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenTagged.desc))
-            mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(GenTagged.desc), "ordinal", CD_int.descriptorString())
+            mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenTagged.Desc))
+            mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(GenTagged.Desc), "ordinal", CD_int.descriptorString())
         }
 
       case AtomicOp.Binary(sop) =>
@@ -803,7 +803,7 @@ object GenExpression {
         val List(exp) = exps
         val bType = TypeDescs.toClassDesc(tpe)
         compileExpr(exp)
-        CHECKCAST(GenValue.desc)
+        CHECKCAST(GenValue.Desc)
         GETFIELD(GenValue.fieldFromType(bType))
         castIfNotPrim(bType)
 
@@ -828,7 +828,7 @@ object GenExpression {
             val erasedExpTpe = TypeDescs.toErasedClassDesc(exp.tpe)
             val valueField = GenValue.fieldFromType(erasedExpTpe)
             compileExpr(exp)
-            NEW(GenValue.desc)
+            NEW(GenValue.Desc)
             DUP()
             INVOKESPECIAL(GenValue.Constructor)
             DUP()
@@ -881,7 +881,7 @@ object GenExpression {
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
-          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.desc), GenUnit.SingletonField.name, GenUnit.desc.descriptorString())
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
 
       case AtomicOp.InvokeSuperMethod(sym, method) =>
@@ -908,7 +908,7 @@ object GenExpression {
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
-          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.desc), GenUnit.SingletonField.name, GenUnit.desc.descriptorString())
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
 
       case AtomicOp.InvokeStaticMethod(method) =>
@@ -921,7 +921,7 @@ object GenExpression {
         val declaration = internalNameOf(method.owner)
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, declaration, method.name, method.descriptor.descriptorString(), method.isInterface)
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
-          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.desc), GenUnit.SingletonField.name, GenUnit.desc.descriptorString())
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
 
       case AtomicOp.GetField(field) =>
@@ -942,7 +942,7 @@ object GenExpression {
         mv.visitFieldInsn(Opcodes.PUTFIELD, declaration, field.name, TypeDescs.toClassDesc(exp2.tpe).descriptorString())
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.desc), GenUnit.SingletonField.name, GenUnit.desc.descriptorString())
+        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
 
       case AtomicOp.GetStaticField(field) =>
         // Add source line number for debugging (can fail when calling java)
@@ -959,7 +959,7 @@ object GenExpression {
         mv.visitFieldInsn(Opcodes.PUTSTATIC, declaration, field.name, TypeDescs.toClassDesc(exp.tpe).descriptorString())
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.desc), GenUnit.SingletonField.name, GenUnit.desc.descriptorString())
+        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
 
       case AtomicOp.Throw =>
         val List(exp) = exps
@@ -982,7 +982,7 @@ object GenExpression {
           case _ =>
             addLoc(loc)
             compileExpr(exp2)
-            CHECKCAST(GenRegion.desc)
+            CHECKCAST(GenRegion.Desc)
             compileExpr(exp1)
             CHECKCAST(JavaClasses.Runnable)
             INVOKEVIRTUAL(GenRegion.SpawnMethod)
@@ -1023,7 +1023,7 @@ object GenExpression {
       case AtomicOp.HoleError(sym) =>
         // Add source line number for debugging (failable by design).
         addLoc(loc)
-        NEW(GenHoleError.desc) // HoleError
+        NEW(GenHoleError.Desc) // HoleError
         DUP() // HoleError, HoleError
         pushString(sym.toString) // HoleError, HoleError, Sym
         pushLoc(loc) // HoleError, HoleError, Sym, Loc
@@ -1033,7 +1033,7 @@ object GenExpression {
       case AtomicOp.MatchError =>
         // Add source line number for debugging (failable by design)
         addLoc(loc)
-        NEW(GenMatchError.desc) // MatchError
+        NEW(GenMatchError.Desc) // MatchError
         DUP() // MatchError, MatchError
         pushLoc(loc) // MatchError, MatchError, Loc
         INVOKESPECIAL(GenMatchError.Constructor) // MatchError
@@ -1042,7 +1042,7 @@ object GenExpression {
       case AtomicOp.CastError(from, to) =>
         // Add source line number for debugging (failable by design)
         addLoc(loc)
-        NEW(GenCastError.desc) // CastError
+        NEW(GenCastError.Desc) // CastError
         DUP() // CastError, CastError
         pushLoc(loc) // CastError, CastError, Loc
         pushString(s"Cannot cast from type '$from' to '$to'") // CastError, CastError, Loc, String
@@ -1147,7 +1147,7 @@ object GenExpression {
             compileExpr(arg)
             castIfNotPrim(tpe)
           }
-          val desc = mkDescriptor(paramTpes *)(GenResult.desc)
+          val desc = mkDescriptor(paramTpes *)(GenResult.Desc)
           val className = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
           mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, ClassMaker.StaticApplyMethodName, desc.descriptorString(), false)
           GenResult.unwindSuspensionFreeThunk("in pure function call", loc)
@@ -1212,7 +1212,7 @@ object GenExpression {
           GenEffectClasses.opName(sym),
           GenEffectClasses.opStaticFunctionDescriptor(sym)
         )
-        NEW(GenSuspension.desc)
+        NEW(GenSuspension.Desc)
         DUP()
         INVOKESPECIAL(GenSuspension.Constructor)
         DUP()
@@ -1226,7 +1226,7 @@ object GenExpression {
         PUTFIELD(GenSuspension.EffOpField)
         DUP()
         // create continuation
-        NEW(GenFramesNil.desc)
+        NEW(GenFramesNil.Desc)
         DUP()
         INVOKESPECIAL(GenFramesNil.Constructor)
         newFrame(mv)
@@ -1237,11 +1237,11 @@ object GenExpression {
         // store continuation
         PUTFIELD(GenSuspension.PrefixField)
         DUP()
-        NEW(GenResumptionNil.desc)
+        NEW(GenResumptionNil.Desc)
         DUP()
         INVOKESPECIAL(GenResumptionNil.Constructor)
         PUTFIELD(GenSuspension.ResumptionField)
-        xReturn(GenSuspension.desc)
+        xReturn(GenSuspension.Desc)
 
         mv.visitLabel(pcPointLabel)
         narrowLocals(mv)
@@ -1335,8 +1335,8 @@ object GenExpression {
       // Compile the scrutinee (pushes enum value onto stack)
       compileExpr(exp)
       // Extract ordinal: checkcast Tagged, getfield ordinal
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenTagged.desc))
-      mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(GenTagged.desc), "ordinal", CD_int.descriptorString())
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenTagged.Desc))
+      mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(GenTagged.Desc), "ordinal", CD_int.descriptorString())
       // Build labels
       val defaultLabel = new Label()
       val endLabel = new Label()
@@ -1425,12 +1425,12 @@ object GenExpression {
       val afterFinally = new Label()
 
       // Create an instance of Region
-      mv.visitTypeInsn(Opcodes.NEW, internalNameOf(GenRegion.desc))
+      mv.visitTypeInsn(Opcodes.NEW, internalNameOf(GenRegion.Desc))
       mv.visitInsn(Opcodes.DUP)
-      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, internalNameOf(GenRegion.desc), ClassMaker.ConstructorMethodName,
+      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, internalNameOf(GenRegion.Desc), ClassMaker.ConstructorMethodName,
         MethodTypeDescs.NothingToVoid.descriptorString(), false)
 
-      xStore(GenRegion.desc, ctx.getIndex(offset))
+      xStore(GenRegion.Desc, ctx.getIndex(offset))
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
@@ -1441,24 +1441,24 @@ object GenExpression {
       mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
-      xLoad(GenRegion.desc, ctx.getIndex(offset))
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.desc))
-      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.desc), GenRegion.ExitMethod.name,
+      xLoad(GenRegion.Desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.Desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.Desc), GenRegion.ExitMethod.name,
         GenRegion.ExitMethod.d.descriptorString(), false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
-      xLoad(GenRegion.desc, ctx.getIndex(offset))
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.desc))
-      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.desc), GenRegion.ReThrowChildExceptionMethod.name,
+      xLoad(GenRegion.Desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.Desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.Desc), GenRegion.ReThrowChildExceptionMethod.name,
         GenRegion.ReThrowChildExceptionMethod.d.descriptorString(), false)
       mv.visitJumpInsn(Opcodes.GOTO, afterFinally)
 
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
-      xLoad(GenRegion.desc, ctx.getIndex(offset))
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.desc))
-      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.desc), GenRegion.ReThrowChildExceptionMethod.name,
+      xLoad(GenRegion.Desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.Desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.Desc), GenRegion.ReThrowChildExceptionMethod.name,
         GenRegion.ReThrowChildExceptionMethod.d.descriptorString(), false)
       mv.visitInsn(Opcodes.ATHROW)
       mv.visitLabel(afterFinally)
@@ -1526,7 +1526,7 @@ object GenExpression {
         mv.visitFieldInsn(Opcodes.PUTFIELD, effectInternalName, GenEffectClasses.opName(op.sym), GenEffectClasses.opFieldType(op.sym).descriptorString())
       }
       // frames
-      NEW(GenFramesNil.desc)
+      NEW(GenFramesNil.Desc)
       DUP()
       INVOKESPECIAL(GenFramesNil.Constructor)
       // continuation
@@ -1595,7 +1595,7 @@ object GenExpression {
 
   private def compileIsTag(ordinal: Int, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
-    CHECKCAST(GenTagged.desc)
+    CHECKCAST(GenTagged.Desc)
     GETFIELD(GenTagged.OrdinalField)
     pushInt(ordinal)
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
@@ -1630,7 +1630,7 @@ object GenExpression {
 
   private def compileExtIsTag(name: String, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
-    CHECKCAST(GenExtTagged.desc)
+    CHECKCAST(GenExtTagged.Desc)
     GETFIELD(GenExtTagged.NameField)
     GenExtTagged.mkTagName(name)
     GenExtTagged.eqTagName()

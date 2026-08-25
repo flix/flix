@@ -304,7 +304,7 @@ object GenArrow {
 
   def genByteCode(args: List[ClassDesc], result: ClassDesc)(implicit flix: Flix): Array[Byte] = {
     val specializedInterface = specialization(args, result)
-    val interfaces = GenThunk.desc :: specializedInterface.map(_.desc)
+    val interfaces = GenThunk.Desc :: specializedInterface.map(_.desc)
 
     val cm = ClassMaker.mkAbstractClass(desc(args, result), superClass = CD_Object, interfaces)
 

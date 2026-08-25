@@ -35,11 +35,12 @@ import java.lang.constant.ClassDesc
   */
 object GenRegion {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Region"))
+  /** The JVM class descriptor for the generated `Region` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Region"))
 
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(this.desc, IsFinal)
+    val cm = mkClass(this.Desc, IsFinal)
 
     cm.mkField(ThreadsField, IsPrivate, IsFinal, NotVolatile)
     cm.mkField(RegionThreadField, IsPrivate, IsFinal, NotVolatile)
@@ -58,18 +59,18 @@ object GenRegion {
   }
 
   // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
-  private def ThreadsField: InstanceField = InstanceField(this.desc, "threads", JavaClasses.ConcurrentLinkedQueue)
+  private def ThreadsField: InstanceField = InstanceField(this.Desc, "threads", JavaClasses.ConcurrentLinkedQueue)
 
   // private final LinkedList<Runnable> onExit = new LinkedList<Runnable>();
-  private def OnExitField: InstanceField = InstanceField(this.desc, "onExit", JavaClasses.LinkedList)
+  private def OnExitField: InstanceField = InstanceField(this.Desc, "onExit", JavaClasses.LinkedList)
 
   // private final Thread regionThread = Thread.currentThread();
-  private def RegionThreadField: InstanceField = InstanceField(this.desc, "regionThread", JavaClasses.Thread)
+  private def RegionThreadField: InstanceField = InstanceField(this.Desc, "regionThread", JavaClasses.Thread)
 
   // private volatile Throwable childException = null;
-  private def ChildExceptionField: InstanceField = InstanceField(this.desc, "childException", JavaClasses.Throwable)
+  private def ChildExceptionField: InstanceField = InstanceField(this.Desc, "childException", JavaClasses.Throwable)
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()
@@ -99,7 +100,7 @@ object GenRegion {
   //   t.start();
   //   threads.add(t);
   // }
-  def SpawnMethod: InstanceMethod = InstanceMethod(this.desc, "spawn", mkVoidDescriptor(JavaClasses.Runnable))
+  def SpawnMethod: InstanceMethod = InstanceMethod(this.Desc, "spawn", mkVoidDescriptor(JavaClasses.Runnable))
 
   private def spawnIns(implicit mv: MethodVisitor): Unit = {
     INVOKESTATIC(ClassConstants.Thread.OfVirtualMethod)
@@ -107,10 +108,10 @@ object GenRegion {
     INVOKEINTERFACE(ClassConstants.ThreadBuilderOfVirtual.UnstartedMethod)
     storeWithName(2, JavaClasses.Thread) { thread =>
       thread.load()
-      NEW(GenUncaughtExceptionHandler.desc)
+      NEW(GenUncaughtExceptionHandler.Desc)
       DUP()
       thisLoad()
-      invokeConstructor(GenUncaughtExceptionHandler.desc, mkVoidDescriptor(GenRegion.desc))
+      invokeConstructor(GenUncaughtExceptionHandler.Desc, mkVoidDescriptor(GenRegion.Desc))
       INVOKEVIRTUAL(ClassConstants.Thread.SetUncaughtExceptionHandlerMethod)
       thread.load()
       INVOKEVIRTUAL(ClassConstants.Thread.StartMethod)
@@ -130,7 +131,7 @@ object GenRegion {
   //   for (Runnable r: onExit)
   //     r.run();
   // }
-  def ExitMethod: InstanceMethod = InstanceMethod(this.desc, "exit", MethodTypeDescs.NothingToVoid)
+  def ExitMethod: InstanceMethod = InstanceMethod(this.Desc, "exit", MethodTypeDescs.NothingToVoid)
 
   private def exitIns(implicit mv: MethodVisitor): Unit = {
     withName(1, JavaClasses.Thread) { t =>
@@ -168,7 +169,7 @@ object GenRegion {
   //   childException = e;
   //   regionThread.interrupt();
   // }
-  def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.desc, "reportChildException", mkVoidDescriptor(JavaClasses.Throwable))
+  def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.Desc, "reportChildException", mkVoidDescriptor(JavaClasses.Throwable))
 
   private def reportChildExceptionIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()
@@ -184,7 +185,7 @@ object GenRegion {
   //   if (childException != null)
   //     throw childException;
   // }
-  def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.desc, "reThrowChildException", MethodTypeDescs.NothingToVoid)
+  def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.Desc, "reThrowChildException", MethodTypeDescs.NothingToVoid)
 
   private def reThrowChildExceptionIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()
@@ -200,7 +201,7 @@ object GenRegion {
   // final public void runOnExit(Runnable r) {
   //   onExit.addFirst(r);
   // }
-  private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.desc, "runOnExit", mkVoidDescriptor(JavaClasses.Runnable))
+  private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.Desc, "runOnExit", mkVoidDescriptor(JavaClasses.Runnable))
 
   private def runOnExitIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()

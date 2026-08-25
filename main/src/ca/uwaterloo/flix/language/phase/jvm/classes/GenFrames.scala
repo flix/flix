@@ -32,10 +32,11 @@ import java.lang.constant.ClassDesc
   */
 object GenFrames {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Frames"))
+  /** The JVM class descriptor for the generated `Frames` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Frames"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkInterface(this.desc)
+    val cm = mkInterface(this.Desc)
 
     cm.mkInterfaceMethod(PushMethod)
     cm.mkInterfaceMethod(ReverseOntoMethod)
@@ -43,13 +44,13 @@ object GenFrames {
     cm.closeClassMaker()
   }
 
-  def PushMethod: InterfaceMethod = InterfaceMethod(this.desc, "push", mkDescriptor(GenFrame.desc)(GenFrames.desc))
+  def PushMethod: InterfaceMethod = InterfaceMethod(this.Desc, "push", mkDescriptor(GenFrame.Desc)(GenFrames.Desc))
 
-  def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.desc, "reverseOnto", mkDescriptor(GenFrames.desc)(GenFrames.desc))
+  def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.Desc, "reverseOnto", mkDescriptor(GenFrames.Desc)(GenFrames.Desc))
 
   def pushImplementation(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenFrame.desc) { frame =>
-      NEW(GenFramesCons.desc)
+    withName(1, GenFrame.Desc) { frame =>
+      NEW(GenFramesCons.Desc)
       DUP()
       INVOKESPECIAL(GenFramesCons.Constructor)
       DUP()
@@ -58,7 +59,7 @@ object GenFrames {
       DUP()
       thisLoad()
       PUTFIELD(GenFramesCons.TailField)
-      xReturn(GenFramesCons.desc)
+      xReturn(GenFramesCons.Desc)
     }
   }
 

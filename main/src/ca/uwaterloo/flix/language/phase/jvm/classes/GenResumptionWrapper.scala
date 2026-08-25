@@ -55,10 +55,10 @@ object GenResumptionWrapper {
     cm.closeClassMaker()
   }
 
-  def Constructor(tpe: ClassDesc): ConstructorMethod = ConstructorMethod(desc(tpe), List(GenResumption.desc))
+  def Constructor(tpe: ClassDesc): ConstructorMethod = ConstructorMethod(desc(tpe), List(GenResumption.Desc))
 
   private def constructorIns(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenResumption.desc) { resumption =>
+    withName(1, GenResumption.Desc) { resumption =>
       thisLoad()
       INVOKESPECIAL(superClassDesc(tpe), ConstructorMethodName, MethodTypeDescs.NothingToVoid)
       thisLoad()
@@ -68,7 +68,7 @@ object GenResumptionWrapper {
     }
   }
 
-  def ResumptionField(tpe: ClassDesc): InstanceField = InstanceField(desc(tpe), "resumption", GenResumption.desc)
+  def ResumptionField(tpe: ClassDesc): InstanceField = InstanceField(desc(tpe), "resumption", GenResumption.Desc)
 
   def InvokeMethod(tpe: ClassDesc): InstanceMethod = GenThunk.InvokeMethod.implementation(desc(tpe))
 
@@ -89,7 +89,7 @@ object GenResumptionWrapper {
         GETSTATIC(GenValue.FalseField)
         mv.visitLabel(doneLabel)
       case _ =>
-        NEW(GenValue.desc)
+        NEW(GenValue.Desc)
         DUP()
         INVOKESPECIAL(GenValue.Constructor)
         DUP()
@@ -98,7 +98,7 @@ object GenResumptionWrapper {
         PUTFIELD(GenValue.fieldFromType(tpe))
     }
     INVOKEINTERFACE(GenResumption.RewindMethod)
-    xReturn(GenResult.desc)
+    xReturn(GenResult.Desc)
   }
 
   private def UniqueMethod(tpe: ClassDesc): InstanceMethod =

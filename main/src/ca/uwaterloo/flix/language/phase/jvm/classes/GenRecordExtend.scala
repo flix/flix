@@ -42,7 +42,7 @@ object GenRecordExtend {
     mkDesc(RootPackage, Mangle.mkClassName("RecordExtend", Mangle.erasedName(value)))
 
   def genByteCode(value: ClassDesc)(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(desc(value), IsFinal, interfaces = List(GenRecord.desc))
+    val cm = ClassMaker.mkClass(desc(value), IsFinal, interfaces = List(GenRecord.Desc))
 
     cm.mkConstructor(Constructor(value), IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
     cm.mkField(LabelField(value), IsPublic, NotFinal, NotVolatile)
@@ -60,7 +60,7 @@ object GenRecordExtend {
 
   def ValueField(value: ClassDesc): InstanceField = InstanceField(desc(value), "value", value)
 
-  def RestField(value: ClassDesc): InstanceField = InstanceField(desc(value), "rest", GenRecord.desc)
+  def RestField(value: ClassDesc): InstanceField = InstanceField(desc(value), "rest", GenRecord.Desc)
 
   private def lookupFieldIns(value: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     caseOnLabelEquality(value) {

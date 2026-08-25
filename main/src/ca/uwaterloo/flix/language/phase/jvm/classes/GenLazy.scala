@@ -100,7 +100,7 @@ object GenLazy {
         // get expression as thunk
         DUP()
         GETFIELD(ExpField(tpe))
-        CHECKCAST(GenThunk.desc)
+        CHECKCAST(GenThunk.Desc)
         // this.value = thunk.unwind()
         GenResult.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown)
         PUTFIELD(ValueField(tpe))
