@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenExtTagged, GenRecord, GenRegion, GenTagged, GenUnit}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenArrow, GenExtTagged, GenLazy, GenRecord, GenRegion, GenStruct, GenTagged, GenTuple, GenUnit}
 
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -28,6 +28,10 @@ import java.lang.constant.ConstantDescs.{CD_Object, CD_String, CD_boolean, CD_by
   * Converts [[SimpleType]]s into the [[ClassDesc]]s of their JVM representations.
   */
 object TypeDescs {
+
+  /** Returns the erased types of `struct`'s fields, which name and shape its class. */
+  def structFields(struct: JvmAst.Struct): List[ClassDesc] =
+    struct.fields.map(field => toErasedClassDesc(field.tpe))
 
   /** Converts the given [[SimpleType]] into the [[ClassDesc]] of its JVM representation. */
   def toClassDesc(tpe0: SimpleType)(implicit root: JvmAst.Root): ClassDesc = tpe0 match {
@@ -49,11 +53,11 @@ object TypeDescs {
     case SimpleType.Region => GenRegion.desc
     case SimpleType.Null => CD_Object
     case SimpleType.Array(tpe) => toClassDesc(tpe).arrayType()
-    case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toErasedClassDesc(tpe)).desc
-    case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toErasedClassDesc)).desc
+    case SimpleType.Lazy(tpe) => GenLazy.desc(toErasedClassDesc(tpe))
+    case SimpleType.Tuple(elms) => GenTuple.desc(elms.map(toErasedClassDesc))
     case SimpleType.Enum(_, Nil) => GenTagged.desc
-    case SimpleType.Struct(sym, Nil) => BackendObjType.Struct.fromStruct(root.structs(sym)).desc
-    case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toErasedClassDesc), toErasedClassDesc(result)).desc
+    case SimpleType.Struct(sym, Nil) => GenStruct.desc(structFields(root.structs(sym)))
+    case SimpleType.Arrow(args, result) => GenArrow.desc(args.map(toErasedClassDesc), toErasedClassDesc(result))
     case SimpleType.RecordEmpty => GenRecord.desc
     case SimpleType.RecordExtend(_, _, _) => GenRecord.desc
     case SimpleType.ExtensibleEmpty => GenExtTagged.desc

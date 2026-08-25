@@ -23,36 +23,46 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceField}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{RootPackage, mkDesc}
-import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, Mangle}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, ClassMaker, Mangle}
+import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc
 
-/**
-  * The class of an extensible tag, e.g. `ExtTag$Obj$Int32` for a tag carrying a reference
-  * and an `Int32`.
-  *
-  * `elms` are the erased types of the values the tag carries; the class is shared by every
-  * tag with that erased shape, and the tag is identified at runtime by
-  * `ExtTagged.NameField`.
-  */
-object GenExtTag {
+/** The class of a Flix tuple, with one field per erased element type. */
+object GenTuple {
 
   def desc(elms: List[ClassDesc]): ClassDesc =
-    mkDesc(RootPackage, Mangle.mkClassName("ExtTag", elms.map(Mangle.erasedName)))
+    mkDesc(RootPackage, Mangle.mkClassName("Tuple", elms.map(Mangle.erasedName)))
+
 
   def genByteCode(elms: List[ClassDesc])(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(desc(elms), IsFinal, superClass = GenExtTagged.desc)
+    val cm = ClassMaker.mkClass(desc(elms), IsFinal)
 
-    cm.mkConstructor(Constructor(elms), IsPublic, nullarySuperConstructor(GenExtTagged.Constructor)(_))
     elms.indices.foreach(i => cm.mkField(IndexField(elms, i), IsPublic, NotFinal, NotVolatile))
+    cm.mkConstructor(Constructor(elms), IsPublic, constructorIns(elms)(_))
 
     cm.closeClassMaker()
   }
 
-  def NameField: InstanceField = GenExtTagged.NameField
+  def IndexField(elms: List[ClassDesc], i: Int): InstanceField = InstanceField(desc(elms), s"field$i", elms(i))
 
-  def IndexField(elms: List[ClassDesc], i: Int): InstanceField = InstanceField(desc(elms), s"v$i", elms(i))
+  def Constructor(elms: List[ClassDesc]): ConstructorMethod = ConstructorMethod(desc(elms), elms)
 
-  def Constructor(elms: List[ClassDesc]): ConstructorMethod = ConstructorMethod(desc(elms), Nil)
+  /** `[] --> return` */
+  private def constructorIns(elms: List[ClassDesc])(implicit mv: MethodVisitor): Unit =
+    withNames(1, elms) { case (_, variables) =>
+      thisLoad()
+      // super()
+      DUP()
+      INVOKESPECIAL(ClassConstants.Object.Constructor)
+      // this.field$i = var$j
+      for ((elm, i) <- variables.zipWithIndex) {
+        DUP()
+        elm.load()
+        PUTFIELD(IndexField(elms, i))
+      }
+      RETURN()
+    }
+
 
 }

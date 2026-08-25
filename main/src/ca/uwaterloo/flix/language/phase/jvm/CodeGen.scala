@@ -18,10 +18,10 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrame, GenFrames, GenFramesCons, GenFramesNil, GenGlobal, GenHandler, GenHoleError, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenReifiedSourceLocation, GenResult, GenResumption, GenResumptionCons, GenResumptionNil, GenResumptionWrapper, GenSuspension, GenTag, GenTagged, GenThunk, GenUncaughtExceptionHandler, GenUnhandledEffectError, GenUnit, GenValue}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrame, GenFrames, GenFramesCons, GenFramesNil, GenGlobal, GenHandler, GenHoleError, GenLazy, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenReifiedSourceLocation, GenResult, GenResumption, GenResumptionCons, GenResumptionNil, GenResumptionWrapper, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUncaughtExceptionHandler, GenUnhandledEffectError, GenUnit, GenValue}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 
 import java.lang.constant.ClassDesc
@@ -52,19 +52,19 @@ object CodeGen {
       main => JvmClass(GenMain.desc, GenMain.genByteCode(main.sym))
     ).toList
 
-    val namespaceClasses = namespacesOf(root).map(
-      ns => {
-        val entrypointDefs = ns.defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
-        JvmClass(GenNamespace.desc(ns.ns), GenNamespace.genByteCode(ns.ns, entrypointDefs))
-      }).toList
+    val namespaceClasses = namespacesOf(root).map {
+      case (ns, defs) =>
+        val entrypointDefs = defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
+        JvmClass(GenNamespace.desc(ns), GenNamespace.genByteCode(ns, entrypointDefs))
+    }.toList
 
     // Generate function classes.
     val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs).values.toList
     val erasedFunctionTypes = getErasedArrowsOf(allTypes)
-    val functionInterfaces = erasedFunctionTypes.map(bt => JvmClass(bt.desc, bt.genByteCode()))
+    val functionInterfaces = erasedFunctionTypes.map { case (args, result) => JvmClass(GenArrow.desc(args, result), GenArrow.genByteCode(args, result)) }
     val closureAbstractClasses = erasedFunctionTypes.map {
-      case BackendObjType.Arrow(args, result) => BackendObjType.AbstractArrow(args, result)
-    }.map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
+      case (args, result) => JvmClass(GenAbstractArrow.desc(args, result), GenAbstractArrow.genByteCode(args, result))
+    }.toList
 
     val taggedAbstractClass = List(JvmClass(GenTagged.desc, GenTagged.genByteCode()))
     val nullaryTagClasses = root.enums.values.flatMap(getNullaryTagsOf).toList.map { caze =>
@@ -75,14 +75,14 @@ object CodeGen {
     val extTaggedAbstractClass = List(JvmClass(GenExtTagged.desc, GenExtTagged.genByteCode()))
     val extensibleTagClasses = getExtensibleTagTypesOf(allTypes).map(elms => JvmClass(GenExtTag.desc(elms), GenExtTag.genByteCode(elms))).toList
 
-    val tupleClasses = getTupleTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
-    val structClasses = root.structs.values.map(BackendObjType.Struct.fromStruct).toList.distinctBy(_.desc).map(bt => JvmClass(bt.desc, bt.genByteCode()))
+    val tupleClasses = getTupleTypesOf(allTypes).map(elms => JvmClass(GenTuple.desc(elms), GenTuple.genByteCode(elms))).toList
+    val structClasses = root.structs.values.map(TypeDescs.structFields).toSet[List[ClassDesc]].toList.map(elms => JvmClass(GenStruct.desc(elms), GenStruct.genByteCode(elms)))
 
     val recordInterfaces = List(JvmClass(GenRecord.desc, GenRecord.genByteCode()))
     val recordEmptyClasses = List(JvmClass(GenRecordEmpty.desc, GenRecordEmpty.genByteCode()))
     val recordExtendClasses = getRecordExtendsOf(allTypes).map(value => JvmClass(GenRecordExtend.desc(value), GenRecordExtend.genByteCode(value))).toList
 
-    val lazyClasses = getLazyTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
+    val lazyClasses = getLazyTypesOf(allTypes).map(tpe => JvmClass(GenLazy.desc(tpe), GenLazy.genByteCode(tpe))).toList
 
     val anonClasses = GenAnonymousClasses.gen(root.anonClasses.distinctBy(_.name))
 
@@ -184,20 +184,15 @@ object CodeGen {
     BytecodeAst.Root(classMap, tests, main, root.sources)
   }(DebugNoOp())
 
-  /** Returns the set of namespaces in the given AST `root`. */
-  private def namespacesOf(root: Root): Set[NamespaceInfo] = {
-    // Group every symbol by namespace.
-    root.defs.groupBy(_._1.namespace).map {
-      case (ns, defs) =>
-        NamespaceInfo(ns, defs)
-    }.toSet
-  }
+  /** Returns the defs of each namespace in the given AST `root`. */
+  private def namespacesOf(root: Root): Map[List[String], Map[Symbol.DefnSym, Def]] =
+    root.defs.groupBy(_._1.namespace)
 
   /** Returns the set of erased function types in `types` without searching recursively. */
-  private def getErasedArrowsOf(types: Iterable[SimpleType]): Set[BackendObjType.Arrow] =
-    types.foldLeft(Set.empty[BackendObjType.Arrow]) {
+  private def getErasedArrowsOf(types: Iterable[SimpleType]): Set[(List[ClassDesc], ClassDesc)] =
+    types.foldLeft(Set.empty[(List[ClassDesc], ClassDesc)]) {
       case (acc, SimpleType.Arrow(args, result)) =>
-        acc + BackendObjType.Arrow(args.map(TypeDescs.toErasedClassDesc), TypeDescs.toErasedClassDesc(result))
+        acc + ((args.map(TypeDescs.toErasedClassDesc), TypeDescs.toErasedClassDesc(result)))
       case (acc, _) => acc
     }
 
@@ -220,10 +215,10 @@ object CodeGen {
     }
 
   /** Returns the set of tuple types in `types` without searching recursively. */
-  private def getTupleTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Tuple] =
-    types.foldLeft(Set.empty[BackendObjType.Tuple]) {
+  private def getTupleTypesOf(types: Iterable[SimpleType]): Set[List[ClassDesc]] =
+    types.foldLeft(Set.empty[List[ClassDesc]]) {
       case (acc, SimpleType.Tuple(elms)) =>
-        acc + BackendObjType.Tuple(elms.map(TypeDescs.toErasedClassDesc))
+        acc + elms.map(TypeDescs.toErasedClassDesc)
       case (acc, _) => acc
     }
 
@@ -236,9 +231,9 @@ object CodeGen {
     }
 
   /** Returns the set of lazy types in `types` without searching recursively. */
-  private def getLazyTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Lazy] =
-    types.foldLeft(Set.empty[BackendObjType.Lazy]) {
-      case (acc, SimpleType.Lazy(tpe)) => acc + BackendObjType.Lazy(TypeDescs.toErasedClassDesc(tpe))
+  private def getLazyTypesOf(types: Iterable[SimpleType]): Set[ClassDesc] =
+    types.foldLeft(Set.empty[ClassDesc]) {
+      case (acc, SimpleType.Lazy(tpe)) => acc + TypeDescs.toErasedClassDesc(tpe)
       case (acc, _) => acc
     }
 

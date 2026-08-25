@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethodName, I
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{RootPackage, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkVoidDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.{BackendObjType, ClassMaker, GenFunAndClosureClasses, JavaClasses, MethodTypeDescs}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, GenFunAndClosureClasses, JavaClasses, MethodTypeDescs}
 import ca.uwaterloo.flix.util.ClassDescs
 import org.objectweb.asm.MethodVisitor
 
