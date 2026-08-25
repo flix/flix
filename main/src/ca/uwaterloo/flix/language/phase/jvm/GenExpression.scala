@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenMatchError, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenResult, GenResumption, GenResumptionNil, GenSuspension, GenTag, GenTagged, GenThunk, GenUnit, GenValue}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenLazy, GenMatchError, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenResult, GenResumption, GenResumptionNil, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUnit, GenValue}
 import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.{CD_double, CD_int, CD_long, CD_void}
@@ -625,19 +625,19 @@ object GenExpression {
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
         val SimpleType.Tuple(elmTypes) = exp.tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(TypeDescs.toErasedClassDesc))
+        val tupleElms = elmTypes.map(TypeDescs.toErasedClassDesc)
 
         compileExpr(exp)
-        GETFIELD(tupleType.IndexField(idx))
+        GETFIELD(GenTuple.IndexField(tupleElms, idx))
         castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.Tuple =>
         val SimpleType.Tuple(elmTypes) = tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(TypeDescs.toErasedClassDesc))
-        NEW(tupleType.desc)
+        val tupleElms = elmTypes.map(TypeDescs.toErasedClassDesc)
+        NEW(GenTuple.desc(tupleElms))
         DUP()
         exps.foreach(compileExpr)
-        INVOKESPECIAL(tupleType.Constructor)
+        INVOKESPECIAL(GenTuple.Constructor(tupleElms))
 
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
@@ -747,7 +747,7 @@ object GenExpression {
         ARRAYLENGTH()
 
       case AtomicOp.StructNew(sym, mutability, _) =>
-        val structType = getStructType(root.structs(sym))
+        val structElms = getStructType(root.structs(sym))
         val (fieldExps, regionOpt) = mutability match {
           case Mutability.Immutable => (exps, None)
           case Mutability.Mutable =>
@@ -761,20 +761,20 @@ object GenExpression {
             compileExpr(region)
             xPop(TypeDescs.toClassDesc(region.tpe))
         }
-        NEW(structType.desc)
+        NEW(GenStruct.desc(structElms))
         DUP()
         fieldExps.foreach(compileExpr)
-        INVOKESPECIAL(structType.Constructor)
+        INVOKESPECIAL(GenStruct.Constructor(structElms))
 
       case AtomicOp.StructGet(field) =>
 
         val List(exp) = exps
         val struct = root.structs(field.structSym)
-        val structType = getStructType(struct)
+        val structElms = getStructType(struct)
         val idx = struct.fields.indexWhere(_.sym == field)
 
         compileExpr(exp)
-        GETFIELD(structType.IndexField(idx))
+        GETFIELD(GenStruct.IndexField(structElms, idx))
         castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.StructPut(field) =>
@@ -782,11 +782,11 @@ object GenExpression {
         val List(exp1, exp2) = exps
         val struct = root.structs(field.structSym)
         val idx = struct.fields.indexWhere(_.sym == field)
-        val structType = getStructType(struct)
+        val structElms = getStructType(struct)
 
         compileExpr(exp1)
         compileExpr(exp2)
-        PUTFIELD(structType.IndexField(idx))
+        PUTFIELD(GenStruct.IndexField(structElms, idx))
         GETSTATIC(GenUnit.SingletonField)
 
       case AtomicOp.InstanceOf(clazz) =>
@@ -994,12 +994,12 @@ object GenExpression {
 
         // Find the Lazy class name (Lazy$tpe).
         val SimpleType.Lazy(elmType) = tpe
-        val lazyType = BackendObjType.Lazy(TypeDescs.toErasedClassDesc(elmType))
+        val lazyElm = TypeDescs.toErasedClassDesc(elmType)
 
-        NEW(lazyType.desc)
+        NEW(GenLazy.desc(lazyElm))
         DUP()
         compileExpr(exp)
-        INVOKESPECIAL(lazyType.Constructor)
+        INVOKESPECIAL(GenLazy.Constructor(lazyElm))
 
       case AtomicOp.Force =>
         val List(exp) = exps
@@ -1007,17 +1007,17 @@ object GenExpression {
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
         val SimpleType.Lazy(elmType) = exp.tpe
         val erasedElmType = TypeDescs.toErasedClassDesc(elmType)
-        val lazyType = BackendObjType.Lazy(erasedElmType)
+        val lazyElm = erasedElmType
 
         // Emit code for the lazy expression.
         compileExpr(exp)
-        CHECKCAST(lazyType.desc)
+        CHECKCAST(GenLazy.desc(lazyElm))
         DUP()
-        GETFIELD(lazyType.ExpField)
+        GETFIELD(GenLazy.ExpField(lazyElm))
         ifConditionElse(Condition.NONNULL)(
-          INVOKEVIRTUAL(lazyType.ForceMethod)
+          INVOKEVIRTUAL(GenLazy.ForceMethod(lazyElm))
         )(
-          GETFIELD(lazyType.ValueField)
+          GETFIELD(GenLazy.ValueField(lazyElm))
         )
 
       case AtomicOp.HoleError(sym) =>
@@ -1589,8 +1589,8 @@ object GenExpression {
 
   }
 
-  private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {
-    BackendObjType.Struct(struct.fields.map(field => TypeDescs.toErasedClassDesc(field.tpe)))
+  private def getStructType(struct: Struct): List[ClassDesc] = {
+    TypeDescs.structFields(struct)
   }
 
   private def compileIsTag(ordinal: Int, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
