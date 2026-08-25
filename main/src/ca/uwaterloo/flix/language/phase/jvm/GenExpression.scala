@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenHoleError, GenMatchError}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenExtTag, GenHoleError, GenMatchError, GenNullaryTag, GenRecordExtend, GenTag}
 import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
-import java.lang.constant.MethodTypeDesc
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.{CD_double, CD_long, CD_void}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -608,17 +608,16 @@ object GenExpression {
 
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
-        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
-        compileIsTag(sym.ordinal, exp, termTypes)
+        compileIsTag(sym.ordinal, exp)
 
       case AtomicOp.Tag(sym) =>
         val caze = root.enums(sym.enumSym).cases(sym)
-        val termTypes = caze.tpes.map(BackendType.toBackendType)
+        val termTypes = caze.tpes.map(BackendType.toErasedClassDesc)
         compileTag(sym.enumSym.toString, sym.name, caze.sym.ordinal, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
         val List(exp) = exps
-        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
+        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toErasedClassDesc)
 
         compileUntag(exp, idx, termTypes)
         castIfNotPrim(BackendType.toClassDesc(tpe))
@@ -642,31 +641,31 @@ object GenExpression {
 
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
-        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
+        val recordValue = BackendType.toErasedClassDesc(tpe)
 
         compileExpr(exp)
         pushString(field.name)
         INVOKEINTERFACE(BackendObjType.Record.LookupFieldMethod)
         // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
-        CHECKCAST(recordType.desc)
-        GETFIELD(recordType.ValueField)
+        CHECKCAST(GenRecordExtend.desc(recordValue))
+        GETFIELD(GenRecordExtend.ValueField(recordValue))
         castIfNotPrim(BackendType.toClassDesc(tpe))
 
       case AtomicOp.RecordExtend(field) =>
         val List(exp1, exp2) = exps
-        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(exp1.tpe))
-        NEW(recordType.desc)
+        val recordValue = BackendType.toErasedClassDesc(exp1.tpe)
+        NEW(GenRecordExtend.desc(recordValue))
         DUP()
-        INVOKESPECIAL(recordType.Constructor)
+        INVOKESPECIAL(GenRecordExtend.Constructor(recordValue))
         DUP()
         pushString(field.name)
-        PUTFIELD(recordType.LabelField)
+        PUTFIELD(GenRecordExtend.LabelField(recordValue))
         DUP()
         compileExpr(exp1)
-        PUTFIELD(recordType.ValueField)
+        PUTFIELD(GenRecordExtend.ValueField(recordValue))
         DUP()
         compileExpr(exp2)
-        PUTFIELD(recordType.RestField)
+        PUTFIELD(GenRecordExtend.RestField(recordValue))
 
       case AtomicOp.RecordRestrict(field) =>
         val List(exp) = exps
@@ -677,17 +676,16 @@ object GenExpression {
 
       case AtomicOp.ExtIs(sym) =>
         val List(exp) = exps
-        val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
-        compileExtIsTag(sym.name, exp, tpes)
+        compileExtIsTag(sym.name, exp)
 
       case AtomicOp.ExtTag(sym) =>
-        val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(BackendType.toBackendType)
+        val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(BackendType.toErasedClassDesc)
         compileExtTag(sym.name, exps, tpes)
 
       case AtomicOp.ExtUntag(sym, idx) =>
 
         val List(exp) = exps
-        val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
+        val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toErasedClassDesc)
 
         compileExtUntag(exp, idx, tpes)
         castIfNotPrim(BackendType.toClassDesc(tpe))
@@ -1597,7 +1595,7 @@ object GenExpression {
     BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
   }
 
-  private def compileIsTag(ordinal: Int, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileIsTag(ordinal: Int, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
     CHECKCAST(BackendObjType.Tagged.desc)
     GETFIELD(BackendObjType.Tagged.OrdinalField)
@@ -1605,36 +1603,34 @@ object GenExpression {
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
   }
 
-  private def compileTag(enumName: String, name: String, ordinal: Int, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileTag(enumName: String, name: String, ordinal: Int, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     tpes match {
       case Nil =>
-        GETSTATIC(BackendObjType.NullaryTag(enumName, name, -1).SingletonField)
+        GETSTATIC(GenNullaryTag.SingletonField(enumName, name))
       case _ =>
-        val tagType = BackendObjType.Tag(tpes)
-        NEW(tagType.desc)
+        NEW(GenTag.desc(tpes))
         DUP()
-        INVOKESPECIAL(tagType.Constructor)
+        INVOKESPECIAL(GenTag.Constructor(tpes))
         DUP()
         pushInt(ordinal)
-        PUTFIELD(tagType.OrdinalField)
+        PUTFIELD(GenTag.OrdinalField)
         exps.zipWithIndex.foreach {
           case (e, i) => DUP()
             compileExpr(e)
-            PUTFIELD(tagType.IndexField(i))
+            PUTFIELD(GenTag.IndexField(tpes, i))
         }
     }
   }
 
-  private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
+  private def compileUntag(exp: Expr, idx: Int, tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    // GenNullaryTag cannot happen here since terms must be non-empty.
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
-    val tagType = BackendObjType.Tag(tpes)
     compileExpr(exp)
-    CHECKCAST(tagType.desc)
-    GETFIELD(tagType.IndexField(idx))
+    CHECKCAST(GenTag.desc(tpes))
+    GETFIELD(GenTag.IndexField(tpes, idx))
   }
 
-  private def compileExtIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileExtIsTag(name: String, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
     CHECKCAST(BackendObjType.ExtTagged.desc)
     GETFIELD(BackendObjType.ExtTagged.NameField)
@@ -1642,26 +1638,24 @@ object GenExpression {
     BackendObjType.ExtTagged.eqTagName()
   }
 
-  private def compileExtTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    val tagType = BackendObjType.ExtTag(tpes)
-    NEW(tagType.desc)
+  private def compileExtTag(name: String, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    NEW(GenExtTag.desc(tpes))
     DUP()
-    INVOKESPECIAL(tagType.Constructor)
+    INVOKESPECIAL(GenExtTag.Constructor(tpes))
     DUP()
     BackendObjType.ExtTagged.mkTagName(name)
-    PUTFIELD(tagType.NameField)
+    PUTFIELD(GenExtTag.NameField)
     exps.zipWithIndex.foreach {
       case (e, i) => DUP()
         compileExpr(e)
-        PUTFIELD(tagType.IndexField(i))
+        PUTFIELD(GenExtTag.IndexField(tpes, i))
     }
   }
 
-  private def compileExtUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    val tagType = BackendObjType.ExtTag(tpes)
+  private def compileExtUntag(exp: Expr, idx: Int, tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
-    CHECKCAST(tagType.desc)
-    GETFIELD(tagType.IndexField(idx))
+    CHECKCAST(GenExtTag.desc(tpes))
+    GETFIELD(GenExtTag.IndexField(tpes, idx))
   }
 
   private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
