@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.JvmAst.{Effect, Root}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InstanceField
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
@@ -78,19 +79,17 @@ object GenEffectClasses {
   }
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
-    import Instructions.*
     ALOAD(0)
     INVOKESPECIAL(ClassConstants.Object.Constructor)
     RETURN()
   }
 
   private def methodIns(effectName: ClassDesc, opFunction: BackendObjType.Arrow, opField: InstanceField, erasedParams: List[BackendType], returnType: BackendType)(implicit mv: MethodVisitor): Unit = {
-    import Instructions.*
     val wrapperType = BackendObjType.ResumptionWrapper(returnType)
 
-    Instructions.withNames(0, erasedParams.map(_.toClassDesc)) { case (paramsOffset, params) =>
-      Instructions.withName(paramsOffset, BackendObjType.Handler.desc) { handler =>
-        Instructions.withName(paramsOffset + 1, BackendObjType.Resumption.desc) { resumption =>
+    withNames(0, erasedParams.map(_.toClassDesc)) { case (paramsOffset, params) =>
+      withName(paramsOffset, BackendObjType.Handler.desc) { handler =>
+        withName(paramsOffset + 1, BackendObjType.Resumption.desc) { resumption =>
           // Cast the given generic handler to the current effect.
           handler.load()
           CHECKCAST(effectName)
