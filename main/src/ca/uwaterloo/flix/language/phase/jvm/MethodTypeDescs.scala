@@ -16,10 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.lang.constant.{ConstantDescs, MethodTypeDesc}
+import java.lang.constant.{ClassDesc, ConstantDescs, MethodTypeDesc}
 
 /**
-  * Helpers for constructing [[MethodTypeDesc]] from [[BackendType]].
+  * Helpers for constructing [[MethodTypeDesc]] from [[ClassDesc]].
   */
 object MethodTypeDescs {
 
@@ -27,11 +27,11 @@ object MethodTypeDescs {
   val NothingToVoid: MethodTypeDesc = MethodTypeDesc.of(ConstantDescs.CD_void)
 
   /** Returns the [[MethodTypeDesc]] of a method that takes `argument`s and returns `result`. */
-  def mkDescriptor(argument: BackendType*)(result: BackendType): MethodTypeDesc =
-    MethodTypeDesc.of(result.toClassDesc, argument.map(_.toClassDesc) *)
+  def mkDescriptor(argument: ClassDesc*)(result: ClassDesc): MethodTypeDesc =
+    MethodTypeDesc.of(result, argument *)
 
   /** Returns the [[MethodTypeDesc]] of a method that takes `argument`s and returns void. */
-  def mkVoidDescriptor(argument: BackendType*): MethodTypeDesc =
-    MethodTypeDesc.of(ConstantDescs.CD_void, argument.map(_.toClassDesc) *)
+  def mkVoidDescriptor(argument: ClassDesc*): MethodTypeDesc =
+    MethodTypeDesc.of(ConstantDescs.CD_void, argument *)
 
 }

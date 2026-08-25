@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.BackendType.RichClassDesc
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.util.{ClassDescs, ParOps}
@@ -282,7 +281,7 @@ object GenFunAndClosureClasses {
   }
 
   private def staticApplyMethod(className: ClassDesc, defn: Def)(implicit root: Root): StaticMethod =
-    StaticMethod(className, ClassMaker.StaticApplyMethodName, MethodTypeDescs.mkDescriptor(defn.fparams.map(fp => BackendType.toBackendType(fp.tpe)) *)(BackendObjType.Result.toTpe))
+    StaticMethod(className, ClassMaker.StaticApplyMethodName, MethodTypeDescs.mkDescriptor(defn.fparams.map(fp => BackendType.toClassDesc(fp.tpe)) *)(BackendObjType.Result.desc))
 
   private def compileStaticApplyMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
@@ -311,7 +310,7 @@ object GenFunAndClosureClasses {
 
   private def compileStaticInvokeMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
-      MethodTypeDescs.mkDescriptor()(BackendObjType.Result.toTpe).descriptorString(), null, null)
+      MethodTypeDescs.mkDescriptor()(BackendObjType.Result.desc).descriptorString(), null, null)
     m.visitCode()
 
     val functionInterface = BackendObjType.Arrow.fromArrowType(defn.arrowType).desc
@@ -337,7 +336,7 @@ object GenFunAndClosureClasses {
 
   private def compileInvokeMethod(visitor: ClassWriter, className: ClassDesc): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
-      MethodTypeDescs.mkDescriptor()(BackendObjType.Result.toTpe).descriptorString(), null, null)
+      MethodTypeDescs.mkDescriptor()(BackendObjType.Result.desc).descriptorString(), null, null)
     m.visitCode()
 
     val applyMethod = BackendObjType.Frame.ApplyMethod
@@ -501,7 +500,7 @@ object GenFunAndClosureClasses {
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root): Unit = {
     val closureAbstractClass = BackendObjType.AbstractArrow.fromArrowType(defn.arrowType)
-    implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodTypeDescs.mkDescriptor()(closureAbstractClass.toTpe).descriptorString(), null, null)
+    implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodTypeDescs.mkDescriptor()(closureAbstractClass.desc).descriptorString(), null, null)
     m.visitCode()
 
     mkCopy(className, defn)

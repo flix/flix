@@ -70,9 +70,9 @@ object GenEffectClasses {
       val opFunction = BackendObjType.Arrow(erasedParams :+ BackendType.Object, BackendType.Object)
       val opField = ClassMaker.InstanceField(effectName, name, opFunction.desc)
       cm.mkField(opField, IsPublic, NotFinal, NotVolatile)
-      val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
+      val methodArgs = erasedParams.map(_.toClassDesc) ++ List(BackendObjType.Handler.desc, BackendObjType.Resumption.desc)
       val returnType = BackendType.toBackendType(op.tpe)
-      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodTypeDescs.mkDescriptor(methodArgs *)(BackendObjType.Result.toTpe)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
+      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodTypeDescs.mkDescriptor(methodArgs *)(BackendObjType.Result.desc)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
     }
 
     cm.closeClassMaker()
@@ -124,8 +124,8 @@ object GenEffectClasses {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
     val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
-    val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
-    MethodTypeDescs.mkDescriptor(methodArgs *)(BackendObjType.Result.toTpe)
+    val methodArgs = erasedParams.map(_.toClassDesc) ++ List(BackendObjType.Handler.desc, BackendObjType.Resumption.desc)
+    MethodTypeDescs.mkDescriptor(methodArgs *)(BackendObjType.Result.desc)
   }
 
   /** Returns the JVM field/method name of the effect operation `sym`. */

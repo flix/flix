@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 
+import java.lang.constant.ClassDesc
+
 /**
   * Name mangling and construction of class names for generated classes.
   */
@@ -29,6 +31,12 @@ object Mangle {
 
   /** The `dev.flix.runtime` package of the Flix runtime classes. */
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
+
+  /** Returns the [[ClassDesc]] of the class `name` in the package `pkg`. */
+  def mkDesc(pkg: List[String], name: String): ClassDesc = {
+    val prefix = if (pkg.isEmpty) "" else pkg.mkString("", "/", "/")
+    ClassDesc.ofInternalName(prefix + name)
+  }
 
   /**
     * Constructs a concatenated string using `Flix.Delimiter`. The call
