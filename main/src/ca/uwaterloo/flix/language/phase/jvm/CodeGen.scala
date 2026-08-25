@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
-import ca.uwaterloo.flix.language.phase.jvm.classes.GenGlobal
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenGlobal, GenHoleError, GenMain, GenMatchError, GenNamespace, GenReifiedSourceLocation, GenUncaughtExceptionHandler, GenUnhandledEffectError}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import ca.uwaterloo.flix.util.collection.MapOps
 
@@ -47,14 +47,13 @@ object CodeGen {
     val allTypes = root.types ++ requiredTypes
 
     val mainClass = root.getMain.map(
-      main => JvmClass(BackendObjType.Main.desc, BackendObjType.Main.genByteCode(main.sym))
+      main => JvmClass(GenMain.desc, GenMain.genByteCode(main.sym))
     ).toList
 
     val namespaceClasses = namespacesOf(root).map(
       ns => {
-        val nsClass = BackendObjType.Namespace(ns.ns)
         val entrypointDefs = ns.defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
-        JvmClass(nsClass.desc, nsClass.genByteCode(entrypointDefs))
+        JvmClass(GenNamespace.desc(ns.ns), GenNamespace.genByteCode(ns.ns, entrypointDefs))
       }).toList
 
     // Generate function classes.
@@ -84,17 +83,17 @@ object CodeGen {
     val unitClass = List(JvmClass(BackendObjType.Unit.desc, BackendObjType.Unit.genByteCode()))
 
     val flixErrorClass = List(JvmClass(ClassConstants.FlixError.Desc, ClassConstants.FlixError.genByteCode()))
-    val rslClass = List(JvmClass(BackendObjType.ReifiedSourceLocation.desc, BackendObjType.ReifiedSourceLocation.genByteCode()))
-    val holeErrorClass = List(JvmClass(BackendObjType.HoleError.desc, BackendObjType.HoleError.genByteCode()))
-    val matchErrorClass = List(JvmClass(BackendObjType.MatchError.desc, BackendObjType.MatchError.genByteCode()))
-    val castErrorClass = List(JvmClass(BackendObjType.CastError.desc, BackendObjType.CastError.genByteCode()))
-    val unhandledEffectErrorClass = List(JvmClass(BackendObjType.UnhandledEffectError.desc, BackendObjType.UnhandledEffectError.genByteCode()))
+    val rslClass = List(JvmClass(GenReifiedSourceLocation.desc, GenReifiedSourceLocation.genByteCode()))
+    val holeErrorClass = List(JvmClass(GenHoleError.desc, GenHoleError.genByteCode()))
+    val matchErrorClass = List(JvmClass(GenMatchError.desc, GenMatchError.genByteCode()))
+    val castErrorClass = List(JvmClass(GenCastError.desc, GenCastError.genByteCode()))
+    val unhandledEffectErrorClass = List(JvmClass(GenUnhandledEffectError.desc, GenUnhandledEffectError.genByteCode()))
 
     val globalClass = List(JvmClass(GenGlobal.desc, GenGlobal.genByteCode()))
 
     val regionClass = List(JvmClass(BackendObjType.Region.desc, BackendObjType.Region.genByteCode()))
 
-    val uncaughtExceptionHandlerClass = List(JvmClass(BackendObjType.UncaughtExceptionHandler.desc, BackendObjType.UncaughtExceptionHandler.genByteCode()))
+    val uncaughtExceptionHandlerClass = List(JvmClass(GenUncaughtExceptionHandler.desc, GenUncaughtExceptionHandler.genByteCode()))
 
     // Effect runtime classes.
     val resultInterface = List(JvmClass(BackendObjType.Result.desc, BackendObjType.Result.genByteCode()))
@@ -168,13 +167,12 @@ object CodeGen {
 
     val tests = MapOps.mapValues(root.defs.filter(_._2.ann.isTest)) {
       case defn =>
-        val nsType = BackendObjType.Namespace(defn.sym.namespace)
-        BytecodeAst.Test(nsType.desc, nsType.ShimMethod(defn).name, defn.ann.isSkip)
+        val ns = defn.sym.namespace
+        BytecodeAst.Test(GenNamespace.desc(ns), GenNamespace.ShimMethod(ns, defn).name, defn.ann.isSkip)
     }
     val main = root.mainEntryPoint.map{
       case _ =>
-        val mainType = BackendObjType.Main
-        BytecodeAst.Def(mainType.desc, mainType.MainMethod.name)
+        BytecodeAst.Def(GenMain.desc, GenMain.MainMethod.name)
     }
     BytecodeAst.Root(classMap, tests, main, root.sources)
   }(DebugNoOp())

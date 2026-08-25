@@ -52,9 +52,18 @@ import java.lang.constant.{ClassDesc, MethodTypeDesc}
   */
 object GenEffectClasses {
 
+  /**
+    * Returns the descriptor of the effect definition class of `sym`.
+    *
+    * Print       =>  Eff$Print
+    * List.Crash  =>  List.Eff$Crash
+    */
+  def effectDesc(sym: Symbol.EffSym): ClassDesc =
+    Mangle.mkDesc(sym.namespace, Mangle.mkClassName("Eff", sym.name))
+
   def gen(effects: Iterable[Effect])(implicit root: Root, flix: Flix): List[JvmClass] = {
     for (effect <- effects.toList) yield {
-      val className = BackendObjType.Effect(effect.sym).desc
+      val className = effectDesc(effect.sym)
       JvmClass(className, genByteCode(className, effect))
     }
   }

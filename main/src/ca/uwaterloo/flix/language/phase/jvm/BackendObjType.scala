@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.Branch.*
@@ -25,14 +25,14 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
-import ca.uwaterloo.flix.language.phase.jvm.classes.GenGlobal
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenReifiedSourceLocation, GenUncaughtExceptionHandler, GenUnhandledEffectError}
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, RootPackage, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
-import java.lang.constant.{ClassDesc, MethodTypeDesc}
-import java.lang.constant.ConstantDescs.{CD_Object, CD_boolean, CD_byte, CD_char, CD_double, CD_float, CD_int, CD_long, CD_short, CD_void}
+import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.{CD_Object, CD_boolean, CD_byte, CD_char, CD_double, CD_float, CD_int, CD_long, CD_short}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -53,21 +53,10 @@ sealed trait BackendObjType {
     case BackendObjType.ExtTag(tpes) => mkDesc(RootPackage, mkClassName("ExtTag", tpes))
     case BackendObjType.AbstractArrow(args, result) => mkDesc(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
     case BackendObjType.Arrow(args, result) => mkDesc(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
-    case BackendObjType.Defn(sym) => mkDesc(sym.namespace, Mangle.mkClassName("Def", sym.name))
-    case BackendObjType.Closure(sym) => mkDesc(sym.namespace, Mangle.mkClassName("Clo", sym.name))
-    case BackendObjType.Effect(sym) => mkDesc(sym.namespace, Mangle.mkClassName("Eff", sym.name))
     case BackendObjType.RecordEmpty => mkDesc(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(value) => mkDesc(RootPackage, mkClassName("RecordExtend", value))
     case BackendObjType.Record => mkDesc(RootPackage, mkClassName("Record"))
-    case BackendObjType.ReifiedSourceLocation => mkDesc(DevFlixRuntime, mkClassName("ReifiedSourceLocation"))
-    case BackendObjType.HoleError => mkDesc(DevFlixRuntime, mkClassName("HoleError"))
-    case BackendObjType.MatchError => mkDesc(DevFlixRuntime, mkClassName("MatchError"))
-    case BackendObjType.CastError => mkDesc(DevFlixRuntime, mkClassName("CastError"))
-    case BackendObjType.UnhandledEffectError => mkDesc(DevFlixRuntime, mkClassName("UnhandledEffectError"))
     case BackendObjType.Region => mkDesc(DevFlixRuntime, mkClassName("Region"))
-    case BackendObjType.UncaughtExceptionHandler => mkDesc(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
-    case BackendObjType.Main => mkDesc(RootPackage, "Main")
-    case BackendObjType.Namespace(ns) => mkDesc(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(clazz) => clazz
     // Effects Runtime
@@ -715,25 +704,6 @@ object BackendObjType {
     def ArgField(index: Int): InstanceField = InstanceField(this.desc, s"arg$index", args(index).toClassDesc)
   }
 
-  case class Defn(sym: Symbol.DefnSym) extends BackendObjType
-
-  /**
-    * The closure class `Clo$Name` for the given closure.
-    *
-    * String.charAt     =>    String/Clo$charAt
-    * List.length       =>    List/Clo$length
-    * List.map          =>    List/Clo$map
-    */
-  case class Closure(sym: Symbol.DefnSym) extends BackendObjType
-
-  /**
-    * The effect definition class for the given effect symbol.
-    *
-    * Print       =>  Eff$Print
-    * List.Crash  =>  List.Eff$Crash
-    */
-  case class Effect(sym: Symbol.EffSym) extends BackendObjType
-
   case object RecordEmpty extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.desc, IsFinal, interfaces = List(this.interface.desc))
@@ -865,264 +835,6 @@ object BackendObjType {
     */
   case class Native(clazz: ClassDesc) extends BackendObjType
 
-  case object ReifiedSourceLocation extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal)
-
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-
-      cm.mkField(SourceField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(BeginLineField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(BeginColField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(EndLineField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(EndColField, IsPublic, IsFinal, NotVolatile)
-
-      cm.mkMethod(Nil, ToStringMethod, IsPublic, NotFinal, toStringIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(
-      this.desc, List(JavaClasses.String, CD_int, CD_int, CD_int, CD_int)
-    )
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      INVOKESPECIAL(ClassConstants.Object.Constructor)
-      thisLoad()
-      ALOAD(1)
-      PUTFIELD(SourceField)
-      thisLoad()
-      ILOAD(2)
-      PUTFIELD(BeginLineField)
-      thisLoad()
-      ILOAD(3)
-      PUTFIELD(BeginColField)
-      thisLoad()
-      ILOAD(4)
-      PUTFIELD(EndLineField)
-      thisLoad()
-      ILOAD(5)
-      PUTFIELD(EndColField)
-      RETURN()
-    }
-
-    private def SourceField: InstanceField =
-      InstanceField(this.desc, "source", JavaClasses.String)
-
-    private def BeginLineField: InstanceField =
-      InstanceField(this.desc, "beginLine", CD_int)
-
-    private def BeginColField: InstanceField =
-      InstanceField(this.desc, "beginCol", CD_int)
-
-    private def EndLineField: InstanceField =
-      InstanceField(this.desc, "endLine", CD_int)
-
-    private def EndColField: InstanceField =
-      InstanceField(this.desc, "endCol", CD_int)
-
-    private def ToStringMethod: InstanceMethod = ClassConstants.Object.ToStringMethod.implementation(this.desc)
-
-    private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      // create string builder
-      NEW(JavaClasses.StringBuilder)
-      DUP()
-      INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
-      // build string
-      thisLoad()
-      GETFIELD(SourceField)
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-      pushString(":")
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-      thisLoad()
-      GETFIELD(BeginLineField)
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendInt32Method)
-      pushString(":")
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-      thisLoad()
-      GETFIELD(BeginColField)
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendInt32Method)
-      // create the string
-      INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-      ARETURN()
-    }
-  }
-
-  case object HoleError extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, ClassConstants.FlixError.Desc)
-
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      // These fields allow external equality checking.
-      cm.mkField(HoleField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(LocationField, IsPublic, IsFinal, NotVolatile)
-
-      cm.closeClassMaker()
-    }
-
-    private def HoleField: InstanceField = InstanceField(this.desc, "hole", JavaClasses.String)
-
-    private def LocationField: InstanceField = InstanceField(this.desc, "location", ReifiedSourceLocation.desc)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(JavaClasses.String, ReifiedSourceLocation.desc))
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, JavaClasses.String) { hole =>
-        withName(2, ReifiedSourceLocation.desc) { loc =>
-          thisLoad()
-          // create an error msg
-          NEW(JavaClasses.StringBuilder)
-          DUP()
-          INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
-          pushString("Hole '")
-          INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-          hole.load()
-          INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-          pushString("' at ")
-          INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-          loc.load()
-          INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-          INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-          INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-          INVOKESPECIAL(ClassConstants.FlixError.Constructor)
-          // save the arguments locally
-          thisLoad()
-          hole.load()
-          PUTFIELD(HoleField)
-          thisLoad()
-          loc.load()
-          PUTFIELD(LocationField)
-          RETURN()
-        }
-      }
-    }
-  }
-
-  case object MatchError extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(MatchError.desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
-
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      // This field allows external equality checking.
-      cm.mkField(LocationField, IsPublic, IsFinal, NotVolatile)
-
-      cm.closeClassMaker()
-    }
-
-    private def LocationField: InstanceField = InstanceField(this.desc, "location", ReifiedSourceLocation.desc)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(MatchError.desc, List(ReifiedSourceLocation.desc))
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      NEW(JavaClasses.StringBuilder)
-      DUP()
-      INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
-      pushString("Non-exhaustive match at ")
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-      ALOAD(1)
-      INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-      INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-      INVOKESPECIAL(ClassConstants.FlixError.Constructor)
-      // save argument locally
-      thisLoad()
-      ALOAD(1)
-      PUTFIELD(this.LocationField)
-      RETURN()
-    }
-  }
-
-  case object CastError extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
-
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(ReifiedSourceLocation.desc, JavaClasses.String))
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, ReifiedSourceLocation.desc)(loc => withName(2, JavaClasses.String)(msg => {
-        thisLoad()
-        NEW(JavaClasses.StringBuilder)
-        DUP()
-        INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
-        msg.load()
-        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-        pushString(" at ")
-        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-        loc.load()
-        INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-        INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-        INVOKESPECIAL(ClassConstants.FlixError.Constructor)
-        RETURN()
-      }))
-    }
-  }
-
-  case object UnhandledEffectError extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
-
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      // This field allows external equality checking.
-      cm.mkField(EffectNameField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(LocationField, IsPublic, IsFinal, NotVolatile)
-
-      cm.closeClassMaker()
-    }
-
-    private def EffectNameField: InstanceField = InstanceField(this.desc, "effectName", JavaClasses.String)
-
-    private def LocationField: InstanceField = InstanceField(this.desc, "location", ReifiedSourceLocation.desc)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(Suspension.desc, JavaClasses.String, ReifiedSourceLocation.desc))
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Suspension.desc)(suspension => withName(2, JavaClasses.String)(info => withName(3, ReifiedSourceLocation.desc)(loc => {
-        def appendString(): Unit = INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-
-        thisLoad()
-        NEW(JavaClasses.StringBuilder)
-        DUP()
-        INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
-        pushString("Unhandled effect '")
-        appendString()
-        suspension.load()
-        GETFIELD(Suspension.EffSymField)
-        appendString()
-        pushString("' (")
-        appendString()
-        info.load()
-        appendString()
-        pushString(") at ")
-        appendString()
-        loc.load()
-        INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-        appendString()
-        INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-        INVOKESPECIAL(ClassConstants.FlixError.Constructor)
-        // save arguments locally
-        thisLoad()
-        suspension.load()
-        GETFIELD(Suspension.EffSymField)
-        PUTFIELD(EffectNameField)
-        thisLoad()
-        loc.load()
-        PUTFIELD(LocationField)
-        RETURN()
-      })))
-    }
-  }
-
 
   case object Region extends BackendObjType {
 
@@ -1195,10 +907,10 @@ object BackendObjType {
       INVOKEINTERFACE(ClassConstants.ThreadBuilderOfVirtual.UnstartedMethod)
       storeWithName(2, JavaClasses.Thread) { thread =>
         thread.load()
-        NEW(BackendObjType.UncaughtExceptionHandler.desc)
+        NEW(GenUncaughtExceptionHandler.desc)
         DUP()
         thisLoad()
-        invokeConstructor(BackendObjType.UncaughtExceptionHandler.desc, mkVoidDescriptor(BackendObjType.Region.desc))
+        invokeConstructor(GenUncaughtExceptionHandler.desc, mkVoidDescriptor(BackendObjType.Region.desc))
         INVOKEVIRTUAL(ClassConstants.Thread.SetUncaughtExceptionHandlerMethod)
         thread.load()
         INVOKEVIRTUAL(ClassConstants.Thread.StartMethod)
@@ -1298,124 +1010,6 @@ object BackendObjType {
       RETURN()
     }
   }
-
-  case object UncaughtExceptionHandler extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal, interfaces = List(JavaClasses.Thread$UncaughtExceptionHandler))
-
-      cm.mkField(RegionField, IsPrivate, IsFinal, NotVolatile)
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.mkMethod(Nil, UncaughtExceptionMethod, IsPublic, IsFinal, uncaughtExceptionsIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    // private final Region r;
-    private def RegionField: InstanceField = InstanceField(this.desc, "r", BackendObjType.Region.desc)
-
-    // UncaughtExceptionHandler(Region r) { this.r = r; }
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, BackendObjType.Region.desc :: Nil)
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      INVOKESPECIAL(ClassConstants.Object.Constructor)
-      thisLoad()
-      ALOAD(1)
-      PUTFIELD(RegionField)
-      RETURN()
-    }
-
-    // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
-    private def UncaughtExceptionMethod: InstanceMethod =
-      InstanceMethod(this.desc, "uncaughtException", ClassConstants.ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d)
-
-    private def uncaughtExceptionsIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      GETFIELD(RegionField)
-      ALOAD(2)
-      INVOKEVIRTUAL(Region.ReportChildExceptionMethod)
-      RETURN()
-    }
-  }
-
-  case object Main extends BackendObjType {
-
-    def genByteCode(sym: Symbol.DefnSym)(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal)
-
-      cm.mkStaticMethod(MainMethod, IsPublic, NotFinal, mainIns(sym)(_))
-
-      cm.closeClassMaker()
-    }
-
-    def MainMethod: StaticMethod = StaticMethod(this.desc, "main", mkVoidDescriptor(JavaClasses.String.arrayType()))
-
-    private def mainIns(sym: Symbol.DefnSym)(implicit mv: MethodVisitor): Unit = {
-      val defName = BackendObjType.Defn(sym).desc
-      withName(0, JavaClasses.String.arrayType())(args => {
-        args.load()
-        INVOKESTATIC(GenGlobal.SetArgsMethod)
-        NEW(defName)
-        DUP()
-        INVOKESPECIAL(defName, ConstructorMethodName, MethodTypeDescs.NothingToVoid)
-        DUP()
-        GETSTATIC(Unit.SingletonField)
-        PUTFIELD(InstanceField(defName, "arg0", CD_Object))
-        Result.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
-        POP()
-        RETURN()
-      })
-    }
-  }
-
-  case class Namespace(ns: List[String]) extends BackendObjType {
-
-    def genByteCode(defs: List[JvmAst.Def])(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal)
-
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-
-      for (defn <- defs) {
-        cm.mkStaticMethod(ShimMethod(defn), IsPublic, IsFinal, shimIns(defn)(_))
-      }
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    def ShimMethod(defn: JvmAst.Def): StaticMethod = {
-      val erasedArgs = defn.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
-      val erasedResult = BackendType.toErasedClassDesc(defn.unboxedType.tpe)
-      // Exported names are checked in Safety, so no mangling is needed.
-      val name = if (defn.ann.isExport) defn.sym.name else "m_" + Mangle.mangle(defn.sym.name)
-      StaticMethod(this.desc, name, mkDescriptor(erasedArgs *)(erasedResult))
-    }
-
-    private def shimIns(defn: JvmAst.Def)(implicit mv: MethodVisitor): Unit = {
-      val defnT = Defn(defn.sym)
-      val paramTypes = defn.fparams.map(fp => BackendType.toErasedClassDesc(fp.tpe))
-      withNames(0, paramTypes) {
-        case (_, args) =>
-          val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
-          NEW(defnT.desc)
-          DUP()
-          INVOKESPECIAL(ConstructorMethod(defnT.desc, Nil))
-          for ((arg, index) <- args.zipWithIndex) {
-            DUP()
-            arg.load()
-            PUTFIELD(InstanceField(defnT.desc, s"arg$index", paramTypes(index)))
-          }
-          Result.unwindSuspensionFreeThunkToType(erasedResult, s"in shim method of ${defn.sym}", defn.loc)
-          xReturn(erasedResult.toClassDesc)
-      }
-    }
-  }
-
-  //
-  // Java Types
-  //
 
   case object Result extends BackendObjType {
 
@@ -1520,21 +1114,21 @@ object BackendObjType {
 
     /**
       * [..., Result] -> [..., Value|Thunk]
-      * side effect: if the result is a suspension, a [[UnhandledEffectError]] is thrown.
+      * side effect: if the result is a suspension, a [[GenUnhandledEffectError]] is thrown.
       */
     def crashIfSuspension(errorHint: String, loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
       DUP()
       INSTANCEOF(Suspension.desc)
       ifCondition(Condition.NE) {
         CHECKCAST(Suspension.desc)
-        NEW(UnhandledEffectError.desc)
+        NEW(GenUnhandledEffectError.desc)
         // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
         DUP2()
         SWAP()
         pushString(errorHint)
         pushLoc(loc)
         // [.., suspension, UEE, UEE, suspension, info, rsl] -> [.., suspension, UEE]
-        INVOKESPECIAL(UnhandledEffectError.Constructor)
+        INVOKESPECIAL(GenUnhandledEffectError.Constructor)
         ATHROW()
       }
     }

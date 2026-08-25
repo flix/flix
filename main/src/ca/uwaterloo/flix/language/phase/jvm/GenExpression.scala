@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenHoleError, GenMatchError}
 import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
 import java.lang.constant.MethodTypeDesc
 import java.lang.constant.ConstantDescs.{CD_double, CD_long, CD_void}
@@ -192,7 +193,7 @@ object GenExpression {
 
       case AtomicOp.Closure(sym) =>
         // JvmType of the closure
-        val closureName = internalNameOf(BackendObjType.Closure(sym).desc)
+        val closureName = internalNameOf(GenFunAndClosureClasses.closureDesc(sym))
         // new closure instance
         mv.visitTypeInsn(Opcodes.NEW, closureName)
         // Duplicate
@@ -1024,30 +1025,30 @@ object GenExpression {
       case AtomicOp.HoleError(sym) =>
         // Add source line number for debugging (failable by design).
         addLoc(loc)
-        NEW(BackendObjType.HoleError.desc) // HoleError
+        NEW(GenHoleError.desc) // HoleError
         DUP() // HoleError, HoleError
         pushString(sym.toString) // HoleError, HoleError, Sym
         pushLoc(loc) // HoleError, HoleError, Sym, Loc
-        INVOKESPECIAL(BackendObjType.HoleError.Constructor) // HoleError
+        INVOKESPECIAL(GenHoleError.Constructor) // HoleError
         ATHROW()
 
       case AtomicOp.MatchError =>
         // Add source line number for debugging (failable by design)
         addLoc(loc)
-        NEW(BackendObjType.MatchError.desc) // MatchError
+        NEW(GenMatchError.desc) // MatchError
         DUP() // MatchError, MatchError
         pushLoc(loc) // MatchError, MatchError, Loc
-        INVOKESPECIAL(BackendObjType.MatchError.Constructor) // MatchError
+        INVOKESPECIAL(GenMatchError.Constructor) // MatchError
         ATHROW()
 
       case AtomicOp.CastError(from, to) =>
         // Add source line number for debugging (failable by design)
         addLoc(loc)
-        NEW(BackendObjType.CastError.desc) // CastError
+        NEW(GenCastError.desc) // CastError
         DUP() // CastError, CastError
         pushLoc(loc) // CastError, CastError, Loc
         pushString(s"Cannot cast from type '$from' to '$to'") // CastError, CastError, Loc, String
-        INVOKESPECIAL(BackendObjType.CastError.Constructor) // CastError
+        INVOKESPECIAL(GenCastError.Constructor) // CastError
         ATHROW()
 
       // Vector operations are simplified to array operations in the Simplifier.
@@ -1118,7 +1119,7 @@ object GenExpression {
 
     case Expr.ApplyDef(sym, exps, ct, _, _, loc) => ct match {
       case ExpPosition.Tail =>
-        val defInternalName = internalNameOf(BackendObjType.Defn(sym).desc)
+        val defInternalName = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
         // Type of the function abstract class
         val functionInterface = BackendObjType.Arrow.fromArrowType(root.defs(sym).arrowType)
 
@@ -1149,12 +1150,12 @@ object GenExpression {
             castIfNotPrim(tpe)
           }
           val desc = mkDescriptor(paramTpes *)(BackendObjType.Result.desc)
-          val className = internalNameOf(BackendObjType.Defn(sym).desc)
+          val className = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
           mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, ClassMaker.StaticApplyMethodName, desc.descriptorString(), false)
           BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
         } else {
           // JvmType of Def
-          val defInternalName = internalNameOf(BackendObjType.Defn(sym).desc)
+          val defInternalName = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
 
           // Put the def on the stack
           mv.visitTypeInsn(Opcodes.NEW, defInternalName)
@@ -1209,7 +1210,7 @@ object GenExpression {
         val erasedResult = BackendType.toErasedBackendType(tpe)
         pcCounter(0) += 1
 
-        val effectName = BackendObjType.Effect(sym.eff).desc
+        val effectName = GenEffectClasses.effectDesc(sym.eff)
         val effectStaticMethod = ClassMaker.StaticMethod(
           effectName,
           GenEffectClasses.opName(sym),
@@ -1514,7 +1515,7 @@ object GenExpression {
 
     case Expr.RunWith(exp, effUse, rules, ct, _, _, loc) =>
       // exp is a Unit -> exp.tpe closure
-      val effectName = BackendObjType.Effect(effUse.sym).desc
+      val effectName = GenEffectClasses.effectDesc(effUse.sym)
       val effectInternalName = internalNameOf(effectName)
       // eff name
       pushString(effUse.sym.toString)

@@ -20,6 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.Branch.{FalseBranch, TrueBranch}
+import ca.uwaterloo.flix.language.phase.jvm.classes.GenReifiedSourceLocation
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import org.objectweb.asm
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
@@ -436,14 +437,14 @@ object Instructions {
   }
 
   def pushLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
-    NEW(BackendObjType.ReifiedSourceLocation.desc)
+    NEW(GenReifiedSourceLocation.desc)
     DUP()
     pushString(loc.source.name)
     pushInt(loc.startLine)
     pushInt(loc.startCol)
     pushInt(loc.endLine)
     pushInt(loc.endCol)
-    INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
+    INVOKESPECIAL(GenReifiedSourceLocation.Constructor)
   }
 
   /** `[] --> return`, the body of a static constructor that stores a fresh instance in `singleton`. */
