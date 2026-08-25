@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrame, GenFrames, GenFramesCons, GenFramesNil, GenGlobal, GenHandler, GenHoleError, GenLazy, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenReifiedSourceLocation, GenResult, GenResumption, GenResumptionCons, GenResumptionNil, GenResumptionWrapper, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUncaughtExceptionHandler, GenUnhandledEffectError, GenUnit, GenValue}
@@ -52,11 +52,11 @@ object CodeGen {
       main => JvmClass(GenMain.desc, GenMain.genByteCode(main.sym))
     ).toList
 
-    val namespaceClasses = namespacesOf(root).map(
-      ns => {
-        val entrypointDefs = ns.defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
-        JvmClass(GenNamespace.desc(ns.ns), GenNamespace.genByteCode(ns.ns, entrypointDefs))
-      }).toList
+    val namespaceClasses = namespacesOf(root).map {
+      case (ns, defs) =>
+        val entrypointDefs = defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
+        JvmClass(GenNamespace.desc(ns), GenNamespace.genByteCode(ns, entrypointDefs))
+    }.toList
 
     // Generate function classes.
     val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs).values.toList
@@ -184,14 +184,9 @@ object CodeGen {
     BytecodeAst.Root(classMap, tests, main, root.sources)
   }(DebugNoOp())
 
-  /** Returns the set of namespaces in the given AST `root`. */
-  private def namespacesOf(root: Root): Set[NamespaceInfo] = {
-    // Group every symbol by namespace.
-    root.defs.groupBy(_._1.namespace).map {
-      case (ns, defs) =>
-        NamespaceInfo(ns, defs)
-    }.toSet
-  }
+  /** Returns the defs of each namespace in the given AST `root`. */
+  private def namespacesOf(root: Root): Map[List[String], Map[Symbol.DefnSym, Def]] =
+    root.defs.groupBy(_._1.namespace)
 
   /** Returns the set of erased function types in `types` without searching recursively. */
   private def getErasedArrowsOf(types: Iterable[SimpleType]): Set[(List[ClassDesc], ClassDesc)] =
