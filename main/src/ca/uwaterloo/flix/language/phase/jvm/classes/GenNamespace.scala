@@ -65,7 +65,7 @@ object GenNamespace {
     val paramTypes = defn.fparams.map(fp => BackendType.toErasedClassDesc(fp.tpe))
     withNames(0, paramTypes) {
       case (_, args) =>
-        val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
+        val erasedResult = BackendType.toErasedClassDesc(defn.unboxedType.tpe)
         NEW(defnDesc)
         DUP()
         INVOKESPECIAL(ConstructorMethod(defnDesc, Nil))
@@ -74,8 +74,8 @@ object GenNamespace {
           arg.load()
           PUTFIELD(InstanceField(defnDesc, s"arg$index", paramTypes(index)))
         }
-        BackendObjType.Result.unwindSuspensionFreeThunkToType(erasedResult, s"in shim method of ${defn.sym}", defn.loc)
-        xReturn(erasedResult.toClassDesc)
+        GenResult.unwindSuspensionFreeThunkToType(erasedResult, s"in shim method of ${defn.sym}", defn.loc)
+        xReturn(erasedResult)
     }
   }
 

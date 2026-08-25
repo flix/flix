@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JMethod}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
+import ca.uwaterloo.flix.language.phase.jvm.classes.GenResult
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
@@ -163,7 +164,7 @@ object GenAnonymousClasses {
   /** Creates code to read the arguments, load it into the `cloField` closure, call that function, and returns. */
   private def methodIns(abstractClass: BackendObjType.AbstractArrow, cloField: ClassMaker.InstanceField, actualRes: ClassDesc, m: JvmMethod)(implicit mv: MethodVisitor, root: Root): Unit = {
     val functionAbstractClass = abstractClass.superClass
-    val returnType = BackendType.toBackendType(m.tpe)
+    val returnType = BackendType.toClassDesc(m.tpe)
 
     thisLoad()
     GETFIELD(cloField)
@@ -178,7 +179,7 @@ object GenAnonymousClasses {
         }
     }
     // Invoke the closure, leaving its result on the stack in the representation of `m.tpe`.
-    BackendObjType.Result.unwindSuspensionFreeThunkToType(returnType, s"in anonymous class method ${m.ident.name}", m.loc)
+    GenResult.unwindSuspensionFreeThunkToType(returnType, s"in anonymous class method ${m.ident.name}", m.loc)
 
     // Return the value using the method's erased JVM return type (`actualRes`). Any boxing
     // needed to feed a primitive result into a reference (e.g. `Object`) return has already

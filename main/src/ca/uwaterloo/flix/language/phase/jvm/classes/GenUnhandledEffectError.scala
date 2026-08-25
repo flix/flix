@@ -52,10 +52,10 @@ object GenUnhandledEffectError {
   private def LocationField: InstanceField = InstanceField(this.desc, "location", GenReifiedSourceLocation.desc)
 
   def Constructor: ConstructorMethod =
-    ConstructorMethod(this.desc, List(BackendObjType.Suspension.desc, JavaClasses.String, GenReifiedSourceLocation.desc))
+    ConstructorMethod(this.desc, List(GenSuspension.desc, JavaClasses.String, GenReifiedSourceLocation.desc))
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
-    withName(1, BackendObjType.Suspension.desc)(suspension => withName(2, JavaClasses.String)(info => withName(3, GenReifiedSourceLocation.desc)(loc => {
+    withName(1, GenSuspension.desc)(suspension => withName(2, JavaClasses.String)(info => withName(3, GenReifiedSourceLocation.desc)(loc => {
       def appendString(): Unit = INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
 
       thisLoad()
@@ -65,7 +65,7 @@ object GenUnhandledEffectError {
       pushString("Unhandled effect '")
       appendString()
       suspension.load()
-      GETFIELD(BackendObjType.Suspension.EffSymField)
+      GETFIELD(GenSuspension.EffSymField)
       appendString()
       pushString("' (")
       appendString()
@@ -81,7 +81,7 @@ object GenUnhandledEffectError {
       // save arguments locally
       thisLoad()
       suspension.load()
-      GETFIELD(BackendObjType.Suspension.EffSymField)
+      GETFIELD(GenSuspension.EffSymField)
       PUTFIELD(EffectNameField)
       thisLoad()
       loc.load()

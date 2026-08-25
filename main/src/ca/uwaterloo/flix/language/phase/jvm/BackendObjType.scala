@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenReifiedSourceLocation, GenUncaughtExceptionHandler, GenUnhandledEffectError}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenReifiedSourceLocation, GenResult, GenThunk, GenUncaughtExceptionHandler, GenValue}
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, RootPackage, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
@@ -55,20 +55,6 @@ sealed trait BackendObjType {
     // Java classes
     case BackendObjType.Native(clazz) => clazz
     // Effects Runtime
-    case BackendObjType.Result => mkDesc(DevFlixRuntime, mkClassName("Result"))
-    case BackendObjType.Value => mkDesc(DevFlixRuntime, mkClassName("Value"))
-    case BackendObjType.Frame => mkDesc(DevFlixRuntime, mkClassName("Frame"))
-    case BackendObjType.Thunk => mkDesc(DevFlixRuntime, mkClassName("Thunk"))
-    case BackendObjType.Suspension => mkDesc(DevFlixRuntime, mkClassName("Suspension"))
-    case BackendObjType.Frames => mkDesc(DevFlixRuntime, mkClassName("Frames"))
-    case BackendObjType.FramesCons => mkDesc(DevFlixRuntime, mkClassName("FramesCons"))
-    case BackendObjType.FramesNil => mkDesc(DevFlixRuntime, mkClassName("FramesNil"))
-    case BackendObjType.Resumption => mkDesc(DevFlixRuntime, mkClassName("Resumption"))
-    case BackendObjType.ResumptionCons => mkDesc(DevFlixRuntime, mkClassName("ResumptionCons"))
-    case BackendObjType.ResumptionNil => mkDesc(DevFlixRuntime, mkClassName("ResumptionNil"))
-    case BackendObjType.Handler => mkDesc(DevFlixRuntime, mkClassName("Handler"))
-    case BackendObjType.EffectCall => mkDesc(DevFlixRuntime, mkClassName("EffectCall"))
-    case BackendObjType.ResumptionWrapper(t) => mkDesc(DevFlixRuntime, mkClassName("ResumptionWrapper", t))
   }
 
   /**
@@ -177,9 +163,9 @@ object BackendObjType {
           // get expression as thunk
           DUP()
           GETFIELD(ExpField)
-          CHECKCAST(Thunk.desc)
+          CHECKCAST(GenThunk.desc)
           // this.value = thunk.unwind()
-          Result.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(tpe.toClassDesc, "during call to Lazy.force", SourceLocation.Unknown)
           PUTFIELD(ValueField)
           // this.exp = null
           thisLoad()
@@ -450,105 +436,105 @@ object BackendObjType {
           DUP()
           ALOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           ARETURN()
         case ObjConsumer =>
           thisLoad()
           DUP()
           ALOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           RETURN()
         case ObjPredicate =>
           thisLoad()
           DUP()
           ALOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_boolean, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           IRETURN()
         case IntFunction =>
           thisLoad()
           DUP()
           ILOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           ARETURN()
         case IntConsumer =>
           thisLoad()
           DUP()
           ILOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           RETURN()
         case IntPredicate =>
           thisLoad()
           DUP()
           ILOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_boolean, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           IRETURN()
         case IntUnaryOperator =>
           thisLoad()
           DUP()
           ILOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Int32, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_int, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           IRETURN()
         case LongFunction =>
           thisLoad()
           DUP()
           LLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           ARETURN()
         case LongConsumer =>
           thisLoad()
           DUP()
           LLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           RETURN()
         case LongPredicate =>
           thisLoad()
           DUP()
           LLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_boolean, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           IRETURN()
         case LongUnaryOperator =>
           thisLoad()
           DUP()
           LLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Int64, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_long, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           LRETURN()
         case DoubleFunction =>
           thisLoad()
           DUP()
           DLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           ARETURN()
         case DoubleConsumer =>
           thisLoad()
           DUP()
           DLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_Object, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           RETURN()
         case DoublePredicate =>
           thisLoad()
           DUP()
           DLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_boolean, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           IRETURN()
         case DoubleUnaryOperator =>
           thisLoad()
           DUP()
           DLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(BackendType.Float64, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(CD_double, s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
           DRETURN()
       }
     }
@@ -617,7 +603,7 @@ object BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val specializedInterface = specialization()
-      val interfaces = Thunk.desc :: specializedInterface.map(_.desc)
+      val interfaces = GenThunk.desc :: specializedInterface.map(_.desc)
 
       val cm = ClassMaker.mkAbstractClass(this.desc, superClass = CD_Object, interfaces)
 
@@ -859,697 +845,6 @@ object BackendObjType {
       ALOAD(1)
       INVOKEVIRTUAL(ClassConstants.LinkedList.AddFirstMethod)
       RETURN()
-    }
-  }
-
-  case object Result extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.desc)
-      cm.closeClassMaker()
-    }
-
-    /**
-      * Expects a Result on the stack and leaves a non-Thunk Result.
-      * [..., Result] --> [..., Suspension|Value]
-      */
-    def unwindThunk()(implicit mv: MethodVisitor): Unit = {
-      whileLoop(Condition.NE) {
-        DUP()
-        INSTANCEOF(Thunk.desc)
-      } {
-        CHECKCAST(Thunk.desc)
-        INVOKEINTERFACE(Thunk.InvokeMethod)
-      }
-    }
-
-    /**
-      * Expects a Result on the stack.
-      * If the result is a Suspension, this will return a modified Suspension.
-      * If the result in NOT a Suspension, this will leave it on the stack.
-      * [..., Result] --> [..., Thunk|Value]
-      * side effect: Will return a modified suspension if a suspension occurs
-      */
-    private def handleSuspension(pc: Int, newFrame: MethodVisitor => Unit, setPc: MethodVisitor => Unit)(implicit mv: MethodVisitor): Unit = {
-      DUP()
-      INSTANCEOF(Suspension.desc)
-      ifCondition(Condition.NE) {
-        DUP()
-        CHECKCAST(Suspension.desc) // [..., s]
-        // Add our new frame
-        NEW(Suspension.desc)
-        DUP()
-        INVOKESPECIAL(Suspension.Constructor) // [..., s, s']
-        SWAP() // [..., s', s]
-        DUP2() // [..., s', s, s', s]
-        GETFIELD(Suspension.EffSymField)
-        PUTFIELD(Suspension.EffSymField) // [..., s', s]
-        DUP2()
-        GETFIELD(Suspension.EffOpField)
-        PUTFIELD(Suspension.EffOpField) // [..., s', s]
-        DUP2()
-        GETFIELD(Suspension.ResumptionField)
-        PUTFIELD(Suspension.ResumptionField) // [..., s', s]
-        DUP2()
-        GETFIELD(Suspension.PrefixField) // [..., s', s, s', s.prefix]
-        // Make the new frame and push it
-        newFrame(mv)
-        DUP()
-        pushInt(pc)
-        setPc(mv)
-        INVOKEINTERFACE(Frames.PushMethod) // [..., s', s, s', prefix']
-        PUTFIELD(Suspension.PrefixField) // [..., s', s]
-        POP() // [..., s']
-        // Return the suspension up the stack
-        xReturn(Suspension.desc)
-      }
-    }
-
-    /**
-      * Expects a Result on the stack and leaves a Value.
-      * This might return if a Suspension is encountered.
-      * [..., Result] --> [..., Value.value: tpe]
-      * side effect: Will return any Suspension found
-      */
-    def unwindThunkToValue(pc: Int, newFrame: MethodVisitor => Unit, setPc: MethodVisitor => Unit)(implicit mv: MethodVisitor): Unit = {
-      unwindThunk()
-      handleSuspension(pc, newFrame, setPc)
-      CHECKCAST(Value.desc) // Cannot fail
-    }
-
-    /**
-      * Expects a Result on the stack and leaves something of the given tpe but erased.
-      * Assumes that the result is control-pure, i.e. it is not a suspension and will never return a suspension through a thunk.
-      * [..., Result] --> [..., Value.value: tpe]
-      * side effect: crashes on suspensions
-      */
-    def unwindSuspensionFreeThunkToType(tpe: BackendType, errorHint: String, loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
-      unwindThunk()
-      crashIfSuspension(errorHint, loc)
-      CHECKCAST(Value.desc) // Cannot fail
-      GETFIELD(Value.fieldFromType(tpe))
-      castIfNotPrim(tpe.toClassDesc)
-    }
-
-    /**
-      * Expects a Result on the stack and leaves a Value.
-      * Assumes that the result is control-pure, i.e. it is not a suspension and will never return a suspension through a thunk.
-      * [..., Result] --> [..., Value]
-      * side effect: crashes on suspensions
-      */
-    def unwindSuspensionFreeThunk(errorHint: String, loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
-      unwindThunk()
-      crashIfSuspension(errorHint, loc)
-      CHECKCAST(Value.desc)
-    }
-
-    /**
-      * [..., Result] -> [..., Value|Thunk]
-      * side effect: if the result is a suspension, a [[GenUnhandledEffectError]] is thrown.
-      */
-    def crashIfSuspension(errorHint: String, loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
-      DUP()
-      INSTANCEOF(Suspension.desc)
-      ifCondition(Condition.NE) {
-        CHECKCAST(Suspension.desc)
-        NEW(GenUnhandledEffectError.desc)
-        // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
-        DUP2()
-        SWAP()
-        pushString(errorHint)
-        pushLoc(loc)
-        // [.., suspension, UEE, UEE, suspension, info, rsl] -> [.., suspension, UEE]
-        INVOKESPECIAL(GenUnhandledEffectError.Constructor)
-        ATHROW()
-      }
-    }
-  }
-
-  case object Value extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal, interfaces = List(Result.desc))
-
-      // The fields of all erased types, only one will be relevant
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkField(BoolField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(CharField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(Int8Field, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(Int16Field, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(Int32Field, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(Int64Field, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(Float32Field, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(Float64Field, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(ObjectField, IsPublic, NotFinal, NotVolatile)
-
-      // Cached singleton Value instances for Unit, true, and false
-      cm.mkField(UnitField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(TrueField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(FalseField, IsPublic, IsFinal, NotVolatile)
-      cm.mkStaticConstructor(StaticConstructorMethod(this.desc), staticConstructorIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    private def staticConstructorIns(implicit mv: MethodVisitor): Unit = {
-      // Value.UNIT = new Value(); Value.UNIT.o = Unit.INSTANCE
-      NEW(this.desc)
-      DUP()
-      INVOKESPECIAL(Constructor)
-      DUP()
-      GETSTATIC(BackendObjType.Unit.SingletonField)
-      PUTFIELD(ObjectField)
-      PUTSTATIC(UnitField)
-      // Value.TRUE = new Value(); Value.TRUE.b = true
-      NEW(this.desc)
-      DUP()
-      INVOKESPECIAL(Constructor)
-      DUP()
-      ICONST_1()
-      PUTFIELD(BoolField)
-      PUTSTATIC(TrueField)
-      // Value.FALSE = new Value(); Value.FALSE.b = false (default, but explicit)
-      NEW(this.desc)
-      DUP()
-      INVOKESPECIAL(Constructor)
-      PUTSTATIC(FalseField)
-      RETURN()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    private def BoolField: InstanceField = InstanceField(this.desc, "b", CD_boolean)
-
-    private def CharField: InstanceField = InstanceField(this.desc, "c", CD_char)
-
-    private def Int8Field: InstanceField = InstanceField(this.desc, "i8", CD_byte)
-
-    private def Int16Field: InstanceField = InstanceField(this.desc, "i16", CD_short)
-
-    private def Int32Field: InstanceField = InstanceField(this.desc, "i32", CD_int)
-
-    private def Int64Field: InstanceField = InstanceField(this.desc, "i64", CD_long)
-
-    private def Float32Field: InstanceField = InstanceField(this.desc, "f32", CD_float)
-
-    private def Float64Field: InstanceField = InstanceField(this.desc, "f64", CD_double)
-
-    private def ObjectField: InstanceField = InstanceField(this.desc, "o", CD_Object)
-
-    def UnitField: StaticField = StaticField(this.desc, "UNIT", this.desc)
-
-    def TrueField: StaticField = StaticField(this.desc, "TRUE", this.desc)
-
-    def FalseField: StaticField = StaticField(this.desc, "FALSE", this.desc)
-
-    /**
-      * Returns the field of Value corresponding to the given type
-      */
-    def fieldFromType(tpe: BackendType): InstanceField = {
-      import BackendType.*
-      tpe match {
-        case Bool => BoolField
-        case Char => CharField
-        case Int8 => Int8Field
-        case Int16 => Int16Field
-        case Int32 => Int32Field
-        case Int64 => Int64Field
-        case Float32 => Float32Field
-        case Float64 => Float64Field
-        case Array(_) | BackendType.Reference(_) => ObjectField
-      }
-    }
-  }
-
-  /** Frame is really just java.util.Function<Value, Result> * */
-  case object Frame extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.desc)
-
-      cm.mkInterfaceMethod(ApplyMethod)
-      cm.mkStaticInterfaceMethod(StaticApplyMethod, IsPublic, NotFinal, staticApplyIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def ApplyMethod: InterfaceMethod = InterfaceMethod(this.desc, "applyFrame", mkDescriptor(Value.desc)(Result.desc))
-
-    def StaticApplyMethod: StaticInterfaceMethod = StaticInterfaceMethod(
-      this.desc,
-      "applyFrameStatic",
-      mkDescriptor(Frame.desc, Value.desc)(Result.desc)
-    )
-
-    private def staticApplyIns(implicit mv: MethodVisitor): Unit = {
-      withName(0, Frame.desc) { fun =>
-        withName(1, Value.desc) { resumeArg =>
-          fun.load()
-          resumeArg.load()
-          INVOKEINTERFACE(Frame.ApplyMethod)
-          ARETURN()
-        }
-      }
-    }
-  }
-
-  case object Thunk extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.desc, interfaces = List(Result.desc, JavaClasses.Runnable))
-
-      cm.mkInterfaceMethod(InvokeMethod)
-      cm.mkDefaultMethod(RunMethod, IsPublic, NotFinal, runIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def InvokeMethod: InterfaceMethod = InterfaceMethod(this.desc, "invoke", mkDescriptor()(Result.desc))
-
-    private def RunMethod: DefaultMethod = DefaultMethod(this.desc, "run", mkVoidDescriptor())
-
-    private def runIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      Result.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(JavaClasses.Runnable)}", SourceLocation.Unknown)
-      POP()
-      RETURN()
-    }
-  }
-
-  case object Suspension extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal, interfaces = List(Result.desc))
-
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkField(EffSymField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(EffOpField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(PrefixField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(ResumptionField, IsPublic, NotFinal, NotVolatile)
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    def EffSymField: InstanceField = InstanceField(this.desc, "effSym", JavaClasses.String)
-
-    def EffOpField: InstanceField = InstanceField(this.desc, "effOp", EffectCall.desc)
-
-    def PrefixField: InstanceField = InstanceField(this.desc, "prefix", Frames.desc)
-
-    def ResumptionField: InstanceField = InstanceField(this.desc, "resumption", Resumption.desc)
-
-  }
-
-  case object Frames extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.desc)
-
-      cm.mkInterfaceMethod(PushMethod)
-      cm.mkInterfaceMethod(ReverseOntoMethod)
-
-      cm.closeClassMaker()
-    }
-
-    def PushMethod: InterfaceMethod = InterfaceMethod(this.desc, "push", mkDescriptor(Frame.desc)(Frames.desc))
-
-    def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.desc, "reverseOnto", mkDescriptor(Frames.desc)(Frames.desc))
-
-    def pushImplementation(implicit mv: MethodVisitor): Unit = {
-      withName(1, Frame.desc) { frame =>
-        NEW(FramesCons.desc)
-        DUP()
-        INVOKESPECIAL(FramesCons.Constructor)
-        DUP()
-        frame.load()
-        PUTFIELD(FramesCons.HeadField)
-        DUP()
-        thisLoad()
-        PUTFIELD(FramesCons.TailField)
-        xReturn(FramesCons.desc)
-      }
-    }
-  }
-
-  case object FramesCons extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal, interfaces = List(Frames.desc))
-
-      cm.mkField(HeadField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(TailField, IsPublic, NotFinal, NotVolatile)
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkMethod(Nil, PushMethod, IsPublic, IsFinal, Frames.pushImplementation(_))
-      cm.mkMethod(Nil, Frames.ReverseOntoMethod.implementation(this.desc), IsPublic, IsFinal, reverseOntoIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def HeadField: InstanceField = InstanceField(this.desc, "head", Frame.desc)
-
-    def TailField: InstanceField = InstanceField(this.desc, "tail", Frames.desc)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.desc)
-
-    private def reverseOntoIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Frames.desc) { rest =>
-        thisLoad()
-        GETFIELD(TailField)
-        NEW(FramesCons.desc)
-        DUP()
-        INVOKESPECIAL(FramesCons.Constructor)
-        DUP()
-        thisLoad()
-        GETFIELD(HeadField)
-        PUTFIELD(HeadField)
-        DUP()
-        rest.load()
-        PUTFIELD(TailField)
-        INVOKEINTERFACE(Frames.ReverseOntoMethod)
-        xReturn(Frames.desc)
-      }
-    }
-  }
-
-  case object FramesNil extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal, interfaces = List(Frames.desc))
-
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkMethod(Nil, PushMethod, IsPublic, IsFinal, Frames.pushImplementation(_))
-      cm.mkMethod(Nil, Frames.ReverseOntoMethod.implementation(this.desc), IsPublic, IsFinal, reverseOntoIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.desc)
-
-    private def reverseOntoIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Frames.desc) { rest =>
-        rest.load()
-        xReturn(rest.tpe)
-      }
-    }
-  }
-
-  case object Resumption extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.desc)
-      cm.mkInterfaceMethod(RewindMethod)
-      cm.mkStaticInterfaceMethod(StaticRewindMethod, IsPublic, NotFinal, staticRewindIns(_))
-      cm.closeClassMaker()
-    }
-
-    def RewindMethod: InterfaceMethod = InterfaceMethod(this.desc, "rewind", mkDescriptor(Value.desc)(Result.desc))
-
-    def StaticRewindMethod: StaticInterfaceMethod = StaticInterfaceMethod(this.desc, "staticRewind", mkDescriptor(Resumption.desc, Value.desc)(Result.desc))
-
-    private def staticRewindIns(implicit mv: MethodVisitor): Unit = {
-      withName(0, Resumption.desc) { resumption =>
-        withName(1, Value.desc) { v =>
-          resumption.load()
-          v.load()
-          INVOKEINTERFACE(Resumption.RewindMethod)
-          ARETURN()
-        }
-      }
-    }
-  }
-
-  case object ResumptionCons extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal, interfaces = List(Resumption.desc))
-
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-
-      cm.mkField(SymField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(HandlerField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(FramesField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(TailField, IsPublic, NotFinal, NotVolatile)
-
-      cm.mkMethod(Nil, Resumption.RewindMethod.implementation(this.desc), IsPublic, IsFinal, rewindIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    def SymField: InstanceField = InstanceField(this.desc, "sym", JavaClasses.String)
-
-    def HandlerField: InstanceField = InstanceField(this.desc, "handler", Handler.desc)
-
-    def FramesField: InstanceField = InstanceField(this.desc, "frames", Frames.desc)
-
-    def TailField: InstanceField = InstanceField(this.desc, "tail", Resumption.desc)
-
-    private def rewindIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Value.desc) { v =>
-        thisLoad()
-        GETFIELD(SymField)
-        thisLoad()
-        GETFIELD(HandlerField)
-        thisLoad()
-        GETFIELD(FramesField)
-        // () -> tail.rewind(v)
-        thisLoad()
-        GETFIELD(TailField)
-        v.load()
-        mkStaticLambda(Thunk.InvokeMethod, Resumption.StaticRewindMethod, drop = 0)
-        mkStaticLambda(Thunk.InvokeMethod, Handler.InstallHandlerMethod, drop = 0)
-        xReturn(Thunk.desc)
-      }
-    }
-  }
-
-  case object ResumptionNil extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal, interfaces = List(Resumption.desc))
-
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkMethod(Nil, Resumption.RewindMethod.implementation(this.desc), IsPublic, IsFinal, rewindIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    private def rewindIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Value.desc) { v =>
-        v.load()
-        xReturn(v.tpe)
-      }
-    }
-  }
-
-  case object Handler extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.desc)
-      cm.mkStaticInterfaceMethod(InstallHandlerMethod, IsPublic, NotFinal, installHandlerIns(_))
-      cm.closeClassMaker()
-    }
-
-    def InstallHandlerMethod: StaticInterfaceMethod = StaticInterfaceMethod(
-      this.desc,
-      "installHandler",
-      mkDescriptor(JavaClasses.String, Handler.desc, Frames.desc, Thunk.desc)(Result.desc)
-    )
-
-    private def installHandlerIns(implicit mv: MethodVisitor): Unit = {
-      withName(0, JavaClasses.String) { effSym =>
-        withName(1, Handler.desc) { handler =>
-          withName(2, Frames.desc) { frames =>
-            withName(3, Thunk.desc) { thunk =>
-              thunk.load()
-              // Thunk|Value|Suspension
-              Result.unwindThunk()
-              // Value|Suspension
-              // handle suspension
-              DUP()
-              INSTANCEOF(Suspension.desc)
-              ifCondition(Condition.NE) {
-                DUP()
-                CHECKCAST(Suspension.desc)
-                storeWithName(4, Suspension.desc) { s =>
-                  NEW(ResumptionCons.desc)
-                  DUP()
-                  INVOKESPECIAL(ResumptionCons.Constructor)
-                  DUP()
-                  effSym.load()
-                  PUTFIELD(ResumptionCons.SymField)
-                  DUP()
-                  handler.load()
-                  PUTFIELD(ResumptionCons.HandlerField)
-                  DUP()
-                  s.load()
-                  GETFIELD(Suspension.PrefixField)
-                  frames.load()
-                  INVOKEINTERFACE(Frames.ReverseOntoMethod)
-                  PUTFIELD(ResumptionCons.FramesField)
-                  DUP()
-                  s.load()
-                  GETFIELD(Suspension.ResumptionField)
-                  PUTFIELD(ResumptionCons.TailField)
-                  storeWithName(5, ResumptionCons.desc) { r =>
-                    s.load()
-                    GETFIELD(Suspension.EffSymField)
-                    effSym.load()
-                    INVOKEVIRTUAL(ClassConstants.Object.EqualsMethod)
-                    ifCondition(Condition.NE) {
-                      s.load()
-                      GETFIELD(Suspension.EffOpField)
-                      handler.load()
-                      r.load()
-                      INVOKEINTERFACE(EffectCall.ApplyMethod)
-                      xReturn(Result.desc)
-                    }
-                    NEW(Suspension.desc)
-                    DUP()
-                    INVOKESPECIAL(Suspension.Constructor)
-                    DUP()
-                    s.load()
-                    GETFIELD(Suspension.EffSymField)
-                    PUTFIELD(Suspension.EffSymField)
-                    DUP()
-                    s.load()
-                    GETFIELD(Suspension.EffOpField)
-                    PUTFIELD(Suspension.EffOpField)
-                    DUP()
-                    NEW(FramesNil.desc)
-                    DUP()
-                    INVOKESPECIAL(FramesNil.Constructor)
-                    PUTFIELD(Suspension.PrefixField)
-                    DUP()
-                    r.load()
-                    PUTFIELD(Suspension.ResumptionField)
-                    xReturn(Suspension.desc)
-                  }
-                }
-              }
-
-              // Value
-              CHECKCAST(Value.desc)
-              storeWithName(6, Value.desc) { res =>
-                //
-                // Case on frames
-                // FramesNil
-                frames.load()
-                INSTANCEOF(FramesNil.desc)
-                ifCondition(Condition.NE) {
-                  res.load()
-                  xReturn(Value.desc)
-                }
-                // FramesCons
-                frames.load()
-                CHECKCAST(FramesCons.desc)
-                storeWithName(7, FramesCons.desc) { cons => {
-                  effSym.load()
-                  handler.load()
-                  cons.load()
-                  GETFIELD(FramesCons.TailField)
-                  // thunk
-                  cons.load()
-                  GETFIELD(FramesCons.HeadField)
-                  res.load()
-                  mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod, drop = 0)
-                  INVOKESTATIC(InstallHandlerMethod)
-                  xReturn(Result.desc)
-                }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  case object EffectCall extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.desc)
-      cm.mkInterfaceMethod(ApplyMethod)
-      cm.closeClassMaker()
-    }
-
-    def ApplyMethod: InterfaceMethod = InterfaceMethod(this.desc, "apply", mkDescriptor(Handler.desc, Resumption.desc)(Result.desc))
-
-  }
-
-  case class ResumptionWrapper(tpe: BackendType) extends BackendObjType {
-
-    // tpe -> Result
-    private val superClass: AbstractArrow = AbstractArrow(List(tpe.toErased), BackendType.Object)
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.desc, IsFinal, superClass.desc)
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.mkField(ResumptionField, IsPrivate, IsFinal, NotVolatile)
-      cm.mkMethod(Nil, InvokeMethod, IsPublic, NotFinal, invokeIns(_))
-      cm.mkMethod(Nil, UniqueMethod, IsPublic, NotFinal, uniqueIns(_))
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, List(Resumption.desc))
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Resumption.desc) { resumption =>
-        thisLoad()
-        INVOKESPECIAL(superClass.desc, ConstructorMethodName, MethodTypeDescs.NothingToVoid)
-        thisLoad()
-        resumption.load()
-        PUTFIELD(ResumptionField)
-        RETURN()
-      }
-    }
-
-    def ResumptionField: InstanceField = InstanceField(this.desc, "resumption", Resumption.desc)
-
-    def InvokeMethod: InstanceMethod = Thunk.InvokeMethod.implementation(this.desc)
-
-    private def invokeIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      GETFIELD(ResumptionField)
-      tpe.toErased match {
-        case BackendType.Bool =>
-          // Use cached Value.TRUE / Value.FALSE singletons
-          thisLoad()
-          mv.visitFieldInsn(Opcodes.GETFIELD, ClassDescs.internalNameOf(desc), "arg0", tpe.toErased.toDescriptor)
-          val falseLabel = new Label()
-          val doneLabel = new Label()
-          mv.visitJumpInsn(Opcodes.IFEQ, falseLabel)
-          GETSTATIC(Value.TrueField)
-          mv.visitJumpInsn(Opcodes.GOTO, doneLabel)
-          mv.visitLabel(falseLabel)
-          GETSTATIC(Value.FalseField)
-          mv.visitLabel(doneLabel)
-        case _ =>
-          NEW(Value.desc)
-          DUP()
-          INVOKESPECIAL(Value.Constructor)
-          DUP()
-          thisLoad()
-          mv.visitFieldInsn(Opcodes.GETFIELD, ClassDescs.internalNameOf(desc), "arg0", tpe.toErased.toDescriptor)
-          PUTFIELD(Value.fieldFromType(tpe.toErased))
-      }
-      INVOKEINTERFACE(Resumption.RewindMethod)
-      xReturn(Result.desc)
-    }
-
-    private def UniqueMethod: InstanceMethod = InstanceMethod(this.desc, "getUniqueThreadClosure", mkDescriptor()(this.superClass.desc))
-
-    private def uniqueIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      ARETURN()
     }
   }
 }

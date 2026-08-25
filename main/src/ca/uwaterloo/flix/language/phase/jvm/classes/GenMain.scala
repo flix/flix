@@ -59,7 +59,7 @@ object GenMain {
       DUP()
       GETSTATIC(BackendObjType.Unit.SingletonField)
       PUTFIELD(InstanceField(defName, "arg0", CD_Object))
-      BackendObjType.Result.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+      GenResult.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
       POP()
       RETURN()
     })
