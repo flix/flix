@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, RigidityEnv, Symbol, Type,
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.collection.{MapOps, Nel}
+import ca.uwaterloo.flix.util.collection.{ListOps, MapOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -311,7 +311,7 @@ object Specialize {
       prefixTparams           = prefixTparamsMap.getOrElse(sym, Nil)
       if defn.spec.tparams.nonEmpty || prefixTparams.nonEmpty
     } yield {
-      val substMap = (prefixTparams.zip(args) ++ defn.spec.tparams.zip(args.drop(prefixTparams.length)))
+      val substMap = (ListOps.zip(prefixTparams, args.take(prefixTparams.length)) ++ ListOps.zip(defn.spec.tparams, args.drop(prefixTparams.length)))
         .map { case (tp, ty) => tp.sym -> ty }.toMap
       val freshSym = Symbol.freshDefnSym(defn.sym)
       val subst = StrictSubstitution.mk(Substitution(substMap))
@@ -329,7 +329,7 @@ object Specialize {
       if enm.tparams.nonEmpty
       args                  <- instantiations.map(_.args)
     } yield {
-      val substMap = enm.tparams.zip(args).map { case (tp, ty) => tp.sym -> ty }.toMap
+      val substMap = ListOps.zip(enm.tparams, args).map { case (tp, ty) => tp.sym -> ty }.toMap
       val freshSym = Symbol.freshEnumSym(enm.sym)
       val subst = StrictSubstitution.mk(Substitution(substMap))
       val newCases = enm.cases.map { case (caseSym, TypedAst.Case(_, tpes, sc, cloc)) =>
@@ -351,7 +351,7 @@ object Specialize {
       enm                   <- root.restrictableEnums.get(sym).toList
       args                  <- instantiations.map(_.args)
     } yield {
-      val substMap = (enm.index :: enm.tparams).zip(args).map { case (tp, ty) => tp.sym -> ty }.toMap
+      val substMap = ListOps.zip(enm.index :: enm.tparams, args).map { case (tp, ty) => tp.sym -> ty }.toMap
       val freshSym = Symbol.freshEnumSym(SpecializeAndLower.lowerRestrictableEnumSym(sym))
       val subst = StrictSubstitution.mk(Substitution(substMap))
       val newCases = enm.cases.map { case (caseSym, TypedAst.RestrictableCase(_, tpes, sc, cloc)) =>
@@ -373,7 +373,7 @@ object Specialize {
       if struct.tparams.nonEmpty
       args                  <- instantiations.map(_.args)
     } yield {
-      val substMap = struct.tparams.zip(args).map { case (tp, ty) => tp.sym -> ty }.toMap
+      val substMap = ListOps.zip(struct.tparams, args).map { case (tp, ty) => tp.sym -> ty }.toMap
       val freshSym = Symbol.freshStructSym(struct.sym)
       val subst = StrictSubstitution.mk(Substitution(substMap))
       val newFields = struct.fields.map { case (fieldSym, TypedAst.StructField(_, tpe, floc)) =>
