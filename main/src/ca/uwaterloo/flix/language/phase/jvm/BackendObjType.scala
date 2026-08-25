@@ -42,7 +42,7 @@ sealed trait BackendObjType {
     */
   val desc: ClassDesc = this match {
     case BackendObjType.Unit => mkDesc(DevFlixRuntime, mkClassName("Unit"))
-    case BackendObjType.Lazy(tpe) => mkDesc(RootPackage, mkClassName("Lazy", tpe))
+    case BackendObjType.Lazy(tpe) => mkDesc(RootPackage, Mangle.mkClassName("Lazy", Mangle.erasedName(tpe)))
     case BackendObjType.Tuple(elms) => mkDesc(RootPackage, Mangle.mkClassName("Tuple", elms.map(Mangle.erasedName)))
     case BackendObjType.Struct(elms) => mkDesc(RootPackage, Mangle.mkClassName("Struct", elms.map(Mangle.erasedName)))
     case BackendObjType.Tagged => mkDesc(RootPackage, mkClassName("Tagged"))
@@ -99,7 +99,7 @@ object BackendObjType {
 
   }
 
-  case class Lazy(tpe: BackendType) extends BackendObjType {
+  case class Lazy(tpe: ClassDesc) extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.desc, IsFinal)
@@ -115,7 +115,7 @@ object BackendObjType {
 
     def ExpField: InstanceField = InstanceField(this.desc, "expression", CD_Object)
 
-    def ValueField: InstanceField = InstanceField(this.desc, "value", tpe.toClassDesc)
+    def ValueField: InstanceField = InstanceField(this.desc, "value", tpe)
 
     private def LockField: InstanceField = InstanceField(this.desc, "lock", JavaClasses.ReentrantLock)
 
@@ -141,7 +141,7 @@ object BackendObjType {
         RETURN()
       })
 
-    def ForceMethod: InstanceMethod = InstanceMethod(this.desc, "force", mkDescriptor()(tpe.toClassDesc))
+    def ForceMethod: InstanceMethod = InstanceMethod(this.desc, "force", mkDescriptor()(tpe))
 
     /** `[] --> return tpe` */
     private def forceIns(implicit mv: MethodVisitor): Unit = {
@@ -165,7 +165,7 @@ object BackendObjType {
           GETFIELD(ExpField)
           CHECKCAST(GenThunk.desc)
           // this.value = thunk.unwind()
-          GenResult.unwindSuspensionFreeThunkToType(tpe.toClassDesc, "during call to Lazy.force", SourceLocation.Unknown)
+          GenResult.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown)
           PUTFIELD(ValueField)
           // this.exp = null
           thisLoad()
@@ -180,7 +180,7 @@ object BackendObjType {
         ATHROW()
       }
       unlockLock()
-      xReturn(tpe.toClassDesc)
+      xReturn(tpe)
     }
   }
 

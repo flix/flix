@@ -994,7 +994,7 @@ object GenExpression {
 
         // Find the Lazy class name (Lazy$tpe).
         val SimpleType.Lazy(elmType) = tpe
-        val lazyType = BackendObjType.Lazy(BackendType.toBackendType(elmType))
+        val lazyType = BackendObjType.Lazy(BackendType.toErasedClassDesc(elmType))
 
         NEW(lazyType.desc)
         DUP()
@@ -1006,7 +1006,7 @@ object GenExpression {
 
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
         val SimpleType.Lazy(elmType) = exp.tpe
-        val erasedElmType = BackendType.toBackendType(elmType)
+        val erasedElmType = BackendType.toErasedClassDesc(elmType)
         val lazyType = BackendObjType.Lazy(erasedElmType)
 
         // Emit code for the lazy expression.
