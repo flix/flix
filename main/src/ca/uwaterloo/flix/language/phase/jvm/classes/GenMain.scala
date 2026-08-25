@@ -57,7 +57,7 @@ object GenMain {
       DUP()
       INVOKESPECIAL(defName, ConstructorMethodName, MethodTypeDescs.NothingToVoid)
       DUP()
-      GETSTATIC(BackendObjType.Unit.SingletonField)
+      GETSTATIC(GenUnit.SingletonField)
       PUTFIELD(InstanceField(defName, "arg0", CD_Object))
       GenResult.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
       POP()

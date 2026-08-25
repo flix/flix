@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenRegion, GenUnit}
+
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -31,7 +33,7 @@ object TypeDescs {
   def toClassDesc(tpe0: SimpleType)(implicit root: JvmAst.Root): ClassDesc = tpe0 match {
     case SimpleType.Void => CD_Object
     case SimpleType.AnyType => CD_Object
-    case SimpleType.Unit => BackendObjType.Unit.desc
+    case SimpleType.Unit => GenUnit.desc
     case SimpleType.Bool => CD_boolean
     case SimpleType.Char => CD_char
     case SimpleType.Float32 => CD_float
@@ -44,7 +46,7 @@ object TypeDescs {
     case SimpleType.BigInt => JavaClasses.BigInteger
     case SimpleType.String => CD_String
     case SimpleType.Regex => JavaClasses.Regex
-    case SimpleType.Region => BackendObjType.Region.desc
+    case SimpleType.Region => GenRegion.desc
     case SimpleType.Null => CD_Object
     case SimpleType.Array(tpe) => toClassDesc(tpe).arrayType()
     case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toErasedClassDesc(tpe)).desc
