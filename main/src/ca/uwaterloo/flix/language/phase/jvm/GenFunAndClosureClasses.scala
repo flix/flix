@@ -266,7 +266,7 @@ object GenFunAndClosureClasses {
     // Fields
     val closureArgTypes = defn.cparams.map(_.tpe)
     for ((argType, index) <- closureArgTypes.zipWithIndex) {
-      val field = visitor.visitField(Opcodes.ACC_PUBLIC, s"clo$index", BackendType.toBackendType(argType).toDescriptor, null, null)
+      val field = visitor.visitField(Opcodes.ACC_PUBLIC, s"clo$index", BackendType.toClassDesc(argType).descriptorString(), null, null)
       field.visitEnd()
     }
     // lparams use erased types (like fparams) so setPc can store without casting

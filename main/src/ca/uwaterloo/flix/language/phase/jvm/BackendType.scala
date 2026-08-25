@@ -172,8 +172,38 @@ object BackendType {
   }
 
   /** Converts the given [[SimpleType]] into the [[ClassDesc]] of its JVM representation. */
-  def toClassDesc(tpe0: SimpleType)(implicit root: JvmAst.Root): ClassDesc =
-    ClassDesc.ofDescriptor(toBackendType(tpe0).toDescriptor)
+  def toClassDesc(tpe0: SimpleType)(implicit root: JvmAst.Root): ClassDesc = tpe0 match {
+    case SimpleType.Void => CD_Object
+    case SimpleType.AnyType => CD_Object
+    case SimpleType.Unit => BackendObjType.Unit.desc
+    case SimpleType.Bool => CD_boolean
+    case SimpleType.Char => CD_char
+    case SimpleType.Float32 => CD_float
+    case SimpleType.Float64 => CD_double
+    case SimpleType.BigDecimal => JavaClasses.BigDecimal
+    case SimpleType.Int8 => CD_byte
+    case SimpleType.Int16 => CD_short
+    case SimpleType.Int32 => CD_int
+    case SimpleType.Int64 => CD_long
+    case SimpleType.BigInt => JavaClasses.BigInteger
+    case SimpleType.String => CD_String
+    case SimpleType.Regex => JavaClasses.Regex
+    case SimpleType.Region => BackendObjType.Region.desc
+    case SimpleType.Null => CD_Object
+    case SimpleType.Array(tpe) => toClassDesc(tpe).arrayType()
+    case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toErasedClassDesc(tpe)).desc
+    case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toErasedClassDesc)).desc
+    case SimpleType.Enum(_, Nil) => BackendObjType.Tagged.desc
+    case SimpleType.Struct(sym, Nil) => BackendObjType.Struct.fromStruct(root.structs(sym)).desc
+    case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toErasedClassDesc), toErasedClassDesc(result)).desc
+    case SimpleType.RecordEmpty => BackendObjType.Record.desc
+    case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.desc
+    case SimpleType.ExtensibleEmpty => BackendObjType.ExtTagged.desc
+    case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.ExtTagged.desc
+    case SimpleType.Native(clazz) => clazz
+    case SimpleType.Enum(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
+    case SimpleType.Struct(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
+  }
 
   /**
     * Contains all the primitive types and `Reference(Native(CD_Object))`.
