@@ -189,8 +189,8 @@ object ConstraintSolver {
       instance <- instanceMap.get((sigSym.trt, tyCon))
       result   <- instance.defs.find(_.sym.text == sigSym.name) match {
         case Some(implDef) =>
-          val sigOwnArgs = instantiation.args.tail // type args beyond the trait type param
-          Some((implDef.sym, GroundInstantiation(instanceArgsFor(instance, traitType, root) ++ sigOwnArgs)))
+          val implOwnArgs = dropEconstrArgs(sigSym, instantiation, root)
+          Some((implDef.sym, GroundInstantiation(instanceArgsFor(instance, traitType, root) ++ implOwnArgs)))
 
         case None =>
           // No impl def: sig has a default impl. Synthesize a trait-level sym and forward the
@@ -202,6 +202,15 @@ object ConstraintSolver {
           }
       }
     } yield result
+  }
+
+  /** Drops `sigSym`'s own args that equality constraints introduced, leaving the impl def's. */
+  private def dropEconstrArgs(sigSym: Symbol.SigSym, instantiation: GroundInstantiation, root: TypedAst.Root): List[Type] = {
+    val sigSpec = root.sigs(sigSym).spec
+    val econstrVars = sigSpec.econstrs.flatMap(ec => ec.tpe1.typeVars ++ ec.tpe2.typeVars).map(_.sym).toSet
+    ListOps.zip(sigSpec.tparams.map(_.sym), instantiation.args.tail).collect {
+      case (sym, arg) if !econstrVars.contains(sym) => arg
+    }
   }
 
   /** Unifies `instance`'s type against `traitType`, returning its tparams' values in order. */
