@@ -24,30 +24,29 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, Const
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.{BackendObjType, BackendType, Mangle, MethodTypeDescs}
+import ca.uwaterloo.flix.language.phase.jvm.{BackendObjType, Mangle, MethodTypeDescs}
 import ca.uwaterloo.flix.util.ClassDescs
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.{CD_Object, CD_boolean}
 
 /**
   * The class that presents a [[GenResumption]] as a one-argument Flix function, so that a
   * handler can call the continuation like any other closure.
   *
-  * NB: `tpe` is still a [[BackendType]] because the superclass is a
-  * `BackendObjType.AbstractArrow`, which Wave 2 de-parametrizes. Only its erasure is ever
-  * used.
+  * `tpe` is the erased type the resumption is resumed with.
   */
 object GenResumptionWrapper {
 
-  def desc(tpe: BackendType): ClassDesc =
-    mkDesc(DevFlixRuntime, Mangle.mkClassName("ResumptionWrapper", tpe.toErasedString))
+  def desc(tpe: ClassDesc): ClassDesc =
+    mkDesc(DevFlixRuntime, Mangle.mkClassName("ResumptionWrapper", Mangle.erasedName(tpe)))
 
   // tpe -> Result
-  private def superClass(tpe: BackendType): BackendObjType.AbstractArrow =
-    BackendObjType.AbstractArrow(List(tpe.toErased), BackendType.Object)
+  private def superClass(tpe: ClassDesc): BackendObjType.AbstractArrow =
+    BackendObjType.AbstractArrow(List(tpe), CD_Object)
 
-  def genByteCode(tpe: BackendType)(implicit flix: Flix): Array[Byte] = {
+  def genByteCode(tpe: ClassDesc)(implicit flix: Flix): Array[Byte] = {
     val cm = mkClass(desc(tpe), IsFinal, superClass(tpe).desc)
     cm.mkConstructor(Constructor(tpe), IsPublic, constructorIns(tpe)(_))
     cm.mkField(ResumptionField(tpe), IsPrivate, IsFinal, NotVolatile)
@@ -56,9 +55,9 @@ object GenResumptionWrapper {
     cm.closeClassMaker()
   }
 
-  def Constructor(tpe: BackendType): ConstructorMethod = ConstructorMethod(desc(tpe), List(GenResumption.desc))
+  def Constructor(tpe: ClassDesc): ConstructorMethod = ConstructorMethod(desc(tpe), List(GenResumption.desc))
 
-  private def constructorIns(tpe: BackendType)(implicit mv: MethodVisitor): Unit = {
+  private def constructorIns(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     withName(1, GenResumption.desc) { resumption =>
       thisLoad()
       INVOKESPECIAL(superClass(tpe).desc, ConstructorMethodName, MethodTypeDescs.NothingToVoid)
@@ -69,18 +68,18 @@ object GenResumptionWrapper {
     }
   }
 
-  def ResumptionField(tpe: BackendType): InstanceField = InstanceField(desc(tpe), "resumption", GenResumption.desc)
+  def ResumptionField(tpe: ClassDesc): InstanceField = InstanceField(desc(tpe), "resumption", GenResumption.desc)
 
-  def InvokeMethod(tpe: BackendType): InstanceMethod = GenThunk.InvokeMethod.implementation(desc(tpe))
+  def InvokeMethod(tpe: ClassDesc): InstanceMethod = GenThunk.InvokeMethod.implementation(desc(tpe))
 
-  private def invokeIns(tpe: BackendType)(implicit mv: MethodVisitor): Unit = {
+  private def invokeIns(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     thisLoad()
     GETFIELD(ResumptionField(tpe))
-    tpe.toErased match {
-      case BackendType.Bool =>
+    tpe match {
+      case CD_boolean =>
         // Use cached Value.TRUE / Value.FALSE singletons
         thisLoad()
-        mv.visitFieldInsn(Opcodes.GETFIELD, ClassDescs.internalNameOf(desc(tpe)), "arg0", tpe.toErased.toDescriptor)
+        mv.visitFieldInsn(Opcodes.GETFIELD, ClassDescs.internalNameOf(desc(tpe)), "arg0", tpe.descriptorString())
         val falseLabel = new Label()
         val doneLabel = new Label()
         mv.visitJumpInsn(Opcodes.IFEQ, falseLabel)
@@ -95,14 +94,14 @@ object GenResumptionWrapper {
         INVOKESPECIAL(GenValue.Constructor)
         DUP()
         thisLoad()
-        mv.visitFieldInsn(Opcodes.GETFIELD, ClassDescs.internalNameOf(desc(tpe)), "arg0", tpe.toErased.toDescriptor)
-        PUTFIELD(GenValue.fieldFromType(tpe.toErased.toClassDesc))
+        mv.visitFieldInsn(Opcodes.GETFIELD, ClassDescs.internalNameOf(desc(tpe)), "arg0", tpe.descriptorString())
+        PUTFIELD(GenValue.fieldFromType(tpe))
     }
     INVOKEINTERFACE(GenResumption.RewindMethod)
     xReturn(GenResult.desc)
   }
 
-  private def UniqueMethod(tpe: BackendType): InstanceMethod =
+  private def UniqueMethod(tpe: ClassDesc): InstanceMethod =
     InstanceMethod(desc(tpe), "getUniqueThreadClosure", mkDescriptor()(superClass(tpe).desc))
 
   private def uniqueIns(implicit mv: MethodVisitor): Unit = {

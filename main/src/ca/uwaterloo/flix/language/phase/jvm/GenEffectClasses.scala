@@ -13,6 +13,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import java.lang.constant.ConstantDescs.CD_Object
 
 /** An effect class like this:
   * {{{
@@ -76,12 +77,12 @@ object GenEffectClasses {
 
     for (op <- effect.ops) {
       val name = opName(op.sym)
-      val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
-      val opFunction = BackendObjType.Arrow(erasedParams :+ BackendType.Object, BackendType.Object)
+      val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
+      val opFunction = BackendObjType.Arrow(erasedParams :+ CD_Object, CD_Object)
       val opField = ClassMaker.InstanceField(effectName, name, opFunction.desc)
       cm.mkField(opField, IsPublic, NotFinal, NotVolatile)
-      val methodArgs = erasedParams.map(_.toClassDesc) ++ List(GenHandler.desc, GenResumption.desc)
-      val returnType = BackendType.toBackendType(op.tpe)
+      val methodArgs = erasedParams ++ List(GenHandler.desc, GenResumption.desc)
+      val returnType = BackendType.toErasedClassDesc(op.tpe)
       cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodTypeDescs.mkDescriptor(methodArgs *)(GenResult.desc)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
     }
 
@@ -94,9 +95,9 @@ object GenEffectClasses {
     RETURN()
   }
 
-  private def methodIns(effectName: ClassDesc, opFunction: BackendObjType.Arrow, opField: InstanceField, erasedParams: List[BackendType], returnType: BackendType)(implicit mv: MethodVisitor): Unit = {
+  private def methodIns(effectName: ClassDesc, opFunction: BackendObjType.Arrow, opField: InstanceField, erasedParams: List[ClassDesc], returnType: ClassDesc)(implicit mv: MethodVisitor): Unit = {
 
-    withNames(0, erasedParams.map(_.toClassDesc)) { case (paramsOffset, params) =>
+    withNames(0, erasedParams) { case (paramsOffset, params) =>
       withName(paramsOffset, GenHandler.desc) { handler =>
         withName(paramsOffset + 1, GenResumption.desc) { resumption =>
           // Cast the given generic handler to the current effect.
@@ -132,8 +133,8 @@ object GenEffectClasses {
   def opStaticFunctionDescriptor(sym: Symbol.OpSym)(implicit root: Root): MethodTypeDesc = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
-    val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
-    val methodArgs = erasedParams.map(_.toClassDesc) ++ List(GenHandler.desc, GenResumption.desc)
+    val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
+    val methodArgs = erasedParams ++ List(GenHandler.desc, GenResumption.desc)
     MethodTypeDescs.mkDescriptor(methodArgs *)(GenResult.desc)
   }
 
@@ -144,8 +145,8 @@ object GenEffectClasses {
   def opFieldType(sym: Symbol.OpSym)(implicit root: Root): BackendObjType.Arrow = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
-    val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
-    BackendObjType.Arrow(erasedParams :+ BackendType.Object, BackendType.Object)
+    val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
+    BackendObjType.Arrow(erasedParams :+ CD_Object, CD_Object)
   }
 
 }

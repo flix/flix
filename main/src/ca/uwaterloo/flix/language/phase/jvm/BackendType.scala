@@ -160,7 +160,7 @@ object BackendType {
       case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toErasedClassDesc)).toTpe
       case SimpleType.Enum(_, Nil) => BackendObjType.Tagged.toTpe
       case SimpleType.Struct(sym, Nil) => BackendObjType.Struct.fromStruct(root.structs(sym)).toTpe
-      case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
+      case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toErasedClassDesc), toErasedClassDesc(result)).toTpe
       case SimpleType.RecordEmpty => BackendObjType.Record.toTpe
       case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
       case SimpleType.ExtensibleEmpty => BackendObjType.ExtTagged.toTpe
