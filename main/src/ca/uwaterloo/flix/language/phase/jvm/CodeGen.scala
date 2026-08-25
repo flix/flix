@@ -21,8 +21,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenGlobal, GenHoleError, GenMain, GenMatchError, GenNamespace, GenReifiedSourceLocation, GenUncaughtExceptionHandler, GenUnhandledEffectError}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenExtTag, GenGlobal, GenHoleError, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecordExtend, GenReifiedSourceLocation, GenTag, GenUncaughtExceptionHandler, GenUnhandledEffectError}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+
+import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.util.collection.MapOps
 
 
@@ -65,16 +67,20 @@ object CodeGen {
     }.map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
 
     val taggedAbstractClass = List(JvmClass(BackendObjType.Tagged.desc, BackendObjType.Tagged.genByteCode()))
-    val tagClasses = root.enums.values.flatMap(getTagsOf).toList.distinctBy(_.desc).map(bt => JvmClass(bt.desc, bt.genByteCode()))
+    val nullaryTagClasses = root.enums.values.flatMap(getNullaryTagsOf).toList.map { caze =>
+      val enumName = caze.sym.enumSym.toString
+      JvmClass(GenNullaryTag.desc(enumName, caze.sym.name), GenNullaryTag.genByteCode(enumName, caze.sym.name, caze.sym.ordinal))
+    }
+    val tagClasses = root.enums.values.flatMap(getTagsOf).toSet[List[ClassDesc]].toList.map(elms => JvmClass(GenTag.desc(elms), GenTag.genByteCode(elms)))
     val extTaggedAbstractClass = List(JvmClass(BackendObjType.ExtTagged.desc, BackendObjType.ExtTagged.genByteCode()))
-    val extensibleTagClasses = getExtensibleTagTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
+    val extensibleTagClasses = getExtensibleTagTypesOf(allTypes).map(elms => JvmClass(GenExtTag.desc(elms), GenExtTag.genByteCode(elms))).toList
 
     val tupleClasses = getTupleTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
     val structClasses = root.structs.values.map(BackendObjType.Struct.fromStruct).toList.distinctBy(_.desc).map(bt => JvmClass(bt.desc, bt.genByteCode()))
 
     val recordInterfaces = List(JvmClass(BackendObjType.Record.desc, BackendObjType.Record.genByteCode()))
     val recordEmptyClasses = List(JvmClass(BackendObjType.RecordEmpty.desc, BackendObjType.RecordEmpty.genByteCode()))
-    val recordExtendClasses = getRecordExtendsOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
+    val recordExtendClasses = getRecordExtendsOf(allTypes).map(value => JvmClass(GenRecordExtend.desc(value), GenRecordExtend.genByteCode(value))).toList
 
     val lazyClasses = getLazyTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
 
@@ -119,6 +125,7 @@ object CodeGen {
       functionAndClosureClasses,
       closureAbstractClasses,
       taggedAbstractClass,
+      nullaryTagClasses,
       tagClasses,
       extTaggedAbstractClass,
       extensibleTagClasses,
@@ -194,23 +201,21 @@ object CodeGen {
       case (acc, _) => acc
     }
 
-  /** Returns the tag type of each case in `enm`. */
-  private def getTagsOf(enm: Enum)(implicit root: Root): List[BackendObjType.TagType] = {
-    enm.cases.values.map {
-      case caze => caze.tpes match {
-        case Nil =>
-          BackendObjType.NullaryTag(caze.sym.enumSym.toString, caze.sym.name, caze.sym.ordinal)
-        case elms =>
-          BackendObjType.Tag(elms.map(BackendType.toBackendType))
-      }
-    }.toList
-  }
+  /** Returns the nullary cases of `enm`, which each get their own singleton class. */
+  private def getNullaryTagsOf(enm: Enum): Iterable[Case] =
+    enm.cases.values.filter(_.tpes.isEmpty)
+
+  /** Returns the erased term types of each non-nullary case in `enm`. */
+  private def getTagsOf(enm: Enum): Set[List[ClassDesc]] =
+    enm.cases.values.collect {
+      case caze if caze.tpes.nonEmpty => caze.tpes.map(BackendType.toErasedClassDesc)
+    }.toSet
 
   /** Returns the set of extensible tag types in `types` without searching recursively. */
-  private def getExtensibleTagTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.ExtTag] =
-    types.foldLeft(Set.empty[BackendObjType.ExtTag]) {
+  private def getExtensibleTagTypesOf(types: Iterable[SimpleType]): Set[List[ClassDesc]] =
+    types.foldLeft(Set.empty[List[ClassDesc]]) {
       case (acc, SimpleType.ExtensibleExtend(_, targs, _)) =>
-        acc + BackendObjType.ExtTag(targs.map(BackendType.toBackendType))
+        acc + targs.map(BackendType.toErasedClassDesc)
       case (acc, _) => acc
     }
 
@@ -223,10 +228,10 @@ object CodeGen {
     }
 
   /** Returns the set of record extend types in `types` without searching recursively. */
-  private def getRecordExtendsOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.RecordExtend] =
-    types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
+  private def getRecordExtendsOf(types: Iterable[SimpleType]): Set[ClassDesc] =
+    types.foldLeft(Set.empty[ClassDesc]) {
       case (acc, SimpleType.RecordExtend(_, value, _)) =>
-        acc + BackendObjType.RecordExtend(BackendType.toBackendType(value))
+        acc + BackendType.toErasedClassDesc(value)
       case (acc, _) => acc
     }
 

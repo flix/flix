@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.Instructions.Branch.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
@@ -46,15 +45,11 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => mkDesc(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Tuple(elms) => mkDesc(RootPackage, mkClassName("Tuple", elms))
     case BackendObjType.Struct(elms) => mkDesc(RootPackage, mkClassName("Struct", elms))
-    case BackendObjType.NullaryTag(enumName, sym, _) => mkDesc(RootPackage, Mangle.mkClassName(enumName, sym))
     case BackendObjType.Tagged => mkDesc(RootPackage, mkClassName("Tagged"))
-    case BackendObjType.Tag(tpes) => mkDesc(RootPackage, mkClassName("Tag", tpes))
     case BackendObjType.ExtTagged => mkDesc(RootPackage, mkClassName("ExtTagged"))
-    case BackendObjType.ExtTag(tpes) => mkDesc(RootPackage, mkClassName("ExtTag", tpes))
     case BackendObjType.AbstractArrow(args, result) => mkDesc(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
     case BackendObjType.Arrow(args, result) => mkDesc(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
     case BackendObjType.RecordEmpty => mkDesc(RootPackage, mkClassName(s"RecordEmpty"))
-    case BackendObjType.RecordExtend(value) => mkDesc(RootPackage, mkClassName("RecordExtend", value))
     case BackendObjType.Record => mkDesc(RootPackage, mkClassName("Record"))
     case BackendObjType.Region => mkDesc(DevFlixRuntime, mkClassName("Region"))
     // Java classes
@@ -293,55 +288,6 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
   }
 
-  sealed trait TagType extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte]
-  }
-
-  case class NullaryTag(enumName: String, name: String, ordinal: Int) extends TagType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = Tagged.desc)
-
-      cm.mkStaticConstructor(StaticConstructorMethod(this.desc), singletonStaticConstructor(Constructor, SingletonField)(_))
-      cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def SingletonField: StaticField = StaticField(this.desc, "singleton", this.desc)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    /** `[] --> return` */
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      INVOKESPECIAL(Tagged.Constructor)
-      thisLoad()
-      pushInt(ordinal)
-      PUTFIELD(Tagged.OrdinalField)
-      RETURN()
-    }
-  }
-
-  case class Tag(elms: List[BackendType]) extends TagType {
-    if (elms.isEmpty) throw InternalCompilerException(s"Unexpected nullary Tag type", SourceLocation.Unknown)
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = Tagged.desc)
-
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(Tagged.Constructor)(_))
-      elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
-
-      cm.closeClassMaker()
-    }
-
-    def OrdinalField: InstanceField = Tagged.OrdinalField
-
-    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"v$i", elms(i).toClassDesc)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-  }
-
   case object ExtTagged extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(this.desc)
@@ -365,23 +311,6 @@ object BackendObjType {
       // ACMP is okay since tag strings are loaded through ldc instructions
       ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
     }
-  }
-
-  case class ExtTag(elms: List[BackendType]) extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = ExtTagged.desc)
-
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ExtTagged.Constructor)(_))
-      elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
-
-      cm.closeClassMaker()
-    }
-
-    def NameField: InstanceField = ExtTagged.NameField
-
-    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"v$i", elms(i).toClassDesc)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
   }
 
   object AbstractArrow {
@@ -730,84 +659,6 @@ object BackendObjType {
     private def throwUnsupportedExc(implicit mv: MethodVisitor): Unit = {
       throwUnsupportedOperationException(
         s"${Record.LookupFieldMethod.name} method shouldn't be called")
-    }
-  }
-
-  case class RecordExtend(value: BackendType) extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, interfaces = List(Record.desc))
-
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkField(LabelField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(ValueField, IsPublic, NotFinal, NotVolatile)
-      cm.mkField(RestField, IsPublic, NotFinal, NotVolatile)
-      cm.mkMethod(Nil, Record.LookupFieldMethod.implementation(this.desc), IsPublic, IsFinal, lookupFieldIns(_))
-      cm.mkMethod(Nil, RestrictFieldMethod, IsPublic, IsFinal, restrictFieldIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    def LabelField: InstanceField = InstanceField(this.desc, "label", JavaClasses.String)
-
-    def ValueField: InstanceField = InstanceField(this.desc, "value", value.toClassDesc)
-
-    def RestField: InstanceField = InstanceField(this.desc, "rest", Record.desc)
-
-    private def lookupFieldIns(implicit mv: MethodVisitor): Unit = {
-      caseOnLabelEquality {
-        case TrueBranch =>
-          thisLoad()
-          ARETURN()
-        case FalseBranch =>
-          thisLoad()
-          GETFIELD(RestField)
-          ALOAD(1)
-          INVOKEINTERFACE(Record.LookupFieldMethod)
-          ARETURN()
-      }
-    }
-
-    def RestrictFieldMethod: InstanceMethod = Record.RestrictFieldMethod.implementation(this.desc)
-
-    private def restrictFieldIns(implicit mv: MethodVisitor): Unit = {
-      caseOnLabelEquality {
-        case TrueBranch =>
-          thisLoad()
-          GETFIELD(RestField)
-          ARETURN()
-        case FalseBranch =>
-          NEW(this.desc)
-          DUP()
-          INVOKESPECIAL(this.Constructor)
-          DUP()
-          thisLoad()
-          GETFIELD(LabelField)
-          PUTFIELD(LabelField)
-          DUP()
-          thisLoad()
-          GETFIELD(ValueField)
-          PUTFIELD(ValueField)
-          DUP() // get the new restricted rest to put
-          thisLoad()
-          GETFIELD(RestField)
-          ALOAD(1)
-          INVOKEINTERFACE(Record.RestrictFieldMethod)
-          PUTFIELD(RestField) // put the rest field and return
-          ARETURN()
-      }
-    }
-
-    /**
-      * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
-      */
-    private def caseOnLabelEquality(cases: Branch => Unit)(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      GETFIELD(LabelField)
-      ALOAD(1)
-      INVOKEVIRTUAL(ClassConstants.Object.EqualsMethod)
-      branch(Condition.Bool)(cases)
     }
   }
 
