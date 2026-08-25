@@ -44,12 +44,8 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => mkDesc(RootPackage, Mangle.mkClassName("Lazy", Mangle.erasedName(tpe)))
     case BackendObjType.Tuple(elms) => mkDesc(RootPackage, Mangle.mkClassName("Tuple", elms.map(Mangle.erasedName)))
     case BackendObjType.Struct(elms) => mkDesc(RootPackage, Mangle.mkClassName("Struct", elms.map(Mangle.erasedName)))
-    case BackendObjType.Tagged => mkDesc(RootPackage, mkClassName("Tagged"))
-    case BackendObjType.ExtTagged => mkDesc(RootPackage, mkClassName("ExtTagged"))
     case BackendObjType.AbstractArrow(args, result) => mkDesc(RootPackage, Mangle.mkClassName(s"Clo${args.length}", (args :+ result).map(Mangle.erasedName)))
     case BackendObjType.Arrow(args, result) => mkDesc(RootPackage, Mangle.mkClassName(s"Fn${args.length}", (args :+ result).map(Mangle.erasedName)))
-    case BackendObjType.RecordEmpty => mkDesc(RootPackage, mkClassName(s"RecordEmpty"))
-    case BackendObjType.Record => mkDesc(RootPackage, mkClassName("Record"))
     // Java classes
     case BackendObjType.Native(clazz) => clazz
     // Effects Runtime
@@ -224,47 +220,6 @@ object BackendObjType {
       }
     }
 
-  }
-
-  case object Tagged extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkAbstractClass(this.desc)
-
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-
-      cm.mkField(OrdinalField, IsPublic, NotFinal, NotVolatile)
-
-      cm.closeClassMaker()
-    }
-
-    def OrdinalField: InstanceField = InstanceField(this.desc, "ordinal", CD_int)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-  }
-
-  case object ExtTagged extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkAbstractClass(this.desc)
-
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-
-      cm.mkField(NameField, IsPublic, NotFinal, NotVolatile)
-
-      cm.closeClassMaker()
-    }
-
-    def NameField: InstanceField = InstanceField(this.desc, "tag", JavaClasses.String)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    /** [...] -> [..., tagName] */
-    def mkTagName(name: String)(implicit mv: MethodVisitor): Unit = pushString(Mangle.mangle(name))
-
-    /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
-    def eqTagName()(implicit mv: MethodVisitor): Unit = {
-      // ACMP is okay since tag strings are loaded through ldc instructions
-      ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
-    }
   }
 
   object AbstractArrow {
@@ -585,52 +540,6 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
     def ArgField(index: Int): InstanceField = InstanceField(this.desc, s"arg$index", args(index))
-  }
-
-  case object RecordEmpty extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.desc, IsFinal, interfaces = List(this.interface.desc))
-
-      cm.mkStaticConstructor(StaticConstructorMethod(this.desc), singletonStaticConstructor(Constructor, SingletonField)(_))
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
-      cm.mkMethod(Nil, LookupFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
-      cm.mkMethod(Nil, RestrictFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
-
-    def interface: Record.type = Record
-
-    def SingletonField: StaticField = StaticField(this.desc, "INSTANCE", this.desc)
-
-    private def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.desc)
-
-    private def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.desc)
-
-    private def throwUnsupportedExc(implicit mv: MethodVisitor): Unit = {
-      throwUnsupportedOperationException(
-        s"${Record.LookupFieldMethod.name} method shouldn't be called")
-    }
-  }
-
-  case object Record extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkInterface(this.desc)
-
-      cm.mkInterfaceMethod(LookupFieldMethod)
-      cm.mkInterfaceMethod(RestrictFieldMethod)
-
-      cm.closeClassMaker()
-    }
-
-    def LookupFieldMethod: InterfaceMethod = InterfaceMethod(this.desc, "lookupField",
-      mkDescriptor(JavaClasses.String)(this.desc))
-
-    def RestrictFieldMethod: InterfaceMethod = InterfaceMethod(this.desc, "restrictField",
-      mkDescriptor(JavaClasses.String)(this.desc))
   }
 
   /**

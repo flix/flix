@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenMatchError, GenNullaryTag, GenRecordExtend, GenRegion, GenResult, GenResumption, GenResumptionNil, GenSuspension, GenTag, GenThunk, GenUnit, GenValue}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenMatchError, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenResult, GenResumption, GenResumptionNil, GenSuspension, GenTag, GenTagged, GenThunk, GenUnit, GenValue}
 import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.{CD_double, CD_int, CD_long, CD_void}
@@ -177,7 +177,7 @@ object GenExpression {
         INVOKESTATIC(ClassConstants.Regex.CompileMethod)
 
       case Constant.RecordEmpty =>
-        GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
+        GETSTATIC(GenRecordEmpty.SingletonField)
 
       case Constant.Static =>
         //!TODO: For now, just emit null
@@ -246,8 +246,8 @@ object GenExpression {
             throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
 
           case ObjectOp.Ordinal =>
-            mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(BackendObjType.Tagged.desc))
-            mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(BackendObjType.Tagged.desc), "ordinal", CD_int.descriptorString())
+            mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenTagged.desc))
+            mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(GenTagged.desc), "ordinal", CD_int.descriptorString())
         }
 
       case AtomicOp.Binary(sop) =>
@@ -645,7 +645,7 @@ object GenExpression {
 
         compileExpr(exp)
         pushString(field.name)
-        INVOKEINTERFACE(BackendObjType.Record.LookupFieldMethod)
+        INVOKEINTERFACE(GenRecord.LookupFieldMethod)
         // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
         CHECKCAST(GenRecordExtend.desc(recordValue))
         GETFIELD(GenRecordExtend.ValueField(recordValue))
@@ -672,7 +672,7 @@ object GenExpression {
 
         compileExpr(exp)
         pushString(field.name)
-        INVOKEINTERFACE(BackendObjType.Record.RestrictFieldMethod)
+        INVOKEINTERFACE(GenRecord.RestrictFieldMethod)
 
       case AtomicOp.ExtIs(sym) =>
         val List(exp) = exps
@@ -1335,8 +1335,8 @@ object GenExpression {
       // Compile the scrutinee (pushes enum value onto stack)
       compileExpr(exp)
       // Extract ordinal: checkcast Tagged, getfield ordinal
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(BackendObjType.Tagged.desc))
-      mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(BackendObjType.Tagged.desc), "ordinal", CD_int.descriptorString())
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenTagged.desc))
+      mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(GenTagged.desc), "ordinal", CD_int.descriptorString())
       // Build labels
       val defaultLabel = new Label()
       val endLabel = new Label()
@@ -1595,8 +1595,8 @@ object GenExpression {
 
   private def compileIsTag(ordinal: Int, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
-    CHECKCAST(BackendObjType.Tagged.desc)
-    GETFIELD(BackendObjType.Tagged.OrdinalField)
+    CHECKCAST(GenTagged.desc)
+    GETFIELD(GenTagged.OrdinalField)
     pushInt(ordinal)
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
   }
@@ -1630,10 +1630,10 @@ object GenExpression {
 
   private def compileExtIsTag(name: String, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
-    CHECKCAST(BackendObjType.ExtTagged.desc)
-    GETFIELD(BackendObjType.ExtTagged.NameField)
-    BackendObjType.ExtTagged.mkTagName(name)
-    BackendObjType.ExtTagged.eqTagName()
+    CHECKCAST(GenExtTagged.desc)
+    GETFIELD(GenExtTagged.NameField)
+    GenExtTagged.mkTagName(name)
+    GenExtTagged.eqTagName()
   }
 
   private def compileExtTag(name: String, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
@@ -1641,7 +1641,7 @@ object GenExpression {
     DUP()
     INVOKESPECIAL(GenExtTag.Constructor(tpes))
     DUP()
-    BackendObjType.ExtTagged.mkTagName(name)
+    GenExtTagged.mkTagName(name)
     PUTFIELD(GenExtTag.NameField)
     exps.zipWithIndex.foreach {
       case (e, i) => DUP()

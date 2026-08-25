@@ -41,7 +41,7 @@ object GenNullaryTag {
 
   def genByteCode(enumName: String, name: String, ordinal: Int)(implicit flix: Flix): Array[Byte] = {
     val d = desc(enumName, name)
-    val cm = ClassMaker.mkClass(d, IsFinal, superClass = BackendObjType.Tagged.desc)
+    val cm = ClassMaker.mkClass(d, IsFinal, superClass = GenTagged.desc)
 
     cm.mkStaticConstructor(StaticConstructorMethod(d), singletonStaticConstructor(Constructor(enumName, name), SingletonField(enumName, name))(_))
     cm.mkField(SingletonField(enumName, name), IsPublic, IsFinal, NotVolatile)
@@ -61,10 +61,10 @@ object GenNullaryTag {
   /** `[] --> return` */
   private def constructorIns(ordinal: Int)(implicit mv: MethodVisitor): Unit = {
     thisLoad()
-    INVOKESPECIAL(BackendObjType.Tagged.Constructor)
+    INVOKESPECIAL(GenTagged.Constructor)
     thisLoad()
     pushInt(ordinal)
-    PUTFIELD(BackendObjType.Tagged.OrdinalField)
+    PUTFIELD(GenTagged.OrdinalField)
     RETURN()
   }
 

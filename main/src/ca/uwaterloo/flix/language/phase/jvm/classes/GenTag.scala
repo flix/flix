@@ -44,15 +44,15 @@ object GenTag {
 
   def genByteCode(elms: List[ClassDesc])(implicit flix: Flix): Array[Byte] = {
     if (elms.isEmpty) throw InternalCompilerException(s"Unexpected nullary Tag type", SourceLocation.Unknown)
-    val cm = ClassMaker.mkClass(desc(elms), IsFinal, superClass = BackendObjType.Tagged.desc)
+    val cm = ClassMaker.mkClass(desc(elms), IsFinal, superClass = GenTagged.desc)
 
-    cm.mkConstructor(Constructor(elms), IsPublic, nullarySuperConstructor(BackendObjType.Tagged.Constructor)(_))
+    cm.mkConstructor(Constructor(elms), IsPublic, nullarySuperConstructor(GenTagged.Constructor)(_))
     elms.indices.foreach(i => cm.mkField(IndexField(elms, i), IsPublic, NotFinal, NotVolatile))
 
     cm.closeClassMaker()
   }
 
-  def OrdinalField: InstanceField = BackendObjType.Tagged.OrdinalField
+  def OrdinalField: InstanceField = GenTagged.OrdinalField
 
   def IndexField(elms: List[ClassDesc], i: Int): InstanceField = InstanceField(desc(elms), s"v$i", elms(i))
 

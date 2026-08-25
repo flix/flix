@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenRegion, GenUnit}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenExtTagged, GenRecord, GenRegion, GenTagged, GenUnit}
 
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -51,13 +51,13 @@ object TypeDescs {
     case SimpleType.Array(tpe) => toClassDesc(tpe).arrayType()
     case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toErasedClassDesc(tpe)).desc
     case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toErasedClassDesc)).desc
-    case SimpleType.Enum(_, Nil) => BackendObjType.Tagged.desc
+    case SimpleType.Enum(_, Nil) => GenTagged.desc
     case SimpleType.Struct(sym, Nil) => BackendObjType.Struct.fromStruct(root.structs(sym)).desc
     case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toErasedClassDesc), toErasedClassDesc(result)).desc
-    case SimpleType.RecordEmpty => BackendObjType.Record.desc
-    case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.desc
-    case SimpleType.ExtensibleEmpty => BackendObjType.ExtTagged.desc
-    case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.ExtTagged.desc
+    case SimpleType.RecordEmpty => GenRecord.desc
+    case SimpleType.RecordExtend(_, _, _) => GenRecord.desc
+    case SimpleType.ExtensibleEmpty => GenExtTagged.desc
+    case SimpleType.ExtensibleExtend(_, _, _) => GenExtTagged.desc
     case SimpleType.Native(clazz) => clazz
     case SimpleType.Enum(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
     case SimpleType.Struct(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
