@@ -404,6 +404,10 @@ object Instructions {
   def invokeConstructor(className: ClassDesc, descriptor: MethodTypeDesc)(implicit mv: MethodVisitor): Unit =
     INVOKESPECIAL(className, ConstructorMethodName, descriptor)
 
+  /** Returns `true` if `tpe` takes two slots on the stack, i.e. it is `long` or `double`. */
+  def isCategory2(tpe: ClassDesc): Boolean =
+    tpe == ConstantDescs.CD_long || tpe == ConstantDescs.CD_double
+
   def nop(): Unit =
     ()
 
@@ -535,7 +539,7 @@ object Instructions {
   /** Emits a `POP` or `POP2` instruction that pops a value of type `tpe` off the stack. */
   def xPop(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     import java.lang.constant.ConstantDescs.*
-    if (tpe == CD_long || tpe == CD_double) mv.visitInsn(Opcodes.POP2)
+    if (isCategory2(tpe)) mv.visitInsn(Opcodes.POP2)
     else mv.visitInsn(Opcodes.POP)
   }
 

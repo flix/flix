@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenExtTag, GenGlobal, GenHoleError, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecordExtend, GenReifiedSourceLocation, GenTag, GenUncaughtExceptionHandler, GenUnhandledEffectError}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenFrame, GenFrames, GenFramesCons, GenFramesNil, GenGlobal, GenHandler, GenHoleError, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecordExtend, GenReifiedSourceLocation, GenResult, GenResumption, GenResumptionCons, GenResumptionNil, GenResumptionWrapper, GenSuspension, GenTag, GenThunk, GenUncaughtExceptionHandler, GenUnhandledEffectError, GenValue}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 
 import java.lang.constant.ClassDesc
@@ -102,21 +102,21 @@ object CodeGen {
     val uncaughtExceptionHandlerClass = List(JvmClass(GenUncaughtExceptionHandler.desc, GenUncaughtExceptionHandler.genByteCode()))
 
     // Effect runtime classes.
-    val resultInterface = List(JvmClass(BackendObjType.Result.desc, BackendObjType.Result.genByteCode()))
-    val valueClass = List(JvmClass(BackendObjType.Value.desc, BackendObjType.Value.genByteCode()))
-    val frameInterface = List(JvmClass(BackendObjType.Frame.desc, BackendObjType.Frame.genByteCode()))
-    val thunkAbstractClass = List(JvmClass(BackendObjType.Thunk.desc, BackendObjType.Thunk.genByteCode()))
-    val suspensionClass = List(JvmClass(BackendObjType.Suspension.desc, BackendObjType.Suspension.genByteCode()))
-    val framesInterface = List(JvmClass(BackendObjType.Frames.desc, BackendObjType.Frames.genByteCode()))
-    val framesConsClass = List(JvmClass(BackendObjType.FramesCons.desc, BackendObjType.FramesCons.genByteCode()))
-    val framesNilClass = List(JvmClass(BackendObjType.FramesNil.desc, BackendObjType.FramesNil.genByteCode()))
-    val resumptionInterface = List(JvmClass(BackendObjType.Resumption.desc, BackendObjType.Resumption.genByteCode()))
-    val resumptionConsClass = List(JvmClass(BackendObjType.ResumptionCons.desc, BackendObjType.ResumptionCons.genByteCode()))
-    val resumptionNilClass = List(JvmClass(BackendObjType.ResumptionNil.desc, BackendObjType.ResumptionNil.genByteCode()))
-    val handlerInterface = List(JvmClass(BackendObjType.Handler.desc, BackendObjType.Handler.genByteCode()))
-    val effectCallClass = List(JvmClass(BackendObjType.EffectCall.desc, BackendObjType.EffectCall.genByteCode()))
+    val resultInterface = List(JvmClass(GenResult.desc, GenResult.genByteCode()))
+    val valueClass = List(JvmClass(GenValue.desc, GenValue.genByteCode()))
+    val frameInterface = List(JvmClass(GenFrame.desc, GenFrame.genByteCode()))
+    val thunkAbstractClass = List(JvmClass(GenThunk.desc, GenThunk.genByteCode()))
+    val suspensionClass = List(JvmClass(GenSuspension.desc, GenSuspension.genByteCode()))
+    val framesInterface = List(JvmClass(GenFrames.desc, GenFrames.genByteCode()))
+    val framesConsClass = List(JvmClass(GenFramesCons.desc, GenFramesCons.genByteCode()))
+    val framesNilClass = List(JvmClass(GenFramesNil.desc, GenFramesNil.genByteCode()))
+    val resumptionInterface = List(JvmClass(GenResumption.desc, GenResumption.genByteCode()))
+    val resumptionConsClass = List(JvmClass(GenResumptionCons.desc, GenResumptionCons.genByteCode()))
+    val resumptionNilClass = List(JvmClass(GenResumptionNil.desc, GenResumptionNil.genByteCode()))
+    val handlerInterface = List(JvmClass(GenHandler.desc, GenHandler.genByteCode()))
+    val effectCallClass = List(JvmClass(GenEffectCall.desc, GenEffectCall.genByteCode()))
     val effectClasses = GenEffectClasses.gen(root.effects.values)
-    val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper.apply).map(bt => JvmClass(bt.desc, bt.genByteCode()))
+    val resumptionWrappers = BackendType.erasedTypes.map(tpe => JvmClass(GenResumptionWrapper.desc(tpe), GenResumptionWrapper.genByteCode(tpe)))
 
     val allClasses = List(
       mainClass,

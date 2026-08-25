@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenExtTag, GenHoleError, GenMatchError, GenNullaryTag, GenRecordExtend, GenTag}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenMatchError, GenNullaryTag, GenRecordExtend, GenResult, GenResumption, GenResumptionNil, GenSuspension, GenTag, GenThunk, GenValue}
 import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.{CD_double, CD_long, CD_void}
@@ -801,11 +801,11 @@ object GenExpression {
 
       case AtomicOp.Unbox =>
         val List(exp) = exps
-        val bType = BackendType.toBackendType(tpe)
+        val bType = BackendType.toClassDesc(tpe)
         compileExpr(exp)
-        CHECKCAST(BackendObjType.Value.desc)
-        GETFIELD(BackendObjType.Value.fieldFromType(bType))
-        castIfNotPrim(bType.toClassDesc)
+        CHECKCAST(GenValue.desc)
+        GETFIELD(GenValue.fieldFromType(bType))
+        castIfNotPrim(bType)
 
       case AtomicOp.Box =>
         val List(exp) = exps
@@ -813,26 +813,26 @@ object GenExpression {
           case SimpleType.Unit =>
             compileExpr(exp)
             POP()
-            GETSTATIC(BackendObjType.Value.UnitField)
+            GETSTATIC(GenValue.UnitField)
           case SimpleType.Bool =>
             compileExpr(exp)
             val falseLabel = new Label()
             val doneLabel = new Label()
             mv.visitJumpInsn(Opcodes.IFEQ, falseLabel)
-            GETSTATIC(BackendObjType.Value.TrueField)
+            GETSTATIC(GenValue.TrueField)
             mv.visitJumpInsn(Opcodes.GOTO, doneLabel)
             mv.visitLabel(falseLabel)
-            GETSTATIC(BackendObjType.Value.FalseField)
+            GETSTATIC(GenValue.FalseField)
             mv.visitLabel(doneLabel)
           case _ =>
-            val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
-            val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
+            val erasedExpTpe = BackendType.toErasedClassDesc(exp.tpe)
+            val valueField = GenValue.fieldFromType(erasedExpTpe)
             compileExpr(exp)
-            NEW(BackendObjType.Value.desc)
+            NEW(GenValue.desc)
             DUP()
-            INVOKESPECIAL(BackendObjType.Value.Constructor)
+            INVOKESPECIAL(GenValue.Constructor)
             DUP()
-            xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) // two objects on top of the stack
+            xSwap(lowerLarge = isCategory2(erasedExpTpe), higherLarge = true) // two objects on top of the stack
             PUTFIELD(valueField)
         }
 
@@ -1091,7 +1091,7 @@ object GenExpression {
 
           // Calling unwind and unboxing
           if (Purity.isControlPure(purity)) {
-            BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)
+            GenResult.unwindSuspensionFreeThunk("in pure closure call", loc)
           } else {
             ctx match {
               case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
@@ -1099,7 +1099,7 @@ object GenExpression {
                 val pcPointLabel = pcLabels(pcPoint)
                 val afterUnboxing = new Label()
                 pcCounter(0) += 1
-                BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)
+                GenResult.unwindThunkToValue(pcPoint, newFrame, setPc)
                 mv.visitJumpInsn(Opcodes.GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
@@ -1147,10 +1147,10 @@ object GenExpression {
             compileExpr(arg)
             castIfNotPrim(tpe)
           }
-          val desc = mkDescriptor(paramTpes *)(BackendObjType.Result.desc)
+          val desc = mkDescriptor(paramTpes *)(GenResult.desc)
           val className = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
           mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, ClassMaker.StaticApplyMethodName, desc.descriptorString(), false)
-          BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
+          GenResult.unwindSuspensionFreeThunk("in pure function call", loc)
         } else {
           // JvmType of Def
           val defInternalName = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
@@ -1174,13 +1174,13 @@ object GenExpression {
             case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
               val defn = root.defs(sym)
               if (Purity.isControlPure(defn.expr.purity)) {
-                BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
+                GenResult.unwindSuspensionFreeThunk("in pure function call", loc)
               } else {
                 val pcPoint = pcCounter(0) + 1
                 val pcPointLabel = pcLabels(pcPoint)
                 val afterUnboxing = new Label()
                 pcCounter(0) += 1
-                BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)
+                GenResult.unwindThunkToValue(pcPoint, newFrame, setPc)
                 mv.visitJumpInsn(Opcodes.GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
@@ -1190,22 +1190,20 @@ object GenExpression {
                 mv.visitLabel(afterUnboxing)
               }
             case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-              BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
+              GenResult.unwindSuspensionFreeThunk("in pure function call", loc)
           }
         }
     }
 
     case Expr.ApplyOp(sym, exps, tpe, _, loc) => ctx match {
       case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-        BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
+        GenResult.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 
       case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
-        import BackendObjType.Suspension
-
         val pcPoint = pcCounter(0) + 1
         val pcPointLabel = pcLabels(pcPoint)
         val afterUnboxing = new Label()
-        val erasedResult = BackendType.toErasedBackendType(tpe)
+        val erasedResult = BackendType.toErasedClassDesc(tpe)
         pcCounter(0) += 1
 
         val effectName = GenEffectClasses.effectDesc(sym.eff)
@@ -1214,41 +1212,41 @@ object GenExpression {
           GenEffectClasses.opName(sym),
           GenEffectClasses.opStaticFunctionDescriptor(sym)
         )
-        NEW(Suspension.desc)
+        NEW(GenSuspension.desc)
         DUP()
-        INVOKESPECIAL(Suspension.Constructor)
+        INVOKESPECIAL(GenSuspension.Constructor)
         DUP()
         pushString(sym.eff.toString)
-        PUTFIELD(Suspension.EffSymField)
+        PUTFIELD(GenSuspension.EffSymField)
         DUP()
         // --- eff op ---
         exps.foreach(compileExpr)
-        mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2)
+        mkStaticLambda(GenEffectCall.ApplyMethod, effectStaticMethod, 2)
         // --------------
-        PUTFIELD(Suspension.EffOpField)
+        PUTFIELD(GenSuspension.EffOpField)
         DUP()
         // create continuation
-        NEW(BackendObjType.FramesNil.desc)
+        NEW(GenFramesNil.desc)
         DUP()
-        INVOKESPECIAL(BackendObjType.FramesNil.Constructor)
+        INVOKESPECIAL(GenFramesNil.Constructor)
         newFrame(mv)
         DUP()
         pushInt(pcPoint)
         setPc(mv)
-        INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod)
+        INVOKEVIRTUAL(GenFramesNil.PushMethod)
         // store continuation
-        PUTFIELD(Suspension.PrefixField)
+        PUTFIELD(GenSuspension.PrefixField)
         DUP()
-        NEW(BackendObjType.ResumptionNil.desc)
+        NEW(GenResumptionNil.desc)
         DUP()
-        INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor)
-        PUTFIELD(Suspension.ResumptionField)
-        xReturn(Suspension.desc)
+        INVOKESPECIAL(GenResumptionNil.Constructor)
+        PUTFIELD(GenSuspension.ResumptionField)
+        xReturn(GenSuspension.desc)
 
         mv.visitLabel(pcPointLabel)
         narrowLocals(mv)
         ALOAD(1)
-        GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))
+        GETFIELD(GenValue.fieldFromType(erasedResult))
 
         mv.visitLabel(afterUnboxing)
         castIfNotPrim(BackendType.toClassDesc(tpe))
@@ -1528,27 +1526,27 @@ object GenExpression {
         mv.visitFieldInsn(Opcodes.PUTFIELD, effectInternalName, GenEffectClasses.opName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
       }
       // frames
-      NEW(BackendObjType.FramesNil.desc)
+      NEW(GenFramesNil.desc)
       DUP()
-      INVOKESPECIAL(BackendObjType.FramesNil.Constructor)
+      INVOKESPECIAL(GenFramesNil.Constructor)
       // continuation
       compileExpr(exp)
       // exp.arg0 should be set to unit here but from lifting we know that it is unused so the
       // implicit null is fine.
       // call installHandler
-      INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod)
+      INVOKESTATIC(GenHandler.InstallHandlerMethod)
       // handle value/suspend/thunk if in non-tail position
       if (ct == ExpPosition.NonTail) {
         ctx match {
           case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-            BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc)
+            GenResult.unwindSuspensionFreeThunk("in pure run-with call", loc)
 
           case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
             val pcPoint = pcCounter(0) + 1
             val pcPointLabel = pcLabels(pcPoint)
             val afterUnboxing = new Label()
             pcCounter(0) += 1
-            BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)
+            GenResult.unwindThunkToValue(pcPoint, newFrame, setPc)
             mv.visitJumpInsn(Opcodes.GOTO, afterUnboxing)
 
             mv.visitLabel(pcPointLabel)

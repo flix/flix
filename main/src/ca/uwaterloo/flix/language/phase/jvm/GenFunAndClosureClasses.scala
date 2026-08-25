@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenFrame, GenResult, GenThunk, GenValue}
 import ca.uwaterloo.flix.util.{ClassDescs, ParOps}
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
@@ -175,7 +176,7 @@ object GenFunAndClosureClasses {
 
     // Header
     val functionInterface = BackendObjType.Arrow.fromArrowType(defn.arrowType).desc
-    val frameInterface = BackendObjType.Frame
+    val frameInterface = GenFrame
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
       ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.desc)))
     visitor.visitSource(defn.loc.source.name, null)
@@ -257,7 +258,7 @@ object GenFunAndClosureClasses {
 
     // Header
     val functionInterface = BackendObjType.AbstractArrow.fromArrowType(defn.arrowType).desc
-    val frameInterface = BackendObjType.Frame
+    val frameInterface = GenFrame
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
       ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.desc)))
     visitor.visitSource(defn.loc.source.name, null)
@@ -299,7 +300,7 @@ object GenFunAndClosureClasses {
   }
 
   private def staticApplyMethod(className: ClassDesc, defn: Def)(implicit root: Root): StaticMethod =
-    StaticMethod(className, ClassMaker.StaticApplyMethodName, MethodTypeDescs.mkDescriptor(defn.fparams.map(fp => BackendType.toClassDesc(fp.tpe)) *)(BackendObjType.Result.desc))
+    StaticMethod(className, ClassMaker.StaticApplyMethodName, MethodTypeDescs.mkDescriptor(defn.fparams.map(fp => BackendType.toClassDesc(fp.tpe)) *)(GenResult.desc))
 
   private def compileStaticApplyMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
@@ -319,7 +320,7 @@ object GenFunAndClosureClasses {
     val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
-    xReturn(BackendObjType.Result.desc)
+    xReturn(GenResult.desc)
 
 
     m.visitMaxs(999, 999)
@@ -327,8 +328,8 @@ object GenFunAndClosureClasses {
   }
 
   private def compileStaticInvokeMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root): Unit = {
-    implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
-      MethodTypeDescs.mkDescriptor()(BackendObjType.Result.desc).descriptorString(), null, null)
+    implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, GenThunk.InvokeMethod.name,
+      MethodTypeDescs.mkDescriptor()(GenResult.desc).descriptorString(), null, null)
     m.visitCode()
 
     val functionInterface = BackendObjType.Arrow.fromArrowType(defn.arrowType).desc
@@ -346,23 +347,23 @@ object GenFunAndClosureClasses {
     val method = staticApplyMethod(className, defn)
     m.visitMethodInsn(Opcodes.INVOKESTATIC, ClassDescs.internalNameOf(className), method.name, method.d.descriptorString(), false)
 
-    xReturn(BackendObjType.Result.desc)
+    xReturn(GenResult.desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
   }
 
   private def compileInvokeMethod(visitor: ClassWriter, className: ClassDesc): Unit = {
-    implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
-      MethodTypeDescs.mkDescriptor()(BackendObjType.Result.desc).descriptorString(), null, null)
+    implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, GenThunk.InvokeMethod.name,
+      MethodTypeDescs.mkDescriptor()(GenResult.desc).descriptorString(), null, null)
     m.visitCode()
 
-    val applyMethod = BackendObjType.Frame.ApplyMethod
+    val applyMethod = GenFrame.ApplyMethod
     m.visitVarInsn(Opcodes.ALOAD, 0)
     m.visitInsn(Opcodes.ACONST_NULL)
     m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ClassDescs.internalNameOf(className), applyMethod.name, applyMethod.d.descriptorString(), false)
 
-    xReturn(BackendObjType.Result.desc)
+    xReturn(GenResult.desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -373,7 +374,7 @@ object GenFunAndClosureClasses {
                                  defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val classInternalName = ClassDescs.internalNameOf(className)
-    val applyMethod = BackendObjType.Frame.ApplyMethod
+    val applyMethod = GenFrame.ApplyMethod
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, applyMethod.name, applyMethod.d.descriptorString(), null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
@@ -455,7 +456,7 @@ object GenFunAndClosureClasses {
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
 
-    xReturn(BackendObjType.Result.desc)
+    xReturn(GenResult.desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
