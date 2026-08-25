@@ -98,7 +98,6 @@ object GenAnonymousClasses {
   }
 
   private def constructorIns(superClass: ClassDesc)(implicit mv: MethodVisitor): Unit = {
-    import Instructions.*
     ALOAD(0)
     INVOKESPECIAL(ClassMaker.ConstructorMethod(superClass, Nil))
     RETURN()
@@ -106,11 +105,10 @@ object GenAnonymousClasses {
 
   /** Creates constructor bytecode that forwards parameters directly to the super constructor. */
   private def constructorInsWithSuperCall(superClass: ClassDesc, constructor: JConstructor)(implicit mv: MethodVisitor): Unit = {
-    import Instructions.*
     // ALOAD 0 (this)
     thisLoad()
     // Load each <init> parameter (starting at slot 1)
-    Instructions.withNames(1, constructor.descriptor.parameterList.asScala.toList) { case (_, args) =>
+    withNames(1, constructor.descriptor.parameterList.asScala.toList) { case (_, args) =>
       for (arg <- args) arg.load()
     }
     // INVOKESPECIAL superClass.<init>(paramTypes...)
@@ -148,7 +146,7 @@ object GenAnonymousClasses {
     // ALOAD 0 (this)
     thisLoad()
     // Load each parameter (starting at slot 1)
-    Instructions.withNames(1, method.descriptor.parameterList.asScala.toList) { case (_, args) =>
+    withNames(1, method.descriptor.parameterList.asScala.toList) { case (_, args) =>
       for (arg <- args) arg.load()
     }
     // INVOKESPECIAL superClass.methodName(descriptor)
@@ -158,7 +156,7 @@ object GenAnonymousClasses {
     if (isVoid) {
       RETURN()
     } else {
-      Instructions.xReturn(method.descriptor.returnType())
+      xReturn(method.descriptor.returnType())
     }
   }
 
@@ -171,7 +169,7 @@ object GenAnonymousClasses {
     GETFIELD(cloField)
     INVOKEVIRTUAL(abstractClass.GetUniqueThreadClosureMethod)
     // Load the actual arguments into the erased closure arguments.
-    Instructions.withNames(0, m.fparams.map(_.tpe).map(BackendType.toClassDesc)) {
+    withNames(0, m.fparams.map(_.tpe).map(BackendType.toClassDesc)) {
       case (_, args) =>
         for ((arg, i) <- args.zipWithIndex) {
           DUP()
@@ -188,7 +186,7 @@ object GenAnonymousClasses {
     if (actualRes == CD_void) {
       RETURN()
     } else {
-      Instructions.xReturn(actualRes)
+      xReturn(actualRes)
     }
   }
 

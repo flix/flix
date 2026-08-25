@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.BackendType.RichClassDesc
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceMethod, InterfaceMethod, StaticMethod}
+import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
 import org.objectweb.asm.MethodVisitor
 
@@ -42,7 +43,6 @@ object ClassConstants {
     }
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      import Instructions.*
       thisLoad()
       ALOAD(1)
       invokeConstructor(JavaClasses.Error, mkVoidDescriptor(BackendType.String))
