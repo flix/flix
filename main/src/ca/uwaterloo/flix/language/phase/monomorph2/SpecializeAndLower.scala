@@ -20,8 +20,8 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JClass, JConstructor, JField, JMethod, Mutability, Polarity, RegionScope, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler, Predicate}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JClass, JConstructor, JField, JMethod, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupCaseSym, lookupRestrictableCaseSym, lookupStructSym, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
@@ -654,10 +654,18 @@ object SpecializeAndLower {
       val defn = lookupSym(Defs.Fixpoint.Solver.Union, resultType)
       val argExps = visitExp(exp1, env0, subst) :: visitExp(exp2, env0, subst) :: Nil
       MonoAst.Expr.ApplyDef(defn, argExps, Types.Fixpoint.Solver.MergeType, resultType, subst(eff), loc)
-    case TypedAst.Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _, _, _) => ???
-    case TypedAst.Expr.FixpointSolveWithProject(_, _, _, _, _, _) => ???
-    case TypedAst.Expr.FixpointInjectInto(_, _, _, _, _) => ???
+
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe0, eff, loc) =>
+      lowerQueryWithProvenance(exps, select, withh, subst(tpe0), subst(eff), loc, env0, subst)
+
+    case TypedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tpe, eff, loc) =>
+      lowerQueryWithSelect(exps, queryExp, selects.length, pred, subst(tpe), subst(eff), loc, env0, subst)
+
+    case TypedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, _, eff, loc) =>
+      lowerSolveWithProject(exps, optPreds, mode, subst(eff), loc, env0, subst)
+
+    case TypedAst.Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
+      lowerInjectInto(exps, predsAndArities, loc, env0, subst)
 
     case TypedAst.Expr.ApplySig(symUse, exps, _, _, itpe0, tpe, eff, _, loc) =>
       val groundArrowTpe = subst(itpe0)
@@ -2108,6 +2116,314 @@ object SpecializeAndLower {
   /*
    * Datalog lowering
    */
+
+  /**
+    * Rewrites
+    * {{{
+    *     pquery e1, e2, e3 select Head(t1, ..., tn) with {W1, ..., Wm}
+    * }}}
+    * to
+    * {{{
+    *     provenanceOf(PredSym("Head"), Vector#{t1, ..., tn}, Vector#{W1, ..., Wm}, mkExtVar, e1 <+> e2 <+> e3)
+    * }}}
+    * where `mkExtVar` is the mapping this function builds from `PredSym` and terms to an
+    * extensible variant.
+    */
+  private def lowerQueryWithProvenance(exps: List[TypedAst.Expr], select: Predicate.Head, withh: List[Name.Pred], tpe0: Type, eff: Type, loc: SourceLocation, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val tpe = lowerType(tpe0)
+    val mergedExp = mergeExps(exps.map(visitExp(_, env0, subst)), loc)
+    val (goalPredSym, goalTerms) = select match {
+      case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
+        val boxedTerms = terms.map(t => box(visitExp(t, env0, subst), subst(t.tpe)))
+        (mkPredSym(pred), mkVector(boxedTerms, Types.Fixpoint.Boxed, loc1))
+    }
+    val withPredSyms = mkVector(withh.map(mkPredSym), Types.Fixpoint.Ast.Shared.PredSym, loc)
+    val extVarType = unwrapVectorType(tpe, loc)
+    val preds = predicatesOfExtVar(extVarType, loc)
+    val lambdaExp = mkExtVarLambda(preds, extVarType, loc)
+    val argExps = goalPredSym :: goalTerms :: withPredSyms :: lambdaExp :: mergedExp :: Nil
+    val groundArrowTpe = Types.Fixpoint.Solver.mkProvenanceOf(extVarType, loc)
+    val defn = lookupSym(Defs.Fixpoint.Solver.ProvenanceOf, groundArrowTpe)
+    MonoAst.Expr.ApplyDef(defn, argExps, Specialize.rewriteEnumStructType(groundArrowTpe), Specialize.rewriteEnumStructType(tpe), eff, loc)
+  }
+
+  /**
+    * Rewrites
+    * {{{
+    *     query e_db, e_pr select (v1, v2) from P(v1, v2)
+    * }}}
+    * to
+    * {{{
+    *     facts2(PredSym("P"), solve(e_db <+> e_pr))
+    * }}}
+    */
+  private def lowerQueryWithSelect(exps: List[TypedAst.Expr], queryExp: TypedAst.Expr, predArity: Int, pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val loweredExps = exps.map(visitExp(_, env0, subst))
+    val loweredQueryExp = visitExp(queryExp, env0, subst)
+
+    // Define the name and type of the appropriate factsX function in Solver.flix
+    val defTpe = Type.mkPureUncurriedArrow(Nel.of(Types.Fixpoint.Ast.Shared.PredSym, Types.Fixpoint.Ast.Datalog.Datalog), tpe, loc)
+    val sym = lookupSym(Defs.Fixpoint.Solver.Facts(predArity), defTpe)
+
+    // Merge and solve exps
+    val mergedExp = mergeExps(loweredQueryExp :: loweredExps, loc)
+    val solveDefn = lookupSym(Defs.Fixpoint.Solver.RunSolver, Types.Fixpoint.Solver.SolveType)
+    val solvedExp = MonoAst.Expr.ApplyDef(solveDefn, mergedExp :: Nil, Types.Fixpoint.Solver.SolveType, Types.Fixpoint.Ast.Datalog.Datalog, eff, loc)
+
+    // Put everything together
+    val argExps = mkPredSym(pred) :: solvedExp :: Nil
+    MonoAst.Expr.ApplyDef(sym, argExps, Specialize.rewriteEnumStructType(defTpe), Specialize.rewriteEnumStructType(tpe), eff, loc)
+
+  }
+
+  /**
+    * Rewrites
+    * {{{
+    *     solve e₁, e₂, e₃ project P₁, P₂, P₃
+    * }}}
+    * to
+    * {{{
+    *     let tmp% = solve e₁ <+> e₂ <+> e₃;
+    *     merge (project P₁ tmp%, project P₂ tmp%, project P₃ tmp%)
+    * }}}
+    */
+  private def lowerSolveWithProject(exps0: List[TypedAst.Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, eff: Type, loc: SourceLocation, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val defn = mode match {
+      case SolveMode.Default => lookupSym(Defs.Fixpoint.Solver.RunSolver, Types.Fixpoint.Ast.Datalog.Datalog)
+      case SolveMode.WithProvenance => lookupSym(Defs.Fixpoint.Solver.RunSolverWithProvenance, Types.Fixpoint.Ast.Datalog.Datalog)
+    }
+    val exps = exps0.map(visitExp(_, env0, subst))
+    val mergedExp = mergeExps(exps, loc)
+    val argExps = mergedExp :: Nil
+    val solvedExp = MonoAst.Expr.ApplyDef(defn, argExps, Types.Fixpoint.Solver.SolveType, Types.Fixpoint.Ast.Datalog.Datalog, eff, loc)
+    val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)(RegionScope.Top, flix)
+    val letBodyExp = optPreds match {
+      case Some(preds) =>
+        mergeExps(preds.map(pred => {
+          val varExp = MonoAst.Expr.Var(tmpVarSym, Types.Fixpoint.Ast.Datalog.Datalog, loc)
+          projectSym(mkPredSym(pred), varExp, loc)
+        }), loc)
+      case None => MonoAst.Expr.Var(tmpVarSym, Types.Fixpoint.Ast.Datalog.Datalog, loc)
+    }
+    MonoAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Fixpoint.Ast.Datalog.Datalog, eff, Occur.Unknown, loc)
+
+  }
+
+  /**
+    * Rewrites
+    * {{{
+    *     inject e1, e2 into P1/1, P2/2
+    * }}}
+    * to
+    * {{{
+    *     injectInto1(PredSym("P1"), e1) <+> injectInto2(PredSym("P2"), e2)
+    * }}}
+    */
+  private def lowerInjectInto(exps: List[TypedAst.Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val loweredExps = ListOps.zip(exps, predsAndArities).map {
+      case (exp, PredicateAndArity(pred, arity)) =>
+        val expTpe = subst(exp.tpe)
+
+        // The type of the function.
+        val defTpe = Type.mkPureUncurriedArrow(Nel.of(Types.Fixpoint.Ast.Shared.PredSym, lowerType(expTpe)), Types.Fixpoint.Ast.Datalog.Datalog, loc)
+
+        // Compute the symbol of the function.
+        val sym = lookupSym(Defs.Fixpoint.Solver.InjectInto(arity), defTpe)
+
+        // Put everything together.
+        val argExps = mkPredSym(pred) :: visitExp(exp, env0, subst) :: Nil
+        MonoAst.Expr.ApplyDef(sym, argExps, Specialize.rewriteEnumStructType(defTpe), Types.Fixpoint.Ast.Datalog.Datalog, subst(exp.eff), loc)
+    }
+    mergeExps(loweredExps, loc)
+
+  }
+
+  /*
+   * Methods for lowering provenance datalog expressions.
+   */
+
+  /**
+    * Returns `t` from the Flix type `Vector[t]`.
+    */
+  private def unwrapVectorType(tpe: Type, loc: SourceLocation): Type = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Vector, _), extType, _) => extType
+    case t => throw InternalCompilerException(
+      s"Expected Type.Apply(Type.Cst(TypeConstructor.Vector, _), _, _), but got $t",
+      loc
+    )
+  }
+
+  /**
+    * Returns the pairs consisting of predicates and their term types from the extensible variant
+    * type `tpe`.
+    */
+  private def predicatesOfExtVar(tpe: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Extensible, _), tpe1, loc1) =>
+      predicatesOfSchemaRow(tpe1, loc1)
+    case t => throw InternalCompilerException(
+      s"Expected Type.Apply(Type.Cst(TypeConstructor.Extensible, _), _, _), but got $t",
+      loc
+    )
+  }
+
+  /**
+    * Returns the pairs consisting of predicates and their term types from the SchemaRow `row`.
+    */
+  private def predicatesOfSchemaRow(row: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = row match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), rel, loc2), tpe2, loc1) =>
+      (pred, termTypesOfRelation(rel, loc2)) :: predicatesOfSchemaRow(tpe2, loc1)
+    case Type.Var(_, _) => Nil
+    case Type.SchemaRowEmpty => Nil
+    case t => throw InternalCompilerException(s"Got unexpected $t", loc)
+  }
+
+  /**
+    * Returns the types constituting a `Type.Relation`.
+    */
+  private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
+    def flattenApply(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
+      case Type.Cst(TypeConstructor.Relation(_), _) => Nil
+      case Type.Apply(rest, t, loc1) => t :: flattenApply(rest, loc1)
+      case _ if rel0.typeConstructor.contains(TypeConstructor.AnyType) => Nil
+      // The type of the relation is undetermined, i.e. it is a free type variable that has been replaced by AnyType.
+      // Since we have an AnyType we are free to treat it however we want. Here we decide to treat the relation as being nullary.
+      case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got $t", loc0)
+    }
+
+    flattenApply(rel, loc).reverse
+  }
+
+  /**
+    * Returns the `MonoAst` lambda expression
+    * {{{
+    *   predSym: PredSym -> terms: Vector[Boxed] -> match predSym {
+    *     case PredSym.PredSym(name, _) => match name {
+    *       case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       ...
+    *     }
+    *   }
+    * }}}
+    * where `P1, P2, ...` are in `preds` with their respective term types.
+    */
+  private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)(RegionScope.Top, flix)
+    val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)(RegionScope.Top, flix)
+    mkLambdaExp(predSymVar, Types.Fixpoint.Ast.Shared.PredSym,
+      mkLambdaExp(termsVar, Types.Fixpoint.VectorOfBoxed,
+        mkExtVarBody(preds, predSymVar, termsVar, tpe, loc),
+        tpe, Type.Pure, loc
+      ),
+      Type.mkPureArrow(Types.Fixpoint.VectorOfBoxed, tpe, loc), Type.Pure, loc
+    )
+  }
+
+  /**
+    * Returns the `MonoAst` lambda expression
+    * {{{
+    *   paramName -> exp
+    * }}}
+    * where `"paramName" == param.text` and `exp` has type `expType` and effect `eff`.
+    */
+  private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: MonoAst.Expr, expTpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr =
+    MonoAst.Expr.Lambda(
+      MonoAst.FormalParam(param, paramTpe, Occur.Unknown, loc),
+      exp,
+      Type.mkArrowWithEffect(paramTpe, eff, expTpe, loc),
+      loc
+    )
+
+  /**
+    * Returns the `MonoAst` match expression
+    * {{{
+    *   match predSym {
+    *     case PredSym.PredSym(name, _) => match name {
+    *       case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       ...
+    *     }
+    *   }
+    * }}}
+    * where `P1, P2, ...` are in `preds` with their respective term types, `"predSym" == predSymVar.text`
+    * and `"terms" == termsVar.text`.
+    */
+  private def mkExtVarBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+    val nameVar = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)(RegionScope.Top, flix)
+    MonoAst.Expr.Match(
+      exp = MonoAst.Expr.Var(predSymVar, Types.Fixpoint.Ast.Shared.PredSym, loc),
+      rules = List(
+        MonoAst.MatchRule(
+          pat = MonoAst.Pattern.Tag(
+            symUse = SymUse.CaseSymUse(findCaseSym(Enums.Fixpoint.Ast.Shared.PredSym, "PredSym"), loc),
+            pats = List(
+              MonoAst.Pattern.Var(nameVar, Type.Str, Occur.Unknown, loc),
+              MonoAst.Pattern.Wild(Type.Int64, loc)
+            ),
+            tpe = Types.Fixpoint.Ast.Shared.PredSym, loc = loc
+          ),
+          guard = None,
+          exp = MonoAst.Expr.Match(
+            exp = MonoAst.Expr.Var(nameVar, Type.Str, loc),
+            rules = preds.map {
+              case (p, types) => mkProvenanceMatchRule(termsVar, tpe, p, types, loc)
+            },
+            tpe = tpe, eff = Type.Pure, loc = loc
+          ),
+        )
+      ),
+      tpe = tpe, eff = Type.Pure, loc
+    )
+  }
+
+  /**
+    * Returns the pattern match rule
+    * {{{
+    *   case "P" => xvar P(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    * }}}
+    * where `"P" == p.name`
+    */
+  private def mkProvenanceMatchRule(termsVar: Symbol.VarSym, tpe: Type, p: Name.Pred, types: List[Type], loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.MatchRule = {
+    val termsExps = types.zipWithIndex.map {
+      case (tpe1, i) => mkUnboxedTerm(termsVar, tpe1, i, loc)
+    }
+    MonoAst.MatchRule(
+      pat = MonoAst.Pattern.Cst(Constant.Str(p.name), Type.Str, loc),
+      guard = None,
+      exp = MonoAst.Expr.ApplyAtomic(
+        op = AtomicOp.ExtTag(Name.Label(p.name, loc)),
+        exps = termsExps,
+        tpe = tpe, eff = Type.Pure, loc = loc
+      )
+    )
+  }
+
+  /**
+    * Returns the `MonoAst` expression
+    * {{{
+    *   unbox(Vector.get(i, terms))
+    * }}}
+    * where `"terms" == termsVar.text`.
+    */
+  private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation)(implicit tables: SpecializationTables, root: TypedAst.Root): MonoAst.Expr = {
+    val outerGroundArrowTpe = Type.mkPureUncurriedArrow(Nel.of(Types.Fixpoint.Boxed), tpe, loc)
+    val innerGroundArrowTpe = Type.mkPureUncurriedArrow(Nel.of(Type.Int32, Types.Fixpoint.VectorOfBoxed), Types.Fixpoint.Boxed, loc)
+    MonoAst.Expr.ApplyDef(
+      sym = lookupSym(Defs.Fixpoint.Boxable.Unbox, outerGroundArrowTpe),
+      exps = List(
+        MonoAst.Expr.ApplyDef(
+          sym = lookupSym(Symbol.mkDefnSym(s"Vector.get"), innerGroundArrowTpe),
+          exps = List(
+            MonoAst.Expr.Cst(Constant.Int32(i), Type.Int32, loc),
+            MonoAst.Expr.Var(termsVar, Types.Fixpoint.VectorOfBoxed, loc)
+          ),
+          itpe = innerGroundArrowTpe,
+          tpe = Types.Fixpoint.Boxed, eff = Type.Pure, loc = loc
+        )
+      ),
+      itpe = Specialize.rewriteEnumStructType(outerGroundArrowTpe),
+      tpe = Specialize.rewriteEnumStructType(tpe), eff = Type.Pure, loc = loc
+    )
+  }
 
   /** Constructs a `Fixpoint/Ast/Datalog.Datalog` value from the Datalog constraints `cs`. */
   private def lowerConstraintSet(cs: List[TypedAst.Constraint], loc: SourceLocation, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
