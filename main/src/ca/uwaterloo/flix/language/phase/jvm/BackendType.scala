@@ -19,12 +19,14 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.{CD_Object, CD_String, CD_boolean, CD_byte, CD_char, CD_double, CD_float, CD_int, CD_long, CD_short}
 import scala.annotation.tailrec
 
 /**
   * Represents all Flix types that are not objects on the JVM (array is an exception).
   */
-sealed trait BackendType extends VoidableType {
+sealed trait BackendType {
 
   def toDescriptor: String = {
     /** Returns the nesting degree of the array type together with the element type. */
@@ -51,6 +53,9 @@ sealed trait BackendType extends VoidableType {
       case BackendType.Reference(ref) => ref.toDescriptor
     }
   }
+
+  /** Returns the [[ClassDesc]] of `this` type. */
+  def toClassDesc: ClassDesc = ClassDesc.ofDescriptor(toDescriptor)
 
   /**
     * Returns the erased type, either itself if `this` is primitive or `java.lang.Object`
@@ -87,11 +92,6 @@ sealed trait BackendType extends VoidableType {
          BackendType.Int32 | BackendType.Float32 | BackendType.Array(_) | BackendType.Reference(_) => false
   }
 
-  /**
-    * Returns `2` if `this` is a 64 bit value, or `1` if it is a 32 bit value.
-    */
-  def stackSlots: Int = if (is64BitWidth) 2 else 1
-
 }
 
 object BackendType {
@@ -118,11 +118,17 @@ object BackendType {
     * Holds a reference to some object type.
     */
   case class Reference(ref: BackendObjType) extends BackendType {
-    def name: JvmName = ref.jvmName
+    def name: ClassDesc = ref.desc
   }
 
-  val Object: BackendType = Reference(BackendObjType.Native(JvmName.Object))
-  val String: BackendType = Reference(BackendObjType.Native(JvmName.String))
+  val Object: BackendType = Reference(BackendObjType.Native(CD_Object))
+  val String: BackendType = Reference(BackendObjType.Native(CD_String))
+
+  /** Enriches a class or interface descriptor with a shorthand for its reference type. */
+  implicit class RichClassDesc(private val desc: ClassDesc) extends AnyVal {
+    /** Wraps `desc` in `BackendType.Reference(BackendObjType.Native(...))`. */
+    def toTpe: BackendType.Reference = Reference(BackendObjType.Native(desc))
+  }
 
   /**
     * Converts the given [[SimpleType]] into its [[BackendType]] representation.
@@ -139,34 +145,38 @@ object BackendType {
       case SimpleType.Char => BackendType.Char
       case SimpleType.Float32 => BackendType.Float32
       case SimpleType.Float64 => BackendType.Float64
-      case SimpleType.BigDecimal => JvmName.BigDecimal.toTpe
+      case SimpleType.BigDecimal => JavaClasses.BigDecimal.toTpe
       case SimpleType.Int8 => BackendType.Int8
       case SimpleType.Int16 => BackendType.Int16
       case SimpleType.Int32 => BackendType.Int32
       case SimpleType.Int64 => BackendType.Int64
-      case SimpleType.BigInt => JvmName.BigInteger.toTpe
+      case SimpleType.BigInt => JavaClasses.BigInteger.toTpe
       case SimpleType.String => BackendType.String
-      case SimpleType.Regex => JvmName.Regex.toTpe
+      case SimpleType.Regex => JavaClasses.Regex.toTpe
       case SimpleType.Region => BackendObjType.Region.toTpe
       case SimpleType.Null => BackendType.Object
       case SimpleType.Array(tpe) => Array(toBackendType(tpe))
-      case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
-      case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
+      case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toErasedClassDesc(tpe)).toTpe
+      case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toErasedClassDesc)).toTpe
       case SimpleType.Enum(_, Nil) => BackendObjType.Tagged.toTpe
-      case SimpleType.Struct(sym, Nil) => JvmOps.getStructType(root.structs(sym)).toTpe
-      case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
+      case SimpleType.Struct(sym, Nil) => BackendObjType.Struct.fromStruct(root.structs(sym)).toTpe
+      case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toErasedClassDesc), toErasedClassDesc(result)).toTpe
       case SimpleType.RecordEmpty => BackendObjType.Record.toTpe
       case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
       case SimpleType.ExtensibleEmpty => BackendObjType.ExtTagged.toTpe
       case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.ExtTagged.toTpe
-      case SimpleType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
+      case SimpleType.Native(clazz) => BackendObjType.Native(clazz).toTpe
       case SimpleType.Enum(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
       case SimpleType.Struct(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
     }
   }
 
+  /** Converts the given [[SimpleType]] into the [[ClassDesc]] of its JVM representation. */
+  def toClassDesc(tpe0: SimpleType)(implicit root: JvmAst.Root): ClassDesc =
+    ClassDesc.ofDescriptor(toBackendType(tpe0).toDescriptor)
+
   /**
-    * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
+    * Contains all the primitive types and `Reference(Native(CD_Object))`.
     */
   def erasedTypes: List[BackendType] = List(
     BackendType.Bool,
@@ -199,6 +209,25 @@ object BackendType {
          SimpleType.ExtensibleExtend(_, _, _) | SimpleType.ExtensibleEmpty | SimpleType.Native(_) |
          SimpleType.Region | SimpleType.Null =>
       BackendType.Object
+  }
+
+  /** Computes the [[ClassDesc]] of the erased JVM representation of the given [[SimpleType]]. */
+  def toErasedClassDesc(tpe: SimpleType): ClassDesc = tpe match {
+    case SimpleType.Bool => CD_boolean
+    case SimpleType.Char => CD_char
+    case SimpleType.Int8 => CD_byte
+    case SimpleType.Int16 => CD_short
+    case SimpleType.Int32 => CD_int
+    case SimpleType.Int64 => CD_long
+    case SimpleType.Float32 => CD_float
+    case SimpleType.Float64 => CD_double
+    case SimpleType.Void | SimpleType.AnyType | SimpleType.Unit | SimpleType.BigDecimal | SimpleType.BigInt |
+         SimpleType.String | SimpleType.Regex | SimpleType.Array(_) | SimpleType.Lazy(_) |
+         SimpleType.Tuple(_) | SimpleType.Enum(_, _) | SimpleType.Struct(_, _) | SimpleType.Arrow(_, _) |
+         SimpleType.RecordEmpty | SimpleType.RecordExtend(_, _, _) |
+         SimpleType.ExtensibleExtend(_, _, _) | SimpleType.ExtensibleEmpty | SimpleType.Native(_) |
+         SimpleType.Region | SimpleType.Null =>
+      CD_Object
   }
 
   sealed trait PrimitiveType extends BackendType

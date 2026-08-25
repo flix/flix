@@ -21,7 +21,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenFrame, GenFrames, GenFramesCons, GenFramesNil, GenGlobal, GenHandler, GenHoleError, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecordExtend, GenReifiedSourceLocation, GenResult, GenResumption, GenResumptionCons, GenResumptionNil, GenResumptionWrapper, GenSuspension, GenTag, GenThunk, GenUncaughtExceptionHandler, GenUnhandledEffectError, GenValue}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+
+import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.util.collection.MapOps
 
 
@@ -46,71 +49,74 @@ object CodeGen {
     val allTypes = root.types ++ requiredTypes
 
     val mainClass = root.getMain.map(
-      main => JvmClass(BackendObjType.Main.jvmName, BackendObjType.Main.genByteCode(main.sym))
+      main => JvmClass(GenMain.desc, GenMain.genByteCode(main.sym))
     ).toList
 
-    val namespaceClasses = JvmOps.namespacesOf(root).map(
+    val namespaceClasses = namespacesOf(root).map(
       ns => {
-        val nsClass = BackendObjType.Namespace(ns.ns)
         val entrypointDefs = ns.defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
-        JvmClass(nsClass.jvmName, nsClass.genByteCode(entrypointDefs))
+        JvmClass(GenNamespace.desc(ns.ns), GenNamespace.genByteCode(ns.ns, entrypointDefs))
       }).toList
 
     // Generate function classes.
     val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs).values.toList
-    val erasedFunctionTypes = JvmOps.getErasedArrowsOf(allTypes)
-    val functionInterfaces = erasedFunctionTypes.map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
+    val erasedFunctionTypes = getErasedArrowsOf(allTypes)
+    val functionInterfaces = erasedFunctionTypes.map(bt => JvmClass(bt.desc, bt.genByteCode()))
     val closureAbstractClasses = erasedFunctionTypes.map {
       case BackendObjType.Arrow(args, result) => BackendObjType.AbstractArrow(args, result)
-    }.map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    }.map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
 
-    val taggedAbstractClass = List(JvmClass(BackendObjType.Tagged.jvmName, BackendObjType.Tagged.genByteCode()))
-    val tagClasses = root.enums.values.flatMap(JvmOps.getTagsOf).toList.distinctBy(_.jvmName).map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
-    val extTaggedAbstractClass = List(JvmClass(BackendObjType.ExtTagged.jvmName, BackendObjType.ExtTagged.genByteCode()))
-    val extensibleTagClasses = JvmOps.getExtensibleTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val taggedAbstractClass = List(JvmClass(BackendObjType.Tagged.desc, BackendObjType.Tagged.genByteCode()))
+    val nullaryTagClasses = root.enums.values.flatMap(getNullaryTagsOf).toList.map { caze =>
+      val enumName = caze.sym.enumSym.toString
+      JvmClass(GenNullaryTag.desc(enumName, caze.sym.name), GenNullaryTag.genByteCode(enumName, caze.sym.name, caze.sym.ordinal))
+    }
+    val tagClasses = root.enums.values.flatMap(getTagsOf).toSet[List[ClassDesc]].toList.map(elms => JvmClass(GenTag.desc(elms), GenTag.genByteCode(elms)))
+    val extTaggedAbstractClass = List(JvmClass(BackendObjType.ExtTagged.desc, BackendObjType.ExtTagged.genByteCode()))
+    val extensibleTagClasses = getExtensibleTagTypesOf(allTypes).map(elms => JvmClass(GenExtTag.desc(elms), GenExtTag.genByteCode(elms))).toList
 
-    val tupleClasses = JvmOps.getTupleTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
-    val structClasses = root.structs.values.map(JvmOps.getStructType).toList.distinctBy(_.jvmName).map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
+    val tupleClasses = getTupleTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
+    val structClasses = root.structs.values.map(BackendObjType.Struct.fromStruct).toList.distinctBy(_.desc).map(bt => JvmClass(bt.desc, bt.genByteCode()))
 
-    val recordInterfaces = List(JvmClass(BackendObjType.Record.jvmName, BackendObjType.Record.genByteCode()))
-    val recordEmptyClasses = List(JvmClass(BackendObjType.RecordEmpty.jvmName, BackendObjType.RecordEmpty.genByteCode()))
-    val recordExtendClasses = JvmOps.getRecordExtendsOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val recordInterfaces = List(JvmClass(BackendObjType.Record.desc, BackendObjType.Record.genByteCode()))
+    val recordEmptyClasses = List(JvmClass(BackendObjType.RecordEmpty.desc, BackendObjType.RecordEmpty.genByteCode()))
+    val recordExtendClasses = getRecordExtendsOf(allTypes).map(value => JvmClass(GenRecordExtend.desc(value), GenRecordExtend.genByteCode(value))).toList
 
-    val lazyClasses = JvmOps.getLazyTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val lazyClasses = getLazyTypesOf(allTypes).map(bt => JvmClass(bt.desc, bt.genByteCode())).toList
 
     val anonClasses = GenAnonymousClasses.gen(root.anonClasses.distinctBy(_.name))
 
-    val unitClass = List(JvmClass(BackendObjType.Unit.jvmName, BackendObjType.Unit.genByteCode()))
+    val unitClass = List(JvmClass(BackendObjType.Unit.desc, BackendObjType.Unit.genByteCode()))
 
-    val flixErrorClass = List(JvmClass(JvmName.FlixError, ClassConstants.FlixError.genByteCode()))
-    val rslClass = List(JvmClass(BackendObjType.ReifiedSourceLocation.jvmName, BackendObjType.ReifiedSourceLocation.genByteCode()))
-    val holeErrorClass = List(JvmClass(BackendObjType.HoleError.jvmName, BackendObjType.HoleError.genByteCode()))
-    val matchErrorClass = List(JvmClass(BackendObjType.MatchError.jvmName, BackendObjType.MatchError.genByteCode()))
-    val castErrorClass = List(JvmClass(BackendObjType.CastError.jvmName, BackendObjType.CastError.genByteCode()))
-    val unhandledEffectErrorClass = List(JvmClass(BackendObjType.UnhandledEffectError.jvmName, BackendObjType.UnhandledEffectError.genByteCode()))
+    val flixErrorClass = List(JvmClass(ClassConstants.FlixError.Desc, ClassConstants.FlixError.genByteCode()))
+    val rslClass = List(JvmClass(GenReifiedSourceLocation.desc, GenReifiedSourceLocation.genByteCode()))
+    val holeErrorClass = List(JvmClass(GenHoleError.desc, GenHoleError.genByteCode()))
+    val matchErrorClass = List(JvmClass(GenMatchError.desc, GenMatchError.genByteCode()))
+    val castErrorClass = List(JvmClass(GenCastError.desc, GenCastError.genByteCode()))
+    val unhandledEffectErrorClass = List(JvmClass(GenUnhandledEffectError.desc, GenUnhandledEffectError.genByteCode()))
 
-    val globalClass = List(JvmClass(BackendObjType.Global.jvmName, BackendObjType.Global.genByteCode()))
+    val globalClass = List(JvmClass(GenGlobal.desc, GenGlobal.genByteCode()))
 
-    val regionClass = List(JvmClass(BackendObjType.Region.jvmName, BackendObjType.Region.genByteCode()))
+    val regionClass = List(JvmClass(BackendObjType.Region.desc, BackendObjType.Region.genByteCode()))
 
-    val uncaughtExceptionHandlerClass = List(JvmClass(BackendObjType.UncaughtExceptionHandler.jvmName, BackendObjType.UncaughtExceptionHandler.genByteCode()))
+    val uncaughtExceptionHandlerClass = List(JvmClass(GenUncaughtExceptionHandler.desc, GenUncaughtExceptionHandler.genByteCode()))
 
     // Effect runtime classes.
-    val resultInterface = List(JvmClass(BackendObjType.Result.jvmName, BackendObjType.Result.genByteCode()))
-    val valueClass = List(JvmClass(BackendObjType.Value.jvmName, BackendObjType.Value.genByteCode()))
-    val frameInterface = List(JvmClass(BackendObjType.Frame.jvmName, BackendObjType.Frame.genByteCode()))
-    val thunkAbstractClass = List(JvmClass(BackendObjType.Thunk.jvmName, BackendObjType.Thunk.genByteCode()))
-    val suspensionClass = List(JvmClass(BackendObjType.Suspension.jvmName, BackendObjType.Suspension.genByteCode()))
-    val framesInterface = List(JvmClass(BackendObjType.Frames.jvmName, BackendObjType.Frames.genByteCode()))
-    val framesConsClass = List(JvmClass(BackendObjType.FramesCons.jvmName, BackendObjType.FramesCons.genByteCode()))
-    val framesNilClass = List(JvmClass(BackendObjType.FramesNil.jvmName, BackendObjType.FramesNil.genByteCode()))
-    val resumptionInterface = List(JvmClass(BackendObjType.Resumption.jvmName, BackendObjType.Resumption.genByteCode()))
-    val resumptionConsClass = List(JvmClass(BackendObjType.ResumptionCons.jvmName, BackendObjType.ResumptionCons.genByteCode()))
-    val resumptionNilClass = List(JvmClass(BackendObjType.ResumptionNil.jvmName, BackendObjType.ResumptionNil.genByteCode()))
-    val handlerInterface = List(JvmClass(BackendObjType.Handler.jvmName, BackendObjType.Handler.genByteCode()))
-    val effectCallClass = List(JvmClass(BackendObjType.EffectCall.jvmName, BackendObjType.EffectCall.genByteCode()))
+    val resultInterface = List(JvmClass(GenResult.desc, GenResult.genByteCode()))
+    val valueClass = List(JvmClass(GenValue.desc, GenValue.genByteCode()))
+    val frameInterface = List(JvmClass(GenFrame.desc, GenFrame.genByteCode()))
+    val thunkAbstractClass = List(JvmClass(GenThunk.desc, GenThunk.genByteCode()))
+    val suspensionClass = List(JvmClass(GenSuspension.desc, GenSuspension.genByteCode()))
+    val framesInterface = List(JvmClass(GenFrames.desc, GenFrames.genByteCode()))
+    val framesConsClass = List(JvmClass(GenFramesCons.desc, GenFramesCons.genByteCode()))
+    val framesNilClass = List(JvmClass(GenFramesNil.desc, GenFramesNil.genByteCode()))
+    val resumptionInterface = List(JvmClass(GenResumption.desc, GenResumption.genByteCode()))
+    val resumptionConsClass = List(JvmClass(GenResumptionCons.desc, GenResumptionCons.genByteCode()))
+    val resumptionNilClass = List(JvmClass(GenResumptionNil.desc, GenResumptionNil.genByteCode()))
+    val handlerInterface = List(JvmClass(GenHandler.desc, GenHandler.genByteCode()))
+    val effectCallClass = List(JvmClass(GenEffectCall.desc, GenEffectCall.genByteCode()))
     val effectClasses = GenEffectClasses.gen(root.effects.values)
-    val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper.apply).map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
+    val resumptionWrappers = BackendType.erasedTypes.map(_.toClassDesc).map(tpe => JvmClass(GenResumptionWrapper.desc(tpe), GenResumptionWrapper.genByteCode(tpe)))
 
     val allClasses = List(
       mainClass,
@@ -119,6 +125,7 @@ object CodeGen {
       functionAndClosureClasses,
       closureAbstractClasses,
       taggedAbstractClass,
+      nullaryTagClasses,
       tagClasses,
       extTaggedAbstractClass,
       extensibleTagClasses,
@@ -159,7 +166,7 @@ object CodeGen {
     // Check for duplicate JVM class names.
     val duplicates = allClasses.groupBy(_.name).collect { case (name, classes) if classes.length > 1 => name }
     if (duplicates.nonEmpty) {
-      val names = duplicates.map(_.toInternalName).mkString(", ")
+      val names = duplicates.map(ClassDescs.internalNameOf).mkString(", ")
       throw InternalCompilerException(s"Duplicate JVM class names: $names", SourceLocation.Unknown)
     }
 
@@ -167,15 +174,72 @@ object CodeGen {
 
     val tests = MapOps.mapValues(root.defs.filter(_._2.ann.isTest)) {
       case defn =>
-        val nsType = BackendObjType.Namespace(defn.sym.namespace)
-        BytecodeAst.Test(nsType.jvmName, nsType.ShimMethod(defn).name, defn.ann.isSkip)
+        val ns = defn.sym.namespace
+        BytecodeAst.Test(GenNamespace.desc(ns), GenNamespace.ShimMethod(ns, defn).name, defn.ann.isSkip)
     }
     val main = root.mainEntryPoint.map{
       case _ =>
-        val mainType = BackendObjType.Main
-        BytecodeAst.Def(mainType.jvmName, mainType.MainMethod.name)
+        BytecodeAst.Def(GenMain.desc, GenMain.MainMethod.name)
     }
     BytecodeAst.Root(classMap, tests, main, root.sources)
   }(DebugNoOp())
+
+  /** Returns the set of namespaces in the given AST `root`. */
+  private def namespacesOf(root: Root): Set[NamespaceInfo] = {
+    // Group every symbol by namespace.
+    root.defs.groupBy(_._1.namespace).map {
+      case (ns, defs) =>
+        NamespaceInfo(ns, defs)
+    }.toSet
+  }
+
+  /** Returns the set of erased function types in `types` without searching recursively. */
+  private def getErasedArrowsOf(types: Iterable[SimpleType]): Set[BackendObjType.Arrow] =
+    types.foldLeft(Set.empty[BackendObjType.Arrow]) {
+      case (acc, SimpleType.Arrow(args, result)) =>
+        acc + BackendObjType.Arrow(args.map(BackendType.toErasedClassDesc), BackendType.toErasedClassDesc(result))
+      case (acc, _) => acc
+    }
+
+  /** Returns the nullary cases of `enm`, which each get their own singleton class. */
+  private def getNullaryTagsOf(enm: Enum): Iterable[Case] =
+    enm.cases.values.filter(_.tpes.isEmpty)
+
+  /** Returns the erased term types of each non-nullary case in `enm`. */
+  private def getTagsOf(enm: Enum): Set[List[ClassDesc]] =
+    enm.cases.values.collect {
+      case caze if caze.tpes.nonEmpty => caze.tpes.map(BackendType.toErasedClassDesc)
+    }.toSet
+
+  /** Returns the set of extensible tag types in `types` without searching recursively. */
+  private def getExtensibleTagTypesOf(types: Iterable[SimpleType]): Set[List[ClassDesc]] =
+    types.foldLeft(Set.empty[List[ClassDesc]]) {
+      case (acc, SimpleType.ExtensibleExtend(_, targs, _)) =>
+        acc + targs.map(BackendType.toErasedClassDesc)
+      case (acc, _) => acc
+    }
+
+  /** Returns the set of tuple types in `types` without searching recursively. */
+  private def getTupleTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Tuple] =
+    types.foldLeft(Set.empty[BackendObjType.Tuple]) {
+      case (acc, SimpleType.Tuple(elms)) =>
+        acc + BackendObjType.Tuple(elms.map(BackendType.toErasedClassDesc))
+      case (acc, _) => acc
+    }
+
+  /** Returns the set of record extend types in `types` without searching recursively. */
+  private def getRecordExtendsOf(types: Iterable[SimpleType]): Set[ClassDesc] =
+    types.foldLeft(Set.empty[ClassDesc]) {
+      case (acc, SimpleType.RecordExtend(_, value, _)) =>
+        acc + BackendType.toErasedClassDesc(value)
+      case (acc, _) => acc
+    }
+
+  /** Returns the set of lazy types in `types` without searching recursively. */
+  private def getLazyTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Lazy] =
+    types.foldLeft(Set.empty[BackendObjType.Lazy]) {
+      case (acc, SimpleType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.toErasedClassDesc(tpe))
+      case (acc, _) => acc
+    }
 
 }

@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.collection.Nel
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -385,7 +384,7 @@ object Inliner {
           case MatchResult.Match(binders) =>
             // Guaranteed match - convert to let binders.
             sctx.changed.putIfAbsent(sym0, ())
-            bindPatterns(binders.toSeq, ruleExp, loc)
+            bindPatterns(binders, ruleExp, loc)
           case MatchResult.NoMatch =>
             // Impossible match - delete and continue.
             sctx.changed.putIfAbsent(sym0, ())
@@ -432,9 +431,9 @@ object Inliner {
       *   }
       * }}}
       *
-      * This would return `Match(Chain(Some(x) => 12), None => tail)`
+      * This would return `Match(List(Some(x) => 12, None => tail))`
       */
-    case class Match(binders: Chain[(Option[Pattern.Var], MonoAst.Expr)]) extends MatchResult
+    case class Match(binders: List[(Option[Pattern.Var], MonoAst.Expr)]) extends MatchResult
 
     /** An expression does not match a pattern. */
     case object NoMatch extends MatchResult
@@ -452,7 +451,7 @@ object Inliner {
       * }}}
       */
     def emptyMatch(): MatchResult =
-      Match(Chain.empty)
+      Match(Nil)
 
     /**
       * A match of a single binder. E.g.:
@@ -464,7 +463,7 @@ object Inliner {
       * }}}
       */
     def singleMatch(pat: Option[Pattern.Var], exp: MonoAst.Expr): MatchResult =
-      Match(Chain((pat, exp)))
+      Match(List((pat, exp)))
 
     /**
       * Returns a match with no binder if `b` is true (see [[emptyMatch]]).
@@ -732,11 +731,11 @@ object Inliner {
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
-    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff1, loc1) =>
+    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff1, javaSig, loc1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e = visitExp(exp, ctx)
-      MonoAst.JvmMethod(ann, ident, fps, e, retTpe, eff1, loc1)
+      MonoAst.JvmMethod(ann, ident, fps, e, retTpe, eff1, javaSig, loc1)
   }
 
   /**

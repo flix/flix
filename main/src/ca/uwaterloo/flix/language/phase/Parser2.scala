@@ -122,7 +122,7 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  def run(tokens0: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phaseNew("Parser2") {
+  def run(tokens0: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phase("Parser2") {
     // Compute the stale and fresh sources.
     val (stale, fresh) = changeSet.partition(tokens0, oldRoot.units)
 

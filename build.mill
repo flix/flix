@@ -20,6 +20,8 @@ object flix extends ScalaModule {
     mvn"org.java-websocket:Java-WebSocket:1.6.0",
     mvn"org.jline:jline:3.30.9",
     mvn"org.json4s::json4s-native:4.0.7",
+    mvn"net.bytebuddy:byte-buddy:1.18.11",
+    mvn"com.google.code.findbugs:jsr305:3.0.2", // Byte Buddy's nullability annotations (needed by scalac)
     mvn"org.ow2.asm:asm:9.9.1",
     mvn"org.commonmark:commonmark:0.24.0",
     mvn"org.commonmark:commonmark-ext-gfm-tables:0.24.0",

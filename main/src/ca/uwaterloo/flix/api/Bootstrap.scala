@@ -22,7 +22,10 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
-import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
+import ca.uwaterloo.flix.language.phase.jvm.JvmClass
+import ca.uwaterloo.flix.util.ClassDescs
+
+import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
@@ -94,8 +97,8 @@ object Bootstrap {
     }
 
     FileOps.newFileIfAbsent(gitignoreFile) {
-      s"""*.fpkg
-         |*.jar
+      s"""*.$EXT_FPKG
+         |*.$EXT_JAR
          |.GITHUB_TOKEN
          |$artifactDirectoryRaw
          |$buildDirectoryRaw
@@ -130,7 +133,7 @@ object Bootstrap {
         |""".stripMargin
     }
 
-    FileOps.newFileIfAbsent(buildAndTestWorkflowFile) {
+    FileOps.newFileIfAbsent(buildAndTestWorkflowFile) {(
       """name: Build and Test
         |
         |on:
@@ -151,10 +154,10 @@ object Bootstrap {
         |          distribution: 'temurin'
         |          java-version: '21'
         |
-        |      - name: Read Flix version from flix.toml
+        |      - name: Read Flix version from """ + FLIX_TOML + """
         |        id: flix
         |        run: |
-        |          version=$(grep -E '^"?flix"?[[:space:]]*=' flix.toml \
+        |          version=$(grep -E '^"?flix"?[[:space:]]*=' """ + FLIX_TOML + """ \
         |            | head -n1 \
         |            | sed -E 's/.*"([^"]+)"[[:space:]]*$/\1/')
         |          echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -169,7 +172,7 @@ object Bootstrap {
         |
         |      - name: Test
         |        run: java -jar flix.jar test
-        |""".stripMargin
+        |""").stripMargin
     }
     Result.Ok(())
   }
@@ -181,13 +184,13 @@ object Bootstrap {
   private val EXT_FLIX: String = "flix"
 
   /** The flix package file extension. Does not contain leading '.' */
-  private val EXT_FPKG: String = "fpkg"
+  val EXT_FPKG: String = "fpkg"
 
   /** The jar file extension. Does not contain leading '.' */
   private val EXT_JAR: String = "jar"
 
   /** The manifest / flix toml file name. */
-  private val FLIX_TOML: String = "flix.toml"
+  val FLIX_TOML: String = "flix.toml"
 
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
@@ -571,7 +574,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def checkEffects(flix: Flix): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
-      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-check'"))
+      return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-check'"))
     }
 
     FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
@@ -645,7 +648,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
-      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-lock'"))
+      return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
     }
     Steps.updateStaleSources(flix)
     for {
@@ -677,7 +680,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def clean(): Result[Unit, BootstrapError] = {
     // Ensure project mode
     if (optManifest.isEmpty) {
-      return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'clean' in a non-project directory."))
+      return Err(BootstrapError.FileError(s"No manifest found ('$FLIX_TOML'). Refusing to run 'clean' in a non-project directory."))
     }
 
     // Ensure `cwd` is not dangerous
@@ -1013,10 +1016,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Adds all `classes` to `zip`, writing the bytecode directly from memory.
       */
-    def addClassesToZip(classes: Map[JvmName, JvmClass], zip: ZipOutputStream): Unit = {
+    def addClassesToZip(classes: Map[ClassDesc, JvmClass], zip: ZipOutputStream): Unit = {
       // Add all classes.
       // Here we sort entries by their entry name to apply https://reproducible-builds.org/
-      val entries = classes.values.map(clazz => (clazz.name.toClassFileName, clazz)).toList.sortBy(_._1)
+      val entries = classes.values.map(clazz => (ClassDescs.classFileNameOf(clazz.name), clazz)).toList.sortBy(_._1)
       for ((entryName, clazz) <- entries) {
         FileOps.addToZip(zip, entryName, clazz.bytecode)
       }
@@ -1536,7 +1539,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       *
       * @see [[Bootstrap.getClassDirectory]]
       */
-    def writeClasses(classes: Map[JvmName, JvmClass]): Result[Unit, BootstrapError] = {
+    def writeClasses(classes: Map[ClassDesc, JvmClass]): Result[Unit, BootstrapError] = {
       val classDir = Bootstrap.getClassDirectory(projectPath)
       Result.traverse(classes.values.toList)(writeClass(classDir, _)).map(_ => ())
     }
@@ -1548,7 +1551,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     private def writeClass(classDir: Path, clazz: JvmClass): Result[Unit, BootstrapError] = {
       // Compute the absolute path of the class file to write.
-      val path = classDir.resolve(clazz.name.toPath).toAbsolutePath
+      val path = classDir.resolve(ClassDescs.classFileNameOf(clazz.name)).toAbsolutePath
 
       try {
         // Create all parent directories (in case they don't exist).

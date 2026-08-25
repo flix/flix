@@ -31,13 +31,12 @@ import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.tools.compilertop.{CompilerTop, Profiler}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
+import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.tc.Debug
 
 import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
-import java.util.concurrent.ForkJoinPool
 import java.util.zip.ZipFile
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -147,7 +146,7 @@ class Flix {
   /**
     * The current phase we are in. Initially `None`. Volatile so the compiler
     * profiler renderer thread sees each store made by the compile thread in
-    * [[phase]] / [[phaseNew]].
+    * [[phase]].
     */
   @volatile private var currentPhase: Option[PhaseTime] = None
 
@@ -179,9 +178,9 @@ class Flix {
   var options: Options = Options.Default
 
   /**
-    * The thread pool executor service for `this` Flix instance.
+    * The thread pool for `this` Flix instance.
     */
-  var threadPool: java.util.concurrent.ForkJoinPool = _
+  var threadPool: ThreadPool = _
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -488,8 +487,11 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork-join thread pool.
-    initForkJoinPool()
+    // Begin drawing the progress bar (if enabled).
+    progressBar.start()
+
+    // Initialize the thread pool.
+    initThreadPool()
 
     // Reset the phase information.
     phaseTimers = ArrayBuffer.empty
@@ -523,91 +525,80 @@ class Flix {
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
     errors ++= parserErrors
 
-    val (weederValidation, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+    val (weederResult, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
     errors ++= weederErrors
 
-    val result = weederValidation match {
-      case Validation.Failure(failures) =>
-        errors ++= failures.toList
-        None
+    val result = weederResult match {
+      case None => None
 
-      case Validation.Success(afterWeeder) =>
+      case Some(afterWeeder) =>
         val afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
 
         val (afterNamer, nameErrors) = Namer.run(afterDesugar)
         errors ++= nameErrors
 
-        val (resolverValidation, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
+        val (afterResolver, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
         errors ++= resolutionErrors
 
-        resolverValidation match {
-          case Validation.Failure(failures) =>
-            errors ++= failures.toList
-            None
+        val (afterKinder, kindErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
+        errors ++= kindErrors
 
-          case Validation.Success(afterResolver) =>
+        val (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
+        errors ++= derivationErrors
 
-            val (afterKinder, kindErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
-            errors ++= kindErrors
+        val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
+        errors ++= typeErrors
 
-            val (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
-            errors ++= derivationErrors
+        val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
+        errors ++= entryPointErrors
 
-            val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
-            errors ++= typeErrors
+        val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+        errors ++= instanceErrors
 
-            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
-            errors ++= entryPointErrors
+        val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances, cachedTyperAst, changeSet)
+        errors ++= predDepErrors
 
-            val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-            errors ++= instanceErrors
+        val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
+        errors ++= stratificationErrors
 
-            val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances, cachedTyperAst, changeSet)
-            errors ++= predDepErrors
+        val (afterPatMatch, patMatchErrors) = PatMatch2.run(afterStratifier, cachedTyperAst, changeSet)
+        errors ++= patMatchErrors
 
-            val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
-            errors ++= stratificationErrors
+        val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
+        errors ++= redundancyErrors
 
-            val (afterPatMatch, patMatchErrors) = PatMatch2.run(afterStratifier, cachedTyperAst, changeSet)
-            errors ++= patMatchErrors
+        val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
+        errors ++= safetyErrors
 
-            val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
-            errors ++= redundancyErrors
+        val (afterTerminator, terminationErrors) = Terminator.run(afterRedundancy, cachedTyperAst, changeSet)
+        errors ++= terminationErrors
 
-            val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
-            errors ++= safetyErrors
+        val (afterDependencies, _) = Dependencies.run(afterTerminator, cachedTyperAst, changeSet)
 
-            val (afterTerminator, terminationErrors) = Terminator.run(afterRedundancy, cachedTyperAst, changeSet)
-            errors ++= terminationErrors
+        if (options.incremental) {
+          this.cachedLexerTokens = afterLexer
+          this.cachedParserCst = afterParser
+          this.cachedWeederAst = afterWeeder
+          this.cachedDesugarAst = afterDesugar
+          this.cachedKinderAst = afterKinder
+          this.cachedResolverAst = afterResolver
+          this.cachedTyperAst = afterDependencies
 
-            val (afterDependencies, _) = Dependencies.run(afterTerminator, cachedTyperAst, changeSet)
+          // We record that no files are dirty in the change set.
+          this.changeSet = ChangeSet.Dirty(Set.empty)
 
-            if (options.incremental) {
-              this.cachedLexerTokens = afterLexer
-              this.cachedParserCst = afterParser
-              this.cachedWeederAst = afterWeeder
-              this.cachedDesugarAst = afterDesugar
-              this.cachedKinderAst = afterKinder
-              this.cachedResolverAst = afterResolver
-              this.cachedTyperAst = afterDependencies
-
-              // We record that no files are dirty in the change set.
-              this.changeSet = ChangeSet.Dirty(Set.empty)
-
-              // We save all the current errors.
-              this.cachedErrors = errors.toList
-            }
-
-            Some(afterDependencies)
+          // We save all the current errors.
+          this.cachedErrors = errors.toList
         }
+
+        Some(afterDependencies)
     }
-    // Shutdown fork-join thread pool.
-    shutdownForkJoinPool()
+
+    // Shutdown the thread pool.
+    shutdownThreadPool()
 
     // Reset the progress bar.
-    if (options.progress) {
-      progressBar.complete()
-    }
+    progressBar.complete()
 
     // Stop the live compiler profiler TUI only if there are errors and no
     // `codeGen` will follow. On the success path, leave it running so
@@ -628,7 +619,11 @@ class Flix {
     (result, errors.toList)
   } catch {
     case ex: InternalCompilerException =>
+      progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
+      throw ex
+    case ex: Throwable =>
+      progressBar.complete()
       throw ex
   }
 
@@ -645,8 +640,11 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork-join thread pool.
-    initForkJoinPool()
+    // Begin drawing the progress bar (if enabled).
+    progressBar.start()
+
+    // Initialize the thread pool.
+    initThreadPool()
 
     var treeShaker1Ast = TreeShaker1.run(typedAst)
     // Note: Do not null typedAst. It is used later.
@@ -699,13 +697,11 @@ class Flix {
     val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
     val result = new CompilationResult(bytecodeAst, totalTime, totalSize, this)
 
-    // Shutdown fork-join thread pool.
-    shutdownForkJoinPool()
+    // Shutdown the thread pool.
+    shutdownThreadPool()
 
     // Reset the progress bar.
-    if (options.progress) {
-      progressBar.complete()
-    }
+    progressBar.complete()
 
     // Stop the live compiler profiler TUI, if it is running.
     compilerTop.foreach(_.stop())
@@ -714,9 +710,11 @@ class Flix {
     result
   } catch {
     case ex: InternalCompilerException =>
+      progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
       throw ex
     case ex: Throwable =>
+      progressBar.complete()
       CrashHandler.handleCrash(ex)(this)
       throw ex
   }
@@ -724,12 +722,12 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def compile(): Validation[CompilationResult, CompilationMessage] = {
+  def compile(): Result[CompilationResult, List[CompilationMessage]] = {
     val (result, errors) = check()
     if (errors.isEmpty) {
-      Validation.Success(codeGen(result.get))
+      Result.Ok(codeGen(result.get))
     } else {
-      Validation.Failure(Chain.from(errors))
+      Result.Err(errors)
     }
   }
 
@@ -750,43 +748,16 @@ class Flix {
 
   /**
     * Enters the phase with the given name.
-    */
-  def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
-    // Initialize the phase time object.
-    currentPhase = Some(PhaseTime(phase, 0))
-
-    if (options.progress) {
-      progressBar.observe(phase, "")
-    }
-
-    // Measure the execution time.
-    val t = System.nanoTime()
-    val (root, errs) = f
-    val e = System.nanoTime() - t
-
-    // Update the phase time and add it to the list of executed phases.
-    val finished = PhaseTime(phase, e)
-    currentPhase = Some(finished)
-    phaseTimers += finished
-
-    if (this.options.xprintphases) {
-      d.output(phase, root)(this)
-    }
-
-    // Return the result computed by the phase.
-    (root, errs)
-  }
-
-  /**
-    * Enters the phase with the given name.
+    *
+    * Runs `f`, records its execution time, and, if `--Xprint-phases` is enabled,
+    * hands the result to `d`. Phases returning a `(root, errors)` pair get their
+    * [[Debug]] instance from [[Debug.debugPair]], which debugs only the root.
     */
   def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
     currentPhase = Some(PhaseTime(phase, 0))
 
-    if (options.progress) {
-      progressBar.observe(phase, "")
-    }
+    progressBar.observe(phase)
 
     // Measure the execution time.
     val t = System.nanoTime()
@@ -859,16 +830,16 @@ class Flix {
   }
 
   /**
-    * Initializes the fork-join thread pool.
+    * Initializes the thread pool.
     */
-  private def initForkJoinPool(): Unit = {
-    threadPool = new ForkJoinPool(options.threads)
+  private def initThreadPool(): Unit = {
+    threadPool = new ThreadPool(options.threads)
   }
 
   /**
-    * Shuts down the fork-join thread pools.
+    * Shuts down the thread pool.
     */
-  private def shutdownForkJoinPool(): Unit = {
+  private def shutdownThreadPool(): Unit = {
     threadPool.shutdown()
   }
 

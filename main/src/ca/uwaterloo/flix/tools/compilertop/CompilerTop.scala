@@ -303,7 +303,7 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     // `completed` first and uses the snapshot when it sees true; the volatile
     // writes here happen-before the AtomicBoolean store via JMM.
     frozenElapsedNanos = System.nanoTime() - startNanos
-    frozenActiveThreads = if (flix.threadPool == null) 0 else flix.threadPool.getActiveThreadCount
+    frozenActiveThreads = if (flix.threadPool == null) 0 else flix.threadPool.getActiveCount
     frozenHeap = heapUsage()
 
     if (!completed.compareAndSet(false, true)) return
@@ -353,12 +353,12 @@ final class CompilerTop(flix: Flix, profiler: Profiler) {
     val isDone = completed.get()
     val now = System.nanoTime()
     val pool = flix.threadPool
-    val parallelism = if (pool == null) flix.options.threads.max(1) else pool.getParallelism.max(1)
+    val parallelism = if (pool == null) flix.options.threads.max(1) else pool.getCorePoolSize.max(1)
     // Once compilation is done, freeze elapsed + active threads + heap at
     // their snapshot values so the dashboard reflects the state at
     // completion rather than ticking forward during the wait-for-quit phase.
     val elapsed = if (isDone) frozenElapsedNanos else now - startNanos
-    val activeThreads = if (isDone) frozenActiveThreads else (if (pool == null) 0 else pool.getActiveThreadCount)
+    val activeThreads = if (isDone) frozenActiveThreads else (if (pool == null) 0 else pool.getActiveCount)
     val heap = if (isDone) frozenHeap else heapUsage()
     val currentPhase = if (isDone) "done" else flix.getCurrentPhaseName.getOrElse("starting")
     val phaseTimersSize = flix.phaseTimers.size

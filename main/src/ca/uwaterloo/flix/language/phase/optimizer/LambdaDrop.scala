@@ -340,9 +340,9 @@ object LambdaDrop {
           MonoAst.JvmConstructor(e, retTpe, eff2, loc2)
       }
       val ms = methods.map {
-        case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff2, loc2) =>
+        case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff2, javaSig, loc2) =>
           val e = rewriteExp(exp)
-          MonoAst.JvmMethod(ann, ident, fparams, e, retTpe, eff2, loc2)
+          MonoAst.JvmMethod(ann, ident, fparams, e, retTpe, eff2, javaSig, loc2)
       }
       Expr.NewObject(sym, clazz, tpe, eff1, cs, ms, loc1)
 

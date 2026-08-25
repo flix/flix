@@ -24,9 +24,8 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain, Nel, SeqOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.collection.{ArrayOps, Nel, SeqOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.lang.{Byte as JByte, Integer as JInt, Long as JLong, Short as JShort}
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -49,31 +48,47 @@ object Weeder2 {
 
   import WeededAst.*
 
-  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[WeededAst.Root, CompilationMessage], List[CompilationMessage]) = {
-    flix.phaseNew("Weeder2") {
+  /**
+    * Weeds the given syntax tree `root`.
+    *
+    * Returns the weeded root and the errors. The root is `None` if any compilation unit
+    * failed hard, in which case the list of errors is non-empty.
+    */
+  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Option[WeededAst.Root], List[CompilationMessage]) = {
+    flix.phase("Weeder2") {
       implicit val sctx: SharedContext = SharedContext.mk()
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
       // Schedule the biggest sources first to increase throughput.
       def sortBy(p: (Source, SyntaxTree.Tree)): Int = -p._1.data.length
 
-      // Parse each source file in parallel and join them into a WeededAst.Root
+      // Weed each source file in parallel. A unit that fails hard yields `None`.
       val refreshed = ParOps.parMapWithPriority(stale, sortBy) {
-        case (src, tree) => mapN(weed(tree))(tree => src -> tree)
+        case (src, tree) => weed(tree).map(src -> _)
       }
 
-      val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
-      (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.availableClasses, root.tokens)), sctx.errors.asScala.toList)
-    }(DebugValidation())
+      // The root is only available if every unit was weeded successfully.
+      val result = Option.when(refreshed.forall(_.isDefined)) {
+        WeededAst.Root(refreshed.flatten.toMap ++ fresh, entryPoint, readRoot.availableClasses, root.tokens)
+      }
+      (result, sctx.errors.asScala.toList)
+    }
   }
 
-  private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[CompilationUnit, CompilationMessage] = {
+  /**
+    * Weeds the given compilation unit `tree`.
+    *
+    * Returns `None` if the unit fails hard, in which case the error has been added to `sctx`.
+    */
+  private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Option[CompilationUnit] = {
     try {
       val usesAndImports = pickAllUsesAndImports(tree)
       val declarations = Decls.pickAllDeclarations(tree)
-      Validation.Success(CompilationUnit(usesAndImports, declarations, tree.loc))
+      Some(CompilationUnit(usesAndImports, declarations, tree.loc))
     } catch {
-      case PickException(error) => Validation.Failure(Chain(error))
+      case PickException(error) =>
+        sctx.errors.add(error)
+        None
     }
   }
 
@@ -2954,7 +2969,7 @@ object Weeder2 {
       }
       pickAllTrees(parentTree).foldRight(rest) {
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
-          val qname = pickQName(parentTree)
+          val qname = pickQName(tree)
           val targs = Types.pickArguments(tree)
           Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
 
@@ -3281,9 +3296,11 @@ object Weeder2 {
   }
 
   private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): PredicateAndArity = {
-    val arityToken = pickToken(TokenKind.LiteralInt, tree)
     val ident = pickNameIdent(tree)
-    val arity = tryParsePredicateArity(arityToken)
+    val arity = tryPickToken(TokenKind.LiteralInt, tree) match {
+      case Some(token) => tryParsePredicateArity(token)
+      case None => 0 // The parser has already reported the missing integer literal.
+    }
     PredicateAndArity(Name.mkPred(ident), arity)
   }
 
@@ -3420,13 +3437,20 @@ object Weeder2 {
     * Picks out the first token of a specific [[TokenKind]].
     */
   private def pickToken(kind: TokenKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Token = {
-    tree.children.collectFirst {
-      case token: Token if token.kind == kind => token
-    } match {
+    tryPickToken(kind, tree) match {
       case Some(t) => t
       case _ =>
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
         throw PickException(error)
+    }
+  }
+
+  /**
+    * Tries to pick out the first token of a specific [[TokenKind]].
+    */
+  private def tryPickToken(kind: TokenKind, tree: Tree): Option[Token] = {
+    tree.children.collectFirst {
+      case token: Token if token.kind == kind => token
     }
   }
 
@@ -3506,9 +3530,8 @@ object Weeder2 {
   /**
     * An exception thrown by [[pick]] and [[pickToken]] when a required sub-tree or token is missing.
     *
-    * This bypasses the [[Validation]] machinery: the exception is thrown deep inside weeding and
-    * caught in [[weed]], where it is converted into a [[Validation.Failure]]. It exists so that the
-    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
+    * The exception is thrown deep inside weeding and caught in [[weed]], where the error is
+    * reported and the enclosing compilation unit is dropped.
     */
   private case class PickException(error: NeedAtleastOne) extends RuntimeException
 

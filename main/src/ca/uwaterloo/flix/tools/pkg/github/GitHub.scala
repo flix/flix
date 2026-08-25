@@ -26,7 +26,8 @@ import org.json4s.native.JsonMethods.{compact, parse, render}
 import java.io.{IOException, InputStream}
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.net.{URI, URL}
+import java.net.{URI, URL, URLEncoder}
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
 /**
@@ -235,6 +236,85 @@ object GitHub {
   }
 
   /**
+    * Opens a stream over `url`, following redirects. The caller closes the stream.
+    *
+    * Kept apart: a refusal (403/429, usually a rate limit), any other unexpected status, and never
+    * reaching a server at all.
+    */
+  def download(url: URL): Result[InputStream, PackageError] = {
+    val request = HttpRequest.newBuilder(url.toURI).GET().build()
+
+    val response = try {
+      Client.sendStreamingRequest(request)
+    } catch {
+      case ex: IOException => return Err(PackageError.DownloadUnreachable(url, ex.getMessage))
+    }
+
+    response.statusCode() match {
+      case status if status >= 200 && status < 300 =>
+        Ok(response.body())
+      case status =>
+        // A close failure must not shadow the status being reported.
+        try response.body().close() catch { case _: IOException => () }
+        status match {
+          case 403 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
+          case 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
+          case _ => Err(PackageError.DownloadFailed(url, status))
+        }
+    }
+  }
+
+  /**
+    * Returns `response`'s `Retry-After` header, if it has one.
+    */
+  private def retryAfter(response: HttpResponse[InputStream]): Option[String] = {
+    val header = response.headers().firstValue("Retry-After")
+    if (header.isPresent) Some(header.get()) else None
+  }
+
+  /**
+    * Opens a stream over the `assetName` asset of `project`'s `version` release, without consulting
+    * the REST API -- a release asset's address is fully predictable from owner/repo/tag/name.
+    * The caller closes the stream. See [[findReleaseAsset]] for the fallback when this 404s.
+    */
+  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String): Result[InputStream, PackageError] = {
+    val url = releaseAssetUrl(project, version, assetName)
+    download(url) match {
+      case Err(PackageError.DownloadFailed(_, 404)) =>
+        Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
+      case other => other
+    }
+  }
+
+  /**
+    * Finds the single `extension` asset in `project`'s `version` release by reading the REST API --
+    * the fallback for when [[downloadReleaseAsset]]'s guessed name 404s.
+    */
+  def findReleaseAsset(project: Project, version: SemVer, extension: String, apiKey: Option[String]): Result[Asset, PackageError] = {
+    getReleases(project, apiKey).flatMap { releases =>
+      releases.find(r => r.version == version) match {
+        case None => Err(PackageError.VersionDoesNotExist(version, project))
+        case Some(release) =>
+          release.assets.filter(_.name.endsWith(s".$extension")) match {
+            case Nil => Err(PackageError.NoSuchFile(project.toString, extension))
+            case asset :: Nil => Ok(asset)
+            case _ => Err(PackageError.TooManyFiles(project.toString, extension))
+          }
+      }
+    }
+  }
+
+  /**
+    * The permanent, non-REST address of a release asset.
+    */
+  private def releaseAssetUrl(project: Project, version: SemVer, assetName: String): URL = {
+    // The 4-arg constructor percent-encodes the path, so a name with a space or "#" (legal in a
+    // manifest's declared name, which this can be built from) can't produce a malformed URL.
+    val path = s"/${project.owner}/${project.repo}/releases/download/v$version/$assetName"
+    new URI("https", "github.com", path, null).toURL
+  }
+
+  /**
     * Gets the project release with the relevant semantic version.
     */
   def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError] = {
@@ -278,7 +358,12 @@ object GitHub {
     * Returns the URL that release assets can be uploaded to.
     */
   private def releaseAssetUploadUrl(project: Project, releaseId: String, assetName: String): URL = {
-    new URI(s"https://uploads.github.com/repos/${project.owner}/${project.repo}/releases/$releaseId/assets?name=$assetName").toURL
+    // "&" and "=" are legal query characters, so the URI constructor won't escape them -- an
+    // assetName containing one could inject an extra query parameter. URLEncoder escapes them.
+    val path = s"/repos/${project.owner}/${project.repo}/releases/$releaseId/assets"
+    val base = new URI("https", "uploads.github.com", path, null, null)
+    val encodedName = URLEncoder.encode(assetName, StandardCharsets.UTF_8)
+    new URI(s"$base?name=$encodedName").toURL
   }
 
   /**
@@ -325,10 +410,12 @@ object GitHub {
       * Reusing the instance yields better performance since it can
       * keep connections open.
       *
-      * This field should only be accessed in a thread-safe manner, e.g.,
-      * such as using `this.synchronized` blocks or some other locking mechanism.
+      * The client is immutable once built and manages its own connection pool,
+      * so it can be shared across threads without external locking.
       */
-    private val HTTP_CLIENT: HttpClient = HttpClient.newHttpClient()
+    private val HTTP_CLIENT: HttpClient =
+      // Follows redirects: a release download address redirects to the storage the asset lives on.
+      HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()
 
     /**
       * Sends the HTTP request, `request`, and returns the response.
@@ -337,9 +424,14 @@ object GitHub {
       *
       * May throw [[IOException]].
       */
-    def sendRequest(request: HttpRequest): HttpResponse[String] = this.synchronized {
+    def sendRequest(request: HttpRequest): HttpResponse[String] =
       HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
-    }
+
+    /**
+      * As [[sendRequest]], but with a streamed body. May throw [[IOException]].
+      */
+    def sendStreamingRequest(request: HttpRequest): HttpResponse[InputStream] =
+      HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream())
 
   }
 }

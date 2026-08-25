@@ -348,12 +348,12 @@ object Main {
           } else {
             val flix = mkFlixWithFiles(cmdOpts.files, options.copy(progress = false))
             flix.compile() match {
-              case Validation.Success(compilationResult) =>
+              case Result.Ok(compilationResult) =>
                 Tester.run(Nil, JvmLoader.load(compilationResult))(flix) match {
                   case Result.Ok(_) => System.exit(0)
                   case Result.Err(_) => System.exit(1)
                 }
-              case Validation.Failure(errors) => exitWithErrors(flix, errors.toList, None)
+              case Result.Err(errors) => exitWithErrors(flix, errors, None)
             }
           }
 

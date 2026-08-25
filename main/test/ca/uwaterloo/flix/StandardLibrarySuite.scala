@@ -47,11 +47,11 @@ class StandardLibrarySuite extends AnyFunSuite {
     }
 
     // Compile the program with all test suites.
-    flix.compile().toResult match {
+    flix.compile() match {
       case Result.Ok(compilationResult) =>
         runTests(JvmLoader.load(compilationResult))
       case Result.Err(errors) =>
-        fail(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None))
+        fail(CompilationMessage.formatAll(errors)(flix.getFormatter, None))
     }
   } catch {
     case ex: Throwable =>

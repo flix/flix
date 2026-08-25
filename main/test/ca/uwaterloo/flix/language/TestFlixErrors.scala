@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.phase.jvm.BackendObjType
+import ca.uwaterloo.flix.language.phase.jvm.classes.GenHoleError
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
-import ca.uwaterloo.flix.util.{Options, Result, Validation}
+import ca.uwaterloo.flix.util.{Options, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestFlixErrors extends AnyFunSuite {
@@ -33,7 +33,7 @@ class TestFlixErrors extends AnyFunSuite {
       .setOptions(Options.TestWithLibMin)
       .addVirtualPath(CompilerConstants.VirtualTestFile, input)
       .compile()
-    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
+    expectRuntimeError(result, GenHoleError.desc.displayName())
   }
 
   test("HoleError.02") {
@@ -42,11 +42,11 @@ class TestFlixErrors extends AnyFunSuite {
       .setOptions(Options.TestWithLibMin)
       .addVirtualPath(CompilerConstants.VirtualTestFile, input)
       .compile()
-    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
+    expectRuntimeError(result, GenHoleError.desc.displayName())
   }
 
-  def expectRuntimeError(v: Validation[CompilationResult, CompilationMessage], name: String): Unit = {
-    v.toResult match {
+  def expectRuntimeError(v: Result[CompilationResult, List[CompilationMessage]], name: String): Unit = {
+    v match {
       case Result.Ok(t) => JvmLoader.load(t).main match {
         case Some(main) => try {
           main.apply(Array.empty)

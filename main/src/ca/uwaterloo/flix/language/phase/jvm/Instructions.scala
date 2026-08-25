@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2026 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,36 +18,39 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.Instructions.Branch.{FalseBranch, TrueBranch}
+import ca.uwaterloo.flix.language.phase.jvm.classes.GenReifiedSourceLocation
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import org.objectweb.asm
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
+import java.lang.constant.{ClassDesc, ConstantDescs, MethodTypeDesc}
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.*
 
-object BytecodeInstructions {
+/** Instructions for emitting JVM bytecode via [[MethodVisitor]], expressed in terms of nominal JVM types ([[ClassDesc]], [[MethodTypeDesc]]). */
+object Instructions {
 
   /** A wrapper of [[MethodVisitor]] to improve its interface. */
   implicit class RichMethodVisitor(visitor: MethodVisitor) {
-    def visitTypeInstruction(opcode: Int, tpe: JvmName): Unit =
-      visitor.visitTypeInsn(opcode, tpe.toInternalName)
+    def visitTypeInstruction(opcode: Int, tpe: ClassDesc): Unit =
+      visitor.visitTypeInsn(opcode, ClassDescs.internalNameOf(tpe))
 
     def visitTypeInstructionDirect(opcode: Int, tpe: String): Unit =
       visitor.visitTypeInsn(opcode, tpe)
 
     def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
-    def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): Unit =
-      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, isInterface)
+    def visitMethodInstruction(opcode: Int, owner: ClassDesc, methodName: String, descriptor: MethodTypeDesc, isInterface: Boolean): Unit =
+      visitor.visitMethodInsn(opcode, ClassDescs.internalNameOf(owner), methodName, descriptor.descriptorString(), isInterface)
 
     // TODO: sanitize varags
-    def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
-      visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments *)
+    def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodTypeDesc, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
+      visitor.visitInvokeDynamicInsn(methodName, descriptor.descriptorString(), bootstrapMethodHandle.handle, bootstrapMethodArguments *)
 
-    def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: BackendType): Unit =
-      visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
+    def visitFieldInstruction(opcode: Int, owner: ClassDesc, fieldName: String, fieldType: ClassDesc): Unit =
+      visitor.visitFieldInsn(opcode, ClassDescs.internalNameOf(owner), fieldName, fieldType.descriptorString())
 
     def visitVarInstruction(opcode: Int, v: Int): Unit =
       visitor.visitVarInsn(opcode, v)
@@ -73,11 +77,11 @@ object BytecodeInstructions {
   sealed case class Handle(handle: asm.Handle)
 
   def mkStaticHandle(m: StaticMethod): Handle = {
-    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, m.clazz.toInternalName, m.name, m.d.toDescriptor, false))
+    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, ClassDescs.internalNameOf(m.clazz), m.name, m.d.descriptorString(), false))
   }
 
   def mkStaticHandle(m: StaticInterfaceMethod): Handle = {
-    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, m.clazz.toInternalName, m.name, m.d.toDescriptor, true))
+    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, ClassDescs.internalNameOf(m.clazz), m.name, m.d.descriptorString(), true))
   }
 
   //
@@ -122,8 +126,8 @@ object BytecodeInstructions {
     case object FalseBranch extends Branch
   }
 
-  // TODO: do this for methods
-  class Variable(val tpe: BackendType, index: Int) {
+  /** A local variable of type `tpe` at index `index`. */
+  class Variable(val tpe: ClassDesc, index: Int) {
     def load()(implicit mv: MethodVisitor): Unit = xLoad(tpe, index)
 
     def store()(implicit mv: MethodVisitor): Unit = xStore(tpe, index)
@@ -137,7 +141,7 @@ object BytecodeInstructions {
 
   def ALOAD(index: Int)(implicit mv: MethodVisitor): Unit = mv.visitVarInstruction(Opcodes.ALOAD, index)
 
-  def ANEWARRAY(className: JvmName)(implicit mv: MethodVisitor): Unit = mv.visitTypeInstruction(Opcodes.ANEWARRAY, className)
+  def ANEWARRAY(className: ClassDesc)(implicit mv: MethodVisitor): Unit = mv.visitTypeInstruction(Opcodes.ANEWARRAY, className)
 
   def ARETURN()(implicit mv: MethodVisitor): Unit = mv.visitInstruction(Opcodes.ARETURN)
 
@@ -152,7 +156,7 @@ object BytecodeInstructions {
   def BIPUSH(i: Byte)(implicit mv: MethodVisitor): Unit =
     mv.visitIntInstruction(Opcodes.BIPUSH, i)
 
-  def CHECKCAST(className: JvmName)(implicit mv: MethodVisitor): Unit =
+  def CHECKCAST(className: ClassDesc)(implicit mv: MethodVisitor): Unit =
     mv.visitTypeInstruction(Opcodes.CHECKCAST, className)
 
   def DLOAD(index: Int)(implicit mv: MethodVisitor): Unit =
@@ -206,7 +210,7 @@ object BytecodeInstructions {
   def ILOAD(index: Int)(implicit mv: MethodVisitor): Unit =
     mv.visitVarInstruction(Opcodes.ILOAD, index)
 
-  def INSTANCEOF(tpe: JvmName)(implicit mv: MethodVisitor): Unit =
+  def INSTANCEOF(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit =
     mv.visitTypeInstruction(Opcodes.INSTANCEOF, tpe)
 
   /**
@@ -228,15 +232,17 @@ object BytecodeInstructions {
     * last `n` arguments to the original return type. This must of course
     * correspond to the type of `lambdaMethod`.
     */
-  def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle, drop: Int)(implicit mv: MethodVisitor): Unit =
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodTypeDesc, callHandle: Handle, drop: Int)(implicit mv: MethodVisitor): Unit = {
+    val lambdaAsmType = asm.Type.getMethodType(lambdaMethod.d.descriptorString())
     mv.visitInvokeDynamicInstruction(
       lambdaMethod.name,
-      mkDescriptor(callD.arguments.dropRight(drop) *)(lambdaMethod.clazz.toTpe),
+      MethodTypeDesc.of(lambdaMethod.clazz, callD.parameterList().asScala.dropRight(drop).toSeq *),
       mkStaticHandle(ClassConstants.LambdaMetafactory.MetafactoryMethod),
-      lambdaMethod.d.toAsmType,
+      lambdaAsmType,
       callHandle.handle,
-      lambdaMethod.d.toAsmType
+      lambdaAsmType
     )
+  }
 
   def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticMethod, drop: Int)(implicit mv: MethodVisitor): Unit =
     mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
@@ -244,13 +250,13 @@ object BytecodeInstructions {
   def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticInterfaceMethod, drop: Int)(implicit mv: MethodVisitor): Unit =
     mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
 
-  def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit =
+  def INVOKEINTERFACE(interfaceName: ClassDesc, methodName: String, descriptor: MethodTypeDesc)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor, isInterface = true)
 
   def INVOKEINTERFACE(m: InterfaceMethod)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d, isInterface = true)
 
-  def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit = {
+  def INVOKESPECIAL(className: ClassDesc, methodName: String, descriptor: MethodTypeDesc)(implicit mv: MethodVisitor): Unit = {
     val isInterface = false // OBS this is not technically true if you use it to call private interface methods(?)
     mv.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor, isInterface = isInterface)
   }
@@ -258,7 +264,7 @@ object BytecodeInstructions {
   def INVOKESPECIAL(c: ConstructorMethod)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d, isInterface = false)
 
-  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false)(implicit mv: MethodVisitor): Unit =
+  def INVOKESTATIC(className: ClassDesc, methodName: String, descriptor: MethodTypeDesc, isInterface: Boolean = false)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor, isInterface)
 
   def INVOKESTATIC(m: StaticMethod)(implicit mv: MethodVisitor): Unit =
@@ -267,7 +273,7 @@ object BytecodeInstructions {
   def INVOKESTATIC(m: StaticInterfaceMethod)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = true)
 
-  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false)(implicit mv: MethodVisitor): Unit =
+  def INVOKEVIRTUAL(className: ClassDesc, methodName: String, descriptor: MethodTypeDesc, isInterface: Boolean = false)(implicit mv: MethodVisitor): Unit =
     mv.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor, isInterface)
 
   def INVOKEVIRTUAL(m: AbstractMethod)(implicit mv: MethodVisitor): Unit =
@@ -294,7 +300,7 @@ object BytecodeInstructions {
   def LRETURN()(implicit mv: MethodVisitor): Unit =
     mv.visitInstruction(Opcodes.LRETURN)
 
-  def NEW(className: JvmName)(implicit mv: MethodVisitor): Unit =
+  def NEW(className: ClassDesc)(implicit mv: MethodVisitor): Unit =
     mv.visitTypeInstruction(Opcodes.NEW, className)
 
   def POP()(implicit mv: MethodVisitor): Unit =
@@ -341,12 +347,9 @@ object BytecodeInstructions {
     mv.visitLabel(skipLabel)
   }
 
-  def castIfNotPrim(tpe: BackendType)(implicit mv: MethodVisitor): Unit = {
-    tpe match {
-      case arr: BackendType.Array => mv.visitTypeInstructionDirect(Opcodes.CHECKCAST, arr.toDescriptor)
-      case BackendType.Reference(ref) => CHECKCAST(ref.jvmName)
-      case _: BackendType.PrimitiveType => nop()
-    }
+  /** Emits a `CHECKCAST` of the top of the stack to `tpe`, unless `tpe` is a primitive type. */
+  def castIfNotPrim(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    if (!tpe.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, ClassDescs.internalNameOf(tpe))
   }
 
   /// while(c(t)) { i }
@@ -398,11 +401,22 @@ object BytecodeInstructions {
     mv.visitLabel(afterEverything)
   }
 
-  def invokeConstructor(className: JvmName, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit =
-    INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
+  def invokeConstructor(className: ClassDesc, descriptor: MethodTypeDesc)(implicit mv: MethodVisitor): Unit =
+    INVOKESPECIAL(className, ConstructorMethodName, descriptor)
+
+  /** Returns `true` if `tpe` takes two slots on the stack, i.e. it is `long` or `double`. */
+  def isCategory2(tpe: ClassDesc): Boolean =
+    tpe == ConstantDescs.CD_long || tpe == ConstantDescs.CD_double
 
   def nop(): Unit =
     ()
+
+  /** `[] --> return`, the body of a constructor that only calls the nullary `superClass` constructor. */
+  def nullarySuperConstructor(superClass: ConstructorMethod)(implicit mv: MethodVisitor): Unit = {
+    thisLoad()
+    INVOKESPECIAL(superClass)
+    RETURN()
+  }
 
   def pushBool(b: Boolean)(implicit mv: MethodVisitor): Unit =
     if (b) ICONST_1() else ICONST_0()
@@ -427,17 +441,27 @@ object BytecodeInstructions {
   }
 
   def pushLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
-    NEW(BackendObjType.ReifiedSourceLocation.jvmName)
+    NEW(GenReifiedSourceLocation.desc)
     DUP()
     pushString(loc.source.name)
     pushInt(loc.startLine)
     pushInt(loc.startCol)
     pushInt(loc.endLine)
     pushInt(loc.endCol)
-    INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
+    INVOKESPECIAL(GenReifiedSourceLocation.Constructor)
   }
 
-  def storeWithName(index: Int, tpe: BackendType)(body: Variable => Unit)(implicit mv: MethodVisitor): Unit = {
+  /** `[] --> return`, the body of a static constructor that stores a fresh instance in `singleton`. */
+  def singletonStaticConstructor(thisConstructor: ConstructorMethod, singleton: StaticField)(implicit mv: MethodVisitor): Unit = {
+    NEW(thisConstructor.clazz)
+    DUP()
+    INVOKESPECIAL(thisConstructor)
+    PUTSTATIC(singleton)
+    RETURN()
+  }
+
+  /** Emits an `xStore` of `tpe` at `index` and runs `body` with the corresponding [[Variable]]. */
+  def storeWithName(index: Int, tpe: ClassDesc)(body: Variable => Unit)(implicit mv: MethodVisitor): Unit = {
     xStore(tpe, index)
     body(new Variable(tpe, index))
   }
@@ -445,100 +469,98 @@ object BytecodeInstructions {
   def thisLoad()(implicit mv: MethodVisitor): Unit = ALOAD(0)
 
   def throwUnsupportedOperationException(msg: String)(implicit mv: MethodVisitor): Unit = {
-    NEW(JvmName.UnsupportedOperationException)
+    NEW(JavaClasses.UnsupportedOperationException)
     DUP()
     pushString(msg)
-    INVOKESPECIAL(JvmName.UnsupportedOperationException, JvmName.ConstructorMethod,
-      mkDescriptor(BackendType.String)(VoidableType.Void))
+    INVOKESPECIAL(JavaClasses.UnsupportedOperationException, ConstructorMethodName,
+      MethodTypeDesc.of(ConstantDescs.CD_void, JavaClasses.String))
     ATHROW()
   }
 
-  def withName(index: Int, tpe: BackendType)(body: Variable => Unit): Unit =
+  /** Runs `body` with the [[Variable]] of type `tpe` at `index`. */
+  def withName(index: Int, tpe: ClassDesc)(body: Variable => Unit): Unit =
     body(new Variable(tpe, index))
 
-  def withNames(index: Int, tpes: List[BackendType])(body: (Int, List[Variable]) => Unit): Unit = {
+  /** Runs `body` with the [[Variable]]s of types `tpes` starting at `index`, and the next free index. */
+  def withNames(index: Int, tpes: List[ClassDesc])(body: (Int, List[Variable]) => Unit): Unit = {
     var runningIndex = index
     val variables = tpes.map(tpe => {
       val variable = new Variable(tpe, runningIndex)
-      runningIndex = runningIndex + tpe.stackSlots
+      runningIndex = runningIndex + stackSlotsOf(tpe)
       variable
     })
     body(runningIndex, variables)
   }
 
-  def xArrayLoad(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
-    case BackendType.Array(_) => mv.visitInstruction(Opcodes.AALOAD)
-    case BackendType.Reference(_) => mv.visitInstruction(Opcodes.AALOAD)
-    case BackendType.Bool => mv.visitInstruction(Opcodes.BALOAD)
-    case BackendType.Char => mv.visitInstruction(Opcodes.CALOAD)
-    case BackendType.Int8 => mv.visitInstruction(Opcodes.BALOAD)
-    case BackendType.Int16 => mv.visitInstruction(Opcodes.SALOAD)
-    case BackendType.Int32 => mv.visitInstruction(Opcodes.IALOAD)
-    case BackendType.Int64 => mv.visitInstruction(Opcodes.LALOAD)
-    case BackendType.Float32 => mv.visitInstruction(Opcodes.FALOAD)
-    case BackendType.Float64 => mv.visitInstruction(Opcodes.DALOAD)
+  /** Emits a `?ALOAD` instruction that loads an element from an array with element type `elmTpe`. */
+  def xArrayLoad(elmTpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    if (elmTpe == CD_boolean) mv.visitInsn(Opcodes.BALOAD)
+    else if (elmTpe == CD_char) mv.visitInsn(Opcodes.CALOAD)
+    else if (elmTpe == CD_byte) mv.visitInsn(Opcodes.BALOAD)
+    else if (elmTpe == CD_short) mv.visitInsn(Opcodes.SALOAD)
+    else if (elmTpe == CD_int) mv.visitInsn(Opcodes.IALOAD)
+    else if (elmTpe == CD_long) mv.visitInsn(Opcodes.LALOAD)
+    else if (elmTpe == CD_float) mv.visitInsn(Opcodes.FALOAD)
+    else if (elmTpe == CD_double) mv.visitInsn(Opcodes.DALOAD)
+    else mv.visitInsn(Opcodes.AALOAD)
   }
 
-  def xArrayStore(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
-    case BackendType.Array(_) => mv.visitInstruction(Opcodes.AASTORE)
-    case BackendType.Reference(_) => mv.visitInstruction(Opcodes.AASTORE)
-    case BackendType.Bool => mv.visitInstruction(Opcodes.BASTORE)
-    case BackendType.Char => mv.visitInstruction(Opcodes.CASTORE)
-    case BackendType.Int8 => mv.visitInstruction(Opcodes.BASTORE)
-    case BackendType.Int16 => mv.visitInstruction(Opcodes.SASTORE)
-    case BackendType.Int32 => mv.visitInstruction(Opcodes.IASTORE)
-    case BackendType.Int64 => mv.visitInstruction(Opcodes.LASTORE)
-    case BackendType.Float32 => mv.visitInstruction(Opcodes.FASTORE)
-    case BackendType.Float64 => mv.visitInstruction(Opcodes.DASTORE)
+  /** Emits a `?ASTORE` instruction that stores an element into an array with element type `elmTpe`. */
+  def xArrayStore(elmTpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    if (elmTpe == CD_boolean) mv.visitInsn(Opcodes.BASTORE)
+    else if (elmTpe == CD_char) mv.visitInsn(Opcodes.CASTORE)
+    else if (elmTpe == CD_byte) mv.visitInsn(Opcodes.BASTORE)
+    else if (elmTpe == CD_short) mv.visitInsn(Opcodes.SASTORE)
+    else if (elmTpe == CD_int) mv.visitInsn(Opcodes.IASTORE)
+    else if (elmTpe == CD_long) mv.visitInsn(Opcodes.LASTORE)
+    else if (elmTpe == CD_float) mv.visitInsn(Opcodes.FASTORE)
+    else if (elmTpe == CD_double) mv.visitInsn(Opcodes.DASTORE)
+    else mv.visitInsn(Opcodes.AASTORE)
   }
 
-  def xLoad(tpe: BackendType, index: Int)(implicit mv: MethodVisitor): Unit = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
-    case BackendType.Int64 => LLOAD(index)
-    case BackendType.Float32 => mv.visitVarInstruction(Opcodes.FLOAD, index)
-    case BackendType.Float64 => DLOAD(index)
-    case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
+  /** Emits a `?LOAD` instruction that loads the local variable of type `tpe` at `index`. */
+  def xLoad(tpe: ClassDesc, index: Int)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    if (tpe == CD_boolean || tpe == CD_char || tpe == CD_byte || tpe == CD_short || tpe == CD_int) mv.visitVarInsn(Opcodes.ILOAD, index)
+    else if (tpe == CD_long) mv.visitVarInsn(Opcodes.LLOAD, index)
+    else if (tpe == CD_float) mv.visitVarInsn(Opcodes.FLOAD, index)
+    else if (tpe == CD_double) mv.visitVarInsn(Opcodes.DLOAD, index)
+    else mv.visitVarInsn(Opcodes.ALOAD, index)
   }
 
-  def xNewArray(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
-    case BackendType.Array(_) => mv.visitTypeInsn(Opcodes.ANEWARRAY, elmTpe.toDescriptor)
-    case BackendType.Reference(ref) => ANEWARRAY(ref.jvmName)
-    case tpe: BackendType.PrimitiveType => tpe match {
-      case BackendType.Bool => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN)
-      case BackendType.Char => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_CHAR)
-      case BackendType.Int8 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_BYTE)
-      case BackendType.Int16 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_SHORT)
-      case BackendType.Int32 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_INT)
-      case BackendType.Int64 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_LONG)
-      case BackendType.Float32 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_FLOAT)
-      case BackendType.Float64 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_DOUBLE)
-    }
+  /** Emits a `NEWARRAY` or `ANEWARRAY` instruction that creates an array with element type `elmTpe`. */
+  def xNewArray(elmTpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    if (elmTpe.isPrimitive) mv.visitIntInsn(Opcodes.NEWARRAY, newArrayOperandOf(elmTpe))
+    else mv.visitTypeInsn(Opcodes.ANEWARRAY, ClassDescs.internalNameOf(elmTpe))
   }
 
-  /**
-    * Pops the top of the stack using `POP` or `POP2` depending on the value size.
-    */
-  def xPop(tpe: BackendType)(implicit mv: MethodVisitor): Unit = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 |
-         BackendType.Float32 | BackendType.Array(_) | BackendType.Reference(_) => POP()
-    case BackendType.Int64 | BackendType.Float64 => POP2()
+  /** Emits a `POP` or `POP2` instruction that pops a value of type `tpe` off the stack. */
+  def xPop(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    if (isCategory2(tpe)) mv.visitInsn(Opcodes.POP2)
+    else mv.visitInsn(Opcodes.POP)
   }
 
-  def xReturn(tpe: BackendType)(implicit mv: MethodVisitor): Unit = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => IRETURN()
-    case BackendType.Int64 => LRETURN()
-    case BackendType.Float32 => mv.visitInstruction(Opcodes.FRETURN)
-    case BackendType.Float64 => DRETURN()
-    case BackendType.Array(_) | BackendType.Reference(_) => ARETURN()
+  /** Emits a `?RETURN` instruction that returns a value of type `tpe`. */
+  def xReturn(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    if (tpe == CD_boolean || tpe == CD_char || tpe == CD_byte || tpe == CD_short || tpe == CD_int) mv.visitInsn(Opcodes.IRETURN)
+    else if (tpe == CD_long) mv.visitInsn(Opcodes.LRETURN)
+    else if (tpe == CD_float) mv.visitInsn(Opcodes.FRETURN)
+    else if (tpe == CD_double) mv.visitInsn(Opcodes.DRETURN)
+    else mv.visitInsn(Opcodes.ARETURN)
   }
 
-  def xStore(tpe: BackendType, index: Int)(implicit mv: MethodVisitor): Unit = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 =>
-      mv.visitVarInstruction(Opcodes.ISTORE, index)
-    case BackendType.Int64 => mv.visitVarInstruction(Opcodes.LSTORE, index)
-    case BackendType.Float32 => mv.visitVarInstruction(Opcodes.FSTORE, index)
-    case BackendType.Float64 => mv.visitVarInstruction(Opcodes.DSTORE, index)
-    case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
+  /** Emits a `?STORE` instruction that stores the top of the stack into the local variable of type `tpe` at `index`. */
+  def xStore(tpe: ClassDesc, index: Int)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    if (tpe == CD_boolean || tpe == CD_char || tpe == CD_byte || tpe == CD_short || tpe == CD_int) mv.visitVarInsn(Opcodes.ISTORE, index)
+    else if (tpe == CD_long) mv.visitVarInsn(Opcodes.LSTORE, index)
+    else if (tpe == CD_float) mv.visitVarInsn(Opcodes.FSTORE, index)
+    else if (tpe == CD_double) mv.visitVarInsn(Opcodes.DSTORE, index)
+    else mv.visitVarInsn(Opcodes.ASTORE, index)
   }
 
   def xSwap(lowerLarge: Boolean, higherLarge: Boolean)(implicit mv: MethodVisitor): Unit = (lowerLarge, higherLarge) match {
@@ -591,6 +613,26 @@ object BytecodeInstructions {
     case Condition.NE => Condition.EQ
     case Condition.NONNULL => Condition.NULL
     case Condition.NULL => Condition.NONNULL
+  }
+
+  /** Returns the number of stack slots (1 or 2) that a value of type `tpe` occupies. */
+  private def stackSlotsOf(tpe: ClassDesc): Int = {
+    import java.lang.constant.ConstantDescs.*
+    if (tpe == CD_long || tpe == CD_double) 2 else 1
+  }
+
+  /** Returns the `NEWARRAY` type operand (e.g. [[Opcodes.T_INT]]) of the primitive type `tpe`. */
+  private def newArrayOperandOf(tpe: ClassDesc): Int = {
+    import java.lang.constant.ConstantDescs.*
+    if (tpe == CD_boolean) Opcodes.T_BOOLEAN
+    else if (tpe == CD_char) Opcodes.T_CHAR
+    else if (tpe == CD_byte) Opcodes.T_BYTE
+    else if (tpe == CD_short) Opcodes.T_SHORT
+    else if (tpe == CD_int) Opcodes.T_INT
+    else if (tpe == CD_long) Opcodes.T_LONG
+    else if (tpe == CD_float) Opcodes.T_FLOAT
+    else if (tpe == CD_double) Opcodes.T_DOUBLE
+    else throw InternalCompilerException(s"Unexpected primitive array element type '${tpe.descriptorString()}'", SourceLocation.Unknown)
   }
 
 }

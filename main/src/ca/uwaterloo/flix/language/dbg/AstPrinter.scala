@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.printer.*
 import ca.uwaterloo.flix.util.tc.Debug
-import ca.uwaterloo.flix.util.{FileOps, Validation}
+import ca.uwaterloo.flix.util.FileOps
 
 import java.nio.file.Path
 
@@ -99,17 +99,6 @@ object AstPrinter {
   implicit object DebugJvmAst extends Debug[JvmAst.Root] {
     override def emit(phase: String, root: JvmAst.Root)(implicit flix: Flix): Unit =
       printDocProgram(phase, JvmAstPrinter.print(root))
-  }
-
-  case class DebugValidation[T, E]()(implicit d: Debug[T]) extends Debug[Validation[T, E]] {
-    override val hasAst: Boolean = d.hasAst
-
-    override def output(name: String, v: Validation[T, E])(implicit flix: Flix): Unit =
-      Validation.mapN(v) {
-        case x => d.output(name, x)
-      }
-
-    override def emit(name: String, a: Validation[T, E])(implicit flix: Flix): Unit = ()
   }
 
   private def printDocProgram(phase: String, dast: DocAst.Program)(implicit flix: Flix): Unit = {

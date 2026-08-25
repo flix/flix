@@ -103,3 +103,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Simon Lykke Andersen](https://github.com/Simon220902)
 - [Mirai Tomiyama](https://github.com/ababup1192)
 - [Tada Siangchin](https://github.com/Simmypeet)
+- [Werner Stein](https://github.com/wstein)
