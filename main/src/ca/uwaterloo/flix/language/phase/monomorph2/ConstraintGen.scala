@@ -114,7 +114,6 @@ object ConstraintGen {
     }
 
     ParOps.parMap(root.effects.values.flatMap(_.ops)) { op =>
-      // We need a Synthetic DefnSym to tie the tparams to
       val defnSym = new Symbol.DefnSym(None, op.sym.namespace, op.sym.name, op.sym.loc)
       val mvar = MonoVar.Def(defnSym)
       implicit val tparamEnv: TypeParamEnv = mkTypeParamEnv(mvar, op.spec.tparams)
@@ -139,10 +138,11 @@ object ConstraintGen {
   private def visitType(tpe0: Type)(implicit tparamEnv: TypeParamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     def dealiasedVisitType(tpe: Type): Unit = tpe match {
       case at @ Type.AssocType(_, arg, _, _) =>
-        if (at.typeVars.isEmpty)
+        if (at.typeVars.isEmpty) {
           visitType(Canonicalization.reduceAssocType(at)(root, flix))
-        else
+        } else {
           dealiasedVisitType(arg)
+        }
       case app @ Type.Apply(_, _, _)    =>
         val args = app.typeArguments
         for (arg <- args) {
@@ -214,7 +214,7 @@ object ConstraintGen {
   /**
     * Emits flow constraints for the formal parameter types, return type, and body of `defn`.
     */
- private def visitDef(defn: TypedAst.Def)(implicit tparamEnv: TypeParamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+  private def visitDef(defn: TypedAst.Def)(implicit tparamEnv: TypeParamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     for (case FormalParam(_, tpe, _, _, _) <- defn.spec.fparams) {
       visitType(tpe)
     }
@@ -227,47 +227,48 @@ object ConstraintGen {
     * Emits flow constraints for the default-handler calls that
     * [[SpecializeAndLower.wrapDefWithDefaultHandlers]] synthesizes around entry points.
     */
-  private def entryPointHandlerConstraints(defn: TypedAst.Def)(implicit tparamEnv: TypeParamEnv, sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
+  private def entryPointHandlerConstraints(defn: TypedAst.Def)(implicit tparamEnv: TypeParamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
     if (TypedAstOps.isEntryPoint(defn)(root)) {
       val loc = defn.spec.eff.loc
       val defEffects = Canonicalization.evalEff(defn.spec.eff)
       val requiredHandlers = root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
-      requiredHandlers.foldLeft(defn.spec.eff) { case (eff, handler) =>
-        val handlerDef = root.defs(handler.handlerSym)
-        val handlerTparams = handlerDef.spec.tparams
-        // E.g. imagine we have this effect declaration:
-        // {{{
-        //   eff Ask {
-        //       def ask(): Int32
-        //   }
-        // }}}
-        // with this default handler declaration:
-        // {{{
-        //   mod Ask {
-        //       @DefaultHandler
-        //       def handle(f: Unit -> a \ ef): a \ (ef - Ask) + IO = ...
-        //   }
-        // }}}
-        // which will then be (implicitly) used at this entry point:
-        // {{{
-        //   def main(): Unit \ Ask + IO = println(Ask.ask())
-        // }}}
-        // `SpecializeAndLower` will synthesize a call `Ask.handle(() -> <main's body>)` around
-        // `main`, so we must create the flow:
-        // {{{
-        //   [Unit, Ask + IO] ~> Ask.handle
-        // }}}
-        //
-        // N.B. We use full unification rather than reading `a`/`ef` off fixed positions because
-        // a default handler's parameter type only has to be *equal* to `Unit -> a \ ef`, not
-        // written that way syntactically — e.g. `f: Unit -> a \ (ef + Pure)` is a valid handler
-        // parameter type too.
-        val concreteParamTpe = Type.mkArrowWithEffect(Type.Unit, eff, defn.spec.retTpe, loc)
-        val subst = ConstraintSolver2.fullyUnify(handlerDef.spec.fparams.head.tpe, concreteParamTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
-          .getOrElse(throw InternalCompilerException(s"Could not unify default handler '${handler.handlerSym}' against its call site.", loc))
-        val args = handlerTparams.map(tp => typeToMonoArg(subst(Type.Var(tp.sym, loc))))
-        sctx.addFlowConstraint(FlowConstraint(Instantiation(args), MonoVar.Def(handler.handlerSym)))
-        Canonicalization.canonicalEffect(Type.mkUnion(Type.mkDifference(eff, handler.handledEff, loc), Type.IO, loc))
+      requiredHandlers.foldLeft(defn.spec.eff) {
+        case (eff, handler) =>
+          val handlerDef = root.defs(handler.handlerSym)
+          val handlerTparams = handlerDef.spec.tparams
+          // E.g. imagine we have this effect declaration:
+          // {{{
+          //   eff Ask {
+          //       def ask(): Int32
+          //   }
+          // }}}
+          // with this default handler declaration:
+          // {{{
+          //   mod Ask {
+          //       @DefaultHandler
+          //       def handle(f: Unit -> a \ ef): a \ (ef - Ask) + IO = ...
+          //   }
+          // }}}
+          // which will then be (implicitly) used at this entry point:
+          // {{{
+          //   def main(): Unit \ Ask + IO = println(Ask.ask())
+          // }}}
+          // `SpecializeAndLower` will synthesize a call `Ask.handle(() -> <main's body>)` around
+          // `main`, so we must create the flow:
+          // {{{
+          //   [Unit, Ask + IO] ~> Ask.handle
+          // }}}
+          //
+          // N.B. We use full unification rather than reading `a`/`ef` off fixed positions because
+          // a default handler's parameter type only has to be *equal* to `Unit -> a \ ef`, not
+          // written that way syntactically — e.g. `f: Unit -> a \ (ef + Pure)` is a valid handler
+          // parameter type too.
+          val concreteParamTpe = Type.mkArrowWithEffect(Type.Unit, eff, defn.spec.retTpe, loc)
+          val subst = ConstraintSolver2.fullyUnify(handlerDef.spec.fparams.head.tpe, concreteParamTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
+            .getOrElse(throw InternalCompilerException(s"Could not unify default handler '${handler.handlerSym}' against its call site.", loc))
+          val args = handlerTparams.map(tp => typeToMonoArg(subst(Type.Var(tp.sym, loc))))
+          sctx.addFlowConstraint(FlowConstraint(Instantiation(args), MonoVar.Def(handler.handlerSym)))
+          Canonicalization.canonicalEffect(Type.mkUnion(Type.mkDifference(eff, handler.handledEff, loc), Type.IO, loc))
       }
       ()
     }
@@ -789,35 +790,35 @@ object ConstraintGen {
     dealiasedTypeToMonoArg(Type.eraseAliases(tpe0))
 
   /** Like [[typeToMonoArg]], but `tpe` must already have its aliases erased (deeply). */
-  private def dealiasedTypeToMonoArg(tpe: Type)(implicit tparamEnv: TypeParamEnv, root: TypedAst.Root, flix: Flix): MonoArg =
-    tpe match {
-      case Type.Var(sym, _) =>
-        // A type variable that is not a tparam of the current decl (absent from tparamEnv) — e.g.
-        // a region var introduced by `region r { ... }`. We record it as an opaque constant so the
-        // flow is still emitted but the solver does not propagate it.
-        tparamEnv.get(sym).getOrElse(MonoArg.Const(tpe))
-      case at @ Type.AssocType(symUse, arg, kind, assocLoc) =>
-        if (tpe.typeVars.isEmpty)
-          MonoArg.Const(Canonicalization.reduceAssocType(at)(root, flix))
-        else
-          MonoArg.Assoc(symUse.sym, dealiasedTypeToMonoArg(arg), kind, assocLoc)
-      case Type.Cst(_, _) =>
-        MonoArg.Const(tpe)
-      case Type.Apply(_, _, _) =>
-        if (tpe.kind == Kind.Eff && tpe.typeVars.isEmpty)
-          MonoArg.Const(Canonicalization.simplify(tpe, isGround = true)(root, flix))
-        else {
-          MonoArg.App(dealiasedTypeToMonoArg(tpe.baseType), tpe.typeArguments.map(arg => dealiasedTypeToMonoArg(arg)))
-        }
-      case Type.Alias(_, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected type alias (should have been erased): $tpe", tpe.loc)
-      case Type.JvmToType(_, loc) =>
-        throw InternalCompilerException("Unexpected JVM type", loc)
-      case Type.JvmToEff(_, loc) =>
-        throw InternalCompilerException("Unexpected JVM eff", loc)
-      case Type.UnresolvedJvmType(_, loc) =>
-        throw InternalCompilerException("Unexpected JVM type", loc)
-    }
+  private def dealiasedTypeToMonoArg(tpe: Type)(implicit tparamEnv: TypeParamEnv, root: TypedAst.Root, flix: Flix): MonoArg = tpe match {
+    case Type.Var(sym, _) =>
+      // A type variable that is not a tparam of the current decl (absent from tparamEnv) — e.g.
+      // a region var introduced by `region r { ... }`. We record it as an opaque constant so the
+      // flow is still emitted but the solver does not propagate it.
+      tparamEnv.get(sym).getOrElse(MonoArg.Const(tpe))
+    case at @ Type.AssocType(symUse, arg, kind, assocLoc) =>
+      if (tpe.typeVars.isEmpty) {
+        MonoArg.Const(Canonicalization.reduceAssocType(at)(root, flix))
+      } else {
+        MonoArg.Assoc(symUse.sym, dealiasedTypeToMonoArg(arg), kind, assocLoc)
+      }
+    case Type.Cst(_, _) =>
+      MonoArg.Const(tpe)
+    case Type.Apply(_, _, _) =>
+      if (tpe.kind == Kind.Eff && tpe.typeVars.isEmpty) {
+        MonoArg.Const(Canonicalization.simplify(tpe, isGround = true)(root, flix))
+      } else {
+        MonoArg.App(dealiasedTypeToMonoArg(tpe.baseType), tpe.typeArguments.map(arg => dealiasedTypeToMonoArg(arg)))
+      }
+    case Type.Alias(_, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected type alias (should have been erased): $tpe", tpe.loc)
+    case Type.JvmToType(_, loc) =>
+      throw InternalCompilerException("Unexpected JVM type", loc)
+    case Type.JvmToEff(_, loc) =>
+      throw InternalCompilerException("Unexpected JVM eff", loc)
+    case Type.UnresolvedJvmType(_, loc) =>
+      throw InternalCompilerException("Unexpected JVM type", loc)
+  }
 
   /** Returns the enum/restrictable-enum/struct `MonoVar` and type arguments of `tpe0`. */
   private def getMonoVarAndTypeArgs(tpe0: Type): (MonoVar, List[Type]) = {
