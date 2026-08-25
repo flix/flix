@@ -1,6 +1,5 @@
 /*
- * Copyright 2021 Magnus Madsen
- *           2025 Casper Dalgaard Nielsen
+ * Copyright 2026 Flix Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1059,7 +1058,7 @@ object SpecializeAndLower {
       case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
       case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
       case (x, y) =>
-        val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
+        val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(prettyPrintErasedType(x), prettyPrintErasedType(y)), Nil, tpe, eff, loc)
         MonoAst.Expr.Stm(List(exp), crash, tpe, eff, loc)
     }
   }
@@ -1089,11 +1088,12 @@ object SpecializeAndLower {
   }
 
   /**
-    * Returns the erased string representation of `tpe`
+    * Returns a human-readable name for the erased runtime type of `tpe`, for use in a
+    * `CastError` message.
     *
     * N.B.: `tpe` must be normalized.
     */
-  private def erasedString(tpe: Type): String = tpe match {
+  private def prettyPrintErasedType(tpe: Type): String = tpe match {
     case Type.Char => "Char"
     case Type.Bool => "Bool"
     case Type.Int8 => "Int8"
