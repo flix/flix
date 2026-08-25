@@ -157,7 +157,7 @@ object BackendType {
       case SimpleType.Null => BackendType.Object
       case SimpleType.Array(tpe) => Array(toBackendType(tpe))
       case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
-      case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
+      case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toErasedClassDesc)).toTpe
       case SimpleType.Enum(_, Nil) => BackendObjType.Tagged.toTpe
       case SimpleType.Struct(sym, Nil) => BackendObjType.Struct.fromStruct(root.structs(sym)).toTpe
       case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe

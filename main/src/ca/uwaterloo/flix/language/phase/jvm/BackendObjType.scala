@@ -43,8 +43,8 @@ sealed trait BackendObjType {
   val desc: ClassDesc = this match {
     case BackendObjType.Unit => mkDesc(DevFlixRuntime, mkClassName("Unit"))
     case BackendObjType.Lazy(tpe) => mkDesc(RootPackage, mkClassName("Lazy", tpe))
-    case BackendObjType.Tuple(elms) => mkDesc(RootPackage, mkClassName("Tuple", elms))
-    case BackendObjType.Struct(elms) => mkDesc(RootPackage, mkClassName("Struct", elms))
+    case BackendObjType.Tuple(elms) => mkDesc(RootPackage, Mangle.mkClassName("Tuple", elms.map(Mangle.erasedName)))
+    case BackendObjType.Struct(elms) => mkDesc(RootPackage, Mangle.mkClassName("Struct", elms.map(Mangle.erasedName)))
     case BackendObjType.Tagged => mkDesc(RootPackage, mkClassName("Tagged"))
     case BackendObjType.ExtTagged => mkDesc(RootPackage, mkClassName("ExtTagged"))
     case BackendObjType.AbstractArrow(args, result) => mkDesc(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
@@ -184,7 +184,7 @@ object BackendObjType {
     }
   }
 
-  case class Tuple(elms: List[BackendType]) extends BackendObjType {
+  case class Tuple(elms: List[ClassDesc]) extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.desc, IsFinal)
@@ -195,13 +195,13 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"field$i", elms(i).toClassDesc)
+    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"field$i", elms(i))
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, elms.map(_.toClassDesc))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, elms)
 
     /** `[] --> return` */
     private def constructorIns(implicit mv: MethodVisitor): Unit =
-      withNames(1, elms.map(_.toClassDesc)) { case (_, variables) =>
+      withNames(1, elms) { case (_, variables) =>
         thisLoad()
         // super()
         DUP()
@@ -220,10 +220,10 @@ object BackendObjType {
   object Struct {
     /** Returns the struct type of `struct`. */
     def fromStruct(struct: JvmAst.Struct)(implicit root: JvmAst.Root): Struct =
-      Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
+      Struct(struct.fields.map(field => BackendType.toErasedClassDesc(field.tpe)))
   }
 
-  case class Struct(elms: List[BackendType]) extends BackendObjType {
+  case class Struct(elms: List[ClassDesc]) extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.desc, IsFinal)
@@ -234,12 +234,12 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"field$i", elms(i).toClassDesc)
+    def IndexField(i: Int): InstanceField = InstanceField(this.desc, s"field$i", elms(i))
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, elms.map(_.toClassDesc))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.desc, elms)
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withNames(1, elms.map(_.toClassDesc)) { case (_, variables) =>
+      withNames(1, elms) { case (_, variables) =>
         thisLoad()
         // super()
         DUP()
