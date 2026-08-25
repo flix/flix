@@ -33,6 +33,24 @@ import java.lang.constant.ConstantDescs.CD_int
 object GenFunAndClosureClasses {
 
   /**
+    * Returns the descriptor of the function class `Def$Name` of `sym`.
+    *
+    * String.charAt     =>    String/Def$charAt
+    * List.length       =>    List/Def$length
+    */
+  def defnDesc(sym: Symbol.DefnSym): ClassDesc =
+    Mangle.mkDesc(sym.namespace, Mangle.mkClassName("Def", sym.name))
+
+  /**
+    * Returns the descriptor of the closure class `Clo$Name` of `sym`.
+    *
+    * String.charAt     =>    String/Clo$charAt
+    * List.map          =>    List/Clo$map
+    */
+  def closureDesc(sym: Symbol.DefnSym): ClassDesc =
+    Mangle.mkDesc(sym.namespace, Mangle.mkClassName("Clo", sym.name))
+
+  /**
     * Returns a map of function- and closure-classes for the given set `defs`.
     */
   def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[ClassDesc, JvmClass] = {
@@ -40,7 +58,7 @@ object GenFunAndClosureClasses {
 
       case (macc, closure) if isClosure(closure) =>
         flix.profile(closure.sym, closure.loc) {
-          val closureName = BackendObjType.Closure(closure.sym).desc
+          val closureName = closureDesc(closure.sym)
           val code = genClosure(closureName, closure)
           flix.emitEvent(FlixEvent.EmittedClass(closure.sym, code.length))
           macc + (closureName -> JvmClass(closureName, code))
@@ -48,7 +66,7 @@ object GenFunAndClosureClasses {
 
       case (macc, defn) if isFunction(defn) && isControlPure(defn) =>
         flix.profile(defn.sym, defn.loc) {
-          val functionName = BackendObjType.Defn(defn.sym).desc
+          val functionName = defnDesc(defn.sym)
           val code = genControlPureFunction(functionName, defn)
           flix.emitEvent(FlixEvent.EmittedClass(defn.sym, code.length))
           macc + (functionName -> JvmClass(functionName, code))
@@ -56,7 +74,7 @@ object GenFunAndClosureClasses {
 
       case (macc, defn) if isFunction(defn) =>
         flix.profile(defn.sym, defn.loc) {
-          val functionName = BackendObjType.Defn(defn.sym).desc
+          val functionName = defnDesc(defn.sym)
           val code = genControlImpureFunction(functionName, defn)
           flix.emitEvent(FlixEvent.EmittedClass(defn.sym, code.length))
           macc + (functionName -> JvmClass(functionName, code))
