@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JMethod}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.GenResult
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenResult}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
@@ -72,9 +72,9 @@ object GenAnonymousClasses {
     }
 
     for ((m, i) <- obj.methods.zipWithIndex) {
-      val abstractClass = erasedArrowType(m.fparams.map(_.tpe), m.tpe)
+      val abstractClassArgs = erasedArrowArgs(m.fparams.map(_.tpe))
       // Create the field that will store the closure implementing the body of the method.
-      val cloField = ClassMaker.InstanceField(className, s"clo$i", abstractClass.desc)
+      val cloField = ClassMaker.InstanceField(className, s"clo$i", GenAbstractArrow.desc(abstractClassArgs, CD_Object))
       cm.mkField(cloField, IsPublic, NotFinal, NotVolatile)
       // Use the Java interface's erased method signature (resolved during lowering) for the
       // JVM descriptor. This ensures the generated method matches the interface even when the
@@ -85,7 +85,7 @@ object GenAnonymousClasses {
           val ret = if (m.tpe == SimpleType.Unit) CD_void else TypeDescs.toClassDesc(m.tpe)
           MethodTypeDesc.of(ret, m.fparams.tail.map(fp => TypeDescs.toClassDesc(fp.tpe)) *)
       }
-      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, descriptor), IsPublic, NotFinal, methodIns(abstractClass, cloField, descriptor.returnType(), m)(_, root))
+      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, descriptor), IsPublic, NotFinal, methodIns(abstractClassArgs, cloField, descriptor.returnType(), m)(_, root))
     }
 
     // Generate bridge methods for super method calls.
@@ -118,10 +118,8 @@ object GenAnonymousClasses {
   }
 
   /** Returns the erased abstract arrow class for the given parameter types and return type. */
-  private def erasedArrowType(paramTypes: List[SimpleType], retTpe: SimpleType): BackendObjType.AbstractArrow = {
-    val boxedResult = CD_Object
-    BackendObjType.AbstractArrow(paramTypes.map(TypeDescs.toErasedClassDesc), boxedResult)
-  }
+  private def erasedArrowArgs(paramTypes: List[SimpleType]): List[ClassDesc] =
+    paramTypes.map(TypeDescs.toErasedClassDesc)
 
   /**
     * Generates bytecode for a bridge method that delegates to the superclass via `INVOKESPECIAL`.
@@ -162,20 +160,19 @@ object GenAnonymousClasses {
   }
 
   /** Creates code to read the arguments, load it into the `cloField` closure, call that function, and returns. */
-  private def methodIns(abstractClass: BackendObjType.AbstractArrow, cloField: ClassMaker.InstanceField, actualRes: ClassDesc, m: JvmMethod)(implicit mv: MethodVisitor, root: Root): Unit = {
-    val functionAbstractClass = abstractClass.superClass
+  private def methodIns(abstractClassArgs: List[ClassDesc], cloField: ClassMaker.InstanceField, actualRes: ClassDesc, m: JvmMethod)(implicit mv: MethodVisitor, root: Root): Unit = {
     val returnType = TypeDescs.toClassDesc(m.tpe)
 
     thisLoad()
     GETFIELD(cloField)
-    INVOKEVIRTUAL(abstractClass.GetUniqueThreadClosureMethod)
+    INVOKEVIRTUAL(GenAbstractArrow.GetUniqueThreadClosureMethod(abstractClassArgs, CD_Object))
     // Load the actual arguments into the erased closure arguments.
     withNames(0, m.fparams.map(_.tpe).map(TypeDescs.toClassDesc)) {
       case (_, args) =>
         for ((arg, i) <- args.zipWithIndex) {
           DUP()
           arg.load()
-          PUTFIELD(functionAbstractClass.ArgField(i))
+          PUTFIELD(GenArrow.ArgField(abstractClassArgs, CD_Object, i))
         }
     }
     // Invoke the closure, leaving its result on the stack in the representation of `m.tpe`.

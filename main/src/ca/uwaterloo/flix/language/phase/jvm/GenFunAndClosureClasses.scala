@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenFrame, GenResult, GenThunk, GenValue}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenFrame, GenResult, GenThunk, GenValue}
 import ca.uwaterloo.flix.util.{ClassDescs, ParOps}
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
@@ -115,7 +115,7 @@ object GenFunAndClosureClasses {
     val visitor = ClassMaker.mkClassWriter()
 
     // Header
-    val functionInterface = BackendObjType.Arrow.fromArrowType(defn.arrowType).desc
+    val functionInterface = GenArrow.descOfArrowType(defn.arrowType)
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
       ClassDescs.internalNameOf(functionInterface), null)
     visitor.visitSource(defn.loc.source.name, null)
@@ -175,7 +175,7 @@ object GenFunAndClosureClasses {
     val visitor = ClassMaker.mkClassWriter()
 
     // Header
-    val functionInterface = BackendObjType.Arrow.fromArrowType(defn.arrowType).desc
+    val functionInterface = GenArrow.descOfArrowType(defn.arrowType)
     val frameInterface = GenFrame
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
       ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.desc)))
@@ -257,7 +257,7 @@ object GenFunAndClosureClasses {
     val visitor = ClassMaker.mkClassWriter()
 
     // Header
-    val functionInterface = BackendObjType.AbstractArrow.fromArrowType(defn.arrowType).desc
+    val functionInterface = GenAbstractArrow.descOfArrowType(defn.arrowType)
     val frameInterface = GenFrame
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
       ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.desc)))
@@ -332,7 +332,7 @@ object GenFunAndClosureClasses {
       MethodTypeDescs.mkDescriptor()(GenResult.desc).descriptorString(), null, null)
     m.visitCode()
 
-    val functionInterface = BackendObjType.Arrow.fromArrowType(defn.arrowType).desc
+    val functionInterface = GenArrow.descOfArrowType(defn.arrowType)
     // Putting args on the Fn class
     for ((fp, i) <- defn.fparams.zipWithIndex) {
       // Load the `this` pointer
@@ -518,8 +518,9 @@ object GenFunAndClosureClasses {
   }
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root): Unit = {
-    val closureAbstractClass = BackendObjType.AbstractArrow.fromArrowType(defn.arrowType)
-    implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodTypeDescs.mkDescriptor()(closureAbstractClass.desc).descriptorString(), null, null)
+    val (cloArgs, cloResult) = GenArrow.erasedArgsAndResult(defn.arrowType)
+    val closureAbstractClass = GenAbstractArrow.desc(cloArgs, cloResult)
+    implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC, GenAbstractArrow.GetUniqueThreadClosureMethod(cloArgs, cloResult).name, MethodTypeDescs.mkDescriptor()(closureAbstractClass).descriptorString(), null, null)
     m.visitCode()
 
     mkCopy(className, defn)

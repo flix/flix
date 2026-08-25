@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenExtTagged, GenLazy, GenRecord, GenRegion, GenStruct, GenTagged, GenTuple, GenUnit}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenArrow, GenExtTagged, GenLazy, GenRecord, GenRegion, GenStruct, GenTagged, GenTuple, GenUnit}
 
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -57,7 +57,7 @@ object TypeDescs {
     case SimpleType.Tuple(elms) => GenTuple.desc(elms.map(toErasedClassDesc))
     case SimpleType.Enum(_, Nil) => GenTagged.desc
     case SimpleType.Struct(sym, Nil) => GenStruct.desc(structFields(root.structs(sym)))
-    case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toErasedClassDesc), toErasedClassDesc(result)).desc
+    case SimpleType.Arrow(args, result) => GenArrow.desc(args.map(toErasedClassDesc), toErasedClassDesc(result))
     case SimpleType.RecordEmpty => GenRecord.desc
     case SimpleType.RecordExtend(_, _, _) => GenRecord.desc
     case SimpleType.ExtensibleEmpty => GenExtTagged.desc
