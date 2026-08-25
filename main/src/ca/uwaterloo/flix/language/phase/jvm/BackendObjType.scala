@@ -47,8 +47,8 @@ sealed trait BackendObjType {
     case BackendObjType.Struct(elms) => mkDesc(RootPackage, Mangle.mkClassName("Struct", elms.map(Mangle.erasedName)))
     case BackendObjType.Tagged => mkDesc(RootPackage, mkClassName("Tagged"))
     case BackendObjType.ExtTagged => mkDesc(RootPackage, mkClassName("ExtTagged"))
-    case BackendObjType.AbstractArrow(args, result) => mkDesc(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
-    case BackendObjType.Arrow(args, result) => mkDesc(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
+    case BackendObjType.AbstractArrow(args, result) => mkDesc(RootPackage, Mangle.mkClassName(s"Clo${args.length}", (args :+ result).map(Mangle.erasedName)))
+    case BackendObjType.Arrow(args, result) => mkDesc(RootPackage, Mangle.mkClassName(s"Fn${args.length}", (args :+ result).map(Mangle.erasedName)))
     case BackendObjType.RecordEmpty => mkDesc(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.Record => mkDesc(RootPackage, mkClassName("Record"))
     case BackendObjType.Region => mkDesc(DevFlixRuntime, mkClassName("Region"))
@@ -69,14 +69,6 @@ sealed trait BackendObjType {
 }
 
 object BackendObjType {
-
-  private def mkClassName(prefix: String, tpe: BackendType): String = {
-    Mangle.mkClassName(prefix, tpe.toErasedString)
-  }
-
-  private def mkClassName(prefix: String, tpes: List[BackendType]): String = {
-    Mangle.mkClassName(prefix, tpes.map(_.toErasedString))
-  }
 
   private def mkClassName(prefix: String): String = {
     Mangle.mkClassName(prefix)
@@ -312,7 +304,7 @@ object BackendObjType {
       */
     def fromArrowType(tpe: SimpleType): AbstractArrow = tpe match {
       case SimpleType.Arrow(targs, tresult) =>
-        AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
+        AbstractArrow(targs.map(BackendType.toErasedClassDesc), BackendType.toErasedClassDesc(tresult))
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
     }
   }
@@ -324,7 +316,7 @@ object BackendObjType {
     * public abstract Clo2$Int$Obj$Bool getUniqueThreadClosure();
     * }
     */
-  case class AbstractArrow(args: List[BackendType], result: BackendType) extends BackendObjType {
+  case class AbstractArrow(args: List[ClassDesc], result: ClassDesc) extends BackendObjType {
 
     def superClass: BackendObjType.Arrow = Arrow(args, result)
 
@@ -354,15 +346,15 @@ object BackendObjType {
       *
       * NB: The given type `tpe` must be an arrow type.
       */
-    def fromArrowType(tpe: SimpleType)(implicit root: JvmAst.Root): Arrow = tpe match {
+    def fromArrowType(tpe: SimpleType): Arrow = tpe match {
       case SimpleType.Arrow(targs, tresult) =>
-        Arrow(targs.map(BackendType.toErasedBackendType), BackendType.toBackendType(tresult))
+        Arrow(targs.map(BackendType.toErasedClassDesc), BackendType.toErasedClassDesc(tresult))
       case _ =>
         throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
     }
   }
 
-  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
+  case class Arrow(args: List[ClassDesc], result: ClassDesc) extends BackendObjType {
 
     /**
       * Represents a function interface from `java.util.function`.
@@ -589,13 +581,13 @@ object BackendObjType {
       */
     private def specialization(): List[FunctionInterface] = {
       (args, result) match {
-        case (BackendType.Reference(BackendObjType.Native(CD_Object)) :: Nil, _) =>
+        case (CD_Object :: Nil, _) =>
           ObjFunction :: ObjConsumer :: ObjPredicate :: Nil
-        case (BackendType.Int32 :: Nil, _) =>
+        case (CD_int :: Nil, _) =>
           IntFunction :: IntConsumer :: IntPredicate :: IntUnaryOperator :: Nil
-        case (BackendType.Int64 :: Nil, _) =>
+        case (CD_long :: Nil, _) =>
           LongFunction :: LongConsumer :: LongPredicate :: LongUnaryOperator :: Nil
-        case (BackendType.Float64 :: Nil, _) =>
+        case (CD_double :: Nil, _) =>
           DoubleFunction :: DoubleConsumer :: DoublePredicate :: DoubleUnaryOperator :: Nil
         case _ => Nil
       }
@@ -616,7 +608,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
 
-    def ArgField(index: Int): InstanceField = InstanceField(this.desc, s"arg$index", args(index).toClassDesc)
+    def ArgField(index: Int): InstanceField = InstanceField(this.desc, s"arg$index", args(index))
   }
 
   case object RecordEmpty extends BackendObjType {

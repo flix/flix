@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
-import java.lang.constant.ConstantDescs.CD_void
+import java.lang.constant.ConstantDescs.{CD_Object, CD_void}
 import scala.jdk.CollectionConverters.*
 
 /** Generates bytecode for anonymous classes (created through NewObject). */
@@ -119,8 +119,8 @@ object GenAnonymousClasses {
 
   /** Returns the erased abstract arrow class for the given parameter types and return type. */
   private def erasedArrowType(paramTypes: List[SimpleType], retTpe: SimpleType): BackendObjType.AbstractArrow = {
-    val boxedResult = BackendType.Object
-    BackendObjType.AbstractArrow(paramTypes.map(BackendType.toErasedBackendType), boxedResult)
+    val boxedResult = CD_Object
+    BackendObjType.AbstractArrow(paramTypes.map(BackendType.toErasedClassDesc), boxedResult)
   }
 
   /**

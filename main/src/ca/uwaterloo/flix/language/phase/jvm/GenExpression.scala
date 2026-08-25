@@ -1167,7 +1167,7 @@ object GenExpression {
             // Evaluating the expression
             compileExpr(arg)
             mv.visitFieldInsn(Opcodes.PUTFIELD, defInternalName,
-              s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
+              s"arg$i", BackendType.toErasedClassDesc(arg.tpe).descriptorString())
           }
           // Calling unwind and unboxing
           ctx match {

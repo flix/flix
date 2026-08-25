@@ -116,7 +116,7 @@ object CodeGen {
     val handlerInterface = List(JvmClass(GenHandler.desc, GenHandler.genByteCode()))
     val effectCallClass = List(JvmClass(GenEffectCall.desc, GenEffectCall.genByteCode()))
     val effectClasses = GenEffectClasses.gen(root.effects.values)
-    val resumptionWrappers = BackendType.erasedTypes.map(tpe => JvmClass(GenResumptionWrapper.desc(tpe), GenResumptionWrapper.genByteCode(tpe)))
+    val resumptionWrappers = BackendType.erasedTypes.map(_.toClassDesc).map(tpe => JvmClass(GenResumptionWrapper.desc(tpe), GenResumptionWrapper.genByteCode(tpe)))
 
     val allClasses = List(
       mainClass,
@@ -197,7 +197,7 @@ object CodeGen {
   private def getErasedArrowsOf(types: Iterable[SimpleType]): Set[BackendObjType.Arrow] =
     types.foldLeft(Set.empty[BackendObjType.Arrow]) {
       case (acc, SimpleType.Arrow(args, result)) =>
-        acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
+        acc + BackendObjType.Arrow(args.map(BackendType.toErasedClassDesc), BackendType.toErasedClassDesc(result))
       case (acc, _) => acc
     }
 
