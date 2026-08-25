@@ -625,7 +625,7 @@ object GenExpression {
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
         val SimpleType.Tuple(elmTypes) = exp.tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
+        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toErasedClassDesc))
 
         compileExpr(exp)
         GETFIELD(tupleType.IndexField(idx))
@@ -633,7 +633,7 @@ object GenExpression {
 
       case AtomicOp.Tuple =>
         val SimpleType.Tuple(elmTypes) = tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
+        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toErasedClassDesc))
         NEW(tupleType.desc)
         DUP()
         exps.foreach(compileExpr)
@@ -1590,7 +1590,7 @@ object GenExpression {
   }
 
   private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {
-    BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
+    BackendObjType.Struct(struct.fields.map(field => BackendType.toErasedClassDesc(field.tpe)))
   }
 
   private def compileIsTag(ordinal: Int, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {

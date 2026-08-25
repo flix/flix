@@ -223,7 +223,7 @@ object CodeGen {
   private def getTupleTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Tuple] =
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, SimpleType.Tuple(elms)) =>
-        acc + BackendObjType.Tuple(elms.map(BackendType.toBackendType))
+        acc + BackendObjType.Tuple(elms.map(BackendType.toErasedClassDesc))
       case (acc, _) => acc
     }
 
