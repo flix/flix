@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, StaticConstructorMethod, StaticField}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{RootPackage, mkDesc}
-import ca.uwaterloo.flix.language.phase.jvm.{BackendObjType, ClassMaker, Mangle}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, Mangle}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc

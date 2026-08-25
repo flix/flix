@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, Insta
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.mkDesc
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.{BackendObjType, ClassConstants, ClassMaker, GenFunAndClosureClasses, Mangle, TypeDescs}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, ClassMaker, GenFunAndClosureClasses, Mangle, TypeDescs}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc
