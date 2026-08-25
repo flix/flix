@@ -42,13 +42,13 @@ object GenRecordExtend {
     mkDesc(RootPackage, Mangle.mkClassName("RecordExtend", Mangle.erasedName(value)))
 
   def genByteCode(value: ClassDesc)(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(desc(value), IsFinal, interfaces = List(BackendObjType.Record.desc))
+    val cm = ClassMaker.mkClass(desc(value), IsFinal, interfaces = List(GenRecord.desc))
 
     cm.mkConstructor(Constructor(value), IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
     cm.mkField(LabelField(value), IsPublic, NotFinal, NotVolatile)
     cm.mkField(ValueField(value), IsPublic, NotFinal, NotVolatile)
     cm.mkField(RestField(value), IsPublic, NotFinal, NotVolatile)
-    cm.mkMethod(Nil, BackendObjType.Record.LookupFieldMethod.implementation(desc(value)), IsPublic, IsFinal, lookupFieldIns(value)(_))
+    cm.mkMethod(Nil, GenRecord.LookupFieldMethod.implementation(desc(value)), IsPublic, IsFinal, lookupFieldIns(value)(_))
     cm.mkMethod(Nil, RestrictFieldMethod(value), IsPublic, IsFinal, restrictFieldIns(value)(_))
 
     cm.closeClassMaker()
@@ -60,7 +60,7 @@ object GenRecordExtend {
 
   def ValueField(value: ClassDesc): InstanceField = InstanceField(desc(value), "value", value)
 
-  def RestField(value: ClassDesc): InstanceField = InstanceField(desc(value), "rest", BackendObjType.Record.desc)
+  def RestField(value: ClassDesc): InstanceField = InstanceField(desc(value), "rest", GenRecord.desc)
 
   private def lookupFieldIns(value: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     caseOnLabelEquality(value) {
@@ -71,13 +71,13 @@ object GenRecordExtend {
         thisLoad()
         GETFIELD(RestField(value))
         ALOAD(1)
-        INVOKEINTERFACE(BackendObjType.Record.LookupFieldMethod)
+        INVOKEINTERFACE(GenRecord.LookupFieldMethod)
         ARETURN()
     }
   }
 
   def RestrictFieldMethod(value: ClassDesc): InstanceMethod =
-    BackendObjType.Record.RestrictFieldMethod.implementation(desc(value))
+    GenRecord.RestrictFieldMethod.implementation(desc(value))
 
   private def restrictFieldIns(value: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     caseOnLabelEquality(value) {
@@ -101,7 +101,7 @@ object GenRecordExtend {
         thisLoad()
         GETFIELD(RestField(value))
         ALOAD(1)
-        INVOKEINTERFACE(BackendObjType.Record.RestrictFieldMethod)
+        INVOKEINTERFACE(GenRecord.RestrictFieldMethod)
         PUTFIELD(RestField(value)) // put the rest field and return
         ARETURN()
     }
