@@ -785,6 +785,13 @@ object ConstraintGen {
     flattenApply(rel).reverse
   }
 
+  /** Extracts T from NewChannel's `(Sender[T], Receiver[T])` type — see ConstraintGen's NewChannel rule. */
+  private def extractChannelElm(tpe: Type): Type = tpe.typeArguments match {
+    case List(Type.Apply(Type.Cst(TypeConstructor.Sender, _), elm, _), _) => elm
+    case List(Type.Apply(Type.Cst(TypeConstructor.Receiver, _), elm, _), _) => elm
+    case _ => throw InternalCompilerException(s"Expected (Sender[_], Receiver[_]), but got $tpe", tpe.loc)
+  }
+
   /** Converts `tpe0` to a `MonoArg` relative to the current declaration context. */
   private def typeToMonoArg(tpe0: Type)(implicit tparamEnv: TypeParamEnv, root: TypedAst.Root, flix: Flix): MonoArg =
     dealiasedTypeToMonoArg(Type.eraseAliases(tpe0))
@@ -826,12 +833,5 @@ object ConstraintGen {
     val mvar = declMonoVar(tpe.baseType).getOrElse(
       throw InternalCompilerException(s"Expected an Enum, RestrictableEnum, or Struct type, but got $tpe", tpe0.loc))
     (mvar, tpe.typeArguments)
-  }
-
-  /** Extracts T from NewChannel's `(Sender[T], Receiver[T])` type — see ConstraintGen's NewChannel rule. */
-  private def extractChannelElm(tpe: Type): Type = tpe.typeArguments match {
-    case List(Type.Apply(Type.Cst(TypeConstructor.Sender, _), elm, _), _) => elm
-    case List(Type.Apply(Type.Cst(TypeConstructor.Receiver, _), elm, _), _) => elm
-    case _ => throw InternalCompilerException(s"Expected (Sender[_], Receiver[_]), but got $tpe", tpe.loc)
   }
 }
