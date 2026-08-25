@@ -238,7 +238,7 @@ object CodeGen {
   /** Returns the set of lazy types in `types` without searching recursively. */
   private def getLazyTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Lazy] =
     types.foldLeft(Set.empty[BackendObjType.Lazy]) {
-      case (acc, SimpleType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.toBackendType(tpe))
+      case (acc, SimpleType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.toErasedClassDesc(tpe))
       case (acc, _) => acc
     }
 
