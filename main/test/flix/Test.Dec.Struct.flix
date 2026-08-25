@@ -33,11 +33,6 @@ mod Test.Dec.Struct {
         poly_recurse: PolyRecursive[a, r]
     }
 
-    pub struct PolyRecursiveNonRegular[a, r] {
-        poly_nonregular_simple: a,
-        poly_nonregular_recurse: PolyRecursiveNonRegular[Poly[a, r], r]
-    }
-
     pub struct BinaryTree[t, r] {
         l: Option[BinaryTree[t, r]],
         r: Option[BinaryTree[t, r]],
