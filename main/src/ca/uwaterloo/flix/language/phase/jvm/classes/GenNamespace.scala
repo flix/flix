@@ -50,7 +50,7 @@ object GenNamespace {
     cm.closeClassMaker()
   }
 
-  def Constructor(ns: List[String]): ConstructorMethod = ConstructorMethod(desc(ns), Nil)
+  private def Constructor(ns: List[String]): ConstructorMethod = ConstructorMethod(desc(ns), Nil)
 
   def ShimMethod(ns: List[String], defn: JvmAst.Def): StaticMethod = {
     val erasedArgs = defn.fparams.map(_.tpe).map(TypeDescs.toErasedClassDesc)

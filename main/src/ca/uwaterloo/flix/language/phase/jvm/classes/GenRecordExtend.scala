@@ -76,7 +76,7 @@ object GenRecordExtend {
     }
   }
 
-  def RestrictFieldMethod(value: ClassDesc): InstanceMethod =
+  private def RestrictFieldMethod(value: ClassDesc): InstanceMethod =
     GenRecord.RestrictFieldMethod.implementation(desc(value))
 
   private def restrictFieldIns(value: ClassDesc)(implicit mv: MethodVisitor): Unit = {
