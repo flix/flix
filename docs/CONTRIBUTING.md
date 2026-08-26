@@ -52,3 +52,7 @@ We are interested in correct, well-documented, and well-tested code.
 We expect all pull requests to be maintainable and follow established style.
 
 Please have a look at [docs/STYLE.md](STYLE.md) for more information on how to structure your code.
+
+## LLM Generated Code
+
+Please see [docs/LLM-POLICY.md](LLM-POLICY.md)
