@@ -19,6 +19,9 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.language.ast.Symbol
 
 object Options {
+  // Enable constraint-based monomorphization if "XNEWMONO" env var is set.
+  private def EnableMono2: Boolean = sys.env.get("XNEWMONO").contains("1")
+
   /**
     * Default options.
     */
@@ -38,7 +41,7 @@ object Options {
     xnodeprecated = false,
     xsummary = false,
     xsubeffecting = Set.empty,
-    xnewmono = false,
+    xnewmono = EnableMono2,
     XPerfN = None,
     XPerfFrontend = false,
     XPerfPar = false,
