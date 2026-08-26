@@ -17,15 +17,15 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler, Predicate}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JClass, JConstructor, JField, JMethod, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupCaseSym, lookupRestrictableCaseSym, lookupStructSym, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.*
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Result}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Result}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 
@@ -41,7 +41,7 @@ import java.lang.constant.{ClassDesc, MethodTypeDesc}
   *
   * N.B.: [[ConstraintGen]] needs to predict every specialized symbol synthesized here.
   */
-object SpecializeAndLower {
+private[monomorph2] object SpecializeAndLower {
 
   /**
     * Lowers the given type `tpe0`.
@@ -52,6 +52,7 @@ object SpecializeAndLower {
     case Some(TypeConstructor.Schema) =>
       // Erase every Schema type, regardless of its polymorphic type applications, to the Datalog type.
       Types.Fixpoint.Ast.Datalog.Datalog
+
     case _ => lowerTypeNonSchema(tpe0)
   }
 
@@ -101,7 +102,7 @@ object SpecializeAndLower {
     Specialize.rewriteEnumStructType(lowerType(t))
 
   /** Specializes and lowers `defn0` under `subst` into a `MonoAst.Def` with the specialized symbol `freshSym`. */
-  protected[monomorph2] def visitDef(freshSym: Symbol.DefnSym, defn0: TypedAst.Def, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Def = {
+  private[monomorph2] def visitDef(freshSym: Symbol.DefnSym, defn0: TypedAst.Def, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Def = {
     implicit val lctx: LocalContext = LocalContext.empty
     val defn = wrapIfEntryPoint(defn0, subst)
     defn match {
@@ -395,6 +396,7 @@ object SpecializeAndLower {
       region0.map(visitExp(_, env0, subst)) match {
         case Some(region) =>
           MonoAst.Expr.ApplyAtomic(AtomicOp.StructNew(newStructSym, Mutability.Mutable, names), region :: es, tLow, subst(eff), loc)
+
         case None =>
           MonoAst.Expr.ApplyAtomic(AtomicOp.StructNew(newStructSym, Mutability.Immutable, names), es, tLow, subst(eff), loc)
       }
@@ -431,6 +433,7 @@ object SpecializeAndLower {
 
     case TypedAst.Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp, env0, subst)
+
     case TypedAst.Expr.InstanceOf(exp, clazz, loc) =>
       // Primitives never satisfy an instanceof check: evaluate for side effects and return false.
       val e = visitExp(exp, env0, subst)
@@ -458,6 +461,7 @@ object SpecializeAndLower {
       val e = visitExp(exp, env0, subst)
       val t = visitType(tpe, subst)
       mkCast(e, t, subst(eff), loc)
+
     case TypedAst.Expr.Throw(exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       val t = visitType(tpe, subst)
@@ -520,6 +524,7 @@ object SpecializeAndLower {
       (lctx.sym, lctx.thisRef) match {
         case (Some(sym), Some(thisRef)) =>
           MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, JMethod.of(method)), thisRef :: es, t, subst(eff), loc)
+
         case _ =>
           throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
       }
@@ -638,6 +643,7 @@ object SpecializeAndLower {
       val e = visitExp(exp, env0, subst)
       val t = visitType(tpe, subst)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, subst(eff), loc)
+
     case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       lowerConstraintSet(cs, loc, env0, subst)
 
@@ -776,7 +782,9 @@ object SpecializeAndLower {
           val env = pat0.foldLeft(env0) {
             case (env1, TypedAst.RestrictableChoosePattern.Var(bnd, _, _)) =>
               env1 + (bnd.sym -> Symbol.freshVarSym(bnd.sym))
+
             case (env1, TypedAst.RestrictableChoosePattern.Wild(_, _)) => env1
+
             case (_, TypedAst.RestrictableChoosePattern.Error(_, errLoc)) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
           }
           val termPatterns = pat0.map {
@@ -913,7 +921,7 @@ object SpecializeAndLower {
   }
 
   /** Lowers the given enum `enum0`. */
-  protected[monomorph2] def lowerEnum(enum0: TypedAst.Enum)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Enum = enum0 match {
+  private[monomorph2] def lowerEnum(enum0: TypedAst.Enum)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Enum = enum0 match {
     case TypedAst.Enum(doc, ann, mod, sym, tparams0, _, cases0, loc) =>
       val tparams = tparams0.map(lowerTypeParam)
       val cases = cases0.map {
@@ -925,7 +933,7 @@ object SpecializeAndLower {
   }
 
   /** Lowers the given `effect`. */
-  protected[monomorph2] def lowerEffect(effect: TypedAst.Effect)(implicit tables: SpecializationTables): MonoAst.Effect = effect match {
+  private[monomorph2] def lowerEffect(effect: TypedAst.Effect)(implicit tables: SpecializationTables): MonoAst.Effect = effect match {
     case TypedAst.Effect(doc, ann, mod, sym, _, ops0, loc) =>
       // TODO EFFECT-TPARAMS use tparams
       val ops = ops0.map(lowerOp)
@@ -933,7 +941,7 @@ object SpecializeAndLower {
   }
 
   /** Lowers the given struct `struct0`. */
-  protected[monomorph2] def lowerStruct(struct0: TypedAst.Struct)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Struct = struct0 match {
+  private[monomorph2] def lowerStruct(struct0: TypedAst.Struct)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Struct = struct0 match {
     case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fields0, loc) =>
       val tparams = tparams0.map(lowerTypeParam)
       val fields = fields0.map {
@@ -1047,16 +1055,27 @@ object SpecializeAndLower {
   private def mkCast(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
     (exp.tpe, tpe) match {
       case (Type.Char, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (Type.Char, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (Type.Int16, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (Type.Bool, Type.Bool) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (Type.Int8, Type.Int8) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (Type.Int16, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (Type.Int32, Type.Int32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (Type.Int64, Type.Int64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (Type.Float32, Type.Float32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+
       case (x, y) =>
         val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(prettyPrintErasedType(x), prettyPrintErasedType(y)), Nil, tpe, eff, loc)
         MonoAst.Expr.Stm(List(exp), crash, tpe, eff, loc)
@@ -1250,6 +1269,7 @@ object SpecializeAndLower {
   private def stripAutoUnbox(expr: MonoAst.Expr): MonoAst.Expr = expr match {
     case MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), List(inner), _, _, _)
       if isAutoUnboxMethod(method) => inner
+
     case _ => expr
   }
 
@@ -1596,6 +1616,7 @@ object SpecializeAndLower {
         val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), List(MonoAst.Pattern.Wild(locksType, loc))), loc)
         val defaultMatch = MonoAst.MatchRule(pat, None, defaultExp)
         List(defaultMatch)
+
       case None =>
         List()
     }
@@ -1939,6 +1960,7 @@ object SpecializeAndLower {
     case Denotation.Latticenal =>
       tpeOpt match {
         case None => throw InternalCompilerException("Unexpected nullary lattice predicate.", loc)
+
         case Some(tpe) =>
           val innerType = lowerType(tpe)
           // The type `Denotation[tpe]`.
@@ -2203,6 +2225,7 @@ object SpecializeAndLower {
           val varExp = MonoAst.Expr.Var(tmpVarSym, Types.Fixpoint.Ast.Datalog.Datalog, loc)
           projectSym(mkPredSym(pred), varExp, loc)
         }), loc)
+
       case None => MonoAst.Expr.Var(tmpVarSym, Types.Fixpoint.Ast.Datalog.Datalog, loc)
     }
     MonoAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Fixpoint.Ast.Datalog.Datalog, eff, Occur.Unknown, loc)
@@ -2247,6 +2270,7 @@ object SpecializeAndLower {
     */
   private def unwrapVectorType(tpe: Type, loc: SourceLocation): Type = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.Vector, _), extType, _) => extType
+
     case t => throw InternalCompilerException(
       s"Expected Type.Apply(Type.Cst(TypeConstructor.Vector, _), _, _), but got $t",
       loc
@@ -2260,6 +2284,7 @@ object SpecializeAndLower {
   private def predicatesOfExtVar(tpe: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.Extensible, _), tpe1, loc1) =>
       predicatesOfSchemaRow(tpe1, loc1)
+
     case t => throw InternalCompilerException(
       s"Expected Type.Apply(Type.Cst(TypeConstructor.Extensible, _), _, _), but got $t",
       loc
@@ -2272,8 +2297,11 @@ object SpecializeAndLower {
   private def predicatesOfSchemaRow(row: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = row match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), rel, loc2), tpe2, loc1) =>
       (pred, termTypesOfRelation(rel, loc2)) :: predicatesOfSchemaRow(tpe2, loc1)
+
     case Type.Var(_, _) => Nil
+
     case Type.SchemaRowEmpty => Nil
+
     case t => throw InternalCompilerException(s"Got unexpected $t", loc)
   }
 
@@ -2283,8 +2311,11 @@ object SpecializeAndLower {
   private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
     def flattenApply(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
       case Type.Cst(TypeConstructor.Relation(_), _) => Nil
+
       case Type.Apply(rest, t, loc1) => t :: flattenApply(rest, loc1)
+
       case _ if rel0.typeConstructor.contains(TypeConstructor.AnyType) => Nil
+
       // The type of the relation is undetermined, i.e. it is a free type variable that has been replaced by AnyType.
       // Since we have an AnyType we are free to treat it however we want. Here we decide to treat the relation as being nullary.
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got $t", loc0)
