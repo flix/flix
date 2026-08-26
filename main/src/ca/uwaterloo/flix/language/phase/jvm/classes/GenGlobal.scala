@@ -36,13 +36,14 @@ import java.lang.constant.{ClassDesc, MethodTypeDesc}
 object GenGlobal {
 
   /** "Global" is fixed in source code, so it should not be mangled and `$` suffixed. */
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, "Global")
+  /** The JVM class descriptor for the generated `Global` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, "Global")
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.desc, IsFinal)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal)
 
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-    cm.mkStaticConstructor(StaticConstructorMethod(this.desc), staticConstructorIns(_))
+    cm.mkStaticConstructor(StaticConstructorMethod(this.Desc), staticConstructorIns(_))
 
     cm.mkField(CounterField, IsPrivate, IsFinal, NotVolatile)
     cm.mkStaticMethod(NewIdMethod, IsPublic, IsFinal, newIdIns(_))
@@ -54,7 +55,7 @@ object GenGlobal {
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
   private def staticConstructorIns(implicit mv: MethodVisitor): Unit = {
     NEW(JavaClasses.AtomicLong)
@@ -67,7 +68,7 @@ object GenGlobal {
     RETURN()
   }
 
-  private def NewIdMethod: StaticMethod = StaticMethod(this.desc, "newId", mkDescriptor()(CD_long))
+  private def NewIdMethod: StaticMethod = StaticMethod(this.Desc, "newId", mkDescriptor()(CD_long))
 
   private def newIdIns(implicit mv: MethodVisitor): Unit = {
     GETSTATIC(CounterField)
@@ -76,7 +77,7 @@ object GenGlobal {
     LRETURN()
   }
 
-  private def GetArgsMethod: StaticMethod = StaticMethod(this.desc, "getArgs", mkDescriptor()(JavaClasses.String.arrayType()))
+  private def GetArgsMethod: StaticMethod = StaticMethod(this.Desc, "getArgs", mkDescriptor()(JavaClasses.String.arrayType()))
 
   private def getArgsIns(implicit mv: MethodVisitor): Unit = {
     GETSTATIC(ArgsField)
@@ -96,7 +97,7 @@ object GenGlobal {
   }
 
   def SetArgsMethod: StaticMethod =
-    StaticMethod(this.desc, "setArgs", MethodTypeDesc.of(CD_void, JavaClasses.String.arrayType()))
+    StaticMethod(this.Desc, "setArgs", MethodTypeDesc.of(CD_void, JavaClasses.String.arrayType()))
 
   private def setArgsIns(implicit mv: MethodVisitor): Unit = {
     ALOAD(0)
@@ -115,9 +116,9 @@ object GenGlobal {
     RETURN()
   }
 
-  private def CounterField: StaticField = StaticField(this.desc, "counter", JavaClasses.AtomicLong)
+  private def CounterField: StaticField = StaticField(this.Desc, "counter", JavaClasses.AtomicLong)
 
-  private def ArgsField: StaticField = StaticField(this.desc, "args", JavaClasses.String.arrayType())
+  private def ArgsField: StaticField = StaticField(this.Desc, "args", JavaClasses.String.arrayType())
 
   private def arrayCopy()(implicit mv: MethodVisitor): Unit = {
     mv.visitMethodInstruction(Opcodes.INVOKESTATIC, JavaClasses.System, "arraycopy",

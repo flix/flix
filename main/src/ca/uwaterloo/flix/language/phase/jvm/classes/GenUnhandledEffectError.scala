@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceField}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
-import ca.uwaterloo.flix.language.phase.jvm.{BackendObjType, ClassConstants, ClassMaker, JavaClasses, Mangle}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, ClassMaker, JavaClasses, Mangle}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc
@@ -34,10 +34,11 @@ import java.lang.constant.ClassDesc
   */
 object GenUnhandledEffectError {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("UnhandledEffectError"))
+  /** The JVM class descriptor for the generated `UnhandledEffectError` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("UnhandledEffectError"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
     // This field allows external equality checking.
@@ -47,15 +48,15 @@ object GenUnhandledEffectError {
     cm.closeClassMaker()
   }
 
-  private def EffectNameField: InstanceField = InstanceField(this.desc, "effectName", JavaClasses.String)
+  private def EffectNameField: InstanceField = InstanceField(this.Desc, "effectName", JavaClasses.String)
 
-  private def LocationField: InstanceField = InstanceField(this.desc, "location", GenReifiedSourceLocation.desc)
+  private def LocationField: InstanceField = InstanceField(this.Desc, "location", GenReifiedSourceLocation.Desc)
 
   def Constructor: ConstructorMethod =
-    ConstructorMethod(this.desc, List(GenSuspension.desc, JavaClasses.String, GenReifiedSourceLocation.desc))
+    ConstructorMethod(this.Desc, List(GenSuspension.Desc, JavaClasses.String, GenReifiedSourceLocation.Desc))
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenSuspension.desc)(suspension => withName(2, JavaClasses.String)(info => withName(3, GenReifiedSourceLocation.desc)(loc => {
+    withName(1, GenSuspension.Desc)(suspension => withName(2, JavaClasses.String)(info => withName(3, GenReifiedSourceLocation.Desc)(loc => {
       def appendString(): Unit = INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
 
       thisLoad()

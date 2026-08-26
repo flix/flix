@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, Insta
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.mkDesc
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.{BackendObjType, BackendType, ClassConstants, ClassMaker, GenFunAndClosureClasses, Mangle}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, ClassMaker, GenFunAndClosureClasses, Mangle, TypeDescs}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc
@@ -53,8 +53,8 @@ object GenNamespace {
   def Constructor(ns: List[String]): ConstructorMethod = ConstructorMethod(desc(ns), Nil)
 
   def ShimMethod(ns: List[String], defn: JvmAst.Def): StaticMethod = {
-    val erasedArgs = defn.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
-    val erasedResult = BackendType.toErasedClassDesc(defn.unboxedType.tpe)
+    val erasedArgs = defn.fparams.map(_.tpe).map(TypeDescs.toErasedClassDesc)
+    val erasedResult = TypeDescs.toErasedClassDesc(defn.unboxedType.tpe)
     // Exported names are checked in Safety, so no mangling is needed.
     val name = if (defn.ann.isExport) defn.sym.name else "m_" + Mangle.mangle(defn.sym.name)
     StaticMethod(desc(ns), name, mkDescriptor(erasedArgs *)(erasedResult))
@@ -62,10 +62,10 @@ object GenNamespace {
 
   private def shimIns(defn: JvmAst.Def)(implicit mv: MethodVisitor): Unit = {
     val defnDesc = GenFunAndClosureClasses.defnDesc(defn.sym)
-    val paramTypes = defn.fparams.map(fp => BackendType.toErasedClassDesc(fp.tpe))
+    val paramTypes = defn.fparams.map(fp => TypeDescs.toErasedClassDesc(fp.tpe))
     withNames(0, paramTypes) {
       case (_, args) =>
-        val erasedResult = BackendType.toErasedClassDesc(defn.unboxedType.tpe)
+        val erasedResult = TypeDescs.toErasedClassDesc(defn.unboxedType.tpe)
         NEW(defnDesc)
         DUP()
         INVOKESPECIAL(ConstructorMethod(defnDesc, Nil))

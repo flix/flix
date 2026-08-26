@@ -34,10 +34,11 @@ import java.lang.constant.ClassDesc
   */
 object GenResumptionCons {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("ResumptionCons"))
+  /** The JVM class descriptor for the generated `ResumptionCons` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("ResumptionCons"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(this.desc, IsFinal, interfaces = List(GenResumption.desc))
+    val cm = mkClass(this.Desc, IsFinal, interfaces = List(GenResumption.Desc))
 
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
 
@@ -46,23 +47,23 @@ object GenResumptionCons {
     cm.mkField(FramesField, IsPublic, NotFinal, NotVolatile)
     cm.mkField(TailField, IsPublic, NotFinal, NotVolatile)
 
-    cm.mkMethod(Nil, GenResumption.RewindMethod.implementation(this.desc), IsPublic, IsFinal, rewindIns(_))
+    cm.mkMethod(Nil, GenResumption.RewindMethod.implementation(this.Desc), IsPublic, IsFinal, rewindIns(_))
 
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.desc, Nil)
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
-  def SymField: InstanceField = InstanceField(this.desc, "sym", JavaClasses.String)
+  def SymField: InstanceField = InstanceField(this.Desc, "sym", JavaClasses.String)
 
-  def HandlerField: InstanceField = InstanceField(this.desc, "handler", GenHandler.desc)
+  def HandlerField: InstanceField = InstanceField(this.Desc, "handler", GenHandler.Desc)
 
-  def FramesField: InstanceField = InstanceField(this.desc, "frames", GenFrames.desc)
+  def FramesField: InstanceField = InstanceField(this.Desc, "frames", GenFrames.Desc)
 
-  def TailField: InstanceField = InstanceField(this.desc, "tail", GenResumption.desc)
+  def TailField: InstanceField = InstanceField(this.Desc, "tail", GenResumption.Desc)
 
   private def rewindIns(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenValue.desc) { v =>
+    withName(1, GenValue.Desc) { v =>
       thisLoad()
       GETFIELD(SymField)
       thisLoad()
@@ -75,7 +76,7 @@ object GenResumptionCons {
       v.load()
       mkStaticLambda(GenThunk.InvokeMethod, GenResumption.StaticRewindMethod, drop = 0)
       mkStaticLambda(GenThunk.InvokeMethod, GenHandler.InstallHandlerMethod, drop = 0)
-      xReturn(GenThunk.desc)
+      xReturn(GenThunk.Desc)
     }
   }
 

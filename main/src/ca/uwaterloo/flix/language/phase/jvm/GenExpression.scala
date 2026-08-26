@@ -23,10 +23,10 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenCastError, GenEffectCall, GenExtTag, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenMatchError, GenNullaryTag, GenRecordExtend, GenResult, GenResumption, GenResumptionNil, GenSuspension, GenTag, GenThunk, GenValue}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenLazy, GenMatchError, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenResult, GenResumption, GenResumptionNil, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUnit, GenValue}
 import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
-import java.lang.constant.ConstantDescs.{CD_double, CD_long, CD_void}
+import java.lang.constant.ConstantDescs.{CD_double, CD_int, CD_long, CD_void}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -113,7 +113,7 @@ object GenExpression {
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(cst, loc) => cst match {
       case Constant.Unit =>
-        GETSTATIC(BackendObjType.Unit.SingletonField)
+        GETSTATIC(GenUnit.SingletonField)
 
       case Constant.Null =>
         ACONST_NULL()
@@ -177,17 +177,17 @@ object GenExpression {
         INVOKESTATIC(ClassConstants.Regex.CompileMethod)
 
       case Constant.RecordEmpty =>
-        GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
+        GETSTATIC(GenRecordEmpty.SingletonField)
 
       case Constant.Static =>
         //!TODO: For now, just emit null
         ACONST_NULL()
-        CHECKCAST(BackendObjType.Region.desc)
+        CHECKCAST(GenRegion.Desc)
 
     }
 
     case Expr.Var(_, offset, tpe, _) =>
-      xLoad(BackendType.toClassDesc(tpe), ctx.getIndex(offset))
+      xLoad(TypeDescs.toClassDesc(tpe), ctx.getIndex(offset))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
@@ -201,7 +201,7 @@ object GenExpression {
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, closureName, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
         // Capturing free args
         for ((arg, i) <- exps.zipWithIndex) {
-          val argType = BackendType.toClassDesc(arg.tpe)
+          val argType = TypeDescs.toClassDesc(arg.tpe)
           mv.visitInsn(Opcodes.DUP)
           compileExpr(arg)
           castIfNotPrim(argType)
@@ -246,8 +246,8 @@ object GenExpression {
             throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
 
           case ObjectOp.Ordinal =>
-            mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(BackendObjType.Tagged.desc))
-            mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(BackendObjType.Tagged.desc), "ordinal", BackendType.Int32.toDescriptor)
+            mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenTagged.Desc))
+            mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(GenTagged.Desc), "ordinal", CD_int.descriptorString())
         }
 
       case AtomicOp.Binary(sop) =>
@@ -612,48 +612,48 @@ object GenExpression {
 
       case AtomicOp.Tag(sym) =>
         val caze = root.enums(sym.enumSym).cases(sym)
-        val termTypes = caze.tpes.map(BackendType.toErasedClassDesc)
+        val termTypes = caze.tpes.map(TypeDescs.toErasedClassDesc)
         compileTag(sym.enumSym.toString, sym.name, caze.sym.ordinal, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
         val List(exp) = exps
-        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toErasedClassDesc)
+        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(TypeDescs.toErasedClassDesc)
 
         compileUntag(exp, idx, termTypes)
-        castIfNotPrim(BackendType.toClassDesc(tpe))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
         val SimpleType.Tuple(elmTypes) = exp.tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toErasedClassDesc))
+        val tupleElms = elmTypes.map(TypeDescs.toErasedClassDesc)
 
         compileExpr(exp)
-        GETFIELD(tupleType.IndexField(idx))
-        castIfNotPrim(BackendType.toClassDesc(tpe))
+        GETFIELD(GenTuple.IndexField(tupleElms, idx))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.Tuple =>
         val SimpleType.Tuple(elmTypes) = tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toErasedClassDesc))
-        NEW(tupleType.desc)
+        val tupleElms = elmTypes.map(TypeDescs.toErasedClassDesc)
+        NEW(GenTuple.desc(tupleElms))
         DUP()
         exps.foreach(compileExpr)
-        INVOKESPECIAL(tupleType.Constructor)
+        INVOKESPECIAL(GenTuple.Constructor(tupleElms))
 
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
-        val recordValue = BackendType.toErasedClassDesc(tpe)
+        val recordValue = TypeDescs.toErasedClassDesc(tpe)
 
         compileExpr(exp)
         pushString(field.name)
-        INVOKEINTERFACE(BackendObjType.Record.LookupFieldMethod)
+        INVOKEINTERFACE(GenRecord.LookupFieldMethod)
         // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
         CHECKCAST(GenRecordExtend.desc(recordValue))
         GETFIELD(GenRecordExtend.ValueField(recordValue))
-        castIfNotPrim(BackendType.toClassDesc(tpe))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.RecordExtend(field) =>
         val List(exp1, exp2) = exps
-        val recordValue = BackendType.toErasedClassDesc(exp1.tpe)
+        val recordValue = TypeDescs.toErasedClassDesc(exp1.tpe)
         NEW(GenRecordExtend.desc(recordValue))
         DUP()
         INVOKESPECIAL(GenRecordExtend.Constructor(recordValue))
@@ -672,27 +672,27 @@ object GenExpression {
 
         compileExpr(exp)
         pushString(field.name)
-        INVOKEINTERFACE(BackendObjType.Record.RestrictFieldMethod)
+        INVOKEINTERFACE(GenRecord.RestrictFieldMethod)
 
       case AtomicOp.ExtIs(sym) =>
         val List(exp) = exps
         compileExtIsTag(sym.name, exp)
 
       case AtomicOp.ExtTag(sym) =>
-        val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(BackendType.toErasedClassDesc)
+        val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(TypeDescs.toErasedClassDesc)
         compileExtTag(sym.name, exps, tpes)
 
       case AtomicOp.ExtUntag(sym, idx) =>
 
         val List(exp) = exps
-        val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toErasedClassDesc)
+        val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(TypeDescs.toErasedClassDesc)
 
         compileExtUntag(exp, idx, tpes)
-        castIfNotPrim(BackendType.toClassDesc(tpe))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.ArrayLit =>
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
-        val elmTpe = BackendType.toClassDesc(innerType)
+        val elmTpe = TypeDescs.toClassDesc(innerType)
 
         pushInt(exps.length)
         xNewArray(elmTpe)
@@ -707,19 +707,19 @@ object GenExpression {
         val List(exp1, exp2) = exps
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
-        val erasedElmTpe = BackendType.toErasedClassDesc(innerType)
+        val erasedElmTpe = TypeDescs.toErasedClassDesc(innerType)
         val elmIs64BitWidth = erasedElmTpe == CD_long || erasedElmTpe == CD_double
         val fillMethod = ClassMaker.StaticMethod(JavaClasses.Arrays, "fill", MethodTypeDesc.of(CD_void, erasedElmTpe.arrayType(), erasedElmTpe))
         compileExpr(exp1) // default
         compileExpr(exp2) // default, length
-        xNewArray(BackendType.toClassDesc(innerType)) // default, arr
+        xNewArray(TypeDescs.toClassDesc(innerType)) // default, arr
         if (elmIs64BitWidth) DUP_X2() else DUP_X1() // arr, default, arr
         xSwap(lowerLarge = elmIs64BitWidth, higherLarge = false) // arr, arr, default
         INVOKESTATIC(fillMethod)
 
       case AtomicOp.ArrayLoad =>
         val List(exp1, exp2) = exps
-        val elmTpe = BackendType.toClassDesc(tpe)
+        val elmTpe = TypeDescs.toClassDesc(tpe)
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
@@ -730,7 +730,7 @@ object GenExpression {
 
       case AtomicOp.ArrayStore =>
         val List(exp1, exp2, exp3) = exps
-        val elmTpe = BackendType.toClassDesc(exp3.tpe)
+        val elmTpe = TypeDescs.toClassDesc(exp3.tpe)
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
@@ -739,7 +739,7 @@ object GenExpression {
         compileExpr(exp2) // Evaluating the index
         compileExpr(exp3) // Evaluating the element
         xArrayStore(elmTpe)
-        GETSTATIC(BackendObjType.Unit.SingletonField)
+        GETSTATIC(GenUnit.SingletonField)
 
       case AtomicOp.ArrayLength =>
         val List(exp) = exps
@@ -747,7 +747,7 @@ object GenExpression {
         ARRAYLENGTH()
 
       case AtomicOp.StructNew(sym, mutability, _) =>
-        val structType = getStructType(root.structs(sym))
+        val structElms = getStructType(root.structs(sym))
         val (fieldExps, regionOpt) = mutability match {
           case Mutability.Immutable => (exps, None)
           case Mutability.Mutable =>
@@ -759,35 +759,35 @@ object GenExpression {
           case None => ()
           case Some(region) =>
             compileExpr(region)
-            xPop(BackendType.toClassDesc(region.tpe))
+            xPop(TypeDescs.toClassDesc(region.tpe))
         }
-        NEW(structType.desc)
+        NEW(GenStruct.desc(structElms))
         DUP()
         fieldExps.foreach(compileExpr)
-        INVOKESPECIAL(structType.Constructor)
+        INVOKESPECIAL(GenStruct.Constructor(structElms))
 
       case AtomicOp.StructGet(field) =>
 
         val List(exp) = exps
         val struct = root.structs(field.structSym)
-        val structType = getStructType(struct)
+        val structElms = getStructType(struct)
         val idx = struct.fields.indexWhere(_.sym == field)
 
         compileExpr(exp)
-        GETFIELD(structType.IndexField(idx))
-        castIfNotPrim(BackendType.toClassDesc(tpe))
+        GETFIELD(GenStruct.IndexField(structElms, idx))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.StructPut(field) =>
 
         val List(exp1, exp2) = exps
         val struct = root.structs(field.structSym)
         val idx = struct.fields.indexWhere(_.sym == field)
-        val structType = getStructType(struct)
+        val structElms = getStructType(struct)
 
         compileExpr(exp1)
         compileExpr(exp2)
-        PUTFIELD(structType.IndexField(idx))
-        GETSTATIC(BackendObjType.Unit.SingletonField)
+        PUTFIELD(GenStruct.IndexField(structElms, idx))
+        GETSTATIC(GenUnit.SingletonField)
 
       case AtomicOp.InstanceOf(clazz) =>
         val List(exp) = exps
@@ -797,13 +797,13 @@ object GenExpression {
       case AtomicOp.Cast =>
         val List(exp) = exps
         compileExpr(exp)
-        castIfNotPrim(BackendType.toClassDesc(tpe))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.Unbox =>
         val List(exp) = exps
-        val bType = BackendType.toClassDesc(tpe)
+        val bType = TypeDescs.toClassDesc(tpe)
         compileExpr(exp)
-        CHECKCAST(GenValue.desc)
+        CHECKCAST(GenValue.Desc)
         GETFIELD(GenValue.fieldFromType(bType))
         castIfNotPrim(bType)
 
@@ -825,10 +825,10 @@ object GenExpression {
             GETSTATIC(GenValue.FalseField)
             mv.visitLabel(doneLabel)
           case _ =>
-            val erasedExpTpe = BackendType.toErasedClassDesc(exp.tpe)
+            val erasedExpTpe = TypeDescs.toErasedClassDesc(exp.tpe)
             val valueField = GenValue.fieldFromType(erasedExpTpe)
             compileExpr(exp)
-            NEW(GenValue.desc)
+            NEW(GenValue.Desc)
             DUP()
             INVOKESPECIAL(GenValue.Constructor)
             DUP()
@@ -881,7 +881,7 @@ object GenExpression {
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
-          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
 
       case AtomicOp.InvokeSuperMethod(sym, method) =>
@@ -908,7 +908,7 @@ object GenExpression {
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
-          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
 
       case AtomicOp.InvokeStaticMethod(method) =>
@@ -921,7 +921,7 @@ object GenExpression {
         val declaration = internalNameOf(method.owner)
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, declaration, method.name, method.descriptor.descriptorString(), method.isInterface)
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
-          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
 
       case AtomicOp.GetField(field) =>
@@ -930,7 +930,7 @@ object GenExpression {
         addLoc(loc)
         compileExpr(exp)
         val declaration = internalNameOf(field.owner)
-        mv.visitFieldInsn(Opcodes.GETFIELD, declaration, field.name, BackendType.toClassDesc(tpe).descriptorString())
+        mv.visitFieldInsn(Opcodes.GETFIELD, declaration, field.name, TypeDescs.toClassDesc(tpe).descriptorString())
 
       case AtomicOp.PutField(field) =>
         val List(exp1, exp2) = exps
@@ -939,16 +939,16 @@ object GenExpression {
         compileExpr(exp1)
         compileExpr(exp2)
         val declaration = internalNameOf(field.owner)
-        mv.visitFieldInsn(Opcodes.PUTFIELD, declaration, field.name, BackendType.toClassDesc(exp2.tpe).descriptorString())
+        mv.visitFieldInsn(Opcodes.PUTFIELD, declaration, field.name, TypeDescs.toClassDesc(exp2.tpe).descriptorString())
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
 
       case AtomicOp.GetStaticField(field) =>
         // Add source line number for debugging (can fail when calling java)
         addLoc(loc)
         val declaration = internalNameOf(field.owner)
-        mv.visitFieldInsn(Opcodes.GETSTATIC, declaration, field.name, BackendType.toClassDesc(tpe).descriptorString())
+        mv.visitFieldInsn(Opcodes.GETSTATIC, declaration, field.name, TypeDescs.toClassDesc(tpe).descriptorString())
 
       case AtomicOp.PutStaticField(field) =>
         val List(exp) = exps
@@ -956,10 +956,10 @@ object GenExpression {
         addLoc(loc)
         compileExpr(exp)
         val declaration = internalNameOf(field.owner)
-        mv.visitFieldInsn(Opcodes.PUTSTATIC, declaration, field.name, BackendType.toClassDesc(exp.tpe).descriptorString())
+        mv.visitFieldInsn(Opcodes.PUTSTATIC, declaration, field.name, TypeDescs.toClassDesc(exp.tpe).descriptorString())
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(BackendObjType.Unit.desc), BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
 
       case AtomicOp.Throw =>
         val List(exp) = exps
@@ -978,15 +978,15 @@ object GenExpression {
             CHECKCAST(JavaClasses.Runnable)
             INVOKESTATIC(ClassConstants.Thread.StartVirtualThreadMethod)
             POP()
-            GETSTATIC(BackendObjType.Unit.SingletonField)
+            GETSTATIC(GenUnit.SingletonField)
           case _ =>
             addLoc(loc)
             compileExpr(exp2)
-            CHECKCAST(BackendObjType.Region.desc)
+            CHECKCAST(GenRegion.Desc)
             compileExpr(exp1)
             CHECKCAST(JavaClasses.Runnable)
-            INVOKEVIRTUAL(BackendObjType.Region.SpawnMethod)
-            GETSTATIC(BackendObjType.Unit.SingletonField)
+            INVOKEVIRTUAL(GenRegion.SpawnMethod)
+            GETSTATIC(GenUnit.SingletonField)
         }
 
       case AtomicOp.Lazy =>
@@ -994,36 +994,36 @@ object GenExpression {
 
         // Find the Lazy class name (Lazy$tpe).
         val SimpleType.Lazy(elmType) = tpe
-        val lazyType = BackendObjType.Lazy(BackendType.toErasedClassDesc(elmType))
+        val lazyElm = TypeDescs.toErasedClassDesc(elmType)
 
-        NEW(lazyType.desc)
+        NEW(GenLazy.desc(lazyElm))
         DUP()
         compileExpr(exp)
-        INVOKESPECIAL(lazyType.Constructor)
+        INVOKESPECIAL(GenLazy.Constructor(lazyElm))
 
       case AtomicOp.Force =>
         val List(exp) = exps
 
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
         val SimpleType.Lazy(elmType) = exp.tpe
-        val erasedElmType = BackendType.toErasedClassDesc(elmType)
-        val lazyType = BackendObjType.Lazy(erasedElmType)
+        val erasedElmType = TypeDescs.toErasedClassDesc(elmType)
+        val lazyElm = erasedElmType
 
         // Emit code for the lazy expression.
         compileExpr(exp)
-        CHECKCAST(lazyType.desc)
+        CHECKCAST(GenLazy.desc(lazyElm))
         DUP()
-        GETFIELD(lazyType.ExpField)
+        GETFIELD(GenLazy.ExpField(lazyElm))
         ifConditionElse(Condition.NONNULL)(
-          INVOKEVIRTUAL(lazyType.ForceMethod)
+          INVOKEVIRTUAL(GenLazy.ForceMethod(lazyElm))
         )(
-          GETFIELD(lazyType.ValueField)
+          GETFIELD(GenLazy.ValueField(lazyElm))
         )
 
       case AtomicOp.HoleError(sym) =>
         // Add source line number for debugging (failable by design).
         addLoc(loc)
-        NEW(GenHoleError.desc) // HoleError
+        NEW(GenHoleError.Desc) // HoleError
         DUP() // HoleError, HoleError
         pushString(sym.toString) // HoleError, HoleError, Sym
         pushLoc(loc) // HoleError, HoleError, Sym, Loc
@@ -1033,7 +1033,7 @@ object GenExpression {
       case AtomicOp.MatchError =>
         // Add source line number for debugging (failable by design)
         addLoc(loc)
-        NEW(GenMatchError.desc) // MatchError
+        NEW(GenMatchError.Desc) // MatchError
         DUP() // MatchError, MatchError
         pushLoc(loc) // MatchError, MatchError, Loc
         INVOKESPECIAL(GenMatchError.Constructor) // MatchError
@@ -1042,7 +1042,7 @@ object GenExpression {
       case AtomicOp.CastError(from, to) =>
         // Add source line number for debugging (failable by design)
         addLoc(loc)
-        NEW(GenCastError.desc) // CastError
+        NEW(GenCastError.Desc) // CastError
         DUP() // CastError, CastError
         pushLoc(loc) // CastError, CastError, Loc
         pushString(s"Cannot cast from type '$from' to '$to'") // CastError, CastError, Loc, String
@@ -1057,37 +1057,37 @@ object GenExpression {
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       // Type of the function abstract class
-      val functionInterface = BackendObjType.Arrow.fromArrowType(exp1.tpe)
-      val closureAbstractClass = BackendObjType.AbstractArrow.fromArrowType(exp1.tpe)
+      val (fnArgs, fnResult) = GenArrow.erasedArgsAndResult(exp1.tpe)
+      val closureAbstractClass = GenAbstractArrow.descOfArrowType(exp1.tpe)
       ct match {
         case ExpPosition.Tail =>
           // Evaluating the closure
           compileExpr(exp1)
           // Casting to JvmType of closure abstract class
-          mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(closureAbstractClass.desc))
+          mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(closureAbstractClass))
           // retrieving the unique thread object
-          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(closureAbstractClass.desc), closureAbstractClass.GetUniqueThreadClosureMethod.name, mkDescriptor()(closureAbstractClass.desc).descriptorString(), false)
+          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(closureAbstractClass), GenAbstractArrow.GetUniqueThreadClosureMethod(fnArgs, fnResult).name, mkDescriptor()(closureAbstractClass).descriptorString(), false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
           mv.visitInsn(Opcodes.DUP)
           // Evaluating the expression
           compileExpr(exp2)
-          PUTFIELD(functionInterface.ArgField(0))
+          PUTFIELD(GenArrow.ArgField(fnArgs, fnResult, 0))
           // Return the closure
           mv.visitInsn(Opcodes.ARETURN)
 
         case ExpPosition.NonTail =>
           compileExpr(exp1)
           // Casting to JvmType of closure abstract class
-          mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(closureAbstractClass.desc))
+          mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(closureAbstractClass))
           // retrieving the unique thread object
-          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(closureAbstractClass.desc), closureAbstractClass.GetUniqueThreadClosureMethod.name, mkDescriptor()(closureAbstractClass.desc).descriptorString(), false)
+          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(closureAbstractClass), GenAbstractArrow.GetUniqueThreadClosureMethod(fnArgs, fnResult).name, mkDescriptor()(closureAbstractClass).descriptorString(), false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
           mv.visitInsn(Opcodes.DUP)
           // Evaluating the expression
           compileExpr(exp2)
-          PUTFIELD(functionInterface.ArgField(0))
+          PUTFIELD(GenArrow.ArgField(fnArgs, fnResult, 0))
 
           // Calling unwind and unboxing
           if (Purity.isControlPure(purity)) {
@@ -1119,7 +1119,7 @@ object GenExpression {
       case ExpPosition.Tail =>
         val defInternalName = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
         // Type of the function abstract class
-        val functionInterface = BackendObjType.Arrow.fromArrowType(root.defs(sym).arrowType)
+        val (fnArgs, fnResult) = GenArrow.erasedArgsAndResult(root.defs(sym).arrowType)
 
         // Put the def on the stack
         mv.visitTypeInsn(Opcodes.NEW, defInternalName)
@@ -1131,7 +1131,7 @@ object GenExpression {
           mv.visitInsn(Opcodes.DUP)
           // Evaluating the expression
           compileExpr(arg)
-          PUTFIELD(functionInterface.ArgField(i))
+          PUTFIELD(GenArrow.ArgField(fnArgs, fnResult, i))
         }
         // Return the def
         mv.visitInsn(Opcodes.ARETURN)
@@ -1141,13 +1141,13 @@ object GenExpression {
         val targetIsFunction = defn.cparams.isEmpty
         val canCallStaticMethod = Purity.isControlPure(defn.expr.purity) && targetIsFunction
         if (canCallStaticMethod) {
-          val paramTpes = defn.fparams.map(fp => BackendType.toClassDesc(fp.tpe))
+          val paramTpes = defn.fparams.map(fp => TypeDescs.toClassDesc(fp.tpe))
           // Call the static method, using exact types
           for ((arg, tpe) <- ListOps.zip(exps, paramTpes)) {
             compileExpr(arg)
             castIfNotPrim(tpe)
           }
-          val desc = mkDescriptor(paramTpes *)(GenResult.desc)
+          val desc = mkDescriptor(paramTpes *)(GenResult.Desc)
           val className = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
           mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, ClassMaker.StaticApplyMethodName, desc.descriptorString(), false)
           GenResult.unwindSuspensionFreeThunk("in pure function call", loc)
@@ -1167,7 +1167,7 @@ object GenExpression {
             // Evaluating the expression
             compileExpr(arg)
             mv.visitFieldInsn(Opcodes.PUTFIELD, defInternalName,
-              s"arg$i", BackendType.toErasedClassDesc(arg.tpe).descriptorString())
+              s"arg$i", TypeDescs.toErasedClassDesc(arg.tpe).descriptorString())
           }
           // Calling unwind and unboxing
           ctx match {
@@ -1203,7 +1203,7 @@ object GenExpression {
         val pcPoint = pcCounter(0) + 1
         val pcPointLabel = pcLabels(pcPoint)
         val afterUnboxing = new Label()
-        val erasedResult = BackendType.toErasedClassDesc(tpe)
+        val erasedResult = TypeDescs.toErasedClassDesc(tpe)
         pcCounter(0) += 1
 
         val effectName = GenEffectClasses.effectDesc(sym.eff)
@@ -1212,7 +1212,7 @@ object GenExpression {
           GenEffectClasses.opName(sym),
           GenEffectClasses.opStaticFunctionDescriptor(sym)
         )
-        NEW(GenSuspension.desc)
+        NEW(GenSuspension.Desc)
         DUP()
         INVOKESPECIAL(GenSuspension.Constructor)
         DUP()
@@ -1226,7 +1226,7 @@ object GenExpression {
         PUTFIELD(GenSuspension.EffOpField)
         DUP()
         // create continuation
-        NEW(GenFramesNil.desc)
+        NEW(GenFramesNil.Desc)
         DUP()
         INVOKESPECIAL(GenFramesNil.Constructor)
         newFrame(mv)
@@ -1237,11 +1237,11 @@ object GenExpression {
         // store continuation
         PUTFIELD(GenSuspension.PrefixField)
         DUP()
-        NEW(GenResumptionNil.desc)
+        NEW(GenResumptionNil.Desc)
         DUP()
         INVOKESPECIAL(GenResumptionNil.Constructor)
         PUTFIELD(GenSuspension.ResumptionField)
-        xReturn(GenSuspension.desc)
+        xReturn(GenSuspension.Desc)
 
         mv.visitLabel(pcPointLabel)
         narrowLocals(mv)
@@ -1249,19 +1249,19 @@ object GenExpression {
         GETFIELD(GenValue.fieldFromType(erasedResult))
 
         mv.visitLabel(afterUnboxing)
-        castIfNotPrim(BackendType.toClassDesc(tpe))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
     }
 
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
       case EffectContext(_, _, _, setPc, _, _, _, _) =>
         // The function abstract class name
-        val functionInterface = BackendObjType.Arrow.fromArrowType(root.defs(sym).arrowType)
+        val (fnArgs, fnResult) = GenArrow.erasedArgsAndResult(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
         for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(Opcodes.ALOAD, 0)
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
-          PUTFIELD(functionInterface.ArgField(i))
+          PUTFIELD(GenArrow.ArgField(fnArgs, fnResult, i))
         }
         mv.visitVarInsn(Opcodes.ALOAD, 0)
         pushInt(0)
@@ -1271,13 +1271,13 @@ object GenExpression {
 
       case DirectInstanceContext(_, _, _) =>
         // The function abstract class name
-        val functionInterface = BackendObjType.Arrow.fromArrowType(root.defs(sym).arrowType)
+        val (fnArgs, fnResult) = GenArrow.erasedArgsAndResult(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
         for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(Opcodes.ALOAD, 0)
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
-          PUTFIELD(functionInterface.ArgField(i))
+          PUTFIELD(GenArrow.ArgField(fnArgs, fnResult, i))
         }
         // Jump to the entry point of the method.
         mv.visitJumpInsn(Opcodes.GOTO, ctx.entryPoint)
@@ -1290,7 +1290,7 @@ object GenExpression {
         }
         for ((arg, fp) <- ListOps.zip(exps, defn.fparams).reverse) {
           // Store it in the ith parameter.
-          val tpe = BackendType.toClassDesc(arg.tpe)
+          val tpe = TypeDescs.toClassDesc(arg.tpe)
           val offset = ctx.getIndex(fp.offset)
           xStore(tpe, offset)
         }
@@ -1335,8 +1335,8 @@ object GenExpression {
       // Compile the scrutinee (pushes enum value onto stack)
       compileExpr(exp)
       // Extract ordinal: checkcast Tagged, getfield ordinal
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(BackendObjType.Tagged.desc))
-      mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(BackendObjType.Tagged.desc), "ordinal", BackendType.Int32.toDescriptor)
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenTagged.Desc))
+      mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(GenTagged.Desc), "ordinal", CD_int.descriptorString())
       // Build labels
       val defaultLabel = new Label()
       val endLabel = new Label()
@@ -1387,7 +1387,7 @@ object GenExpression {
       mv.visitLabel(endLabel)
 
     case Expr.Let(_, offset, exp1, exp2, _) =>
-      val bType = BackendType.toClassDesc(exp1.tpe)
+      val bType = TypeDescs.toClassDesc(exp1.tpe)
       compileExpr(exp1)
       // No cast needed in most cases: operations self-cast (Untag, Index, etc.),
       // function calls are wrapped in Cast by the Eraser, and effect resume
@@ -1404,7 +1404,7 @@ object GenExpression {
     case Expr.Stm(exps, exp, _) =>
       exps.foreach { e =>
         compileExpr(e)
-        xPop(BackendType.toClassDesc(e.tpe))
+        xPop(TypeDescs.toClassDesc(e.tpe))
       }
       compileExpr(exp)
 
@@ -1425,12 +1425,12 @@ object GenExpression {
       val afterFinally = new Label()
 
       // Create an instance of Region
-      mv.visitTypeInsn(Opcodes.NEW, internalNameOf(BackendObjType.Region.desc))
+      mv.visitTypeInsn(Opcodes.NEW, internalNameOf(GenRegion.Desc))
       mv.visitInsn(Opcodes.DUP)
-      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, internalNameOf(BackendObjType.Region.desc), ClassMaker.ConstructorMethodName,
+      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, internalNameOf(GenRegion.Desc), ClassMaker.ConstructorMethodName,
         MethodTypeDescs.NothingToVoid.descriptorString(), false)
 
-      xStore(BackendObjType.Region.desc, ctx.getIndex(offset))
+      xStore(GenRegion.Desc, ctx.getIndex(offset))
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
@@ -1441,25 +1441,25 @@ object GenExpression {
       mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
-      xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(BackendObjType.Region.desc))
-      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ExitMethod.name,
-        BackendObjType.Region.ExitMethod.d.descriptorString(), false)
+      xLoad(GenRegion.Desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.Desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.Desc), GenRegion.ExitMethod.name,
+        GenRegion.ExitMethod.d.descriptorString(), false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
-      xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(BackendObjType.Region.desc))
-      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ReThrowChildExceptionMethod.name,
-        BackendObjType.Region.ReThrowChildExceptionMethod.d.descriptorString(), false)
+      xLoad(GenRegion.Desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.Desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.Desc), GenRegion.ReThrowChildExceptionMethod.name,
+        GenRegion.ReThrowChildExceptionMethod.d.descriptorString(), false)
       mv.visitJumpInsn(Opcodes.GOTO, afterFinally)
 
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
-      xLoad(BackendObjType.Region.desc, ctx.getIndex(offset))
-      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(BackendObjType.Region.desc))
-      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(BackendObjType.Region.desc), BackendObjType.Region.ReThrowChildExceptionMethod.name,
-        BackendObjType.Region.ReThrowChildExceptionMethod.d.descriptorString(), false)
+      xLoad(GenRegion.Desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.Desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.Desc), GenRegion.ReThrowChildExceptionMethod.name,
+        GenRegion.ReThrowChildExceptionMethod.d.descriptorString(), false)
       mv.visitInsn(Opcodes.ATHROW)
       mv.visitLabel(afterFinally)
 
@@ -1523,10 +1523,10 @@ object GenExpression {
       for (HandlerRule(op, _, body) <- rules) {
         mv.visitInsn(Opcodes.DUP)
         compileExpr(body)
-        mv.visitFieldInsn(Opcodes.PUTFIELD, effectInternalName, GenEffectClasses.opName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
+        mv.visitFieldInsn(Opcodes.PUTFIELD, effectInternalName, GenEffectClasses.opName(op.sym), GenEffectClasses.opFieldType(op.sym).descriptorString())
       }
       // frames
-      NEW(GenFramesNil.desc)
+      NEW(GenFramesNil.Desc)
       DUP()
       INVOKESPECIAL(GenFramesNil.Constructor)
       // continuation
@@ -1584,19 +1584,19 @@ object GenExpression {
       methodExps.zipWithIndex.foreach { case (e, i) =>
         mv.visitInsn(Opcodes.DUP)
         compileExpr(e)
-        mv.visitFieldInsn(Opcodes.PUTFIELD, className, s"clo$i", BackendObjType.AbstractArrow.fromArrowType(e.tpe).toDescriptor)
+        mv.visitFieldInsn(Opcodes.PUTFIELD, className, s"clo$i", GenAbstractArrow.descOfArrowType(e.tpe).descriptorString())
       }
 
   }
 
-  private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {
-    BackendObjType.Struct(struct.fields.map(field => BackendType.toErasedClassDesc(field.tpe)))
+  private def getStructType(struct: Struct): List[ClassDesc] = {
+    TypeDescs.structFields(struct)
   }
 
   private def compileIsTag(ordinal: Int, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
-    CHECKCAST(BackendObjType.Tagged.desc)
-    GETFIELD(BackendObjType.Tagged.OrdinalField)
+    CHECKCAST(GenTagged.Desc)
+    GETFIELD(GenTagged.OrdinalField)
     pushInt(ordinal)
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
   }
@@ -1630,10 +1630,10 @@ object GenExpression {
 
   private def compileExtIsTag(name: String, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
-    CHECKCAST(BackendObjType.ExtTagged.desc)
-    GETFIELD(BackendObjType.ExtTagged.NameField)
-    BackendObjType.ExtTagged.mkTagName(name)
-    BackendObjType.ExtTagged.eqTagName()
+    CHECKCAST(GenExtTagged.Desc)
+    GETFIELD(GenExtTagged.NameField)
+    GenExtTagged.mkTagName(name)
+    GenExtTagged.eqTagName()
   }
 
   private def compileExtTag(name: String, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
@@ -1641,7 +1641,7 @@ object GenExpression {
     DUP()
     INVOKESPECIAL(GenExtTag.Constructor(tpes))
     DUP()
-    BackendObjType.ExtTagged.mkTagName(name)
+    GenExtTagged.mkTagName(name)
     PUTFIELD(GenExtTag.NameField)
     exps.zipWithIndex.foreach {
       case (e, i) => DUP()

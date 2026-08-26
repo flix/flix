@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, StaticConstructorMethod, StaticField}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{RootPackage, mkDesc}
-import ca.uwaterloo.flix.language.phase.jvm.{BackendObjType, ClassMaker, Mangle}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, Mangle}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc
@@ -41,7 +41,7 @@ object GenNullaryTag {
 
   def genByteCode(enumName: String, name: String, ordinal: Int)(implicit flix: Flix): Array[Byte] = {
     val d = desc(enumName, name)
-    val cm = ClassMaker.mkClass(d, IsFinal, superClass = BackendObjType.Tagged.desc)
+    val cm = ClassMaker.mkClass(d, IsFinal, superClass = GenTagged.Desc)
 
     cm.mkStaticConstructor(StaticConstructorMethod(d), singletonStaticConstructor(Constructor(enumName, name), SingletonField(enumName, name))(_))
     cm.mkField(SingletonField(enumName, name), IsPublic, IsFinal, NotVolatile)
@@ -61,10 +61,10 @@ object GenNullaryTag {
   /** `[] --> return` */
   private def constructorIns(ordinal: Int)(implicit mv: MethodVisitor): Unit = {
     thisLoad()
-    INVOKESPECIAL(BackendObjType.Tagged.Constructor)
+    INVOKESPECIAL(GenTagged.Constructor)
     thisLoad()
     pushInt(ordinal)
-    PUTFIELD(BackendObjType.Tagged.OrdinalField)
+    PUTFIELD(GenTagged.OrdinalField)
     RETURN()
   }
 
