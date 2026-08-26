@@ -17,12 +17,12 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, MatchRule, Predicate, TypeParam}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, PredicateAndArity, RegionScope}
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue

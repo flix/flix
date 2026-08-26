@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.phase.typer.{Progress, TypeReduction2}
 import ca.uwaterloo.flix.util.InternalCompilerException

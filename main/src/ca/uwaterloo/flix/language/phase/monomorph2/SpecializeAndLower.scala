@@ -17,15 +17,15 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler, Predicate}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JClass, JConstructor, JField, JMethod, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.{SpecializationTables, StrictSubstitution, lookupCaseSym, lookupRestrictableCaseSym, lookupStructSym, lookupSym, resolveSigSym, specializeFormalParam, specializeFormalParams}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.*
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Result}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Result}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 

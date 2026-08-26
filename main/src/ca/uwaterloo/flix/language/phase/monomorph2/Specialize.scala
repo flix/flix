@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Instance}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
-import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, RigidityEnv, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.Substitution
