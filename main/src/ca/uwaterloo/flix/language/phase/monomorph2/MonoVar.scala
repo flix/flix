@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.language.ast.Symbol
   * instantiation the solver determines, then substitutes back wherever `MonoArg.Param`
   * references it.
   */
-sealed trait MonoVar
+private[monomorph2] sealed trait MonoVar
 
-object MonoVar {
+private[monomorph2] object MonoVar {
   case class Def(sym: Symbol.DefnSym) extends MonoVar
 
   case class Enum(sym: Symbol.EnumSym) extends MonoVar

@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{RegionScope, SymUse}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph2.MonomorphHelpers.lowerChannelType
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.Defs
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
@@ -37,7 +37,7 @@ import scala.collection.mutable
   * The result is, per polymorphic symbol, the set of ground instantiations it must be
   * specialized at.
   */
-object ConstraintSolver {
+private[monomorph2] object ConstraintSolver {
 
   /**
     * Solves `flows` to a fixpoint and returns the set of required specializations.
@@ -45,7 +45,7 @@ object ConstraintSolver {
     * Callers must run [[NonMonomorphizableCheck.checkMonomorphizable]] first to make
     * sure that the fixpoint loop will not grow without bound.
     */
-  def solve(flows: List[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = {
+  private[monomorph2] def solve(flows: List[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = {
     val instanceMap = MonomorphHelpers.mkInstanceMap(root.instances)
     val dependents  = buildDependents(flows)
 
@@ -60,9 +60,13 @@ object ConstraintSolver {
           } else {
             inst0
           }
+
         case MonoVar.Enum(_)              => inst0
+
         case MonoVar.Sig(_)               => inst0
+
         case MonoVar.RestrictableEnum(_)  => inst0
+
         case MonoVar.Struct(_)            => inst0
       }
       // Only add genuinely new instantiations, i.e. ones not already in the solution nor in the worklist.
@@ -94,9 +98,13 @@ object ConstraintSolver {
             for (case (implSym, implArgs) <- resolveSig(sigSym, inst, root, instanceMap)) {
               enqueue(MonoVar.Def(implSym), implArgs)
             }
+
           case MonoVar.Def(_)              => ()
+
           case MonoVar.Enum(_)             => ()
+
           case MonoVar.RestrictableEnum(_) => ()
+
           case MonoVar.Struct(_)           => ()
         }
 
@@ -137,16 +145,19 @@ object ConstraintSolver {
     */
   private def substArg(arg: MonoArg, bindings: Map[MonoVar, GroundInstantiation]): Option[Type] = arg match {
     case MonoArg.Const(t) => Some(t)
+
     case MonoArg.Param(v, i) =>
       for {
         inst <- bindings.get(v)
         tpe  <- Some(inst.args(i))
       } yield tpe
+
     case MonoArg.App(head, args) =>
       for {
         h  <- substArg(head, bindings)
         as <- ListOps.traverse(args)(substArg(_, bindings))
       } yield Type.mkApply(h, as, h.loc)
+
     case MonoArg.Assoc(sym, a, kind, loc) =>
       substArg(a, bindings).map {
         t =>

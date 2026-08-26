@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.CodeGen
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
-import ca.uwaterloo.flix.language.phase.monomorph2.ConstraintMonomorphization
+import ca.uwaterloo.flix.language.phase.monomorph2.Monomorpher2
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -650,7 +650,7 @@ class Flix {
     // Note: Do not null typedAst. It is used later.
 
     var monomorpherAst =
-      if (options.xnewmono) ConstraintMonomorphization.run(treeShaker1Ast)
+      if (options.xnewmono) Monomorpher2.run(treeShaker1Ast)
       else Specialization.run(treeShaker1Ast)
     treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
 

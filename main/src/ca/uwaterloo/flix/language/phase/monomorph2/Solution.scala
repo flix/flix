@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
   * symbol, the set of concrete instantiations it must be specialized at. A restrictable
   * enum's instantiation always starts with its case-set index (`Kind.CaseSet`).
   */
-case class Solution(
+private[monomorph2] case class Solution(
   defs: Map[Symbol.DefnSym, List[GroundInstantiation]],
   enums: Map[Symbol.EnumSym, List[GroundInstantiation]],
   structs: Map[Symbol.StructSym, List[GroundInstantiation]],
