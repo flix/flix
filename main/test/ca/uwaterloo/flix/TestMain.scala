@@ -157,6 +157,27 @@ class TestMain extends AnyFunSuite {
     assert(opts.assumeYes)
   }
 
+  test("--version") {
+    val args = Array("--version")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.version)
+    assert(!opts.json)
+  }
+
+  test("--version --json") {
+    val args = Array("--version", "--json")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.version)
+    assert(opts.json)
+  }
+
+  test("--json --version") {
+    val args = Array("--json", "--version")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.version)
+    assert(opts.json)
+  }
+
   test("--Xbenchmark-code-size") {
     val args = Array("--Xbenchmark-code-size", "p.flix")
     val opts = Main.parseCmdOpts(args).get
