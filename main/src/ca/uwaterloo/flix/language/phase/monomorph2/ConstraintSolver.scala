@@ -49,7 +49,7 @@ private[monomorph2] object ConstraintSolver {
     val instanceMap = MonomorphHelpers.mkInstanceMap(root.instances)
     val dependents  = buildDependents(flows)
 
-    val solution  = mutable.Map.empty[MonoVar, mutable.LinkedHashSet[GroundInstantiation]]
+    val solution  = mutable.Map.empty[MonoVar, mutable.ListBuffer[GroundInstantiation]]
     val worklist  = mutable.Queue.empty[(MonoVar, GroundInstantiation)]
     val enqueued  = mutable.HashSet.empty[(MonoVar, GroundInstantiation)]
 
@@ -87,7 +87,7 @@ private[monomorph2] object ConstraintSolver {
     while (worklist.nonEmpty) {
       val (dst, inst) = worklist.dequeue()
 
-      solution.getOrElseUpdate(dst, mutable.LinkedHashSet.empty).add(inst)
+      solution.getOrElseUpdate(dst, mutable.ListBuffer.empty) += inst
 
       // Sig dispatch: resolve to impl def and forward the instantiation.
       dst match {
