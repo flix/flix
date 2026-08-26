@@ -70,7 +70,7 @@ object GenRegion {
   // private volatile Throwable childException = null;
   private def ChildExceptionField: InstanceField = InstanceField(this.Desc, "childException", JavaClasses.Throwable)
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
+  private def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()
