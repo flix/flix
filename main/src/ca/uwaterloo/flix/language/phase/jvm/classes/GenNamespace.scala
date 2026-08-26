@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm.classes
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.JvmAst
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.IsFinal
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceField, StaticMethod}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.mkDesc
@@ -41,7 +41,7 @@ object GenNamespace {
   def genByteCode(ns: List[String], defs: List[JvmAst.Def])(implicit flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(desc(ns), IsFinal)
 
-    cm.mkConstructor(Constructor(ns), IsPrivate, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
+    cm.mkConstructor(Constructor(ns), IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
 
     for (defn <- defs) {
       cm.mkStaticMethod(ShimMethod(ns, defn), IsPublic, IsFinal, shimIns(defn)(_))

@@ -53,7 +53,7 @@ object GenRegion {
     cm.mkMethod(Nil, ExitMethod, IsPublic, IsFinal, exitIns(_))
     cm.mkMethod(Nil, ReportChildExceptionMethod, IsPublic, IsFinal, reportChildExceptionIns(_))
     cm.mkMethod(Nil, ReThrowChildExceptionMethod, IsPublic, IsFinal, reThrowChildExceptionIns(_))
-    cm.mkMethod(Nil, RunOnExitMethod, IsPrivate, IsFinal, runOnExitIns(_))
+    cm.mkMethod(Nil, RunOnExitMethod, IsPublic, IsFinal, runOnExitIns(_))
 
     cm.closeClassMaker()
   }
@@ -198,7 +198,7 @@ object GenRegion {
     RETURN()
   }
 
-  // private final void runOnExit(Runnable r) {
+  // final public void runOnExit(Runnable r) {
   //   onExit.addFirst(r);
   // }
   private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.Desc, "runOnExit", mkVoidDescriptor(JavaClasses.Runnable))

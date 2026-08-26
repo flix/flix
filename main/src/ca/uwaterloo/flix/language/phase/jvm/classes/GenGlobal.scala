@@ -42,7 +42,7 @@ object GenGlobal {
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(this.Desc, IsFinal)
 
-    cm.mkConstructor(Constructor, IsPrivate, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
+    cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
     cm.mkStaticConstructor(StaticConstructorMethod(this.Desc), staticConstructorIns(_))
 
     cm.mkField(CounterField, IsPrivate, IsFinal, NotVolatile)
