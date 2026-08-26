@@ -52,7 +52,7 @@ object GenFramesCons {
 
   def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
-  def PushMethod: InstanceMethod = GenFrames.PushMethod.implementation(this.Desc)
+  private def PushMethod: InstanceMethod = GenFrames.PushMethod.implementation(this.Desc)
 
   private def reverseOntoIns(implicit mv: MethodVisitor): Unit = {
     withName(1, GenFrames.Desc) { rest =>

@@ -55,7 +55,7 @@ object GenGlobal {
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
+  private def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
   private def staticConstructorIns(implicit mv: MethodVisitor): Unit = {
     NEW(JavaClasses.AtomicLong)
