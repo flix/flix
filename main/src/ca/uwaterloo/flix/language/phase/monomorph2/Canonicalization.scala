@@ -88,12 +88,12 @@ private[monomorph2] object Canonicalization {
     */
   def normalizeApply(normalize: Type => Type, app: Type.Apply, isGround: Boolean): Type = {
     val Type.Apply(tpe1, tpe2, loc) = app
-    val x = normalize(tpe1)
-    val y = normalize(tpe2)
-    // Check x's kind, not the original app's: substitution may change a higher-kinded var's kind,
-    // and the applied kind is computed from x.kind alone, so this avoids a throwaway Type.Apply.
-    (x, y) match {
-      case _ if isGround && (x.kind match { case Kind.Arrow(_, k) => k == Kind.Eff; case _ => false }) => canonicalEffect(Type.Apply(x, y, loc))
+    val nt1 = normalize(tpe1)
+    val nt2 = normalize(tpe2)
+    // Check nt1's kind, not the original app's: substitution may change a higher-kinded var's kind,
+    // and the applied kind is computed from nt1.kind alone, so this avoids a throwaway Type.Apply.
+    (nt1, nt2) match {
+      case _ if isGround && (nt1.kind match { case Kind.Arrow(_, k) => k == Kind.Eff; case _ => false }) => canonicalEffect(Type.Apply(nt1, nt2, loc))
 
       case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
 
