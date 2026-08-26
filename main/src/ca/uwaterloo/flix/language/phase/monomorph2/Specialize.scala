@@ -36,7 +36,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
   * call/tag/struct site via `lookupSym`/`lookupCaseSym`/`lookupRestrictableCaseSym`/
   * `lookupStructSym`/`resolveSigSym`.
   */
-object Specialize {
+private[monomorph2] object Specialize {
   /**
     * Lookup tables mapping each parametric def/enum/struct/restrictable-enum's original sym,
     * at a given ground instantiation, to its fresh specialized sym.
@@ -408,7 +408,7 @@ object Specialize {
     }
 
   /** Specializes `root` per [[ConstraintSolver]]'s [[Solution]]. */
-  def run(root: TypedAst.Root, solution: Solution)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
+  private[monomorph2] def run(root: TypedAst.Root, solution: Solution)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
     implicit val r: TypedAst.Root = root
     // Prepare [[SpecializationTables]]
     val AllDefs(allDefs, defToInst, defaultSigDefs, prefixTparams) = mkAllDefs(root)

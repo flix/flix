@@ -41,7 +41,7 @@ import java.lang.constant.{ClassDesc, MethodTypeDesc}
   *
   * N.B.: [[ConstraintGen]] needs to predict every specialized symbol synthesized here.
   */
-object SpecializeAndLower {
+private[monomorph2] object SpecializeAndLower {
 
   /**
     * Lowers the given type `tpe0`.
@@ -102,7 +102,7 @@ object SpecializeAndLower {
     Specialize.rewriteEnumStructType(lowerType(t))
 
   /** Specializes and lowers `defn0` under `subst` into a `MonoAst.Def` with the specialized symbol `freshSym`. */
-  protected[monomorph2] def visitDef(freshSym: Symbol.DefnSym, defn0: TypedAst.Def, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Def = {
+  private[monomorph2] def visitDef(freshSym: Symbol.DefnSym, defn0: TypedAst.Def, subst: StrictSubstitution)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Def = {
     implicit val lctx: LocalContext = LocalContext.empty
     val defn = wrapIfEntryPoint(defn0, subst)
     defn match {
@@ -921,7 +921,7 @@ object SpecializeAndLower {
   }
 
   /** Lowers the given enum `enum0`. */
-  protected[monomorph2] def lowerEnum(enum0: TypedAst.Enum)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Enum = enum0 match {
+  private[monomorph2] def lowerEnum(enum0: TypedAst.Enum)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Enum = enum0 match {
     case TypedAst.Enum(doc, ann, mod, sym, tparams0, _, cases0, loc) =>
       val tparams = tparams0.map(lowerTypeParam)
       val cases = cases0.map {
@@ -933,7 +933,7 @@ object SpecializeAndLower {
   }
 
   /** Lowers the given `effect`. */
-  protected[monomorph2] def lowerEffect(effect: TypedAst.Effect)(implicit tables: SpecializationTables): MonoAst.Effect = effect match {
+  private[monomorph2] def lowerEffect(effect: TypedAst.Effect)(implicit tables: SpecializationTables): MonoAst.Effect = effect match {
     case TypedAst.Effect(doc, ann, mod, sym, _, ops0, loc) =>
       // TODO EFFECT-TPARAMS use tparams
       val ops = ops0.map(lowerOp)
@@ -941,7 +941,7 @@ object SpecializeAndLower {
   }
 
   /** Lowers the given struct `struct0`. */
-  protected[monomorph2] def lowerStruct(struct0: TypedAst.Struct)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Struct = struct0 match {
+  private[monomorph2] def lowerStruct(struct0: TypedAst.Struct)(implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): MonoAst.Struct = struct0 match {
     case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fields0, loc) =>
       val tparams = tparams0.map(lowerTypeParam)
       val fields = fields0.map {

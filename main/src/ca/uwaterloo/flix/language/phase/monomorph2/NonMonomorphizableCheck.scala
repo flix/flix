@@ -56,7 +56,7 @@ import ca.uwaterloo.flix.util.{Graph, InternalCompilerException}
   * definitions (`def`, `sig`, instance `def`) will not be detected, whereas unreachable
   * polymorphic recursive enum/struct declarations will still be rejected.
   */
-object NonMonomorphizableCheck {
+private[monomorph2] object NonMonomorphizableCheck {
 
   /** One tracked slot: the `pos`'th type-parameter position of `mvar`. */
   private case class Vertex(mvar: MonoVar, pos: Int)
@@ -66,7 +66,7 @@ object NonMonomorphizableCheck {
 
   // TODO Make it a proper compiler error-message
   /** Checks whether `flows` contains a growing cycle and throws [[InternalCompilerException]] if so. */
-  def checkMonomorphizable(flows: List[FlowConstraint]): Unit = {
+  private[monomorph2] def checkMonomorphizable(flows: List[FlowConstraint]): Unit = {
     val edges = for {
       FlowConstraint(Instantiation(args), dst) <- flows
       (arg, i) <- args.zipWithIndex

@@ -28,27 +28,27 @@ import ca.uwaterloo.flix.util.collection.ListMap
 private[monomorph2] object MonomorphHelpers {
 
   /** Returns `true` if `sym` is a quantified (i.e. not lexically bound) variable in `cparams0`. */
-  def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[TypedAst.ConstraintParam]): Boolean =
+  private[monomorph2] def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[TypedAst.ConstraintParam]): Boolean =
     cparams0.exists(p => p.bnd.sym == sym)
 
   /** Returns the synthesized `DefnSym` for `sig`'s default (trait-level) implementation. */
-  def defaultSigImplSym(sig: TypedAst.Sig): Symbol.DefnSym = {
+  private[monomorph2] def defaultSigImplSym(sig: TypedAst.Sig): Symbol.DefnSym = {
     val ns = sig.sym.trt.namespace :+ sig.sym.trt.name
     new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
   }
 
   /** Returns the free variables of `exp0` that are quantified (bound by `cparams0`). */
-  def quantifiedVars(cparams0: List[TypedAst.ConstraintParam], exp0: Expr): List[(Symbol.VarSym, Type)] =
+  private[monomorph2] def quantifiedVars(cparams0: List[TypedAst.ConstraintParam], exp0: Expr): List[(Symbol.VarSym, Type)] =
     TypedAstOps.freeVars(exp0).toList.filter { case (sym, _) => isQuantifiedVar(sym, cparams0) }
 
   /** Returns a table for fast lookup of instances. */
-  def mkInstanceMap(instances: ListMap[Symbol.TraitSym, TypedAst.Instance]): Map[(Symbol.TraitSym, TypeConstructor), TypedAst.Instance] =
+  private[monomorph2] def mkInstanceMap(instances: ListMap[Symbol.TraitSym, TypedAst.Instance]): Map[(Symbol.TraitSym, TypeConstructor), TypedAst.Instance] =
     instances.map { case (sym, inst) => ((sym, inst.tpe.typeConstructor.get), inst) }.toMap
 
   /**
     * Mirrors [[SpecializeAndLower.lowerType]]'s Sender/Receiver case. (Only for `@LoweringTargetChannel` types)
     */
-  def lowerChannelType(tpe: Type): Type = tpe match {
+  private[monomorph2] def lowerChannelType(tpe: Type): Type = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), elm, _) =>
       Type.Apply(Type.Apply(Symbols.Types.Concurrent.Channel.Mpmc, lowerChannelType(elm), loc), Type.IO, loc)
 
@@ -65,7 +65,7 @@ private[monomorph2] object MonomorphHelpers {
   }
 
   /** Rewrites every `Region` constant in `t` to `IO`. */
-  def rewriteRegionToIO(t: Type): Type = t match {
+  private[monomorph2] def rewriteRegionToIO(t: Type): Type = t match {
     case Type.Cst(TypeConstructor.Region(_), loc) => Type.Cst(TypeConstructor.Effect(Symbol.IO, Kind.Eff), loc)
     case Type.Cst(_, _)                           => t
     case Type.Var(_, _)                           => t
@@ -78,6 +78,6 @@ private[monomorph2] object MonomorphHelpers {
   }
 
   /** Rewrites `tpe`'s regions to `IO`, defaults its free vars, and reduces/normalizes the result. */
-  def groundType(tpe: Type)(implicit root: TypedAst.Root, flix: Flix): Type =
+  private[monomorph2] def groundType(tpe: Type)(implicit root: TypedAst.Root, flix: Flix): Type =
     Canonicalization.simplify(rewriteRegionToIO(tpe).map(Canonicalization.default), isGround = true)
 }

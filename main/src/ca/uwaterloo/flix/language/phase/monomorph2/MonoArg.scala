@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 
 /** A type argument that flows into a `MonoVar`. */
-sealed trait MonoArg
+private[monomorph2] sealed trait MonoArg
 
-object MonoArg {
+private[monomorph2] object MonoArg {
   /**
     * The i'th type parameter slot belonging to a specific MonoVar.
     */
@@ -47,7 +47,7 @@ object MonoArg {
   case class Assoc(sym: Symbol.AssocTypeSym, arg: MonoArg, kind: Kind, loc: SourceLocation) extends MonoArg
 
   /** Returns every `(MonoVar, index)` pair referenced by a `Param` inside `arg`, however deeply wrapped. */
-  def collectParams(arg: MonoArg): List[(MonoVar, Int)] = arg match {
+  private[monomorph2] def collectParams(arg: MonoArg): List[(MonoVar, Int)] = arg match {
     case MonoArg.Const(_)          => Nil
     case MonoArg.Param(v, i)       => List((v, i))
     case MonoArg.App(tycon, args)  => collectParams(tycon) ++ args.flatMap(collectParams)

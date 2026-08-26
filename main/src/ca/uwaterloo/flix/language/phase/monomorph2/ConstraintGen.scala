@@ -32,7 +32,7 @@ import scala.jdk.CollectionConverters.*
   * Constraint generation for constraint-based monomorphization: emits `FlowConstraint` constraints
   * describing how concrete types propagate through the program, for [[ConstraintSolver]] to solve.
   */
-object ConstraintGen {
+private[monomorph2] object ConstraintGen {
 
   private object SharedContext {
     /** Returns a fresh shared context. */
@@ -55,7 +55,7 @@ object ConstraintGen {
   /**
     * Generates specialization constraints for every top-level declaration in `root0`.
     */
-  def generate(root0: TypedAst.Root)(implicit flix: Flix): List[FlowConstraint] = {
+  private[monomorph2] def generate(root0: TypedAst.Root)(implicit flix: Flix): List[FlowConstraint] = {
     implicit val sctx: SharedContext = SharedContext.mk()
     implicit val root: TypedAst.Root = root0
 

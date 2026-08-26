@@ -37,7 +37,7 @@ import scala.collection.mutable
   * The result is, per polymorphic symbol, the set of ground instantiations it must be
   * specialized at.
   */
-object ConstraintSolver {
+private[monomorph2] object ConstraintSolver {
 
   /**
     * Solves `flows` to a fixpoint and returns the set of required specializations.
@@ -45,7 +45,7 @@ object ConstraintSolver {
     * Callers must run [[NonMonomorphizableCheck.checkMonomorphizable]] first to make
     * sure that the fixpoint loop will not grow without bound.
     */
-  def solve(flows: List[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = {
+  private[monomorph2] def solve(flows: List[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = {
     val instanceMap = MonomorphHelpers.mkInstanceMap(root.instances)
     val dependents  = buildDependents(flows)
 

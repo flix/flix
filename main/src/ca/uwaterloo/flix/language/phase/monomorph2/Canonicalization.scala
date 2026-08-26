@@ -35,14 +35,14 @@ import scala.collection.immutable.SortedSet
 private[monomorph2] object Canonicalization {
 
   /** Puts the effect formula `eff` into canonical form. */
-  def canonicalEffect(eff: Type): Type = coSetToType(evalEff(eff), eff.loc)
+  private[monomorph2] def canonicalEffect(eff: Type): Type = coSetToType(evalEff(eff), eff.loc)
 
   /**
     * Evaluates the effect formula `eff` to a set of atomic effects.
     *
     * N.B. Throws [[InternalCompilerException]] if `eff` is not simplified and ground.
     */
-  def evalEff(eff: Type): CofiniteSet[Symbol.EffSym] = eff match {
+  private[monomorph2] def evalEff(eff: Type): CofiniteSet[Symbol.EffSym] = eff match {
     case Type.Univ                                                                      => CofiniteSet.universe
     case Type.Pure                                                                      => CofiniteSet.empty
     case Type.Cst(TypeConstructor.Effect(sym, _), _)                                    => CofiniteSet.mkSet(sym)
@@ -61,7 +61,7 @@ private[monomorph2] object Canonicalization {
     * - A finite [[CofiniteSet.Set]] becomes a union of `Effect` constants.
     * - A [[CofiniteSet.Compl]] becomes the complement of one.
     */
-  def coSetToType(set: CofiniteSet[Symbol.EffSym], loc: SourceLocation): Type = set match {
+  private def coSetToType(set: CofiniteSet[Symbol.EffSym], loc: SourceLocation): Type = set match {
     case CofiniteSet.Set(s)   => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc)
     case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc), loc)
   }
@@ -71,7 +71,7 @@ private[monomorph2] object Canonicalization {
     *
     * N.B. Throws [[InternalCompilerException]] if `assoc` is not actually reducible.
     */
-  def reduceAssocType(assoc: Type.AssocType)(implicit root: TypedAst.Root, flix: Flix): Type = {
+  private[monomorph2] def reduceAssocType(assoc: Type.AssocType)(implicit root: TypedAst.Root, flix: Flix): Type = {
     val progress = Progress()
     val (res, cs) = TypeReduction2.reduce(assoc)(RegionScope.Top, RigidityEnv.empty, progress, root.eqEnv, flix)
     if (cs.nonEmpty) throw InternalCompilerException(s"unexpected constraints: $cs", assoc.loc)
@@ -86,7 +86,7 @@ private[monomorph2] object Canonicalization {
     * N.B. If `isGround` and the result has effect kind, it is further canonicalized via
     * [[canonicalEffect]].
     */
-  def normalizeApply(normalize: Type => Type, app: Type.Apply, isGround: Boolean): Type = {
+  private[monomorph2] def normalizeApply(normalize: Type => Type, app: Type.Apply, isGround: Boolean): Type = {
     val Type.Apply(tpe1, tpe2, loc) = app
     val nt1 = normalize(tpe1)
     val nt2 = normalize(tpe2)
@@ -138,7 +138,7 @@ private[monomorph2] object Canonicalization {
     * N.B. If `isGround`, `tpe` is also put into canonical form. Only pass `true` once `tpe` has no
     * free type variables left.
     */
-  def simplify(tpe: Type, isGround: Boolean)(implicit root: TypedAst.Root, flix: Flix): Type = tpe match {
+  private[monomorph2] def simplify(tpe: Type, isGround: Boolean)(implicit root: TypedAst.Root, flix: Flix): Type = tpe match {
     case Type.Var(_, _)            => tpe
 
     case Type.Cst(_, _)            => tpe
@@ -173,7 +173,7 @@ private[monomorph2] object Canonicalization {
     *       }
     * }}}
     */
-  def default(tpe0: Type): Type = tpe0.kind match {
+  private[monomorph2] def default(tpe0: Type): Type = tpe0.kind match {
     case Kind.Wild          => Type.mkAnyType(tpe0.loc)
     case Kind.WildCaseSet   => Type.mkAnyType(tpe0.loc)
     case Kind.Star          => Type.mkAnyType(tpe0.loc)

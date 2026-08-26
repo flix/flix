@@ -22,4 +22,4 @@ import ca.uwaterloo.flix.language.ast.Type
   * [[Instantiation]] after solving: `args(i)` is the concrete [[Type]] for the ith
   * type-parameter slot, instead of a possibly-still-symbolic [[MonoArg]].
   */
-case class GroundInstantiation(args: List[Type])
+private[monomorph2] case class GroundInstantiation(args: List[Type])

@@ -19,4 +19,4 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 /**
   * A component-wise flow constraint: `args` flows into the type-parameter slots of `dst`.
   */
-case class FlowConstraint(args: Instantiation, dst: MonoVar)
+private[monomorph2] case class FlowConstraint(args: Instantiation, dst: MonoVar)

@@ -20,4 +20,4 @@ package ca.uwaterloo.flix.language.phase.monomorph2
   * A positional assignment of a [[MonoArg]] to each of a [[MonoVar]]'s type-parameter slots,
   * i.e. in a [[FlowConstraint]], `args(i)` is what flows into `dst`'s ith type-parameter.
   */
-case class Instantiation(args: List[MonoArg])
+private[monomorph2] case class Instantiation(args: List[MonoArg])
