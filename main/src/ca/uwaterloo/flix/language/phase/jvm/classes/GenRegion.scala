@@ -53,7 +53,7 @@ object GenRegion {
     cm.mkMethod(Nil, ExitMethod, IsPublic, IsFinal, exitIns(_))
     cm.mkMethod(Nil, ReportChildExceptionMethod, IsPublic, IsFinal, reportChildExceptionIns(_))
     cm.mkMethod(Nil, ReThrowChildExceptionMethod, IsPublic, IsFinal, reThrowChildExceptionIns(_))
-    cm.mkMethod(Nil, RunOnExitMethod, IsPublic, IsFinal, runOnExitIns(_))
+    cm.mkMethod(Nil, RunOnExitMethod, IsPrivate, IsFinal, runOnExitIns(_))
 
     cm.closeClassMaker()
   }
@@ -70,7 +70,7 @@ object GenRegion {
   // private volatile Throwable childException = null;
   private def ChildExceptionField: InstanceField = InstanceField(this.Desc, "childException", JavaClasses.Throwable)
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
+  private def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()
@@ -198,7 +198,7 @@ object GenRegion {
     RETURN()
   }
 
-  // final public void runOnExit(Runnable r) {
+  // private final void runOnExit(Runnable r) {
   //   onExit.addFirst(r);
   // }
   private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.Desc, "runOnExit", mkVoidDescriptor(JavaClasses.Runnable))

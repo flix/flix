@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm.classes
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.IsFinal
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceMethod, StaticConstructorMethod, StaticField}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
@@ -38,7 +38,7 @@ object GenRecordEmpty {
     val cm = ClassMaker.mkClass(this.Desc, IsFinal, interfaces = List(GenRecord.Desc))
 
     cm.mkStaticConstructor(StaticConstructorMethod(this.Desc), singletonStaticConstructor(Constructor, SingletonField)(_))
-    cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
+    cm.mkConstructor(Constructor, IsPrivate, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
     cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
     cm.mkMethod(Nil, LookupFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
     cm.mkMethod(Nil, RestrictFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
@@ -46,7 +46,7 @@ object GenRecordEmpty {
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
+  private def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
   def SingletonField: StaticField = StaticField(this.Desc, "INSTANCE", this.Desc)
 

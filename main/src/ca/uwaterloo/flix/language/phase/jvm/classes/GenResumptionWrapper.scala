@@ -68,9 +68,9 @@ object GenResumptionWrapper {
     }
   }
 
-  def ResumptionField(tpe: ClassDesc): InstanceField = InstanceField(desc(tpe), "resumption", GenResumption.Desc)
+  private def ResumptionField(tpe: ClassDesc): InstanceField = InstanceField(desc(tpe), "resumption", GenResumption.Desc)
 
-  def InvokeMethod(tpe: ClassDesc): InstanceMethod = GenThunk.InvokeMethod.implementation(desc(tpe))
+  private def InvokeMethod(tpe: ClassDesc): InstanceMethod = GenThunk.InvokeMethod.implementation(desc(tpe))
 
   private def invokeIns(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     thisLoad()

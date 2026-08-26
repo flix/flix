@@ -8,6 +8,8 @@ package dev.flix.runtime;
  */
 public final class Global {
 
+    private Global() {}
+
     public static final long newId() {
         throw new RuntimeException("Global.newId should not be called on the mock class");
     }

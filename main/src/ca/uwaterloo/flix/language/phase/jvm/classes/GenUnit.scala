@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm.classes
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.IsFinal
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, StaticConstructorMethod, StaticField, mkClass}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
@@ -37,13 +37,13 @@ object GenUnit {
     val cm = mkClass(this.Desc, IsFinal)
 
     cm.mkStaticConstructor(StaticConstructorMethod(this.Desc), singletonStaticConstructor(Constructor, SingletonField)(_))
-    cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
+    cm.mkConstructor(Constructor, IsPrivate, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
     cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
 
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
+  private def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
   def SingletonField: StaticField = StaticField(this.Desc, "INSTANCE", this.Desc)
 

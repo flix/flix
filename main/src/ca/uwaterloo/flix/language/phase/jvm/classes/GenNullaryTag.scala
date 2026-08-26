@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm.classes
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.IsFinal
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, StaticConstructorMethod, StaticField}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
@@ -45,7 +45,7 @@ object GenNullaryTag {
 
     cm.mkStaticConstructor(StaticConstructorMethod(d), singletonStaticConstructor(Constructor(enumName, name), SingletonField(enumName, name))(_))
     cm.mkField(SingletonField(enumName, name), IsPublic, IsFinal, NotVolatile)
-    cm.mkConstructor(Constructor(enumName, name), IsPublic, constructorIns(ordinal)(_))
+    cm.mkConstructor(Constructor(enumName, name), IsPrivate, constructorIns(ordinal)(_))
 
     cm.closeClassMaker()
   }
@@ -55,7 +55,7 @@ object GenNullaryTag {
     StaticField(d, "singleton", d)
   }
 
-  def Constructor(enumName: String, name: String): ConstructorMethod =
+  private def Constructor(enumName: String, name: String): ConstructorMethod =
     ConstructorMethod(desc(enumName, name), Nil)
 
   /** `[] --> return` */
