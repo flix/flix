@@ -65,7 +65,7 @@ jobs:
         timeout-minutes: 20
         # ScalaTest flags: -o = stdout reporter, C = suppress TestSucceeded, O = suppress SuiteCompleted
         env:
-          Xnewmono: "1"
+          XNEWMONO: "1"
         run: ./mill flix.test.testForked "-oCO"
 
   build-and-test-examples:
