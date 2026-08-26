@@ -68,7 +68,7 @@ object GenArrow {
   /**
     * Represents a function interface from `java.util.function`.
     */
-  sealed trait FunctionInterface {
+  private sealed trait FunctionInterface {
     /**
       * The [[ClassDesc]] of the interface.
       */
@@ -241,49 +241,49 @@ object GenArrow {
   }
 
   // ClassMaker.Object -> ClassMaker.Object
-  case object ObjFunction extends FunctionInterface
+  private case object ObjFunction extends FunctionInterface
 
   // ClassMaker.Object -> Unit
-  case object ObjConsumer extends FunctionInterface
+  private case object ObjConsumer extends FunctionInterface
 
   // ClassMaker.Object -> Bool
-  case object ObjPredicate extends FunctionInterface
+  private case object ObjPredicate extends FunctionInterface
 
   // Int32 -> ClassMaker.Object
-  case object IntFunction extends FunctionInterface
+  private case object IntFunction extends FunctionInterface
 
   // Int32 -> Unit
-  case object IntConsumer extends FunctionInterface
+  private case object IntConsumer extends FunctionInterface
 
   // Int32 -> Bool
-  case object IntPredicate extends FunctionInterface
+  private case object IntPredicate extends FunctionInterface
 
   // Int32 -> Int32
-  case object IntUnaryOperator extends FunctionInterface
+  private case object IntUnaryOperator extends FunctionInterface
 
   // Int64 -> ClassMaker.Object
-  case object LongFunction extends FunctionInterface
+  private case object LongFunction extends FunctionInterface
 
   // Int64 -> Unit
-  case object LongConsumer extends FunctionInterface
+  private case object LongConsumer extends FunctionInterface
 
   // Int64 -> Bool
-  case object LongPredicate extends FunctionInterface
+  private case object LongPredicate extends FunctionInterface
 
   // Int64 -> Int64
-  case object LongUnaryOperator extends FunctionInterface
+  private case object LongUnaryOperator extends FunctionInterface
 
   // Float64 -> ClassMaker.Object
-  case object DoubleFunction extends FunctionInterface
+  private case object DoubleFunction extends FunctionInterface
 
   // Float64 -> Unit
-  case object DoubleConsumer extends FunctionInterface
+  private case object DoubleConsumer extends FunctionInterface
 
   // Float64 -> Bool
-  case object DoublePredicate extends FunctionInterface
+  private case object DoublePredicate extends FunctionInterface
 
   // Float64 -> Float64
-  case object DoubleUnaryOperator extends FunctionInterface
+  private case object DoubleUnaryOperator extends FunctionInterface
 
   /**
     * Returns the specialized java function interfaces of the function type.

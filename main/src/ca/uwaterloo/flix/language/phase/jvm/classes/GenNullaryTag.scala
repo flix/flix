@@ -55,7 +55,7 @@ object GenNullaryTag {
     StaticField(d, "singleton", d)
   }
 
-  def Constructor(enumName: String, name: String): ConstructorMethod =
+  private def Constructor(enumName: String, name: String): ConstructorMethod =
     ConstructorMethod(desc(enumName, name), Nil)
 
   /** `[] --> return` */

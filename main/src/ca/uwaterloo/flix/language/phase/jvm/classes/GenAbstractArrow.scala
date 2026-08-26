@@ -68,7 +68,7 @@ object GenAbstractArrow {
     cm.closeClassMaker()
   }
 
-  def Constructor(args: List[ClassDesc], result: ClassDesc): ConstructorMethod =
+  private def Constructor(args: List[ClassDesc], result: ClassDesc): ConstructorMethod =
     ConstructorMethod(desc(args, result), Nil)
 
   def GetUniqueThreadClosureMethod(args: List[ClassDesc], result: ClassDesc): AbstractMethod =

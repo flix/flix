@@ -46,7 +46,7 @@ object GenRecordEmpty {
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
+  private def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
   def SingletonField: StaticField = StaticField(this.Desc, "INSTANCE", this.Desc)
 
