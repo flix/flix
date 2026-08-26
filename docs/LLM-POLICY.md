@@ -24,6 +24,10 @@ as long as they respect the time of the Flix core team.
    https://github.com/flix/flix/discussions — with an implementation plan in
    place — before work begins.
 
+7. If you open an LLM generated pull request, please add at least one sentence 
+   written by yourself that explains the purpose of the PR. Put the sentence 
+   at the top in italics.
+
 Pull requests that do not adhere to this policy may be closed without comment
 or review. It is always better to reach out to us on Zulip before
 starting the work.
