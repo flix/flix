@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.language.ast.Symbol
 
 object Options {
+  private def xnewmonoDefault: Boolean = sys.env.get("Xnewmono").contains("1")
+
   /**
     * Default options.
     */
@@ -38,7 +40,7 @@ object Options {
     xnodeprecated = false,
     xsummary = false,
     xsubeffecting = Set.empty,
-    xnewmono = false,
+    xnewmono = xnewmonoDefault,
     XPerfN = None,
     XPerfFrontend = false,
     XPerfPar = false,
