@@ -16,7 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase.monomorph2
 
+import ca.uwaterloo.flix.language.ast.Type
+
 /**
-  * A component-wise flow constraint: `args` flows into the type-parameter slots of `dst`.
+  * [[Instantiation]] after solving: `args(i)` is the concrete [[Type]] for the ith
+  * type-parameter slot, instead of a possibly-still-symbolic [[MonoArg]].
   */
-case class FlowConstraint(args: Instantiation, dst: MonoVar)
+case class GroundInstantiation(args: List[Type])

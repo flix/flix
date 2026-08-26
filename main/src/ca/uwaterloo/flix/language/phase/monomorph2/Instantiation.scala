@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 /**
-  * A component-wise flow constraint: `args` flows into the type-parameter slots of `dst`.
+  * A positional assignment of a [[MonoArg]] to each of a [[MonoVar]]'s type-parameter slots,
+  * i.e. in a [[FlowConstraint]], `args(i)` is what flows into `dst`'s ith type-parameter.
   */
-case class FlowConstraint(args: Instantiation, dst: MonoVar)
+case class Instantiation(args: List[MonoArg])
