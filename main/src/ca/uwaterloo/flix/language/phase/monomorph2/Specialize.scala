@@ -444,7 +444,7 @@ private[monomorph2] object Specialize {
           defToInst.get(sym).forall(_.tparams.isEmpty) &&
           !defaultSigDefs.contains(sym)
     }
-    val nonParametricDefs: Map[Symbol.DefnSym, MonoAst.Def] =
+    val nonParametricDefs =
       ParOps.parMapWithPriority(nonParametricDefEntries, sortBy = ({ case (_, defn) => negativeLineCount(defn) }: ((Symbol.DefnSym, TypedAst.Def)) => Int)) {
 
         case (sym, defn) => sym -> flix.profile(defn.sym, defn.loc) {
@@ -452,7 +452,7 @@ private[monomorph2] object Specialize {
         }
       }.toMap
 
-    val specializedDefs: Map[Symbol.DefnSym, MonoAst.Def] =
+    val specializedDefs =
       ParOps.parMapWithPriority(entries, sortBy = ({ case (_, defn, _, _) => negativeLineCount(defn) }: ((Symbol.DefnSym, TypedAst.Def, StrictSubstitution, Type)) => Int)) {
         case (freshSym, defn, subst, _) => freshSym -> flix.profile(defn.sym, defn.loc) {
           SpecializeAndLower.visitDef(freshSym, defn, subst)
