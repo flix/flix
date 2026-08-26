@@ -51,6 +51,7 @@ private[monomorph2] object ConstraintSolver {
 
     val solution  = mutable.Map.empty[MonoVar, mutable.ListBuffer[GroundInstantiation]]
     val worklist  = mutable.Queue.empty[(MonoVar, GroundInstantiation)]
+    val enqueued  = mutable.HashSet.empty[(MonoVar, GroundInstantiation)]
 
     def enqueue(dst: MonoVar, inst0: GroundInstantiation): Unit = {
       val inst = dst match {
@@ -70,10 +71,8 @@ private[monomorph2] object ConstraintSolver {
         case MonoVar.Struct(_)            => inst0
       }
       // Only add genuinely new instantiations, i.e. ones not already in the solution nor in the worklist.
-      if (!solution.get(dst).exists(_.contains(inst))) {
-        if (!worklist.contains((dst, inst))) {
-          worklist.enqueue((dst, inst))
-        }
+      if (enqueued.add((dst, inst))) {
+        worklist.enqueue((dst, inst))
       }
     }
 
@@ -88,31 +87,28 @@ private[monomorph2] object ConstraintSolver {
     while (worklist.nonEmpty) {
       val (dst, inst) = worklist.dequeue()
 
-      val seen = solution.getOrElseUpdate(dst, mutable.ListBuffer.empty)
-      if (!seen.contains(inst)) {
-        seen += inst
+      solution.getOrElseUpdate(dst, mutable.ListBuffer.empty) += inst
 
-        // Sig dispatch: resolve to impl def and forward the instantiation.
-        dst match {
-          case MonoVar.Sig(sigSym) =>
-            for (case (implSym, implArgs) <- resolveSig(sigSym, inst, root, instanceMap)) {
-              enqueue(MonoVar.Def(implSym), implArgs)
-            }
-
-          case MonoVar.Def(_)              => ()
-
-          case MonoVar.Enum(_)             => ()
-
-          case MonoVar.RestrictableEnum(_) => ()
-
-          case MonoVar.Struct(_)           => ()
-        }
-
-        // Propagate: substitute this MonoVar's new instantiation into all dependent flows.
-        for (fc <- dependents.getOrElse(dst, Nil)) {
-          for (groundInstantiation <- groundArgs(fc, Map(dst -> inst), root)) {
-            enqueue(fc.dst, groundInstantiation)
+      // Sig dispatch: resolve to impl def and forward the instantiation.
+      dst match {
+        case MonoVar.Sig(sigSym) =>
+          for (case (implSym, implArgs) <- resolveSig(sigSym, inst, root, instanceMap)) {
+            enqueue(MonoVar.Def(implSym), implArgs)
           }
+
+        case MonoVar.Def(_)              => ()
+
+        case MonoVar.Enum(_)             => ()
+
+        case MonoVar.RestrictableEnum(_) => ()
+
+        case MonoVar.Struct(_)           => ()
+      }
+
+      // Propagate: substitute this MonoVar's new instantiation into all dependent flows.
+      for (fc <- dependents.getOrElse(dst, Nil)) {
+        for (groundInstantiation <- groundArgs(fc, Map(dst -> inst), root)) {
+          enqueue(fc.dst, groundInstantiation)
         }
       }
     }
