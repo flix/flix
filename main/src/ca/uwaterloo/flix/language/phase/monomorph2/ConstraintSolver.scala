@@ -60,9 +60,13 @@ object ConstraintSolver {
           } else {
             inst0
           }
+
         case MonoVar.Enum(_)              => inst0
+
         case MonoVar.Sig(_)               => inst0
+
         case MonoVar.RestrictableEnum(_)  => inst0
+
         case MonoVar.Struct(_)            => inst0
       }
       // Only add genuinely new instantiations, i.e. ones not already in the solution nor in the worklist.
@@ -94,9 +98,13 @@ object ConstraintSolver {
             for (case (implSym, implArgs) <- resolveSig(sigSym, inst, root, instanceMap)) {
               enqueue(MonoVar.Def(implSym), implArgs)
             }
+
           case MonoVar.Def(_)              => ()
+
           case MonoVar.Enum(_)             => ()
+
           case MonoVar.RestrictableEnum(_) => ()
+
           case MonoVar.Struct(_)           => ()
         }
 
@@ -137,16 +145,19 @@ object ConstraintSolver {
     */
   private def substArg(arg: MonoArg, bindings: Map[MonoVar, GroundInstantiation]): Option[Type] = arg match {
     case MonoArg.Const(t) => Some(t)
+
     case MonoArg.Param(v, i) =>
       for {
         inst <- bindings.get(v)
         tpe  <- Some(inst.args(i))
       } yield tpe
+
     case MonoArg.App(head, args) =>
       for {
         h  <- substArg(head, bindings)
         as <- ListOps.traverse(args)(substArg(_, bindings))
       } yield Type.mkApply(h, as, h.loc)
+
     case MonoArg.Assoc(sym, a, kind, loc) =>
       substArg(a, bindings).map {
         t =>

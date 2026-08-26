@@ -62,6 +62,7 @@ object Specialize {
                        (implicit tables: SpecializationTables, root: TypedAst.Root): Symbol.DefnSym =
     tables.defTable.get((sym, groundArrowTpe)) match {
       case Some(specializedSym) => specializedSym
+
       case None =>
         if (root.defs(sym).spec.tparams.isEmpty) {
           sym
@@ -77,6 +78,7 @@ object Specialize {
     val argTypes = groundEnumTpe.typeArguments
     tables.enumTable.get((caseSym.enumSym, argTypes)) match {
       case Some(freshEnumSym) => new Symbol.CaseSym(freshEnumSym, caseSym.name, caseSym.ordinal, caseSym.loc)
+
       case None  =>
         if (argTypes.isEmpty) {
           caseSym
@@ -94,6 +96,7 @@ object Specialize {
     val argTypes = groundRestrictableEnumTpe.typeArguments
     tables.restrictableEnumTable.get((caseSym.enumSym, argTypes)) match {
       case Some(freshEnumSym) => new Symbol.CaseSym(freshEnumSym, caseSym.name, Symbol.CaseSym.NoOrdinal, caseSym.loc)
+
       case None =>
         throw InternalCompilerException(s"No restrictable enum specialization for ${caseSym.enumSym} at $argTypes. ", caseSym.loc)
     }
@@ -107,6 +110,7 @@ object Specialize {
     val argTypes = groundStructTpe.typeArguments
     tables.structTable.get((sym, argTypes)) match {
       case Some(freshStructSym) => freshStructSym
+
       case None =>
         if (argTypes.isEmpty) {
           sym
@@ -155,7 +159,9 @@ object Specialize {
         Canonicalization.simplify(reducedType, isGround = true)
 
       case Type.JvmToType(_, loc)                   => throw InternalCompilerException("unexpected JVM type", loc)
+
       case Type.JvmToEff(_, loc)                    => throw InternalCompilerException("unexpected JVM eff", loc)
+
       case Type.UnresolvedJvmType(_, loc)           => throw InternalCompilerException("unexpected JVM type", loc)
     }
   }
@@ -189,10 +195,13 @@ object Specialize {
     val (resolvedSym, isParametric) = (sig.exp, defns) match {
       // An instance implementation exists. Use it.
       case (_, defn :: Nil) => (defn.sym, defn.spec.tparams.nonEmpty || instance.tparams.nonEmpty)
+
       // No instance implementation, but a default implementation exists. Use it.
       case (Some(_), Nil)   => (MonomorphHelpers.defaultSigImplSym(sig), true)
+
       // Multiple matching defs. Should have been caught previously.
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
+
       // No matching defs and no default. Should have been caught previously.
       case (None, Nil)      => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
     }
@@ -230,10 +239,13 @@ object Specialize {
       tpe.baseType match {
         case Type.Cst(TypeConstructor.Enum(sym, _), _) =>
           Type.mkEnum(tables.enumTable((sym, args)), Nil, loc)
+
         case Type.Cst(TypeConstructor.RestrictableEnum(sym, _), _) =>
           Type.mkEnum(tables.restrictableEnumTable((sym, args)), Nil, loc)
+
         case Type.Cst(TypeConstructor.Struct(sym, _), _) =>
           Type.mkStruct(tables.structTable((sym, args)), Nil, loc)
+
         case _ => Type.mkApply(rewriteEnumStructType(tpe.baseType), args.map(rewriteEnumStructType), loc)
       }
 
@@ -241,9 +253,13 @@ object Specialize {
       Type.Alias(sym, args.map(rewriteEnumStructType), rewriteEnumStructType(inner), loc)
 
     case Type.Var(_, loc)                  => throw InternalCompilerException("Unexpected type variable", loc)
+
     case Type.AssocType(_, _, _, loc)      => throw InternalCompilerException("Unexpected associated type", loc)
+
     case Type.JvmToType(_, loc)            => throw InternalCompilerException("Unexpected JVM type", loc)
+
     case Type.JvmToEff(_, loc)             => throw InternalCompilerException("Unexpected JVM eff", loc)
+
     case Type.UnresolvedJvmType(_, loc)    => throw InternalCompilerException("Unexpected JVM type", loc)
   }
 
@@ -430,6 +446,7 @@ object Specialize {
     }
     val nonParametricDefs: Map[Symbol.DefnSym, MonoAst.Def] =
       ParOps.parMapWithPriority(nonParametricDefEntries, sortBy = ({ case (_, defn) => negativeLineCount(defn) }: ((Symbol.DefnSym, TypedAst.Def)) => Int)) {
+
         case (sym, defn) => sym -> flix.profile(defn.sym, defn.loc) {
           SpecializeAndLower.visitDef(sym, defn, StrictSubstitution.empty)
         }

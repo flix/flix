@@ -89,6 +89,7 @@ object NonMonomorphizableCheck {
           s"cannot generate a finite number of monomorphized copies for this definition.",
           monoVarLoc(edge.src.mvar)
         )
+
       case None => ()
     }
   }
@@ -99,6 +100,7 @@ object NonMonomorphizableCheck {
   private def isGrowingHead(arg: MonoArg): Boolean = arg match {
     // a direct copy, never growth
     case MonoArg.Param(_, _)                => false
+
     // set algebra doesn't count as nesting
     case MonoArg.App(MonoArg.Const(tpe), _) =>
       Kind.resultKind(tpe.kind) match {
@@ -107,8 +109,11 @@ object NonMonomorphizableCheck {
         case Kind.CaseSet(_) => false
         case _               => true
       }
+
     case MonoArg.App(_, _)                  => true
+
     case MonoArg.Const(_)                   => true
+
     case MonoArg.Assoc(_, _, _, _)          => true
   }
 
