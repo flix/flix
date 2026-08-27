@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer.jvm
 
 import java.lang.constant.ClassDesc
 
+/** An error encountered while looking up Java class-file metadata. */
 sealed trait JavaLookupError {
   def desc: ClassDesc
 }

@@ -31,7 +31,4 @@ trait JavaTypeProvider extends AutoCloseable {
   /** Looks up the class denoted by `desc`. */
   def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError]
 
-  /** Releases open class-path resources. */
-  override def close(): Unit
-
 }

@@ -21,8 +21,10 @@ import java.lang.constant.ClassDesc
 sealed trait JavaTypeVariableOwner
 
 object JavaTypeVariableOwner {
+  /** A class or interface declaration that owns a Java type variable. */
   case class Class(owner: ClassDesc) extends JavaTypeVariableOwner
 
+  /** A method or constructor declaration that owns a Java type variable. */
   case class Method(owner: JavaMethodRef) extends JavaTypeVariableOwner
 
   /**
