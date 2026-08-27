@@ -15,10 +15,10 @@
  */
 package ca.uwaterloo.flix.language.phase.typer.jvm
 
+import ca.uwaterloo.flix.language.ast.jvm.*
 import ca.uwaterloo.flix.language.ast.jvm.JavaType.{NonGeneric, Parameterized, Variable}
 import ca.uwaterloo.flix.language.ast.jvm.JavaTypeVariableOwner.Class
-import ca.uwaterloo.flix.language.ast.jvm.{JavaMethodRef, JavaTypeParameter, JavaTypeVariable, JavaTypeVariableOwner}
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaLookupError.{MissingClass, UnsupportedDescriptor}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaLookupError.{InvalidClass, MissingClass, UnsupportedDescriptor}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import net.bytebuddy.dynamic.ClassFileLocator
@@ -98,6 +98,20 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
     }
   }
 
+  test("lookupClass.ReportsInvalidClass") {
+    val className = "dev.flix.prototype.Invalid"
+    val classDesc = ClassDesc.of(className)
+    val locator = ClassFileLocator.Simple.of(className, Array.emptyByteArray)
+
+    withProvider(ByteBuddyJavaTypeProvider.fromLocator(locator)) { provider =>
+      provider.lookupClass(classDesc) match {
+        case Err(InvalidClass(`classDesc`, _)) => succeed
+        case result => fail(s"Expected InvalidClass, got: $result")
+      }
+    }
+  }
+
+  /** Returns the bytes of a generic interface with class- and method-owned type variables. */
   private def mkGenericInterface(internalName: String): Array[Byte] = {
     val writer = new ClassWriter(0)
     writer.visit(
@@ -126,10 +140,12 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
     writer.toByteArray
   }
 
+  /** Runs `f` with `provider` and closes the provider afterward. */
   private def withProvider[A](provider: ByteBuddyJavaTypeProvider)(f: ByteBuddyJavaTypeProvider => A): A =
     try f(provider)
     finally provider.close()
 
+  /** Returns an `Ok` value or fails the test when `result` is `Err`. */
   private def resolve[A](result: Result[A, JavaLookupError]): A = result match {
     case Ok(value) => value
     case Err(error) => fail(error.toString)

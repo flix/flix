@@ -28,7 +28,7 @@ import java.lang.constant.ClassDesc
   */
 trait JavaTypeProvider extends AutoCloseable {
 
-  /** Looks up the class denoted by `desc`. */
+  /** Returns `Ok` with metadata for `desc`, or `Err` if the descriptor cannot be looked up. */
   def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError]
 
 }

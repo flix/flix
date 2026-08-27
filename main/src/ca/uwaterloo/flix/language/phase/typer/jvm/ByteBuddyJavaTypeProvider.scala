@@ -15,10 +15,10 @@
  */
 package ca.uwaterloo.flix.language.phase.typer.jvm
 
-import ca.uwaterloo.flix.language.ast.jvm.{JavaClass, JavaField, JavaFieldRef, JavaMethod, JavaMethodRef, JavaType, JavaTypeParameter, JavaTypeVariable, JavaTypeVariableOwner}
+import ca.uwaterloo.flix.language.ast.jvm.*
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaLookupError.{InvalidClass, MissingClass, UnsupportedDescriptor}
-import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.{ClassDescs, Result}
 import net.bytebuddy.ClassFileVersion
 import net.bytebuddy.description.TypeVariableSource
 import net.bytebuddy.description.field.FieldDescription
@@ -28,9 +28,49 @@ import net.bytebuddy.dynamic.ClassFileLocator
 import net.bytebuddy.pool.TypePool
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import java.lang.reflect.{GenericSignatureFormatError, MalformedParameterizedTypeException}
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters.*
-import scala.util.control.NonFatal
+
+object ByteBuddyJavaTypeProvider {
+
+  /** Returns a provider for the classes visible through the JDK platform class loader. */
+  def platform(): ByteBuddyJavaTypeProvider =
+    fromLocators(List(ClassFileLocator.ForClassLoader.ofPlatformLoader()))
+
+  /** Returns a provider that reads resources visible to `loader` without loading classes; `null` denotes the bootstrap loader. */
+  def fromClassLoader(loader: ClassLoader): ByteBuddyJavaTypeProvider = {
+    val locator = if (loader == null) ClassFileLocator.ForClassLoader.ofBootLoader() else ClassFileLocator.ForClassLoader.of(loader)
+    fromLocators(List(locator))
+  }
+
+  /** Returns a provider for JARs and class directories, with running-JVM multi-release entries and optional platform fallback. */
+  def fromClassPath(entries: List[Path], includePlatform: Boolean = true): ByteBuddyJavaTypeProvider = {
+    val version = ClassFileVersion.ofThisVm()
+    val entryLocators = entries.map { path =>
+      if (Files.isDirectory(path)) ClassFileLocator.ForFolder.of(path.toFile, version)
+      else ClassFileLocator.ForJarFile.of(path.toFile, version)
+    }
+    val locators = if (includePlatform) entryLocators :+ ClassFileLocator.ForClassLoader.ofPlatformLoader() else entryLocators
+    fromLocators(locators)
+  }
+
+  /** Returns a provider backed by an arbitrary locator for focused tests. */
+  private[jvm] def fromLocator(locator: ClassFileLocator): ByteBuddyJavaTypeProvider =
+    fromLocators(List(locator))
+
+  /** Returns a provider backed by the given locators in lookup order. */
+  private def fromLocators(locators: List[ClassFileLocator]): ByteBuddyJavaTypeProvider = {
+    val locator = new ClassFileLocator.Compound(locators.asJava)
+    val pool = new TypePool.Default.WithLazyResolution(
+      new TypePool.CacheProvider.Simple(),
+      locator,
+      TypePool.Default.ReaderMode.FAST
+    )
+    ByteBuddyJavaTypeProvider(locator, pool)
+  }
+
+}
 
 /**
   * A [[JavaTypeProvider]] backed by Byte Buddy's lazy class-file type pool.
@@ -38,26 +78,33 @@ import scala.util.control.NonFatal
   * Byte Buddy reads bytes through a [[ClassFileLocator]] and parses class-file metadata. It is never given a target
   * `Class`, and this implementation never calls `Class.forName` or `ClassLoader.loadClass`.
   */
-final class ByteBuddyJavaTypeProvider private(
-  private val locator: ClassFileLocator,
-  private val pool: TypePool
+final case class ByteBuddyJavaTypeProvider(
+  locator: ClassFileLocator,
+  pool: TypePool
 ) extends JavaTypeProvider {
 
-  override def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError] =
-    resolve(desc).flatMap(tpe => attempt(desc)(toClass(tpe)))
-
-  override def close(): Unit = locator.close()
-
-  private def resolve(desc: ClassDesc): Result[TypeDescription, JavaLookupError] = {
-    binaryName(desc) match {
-      case None => Err(UnsupportedDescriptor(desc))
-      case Some(name) =>
-        attempt(desc)(pool.describe(name)).flatMap { resolution =>
-          if (resolution.isResolved) attempt(desc)(resolution.resolve()) else Err(MissingClass(desc))
-        }
+  /** Returns `Ok` with metadata for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
+  override def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError] = {
+    if (!desc.isClassOrInterface) {
+      Err(UnsupportedDescriptor(desc))
+    } else {
+      try {
+        val resolution = pool.describe(ClassDescs.binaryNameOf(desc))
+        if (resolution.isResolved) Ok(toClass(resolution.resolve())) else Err(MissingClass(desc))
+      } catch {
+        case ex: GenericSignatureFormatError => Err(InvalidClass(desc, exceptionMessage(ex)))
+        case ex: MalformedParameterizedTypeException => Err(InvalidClass(desc, exceptionMessage(ex)))
+        case ex: IllegalArgumentException => Err(InvalidClass(desc, exceptionMessage(ex)))
+        case ex: IndexOutOfBoundsException => Err(InvalidClass(desc, exceptionMessage(ex)))
+        case ex: IllegalStateException => Err(InvalidClass(desc, exceptionMessage(ex)))
+      }
     }
   }
 
+  /** Closes the underlying class-file locator and its owned resources. */
+  override def close(): Unit = locator.close()
+
+  /** Converts a Byte Buddy type description to Java class-file metadata. */
   private def toClass(tpe: TypeDescription): JavaClass = {
     val desc = toClassDesc(tpe)
     val methods = tpe.getDeclaredMethods.asScala.toList
@@ -74,6 +121,22 @@ final class ByteBuddyJavaTypeProvider private(
     )
   }
 
+  /** Converts a Byte Buddy type definition to its erased class descriptor. */
+  private def toClassDesc(tpe: TypeDefinition): ClassDesc =
+    ClassDesc.ofDescriptor(tpe.asErasure().getDescriptor)
+
+  /** Converts a Byte Buddy field description to Java field metadata. */
+  private def toField(field: FieldDescription): JavaField = {
+    val fieldType = toType(field.getType)
+    val ref = JavaFieldRef(
+      owner = toClassDesc(field.getDeclaringType.asErasure()),
+      name = field.getName,
+      descriptor = fieldType.erasure
+    )
+    JavaField(ref, field.getModifiers, fieldType)
+  }
+
+  /** Converts a Byte Buddy method description to Java method metadata. */
   private def toMethod(method: MethodDescription): JavaMethod = {
     val ref = toMethodRef(method)
     JavaMethod(
@@ -89,19 +152,17 @@ final class ByteBuddyJavaTypeProvider private(
     )
   }
 
-  private def toField(field: FieldDescription): JavaField = {
-    val fieldType = toType(field.getType)
-    val ref = JavaFieldRef(
-      owner = toClassDesc(field.getDeclaringType.asErasure()),
-      name = field.getName,
-      descriptor = fieldType.erasure
+  /** Converts a Byte Buddy method description to its nominal class-file reference. */
+  private def toMethodRef(method: MethodDescription): JavaMethodRef = {
+    val defined = method.asDefined()
+    JavaMethodRef(
+      owner = toClassDesc(defined.getDeclaringType.asErasure()),
+      name = defined.getInternalName,
+      descriptor = MethodTypeDesc.ofDescriptor(defined.getDescriptor)
     )
-    JavaField(ref, field.getModifiers, fieldType)
   }
 
-  private def toTypeParameter(tpe: TypeDescription.Generic): JavaTypeParameter =
-    JavaTypeParameter(toTypeVariable(tpe), tpe.getUpperBounds.asScala.toList.map(toType))
-
+  /** Converts a Byte Buddy generic type description to Java type metadata. */
   private def toType(tpe: TypeDescription.Generic): JavaType = {
     tpe.getSort match {
       case TypeDefinition.Sort.GENERIC_ARRAY =>
@@ -119,6 +180,11 @@ final class ByteBuddyJavaTypeProvider private(
     }
   }
 
+  /** Converts a Byte Buddy type variable declaration to a Java type parameter. */
+  private def toTypeParameter(tpe: TypeDescription.Generic): JavaTypeParameter =
+    JavaTypeParameter(toTypeVariable(tpe), tpe.getUpperBounds.asScala.toList.map(toType))
+
+  /** Converts a Byte Buddy type variable to its owner-qualified Java identity. */
   private def toTypeVariable(tpe: TypeDescription.Generic): JavaTypeVariable = {
     val owner = tpe.getTypeVariableSource match {
       case clazz: TypeDescription => JavaTypeVariableOwner.Class(toClassDesc(clazz))
@@ -129,82 +195,8 @@ final class ByteBuddyJavaTypeProvider private(
     JavaTypeVariable(owner, tpe.getSymbol)
   }
 
-  private def toMethodRef(method: MethodDescription): JavaMethodRef = {
-    // Preserve the method's defined class-file descriptor in its nominal identity while retaining generic parameter
-    // and return types in JavaMethod.
-    val defined = method.asDefined()
-    JavaMethodRef(
-      owner = toClassDesc(defined.getDeclaringType.asErasure()),
-      name = defined.getInternalName,
-      descriptor = MethodTypeDesc.ofDescriptor(defined.getDescriptor)
-    )
-  }
-
-  private def toClassDesc(tpe: TypeDefinition): ClassDesc =
-    ClassDesc.ofDescriptor(tpe.asErasure().getDescriptor)
-
-  private def binaryName(desc: ClassDesc): Option[String] = {
-    val descriptor = desc.descriptorString()
-    if (descriptor.startsWith("L") && descriptor.endsWith(";")) {
-      Some(descriptor.substring(1, descriptor.length - 1).replace('/', '.'))
-    } else {
-      None
-    }
-  }
-
-  private def attempt[A](desc: ClassDesc)(f: => A): Result[A, JavaLookupError] =
-    try Ok(f)
-    catch {
-      case NonFatal(ex) => Err(InvalidClass(desc, Option(ex.getMessage).getOrElse(ex.getClass.getName)))
-    }
-
-}
-
-object ByteBuddyJavaTypeProvider {
-
-  /** Returns a provider for the classes visible through the JDK platform class loader. */
-  def platform(): ByteBuddyJavaTypeProvider =
-    fromLocators(List(ClassFileLocator.ForClassLoader.ofPlatformLoader()))
-
-  /**
-    * Returns a provider that reads resources visible to `loader`.
-    *
-    * Resource lookup does not define or initialize the class being described. A `null` loader denotes the bootstrap
-    * class loader.
-    */
-  def fromClassLoader(loader: ClassLoader): ByteBuddyJavaTypeProvider = {
-    val locator = if (loader == null) ClassFileLocator.ForClassLoader.ofBootLoader() else ClassFileLocator.ForClassLoader.of(loader)
-    fromLocators(List(locator))
-  }
-
-  /**
-    * Returns a provider for explicit JARs and class directories.
-    *
-    * Multi-release entries are selected for the running JVM. Platform classes are appended as a fallback when
-    * `includePlatform` is `true`.
-    */
-  def fromClassPath(entries: List[Path], includePlatform: Boolean = true): ByteBuddyJavaTypeProvider = {
-    val version = ClassFileVersion.ofThisVm()
-    val entryLocators = entries.map { path =>
-      if (Files.isDirectory(path)) ClassFileLocator.ForFolder.of(path.toFile, version)
-      else ClassFileLocator.ForJarFile.of(path.toFile, version)
-    }
-    val locators = if (includePlatform) entryLocators :+ ClassFileLocator.ForClassLoader.ofPlatformLoader() else entryLocators
-    fromLocators(locators)
-  }
-
-  /** Constructs a provider from an arbitrary locator. Intended for focused tests. */
-  private[jvm] def fromLocator(locator: ClassFileLocator): ByteBuddyJavaTypeProvider =
-    fromLocators(List(locator))
-
-  private def fromLocators(locators: List[ClassFileLocator]): ByteBuddyJavaTypeProvider = {
-    val locator = new ClassFileLocator.Compound(locators.asJava)
-    val pool = new TypePool.Default.WithLazyResolution(
-      new TypePool.CacheProvider.Simple(),
-      locator,
-      TypePool.Default.ReaderMode.FAST
-    )
-    new ByteBuddyJavaTypeProvider(locator, pool)
-  }
+  /** Returns the exception message, falling back to the exception class name when absent. */
+  private def exceptionMessage(ex: Throwable): String =
+    Option(ex.getMessage).getOrElse(ex.getClass.getName)
 
 }
