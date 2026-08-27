@@ -58,7 +58,6 @@ private[monomorph2] object SpecializeAndLower {
 
   private def lowerTypeNonSchema(tpe0: Type): Type = tpe0 match {
     case Type.Cst(_, _) => tpe0 // Reuse tpe0.
-
     case Type.Var(_, _) => tpe0
 
     // Sender[t] -> Concurrent.Channel.Mpmc[t, IO]
@@ -82,13 +81,9 @@ private[monomorph2] object SpecializeAndLower {
       }
 
     case Type.Alias(_, _, _, loc) => throw InternalCompilerException("unexpected type alias", loc)
-
     case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc)
-
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
-
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
-
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
 
   }
@@ -784,7 +779,6 @@ private[monomorph2] object SpecializeAndLower {
               env1 + (bnd.sym -> Symbol.freshVarSym(bnd.sym))
 
             case (env1, TypedAst.RestrictableChoosePattern.Wild(_, _)) => env1
-
             case (_, TypedAst.RestrictableChoosePattern.Error(_, errLoc)) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
           }
           val termPatterns = pat0.map {
@@ -1055,25 +1049,15 @@ private[monomorph2] object SpecializeAndLower {
   private def mkCast(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
     (exp.tpe, tpe) match {
       case (Type.Char, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-
       case (Type.Char, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-
       case (Type.Int16, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-
       case (Type.Bool, Type.Bool) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-
       case (Type.Int8, Type.Int8) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-
       case (Type.Int16, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-
       case (Type.Int32, Type.Int32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-
       case (Type.Int64, Type.Int64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-
       case (Type.Float32, Type.Float32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-
       case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-
       case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
 
       case (x, y) =>
@@ -2270,7 +2254,6 @@ private[monomorph2] object SpecializeAndLower {
     */
   private def unwrapVectorType(tpe: Type, loc: SourceLocation): Type = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.Vector, _), extType, _) => extType
-
     case t => throw InternalCompilerException(
       s"Expected Type.Apply(Type.Cst(TypeConstructor.Vector, _), _, _), but got $t",
       loc
@@ -2299,9 +2282,7 @@ private[monomorph2] object SpecializeAndLower {
       (pred, termTypesOfRelation(rel, loc2)) :: predicatesOfSchemaRow(tpe2, loc1)
 
     case Type.Var(_, _) => Nil
-
     case Type.SchemaRowEmpty => Nil
-
     case t => throw InternalCompilerException(s"Got unexpected $t", loc)
   }
 
@@ -2311,9 +2292,7 @@ private[monomorph2] object SpecializeAndLower {
   private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
     def flattenApply(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
       case Type.Cst(TypeConstructor.Relation(_), _) => Nil
-
       case Type.Apply(rest, t, loc1) => t :: flattenApply(rest, loc1)
-
       case _ if rel0.typeConstructor.contains(TypeConstructor.AnyType) => Nil
 
       // The type of the relation is undetermined, i.e. it is a free type variable that has been replaced by AnyType.
@@ -2585,11 +2564,8 @@ private[monomorph2] object SpecializeAndLower {
       mkBodyTermLit(box(MonoAst.Expr.Cst(cst, visitTypeSubstituted(rawTpe), loc), rawTpe))
 
     case TypedAst.Pattern.Tag(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
     case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
     case TypedAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
     case TypedAst.Pattern.Error(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
   }

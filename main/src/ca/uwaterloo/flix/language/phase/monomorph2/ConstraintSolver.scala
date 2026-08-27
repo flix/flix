@@ -63,11 +63,8 @@ private[monomorph2] object ConstraintSolver {
           }
 
         case MonoVar.Enum(_)              => inst0
-
         case MonoVar.Sig(_)               => inst0
-
         case MonoVar.RestrictableEnum(_)  => inst0
-
         case MonoVar.Struct(_)            => inst0
       }
       // Only add genuinely new instantiations, i.e. ones not already in the solution nor in the worklist.
@@ -97,11 +94,8 @@ private[monomorph2] object ConstraintSolver {
           }
 
         case MonoVar.Def(_)              => ()
-
         case MonoVar.Enum(_)             => ()
-
         case MonoVar.RestrictableEnum(_) => ()
-
         case MonoVar.Struct(_)           => ()
       }
 
