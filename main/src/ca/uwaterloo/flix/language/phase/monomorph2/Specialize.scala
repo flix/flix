@@ -399,7 +399,7 @@ private[monomorph2] object Specialize {
     }
 
   /** Specializes `root` per [[ConstraintSolver]]'s [[Solution]]. */
-  private[monomorph2] def run(root: TypedAst.Root, solution: Solution)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
+  private[monomorph2] def run(root: TypedAst.Root, solution: Solution)(implicit flix: Flix): MonoAst.Root = {
     implicit val r: TypedAst.Root = root
     // Prepare [[SpecializationTables]]
     val AllDefs(allDefs, defToInst, defaultSigDefs, prefixTparams) = mkAllDefs(root)
