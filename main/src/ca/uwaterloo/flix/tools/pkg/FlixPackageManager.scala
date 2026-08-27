@@ -224,7 +224,7 @@ object FlixPackageManager {
       // download toml files
       tomlPaths <- traverse(flixDeps) { dep =>
         val depName = s"${dep.username}/${dep.projectName}"
-        install(depName, dep.version, "toml", path, apiKey).map(p => (p, dep))
+        install(depName, dep.version, Bootstrap.EXT_TOML, path, apiKey).map(p => (p, dep))
       }
 
       // parse manifests
