@@ -145,11 +145,8 @@ private[monomorph2] object Specialize {
       }
 
       case Type.Cst(TypeConstructor.Region(_), loc) => throw InternalCompilerException("unexpected Region: should have been rewritten to IO already", loc)
-
       case Type.Cst(_, _)                           => tpe0
-
       case app@Type.Apply(_, _, _)                  => Canonicalization.normalizeApply(applySubst, app, isGround = true)
-
       case Type.Alias(_, _, t, _)                   => applySubst(t)
 
       case Type.AssocType(symUse, arg0, kind, loc)  =>
@@ -159,9 +156,7 @@ private[monomorph2] object Specialize {
         Canonicalization.simplify(reducedType, isGround = true)
 
       case Type.JvmToType(_, loc)                   => throw InternalCompilerException("unexpected JVM type", loc)
-
       case Type.JvmToEff(_, loc)                    => throw InternalCompilerException("unexpected JVM eff", loc)
-
       case Type.UnresolvedJvmType(_, loc)           => throw InternalCompilerException("unexpected JVM type", loc)
     }
   }
@@ -253,13 +248,9 @@ private[monomorph2] object Specialize {
       Type.Alias(sym, args.map(rewriteEnumStructType), rewriteEnumStructType(inner), loc)
 
     case Type.Var(_, loc)                  => throw InternalCompilerException("Unexpected type variable", loc)
-
     case Type.AssocType(_, _, _, loc)      => throw InternalCompilerException("Unexpected associated type", loc)
-
     case Type.JvmToType(_, loc)            => throw InternalCompilerException("Unexpected JVM type", loc)
-
     case Type.JvmToEff(_, loc)             => throw InternalCompilerException("Unexpected JVM eff", loc)
-
     case Type.UnresolvedJvmType(_, loc)    => throw InternalCompilerException("Unexpected JVM type", loc)
   }
 

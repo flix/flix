@@ -111,9 +111,7 @@ private[monomorph2] object NonMonomorphizableCheck {
       }
 
     case MonoArg.App(_, _)                  => true
-
     case MonoArg.Const(_)                   => true
-
     case MonoArg.Assoc(_, _, _, _)          => true
   }
 

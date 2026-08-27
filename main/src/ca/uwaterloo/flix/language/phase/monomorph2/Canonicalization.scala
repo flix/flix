@@ -94,29 +94,19 @@ private[monomorph2] object Canonicalization {
     // and the applied kind is computed from nt1.kind alone, so this avoids a throwaway Type.Apply.
     (nt1, nt2) match {
       case _ if isGround && (nt1.kind match { case Kind.Arrow(_, k) => k == Kind.Eff; case _ => false }) => canonicalEffect(Type.Apply(nt1, nt2, loc))
-
       case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
-
       case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
-
       case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
-
       case (Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y) => Type.mkDifference(x, y, loc)
-
       case (Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y) => Type.mkSymmetricDiff(x, y, loc)
 
       // Bool equations don't need separate canonicalization: unlike effects, these smart
       // constructors fully reduce a ground formula to a single True/False constant.
       case (Type.Cst(TypeConstructor.Not, _), y) => Type.mkNot(y, loc)
-
       case (Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y) => Type.mkAnd(x, y, loc)
-
       case (Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y) => Type.mkOr(x, y, loc)
-
       case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
-
       case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
-
       case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
 
       case (Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), tpe, _), rest) =>
@@ -140,11 +130,8 @@ private[monomorph2] object Canonicalization {
     */
   private[monomorph2] def simplify(tpe: Type, isGround: Boolean)(implicit root: TypedAst.Root, flix: Flix): Type = tpe match {
     case Type.Var(_, _)            => tpe
-
     case Type.Cst(_, _)            => tpe
-
     case app@Type.Apply(_, _, _)   => normalizeApply(simplify(_, isGround), app, isGround)
-
     case Type.Alias(_, _, t, _)    => simplify(t, isGround)
 
     case Type.AssocType(symUse, arg0, kind, loc) =>
@@ -152,9 +139,7 @@ private[monomorph2] object Canonicalization {
       simplify(reduceAssocType(Type.AssocType(symUse, arg, kind, loc)), isGround)
 
     case Type.JvmToType(_, loc)         => throw InternalCompilerException("unexpected JVM type", loc)
-
     case Type.JvmToEff(_, loc)          => throw InternalCompilerException("unexpected JVM eff", loc)
-
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
   }
 
@@ -199,19 +184,12 @@ private[monomorph2] object Canonicalization {
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), newRest, loc3)
 
     case Type.Cst(_, _)                => Type.mkRecordRowExtend(label, tpe, rest, loc)
-
     case Type.Apply(_, _, _)           => Type.mkRecordRowExtend(label, tpe, rest, loc)
-
     case Type.Var(_, _)                => Type.mkRecordRowExtend(label, tpe, rest, loc)
-
     case Type.Alias(_, _, _, _)        => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
-
     case Type.AssocType(_, _, _, _)    => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
-
     case Type.JvmToType(_, _)          => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
-
     case Type.JvmToEff(_, _)           => throw InternalCompilerException(s"Unexpected JVM eff '$rest'", rest.loc)
-
     case Type.UnresolvedJvmType(_, _)  => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
   }
 
@@ -228,19 +206,12 @@ private[monomorph2] object Canonicalization {
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(l), loc1), t, loc2), newRest, loc3)
 
     case Type.Cst(_, _)                => Type.mkSchemaRowExtend(label, tpe, rest, loc)
-
     case Type.Apply(_, _, _)           => Type.mkSchemaRowExtend(label, tpe, rest, loc)
-
     case Type.Var(_, _)                => Type.mkSchemaRowExtend(label, tpe, rest, loc)
-
     case Type.Alias(_, _, _, _)        => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
-
     case Type.AssocType(_, _, _, _)    => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
-
     case Type.JvmToType(_, _)          => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
-
     case Type.JvmToEff(_, _)           => throw InternalCompilerException(s"Unexpected JVM eff '$rest'", rest.loc)
-
     case Type.UnresolvedJvmType(_, _)  => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
   }
 }

@@ -154,13 +154,9 @@ private[monomorph2] object ConstraintGen {
         }
 
       case Type.Var(_, _)               => ()
-
       case Type.Cst(_, _)               => ()
-
       case Type.JvmToEff(_, _)          => ()
-
       case Type.JvmToType(_, _)         => ()
-
       case Type.UnresolvedJvmType(_, _) => ()
 
       case Type.Alias(_, _, _, _)       =>
@@ -287,9 +283,7 @@ private[monomorph2] object ConstraintGen {
     */
   private def visitExp(exp0: Expr)(implicit tparamEnv: TypeParamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _)        => ()
-
     case Expr.Var(_, _, _)        => ()
-
     case Expr.Hole(_, _, _, _, _) => ()
 
     case Expr.ApplyDef(symUse, exps, targs, _, _, _, _, _) =>
@@ -337,9 +331,7 @@ private[monomorph2] object ConstraintGen {
       visitExp(exp)
 
     case Expr.Discard(exp, _, _) => visitExp(exp)
-
     case Expr.Region(_, _, exp, _, _, _) => visitExp(exp)
-
     case Expr.Use(_, _, exp, _) => visitExp(exp)
 
     case Expr.Match(exp, rules, _, _, _) =>
@@ -401,7 +393,6 @@ private[monomorph2] object ConstraintGen {
       }
 
     case Expr.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
-
     case Expr.RecordSelect(exp, _, _, _, _) => visitExp(exp)
 
     case Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
@@ -460,17 +451,11 @@ private[monomorph2] object ConstraintGen {
       visitExp(exp2)
 
     case Expr.Lazy(exp, _, _) => visitExp(exp)
-
     case Expr.Force(exp, _, _, _) => visitExp(exp)
-
     case Expr.Ascribe(exp, _, _, _, _, _) => visitExp(exp)
-
     case Expr.InstanceOf(exp, _, _) => visitExp(exp)
-
     case Expr.CheckedCast(_, exp, _, _, _) => visitExp(exp)
-
     case Expr.UncheckedCast(exp, _, _, _, _, _) => visitExp(exp)
-
     case Expr.Unsafe(exp, _, _, _, _, _) => visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -545,7 +530,6 @@ private[monomorph2] object ConstraintGen {
       visitExp(exp2)
 
     case Expr.GetStaticField(_, _, _, _) => ()
-
     case Expr.PutStaticField(_, exp, _, _, _) => visitExp(exp)
 
     case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
@@ -727,11 +711,8 @@ private[monomorph2] object ConstraintGen {
       visitPat(pat)
 
     case TypedAst.Pattern.Wild(_, _)   => ()
-
     case TypedAst.Pattern.Var(_, _, _) => ()
-
     case TypedAst.Pattern.Cst(_, _, _) => ()
-
     case TypedAst.Pattern.Error(_, _)  => ()
   }
 
@@ -777,13 +758,9 @@ private[monomorph2] object ConstraintGen {
           }
 
         case TypedAst.Pattern.Cst(_, tpe, _)       => boxConstraint(tpe)
-
         case TypedAst.Pattern.Tag(_, _, _, loc)    => throw InternalCompilerException(s"Unexpected pattern: '$term'.", loc)
-
         case TypedAst.Pattern.Tuple(_, _, loc)     => throw InternalCompilerException(s"Unexpected pattern: '$term'.", loc)
-
         case TypedAst.Pattern.Error(_, loc)        => throw InternalCompilerException(s"Unexpected pattern: '$term'.", loc)
-
         case TypedAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$term'.", loc)
       }
     }
@@ -855,9 +832,7 @@ private[monomorph2] object ConstraintGen {
       (pred, termTypesOfRelation(rel)) :: predicatesOfSchemaRow(tpe2)
 
     case Type.Var(_, _) => Nil
-
     case Type.SchemaRowEmpty => Nil
-
     case t => throw InternalCompilerException(s"Got unexpected $t", t.loc)
   }
 
