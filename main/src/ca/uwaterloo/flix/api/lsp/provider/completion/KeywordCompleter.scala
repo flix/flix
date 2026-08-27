@@ -187,4 +187,12 @@ object KeywordCompleter {
       Completion.KeywordCompletion("alias", range, Priority.Lowest(0))
     )
 
+  /**
+   * Returns keywords that may occur inside the lhs of a match body,
+   * i.e., between `case` and `=>`.
+   */
+  def getMatchBodyKeywords(range: Range): List[Completion] =
+    List(
+      Completion.KeywordCompletion("case", range, Priority.Lowest(0)),
+    ) 
 }

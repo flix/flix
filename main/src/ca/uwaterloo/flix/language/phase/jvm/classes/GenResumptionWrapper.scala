@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, Const
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.{BackendObjType, Mangle, MethodTypeDescs}
+import ca.uwaterloo.flix.language.phase.jvm.{Mangle, MethodTypeDescs}
 import ca.uwaterloo.flix.util.ClassDescs
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
@@ -43,11 +43,11 @@ object GenResumptionWrapper {
     mkDesc(DevFlixRuntime, Mangle.mkClassName("ResumptionWrapper", Mangle.erasedName(tpe)))
 
   // tpe -> Result
-  private def superClass(tpe: ClassDesc): BackendObjType.AbstractArrow =
-    BackendObjType.AbstractArrow(List(tpe), CD_Object)
+  private def superClassDesc(tpe: ClassDesc): ClassDesc =
+    GenAbstractArrow.desc(List(tpe), CD_Object)
 
   def genByteCode(tpe: ClassDesc)(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(desc(tpe), IsFinal, superClass(tpe).desc)
+    val cm = mkClass(desc(tpe), IsFinal, superClassDesc(tpe))
     cm.mkConstructor(Constructor(tpe), IsPublic, constructorIns(tpe)(_))
     cm.mkField(ResumptionField(tpe), IsPrivate, IsFinal, NotVolatile)
     cm.mkMethod(Nil, InvokeMethod(tpe), IsPublic, NotFinal, invokeIns(tpe)(_))
@@ -55,12 +55,12 @@ object GenResumptionWrapper {
     cm.closeClassMaker()
   }
 
-  def Constructor(tpe: ClassDesc): ConstructorMethod = ConstructorMethod(desc(tpe), List(GenResumption.desc))
+  def Constructor(tpe: ClassDesc): ConstructorMethod = ConstructorMethod(desc(tpe), List(GenResumption.Desc))
 
   private def constructorIns(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenResumption.desc) { resumption =>
+    withName(1, GenResumption.Desc) { resumption =>
       thisLoad()
-      INVOKESPECIAL(superClass(tpe).desc, ConstructorMethodName, MethodTypeDescs.NothingToVoid)
+      INVOKESPECIAL(superClassDesc(tpe), ConstructorMethodName, MethodTypeDescs.NothingToVoid)
       thisLoad()
       resumption.load()
       PUTFIELD(ResumptionField(tpe))
@@ -68,9 +68,9 @@ object GenResumptionWrapper {
     }
   }
 
-  def ResumptionField(tpe: ClassDesc): InstanceField = InstanceField(desc(tpe), "resumption", GenResumption.desc)
+  private def ResumptionField(tpe: ClassDesc): InstanceField = InstanceField(desc(tpe), "resumption", GenResumption.Desc)
 
-  def InvokeMethod(tpe: ClassDesc): InstanceMethod = GenThunk.InvokeMethod.implementation(desc(tpe))
+  private def InvokeMethod(tpe: ClassDesc): InstanceMethod = GenThunk.InvokeMethod.implementation(desc(tpe))
 
   private def invokeIns(tpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     thisLoad()
@@ -89,7 +89,7 @@ object GenResumptionWrapper {
         GETSTATIC(GenValue.FalseField)
         mv.visitLabel(doneLabel)
       case _ =>
-        NEW(GenValue.desc)
+        NEW(GenValue.Desc)
         DUP()
         INVOKESPECIAL(GenValue.Constructor)
         DUP()
@@ -98,11 +98,11 @@ object GenResumptionWrapper {
         PUTFIELD(GenValue.fieldFromType(tpe))
     }
     INVOKEINTERFACE(GenResumption.RewindMethod)
-    xReturn(GenResult.desc)
+    xReturn(GenResult.Desc)
   }
 
   private def UniqueMethod(tpe: ClassDesc): InstanceMethod =
-    InstanceMethod(desc(tpe), "getUniqueThreadClosure", mkDescriptor()(superClass(tpe).desc))
+    InstanceMethod(desc(tpe), "getUniqueThreadClosure", mkDescriptor()(superClassDesc(tpe)))
 
   private def uniqueIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()

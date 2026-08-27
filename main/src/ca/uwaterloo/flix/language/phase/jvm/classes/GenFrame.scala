@@ -31,10 +31,11 @@ import java.lang.constant.ClassDesc
 /** Frame is really just java.util.Function<Value, Result> * */
 object GenFrame {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Frame"))
+  /** The JVM class descriptor for the generated `Frame` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Frame"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkInterface(this.desc)
+    val cm = mkInterface(this.Desc)
 
     cm.mkInterfaceMethod(ApplyMethod)
     cm.mkStaticInterfaceMethod(StaticApplyMethod, IsPublic, NotFinal, staticApplyIns(_))
@@ -42,17 +43,17 @@ object GenFrame {
     cm.closeClassMaker()
   }
 
-  def ApplyMethod: InterfaceMethod = InterfaceMethod(this.desc, "applyFrame", mkDescriptor(GenValue.desc)(GenResult.desc))
+  def ApplyMethod: InterfaceMethod = InterfaceMethod(this.Desc, "applyFrame", mkDescriptor(GenValue.Desc)(GenResult.Desc))
 
   def StaticApplyMethod: StaticInterfaceMethod = StaticInterfaceMethod(
-    this.desc,
+    this.Desc,
     "applyFrameStatic",
-    mkDescriptor(GenFrame.desc, GenValue.desc)(GenResult.desc)
+    mkDescriptor(GenFrame.Desc, GenValue.Desc)(GenResult.Desc)
   )
 
   private def staticApplyIns(implicit mv: MethodVisitor): Unit = {
-    withName(0, GenFrame.desc) { fun =>
-      withName(1, GenValue.desc) { resumeArg =>
+    withName(0, GenFrame.Desc) { fun =>
+      withName(1, GenValue.Desc) { resumeArg =>
         fun.load()
         resumeArg.load()
         INVOKEINTERFACE(GenFrame.ApplyMethod)

@@ -17,38 +17,36 @@
 package ca.uwaterloo.flix.language.phase.jvm.classes
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.IsFinal
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.NotFinal
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, mkClass}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceField}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
-import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, Mangle}
+import ca.uwaterloo.flix.language.phase.jvm.Mangle.{RootPackage, mkDesc}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, ClassMaker, Mangle}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.CD_int
 
-/** The empty [[GenResumption]]: rewinding it just yields the value it is given. */
-object GenResumptionNil {
+/** The abstract base class of every enum case class, carrying the case's ordinal. */
+object GenTagged {
 
-  /** The JVM class descriptor for the generated `ResumptionNil` class. */
-  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("ResumptionNil"))
+  /** The JVM class descriptor for the generated `Tagged` class. */
+  val Desc: ClassDesc = mkDesc(RootPackage, Mangle.mkClassName("Tagged"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(this.Desc, IsFinal, interfaces = List(GenResumption.Desc))
+    val cm = ClassMaker.mkAbstractClass(this.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-    cm.mkMethod(Nil, GenResumption.RewindMethod.implementation(this.Desc), IsPublic, IsFinal, rewindIns(_))
+
+    cm.mkField(OrdinalField, IsPublic, NotFinal, NotVolatile)
 
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
+  def OrdinalField: InstanceField = InstanceField(this.Desc, "ordinal", CD_int)
 
-  private def rewindIns(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenValue.Desc) { v =>
-      v.load()
-      xReturn(v.tpe)
-    }
-  }
+  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
 }

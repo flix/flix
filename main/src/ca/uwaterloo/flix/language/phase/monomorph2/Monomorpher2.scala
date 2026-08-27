@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 Simon Lykke Andersen
+ * Copyright 2026 Flix Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import ca.uwaterloo.flix.language.ast.{MonoAst, TypedAst}
   * would not otherwise have any reason to see. Any such construct needs its own constraints
   * generated in step 1, or it won't be in the solution by the time step 4 needs to specialize it.
   */
-object ConstraintMonomorphization {
+object Monomorpher2 {
 
   /** Performs constraint-based monomorphization of the given AST `root`. */
   def run(root: TypedAst.Root)(implicit flix: Flix): MonoAst.Root = {

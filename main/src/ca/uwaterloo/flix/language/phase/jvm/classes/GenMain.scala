@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethodName, I
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{RootPackage, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkVoidDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.{BackendObjType, ClassMaker, GenFunAndClosureClasses, JavaClasses, MethodTypeDescs}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, GenFunAndClosureClasses, JavaClasses, MethodTypeDescs}
 import ca.uwaterloo.flix.util.ClassDescs
 import org.objectweb.asm.MethodVisitor
 
@@ -36,17 +36,18 @@ import java.lang.constant.ConstantDescs.CD_Object
   */
 object GenMain {
 
-  val desc: ClassDesc = mkDesc(RootPackage, "Main")
+  /** The JVM class descriptor for the generated `Main` class. */
+  val Desc: ClassDesc = mkDesc(RootPackage, "Main")
 
   def genByteCode(sym: Symbol.DefnSym)(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.desc, IsFinal)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal)
 
     cm.mkStaticMethod(MainMethod, IsPublic, NotFinal, mainIns(sym)(_))
 
     cm.closeClassMaker()
   }
 
-  def MainMethod: StaticMethod = StaticMethod(this.desc, "main", mkVoidDescriptor(JavaClasses.String.arrayType()))
+  def MainMethod: StaticMethod = StaticMethod(this.Desc, "main", mkVoidDescriptor(JavaClasses.String.arrayType()))
 
   private def mainIns(sym: Symbol.DefnSym)(implicit mv: MethodVisitor): Unit = {
     val defName = GenFunAndClosureClasses.defnDesc(sym)
@@ -57,9 +58,9 @@ object GenMain {
       DUP()
       INVOKESPECIAL(defName, ConstructorMethodName, MethodTypeDescs.NothingToVoid)
       DUP()
-      GETSTATIC(BackendObjType.Unit.SingletonField)
+      GETSTATIC(GenUnit.SingletonField)
       PUTFIELD(InstanceField(defName, "arg0", CD_Object))
-      GenResult.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(desc)}", SourceLocation.Unknown)
+      GenResult.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(Desc)}", SourceLocation.Unknown)
       POP()
       RETURN()
     })

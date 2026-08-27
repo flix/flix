@@ -28,12 +28,19 @@ import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.*
+import org.json4s.JsonDSL.*
+import org.json4s.native.JsonMethods
 
 import java.io.{File, PrintStream}
 import java.net.BindException
 import java.nio.file.Paths
 
 object Main {
+
+  /**
+    * The header printed by `--help` and `--version`.
+    */
+  private val Header: String = s"The Flix Programming Language ${Version.CurrentVersion}"
 
   def main(argv: Array[String]): Unit = {
 
@@ -45,6 +52,12 @@ object Main {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
       System.exit(1)
       null
+    }
+
+    // check if the --version flag was passed.
+    if (cmdOpts.version) {
+      printVersion(cmdOpts.json)
+      System.exit(0)
     }
 
     // get GitHub token
@@ -487,6 +500,7 @@ object Main {
     listen: Option[Int] = None,
     threads: Option[Int] = None,
     top: Boolean = false,
+    version: Boolean = false,
     assumeYes: Boolean = false,
     xbenchmarkCodeSize: Boolean = false,
     xbenchmarkIncremental: Boolean = false,
@@ -591,7 +605,7 @@ object Main {
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
 
       // Head
-      head("The Flix Programming Language", Version.CurrentVersion.toString)
+      head(Header)
 
       // Command
       cmd("init").action((_, c) => c.copy(command = Command.Init)).text("  creates a new project in the current directory.")
@@ -691,7 +705,8 @@ object Main {
       opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
         text("automatically answer yes to all prompts.")
 
-      version("version").text("prints the version number.")
+      opt[Unit]("version").action((_, c) => c.copy(version = true)).
+        text("prints the version number.")
 
       // Experimental options:
       note("")
@@ -752,6 +767,22 @@ object Main {
     }
 
     parser.parse(flixArgs, CmdOpts()).map(_.copy(args = progArgs.toList))
+  }
+
+  /**
+    * Prints the version number as JSON or plain text.
+    */
+  private def printVersion(json: Boolean): Unit = {
+    if (json) {
+      val v = Version.CurrentVersion
+      val result =
+        ("major" -> v.major) ~
+          ("minor" -> v.minor) ~
+          ("revision" -> v.revision)
+      println(JsonMethods.pretty(JsonMethods.render(result)))
+    } else {
+      println(Header)
+    }
   }
 
   /**

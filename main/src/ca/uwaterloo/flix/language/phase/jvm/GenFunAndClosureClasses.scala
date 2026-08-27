@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenFrame, GenResult, GenThunk, GenValue}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenFrame, GenResult, GenThunk, GenValue}
 import ca.uwaterloo.flix.util.{ClassDescs, ParOps}
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
@@ -115,7 +115,7 @@ object GenFunAndClosureClasses {
     val visitor = ClassMaker.mkClassWriter()
 
     // Header
-    val functionInterface = BackendObjType.Arrow.fromArrowType(defn.arrowType).desc
+    val functionInterface = GenArrow.descOfArrowType(defn.arrowType)
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
       ClassDescs.internalNameOf(functionInterface), null)
     visitor.visitSource(defn.loc.source.name, null)
@@ -175,15 +175,15 @@ object GenFunAndClosureClasses {
     val visitor = ClassMaker.mkClassWriter()
 
     // Header
-    val functionInterface = BackendObjType.Arrow.fromArrowType(defn.arrowType).desc
+    val functionInterface = GenArrow.descOfArrowType(defn.arrowType)
     val frameInterface = GenFrame
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
-      ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.desc)))
+      ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.Desc)))
     visitor.visitSource(defn.loc.source.name, null)
 
     // Fields — lparams use erased types (like fparams) so setPc can store without casting
     for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(Opcodes.ACC_PUBLIC, s"l$i", BackendType.toErasedClassDesc(x.tpe).descriptorString(), null, null)
+      visitor.visitField(Opcodes.ACC_PUBLIC, s"l$i", TypeDescs.toErasedClassDesc(x.tpe).descriptorString(), null, null)
     }
     visitor.visitField(Opcodes.ACC_PUBLIC, "pc", CD_int.descriptorString(), null, null)
 
@@ -257,21 +257,21 @@ object GenFunAndClosureClasses {
     val visitor = ClassMaker.mkClassWriter()
 
     // Header
-    val functionInterface = BackendObjType.AbstractArrow.fromArrowType(defn.arrowType).desc
+    val functionInterface = GenAbstractArrow.descOfArrowType(defn.arrowType)
     val frameInterface = GenFrame
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
-      ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.desc)))
+      ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.Desc)))
     visitor.visitSource(defn.loc.source.name, null)
 
     // Fields
     val closureArgTypes = defn.cparams.map(_.tpe)
     for ((argType, index) <- closureArgTypes.zipWithIndex) {
-      val field = visitor.visitField(Opcodes.ACC_PUBLIC, s"clo$index", BackendType.toClassDesc(argType).descriptorString(), null, null)
+      val field = visitor.visitField(Opcodes.ACC_PUBLIC, s"clo$index", TypeDescs.toClassDesc(argType).descriptorString(), null, null)
       field.visitEnd()
     }
     // lparams use erased types (like fparams) so setPc can store without casting
     for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(Opcodes.ACC_PUBLIC, s"l$i", BackendType.toErasedClassDesc(x.tpe).descriptorString(), null, null)
+      visitor.visitField(Opcodes.ACC_PUBLIC, s"l$i", TypeDescs.toErasedClassDesc(x.tpe).descriptorString(), null, null)
     }
     visitor.visitField(Opcodes.ACC_PUBLIC, "pc", CD_int.descriptorString(), null, null)
 
@@ -300,7 +300,7 @@ object GenFunAndClosureClasses {
   }
 
   private def staticApplyMethod(className: ClassDesc, defn: Def)(implicit root: Root): StaticMethod =
-    StaticMethod(className, ClassMaker.StaticApplyMethodName, MethodTypeDescs.mkDescriptor(defn.fparams.map(fp => BackendType.toClassDesc(fp.tpe)) *)(GenResult.desc))
+    StaticMethod(className, ClassMaker.StaticApplyMethodName, MethodTypeDescs.mkDescriptor(defn.fparams.map(fp => TypeDescs.toClassDesc(fp.tpe)) *)(GenResult.Desc))
 
   private def compileStaticApplyMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
@@ -320,7 +320,7 @@ object GenFunAndClosureClasses {
     val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
-    xReturn(GenResult.desc)
+    xReturn(GenResult.Desc)
 
 
     m.visitMaxs(999, 999)
@@ -329,25 +329,25 @@ object GenFunAndClosureClasses {
 
   private def compileStaticInvokeMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, GenThunk.InvokeMethod.name,
-      MethodTypeDescs.mkDescriptor()(GenResult.desc).descriptorString(), null, null)
+      MethodTypeDescs.mkDescriptor()(GenResult.Desc).descriptorString(), null, null)
     m.visitCode()
 
-    val functionInterface = BackendObjType.Arrow.fromArrowType(defn.arrowType).desc
+    val functionInterface = GenArrow.descOfArrowType(defn.arrowType)
     // Putting args on the Fn class
     for ((fp, i) <- defn.fparams.zipWithIndex) {
       // Load the `this` pointer
       m.visitVarInsn(Opcodes.ALOAD, 0)
       // Load arg i
       m.visitFieldInsn(Opcodes.GETFIELD, ClassDescs.internalNameOf(functionInterface),
-        s"arg$i", BackendType.toErasedClassDesc(fp.tpe).descriptorString())
+        s"arg$i", TypeDescs.toErasedClassDesc(fp.tpe).descriptorString())
       // Insert cast to concrete type
-      castIfNotPrim(BackendType.toClassDesc(fp.tpe))
+      castIfNotPrim(TypeDescs.toClassDesc(fp.tpe))
     }
 
     val method = staticApplyMethod(className, defn)
     m.visitMethodInsn(Opcodes.INVOKESTATIC, ClassDescs.internalNameOf(className), method.name, method.d.descriptorString(), false)
 
-    xReturn(GenResult.desc)
+    xReturn(GenResult.Desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -355,7 +355,7 @@ object GenFunAndClosureClasses {
 
   private def compileInvokeMethod(visitor: ClassWriter, className: ClassDesc): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, GenThunk.InvokeMethod.name,
-      MethodTypeDescs.mkDescriptor()(GenResult.desc).descriptorString(), null, null)
+      MethodTypeDescs.mkDescriptor()(GenResult.Desc).descriptorString(), null, null)
     m.visitCode()
 
     val applyMethod = GenFrame.ApplyMethod
@@ -363,7 +363,7 @@ object GenFunAndClosureClasses {
     m.visitInsn(Opcodes.ACONST_NULL)
     m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ClassDescs.internalNameOf(className), applyMethod.name, applyMethod.d.descriptorString(), false)
 
-    xReturn(GenResult.desc)
+    xReturn(GenResult.Desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -378,9 +378,9 @@ object GenFunAndClosureClasses {
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, applyMethod.name, applyMethod.d.descriptorString(), null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.offset + localOffset, lp.sym.isWild, BackendType.toErasedClassDesc(lp.tpe), Some(BackendType.toClassDesc(lp.tpe))) }
-    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.offset + localOffset, false, BackendType.toClassDesc(cp.tpe), None) }
-    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.offset + localOffset, false, BackendType.toErasedClassDesc(fp.tpe), Some(BackendType.toClassDesc(fp.tpe))) }
+    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.offset + localOffset, lp.sym.isWild, TypeDescs.toErasedClassDesc(lp.tpe), Some(TypeDescs.toClassDesc(lp.tpe))) }
+    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.offset + localOffset, false, TypeDescs.toClassDesc(cp.tpe), None) }
+    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.offset + localOffset, false, TypeDescs.toErasedClassDesc(fp.tpe), Some(TypeDescs.toClassDesc(fp.tpe))) }
 
     def loadParamsOf(params: List[(String, Int, Boolean, ClassDesc, Option[ClassDesc])]): Unit = {
       params.foreach { case (name, offset, _, fieldType, castTo) => loadFromField(m, className, name, offset, fieldType, castTo) }
@@ -456,7 +456,7 @@ object GenFunAndClosureClasses {
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
 
-    xReturn(GenResult.desc)
+    xReturn(GenResult.Desc)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -484,9 +484,9 @@ object GenFunAndClosureClasses {
   private def mkCopy(className: ClassDesc, defn: Def)(implicit mv: MethodVisitor, root: Root): Unit = {
     val classInternalName = ClassDescs.internalNameOf(className)
     val pc = List(("pc", CD_int))
-    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", BackendType.toErasedClassDesc(p._1.tpe)))
-    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", BackendType.toClassDesc(p._1.tpe)))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", BackendType.toErasedClassDesc(p._1.tpe)))
+    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", TypeDescs.toErasedClassDesc(p._1.tpe)))
+    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", TypeDescs.toClassDesc(p._1.tpe)))
+    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", TypeDescs.toErasedClassDesc(p._1.tpe)))
     val params = pc ++ fparams ++ cparams ++ lparams
 
     NEW(className)
@@ -518,8 +518,9 @@ object GenFunAndClosureClasses {
   }
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root): Unit = {
-    val closureAbstractClass = BackendObjType.AbstractArrow.fromArrowType(defn.arrowType)
-    implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodTypeDescs.mkDescriptor()(closureAbstractClass.desc).descriptorString(), null, null)
+    val (cloArgs, cloResult) = GenArrow.erasedArgsAndResult(defn.arrowType)
+    val closureAbstractClass = GenAbstractArrow.desc(cloArgs, cloResult)
+    implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC, GenAbstractArrow.GetUniqueThreadClosureMethod(cloArgs, cloResult).name, MethodTypeDescs.mkDescriptor()(closureAbstractClass).descriptorString(), null, null)
     m.visitCode()
 
     mkCopy(className, defn)

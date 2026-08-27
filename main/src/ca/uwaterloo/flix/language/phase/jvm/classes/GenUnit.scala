@@ -19,36 +19,33 @@ package ca.uwaterloo.flix.language.phase.jvm.classes
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.IsFinal
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, mkClass}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, StaticConstructorMethod, StaticField, mkClass}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, Mangle}
-import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc
 
-/** The empty [[GenResumption]]: rewinding it just yields the value it is given. */
-object GenResumptionNil {
+/** The `Unit` class, whose single instance is the Flix unit value. */
+object GenUnit {
 
-  /** The JVM class descriptor for the generated `ResumptionNil` class. */
-  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("ResumptionNil"))
+  /** The JVM class descriptor for the generated `Unit` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Unit"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(this.Desc, IsFinal, interfaces = List(GenResumption.Desc))
+    val cm = mkClass(this.Desc, IsFinal)
 
+    cm.mkStaticConstructor(StaticConstructorMethod(this.Desc), singletonStaticConstructor(Constructor, SingletonField)(_))
     cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-    cm.mkMethod(Nil, GenResumption.RewindMethod.implementation(this.Desc), IsPublic, IsFinal, rewindIns(_))
+    cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
 
     cm.closeClassMaker()
   }
 
-  def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
+  private def Constructor: ConstructorMethod = ConstructorMethod(this.Desc, Nil)
 
-  private def rewindIns(implicit mv: MethodVisitor): Unit = {
-    withName(1, GenValue.Desc) { v =>
-      v.load()
-      xReturn(v.tpe)
-    }
-  }
+  def SingletonField: StaticField = StaticField(this.Desc, "INSTANCE", this.Desc)
+
 
 }

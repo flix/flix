@@ -35,10 +35,11 @@ import java.lang.constant.ClassDesc
   */
 object GenThunk {
 
-  val desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Thunk"))
+  /** The JVM class descriptor for the generated `Thunk` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Thunk"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkInterface(this.desc, interfaces = List(GenResult.desc, JavaClasses.Runnable))
+    val cm = mkInterface(this.Desc, interfaces = List(GenResult.Desc, JavaClasses.Runnable))
 
     cm.mkInterfaceMethod(InvokeMethod)
     cm.mkDefaultMethod(RunMethod, IsPublic, NotFinal, runIns(_))
@@ -46,9 +47,9 @@ object GenThunk {
     cm.closeClassMaker()
   }
 
-  def InvokeMethod: InterfaceMethod = InterfaceMethod(this.desc, "invoke", mkDescriptor()(GenResult.desc))
+  def InvokeMethod: InterfaceMethod = InterfaceMethod(this.Desc, "invoke", mkDescriptor()(GenResult.Desc))
 
-  private def RunMethod: DefaultMethod = DefaultMethod(this.desc, "run", mkVoidDescriptor())
+  private def RunMethod: DefaultMethod = DefaultMethod(this.Desc, "run", mkVoidDescriptor())
 
   private def runIns(implicit mv: MethodVisitor): Unit = {
     thisLoad()

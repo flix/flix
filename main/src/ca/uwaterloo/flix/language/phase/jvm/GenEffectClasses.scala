@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.JvmAst.{Effect, Root}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenHandler, GenResult, GenResumption, GenResumptionWrapper, GenThunk}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenHandler, GenResult, GenResumption, GenResumptionWrapper, GenThunk}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InstanceField
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
@@ -71,19 +71,20 @@ object GenEffectClasses {
   }
 
   private def genByteCode(effectName: ClassDesc, effect: Effect)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(effectName, IsFinal, interfaces = List(GenHandler.desc))
+    val cm = ClassMaker.mkClass(effectName, IsFinal, interfaces = List(GenHandler.Desc))
 
     cm.mkConstructor(ClassMaker.ConstructorMethod(effectName, Nil), IsPublic, constructorIns(_))
 
     for (op <- effect.ops) {
       val name = opName(op.sym)
-      val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
-      val opFunction = BackendObjType.Arrow(erasedParams :+ CD_Object, CD_Object)
-      val opField = ClassMaker.InstanceField(effectName, name, opFunction.desc)
+      val erasedParams = op.fparams.map(_.tpe).map(TypeDescs.toErasedClassDesc)
+      val opFunctionArgs = erasedParams :+ CD_Object
+      val opFunctionDesc = GenArrow.desc(opFunctionArgs, CD_Object)
+      val opField = ClassMaker.InstanceField(effectName, name, opFunctionDesc)
       cm.mkField(opField, IsPublic, NotFinal, NotVolatile)
-      val methodArgs = erasedParams ++ List(GenHandler.desc, GenResumption.desc)
-      val returnType = BackendType.toErasedClassDesc(op.tpe)
-      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodTypeDescs.mkDescriptor(methodArgs *)(GenResult.desc)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
+      val methodArgs = erasedParams ++ List(GenHandler.Desc, GenResumption.Desc)
+      val returnType = TypeDescs.toErasedClassDesc(op.tpe)
+      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, name, MethodTypeDescs.mkDescriptor(methodArgs *)(GenResult.Desc)), IsPublic, NotFinal, methodIns(effectName, opFunctionArgs, opField, erasedParams, returnType)(_))
     }
 
     cm.closeClassMaker()
@@ -95,11 +96,11 @@ object GenEffectClasses {
     RETURN()
   }
 
-  private def methodIns(effectName: ClassDesc, opFunction: BackendObjType.Arrow, opField: InstanceField, erasedParams: List[ClassDesc], returnType: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+  private def methodIns(effectName: ClassDesc, opFunctionArgs: List[ClassDesc], opField: InstanceField, erasedParams: List[ClassDesc], returnType: ClassDesc)(implicit mv: MethodVisitor): Unit = {
 
     withNames(0, erasedParams) { case (paramsOffset, params) =>
-      withName(paramsOffset, GenHandler.desc) { handler =>
-        withName(paramsOffset + 1, GenResumption.desc) { resumption =>
+      withName(paramsOffset, GenHandler.Desc) { handler =>
+        withName(paramsOffset + 1, GenResumption.Desc) { resumption =>
           // Cast the given generic handler to the current effect.
           handler.load()
           CHECKCAST(effectName)
@@ -107,13 +108,13 @@ object GenEffectClasses {
           // The handler closure is shared across every invocation of this operation. Make a fresh
           // copy (preserving captures, but with fresh argument/local/pc slots) so that re-entrant
           // invocations from deep or multi-shot resumptions do not clobber each other's arguments.
-          val absArrow = BackendObjType.AbstractArrow(opFunction.args, opFunction.result)
-          CHECKCAST(absArrow.desc)
-          INVOKEVIRTUAL(absArrow.GetUniqueThreadClosureMethod)
+          val absArrow = GenAbstractArrow.desc(opFunctionArgs, CD_Object)
+          CHECKCAST(absArrow)
+          INVOKEVIRTUAL(GenAbstractArrow.GetUniqueThreadClosureMethod(opFunctionArgs, CD_Object))
           for ((par, i) <- params.zipWithIndex) {
             DUP()
             par.load()
-            PUTFIELD(opFunction.ArgField(i))
+            PUTFIELD(GenArrow.ArgField(opFunctionArgs, CD_Object, i))
           }
           // Convert the resumption to a function.
           DUP()
@@ -121,7 +122,7 @@ object GenEffectClasses {
           DUP()
           resumption.load()
           INVOKESPECIAL(GenResumptionWrapper.Constructor(returnType))
-          PUTFIELD(ClassMaker.InstanceField(opFunction.desc, s"arg${params.size}", JavaClasses.Object))
+          PUTFIELD(ClassMaker.InstanceField(GenArrow.desc(opFunctionArgs, CD_Object), s"arg${params.size}", JavaClasses.Object))
           // Call invoke.
           INVOKEINTERFACE(GenThunk.InvokeMethod)
           ARETURN()
@@ -133,20 +134,20 @@ object GenEffectClasses {
   def opStaticFunctionDescriptor(sym: Symbol.OpSym)(implicit root: Root): MethodTypeDesc = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
-    val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
-    val methodArgs = erasedParams ++ List(GenHandler.desc, GenResumption.desc)
-    MethodTypeDescs.mkDescriptor(methodArgs *)(GenResult.desc)
+    val erasedParams = op.fparams.map(_.tpe).map(TypeDescs.toErasedClassDesc)
+    val methodArgs = erasedParams ++ List(GenHandler.Desc, GenResumption.Desc)
+    MethodTypeDescs.mkDescriptor(methodArgs *)(GenResult.Desc)
   }
 
   /** Returns the JVM field/method name of the effect operation `sym`. */
   def opName(sym: Symbol.OpSym): String =
     Mangle.mangle(sym.name)
 
-  def opFieldType(sym: Symbol.OpSym)(implicit root: Root): BackendObjType.Arrow = {
+  def opFieldType(sym: Symbol.OpSym)(implicit root: Root): ClassDesc = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
-    val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedClassDesc)
-    BackendObjType.Arrow(erasedParams :+ CD_Object, CD_Object)
+    val erasedParams = op.fparams.map(_.tpe).map(TypeDescs.toErasedClassDesc)
+    GenArrow.desc(erasedParams :+ CD_Object, CD_Object)
   }
 
 }
