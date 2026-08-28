@@ -124,4 +124,49 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
     } finally provider.close()
   }
 
+  test("isSubtype.ClassFileHierarchy") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      provider.isSubtype(ClassDesc.of("java.util.ArrayList"), ClassDesc.of("java.util.List")) match {
+        case Ok(arrayListIsList) => assert(arrayListIsList)
+        case Err(error) => fail(error.toString)
+      }
+      provider.isSubtype(ClassDesc.of("java.util.List"), ClassDesc.of("java.util.ArrayList")) match {
+        case Ok(listIsArrayList) => assert(!listIsArrayList)
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
+  test("virtualMethods.IncludesInheritedMethods") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      provider.virtualMethods(ClassDesc.of("java.util.function.UnaryOperator")) match {
+        case Ok(methods) =>
+          val applyDescriptor = MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)Ljava/lang/Object;")
+          assert(methods.exists(m =>
+            m.ref.owner == ClassDesc.of("java.util.function.Function") &&
+              m.ref.name == "apply" &&
+              m.ref.descriptor == applyDescriptor
+          ))
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
+  test("virtualMethods.PreservesDeclaredErasureAfterGenericSubstitution") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      provider.virtualMethods(ClassDesc.of("java.util.concurrent.Delayed")) match {
+        case Ok(methods) =>
+          assert(methods.exists(m =>
+            m.ref.owner == ClassDesc.of("java.lang.Comparable") &&
+              m.ref.name == "compareTo" &&
+              m.ref.descriptor == MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)I")
+          ))
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
 }
