@@ -333,7 +333,7 @@ object TypeReduction2 {
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
   private def lookupField(thisObj: Type,
                           fieldName: String,
-                          loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv): JavaFieldResolution = {
+                          loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaFieldResolution = {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
     val clazzOpt = Type.classFromFlixType(thisObj)
@@ -345,7 +345,7 @@ object TypeReduction2 {
       val owner = ClassDescs.of(clazz)
       val oldResult = oldField.map(field =>
         JavaFieldRef(ClassDescs.of(field.getDeclaringClass), field.getName, ClassDescs.of(field.getType)))
-      val newResult = JavaTypeReductionShadow.lookupField(clazz.getClassLoader, owner, fieldName)
+      val newResult = flix.javaMemberResolver.field(owner, fieldName, static = false).map(_.map(_.ref))
       JavaTypeReductionShadow.compareField(owner, fieldName, oldResult, newResult, loc)
     }
     oldField.map(JavaFieldResolution.Resolved.apply).getOrElse(JavaFieldResolution.NotFound)

@@ -49,4 +49,16 @@ class ExternalJarLoader extends URLClassLoader(Array.empty, ClassLoader.getPlatf
           throw e
     }
   }
+
+  /** Finds compiler-provided class files that are explicitly visible through this loader. */
+  override def findResource(name: String): URL = {
+    val resource = super.findResource(name)
+    if (resource != null) {
+      resource
+    } else if (name == "dev/flix/runtime/Global.class" || name.startsWith("dev/flix/test/")) {
+      ClassLoader.getSystemResource(name)
+    } else {
+      null
+    }
+  }
 }

@@ -17,24 +17,14 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.jvm.JavaFieldRef
-import ca.uwaterloo.flix.language.phase.typer.jvm.{ByteBuddyJavaTypeProvider, JavaLookupError, JavaMemberResolver}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaLookupError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
-import java.lang.ref.WeakReference
 import java.lang.constant.ClassDesc
-import java.util.WeakHashMap
 
 /** Checks descriptor-based Java field resolution against reflective type reduction. */
 private[typer] object JavaTypeReductionShadow {
-
-  private val resolvers = new WeakHashMap[ClassLoader, WeakReference[JavaMemberResolver]]()
-
-  /** Returns `Ok` with the descriptor-selected instance field, or `Err` if class metadata cannot be read. */
-  def lookupField(loader: ClassLoader,
-                  owner: ClassDesc,
-                  name: String): Result[Option[JavaFieldRef], JavaLookupError] =
-    resolverFor(loader).field(owner, name, static = false).map(_.map(_.ref))
 
   /** Compares the old reflective field result with the new descriptor-based field result. */
   def compareField(owner: ClassDesc,
@@ -53,15 +43,6 @@ private[typer] object JavaTypeReductionShadow {
             loc
           )
         }
-    }
-  }
-
-  /** Returns the cached descriptor resolver for `loader`. */
-  private def resolverFor(loader: ClassLoader): JavaMemberResolver = resolvers.synchronized {
-    Option(resolvers.get(loader)).flatMap(ref => Option(ref.get())).getOrElse {
-      val resolver = JavaMemberResolver(ByteBuddyJavaTypeProvider.fromClassLoader(loader))
-      resolvers.put(loader, new WeakReference(resolver))
-      resolver
     }
   }
 
