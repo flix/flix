@@ -2893,6 +2893,34 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedPredicateArity](result)
   }
 
+  test("TypeError.MismatchedPredicateArity.04") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1, 2). };
+        |    let p2 = #{ Foo(1, 2, 3). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.05") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Bar(1). Foo(1, 2). };
+        |    let p2 = #{ Foo(1, 2, 3). Baz("a"). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
   test("TypeError.MismatchedPredicateDenotation.01") {
     val input =
       """
@@ -2916,6 +2944,20 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        Foo(1; 2).
         |        Foo(1, 2).
         |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.03") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1, 2). };
+        |    let p2 = #{ Foo(1; 2). };
+        |    let _ = p1 <+> p2;
         |    println("Hello World!")
         |
         |""".stripMargin
