@@ -124,13 +124,19 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
     } finally provider.close()
   }
 
-  test("isSubtype.ClassFileHierarchy") {
+  test("isSubtype.ClassFileHierarchy.Subtype") {
     val provider = ByteBuddyJavaTypeProvider.platform()
     try {
       provider.isSubtype(ClassDesc.of("java.util.ArrayList"), ClassDesc.of("java.util.List")) match {
         case Ok(arrayListIsList) => assert(arrayListIsList)
         case Err(error) => fail(error.toString)
       }
+    } finally provider.close()
+  }
+
+  test("isSubtype.ClassFileHierarchy.NotSubtype") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
       provider.isSubtype(ClassDesc.of("java.util.List"), ClassDesc.of("java.util.ArrayList")) match {
         case Ok(listIsArrayList) => assert(!listIsArrayList)
         case Err(error) => fail(error.toString)
