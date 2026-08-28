@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.jvm.JavaTypeVariableOwner.Class
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaLookupError.{InvalidClass, MissingClass, UnsupportedDescriptor}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import net.bytebuddy.dynamic.ClassFileLocator
+import net.bytebuddy.pool.TypePool
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
@@ -102,8 +103,18 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
   test("lookupClass.ReportsInvalidClass") {
     val className = "dev.flix.prototype.Invalid"
     val classDesc = ClassDesc.of(className)
-    val locator = ClassFileLocator.Simple.of(className, Array.emptyByteArray)
-    val provider = ByteBuddyJavaTypeProvider.fromLocator(locator)
+    val classBytes = Array[Byte](
+      0xca.toByte, 0xfe.toByte, 0xba.toByte, 0xbe.toByte,
+      0x00.toByte, 0x00.toByte, 0x00.toByte, 0x41.toByte,
+      0x00.toByte, 0x02.toByte, 0x00.toByte
+    )
+    val locator = ClassFileLocator.Simple.of(className, classBytes)
+    val pool = new TypePool.Default.WithLazyResolution(
+      new TypePool.CacheProvider.Simple(),
+      locator,
+      TypePool.Default.ReaderMode.FAST
+    )
+    val provider = ByteBuddyJavaTypeProvider(locator, pool)
 
     try {
       provider.lookupClass(classDesc) match {

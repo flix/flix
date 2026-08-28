@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.{ClassDescs, Result}
 import net.bytebuddy.ClassFileVersion
 import net.bytebuddy.description.TypeVariableSource
 import net.bytebuddy.description.field.FieldDescription
-import net.bytebuddy.description.method.{MethodDescription, ParameterDescription}
+import net.bytebuddy.description.method.MethodDescription
 import net.bytebuddy.description.`type`.{TypeDefinition, TypeDescription}
 import net.bytebuddy.dynamic.ClassFileLocator
 import net.bytebuddy.pool.TypePool
@@ -40,7 +40,13 @@ object ByteBuddyJavaTypeProvider {
 
   /** Returns a provider that reads resources visible to `loader` without loading classes; `null` denotes the bootstrap loader. */
   def fromClassLoader(loader: ClassLoader): ByteBuddyJavaTypeProvider = {
-    val locator = if (loader == null) ClassFileLocator.ForClassLoader.ofBootLoader() else ClassFileLocator.ForClassLoader.of(loader)
+    val locator = if (loader == null) {
+      // The JVM represents the bootstrap class loader with null.
+      ClassFileLocator.ForClassLoader.ofBootLoader()
+    } else {
+      // A non-null loader exposes application or user-provided class-path resources.
+      ClassFileLocator.ForClassLoader.of(loader)
+    }
     fromLocators(List(locator))
   }
 
@@ -48,16 +54,19 @@ object ByteBuddyJavaTypeProvider {
   def fromClassPath(entries: List[Path], includePlatform: Boolean = true): ByteBuddyJavaTypeProvider = {
     val version = ClassFileVersion.ofThisVm()
     val entryLocators = entries.map { path =>
-      if (Files.isDirectory(path)) ClassFileLocator.ForFolder.of(path.toFile, version)
-      else ClassFileLocator.ForJarFile.of(path.toFile, version)
+      if (Files.isDirectory(path)) {
+        ClassFileLocator.ForFolder.of(path.toFile, version)
+      } else {
+        ClassFileLocator.ForJarFile.of(path.toFile, version)
+      }
     }
-    val locators = if (includePlatform) entryLocators :+ ClassFileLocator.ForClassLoader.ofPlatformLoader() else entryLocators
+    val locators = if (includePlatform) {
+      entryLocators :+ ClassFileLocator.ForClassLoader.ofPlatformLoader()
+    } else {
+      entryLocators
+    }
     fromLocators(locators)
   }
-
-  /** Returns a provider backed by an arbitrary locator for focused tests. */
-  private[jvm] def fromLocator(locator: ClassFileLocator): ByteBuddyJavaTypeProvider =
-    fromLocators(List(locator))
 
   /** Returns a provider backed by the given locators in lookup order. */
   private def fromLocators(locators: List[ClassFileLocator]): ByteBuddyJavaTypeProvider = {
@@ -95,7 +104,6 @@ final case class ByteBuddyJavaTypeProvider(
         case ex: GenericSignatureFormatError => Err(InvalidClass(desc, exceptionMessage(ex)))
         case ex: MalformedParameterizedTypeException => Err(InvalidClass(desc, exceptionMessage(ex)))
         case ex: IllegalArgumentException => Err(InvalidClass(desc, exceptionMessage(ex)))
-        case ex: IndexOutOfBoundsException => Err(InvalidClass(desc, exceptionMessage(ex)))
         case ex: IllegalStateException => Err(InvalidClass(desc, exceptionMessage(ex)))
       }
     }
@@ -143,9 +151,7 @@ final case class ByteBuddyJavaTypeProvider(
       ref = ref,
       modifiers = method.getModifiers,
       typeParameters = method.getTypeVariables.asScala.toList.map(toTypeParameter),
-      parameterTypes = method.getParameters.asScala.toList
-        .map(_.asInstanceOf[ParameterDescription])
-        .map(p => toType(p.getType)),
+      parameterTypes = method.getParameters.asTypeList().asScala.toList.map(toType),
       returnType = toType(method.getReturnType),
       isConstructor = method.isConstructor,
       isVarArgs = method.isVarArgs
