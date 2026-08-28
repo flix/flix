@@ -150,11 +150,12 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
       provider.virtualMethods(ClassDesc.of("java.util.function.UnaryOperator")) match {
         case Ok(methods) =>
           val applyDescriptor = MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)Ljava/lang/Object;")
-          val hasInheritedApply = methods.exists(m =>
-            m.ref.owner == ClassDesc.of("java.util.function.Function") &&
-              m.ref.name == "apply" &&
-              m.ref.descriptor == applyDescriptor
-          )
+          val hasInheritedApply = methods.exists { m =>
+            val hasExpectedOwner = m.ref.owner == ClassDesc.of("java.util.function.Function")
+            val hasExpectedName = m.ref.name == "apply"
+            val hasExpectedDescriptor = m.ref.descriptor == applyDescriptor
+            hasExpectedOwner && hasExpectedName && hasExpectedDescriptor
+          }
           assert(hasInheritedApply)
         case Err(error) => fail(error.toString)
       }
@@ -166,11 +167,13 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
     try {
       provider.virtualMethods(ClassDesc.of("java.util.concurrent.Delayed")) match {
         case Ok(methods) =>
-          val hasDeclaredCompareTo = methods.exists(m =>
-            m.ref.owner == ClassDesc.of("java.lang.Comparable") &&
-              m.ref.name == "compareTo" &&
-              m.ref.descriptor == MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)I")
-          )
+          val compareToDescriptor = MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)I")
+          val hasDeclaredCompareTo = methods.exists { m =>
+            val hasExpectedOwner = m.ref.owner == ClassDesc.of("java.lang.Comparable")
+            val hasExpectedName = m.ref.name == "compareTo"
+            val hasExpectedDescriptor = m.ref.descriptor == compareToDescriptor
+            hasExpectedOwner && hasExpectedName && hasExpectedDescriptor
+          }
           assert(hasDeclaredCompareTo)
         case Err(error) => fail(error.toString)
       }
