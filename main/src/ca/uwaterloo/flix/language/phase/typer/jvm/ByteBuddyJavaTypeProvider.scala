@@ -95,34 +95,17 @@ final case class ByteBuddyJavaTypeProvider(
 
   /** Returns `Ok` with metadata for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
   override def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError] =
-    resolve(desc).flatMap { tpe =>
-      try {
-        Ok(toClass(tpe))
-      } catch {
-        case ex: GenericSignatureFormatError => Err(InvalidClass(desc, exceptionMessage(ex)))
-        case ex: MalformedParameterizedTypeException => Err(InvalidClass(desc, exceptionMessage(ex)))
-        case ex: IllegalArgumentException => Err(InvalidClass(desc, exceptionMessage(ex)))
-        case ex: IllegalStateException => Err(InvalidClass(desc, exceptionMessage(ex)))
-      }
-    }
+    resolve(desc).map(toClass)
 
   /** Returns `Ok` with the virtual method graph for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
   override def virtualMethods(desc: ClassDesc): Result[List[JavaMethod], JavaLookupError] =
-    resolve(desc).flatMap { tpe =>
-      try {
-        val methods = MethodGraph.Compiler.Default.forJavaHierarchy().compile(tpe: TypeDefinition).listNodes().asScala
-          .map(_.getRepresentative)
-          .filter(_.isVirtual)
-          .map(toMethod)
-          .toList
-          .sortBy(m => (m.ref.name, m.ref.descriptor.descriptorString()))
-        Ok(methods)
-      } catch {
-        case ex: GenericSignatureFormatError => Err(InvalidClass(desc, exceptionMessage(ex)))
-        case ex: MalformedParameterizedTypeException => Err(InvalidClass(desc, exceptionMessage(ex)))
-        case ex: IllegalArgumentException => Err(InvalidClass(desc, exceptionMessage(ex)))
-        case ex: IllegalStateException => Err(InvalidClass(desc, exceptionMessage(ex)))
-      }
+    resolve(desc).map { tpe =>
+      MethodGraph.Compiler.Default.forJavaHierarchy().compile(tpe: TypeDefinition).listNodes().asScala
+        .map(_.getRepresentative)
+        .filter(_.isVirtual)
+        .map(toMethod)
+        .toList
+        .sortBy(m => (m.ref.name, m.ref.descriptor.descriptorString()))
     }
 
   /** Returns `Ok` with the subtype result, or `Err` if either descriptor is unsupported, missing, or invalid. */
@@ -131,16 +114,7 @@ final case class ByteBuddyJavaTypeProvider(
       Ok(true)
     } else {
       resolve(subtype).flatMap { sub =>
-        resolve(supertype).flatMap { sup =>
-          try {
-            Ok(sub.isAssignableTo(sup))
-          } catch {
-            case ex: GenericSignatureFormatError => Err(InvalidClass(subtype, exceptionMessage(ex)))
-            case ex: MalformedParameterizedTypeException => Err(InvalidClass(subtype, exceptionMessage(ex)))
-            case ex: IllegalArgumentException => Err(InvalidClass(subtype, exceptionMessage(ex)))
-            case ex: IllegalStateException => Err(InvalidClass(subtype, exceptionMessage(ex)))
-          }
-        }
+        resolve(supertype).map(sup => sub.isAssignableTo(sup))
       }
     }
   }
@@ -213,9 +187,11 @@ final case class ByteBuddyJavaTypeProvider(
 
   /** Converts a Byte Buddy method description to its nominal class-file reference. */
   private def toMethodRef(method: MethodDescription): JavaMethodRef = {
-    // A method-graph representative can carry type substitutions from the queried subtype. Its nominal identity,
-    // however, is the descriptor declared in its owning class. Keep contextual types in JavaMethod and use the
-    // defined shape for JavaMethodRef.
+    // A method graph specializes inherited generic methods for the queried type. For example, Java's Delayed extends
+    // Comparable<Delayed>, so its graph represents the inherited compareTo method as accepting a Delayed argument.
+    // The method is nevertheless declared on Comparable as compareTo(T). Since T erases to Object, its class-file
+    // descriptor accepts Object, not Delayed. Calling asDefined discards the Delayed substitution, ensuring that
+    // JavaMethodRef identifies the method declared in the class file while JavaMethod retains the specialized type.
     val defined = method.asDefined()
     JavaMethodRef(
       owner = toClassDesc(defined.getDeclaringType.asErasure()),
