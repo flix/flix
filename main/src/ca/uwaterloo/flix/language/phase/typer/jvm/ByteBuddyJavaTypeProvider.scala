@@ -187,11 +187,6 @@ final case class ByteBuddyJavaTypeProvider(
 
   /** Converts a Byte Buddy method description to its nominal class-file reference. */
   private def toMethodRef(method: MethodDescription): JavaMethodRef = {
-    // A method graph specializes inherited generic methods for the queried type. For example, Java's Delayed extends
-    // Comparable<Delayed>, so its graph represents the inherited compareTo method as accepting a Delayed argument.
-    // The method is nevertheless declared on Comparable as compareTo(T). Since T erases to Object, its class-file
-    // descriptor accepts Object, not Delayed. Calling asDefined discards the Delayed substitution, ensuring that
-    // JavaMethodRef identifies the method declared in the class file while JavaMethod retains the specialized type.
     val defined = method.asDefined()
     JavaMethodRef(
       owner = toClassDesc(defined.getDeclaringType.asErasure()),
