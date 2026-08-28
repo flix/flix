@@ -150,7 +150,7 @@ object TypeReduction2 {
 
         case JvmMember.JvmField(_, tpe, name) =>
           val (reducedTpe, cs) = reduce(tpe)
-          lookupField(reducedTpe, name.name) match {
+          lookupField(reducedTpe, name.name, loc) match {
             case JavaFieldResolution.Resolved(field) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmField(field), loc), cs)
@@ -330,14 +330,19 @@ object TypeReduction2 {
   }
 
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
-  private def lookupField(thisObj: Type, fieldName: String)(implicit scope: RegionScope, renv: RigidityEnv): JavaFieldResolution = {
+  private def lookupField(thisObj: Type,
+                          fieldName: String,
+                          loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv): JavaFieldResolution = {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
-    val opt = for {
-      clazz <- Type.classFromFlixType(thisObj)
-      field <- JvmUtils.getField(clazz, fieldName, static = false)
-    } yield JavaFieldResolution.Resolved(field)
-    opt.getOrElse(JavaFieldResolution.NotFound)
+    val clazzOpt = Type.classFromFlixType(thisObj)
+    val fieldOpt = for {
+      owner <- clazzOpt
+      member <- JvmUtils.getField(owner, fieldName, static = false)
+    } yield member
+    val result = fieldOpt.map(JavaFieldResolution.Resolved.apply).getOrElse(JavaFieldResolution.NotFound)
+    clazzOpt.foreach(owner => JavaTypeReductionShadow.compareField(owner, fieldName, fieldOpt, loc))
+    result
   }
 
   /**
