@@ -189,8 +189,11 @@ object Bootstrap {
   /** The jar file extension. Does not contain leading '.' */
   private val EXT_JAR: String = "jar"
 
+  /** The toml file extension. Does not contain leading '.' */
+  val EXT_TOML: String = "toml"
+
   /** The manifest / flix toml file name. */
-  val FLIX_TOML: String = "flix.toml"
+  val FLIX_TOML: String = s"flix.$EXT_TOML"
 
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
