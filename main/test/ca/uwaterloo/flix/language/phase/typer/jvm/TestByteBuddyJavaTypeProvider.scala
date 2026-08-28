@@ -144,11 +144,12 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
       provider.virtualMethods(ClassDesc.of("java.util.function.UnaryOperator")) match {
         case Ok(methods) =>
           val applyDescriptor = MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)Ljava/lang/Object;")
-          assert(methods.exists(m =>
+          val hasInheritedApply = methods.exists(m =>
             m.ref.owner == ClassDesc.of("java.util.function.Function") &&
               m.ref.name == "apply" &&
               m.ref.descriptor == applyDescriptor
-          ))
+          )
+          assert(hasInheritedApply)
         case Err(error) => fail(error.toString)
       }
     } finally provider.close()
@@ -159,11 +160,12 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
     try {
       provider.virtualMethods(ClassDesc.of("java.util.concurrent.Delayed")) match {
         case Ok(methods) =>
-          assert(methods.exists(m =>
+          val hasDeclaredCompareTo = methods.exists(m =>
             m.ref.owner == ClassDesc.of("java.lang.Comparable") &&
               m.ref.name == "compareTo" &&
               m.ref.descriptor == MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)I")
-          ))
+          )
+          assert(hasDeclaredCompareTo)
         case Err(error) => fail(error.toString)
       }
     } finally provider.close()
