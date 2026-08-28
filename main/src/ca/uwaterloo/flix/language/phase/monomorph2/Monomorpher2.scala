@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{MonoAst, TypedAst}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 
 /**
   * Entry point for constraint-based monomorphization, following the approach of "The Simple
@@ -43,7 +44,7 @@ import ca.uwaterloo.flix.language.ast.{MonoAst, TypedAst}
 object Monomorpher2 {
 
   /** Performs constraint-based monomorphization of the given AST `root`. */
-  def run(root: TypedAst.Root)(implicit flix: Flix): MonoAst.Root = {
+  def run(root: TypedAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher2") {
     val constraints = ConstraintGen.generate(root)
     NonMonomorphizableCheck.checkMonomorphizable(constraints)
     val solution = ConstraintSolver.solve(constraints, root)
