@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.jvm.JavaField
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
@@ -26,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.CodeGen
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.monomorph2.Monomorpher2
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
-import ca.uwaterloo.flix.language.phase.typer.jvm.{ByteBuddyJavaTypeProvider, JavaLookupError, JavaMemberResolver, JavaTypeProvider}
+import ca.uwaterloo.flix.language.phase.typer.jvm.{ByteBuddyJavaTypeProvider, JavaTypeProvider}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -36,7 +35,6 @@ import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.tc.Debug
 
-import java.lang.constant.ClassDesc
 import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
@@ -201,11 +199,7 @@ class Flix {
   val jarLoader = new ExternalJarLoader
 
   /** The descriptor-based Java metadata provider owned by this compiler instance. */
-  private val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromClassLoader(jarLoader)
-
-  /** Returns `Ok` with the selected public field, or `Err` if class metadata cannot be read. */
-  private[flix] def resolveJavaField(owner: ClassDesc, name: String, static: Boolean): Result[Option[JavaField], JavaLookupError] =
-    JavaMemberResolver.field(javaTypeProvider, owner, name, static)
+  val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromClassLoader(jarLoader)
 
   /**
     * Adds Flix source code from a file on the filesystem.

@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.JavaFieldRef
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
@@ -345,8 +346,8 @@ object TypeReduction2 {
       val owner = ClassDescs.of(clazz)
       val oldResult = oldField.map(field =>
         JavaFieldRef(ClassDescs.of(field.getDeclaringClass), field.getName, ClassDescs.of(field.getType)))
-      val newResult = flix.resolveJavaField(owner, fieldName, static = false).map(_.map(_.ref))
-      JavaTypeReductionShadow.compareField(owner, fieldName, oldResult, newResult, loc)
+      val newResult = JavaMemberResolver.field(flix.javaTypeProvider, owner, fieldName, static = false).map(_.map(_.ref))
+      JavaReductionOpsTEMP.compareField(owner, fieldName, oldResult, newResult, loc)
     }
     oldField.map(JavaFieldResolution.Resolved.apply).getOrElse(JavaFieldResolution.NotFound)
   }

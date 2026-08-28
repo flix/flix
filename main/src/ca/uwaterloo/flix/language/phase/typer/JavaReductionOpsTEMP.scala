@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import java.lang.constant.ClassDesc
 
 /** Checks descriptor-based Java field resolution against reflective type reduction. */
-private[typer] object JavaTypeReductionShadow {
+private[typer] object JavaReductionOpsTEMP {
 
   /** Compares the old reflective field result with the new descriptor-based field result. */
   def compareField(owner: ClassDesc,
