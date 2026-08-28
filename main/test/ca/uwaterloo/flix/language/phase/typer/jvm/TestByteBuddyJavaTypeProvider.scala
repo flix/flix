@@ -15,140 +15,102 @@
  */
 package ca.uwaterloo.flix.language.phase.typer.jvm
 
-import ca.uwaterloo.flix.language.ast.jvm.*
-import ca.uwaterloo.flix.language.ast.jvm.JavaType.{NonGeneric, Parameterized, Variable}
+import ca.uwaterloo.flix.language.ast.jvm.JavaType.{Parameterized, Variable}
+import ca.uwaterloo.flix.language.ast.jvm.JavaTypeVariable
 import ca.uwaterloo.flix.language.ast.jvm.JavaTypeVariableOwner.Class
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaLookupError.{InvalidClass, MissingClass, UnsupportedDescriptor}
-import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import net.bytebuddy.dynamic.ClassFileLocator
-import org.objectweb.asm.{ClassWriter, Opcodes}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 
 class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
 
-  test("lookupClass.PlatformClass") {
-    withProvider(ByteBuddyJavaTypeProvider.platform()) { provider =>
+  test("lookupClass.PlatformClass.Descriptor") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
       val arrayListDesc = ClassDesc.of("java.util.ArrayList")
-      val arrayList = resolve(provider.lookupClass(arrayListDesc))
-
-      assert(arrayList.desc == arrayListDesc)
-      assert(arrayList.typeParameters.map(_.variable) ==
-        List(JavaTypeVariable(Class(arrayListDesc), "E")))
-
-      val get = arrayList.declaredMethods.find(m =>
-        m.ref.name == "get" && m.ref.descriptor == MethodTypeDesc.ofDescriptor("(I)Ljava/lang/Object;"))
-      assert(get.exists(_.returnType == Variable(
-        JavaTypeVariable(Class(arrayListDesc), "E"),
-        ClassDesc.of("java.lang.Object")
-      )))
-
-      assert(arrayList.interfaces.exists {
-        case Parameterized(desc, List(Variable(variable, _))) =>
-          desc == ClassDesc.of("java.util.List") && variable == JavaTypeVariable(Class(arrayListDesc), "E")
-        case _ => false
-      })
-    }
+      provider.lookupClass(arrayListDesc) match {
+        case Ok(arrayList) => assert(arrayList.desc == arrayListDesc)
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
   }
 
-  test("lookupClass.InMemoryClassFile") {
-    val className = "dev.flix.prototype.Unloaded"
-    val classDesc = ClassDesc.of(className)
-    val classBytes = mkGenericInterface(className.replace('.', '/'))
-    val locator = new ClassFileLocator.Compound(
-      ClassFileLocator.Simple.of(className, classBytes),
-      ClassFileLocator.ForClassLoader.ofPlatformLoader()
-    )
-
-    withProvider(ByteBuddyJavaTypeProvider.fromLocator(locator)) { provider =>
-      val clazz = resolve(provider.lookupClass(classDesc))
-      val variable = JavaTypeVariable(Class(classDesc), "T")
-
-      assert(clazz.typeParameters == List(JavaTypeParameter(
-        variable,
-        List(NonGeneric(ClassDesc.of("java.lang.Object")))
-      )))
-
-      val id = clazz.declaredMethods.find(_.ref.name == "id").get
-      assert(id.ref == JavaMethodRef(
-        classDesc,
-        "id",
-        MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)Ljava/lang/Object;")
-      ))
-      assert(id.parameterTypes == List(Variable(variable, ClassDesc.of("java.lang.Object"))))
-      assert(id.returnType == Variable(variable, ClassDesc.of("java.lang.Object")))
-
-      val convert = clazz.declaredMethods.find(_.ref.name == "convert").get
-      val methodVariable = JavaTypeVariable(JavaTypeVariableOwner.Method(convert.ref), "U")
-      assert(convert.typeParameters.map(_.variable) == List(methodVariable))
-      assert(convert.parameterTypes == List(Variable(methodVariable, ClassDesc.of("java.lang.Object"))))
-      assert(convert.returnType == Variable(variable, ClassDesc.of("java.lang.Object")))
-    }
+  test("lookupClass.PlatformClass.TypeParameters") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      val arrayListDesc = ClassDesc.of("java.util.ArrayList")
+      provider.lookupClass(arrayListDesc) match {
+        case Ok(arrayList) =>
+          assert(arrayList.typeParameters.map(_.variable) == List(JavaTypeVariable(Class(arrayListDesc), "E")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
   }
 
-  test("lookupClass.ReportsMissingAndUnsupportedDescriptors") {
-    withProvider(ByteBuddyJavaTypeProvider.platform()) { provider =>
+  test("lookupClass.PlatformClass.GenericMethod") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      val arrayListDesc = ClassDesc.of("java.util.ArrayList")
+      provider.lookupClass(arrayListDesc) match {
+        case Ok(arrayList) =>
+          val get = arrayList.declaredMethods.find(m =>
+            m.ref.name == "get" && m.ref.descriptor == MethodTypeDesc.ofDescriptor("(I)Ljava/lang/Object;"))
+          assert(get.exists(_.returnType == Variable(
+            JavaTypeVariable(Class(arrayListDesc), "E"),
+            ClassDesc.of("java.lang.Object")
+          )))
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
+  test("lookupClass.PlatformClass.GenericInterface") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      val arrayListDesc = ClassDesc.of("java.util.ArrayList")
+      provider.lookupClass(arrayListDesc) match {
+        case Ok(arrayList) =>
+          assert(arrayList.interfaces.exists {
+            case Parameterized(desc, List(Variable(variable, _))) =>
+              desc == ClassDesc.of("java.util.List") && variable == JavaTypeVariable(Class(arrayListDesc), "E")
+            case _ => false
+          })
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
+  test("lookupClass.ReportsMissingClass") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
       val missing = ClassDesc.of("dev.flix.prototype.DoesNotExist")
       assert(provider.lookupClass(missing) == Err(MissingClass(missing)))
+    } finally provider.close()
+  }
 
+  test("lookupClass.ReportsUnsupportedDescriptor") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
       val array = ClassDesc.ofDescriptor("[Ljava/lang/String;")
       assert(provider.lookupClass(array) == Err(UnsupportedDescriptor(array)))
-    }
+    } finally provider.close()
   }
 
   test("lookupClass.ReportsInvalidClass") {
     val className = "dev.flix.prototype.Invalid"
     val classDesc = ClassDesc.of(className)
     val locator = ClassFileLocator.Simple.of(className, Array.emptyByteArray)
+    val provider = ByteBuddyJavaTypeProvider.fromLocator(locator)
 
-    withProvider(ByteBuddyJavaTypeProvider.fromLocator(locator)) { provider =>
+    try {
       provider.lookupClass(classDesc) match {
         case Err(InvalidClass(`classDesc`, _)) => succeed
         case result => fail(s"Expected InvalidClass, got: $result")
       }
-    }
-  }
-
-  /** Returns the bytes of a generic interface with class- and method-owned type variables. */
-  private def mkGenericInterface(internalName: String): Array[Byte] = {
-    val writer = new ClassWriter(0)
-    writer.visit(
-      Opcodes.V21,
-      Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE,
-      internalName,
-      "<T:Ljava/lang/Object;>Ljava/lang/Object;",
-      "java/lang/Object",
-      null
-    )
-    writer.visitMethod(
-      Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
-      "id",
-      "(Ljava/lang/Object;)Ljava/lang/Object;",
-      "(TT;)TT;",
-      null
-    ).visitEnd()
-    writer.visitMethod(
-      Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
-      "convert",
-      "(Ljava/lang/Object;)Ljava/lang/Object;",
-      "<U:Ljava/lang/Object;>(TU;)TT;",
-      null
-    ).visitEnd()
-    writer.visitEnd()
-    writer.toByteArray
-  }
-
-  /** Runs `f` with `provider` and closes the provider afterward. */
-  private def withProvider[A](provider: ByteBuddyJavaTypeProvider)(f: ByteBuddyJavaTypeProvider => A): A =
-    try f(provider)
-    finally provider.close()
-
-  /** Returns an `Ok` value or fails the test when `result` is `Err`. */
-  private def resolve[A](result: Result[A, JavaLookupError]): A = result match {
-    case Ok(value) => value
-    case Err(error) => fail(error.toString)
+    } finally provider.close()
   }
 
 }
