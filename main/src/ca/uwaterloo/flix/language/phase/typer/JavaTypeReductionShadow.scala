@@ -17,12 +17,12 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.jvm.JavaFieldRef
-import ca.uwaterloo.flix.language.phase.typer.jvm.{ByteBuddyJavaTypeProvider, JavaMemberResolver}
+import ca.uwaterloo.flix.language.phase.typer.jvm.{ByteBuddyJavaTypeProvider, JavaLookupError, JavaMemberResolver}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.lang.ref.WeakReference
-import java.lang.reflect.Field
+import java.lang.constant.ClassDesc
 import java.util.WeakHashMap
 
 /** Checks descriptor-based Java field resolution against reflective type reduction. */
@@ -30,37 +30,39 @@ private[typer] object JavaTypeReductionShadow {
 
   private val resolvers = new WeakHashMap[ClassLoader, WeakReference[JavaMemberResolver]]()
 
-  /** Compares descriptor-based instance-field resolution with the authoritative reflective result. */
-  def compareField(owner: Class[?], name: String, reflective: Option[Field], loc: SourceLocation): Unit = {
-    val descriptorOwner = ClassDescs.of(owner)
-    val query = s"${descriptorOwner.displayName()}.$name"
-    resolverFor(owner).field(descriptorOwner, name, static = false) match {
+  /** Returns `Ok` with the descriptor-selected instance field, or `Err` if class metadata cannot be read. */
+  def lookupField(loader: ClassLoader,
+                  owner: ClassDesc,
+                  name: String): Result[Option[JavaFieldRef], JavaLookupError] =
+    resolverFor(loader).field(owner, name, static = false).map(_.map(_.ref))
+
+  /** Compares the old reflective field result with the new descriptor-based field result. */
+  def compareField(owner: ClassDesc,
+                   name: String,
+                   oldResult: Option[JavaFieldRef],
+                   newResult: Result[Option[JavaFieldRef], JavaLookupError],
+                   loc: SourceLocation): Unit = {
+    val query = s"${owner.displayName()}.$name"
+    newResult match {
       case Err(error) =>
         throw InternalCompilerException(s"Java field shadow lookup failed for '$query': $error", loc)
-      case Ok(descriptor) =>
-        val reflectiveRef = reflective.map(toRef)
-        val descriptorRef = descriptor.map(_.ref)
-        if (reflectiveRef != descriptorRef) {
+      case Ok(result) =>
+        if (oldResult != result) {
           throw InternalCompilerException(
-            s"Java field lookup mismatch for '$query': reflection=$reflectiveRef, descriptor=$descriptorRef",
+            s"Java field lookup mismatch for '$query': reflection=$oldResult, descriptor=$result",
             loc
           )
         }
     }
   }
 
-  /** Returns the cached descriptor resolver for the class loader of `owner`. */
-  private def resolverFor(owner: Class[?]): JavaMemberResolver = resolvers.synchronized {
-    val loader = owner.getClassLoader
+  /** Returns the cached descriptor resolver for `loader`. */
+  private def resolverFor(loader: ClassLoader): JavaMemberResolver = resolvers.synchronized {
     Option(resolvers.get(loader)).flatMap(ref => Option(ref.get())).getOrElse {
       val resolver = JavaMemberResolver(ByteBuddyJavaTypeProvider.fromClassLoader(loader))
       resolvers.put(loader, new WeakReference(resolver))
       resolver
     }
   }
-
-  /** Returns the descriptor-based reference for the reflective `field`. */
-  private def toRef(field: Field): JavaFieldRef =
-    JavaFieldRef(ClassDescs.of(field.getDeclaringClass), field.getName, ClassDescs.of(field.getType))
 
 }

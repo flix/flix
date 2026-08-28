@@ -18,10 +18,11 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
+import ca.uwaterloo.flix.language.ast.jvm.JavaFieldRef
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
-import ca.uwaterloo.flix.util.JvmUtils
+import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
@@ -336,13 +337,18 @@ object TypeReduction2 {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
     val clazzOpt = Type.classFromFlixType(thisObj)
-    val fieldOpt = for {
+    val oldField = for {
       owner <- clazzOpt
       member <- JvmUtils.getField(owner, fieldName, static = false)
     } yield member
-    val result = fieldOpt.map(JavaFieldResolution.Resolved.apply).getOrElse(JavaFieldResolution.NotFound)
-    clazzOpt.foreach(owner => JavaTypeReductionShadow.compareField(owner, fieldName, fieldOpt, loc))
-    result
+    clazzOpt.foreach { clazz =>
+      val owner = ClassDescs.of(clazz)
+      val oldResult = oldField.map(field =>
+        JavaFieldRef(ClassDescs.of(field.getDeclaringClass), field.getName, ClassDescs.of(field.getType)))
+      val newResult = JavaTypeReductionShadow.lookupField(clazz.getClassLoader, owner, fieldName)
+      JavaTypeReductionShadow.compareField(owner, fieldName, oldResult, newResult, loc)
+    }
+    oldField.map(JavaFieldResolution.Resolved.apply).getOrElse(JavaFieldResolution.NotFound)
   }
 
   /**
