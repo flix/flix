@@ -345,7 +345,7 @@ object TypeReduction2 {
       val owner = ClassDescs.of(clazz)
       val oldResult = oldField.map(field =>
         JavaFieldRef(ClassDescs.of(field.getDeclaringClass), field.getName, ClassDescs.of(field.getType)))
-      val newResult = flix.javaMemberResolver.field(owner, fieldName, static = false).map(_.map(_.ref))
+      val newResult = flix.resolveJavaField(owner, fieldName, static = false).map(_.map(_.ref))
       JavaTypeReductionShadow.compareField(owner, fieldName, oldResult, newResult, loc)
     }
     oldField.map(JavaFieldResolution.Resolved.apply).getOrElse(JavaFieldResolution.NotFound)

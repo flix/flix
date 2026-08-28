@@ -21,25 +21,23 @@ import ca.uwaterloo.flix.util.Result.Ok
 
 import java.lang.constant.ClassDesc
 
+/** Resolves accessible Java members using descriptor-based class-file metadata. */
 object JavaMemberResolver {
 
   private val AccPublic = 0x0001
 
   private val AccStatic = 0x0008
 
-}
-
-/** Resolves accessible Java members using descriptor-based class-file metadata. */
-final case class JavaMemberResolver(provider: JavaTypeProvider) {
-
-  import JavaMemberResolver.*
-
   /** Returns `Ok` with the selected public field, or `Err` if class metadata cannot be read. */
-  def field(owner: ClassDesc, name: String, static: Boolean): Result[Option[JavaField], JavaLookupError] =
-    findField(owner, name, Set.empty).map(_.filter(f => isStatic(f.modifiers) == static))
+  def field(provider: JavaTypeProvider,
+            owner: ClassDesc,
+            name: String,
+            static: Boolean): Result[Option[JavaField], JavaLookupError] =
+    findField(provider, owner, name, Set.empty).map(_.filter(f => isStatic(f.modifiers) == static))
 
   /** Returns `Ok` with the first public field selected from `owner`, or `Err` if class metadata cannot be read. */
-  private def findField(owner: ClassDesc,
+  private def findField(provider: JavaTypeProvider,
+                        owner: ClassDesc,
                         name: String,
                         visited: Set[ClassDesc]): Result[Option[JavaField], JavaLookupError] = {
     if (visited.contains(owner)) {
@@ -49,11 +47,11 @@ final case class JavaMemberResolver(provider: JavaTypeProvider) {
         clazz.declaredFields.find(f => f.ref.name == name && isPublic(f.modifiers)) match {
           case field @ Some(_) => Ok(field)
           case None =>
-            findFieldIn(clazz.interfaces.map(_.erasure), name, visited + owner).flatMap {
+            findFieldIn(provider, clazz.interfaces.map(_.erasure), name, visited + owner).flatMap {
               case field @ Some(_) => Ok(field)
               case None => clazz.superClass match {
                 case None => Ok(None)
-                case Some(parent) => findField(parent.erasure, name, visited + owner)
+                case Some(parent) => findField(provider, parent.erasure, name, visited + owner)
               }
             }
         }
@@ -62,13 +60,14 @@ final case class JavaMemberResolver(provider: JavaTypeProvider) {
   }
 
   /** Returns `Ok` with the first public field selected from `owners`, or `Err` if class metadata cannot be read. */
-  private def findFieldIn(owners: List[ClassDesc],
+  private def findFieldIn(provider: JavaTypeProvider,
+                          owners: List[ClassDesc],
                           name: String,
                           visited: Set[ClassDesc]): Result[Option[JavaField], JavaLookupError] = owners match {
     case Nil => Ok(None)
-    case owner :: rest => findField(owner, name, visited).flatMap {
+    case owner :: rest => findField(provider, owner, name, visited).flatMap {
       case field @ Some(_) => Ok(field)
-      case None => findFieldIn(rest, name, visited)
+      case None => findFieldIn(provider, rest, name, visited)
     }
   }
 
