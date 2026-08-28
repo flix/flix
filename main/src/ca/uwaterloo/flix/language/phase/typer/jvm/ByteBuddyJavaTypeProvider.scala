@@ -25,6 +25,7 @@ import net.bytebuddy.description.field.FieldDescription
 import net.bytebuddy.description.method.MethodDescription
 import net.bytebuddy.description.`type`.{TypeDefinition, TypeDescription}
 import net.bytebuddy.dynamic.ClassFileLocator
+import net.bytebuddy.dynamic.scaffold.MethodGraph
 import net.bytebuddy.pool.TypePool
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
@@ -93,13 +94,42 @@ final case class ByteBuddyJavaTypeProvider(
 ) extends JavaTypeProvider {
 
   /** Returns `Ok` with metadata for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
-  override def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError] = {
+  override def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError] =
+    resolve(desc).map(toClass)
+
+  /** Returns `Ok` with the virtual method graph for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
+  override def virtualMethods(desc: ClassDesc): Result[List[JavaMethod], JavaLookupError] =
+    resolve(desc).map { tpe =>
+      MethodGraph.Compiler.Default.forJavaHierarchy().compile(tpe: TypeDefinition).listNodes().asScala
+        .map(_.getRepresentative)
+        .filter(_.isVirtual)
+        .map(toMethod)
+        .toList
+        .sortBy(m => (m.ref.name, m.ref.descriptor.descriptorString()))
+    }
+
+  /** Returns `Ok` with the subtype result, or `Err` if either descriptor is unsupported, missing, or invalid. */
+  override def isSubtype(subtype: ClassDesc, supertype: ClassDesc): Result[Boolean, JavaLookupError] = {
+    if (subtype == supertype) {
+      Ok(true)
+    } else {
+      resolve(subtype).flatMap { sub =>
+        resolve(supertype).map(sup => sub.isAssignableTo(sup))
+      }
+    }
+  }
+
+  /** Closes the underlying class-file locator and its owned resources. */
+  override def close(): Unit = locator.close()
+
+  /** Returns `Ok` with the resolved type, or `Err` if `desc` is unsupported, missing, or invalid. */
+  private def resolve(desc: ClassDesc): Result[TypeDescription, JavaLookupError] = {
     if (!desc.isClassOrInterface) {
       Err(UnsupportedDescriptor(desc))
     } else {
       try {
         val resolution = pool.describe(ClassDescs.binaryNameOf(desc))
-        if (resolution.isResolved) Ok(toClass(resolution.resolve())) else Err(MissingClass(desc))
+        if (resolution.isResolved) Ok(resolution.resolve()) else Err(MissingClass(desc))
       } catch {
         case ex: GenericSignatureFormatError => Err(InvalidClass(desc, exceptionMessage(ex)))
         case ex: MalformedParameterizedTypeException => Err(InvalidClass(desc, exceptionMessage(ex)))
@@ -108,9 +138,6 @@ final case class ByteBuddyJavaTypeProvider(
       }
     }
   }
-
-  /** Closes the underlying class-file locator and its owned resources. */
-  override def close(): Unit = locator.close()
 
   /** Converts a Byte Buddy type description to Java class-file metadata. */
   private def toClass(tpe: TypeDescription): JavaClass = {

@@ -124,4 +124,60 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
     } finally provider.close()
   }
 
+  test("isSubtype.ClassFileHierarchy.Subtype") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      provider.isSubtype(ClassDesc.of("java.util.ArrayList"), ClassDesc.of("java.util.List")) match {
+        case Ok(arrayListIsList) => assert(arrayListIsList)
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
+  test("isSubtype.ClassFileHierarchy.NotSubtype") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      provider.isSubtype(ClassDesc.of("java.util.List"), ClassDesc.of("java.util.ArrayList")) match {
+        case Ok(listIsArrayList) => assert(!listIsArrayList)
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
+  test("virtualMethods.IncludesInheritedMethods") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      provider.virtualMethods(ClassDesc.of("java.util.function.UnaryOperator")) match {
+        case Ok(methods) =>
+          val applyDescriptor = MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)Ljava/lang/Object;")
+          val hasInheritedApply = methods.exists { m =>
+            val hasExpectedOwner = m.ref.owner == ClassDesc.of("java.util.function.Function")
+            val hasExpectedName = m.ref.name == "apply"
+            val hasExpectedDescriptor = m.ref.descriptor == applyDescriptor
+            hasExpectedOwner && hasExpectedName && hasExpectedDescriptor
+          }
+          assert(hasInheritedApply)
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
+  test("virtualMethods.PreservesDeclaredErasureAfterGenericSubstitution") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      provider.virtualMethods(ClassDesc.of("java.util.concurrent.Delayed")) match {
+        case Ok(methods) =>
+          val compareToDescriptor = MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)I")
+          val hasDeclaredCompareTo = methods.exists { m =>
+            val hasExpectedOwner = m.ref.owner == ClassDesc.of("java.lang.Comparable")
+            val hasExpectedName = m.ref.name == "compareTo"
+            val hasExpectedDescriptor = m.ref.descriptor == compareToDescriptor
+            hasExpectedOwner && hasExpectedName && hasExpectedDescriptor
+          }
+          assert(hasDeclaredCompareTo)
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
 }

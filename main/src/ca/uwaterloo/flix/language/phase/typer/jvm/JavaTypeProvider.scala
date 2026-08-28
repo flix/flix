@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer.jvm
 
-import ca.uwaterloo.flix.language.ast.jvm.JavaClass
+import ca.uwaterloo.flix.language.ast.jvm.{JavaClass, JavaMethod}
 import ca.uwaterloo.flix.util.Result
 
 import java.lang.constant.ClassDesc
@@ -30,5 +30,11 @@ trait JavaTypeProvider extends AutoCloseable {
 
   /** Returns `Ok` with metadata for `desc`, or `Err` if the descriptor cannot be looked up. */
   def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError]
+
+  /** Returns `Ok` with the virtual method graph for `desc`, or `Err` if the descriptor cannot be looked up. */
+  def virtualMethods(desc: ClassDesc): Result[List[JavaMethod], JavaLookupError]
+
+  /** Returns `Ok` with the subtype result, or `Err` if either descriptor cannot be looked up. */
+  def isSubtype(subtype: ClassDesc, supertype: ClassDesc): Result[Boolean, JavaLookupError]
 
 }
