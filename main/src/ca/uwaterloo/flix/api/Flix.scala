@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.CodeGen
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.monomorph2.Monomorpher2
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
+import ca.uwaterloo.flix.language.phase.typer.jvm.{ByteBuddyJavaTypeProvider, JavaTypeProvider}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -196,6 +197,9 @@ class Flix {
     * A class loader for loading external JARs.
     */
   val jarLoader = new ExternalJarLoader
+
+  /** The descriptor-based Java metadata provider owned by this compiler instance. */
+  val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromClassLoader(jarLoader)
 
   /**
     * Adds Flix source code from a file on the filesystem.

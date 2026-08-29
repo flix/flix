@@ -18,10 +18,12 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
+import ca.uwaterloo.flix.language.ast.jvm.JavaFieldRef
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
-import ca.uwaterloo.flix.util.JvmUtils
+import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
@@ -150,7 +152,7 @@ object TypeReduction2 {
 
         case JvmMember.JvmField(_, tpe, name) =>
           val (reducedTpe, cs) = reduce(tpe)
-          lookupField(reducedTpe, name.name) match {
+          lookupField(reducedTpe, name.name, loc) match {
             case JavaFieldResolution.Resolved(field) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmField(field), loc), cs)
@@ -330,14 +332,28 @@ object TypeReduction2 {
   }
 
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
-  private def lookupField(thisObj: Type, fieldName: String)(implicit scope: RegionScope, renv: RigidityEnv): JavaFieldResolution = {
+  private def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaFieldResolution = {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
-    val opt = for {
-      clazz <- Type.classFromFlixType(thisObj)
-      field <- JvmUtils.getField(clazz, fieldName, static = false)
-    } yield JavaFieldResolution.Resolved(field)
-    opt.getOrElse(JavaFieldResolution.NotFound)
+
+    // Old path (authoritative): load the owner class and resolve the field with reflection.
+    val oldOwner = Type.classFromFlixType(thisObj)
+    val oldField = for {
+      owner <- oldOwner
+      member <- JvmUtils.getField(owner, fieldName, static = false)
+    } yield member
+
+    // New path (shadow only): resolve from the owner descriptor without passing a Class to the resolver.
+    oldOwner.foreach { clazz =>
+      val owner = ClassDescs.of(clazz)
+      val oldResult = oldField.map(field =>
+        JavaFieldRef(ClassDescs.of(field.getDeclaringClass), field.getName, ClassDescs.of(field.getType)))
+      val newResult = JavaMemberResolver.field(owner, fieldName, static = false).map(_.map(_.ref))
+      JavaReductionOpsTEMP.compareField(owner, fieldName, oldResult, newResult, loc)
+    }
+
+    // TODO: Remove the old path once the owner descriptor comes directly from Type and Resolved stores JavaField.
+    oldField.map(JavaFieldResolution.Resolved.apply).getOrElse(JavaFieldResolution.NotFound)
   }
 
   /**
