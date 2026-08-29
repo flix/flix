@@ -335,18 +335,24 @@ object TypeReduction2 {
   private def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaFieldResolution = {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
-    val clazzOpt = Type.classFromFlixType(thisObj)
+
+    // Old path (authoritative): load the owner class and resolve the field with reflection.
+    val oldOwner = Type.classFromFlixType(thisObj)
     val oldField = for {
-      owner <- clazzOpt
+      owner <- oldOwner
       member <- JvmUtils.getField(owner, fieldName, static = false)
     } yield member
-    clazzOpt.foreach { clazz =>
+
+    // New path (shadow only): resolve from the owner descriptor without passing a Class to the resolver.
+    oldOwner.foreach { clazz =>
       val owner = ClassDescs.of(clazz)
       val oldResult = oldField.map(field =>
         JavaFieldRef(ClassDescs.of(field.getDeclaringClass), field.getName, ClassDescs.of(field.getType)))
       val newResult = JavaMemberResolver.field(owner, fieldName, static = false).map(_.map(_.ref))
       JavaReductionOpsTEMP.compareField(owner, fieldName, oldResult, newResult, loc)
     }
+
+    // TODO: Remove the old path once the owner descriptor comes directly from Type and Resolved stores JavaField.
     oldField.map(JavaFieldResolution.Resolved.apply).getOrElse(JavaFieldResolution.NotFound)
   }
 
