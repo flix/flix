@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.lang.constant.ClassDesc
 
-/** Checks descriptor-based Java field resolution against reflective type reduction. */
-private[typer] object JavaReductionOpsTEMP {
+/** Checks descriptor-based Java member resolution against reflective lookup. */
+private[phase] object JavaReductionOpsTEMP {
 
   /** Compares the old reflective field result with the new descriptor-based field result. */
   def compareField(owner: ClassDesc,
