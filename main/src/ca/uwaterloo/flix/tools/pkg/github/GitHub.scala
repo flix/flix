@@ -238,11 +238,16 @@ object GitHub {
   /**
     * Opens a stream over `url`, following redirects. The caller closes the stream.
     *
+    * `apiKey`, if given, is sent as a bearer token -- required to read a private repo's release
+    * assets, since this is otherwise an unauthenticated request.
+    *
     * Kept apart: a refusal (403/429, usually a rate limit), any other unexpected status, and never
     * reaching a server at all.
     */
-  def download(url: URL): Result[InputStream, PackageError] = {
-    val request = HttpRequest.newBuilder(url.toURI).GET().build()
+  def download(url: URL, apiKey: Option[String]): Result[InputStream, PackageError] = {
+    val reqBuilder = HttpRequest.newBuilder(url.toURI)
+    apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
+    val request = reqBuilder.GET().build()
 
     val response = try {
       Client.sendStreamingRequest(request)
@@ -277,9 +282,9 @@ object GitHub {
     * the REST API -- a release asset's address is fully predictable from owner/repo/tag/name.
     * The caller closes the stream. See [[findReleaseAsset]] for the fallback when this 404s.
     */
-  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String): Result[InputStream, PackageError] = {
+  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String, apiKey: Option[String]): Result[InputStream, PackageError] = {
     val url = releaseAssetUrl(project, version, assetName)
-    download(url) match {
+    download(url, apiKey) match {
       case Err(PackageError.DownloadFailed(_, 404)) =>
         Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
       case other => other
@@ -329,9 +334,15 @@ object GitHub {
 
   /**
     * Downloads the given asset.
+    *
+    * `apiKey`, if given, is sent as a bearer token -- required to read a private repo's release
+    * assets, since `URL.openStream()` sends none.
     */
-  def downloadAsset(asset: Asset): InputStream =
-    asset.url.openStream()
+  def downloadAsset(asset: Asset, apiKey: Option[String]): InputStream = {
+    val conn = asset.url.openConnection()
+    apiKey.foreach(key => conn.setRequestProperty("Authorization", "Bearer " + key))
+    conn.getInputStream
+  }
 
   /**
     * Returns the URL that returns data related to the project's releases.
