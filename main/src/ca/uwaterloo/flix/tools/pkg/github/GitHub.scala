@@ -339,14 +339,35 @@ object GitHub {
     * limit like any other API call.
     */
   def downloadAsset(asset: Asset, apiKey: Option[String]): InputStream =
-    try {
-      asset.url.openStream()
-    } catch {
-      case _: FileNotFoundException if apiKey.isDefined =>
-        val conn = asset.apiUrl.openConnection()
-        conn.setRequestProperty("Accept", "application/octet-stream")
-        apiKey.foreach(key => conn.setRequestProperty("Authorization", "Bearer " + key))
-        conn.getInputStream
+    tryPublicThenApi(apiKey)(asset.url.openStream()) { key =>
+      val conn = asset.apiUrl.openConnection()
+      conn.setRequestProperty("Accept", "application/octet-stream")
+      conn.setRequestProperty("Authorization", "Bearer " + key)
+      conn.getInputStream
+    }
+
+  /**
+    * Returns `publicAttempt`, or `apiAttempt` applied to the key if `publicAttempt` throws
+    * [[FileNotFoundException]] and `apiKey` is given.
+    *
+    * Package-private, and the attempts are parameters rather than inlined into [[downloadAsset]],
+    * so this can be tested without a network.
+    *
+    * Without `apiKey` a [[FileNotFoundException]] is not retried: the public address 404s
+    * unconditionally for a private repo's assets, so without a credential to try instead,
+    * `apiAttempt` would just 404 again too. `apiAttempt` takes the key directly, rather than
+    * closing over `apiKey` itself, so it cannot be called without one -- the type says so, not a
+    * convention the caller has to remember.
+    */
+  private[github] def tryPublicThenApi[A](apiKey: Option[String])(publicAttempt: => A)(apiAttempt: String => A): A =
+    apiKey match {
+      case None => publicAttempt
+      case Some(key) =>
+        try {
+          publicAttempt
+        } catch {
+          case _: FileNotFoundException => apiAttempt(key)
+        }
     }
 
   /**
@@ -394,8 +415,11 @@ object GitHub {
 
   /**
     * Parses an Asset JSON.
+    *
+    * Package-private so the split between `url` (public) and `apiUrl` (authenticated) can be
+    * tested without a network.
     */
-  private def parseAsset(asset: JValue): Asset = {
+  private[github] def parseAsset(asset: JValue): Asset = {
     val url = asset \ "browser_download_url"
     val apiUrl = asset \ "url"
     val name = asset \ "name"
