@@ -175,7 +175,7 @@ object FlixPackageManager {
             out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
             out.flush()
             try {
-              val stream = GitHub.downloadAsset(asset)
+              val stream = GitHub.downloadAsset(asset, apiKey)
               try {
                 Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
               } finally {
