@@ -30,13 +30,8 @@ import scala.collection.mutable
 object FlixPackageManager {
 
   /**
-    * The manifest asset's fixed name -- `Bootstrap.release` uploads `flix.toml` unchanged.
-    */
-  private val ManifestAssetName = "flix.toml"
-
-  /**
-    * Opens a stream over the first of `candidateNames` the release actually publishes, falling back
-    * to a rate-limited listing when none of them do. See [[installAll]] for the guessed names.
+    * Opens a stream over `guessedName` if the release actually publishes it, falling back to a
+    * rate-limited listing otherwise. The caller closes the stream.
     *
     * `candidateNames` are full asset file names (e.g. `"myrepo.fpkg"`), each already carrying its
     * own extension; `extension` is used only by the fallback listing lookup, to pick the one asset
