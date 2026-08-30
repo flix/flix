@@ -54,7 +54,10 @@ import ca.uwaterloo.flix.util.{Graph, InternalCompilerException}
   *
   * N.B. Because of [[TreeShaker1]], unreachable occurrences of polymorphic recursive function
   * definitions (`def`, `sig`, instance `def`) will not be detected, whereas unreachable
-  * polymorphic recursive enum/struct declarations will still be rejected.
+  * polymorphic recursive enum/struct declarations will still be rejected. The check runs on
+  * every generated flow, ignoring [[FlowConstraint]]'s `src` — it deliberately stays more
+  * conservative than the demand-driven [[ConstraintSolver]], which fires a flow only once its
+  * origin declaration is live.
   */
 private[monomorph2] object NonMonomorphizableCheck {
 
@@ -68,7 +71,7 @@ private[monomorph2] object NonMonomorphizableCheck {
   /** Checks whether `flows` contains a growing cycle and throws [[InternalCompilerException]] if so. */
   private[monomorph2] def checkMonomorphizable(flows: List[FlowConstraint]): Unit = {
     val edges = for {
-      FlowConstraint(Instantiation(args), dst) <- flows
+      FlowConstraint(Instantiation(args), dst, _) <- flows
       (arg, i) <- args.zipWithIndex
       (v, j) <- MonoArg.collectParams(arg).distinct
     } yield Edge(Vertex(v, j), Vertex(dst, i), growing = isGrowingHead(arg))

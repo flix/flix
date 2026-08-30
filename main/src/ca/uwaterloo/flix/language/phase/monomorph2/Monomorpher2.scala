@@ -33,13 +33,21 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
   *   - 2. [[NonMonomorphizableCheck]] rejects programs with no finite solution (e.g. polymorphic
   *     recursion) before solving, so the next step cannot loop forever.
   *   - 3. [[ConstraintSolver]] solves the flow constraints to a fixpoint, producing the set of
-  *     concrete instantiations each polymorphic symbol must be specialized at.
-  *   - 4. [[Specialize]] specializes (and lowers) every def/enum/struct/
+  *     concrete instantiations each live symbol must be specialized at. Solving is
+  *     demand-driven: it starts from the entry points (plus effect ops, non-parametric
+  *     enums/structs, and monomorphic channel/Datalog lowering targets), and a flow only fires
+  *     once its origin declaration is live — so declarations that are never demanded produce no
+  *     specializations, even if [[TreeShaker1]]'s coarser reachability kept them around.
+  *   - 4. [[Specialize]] specializes (and lowers) every live def/enum/struct/
   *     restrictable-enum accordingly.
   *
   * Caution: step 4's lowering can synthesize references to specific stdlib defs/enums that step 1
   * would not otherwise have any reason to see. Any such construct needs its own constraints
-  * generated in step 1, or it won't be in the solution by the time step 4 needs to specialize it.
+  * generated in step 1 (or a seed in step 3, for monomorphic targets), or it won't be in the
+  * solution by the time step 4 needs to specialize it. Demand-driven solving makes this stricter:
+  * an eager ground flow from an unrelated declaration can no longer paper over a missing demand —
+  * a miss surfaces as a strict lookup failure in step 4 and must be fixed by adding the missing
+  * constraint in step 1, never by weakening the gating in step 3.
   */
 object Monomorpher2 {
 
