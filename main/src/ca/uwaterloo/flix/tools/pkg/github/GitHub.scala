@@ -23,7 +23,7 @@ import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods.{compact, parse, render}
 
-import java.io.{IOException, InputStream}
+import java.io.{FileNotFoundException, IOException, InputStream}
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{URI, URL, URLEncoder}
@@ -50,9 +50,11 @@ object GitHub {
   /**
     * An asset from a GitHub project release.
     *
-    * `url` is the link to download the asset.
+    * `url` is the public download link -- unmetered, but unusable for a private repo's assets,
+    * which 404 there regardless of any credential. `apiUrl` is the same asset via the REST API,
+    * which does support one; see [[downloadAsset]].
     */
-  case class Asset(name: String, url: URL)
+  case class Asset(name: String, url: URL, apiUrl: URL)
 
   /**
     * Lists the project's releases.
@@ -238,16 +240,11 @@ object GitHub {
   /**
     * Opens a stream over `url`, following redirects. The caller closes the stream.
     *
-    * `apiKey`, if given, is sent as a bearer token -- required to read a private repo's release
-    * assets, since this is otherwise an unauthenticated request.
-    *
     * Kept apart: a refusal (403/429, usually a rate limit), any other unexpected status, and never
     * reaching a server at all.
     */
-  def download(url: URL, apiKey: Option[String]): Result[InputStream, PackageError] = {
-    val reqBuilder = HttpRequest.newBuilder(url.toURI)
-    apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
-    val request = reqBuilder.GET().build()
+  def download(url: URL): Result[InputStream, PackageError] = {
+    val request = HttpRequest.newBuilder(url.toURI).GET().build()
 
     val response = try {
       Client.sendStreamingRequest(request)
@@ -282,9 +279,9 @@ object GitHub {
     * the REST API -- a release asset's address is fully predictable from owner/repo/tag/name.
     * The caller closes the stream. See [[findReleaseAsset]] for the fallback when this 404s.
     */
-  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String, apiKey: Option[String]): Result[InputStream, PackageError] = {
+  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String): Result[InputStream, PackageError] = {
     val url = releaseAssetUrl(project, version, assetName)
-    download(url, apiKey) match {
+    download(url) match {
       case Err(PackageError.DownloadFailed(_, 404)) =>
         Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
       case other => other
@@ -335,14 +332,22 @@ object GitHub {
   /**
     * Downloads the given asset.
     *
-    * `apiKey`, if given, is sent as a bearer token -- required to read a private repo's release
-    * assets, since `URL.openStream()` sends none.
+    * Tries `asset.url` first -- the public, unmetered address -- and falls back to `asset.apiUrl`
+    * only if that 404s and `apiKey` is given. The public address 404s unconditionally for a
+    * private repo's assets, no matter what credential is sent to it; the REST API asset endpoint
+    * is the one that actually honors a bearer token, at the cost of counting against the rate
+    * limit like any other API call.
     */
-  def downloadAsset(asset: Asset, apiKey: Option[String]): InputStream = {
-    val conn = asset.url.openConnection()
-    apiKey.foreach(key => conn.setRequestProperty("Authorization", "Bearer " + key))
-    conn.getInputStream
-  }
+  def downloadAsset(asset: Asset, apiKey: Option[String]): InputStream =
+    try {
+      asset.url.openStream()
+    } catch {
+      case _: FileNotFoundException if apiKey.isDefined =>
+        val conn = asset.apiUrl.openConnection()
+        conn.setRequestProperty("Accept", "application/octet-stream")
+        apiKey.foreach(key => conn.setRequestProperty("Authorization", "Bearer " + key))
+        conn.getInputStream
+    }
 
   /**
     * Returns the URL that returns data related to the project's releases.
@@ -392,8 +397,9 @@ object GitHub {
     */
   private def parseAsset(asset: JValue): Asset = {
     val url = asset \ "browser_download_url"
+    val apiUrl = asset \ "url"
     val name = asset \ "name"
-    Asset(name.values.toString, new URI(url.values.toString).toURL)
+    Asset(name.values.toString, new URI(url.values.toString).toURL, new URI(apiUrl.values.toString).toURL)
   }
 
   /**
