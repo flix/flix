@@ -33,30 +33,30 @@ object FlixPackageManager {
     * Opens a stream over `guessedName` if the release actually publishes it, falling back to a
     * rate-limited listing otherwise. The caller closes the stream.
     *
-    * `candidateNames` are full asset file names (e.g. `"myrepo.fpkg"`), each already carrying its
-    * own extension; `extension` is used only by the fallback listing lookup, to pick the one asset
-    * of that kind out of the release's full asset list.
+    * `guessedName` is the full asset file name (e.g. `"myrepo.fpkg"`), already carrying its own
+    * extension; here `extension` is used only by the fallback listing lookup, to pick the one
+    * asset of that kind out of the release's full asset list.
     */
-  private def openAsset(project: GitHub.Project, version: SemVer, candidateNames: List[String], extension: String, apiKey: Option[String]): Result[InputStream, PackageError] =
-    tryCandidates(project, version, candidateNames) match {
-      case Some(result) => result
-      case None =>
-        GitHub.findReleaseAsset(project, version, extension, apiKey)
-          .flatMap(asset => GitHub.download(asset.url))
+  private def openAsset(project: GitHub.Project, version: SemVer, guessedName: String, extension: String, apiKey: Option[String]): Result[InputStream, PackageError] =
+    tryGuess(GitHub.downloadReleaseAsset(project, version, guessedName)) {
+      GitHub.findReleaseAsset(project, version, extension, apiKey).flatMap(asset => GitHub.download(asset.url))
     }
 
   /**
-    * Opens the first of `candidateNames` the release publishes, or `None` if it publishes none of them.
+    * Returns `guess`, or `fallback` if `guess` is a [[PackageError.ReleaseAssetNotFound]].
+    *
+    * Package-private, and `guess` is a parameter rather than inlined into [[openAsset]], so this
+    * can be tested without a network.
+    *
+    * A [[PackageError.ReleaseAssetNotFound]] means only that the guess was wrong, so the search
+    * falls back. Any other failure is the caller's to report, and is returned as-is: a rate limit
+    * or an unreachable host says nothing about whether the fallback would succeed.
     */
-  private def tryCandidates(project: GitHub.Project, version: SemVer, candidateNames: List[String]): Option[Result[InputStream, PackageError]] =
-    candidateNames match {
-      case Nil => None
-      case assetName :: rest =>
-        GitHub.downloadReleaseAsset(project, version, assetName) match {
-          case Ok(stream) => Some(Ok(stream))
-          case Err(_: PackageError.ReleaseAssetNotFound) => tryCandidates(project, version, rest)
-          case Err(e) => Some(Err(e))
-        }
+  private[pkg] def tryGuess(guess: Result[InputStream, PackageError])
+                            (fallback: => Result[InputStream, PackageError]): Result[InputStream, PackageError] =
+    guess match {
+      case Err(_: PackageError.ReleaseAssetNotFound) => fallback
+      case other => other
     }
 
   /**
@@ -158,7 +158,7 @@ object FlixPackageManager {
 
     val flixPaths = allFlixDeps.map { case (sctx, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
-      install(depName, dep.version, "fpkg", projectRoot, apiKey) match {
+      install(depName, dep.version, fpkgAssetName(dep), Bootstrap.EXT_FPKG, projectRoot, apiKey) match {
         case Ok(p) => (p, sctx)
         case Err(e) =>
           out.println(s"ERROR: Installation of `$depName' failed.")
@@ -170,42 +170,51 @@ object FlixPackageManager {
   }
 
   /**
+    * Returns the asset name `dep`'s release is expected to publish its package under.
+    *
+    * `Bootstrap.release` uploads the package as `<project directory>.fpkg`, which is the repository
+    * name for a conventional checkout. Guessing it costs an unmetered request; [[openAsset]] falls
+    * back to the listing for the projects where it does not hold.
+    */
+  private[pkg] def fpkgAssetName(dep: FlixDependency): String =
+    s"${dep.projectName}.${Bootstrap.EXT_FPKG}"
+
+  /**
     * Installs a flix package from the Github `project`.
     *
     * `project` must be of the form `<owner>/<repo>`
     *
     * The package is installed at `lib/<owner>/<repo>`
     *
-    * There should be only one file with the given extension.
+    * `guessedName` is the name the release is expected to publish its asset under, tried before the
+    * rate-limited listing; see [[openAsset]]. The listing requires that the release publish exactly
+    * one `extension` asset.
     *
     * Returns the path to the downloaded file.
     */
-  private def install(project: String, version: SemVer, extension: String, p: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Path, PackageError] = {
+  private def install(project: String, version: SemVer, guessedName: String, extension: String, p: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Path, PackageError] = {
     GitHub.parseProject(project).flatMap { proj =>
       val lib = Bootstrap.getLibraryDirectory(p)
-      val assetName = s"${proj.repo}-$version.$extension"
+      val cacheName = s"${proj.repo}-$version.$extension"
       val dirPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
       // create the directory if it does not exist
       Files.createDirectories(dirPath)
-      val assetPath = dirPath.resolve(assetName)
+      val assetPath = dirPath.resolve(cacheName)
 
       if (Files.exists(assetPath)) {
         out.println(s"  Cached `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")}).")
         Ok(assetPath)
       } else {
-        GitHub.getSpecificRelease(proj, version, apiKey).flatMap { release =>
-          val assets = release.assets.filter(_.name.endsWith(s".$extension"))
-          if (assets.isEmpty) {
-            Err(PackageError.NoSuchFile(project, extension))
-          } else if (assets.length != 1) {
-            Err(PackageError.TooManyFiles(project, extension))
-          } else {
-            // download asset to the directory
-            val asset = assets.head
-            out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
-            out.flush()
+        out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
+        out.flush()
+        openAsset(proj, version, guessedName, extension, apiKey) match {
+          case Err(e) =>
+            // Terminate the line started above; the error carries its own message.
+            out.println("ERROR.")
+            Err(e)
+
+          case Ok(stream) =>
             try {
-              val stream = GitHub.downloadAsset(asset)
               try {
                 Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
               } finally {
@@ -225,16 +234,15 @@ object FlixPackageManager {
                   case e2: IOException => e.addSuppressed(e2)
                 }
                 out.println(s"ERROR: ${e.getMessage}.")
-                return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
+                return Err(PackageError.DownloadError(cacheName, Some(e.getMessage)))
             }
             if (Files.exists(assetPath)) {
               out.println(s"OK.")
               Ok(assetPath)
             } else {
               out.println(s"ERROR: File was not created.")
-              Err(PackageError.DownloadError(asset, None))
+              Err(PackageError.DownloadError(cacheName, None))
             }
-          }
         }
       }
     }
@@ -254,7 +262,8 @@ object FlixPackageManager {
       // download toml files
       tomlPaths <- traverse(flixDeps) { dep =>
         val depName = s"${dep.username}/${dep.projectName}"
-        install(depName, dep.version, Bootstrap.EXT_TOML, path, apiKey).map(p => (p, dep))
+        // `Bootstrap.release` uploads the manifest under its fixed name, unchanged.
+        install(depName, dep.version, Bootstrap.FLIX_TOML, Bootstrap.EXT_TOML, path, apiKey).map(p => (p, dep))
       }
 
       // parse manifests
