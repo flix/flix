@@ -25,6 +25,69 @@ import java.lang.constant.ClassDesc
 import java.lang.reflect.Modifier
 import scala.jdk.CollectionConverters.*
 
+/*
+ * Constructor overload resolution intentionally mirrors Apache Commons Lang's
+ * `ConstructorUtils.getMatchingAccessibleConstructor` and the transformation
+ * costs in `MemberUtils`. It is a compatibility algorithm for Flix's existing
+ * reflective lookup, not an implementation of JLS most-specific resolution.
+ *
+ * Resolution separates legality from preference. A candidate must first be
+ * applicable; only applicable candidates receive a cost. Consequently, a low
+ * cost can never make an illegal argument conversion acceptable.
+ *
+ * Exact erased descriptor matches are selected before any scoring. This covers
+ * ordinary exact parameters and passing an array directly to a varargs
+ * constructor. A `Null` argument has no descriptor and cannot be exact.
+ *
+ * Applicability supports the conversions recognized by the current reflective
+ * path: widening references, widening primitives, boxing, unboxing, `null` to
+ * references, Java array subtyping, and both fixed and expanded varargs. This
+ * step only answers whether a constructor can participate in ranking.
+ *
+ * Each applicable constructor then receives one cost per argument. The costs
+ * are added, producing a single number for the complete parameter list. A
+ * candidate may therefore compensate for a worse match at one parameter with
+ * a better match at another parameter.
+ *
+ * An exact argument-to-parameter type costs zero. For class parameters, each
+ * superclass step costs 1.0. An assignable interface costs 0.25, making it
+ * worse than an exact match but better than one superclass step. The interface
+ * hierarchy depth is deliberately not counted.
+ *
+ * A `Null` argument costs 1.5 for every reference parameter. Thus `String` and
+ * `CharSequence` receive equal costs for `null`, even though JLS overload
+ * resolution would consider `String` more specific.
+ *
+ * Primitive promotion follows Commons Lang's ordered list:
+ *
+ *   byte, short, char, int, long, float, double
+ *
+ * Moving forward by one position costs 0.1. Applicability is checked first, so
+ * this heuristic ordering cannot legalize an invalid primitive conversion.
+ * Unwrapping a wrapper before primitive promotion adds another 0.1.
+ *
+ * Varargs receive a small 0.001 penalty. When an explicit array is supplied,
+ * its component type is compared with the declared component type. For
+ * expanded varargs, every trailing argument is compared with the component
+ * type and receives the penalty. When no varargs values are supplied, Commons
+ * Lang gives the more generic component type the lower cost.
+ *
+ * After scoring, every candidate with the minimum total cost is returned.
+ * Commons Lang keeps the first minimum encountered in reflection order, but
+ * reflection order is unspecified and may differ from class-file metadata
+ * order. Returning every tied minimum lets shadow comparison accept any
+ * semantically equivalent Commons Lang choice without depending on that order.
+ *
+ * Wrapper-to-primitive unboxing is considered during applicability and scoring
+ * because Commons Lang considers it. Flix does not support that conversion in
+ * lowering, so tied best candidates requiring it are removed only after best
+ * candidate selection. Filtering earlier could select a worse supported
+ * constructor, which would not match the existing reflective path.
+ *
+ * The score should therefore be read as an estimate of conversion distance
+ * used to preserve existing behavior. It is not a runtime conversion, a proof
+ * of type safety, or a general model of Java overload resolution.
+ */
 /** Resolves accessible Java members using descriptor-based class-file metadata. */
 object JavaMemberResolver {
 
