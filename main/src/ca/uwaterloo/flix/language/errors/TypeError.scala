@@ -514,6 +514,33 @@ object TypeError {
   }
 
   /**
+    * Mismatched Label Type.
+    *
+    * @param label the record label.
+    * @param tpe1  the first type of the label.
+    * @param tpe2  the second type of the label.
+    * @param renv  the rigidity environment.
+    * @param loc1  the location where the label has the first type.
+    * @param loc2  the location where the label has the second type.
+    * @param loc   the location where the unification error occurred.
+    */
+  case class MismatchedLabelType(label: Name.Label, tpe1: Type, tpe2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7491
+
+    def summary: String = s"Mismatched types for label '${label.name}': '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched types for label '${cyan(label.name)}': '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
+         |
+         |${highlight(loc1, s"here '${label.name}' has type '${formatType(tpe1, Some(renv))}'.", fmt)}
+         |
+         |${highlight(loc2, s"here '${label.name}' has type '${formatType(tpe2, Some(renv))}'.", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Mismatched Predicate Arity.
     *
     * @param pred   the predicate label.

@@ -231,6 +231,9 @@ object ConstraintSolverInterface {
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
+    case TypeConstraint.RecordConflicted(label, tpe1, tpe2, loc1, loc2, prov) =>
+      List(TypeError.MismatchedLabelType(label, subst(tpe1), subst(tpe2), renv, loc1, loc2, prov.loc))
+
     case TypeConstraint.SchemaConflicted(pred, tpe1, tpe2, prov) =>
       val t1 = subst(tpe1)
       val t2 = subst(tpe2)
