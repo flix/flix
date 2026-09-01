@@ -2694,6 +2694,122 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ExtraLabel](result)
   }
 
+  test("TypeError.MismatchedLabelType.01") {
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = { x = 1 };
+        |    let r2 = { x = "a" };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.02") {
+    // Two labels with mismatched types.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = { x = 1, y = 1 };
+        |    let r2 = { x = "a", y = "b" };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.03") {
+    // The record is passed as an argument.
+    val input =
+      """
+        |def f(_r: { x = Int32 }): Unit = ()
+        |
+        |def g(): Unit \ IO =
+        |    let _ = f({ x = "a" });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.04") {
+    // The record is passed as an argument to a function with an open record parameter.
+    val input =
+      """
+        |def f(_r: { x = Int32 | r }): Unit = ()
+        |
+        |def g(): Unit \ IO =
+        |    let _ = f({ x = "a", z = true });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.05") {
+    // The record is checked against a type ascription.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let _r: { x = Int32 } = { x = "a" };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.06") {
+    // The records are nested inside another type.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = ({ x = 1 }, 1);
+        |    let r2 = ({ x = "a" }, 2);
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.07") {
+    // The label is selected with the wrong type.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r = { x = "a" };
+        |    let _: Int32 = r#x;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.08") {
+    // The mismatched label is inside a nested record.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = { x = { y = 1 } };
+        |    let r2 = { x = { y = "a" } };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
   test("ExtMatchError#11283") {
     val input =
       """
