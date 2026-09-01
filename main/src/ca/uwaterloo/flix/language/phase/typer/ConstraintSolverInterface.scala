@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 import ca.uwaterloo.flix.util.Build
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
   * Interface to [[ConstraintSolver2]].
@@ -301,15 +302,23 @@ object ConstraintSolverInterface {
     * Returns `None` unless the predicate can be uniquely identified.
     */
   private def findMismatchedPred(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type): Option[Name.Pred] = {
+    val preds1 = getPredicates(fullType1)
     val preds2 = getPredicates(fullType2)
-    val candidates = getPredicates(fullType1).collect {
-      case (pred1, payload1) if payload1.typeConstructor == baseType1.typeConstructor &&
-        preds2.exists { case (pred2, payload2) => pred1 == pred2 && payload2.typeConstructor == baseType2.typeConstructor } => pred1
+
+    // The set of predicates whose payloads match `baseType1` in `fullType1` and `baseType2` in `fullType2`.
+    val candidates = mutable.Set.empty[Name.Pred]
+    for ((pred1, payload1) <- preds1) {
+      if (payload1.typeConstructor == baseType1.typeConstructor) {
+        for ((pred2, payload2) <- preds2) {
+          if (pred1 == pred2 && payload2.typeConstructor == baseType2.typeConstructor) {
+            candidates += pred1
+          }
+        }
+      }
     }
-    candidates.distinct match {
-      case pred :: Nil => Some(pred)
-      case _ => None
-    }
+
+    // The predicate is only identified if there is exactly one candidate.
+    if (candidates.size == 1) Some(candidates.head) else None
   }
 
   /**
