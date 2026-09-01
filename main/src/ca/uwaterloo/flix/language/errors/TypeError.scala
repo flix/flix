@@ -516,15 +516,17 @@ object TypeError {
   /**
     * Mismatched Label Type.
     *
-    * @param label the record label.
-    * @param tpe1  the first type of the label.
-    * @param tpe2  the second type of the label.
-    * @param renv  the rigidity environment.
-    * @param loc1  the location where the label has the first type.
-    * @param loc2  the location where the label has the second type.
-    * @param loc   the location where the unification error occurred.
+    * @param label     the record label.
+    * @param tpe1      the first type (the part of the label's type that could not be unified).
+    * @param tpe2      the second type (the part of the label's type that could not be unified).
+    * @param fullType1 the first enclosing type.
+    * @param fullType2 the second enclosing type.
+    * @param renv      the rigidity environment.
+    * @param loc1      the location of the first occurrence of the label.
+    * @param loc2      the location of the second occurrence of the label.
+    * @param loc       the location where the unification error occurred.
     */
-  case class MismatchedLabelType(label: Name.Label, tpe1: Type, tpe2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedLabelType(label: Name.Label, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E7491
 
     def summary: String = s"Mismatched types for label '${label.name}': '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
@@ -533,9 +535,12 @@ object TypeError {
       import fmt.*
       s""">> Mismatched types for label '${cyan(label.name)}': '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
          |
-         |${highlight(loc1, s"here '${label.name}' has type '${formatType(tpe1, Some(renv))}'.", fmt)}
+         |${highlight(loc1, s"'${formatType(tpe1, Some(renv))}' comes from here.", fmt)}
          |
-         |${highlight(loc2, s"here '${label.name}' has type '${formatType(tpe2, Some(renv))}'.", fmt)}
+         |${highlight(loc2, s"'${formatType(tpe2, Some(renv))}' comes from here.", fmt)}
+         |
+         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
          |""".stripMargin
     }
   }
@@ -592,6 +597,38 @@ object TypeError {
          |${highlight(loc1, s"here '${pred.name}' is a ${magenta(pretty(den1))}.", fmt)}
          |
          |${highlight(loc2, s"here '${pred.name}' is a ${magenta(pretty(den2))}.", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Mismatched Predicate Types.
+    *
+    * @param pred      the predicate label.
+    * @param tpe1      the first type (the part of the predicate's type that could not be unified).
+    * @param tpe2      the second type (the part of the predicate's type that could not be unified).
+    * @param fullType1 the first enclosing type.
+    * @param fullType2 the second enclosing type.
+    * @param renv      the rigidity environment.
+    * @param loc1      the location of the first occurrence of the predicate.
+    * @param loc2      the location of the second occurrence of the predicate.
+    * @param loc       the location where the unification error occurred.
+    */
+  case class MismatchedPredicateTypes(pred: Name.Pred, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6710
+
+    def summary: String = s"Mismatched types for predicate '${pred.name}': '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched types for predicate '${cyan(pred.name)}': '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
+         |
+         |${highlight(loc1, s"'${formatType(tpe1, Some(renv))}' comes from here.", fmt)}
+         |
+         |${highlight(loc2, s"'${formatType(tpe2, Some(renv))}' comes from here.", fmt)}
+         |
+         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
          |""".stripMargin
     }
   }

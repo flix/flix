@@ -2810,6 +2810,102 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedLabelType](result)
   }
 
+  test("TypeError.MismatchedLabelType.09") {
+    // The label types are only known after the rows have been unified.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = { x = List#{1} };
+        |    let r2 = { x = List#{"a"} };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.10") {
+    // The label types are determined through a container argument.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = { x = List.reverse(List.Cons(1, List.Nil)) };
+        |    let r2 = { x = List.reverse(List.Cons("a", List.Nil)) };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.11") {
+    // The conflict is in the first of two type arguments.
+    val input =
+      """
+        |enum Pair[a, b] { case Pair(a, b) }
+        |
+        |def f(): Unit \ IO =
+        |    let r1 = { x = Pair.Pair(1, true) };
+        |    let r2 = { x = Pair.Pair("a", true) };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.12") {
+    // The label type is a type alias.
+    val input =
+      """
+        |type alias Age = Int32
+        |
+        |def f(_r: { x = Age }): Unit = ()
+        |
+        |def g(): Unit \ IO =
+        |    let _ = f({ x = "a" });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.13") {
+    // The label types differ only in their effects, which is not a label type mismatch.
+    val input =
+      """
+        |eff E { def op(): Unit }
+        |
+        |def f(_r: { g = Unit -> Unit }): Unit = ()
+        |
+        |def h(): Unit = f({ g = () -> E.op() })
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+    rejectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.14") {
+    // A missing label inside a nested record is not a label type mismatch.
+    val input =
+      """
+        |def f(_r: { x = { y = Int32 } }): Unit = ()
+        |
+        |def g(): Unit \ IO =
+        |    let _ = f({ x = { z = 1 } });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    rejectError[TypeError.MismatchedLabelType](result)
+  }
+
   test("ExtMatchError#11283") {
     val input =
       """
@@ -2820,7 +2916,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.MismatchedPredicateTypes](result)
   }
 
   test("TypeError.ExtMatch.01") {
@@ -3182,6 +3278,95 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibAll)
     expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1). };
+        |    let p2 = #{ Foo("a"). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateTypes](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.02") {
+    // The schema is passed as an argument.
+    val input =
+      """
+        |def f(_p: #{ Foo(Int32) }): Unit = ()
+        |
+        |def main(): Unit \ IO =
+        |    let _ = f(#{ Foo("a"). });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateTypes](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.03") {
+    // Two predicates with mismatched term types.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1). Bar(1). };
+        |    let p2 = #{ Foo("a"). Bar("b"). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateTypes](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.04") {
+    // A lattice predicate with a mismatched key type.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1; 2). };
+        |    let p2 = #{ Foo("a"; 2). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateTypes](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.05") {
+    // The mismatch is nested inside a term type.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo((1, 1)). };
+        |    let p2 = #{ Foo((1, "a")). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateTypes](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.06") {
+    // The term types are only known after the rows have been unified.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(List#{1}). };
+        |    let p2 = #{ Foo(List#{"a"}). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateTypes](result)
   }
 
   test("Test.DefaultHandlerNotInModule.01") {

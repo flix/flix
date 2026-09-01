@@ -161,15 +161,13 @@ object Profiler {
   private def countVars(cs: List[TypeConstraint]): (Long, Long) = {
     val vars = scala.collection.mutable.HashSet.empty[Type.Var]
     def collect(c: TypeConstraint): Unit = c match {
-      case TypeConstraint.Equality(t1, t2, _)                  => vars ++= t1.typeVars; vars ++= t2.typeVars
-      case TypeConstraint.Trait(_, t, _)                       => vars ++= t.typeVars
-      case TypeConstraint.Conflicted(t1, t2, _)                => vars ++= t1.typeVars; vars ++= t2.typeVars
-      case TypeConstraint.RecordConflicted(_, t1, t2, _, _, _) => vars ++= t1.typeVars; vars ++= t2.typeVars
-      case TypeConstraint.SchemaConflicted(_, t1, t2, _)       => vars ++= t1.typeVars; vars ++= t2.typeVars
+      case TypeConstraint.Equality(t1, t2, _)         => vars ++= t1.typeVars; vars ++= t2.typeVars
+      case TypeConstraint.Trait(_, t, _)              => vars ++= t.typeVars
+      case TypeConstraint.Conflicted(t1, t2, _)       => vars ++= t1.typeVars; vars ++= t2.typeVars
       case TypeConstraint.Purification(_, e1, e2, _, nested) =>
         vars ++= e1.typeVars; vars ++= e2.typeVars
         nested.foreach(collect)
-      case TypeConstraint.EffConflicted(_)                     => ()
+      case TypeConstraint.EffConflicted(_)            => ()
     }
     cs.foreach(collect)
     var tv = 0L

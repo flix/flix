@@ -290,34 +290,6 @@ object ConstraintSolver2 {
           TypeConstraint.Conflicted(r1, r2, prov) :: cs1 ::: cs2
       }
 
-    case TypeConstraint.RecordConflicted(label, tpe1, tpe2, loc1, loc2, prov) =>
-      if (isEliminable(tpe1) || isEliminable(tpe2)) {
-        Nil
-      } else {
-        // (redU)
-        val (r1, cs1) = reduce(tpe1)(scope, renv, progress, eqenv, flix)
-        val (r2, cs2) = reduce(tpe2)(scope, renv, progress, eqenv, flix)
-        // Performance: Reuse this, if possible.
-        if ((r1 eq tpe1) && (r2 eq tpe2) && cs1.isEmpty && cs2.isEmpty)
-          constr :: Nil
-        else
-          TypeConstraint.RecordConflicted(label, r1, r2, loc1, loc2, prov) :: cs1 ::: cs2
-      }
-
-    case TypeConstraint.SchemaConflicted(pred, tpe1, tpe2, prov) =>
-      if (isEliminable(tpe1) || isEliminable(tpe2)) {
-        Nil
-      } else {
-        // (redU)
-        val (r1, cs1) = reduce(tpe1)(scope, renv, progress, eqenv, flix)
-        val (r2, cs2) = reduce(tpe2)(scope, renv, progress, eqenv, flix)
-        // Performance: Reuse this, if possible.
-        if ((r1 eq tpe1) && (r2 eq tpe2) && cs1.isEmpty && cs2.isEmpty)
-          constr :: Nil
-        else
-          TypeConstraint.SchemaConflicted(pred, r1, r2, prov) :: cs1 ::: cs2
-      }
-
     case TypeConstraint.EffConflicted(_) => constr :: Nil
   }
 
@@ -418,8 +390,6 @@ object ConstraintSolver2 {
     // Case 1: Non-trait constraint. Do nothing.
     case c: TypeConstraint.Equality => List(c)
     case c: TypeConstraint.Conflicted => List(c)
-    case c: TypeConstraint.RecordConflicted => List(c)
-    case c: TypeConstraint.SchemaConflicted => List(c)
     case c: TypeConstraint.EffConflicted => List(c)
 
     case c@TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
@@ -736,7 +706,7 @@ object ConstraintSolver2 {
     * Returns true if the kind should be unified syntactically.
     */
   @tailrec
-  private def isSyntactic(k: Kind): Boolean = k match {
+  def isSyntactic(k: Kind): Boolean = k match {
     case Kind.Star => true
     case Kind.Predicate => true
 
