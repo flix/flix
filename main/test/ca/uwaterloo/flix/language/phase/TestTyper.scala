@@ -2759,7 +2759,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.MismatchedPredicateArity](result)
   }
 
   test("TypeError.ExtMatch.05") {
@@ -2774,7 +2774,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.MismatchedPredicateArity](result)
   }
 
   test("TypeError.ExtMatch.06") {
@@ -2921,6 +2921,79 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedPredicateArity](result)
   }
 
+  test("TypeError.MismatchedPredicateArity.06") {
+    // Two predicates with the same arity mismatch.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1). Bar(1). };
+        |    let p2 = #{ Foo(1, 2). Bar(1, 2). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.07") {
+    // The schemas are nested inside another type.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = (#{ Foo(1). }, 1);
+        |    let p2 = (#{ Foo(1, 2). }, 2);
+        |    let _ = if (true) p1 else p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.08") {
+    // The schemas are nested inside function types.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let f1 = () -> #{ Foo(1). };
+        |    let f2 = () -> #{ Foo(1, 2). };
+        |    let _ = if (true) f1 else f2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.09") {
+    // The schema is passed as an argument.
+    val input =
+      """
+        |def f(_p: #{ Foo(Int32) }): Unit = ()
+        |
+        |def main(): Unit \ IO =
+        |    let _ = f(#{ Foo(1, 2). });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.10") {
+    // The schema is checked against a type ascription.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _p: #{ Foo(Int32) } = #{ Foo(1, 2). };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
   test("TypeError.MismatchedPredicateDenotation.01") {
     val input =
       """
@@ -2958,6 +3031,36 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    let p1 = #{ Foo(1, 2). };
         |    let p2 = #{ Foo(1; 2). };
         |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.04") {
+    // Two predicates with the same denotation mismatch.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1, 2). Bar(1, 2). };
+        |    let p2 = #{ Foo(1; 2). Bar(1; 2). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.05") {
+    // The schema is passed as an argument.
+    val input =
+      """
+        |def f(_p: #{ Foo(Int32, Int32) }): Unit = ()
+        |
+        |def main(): Unit \ IO =
+        |    let _ = f(#{ Foo(1; 2). });
         |    println("Hello World!")
         |
         |""".stripMargin

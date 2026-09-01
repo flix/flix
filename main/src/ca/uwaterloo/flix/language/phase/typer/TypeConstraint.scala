@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
 
 
@@ -32,6 +32,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Trait(_, tpe, _) => tpe.size
     case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => tpe1.size + tpe2.size
+    case TypeConstraint.SchemaConflicted(_, tpe1, tpe2, _) => tpe1.size + tpe2.size
     case TypeConstraint.EffConflicted(_) => 0
   }
 
@@ -40,6 +41,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"$tpe1 ≁ $tpe2"
+    case TypeConstraint.SchemaConflicted(pred, tpe1, tpe2, _) => s"$pred: $tpe1 ≁ $tpe2"
     case TypeConstraint.EffConflicted(err) => err.toString
   }
 
@@ -98,6 +100,14 @@ object TypeConstraint {
     * A type constraint indicating that `tpe1` and `tpe2` cannot be unified.
     */
   case class Conflicted(tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
+    def loc: SourceLocation = prov.loc
+  }
+
+  /**
+    * A type constraint indicating that the types `tpe1` and `tpe2` of the predicate `pred` cannot
+    * be unified because their type constructors differ (e.g. in arity or denotation).
+    */
+  case class SchemaConflicted(pred: Name.Pred, tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 

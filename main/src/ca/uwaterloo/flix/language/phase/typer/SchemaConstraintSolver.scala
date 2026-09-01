@@ -58,7 +58,7 @@ object SchemaConstraintSolver {
     // ( ℓ : τ₁  | ρ₁ ) ~ ( ℓ : τ₂  | ρ₂ )  =>  { τ₁ ~ τ₂, ρ₁ ~ ρ₂ }
     case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label1), _), t1, _), rest1, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label2), _), t2, _), rest2, _)) if label1 == label2 =>
       progress.markProgress()
-      (List(TypeConstraint.Equality(t1, t2, prov), TypeConstraint.Equality(rest1, rest2, prov)), Substitution.empty)
+      (List(mkEqualityOrConflict(label1, t1, t2, prov), TypeConstraint.Equality(rest1, rest2, prov)), Substitution.empty)
 
     // If labels do not match, then we pivot the right row to make them match.
     //
@@ -69,7 +69,7 @@ object SchemaConstraintSolver {
       pivot(r2, label, t1, r1.typeVars.map(_.sym))(scope, renv, flix) match {
         case Some((Type.Apply(Type.Apply(_, t3, _), rest3, _), subst)) =>
           progress.markProgress()
-          (List(TypeConstraint.Equality(t1, t3, prov), TypeConstraint.Equality(rest1, rest3, prov)), subst)
+          (List(mkEqualityOrConflict(label, t1, t3, prov), TypeConstraint.Equality(rest1, rest3, prov)), subst)
 
         case None =>
           (List(TypeConstraint.Equality(tpe1, tpe2, prov)), Substitution.empty)
@@ -80,6 +80,20 @@ object SchemaConstraintSolver {
     // If nothing matches, we give up and return the constraints as we got them.
     case _ => (List(TypeConstraint.Equality(tpe1, tpe2, prov)), Substitution.empty)
   }
+
+  /**
+    * Returns the constraint relating the types `tpe1` and `tpe2` of the predicate `pred`.
+    *
+    * If both types have known but different type constructors (e.g. `Relation(2)` and `Relation(3)`,
+    * or `Relation(2)` and `Lattice(2)`) then they can never be unified. In that case we return a
+    * [[TypeConstraint.SchemaConflicted]] which records the predicate, so that a precise error can be
+    * reported later. Otherwise we return an ordinary equality constraint.
+    */
+  private def mkEqualityOrConflict(pred: Name.Pred, tpe1: Type, tpe2: Type, prov: Provenance): TypeConstraint =
+    (tpe1.typeConstructor, tpe2.typeConstructor) match {
+      case (Some(tc1), Some(tc2)) if tc1 != tc2 => TypeConstraint.SchemaConflicted(pred, tpe1, tpe2, prov)
+      case _ => TypeConstraint.Equality(tpe1, tpe2, prov)
+    }
 
   /**
     * Rearranges the row so that the given label is at the front.

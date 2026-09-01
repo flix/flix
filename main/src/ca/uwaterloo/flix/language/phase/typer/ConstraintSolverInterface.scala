@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 import ca.uwaterloo.flix.util.Build
 
 import scala.annotation.tailrec
-import scala.collection.mutable
 
 /**
   * Interface to [[ConstraintSolver2]].
@@ -202,37 +201,9 @@ object ConstraintSolverInterface {
       val baseTpe2 = subst(baseType2)
       val fullTpe1 = subst(fullType1)
       val fullTpe2 = subst(fullType2)
-      val default = List(mkMismatchedTypesOrEffects(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc))
-
-      (baseTpe1.typeConstructor, baseTpe2.typeConstructor) match {
-        case (Some(TypeConstructor.Relation(arity1)), Some(TypeConstructor.Relation(arity2))) if arity1 != arity2 =>
-          findMismatchedPred(baseTpe1, baseTpe2, fullTpe1, fullTpe2) match {
-            case Some(pred) => List(TypeError.MismatchedPredicateArity(pred, arity1, arity2, baseTpe1.loc, baseTpe2.loc, loc))
-            case None => default
-          }
-
-        case (Some(TypeConstructor.Lattice(arity1)), Some(TypeConstructor.Lattice(arity2))) if arity1 != arity2 =>
-          findMismatchedPred(baseTpe1, baseTpe2, fullTpe1, fullTpe2) match {
-            case Some(pred) => List(TypeError.MismatchedPredicateArity(pred, arity1, arity2, baseTpe1.loc, baseTpe2.loc, loc))
-            case None => default
-          }
-
-        case (Some(TypeConstructor.Relation(_)), Some(TypeConstructor.Lattice(_))) =>
-          findMismatchedPred(baseTpe1, baseTpe2, fullTpe1, fullTpe2) match {
-            case Some(pred) => List(TypeError.MismatchedPredicateDenotation(pred, Denotation.Relational, Denotation.Latticenal, baseTpe1.loc, baseTpe2.loc, loc))
-            case None => default
-          }
-
-        case (Some(TypeConstructor.Lattice(_)), Some(TypeConstructor.Relation(_))) =>
-          findMismatchedPred(baseTpe1, baseTpe2, fullTpe1, fullTpe2) match {
-            case Some(pred) => List(TypeError.MismatchedPredicateDenotation(pred, Denotation.Latticenal, Denotation.Relational, baseTpe1.loc, baseTpe2.loc, loc))
-            case None => default
-          }
-
-        // A function type and a concrete non-function type can never be unified, regardless of effects.
-        case _ =>
-          mkArrowAndNonArrowError(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc).getOrElse(default)
-      }
+      // A function type and a concrete non-function type can never be unified, regardless of effects.
+      mkArrowAndNonArrowError(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc)
+        .getOrElse(List(mkMismatchedTypesOrEffects(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc)))
 
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
@@ -259,6 +230,27 @@ object ConstraintSolverInterface {
 
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+
+    case TypeConstraint.SchemaConflicted(pred, tpe1, tpe2, prov) =>
+      val t1 = subst(tpe1)
+      val t2 = subst(tpe2)
+      (t1.typeConstructor, t2.typeConstructor) match {
+        case (Some(TypeConstructor.Relation(arity1)), Some(TypeConstructor.Relation(arity2))) if arity1 != arity2 =>
+          List(TypeError.MismatchedPredicateArity(pred, arity1, arity2, t1.loc, t2.loc, prov.loc))
+
+        case (Some(TypeConstructor.Lattice(arity1)), Some(TypeConstructor.Lattice(arity2))) if arity1 != arity2 =>
+          List(TypeError.MismatchedPredicateArity(pred, arity1, arity2, t1.loc, t2.loc, prov.loc))
+
+        case (Some(TypeConstructor.Relation(_)), Some(TypeConstructor.Lattice(_))) =>
+          List(TypeError.MismatchedPredicateDenotation(pred, Denotation.Relational, Denotation.Latticenal, t1.loc, t2.loc, prov.loc))
+
+        case (Some(TypeConstructor.Lattice(_)), Some(TypeConstructor.Relation(_))) =>
+          List(TypeError.MismatchedPredicateDenotation(pred, Denotation.Latticenal, Denotation.Relational, t1.loc, t2.loc, prov.loc))
+
+        // Neither an arity nor a denotation mismatch: report it as the equality it would otherwise have been.
+        case _ =>
+          mkTypeError(TypeConstraint.Equality(tpe1, tpe2, prov), subst, renv, root)
+      }
 
     case TypeConstraint.EffConflicted(err) => List(err)
 
@@ -290,47 +282,6 @@ object ConstraintSolverInterface {
       case _ =>
         TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
     }
-  }
-
-  /**
-    * Attempts to find the predicate in the schema types `fullType1` and `fullType2` whose
-    * payload types are `baseType1` and `baseType2`, respectively.
-    *
-    * The predicate is identified by comparing type constructors, so `baseType1` and `baseType2`
-    * must have different type constructors (e.g. relations of different arity).
-    *
-    * Returns `None` unless the predicate can be uniquely identified.
-    */
-  private def findMismatchedPred(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type): Option[Name.Pred] = {
-    val preds1 = getPredicates(fullType1)
-    val preds2 = getPredicates(fullType2)
-
-    // The set of predicates whose payloads match `baseType1` in `fullType1` and `baseType2` in `fullType2`.
-    val candidates = mutable.Set.empty[Name.Pred]
-    for ((pred1, payload1) <- preds1) {
-      if (payload1.typeConstructor == baseType1.typeConstructor) {
-        for ((pred2, payload2) <- preds2) {
-          if (pred1 == pred2 && payload2.typeConstructor == baseType2.typeConstructor) {
-            candidates += pred1
-          }
-        }
-      }
-    }
-
-    // The predicate is only identified if there is exactly one candidate.
-    if (candidates.size == 1) Some(candidates.head) else None
-  }
-
-  /**
-    * Returns the predicates of the schema or schema row type `tpe` paired with their payload types.
-    *
-    * Returns the empty list if `tpe` is not a schema or schema row type.
-    */
-  private def getPredicates(tpe: Type): List[(Name.Pred, Type)] = tpe match {
-    case Type.Apply(Type.Cst(TypeConstructor.Schema, _), row, _) => getPredicates(row)
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), payload, _), rest, _) =>
-      (pred, payload) :: getPredicates(rest)
-    case _ => Nil
   }
 
   /**
