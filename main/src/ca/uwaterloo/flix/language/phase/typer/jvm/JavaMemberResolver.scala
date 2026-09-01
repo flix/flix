@@ -88,19 +88,23 @@ import scala.jdk.CollectionConverters.*
  * used to preserve existing behavior. It is not a runtime conversion, a proof
  * of type safety, or a general model of Java overload resolution.
  */
-/** Resolves accessible Java members using descriptor-based class-file metadata. */
 object JavaMemberResolver {
 
   import JavaArgument.*
 
+  /** The penalty added for each varargs conversion. */
   private val VarArgsCost = 0.001f
 
+  /** The descriptor of `java.lang.Cloneable`, a direct supertype of every array type. */
   private val CloneableDesc = ClassDesc.of("java.lang.Cloneable")
 
+  /** The descriptor of `java.io.Serializable`, a direct supertype of every array type. */
   private val SerializableDesc = ClassDesc.of("java.io.Serializable")
 
+  /** The primitive types in the promotion order used by Commons Lang. */
   private val WideningPrimitives = List(CD_byte, CD_short, CD_char, CD_int, CD_long, CD_float, CD_double)
 
+  /** Maps each non-void primitive descriptor to its wrapper descriptor. */
   private val PrimitiveToWrapper = Map(
     CD_boolean -> CD_Boolean,
     CD_byte -> CD_Byte,
@@ -112,6 +116,7 @@ object JavaMemberResolver {
     CD_double -> CD_Double
   )
 
+  /** Maps each primitive wrapper descriptor to its primitive descriptor. */
   private val WrapperToPrimitive = PrimitiveToWrapper.map {
     case (primitive, wrapper) => wrapper -> primitive
   }
@@ -127,13 +132,23 @@ object JavaMemberResolver {
   def field(owner: ClassDesc, name: String, static: Boolean)(implicit flix: Flix): Result[Option[JavaField], JavaLookupError] =
     findField(owner, name, Set.empty).map(_.filter(f => Modifier.isStatic(f.modifiers) == static))
 
-  /** Returns `Ok` with every tied lowest-cost candidate, or `Err` if assignability metadata cannot be read. */
+  /**
+    * Selects the best candidates according to Commons Lang's transformation costs.
+    *
+    * Exact erased descriptor matches are returned without scoring. Otherwise, the method discards inapplicable
+    * candidates, scores every remaining candidate, and returns every candidate tied for the minimum score.
+    *
+    *   - `Ok(Nil)` means that no candidate is applicable.
+    *   - `Ok(methods)` contains the exact matches or every tied lowest-cost candidate.
+    *   - `Err(error)` means that metadata required for applicability or scoring could not be read.
+    */
   private def best(candidates: List[JavaMethod], arguments: List[JavaArgument])(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] = exactMatches(candidates, arguments) match {
     case exact if exact.nonEmpty => Ok(exact)
     case _ =>
       Result.traverse(candidates)(method => isMatching(method, arguments).map(matches => method -> matches)).flatMap { tested =>
         val matching = tested.collect { case (method, true) => method }
-        Result.traverse(matching)(method => transformationCost(arguments, method).map(cost => method -> cost)).map { scored =>
+        val scoredCandidates = Result.traverse(matching)(method => transformationCost(arguments, method).map(cost => method -> cost))
+        scoredCandidates.map { scored =>
           scored.map(_._2).minOption match {
             case None => Nil
             case Some(minimum) => scored.collect { case (method, cost) if cost == minimum => method }
@@ -164,17 +179,27 @@ object JavaMemberResolver {
   /** Returns `Ok(true)` when `arguments` match expanded varargs, `Ok(false)` otherwise, or `Err` on lookup failure. */
   private def matchesExpandedVarArgs(arguments: List[JavaArgument], parameters: List[ClassDesc])(implicit flix: Flix): Result[Boolean, JavaLookupError] = {
     if (parameters.isEmpty || arguments.length < parameters.length - 1) {
+      // A varargs call cannot omit a fixed parameter, and a valid varargs method must have an array parameter.
       Ok(false)
     } else {
+      // The fixed arguments must match their parameters before the trailing arguments can match the component type.
       val fixedCount = parameters.length - 1
       val fixedArguments = arguments.take(fixedCount)
       val fixedParameters = parameters.take(fixedCount)
       componentType(parameters.last) match {
-        case None => Ok(false)
+        case None =>
+          // The final parameter of a valid varargs method must be an array.
+          Ok(false)
         case Some(component) =>
+          // Every trailing argument must be assignable to the varargs array component type.
           allAssignable(fixedArguments, fixedParameters).flatMap { fixedMatch =>
-            if (!fixedMatch) Ok(false)
-            else allAssignable(arguments.drop(fixedCount), List.fill(arguments.length - fixedCount)(component))
+            if (!fixedMatch) {
+              // A mismatch among the fixed parameters makes the complete invocation inapplicable.
+              Ok(false)
+            } else {
+              // The remaining arguments form the expanded varargs sequence.
+              allAssignable(arguments.drop(fixedCount), List.fill(arguments.length - fixedCount)(component))
+            }
           }
       }
     }
@@ -191,7 +216,19 @@ object JavaMemberResolver {
     }
   }
 
-  /** Returns `Ok` with whether `argument` is assignable to `parameter`, or `Err` if hierarchy metadata cannot be read. */
+  /**
+    * Tests whether `argument` is assignment-compatible with `parameter` under the Commons Lang matching policy.
+    *
+    * The policy includes widening references, widening primitives, boxing, unboxing, and assignment of `Null` to
+    * reference types. Unsupported unboxing is deliberately rejected only after best-candidate selection.
+    *
+    *   - `Typed(String)` is assignable to `Object` by widening the reference.
+    *   - `Typed(byte)` is assignable to `int` by widening the primitive.
+    *   - `Typed(int)` is assignable to `Object` by boxing to `Integer` and widening the reference.
+    *   - `Null` is assignable to `String`, but not to `int`.
+    *
+    * Returns `Ok(true)` for an allowed conversion, `Ok(false)` otherwise, or `Err` if hierarchy metadata is missing.
+    */
   private def isAssignable(argument: JavaArgument, parameter: ClassDesc)(implicit flix: Flix): Result[Boolean, JavaLookupError] = argument match {
     case Null => Ok(!parameter.isPrimitive)
     case Typed(source) if source == parameter => Ok(true)
@@ -209,11 +246,24 @@ object JavaMemberResolver {
     case Typed(source) => isReferenceSubtype(source, parameter)
   }
 
-  /** Returns `Ok` with whether `source` is a reference subtype of `target`, or `Err` if hierarchy metadata cannot be read. */
+  /**
+    * Tests reference subtyping, including Java's special array subtype rules.
+    *
+    * Nominal reference types are delegated to the configured `JavaTypeProvider`; array relationships are computed
+    * directly because array descriptors do not have class-file metadata of their own.
+    *
+    *   - `String` is a subtype of `CharSequence`.
+    *   - `String[]` is a subtype of `Object`, `Cloneable`, `Serializable`, and `Object[]`.
+    *   - `int[]` is not a subtype of `long[]` because primitive array components must be identical.
+    *
+    * Returns `Ok(true)` for a subtype, `Ok(false)` otherwise, or `Err` if nominal hierarchy metadata is missing.
+    */
   private def isReferenceSubtype(source: ClassDesc, target: ClassDesc)(implicit flix: Flix): Result[Boolean, JavaLookupError] = {
     if (source == target) {
+      // Every reference type is a subtype of itself.
       Ok(true)
     } else if (source.isArray) {
+      // Arrays have descriptor-defined supertypes and covariant reference components.
       if (target == CD_Object || target == CloneableDesc || target == SerializableDesc) {
         Ok(true)
       } else if (target.isArray) {
@@ -227,13 +277,26 @@ object JavaMemberResolver {
         Ok(false)
       }
     } else if (target.isArray) {
+      // A non-array reference type is never a subtype of an array type.
       Ok(false)
     } else {
+      // All remaining cases are nominal reference relationships read from class-file metadata.
       flix.javaTypeProvider.isSubtype(source, target)
     }
   }
 
-  /** Returns `Ok` with the Commons-Lang-style transformation cost, or `Err` if hierarchy metadata cannot be read. */
+  /**
+    * Computes the total Commons Lang transformation cost for an applicable method.
+    *
+    * Fixed parameters contribute their individual object transformation costs. Varargs add a small penalty and are
+    * scored according to whether the invocation supplies no values, an explicit array, or expanded trailing values.
+    *
+    *   - `(String) -> (String)` costs `0.0`.
+    *   - `(byte) -> (int)` costs `0.3` under the Commons Lang primitive ordering.
+    *   - `(String, String) -> (String...)` costs `0.002` for two expanded varargs values.
+    *
+    * Returns `Ok(cost)` when all required hierarchy metadata is available, or `Err` when it cannot be read.
+    */
   private def transformationCost(arguments: List[JavaArgument], method: JavaMethod)(implicit flix: Flix): Result[Float, JavaLookupError] = {
     val parameters = erasedParameters(method)
     val fixedCount = if (method.isVarArgs) parameters.length - 1 else parameters.length
@@ -269,7 +332,18 @@ object JavaMemberResolver {
     }
   }
 
-  /** Returns `Ok` with the transformation cost to `target`, or `Err` if hierarchy metadata cannot be read. */
+  /**
+    * Computes the transformation cost from one argument to one target parameter.
+    *
+    * Primitive targets use primitive promotion costs, while reference targets use class-hierarchy costs. `Null` has
+    * the fixed reference cost used by Commons Lang.
+    *
+    *   - `Typed(byte) -> int` delegates to primitive promotion and costs `0.3`.
+    *   - `Typed(Integer) -> Number` delegates to hierarchy traversal and costs `1.0`.
+    *   - `Null -> String` costs `1.5`.
+    *
+    * Returns `Ok(cost)` when hierarchy metadata is available, or `Err` when it cannot be read.
+    */
   private def objectTransformationCost(argument: JavaArgument, target: ClassDesc)(implicit flix: Flix): Result[Float, JavaLookupError] = {
     if (target.isPrimitive) {
       Ok(primitivePromotionCost(argument, target))
@@ -279,7 +353,18 @@ object JavaMemberResolver {
     }
   }
 
-  /** Returns `Ok` with the reference-hierarchy cost, or `Err` if hierarchy metadata cannot be read. */
+  /**
+    * Computes the Commons Lang hierarchy distance from `source` to reference type `target`.
+    *
+    * Each superclass step adds `1.0`; an assignable interface adds `0.25`; and exhausting the hierarchy adds a final
+    * `1.5` penalty. The accumulator `cost` records the superclass steps already traversed.
+    *
+    *   - `String -> Object` costs `1.0`.
+    *   - `Integer -> Object` costs `2.0` through `Number`.
+    *   - `ArrayList -> List` costs `0.25` because `List` is an assignable interface.
+    *
+    * Returns `Ok(cost)` when hierarchy metadata is available, or `Err` when it cannot be read.
+    */
   private def objectHierarchyCost(source: ClassDesc, target: ClassDesc, cost: Float)(implicit flix: Flix): Result[Float, JavaLookupError] = {
     if (source == target) {
       Ok(cost)
@@ -315,7 +400,18 @@ object JavaMemberResolver {
     else flix.javaTypeProvider.lookupClass(desc).map(clazz => Modifier.isInterface(clazz.modifiers))
   }
 
-  /** Returns the Commons-Lang-style primitive promotion cost from `argument` to `target`. */
+  /**
+    * Computes the Commons Lang primitive unboxing and widening cost.
+    *
+    * Unboxing a wrapper adds `0.1`; every subsequent position traversed in `WideningPrimitives` adds another `0.1`.
+    * Applicability has already rejected primitive conversions that Java does not allow.
+    *
+    *   - `byte -> short` costs `0.1`.
+    *   - `byte -> int` costs `0.3` because the Commons Lang ordering includes `char` between `short` and `int`.
+    *   - `Integer -> long` costs `0.2`: `0.1` for unboxing and `0.1` for widening.
+    *
+    * Returns the cost used to rank an already-applicable primitive conversion.
+    */
   private def primitivePromotionCost(argument: JavaArgument, target: ClassDesc): Float = argument match {
     case Null => 1.5f
     case Typed(source0) =>

@@ -27,8 +27,7 @@ import java.lang.constant.{ClassDesc, MethodTypeDesc}
 class TestJavaMemberResolver extends AnyFunSuite {
 
   test("constructors.SelectsExactMatch") {
-    val flix = new Flix()
-    implicit val implicitFlix: Flix = flix
+    implicit val flix: Flix = new Flix
     try {
       val owner = ClassDesc.of("java.lang.StringBuilder")
       JavaMemberResolver.constructors(owner, List(Typed(CD_int))) match {
@@ -40,8 +39,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
   }
 
   test("constructors.SelectsReferenceSubtypeMatch") {
-    val flix = new Flix()
-    implicit val implicitFlix: Flix = flix
+    implicit val flix: Flix = new Flix
     try {
       val owner = ClassDesc.of("java.util.ArrayList")
       val linkedList = ClassDesc.of("java.util.LinkedList")
@@ -55,8 +53,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
   }
 
   test("constructors.SelectsPrimitiveWideningMatch") {
-    val flix = new Flix()
-    implicit val implicitFlix: Flix = flix
+    implicit val flix: Flix = new Flix
     try {
       val owner = ClassDesc.of("java.math.BigDecimal")
       JavaMemberResolver.constructors(owner, List(Typed(CD_byte))) match {
@@ -68,8 +65,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
   }
 
   test("constructors.SelectsPrimitiveBoxingMatch") {
-    val flix = new Flix()
-    implicit val implicitFlix: Flix = flix
+    implicit val flix: Flix = new Flix
     try {
       val owner = ClassDesc.of("java.util.concurrent.atomic.AtomicReference")
       JavaMemberResolver.constructors(owner, List(Typed(CD_int))) match {
@@ -82,8 +78,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
   }
 
   test("constructors.RejectsUnsupportedUnboxing") {
-    val flix = new Flix()
-    implicit val implicitFlix: Flix = flix
+    implicit val flix: Flix = new Flix
     try {
       val owner = ClassDesc.of("java.lang.StringBuilder")
       JavaMemberResolver.constructors(owner, List(Typed(CD_Integer))) match {
@@ -94,8 +89,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
   }
 
   test("constructors.ReturnsTiedNullMatches") {
-    val flix = new Flix()
-    implicit val implicitFlix: Flix = flix
+    implicit val flix: Flix = new Flix
     try {
       val owner = ClassDesc.of("java.lang.StringBuilder")
       JavaMemberResolver.constructors(owner, List(Null)) match {
@@ -111,8 +105,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
   }
 
   test("constructors.SelectsFixedArityVarArgsMatch") {
-    val flix = new Flix()
-    implicit val implicitFlix: Flix = flix
+    implicit val flix: Flix = new Flix
     try {
       val owner = ClassDesc.of("java.lang.ProcessBuilder")
       val strings = CD_String.arrayType()
@@ -126,8 +119,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
   }
 
   test("constructors.SelectsExpandedVarArgsMatch") {
-    val flix = new Flix()
-    implicit val implicitFlix: Flix = flix
+    implicit val flix: Flix = new Flix
     try {
       val owner = ClassDesc.of("java.lang.ProcessBuilder")
       val arguments = List(Typed(CD_String), Typed(CD_String))
@@ -141,8 +133,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
   }
 
   test("constructors.ReturnsNoMatch") {
-    val flix = new Flix()
-    implicit val implicitFlix: Flix = flix
+    implicit val flix: Flix = new Flix
     try {
       val owner = ClassDesc.of("java.lang.StringBuilder")
       JavaMemberResolver.constructors(owner, List(Typed(CD_boolean))) match {
@@ -153,8 +144,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
   }
 
   test("constructors.ReportsMissingClass") {
-    val flix = new Flix()
-    implicit val implicitFlix: Flix = flix
+    implicit val flix: Flix = new Flix
     try {
       val missing = ClassDesc.of("dev.flix.prototype.DoesNotExist")
       assert(JavaMemberResolver.constructors(missing, Nil) == Err(MissingClass(missing)))
