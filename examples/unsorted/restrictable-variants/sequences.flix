@@ -815,7 +815,7 @@ mod Seq {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(rc: Region[r], xs: Seq[s][a]): Iterator[a, r, r] \ r =
+    pub def iterator(rc: Region[r], xs: Seq[s][a]): Iterator[a, {}, r] \ r =
         let ls = Ref.fresh(rc, open_variant_as Seq xs);
         let next = () -> {
             choose (Ref.get(ls)) {
@@ -824,7 +824,7 @@ mod Seq {
                 case Seq.Cons(x, rs) => Ref.put(rs, ls); Some(x)
             }
         };
-        Iterator.unfoldWithIter(rc, next)
+        Iterator.unfoldWithIter(rc, next) |> Iterator.absorbRegion
 
     ///
     /// Returns the association list `l` as a `DelayMap`.
@@ -879,7 +879,7 @@ instance Foldable[Seq.Seq[s]] {
 
 instance Iterable[Seq.Seq[s][a]] {
     type Elm = a
-    pub def iterator(rc: Region[r], l: Seq.Seq[s][a]): Iterator[a, r, r] \ r = Seq.iterator(rc, l)
+    pub def iterator(rc: Region[r], l: Seq.Seq[s][a]): Iterator[a, {}, r] \ r = Seq.iterator(rc, l)
 }
 
 instance ForEach[Seq.Seq[s][a]] {
