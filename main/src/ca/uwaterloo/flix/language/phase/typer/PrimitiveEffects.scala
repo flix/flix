@@ -15,10 +15,9 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, LocalResource}
+import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource}
 import org.json4s.JsonAST.*
 import org.json4s.jvalue2monadic
 import org.json4s.native.JsonMethods.parse
@@ -40,16 +39,16 @@ object PrimitiveEffects {
   private val MethodEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Methods.json"
 
   /**
-    * A pre-computed map from packages to effects.
+    * A pre-computed map from package names to effects.
     */
-  private val packageEffs: Map[Package, Set[Symbol.EffSym]] = loadPackageEffs()
+  private val packageEffs: Map[String, Set[Symbol.EffSym]] = loadPackageEffs()
 
   /**
     * A pre-computed map from classes to effects.
     *
     * If there is are specific effect(s) for a constructor or method then we use the effects for the entire class.
     */
-  private val classEffs: Map[Class[?], Set[Symbol.EffSym]] = loadClassEffs()
+  private val classEffs: Map[ClassDesc, Set[Symbol.EffSym]] = loadClassEffs()
 
   /**
     * A pre-computed map from classes to the effects of their constructors.
@@ -68,10 +67,10 @@ object PrimitiveEffects {
   /**
     * Returns the primitive effects of calling the given constructor `c`.
     */
-  def getConstructorEffs(c: JavaMethod, loc: SourceLocation)(implicit flix: Flix): Type = constructorEffs.get(c.ref.owner) match {
+  def getConstructorEffs(c: JavaMethod, loc: SourceLocation): Type = constructorEffs.get(c.ref.owner) match {
     case None =>
       // Case 1: No effects for the constructor. Try the class map.
-      getClassAndPackageEffs(ClassDescs.load(c.ref.owner, flix.jarLoader), loc)
+      getClassAndPackageEffs(c.ref.owner, loc)
     case Some(effs) =>
       // Case 2: We found the effects for the constructor.
       toEffSet(effs, loc)
@@ -80,10 +79,10 @@ object PrimitiveEffects {
   /**
     * Returns the primitive effects of calling the given method `m`.
     */
-  def getMethodEffs(m: JavaMethod, loc: SourceLocation)(implicit flix: Flix): Type = methodEffs.get((m.ref.owner, m.ref.name)) match {
+  def getMethodEffs(m: JavaMethod, loc: SourceLocation): Type = methodEffs.get((m.ref.owner, m.ref.name)) match {
     case None =>
       // Case 1: No effects for the method. Try the class map.
-      getClassAndPackageEffs(ClassDescs.load(m.ref.owner, flix.jarLoader), loc)
+      getClassAndPackageEffs(m.ref.owner, loc)
     case Some(effs) =>
       // Case 2: We found the effects for the method.
       toEffSet(effs, loc)
@@ -93,11 +92,11 @@ object PrimitiveEffects {
     * Returns the primitive effects of the class `c` if they exist.
     * Defaults to [[getPackageEffs]] if nothing was found.
     */
-  private def getClassAndPackageEffs(c: Class[?], loc: SourceLocation): Type = {
+  private def getClassAndPackageEffs(c: ClassDesc, loc: SourceLocation): Type = {
     classEffs.get(c) match {
       case None =>
         // Case 1.1: No effects for the class. Try the package.
-        getPackageEffs(c.getPackage, loc)
+        getPackageEffs(c.packageName(), loc)
       case Some(effs) =>
         // Case 1.2: We use the class effects.
         toEffSet(effs, loc)
@@ -105,10 +104,10 @@ object PrimitiveEffects {
   }
 
   /**
-    * Returns the primitive effs of the package `p`.
+    * Returns the primitive effs of the package named `p`.
     * Defaults to [[Type.IO]] if nothing was found.
     */
-  private def getPackageEffs(p: Package, loc: SourceLocation): Type = {
+  private def getPackageEffs(p: String, loc: SourceLocation): Type = {
     packageEffs.get(p) match {
       case None =>
         // Case 1.1.1: No effects for the package. Use the IO effect by default.
@@ -138,16 +137,15 @@ object PrimitiveEffects {
     * }
     * }}}
     */
-  private def loadPackageEffs(): Map[Package, Set[Symbol.EffSym]] = {
+  private def loadPackageEffs(): Map[String, Set[Symbol.EffSym]] = {
     val data = LocalResource.get(PackageEffsPath)
     val json = parse(data)
 
     val m = json \\ "packages" match {
       case JObject(l) => l.map {
         case (packageName, JString(s)) =>
-          val pkg = Package.getPackages.filter(p => p.getName == packageName).head
           val effSet = parseEffSet(s)
-          (pkg, effSet)
+          (packageName, effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
       case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
@@ -168,16 +166,16 @@ object PrimitiveEffects {
     * }
     * }}}
     */
-  private def loadClassEffs(): Map[Class[?], Set[Symbol.EffSym]] = {
+  private def loadClassEffs(): Map[ClassDesc, Set[Symbol.EffSym]] = {
     val data = LocalResource.get(ClassEffsPath)
     val json = parse(data)
 
     val m = json \\ "classes" match {
       case JObject(l) => l.map {
         case (className, JString(s)) =>
-          val clazz = Class.forName(className)
+          val desc = ClassDesc.of(className)
           val effSet = parseEffSet(s)
-          (clazz, effSet)
+          (desc, effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
       case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
@@ -229,22 +227,24 @@ object PrimitiveEffects {
     * }
     * }}}
     *
-    * Note: The effect set applies to *ALL* constructors of the class.
+    * Note: The class must be the class that *declares* the method, not a subclass that inherits it,
+    * since a resolved [[JavaMethod]] refers to its declaring class. TestPrimitiveEffects enforces this.
+    *
+    * Note: The effect set applies to *ALL* overloads of the method.
     */
   private def loadMethodEffs(): Map[(ClassDesc, String), Set[Symbol.EffSym]] = {
     val data = LocalResource.get(MethodEffsPath)
     val json = parse(data)
 
     val m = json \\ "methods" match {
-      case JObject(l) => l.flatMap {
+      case JObject(l) => l.map {
         case (classNameAndMethod, JString(s)) =>
           val cc = classNameAndMethod.indexOf("::")
           val className = classNameAndMethod.substring(0, cc)
           val methodName = classNameAndMethod.substring(cc + 2)
-          val clazz = Class.forName(className)
+          val desc = ClassDesc.of(className)
           val effSet = parseEffSet(s)
-          // The method may be inherited, so it is keyed by its declaring class.
-          clazz.getMethods.filter(_.getName == methodName).map(m => ((ClassDescs.of(m.getDeclaringClass), methodName), effSet))
+          ((desc, methodName), effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
       case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
