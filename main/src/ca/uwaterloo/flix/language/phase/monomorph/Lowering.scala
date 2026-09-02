@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, 
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import scala.jdk.CollectionConverters.*
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -495,7 +496,7 @@ object Lowering {
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       // Box primitive args where Java expects Object (e.g., `new SimpleEntry(42, true)`).
-      val javaParamTypes = constructor.getParameterTypes
+      val javaParamTypes = constructor.ref.descriptor.parameterList().asScala.toList
       val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(JConstructor.of(constructor)), boxedArgs, t, eff, loc)
 
@@ -1099,7 +1100,14 @@ object Lowering {
     * E.g., in `m.put("k", 42)` on a `HashMap[String, Int32]`, the actual type is `Int32`
     * but the expected type is `Object` (erased), so `42` is boxed via `Integer.valueOf(42)`.
     */
-  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: Class[?]): MonoAst.Expr = {
+  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: Class[?]): MonoAst.Expr =
+    boxIfNecessary(arg, ClassDescs.of(expectedParamType))
+
+  /**
+    * Boxes `arg` if the actual arg type (Flix primitive) mismatches the expected param type (Object).
+    * The expected param type is given as a class descriptor.
+    */
+  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: ClassDesc): MonoAst.Expr = {
     val actualArgType = arg.tpe
     if (isPrimType(actualArgType) && !expectedParamType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(

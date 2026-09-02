@@ -9,12 +9,14 @@ mod Test.Exp.Choose.Recursive {
         case Xor(Expr[s], Expr[s])
     }
 
+    @CompileTest
     pub def testChoose01(): Bool = {
         choose Expr.Cst(false) {
             case Expr.Cst(_) => true
         }
     }
 
+    @CompileTest
     pub def testChoose02(): Bool = {
         choose Expr.Cst(true) {
             case Expr.Cst(_) => true
@@ -22,6 +24,7 @@ mod Test.Exp.Choose.Recursive {
         }
     }
 
+    @CompileTest
     pub def testChoose03(): Bool = {
         let cstOrVar = if (true) open_variant Expr.Cst(true) else open_variant Expr.Var(123);
         choose cstOrVar {
@@ -30,6 +33,7 @@ mod Test.Exp.Choose.Recursive {
         }
     }
 
+    @CompileTest
     pub def testChoose04(): Bool = {
         let cstOrVar = if (true) open_variant Expr.Cst(true) else open_variant Expr.Var(123);
         choose cstOrVar {
@@ -39,6 +43,7 @@ mod Test.Exp.Choose.Recursive {
         }
     }
 
+    @CompileTest
     pub def testChoose05(): Bool = {
         let f = x -> choose x {
             case Expr.Cst(_) => false
@@ -52,6 +57,7 @@ mod Test.Exp.Choose.Recursive {
         h(Expr.Cst(true))
     }
 
+    @CompileTest
     pub def testChoose06(): Bool = {
         let f = x -> choose x {
             case Expr.Cst(_) => false

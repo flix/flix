@@ -16,13 +16,15 @@
  */
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.instantiateJavaTypeWithObjectArgs
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
+import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 
 import java.lang.reflect.Executable
 
@@ -31,20 +33,20 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given def.
     */
-  def visitDef(defn: KindedAst.Def, subst: SubstitutionTree): TypedAst.Def = defn match {
+  def visitDef(defn: KindedAst.Def, subst: SubstitutionTree)(implicit flix: Flix): TypedAst.Def = defn match {
     case KindedAst.Def(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0)
-      val exp = visitExp(exp0)(subst)
+      val exp = visitExp(exp0)(subst, flix)
       TypedAst.Def(sym, spec, exp, loc)
   }
 
   /**
     * Reconstructs types in the given sig.
     */
-  def visitSig(sig: KindedAst.Sig, subst: SubstitutionTree): TypedAst.Sig = sig match {
+  def visitSig(sig: KindedAst.Sig, subst: SubstitutionTree)(implicit flix: Flix): TypedAst.Sig = sig match {
     case KindedAst.Sig(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0)
-      val exp = exp0.map(visitExp(_)(subst))
+      val exp = exp0.map(visitExp(_)(subst, flix))
       TypedAst.Sig(sym, spec, exp, loc)
   }
 
@@ -90,7 +92,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given expression.
     */
-  private def visitExp(exp0: KindedAst.Expr)(implicit subst: SubstitutionTree): TypedAst.Expr = exp0 match {
+  private def visitExp(exp0: KindedAst.Expr)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Expr = exp0 match {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
@@ -199,7 +201,7 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Region(sym, regSym, exp, tvar, evar, loc) =>
       // Use the appropriate branch for the scope.
-      val e = visitExp(exp)(subst.branches.getOrElse(regSym, SubstitutionTree.empty))
+      val e = visitExp(exp)(subst.branches.getOrElse(regSym, SubstitutionTree.empty), flix)
       val tpe = subst(tvar)
       val eff = subst(evar)
       val bnd = TypedAst.Binder(sym, eff)
@@ -644,11 +646,36 @@ object TypeReconstruction {
     if (!exc.isVarArgs) return es
 
     val declaredArity = exc.getParameterCount
+    def varArgsType = Type.mkNative(exc.getParameterTypes.last.getComponentType, loc)
+    wrapVarArgs(declaredArity, varArgsType, es, loc)
+  }
+
+  /**
+    * Returns the given arguments `es` with varargs arguments wrapped in a VectorLit if needed.
+    */
+  private def getArgumentsWithVarArgs(constructor: JavaMethod, es: List[TypedAst.Expr], loc: SourceLocation)(implicit flix: Flix): List[TypedAst.Expr] = {
+    if (!constructor.isVarArgs) return es
+
+    val descriptor = constructor.ref.descriptor
+    val declaredArity = descriptor.parameterCount()
+    def varArgsType = {
+      val componentDesc = descriptor.parameterType(declaredArity - 1).componentType()
+      Type.mkNative(ClassDescs.load(componentDesc, flix.jarLoader), loc)
+    }
+    wrapVarArgs(declaredArity, varArgsType, es, loc)
+  }
+
+  /**
+    * Returns the given arguments `es` with the trailing varargs arguments wrapped in a VectorLit.
+    *
+    * `declaredArity` is the number of declared parameters, the last of which is the varargs parameter,
+    * and `varArgsType` is the element type of that parameter.
+    */
+  private def wrapVarArgs(declaredArity: Int, varArgsType: => Type, es: List[TypedAst.Expr], loc: SourceLocation): List[TypedAst.Expr] = {
     val actualArity = es.length
 
     if (actualArity == declaredArity - 1) {
       // Case 1: Varargs omitted entirely. Insert an empty vector.
-      val varArgsType = Type.mkNative(exc.getParameterTypes.last.getComponentType, loc)
       val varArgs = TypedAst.Expr.VectorLit(Nil, Type.mkVector(varArgsType, loc), Type.Pure, loc)
       es :+ varArgs
     } else if (actualArity >= declaredArity) {
@@ -684,7 +711,7 @@ object TypeReconstruction {
   /**
     * Applies the substitution to the given constraint.
     */
-  private def visitConstraint(c0: KindedAst.Constraint)(implicit subst: SubstitutionTree): TypedAst.Constraint = {
+  private def visitConstraint(c0: KindedAst.Constraint)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Constraint = {
     val KindedAst.Constraint(cparams0, head0, body0, loc) = c0
 
     val head = visitHeadPredicate(head0)
@@ -709,7 +736,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given JVM constructor.
     */
-  private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit subst: SubstitutionTree): TypedAst.JvmConstructor = {
+  private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.JvmConstructor = {
     constructor match {
       case KindedAst.JvmConstructor(exp0, tpe, eff, loc) =>
         val exp = visitExp(exp0)
@@ -720,7 +747,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given JVM method.
     */
-  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit subst: SubstitutionTree): TypedAst.JvmMethod = {
+  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.JvmMethod = {
     method match {
       case KindedAst.JvmMethod(ann, ident, fparams0, exp0, tpe, eff, loc) =>
         val fparams = fparams0.map(visitFormalParam(_, subst))
@@ -732,7 +759,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given ext-match rule.
     */
-  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit subst: SubstitutionTree): TypedAst.ExtMatchRule = rule match {
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.ExtMatchRule = rule match {
     case KindedAst.ExtMatchRule(pat, exp, loc) =>
       val p = visitExtPat(pat)
       val e = visitExp(exp)
@@ -804,7 +831,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given head predicate.
     */
-  private def visitHeadPredicate(head0: KindedAst.Predicate.Head)(implicit subst: SubstitutionTree): TypedAst.Predicate.Head = head0 match {
+  private def visitHeadPredicate(head0: KindedAst.Predicate.Head)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Predicate.Head = head0 match {
     case KindedAst.Predicate.Head.Atom(pred, den0, terms, tvar, loc) =>
       val ts = terms.map(t => visitExp(t))
       TypedAst.Predicate.Head.Atom(pred, den0, ts, subst(tvar), loc)
@@ -814,7 +841,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given body predicate.
     */
-  private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit subst: SubstitutionTree): TypedAst.Predicate.Body = body0 match {
+  private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Predicate.Body = body0 match {
     case KindedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms, tvar, loc) =>
       val ts = terms.map(t => visitPattern(t))
       TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst(tvar), loc)

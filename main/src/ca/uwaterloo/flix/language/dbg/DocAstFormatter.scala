@@ -433,7 +433,7 @@ object DocAstFormatter {
       case Type.Native(clazz) =>
         formatJavaClass(clazz)
       case Type.JvmConstructor(constructor) =>
-        formatJavaClass(constructor.getClass)
+        text(Expr.javaClassName(constructor.ref.owner))
       case Type.JvmMethod(method) =>
         formatJavaClass(method.getClass)
       case Type.JvmField(field) =>

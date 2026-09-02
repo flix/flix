@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.shared.JField
+import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JField}
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
@@ -79,8 +79,8 @@ object TypedAstPrinter {
     case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _, _, _, _, _) => DocAst.Expr.Handler(symUse.sym, rules.map(printHandlerRule))
     case Expr.RunWith(exp1, exp2, _, _, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
-    case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
-    case Expr.InvokeSuperConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
+    case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(JConstructor.of(constructor), exps.map(print))
+    case Expr.InvokeSuperConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(JConstructor.of(constructor), exps.map(print))
     case Expr.InvokeMethod(method, exp, exps, _, _, _) => DocAst.Expr.JavaInvokeMethod(method, print(exp), exps.map(print))
     case Expr.InvokeSuperMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
     case Expr.InvokeStaticMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))

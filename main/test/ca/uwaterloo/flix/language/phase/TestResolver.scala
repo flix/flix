@@ -174,8 +174,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
-  // this test is temporarily ignored because it recovers and proceeds
-  // to fail in future unimplemented phases
   test("InaccessibleStruct.03") {
     val input =
       s"""
@@ -2236,9 +2234,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedStruct](result)
   }
 
-  // A bug was introduced into the kinder when it was refactored, so this test fails, but
-  // will reenable it once my next struct kinder support pr is merged
-  test("ResoutionError.MissingStructField.01") {
+  test("ResolutionError.MissingStructField.01") {
     val input =
       """
         |mod S {

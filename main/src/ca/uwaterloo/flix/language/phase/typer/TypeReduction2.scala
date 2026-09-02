@@ -18,18 +18,18 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethodRef}
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaMethodRef}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, JConstructor, JMethod, RegionScope}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, JMethod, RegionScope}
 import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils}
-import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
+import org.apache.commons.lang3.reflect.MethodUtils
 
 import java.lang.constant.ConstantDescs.*
 import java.lang.constant.ClassDesc
-import java.lang.reflect.{Constructor, GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
+import java.lang.reflect.{GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
 import scala.annotation.tailrec
 
 object TypeReduction2 {
@@ -110,7 +110,8 @@ object TypeReduction2 {
       t match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
-          (instantiateJavaTypeWithFreshVars(constructor.getDeclaringClass, scope, loc), cs)
+          val clazz = ClassDescs.load(constructor.ref.owner, flix.jarLoader)
+          (instantiateJavaTypeWithFreshVars(clazz, scope, loc), cs)
 
         case Type.Cst(TypeConstructor.JvmField(field), _) =>
           progress.markProgress()
@@ -194,21 +195,17 @@ object TypeReduction2 {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaConstructorResolution.UnresolvedTypes
 
-    // Old path (authoritative): load parameter classes and resolve the constructor with reflection.
-    val tparams = ts.map(getJavaType)
-    val oldConstructor: Option[Constructor[?]] = Option(ConstructorUtils.getMatchingAccessibleConstructor(clazz, tparams *))
-      .filterNot(c => usesBoxing(tparams, c.getParameterTypes))
-
-    // New path (shadow only): independently derive descriptors and resolve without passing a Class to the resolver.
     val owner = ClassDescs.of(clazz)
     val arguments = ts.map(getJavaArgument)
-    val oldResult = oldConstructor.map(JConstructor.of)
-    val newResult = JavaMemberResolver.constructors(owner, arguments)
-      .map(_.map(method => JConstructor(method.ref.owner, method.ref.descriptor)))
-    JavaReductionOpsTEMP.compareConstructors(owner, arguments, oldResult, newResult, loc)
-
-    // TODO: Remove the old path once JvmConstructor stores descriptor-based constructor metadata.
-    oldConstructor.map(JavaConstructorResolution.Resolved.apply).getOrElse(JavaConstructorResolution.NotFound)
+    JavaMemberResolver.constructors(owner, arguments) match {
+      // The resolver returns every constructor tied for the best match, in class-file declaration order.
+      // We deterministically pick the first one.
+      case Ok(constructor :: _) => JavaConstructorResolution.Resolved(constructor)
+      case Ok(Nil) => JavaConstructorResolution.NotFound
+      case Err(error) =>
+        val query = s"${owner.displayName()}(${arguments.mkString(", ")})"
+        throw InternalCompilerException(s"Java constructor lookup failed for '$query': $error", loc)
+    }
   }
 
   /** Tries to find a method of `thisObj` that takes arguments of type `ts`. */
@@ -453,7 +450,7 @@ object TypeReduction2 {
   private object JavaConstructorResolution {
 
     /** One matching constructor. */
-    case class Resolved(constructor: Constructor[?]) extends JavaConstructorResolution
+    case class Resolved(constructor: JavaMethod) extends JavaConstructorResolution
 
     /** No matching constructor. */
     case object NotFound extends JavaConstructorResolution
