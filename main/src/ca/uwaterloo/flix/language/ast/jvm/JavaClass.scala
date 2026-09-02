@@ -21,10 +21,16 @@ import java.lang.constant.ClassDesc
 case class JavaClass(
   desc: ClassDesc,
   modifiers: Int,
+  isRuntimeVisibleAnnotation: Boolean,
   typeParameters: List[JavaTypeParameter],
   superClass: Option[JavaType],
   interfaces: List[JavaType],
   declaredConstructors: List[JavaMethod],
   declaredMethods: List[JavaMethod],
   declaredFields: List[JavaField]
-)
+) {
+
+  /** Returns whether this class-file type is an annotation. */
+  def isAnnotation: Boolean = (modifiers & 0x2000) != 0
+
+}
