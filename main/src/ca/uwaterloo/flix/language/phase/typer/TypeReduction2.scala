@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.jvm.JavaFieldRef
+import ca.uwaterloo.flix.language.ast.jvm.{JavaFieldRef, JavaMethodRef}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, JConstructor, RegionScope}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, JConstructor, JMethod, RegionScope}
 import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
@@ -165,7 +165,7 @@ object TypeReduction2 {
           val (reducedTpe, cs0) = reduce(tpe)
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = cs0 ::: css.flatten
-          lookupMethod(reducedTpe, name.name, reducedTpes) match {
+          lookupMethod(reducedTpe, name.name, reducedTpes, loc) match {
             case JavaMethodResolution.Resolved(method) =>
               val classTypeArgs = extractClassTypeArgs(method, reducedTpe, scope, loc)
               val (tpe, cs0) = instantiateMethod(method, classTypeArgs, reducedTpes, scope, loc)
@@ -177,7 +177,7 @@ object TypeReduction2 {
         case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
-          lookupStaticMethod(clazz, name.name, reducedTpes) match {
+          lookupStaticMethod(clazz, name.name, reducedTpes, loc) match {
             case JavaMethodResolution.Resolved(method) =>
               val (tpe, cs0) = instantiateMethod(method, Nil, reducedTpes, scope, loc)
               progress.markProgress()
@@ -210,43 +210,45 @@ object TypeReduction2 {
   }
 
   /** Tries to find a method of `thisObj` that takes arguments of type `ts`. */
-  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type])(implicit scope: RegionScope, renv: RigidityEnv): JavaMethodResolution = {
+  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaMethodResolution = {
     val typesAreKnown = isKnown(thisObj) && ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
-    // For type variables (rigid), fall back to java.lang.Object (the erased type).
+    // Old and new owners are derived independently. For type variables (rigid), both paths fall back to Object.
     val clazz = Type.classFromFlixType(thisObj).getOrElse(classOf[Object])
-    retrieveMethod(clazz, methodName, ts, static = false)
+    val owner = getJavaTypeDesc(thisObj)
+    retrieveMethod(clazz, owner, methodName, ts, static = false, loc)
   }
 
   /** Tries to find a static method of `clazz` that takes arguments of type `ts`. */
-  private def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type])(implicit scope: RegionScope, renv: RigidityEnv): JavaMethodResolution = {
+  private def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaMethodResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
-    retrieveMethod(clazz, methodName, ts, static = true)
+    retrieveMethod(clazz, ClassDescs.of(clazz), methodName, ts, static = true, loc)
   }
 
   /** Tries to find a static/dynamic method of `clazz` that takes arguments of type `ts`. */
-  private def retrieveMethod(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean): JavaMethodResolution = {
+  private def retrieveMethod(clazz: Class[?], owner: ClassDesc, methodName: String, ts: List[Type], static: Boolean, loc: SourceLocation)(implicit flix: Flix): JavaMethodResolution = {
+    // Old path (authoritative): load parameter classes and resolve the method with reflection.
     val tparams = ts.map(getJavaType)
-    val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *)
-    // We check if we found a method and if its static flag matches.
-    if (m != null && JvmUtils.isStatic(m) == static && !usesBoxing(tparams, m.getParameterTypes)) {
-      // Case 1: We found the method on the clazz.
-      JavaMethodResolution.Resolved(m)
-    } else {
-      // Case 2: We failed to find the method on the clazz.
-      // We make one attempt on java.lang.Object.
-      val classObj = classOf[java.lang.Object]
-      val m = MethodUtils.getMatchingAccessibleMethod(classObj, methodName, tparams *)
-      if (m != null && JvmUtils.isStatic(m) == static && !usesBoxing(tparams, m.getParameterTypes)) {
-        // Case 2.1: We found the method on java.lang.Object.
-        JavaMethodResolution.Resolved(m)
-      } else {
-        // Case 2.2: We failed to find the method, so we report an error on the original clazz.
-        JavaMethodResolution.NotFound
-      }
+    def reflectivelyResolve(methodOwner: Class[?]): Option[Method] =
+      Option(MethodUtils.getMatchingAccessibleMethod(methodOwner, methodName, tparams *))
+        .filter(method => JvmUtils.isStatic(method) == static)
+        .filterNot(method => usesBoxing(tparams, method.getParameterTypes))
+
+    val oldMethod = reflectivelyResolve(clazz).orElse(reflectivelyResolve(classOf[Object]))
+
+    // New path (shadow only): independently derive argument descriptors and resolve without passing a Class.
+    val arguments = ts.map(getJavaArgument)
+    val oldResult = oldMethod.map(JMethod.of).map(method => JavaMethodRef(method.owner, method.name, method.descriptor))
+    val newResult = JavaMemberResolver.methods(owner, methodName, arguments, static).map(_.map(_.ref))
+    JavaReductionOpsTEMP.compareMethods(owner, methodName, arguments, static, oldResult, newResult, loc)
+
+    // TODO: Remove the old path once JvmMethod stores descriptor-based method metadata.
+    oldMethod match {
+      case Some(method) => JavaMethodResolution.Resolved(method)
+      case None => JavaMethodResolution.NotFound
     }
   }
 
