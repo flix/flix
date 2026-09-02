@@ -1,11 +1,10 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaTypeParameter}
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.{Kinder, monomorph, Simplifier}
 
-import java.lang.reflect.Method
 import scala.collection.immutable.SortedSet
 
 /**
@@ -286,9 +285,13 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of a Java method.
     *
-    * The kind depends on the number of type parameters:
-    * - For instance methods: class type parameters + method type parameters.
-    * - For static methods: only method type parameters (class params are not in scope).
+    * `classTypeParameters` are the type parameters of the class that the method was looked up on
+    * (which may be a subtype of its declaring class) that are in scope:
+    * - For instance methods: all type parameters of that class.
+    * - For static methods: none (class params are not in scope).
+    *
+    * The parameter and return types of the method refer to these type parameters.
+    * The kind depends on the number of type parameters in scope: class type parameters + method type parameters.
     *
     * Examples:
     * - `JvmMethod(String.length)` has kind `Jvm` (no type parameters).
@@ -297,11 +300,8 @@ object TypeConstructor {
     *
     * Type arguments are applied via `Type.Apply`, e.g., `JvmMethod(ArrayList.get)[String]`.
     */
-  case class JvmMethod(method: Method) extends TypeConstructor {
-    val numClassParams: Int = if (java.lang.reflect.Modifier.isStatic(method.getModifiers)) 0
-                              else method.getDeclaringClass.getTypeParameters.length
-    val numMethodParams: Int = method.getTypeParameters.length
-    def kind: Kind = Kind.mkArrowTo(numClassParams + numMethodParams, Kind.Jvm)
+  case class JvmMethod(method: JavaMethod, classTypeParameters: List[JavaTypeParameter]) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrowTo(classTypeParameters.length + method.typeParameters.length, Kind.Jvm)
   }
 
   /**

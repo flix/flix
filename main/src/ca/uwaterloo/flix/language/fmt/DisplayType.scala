@@ -21,8 +21,6 @@ import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{SymbolSet, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.reflect.Method
-
 /**
   * A well-kinded type in an easily-printable format.
   */
@@ -297,7 +295,7 @@ object DisplayType {
 
   case class JvmField(field: JavaField) extends DisplayType
 
-  case class JvmMethod(method: Method) extends DisplayType
+  case class JvmMethod(method: JavaMethod) extends DisplayType
 
   //////////////////////
   // Miscellaneous Types
@@ -523,7 +521,7 @@ object DisplayType {
         case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
         case TypeConstructor.Native(clazz) => mkApply(Name(clazz.getName), t.typeArguments.map(visit))
         case TypeConstructor.JvmConstructor(constructor) => mkApply(JvmConstructor(constructor), t.typeArguments.map(visit))
-        case TypeConstructor.JvmMethod(method) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
+        case TypeConstructor.JvmMethod(method, _) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
         case TypeConstructor.JvmField(field) => mkApply(JvmField(field), t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)

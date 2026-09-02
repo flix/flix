@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Method
 import scala.collection.immutable.SortedSet
 
 sealed trait DocAst
@@ -322,14 +321,14 @@ object DocAst {
     def JavaInvokeMethod(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(methodName.name)), ds)
 
-    def JavaInvokeMethod(m: Method, d: Expr, ds: List[Expr]): Expr =
-      App(DoubleDot(d, AsIs(m.getName)), ds)
+    def JavaInvokeMethod(m: JavaMethod, d: Expr, ds: List[Expr]): Expr =
+      App(DoubleDot(d, AsIs(m.ref.name)), ds)
 
     def JavaInvokeMethod(m: JMethod, d: Expr, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(m.name)), ds)
 
-    def JavaInvokeStaticMethod(m: Method, ds: List[Expr]): Expr = {
-      App(Dot(Native(m.getDeclaringClass), AsIs(m.getName)), ds)
+    def JavaInvokeStaticMethod(m: JavaMethod, ds: List[Expr]): Expr = {
+      App(Dot(AsIs(javaClassName(m.ref.owner)), AsIs(m.ref.name)), ds)
     }
 
     def JavaInvokeStaticMethod(m: JMethod, ds: List[Expr]): Expr = {
@@ -421,7 +420,7 @@ object DocAst {
 
     case class JvmConstructor(constructor: JavaMethod) extends Atom
 
-    case class JvmMethod(method: Method) extends Atom
+    case class JvmMethod(method: JavaMethod) extends Atom
 
     case class JvmField(field: JavaField) extends Atom
 

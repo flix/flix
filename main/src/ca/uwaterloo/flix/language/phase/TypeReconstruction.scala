@@ -26,8 +26,6 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 
-import java.lang.reflect.Executable
-
 object TypeReconstruction {
 
   /**
@@ -461,7 +459,7 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe.typeConstructor match {
-        case Some(TypeConstructor.JvmMethod(method)) =>
+        case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
         case _ =>
@@ -474,7 +472,7 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe.typeConstructor match {
-        case Some(TypeConstructor.JvmMethod(method)) =>
+        case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, loc)
         case _ =>
@@ -487,7 +485,7 @@ object TypeReconstruction {
       val returnTpe = subst(tvar)
       val eff = subst(evar)
       methodTpe.typeConstructor match {
-        case Some(TypeConstructor.JvmMethod(method)) =>
+        case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
         case _ =>
@@ -642,40 +640,17 @@ object TypeReconstruction {
   /**
     * Returns the given arguments `es` with varargs arguments wrapped in a VectorLit if needed.
     */
-  private def getArgumentsWithVarArgs(exc: Executable, es: List[TypedAst.Expr], loc: SourceLocation): List[TypedAst.Expr] = {
-    if (!exc.isVarArgs) return es
+  private def getArgumentsWithVarArgs(method: JavaMethod, es: List[TypedAst.Expr], loc: SourceLocation)(implicit flix: Flix): List[TypedAst.Expr] = {
+    if (!method.isVarArgs) return es
 
-    val declaredArity = exc.getParameterCount
-    def varArgsType = Type.mkNative(exc.getParameterTypes.last.getComponentType, loc)
-    wrapVarArgs(declaredArity, varArgsType, es, loc)
-  }
-
-  /**
-    * Returns the given arguments `es` with varargs arguments wrapped in a VectorLit if needed.
-    */
-  private def getArgumentsWithVarArgs(constructor: JavaMethod, es: List[TypedAst.Expr], loc: SourceLocation)(implicit flix: Flix): List[TypedAst.Expr] = {
-    if (!constructor.isVarArgs) return es
-
-    val descriptor = constructor.ref.descriptor
+    val descriptor = method.ref.descriptor
     val declaredArity = descriptor.parameterCount()
-    def varArgsType = {
-      val componentDesc = descriptor.parameterType(declaredArity - 1).componentType()
-      Type.mkNative(ClassDescs.load(componentDesc, flix.jarLoader), loc)
-    }
-    wrapVarArgs(declaredArity, varArgsType, es, loc)
-  }
-
-  /**
-    * Returns the given arguments `es` with the trailing varargs arguments wrapped in a VectorLit.
-    *
-    * `declaredArity` is the number of declared parameters, the last of which is the varargs parameter,
-    * and `varArgsType` is the element type of that parameter.
-    */
-  private def wrapVarArgs(declaredArity: Int, varArgsType: => Type, es: List[TypedAst.Expr], loc: SourceLocation): List[TypedAst.Expr] = {
     val actualArity = es.length
 
     if (actualArity == declaredArity - 1) {
       // Case 1: Varargs omitted entirely. Insert an empty vector.
+      val componentDesc = descriptor.parameterType(declaredArity - 1).componentType()
+      val varArgsType = Type.mkNative(ClassDescs.load(componentDesc, flix.jarLoader), loc)
       val varArgs = TypedAst.Expr.VectorLit(Nil, Type.mkVector(varArgsType, loc), Type.Pure, loc)
       es :+ varArgs
     } else if (actualArity >= declaredArity) {
