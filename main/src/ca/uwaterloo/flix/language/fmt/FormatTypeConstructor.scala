@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.TypeConstructor
+import ca.uwaterloo.flix.util.ClassDescs
 
 object FormatTypeConstructor {
 
@@ -70,7 +71,7 @@ object FormatTypeConstructor {
     case TypeConstructor.RestrictableEnum(sym, _) => sym.name
 
     // JVM types
-    case TypeConstructor.Native(clazz) => clazz.getSimpleName
+    case TypeConstructor.Native(desc, _) => ClassDescs.simpleNameOf(desc)
     case TypeConstructor.JvmConstructor(constructor) => s"Constructor(${constructor.ref.owner.displayName()})"
     case TypeConstructor.JvmMethod(method, _) => s"Method(${method.ref.name})"
     case TypeConstructor.JvmField(field) => s"Field(${field.ref.name})"

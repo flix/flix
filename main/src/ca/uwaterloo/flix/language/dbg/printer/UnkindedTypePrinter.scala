@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.{TypeConstructor, UnkindedType}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Type
+import ca.uwaterloo.flix.util.ClassDescs
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -68,7 +69,7 @@ object UnkindedTypePrinter {
       case (UnkindedType.RestrictableEnum(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.UnappliedAlias(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.UnappliedAssocType(sym, _), _) => Type.AsIs(sym.toString)
-      case (UnkindedType.UnappliedNative(clazz, _), _) => Type.AsIs(clazz.getSimpleName)
+      case (UnkindedType.UnappliedNative(desc, _, _), _) => Type.AsIs(ClassDescs.simpleNameOf(desc))
       case (UnkindedType.Arrow(eff0, arity, _), _) if args.lengthIs == arity && arity >= 2 =>
         // `(a1, a2, ..) -> b \ ef` is represented as `List(a1, a2, .., b)`
         // safe match because of the case guard

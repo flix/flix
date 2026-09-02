@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.util.{Formatter, Grammar}
+import ca.uwaterloo.flix.util.{ClassDescs, Formatter, Grammar}
 
 /**
   * A common super-type for type errors.
@@ -316,7 +316,8 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      val availableFields = Type.classFromFlixType(tpe).map(getFieldsByName).getOrElse(Nil)
+      // Transitional: loads the class since the field lookup still requires a loaded class.
+      val availableFields = Type.descFromFlixType(tpe).map(desc => getFieldsByName(ClassDescs.load(desc, flix.jarLoader))).getOrElse(Nil)
       s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
          |
          |${highlight(loc, "cannot find field", fmt)}

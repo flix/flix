@@ -20,7 +20,9 @@ import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitU
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst, UnkindedType}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.util.{Formatter, Grammar}
+import ca.uwaterloo.flix.util.{ClassDescs, Formatter, Grammar}
+
+import java.lang.constant.ClassDesc
 
 /**
   * A common super-type for resolution errors.
@@ -1253,23 +1255,24 @@ object ResolutionError {
     * @param expectedArity the number of type arguments expected.
     * @param loc           the location where the error occurred.
     */
-  case class IllegalRawJavaType(clazz: java.lang.Class[?], expectedArity: Int, loc: SourceLocation) extends ResolutionError {
+  case class IllegalRawJavaType(clazz: ClassDesc, expectedArity: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3692
 
+    private val name = ClassDescs.simpleNameOf(clazz)
     private val expected = Grammar.n_things(expectedArity, "type argument")
-    private val example = s"${clazz.getSimpleName}[${List.fill(expectedArity)("t").mkString(", ")}]"
+    private val example = s"$name[${List.fill(expectedArity)("t").mkString(", ")}]"
 
     def summary: String =
-      s"Missing type arguments: '${clazz.getSimpleName}' expects $expected."
+      s"Missing type arguments: '$name' expects $expected."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing type arguments: '${red(clazz.getSimpleName)}' expects $expected.
+      s""">> Missing type arguments: '${red(name)}' expects $expected.
          |
          |${highlight(loc, "missing type arguments", fmt)}
          |
          |${underline("Explanation:")} Java generic types cannot be used without type arguments.
-         |Use '${cyan(example)}' instead of '${red(clazz.getSimpleName)}'.
+         |Use '${cyan(example)}' instead of '${red(name)}'.
          |""".stripMargin
     }
   }

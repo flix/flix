@@ -261,12 +261,12 @@ object TypeReduction2 {
     case Type.Cst(TypeConstructor.BigInt, _) => ClassDesc.of("java.math.BigInteger")
     case Type.Cst(TypeConstructor.Str, _) => CD_String
     case Type.Cst(TypeConstructor.Regex, _) => ClassDesc.of("java.util.regex.Pattern")
-    case Type.Cst(TypeConstructor.Native(clazz), _) => ClassDescs.of(clazz)
+    case Type.Cst(TypeConstructor.Native(desc, _), _) => desc
 
     // Parameterized Java types erase to their native base type.
     case Type.Apply(_, _, _) if isNativeBase(tpe) =>
       tpe.baseType match {
-        case Type.Cst(TypeConstructor.Native(clazz), _) => ClassDescs.of(clazz)
+        case Type.Cst(TypeConstructor.Native(desc, _), _) => desc
         case _ => CD_Object
       }
 
@@ -388,7 +388,7 @@ object TypeReduction2 {
   /** Returns `true` if the base type of a chain of applications is a `Native` constructor. */
   @tailrec
   private def isNativeBase(tpe: Type): Boolean = tpe match {
-    case Type.Cst(TypeConstructor.Native(_), _) => true
+    case Type.Cst(TypeConstructor.Native(_, _), _) => true
     case Type.Apply(t1, _, _) => isNativeBase(t1)
     case _ => false
   }

@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{SymbolSet, VarText}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 
 /**
   * A well-kinded type in an easily-printable format.
@@ -519,7 +519,7 @@ object DisplayType {
           mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
         case TypeConstructor.Struct(sym, _) => mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
         case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
-        case TypeConstructor.Native(clazz) => mkApply(Name(clazz.getName), t.typeArguments.map(visit))
+        case TypeConstructor.Native(desc, _) => mkApply(Name(ClassDescs.binaryNameOf(desc)), t.typeArguments.map(visit))
         case TypeConstructor.JvmConstructor(constructor) => mkApply(JvmConstructor(constructor), t.typeArguments.map(visit))
         case TypeConstructor.JvmMethod(method, _) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
         case TypeConstructor.JvmField(field) => mkApply(JvmField(field), t.typeArguments.map(visit))

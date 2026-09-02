@@ -111,7 +111,7 @@ package object serialization {
 
   case class RestrictableEnum(sym: RestrictableEnumSym, kind: SKind) extends STC
 
-  case class Native(clazz: String) extends STC
+  case class Native(desc: String, arity: Int) extends STC
 
   case object Array extends STC
 

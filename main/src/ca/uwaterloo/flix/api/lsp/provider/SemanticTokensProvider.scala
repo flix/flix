@@ -867,7 +867,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.Struct(_, _) => true
     case TypeConstructor.RestrictableEnum(_, _) => true
-    case TypeConstructor.Native(_) => true
+    case TypeConstructor.Native(_, _) => true
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
     case TypeConstructor.Pure => true

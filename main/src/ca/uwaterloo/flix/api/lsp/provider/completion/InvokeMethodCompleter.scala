@@ -15,17 +15,20 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
 import ca.uwaterloo.flix.language.ast.{Name, Type}
-import ca.uwaterloo.flix.util.JvmUtils
+import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
 
 object InvokeMethodCompleter {
 
-  def getCompletions(obj: Type, name: Name.Ident): Iterable[MethodCompletion] = {
-    Type.classFromFlixType(obj) match {
+  def getCompletions(obj: Type, name: Name.Ident)(implicit flix: Flix): Iterable[MethodCompletion] = {
+    Type.descFromFlixType(obj) match {
       case None =>
         Nil
-      case Some(clazz) =>
+      case Some(desc) =>
+        // Transitional: loads the class since the method lookup still requires a loaded class.
+        val clazz = ClassDescs.load(desc, flix.jarLoader)
         JvmUtils.getInstanceMethods(clazz).sortBy(_.getName).map(MethodCompletion(name, Priority.Lowest(0), _))
     }
   }

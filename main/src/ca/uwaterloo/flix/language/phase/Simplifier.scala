@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, JMethod, Modifi
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps, Nel}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import scala.annotation.tailrec
@@ -360,7 +360,7 @@ object Simplifier {
             val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
             SimpleType.mkEnum(enumSym, targs.map(visitType))
 
-          case TypeConstructor.Native(clazz) => SimpleType.Native(ClassDescs.of(clazz))
+          case TypeConstructor.Native(desc, _) => SimpleType.Native(desc)
 
           case TypeConstructor.Array =>
             // Remove the region from the array.
@@ -533,7 +533,7 @@ object Simplifier {
             val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
             Type.mkEnum(enumSym, targs.map(visitPolyType), loc)
 
-          case TypeConstructor.Native(_) => cst
+          case TypeConstructor.Native(_, _) => cst
 
           case TypeConstructor.Array =>
             // Remove the region from the array.

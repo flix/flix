@@ -448,7 +448,7 @@ object JavaMemberResolver {
     *
     * Returns `Ok(true)` for a subtype, `Ok(false)` otherwise, or `Err` if nominal hierarchy metadata is missing.
     */
-  private def isReferenceSubtype(source: ClassDesc, target: ClassDesc)(implicit flix: Flix): Result[Boolean, JavaLookupError] = {
+  def isReferenceSubtype(source: ClassDesc, target: ClassDesc)(implicit flix: Flix): Result[Boolean, JavaLookupError] = {
     if (source == target) {
       // Every reference type is a subtype of itself.
       Ok(true)

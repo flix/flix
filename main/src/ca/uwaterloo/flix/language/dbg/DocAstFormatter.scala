@@ -224,17 +224,12 @@ object DocAstFormatter {
         group(text("new") +: text(className) +: curly(
           semiSepOpt(allFormatted)
         ))
-      case Native(clazz) =>
-        formatJavaClass(clazz)
     }
     d0 match {
       case _: Composite if paren => parens(doc)
       case _: Composite | _: Atom => doc
     }
   }
-
-  private def formatJavaClass(clazz: Class[?]): Doc =
-    text(clazz.getName)
 
   private def formatJvmConstructor(c: JvmConstructor)(implicit i: Indent): Doc = {
     val JvmConstructor(clo, _) = c
@@ -430,8 +425,8 @@ object DocAstFormatter {
           case None =>
             text("#") |:: curlyTuple(predicatesf)
         }
-      case Type.Native(clazz) =>
-        formatJavaClass(clazz)
+      case Type.Native(desc) =>
+        text(Expr.javaClassName(desc))
       case Type.JvmConstructor(constructor) =>
         text(Expr.javaClassName(constructor.ref.owner))
       case Type.JvmMethod(method) =>

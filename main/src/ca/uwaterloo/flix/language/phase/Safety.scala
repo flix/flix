@@ -9,13 +9,16 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, S
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
+import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver2}
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
-import ca.uwaterloo.flix.util.{JvmUtils, ParOps}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, ParOps, Result}
 
+import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.{CD_Object, CD_String, CD_Throwable}
 import java.lang.reflect.{ParameterizedType, TypeVariable}
-import java.math.BigInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -441,7 +444,7 @@ object Safety {
       (Type.eraseAliases(from).baseType, Type.eraseAliases(to).baseType) match {
 
         // Allow casting Null to a Java type.
-        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_, _), _)) => ()
         case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigInt, _)) => ()
         case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigDecimal, _)) => ()
         case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => ()
@@ -449,28 +452,28 @@ object Safety {
         case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Array, _)) => ()
 
         // Allow casting one Java type to another if there is a subtype relationship.
-        case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-          if (right.isAssignableFrom(left)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        case (Type.Cst(TypeConstructor.Native(left, _), _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
+          if (isSubtype(left, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for String.
-        case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-          if (right.isAssignableFrom(classOf[String])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
+          if (isSubtype(CD_String, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for Regex.
-        case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-          if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
+          if (isSubtype(JavaClasses.Regex, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for BigInt.
-        case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-          if (right.isAssignableFrom(classOf[BigInteger])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
+          if (isSubtype(JavaClasses.BigInteger, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for BigDecimal.
-        case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-          if (right.isAssignableFrom(classOf[java.math.BigDecimal])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
+          if (isSubtype(JavaClasses.BigDecimal, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for Arrays.
-        case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-          if (right.isAssignableFrom(classOf[Array[Object]])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
+          if (isSubtype(CD_Object.arrayType(), right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Disallow casting a type variable.
         case (src@Type.Var(_, _), _) =>
@@ -481,12 +484,12 @@ object Safety {
           sctx.errors.add(IllegalCheckedCastToVar(from, dst, loc))
 
         // Disallow casting a Java type to any other type.
-        case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
-          sctx.errors.add(IllegalCheckedCastToNonJava(clazz, to, loc))
+        case (Type.Cst(TypeConstructor.Native(desc, _), _), _) =>
+          sctx.errors.add(IllegalCheckedCastToNonJava(desc, to, loc))
 
         // Disallow casting a Java type to any other type (symmetric case).
-        case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
-          sctx.errors.add(IllegalCheckedCastFromNonJava(from, clazz, loc))
+        case (_, Type.Cst(TypeConstructor.Native(desc, _), _)) =>
+          sctx.errors.add(IllegalCheckedCastFromNonJava(from, desc, loc))
 
         // Disallow all other casts.
         case _ => sctx.errors.add(IllegalCheckedCast(from, to, loc))
@@ -569,8 +572,8 @@ object Safety {
         case (_, Some(Type.Var(_, _))) => ()
 
         // Allow casts between Java types.
-        case (Type.Cst(TypeConstructor.Native(_), _), _) => ()
-        case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => ()
+        case (Type.Cst(TypeConstructor.Native(_, _), _), _) => ()
+        case (_, Some(Type.Cst(TypeConstructor.Native(_, _), _))) => ()
 
         // Disallow casting a Boolean to another primitive type.
         case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
@@ -762,14 +765,16 @@ object Safety {
     * @param clazz the Java class specified in the catch clause
     * @param loc   the location of the catch parameter.
     */
-  private def checkCatchClass(clazz: Class[?], loc: SourceLocation)(implicit sctx: SharedContext): Unit =
-    if (!isThrowable(clazz)) {
-      sctx.errors.add(IllegalCatchType(clazz, loc))
+  private def checkCatchClass(clazz: Class[?], loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
+    val desc = ClassDescs.of(clazz)
+    if (!isThrowable(desc, loc)) {
+      sctx.errors.add(IllegalCatchType(desc, loc))
     }
+  }
 
-  /** Returns `true` if `clazz` is [[java.lang.Throwable]] or a subclass of it. */
-  private def isThrowable(clazz: Class[?]): Boolean =
-    classOf[Throwable].isAssignableFrom(clazz)
+  /** Returns `true` if `desc` is [[java.lang.Throwable]] or a subclass of it. */
+  private def isThrowable(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean =
+    isSubtype(desc, CD_Throwable, loc)
 
   /** Checks that the type of the argument to `throw` is [[java.lang.Throwable]] or a subclass. */
   private def checkThrow(exp: Expr)(implicit sctx: SharedContext, flix: Flix): Unit =
@@ -777,10 +782,28 @@ object Safety {
 
   /** Returns `true` if `tpe` is [[java.lang.Throwable]] or a subclass of it. */
   @tailrec
-  private def isThrowableType(tpe0: Type): Boolean = tpe0 match {
-    case Type.Cst(TypeConstructor.Native(clazz), _) => isThrowable(clazz)
+  private def isThrowableType(tpe0: Type)(implicit flix: Flix): Boolean = tpe0 match {
+    case Type.Cst(TypeConstructor.Native(desc, _), loc) => isThrowable(desc, loc)
     case Type.Alias(_, _, tpe, _) => isThrowableType(tpe)
     case _ => false
+  }
+
+  /**
+    * Returns `true` if the Java type `sub` is a subtype of the Java type `sup`.
+    *
+    * A primitive type is only a subtype of itself. Reference types, including arrays,
+    * are checked against the class-file metadata of the Java type provider.
+    */
+  private def isSubtype(sub: ClassDesc, sup: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean = {
+    if (sub.isPrimitive || sup.isPrimitive) {
+      sub == sup
+    } else {
+      JavaMemberResolver.isReferenceSubtype(sub, sup) match {
+        case Result.Ok(result) => result
+        case Result.Err(error) =>
+          throw InternalCompilerException(s"Java subtype check failed for '${sub.displayName()} <: ${sup.displayName()}': $error", loc)
+      }
+    }
   }
 
   /**
@@ -830,7 +853,7 @@ object Safety {
         case JvmMethod(_, ident, fparams, _, _, _, methodLoc) =>
           val firstParam = fparams.head
           firstParam.tpe match {
-            case t if Type.classFromFlixType(Type.eraseAliases(t)).contains(clazz) =>
+            case t if Type.descFromFlixType(Type.eraseAliases(t)).contains(ClassDescs.of(clazz)) =>
               ()
             case Type.Unit =>
               // Unit arguments are likely inserted by the compiler.
@@ -901,7 +924,7 @@ object Safety {
     */
   private def resolveJavaType(javaType: java.lang.reflect.Type, substMap: Map[String, Type], loc: SourceLocation): Type = javaType match {
     case tv: TypeVariable[_] =>
-      substMap.getOrElse(tv.getName, Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc))
+      substMap.getOrElse(tv.getName, Type.mkObject(loc))
     case pt: ParameterizedType =>
       pt.getRawType match {
         case rawClazz: Class[_] =>
@@ -909,12 +932,12 @@ object Safety {
           val resolvedArgs = pt.getActualTypeArguments.toList.map(resolveJavaType(_, substMap, loc))
           Type.mkApply(base, resolvedArgs, loc)
         case _ =>
-          Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc)
+          Type.mkObject(loc)
       }
     case clazz: Class[_] =>
       Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
     case _ =>
-      Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc)
+      Type.mkObject(loc)
   }
 
 

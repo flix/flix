@@ -5,6 +5,7 @@ import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, Int
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.{Kinder, monomorph, Simplifier}
 
+import java.lang.constant.ClassDesc
 import scala.collection.immutable.SortedSet
 
 /**
@@ -264,15 +265,17 @@ object TypeConstructor {
   case class RestrictableEnum(sym: Symbol.RestrictableEnumSym, kind: Kind) extends TypeConstructor
 
   /**
-    * A type constructor that represents the type of JVM classes.
+    * A type constructor that represents the type of the JVM class `desc`.
     *
-    * The kind depends on the number of type parameters of the class:
-    * - `Native(classOf[String])` has kind `Star` (no type parameters).
-    * - `Native(classOf[ArrayList])` has kind `Star -> Star` (one type parameter).
-    * - `Native(classOf[HashMap])` has kind `Star -> Star -> Star` (two type parameters).
+    * `arity` is the number of type parameters of the class, which determines the kind:
+    * - `Native(String, 0)` has kind `Star` (no type parameters).
+    * - `Native(ArrayList, 1)` has kind `Star -> Star` (one type parameter).
+    * - `Native(HashMap, 2)` has kind `Star -> Star -> Star` (two type parameters).
+    *
+    * Unlike [[Class]], a [[Native]] does not retain a loaded class.
     */
-  case class Native(clazz: Class[?]) extends TypeConstructor {
-    def kind: Kind = Kind.mkArrow(clazz.getTypeParameters.length)
+  case class Native(desc: ClassDesc, arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrow(arity)
   }
 
   /**

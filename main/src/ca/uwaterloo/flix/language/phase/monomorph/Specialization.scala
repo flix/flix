@@ -606,7 +606,7 @@ object Specialization {
         val caseSym = root.enums(jvmValueEnumSym).cases.values.find(_.sym.name == caseName).get.sym
         val symUse = CaseSymUse(caseSym, loc)
         val tagArg = if (caseName == "JvmObject") {
-          val objType = Type.mkNative(classOf[java.lang.Object], loc)
+          val objType = Type.mkObject(loc)
           Expr.UncheckedCast(e, Some(objType), None, objType, Type.Pure, loc)
         } else {
           e
