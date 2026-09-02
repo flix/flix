@@ -20,6 +20,7 @@ case class JavaMethod(
   ref: JavaMethodRef,
   modifiers: Int,
   typeParameters: List[JavaTypeParameter],
+  parameterNames: List[String],
   parameterTypes: List[JavaType],
   returnType: JavaType,
   isConstructor: Boolean,

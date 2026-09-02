@@ -28,6 +28,7 @@ import net.bytebuddy.dynamic.ClassFileLocator
 import net.bytebuddy.dynamic.scaffold.MethodGraph
 import net.bytebuddy.pool.TypePool
 
+import java.lang.annotation.{Retention, RetentionPolicy}
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.reflect.{GenericSignatureFormatError, MalformedParameterizedTypeException}
 import java.nio.file.{Files, Path}
@@ -147,6 +148,7 @@ final case class ByteBuddyJavaTypeProvider(
     JavaClass(
       desc = desc,
       modifiers = tpe.getModifiers,
+      isRuntimeVisibleAnnotation = isRuntimeVisibleAnnotation(tpe),
       typeParameters = tpe.getTypeVariables.asScala.toList.map(toTypeParameter),
       superClass = Option(tpe.getSuperClass).map(toType),
       interfaces = tpe.getInterfaces.asScala.toList.map(toType),
@@ -178,6 +180,7 @@ final case class ByteBuddyJavaTypeProvider(
       ref = ref,
       modifiers = method.getModifiers,
       typeParameters = method.getTypeVariables.asScala.toList.map(toTypeParameter),
+      parameterNames = method.getParameters.asDefined().asScala.toList.map(_.getName),
       parameterTypes = method.getParameters.asTypeList().asScala.toList.map(toType),
       returnType = toType(method.getReturnType),
       isConstructor = method.isConstructor,
@@ -193,6 +196,16 @@ final case class ByteBuddyJavaTypeProvider(
       name = defined.getInternalName,
       descriptor = MethodTypeDesc.ofDescriptor(defined.getDescriptor)
     )
+  }
+
+  /** Returns whether `tpe` is an annotation with runtime retention. */
+  private def isRuntimeVisibleAnnotation(tpe: TypeDescription): Boolean = {
+    if (!tpe.isAnnotation) {
+      false
+    } else {
+      val retention = tpe.getDeclaredAnnotations.ofType(classOf[Retention])
+      retention != null && retention.getValue("value").resolve(classOf[RetentionPolicy]) == RetentionPolicy.RUNTIME
+    }
   }
 
   /** Converts a Byte Buddy generic type description to Java type metadata. */
