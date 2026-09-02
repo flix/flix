@@ -37,6 +37,10 @@ private[monomorph2] object MonomorphHelpers {
     new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
   }
 
+  /** Returns the synthesized `DefnSym` under which an effect op's signature flows are tracked. */
+  private[monomorph2] def effectOpImplSym(opSym: Symbol.OpSym): Symbol.DefnSym =
+    new Symbol.DefnSym(None, opSym.namespace, opSym.name, opSym.loc)
+
   /** Returns the free variables of `exp0` that are quantified (bound by `cparams0`). */
   private[monomorph2] def quantifiedVars(cparams0: List[TypedAst.ConstraintParam], exp0: Expr): List[(Symbol.VarSym, Type)] =
     TypedAstOps.freeVars(exp0).toList.filter { case (sym, _) => isQuantifiedVar(sym, cparams0) }

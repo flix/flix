@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{RegionScope, SymUse}
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph2.MonomorphHelpers.lowerChannelType
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.Defs
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
@@ -28,14 +28,20 @@ import ca.uwaterloo.flix.util.collection.ListOps
 import scala.collection.mutable
 
 /**
-  * Solves the flow constraints produced by [[ConstraintGen]] to a fixpoint: starting from
-  * the ground (all-constant) flows, each newly solved instantiation is substituted into the
-  * flows that depend on it until no new instantiations appear.
+  * Solves the flow constraints produced by [[ConstraintGen]] to a fixpoint, demand-driven:
+  * solving starts from the entry points (plus a small set of always-live declarations), and a
+  * flow only fires once its origin declaration ([[FlowConstraint]]'s `src`) is live. A
+  * declaration becomes live when it receives its first instantiation; its parameter-free flows
+  * then fire once, and its parameter-bearing flows fire once per instantiation, until no new
+  * instantiations appear. Flows originating in declarations that never become live — e.g.
+  * ground calls inside a never-instantiated polymorphic def, or the defs of an instance that
+  * is never dispatched to — never produce specializations.
   *
   * Sig destinations are additionally dispatched to their implementing (or default) def.
   *
-  * The result is, per polymorphic symbol, the set of ground instantiations it must be
-  * specialized at.
+  * The result is, per live symbol, the set of ground instantiations it must be specialized at.
+  * Live monomorphic defs appear with a single nullary instantiation, which [[Specialize]] uses
+  * as its liveness filter for non-parametric defs.
   */
 private[monomorph2] object ConstraintSolver {
 
@@ -47,11 +53,24 @@ private[monomorph2] object ConstraintSolver {
     */
   private[monomorph2] def solve(flows: List[FlowConstraint], root: TypedAst.Root)(implicit flix: Flix): Solution = {
     val instanceMap = MonomorphHelpers.mkInstanceMap(root.instances)
-    val dependents  = buildDependents(flows)
+
+    // Split each declaration's flows: parameter-free flows fire once, when the declaration
+    // becomes live; parameter-bearing flows fire once per instantiation of the declaration.
+    // Every `Param` inside a flow references the flow's own origin, since [[ConstraintGen]]'s
+    // `TypeParamEnv` only binds the enclosing declaration's type parameters.
+    val (paramBearing0, paramFree0) = flows.partition(fc => paramVars(fc).nonEmpty)
+    for (fc <- paramBearing0) {
+      if (paramVars(fc) != Set(fc.src)) {
+        throw InternalCompilerException(s"Flow into '${fc.dst}' references type parameters of a declaration other than its origin '${fc.src}'.", SourceLocation.Unknown)
+      }
+    }
+    val paramFree    = paramFree0.groupBy(_.src)
+    val paramBearing = paramBearing0.groupBy(_.src)
 
     val solution  = mutable.Map.empty[MonoVar, mutable.ListBuffer[GroundInstantiation]]
     val worklist  = mutable.Queue.empty[(MonoVar, GroundInstantiation)]
     val enqueued  = mutable.HashSet.empty[(MonoVar, GroundInstantiation)]
+    val live      = mutable.HashSet.empty[MonoVar]
 
     def enqueue(dst: MonoVar, inst0: GroundInstantiation): Unit = {
       val inst = dst match {
@@ -73,10 +92,48 @@ private[monomorph2] object ConstraintSolver {
       }
     }
 
-    // Seed: ground flows (all-Const instantiations) become initial worklist entries.
-    for (fc <- flows) {
-      for (t <- groundArgs(fc, Map.empty, root)) {
-        enqueue(fc.dst, t)
+    /** Marks `v` live; the first time around fires its parameter-free flows. */
+    def markLive(v: MonoVar): Unit = {
+      if (live.add(v)) {
+        for (fc <- paramFree.getOrElse(v, Nil)) {
+          for (inst <- groundArgs(fc, Map.empty, root)) {
+            enqueue(fc.dst, inst)
+          }
+        }
+      }
+    }
+
+    // Seed the demand:
+    //  - Entry points: the roots of all liveness. Monomorphic (guaranteed by `EntryPoints`),
+    //    so the nullary instantiation is exact; it also carries them through Specialize's
+    //    liveness filter.
+    //  - Monomorphic channel/Datalog lowering targets: [[SpecializeAndLower]] references them
+    //    by original symbol whenever the corresponding syntax occurs, and [[TreeShaker1]]
+    //    keeps them in `root.defs` exactly when it does. (Parametric lowering targets get
+    //    real instantiations from the explicit per-construct flows instead.)
+    //  - Effect ops: effects are never shaken and all ops are lowered, so their signature
+    //    demands must fire. Mark-live only: nothing ever flows into an op.
+    //  - Non-parametric enums/structs: [[Specialize]] emits all of them, so their case/field
+    //    type demands must fire. Mark-live only, for the same reason.
+    for (sym <- root.entryPoints) {
+      enqueue(MonoVar.Def(sym), GroundInstantiation(Nil))
+    }
+    for (defn <- root.defs.values) {
+      if ((defn.spec.ann.isLoweringTargetChannel || defn.spec.ann.isLoweringTargetDatalog) && defn.spec.tparams.isEmpty) {
+        enqueue(MonoVar.Def(defn.sym), GroundInstantiation(Nil))
+      }
+    }
+    for (eff <- root.effects.values; op <- eff.ops) {
+      markLive(MonoVar.Def(MonomorphHelpers.effectOpImplSym(op.sym)))
+    }
+    for (enm <- root.enums.values) {
+      if (enm.tparams.isEmpty) {
+        markLive(MonoVar.Enum(enm.sym))
+      }
+    }
+    for (struct <- root.structs.values) {
+      if (struct.tparams.isEmpty) {
+        markLive(MonoVar.Struct(struct.sym))
       }
     }
 
@@ -85,6 +142,7 @@ private[monomorph2] object ConstraintSolver {
       val (dst, inst) = worklist.dequeue()
 
       solution.getOrElseUpdate(dst, mutable.ListBuffer.empty) += inst
+      markLive(dst)
 
       // Sig dispatch: resolve to impl def and forward the instantiation.
       dst match {
@@ -99,8 +157,8 @@ private[monomorph2] object ConstraintSolver {
         case MonoVar.Struct(_)           => ()
       }
 
-      // Propagate: substitute this MonoVar's new instantiation into all dependent flows.
-      for (fc <- dependents.getOrElse(dst, Nil)) {
+      // Propagate: substitute this new instantiation into `dst`'s parameter-bearing flows.
+      for (fc <- paramBearing.getOrElse(dst, Nil)) {
         for (groundInstantiation <- groundArgs(fc, Map(dst -> inst), root)) {
           enqueue(fc.dst, groundInstantiation)
         }
@@ -118,16 +176,6 @@ private[monomorph2] object ConstraintSolver {
   /** Returns every distinct MonoVar referenced by a `Param` in `fc`'s args. */
   private def paramVars(fc: FlowConstraint): Set[MonoVar] =
     fc.args.args.flatMap(MonoArg.collectParams).map(_._1).toSet
-
-  /** Return for each MonoVar, the flows whose args contain `Param(mvar, _)`. */
-  private def buildDependents(flows: List[FlowConstraint]): Map[MonoVar, List[FlowConstraint]] = {
-    val edges = for {
-      fc <- flows
-      v  <- paramVars(fc)
-    } yield v -> fc
-
-    edges.groupMap(_._1)(_._2)
-  }
 
   /**
     * Substitutes `bindings` into `arg`'s `Param`s.
