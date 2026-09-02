@@ -167,9 +167,53 @@ object JavaMemberResolver {
     * method has type `(T) -> T` where `T` is the type parameter of `UnaryOperator`.
     */
   def overridableMethods(owner: ClassDesc)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
+    virtualMethodsWhere(owner, isOverridable)
+
+  /**
+    * Returns `Ok` with the public instance methods of `owner`, including inherited methods, or `Err` if class
+    * metadata cannot be read.
+    *
+    * An array exposes the methods of `Object` and a primitive type exposes no methods. Since an interface does not
+    * inherit from `Object`, the public methods of `Object` are added for an interface unless it declares a method
+    * with the same erased signature. Bridge and synthetic methods are excluded.
+    */
+  def instanceMethods(owner: ClassDesc)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] = {
+    if (owner.isArray) instanceMethods(CD_Object)
+    else if (owner.isPrimitive) Ok(Nil)
+    else virtualMethodsWhere(owner, isPublicInstance)
+  }
+
+  /**
+    * Returns `Ok` with the public static methods of `owner`, including those inherited from superclasses, or `Err`
+    * if class metadata cannot be read.
+    *
+    * Static methods of superinterfaces are not inherited, and a static method hides an inherited static method with
+    * the same erased signature.
+    */
+  def staticMethods(owner: ClassDesc)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] = {
+    if (!owner.isClassOrInterface) Ok(Nil)
+    else staticMethodsWhere(owner, _ => true, Set.empty).map(_.sortBy(method => (method.ref.name, method.ref.descriptor.descriptorString())))
+  }
+
+  /**
+    * Returns `Ok` with the public fields of `owner`, including those inherited from superclasses and superinterfaces,
+    * sorted by name, or `Err` if class metadata cannot be read.
+    */
+  def fields(owner: ClassDesc)(implicit flix: Flix): Result[List[JavaField], JavaLookupError] = {
+    if (!owner.isClassOrInterface) Ok(Nil)
+    else collectFields(owner, Set.empty).map(_.distinctBy(_.ref).sortBy(_.ref.name))
+  }
+
+  /**
+    * Returns the virtual methods of `owner` that satisfy `keep`, sorted by name and descriptor.
+    *
+    * Since an interface does not inherit from `Object`, the public methods of `Object` that satisfy `keep` are added
+    * for an interface unless it declares a method with the same erased signature.
+    */
+  private def virtualMethodsWhere(owner: ClassDesc, keep: JavaMethod => Boolean)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
     flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
       flix.javaTypeProvider.virtualMethods(owner).flatMap { virtualMethods =>
-        val declared = virtualMethods.filter(isOverridable)
+        val declared = virtualMethods.filter(keep)
         if (!Modifier.isInterface(clazz.modifiers)) {
           Ok(declared)
         } else {
@@ -177,13 +221,26 @@ object JavaMemberResolver {
           flix.javaTypeProvider.virtualMethods(CD_Object).map { objectMethods =>
             val declaredKeys = virtualMethods.map(methodKey).toSet
             val inherited = objectMethods.filter { method =>
-              Modifier.isPublic(method.modifiers) && isOverridable(method) && !declaredKeys.contains(methodKey(method))
+              Modifier.isPublic(method.modifiers) && keep(method) && !declaredKeys.contains(methodKey(method))
             }
             (declared ::: inherited).sortBy(method => (method.ref.name, method.ref.descriptor.descriptorString()))
           }
         }
       }
     }
+
+  /** Returns the public fields declared by `owner` and its supertypes, in declaration order. */
+  private def collectFields(owner: ClassDesc, visited: Set[ClassDesc])(implicit flix: Flix): Result[List[JavaField], JavaLookupError] = {
+    if (visited.contains(owner)) {
+      Ok(Nil)
+    } else {
+      flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
+        val declared = clazz.declaredFields.filter(field => Modifier.isPublic(field.modifiers) && !isSynthetic(field.modifiers))
+        val parents = clazz.interfaces.map(_.erasure) ::: clazz.superClass.map(_.erasure).toList
+        Result.traverse(parents)(parent => collectFields(parent, visited + owner)).map(inherited => declared ::: inherited.flatten)
+      }
+    }
+  }
 
   /** Selects the best supported methods from `owner`, then retains the requested kind. */
   private def resolveMethods(owner: ClassDesc, name: String, arguments: List[JavaArgument], static: Boolean)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
@@ -248,26 +305,32 @@ object JavaMemberResolver {
     }
   }
 
-  /** Returns public static methods, applying Java superclass inheritance and hiding. */
+  /** Returns public static methods named `name`, applying Java superclass inheritance and hiding. */
   private def staticMethodCandidates(owner: ClassDesc,
                                      name: String,
-                                     visited: Set[ClassDesc])(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] = {
+                                     visited: Set[ClassDesc])(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
+    staticMethodsWhere(owner, _.ref.name == name, visited)
+
+  /** Returns public static methods satisfying `keep`, applying Java superclass inheritance and hiding. */
+  private def staticMethodsWhere(owner: ClassDesc,
+                                 keep: JavaMethod => Boolean,
+                                 visited: Set[ClassDesc])(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] = {
     if (visited.contains(owner)) {
       Ok(Nil)
     } else {
       flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
-        val namedStaticMethods = clazz.declaredMethods.filter { method =>
-          method.ref.name == name && Modifier.isStatic(method.modifiers)
+        val staticMethods = clazz.declaredMethods.filter { method =>
+          keep(method) && Modifier.isStatic(method.modifiers) && !isSynthetic(method.modifiers)
         }
-        val declared = namedStaticMethods.filter(method => Modifier.isPublic(method.modifiers))
+        val declared = staticMethods.filter(method => Modifier.isPublic(method.modifiers))
         if (Modifier.isInterface(clazz.modifiers)) {
           // Static interface methods are not inherited from superinterfaces.
           Ok(declared)
         } else clazz.superClass match {
           case None => Ok(declared)
           case Some(parent) =>
-            staticMethodCandidates(parent.erasure, name, visited + owner).map { inherited =>
-              val hidden = namedStaticMethods.map(methodKey).toSet
+            staticMethodsWhere(parent.erasure, keep, visited + owner).map { inherited =>
+              val hidden = staticMethods.map(methodKey).toSet
               declared ::: inherited.filterNot(method => hidden.contains(methodKey(method)))
             }
         }
@@ -701,14 +764,20 @@ object JavaMemberResolver {
   /** Returns whether `method` was generated as a bridge method. */
   private def isBridge(method: JavaMethod): Boolean = (method.modifiers & BridgeModifier) != 0
 
-  /** Returns whether `method` was generated by the compiler as a synthetic member. */
-  private def isSynthetic(method: JavaMethod): Boolean = (method.modifiers & SyntheticModifier) != 0
+  /** Returns whether the member with the given `modifiers` was generated by the compiler as a synthetic member. */
+  private def isSynthetic(modifiers: Int): Boolean = (modifiers & SyntheticModifier) != 0
 
   /** Returns whether an anonymous subclass in another package may override the instance method `method`. */
   private def isOverridable(method: JavaMethod): Boolean = {
     val modifiers = method.modifiers
     (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) &&
-      !Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers) && !isBridge(method) && !isSynthetic(method)
+      !Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers) && !isBridge(method) && !isSynthetic(modifiers)
+  }
+
+  /** Returns whether `method` is a public instance method that is not compiler-generated. */
+  private def isPublicInstance(method: JavaMethod): Boolean = {
+    val modifiers = method.modifiers
+    Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers) && !isBridge(method) && !isSynthetic(modifiers)
   }
 
   /** Returns all typed argument descriptors, or `None` if any argument is `Null`. */

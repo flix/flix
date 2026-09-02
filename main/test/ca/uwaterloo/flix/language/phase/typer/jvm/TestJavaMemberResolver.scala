@@ -443,4 +443,81 @@ class TestJavaMemberResolver extends AnyFunSuite {
     } finally flix.javaTypeProvider.close()
   }
 
+  // --- instanceMethods / staticMethods / fields ---
+
+  test("instanceMethods.Class.IncludesInheritedAndFinal") {
+    implicit val flix: Flix = new Flix
+    try {
+      JavaMemberResolver.instanceMethods(ClassDesc.of("java.util.ArrayList")) match {
+        case Ok(methods) =>
+          val names = methods.map(_.ref.name).toSet
+          assert(Set("add", "size", "toString", "getClass", "wait").subsetOf(names))
+          assert(methods.forall(m => Modifier.isPublic(m.modifiers) && !Modifier.isStatic(m.modifiers)))
+          assert(!names.contains("clone") || methods.exists(m => m.ref.name == "clone" && m.ref.owner == ClassDesc.of("java.util.ArrayList")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("instanceMethods.Interface.IncludesObjectMethods") {
+    implicit val flix: Flix = new Flix
+    try {
+      JavaMemberResolver.instanceMethods(ClassDesc.of("java.lang.Runnable")) match {
+        case Ok(methods) =>
+          val names = methods.map(_.ref.name).toSet
+          assert(Set("run", "toString", "equals", "hashCode", "getClass").subsetOf(names))
+          assert(!names.contains("clone"))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("instanceMethods.ArrayAndPrimitive") {
+    implicit val flix: Flix = new Flix
+    try {
+      assert(JavaMemberResolver.instanceMethods(CD_String.arrayType()) == JavaMemberResolver.instanceMethods(CD_Object))
+      assert(JavaMemberResolver.instanceMethods(CD_int) == Ok(Nil))
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("staticMethods.Class.InheritsFromSuperclassOnly") {
+    implicit val flix: Flix = new Flix
+    try {
+      // Integer declares valueOf and parseInt; ArrayList implements List, whose static `of` is not inherited.
+      JavaMemberResolver.staticMethods(ClassDesc.of("java.lang.Integer")) match {
+        case Ok(methods) =>
+          val names = methods.map(_.ref.name).toSet
+          assert(Set("valueOf", "parseInt").subsetOf(names))
+          assert(methods.forall(m => Modifier.isPublic(m.modifiers) && Modifier.isStatic(m.modifiers)))
+        case Err(error) => fail(error.toString)
+      }
+      // Timestamp inherits the static `UTC` of its superclass Date.
+      JavaMemberResolver.staticMethods(ClassDesc.of("java.sql.Timestamp")) match {
+        case Ok(methods) =>
+          val names = methods.map(_.ref.name).toSet
+          assert(names.contains("valueOf") && names.contains("UTC"))
+        case Err(error) => fail(error.toString)
+      }
+      assert(JavaMemberResolver.staticMethods(ClassDesc.of("java.util.ArrayList")).map(_.map(_.ref.name).contains("of")) == Ok(false))
+      assert(JavaMemberResolver.staticMethods(CD_int) == Ok(Nil))
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("fields.IncludesInheritedFields") {
+    implicit val flix: Flix = new Flix
+    try {
+      // JarEntry inherits the constants of ZipEntry; ObjectOutputStream inherits the constants of ObjectStreamConstants.
+      assert(JavaMemberResolver.fields(ClassDesc.of("java.util.jar.JarEntry")).map(_.map(_.ref.name).contains("STORED")) == Ok(true))
+      assert(JavaMemberResolver.fields(ClassDesc.of("java.io.ObjectOutputStream")).map(_.map(_.ref.name).contains("STREAM_MAGIC")) == Ok(true))
+      JavaMemberResolver.fields(ClassDesc.of("java.awt.Point")) match {
+        case Ok(fields) =>
+          assert(fields.map(_.ref.name) == List("x", "y"))
+          assert(fields.forall(f => Modifier.isPublic(f.modifiers)))
+        case Err(error) => fail(error.toString)
+      }
+      assert(JavaMemberResolver.fields(CD_int) == Ok(Nil))
+      assert(JavaMemberResolver.fields(CD_String.arrayType()) == Ok(Nil))
+    } finally flix.javaTypeProvider.close()
+  }
+
 }

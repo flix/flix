@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
 import ca.uwaterloo.flix.language.ast.{Name, Type}
-import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 
 object InvokeMethodCompleter {
 
@@ -27,9 +27,7 @@ object InvokeMethodCompleter {
       case None =>
         Nil
       case Some(desc) =>
-        // Transitional: loads the class since the method lookup still requires a loaded class.
-        val clazz = ClassDescs.load(desc, flix.jarLoader)
-        JvmUtils.getInstanceMethods(clazz).sortBy(_.getName).map(MethodCompletion(name, Priority.Lowest(0), _))
+        JavaMemberResolver.instanceMethods(desc).toOption.getOrElse(Nil).map(MethodCompletion(name, Priority.Lowest(0), _))
     }
   }
 

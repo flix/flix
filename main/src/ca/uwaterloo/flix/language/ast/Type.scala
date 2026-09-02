@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.VarText.Absent
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, Nel}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.*
@@ -1334,18 +1334,6 @@ object Type {
       val elmType = getFlixType(desc.componentType(), arity)
       Type.mkArray(elmType, Type.IO, SourceLocation.Unknown)
     case _ => Type.mkNative(desc, arity, SourceLocation.Unknown)
-  }
-
-  /**
-    * Returns the Flix Type of the loaded Java class `c`.
-    *
-    * Transitional: prefer `getFlixType(desc, arity)` since it does not require a loaded class.
-    */
-  def getFlixType(c: Class[?]): Type = {
-    // An array class has no type parameters of its own, so we use those of its element class.
-    var elm = c
-    while (elm.isArray) elm = elm.getComponentType
-    getFlixType(ClassDescs.of(c), elm.getTypeParameters.length)
   }
 
   /**
