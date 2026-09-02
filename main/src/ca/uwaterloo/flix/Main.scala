@@ -94,7 +94,7 @@ object Main {
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
       xchaosMonkey = Options.Default.xchaosMonkey,
-      xverifyTokens = Options.Default.xverifyTokens
+      xverify = cmdOpts.xverify
     )
 
     // Don't use progress bar if benchmarking.
@@ -512,6 +512,7 @@ object Main {
     xlib: LibLevel = LibLevel.All,
     xprintphases: Boolean = false,
     xsummary: Boolean = false,
+    xverify: Boolean = false,
     xsubeffecting: Set[Subeffecting] = Set.empty,
     xnewmono: Boolean = false,
     XPerfN: Option[Int] = None,
@@ -748,6 +749,10 @@ object Main {
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
+
+      // Xverify
+      opt[Unit]("Xverify").action((_, c) => c.copy(xverify = true)).
+        text("[experimental] enables internal verifiers of compiler invariants.")
 
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).

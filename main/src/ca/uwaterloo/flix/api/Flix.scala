@@ -525,7 +525,7 @@ class Flix {
 
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     errors ++= lexerErrors
-    if (flix.options.xverifyTokens) {
+    if (flix.options.xverify) {
       TokenVerifier.verify(afterLexer)
     }
 
