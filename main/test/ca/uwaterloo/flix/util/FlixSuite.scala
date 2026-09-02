@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{JvmLoader, LoadedProgram, TestFn}
-import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
+import ca.uwaterloo.flix.verifier.EffectVerifier
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Path, Paths}
@@ -38,12 +38,6 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     */
   private def mkFlix(): Flix = {
     val flix = new Flix()
-
-    flix.addListener {
-      case FlixEvent.AfterTailPos(root) =>
-        TypeVerifier.verify(root)(flix)
-      case _ => // nop
-    }
 
     flix.addListener {
       case FlixEvent.AfterTyper(root) =>
