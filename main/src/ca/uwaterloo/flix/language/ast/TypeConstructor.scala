@@ -1,11 +1,11 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.jvm.JavaField
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.{Kinder, monomorph, Simplifier}
 
-import java.lang.reflect.{Constructor, Method}
+import java.lang.reflect.Method
 import scala.collection.immutable.SortedSet
 
 /**
@@ -279,7 +279,7 @@ object TypeConstructor {
   /**
    * A type constructor that represents the type of a Java constructor.
    * */
-  case class JvmConstructor(constructor: Constructor[?]) extends TypeConstructor {
+  case class JvmConstructor(constructor: JavaMethod) extends TypeConstructor {
     def kind: Kind = Kind.Jvm
   }
 
