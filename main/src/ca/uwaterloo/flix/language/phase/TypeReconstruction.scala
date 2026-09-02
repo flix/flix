@@ -24,7 +24,8 @@ import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object TypeReconstruction {
 
@@ -650,7 +651,7 @@ object TypeReconstruction {
     if (actualArity == declaredArity - 1) {
       // Case 1: Varargs omitted entirely. Insert an empty vector.
       val componentDesc = descriptor.parameterType(declaredArity - 1).componentType()
-      val varArgsType = Type.mkNative(ClassDescs.load(componentDesc, flix.jarLoader), loc)
+      val varArgsType = JavaTypes.flixTypeOf(componentDesc, loc)
       val varArgs = TypedAst.Expr.VectorLit(Nil, Type.mkVector(varArgsType, loc), Type.Pure, loc)
       es :+ varArgs
     } else if (actualArity >= declaredArity) {
