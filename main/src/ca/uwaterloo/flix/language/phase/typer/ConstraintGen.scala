@@ -22,9 +22,10 @@ import ca.uwaterloo.flix.language.ast.jvm.JavaField
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, RegionScope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Subeffecting}
+import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Subeffecting}
 
 import java.lang.reflect.{Modifier, ParameterizedType, TypeVariable}
 
@@ -1274,10 +1275,8 @@ object ConstraintGen {
   }
 
   /** Returns the Flix type of the erased descriptor of `field`. */
-  private def getJavaFieldType(field: JavaField, loc: SourceLocation)(implicit flix: Flix): Type = {
-    val clazz = ClassDescs.load(field.ref.descriptor, flix.jarLoader)
-    Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
-  }
+  private def getJavaFieldType(field: JavaField, loc: SourceLocation)(implicit flix: Flix): Type =
+    JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc)
 
   /**
     * Generates constraints for the given catch rule.

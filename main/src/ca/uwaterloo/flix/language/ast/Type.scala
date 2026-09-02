@@ -1320,9 +1320,10 @@ object Type {
     * Arrays are returned with the [[Type.IO]] region. Since an array class has no type parameters
     * of its own, `arity` is the number of type parameters of its (innermost) element class.
     *
-    * Returns a [[TypeConstructor.Native]] of `desc` if nothing more specific is found.
+    * Returns a [[TypeConstructor.Native]] of `desc` if nothing more specific is found. The `arity`
+    * is only evaluated in that case, so callers may compute it lazily.
     */
-  def getFlixType(desc: ClassDesc, arity: Int): Type = desc match {
+  def getFlixType(desc: ClassDesc, arity: => Int): Type = desc match {
     case CD_boolean => Type.Bool
     case CD_byte => Type.Int8
     case CD_short => Type.Int16

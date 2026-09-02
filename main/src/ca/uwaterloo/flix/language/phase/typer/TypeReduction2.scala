@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.jvm.{JavaClass, JavaField, JavaMethod, JavaType, JavaTypeParameter, JavaTypeVariable}
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaType, JavaTypeParameter, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
-import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver}
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver, JavaTypes}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
@@ -109,13 +109,11 @@ object TypeReduction2 {
       t match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
-          val clazz = ClassDescs.load(constructor.ref.owner, flix.jarLoader)
-          (instantiateJavaTypeWithFreshVars(clazz, scope, loc), cs)
+          (JavaTypes.instantiateWithFreshVars(constructor.ref.owner, scope, loc), cs)
 
         case Type.Cst(TypeConstructor.JvmField(field), _) =>
           progress.markProgress()
-          val clazz = ClassDescs.load(field.ref.descriptor, flix.jarLoader)
-          (instantiateJavaTypeWithFreshVars(clazz, scope, loc), cs)
+          (JavaTypes.instantiateWithFreshVars(field.ref.descriptor, scope, loc), cs)
 
         case t1 => t1.typeConstructor match {
           case Some(TypeConstructor.JvmMethod(method, classTypeParameters)) =>
@@ -147,7 +145,7 @@ object TypeReduction2 {
         case JvmMember.JvmConstructor(clazz, tpes) =>
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
-          lookupConstructor(clazz, reducedTpes, loc) match {
+          lookupConstructor(ClassDescs.of(clazz), reducedTpes, loc) match {
             case JavaConstructorResolution.Resolved(constructor) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), cs)
@@ -180,7 +178,7 @@ object TypeReduction2 {
         case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
-          lookupStaticMethod(clazz, name.name, reducedTpes, loc) match {
+          lookupStaticMethod(ClassDescs.of(clazz), name.name, reducedTpes, loc) match {
             case JavaMethodResolution.Resolved(method) =>
               // Class type parameters are not in scope for static methods.
               val (tpe, cs0) = instantiateMethod(method, Nil, Nil, reducedTpes, scope, loc)
@@ -191,12 +189,11 @@ object TypeReduction2 {
       }
   }
 
-  /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */
-  private def lookupConstructor(clazz: Class[?], ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaConstructorResolution = {
+  /** Tries to find a constructor of `owner` that takes arguments of type `ts`. */
+  private def lookupConstructor(owner: ClassDesc, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaConstructorResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaConstructorResolution.UnresolvedTypes
 
-    val owner = ClassDescs.of(clazz)
     val arguments = ts.map(getJavaArgument)
     JavaMemberResolver.constructors(owner, arguments) match {
       // The resolver returns every constructor tied for the best match, in class-file declaration order.
@@ -218,12 +215,12 @@ object TypeReduction2 {
     retrieveMethod(getJavaTypeDesc(thisObj), methodName, ts, static = false, loc)
   }
 
-  /** Tries to find a static method of `clazz` that takes arguments of type `ts`. */
-  private def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaMethodResolution = {
+  /** Tries to find a static method of `owner` that takes arguments of type `ts`. */
+  private def lookupStaticMethod(owner: ClassDesc, methodName: String, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaMethodResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
-    retrieveMethod(ClassDescs.of(clazz), methodName, ts, static = true, loc)
+    retrieveMethod(owner, methodName, ts, static = true, loc)
   }
 
   /** Tries to find a static/dynamic method of `owner` that takes arguments of type `ts`. */
@@ -393,14 +390,6 @@ object TypeReduction2 {
     case _ => false
   }
 
-  /** Like `instantiateJavaTypeWithObjectArgs` but uses fresh type variables instead of `Object`. */
-  private def instantiateJavaTypeWithFreshVars(clazz: Class[?], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
-    val base = Type.getFlixType(clazz)
-    val n = clazz.getTypeParameters.length
-    if (n > 0) Type.mkApply(base, List.fill(n)(Type.freshVar(Kind.Star, loc)(scope, flix)), loc)
-    else base
-  }
-
   /**
     * Resolves the return type of `method`, using generic type information when available.
     *
@@ -416,7 +405,7 @@ object TypeReduction2 {
     * The receiver maps `K -> String`, so the result is `Set[String]`.
     *
     * Example 4: `String.length()` -- the return type is `int` (not a type variable).
-    * Falls back to `instantiateJavaTypeWithFreshVars(int)` which yields `Int32`.
+    * Falls back to `JavaTypes.instantiateWithFreshVars(int)` which yields `Int32`.
     */
   private def resolveMethodReturnType(method: JavaMethod, classTypeParameters: List[JavaTypeParameter], typeArgs: List[Type],
     scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
@@ -424,7 +413,7 @@ object TypeReduction2 {
     method.returnType match {
       case JavaType.Variable(variable, erasure) =>
         // Bare type variable return (e.g., E from ArrayList<E>.get()).
-        substMap.getOrElse(variable, instantiateJavaTypeWithFreshVars(loadClass(erasure), scope, loc))
+        substMap.getOrElse(variable, JavaTypes.instantiateWithFreshVars(erasure, scope, loc))
       case returnType: JavaType.Parameterized =>
         // Parameterized return type (e.g., Set<K> from HashMap.keySet()).
         // Resolve type arguments using the substitution map.
@@ -432,7 +421,7 @@ object TypeReduction2 {
       case returnType =>
         // Other return types (non-generic, generic arrays, etc.).
         // Use erased return type with fresh vars for backward compatibility.
-        instantiateJavaTypeWithFreshVars(loadClass(returnType.erasure), scope, loc)
+        JavaTypes.instantiateWithFreshVars(returnType.erasure, scope, loc)
     }
   }
 
@@ -444,7 +433,7 @@ object TypeReduction2 {
     *   - `Parameterized`: resolve the erased class + recursively resolve the type arguments
     *   - `Wildcard`: resolve the upper bound if it is a type variable; otherwise a fresh type variable
     *   - `GenericArray`: recursively resolve the component type, wrap in Array
-    *   - `NonGeneric`: use `instantiateJavaTypeWithFreshVars`
+    *   - `NonGeneric`: use `JavaTypes.instantiateWithFreshVars`
     */
   private def resolveGenericType(genericType: JavaType, substMap: Map[JavaTypeVariable, Type],
     scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = genericType match {
@@ -456,7 +445,7 @@ object TypeReduction2 {
 
     case JavaType.Parameterized(erasure, arguments) =>
       // Resolve parameterized types like Set<K>, Map.Entry<K,V>, Iterator<E>, etc.
-      val base = Type.getFlixType(loadClass(erasure))
+      val base = JavaTypes.flixTypeOf(erasure, loc)
       val typeArgs = arguments.map(resolveGenericType(_, substMap, scope, loc))
       if (typeArgs.nonEmpty)
         Type.mkApply(base, typeArgs, loc)
@@ -481,7 +470,7 @@ object TypeReduction2 {
 
     case JavaType.NonGeneric(erasure) =>
       // Plain class (non-generic or raw). Convert directly.
-      instantiateJavaTypeWithFreshVars(loadClass(erasure), scope, loc)
+      JavaTypes.instantiateWithFreshVars(erasure, scope, loc)
   }
 
   /**
@@ -512,7 +501,7 @@ object TypeReduction2 {
     */
   private def classTypeParametersOf(method: JavaMethod, owner: ClassDesc, loc: SourceLocation)(implicit flix: Flix): List[JavaTypeParameter] =
     if (Modifier.isStatic(method.modifiers) || !owner.isClassOrInterface) Nil
-    else lookupClass(owner, loc).typeParameters
+    else JavaTypes.lookupClass(owner, loc).typeParameters
 
   /**
     * Instantiates a resolved Java method: creates fresh type variables for method-level
@@ -625,7 +614,7 @@ object TypeReduction2 {
             val fiTypeArgs: Map[String, Type] =
               mapping.argParam.map(_ -> flixArg).toMap ++
               mapping.retParam.map(_ -> flixRet).toMap
-            val interfaceParamNames = lookupClass(pt.erasure, loc).typeParameters.map(_.variable.name)
+            val interfaceParamNames = JavaTypes.lookupClass(pt.erasure, loc).typeParameters.map(_.variable.name)
             interfaceParamNames.zip(pt.arguments).flatMap {
               case (ifParamName, javaTypeArg) =>
                 resolveToTypeVariable(javaTypeArg).flatMap { methodTv =>
@@ -658,16 +647,6 @@ object TypeReduction2 {
         .orElse(lowerBounds.collectFirst { case JavaType.Variable(variable, _) => variable })
     case _ => None
   }
-
-  /** Returns the class metadata of `desc`, or throws if it cannot be read. */
-  private def lookupClass(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): JavaClass =
-    flix.javaTypeProvider.lookupClass(desc) match {
-      case Ok(clazz) => clazz
-      case Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${desc.displayName()}': $error", loc)
-    }
-
-  /** Loads the class of `desc` without initializing it. */
-  private def loadClass(desc: ClassDesc)(implicit flix: Flix): Class[?] = ClassDescs.load(desc, flix.jarLoader)
 
   /**
     * Maps a Flix Arrow type to its Java functional interface.
