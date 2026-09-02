@@ -45,13 +45,14 @@ object Options {
     XPerfN = None,
     XPerfFrontend = false,
     XPerfPar = false,
-    xchaosMonkey = false
+    xchaosMonkey = false,
+    xverifyTokens = false
   )
 
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, xnodeprecated = true, xchaosMonkey = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, xnodeprecated = true, xchaosMonkey = true, xverifyTokens = true)
 
   /**
     * Default test options with the standard library.
@@ -103,7 +104,8 @@ case class Options(lib: LibLevel,
                    XPerfFrontend: Boolean,
                    XPerfPar: Boolean,
                    XPerfN: Option[Int],
-                   xchaosMonkey: Boolean
+                   xchaosMonkey: Boolean,
+                   xverifyTokens: Boolean
                   )
 
 /**

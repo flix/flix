@@ -93,7 +93,8 @@ object Main {
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
-      xchaosMonkey = Options.Default.xchaosMonkey
+      xchaosMonkey = Options.Default.xchaosMonkey,
+      xverifyTokens = Options.Default.xverifyTokens
     )
 
     // Don't use progress bar if benchmarking.

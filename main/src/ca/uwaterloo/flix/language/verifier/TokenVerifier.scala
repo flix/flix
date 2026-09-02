@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.verifier
+package ca.uwaterloo.flix.language.verifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Source
@@ -26,11 +26,11 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, ParOps}
   *   - I-Eof-A: The last token is [[TokenKind.Eof]] and no other token is.
   *   - I-Eof-B: No token before the last is [[TokenKind.Eof]].
   *   - I-Src: All tokens have a [[Source]] consistent with the source map.
-  *   - I-Ranges: Offset- and position ranges must end after they are started (except EOF).
+  *   - I-Ranges: Offset- and position ranges must end after they are started (except EOF and error tokens at end of input).
   *   - I-Bounds: Offset ranges must be inside bounds.
   *   - I-Offset: Token offsets must be in order and not overlapping.
   *   - I-Pos: Positions must be in order and not overlapping.
-  *   - I-Col-End: Exclusive column ends of ranges should never be the first column (except EOF).
+  *   - I-Col-End: Exclusive column ends of ranges should never be the first column (except EOF and error tokens at end of input).
   *
   * Assumptions:
   *   - Offset ranges are end-exclusive.
@@ -42,7 +42,7 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, ParOps}
   */
 object TokenVerifier {
 
-  /** Checks that tokens adhere to the invariants. */
+  /** Checks that tokens adhere to the invariants. Runs after the Lexer when `Options.xverifyTokens` is set. */
   def verify(m: Map[Source, Array[Token]])(implicit flix: Flix): Unit = {
     ParOps.parMap(m) {
       case (src, tokens) => checkSource(src, tokens)
@@ -57,9 +57,9 @@ object TokenVerifier {
     for ((token, i) <- tokens.iterator.zipWithIndex) {
       checkEndOfFileB(token, i == lastIndex)
       checkSrc(src, token)
-      checkRange(token)
+      checkRange(src, token)
       checkBounds(src, token)
-      checkColEnd(token)
+      checkColEnd(src, token)
       if (prev != null) {
         checkOffsetOrder(prev, token)
         checkPositionOrder(prev, token)
@@ -86,11 +86,22 @@ object TokenVerifier {
     if (token.src != src) wrongSource(src, token)
 
   /** Checks I-Ranges. */
-  private def checkRange(token: Token): Unit = {
-    if (token.kind != TokenKind.Eof) {
+  private def checkRange(src: Source, token: Token): Unit = {
+    if (!isAtEndOfInput(src, token)) {
       if (token.startIndex >= token.endIndex) wrongOffsetRange(token)
       if (!isStrictlyBefore(token.start, token.end)) wrongPositionRange(token)
     }
+  }
+
+  /**
+    * Returns true if `token` is the EOF token or an error token produced when the lexer ran out of input.
+    *
+    * Such tokens are zero-width and are exempt from the range invariants.
+    */
+  private def isAtEndOfInput(src: Source, token: Token): Boolean = token.kind match {
+    case TokenKind.Eof => true
+    case TokenKind.Err(_) => token.startIndex == src.data.length
+    case _ => false
   }
 
   /** Returns true if `sp1` is strictly before `sp2`, ignoring [[SourcePosition.source]]. */
@@ -120,8 +131,8 @@ object TokenVerifier {
   }
 
   /** Checks I-Col-End. */
-  private def checkColEnd(token: Token): Unit = {
-    if (token.kind != TokenKind.Eof) {
+  private def checkColEnd(src: Source, token: Token): Unit = {
+    if (!isAtEndOfInput(src, token)) {
       if (token.end.colOneIndexed == 1) unneccesaryEndCol(token)
     }
   }
