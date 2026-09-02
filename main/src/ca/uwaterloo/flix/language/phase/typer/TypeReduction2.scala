@@ -20,12 +20,14 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.JavaFieldRef
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, JConstructor, RegionScope}
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
+import java.lang.constant.ConstantDescs.*
+import java.lang.constant.ClassDesc
 import java.lang.reflect.{Constructor, Field, GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
 import scala.annotation.tailrec
 
@@ -143,7 +145,7 @@ object TypeReduction2 {
         case JvmMember.JvmConstructor(clazz, tpes) =>
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
-          lookupConstructor(clazz, reducedTpes) match {
+          lookupConstructor(clazz, reducedTpes, loc) match {
             case JavaConstructorResolution.Resolved(constructor) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), cs)
@@ -186,19 +188,25 @@ object TypeReduction2 {
   }
 
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */
-  private def lookupConstructor(clazz: Class[?], ts: List[Type])(implicit scope: RegionScope, renv: RigidityEnv): JavaConstructorResolution = {
+  private def lookupConstructor(clazz: Class[?], ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaConstructorResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaConstructorResolution.UnresolvedTypes
 
+    // Old path (authoritative): load parameter classes and resolve the constructor with reflection.
     val tparams = ts.map(getJavaType)
-    val c = ConstructorUtils.getMatchingAccessibleConstructor(clazz, tparams *)
+    val oldConstructor: Option[Constructor[?]] = Option(ConstructorUtils.getMatchingAccessibleConstructor(clazz, tparams *))
+      .filterNot(c => usesBoxing(tparams, c.getParameterTypes))
 
-    // Check if we found a matching constructor.
-    if (c != null && !usesBoxing(tparams, c.getParameterTypes)) {
-      JavaConstructorResolution.Resolved(c)
-    } else {
-      JavaConstructorResolution.NotFound
-    }
+    // New path (shadow only): independently derive descriptors and resolve without passing a Class to the resolver.
+    val owner = ClassDescs.of(clazz)
+    val arguments = ts.map(getJavaArgument)
+    val oldResult = oldConstructor.map(JConstructor.of)
+    val newResult = JavaMemberResolver.constructors(owner, arguments)
+      .map(_.map(method => JConstructor(method.ref.owner, method.ref.descriptor)))
+    JavaReductionOpsTEMP.compareConstructors(owner, arguments, oldResult, newResult, loc)
+
+    // TODO: Remove the old path once JvmConstructor stores descriptor-based constructor metadata.
+    oldConstructor.map(JavaConstructorResolution.Resolved.apply).getOrElse(JavaConstructorResolution.NotFound)
   }
 
   /** Tries to find a method of `thisObj` that takes arguments of type `ts`. */
@@ -329,6 +337,53 @@ object TypeReduction2 {
     val t = getJavaType(elmType)
     val elmClass: Class[?] = if (t == null) classOf[Object] else t
     elmClass.arrayType()
+  }
+
+  /** Returns the descriptor-based Java argument corresponding to the given Flix `tpe`. */
+  private def getJavaArgument(tpe: Type): JavaArgument = tpe match {
+    case Type.Cst(TypeConstructor.Null, _) => JavaArgument.Null
+    case _ => JavaArgument.Typed(getJavaTypeDesc(tpe))
+  }
+
+  /** Returns the Java class descriptor corresponding to the given non-null Flix `tpe`. */
+  private def getJavaTypeDesc(tpe: Type): ClassDesc = tpe match {
+    case Type.Bool => CD_boolean
+    case Type.Int8 => CD_byte
+    case Type.Int16 => CD_short
+    case Type.Int32 => CD_int
+    case Type.Int64 => CD_long
+    case Type.Char => CD_char
+    case Type.Float32 => CD_float
+    case Type.Float64 => CD_double
+    case Type.Cst(TypeConstructor.BigDecimal, _) => ClassDesc.of("java.math.BigDecimal")
+    case Type.Cst(TypeConstructor.BigInt, _) => ClassDesc.of("java.math.BigInteger")
+    case Type.Cst(TypeConstructor.Str, _) => CD_String
+    case Type.Cst(TypeConstructor.Regex, _) => ClassDesc.of("java.util.regex.Pattern")
+    case Type.Cst(TypeConstructor.Native(clazz), _) => ClassDescs.of(clazz)
+
+    // Parameterized Java types erase to their native base type.
+    case Type.Apply(_, _, _) if isNativeBase(tpe) =>
+      tpe.baseType match {
+        case Type.Cst(TypeConstructor.Native(clazz), _) => ClassDescs.of(clazz)
+        case _ => CD_Object
+      }
+
+    // Arrays and vectors erase to Java arrays. A null element type falls back to Object.
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType, _), _, _) =>
+      getJavaArrayTypeDesc(elmType)
+    case Type.Apply(Type.Cst(TypeConstructor.Vector, _), elmType, _) =>
+      getJavaArrayTypeDesc(elmType)
+
+    // Functions map to the same Java functional interfaces as the reflective path.
+    case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), varArg, _), varRet, _) =>
+      lookupFunIF(varArg, varRet).map(mapping => ClassDescs.of(mapping.javaClass)).getOrElse(CD_Object)
+    case _ => CD_Object
+  }
+
+  /** Returns the Java array descriptor for an array or vector element type. */
+  private def getJavaArrayTypeDesc(elmType: Type): ClassDesc = elmType match {
+    case Type.Cst(TypeConstructor.Null, _) => CD_Object.arrayType()
+    case _ => getJavaTypeDesc(elmType).arrayType()
   }
 
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
