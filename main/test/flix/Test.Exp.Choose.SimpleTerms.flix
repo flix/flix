@@ -9,12 +9,14 @@ mod Test.Exp.Choose.SimpleTerms {
         case Xor(Array[Array[Int64, Univ], Univ], Unit)
     }
 
+    @CompileTest
     pub def testChoose01(): Bool = {
         choose Expr.Cst('a') {
             case Expr.Cst(_) => true
         }
     }
 
+    @CompileTest
     pub def testChoose02(): Bool = {
         choose Expr.Cst('a') {
             case Expr.Cst(_) => true
@@ -22,7 +24,7 @@ mod Test.Exp.Choose.SimpleTerms {
         }
     }
 
-// TODO RESTR-VARS
+    @CompileTest
     pub def testChoose03(): Bool = {
         let cstOrVar = if (true) open_variant Expr.Cst('a') else open_variant Expr.Var("lol");
         choose cstOrVar {
@@ -31,6 +33,7 @@ mod Test.Exp.Choose.SimpleTerms {
         }
     }
 
+    @CompileTest
     pub def testChoose04(): Bool = {
         let cstOrVar = if (true) open_variant Expr.Cst('a') else open_variant Expr.Var("lol");
         choose cstOrVar {
@@ -40,6 +43,7 @@ mod Test.Exp.Choose.SimpleTerms {
         }
     }
 
+    @CompileTest
     pub def testChoose05(): Bool = {
         let f = x -> choose x {
             case Expr.Cst(_) => false
@@ -53,6 +57,7 @@ mod Test.Exp.Choose.SimpleTerms {
         h(Expr.Cst('a'))
     }
 
+    @CompileTest
     pub def testChoose06(): Bool = {
         let f = x -> choose x {
             case Expr.Cst(_) => false

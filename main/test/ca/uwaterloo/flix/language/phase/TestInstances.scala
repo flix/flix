@@ -506,20 +506,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.ExtraneousDef](result)
   }
 
-  ignore("Test.OrphanInstance.01") {
-    val input =
-      """
-        |trait C[a]
-        |
-        |mod C {
-        |    instance C[Int32]
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[InstanceError.OrphanInstance](result)
-  }
-
-  test("Test.OrphanInstance.02") {
+  test("Test.OrphanInstance.01") {
     val input =
       """
         |mod N {
@@ -532,22 +519,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OrphanInstance](result)
   }
 
-  ignore("Test.OrphanInstance.03") {
-    val input =
-      """
-        |mod N {
-        |    trait C[a]
-        |
-        |    mod C {
-        |        instance N.C[Int32]
-        |    }
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[InstanceError.OrphanInstance](result)
-  }
-
-  test("Test.OrphanInstance.04") {
+  test("Test.OrphanInstance.02") {
     val input =
       """
         |mod N {

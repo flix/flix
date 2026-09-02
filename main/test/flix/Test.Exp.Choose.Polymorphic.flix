@@ -9,12 +9,14 @@ mod Test.Exp.Choose.Polymorphic {
         case Xor(t, t)
     }
 
+    @CompileTest
     pub def testChoose01(): Bool = {
         choose Expr.Cst(12312) {
             case Expr.Cst(_) => true
         }
     }
 
+    @CompileTest
     pub def testChoose02(): Bool = {
         choose Expr.Cst('a') {
             case Expr.Cst(_) => true
@@ -22,6 +24,7 @@ mod Test.Exp.Choose.Polymorphic {
         }
     }
 
+    @CompileTest
     pub def testChoose03(): Bool = {
         let cstOrVar = if (true) open_variant Expr.Cst(123) else open_variant Expr.Var("hi");
         choose cstOrVar {
@@ -30,6 +33,7 @@ mod Test.Exp.Choose.Polymorphic {
         }
     }
 
+    @CompileTest
     pub def testChoose04(): Bool = {
         let cstOrVar = if (true) open_variant Expr.Cst(123) else open_variant Expr.Var("hi");
         choose cstOrVar {
@@ -39,6 +43,7 @@ mod Test.Exp.Choose.Polymorphic {
         }
     }
 
+    @CompileTest
     pub def testChoose05(): Bool = {
         let f = x -> choose x {
             case Expr.Cst(_) => false
@@ -52,6 +57,7 @@ mod Test.Exp.Choose.Polymorphic {
         h(Expr.Cst(123123))
     }
 
+    @CompileTest
     pub def testChoose06(): Bool = {
         let f = x -> choose x {
             case Expr.Cst(_) => false
