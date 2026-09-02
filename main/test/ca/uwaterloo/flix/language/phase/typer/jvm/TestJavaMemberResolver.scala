@@ -151,4 +151,65 @@ class TestJavaMemberResolver extends AnyFunSuite {
     } finally flix.javaTypeProvider.close()
   }
 
+  test("methods.SelectsExactInstanceOverload") {
+    implicit val flix: Flix = new Flix
+    try {
+      val owner = ClassDesc.of("java.util.ArrayList")
+      JavaMemberResolver.methods(owner, "remove", List(Typed(CD_int)), static = false) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(owner))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("(I)Ljava/lang/Object;")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.FallsBackToObject") {
+    implicit val flix: Flix = new Flix
+    try {
+      val owner = ClassDesc.of("java.util.List")
+      JavaMemberResolver.methods(owner, "toString", Nil, static = false) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(CD_Object))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("()Ljava/lang/String;")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.ResolvesArrayObjectMethod") {
+    implicit val flix: Flix = new Flix
+    try {
+      val owner = CD_String.arrayType()
+      JavaMemberResolver.methods(owner, "toString", Nil, static = false) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(CD_Object))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("()Ljava/lang/String;")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.SelectsExpandedVarArgsMatch") {
+    implicit val flix: Flix = new Flix
+    try {
+      val owner = ClassDesc.of("java.util.Arrays")
+      val arguments = List(Typed(CD_String), Typed(CD_String))
+      JavaMemberResolver.methods(owner, "asList", arguments, static = true) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(owner))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/util/List;")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.ReportsMissingClass") {
+    implicit val flix: Flix = new Flix
+    try {
+      val missing = ClassDesc.of("dev.flix.prototype.DoesNotExist")
+      assert(JavaMemberResolver.methods(missing, "method", Nil, static = false) == Err(MissingClass(missing)))
+    } finally flix.javaTypeProvider.close()
+  }
+
 }
