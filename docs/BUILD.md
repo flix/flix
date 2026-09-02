@@ -59,7 +59,6 @@ Common commands:
 - `./mill flix.test` — run all tests
 - `./mill flix.assembly` — build a fat JAR
 - `./mill flix.testPackageManager` — run package manager tests
-- `./mill flix.testFuzzerSuite` — run fuzzer tests
 - `./mill flix.testIDECompletion` — run IDE completion tests
 - `./mill flix.vscode` — build and copy JAR to VSCode project (requires `.env`)
 
