@@ -28,11 +28,13 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaLookupError, JavaMemberResolver, JavaTypes}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
 
 import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.CD_Object
+import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.unused
 import scala.collection.immutable.SortedSet
@@ -810,13 +812,13 @@ object Resolver {
             // We have a static field access.
             val fieldName = qname.ident
 
-            val owner = ClassDescs.of(clazz)
+            val owner = clazz.desc
             JavaMemberResolver.field(owner, fieldName.name, static = true) match {
               case Result.Ok(Some(field)) =>
                 // Returns out of resolveExp
                 return ResolvedAst.Expr.GetStaticField(field, loc)
               case Result.Ok(None) =>
-                val error = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
+                val error = ResolutionError.UndefinedJvmStaticField(owner, fieldName, loc)
                 sctx.errors.add(error)
                 return ResolvedAst.Expr.Error(error)
               case Result.Err(error) =>
@@ -911,9 +913,9 @@ object Resolver {
             // Returns out of resolveExp
             return es match {
               case ResolvedAst.Expr.Cst(Constant.Unit, _) :: Nil =>
-                ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, Nil, outerLoc)
+                ResolvedAst.Expr.InvokeStaticMethod(clazz.desc, methodName, Nil, outerLoc)
               case _ =>
-                ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, es, outerLoc)
+                ResolvedAst.Expr.InvokeStaticMethod(clazz.desc, methodName, es, outerLoc)
             }
           case _ =>
           // Fallthrough to below.
@@ -1159,7 +1161,7 @@ object Resolver {
       val e = resolveExp(exp, scp0)
       scp0.get(className.name) match {
         case List(Resolution.JavaClass(clazz)) =>
-          ResolvedAst.Expr.InstanceOf(e, clazz, loc)
+          ResolvedAst.Expr.InstanceOf(e, clazz.desc, loc)
         case _ =>
           val error = ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
           sctx.errors.add(error)
@@ -1189,10 +1191,10 @@ object Resolver {
           val scp = scp0 ++ mkVarScp(sym)
           val b = resolveExp(body, scp)
           lookupJvmClass2(className, ns0, scp0) match {
-            case Result.Ok(clazz) => ResolvedAst.CatchRule(sym, clazz, b, ruleLoc)
+            case Result.Ok(clazz) => ResolvedAst.CatchRule(sym, clazz.desc, b, ruleLoc)
             case Result.Err(error) =>
               sctx.errors.add(error)
-              ResolvedAst.CatchRule(sym, classOf[Object], b, ruleLoc)
+              ResolvedAst.CatchRule(sym, CD_Object, b, ruleLoc)
           }
       }
 
@@ -1222,7 +1224,7 @@ object Resolver {
       val es = exps.map(resolveExp(_, scp0))
       scp0.get(className.name) match {
         case List(Resolution.JavaClass(clazz)) =>
-          ResolvedAst.Expr.InvokeConstructor(clazz, es, loc)
+          ResolvedAst.Expr.InvokeConstructor(clazz.desc, es, loc)
         case _ =>
           val error = ResolutionError.UndefinedNew(className, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, loc)
           sctx.errors.add(error)
@@ -1733,13 +1735,14 @@ object Resolver {
       case None =>
         val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
         val erased = UnkindedType.eraseAliases(t)
-        getNativeClassFromType(erased) match {
-          case Some(clazz) =>
+        getNativeDescFromType(erased) match {
+          case Some(desc) =>
             val targs = erased.typeArguments
-            val superScp = scp0.withSuperClass(Some(clazz)).withSuperTargs(targs)
+            val superScp = scp0.withSuperClass(Some(desc)).withSuperTargs(targs)
             val cs = constructors.map(visitJvmConstructor(_, superScp))
             val ms = methods.map(visitJvmMethod(_, superScp))
             val anonClassSym = Symbol.mkFreshAnonClassSym(loc);
+            val clazz = JClass(desc, Modifier.isInterface(JavaTypes.lookupClass(desc, loc).modifiers))
             ResolvedAst.Expr.NewObject(anonClassSym, clazz, targs, cs, ms, loc)
           case None =>
             erased match {
@@ -1771,9 +1774,7 @@ object Resolver {
     lookupJvmClass2(ann.name, ns0, scp0) match {
       case Result.Ok(clazz) =>
         if (clazz.isAnnotation) {
-          val retention = clazz.getAnnotation(classOf[java.lang.annotation.Retention])
-          val isRuntimeVisible = retention != null && retention.value() == java.lang.annotation.RetentionPolicy.RUNTIME
-          Some(JvmAnnotation(ClassDescs.of(clazz), isRuntimeVisible, ann.loc))
+          Some(JvmAnnotation(clazz.desc, clazz.isRuntimeVisibleAnnotation, ann.loc))
         } else {
           sctx.errors.add(ResolutionError.IllegalNonJavaAnnotation(ann.name.name, ann.loc))
           None
@@ -2778,7 +2779,7 @@ object Resolver {
     /**
       * The result is a Java class.
       */
-    case class JavaClass(clazz: Class[?]) extends TypeLookupResult
+    case class JavaClass(clazz: ca.uwaterloo.flix.language.ast.jvm.JavaClass) extends TypeLookupResult
 
     /**
       * The result is an associated type constructor.
@@ -3307,21 +3308,34 @@ object Resolver {
   }
 
   /**
-    * Returns the class reflection object for the given `className`.
+    * Returns the class metadata for the given `className`, read from its class file.
     */
-  private def lookupJvmClass(className: String, ns0: Name.NName, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = try {
-    // Don't initialize the class; we don't want to execute static initializers.
-    val initialize = false
-    Result.Ok(Class.forName(className, initialize, flix.jarLoader))
-  } catch {
-    case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmImport(className, AnchorPosition.mkImportOrUseAnchor(ns0), ex.getMessage, loc))
-    case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmImport(className, AnchorPosition.mkImportOrUseAnchor(ns0), ex.getMessage, loc))
+  private def lookupJvmClass(className: String, ns0: Name.NName, loc: SourceLocation)(implicit flix: Flix): Result[ca.uwaterloo.flix.language.ast.jvm.JavaClass, ResolutionError] = {
+    def undefined(message: String): ResolutionError =
+      ResolutionError.UndefinedJvmImport(className, AnchorPosition.mkImportOrUseAnchor(ns0), message, loc)
+
+    // A name that is not a valid binary class name has no descriptor.
+    val desc = try {
+      Some(ClassDesc.of(className))
+    } catch {
+      case _: IllegalArgumentException => None
+    }
+
+    desc match {
+      case None => Result.Err(undefined(s"'$className' is not a valid class name."))
+      case Some(d) => flix.javaTypeProvider.lookupClass(d) match {
+        case Result.Ok(clazz) => Result.Ok(clazz)
+        case Result.Err(JavaLookupError.MissingClass(_)) => Result.Err(undefined(s"The class '$className' was not found on the class path."))
+        case Result.Err(JavaLookupError.InvalidClass(_, message)) => Result.Err(undefined(s"The class file of '$className' could not be read: $message"))
+        case Result.Err(JavaLookupError.UnsupportedDescriptor(_)) => Result.Err(undefined(s"'$className' does not denote a class or interface."))
+      }
+    }
   }
 
   /**
-    * Returns the class reflection object for the given `className`.
+    * Returns the class metadata for the given `className`, falling back to the imported classes in scope.
     */
-  private def lookupJvmClass2(className: Name.Ident, ns0: Name.NName, scp0: LocalScope)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
+  private def lookupJvmClass2(className: Name.Ident, ns0: Name.NName, scp0: LocalScope)(implicit flix: Flix): Result[ca.uwaterloo.flix.language.ast.jvm.JavaClass, ResolutionError] = {
     lookupJvmClass(className.name, ns0, className.loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => scp0.get(className.name) match {
@@ -3531,20 +3545,11 @@ object Resolver {
   private def mkTypeVarScp(sym: Symbol.RegionSym): LocalScope = LocalScope.singleton(sym.text, Resolution.Region(sym))
 
   /**
-    * Looks up the Java class from a (possibly applied) native unkinded type by
-    * traversing type applications to find the base `Native` type constructor.
-    *
-    * Example: `UnkindedType.Cst(Native(String, 0))` returns `Some(classOf[String])`.
-    * Example: `UnkindedType.Apply(Cst(Native(ArrayList, 1)), Cst(Native(String, 0)))` returns `Some(classOf[ArrayList])`.
-    *
-    * Transitional: loads the class since the AST still refers to loaded classes.
-    */
-  private def getNativeClassFromType(tpe: UnkindedType)(implicit flix: Flix): Option[Class[?]] =
-    getNativeDescFromType(tpe).map(ClassDescs.load(_, flix.jarLoader))
-
-  /**
     * Looks up the Java class descriptor from a (possibly applied) native unkinded type by
     * traversing type applications to find the base `Native` type constructor.
+    *
+    * Example: `UnkindedType.Cst(Native(String, 0))` returns `Some(String)`.
+    * Example: `UnkindedType.Apply(Cst(Native(ArrayList, 1)), Cst(Native(String, 0)))` returns `Some(ArrayList)`.
     */
   private def getNativeDescFromType(tpe: UnkindedType): Option[ClassDesc] = tpe match {
     case UnkindedType.Cst(TypeConstructor.Native(desc, _), _) => Some(desc)
@@ -3556,7 +3561,7 @@ object Resolver {
   /**
     * Converts the class into a Flix type.
     */
-  private def flixifyType(clazz: Class[?], loc: SourceLocation): UnkindedType = clazz.getName match {
+  private def flixifyType(clazz: ca.uwaterloo.flix.language.ast.jvm.JavaClass, loc: SourceLocation): UnkindedType = ClassDescs.binaryNameOf(clazz.desc) match {
     case "java.math.BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc)
     case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc)
     case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc)
@@ -3576,7 +3581,7 @@ object Resolver {
     case "java.util.function.DoubleConsumer" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkUnit(loc), loc)
     case "java.util.function.DoublePredicate" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkBool(loc), loc)
     case "java.util.function.DoubleUnaryOperator" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkFloat64(loc), loc)
-    case _ => UnkindedType.UnappliedNative(ClassDescs.of(clazz), clazz.getTypeParameters.length, loc)
+    case _ => UnkindedType.UnappliedNative(clazz.desc, clazz.typeParameters.length, loc)
   }
 
   /**

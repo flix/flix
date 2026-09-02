@@ -15,7 +15,7 @@ import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaMemberResolver, JavaTypes
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver2}
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
 import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.{CD_Object, CD_String, CD_Throwable}
@@ -766,10 +766,9 @@ object Safety {
     * @param clazz the Java class specified in the catch clause
     * @param loc   the location of the catch parameter.
     */
-  private def checkCatchClass(clazz: Class[?], loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
-    val desc = ClassDescs.of(clazz)
-    if (!isThrowable(desc, loc)) {
-      sctx.errors.add(IllegalCatchType(desc, loc))
+  private def checkCatchClass(clazz: ClassDesc, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
+    if (!isThrowable(clazz, loc)) {
+      sctx.errors.add(IllegalCatchType(clazz, loc))
     }
   }
 
@@ -824,7 +823,7 @@ object Safety {
   private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
     case Expr.NewObject(_, clazz0, tpe0, _, cs, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
-      val clazz = ClassDescs.of(clazz0)
+      val clazz = clazz0.desc
       val javaClass = JavaTypes.lookupClass(clazz, loc)
       // `clazz` must be an interface or have a non-private constructor without arguments
       // (unless user-defined constructors are provided).

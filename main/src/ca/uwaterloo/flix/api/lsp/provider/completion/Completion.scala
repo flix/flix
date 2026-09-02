@@ -20,8 +20,10 @@ import ca.uwaterloo.flix.api.lsp.{Command, CompletionItem, CompletionItemKind, C
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
+import ca.uwaterloo.flix.util.ClassDescs
 import ca.uwaterloo.flix.util.collection.Nel
 
+import java.lang.constant.ClassDesc
 import java.lang.reflect.{Field, Method}
 
 /**
@@ -157,7 +159,7 @@ sealed trait Completion {
       )
 
     case Completion.LocalJavaClassCompletion(name, clazz, range, priority) =>
-      val description = Option(clazz.getCanonicalName)
+      val description = Some(ClassDescs.binaryNameOf(clazz).replace('$', '.'))
       val labelDetails = CompletionItemLabelDetails(None, description)
       CompletionItem(
         label = name,
@@ -681,7 +683,7 @@ object Completion {
     * @param range    the range of the completion.
     * @param priority the priority of the completion.
     */
-  case class LocalJavaClassCompletion(name: String, clazz: Class[?], range: Range, priority: Priority) extends Completion
+  case class LocalJavaClassCompletion(name: String, clazz: ClassDesc, range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a local def completion

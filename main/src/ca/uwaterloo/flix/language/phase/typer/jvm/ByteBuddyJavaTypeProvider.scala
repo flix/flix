@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{ClassDescs, Result}
 import net.bytebuddy.ClassFileVersion
 import net.bytebuddy.description.TypeVariableSource
+import net.bytebuddy.description.enumeration.EnumerationDescription
 import net.bytebuddy.description.field.FieldDescription
 import net.bytebuddy.description.method.MethodDescription
 import net.bytebuddy.description.`type`.{TypeDefinition, TypeDescription}
@@ -226,7 +227,8 @@ final case class ByteBuddyJavaTypeProvider(
       false
     } else {
       val retention = tpe.getDeclaredAnnotations.ofType(classOf[Retention])
-      retention != null && retention.getValue("value").resolve(classOf[RetentionPolicy]) == RetentionPolicy.RUNTIME
+      // The policy is read from the class file, so it is an enumeration description rather than a loaded enum constant.
+      retention != null && retention.getValue("value").resolve(classOf[EnumerationDescription]).getValue == RetentionPolicy.RUNTIME.name()
     }
   }
 

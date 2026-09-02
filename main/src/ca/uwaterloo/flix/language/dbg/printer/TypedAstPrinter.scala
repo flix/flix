@@ -88,7 +88,7 @@ object TypedAstPrinter {
     case Expr.PutField(field, exp1, exp2, _, _, _) => DocAst.Expr.JavaPutField(JField.of(field), print(exp1), print(exp2))
     case Expr.GetStaticField(field, _, _, _) => DocAst.Expr.JavaGetStaticField(JField.of(field))
     case Expr.PutStaticField(field, exp, _, _, _) => DocAst.Expr.JavaPutStaticField(JField.of(field), print(exp))
-    case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, clazz.getName, TypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
+    case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, DocAst.Expr.javaClassName(clazz.desc), TypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
     case Expr.NewChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.PutChannel(_, _, _, _, _) => DocAst.Expr.Unknown
@@ -134,7 +134,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, String, DocAst.Expr) = rule match {
-    case TypedAst.CatchRule(bnd, clazz, exp, _) => (bnd.sym, clazz.getName, print(exp))
+    case TypedAst.CatchRule(bnd, clazz, exp, _) => (bnd.sym, DocAst.Expr.javaClassName(clazz), print(exp))
   }
 
   /**

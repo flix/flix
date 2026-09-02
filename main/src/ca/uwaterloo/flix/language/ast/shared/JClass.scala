@@ -15,17 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.util.ClassDescs
-
 import java.lang.constant.ClassDesc
-
-object JClass {
-
-  /** Returns the [[JClass]] of the given loaded class `clazz`. */
-  def of(clazz: Class[?]): JClass =
-    JClass(ClassDescs.of(clazz), clazz.isInterface)
-
-}
 
 /**
   * A nominal reference to the Java class or interface `desc`.

@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, Sour
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
@@ -437,7 +437,7 @@ object Lowering {
         MonoAst.Expr.Stm(List(e), MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
       } else {
         // If it's a reference type, then do the instanceof check
-        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(ClassDescs.of(clazz)), List(e), Type.Bool, e.eff, loc)
+        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
       }
 
     case TypedAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
@@ -571,10 +571,10 @@ object Lowering {
         val thisTpe = lowerType(thisParam.tpe)
         val thisRef = MonoAst.Expr.Var(thisParam.bnd.sym, thisTpe, loc)
         implicit val lctx: LocalContext = LocalContext(Some(sym), Some(thisRef))
-        lowerJvmMethod(m, clazz)
+        lowerJvmMethod(m, clazz.desc)
       }
       val t = lowerType(tpe)
-      MonoAst.Expr.NewObject(sym, JClass.of(clazz), t, eff, cs, ms, loc)
+      MonoAst.Expr.NewObject(sym, clazz, t, eff, cs, ms, loc)
 
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -674,7 +674,7 @@ object Lowering {
   /**
     * Lowers the given JvmMethod `method`.
     */
-  private def lowerJvmMethod(method: TypedAst.JvmMethod, clazz: Class[?])(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+  private def lowerJvmMethod(method: TypedAst.JvmMethod, clazz: ClassDesc)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
     case TypedAst.JvmMethod(ann, ident, fparams, exp, _, eff, loc) =>
       val fs = fparams.map(lowerFormalParam)
       val e0 = lowerExp(exp)
@@ -683,7 +683,7 @@ object Lowering {
       // box it so the value matches the erased JVM signature. This mirrors the boxing applied
       // to generic Java method *calls* above (see `boxIfNecessary` in InvokeMethod), and the
       // call site unboxes the result symmetrically.
-      val overridden = overriddenJavaMethod(ClassDescs.of(clazz), ident.name, fparams.tail.length, loc)
+      val overridden = overriddenJavaMethod(clazz, ident.name, fparams.tail.length, loc)
       val e = overridden match {
         case Some(m) => boxIfNecessary(e0, m.ref.descriptor.returnType())
         case None => e0
@@ -709,7 +709,7 @@ object Lowering {
   private def lowerCatchRule(rule: TypedAst.CatchRule)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
     case TypedAst.CatchRule(bnd, clazz, exp, _) =>
       val e = lowerExp(exp)
-      MonoAst.CatchRule(bnd.sym, ClassDescs.of(clazz), e)
+      MonoAst.CatchRule(bnd.sym, clazz, e)
   }
 
   /**

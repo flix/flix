@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
+import java.lang.constant.ClassDesc
+
 object KindedAst {
 
   val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
@@ -159,7 +161,7 @@ object KindedAst {
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedPur: Option[Type], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, clazz: java.lang.Class[?], loc: SourceLocation) extends Expr
+    case class InstanceOf(exp: Expr, clazz: ClassDesc, loc: SourceLocation) extends Expr
 
     case class CheckedCast(cast: CheckedCastType, exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -176,25 +178,25 @@ object KindedAst {
 
     case class RunWith(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(clazz: Class[?], exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeConstructor(clazz: ClassDesc, exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeSuperConstructor(clazz: Class[?], exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeSuperConstructor(clazz: ClassDesc, exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeSuperMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], targs: List[Type], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeSuperMethod(clazz: ClassDesc, methodName: Name.Ident, exps: List[Expr], targs: List[Type], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeStaticMethod(clazz: ClassDesc, methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class GetField(exp: Expr, fieldName: Name.Ident, jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class PutField(field: JavaField, clazz: java.lang.Class[?], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class PutField(field: JavaField, clazz: ClassDesc, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class GetStaticField(field: JavaField, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class PutStaticField(field: JavaField, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], targs: List[Type], constructors: List[JvmConstructor], methods: List[JvmMethod], tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, targs: List[Type], constructors: List[JvmConstructor], methods: List[JvmMethod], tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -349,7 +351,7 @@ object KindedAst {
 
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: Nel[FormalParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
+  case class CatchRule(sym: Symbol.VarSym, clazz: ClassDesc, exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(symUse: OpSymUse, fparams: Nel[FormalParam], exp: Expr, tvar: Type.Var, loc: SourceLocation)
 

@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.*
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.reflect.Modifier
@@ -441,7 +441,7 @@ private[monomorph2] object SpecializeAndLower {
         MonoAst.Expr.Stm(List(e), MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
       } else {
         // If it's a reference type, then do the instanceof check
-        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(ClassDescs.of(clazz)), List(e), Type.Bool, e.eff, loc)
+        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
       }
 
     case TypedAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
@@ -575,7 +575,7 @@ private[monomorph2] object SpecializeAndLower {
           // for a generic interface method) but the Flix result is primitive, box it to match the
           // erased signature. This mirrors the boxing applied to generic Java method calls (see
           // `boxIfNecessary` in `mkJavaInvoke`), and the call site unboxes the result symmetrically.
-          val overridden = overriddenJavaMethod(ClassDescs.of(clazz), mIdent.name, fs.tail.length, mLoc)
+          val overridden = overriddenJavaMethod(clazz.desc, mIdent.name, fs.tail.length, mLoc)
           val e = overridden match {
             case Some(m) => boxIfNecessary(e0, m.ref.descriptor.returnType())
             case None => e0
@@ -583,7 +583,7 @@ private[monomorph2] object SpecializeAndLower {
           MonoAst.JvmMethod(mAnn, mIdent, fs, e, e.tpe, subst(mEff), overridden.map(mkJMethod(_, mLoc)), mLoc)
       }
       val t = visitType(tpe, subst)
-      MonoAst.Expr.NewObject(freshSym, JClass.of(clazz), t, subst(eff), cs, ms, loc)
+      MonoAst.Expr.NewObject(freshSym, clazz, t, subst(eff), cs, ms, loc)
 
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
@@ -689,7 +689,7 @@ private[monomorph2] object SpecializeAndLower {
       val freshSym = Symbol.freshVarSym(bnd.sym)
       val env1 = env0 + (bnd.sym -> freshSym)
       val e = visitExp(exp, env1, subst)
-      MonoAst.CatchRule(freshSym, ClassDescs.of(clazz0), e)
+      MonoAst.CatchRule(freshSym, clazz0, e)
   }
 
   /**

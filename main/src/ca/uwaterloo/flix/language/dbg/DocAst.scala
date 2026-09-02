@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
-import ca.uwaterloo.flix.util.ClassDescs
 
 import java.lang.constant.ClassDesc
 import scala.collection.immutable.SortedSet
@@ -247,9 +246,6 @@ object DocAst {
 
     def RefEq(d1: Expr, d2: Expr): Expr =
       Binary(d1, "===", d2)
-
-    def InstanceOf(d: Expr, clazz: Class[?]): Expr =
-      InstanceOf(d, ClassDescs.of(clazz))
 
     def InstanceOf(d: Expr, clazz: ClassDesc): Expr =
       Binary(d, "instanceof", AsIs(javaClassName(clazz)))

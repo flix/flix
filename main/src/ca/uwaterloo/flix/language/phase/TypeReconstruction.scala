@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.Type.instantiateJavaTypeWithObjectArgs
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
@@ -396,7 +395,7 @@ object TypeReconstruction {
       val rs = rules map {
         case KindedAst.CatchRule(sym, clazz, body, ruleLoc) =>
           val b = visitExp(body)
-          val bnd = TypedAst.Binder(sym, Type.mkNative(clazz, SourceLocation.Unknown))
+          val bnd = TypedAst.Binder(sym, JavaTypes.flixTypeOf(clazz, ruleLoc))
           TypedAst.CatchRule(bnd, clazz, b, ruleLoc)
       }
       val tpe = rs.head.exp.tpe
@@ -430,7 +429,7 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+      val tpe = JavaTypes.instantiateWithObjectArgs(clazz, loc)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -443,7 +442,7 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+      val tpe = JavaTypes.instantiateWithObjectArgs(clazz, loc)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>

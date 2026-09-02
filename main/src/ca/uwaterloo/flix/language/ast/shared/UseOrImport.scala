@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.language.ast.jvm.JavaClass
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Sourceable, Symbol}
 
 /**
@@ -34,7 +35,7 @@ object UseOrImport {
   /**
     * An import of a Java class.
     */
-  case class Import(clazz: Class[?], alias: Name.Ident, loc: SourceLocation) extends UseOrImport {
+  case class Import(clazz: JavaClass, alias: Name.Ident, loc: SourceLocation) extends UseOrImport {
     val src: Source = loc.source
   }
 

@@ -625,7 +625,7 @@ object Type {
     /**
       * A Java constructor, defined by its class and argument types.
       */
-    case class JvmConstructor(clazz: Class[?], tpes: List[Type]) extends JvmMember
+    case class JvmConstructor(clazz: ClassDesc, tpes: List[Type]) extends JvmMember
 
     /**
       * A Java field, defined by the receiver type and the field name.
@@ -640,7 +640,7 @@ object Type {
     /**
       * A Java static method, defined by the class, the method name, and the argument types.
       */
-    case class JvmStaticMethod(clazz: Class[?], name: Name.Ident, tpes: List[Type]) extends JvmMember
+    case class JvmStaticMethod(clazz: ClassDesc, name: Name.Ident, tpes: List[Type]) extends JvmMember
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -960,13 +960,6 @@ object Type {
     * Constructs the native type of the class `desc` with `arity` type parameters.
     */
   def mkNative(desc: ClassDesc, arity: Int, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(desc, arity), loc)
-
-  /**
-    * Constructs the native type of the loaded class `clazz`.
-    *
-    * Transitional: prefer `mkNative(desc, arity, loc)` since it does not require a loaded class.
-    */
-  def mkNative(clazz: Class[?], loc: SourceLocation): Type = mkNative(ClassDescs.of(clazz), clazz.getTypeParameters.length, loc)
 
   /**
     * Returns the `java.lang.Object` type.
@@ -1353,16 +1346,6 @@ object Type {
     var elm = c
     while (elm.isArray) elm = elm.getComponentType
     getFlixType(ClassDescs.of(c), elm.getTypeParameters.length)
-  }
-
-  /**
-    * Returns a fully-applied Flix type for the given Java class, with `Object` type arguments
-    * for generic classes. Use this in ground-type contexts that need kind `Star`.
-    */
-  def instantiateJavaTypeWithObjectArgs(c: Class[?], loc: SourceLocation): Type = {
-    val base = getFlixType(c)
-    val n = c.getTypeParameters.length
-    Type.mkApply(base, List.fill(n)(Type.mkObject(loc)), loc)
   }
 
   /**

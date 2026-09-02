@@ -20,10 +20,15 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.{ClassDescs, Formatter, Grammar}
+
+import java.lang.constant.ClassDesc
+import java.lang.reflect.Modifier
+import scala.jdk.CollectionConverters.*
 
 /**
   * A common super-type for type errors.
@@ -97,14 +102,14 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class ConstructorNotFound(clazz: Class[?], tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
+  case class ConstructorNotFound(clazz: ClassDesc, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6025
 
-    def summary: String = s"Constructor not found: '${clazz.getName}' with arguments (${tpes.mkString(", ")})."
+    def summary: String = s"Constructor not found: '${ClassDescs.binaryNameOf(clazz)}' with arguments (${tpes.mkString(", ")})."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Constructor not found: '${red(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
+      s""">> Constructor not found: '${red(ClassDescs.binaryNameOf(clazz))}' with arguments (${cyan(tpes.mkString(", "))}).
          |
          |${highlight(loc, "cannot find constructor", fmt)}
          |
@@ -906,14 +911,14 @@ object TypeError {
     * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class StaticMethodNotFound(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
+  case class StaticMethodNotFound(clazz: ClassDesc, methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6358
 
-    def summary: String = s"Static method not found: '${methodName.name}' in class '${clazz.getName}'."
+    def summary: String = s"Static method not found: '${methodName.name}' in class '${ClassDescs.binaryNameOf(clazz)}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
+      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(ClassDescs.binaryNameOf(clazz))}' with arguments (${cyan(tpes.mkString(", "))}).
          |
          |${highlight(loc, "cannot find static method", fmt)}
          |
@@ -1096,10 +1101,11 @@ object TypeError {
   }
 
   /**
-    * Returns the constructors of the given class sorted by parameter count.
+    * Returns the public constructors of the given class sorted by parameter count.
     */
-  private def getConstructorsByArgs(clazz: Class[?]): List[java.lang.reflect.Constructor[?]] = {
-    clazz.getConstructors.sortBy(_.getParameterTypes.length).toList
+  private def getConstructorsByArgs(clazz: ClassDesc)(implicit flix: Flix): List[JavaMethod] = {
+    val constructors = flix.javaTypeProvider.lookupClass(clazz).toOption.toList.flatMap(_.declaredConstructors)
+    constructors.filter(c => Modifier.isPublic(c.modifiers)).sortBy(_.parameterTypes.length)
   }
 
   /**
@@ -1112,9 +1118,9 @@ object TypeError {
   /**
     * Returns a formatted string representation of a Java constructor.
     */
-  private def formatConstructor(clazz: Class[?], c: java.lang.reflect.Constructor[?]): String = {
-    val params = c.getParameterTypes.map(formatJavaType).mkString(", ")
-    s"${clazz.getSimpleName}($params)"
+  private def formatConstructor(clazz: ClassDesc, c: JavaMethod): String = {
+    val params = c.ref.descriptor.parameterList().asScala.map(formatJavaType).mkString(", ")
+    s"${ClassDescs.simpleNameOf(clazz)}($params)"
   }
 
   /**
@@ -1132,6 +1138,16 @@ object TypeError {
       Type.getFlixType(tpe).toString
     else
       tpe.getName
+  }
+
+  /**
+    * Returns the Flix-style string representation of the Java type `desc`.
+    */
+  private def formatJavaType(desc: ClassDesc): String = {
+    if (desc.isPrimitive || desc.isArray)
+      Type.getFlixType(desc, 0).toString
+    else
+      ClassDescs.binaryNameOf(desc)
   }
 
   /**

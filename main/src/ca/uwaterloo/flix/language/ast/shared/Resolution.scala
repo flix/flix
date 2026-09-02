@@ -26,7 +26,7 @@ sealed trait Resolution
 object Resolution {
   case class Declaration(decl: NamedAst.Declaration) extends Resolution
 
-  case class JavaClass(clazz: Class[?]) extends Resolution
+  case class JavaClass(clazz: ca.uwaterloo.flix.language.ast.jvm.JavaClass) extends Resolution
 
   case class Var(sym: Symbol.VarSym) extends Resolution
 

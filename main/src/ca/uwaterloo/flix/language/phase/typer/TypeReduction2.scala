@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
 import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver, JavaTypes}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.constant.ConstantDescs.*
 import java.lang.constant.ClassDesc
@@ -145,7 +145,7 @@ object TypeReduction2 {
         case JvmMember.JvmConstructor(clazz, tpes) =>
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
-          lookupConstructor(ClassDescs.of(clazz), reducedTpes, loc) match {
+          lookupConstructor(clazz, reducedTpes, loc) match {
             case JavaConstructorResolution.Resolved(constructor) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), cs)
@@ -178,7 +178,7 @@ object TypeReduction2 {
         case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
-          lookupStaticMethod(ClassDescs.of(clazz), name.name, reducedTpes, loc) match {
+          lookupStaticMethod(clazz, name.name, reducedTpes, loc) match {
             case JavaMethodResolution.Resolved(method) =>
               // Class type parameters are not in scope for static methods.
               val (tpe, cs0) = instantiateMethod(method, Nil, Nil, reducedTpes, scope, loc)
