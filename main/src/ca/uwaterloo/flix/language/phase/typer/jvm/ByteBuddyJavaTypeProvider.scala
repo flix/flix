@@ -32,6 +32,7 @@ import java.lang.annotation.{Retention, RetentionPolicy}
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.reflect.{GenericSignatureFormatError, MalformedParameterizedTypeException}
 import java.nio.file.{Files, Path}
+import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters.*
 
 object ByteBuddyJavaTypeProvider {
@@ -94,29 +95,42 @@ final case class ByteBuddyJavaTypeProvider(
   pool: TypePool
 ) extends JavaTypeProvider {
 
+  /** Caches converted class metadata for the lifetime of this provider. */
+  private val classCache = new ConcurrentHashMap[ClassDesc, Result[JavaClass, JavaLookupError]]()
+
+  /** Caches compiled virtual method graphs for the lifetime of this provider. */
+  private val virtualMethodsCache = new ConcurrentHashMap[ClassDesc, Result[List[JavaMethod], JavaLookupError]]()
+
+  /** Caches nominal subtype queries for the lifetime of this provider. */
+  private val subtypeCache = new ConcurrentHashMap[(ClassDesc, ClassDesc), Result[Boolean, JavaLookupError]]()
+
   /** Returns `Ok` with metadata for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
   override def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError] =
-    resolve(desc).map(toClass)
+    classCache.computeIfAbsent(desc, d => resolve(d).map(toClass))
 
   /** Returns `Ok` with the virtual method graph for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
   override def virtualMethods(desc: ClassDesc): Result[List[JavaMethod], JavaLookupError] =
-    resolve(desc).map { tpe =>
-      MethodGraph.Compiler.Default.forJavaHierarchy().compile(tpe: TypeDefinition).listNodes().asScala
-        .map(_.getRepresentative)
-        .filter(_.isVirtual)
-        .map(toMethod)
-        .toList
-        .sortBy(m => (m.ref.name, m.ref.descriptor.descriptorString()))
-    }
+    virtualMethodsCache.computeIfAbsent(desc, d =>
+      resolve(d).map { tpe =>
+        MethodGraph.Compiler.Default.forJavaHierarchy().compile(tpe: TypeDefinition).listNodes().asScala
+          .map(_.getRepresentative)
+          .filter(_.isVirtual)
+          .map(toMethod)
+          .toList
+          .sortBy(m => (m.ref.name, m.ref.descriptor.descriptorString()))
+      }
+    )
 
   /** Returns `Ok` with the subtype result, or `Err` if either descriptor is unsupported, missing, or invalid. */
   override def isSubtype(subtype: ClassDesc, supertype: ClassDesc): Result[Boolean, JavaLookupError] = {
     if (subtype == supertype) {
       Ok(true)
     } else {
-      resolve(subtype).flatMap { sub =>
-        resolve(supertype).map(sup => sub.isAssignableTo(sup))
-      }
+      subtypeCache.computeIfAbsent((subtype, supertype), key =>
+        resolve(key._1).flatMap { sub =>
+          resolve(key._2).map(sup => sub.isAssignableTo(sup))
+        }
+      )
     }
   }
 
