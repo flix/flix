@@ -25,8 +25,9 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.*
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Result}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, Result}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.reflect.Modifier
@@ -574,12 +575,12 @@ private[monomorph2] object SpecializeAndLower {
           // for a generic interface method) but the Flix result is primitive, box it to match the
           // erased signature. This mirrors the boxing applied to generic Java method calls (see
           // `boxIfNecessary` in `mkJavaInvoke`), and the call site unboxes the result symmetrically.
-          val overridden = overriddenJavaMethod(clazz, mIdent.name, fs.tail.length)
+          val overridden = overriddenJavaMethod(ClassDescs.of(clazz), mIdent.name, fs.tail.length, mLoc)
           val e = overridden match {
-            case Some(m) => boxIfNecessary(e0, m.getReturnType)
+            case Some(m) => boxIfNecessary(e0, m.ref.descriptor.returnType())
             case None => e0
           }
-          MonoAst.JvmMethod(mAnn, mIdent, fs, e, e.tpe, subst(mEff), overridden.map(JMethod.of), mLoc)
+          MonoAst.JvmMethod(mAnn, mIdent, fs, e, e.tpe, subst(mEff), overridden.map(mkJMethod(_, mLoc)), mLoc)
       }
       val t = visitType(tpe, subst)
       MonoAst.Expr.NewObject(freshSym, JClass.of(clazz), t, subst(eff), cs, ms, loc)
@@ -1214,13 +1215,6 @@ private[monomorph2] object SpecializeAndLower {
     * E.g., in `m.put("k", 42)` on a `HashMap[String, Int32]`, the actual type is `Int32`
     * but the expected type is `Object` (erased), so `42` is boxed via `Integer.valueOf(42)`.
     */
-  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: Class[?]): MonoAst.Expr =
-    boxIfNecessary(arg, ClassDescs.of(expectedParamType))
-
-  /**
-    * Boxes `arg` if the actual arg type (Flix primitive) mismatches the expected param type (Object).
-    * The expected param type is given as a class descriptor.
-    */
   private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: ClassDesc): MonoAst.Expr = {
     val actualArgType = arg.tpe
     if (isPrimType(actualArgType) && !expectedParamType.isPrimitive) {
@@ -1238,11 +1232,12 @@ private[monomorph2] object SpecializeAndLower {
     * Returns the Java method on `clazz` matching `name` and `arity` (excluding the receiver), if any.
     *
     * The resolved method's erased signature is carried on the [[MonoAst.JvmMethod]] so the
-    * backend can emit matching descriptors without reflection.
+    * backend can emit matching descriptors.
     */
-  private def overriddenJavaMethod(clazz: Class[?], name: String, arity: Int): Option[java.lang.reflect.Method] =
-    JvmUtils.getOverridableInstanceMethods(clazz).collectFirst {
-      case m if m.getName == name && m.getParameterCount == arity => m
+  private def overriddenJavaMethod(clazz: ClassDesc, name: String, arity: Int, loc: SourceLocation)(implicit flix: Flix): Option[JavaMethod] =
+    JavaMemberResolver.overridableMethods(clazz) match {
+      case Result.Ok(methods) => methods.find(m => m.ref.name == name && m.parameterTypes.length == arity)
+      case Result.Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${clazz.displayName()}': $error", loc)
     }
 
   /**
