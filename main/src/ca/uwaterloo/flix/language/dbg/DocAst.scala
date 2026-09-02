@@ -16,12 +16,12 @@
 
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.language.ast.jvm.JavaField
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.{Constructor, Method}
+import java.lang.reflect.Method
 import scala.collection.immutable.SortedSet
 
 sealed trait DocAst
@@ -340,10 +340,6 @@ object DocAst {
       Dot(AsIs(javaClassName(f.owner)), AsIs(f.name))
     }
 
-    def JavaInvokeConstructor(c: Constructor[?], ds: List[Expr]): Expr = {
-      App(Native(c.getDeclaringClass), ds)
-    }
-
     def JavaInvokeConstructor(c: JConstructor, ds: List[Expr]): Expr = {
       App(AsIs(javaClassName(c.owner)), ds)
     }
@@ -423,7 +419,7 @@ object DocAst {
 
     case class Native(clazz: Class[?]) extends Atom
 
-    case class JvmConstructor(constructor: Constructor[?]) extends Atom
+    case class JvmConstructor(constructor: JavaMethod) extends Atom
 
     case class JvmMethod(method: Method) extends Atom
 

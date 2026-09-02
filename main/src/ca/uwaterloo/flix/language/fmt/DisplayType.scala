@@ -17,11 +17,11 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.jvm.JavaField
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{SymbolSet, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.reflect.{Constructor, Method}
+import java.lang.reflect.Method
 
 /**
   * A well-kinded type in an easily-printable format.
@@ -293,7 +293,7 @@ object DisplayType {
 
   case class JvmUnresolvedStaticMethod(clazz: String, name: String, tpes: List[DisplayType]) extends DisplayType
 
-  case class JvmConstructor(constructor: Constructor[?]) extends DisplayType
+  case class JvmConstructor(constructor: JavaMethod) extends DisplayType
 
   case class JvmField(field: JavaField) extends DisplayType
 

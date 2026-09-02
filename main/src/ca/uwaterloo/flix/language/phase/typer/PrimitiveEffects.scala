@@ -15,13 +15,16 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, LocalResource}
 import org.json4s.JsonAST.*
 import org.json4s.jvalue2monadic
 import org.json4s.native.JsonMethods.parse
 
-import java.lang.reflect.{Constructor, Method}
+import java.lang.constant.ClassDesc
+import java.lang.reflect.Method
 
 object PrimitiveEffects {
 
@@ -50,9 +53,11 @@ object PrimitiveEffects {
   private val classEffs: Map[Class[?], Set[Symbol.EffSym]] = loadClassEffs()
 
   /**
-    * A pre-computed map from constructors to effects.
+    * A pre-computed map from classes to the effects of their constructors.
+    *
+    * The effects apply to every constructor of the class.
     */
-  private val constructorEffs: Map[Constructor[?], Set[Symbol.EffSym]] = loadConstructorEffs()
+  private val constructorEffs: Map[ClassDesc, Set[Symbol.EffSym]] = loadConstructorEffs()
 
   /**
     * A pre-computed map from methods to effects.
@@ -62,10 +67,10 @@ object PrimitiveEffects {
   /**
     * Returns the primitive effects of calling the given constructor `c`.
     */
-  def getConstructorEffs(c: Constructor[?], loc: SourceLocation): Type = constructorEffs.get(c) match {
+  def getConstructorEffs(c: JavaMethod, loc: SourceLocation)(implicit flix: Flix): Type = constructorEffs.get(c.ref.owner) match {
     case None =>
       // Case 1: No effects for the constructor. Try the class map.
-      getClassAndPackageEffs(c.getDeclaringClass, loc)
+      getClassAndPackageEffs(ClassDescs.load(c.ref.owner, flix.jarLoader), loc)
     case Some(effs) =>
       // Case 2: We found the effects for the constructor.
       toEffSet(effs, loc)
@@ -194,16 +199,16 @@ object PrimitiveEffects {
     *
     * Note: The effect set applies to *ALL* constructors of the class.
     */
-  private def loadConstructorEffs(): Map[Constructor[?], Set[Symbol.EffSym]] = {
+  private def loadConstructorEffs(): Map[ClassDesc, Set[Symbol.EffSym]] = {
     val data = LocalResource.get(ConstructorEffsPath)
     val json = parse(data)
 
     val m = json \\ "constructors" match {
-      case JObject(l) => l.flatMap {
+      case JObject(l) => l.map {
         case (className, JString(s)) =>
-          val clazz = Class.forName(className)
+          val desc = ClassDesc.of(className)
           val effSet = parseEffSet(s)
-          clazz.getConstructors.map(c => (c, effSet))
+          (desc, effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
       case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)

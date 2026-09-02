@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Result}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import scala.jdk.CollectionConverters.*
 
 /**
   * Fuses specialization and lowering into a single AST walk: instantiates a declaration's
@@ -498,8 +499,8 @@ private[monomorph2] object SpecializeAndLower {
       val es = exps.map(visitExp(_, env0, subst))
       val t = visitType(tpe, subst)
       // Box primitive args to match the constructor's Object-typed parameters.
-      val javaParamTypes = constructor.getParameterTypes
-      val boxedArgs = ListOps.zip(es, javaParamTypes.toList).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
+      val javaParamTypes = constructor.ref.descriptor.parameterList().asScala.toList
+      val boxedArgs = ListOps.zip(es, javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(JConstructor.of(constructor)), boxedArgs, t, subst(eff), loc)
 
     case TypedAst.Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
@@ -1194,7 +1195,14 @@ private[monomorph2] object SpecializeAndLower {
     * E.g., in `m.put("k", 42)` on a `HashMap[String, Int32]`, the actual type is `Int32`
     * but the expected type is `Object` (erased), so `42` is boxed via `Integer.valueOf(42)`.
     */
-  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: Class[?]): MonoAst.Expr = {
+  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: Class[?]): MonoAst.Expr =
+    boxIfNecessary(arg, ClassDescs.of(expectedParamType))
+
+  /**
+    * Boxes `arg` if the actual arg type (Flix primitive) mismatches the expected param type (Object).
+    * The expected param type is given as a class descriptor.
+    */
+  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: ClassDesc): MonoAst.Expr = {
     val actualArgType = arg.tpe
     if (isPrimType(actualArgType) && !expectedParamType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(
