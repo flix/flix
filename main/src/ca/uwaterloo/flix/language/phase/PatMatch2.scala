@@ -24,8 +24,10 @@ import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.PatMatchError
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
+import java.lang.constant.ClassDesc
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
@@ -586,11 +588,11 @@ object PatMatch2 {
     * A catch rule is redundant if a preceding rule catches the same exception
     * class or a superclass of it, making the later rule impossible to reach.
     */
-  private def checkCatchRules(rules: List[TypedAst.CatchRule])(implicit sctx: SharedContext): Unit = {
+  private def checkCatchRules(rules: List[TypedAst.CatchRule])(implicit sctx: SharedContext, flix: Flix): Unit = {
     var precedingRules: List[TypedAst.CatchRule] = Nil
     for (rule <- rules) {
       // Check if any preceding rule's class is a superclass of (or equal to) this rule's class.
-      precedingRules.find(prev => prev.clazz.isAssignableFrom(rule.clazz)) match {
+      precedingRules.find(prev => isSubtype(rule.clazz, prev.clazz, rule.loc)) match {
         case Some(coveringRule) =>
           sctx.errors.add(PatMatchError.RedundantCatchRule(coveringRule.loc, rule.loc))
         case None => ()
@@ -598,6 +600,13 @@ object PatMatch2 {
       precedingRules = precedingRules :+ rule
     }
   }
+
+  /** Returns `true` if the Java class `sub` is a subtype of `sup`, or throws if their metadata cannot be read. */
+  private def isSubtype(sub: ClassDesc, sup: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean =
+    JavaMemberResolver.isReferenceSubtype(sub, sup) match {
+      case Result.Ok(result) => result
+      case Result.Err(error) => throw InternalCompilerException(s"Java subtype check failed for '${sub.displayName()} <: ${sup.displayName()}': $error", loc)
+    }
 
   // ─────────────────────────────────────────────────────────────
   //  Section 3: Run / Visitors

@@ -379,10 +379,10 @@ object DisplayType {
       case Type.JvmToEff(tpe, _) =>
         mkApply(DisplayType.JvmToEff(visit(tpe)), t.typeArguments.map(visit))
       case Type.UnresolvedJvmType(member, _) => member match {
-        case JvmMember.JvmConstructor(clazz, tpes) => DisplayType.JvmUnresolvedConstructor(clazz.getSimpleName, tpes.map(visit))
+        case JvmMember.JvmConstructor(clazz, tpes) => DisplayType.JvmUnresolvedConstructor(ClassDescs.simpleNameOf(clazz), tpes.map(visit))
         case JvmMember.JvmMethod(tpe, name, tpes) => DisplayType.JvmUnresolvedMethod(visit(tpe), name.name, tpes.map(visit))
         case JvmMember.JvmField(_, tpe, name) => DisplayType.JvmUnresolvedField(visit(tpe), name.name)
-        case JvmMember.JvmStaticMethod(clazz, name, tpes) => DisplayType.JvmUnresolvedStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
+        case JvmMember.JvmStaticMethod(clazz, name, tpes) => DisplayType.JvmUnresolvedStaticMethod(ClassDescs.simpleNameOf(clazz), name.name, tpes.map(visit))
       }
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void

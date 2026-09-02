@@ -931,14 +931,14 @@ object ResolutionError {
     * @param field the field name.
     * @param loc   the location of the field access.
     */
-  case class UndefinedJvmStaticField(clazz: Class[?], field: Name.Ident, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmStaticField(clazz: ClassDesc, field: Name.Ident, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1914
 
     def summary: String = s"Undefined static field: '${field.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Undefined static field '${red(field.name)}' in class '${cyan(clazz.getName)}'.
+      s""">> Undefined static field '${red(field.name)}' in class '${cyan(ClassDescs.binaryNameOf(clazz))}'.
          |
          |${highlight(loc, "field not found", fmt)}
          |""".stripMargin

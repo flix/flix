@@ -15,14 +15,18 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
 import ca.uwaterloo.flix.language.ast.Name
-import ca.uwaterloo.flix.util.JvmUtils
+import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
+
+import java.lang.constant.ClassDesc
 
 object GetStaticFieldCompleter {
 
-  def getCompletions(clazz: Class[?], field: Name.Ident): List[Completion] = {
-    JvmUtils.getStaticFields(clazz).sortBy(_.getName).map(FieldCompletion(field, Priority.Lowest(0), _))
+  def getCompletions(clazz: ClassDesc, field: Name.Ident)(implicit flix: Flix): List[Completion] = {
+    // Transitional: loads the class since the member listing still requires a loaded class.
+    JvmUtils.getStaticFields(ClassDescs.load(clazz, flix.jarLoader)).sortBy(_.getName).map(FieldCompletion(field, Priority.Lowest(0), _))
   }
 
 }

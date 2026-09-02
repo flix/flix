@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
+import java.lang.constant.ClassDesc
+
 object TypedAst {
 
   val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, List.empty,Map.empty, TraitEnv.empty, EqualityEnv.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
@@ -202,7 +204,7 @@ object TypedAst {
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, clazz: java.lang.Class[?], loc: SourceLocation) extends Expr {
+    case class InstanceOf(exp: Expr, clazz: ClassDesc, loc: SourceLocation) extends Expr {
       def eff: Type = exp.eff
 
       def tpe: Type = Type.Bool
@@ -243,7 +245,7 @@ object TypedAst {
 
     case class PutStaticField(field: JavaField, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], tpe: Type, eff: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, tpe: Type, eff: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -408,7 +410,7 @@ object TypedAst {
 
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: Nel[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
+  case class CatchRule(bnd: Binder, clazz: ClassDesc, exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: OpSymUse, fparams: Nel[FormalParam], exp: Expr, loc: SourceLocation)
 

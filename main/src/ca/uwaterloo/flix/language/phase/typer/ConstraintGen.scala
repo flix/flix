@@ -25,9 +25,10 @@ import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
-import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Subeffecting}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 
-import java.lang.reflect.{Modifier, ParameterizedType, TypeVariable}
+import java.lang.constant.ClassDesc
+import java.lang.reflect.Modifier
 
 /**
   * This phase generates a list of type constraints, which include
@@ -963,8 +964,8 @@ object ConstraintGen {
 
       case Expr.InvokeSuperMethod(clazz, methodName, exps, targs, jvar, tvar, evar, loc) =>
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = if (targs.nonEmpty) Type.mkApply(Type.mkNative(clazz, loc), targs, loc)
-                       else Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+        val clazzTpe = if (targs.nonEmpty) Type.mkApply(JavaTypes.flixTypeOf(clazz, loc), targs, loc)
+                       else JavaTypes.instantiateWithObjectArgs(clazz, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(clazzTpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
@@ -1000,7 +1001,7 @@ object ConstraintGen {
 
       case Expr.PutField(field, clazz, exp1, exp2, loc) =>
         val fieldType = getJavaFieldType(field, loc)
-        val classType = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+        val classType = JavaTypes.instantiateWithObjectArgs(clazz, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = classType, actual = tpe1, exp1.loc)
@@ -1027,8 +1028,7 @@ object ConstraintGen {
 
       case Expr.NewObject(_, clazz, targs, constructors, methods, tvar, loc) =>
         constructors.foreach(visitJvmConstructor)
-        val resTpe = if (targs.nonEmpty) Type.mkApply(Type.mkNative(clazz, loc), targs, loc)
-                     else Type.mkNative(clazz, loc)
+        val resTpe = Type.mkApply(JavaTypes.flixTypeOf(clazz.desc, loc), targs, loc)
         c.unifyType(tvar, resTpe, loc)
 
         methods.foreach(visitJvmMethod)
@@ -1285,7 +1285,7 @@ object ConstraintGen {
     */
   private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.CatchRule(sym, clazz, exp, _) =>
-      c.expectType(expected = Type.mkNative(clazz, sym.loc), sym.tvar, sym.loc)
+      c.expectType(expected = JavaTypes.flixTypeOf(clazz, sym.loc), sym.tvar, sym.loc)
       visitExp(exp)
   }
 
@@ -1474,16 +1474,8 @@ object ConstraintGen {
   }
 
   /** Builds the result type for a constructor call, using fresh type variables for generic classes. */
-  private def mkConstructorType(clazz: Class[?], loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type = {
-    val numTypeParams = clazz.getTypeParameters.length
-    if (numTypeParams > 0) {
-      val baseTpe = Type.mkNative(clazz, loc)
-      val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
-      Type.mkApply(baseTpe, typeArgs, loc)
-    } else {
-      Type.getFlixType(clazz)
-    }
-  }
+  private def mkConstructorType(clazz: ClassDesc, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type =
+    JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
 
   /** Returns `true` if `exp` is a JVM interop invocation (constructor, method, or static method). */
   private def isJvmInvoke(exp: KindedAst.Expr): Boolean = exp match {

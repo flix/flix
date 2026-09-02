@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer.jvm
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.jvm.JavaType.{Parameterized, Variable}
 import ca.uwaterloo.flix.language.ast.jvm.JavaTypeVariable
 import ca.uwaterloo.flix.language.ast.jvm.JavaTypeVariableOwner.Class
@@ -177,6 +178,40 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
           assert(hasDeclaredCompareTo)
         case Err(error) => fail(error.toString)
       }
+    } finally provider.close()
+  }
+
+  test("lookupClass.Annotation.RuntimeRetention") {
+    val flix = new Flix
+    try {
+      flix.javaTypeProvider.lookupClass(ClassDesc.of("dev.flix.test.TestJvmAnnotation")) match {
+        case Ok(clazz) =>
+          assert(clazz.isAnnotation)
+          assert(clazz.isRuntimeVisibleAnnotation)
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("lookupClass.Annotation.ClassRetention") {
+    val flix = new Flix
+    try {
+      flix.javaTypeProvider.lookupClass(ClassDesc.of("dev.flix.test.TestJvmAnnotationClassRetention")) match {
+        case Ok(clazz) =>
+          assert(clazz.isAnnotation)
+          assert(!clazz.isRuntimeVisibleAnnotation)
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("lookupClass.Annotation.PlatformRetention") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      // Deprecated has runtime retention, Override has source retention, and String is not an annotation.
+      assert(provider.lookupClass(ClassDesc.of("java.lang.Deprecated")).map(_.isRuntimeVisibleAnnotation) == Ok(true))
+      assert(provider.lookupClass(ClassDesc.of("java.lang.Override")).map(_.isRuntimeVisibleAnnotation) == Ok(false))
+      assert(provider.lookupClass(ClassDesc.of("java.lang.String")).map(c => (c.isAnnotation, c.isRuntimeVisibleAnnotation)) == Ok((false, false)))
     } finally provider.close()
   }
 
