@@ -437,7 +437,7 @@ object DocAstFormatter {
       case Type.JvmMethod(method) =>
         formatJavaClass(method.getClass)
       case Type.JvmField(field) =>
-        formatJavaClass(field.getClass)
+        text(Expr.javaClassName(field.ref.owner))
       case Type.Not(t) =>
         text("not") +: formatType(t)
       case Type.And(t1, t2) =>

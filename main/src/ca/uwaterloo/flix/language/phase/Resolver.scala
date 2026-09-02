@@ -22,14 +22,12 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
-import ca.uwaterloo.flix.language.ast.jvm.JavaFieldRef
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
-import ca.uwaterloo.flix.language.phase.typer.JavaReductionOpsTEMP
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
@@ -811,25 +809,18 @@ object Resolver {
             // We have a static field access.
             val fieldName = qname.ident
 
-            // Old path (authoritative): resolve the static field with reflection.
-            val oldField = JvmUtils.getField(clazz, fieldName.name, static = true)
-
-            // New path (shadow only): resolve the static field from its owner descriptor.
             val owner = ClassDescs.of(clazz)
-            val oldResult = oldField.map(field =>
-              JavaFieldRef(ClassDescs.of(field.getDeclaringClass), field.getName, ClassDescs.of(field.getType)))
-            val newResult = JavaMemberResolver.field(owner, fieldName.name, static = true).map(_.map(_.ref))
-            JavaReductionOpsTEMP.compareField(owner, fieldName.name, oldResult, newResult, loc)
-
-            // TODO: Remove the old path once GetStaticField stores JavaField instead of Field.
-            oldField match {
-              case Some(field) =>
+            JavaMemberResolver.field(owner, fieldName.name, static = true) match {
+              case Result.Ok(Some(field)) =>
                 // Returns out of resolveExp
                 return ResolvedAst.Expr.GetStaticField(field, loc)
-              case None =>
+              case Result.Ok(None) =>
                 val error = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
                 sctx.errors.add(error)
                 return ResolvedAst.Expr.Error(error)
+              case Result.Err(error) =>
+                val query = s"${owner.displayName()}.${fieldName.name}"
+                throw InternalCompilerException(s"Java field lookup failed for '$query': $error", loc)
             }
           case _ =>
           // Fallthrough to below.

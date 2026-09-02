@@ -1,10 +1,11 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.jvm.JavaField
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.{Kinder, monomorph, Simplifier}
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.{Constructor, Method}
 import scala.collection.immutable.SortedSet
 
 /**
@@ -306,7 +307,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of a Java field.
     */
-  case class JvmField(field: Field) extends TypeConstructor {
+  case class JvmField(field: JavaField) extends TypeConstructor {
     def kind: Kind = Kind.Jvm
   }
 

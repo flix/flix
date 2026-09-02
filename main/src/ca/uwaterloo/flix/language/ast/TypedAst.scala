@@ -17,12 +17,13 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.jvm.JavaField
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.{Constructor, Method}
 
 object TypedAst {
 
@@ -236,13 +237,13 @@ object TypedAst {
 
     case class InvokeStaticMethod(method: Method, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class GetField(field: Field, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class GetField(field: JavaField, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class PutField(field: Field, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class PutField(field: JavaField, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class GetStaticField(field: Field, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class GetStaticField(field: JavaField, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class PutStaticField(field: Field, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class PutStaticField(field: JavaField, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], tpe: Type, eff: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 

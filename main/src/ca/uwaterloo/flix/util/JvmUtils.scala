@@ -21,23 +21,6 @@ import java.lang.reflect.{Field, Member, Method, Modifier, ParameterizedType, Ty
 object JvmUtils {
 
   /**
-    * Returns the (static/dynamic) `fieldName` field of `clazz` if it exists.
-    *
-    * Field name "length" of array classes always return `None` (see Class.getField).
-    *
-    * @param clazz the class to search
-    * @param static whether to find a static field or an instance field
-    */
-  def getField(clazz: Class[?], fieldName: String, static: Boolean): Option[Field] = {
-    try {
-      val field = clazz.getField(fieldName)
-      if (isStatic(field) == static) Some(field) else None
-    } catch {
-      case _: NoSuchFieldException => None
-    }
-  }
-
-  /**
     * Returns the static fields of the class.
     */
   def getStaticFields(clazz: Class[?]): List[Field] =
