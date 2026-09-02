@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaType, JavaTypeParameter, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
+import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver, JavaTypes}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -254,10 +255,10 @@ object TypeReduction2 {
     case Type.Char => CD_char
     case Type.Float32 => CD_float
     case Type.Float64 => CD_double
-    case Type.Cst(TypeConstructor.BigDecimal, _) => ClassDesc.of("java.math.BigDecimal")
-    case Type.Cst(TypeConstructor.BigInt, _) => ClassDesc.of("java.math.BigInteger")
+    case Type.Cst(TypeConstructor.BigDecimal, _) => JavaClasses.BigDecimal
+    case Type.Cst(TypeConstructor.BigInt, _) => JavaClasses.BigInteger
     case Type.Cst(TypeConstructor.Str, _) => CD_String
-    case Type.Cst(TypeConstructor.Regex, _) => ClassDesc.of("java.util.regex.Pattern")
+    case Type.Cst(TypeConstructor.Regex, _) => JavaClasses.Regex
     case Type.Cst(TypeConstructor.Native(desc, _), _) => desc
 
     // Parameterized Java types erase to their native base type.
@@ -665,35 +666,35 @@ object TypeReduction2 {
     import TypeConstructor.*
     (argType, retType) match {
       case (Type.Cst(Int32, _), Type.Cst(Unit, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.IntConsumer"), None, None))
+        Some(FunIFMapping(JavaClasses.IntConsumer, None, None))
       case (Type.Cst(Int32, _), Type.Cst(Bool, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.IntPredicate"), None, None))
+        Some(FunIFMapping(JavaClasses.IntPredicate, None, None))
       case (Type.Cst(Int32, _), Type.Cst(Int32, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.IntUnaryOperator"), None, None))
+        Some(FunIFMapping(JavaClasses.IntUnaryOperator, None, None))
       case (Type.Cst(Int32, _), _) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.IntFunction"), None, Some("R")))
+        Some(FunIFMapping(JavaClasses.IntFunction, None, Some("R")))
       case (Type.Cst(Int64, _), Type.Cst(Unit, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.LongConsumer"), None, None))
+        Some(FunIFMapping(JavaClasses.LongConsumer, None, None))
       case (Type.Cst(Int64, _), Type.Cst(Bool, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.LongPredicate"), None, None))
+        Some(FunIFMapping(JavaClasses.LongPredicate, None, None))
       case (Type.Cst(Int64, _), Type.Cst(Int64, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.LongUnaryOperator"), None, None))
+        Some(FunIFMapping(JavaClasses.LongUnaryOperator, None, None))
       case (Type.Cst(Int64, _), _) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.LongFunction"), None, Some("R")))
+        Some(FunIFMapping(JavaClasses.LongFunction, None, Some("R")))
       case (Type.Cst(Float64, _), Type.Cst(Unit, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.DoubleConsumer"), None, None))
+        Some(FunIFMapping(JavaClasses.DoubleConsumer, None, None))
       case (Type.Cst(Float64, _), Type.Cst(Bool, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.DoublePredicate"), None, None))
+        Some(FunIFMapping(JavaClasses.DoublePredicate, None, None))
       case (Type.Cst(Float64, _), Type.Cst(Float64, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.DoubleUnaryOperator"), None, None))
+        Some(FunIFMapping(JavaClasses.DoubleUnaryOperator, None, None))
       case (Type.Cst(Float64, _), _) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.DoubleFunction"), None, Some("R")))
+        Some(FunIFMapping(JavaClasses.DoubleFunction, None, Some("R")))
       case (_, Type.Cst(Unit, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.Consumer"), Some("T"), None))
+        Some(FunIFMapping(JavaClasses.ObjConsumer, Some("T"), None))
       case (_, Type.Cst(Bool, _)) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.Predicate"), Some("T"), None))
+        Some(FunIFMapping(JavaClasses.ObjPredicate, Some("T"), None))
       case (_, _) =>
-        Some(FunIFMapping(ClassDesc.of("java.util.function.Function"), Some("T"), Some("R")))
+        Some(FunIFMapping(JavaClasses.ObjFunction, Some("T"), Some("R")))
     }
   }
 }
