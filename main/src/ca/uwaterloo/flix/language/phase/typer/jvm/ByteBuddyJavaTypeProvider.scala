@@ -106,36 +106,44 @@ final case class ByteBuddyJavaTypeProvider(
 
   /** Returns `Ok` with metadata for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
   override def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError] =
-    classCache.computeIfAbsent(desc, d => resolve(d).map(toClass))
+    classCache.computeIfAbsent(desc, d => lookupClassDirect(d))
 
   /** Returns `Ok` with the virtual method graph for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
   override def virtualMethods(desc: ClassDesc): Result[List[JavaMethod], JavaLookupError] =
-    virtualMethodsCache.computeIfAbsent(desc, d =>
-      resolve(d).map { tpe =>
-        MethodGraph.Compiler.Default.forJavaHierarchy().compile(tpe: TypeDefinition).listNodes().asScala
-          .map(_.getRepresentative)
-          .filter(_.isVirtual)
-          .map(toMethod)
-          .toList
-          .sortBy(m => (m.ref.name, m.ref.descriptor.descriptorString()))
-      }
-    )
+    virtualMethodsCache.computeIfAbsent(desc, d => virtualMethodsDirect(d))
 
   /** Returns `Ok` with the subtype result, or `Err` if either descriptor is unsupported, missing, or invalid. */
-  override def isSubtype(subtype: ClassDesc, supertype: ClassDesc): Result[Boolean, JavaLookupError] = {
-    if (subtype == supertype) {
-      Ok(true)
-    } else {
-      subtypeCache.computeIfAbsent((subtype, supertype), key =>
-        resolve(key._1).flatMap { sub =>
-          resolve(key._2).map(sup => sub.isAssignableTo(sup))
-        }
-      )
-    }
-  }
+  override def isSubtype(subtype: ClassDesc, supertype: ClassDesc): Result[Boolean, JavaLookupError] =
+    subtypeCache.computeIfAbsent((subtype, supertype), key => isSubtypeDirect(key._1, key._2))
 
   /** Closes the underlying class-file locator and its owned resources. */
   override def close(): Unit = locator.close()
+
+  /** Computes [[lookupClass]] without consulting the cache. */
+  private def lookupClassDirect(desc: ClassDesc): Result[JavaClass, JavaLookupError] =
+    resolve(desc).map(toClass)
+
+  /** Computes [[virtualMethods]] without consulting the cache. */
+  private def virtualMethodsDirect(desc: ClassDesc): Result[List[JavaMethod], JavaLookupError] =
+    resolve(desc).map { tpe =>
+      MethodGraph.Compiler.Default.forJavaHierarchy().compile(tpe: TypeDefinition).listNodes().asScala
+        .map(_.getRepresentative)
+        .filter(_.isVirtual)
+        .map(toMethod)
+        .toList
+        .sortBy(m => (m.ref.name, m.ref.descriptor.descriptorString()))
+    }
+
+  /** Computes [[isSubtype]] without consulting the cache. */
+  private def isSubtypeDirect(subtype: ClassDesc, supertype: ClassDesc): Result[Boolean, JavaLookupError] = {
+    if (subtype == supertype) {
+      Ok(true)
+    } else {
+      resolve(subtype).flatMap { sub =>
+        resolve(supertype).map(sup => sub.isAssignableTo(sup))
+      }
+    }
+  }
 
   /** Returns `Ok` with the resolved type, or `Err` if `desc` is unsupported, missing, or invalid. */
   private def resolve(desc: ClassDesc): Result[TypeDescription, JavaLookupError] = {
