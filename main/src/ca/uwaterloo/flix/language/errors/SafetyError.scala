@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
@@ -9,6 +10,7 @@ import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.{ClassDescs, Formatter}
 
 import java.lang.constant.ClassDesc
+import scala.jdk.CollectionConverters.*
 
 /** A common super-type for safety errors. */
 sealed trait SafetyError extends CompilationMessage {
@@ -428,7 +430,7 @@ object SafetyError {
     * @param name            The name of the method with the invalid `this` parameter.
     * @param loc             The source location of the method.
     */
-  case class NewObjectIllegalThisType(clazz: java.lang.Class[?], illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError {
+  case class NewObjectIllegalThisType(clazz: ClassDesc, illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5356
 
     def summary: String = s"Unexpected 'this' type for method '$name'."
@@ -439,14 +441,14 @@ object SafetyError {
          |
          |${highlight(loc, "method definition", fmt)}
          |
-         |Expected: ${cyan(clazz.getName)}
+         |Expected: ${cyan(ClassDescs.binaryNameOf(clazz))}
          |Actual:   ${red(illegalThisType.toString)}
          |
          |${underline("Explanation:")} The first formal parameter of any method must be 'this' and must
          |have the same type as the superclass. For example:
          |
-         |  new ${clazz.getSimpleName} {
-         |      def $name(_this: ${clazz.getSimpleName}, ...): ... = ...
+         |  new ${ClassDescs.simpleNameOf(clazz)} {
+         |      def $name(_this: ${ClassDescs.simpleNameOf(clazz)}, ...): ... = ...
          |  }
          |""".stripMargin
     }
@@ -459,22 +461,22 @@ object SafetyError {
     * @param method The unimplemented method.
     * @param loc    The source location of the object derivation.
     */
-  case class NewObjectMissingMethod(clazz: java.lang.Class[?], method: java.lang.reflect.Method, loc: SourceLocation) extends SafetyError {
+  case class NewObjectMissingMethod(clazz: ClassDesc, method: JavaMethod, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5467
 
-    def summary: String = s"Missing implementation of method '${method.getName}'."
+    def summary: String = s"Missing implementation of method '${method.ref.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      val parameterTypes = (clazz +: method.getParameterTypes).map(formatJavaType)
-      val returnType = formatJavaType(method.getReturnType)
-      s""">> Missing implementation of method '${red(method.getName)}' of '${magenta(clazz.getName)}'.
+      val parameterTypes = (clazz :: method.ref.descriptor.parameterList().asScala.toList).map(formatJavaType)
+      val returnType = formatJavaType(method.ref.descriptor.returnType())
+      s""">> Missing implementation of method '${red(method.ref.name)}' of '${magenta(ClassDescs.binaryNameOf(clazz))}'.
          |
          |${highlight(loc, "new object", fmt)}
          |
          |${underline("Explanation:")} Add a method with the following signature:
          |
-         |  def ${method.getName}(${parameterTypes.mkString(", ")}): $returnType
+         |  def ${method.ref.name}(${parameterTypes.mkString(", ")}): $returnType
          |""".stripMargin
     }
   }
@@ -485,14 +487,14 @@ object SafetyError {
     * @param clazz the class.
     * @param loc   the source location of the new object expression.
     */
-  case class NewObjectMissingPublicZeroArgConstructor(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+  case class NewObjectMissingPublicZeroArgConstructor(clazz: ClassDesc, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5578
 
-    def summary: String = s"Class '${clazz.getName}' lacks a public zero-argument constructor."
+    def summary: String = s"Class '${ClassDescs.binaryNameOf(clazz)}' lacks a public zero-argument constructor."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Class '${red(clazz.getName)}' lacks a public zero-argument constructor.
+      s""">> Class '${red(ClassDescs.binaryNameOf(clazz))}' lacks a public zero-argument constructor.
          |
          |${highlight(loc, "missing constructor", fmt)}
          |
@@ -509,7 +511,7 @@ object SafetyError {
     * @param name  The name of the method with the missing `this` parameter.
     * @param loc   The source location of the method.
     */
-  case class NewObjectMissingThisArg(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
+  case class NewObjectMissingThisArg(clazz: ClassDesc, name: String, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5689
 
     def summary: String = s"Missing 'this' parameter for method '$name'."
@@ -523,8 +525,8 @@ object SafetyError {
          |${underline("Explanation:")} The first formal parameter of any method must be 'this' and must
          |have the same type as the superclass. For example:
          |
-         |  new ${clazz.getSimpleName} {
-         |      def $name(_this: ${clazz.getSimpleName}, ...): ... = ...
+         |  new ${ClassDescs.simpleNameOf(clazz)} {
+         |      def $name(_this: ${ClassDescs.simpleNameOf(clazz)}, ...): ... = ...
          |  }
          |""".stripMargin
     }
@@ -536,14 +538,14 @@ object SafetyError {
     * @param clazz the class.
     * @param loc   the source location of the new object expression.
     */
-  case class NewObjectNonPublicClass(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+  case class NewObjectNonPublicClass(clazz: ClassDesc, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5792
 
-    def summary: String = s"Class '${clazz.getName}' is not public."
+    def summary: String = s"Class '${ClassDescs.binaryNameOf(clazz)}' is not public."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Class '${red(clazz.getName)}' is not public.
+      s""">> Class '${red(ClassDescs.binaryNameOf(clazz))}' is not public.
          |
          |${highlight(loc, "non-public class", fmt)}
          |""".stripMargin
@@ -558,14 +560,14 @@ object SafetyError {
     * @param name  The name of the undefined method.
     * @param loc   The source location of the method.
     */
-  case class NewObjectUndefinedMethod(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
+  case class NewObjectUndefinedMethod(clazz: ClassDesc, name: String, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5803
 
-    def summary: String = s"Method '$name' not found in superclass '${clazz.getName}'."
+    def summary: String = s"Method '$name' not found in superclass '${ClassDescs.binaryNameOf(clazz)}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Method '${red(name)}' not found in superclass '${magenta(clazz.getName)}'.
+      s""">> Method '${red(name)}' not found in superclass '${magenta(ClassDescs.binaryNameOf(clazz))}'.
          |
          |${highlight(loc, "undefined method", fmt)}
          |
@@ -581,7 +583,7 @@ object SafetyError {
     * @param clazz the class or interface being extended.
     * @param loc   the source location of the constructor.
     */
-  case class NewObjectConstructorMissingSuperCall(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+  case class NewObjectConstructorMissingSuperCall(clazz: ClassDesc, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5815
 
     def summary: String = "Constructor body must be a single 'super(...)' call."
@@ -604,7 +606,7 @@ object SafetyError {
     * @param clazz the class or interface being extended.
     * @param loc   the source location of the new object expression.
     */
-  case class NewObjectTooManyConstructors(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+  case class NewObjectTooManyConstructors(clazz: ClassDesc, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5826
 
     def summary: String = "A 'new' expression can have at most one constructor."
@@ -621,14 +623,6 @@ object SafetyError {
     }
   }
 
-
-  /** Returns the string representation of `tpe`. */
-  private def formatJavaType(tpe: java.lang.Class[?]): String = {
-    if (tpe.isPrimitive || tpe.isArray)
-      Type.getFlixType(tpe).toString
-    else
-      tpe.getName
-  }
 
   /** Returns the string representation of the Java type `desc`. */
   private def formatJavaType(desc: ClassDesc): String = {

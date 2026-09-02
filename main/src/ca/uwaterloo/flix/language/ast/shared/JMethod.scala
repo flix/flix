@@ -16,19 +16,10 @@
 package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
-import ca.uwaterloo.flix.util.ClassDescs
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
-import java.lang.reflect.Method
 
 object JMethod {
-
-  /** Returns the [[JMethod]] of the given reflective `method`. */
-  def of(method: Method): JMethod = {
-    val paramDescs = method.getParameterTypes.map(ClassDescs.of)
-    val descriptor = MethodTypeDesc.of(ClassDescs.of(method.getReturnType), paramDescs: _*)
-    JMethod(ClassDescs.of(method.getDeclaringClass), method.getName, descriptor, method.getDeclaringClass.isInterface)
-  }
 
   /** Returns the [[JMethod]] of the given class-file method metadata, whose owner is an interface iff `isInterface`. */
   def of(method: JavaMethod, isInterface: Boolean): JMethod =

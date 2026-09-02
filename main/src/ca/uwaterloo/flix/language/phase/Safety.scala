@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
+import ca.uwaterloo.flix.language.ast.jvm.{JavaClass, JavaMethod, JavaType, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -10,15 +11,15 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
 import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaMemberResolver, JavaTypes}
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver2}
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
-import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, ParOps, Result}
+import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, ParOps, Result}
 
 import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.{CD_Object, CD_String, CD_Throwable}
-import java.lang.reflect.{ParameterizedType, TypeVariable}
+import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -821,11 +822,13 @@ object Safety {
     *   - `methods` must not let control effects escape.
     */
   private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
-    case Expr.NewObject(_, clazz, tpe0, _, cs, methods, loc) =>
+    case Expr.NewObject(_, clazz0, tpe0, _, cs, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
+      val clazz = ClassDescs.of(clazz0)
+      val javaClass = JavaTypes.lookupClass(clazz, loc)
       // `clazz` must be an interface or have a non-private constructor without arguments
       // (unless user-defined constructors are provided).
-      if (!clazz.isInterface && cs.isEmpty && !hasNonPrivateZeroArgConstructor(clazz)) {
+      if (!Modifier.isInterface(javaClass.modifiers) && cs.isEmpty && !hasNonPrivateZeroArgConstructor(javaClass)) {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
       }
 
@@ -844,7 +847,7 @@ object Safety {
       }
 
       // `clazz` must be public.
-      if (!isPublicClass(clazz)) {
+      if (!Modifier.isPublic(javaClass.modifiers)) {
         sctx.errors.add(NewObjectNonPublicClass(clazz, loc))
       }
 
@@ -853,7 +856,7 @@ object Safety {
         case JvmMethod(_, ident, fparams, _, _, _, methodLoc) =>
           val firstParam = fparams.head
           firstParam.tpe match {
-            case t if Type.descFromFlixType(Type.eraseAliases(t)).contains(ClassDescs.of(clazz)) =>
+            case t if Type.descFromFlixType(Type.eraseAliases(t)).contains(clazz) =>
               ()
             case Type.Unit =>
               // Unit arguments are likely inserted by the compiler.
@@ -865,16 +868,13 @@ object Safety {
 
       // `methods` must cover all the class's abstract methods and must not include any extra methods
       val targs = tpe.typeArguments
-      val getTargOpt = targs.lift // returns the targ at the given index, or None
-      val javaMethods = JvmUtils.getOverridableInstanceMethods(clazz)
-      val expectedMethods = javaMethods.map {
+      // The type parameters of `clazz` map to its type arguments; a missing argument falls back to Object.
+      val substMap = javaClass.typeParameters.map(_.variable).zip(targs).toMap
+      val expectedMethods = overridableMethods(clazz, loc).map {
         case method =>
-          val tparamNameToIndex = JvmUtils.resolveTypeParamMapping(method, clazz)
-          val substMap = MapOps.filterMapValues(tparamNameToIndex)(getTargOpt)
-
-          val name = method.getName
-          val types = method.getGenericParameterTypes.map(resolveJavaType(_, substMap, loc))
-          val retTpe = resolveJavaType(method.getGenericReturnType, substMap, loc)
+          val name = method.ref.name
+          val types = method.parameterTypes.map(resolveJavaType(_, substMap, loc))
+          val retTpe = resolveJavaType(method.returnType, substMap, loc)
           (method, name, types, retTpe)
       }.sortBy { case (_, name, types, _) => (name, types.length) }
 
@@ -899,7 +899,7 @@ object Safety {
       }
 
       // an unimplemented method is only a problem if it's abstract and isn't auto-implemented by Object
-      val missing = unimplemented.filter { case (method, _, _, _) => isAbstractMethod(method) && !isObjectMethod(method) }
+      val missing = unimplemented.filter { case (method, _, _, _) => isAbstractMethod(method) && !isObjectMethod(method, loc) }
       missing.foreach { case (method, _, _, _) => sctx.errors.add(NewObjectMissingMethod(clazz, method, loc)) }
       extra.foreach { case (ident, name, _, _) => sctx.errors.add(NewObjectUndefinedMethod(clazz, name, ident.loc)) }
 
@@ -908,56 +908,45 @@ object Safety {
       controlEffecting.map(m => SafetyError.IllegalMethodEffect(m.eff, m.loc)).foreach(sctx.errors.add)
   }
 
-  /** Return `true` if `clazz` has a non-private constructor with zero arguments. */
-  private def hasNonPrivateZeroArgConstructor(clazz: Class[?]): Boolean = {
-    try {
-      val constructor = clazz.getDeclaredConstructor()
-      !java.lang.reflect.Modifier.isPrivate(constructor.getModifiers)
-    } catch {
-      case _: NoSuchMethodException => false
+  /** Returns the methods of `clazz` that an anonymous subclass may override, or throws if its metadata cannot be read. */
+  private def overridableMethods(clazz: ClassDesc, loc: SourceLocation)(implicit flix: Flix): List[JavaMethod] =
+    JavaMemberResolver.overridableMethods(clazz) match {
+      case Result.Ok(methods) => methods
+      case Result.Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${clazz.displayName()}': $error", loc)
     }
-  }
+
+  /** Return `true` if `clazz` has a non-private constructor with zero arguments. */
+  private def hasNonPrivateZeroArgConstructor(clazz: JavaClass): Boolean =
+    clazz.declaredConstructors.exists(c => c.parameterTypes.isEmpty && !Modifier.isPrivate(c.modifiers))
 
   /**
-    * Resolves a `java.lang.reflect.Type` to a Flix [[Type]] using the given
-    * substitution map. Falls back to the erased (Object-filled) type.
+    * Resolves the Java type `javaType` to a Flix [[Type]] using the given
+    * substitution of type variables. Falls back to the erased (Object-filled) type.
     */
-  private def resolveJavaType(javaType: java.lang.reflect.Type, substMap: Map[String, Type], loc: SourceLocation): Type = javaType match {
-    case tv: TypeVariable[_] =>
-      substMap.getOrElse(tv.getName, Type.mkObject(loc))
-    case pt: ParameterizedType =>
-      pt.getRawType match {
-        case rawClazz: Class[_] =>
-          val base = Type.getFlixType(rawClazz)
-          val resolvedArgs = pt.getActualTypeArguments.toList.map(resolveJavaType(_, substMap, loc))
-          Type.mkApply(base, resolvedArgs, loc)
-        case _ =>
-          Type.mkObject(loc)
-      }
-    case clazz: Class[_] =>
-      Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
-    case _ =>
+  private def resolveJavaType(javaType: JavaType, substMap: Map[JavaTypeVariable, Type], loc: SourceLocation)(implicit flix: Flix): Type = javaType match {
+    case JavaType.Variable(variable, _) =>
+      substMap.getOrElse(variable, Type.mkObject(loc))
+    case JavaType.Parameterized(erasure, arguments) =>
+      val base = JavaTypes.flixTypeOf(erasure, loc)
+      val resolvedArgs = arguments.map(resolveJavaType(_, substMap, loc))
+      Type.mkApply(base, resolvedArgs, loc)
+    case JavaType.NonGeneric(erasure) =>
+      JavaTypes.instantiateWithObjectArgs(erasure, loc)
+    case JavaType.GenericArray(_, _) =>
+      Type.mkObject(loc)
+    case JavaType.Wildcard(_, _, _) =>
       Type.mkObject(loc)
   }
 
-
-  /** Returns `true` if `c` is public. */
-  private def isPublicClass(c: Class[?]): Boolean =
-    java.lang.reflect.Modifier.isPublic(c.getModifiers)
-
   /** Return `true` if `m` is abstract. */
-  private def isAbstractMethod(m: java.lang.reflect.Method): Boolean =
-    java.lang.reflect.Modifier.isAbstract(m.getModifiers)
+  private def isAbstractMethod(m: JavaMethod): Boolean =
+    Modifier.isAbstract(m.modifiers)
 
-  /** Returns `true` if `m` is or overrides a method found on the Object class. */
-  private def isObjectMethod(method: java.lang.reflect.Method): Boolean = {
-    try {
-      classOf[Object].getDeclaredMethod(method.getName, method.getParameterTypes *)
-      true
-    } catch {
-      case _: NoSuchMethodException => false
+  /** Returns `true` if `method` is or overrides a method declared by the Object class. */
+  private def isObjectMethod(method: JavaMethod, loc: SourceLocation)(implicit flix: Flix): Boolean =
+    JavaTypes.lookupClass(CD_Object, loc).declaredMethods.exists { m =>
+      m.ref.name == method.ref.name && m.ref.descriptor.parameterList() == method.ref.descriptor.parameterList()
     }
-  }
 
   /** Returns `true` if `eff` includes control effects (e.g. Console). */
   private def hasControlEffects(eff: Type): Boolean = {

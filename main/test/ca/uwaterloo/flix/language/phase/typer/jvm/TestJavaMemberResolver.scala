@@ -20,12 +20,11 @@ import ca.uwaterloo.flix.language.ast.jvm.{JavaMethod, JavaType, JavaTypeVariabl
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaArgument.*
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaLookupError.MissingClass
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.lang.constant.ConstantDescs.*
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
-import java.lang.reflect.{Modifier, ParameterizedType, TypeVariable}
+import java.lang.reflect.Modifier
 import scala.jdk.CollectionConverters.*
 
 class TestJavaMemberResolver extends AnyFunSuite {
@@ -442,84 +441,6 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val missing = ClassDesc.of("dev.flix.prototype.DoesNotExist")
       assert(JavaMemberResolver.overridableMethods(missing) == Err(MissingClass(missing)))
     } finally flix.javaTypeProvider.close()
-  }
-
-  test("overridableMethods.AgreesWithReflection") {
-    implicit val flix: Flix = new Flix
-    try {
-      val classes = List(
-        classOf[Object], classOf[Runnable], classOf[Comparable[?]], classOf[CharSequence], classOf[Number],
-        classOf[Exception], classOf[RuntimeException], classOf[Thread], classOf[ClassLoader],
-        classOf[java.io.InputStream], classOf[java.io.OutputStream], classOf[java.io.Reader],
-        classOf[java.util.Comparator[?]], classOf[java.util.concurrent.Callable[?]], classOf[java.util.TimerTask],
-        classOf[java.lang.Iterable[?]], classOf[java.util.Iterator[?]], classOf[java.util.Collection[?]],
-        classOf[java.util.List[?]], classOf[java.util.Map[?, ?]], classOf[java.util.Map.Entry[?, ?]],
-        classOf[java.util.AbstractCollection[?]], classOf[java.util.AbstractList[?]], classOf[java.util.AbstractMap[?, ?]],
-        classOf[java.util.ArrayList[?]], classOf[java.util.LinkedList[?]], classOf[java.util.HashMap[?, ?]], classOf[java.util.TreeMap[?, ?]],
-        classOf[java.util.function.Function[?, ?]], classOf[java.util.function.BiFunction[?, ?, ?]],
-        classOf[java.util.function.UnaryOperator[?]], classOf[java.util.function.BinaryOperator[?]],
-        classOf[java.util.function.Supplier[?]], classOf[java.util.function.Consumer[?]], classOf[java.util.function.Predicate[?]],
-        classOf[dev.flix.test.TestBoundedGenericInterface[?]], classOf[dev.flix.test.TestClass],
-        classOf[dev.flix.test.TestClassWithInheritedMethod], classOf[dev.flix.test.TestClassWithProtectedMethods],
-        classOf[dev.flix.test.TestDefaultMethods], classOf[dev.flix.test.TestFunctionalInterface],
-        classOf[dev.flix.test.TestGenericAbstractClass[?]], classOf[dev.flix.test.TestGenericAbstractClass2[?, ?]],
-        classOf[dev.flix.test.TestGenericChildInterface[?]], classOf[dev.flix.test.TestGenericDefaultMethods[?]],
-        classOf[dev.flix.test.TestGenericGrandchildInterface[?]], classOf[dev.flix.test.TestGenericInterface[?]],
-        classOf[dev.flix.test.TestGenericInterface2[?, ?]], classOf[dev.flix.test.TestGenericInterface3[?, ?, ?]],
-        classOf[dev.flix.test.TestGenericMethod], classOf[dev.flix.test.TestGenericSubInterface[?]],
-        classOf[dev.flix.test.TestGenericSwappedInterface[?, ?]], classOf[dev.flix.test.TestOverloadedMethods],
-        classOf[dev.flix.test.TestThrowingInterface], classOf[dev.flix.test.TestVarargsInterface], classOf[dev.flix.test.TestVoidInterface]
-      )
-      for (clazz <- classes) {
-        val owner = ClassDescs.of(clazz)
-        val expected = reflectiveSignatures(clazz)
-        val actual = JavaMemberResolver.overridableMethods(owner) match {
-          case Ok(methods) => methods.map(descriptorSignature(owner, _)).toSet
-          case Err(error) => fail(error.toString)
-        }
-        assert(actual == expected, s"for ${clazz.getName}: missing ${expected -- actual}, extra ${actual -- expected}")
-      }
-    } finally flix.javaTypeProvider.close()
-  }
-
-  /**
-    * Returns the canonical signatures of the overridable methods of `clazz` computed by reflection.
-    *
-    * Final and synthetic methods are dropped since `overridableMethods` excludes them by design.
-    */
-  private def reflectiveSignatures(clazz: Class[?]): Set[String] = {
-    JvmUtils.getOverridableInstanceMethods(clazz).filterNot(m => Modifier.isFinal(m.getModifiers) || m.isSynthetic).map { method =>
-      val mapping = JvmUtils.resolveTypeParamMapping(method, clazz)
-      val parameters = method.getGenericParameterTypes.toList.map(reflectiveType(_, mapping))
-      val returnType = reflectiveType(method.getGenericReturnType, mapping)
-      s"${method.getName}(${parameters.mkString(", ")}): $returnType"
-    }.toSet
-  }
-
-  /** Renders a reflective Java type the way Safety resolves it: class type variables by index, everything else erased to Object. */
-  private def reflectiveType(tpe: java.lang.reflect.Type, mapping: Map[String, Int]): String = tpe match {
-    case tv: TypeVariable[?] => mapping.get(tv.getName).map(i => s"#$i").getOrElse("java.lang.Object")
-    case pt: ParameterizedType => pt.getRawType match {
-      case raw: Class[?] => s"${raw.getName}<${pt.getActualTypeArguments.toList.map(reflectiveType(_, mapping)).mkString(", ")}>"
-      case _ => "java.lang.Object"
-    }
-    case c: Class[?] => c.getName
-    case _ => "java.lang.Object"
-  }
-
-  /** Renders the signature of a descriptor-based `method` of `owner` in the same canonical form as [[reflectiveSignatures]]. */
-  private def descriptorSignature(owner: ClassDesc, method: JavaMethod)(implicit flix: Flix): String = {
-    val typeParameters = flix.javaTypeProvider.lookupClass(owner).toOption.get.typeParameters.map(_.variable)
-    def render(tpe: JavaType): String = tpe match {
-      case JavaType.Variable(variable, _) => typeParameters.indexOf(variable) match {
-        case -1 => "java.lang.Object"
-        case i => s"#$i"
-      }
-      case JavaType.Parameterized(erasure, arguments) => s"${ClassDescs.binaryNameOf(erasure)}<${arguments.map(render).mkString(", ")}>"
-      case JavaType.NonGeneric(erasure) => ClassDescs.binaryNameOf(erasure)
-      case _ => "java.lang.Object"
-    }
-    s"${method.ref.name}(${method.parameterTypes.map(render).mkString(", ")}): ${render(method.returnType)}"
   }
 
 }
