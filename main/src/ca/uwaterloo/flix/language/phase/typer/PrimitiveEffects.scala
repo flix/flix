@@ -24,7 +24,6 @@ import org.json4s.jvalue2monadic
 import org.json4s.native.JsonMethods.parse
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Method
 
 object PrimitiveEffects {
 
@@ -60,9 +59,11 @@ object PrimitiveEffects {
   private val constructorEffs: Map[ClassDesc, Set[Symbol.EffSym]] = loadConstructorEffs()
 
   /**
-    * A pre-computed map from methods to effects.
+    * A pre-computed map from methods, identified by their declaring class and name, to effects.
+    *
+    * The effects apply to every overload of the method.
     */
-  private val methodEffs: Map[Method, Set[Symbol.EffSym]] = loadMethodEffs()
+  private val methodEffs: Map[(ClassDesc, String), Set[Symbol.EffSym]] = loadMethodEffs()
 
   /**
     * Returns the primitive effects of calling the given constructor `c`.
@@ -79,10 +80,10 @@ object PrimitiveEffects {
   /**
     * Returns the primitive effects of calling the given method `m`.
     */
-  def getMethodEffs(m: Method, loc: SourceLocation): Type = methodEffs.get(m) match {
+  def getMethodEffs(m: JavaMethod, loc: SourceLocation)(implicit flix: Flix): Type = methodEffs.get((m.ref.owner, m.ref.name)) match {
     case None =>
       // Case 1: No effects for the method. Try the class map.
-      getClassAndPackageEffs(m.getDeclaringClass, loc)
+      getClassAndPackageEffs(ClassDescs.load(m.ref.owner, flix.jarLoader), loc)
     case Some(effs) =>
       // Case 2: We found the effects for the method.
       toEffSet(effs, loc)
@@ -230,7 +231,7 @@ object PrimitiveEffects {
     *
     * Note: The effect set applies to *ALL* constructors of the class.
     */
-  private def loadMethodEffs(): Map[Method, Set[Symbol.EffSym]] = {
+  private def loadMethodEffs(): Map[(ClassDesc, String), Set[Symbol.EffSym]] = {
     val data = LocalResource.get(MethodEffsPath)
     val json = parse(data)
 
@@ -242,7 +243,8 @@ object PrimitiveEffects {
           val methodName = classNameAndMethod.substring(cc + 2)
           val clazz = Class.forName(className)
           val effSet = parseEffSet(s)
-          clazz.getMethods.filter(_.getName == methodName).map(m => (m, effSet))
+          // The method may be inherited, so it is keyed by its declaring class.
+          clazz.getMethods.filter(_.getName == methodName).map(m => ((ClassDescs.of(m.getDeclaringClass), methodName), effSet))
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
       case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)

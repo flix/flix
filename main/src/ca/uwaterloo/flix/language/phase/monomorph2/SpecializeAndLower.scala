@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler, Predicate}
+import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.*
@@ -28,6 +29,7 @@ import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Result}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import java.lang.reflect.Modifier
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -512,14 +514,14 @@ private[monomorph2] object SpecializeAndLower {
       val e = visitExp(exp, env0, subst)
       val es = exps.map(visitExp(_, env0, subst))
       val t = visitType(tpe, subst)
-      mkJavaInvoke(method, List(e), es, t, subst(eff), loc, m => AtomicOp.InvokeMethod(JMethod.of(m)))
+      mkJavaInvoke(method, List(e), es, t, subst(eff), loc, m => AtomicOp.InvokeMethod(mkJMethod(m, loc)))
 
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       val t = visitType(tpe, subst)
       (lctx.sym, lctx.thisRef) match {
         case (Some(sym), Some(thisRef)) =>
-          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, JMethod.of(method)), thisRef :: es, t, subst(eff), loc)
+          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, mkJMethod(method, loc)), thisRef :: es, t, subst(eff), loc)
 
         case _ =>
           throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
@@ -528,7 +530,7 @@ private[monomorph2] object SpecializeAndLower {
     case TypedAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       val t = visitType(tpe, subst)
-      mkJavaInvoke(method, Nil, es, t, subst(eff), loc, m => AtomicOp.InvokeStaticMethod(JMethod.of(m)))
+      mkJavaInvoke(method, Nil, es, t, subst(eff), loc, m => AtomicOp.InvokeStaticMethod(mkJMethod(m, loc)))
 
     case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
@@ -1191,6 +1193,20 @@ private[monomorph2] object SpecializeAndLower {
   }
 
   /**
+    * Returns the [[JMethod]] of `method`.
+    *
+    * Whether the owner of `method` is an interface is read from its class metadata,
+    * since the JVM distinguishes interface method invocations.
+    */
+  private def mkJMethod(method: JavaMethod, loc: SourceLocation)(implicit flix: Flix): JMethod = {
+    val owner = method.ref.owner
+    flix.javaTypeProvider.lookupClass(owner) match {
+      case Result.Ok(clazz) => JMethod.of(method, isInterface = Modifier.isInterface(clazz.modifiers))
+      case Result.Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${owner.displayName()}': $error", loc)
+    }
+  }
+
+  /**
     * Boxes `arg` if the actual arg type (Flix primitive) mismatches the expected param type (Object).
     * E.g., in `m.put("k", 42)` on a `HashMap[String, Int32]`, the actual type is `Int32`
     * but the expected type is `Object` (erased), so `42` is boxed via `Integer.valueOf(42)`.
@@ -1231,7 +1247,7 @@ private[monomorph2] object SpecializeAndLower {
     * E.g., in `let v: Int32 = m.get("k")` on a `HashMap[String, Int32]`, the expected type is
     * `Int32` but the actual Java return type is `Object` (erased), so the result is unboxed via `intValue()`.
     */
-  private def unboxIfNecessary(expr: MonoAst.Expr, expectedReturnType: Type, actualReturnType: Class[?]): MonoAst.Expr = {
+  private def unboxIfNecessary(expr: MonoAst.Expr, expectedReturnType: Type, actualReturnType: ClassDesc): MonoAst.Expr = {
     if (isPrimType(expectedReturnType) && !actualReturnType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(
         AtomicOp.InvokeMethod(javaUnboxMethod(expectedReturnType)),
@@ -1246,9 +1262,9 @@ private[monomorph2] object SpecializeAndLower {
   /**
     * Returns a call to Java `method`, boxing `args` and unboxing the result symmetrically.
     */
-  private def mkJavaInvoke(method: java.lang.reflect.Method, receiver: List[MonoAst.Expr], args: List[MonoAst.Expr], t: Type, eff: Type, loc: SourceLocation, mkOp: java.lang.reflect.Method => AtomicOp): MonoAst.Expr = {
-    val boxedArgs = ListOps.zip(args, method.getParameterTypes.toList).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
-    val javaReturnType = method.getReturnType
+  private def mkJavaInvoke(method: JavaMethod, receiver: List[MonoAst.Expr], args: List[MonoAst.Expr], t: Type, eff: Type, loc: SourceLocation, mkOp: JavaMethod => AtomicOp): MonoAst.Expr = {
+    val boxedArgs = ListOps.zip(args, method.ref.descriptor.parameterList().asScala.toList).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
+    val javaReturnType = method.ref.descriptor.returnType()
     val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
     val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
     val invoke = MonoAst.Expr.ApplyAtomic(mkOp(method), receiver ++ boxedArgs, invokeType, eff, loc)
