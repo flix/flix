@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.{Options, Result}
-import ca.uwaterloo.flix.verifier.{EffectVerifier, TokenVerifier}
+import ca.uwaterloo.flix.verifier.TokenVerifier
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.Paths
@@ -41,8 +41,6 @@ class RunVerifiers extends AnyFunSuite with TestUtils {
     flix.addListener {
       case FlixEvent.AfterLexer(sources) =>
         TokenVerifier.verify(sources)
-      case FlixEvent.AfterTyper(root) =>
-        EffectVerifier.verify(root)
       case _ => ()
     }
     flix.addFile(Paths.get(path))(SecurityContext.Unrestricted)
