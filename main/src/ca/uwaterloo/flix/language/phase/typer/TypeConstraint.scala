@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
 
+import scala.annotation.tailrec
+
 
 /**
   * A constraint generated via type inference.
@@ -32,8 +34,6 @@ sealed trait TypeConstraint {
     case TypeConstraint.Trait(_, tpe, _) => tpe.size
     case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => tpe1.size + tpe2.size
-    case TypeConstraint.RecordConflicted(_, tpe1, tpe2, _, _, _) => tpe1.size + tpe2.size
-    case TypeConstraint.SchemaConflicted(_, tpe1, tpe2, _) => tpe1.size + tpe2.size
     case TypeConstraint.EffConflicted(_) => 0
   }
 
@@ -42,8 +42,6 @@ sealed trait TypeConstraint {
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"$tpe1 ≁ $tpe2"
-    case TypeConstraint.RecordConflicted(label, tpe1, tpe2, _, _, _) => s"$label: $tpe1 ≁ $tpe2"
-    case TypeConstraint.SchemaConflicted(pred, tpe1, tpe2, _) => s"$pred: $tpe1 ≁ $tpe2"
     case TypeConstraint.EffConflicted(err) => err.toString
   }
 
@@ -105,25 +103,6 @@ object TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
-  /**
-    * A type constraint indicating that the types `tpe1` and `tpe2` of the record label `label`
-    * cannot be unified because their type constructors differ.
-    *
-    * `loc1` and `loc2` are the locations of the two occurrences of the label. (The locations of
-    * `tpe1` and `tpe2` are unreliable, since inferred types are often shared constants.)
-    */
-  case class RecordConflicted(label: Name.Label, tpe1: Type, tpe2: Type, loc1: SourceLocation, loc2: SourceLocation, prov: Provenance) extends TypeConstraint {
-    def loc: SourceLocation = prov.loc
-  }
-
-  /**
-    * A type constraint indicating that the types `tpe1` and `tpe2` of the predicate `pred` cannot
-    * be unified because their type constructors differ (e.g. in arity or denotation).
-    */
-  case class SchemaConflicted(pred: Name.Pred, tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
-    def loc: SourceLocation = prov.loc
-  }
-
   case class EffConflicted(error: TypeError) extends TypeConstraint {
     def loc: SourceLocation = error.loc
   }
@@ -155,6 +134,30 @@ object TypeConstraint {
     case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
 
     /**
+      * The constraint relates the types of the record label `label` in two record rows.
+      *
+      * `loc1` and `loc2` are the locations of the two occurrences of the label, and `inner` is the
+      * provenance of the constraint the two rows came from.
+      *
+      * The label is recorded here, rather than decided on when the rows are unified, because the
+      * label types may not be known until later. The provenance follows every constraint derived
+      * from the label types, so the label is available whenever any part of them fails to unify.
+      */
+    case class Label(label: Name.Label, loc1: SourceLocation, loc2: SourceLocation, inner: Provenance) extends Provenance {
+      def loc: SourceLocation = inner.loc
+    }
+
+    /**
+      * The constraint relates the types of the predicate `pred` in two schema rows.
+      *
+      * `loc1` and `loc2` are the locations of the two occurrences of the predicate, and `inner` is
+      * the provenance of the constraint the two rows came from. See [[Label]].
+      */
+    case class Predicate(pred: Name.Pred, loc1: SourceLocation, loc2: SourceLocation, inner: Provenance) extends Provenance {
+      def loc: SourceLocation = inner.loc
+    }
+
+    /**
       * The constraint indicates that the left effect is a variable representing the source effect on the right.
       */
     case class Source(eff1: Type.Var, eff2: Type, loc: SourceLocation) extends Provenance
@@ -169,5 +172,15 @@ object TypeConstraint {
       */
     // TODO this is an abuse of provenance. We should instead have a separate "conflict reason" type.
     case class Timeout(msg: String, loc: SourceLocation) extends Provenance
+
+    /**
+      * Returns the provenance underneath any [[Label]] and [[Predicate]] wrappers of `prov`.
+      */
+    @tailrec
+    def unwrap(prov: Provenance): Provenance = prov match {
+      case Label(_, _, _, inner) => unwrap(inner)
+      case Predicate(_, _, _, inner) => unwrap(inner)
+      case _ => prov
+    }
   }
 }

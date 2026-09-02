@@ -51,11 +51,15 @@ object RecordConstraintSolver {
 
     // If labels match, then we compare the label types and rest of the row.
     //
+    // The constraint on the label types records the label, and its two occurrences, in its
+    // provenance, so that a precise error can be reported if the label types fail to unify.
+    //
     // -------------------------------------------------------------
     // ( ℓ : τ₁  | ρ₁ ) ~ ( ℓ : τ₂  | ρ₂ )  =>  { τ₁ ~ τ₂, ρ₁ ~ ρ₂ }
     case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), t1, _), rest1, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label2), _), t2, _), rest2, _)) if label1 == label2 =>
       progress.markProgress()
-      (List(mkEqualityOrConflict(label1, label2, t1, t2, prov), TypeConstraint.Equality(rest1, rest2, prov)), Substitution.empty)
+      val labelProv = Provenance.Label(label1, label1.loc, label2.loc, prov)
+      (List(TypeConstraint.Equality(t1, t2, labelProv), TypeConstraint.Equality(rest1, rest2, prov)), Substitution.empty)
 
     // If labels do not match, then we pivot the right row to make them match.
     //
@@ -66,7 +70,8 @@ object RecordConstraintSolver {
       pivot(r2, label, t1, r1.typeVars.map(_.sym))(scope, renv, flix) match {
         case Some((Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label3), _), t3, _), rest3, _), subst)) =>
           progress.markProgress()
-          (List(mkEqualityOrConflict(label, label3, t1, t3, prov), TypeConstraint.Equality(rest1, rest3, prov)), subst)
+          val labelProv = Provenance.Label(label, label.loc, label3.loc, prov)
+          (List(TypeConstraint.Equality(t1, t3, labelProv), TypeConstraint.Equality(rest1, rest3, prov)), subst)
 
         case None =>
           (List(TypeConstraint.Equality(tpe1, tpe2, prov)), Substitution.empty)
@@ -77,22 +82,6 @@ object RecordConstraintSolver {
     // If nothing matches, we give up and return the constraints as we got them.
     case _ => (List(TypeConstraint.Equality(tpe1, tpe2, prov)), Substitution.empty)
   }
-
-  /**
-    * Returns the constraint relating the types `tpe1` and `tpe2` of the record label `label1` (= `label2`).
-    *
-    * The two labels are the two occurrences of the same label, one from each row.
-    *
-    * If both types have known but different type constructors (e.g. `Int32` and `String`) then
-    * they can never be unified. In that case we return a [[TypeConstraint.RecordConflicted]] which
-    * records the label and the location of each occurrence, so that a precise error can be reported
-    * later. Otherwise we return an ordinary equality constraint.
-    */
-  private def mkEqualityOrConflict(label1: Name.Label, label2: Name.Label, tpe1: Type, tpe2: Type, prov: Provenance): TypeConstraint =
-    (tpe1.typeConstructor, tpe2.typeConstructor) match {
-      case (Some(tc1), Some(tc2)) if tc1 != tc2 => TypeConstraint.RecordConflicted(label1, tpe1, tpe2, label1.loc, label2.loc, prov)
-      case _ => TypeConstraint.Equality(tpe1, tpe2, prov)
-    }
 
   /**
     * Rearranges the row so that the given label is at the front.
