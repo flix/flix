@@ -17,10 +17,11 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
+import ca.uwaterloo.flix.language.ast.jvm.JavaField
 import ca.uwaterloo.flix.language.ast.shared.{SymbolSet, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.{Constructor, Method}
 
 /**
   * A well-kinded type in an easily-printable format.
@@ -294,7 +295,7 @@ object DisplayType {
 
   case class JvmConstructor(constructor: Constructor[?]) extends DisplayType
 
-  case class JvmField(field: Field) extends DisplayType
+  case class JvmField(field: JavaField) extends DisplayType
 
   case class JvmMethod(method: Method) extends DisplayType
 

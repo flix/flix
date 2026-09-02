@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.ast.jvm.{JavaFieldRef, JavaMethodRef}
+import ca.uwaterloo.flix.language.ast.jvm.JavaMethodRef
 import ca.uwaterloo.flix.language.ast.shared.JConstructor
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaArgument
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaLookupError
@@ -73,26 +73,6 @@ private[phase] object JavaReductionOpsTEMP {
         if (!matches) {
           throw InternalCompilerException(
             s"Java method lookup mismatch for '$query': reflection=$oldResult, descriptor=$result",
-            loc
-          )
-        }
-    }
-  }
-
-  /** Compares the old reflective field result with the new descriptor-based field result. */
-  def compareField(owner: ClassDesc,
-                   name: String,
-                   oldResult: Option[JavaFieldRef],
-                   newResult: Result[Option[JavaFieldRef], JavaLookupError],
-                   loc: SourceLocation): Unit = {
-    val query = s"${owner.displayName()}.$name"
-    newResult match {
-      case Err(error) =>
-        throw InternalCompilerException(s"Java field shadow lookup failed for '$query': $error", loc)
-      case Ok(result) =>
-        if (oldResult != result) {
-          throw InternalCompilerException(
-            s"Java field lookup mismatch for '$query': reflection=$oldResult, descriptor=$result",
             loc
           )
         }

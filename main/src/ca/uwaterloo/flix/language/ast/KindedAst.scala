@@ -17,11 +17,10 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.jvm.JavaField
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
-
-import java.lang.reflect.Field
 
 object KindedAst {
 
@@ -189,11 +188,11 @@ object KindedAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class PutField(field: Field, clazz: java.lang.Class[?], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class PutField(field: JavaField, clazz: java.lang.Class[?], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class GetStaticField(field: Field, loc: SourceLocation) extends Expr
+    case class GetStaticField(field: JavaField, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class PutStaticField(field: Field, exp: Expr, loc: SourceLocation) extends Expr
+    case class PutStaticField(field: JavaField, exp: Expr, loc: SourceLocation) extends Expr
 
     case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], targs: List[Type], constructors: List[JvmConstructor], methods: List[JvmMethod], tvar: Type.Var, loc: SourceLocation) extends Expr
 

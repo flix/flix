@@ -18,8 +18,26 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
 import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.*
 
 object ClassDescs {
+
+  /**
+    * Loads the class represented by `desc` without initializing it.
+    */
+  def load(desc: ClassDesc, loader: ClassLoader): Class[?] = desc match {
+    case CD_boolean => java.lang.Boolean.TYPE
+    case CD_byte => java.lang.Byte.TYPE
+    case CD_short => java.lang.Short.TYPE
+    case CD_char => java.lang.Character.TYPE
+    case CD_int => java.lang.Integer.TYPE
+    case CD_long => java.lang.Long.TYPE
+    case CD_float => java.lang.Float.TYPE
+    case CD_double => java.lang.Double.TYPE
+    case CD_void => java.lang.Void.TYPE
+    case _ if desc.isArray => Class.forName(desc.descriptorString().replace('/', '.'), false, loader)
+    case _ => loader.loadClass(binaryNameOf(desc))
+  }
 
   /**
     * Returns the [[ClassDesc]] of the given loaded class `clazz`.

@@ -139,8 +139,13 @@ object JavaMemberResolver {
     }
 
   /** Returns `Ok` with the selected public field, or `Err` if class metadata cannot be read. */
-  def field(owner: ClassDesc, name: String, static: Boolean)(implicit flix: Flix): Result[Option[JavaField], JavaLookupError] =
-    findField(owner, name, Set.empty).map(_.filter(f => Modifier.isStatic(f.modifiers) == static))
+  def field(owner: ClassDesc, name: String, static: Boolean)(implicit flix: Flix): Result[Option[JavaField], JavaLookupError] = {
+    if (owner.isClassOrInterface) {
+      findField(owner, name, Set.empty).map(_.filter(f => Modifier.isStatic(f.modifiers) == static))
+    } else {
+      Ok(None)
+    }
+  }
 
   /** Selects the best supported methods from `owner`, then retains the requested kind. */
   private def resolveMethods(owner: ClassDesc, name: String, arguments: List[JavaArgument], static: Boolean)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =

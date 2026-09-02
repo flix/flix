@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.shared.JField
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
@@ -83,10 +84,10 @@ object TypedAstPrinter {
     case Expr.InvokeMethod(method, exp, exps, _, _, _) => DocAst.Expr.JavaInvokeMethod(method, print(exp), exps.map(print))
     case Expr.InvokeSuperMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
     case Expr.InvokeStaticMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
-    case Expr.GetField(field, exp, _, _, _) => DocAst.Expr.JavaGetField(field, print(exp))
-    case Expr.PutField(field, exp1, exp2, _, _, _) => DocAst.Expr.JavaPutField(field, print(exp1), print(exp2))
-    case Expr.GetStaticField(field, _, _, _) => DocAst.Expr.JavaGetStaticField(field)
-    case Expr.PutStaticField(field, exp, _, _, _) => DocAst.Expr.JavaPutStaticField(field, print(exp))
+    case Expr.GetField(field, exp, _, _, _) => DocAst.Expr.JavaGetField(JField.of(field), print(exp))
+    case Expr.PutField(field, exp1, exp2, _, _, _) => DocAst.Expr.JavaPutField(JField.of(field), print(exp1), print(exp2))
+    case Expr.GetStaticField(field, _, _, _) => DocAst.Expr.JavaGetStaticField(JField.of(field))
+    case Expr.PutStaticField(field, exp, _, _, _) => DocAst.Expr.JavaPutStaticField(JField.of(field), print(exp))
     case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, clazz.getName, TypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
     case Expr.NewChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown

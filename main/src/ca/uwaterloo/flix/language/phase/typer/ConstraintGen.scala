@@ -18,12 +18,13 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern, ExtTagPattern}
+import ca.uwaterloo.flix.language.ast.jvm.JavaField
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, RegionScope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
-import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Subeffecting}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Subeffecting}
 
 import java.lang.reflect.{Modifier, ParameterizedType, TypeVariable}
 
@@ -997,7 +998,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.PutField(field, clazz, exp1, exp2, loc) =>
-        val fieldType = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc)
+        val fieldType = getJavaFieldType(field, loc)
         val classType = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
@@ -1007,17 +1008,18 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.GetStaticField(field, loc) =>
-        val isFinal = Modifier.isFinal(field.getModifiers)
-        val fieldType = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc)
+      case Expr.GetStaticField(field, tvar, loc) =>
+        val isFinal = Modifier.isFinal(field.modifiers)
+        val fieldType = getJavaFieldType(field, loc)
         val fieldReadEff = if (isFinal) Type.Pure else Type.IO
-        val resTpe = fieldType
+        c.unifyType(tvar, fieldType, loc)
+        val resTpe = tvar
         val resEff = fieldReadEff
         (resTpe, resEff)
 
       case Expr.PutStaticField(field, exp, loc) =>
         val (valueTyp, eff) = visitExp(exp)
-        c.expectType(expected = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc), actual = valueTyp, exp.loc)
+        c.expectType(expected = getJavaFieldType(field, loc), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
@@ -1266,8 +1268,15 @@ object ConstraintGen {
           c.expectType(expected = Type.Bool, actual = guardTpe, g.loc)
           c.expectType(expected = Type.Pure, actual = guardEff, g.loc)
       }
+
       val (tpe, eff) = visitExp(exp)
       (patTpe, tpe, eff)
+  }
+
+  /** Returns the Flix type of the erased descriptor of `field`. */
+  private def getJavaFieldType(field: JavaField, loc: SourceLocation)(implicit flix: Flix): Type = {
+    val clazz = ClassDescs.load(field.ref.descriptor, flix.jarLoader)
+    Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
   }
 
   /**

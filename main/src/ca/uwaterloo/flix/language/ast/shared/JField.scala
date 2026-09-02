@@ -15,16 +15,15 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.util.ClassDescs
+import ca.uwaterloo.flix.language.ast.jvm.JavaField
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Field
 
 object JField {
 
-  /** Returns the [[JField]] of the given reflective `field`. */
-  def of(field: Field): JField =
-    JField(ClassDescs.of(field.getDeclaringClass), field.getName)
+  /** Returns the [[JField]] of the given class-file field metadata. */
+  def of(field: JavaField): JField =
+    JField(field.ref.owner, field.ref.name)
 
 }
 

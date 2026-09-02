@@ -777,7 +777,8 @@ object Kinder {
         KindedAst.Expr.PutField(field, clazz, exp1, exp2, loc)
 
       case ResolvedAst.Expr.GetStaticField(field, loc) =>
-        KindedAst.Expr.GetStaticField(field, loc)
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        KindedAst.Expr.GetStaticField(field, tvar, loc)
 
       case ResolvedAst.Expr.PutStaticField(field, exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
