@@ -42,7 +42,7 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, ParOps}
   */
 object TokenVerifier {
 
-  /** Checks that tokens adhere to the invariants. Runs after the Lexer when `Options.xverify` is set. */
+  /** Checks that tokens adhere to the invariants. */
   def verify(m: Map[Source, Array[Token]])(implicit flix: Flix): Unit = {
     ParOps.parMap(m) {
       case (src, tokens) => checkSource(src, tokens)
