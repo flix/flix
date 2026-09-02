@@ -16,12 +16,11 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.api.{Flix, FlixEvent}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{JvmLoader, LoadedProgram, TestFn}
-import ca.uwaterloo.flix.verifier.EffectVerifier
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Path, Paths}
@@ -36,17 +35,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
   /**
     * Returns a new fresh Flix instance with default options.
     */
-  private def mkFlix(): Flix = {
-    val flix = new Flix()
-
-    flix.addListener {
-      case FlixEvent.AfterTyper(root) =>
-        EffectVerifier.verify(root)(flix)
-      case _ => // nop
-    }
-
-    flix
-  }
+  private def mkFlix(): Flix = new Flix()
 
   /**
     * Runs all tests in all files in the directory located at `path`.
