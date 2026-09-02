@@ -32,6 +32,7 @@ import java.lang.annotation.{Retention, RetentionPolicy}
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.reflect.{GenericSignatureFormatError, MalformedParameterizedTypeException}
 import java.nio.file.{Files, Path}
+import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters.*
 
 object ByteBuddyJavaTypeProvider {
@@ -94,12 +95,36 @@ final case class ByteBuddyJavaTypeProvider(
   pool: TypePool
 ) extends JavaTypeProvider {
 
+  /** Caches converted class metadata for the lifetime of this provider. */
+  private val classCache = new ConcurrentHashMap[ClassDesc, Result[JavaClass, JavaLookupError]]()
+
+  /** Caches compiled virtual method graphs for the lifetime of this provider. */
+  private val virtualMethodsCache = new ConcurrentHashMap[ClassDesc, Result[List[JavaMethod], JavaLookupError]]()
+
+  /** Caches nominal subtype queries for the lifetime of this provider. */
+  private val subtypeCache = new ConcurrentHashMap[(ClassDesc, ClassDesc), Result[Boolean, JavaLookupError]]()
+
   /** Returns `Ok` with metadata for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
   override def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError] =
-    resolve(desc).map(toClass)
+    classCache.computeIfAbsent(desc, d => lookupClassDirect(d))
 
   /** Returns `Ok` with the virtual method graph for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
   override def virtualMethods(desc: ClassDesc): Result[List[JavaMethod], JavaLookupError] =
+    virtualMethodsCache.computeIfAbsent(desc, d => virtualMethodsDirect(d))
+
+  /** Returns `Ok` with the subtype result, or `Err` if either descriptor is unsupported, missing, or invalid. */
+  override def isSubtype(subtype: ClassDesc, supertype: ClassDesc): Result[Boolean, JavaLookupError] =
+    subtypeCache.computeIfAbsent((subtype, supertype), key => isSubtypeDirect(key._1, key._2))
+
+  /** Closes the underlying class-file locator and its owned resources. */
+  override def close(): Unit = locator.close()
+
+  /** Computes [[lookupClass]] without consulting the cache. */
+  private def lookupClassDirect(desc: ClassDesc): Result[JavaClass, JavaLookupError] =
+    resolve(desc).map(toClass)
+
+  /** Computes [[virtualMethods]] without consulting the cache. */
+  private def virtualMethodsDirect(desc: ClassDesc): Result[List[JavaMethod], JavaLookupError] =
     resolve(desc).map { tpe =>
       MethodGraph.Compiler.Default.forJavaHierarchy().compile(tpe: TypeDefinition).listNodes().asScala
         .map(_.getRepresentative)
@@ -109,8 +134,8 @@ final case class ByteBuddyJavaTypeProvider(
         .sortBy(m => (m.ref.name, m.ref.descriptor.descriptorString()))
     }
 
-  /** Returns `Ok` with the subtype result, or `Err` if either descriptor is unsupported, missing, or invalid. */
-  override def isSubtype(subtype: ClassDesc, supertype: ClassDesc): Result[Boolean, JavaLookupError] = {
+  /** Computes [[isSubtype]] without consulting the cache. */
+  private def isSubtypeDirect(subtype: ClassDesc, supertype: ClassDesc): Result[Boolean, JavaLookupError] = {
     if (subtype == supertype) {
       Ok(true)
     } else {
@@ -119,9 +144,6 @@ final case class ByteBuddyJavaTypeProvider(
       }
     }
   }
-
-  /** Closes the underlying class-file locator and its owned resources. */
-  override def close(): Unit = locator.close()
 
   /** Returns `Ok` with the resolved type, or `Err` if `desc` is unsupported, missing, or invalid. */
   private def resolve(desc: ClassDesc): Result[TypeDescription, JavaLookupError] = {
