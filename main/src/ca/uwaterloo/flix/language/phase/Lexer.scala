@@ -23,9 +23,8 @@ import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, StringCursor}
 import ca.uwaterloo.flix.util.collection.PrefixTree
 
-import scala.annotation.{tailrec, unused}
+import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.util.Random
 
 /**
   * A lexer that is able to tokenize multiple `Source`s in parallel.
@@ -946,32 +945,6 @@ object Lexer {
     // This should not happen for zero-width tokens at the start of lines.
     val (endLine, endColumn) = s.sc.getExclusiveEndPosition
     SourcePosition.mkFromZeroIndexed(endLine, endColumn)
-  }
-
-  /**
-    * Returns a fuzzed array of tokens based on the given array of `tokens`.
-    *
-    * Must not modify the last token since it is end-of-file.
-    */
-  @unused
-  private def fuzz(tokens: Array[Token])(implicit flix: Flix): Array[Token] = {
-    // Return immediately if there are few tokens.
-    if (tokens.length <= 10) {
-      return tokens
-    }
-
-    // Fuzz the array by picking two random indices and swapping their tokens.
-    val copy = tokens.clone()
-    val lastIndex = copy.length - 1 // Don't remove the last EOF token.
-    val r = new Random()
-    val i = r.nextInt(lastIndex)
-    val j = r.nextInt(lastIndex)
-
-    val tmp = copy(i)
-    copy(i) = copy(j)
-    copy(j) = tmp
-
-    copy
   }
 
 }
