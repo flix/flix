@@ -685,8 +685,6 @@ class Flix {
     var tailPosAst = TailPos.run(effectBinderAst)
     effectBinderAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    flix.emitEvent(FlixEvent.AfterTailPos(tailPosAst))
-
     var eraserAst = Eraser.run(tailPosAst)
     tailPosAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
