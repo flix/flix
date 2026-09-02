@@ -1085,16 +1085,19 @@ object Lowering {
     * Returns the Flix Type for the Java wrapper class of a primitive type.
     * E.g., `Bool` -> `Native(java.lang.Boolean)`, `Int32` -> `Native(java.lang.Integer)`.
     */
-  private def boxedWrapperType(tpe: Type, loc: SourceLocation): Type = tpe match {
-    case Type.Bool => Type.Cst(TypeConstructor.Native(classOf[java.lang.Boolean]), loc)
-    case Type.Char => Type.Cst(TypeConstructor.Native(classOf[java.lang.Character]), loc)
-    case Type.Int8 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Byte]), loc)
-    case Type.Int16 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Short]), loc)
-    case Type.Int32 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Integer]), loc)
-    case Type.Int64 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Long]), loc)
-    case Type.Float32 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Float]), loc)
-    case Type.Float64 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Double]), loc)
-    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+  private def boxedWrapperType(tpe: Type, loc: SourceLocation): Type = {
+    import java.lang.constant.ConstantDescs.*
+    tpe match {
+      case Type.Bool => Type.mkNative(CD_Boolean, 0, loc)
+      case Type.Char => Type.mkNative(CD_Character, 0, loc)
+      case Type.Int8 => Type.mkNative(CD_Byte, 0, loc)
+      case Type.Int16 => Type.mkNative(CD_Short, 0, loc)
+      case Type.Int32 => Type.mkNative(CD_Integer, 0, loc)
+      case Type.Int64 => Type.mkNative(CD_Long, 0, loc)
+      case Type.Float32 => Type.mkNative(CD_Float, 0, loc)
+      case Type.Float64 => Type.mkNative(CD_Double, 0, loc)
+      case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+    }
   }
 
   /**

@@ -59,7 +59,7 @@ object TypeConstructorPrinter {
     case TypeConstructor.Enum(sym, _) => DocAst.Type.AsIs(sym.toString)
     case TypeConstructor.Struct(sym, _) => DocAst.Type.AsIs(sym.toString)
     case TypeConstructor.RestrictableEnum(sym, _) => DocAst.Type.AsIs(sym.toString)
-    case TypeConstructor.Native(clazz) => DocAst.Type.Native(clazz)
+    case TypeConstructor.Native(desc, _) => DocAst.Type.Native(desc)
     case TypeConstructor.JvmConstructor(constructor) => DocAst.Type.JvmConstructor(constructor)
     case TypeConstructor.JvmMethod(method, _) => DocAst.Type.JvmMethod(method)
     case TypeConstructor.JvmField(field) => DocAst.Type.JvmField(field)

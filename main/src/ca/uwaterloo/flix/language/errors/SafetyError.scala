@@ -6,7 +6,9 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatType
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{ClassDescs, Formatter}
+
+import java.lang.constant.ClassDesc
 
 /** A common super-type for safety errors. */
 sealed trait SafetyError extends CompilationMessage {
@@ -88,7 +90,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastFromNonJava(from: Type, to: java.lang.Class[?], loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastFromNonJava(from: Type, to: ClassDesc, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3807
 
     def summary: String = "Impossible cast: cannot cast a Flix type to a Java type."
@@ -141,7 +143,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastToNonJava(from: java.lang.Class[?], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastToNonJava(from: ClassDesc, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4029
 
     def summary: String = "Impossible cast: cannot cast a Java type to a Flix type."
@@ -215,14 +217,16 @@ object SafetyError {
     *
     * @param loc the location of the catch parameter.
     */
-  case class IllegalCatchType(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+  case class IllegalCatchType(clazz: ClassDesc, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4354
 
-    def summary: String = s"Unexpected catch type: '${clazz.getName}' is not a subclass of Throwable."
+    private val name = ClassDescs.binaryNameOf(clazz)
+
+    def summary: String = s"Unexpected catch type: '$name' is not a subclass of Throwable."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected catch type: '${red(clazz.getName)}' is not a subclass of Throwable.
+      s""">> Unexpected catch type: '${red(name)}' is not a subclass of Throwable.
          |
          |${highlight(loc, "unexpected type", fmt)}
          |
@@ -624,5 +628,13 @@ object SafetyError {
       Type.getFlixType(tpe).toString
     else
       tpe.getName
+  }
+
+  /** Returns the string representation of the Java type `desc`. */
+  private def formatJavaType(desc: ClassDesc): String = {
+    if (desc.isPrimitive || desc.isArray)
+      Type.getFlixType(desc, 0).toString
+    else
+      ClassDescs.binaryNameOf(desc)
   }
 }

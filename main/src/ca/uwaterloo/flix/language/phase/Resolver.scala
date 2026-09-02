@@ -32,6 +32,7 @@ import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
 
+import java.lang.constant.ClassDesc
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.unused
 import scala.collection.immutable.SortedSet
@@ -1686,7 +1687,7 @@ object Resolver {
           case Result.Err(error) =>
             // Probe whether the name actually refers to a Java class — if so, body shape mismatched.
             val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
-            getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
+            getNativeDescFromType(UnkindedType.eraseAliases(t)) match {
               case Some(_) =>
                 if (region0.isDefined) sctx.errors.add(ResolutionError.NewObjectWithStructRegion(qname, loc))
                 if (fields0.nonEmpty) sctx.errors.add(ResolutionError.NewObjectWithStructFields(qname, loc))
@@ -2666,13 +2667,12 @@ object Resolver {
             }
         }
 
-      case UnkindedType.UnappliedNative(clazz, loc) =>
-        val expectedArity = clazz.getTypeParameters.length
-        if (targs.length < expectedArity) {
-          sctx.errors.add(ResolutionError.IllegalRawJavaType(clazz, expectedArity, loc))
+      case UnkindedType.UnappliedNative(desc, arity, loc) =>
+        if (targs.length < arity) {
+          sctx.errors.add(ResolutionError.IllegalRawJavaType(desc, arity, loc))
           UnkindedType.Error(loc)
         } else {
-          val cst = UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
+          val cst = UnkindedType.Cst(TypeConstructor.Native(desc, arity), loc)
           val resolvedArgs = targs.map(finishResolveType(_, taenv))
           UnkindedType.mkApply(cst, resolvedArgs, tpe0.loc)
         }
@@ -3534,13 +3534,22 @@ object Resolver {
     * Looks up the Java class from a (possibly applied) native unkinded type by
     * traversing type applications to find the base `Native` type constructor.
     *
-    * Example: `UnkindedType.Cst(Native(classOf[String]))` returns `Some(classOf[String])`.
-    * Example: `UnkindedType.Apply(Cst(Native(classOf[ArrayList])), Cst(Native(classOf[String])))` returns `Some(classOf[ArrayList])`.
+    * Example: `UnkindedType.Cst(Native(String, 0))` returns `Some(classOf[String])`.
+    * Example: `UnkindedType.Apply(Cst(Native(ArrayList, 1)), Cst(Native(String, 0)))` returns `Some(classOf[ArrayList])`.
+    *
+    * Transitional: loads the class since the AST still refers to loaded classes.
     */
-  private def getNativeClassFromType(tpe: UnkindedType): Option[Class[?]] = tpe match {
-    case UnkindedType.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
-    case UnkindedType.UnappliedNative(clazz, _) => Some(clazz)
-    case UnkindedType.Apply(t1, _, _) => getNativeClassFromType(t1)
+  private def getNativeClassFromType(tpe: UnkindedType)(implicit flix: Flix): Option[Class[?]] =
+    getNativeDescFromType(tpe).map(ClassDescs.load(_, flix.jarLoader))
+
+  /**
+    * Looks up the Java class descriptor from a (possibly applied) native unkinded type by
+    * traversing type applications to find the base `Native` type constructor.
+    */
+  private def getNativeDescFromType(tpe: UnkindedType): Option[ClassDesc] = tpe match {
+    case UnkindedType.Cst(TypeConstructor.Native(desc, _), _) => Some(desc)
+    case UnkindedType.UnappliedNative(desc, _, _) => Some(desc)
+    case UnkindedType.Apply(t1, _, _) => getNativeDescFromType(t1)
     case _ => None
   }
 
@@ -3567,7 +3576,7 @@ object Resolver {
     case "java.util.function.DoubleConsumer" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkUnit(loc), loc)
     case "java.util.function.DoublePredicate" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkBool(loc), loc)
     case "java.util.function.DoubleUnaryOperator" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkFloat64(loc), loc)
-    case _ => UnkindedType.UnappliedNative(clazz, loc)
+    case _ => UnkindedType.UnappliedNative(ClassDescs.of(clazz), clazz.getTypeParameters.length, loc)
   }
 
   /**

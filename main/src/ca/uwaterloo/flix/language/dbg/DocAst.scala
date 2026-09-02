@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
+import ca.uwaterloo.flix.util.ClassDescs
 
 import java.lang.constant.ClassDesc
 import scala.collection.immutable.SortedSet
@@ -139,8 +140,6 @@ object DocAst {
 
     case class Lambda(fparams: List[Expr.AscriptionTpe], body: Expr) extends Composite
 
-    case class Native(clazz: Class[?]) extends Atom
-
     val Unknown: Expr =
       Meta("unknown exp")
 
@@ -250,7 +249,7 @@ object DocAst {
       Binary(d1, "===", d2)
 
     def InstanceOf(d: Expr, clazz: Class[?]): Expr =
-      Binary(d, "instanceof", Native(clazz))
+      InstanceOf(d, ClassDescs.of(clazz))
 
     def InstanceOf(d: Expr, clazz: ClassDesc): Expr =
       Binary(d, "instanceof", AsIs(javaClassName(clazz)))
@@ -416,7 +415,7 @@ object DocAst {
 
     case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Atom
 
-    case class Native(clazz: Class[?]) extends Atom
+    case class Native(desc: ClassDesc) extends Atom
 
     case class JvmConstructor(constructor: JavaMethod) extends Atom
 

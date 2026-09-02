@@ -101,7 +101,7 @@ object Serialize {
     case TypeConstructor.Enum(sym, kind) => Enum(serializeEnumSym(sym), serializeKind(kind))
     case TypeConstructor.Struct(sym, kind) => Struct(serializeStructSym(sym), serializeKind(kind))
     case TypeConstructor.RestrictableEnum(sym, kind) => RestrictableEnum(serializeRestrictableEnumSym(sym), serializeKind(kind))
-    case TypeConstructor.Native(clazz) => serializeJvmClass(clazz)
+    case TypeConstructor.Native(desc, arity) => Native(desc.descriptorString(), arity)
     case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
     case TypeConstructor.JvmMethod(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
     case TypeConstructor.JvmField(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
@@ -160,10 +160,6 @@ object Serialize {
 
   private def serializeEnumSym(sym0: Symbol.EnumSym): EnumSym = {
     EnumSym(sym0.namespace, sym0.text)
-  }
-
-  private def serializeJvmClass(clazz: Class[?]): Native = {
-    Native(clazz.descriptorString())
   }
 
   private def serializeKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): VarSym = {

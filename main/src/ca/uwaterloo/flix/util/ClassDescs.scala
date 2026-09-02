@@ -74,12 +74,35 @@ object ClassDescs {
   }
 
   /**
-    * Returns the binary name (e.g. `java.lang.String`) of the class or interface `desc`.
+    * Returns the binary name of `desc` as [[Class.getName]] would return it,
+    * e.g. `java.lang.String`, `int`, or `[Ljava.lang.String;`.
     */
   def binaryNameOf(desc: ClassDesc): String = {
-    // Strip the leading `L` and trailing `;` of the descriptor and replace `/` with `.`.
-    val descriptor = desc.descriptorString()
-    descriptor.substring(1, descriptor.length - 1).replace('/', '.')
+    if (desc.isPrimitive) {
+      desc.displayName()
+    } else if (desc.isArray) {
+      // The binary name of an array type is its descriptor with `/` replaced by `.`.
+      desc.descriptorString().replace('/', '.')
+    } else {
+      // Strip the leading `L` and trailing `;` of the descriptor and replace `/` with `.`.
+      val descriptor = desc.descriptorString()
+      descriptor.substring(1, descriptor.length - 1).replace('/', '.')
+    }
+  }
+
+  /**
+    * Returns the simple name of `desc` as [[Class.getSimpleName]] would return it,
+    * e.g. `String`, `Entry` (for `java.util.Map$Entry`), `int`, or `String[]`.
+    */
+  def simpleNameOf(desc: ClassDesc): String = {
+    if (desc.isArray) {
+      simpleNameOf(desc.componentType()) + "[]"
+    } else {
+      // The display name is the unqualified name, e.g. `Map$Entry` for a nested class.
+      val name = desc.displayName()
+      val idx = name.lastIndexOf('$')
+      if (idx >= 0 && idx < name.length - 1) name.substring(idx + 1) else name
+    }
   }
 
 }

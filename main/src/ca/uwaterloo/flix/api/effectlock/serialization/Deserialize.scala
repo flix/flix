@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUs
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
+import java.lang.constant.ClassDesc
 import scala.collection.immutable.SortedSet
 
 object Deserialize {
@@ -86,7 +87,7 @@ object Deserialize {
     case Enum(sym, kind) => TypeConstructor.Enum(deserializeEnumSym(sym), deserializeKind(kind))
     case Struct(sym, kind) => TypeConstructor.Struct(deserializeStructSym(sym), deserializeKind(kind))
     case RestrictableEnum(sym, kind) => TypeConstructor.RestrictableEnum(deserializeRestrictableEnumSym(sym), deserializeKind(kind))
-    case Native(clazz) => TypeConstructor.Native(deserializeJvmClass(Native(clazz)))
+    case Native(desc, arity) => TypeConstructor.Native(ClassDesc.ofDescriptor(desc), arity)
     case Array => TypeConstructor.Array
     case ArrayWithoutRegion => TypeConstructor.ArrayWithoutRegion
     case Vector => TypeConstructor.Vector
@@ -146,18 +147,6 @@ object Deserialize {
   private def deserializeEnumSym(sym0: EnumSym): Symbol.EnumSym = sym0 match {
     case EnumSym(namespace, text) =>
       Symbol.mkEnumSym(deserializeNamespace(namespace), deserializeIdent(text))
-  }
-
-  private def deserializeJvmClass(clazz0: Native): Class[?] = clazz0.clazz match {
-    case "B" => Byte.getClass
-    case "C" => Char.getClass
-    case "D" => Double.getClass
-    case "F" => Float.getClass
-    case "I" => Int.getClass
-    case "J" => Long.getClass
-    case "S" => Short.getClass
-    case "Z" => Boolean.getClass
-    case clazz => Class.forName(clazz)
   }
 
   private def deserializeKindedTypeVarSym(sym0: VarSym): Symbol.KindedTypeVarSym = sym0 match {
