@@ -86,6 +86,8 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
           TypeConstraint.Conflicted(t1, t2, prov)
 
       case TypeConstraint.EffConflicted(_) => constr
+
+      case TypeConstraint.Error(_) => constr
     }
   }
 
@@ -174,4 +176,3 @@ object SubstitutionTree {
     }
   }
 }
-

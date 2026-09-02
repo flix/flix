@@ -168,6 +168,7 @@ object Profiler {
         vars ++= e1.typeVars; vars ++= e2.typeVars
         nested.foreach(collect)
       case TypeConstraint.EffConflicted(_)            => ()
+      case TypeConstraint.Error(_)                    => ()
     }
     cs.foreach(collect)
     var tv = 0L
@@ -363,4 +364,3 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
     if (sym.id.isEmpty) sym
     else new Symbol.DefnSym(None, sym.namespace, sym.text, sym.loc)
 }
-

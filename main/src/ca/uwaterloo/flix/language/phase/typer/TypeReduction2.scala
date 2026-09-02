@@ -18,13 +18,14 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.jvm.{JavaClass, JavaField, JavaMethod, JavaType, JavaTypeParameter, JavaTypeVariable}
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaType, JavaTypeParameter, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
-import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver}
+import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaLookupError, JavaMemberResolver}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, Result}
 
 import java.lang.constant.ConstantDescs.*
 import java.lang.constant.ClassDesc
@@ -107,6 +108,10 @@ object TypeReduction2 {
     case Type.JvmToType(tpe, loc) =>
       val (t, cs) = reduce(tpe)
       t match {
+        case Type.Cst(TypeConstructor.Error(_, _), _) =>
+          progress.markProgress()
+          (Type.freshError(Kind.Star, loc), cs)
+
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
           val clazz = ClassDescs.load(constructor.ref.owner, flix.jarLoader)
@@ -129,6 +134,10 @@ object TypeReduction2 {
     case Type.JvmToEff(tpe, loc) =>
       val (t, cs) = reduce(tpe)
       t match {
+        case Type.Cst(TypeConstructor.Error(_, _), _) =>
+          progress.markProgress()
+          (Type.freshError(Kind.Eff, loc), cs)
+
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
           (PrimitiveEffects.getConstructorEffs(constructor, loc), cs)
@@ -147,19 +156,23 @@ object TypeReduction2 {
         case JvmMember.JvmConstructor(clazz, tpes) =>
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
-          lookupConstructor(clazz, reducedTpes, loc) match {
+          lookupConstructor(clazz, reducedTpes) match {
             case JavaConstructorResolution.Resolved(constructor) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), cs)
+            case JavaConstructorResolution.MetadataError(query, error) =>
+              recoverFromJavaMetadataError(query, error, loc, cs)
             case _ => (unresolved, cs)
           }
 
         case JvmMember.JvmField(_, tpe, name) =>
           val (reducedTpe, cs) = reduce(tpe)
-          lookupField(reducedTpe, name.name, loc) match {
+          lookupField(reducedTpe, name.name) match {
             case JavaFieldResolution.Resolved(field) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmField(field), loc), cs)
+            case JavaFieldResolution.MetadataError(query, error) =>
+              recoverFromJavaMetadataError(query, error, loc, cs)
             case _ => (unresolved, cs)
           }
 
@@ -167,32 +180,51 @@ object TypeReduction2 {
           val (reducedTpe, cs0) = reduce(tpe)
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = cs0 ::: css.flatten
-          lookupMethod(reducedTpe, name.name, reducedTpes, loc) match {
-            case JavaMethodResolution.Resolved(method) =>
-              val classTypeParameters = classTypeParametersOf(method, getJavaTypeDesc(reducedTpe), loc)
+          lookupMethod(reducedTpe, name.name, reducedTpes) match {
+            case JavaMethodResolution.Resolved(method, classTypeParameters, query) =>
               val classTypeArgs = extractClassTypeArgs(classTypeParameters, reducedTpe, scope, loc)
-              val (tpe, cs0) = instantiateMethod(method, classTypeParameters, classTypeArgs, reducedTpes, scope, loc)
-              progress.markProgress()
-              (tpe, cs ::: cs0)
+              instantiateMethod(method, classTypeParameters, classTypeArgs, reducedTpes, scope, loc) match {
+                case Ok((tpe, cs0)) =>
+                  progress.markProgress()
+                  (tpe, cs ::: cs0)
+                case Err(error) => recoverFromJavaMetadataError(query, error, loc, cs)
+              }
+            case JavaMethodResolution.MetadataError(query, error) =>
+              recoverFromJavaMetadataError(query, error, loc, cs)
             case _ => (unresolved, cs)
           }
 
         case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
-          lookupStaticMethod(clazz, name.name, reducedTpes, loc) match {
-            case JavaMethodResolution.Resolved(method) =>
+          lookupStaticMethod(clazz, name.name, reducedTpes) match {
+            case JavaMethodResolution.Resolved(method, classTypeParameters, query) =>
               // Class type parameters are not in scope for static methods.
-              val (tpe, cs0) = instantiateMethod(method, Nil, Nil, reducedTpes, scope, loc)
-              progress.markProgress()
-              (tpe, cs ::: cs0)
+              instantiateMethod(method, classTypeParameters, Nil, reducedTpes, scope, loc) match {
+                case Ok((tpe, cs0)) =>
+                  progress.markProgress()
+                  (tpe, cs ::: cs0)
+                case Err(error) => recoverFromJavaMetadataError(query, error, loc, cs)
+              }
+            case JavaMethodResolution.MetadataError(query, error) =>
+              recoverFromJavaMetadataError(query, error, loc, cs)
             case _ => (unresolved, cs)
           }
       }
   }
 
+  /** Recovers from a Java metadata failure with an error type and a retained diagnostic. */
+  private def recoverFromJavaMetadataError(query: String, error: JavaLookupError, loc: SourceLocation, cs: List[TypeConstraint])(implicit progress: Progress, flix: Flix): (Type, List[TypeConstraint]) = error match {
+    case _: JavaLookupError.UnsupportedDescriptor =>
+      throw InternalCompilerException(s"Java metadata lookup failed for '$query': $error", loc)
+    case _ =>
+      progress.markProgress()
+      val diagnostic = TypeError.JavaMetadataLookupError(query, error.explanation, loc)
+      (Type.freshError(Kind.Jvm, loc), TypeConstraint.Error(diagnostic) :: cs)
+  }
+
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */
-  private def lookupConstructor(clazz: Class[?], ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaConstructorResolution = {
+  private def lookupConstructor(clazz: Class[?], ts: List[Type])(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaConstructorResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaConstructorResolution.UnresolvedTypes
 
@@ -205,39 +237,41 @@ object TypeReduction2 {
       case Ok(Nil) => JavaConstructorResolution.NotFound
       case Err(error) =>
         val query = s"${owner.displayName()}(${arguments.mkString(", ")})"
-        throw InternalCompilerException(s"Java constructor lookup failed for '$query': $error", loc)
+        JavaConstructorResolution.MetadataError(query, error)
     }
   }
 
   /** Tries to find a method of `thisObj` that takes arguments of type `ts`. */
-  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaMethodResolution = {
+  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type])(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaMethodResolution = {
     val typesAreKnown = isKnown(thisObj) && ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
     // Rigid type variables and other non-Java types fall back to Object.
-    retrieveMethod(getJavaTypeDesc(thisObj), methodName, ts, static = false, loc)
+    retrieveMethod(getJavaTypeDesc(thisObj), methodName, ts, static = false)
   }
 
   /** Tries to find a static method of `clazz` that takes arguments of type `ts`. */
-  private def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaMethodResolution = {
+  private def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type])(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaMethodResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
-    retrieveMethod(ClassDescs.of(clazz), methodName, ts, static = true, loc)
+    retrieveMethod(ClassDescs.of(clazz), methodName, ts, static = true)
   }
 
   /** Tries to find a static/dynamic method of `owner` that takes arguments of type `ts`. */
-  private def retrieveMethod(owner: ClassDesc, methodName: String, ts: List[Type], static: Boolean, loc: SourceLocation)(implicit flix: Flix): JavaMethodResolution = {
+  private def retrieveMethod(owner: ClassDesc, methodName: String, ts: List[Type], static: Boolean)(implicit flix: Flix): JavaMethodResolution = {
     val arguments = ts.map(getJavaArgument)
+    val kind = if (static) "static" else "instance"
+    val query = s"$kind ${owner.displayName()}.$methodName(${arguments.mkString(", ")})"
     JavaMemberResolver.methods(owner, methodName, arguments, static) match {
       // The resolver returns every method tied for the best match in a deterministic order.
       // We pick the first one.
-      case Ok(method :: _) => JavaMethodResolution.Resolved(method)
+      case Ok(method :: _) => classTypeParametersOf(method, owner) match {
+        case Ok(classTypeParameters) => JavaMethodResolution.Resolved(method, classTypeParameters, query)
+        case Err(error) => JavaMethodResolution.MetadataError(query, error)
+      }
       case Ok(Nil) => JavaMethodResolution.NotFound
-      case Err(error) =>
-        val kind = if (static) "static" else "instance"
-        val query = s"$kind ${owner.displayName()}.$methodName(${arguments.mkString(", ")})"
-        throw InternalCompilerException(s"Java method lookup failed for '$query': $error", loc)
+      case Err(error) => JavaMethodResolution.MetadataError(query, error)
     }
   }
 
@@ -289,7 +323,7 @@ object TypeReduction2 {
   }
 
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
-  private def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaFieldResolution = {
+  private def lookupField(thisObj: Type, fieldName: String)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaFieldResolution = {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
 
@@ -297,9 +331,7 @@ object TypeReduction2 {
     JavaMemberResolver.field(owner, fieldName, static = false) match {
       case Ok(Some(field)) => JavaFieldResolution.Resolved(field)
       case Ok(None) => JavaFieldResolution.NotFound
-      case Err(error) =>
-        val query = s"${owner.displayName()}.$fieldName"
-        throw InternalCompilerException(s"Java field lookup failed for '$query': $error", loc)
+      case Err(error) => JavaFieldResolution.MetadataError(s"${owner.displayName()}.$fieldName", error)
     }
   }
 
@@ -336,6 +368,9 @@ object TypeReduction2 {
     /** No matching field. */
     case object NotFound extends JavaFieldResolution
 
+    /** Class-file metadata required for the lookup could not be read. */
+    case class MetadataError(query: String, error: JavaLookupError) extends JavaFieldResolution
+
     /**
       * The types used for the lookup are not resolved enough to decide on a field.
       *
@@ -356,6 +391,9 @@ object TypeReduction2 {
     /** No matching constructor. */
     case object NotFound extends JavaConstructorResolution
 
+    /** Class-file metadata required for the lookup could not be read. */
+    case class MetadataError(query: String, error: JavaLookupError) extends JavaConstructorResolution
+
     /**
       * The types used for the lookup are not resolved enough to decide on a constructor.
       *
@@ -371,10 +409,13 @@ object TypeReduction2 {
   private object JavaMethodResolution {
 
     /** One matching method. */
-    case class Resolved(method: JavaMethod) extends JavaMethodResolution
+    case class Resolved(method: JavaMethod, classTypeParameters: List[JavaTypeParameter], query: String) extends JavaMethodResolution
 
     /** No matching method. */
     case object NotFound extends JavaMethodResolution
+
+    /** Class-file metadata required for the lookup could not be read. */
+    case class MetadataError(query: String, error: JavaLookupError) extends JavaMethodResolution
 
     /**
       * The types used for the lookup are not resolved enough to decide on a method.
@@ -510,9 +551,9 @@ object TypeReduction2 {
     * The parameter and return types of a method found through the virtual method graph of `owner`
     * refer to the type parameters of `owner`, even if the method is declared by a supertype.
     */
-  private def classTypeParametersOf(method: JavaMethod, owner: ClassDesc, loc: SourceLocation)(implicit flix: Flix): List[JavaTypeParameter] =
-    if (Modifier.isStatic(method.modifiers) || !owner.isClassOrInterface) Nil
-    else lookupClass(owner, loc).typeParameters
+  private def classTypeParametersOf(method: JavaMethod, owner: ClassDesc)(implicit flix: Flix): Result[List[JavaTypeParameter], JavaLookupError] =
+    if (Modifier.isStatic(method.modifiers) || !owner.isClassOrInterface) Ok(Nil)
+    else flix.javaTypeProvider.lookupClass(owner).map(_.typeParameters)
 
   /**
     * Instantiates a resolved Java method: creates fresh type variables for method-level
@@ -526,13 +567,12 @@ object TypeReduction2 {
     *   - methodTypeArgs = [?t] (fresh var for `T`)
     *   - emits Equality(?t, String) for the `T` parameter
     */
-  private def instantiateMethod(method: JavaMethod, classTypeParameters: List[JavaTypeParameter], classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): (Type, List[TypeConstraint]) = {
+  private def instantiateMethod(method: JavaMethod, classTypeParameters: List[JavaTypeParameter], classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Result[(Type, List[TypeConstraint]), JavaLookupError] = {
     val methodTypeArgs = method.typeParameters.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
     val allTypeArgs = classTypeArgs ++ methodTypeArgs
     val base = Type.Cst(TypeConstructor.JvmMethod(method, classTypeParameters), loc)
     val tpe = Type.mkApply(base, allTypeArgs, loc)
-    val cs = mkArgConstraints(method, classTypeParameters, allTypeArgs, argTypes, loc)
-    (tpe, cs)
+    mkArgConstraints(method, classTypeParameters, allTypeArgs, argTypes, loc).map(cs => (tpe, cs))
   }
 
   /**
@@ -547,37 +587,37 @@ object TypeReduction2 {
     * argument type.
     */
   private def mkArgConstraints(method: JavaMethod, classTypeParameters: List[JavaTypeParameter], typeArgs: List[Type],
-    argTypes: List[Type], loc: SourceLocation)(implicit flix: Flix): List[TypeConstraint] = {
+    argTypes: List[Type], loc: SourceLocation)(implicit flix: Flix): Result[List[TypeConstraint], JavaLookupError] = {
     val substMap = buildTypeVarSubstitution(method, classTypeParameters, typeArgs)
-    argTypes.zip(method.parameterTypes).flatMap { case (argType, paramType) =>
+    Result.traverse(argTypes.zip(method.parameterTypes)) { case (argType, paramType) =>
       argType match {
         // `null` is a valid value of any reference type, so it must not constrain
         // the parameter's type variable. Emit no constraint and let the receiver
         // or surrounding context determine the type variable.
-        case Type.Cst(TypeConstructor.Null, _) => None
+        case Type.Cst(TypeConstructor.Null, _) => Ok(Nil)
         case _ => paramType match {
           case JavaType.Variable(variable, _) =>
-            substMap.get(variable).map { expectedType =>
+            Ok(substMap.get(variable).map { expectedType =>
               TypeConstraint.Equality(expectedType, argType,
                 TypeConstraint.Provenance.Match(expectedType, argType, loc))
-            }
+            }.toList)
           case pt: JavaType.Parameterized =>
             mkParamTypeConstraints(pt, argType, substMap, loc)
           case JavaType.GenericArray(component, _) =>
             // For varargs/array params (e.g., T[] in Stream.of(T...)), emit a constraint
             // linking the component type variable to the Flix array/vector element type.
-            (component, argType.typeArguments) match {
+            Ok((component, argType.typeArguments) match {
               case (JavaType.Variable(variable, _), elmType :: _) =>
                 substMap.get(variable).map { expectedType =>
                   TypeConstraint.Equality(expectedType, elmType,
                     TypeConstraint.Provenance.Match(expectedType, elmType, loc))
                 }.toList
               case _ => Nil
-            }
-          case _ => None
+            })
+          case _ => Ok(Nil)
         }
       }
-    }
+    }.map(_.flatten)
   }
 
   /**
@@ -617,7 +657,7 @@ object TypeReduction2 {
     *    Zips the Java type arguments with the Flix type arguments directly.
     */
   private def mkParamTypeConstraints(pt: JavaType.Parameterized, argType: Type,
-    substMap: Map[JavaTypeVariable, Type], loc: SourceLocation)(implicit flix: Flix): List[TypeConstraint] = {
+    substMap: Map[JavaTypeVariable, Type], loc: SourceLocation)(implicit flix: Flix): Result[List[TypeConstraint], JavaLookupError] = {
     argType match {
       case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), flixArg, _), flixRet, _) =>
         lookupFunIF(flixArg, flixRet) match {
@@ -625,28 +665,30 @@ object TypeReduction2 {
             val fiTypeArgs: Map[String, Type] =
               mapping.argParam.map(_ -> flixArg).toMap ++
               mapping.retParam.map(_ -> flixRet).toMap
-            val interfaceParamNames = lookupClass(pt.erasure, loc).typeParameters.map(_.variable.name)
-            interfaceParamNames.zip(pt.arguments).flatMap {
-              case (ifParamName, javaTypeArg) =>
-                resolveToTypeVariable(javaTypeArg).flatMap { methodTv =>
-                  for {
-                    expectedType <- substMap.get(methodTv)
-                    flixType <- fiTypeArgs.get(ifParamName)
-                  } yield TypeConstraint.Equality(expectedType, flixType,
-                    TypeConstraint.Provenance.Match(expectedType, flixType, loc))
+            flix.javaTypeProvider.lookupClass(pt.erasure).map { clazz =>
+              val interfaceParamNames = clazz.typeParameters.map(_.variable.name)
+              interfaceParamNames.zip(pt.arguments).flatMap {
+                case (ifParamName, javaTypeArg) =>
+                  resolveToTypeVariable(javaTypeArg).flatMap { methodTv =>
+                    for {
+                      expectedType <- substMap.get(methodTv)
+                      flixType <- fiTypeArgs.get(ifParamName)
+                    } yield TypeConstraint.Equality(expectedType, flixType,
+                      TypeConstraint.Provenance.Match(expectedType, flixType, loc))
+                  }
                 }
             }
-          case None => Nil
+          case None => Ok(Nil)
         }
       case _ =>
-        pt.arguments.zip(argType.typeArguments).flatMap {
+        Ok(pt.arguments.zip(argType.typeArguments).flatMap {
           case (JavaType.Variable(variable, _), flixArg) =>
             substMap.get(variable).map { expectedType =>
               TypeConstraint.Equality(expectedType, flixArg,
                 TypeConstraint.Provenance.Match(expectedType, flixArg, loc))
             }
           case _ => None
-        }
+        })
     }
   }
 
@@ -658,13 +700,6 @@ object TypeReduction2 {
         .orElse(lowerBounds.collectFirst { case JavaType.Variable(variable, _) => variable })
     case _ => None
   }
-
-  /** Returns the class metadata of `desc`, or throws if it cannot be read. */
-  private def lookupClass(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): JavaClass =
-    flix.javaTypeProvider.lookupClass(desc) match {
-      case Ok(clazz) => clazz
-      case Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${desc.displayName()}': $error", loc)
-    }
 
   /** Loads the class of `desc` without initializing it. */
   private def loadClass(desc: ClassDesc)(implicit flix: Flix): Class[?] = ClassDescs.load(desc, flix.jarLoader)

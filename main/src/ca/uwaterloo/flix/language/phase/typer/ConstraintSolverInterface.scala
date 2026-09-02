@@ -277,6 +277,8 @@ object ConstraintSolverInterface {
 
     case TypeConstraint.EffConflicted(err) => List(err)
 
+    case TypeConstraint.Error(err) => List(err)
+
     case TypeConstraint.Trait(sym, tpe, loc) =>
       tpe.typeConstructor match {
         case Some(TypeConstructor.Arrow(_)) => List(TypeError.MissingInstanceArrow(sym, subst(tpe), renv, loc))

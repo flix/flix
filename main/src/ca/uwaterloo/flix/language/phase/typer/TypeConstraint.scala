@@ -35,6 +35,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => tpe1.size + tpe2.size
     case TypeConstraint.EffConflicted(_) => 0
+    case TypeConstraint.Error(_) => 0
   }
 
   override def toString: String = this match {
@@ -43,6 +44,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"$tpe1 ≁ $tpe2"
     case TypeConstraint.EffConflicted(err) => err.toString
+    case TypeConstraint.Error(err) => err.toString
   }
 
   def loc: SourceLocation
@@ -104,6 +106,11 @@ object TypeConstraint {
   }
 
   case class EffConflicted(error: TypeError) extends TypeConstraint {
+    def loc: SourceLocation = error.loc
+  }
+
+  /** A diagnostic produced while reducing a type constraint. */
+  case class Error(error: TypeError) extends TypeConstraint {
     def loc: SourceLocation = error.loc
   }
 

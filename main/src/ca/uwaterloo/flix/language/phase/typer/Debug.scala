@@ -145,6 +145,7 @@ object Debug {
       (header :: children ::: edges).mkString("\n")
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"""${constraintId(constr)} [label = "$tpe1 ≁ $tpe2"];"""
     case TypeConstraint.EffConflicted(effErr) => format(effErr.toString)
+    case TypeConstraint.Error(err) => format(err.toString)
   }
 
   /**

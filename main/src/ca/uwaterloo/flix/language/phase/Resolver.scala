@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaLookupError, JavaMemberResolver}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
 
@@ -818,9 +818,14 @@ object Resolver {
                 val error = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
                 sctx.errors.add(error)
                 return ResolvedAst.Expr.Error(error)
-              case Result.Err(error) =>
+              case Result.Err(error: JavaLookupError.UnsupportedDescriptor) =>
                 val query = s"${owner.displayName()}.${fieldName.name}"
                 throw InternalCompilerException(s"Java field lookup failed for '$query': $error", loc)
+              case Result.Err(error) =>
+                val query = s"${owner.displayName()}.${fieldName.name}"
+                val diagnostic = ResolutionError.JavaMetadataLookupError(query, error.explanation, loc)
+                sctx.errors.add(diagnostic)
+                return ResolvedAst.Expr.Error(diagnostic)
             }
           case _ =>
           // Fallthrough to below.

@@ -944,6 +944,29 @@ object ResolutionError {
   }
 
   /**
+    * An error raised when Java class-file metadata required for member resolution cannot be read.
+    *
+    * @param query  the Java member being resolved.
+    * @param reason the reason the metadata lookup failed.
+    * @param loc    the location of the member access.
+    */
+  case class JavaMetadataLookupError(query: String, reason: String, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E1925
+
+    def summary: String = s"Unable to read Java class metadata while resolving '$query'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unable to read Java class metadata while resolving '${red(query)}'.
+         |
+         |${highlight(loc, "metadata lookup failed", fmt)}
+         |
+         |${underline("Explanation:")} $reason
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Undefined Kind Error.
     *
     * @param qn  the name.

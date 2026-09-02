@@ -291,6 +291,8 @@ object ConstraintSolver2 {
       }
 
     case TypeConstraint.EffConflicted(_) => constr :: Nil
+
+    case TypeConstraint.Error(_) => constr :: Nil
   }
 
   /**
@@ -391,6 +393,7 @@ object ConstraintSolver2 {
     case c: TypeConstraint.Equality => List(c)
     case c: TypeConstraint.Conflicted => List(c)
     case c: TypeConstraint.EffConflicted => List(c)
+    case c: TypeConstraint.Error => List(c)
 
     case c@TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = ListOps.flatMapWithReuse(nested0)(contextReduction(_, progress)(scope.enter(sym), renv0, trenv, eqenv, flix))
