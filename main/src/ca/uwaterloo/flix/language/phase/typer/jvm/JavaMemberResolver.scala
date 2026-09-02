@@ -26,9 +26,9 @@ import java.lang.reflect.Modifier
 import scala.jdk.CollectionConverters.*
 
 /*
- * Constructor overload resolution intentionally mirrors Apache Commons Lang's
- * `ConstructorUtils.getMatchingAccessibleConstructor` and the transformation
- * costs in `MemberUtils`. It is a compatibility algorithm for Flix's existing
+ * Java executable overload resolution intentionally mirrors Apache Commons
+ * Lang's matching constructor and method lookup and the transformation costs
+ * in `MemberUtils`. It is a compatibility algorithm for Flix's existing
  * reflective lookup, not an implementation of JLS most-specific resolution.
  *
  * Resolution separates legality from preference. A candidate must first be
@@ -37,14 +37,14 @@ import scala.jdk.CollectionConverters.*
  *
  * Exact erased descriptor matches are selected before any scoring. This covers
  * ordinary exact parameters and passing an array directly to a varargs
- * constructor. A `Null` argument has no descriptor and cannot be exact.
+ * executable. A `Null` argument has no descriptor and cannot be exact.
  *
  * Applicability supports the conversions recognized by the current reflective
  * path: widening references, widening primitives, boxing, unboxing, `null` to
  * references, Java array subtyping, and both fixed and expanded varargs. This
- * step only answers whether a constructor can participate in ranking.
+ * step only answers whether an executable can participate in ranking.
  *
- * Each applicable constructor then receives one cost per argument. The costs
+ * Each applicable executable then receives one cost per argument. The costs
  * are added, producing a single number for the complete parameter list. A
  * candidate may therefore compensate for a worse match at one parameter with
  * a better match at another parameter.
@@ -73,16 +73,16 @@ import scala.jdk.CollectionConverters.*
  * Lang gives the more generic component type the lower cost.
  *
  * After scoring, every candidate with the minimum total cost is returned.
- * Commons Lang keeps the first minimum encountered in reflection order, but
- * reflection order is unspecified and may differ from class-file metadata
- * order. Returning every tied minimum lets shadow comparison accept any
- * semantically equivalent Commons Lang choice without depending on that order.
+ * Commons Lang keeps the first minimum encountered in its deterministic method
+ * order or in reflection's unspecified constructor order. Returning every tied
+ * minimum lets shadow comparison accept any semantically equivalent Commons
+ * Lang choice without depending on metadata order.
  *
  * Wrapper-to-primitive unboxing is considered during applicability and scoring
  * because Commons Lang considers it. Flix does not support that conversion in
  * lowering, so tied best candidates requiring it are removed only after best
  * candidate selection. Filtering earlier could select a worse supported
- * constructor, which would not match the existing reflective path.
+ * executable, which would not match the existing reflective path.
  *
  * The score should therefore be read as an estimate of conversion distance
  * used to preserve existing behavior. It is not a runtime conversion, a proof
@@ -94,6 +94,9 @@ object JavaMemberResolver {
 
   /** The penalty added for each varargs conversion. */
   private val VarArgsCost = 0.001f
+
+  /** The class-file modifier bit that identifies a compiler-generated bridge method. */
+  private val BridgeModifier = 0x0040
 
   /** The descriptor of `java.lang.Cloneable`, a direct supertype of every array type. */
   private val CloneableDesc = ClassDesc.of("java.lang.Cloneable")
@@ -128,9 +131,191 @@ object JavaMemberResolver {
       best(candidates, arguments).map(_.filterNot(usesUnsupportedUnboxing(arguments, _)))
     }
 
+  /** Returns `Ok` with every tied best public method, including the existing `Object` fallback. */
+  def methods(owner: ClassDesc, name: String, arguments: List[JavaArgument], static: Boolean)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
+    resolveMethods(owner, name, arguments, static).flatMap {
+      case result if result.nonEmpty || owner == CD_Object => Ok(result)
+      case _ => resolveMethods(CD_Object, name, arguments, static)
+    }
+
   /** Returns `Ok` with the selected public field, or `Err` if class metadata cannot be read. */
   def field(owner: ClassDesc, name: String, static: Boolean)(implicit flix: Flix): Result[Option[JavaField], JavaLookupError] =
     findField(owner, name, Set.empty).map(_.filter(f => Modifier.isStatic(f.modifiers) == static))
+
+  /** Selects the best supported methods from `owner`, then retains the requested kind. */
+  private def resolveMethods(owner: ClassDesc, name: String, arguments: List[JavaArgument], static: Boolean)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
+    rawMethodCandidates(owner, name).flatMap { candidates =>
+      // Commons Lang returns an exact Class.getMethod result before declaring-owner normalization.
+      val exact = exactMatches(candidates, arguments)
+      val selected = if (exact.nonEmpty) Ok(exact) else normalizeAccessibleMethods(candidates).flatMap(best(_, arguments))
+      selected.map { methods =>
+        // The existing TypeReduction path checks the static flag only after overload selection.
+        methods.filter(method => Modifier.isStatic(method.modifiers) == static)
+          .filterNot(usesUnsupportedUnboxing(arguments, _))
+      }
+    }
+
+  /** Returns public candidates before declaring-owner accessibility normalization. */
+  private def rawMethodCandidates(owner: ClassDesc, name: String)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] = {
+    if (owner.isArray) {
+      rawMethodCandidates(CD_Object, name)
+    } else if (owner.isPrimitive) {
+      Ok(Nil)
+    } else {
+      virtualMethodCandidates(owner, name).flatMap { virtualMethods =>
+        staticMethodCandidates(owner, name, Set.empty).map(staticMethods => (virtualMethods ::: staticMethods).distinctBy(_.ref))
+      }
+    }
+  }
+
+  /** Returns public virtual graph representatives together with visible synthetic bridges. */
+  private def virtualMethodCandidates(owner: ClassDesc, name: String)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] = {
+    flix.javaTypeProvider.virtualMethods(owner).flatMap { virtualMethods =>
+      bridgeMethods(owner, name, Set.empty, Set.empty).map { bridges =>
+        val methods = virtualMethods.filter { method =>
+          method.ref.name == name && Modifier.isPublic(method.modifiers) && !Modifier.isStatic(method.modifiers)
+        }
+        val bridgeDescriptors = bridges.map(method => method.ref.name -> method.ref.descriptor).toSet
+        val visibleMethods = methods.filterNot(method => bridgeDescriptors.contains(method.ref.name -> method.ref.descriptor))
+        (visibleMethods ::: bridges).distinctBy(_.ref)
+      }
+    }
+  }
+
+  /** Returns visible public bridge methods from the class and interface hierarchy. */
+  private def bridgeMethods(owner: ClassDesc,
+                            name: String,
+                            hidden: Set[(String, List[ClassDesc])],
+                            visited: Set[ClassDesc])(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] = {
+    if (visited.contains(owner)) {
+      Ok(Nil)
+    } else {
+      flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
+        val declarations = clazz.declaredMethods.filter { method =>
+          !Modifier.isStatic(method.modifiers) && !Modifier.isPrivate(method.modifiers)
+        }
+        val bridges = declarations.filter { method =>
+          method.ref.name == name && Modifier.isPublic(method.modifiers) && isBridge(method) && !hidden.contains(methodKey(method))
+        }
+        val nextHidden = hidden ++ declarations.map(methodKey)
+        val parents = clazz.superClass.map(_.erasure).toList ::: clazz.interfaces.map(_.erasure)
+        Result.traverse(parents)(parent => bridgeMethods(parent, name, nextHidden, visited + owner))
+          .map(inherited => bridges ::: inherited.flatten)
+      }
+    }
+  }
+
+  /** Returns public static methods, applying Java superclass inheritance and hiding. */
+  private def staticMethodCandidates(owner: ClassDesc,
+                                     name: String,
+                                     visited: Set[ClassDesc])(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] = {
+    if (visited.contains(owner)) {
+      Ok(Nil)
+    } else {
+      flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
+        val namedStaticMethods = clazz.declaredMethods.filter { method =>
+          method.ref.name == name && Modifier.isStatic(method.modifiers)
+        }
+        val declared = namedStaticMethods.filter(method => Modifier.isPublic(method.modifiers))
+        if (Modifier.isInterface(clazz.modifiers)) {
+          // Static interface methods are not inherited from superinterfaces.
+          Ok(declared)
+        } else clazz.superClass match {
+          case None => Ok(declared)
+          case Some(parent) =>
+            staticMethodCandidates(parent.erasure, name, visited + owner).map { inherited =>
+              val hidden = namedStaticMethods.map(methodKey).toSet
+              declared ::: inherited.filterNot(method => hidden.contains(methodKey(method)))
+            }
+        }
+      }
+    }
+  }
+
+  /** Replaces methods on non-public declaring classes with accessible interface or superclass declarations. */
+  private def normalizeAccessibleMethods(methods: List[JavaMethod])(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
+    Result.traverse(methods)(accessibleMethod).map(_.flatten.distinctBy(_.ref))
+
+  /** Returns the accessible declaration corresponding to `method`, if one exists. */
+  private def accessibleMethod(method: JavaMethod)(implicit flix: Flix): Result[Option[JavaMethod], JavaLookupError] =
+    flix.javaTypeProvider.lookupClass(method.ref.owner).flatMap { owner =>
+      if (!Modifier.isPublic(method.modifiers)) {
+        Ok(None)
+      } else if (Modifier.isPublic(owner.modifiers)) {
+        Ok(Some(method))
+      } else {
+        findAccessibleInterfaceMethod(method.ref.owner, method, Set.empty).flatMap {
+          case result@Some(_) => Ok(result)
+          case None => findAccessibleSuperclassMethod(method.ref.owner, method, Set.empty)
+        }
+      }
+    }
+
+  /** Finds the first matching declaration in the public interface nest of `owner`. */
+  private def findAccessibleInterfaceMethod(owner: ClassDesc,
+                                            method: JavaMethod,
+                                            visited: Set[ClassDesc])(implicit flix: Flix): Result[Option[JavaMethod], JavaLookupError] = {
+    if (visited.contains(owner)) {
+      Ok(None)
+    } else {
+      flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
+        findAccessibleInterfaceMethodIn(clazz.interfaces.map(_.erasure), method, visited + owner).flatMap {
+          case result@Some(_) => Ok(result)
+          case None => clazz.superClass match {
+            case None => Ok(None)
+            case Some(parent) => findAccessibleInterfaceMethod(parent.erasure, method, visited + owner)
+          }
+        }
+      }
+    }
+  }
+
+  /** Finds the first exact method in the public interfaces in declaration order. */
+  private def findAccessibleInterfaceMethodIn(owners: List[ClassDesc],
+                                              method: JavaMethod,
+                                              visited: Set[ClassDesc])(implicit flix: Flix): Result[Option[JavaMethod], JavaLookupError] = owners match {
+    case Nil => Ok(None)
+    case owner :: rest if visited.contains(owner) => findAccessibleInterfaceMethodIn(rest, method, visited)
+    case owner :: rest =>
+      flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
+        if (!Modifier.isPublic(clazz.modifiers)) {
+          findAccessibleInterfaceMethodIn(rest, method, visited)
+        } else {
+          clazz.declaredMethods.find(candidate => Modifier.isPublic(candidate.modifiers) && sameErasedSignature(candidate, method)) match {
+            case result@Some(_) => Ok(result)
+            case None =>
+              findAccessibleInterfaceMethodIn(clazz.interfaces.map(_.erasure), method, visited + owner).flatMap {
+                case result@Some(_) => Ok(result)
+                case None => findAccessibleInterfaceMethodIn(rest, method, visited + owner)
+              }
+          }
+        }
+      }
+  }
+
+  /** Finds the matching method exposed by the first public superclass of `owner`. */
+  private def findAccessibleSuperclassMethod(owner: ClassDesc,
+                                             method: JavaMethod,
+                                             visited: Set[ClassDesc])(implicit flix: Flix): Result[Option[JavaMethod], JavaLookupError] = {
+    if (visited.contains(owner)) {
+      Ok(None)
+    } else {
+      flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
+        clazz.superClass match {
+          case None => Ok(None)
+          case Some(parent) =>
+            flix.javaTypeProvider.lookupClass(parent.erasure).flatMap { parentClass =>
+              if (Modifier.isPublic(parentClass.modifiers)) {
+                rawMethodCandidates(parent.erasure, method.ref.name)
+                  .map(_.find(candidate => sameErasedSignature(candidate, method)))
+              } else {
+                findAccessibleSuperclassMethod(parent.erasure, method, visited + owner)
+              }
+            }
+        }
+      }
+    }
+  }
 
   /**
     * Selects the best candidates according to Commons Lang's transformation costs.
@@ -463,6 +648,15 @@ object JavaMemberResolver {
 
   /** Returns the erased parameter descriptors that participate in overload resolution. */
   private def erasedParameters(method: JavaMethod): List[ClassDesc] = method.ref.descriptor.parameterList().asScala.toList
+
+  /** Returns the erased signature used by Java method overriding and hiding. */
+  private def methodKey(method: JavaMethod): (String, List[ClassDesc]) = method.ref.name -> erasedParameters(method)
+
+  /** Returns whether the two methods have the same erased name and parameter types. */
+  private def sameErasedSignature(method1: JavaMethod, method2: JavaMethod): Boolean = methodKey(method1) == methodKey(method2)
+
+  /** Returns whether `method` was generated as a bridge method. */
+  private def isBridge(method: JavaMethod): Boolean = (method.modifiers & BridgeModifier) != 0
 
   /** Returns all typed argument descriptors, or `None` if any argument is `Null`. */
   private def sequenceArguments(arguments: List[JavaArgument]): Option[List[ClassDesc]] = {

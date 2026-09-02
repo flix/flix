@@ -151,4 +151,141 @@ class TestJavaMemberResolver extends AnyFunSuite {
     } finally flix.javaTypeProvider.close()
   }
 
+  test("methods.SelectsExactInstanceOverload") {
+    implicit val flix: Flix = new Flix
+    try {
+      val owner = ClassDesc.of("java.util.ArrayList")
+      JavaMemberResolver.methods(owner, "remove", List(Typed(CD_int)), static = false) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(owner))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("(I)Ljava/lang/Object;")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.PreservesSyntheticBridge") {
+    implicit val flix: Flix = new Flix
+    try {
+      val owner = ClassDesc.of("dev.flix.test.TestJavaMethodResolution$Bridge")
+      JavaMemberResolver.methods(owner, "apply", List(Typed(CD_Object)), static = false) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(owner))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)Ljava/lang/Object;")))
+        case Err(error) => fail(error.toString)
+      }
+
+      val accessibleBridge = ClassDesc.of("dev.flix.test.TestJavaMethodResolution$Accessible")
+      JavaMemberResolver.methods(accessibleBridge, "apply", List(Typed(CD_Object)), static = false) match {
+        case Ok(methods) => assert(methods.map(_.ref.owner) == List(accessibleBridge))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.NormalizesNonPublicDeclaringOwner") {
+    implicit val flix: Flix = new Flix
+    try {
+      val owner = ClassDesc.of("dev.flix.test.PackagePrivateFunction")
+      val function = ClassDesc.of("java.util.function.Function")
+      JavaMemberResolver.methods(owner, "apply", List(Typed(CD_String)), static = false) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(function))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)Ljava/lang/Object;")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.FallsBackToObject") {
+    implicit val flix: Flix = new Flix
+    try {
+      val owner = ClassDesc.of("java.util.List")
+      JavaMemberResolver.methods(owner, "toString", Nil, static = false) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(CD_Object))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("()Ljava/lang/String;")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.ResolvesArrayObjectMethod") {
+    implicit val flix: Flix = new Flix
+    try {
+      val owner = CD_String.arrayType()
+      JavaMemberResolver.methods(owner, "toString", Nil, static = false) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(CD_Object))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("()Ljava/lang/String;")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.ResolvesStaticHierarchy") {
+    implicit val flix: Flix = new Flix
+    try {
+      val base = ClassDesc.of("dev.flix.test.TestJavaMethodResolution$StaticBase")
+      val child = ClassDesc.of("dev.flix.test.TestJavaMethodResolution$StaticChild")
+      val childInterface = ClassDesc.of("dev.flix.test.TestJavaMethodResolution$StaticChildInterface")
+
+      JavaMemberResolver.methods(child, "inherited", List(Typed(CD_Integer)), static = true) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(base))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("(Ljava/lang/Number;)Ljava/lang/Object;")))
+        case Err(error) => fail(error.toString)
+      }
+
+      JavaMemberResolver.methods(child, "hidden", List(Typed(CD_Object)), static = true) match {
+        case Ok(methods) => assert(methods.map(_.ref.owner) == List(child))
+        case Err(error) => fail(error.toString)
+      }
+
+      JavaMemberResolver.methods(child, "overloaded", List(Typed(CD_String)), static = true) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(child))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)Ljava/lang/String;")))
+        case Err(error) => fail(error.toString)
+      }
+
+      JavaMemberResolver.methods(childInterface, "notInherited", List(Typed(CD_Object)), static = true) match {
+        case Ok(methods) => assert(methods.isEmpty)
+        case Err(error) => fail(error.toString)
+      }
+
+      JavaMemberResolver.methods(child, "exactStatic", List(Typed(ClassDesc.of("java.lang.StringBuilder"))), static = false) match {
+        case Ok(methods) => assert(methods.isEmpty)
+        case Err(error) => fail(error.toString)
+      }
+
+      JavaMemberResolver.methods(child, "exactInstance", List(Typed(ClassDesc.of("java.lang.StringBuffer"))), static = true) match {
+        case Ok(methods) => assert(methods.isEmpty)
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.SelectsExpandedVarArgsMatch") {
+    implicit val flix: Flix = new Flix
+    try {
+      val owner = ClassDesc.of("java.util.Arrays")
+      val arguments = List(Typed(CD_String), Typed(CD_String))
+      JavaMemberResolver.methods(owner, "asList", arguments, static = true) match {
+        case Ok(methods) =>
+          assert(methods.map(_.ref.owner) == List(owner))
+          assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/util/List;")))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("methods.ReportsMissingClass") {
+    implicit val flix: Flix = new Flix
+    try {
+      val missing = ClassDesc.of("dev.flix.prototype.DoesNotExist")
+      assert(JavaMemberResolver.methods(missing, "method", Nil, static = false) == Err(MissingClass(missing)))
+    } finally flix.javaTypeProvider.close()
+  }
+
 }
