@@ -21,9 +21,9 @@ import java.lang.constant.{ClassDesc, MethodTypeDesc}
 
 object JMethod {
 
-  /** Returns the [[JMethod]] of the given class-file method metadata, whose owner is an interface iff `isInterface`. */
-  def of(method: JavaMethod, isInterface: Boolean): JMethod =
-    JMethod(method.ref.owner, method.ref.name, method.ref.descriptor, isInterface)
+  /** Returns the [[JMethod]] of the given class-file method metadata. */
+  def of(method: JavaMethod): JMethod =
+    JMethod(method.ref.owner, method.ref.name, method.ref.descriptor, method.ref.isInterface)
 
 }
 

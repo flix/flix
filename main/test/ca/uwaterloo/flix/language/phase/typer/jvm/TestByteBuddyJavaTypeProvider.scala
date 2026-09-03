@@ -215,4 +215,29 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
     } finally provider.close()
   }
 
+  test("lookupClass.MethodRef.IsInterface") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      def sizeIsInterface(desc: ClassDesc) =
+        provider.lookupClass(desc).map(_.declaredMethods.find(_.ref.name == "size").map(_.ref.isInterface))
+
+      assert(sizeIsInterface(ClassDesc.of("java.util.List")) == Ok(Some(true)))
+      assert(sizeIsInterface(ClassDesc.of("java.util.ArrayList")) == Ok(Some(false)))
+    } finally provider.close()
+  }
+
+  test("virtualMethods.MethodRef.IsInterfaceOfDeclaringType") {
+    val provider = ByteBuddyJavaTypeProvider.platform()
+    try {
+      // `ArrayList` inherits the default method `stream` from the interface `Collection`.
+      provider.virtualMethods(ClassDesc.of("java.util.ArrayList")) match {
+        case Ok(methods) =>
+          val stream = methods.find(m => m.ref.name == "stream" && m.ref.descriptor.parameterCount() == 0)
+          assert(stream.map(_.ref.owner) == Some(ClassDesc.of("java.util.Collection")))
+          assert(stream.map(_.ref.isInterface) == Some(true))
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
 }
