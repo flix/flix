@@ -848,8 +848,8 @@ object Safety {
       val expectedMethods = JavaMetadata.overridableMethods(clazz, loc).map {
         case method =>
           val name = method.ref.name
-          val types = method.parameterTypes.map(JavaTypes.flixTypeOf(_, substMap, loc))
-          val retTpe = JavaTypes.flixTypeOf(method.returnType, substMap, loc)
+          val types = method.parameterTypes.map(JavaTypes.flixTypeOf(_, substMap, loc)(Type.mkObject(loc)))
+          val retTpe = JavaTypes.flixTypeOf(method.returnType, substMap, loc)(Type.mkObject(loc))
           (method, name, types, retTpe)
       }.sortBy { case (_, name, types, _) => (name, types.length) }
 
