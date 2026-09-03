@@ -27,11 +27,11 @@ import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Den
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaBoxing, JavaMemberResolver}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
-import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import java.lang.constant.ClassDesc
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -431,7 +431,7 @@ object Lowering {
 
     case TypedAst.Expr.InstanceOf(exp, clazz, loc) =>
       val e = lowerExp(exp)
-      if (isPrimType(e.tpe)) {
+      if (JavaBoxing.isPrimitive(e.tpe)) {
         // If it's a primitive type, evaluate the expression but return false
         MonoAst.Expr.Stm(List(e), MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
       } else {
@@ -516,8 +516,8 @@ object Lowering {
       val javaParamTypes = method.ref.descriptor.parameterList().asScala.toList
       val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
       val javaReturnType = method.ref.descriptor.returnType()
-      val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
-      val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
+      val needsUnbox = JavaBoxing.isPrimitive(t) && !javaReturnType.isPrimitive
+      val invokeType = if (needsUnbox) JavaBoxing.boxedType(t, loc) else t
       val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(mkJMethod(method, loc)), e :: boxedArgs, invokeType, eff, loc)
       unboxIfNecessary(invoke, t, javaReturnType)
 
@@ -538,8 +538,8 @@ object Lowering {
       val javaParamTypes = method.ref.descriptor.parameterList().asScala.toList
       val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
       val javaReturnType = method.ref.descriptor.returnType()
-      val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
-      val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
+      val needsUnbox = JavaBoxing.isPrimitive(t) && !javaReturnType.isPrimitive
+      val invokeType = if (needsUnbox) JavaBoxing.boxedType(t, loc) else t
       val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(mkJMethod(method, loc)), boxedArgs, invokeType, eff, loc)
       unboxIfNecessary(invoke, t, javaReturnType)
 
@@ -985,35 +985,11 @@ object Lowering {
       case (Type.Int64, Type.Int64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
       case (Type.Float32, Type.Float32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
       case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-      case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) if !JavaBoxing.isPrimitive(x) && !JavaBoxing.isPrimitive(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
       case (x, y) =>
         val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
         MonoAst.Expr.Stm(List(exp), crash, tpe, eff, loc)
     }
-  }
-
-  /**
-    * Returns `true` if `tpe` is a primitive type.
-    *
-    * N.B.: `tpe` must be normalized.
-    */
-  private def isPrimType(tpe: Type): Boolean = tpe match {
-    case Type.Char => true
-    case Type.Bool => true
-    case Type.Int8 => true
-    case Type.Int16 => true
-    case Type.Int32 => true
-    case Type.Int64 => true
-    case Type.Float32 => true
-    case Type.Float64 => true
-    case Type.Cst(_, _) => false
-    case Type.Apply(_, _, _) => false
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
   }
 
   /**
@@ -1041,67 +1017,6 @@ object Lowering {
   }
 
   /**
-    * Returns the `valueOf` boxing method for a Flix primitive type.
-    * This is the same mechanism javac uses to implement autoboxing.
-    */
-  private def javaBoxMethod(tpe: Type): JMethod = {
-    import java.lang.constant.ConstantDescs.*
-    def valueOf(box: ClassDesc, prim: ClassDesc): JMethod =
-      JMethod(box, "valueOf", MethodTypeDesc.of(box, prim), isInterface = false)
-    tpe match {
-      case Type.Bool => valueOf(CD_Boolean, CD_boolean)
-      case Type.Char => valueOf(CD_Character, CD_char)
-      case Type.Int8 => valueOf(CD_Byte, CD_byte)
-      case Type.Int16 => valueOf(CD_Short, CD_short)
-      case Type.Int32 => valueOf(CD_Integer, CD_int)
-      case Type.Int64 => valueOf(CD_Long, CD_long)
-      case Type.Float32 => valueOf(CD_Float, CD_float)
-      case Type.Float64 => valueOf(CD_Double, CD_double)
-      case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
-    }
-  }
-
-  /**
-    * Returns the unboxing method (e.g., `intValue`) for a Flix primitive type.
-    * This is the same mechanism javac uses to implement auto-unboxing.
-    */
-  private def javaUnboxMethod(tpe: Type): JMethod = {
-    import java.lang.constant.ConstantDescs.*
-    def unbox(box: ClassDesc, name: String, prim: ClassDesc): JMethod =
-      JMethod(box, name, MethodTypeDesc.of(prim), isInterface = false)
-    tpe match {
-      case Type.Bool => unbox(CD_Boolean, "booleanValue", CD_boolean)
-      case Type.Char => unbox(CD_Character, "charValue", CD_char)
-      case Type.Int8 => unbox(CD_Byte, "byteValue", CD_byte)
-      case Type.Int16 => unbox(CD_Short, "shortValue", CD_short)
-      case Type.Int32 => unbox(CD_Integer, "intValue", CD_int)
-      case Type.Int64 => unbox(CD_Long, "longValue", CD_long)
-      case Type.Float32 => unbox(CD_Float, "floatValue", CD_float)
-      case Type.Float64 => unbox(CD_Double, "doubleValue", CD_double)
-      case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
-    }
-  }
-
-  /**
-    * Returns the Flix Type for the Java wrapper class of a primitive type.
-    * E.g., `Bool` -> `Native(java.lang.Boolean)`, `Int32` -> `Native(java.lang.Integer)`.
-    */
-  private def boxedWrapperType(tpe: Type, loc: SourceLocation): Type = {
-    import java.lang.constant.ConstantDescs.*
-    tpe match {
-      case Type.Bool => Type.mkNative(CD_Boolean, 0, loc)
-      case Type.Char => Type.mkNative(CD_Character, 0, loc)
-      case Type.Int8 => Type.mkNative(CD_Byte, 0, loc)
-      case Type.Int16 => Type.mkNative(CD_Short, 0, loc)
-      case Type.Int32 => Type.mkNative(CD_Integer, 0, loc)
-      case Type.Int64 => Type.mkNative(CD_Long, 0, loc)
-      case Type.Float32 => Type.mkNative(CD_Float, 0, loc)
-      case Type.Float64 => Type.mkNative(CD_Double, 0, loc)
-      case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
-    }
-  }
-
-  /**
     * Returns the [[JMethod]] of `method`.
     *
     * Whether the owner of `method` is an interface is read from its class metadata,
@@ -1122,11 +1037,11 @@ object Lowering {
     */
   private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: ClassDesc): MonoAst.Expr = {
     val actualArgType = arg.tpe
-    if (isPrimType(actualArgType) && !expectedParamType.isPrimitive) {
+    if (JavaBoxing.isPrimitive(actualArgType) && !expectedParamType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(
-        AtomicOp.InvokeStaticMethod(javaBoxMethod(actualArgType)),
+        AtomicOp.InvokeStaticMethod(JavaBoxing.boxMethod(actualArgType)),
         List(arg),
-        boxedWrapperType(actualArgType, arg.loc),
+        JavaBoxing.boxedType(actualArgType, arg.loc),
         arg.eff,
         arg.loc.asSynthetic
       )
@@ -1139,9 +1054,9 @@ object Lowering {
     * `Int32` but the actual Java return type is `Object` (erased), so the result is unboxed via `intValue()`.
     */
   private def unboxIfNecessary(expr: MonoAst.Expr, expectedReturnType: Type, actualReturnType: ClassDesc): MonoAst.Expr = {
-    if (isPrimType(expectedReturnType) && !actualReturnType.isPrimitive) {
+    if (JavaBoxing.isPrimitive(expectedReturnType) && !actualReturnType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(
-        AtomicOp.InvokeMethod(javaUnboxMethod(expectedReturnType)),
+        AtomicOp.InvokeMethod(JavaBoxing.unboxMethod(expectedReturnType)),
         List(expr),
         expectedReturnType,
         expr.eff,
