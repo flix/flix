@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaMemberResolver, JavaTypes}
 import ca.uwaterloo.flix.util.{ClassDescs, Formatter, Grammar}
 
 import java.lang.constant.ClassDesc
@@ -321,7 +321,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      val availableFields = Type.descFromFlixType(tpe).toList.flatMap(desc => JavaMemberResolver.fields(desc).toOption.getOrElse(Nil))
+      val availableFields = JavaTypes.descriptorOf(tpe).toList.flatMap(desc => JavaMemberResolver.fields(desc).toOption.getOrElse(Nil))
       val available = if (availableFields.isEmpty) "" else
         s"""
            |Available fields:
@@ -1113,7 +1113,7 @@ object TypeError {
     * Returns a formatted string representation of a Java constructor.
     */
   private def formatConstructor(clazz: ClassDesc, c: JavaMethod): String = {
-    val params = c.ref.descriptor.parameterList().asScala.map(formatJavaType).mkString(", ")
+    val params = c.ref.descriptor.parameterList().asScala.map(JavaTypes.formatType).mkString(", ")
     s"${ClassDescs.simpleNameOf(clazz)}($params)"
   }
 
@@ -1128,17 +1128,7 @@ object TypeError {
     * Returns a formatted string representation of a Java field.
     */
   private def formatField(f: JavaField): String = {
-    s"${f.ref.name}: ${formatJavaType(f.ref.descriptor)}"
-  }
-
-  /**
-    * Returns the Flix-style string representation of the Java type `desc`.
-    */
-  private def formatJavaType(desc: ClassDesc): String = {
-    if (desc.isPrimitive || desc.isArray)
-      Type.getFlixType(desc, 0).toString
-    else
-      ClassDescs.binaryNameOf(desc)
+    s"${f.ref.name}: ${JavaTypes.formatType(f.ref.descriptor)}"
   }
 
   /**

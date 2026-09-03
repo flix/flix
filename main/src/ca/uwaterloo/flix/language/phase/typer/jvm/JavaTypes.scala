@@ -19,11 +19,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.jvm.{JavaClass, JavaMethod, JavaType, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import java.lang.constant.ClassDesc
-import java.lang.constant.ConstantDescs.{CD_Object, CD_Throwable}
+import java.lang.constant.ConstantDescs.*
 
 /**
   * Builds Flix types from Java class descriptors using the class-file metadata of the Java type provider.
@@ -55,7 +56,70 @@ object JavaTypes {
     * type parameters of the class (or of the element class of an array).
     */
   def flixTypeOf(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Type =
-    Type.getFlixType(desc, typeParameterCount(elementTypeOf(desc), loc))
+    flixTypeOf(desc, typeParameterCount(elementTypeOf(desc), loc))
+
+  /**
+    * Returns the Flix type of the Java class `desc` whose element class has `arity` type parameters.
+    *
+    * Arrays are returned with the [[Type.IO]] region. Since an array class has no type parameters
+    * of its own, `arity` is the number of type parameters of its (innermost) element class.
+    *
+    * Returns a [[TypeConstructor.Native]] of `desc` if nothing more specific is found. The `arity`
+    * is only evaluated in that case, so callers may compute it lazily.
+    */
+  def flixTypeOf(desc: ClassDesc, arity: => Int): Type = desc match {
+    case CD_boolean => Type.Bool
+    case CD_byte => Type.Int8
+    case CD_short => Type.Int16
+    case CD_int => Type.Int32
+    case CD_long => Type.Int64
+    case CD_char => Type.Char
+    case CD_float => Type.Float32
+    case CD_double => Type.Float64
+    case CD_void => Type.Unit
+    case CD_String => Type.Str
+    case JavaClasses.BigDecimal => Type.BigDecimal
+    case JavaClasses.BigInteger => Type.BigInt
+    case JavaClasses.Regex => Type.Regex
+    case _ if desc.isArray =>
+      val elmType = flixTypeOf(desc.componentType(), arity)
+      Type.mkArray(elmType, Type.IO, SourceLocation.Unknown)
+    case _ => Type.mkNative(desc, arity, SourceLocation.Unknown)
+  }
+
+  /**
+    * Returns the descriptor of the Java class of `tpe`, if it exists.
+    *
+    * Almost the inverse of `flixTypeOf(desc, arity)`, but arrays and `Unit` return `None`.
+    */
+  def descriptorOf(tpe: Type): Option[ClassDesc] = tpe match {
+    case Type.Bool => Some(CD_boolean)
+    case Type.Int8 => Some(CD_byte)
+    case Type.Int16 => Some(CD_short)
+    case Type.Int32 => Some(CD_int)
+    case Type.Int64 => Some(CD_long)
+    case Type.Char => Some(CD_char)
+    case Type.Float32 => Some(CD_float)
+    case Type.Float64 => Some(CD_double)
+    case Type.Cst(TypeConstructor.BigDecimal, _) => Some(JavaClasses.BigDecimal)
+    case Type.Cst(TypeConstructor.BigInt, _) => Some(JavaClasses.BigInteger)
+    case Type.Cst(TypeConstructor.Str, _) => Some(CD_String)
+    case Type.Cst(TypeConstructor.Regex, _) => Some(JavaClasses.Regex)
+    case Type.Cst(TypeConstructor.Native(desc, _), _) => Some(desc)
+    case _ =>
+      // Peel off type applications (e.g., ArrayList[String]) and check the base type.
+      tpe.baseType match {
+        case Type.Cst(TypeConstructor.Native(desc, _), _) => Some(desc)
+        case _ => None
+      }
+  }
+
+  /**
+    * Returns the string representation of the Java type `desc` used in error messages: a primitive
+    * or array type is shown as its Flix type and a class by its binary name.
+    */
+  def formatType(desc: ClassDesc): String =
+    if (desc.isPrimitive || desc.isArray) flixTypeOf(desc, 0).toString else ClassDescs.binaryNameOf(desc)
 
   /**
     * Returns the fully-applied Flix type of the Java class `desc`, with `Object` type arguments for a generic class.

@@ -21,12 +21,11 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.ast.shared.VarText.Absent
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
-import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.lang.constant.ClassDesc
-import java.lang.constant.ConstantDescs.*
+import java.lang.constant.ConstantDescs.CD_Object
 import java.util.Objects
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -1305,62 +1304,6 @@ object Type {
     case Type.JvmToType(_, _) => false
     case Type.JvmToEff(_, _) => false
     case Type.UnresolvedJvmType(_, _) => false
-  }
-
-  /**
-    * Returns the Flix Type of the Java class `desc` whose element class has `arity` type parameters.
-    *
-    * Arrays are returned with the [[Type.IO]] region. Since an array class has no type parameters
-    * of its own, `arity` is the number of type parameters of its (innermost) element class.
-    *
-    * Returns a [[TypeConstructor.Native]] of `desc` if nothing more specific is found. The `arity`
-    * is only evaluated in that case, so callers may compute it lazily.
-    */
-  def getFlixType(desc: ClassDesc, arity: => Int): Type = desc match {
-    case CD_boolean => Type.Bool
-    case CD_byte => Type.Int8
-    case CD_short => Type.Int16
-    case CD_int => Type.Int32
-    case CD_long => Type.Int64
-    case CD_char => Type.Char
-    case CD_float => Type.Float32
-    case CD_double => Type.Float64
-    case CD_void => Type.Unit
-    case CD_String => Type.Str
-    case JavaClasses.BigDecimal => Type.BigDecimal
-    case JavaClasses.BigInteger => Type.BigInt
-    case JavaClasses.Regex => Type.Regex
-    case _ if desc.isArray =>
-      val elmType = getFlixType(desc.componentType(), arity)
-      Type.mkArray(elmType, Type.IO, SourceLocation.Unknown)
-    case _ => Type.mkNative(desc, arity, SourceLocation.Unknown)
-  }
-
-  /**
-    * Returns the descriptor of the Java class of `tpe`, if it exists.
-    *
-    * Almost the inverse function of [[getFlixType]], but arrays and unit returns None.
-    */
-  def descFromFlixType(tpe: Type): Option[ClassDesc] = tpe match {
-    case Type.Bool => Some(CD_boolean)
-    case Type.Int8 => Some(CD_byte)
-    case Type.Int16 => Some(CD_short)
-    case Type.Int32 => Some(CD_int)
-    case Type.Int64 => Some(CD_long)
-    case Type.Char => Some(CD_char)
-    case Type.Float32 => Some(CD_float)
-    case Type.Float64 => Some(CD_double)
-    case Type.Cst(TypeConstructor.BigDecimal, _) => Some(JavaClasses.BigDecimal)
-    case Type.Cst(TypeConstructor.BigInt, _) => Some(JavaClasses.BigInteger)
-    case Type.Cst(TypeConstructor.Str, _) => Some(CD_String)
-    case Type.Cst(TypeConstructor.Regex, _) => Some(JavaClasses.Regex)
-    case Type.Cst(TypeConstructor.Native(desc, _), _) => Some(desc)
-    case _ =>
-      // Peel off type applications (e.g., ArrayList[String]) and check the base type.
-      tpe.baseType match {
-        case Type.Cst(TypeConstructor.Native(desc, _), _) => Some(desc)
-        case _ => None
-      }
   }
 
   /**

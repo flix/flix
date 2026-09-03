@@ -27,7 +27,6 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 
-import java.lang.constant.ClassDesc
 
 /**
   * This phase generates a list of type constraints, which include
@@ -926,7 +925,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = mkConstructorType(clazz, loc)
+        val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -939,7 +938,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = mkConstructorType(clazz, loc)
+        val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -999,7 +998,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.PutField(field, clazz, exp1, exp2, loc) =>
-        val fieldType = getJavaFieldType(field, loc)
+        val fieldType = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc)
         val classType = JavaTypes.instantiateWithObjectArgs(clazz, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
@@ -1011,7 +1010,7 @@ object ConstraintGen {
 
       case Expr.GetStaticField(field, tvar, loc) =>
         val isFinal = field.isFinal
-        val fieldType = getJavaFieldType(field, loc)
+        val fieldType = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc)
         val fieldReadEff = if (isFinal) Type.Pure else Type.IO
         c.unifyType(tvar, fieldType, loc)
         val resTpe = tvar
@@ -1020,7 +1019,7 @@ object ConstraintGen {
 
       case Expr.PutStaticField(field, exp, loc) =>
         val (valueTyp, eff) = visitExp(exp)
-        c.expectType(expected = getJavaFieldType(field, loc), actual = valueTyp, exp.loc)
+        c.expectType(expected = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
@@ -1273,10 +1272,6 @@ object ConstraintGen {
       (patTpe, tpe, eff)
   }
 
-  /** Returns the Flix type of the erased descriptor of `field`. */
-  private def getJavaFieldType(field: JavaField, loc: SourceLocation)(implicit flix: Flix): Type =
-    JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc)
-
   /**
     * Generates constraints for the given catch rule.
     *
@@ -1471,10 +1466,6 @@ object ConstraintGen {
     val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))
     (instantiatedFields.toMap, tpe, regionOpt)
   }
-
-  /** Builds the result type for a constructor call, using fresh type variables for generic classes. */
-  private def mkConstructorType(clazz: ClassDesc, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type =
-    JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
 
   /** Returns `true` if `exp` is a JVM interop invocation (constructor, method, or static method). */
   private def isJvmInvoke(exp: KindedAst.Expr): Boolean = exp match {
