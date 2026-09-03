@@ -870,10 +870,9 @@ object ResolutionError {
     *
     * @param name the class name.
     * @param ap   the anchor position.
-    * @param msg  the Java error message.
     * @param loc  the location of the class name.
     */
-  case class UndefinedJvmClass(name: Name.Ident, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmClass(name: Name.Ident, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1792
 
     def summary: String = s"Undefined Java class: '$name'."
@@ -883,8 +882,6 @@ object ResolutionError {
       s""">> Undefined Java class '${red(name.name)}'.
          |
          |${highlight(loc, "undefined class", fmt)}
-         |
-         |$msg
          |""".stripMargin
     }
   }
@@ -908,17 +905,16 @@ object ResolutionError {
          |
          |${highlight(loc, "unknown import", fmt)}
          |
-         |$msg
-         |$nestedClassHint
+         |$msg$nestedClassHint
          |""".stripMargin
     }
 
     /**
-      * Returns a formatted string with helpful suggestions.
+      * Returns a hint on nested class syntax on its own line, or the empty string if the hint does not apply.
       */
     private def nestedClassHint: String = {
       if (raw".*\.[A-Z].*\.[A-Z].*".r matches name)
-        s"Static nested classes should be specified using '$$', e.g. java.util.Locale$$Builder"
+        s"\nStatic nested classes should be specified using '$$', e.g. java.util.Locale$$Builder"
       else
         ""
     }
@@ -938,7 +934,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Undefined static field '${red(field.name)}' in class '${cyan(ClassDescs.binaryNameOf(clazz))}'.
+      s""">> Undefined static field '${red(field.name)}' in class '${magenta(ClassDescs.binaryNameOf(clazz))}'.
          |
          |${highlight(loc, "field not found", fmt)}
          |""".stripMargin

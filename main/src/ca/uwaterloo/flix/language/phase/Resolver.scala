@@ -1163,7 +1163,7 @@ object Resolver {
         case List(Resolution.JavaClass(clazz)) =>
           ResolvedAst.Expr.InstanceOf(e, clazz.desc, loc)
         case _ =>
-          val error = ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
+          val error = ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), loc)
           sctx.errors.add(error)
           ResolvedAst.Expr.Error(error)
       }
