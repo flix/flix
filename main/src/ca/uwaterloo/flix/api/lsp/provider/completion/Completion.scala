@@ -160,7 +160,7 @@ sealed trait Completion {
       )
 
     case Completion.LocalJavaClassCompletion(name, clazz, range, priority) =>
-      val description = Some(ClassDescs.binaryNameOf(clazz).replace('$', '.'))
+      val description = Some(ClassDescs.canonicalNameOf(clazz))
       val labelDetails = CompletionItemLabelDetails(None, description)
       CompletionItem(
         label = name,

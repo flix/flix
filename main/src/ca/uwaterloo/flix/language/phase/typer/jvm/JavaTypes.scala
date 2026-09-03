@@ -37,7 +37,7 @@ object JavaTypes {
   def lookupClass(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): JavaClass =
     flix.javaTypeProvider.lookupClass(desc) match {
       case Ok(clazz) => clazz
-      case Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${desc.displayName()}': $error", loc)
+      case Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${ClassDescs.binaryNameOf(desc)}': $error", loc)
     }
 
   /**
@@ -166,7 +166,7 @@ object JavaTypes {
     } else {
       JavaMemberResolver.isReferenceSubtype(sub, sup) match {
         case Ok(result) => result
-        case Err(error) => throw InternalCompilerException(s"Java subtype check failed for '${sub.displayName()} <: ${sup.displayName()}': $error", loc)
+        case Err(error) => throw InternalCompilerException(s"Java subtype check failed for '${ClassDescs.binaryNameOf(sub)} <: ${ClassDescs.binaryNameOf(sup)}': $error", loc)
       }
     }
   }
@@ -182,7 +182,7 @@ object JavaTypes {
   def overridableMethods(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): List[JavaMethod] =
     JavaMemberResolver.overridableMethods(desc) match {
       case Ok(methods) => methods
-      case Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${desc.displayName()}': $error", loc)
+      case Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${ClassDescs.binaryNameOf(desc)}': $error", loc)
     }
 
   /** Returns `true` if `method` is or overrides a method declared by `java.lang.Object`. */

@@ -822,7 +822,7 @@ object Resolver {
                 sctx.errors.add(error)
                 return ResolvedAst.Expr.Error(error)
               case Result.Err(error) =>
-                val query = s"${owner.displayName()}.${fieldName.name}"
+                val query = s"${ClassDescs.binaryNameOf(owner)}.${fieldName.name}"
                 throw InternalCompilerException(s"Java field lookup failed for '$query': $error", loc)
             }
           case _ =>
