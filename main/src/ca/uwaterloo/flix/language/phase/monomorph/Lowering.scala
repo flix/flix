@@ -518,7 +518,7 @@ object Lowering {
       val javaReturnType = method.ref.descriptor.returnType()
       val needsUnbox = JavaBoxing.isPrimitive(t) && !javaReturnType.isPrimitive
       val invokeType = if (needsUnbox) JavaBoxing.boxedType(t, loc) else t
-      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(mkJMethod(method, loc)), e :: boxedArgs, invokeType, eff, loc)
+      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(JMethod.of(method)), e :: boxedArgs, invokeType, eff, loc)
       unboxIfNecessary(invoke, t, javaReturnType)
 
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
@@ -526,7 +526,7 @@ object Lowering {
       val t = lowerType(tpe)
       (lctx.sym, lctx.thisRef) match {
         case (Some(sym), Some(thisRef)) =>
-          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, mkJMethod(method, loc)), thisRef :: es, t, eff, loc)
+          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, JMethod.of(method)), thisRef :: es, t, eff, loc)
         case _ =>
           throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
       }
@@ -540,7 +540,7 @@ object Lowering {
       val javaReturnType = method.ref.descriptor.returnType()
       val needsUnbox = JavaBoxing.isPrimitive(t) && !javaReturnType.isPrimitive
       val invokeType = if (needsUnbox) JavaBoxing.boxedType(t, loc) else t
-      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(mkJMethod(method, loc)), boxedArgs, invokeType, eff, loc)
+      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(JMethod.of(method)), boxedArgs, invokeType, eff, loc)
       unboxIfNecessary(invoke, t, javaReturnType)
 
     case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
@@ -687,7 +687,7 @@ object Lowering {
         case Some(m) => boxIfNecessary(e0, m.ref.descriptor.returnType())
         case None => e0
       }
-      MonoAst.JvmMethod(ann, ident, fs, e, e.tpe, eff, overridden.map(mkJMethod(_, loc)), loc)
+      MonoAst.JvmMethod(ann, ident, fs, e, e.tpe, eff, overridden.map(JMethod.of), loc)
   }
 
   /**
@@ -1014,20 +1014,6 @@ object Lowering {
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-  }
-
-  /**
-    * Returns the [[JMethod]] of `method`.
-    *
-    * Whether the owner of `method` is an interface is read from its class metadata,
-    * since the JVM distinguishes interface method invocations.
-    */
-  private def mkJMethod(method: JavaMethod, loc: SourceLocation)(implicit flix: Flix): JMethod = {
-    val owner = method.ref.owner
-    flix.javaTypeProvider.lookupClass(owner) match {
-      case Result.Ok(clazz) => JMethod.of(method, isInterface = clazz.isInterface)
-      case Result.Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${ClassDescs.binaryNameOf(owner)}': $error", loc)
-    }
   }
 
   /**

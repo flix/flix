@@ -17,5 +17,9 @@ package ca.uwaterloo.flix.language.ast.jvm
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 
-/** A nominal, descriptor-based reference to a Java method or constructor. */
-case class JavaMethodRef(owner: ClassDesc, name: String, descriptor: MethodTypeDesc)
+/**
+  * A nominal, descriptor-based reference to a Java method or constructor.
+  *
+  * `isInterface` holds whether `owner` is an interface; the JVM distinguishes interface method references.
+  */
+case class JavaMethodRef(owner: ClassDesc, name: String, descriptor: MethodTypeDesc, isInterface: Boolean)

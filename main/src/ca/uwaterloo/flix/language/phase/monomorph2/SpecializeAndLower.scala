@@ -514,14 +514,14 @@ private[monomorph2] object SpecializeAndLower {
       val e = visitExp(exp, env0, subst)
       val es = exps.map(visitExp(_, env0, subst))
       val t = visitType(tpe, subst)
-      mkJavaInvoke(method, List(e), es, t, subst(eff), loc, m => AtomicOp.InvokeMethod(mkJMethod(m, loc)))
+      mkJavaInvoke(method, List(e), es, t, subst(eff), loc, m => AtomicOp.InvokeMethod(JMethod.of(m)))
 
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       val t = visitType(tpe, subst)
       (lctx.sym, lctx.thisRef) match {
         case (Some(sym), Some(thisRef)) =>
-          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, mkJMethod(method, loc)), thisRef :: es, t, subst(eff), loc)
+          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, JMethod.of(method)), thisRef :: es, t, subst(eff), loc)
 
         case _ =>
           throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
@@ -530,7 +530,7 @@ private[monomorph2] object SpecializeAndLower {
     case TypedAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       val t = visitType(tpe, subst)
-      mkJavaInvoke(method, Nil, es, t, subst(eff), loc, m => AtomicOp.InvokeStaticMethod(mkJMethod(m, loc)))
+      mkJavaInvoke(method, Nil, es, t, subst(eff), loc, m => AtomicOp.InvokeStaticMethod(JMethod.of(m)))
 
     case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
@@ -579,7 +579,7 @@ private[monomorph2] object SpecializeAndLower {
             case Some(m) => boxIfNecessary(e0, m.ref.descriptor.returnType())
             case None => e0
           }
-          MonoAst.JvmMethod(mAnn, mIdent, fs, e, e.tpe, subst(mEff), overridden.map(mkJMethod(_, mLoc)), mLoc)
+          MonoAst.JvmMethod(mAnn, mIdent, fs, e, e.tpe, subst(mEff), overridden.map(JMethod.of), mLoc)
       }
       val t = visitType(tpe, subst)
       MonoAst.Expr.NewObject(freshSym, clazz, t, subst(eff), cs, ms, loc)
@@ -1108,20 +1108,6 @@ private[monomorph2] object SpecializeAndLower {
     case Type.Cst(TypeConstructor.Float32, _) => "JvmFloat32"
     case Type.Cst(TypeConstructor.Float64, _) => "JvmFloat64"
     case _                                    => "JvmObject"
-  }
-
-  /**
-    * Returns the [[JMethod]] of `method`.
-    *
-    * Whether the owner of `method` is an interface is read from its class metadata,
-    * since the JVM distinguishes interface method invocations.
-    */
-  private def mkJMethod(method: JavaMethod, loc: SourceLocation)(implicit flix: Flix): JMethod = {
-    val owner = method.ref.owner
-    flix.javaTypeProvider.lookupClass(owner) match {
-      case Result.Ok(clazz) => JMethod.of(method, isInterface = clazz.isInterface)
-      case Result.Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${ClassDescs.binaryNameOf(owner)}': $error", loc)
-    }
   }
 
   /**

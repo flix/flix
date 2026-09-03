@@ -234,10 +234,12 @@ final case class ByteBuddyJavaTypeProvider(
   /** Converts a Byte Buddy method description to its nominal class-file reference. */
   private def toMethodRef(method: MethodDescription): JavaMethodRef = {
     val defined = method.asDefined()
+    val owner = defined.getDeclaringType
     JavaMethodRef(
-      owner = toClassDesc(defined.getDeclaringType.asErasure()),
+      owner = toClassDesc(owner.asErasure()),
       name = defined.getInternalName,
-      descriptor = MethodTypeDesc.ofDescriptor(defined.getDescriptor)
+      descriptor = MethodTypeDesc.ofDescriptor(defined.getDescriptor),
+      isInterface = owner.isInterface
     )
   }
 
