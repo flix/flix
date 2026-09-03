@@ -1,10 +1,11 @@
 package build
 
 import mill.*
+import mill.javalib.NativeImageModule
 import mill.scalalib.*
 import mill.scalalib.Assembly.*
 
-object flix extends ScalaModule {
+object flix extends ScalaModule with NativeImageModule {
 
   def scalaVersion = "2.13.18"
 
@@ -115,6 +116,26 @@ object flix extends ScalaModule {
     def testSandboxWorkingDir = false
     def testParallelism = false
     def forkEnv = super.forkEnv() ++ Task.env
+  }
+
+  // ── Native Image ────────────────────────────────────────
+  //
+  // Run: GRAALVM_HOME=/path/to/graalvm ./mill flix.nativeImage
+  //
+  // Produces out/flix/nativeImage.dest/native-executable. Mill reads GRAALVM_HOME
+  // from the daemon's environment, so run `./mill shutdown` first if the daemon
+  // was started without it. Set NATIVE_IMAGE_QUICK=1 to build with -Ob (quick
+  // build mode) for faster iteration at the cost of run-time performance.
+  //
+  // The native-image configuration ships in
+  // main/src/resources/META-INF/native-image/dev.flix/flix, so Mill's automatic
+  // inclusion of every file under the resource roots is disabled.
+
+  def nativeIncludedResources = Seq.empty[String]
+
+  def nativeImageOptions = Task {
+    val quick = if (Task.env.contains("NATIVE_IMAGE_QUICK")) Seq("-Ob") else Seq.empty
+    super.nativeImageOptions() ++ quick
   }
 
   // ── Custom Tasks ────────────────────────────────────────
