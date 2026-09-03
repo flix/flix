@@ -34,7 +34,6 @@ import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
 
 import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.CD_Object
-import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.unused
 import scala.collection.immutable.SortedSet
@@ -1742,7 +1741,7 @@ object Resolver {
             val cs = constructors.map(visitJvmConstructor(_, superScp))
             val ms = methods.map(visitJvmMethod(_, superScp))
             val anonClassSym = Symbol.mkFreshAnonClassSym(loc);
-            val clazz = JClass(desc, Modifier.isInterface(JavaTypes.lookupClass(desc, loc).modifiers))
+            val clazz = JClass(desc, JavaTypes.lookupClass(desc, loc).isInterface)
             ResolvedAst.Expr.NewObject(anonClassSym, clazz, targs, cs, ms, loc)
           case None =>
             erased match {

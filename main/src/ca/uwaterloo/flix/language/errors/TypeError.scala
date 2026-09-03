@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 import ca.uwaterloo.flix.util.{ClassDescs, Formatter, Grammar}
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Modifier
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -1105,7 +1104,7 @@ object TypeError {
     */
   private def getConstructorsByArgs(clazz: ClassDesc)(implicit flix: Flix): List[JavaMethod] = {
     val constructors = flix.javaTypeProvider.lookupClass(clazz).toOption.toList.flatMap(_.declaredConstructors)
-    constructors.filter(c => Modifier.isPublic(c.modifiers)).sortBy(_.parameterTypes.length)
+    constructors.filter(c => c.isPublic).sortBy(_.parameterTypes.length)
   }
 
   /**
