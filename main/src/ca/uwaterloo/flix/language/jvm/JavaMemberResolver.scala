@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaType}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.Ok
 
@@ -114,24 +114,32 @@ object JavaMemberResolver {
     case (primitive, wrapper) => wrapper -> primitive
   }
 
+  /*
+   * Every member returned by `constructors`, `methods`, `field`, and `overridableMethods` has a readable
+   * signature (see `readableSignatures`). Consumers can therefore convert the signature to Flix types and
+   * check subtyping on those types without a metadata lookup failing.
+   */
+
   /** Returns `Ok` with every tied best public constructor, or `Err` if class metadata cannot be read. */
   def constructors(owner: ClassDesc, arguments: List[JavaArgument])(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
     flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
       val candidates = clazz.declaredConstructors.filter(_.isPublic)
       best(candidates, arguments).map(_.filterNot(usesUnsupportedUnboxing(arguments, _)))
-    }
+    }.flatMap(readableSignatures)
 
   /** Returns `Ok` with every tied best public method, including the existing `Object` fallback. */
   def methods(owner: ClassDesc, name: String, arguments: List[JavaArgument], static: Boolean)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
     resolveMethods(owner, name, arguments, static).flatMap {
       case result if result.nonEmpty || owner == CD_Object => Ok(result)
       case _ => resolveMethods(CD_Object, name, arguments, static)
-    }
+    }.flatMap(readableSignatures)
 
   /** Returns `Ok` with the selected public field, or `Err` if class metadata cannot be read. */
   def field(owner: ClassDesc, name: String, static: Boolean)(implicit flix: Flix): Result[Option[JavaField], JavaLookupError] = {
     if (owner.isClassOrInterface) {
-      findField(owner, name, Set.empty).map(_.filter(f => f.isStatic == static))
+      findField(owner, name, Set.empty).map(_.filter(f => f.isStatic == static)).flatMap { selected =>
+        Result.traverseOpt(selected)(field => readableTypes(List(field.fieldType)).map(_ => field))
+      }
     } else {
       Ok(None)
     }
@@ -154,7 +162,7 @@ object JavaMemberResolver {
     * method has type `(T) -> T` where `T` is the type parameter of `UnaryOperator`.
     */
   def overridableMethods(owner: ClassDesc)(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
-    virtualMethodsWhere(owner, isOverridable)
+    virtualMethodsWhere(owner, isOverridable).flatMap(readableSignatures)
 
   /**
     * Returns `Ok` with the public instance methods of `owner`, including inherited methods, or `Err` if class
@@ -699,6 +707,34 @@ object JavaMemberResolver {
       case None => findFieldIn(rest, name, visited)
     }
   }
+
+  /**
+    * Returns `Ok(methods)` if the signature of every method in `methods` can be read, or `Err` for the first
+    * class that cannot.
+    *
+    * The signature of a method can be read if every class that occurs in its parameter and return types, and
+    * every supertype of such a class, can be read. Consumers convert these types to Flix types and resolve
+    * members and subtyping on them, which would otherwise fail on a class that is missing from the class path.
+    */
+  private def readableSignatures(methods: List[JavaMethod])(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
+    readableTypes(methods.flatMap(method => method.returnType :: method.parameterTypes)).map(_ => methods)
+
+  /** Returns `Ok` if every class that occurs in `types`, and every supertype of such a class, can be read. */
+  private def readableTypes(types: List[JavaType])(implicit flix: Flix): Result[Unit, JavaLookupError] =
+    Result.traverse(types.flatMap(classesOf).distinct)(JavaHierarchy.supertypes).map(_ => ())
+
+  /** Returns the classes and interfaces that occur in `tpe`, with an array represented by its element class. */
+  private def classesOf(tpe: JavaType): List[ClassDesc] = tpe match {
+    case JavaType.GenericArray(component, _) => classesOf(component)
+    case JavaType.NonGeneric(erasure) => List(elementType(erasure)).filter(_.isClassOrInterface)
+    case JavaType.Parameterized(erasure, arguments) => elementType(erasure) :: arguments.flatMap(classesOf)
+    case JavaType.Variable(_, erasure) => List(elementType(erasure)).filter(_.isClassOrInterface)
+    case JavaType.Wildcard(upperBounds, lowerBounds, _) => (upperBounds ::: lowerBounds).flatMap(classesOf)
+  }
+
+  /** Returns the innermost element descriptor of an array, or `desc` itself for a non-array descriptor. */
+  private def elementType(desc: ClassDesc): ClassDesc =
+    if (desc.isArray) elementType(desc.componentType()) else desc
 
   /** Returns the erased parameter descriptors that participate in overload resolution. */
   private def erasedParameters(method: JavaMethod): List[ClassDesc] = method.ref.descriptor.parameterList().asScala.toList

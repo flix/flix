@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
-import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses, JavaLookupError, JavaMemberResolver, JavaMetadata}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses, JavaHierarchy, JavaLookupError, JavaMemberResolver, JavaMetadata}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
 
@@ -820,9 +820,15 @@ object Resolver {
                 val error = ResolutionError.UndefinedJvmStaticField(owner, fieldName, loc)
                 sctx.errors.add(error)
                 return ResolvedAst.Expr.Error(error)
-              case Result.Err(error) =>
+              case Result.Err(error: JavaLookupError.UnsupportedDescriptor) =>
                 val query = s"${ClassDescs.binaryNameOf(owner)}.${fieldName.name}"
                 throw InternalCompilerException(s"Java field lookup failed for '$query': $error", loc)
+              case Result.Err(error) =>
+                // The type of the field, or a supertype of it, cannot be read.
+                val query = s"the static field '${ClassDescs.binaryNameOf(owner)}.${fieldName.name}'"
+                val err = ResolutionError.UnreadableJvmClass(query, error, loc)
+                sctx.errors.add(err)
+                return ResolvedAst.Expr.Error(err)
             }
           case _ =>
           // Fallthrough to below.
@@ -1738,13 +1744,19 @@ object Resolver {
         val erased = UnkindedType.eraseAliases(t)
         getNativeDescFromType(erased) match {
           case Some(desc) =>
-            val targs = erased.typeArguments
-            val superScp = scp0.withSuperClass(Some(desc)).withSuperTargs(targs)
-            val cs = constructors.map(visitJvmConstructor(_, superScp))
-            val ms = methods.map(visitJvmMethod(_, superScp))
-            val anonClassSym = Symbol.mkFreshAnonClassSym(loc);
-            val clazz = JClass(desc, JavaMetadata.lookupClass(desc, loc).isInterface)
-            ResolvedAst.Expr.NewObject(anonClassSym, clazz, targs, cs, ms, loc)
+            checkOverridableMethods(desc, loc) match {
+              case None =>
+                val targs = erased.typeArguments
+                val superScp = scp0.withSuperClass(Some(desc)).withSuperTargs(targs)
+                val cs = constructors.map(visitJvmConstructor(_, superScp))
+                val ms = methods.map(visitJvmMethod(_, superScp))
+                val anonClassSym = Symbol.mkFreshAnonClassSym(loc);
+                val clazz = JClass(desc, JavaMetadata.lookupClass(desc, loc).isInterface)
+                ResolvedAst.Expr.NewObject(anonClassSym, clazz, targs, cs, ms, loc)
+              case Some(err) =>
+                sctx.errors.add(err)
+                ResolvedAst.Expr.Error(err)
+            }
           case None =>
             erased match {
               case _: UnkindedType.Error =>
@@ -3310,6 +3322,10 @@ object Resolver {
 
   /**
     * Returns the class metadata for the given `className`, read from its class file.
+    *
+    * Fails with [[UndefinedJvmImport]] if the class cannot be read, and with [[UnreadableJvmClass]] if one of its
+    * supertypes cannot be read. The latter lets the later phases resolve the members of the class and check its
+    * subtyping without a metadata lookup failing (see [[JavaMetadata]]).
     */
   private def lookupJvmClass(className: String, ns0: Name.NName, loc: SourceLocation)(implicit flix: Flix): Result[ca.uwaterloo.flix.language.ast.jvm.JavaClass, ResolutionError] = {
     def undefined(message: String): ResolutionError =
@@ -3325,13 +3341,30 @@ object Resolver {
     desc match {
       case None => Result.Err(undefined(s"'$className' is not a valid class name."))
       case Some(d) => flix.javaTypeProvider.lookupClass(d) match {
-        case Result.Ok(clazz) => Result.Ok(clazz)
-        case Result.Err(JavaLookupError.MissingClass(_)) => Result.Err(undefined(s"The class '$className' was not found on the class path."))
-        case Result.Err(JavaLookupError.InvalidClass(_, message)) => Result.Err(undefined(s"The class file of '$className' could not be read: $message"))
-        case Result.Err(JavaLookupError.UnsupportedDescriptor(_)) => Result.Err(undefined(s"'$className' does not denote a class or interface."))
+        case Result.Ok(clazz) => JavaHierarchy.supertypes(d) match {
+          case Result.Ok(_) => Result.Ok(clazz)
+          case Result.Err(error) => Result.Err(ResolutionError.UnreadableJvmClass(s"the class '$className'", error, loc))
+        }
+        case Result.Err(error) => Result.Err(undefined(error.explanation))
       }
     }
   }
+
+  /**
+    * Returns an error if the methods of the class or interface `desc` that an anonymous class may override
+    * cannot all be read, and `None` otherwise.
+    *
+    * The Safety phase compares the methods of an anonymous class against the overridable methods of `desc`,
+    * which requires their signatures to be readable (see [[JavaMemberResolver.overridableMethods]]).
+    */
+  private def checkOverridableMethods(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Option[ResolutionError] =
+    JavaMemberResolver.overridableMethods(desc) match {
+      case Result.Ok(_) => None
+      case Result.Err(error: JavaLookupError.UnsupportedDescriptor) =>
+        throw InternalCompilerException(s"Java method lookup failed for '${ClassDescs.binaryNameOf(desc)}': $error", loc)
+      case Result.Err(error) =>
+        Some(ResolutionError.UnreadableJvmClass(s"the methods of '${ClassDescs.binaryNameOf(desc)}'", error, loc))
+    }
 
   /**
     * Returns the class metadata for the given `className`, falling back to the imported classes in scope.
@@ -3430,7 +3463,7 @@ object Resolver {
   /**
     * Resolves the given uses and imports.
     *
-    * A use or import that cannot be resolved is reported ([[UndefinedUse]] or [[UndefinedJvmImport]])
+    * A use or import that cannot be resolved is reported ([[UndefinedUse]], [[UndefinedJvmImport]], or [[UnreadableJvmClass]])
     * and dropped, so that names it would have brought into scope are simply undefined.
     */
   private def resolveUsesAndImports(usesAndImports0: List[NamedAst.UseOrImport], ns: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[UseOrImport] = {

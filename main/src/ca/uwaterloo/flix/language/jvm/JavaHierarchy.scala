@@ -17,15 +17,43 @@ package ca.uwaterloo.flix.language.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.Ok
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.CD_Object
+import scala.annotation.tailrec
 
 /**
-  * Subtyping of Java types, read from the class-file metadata of the Java type provider.
+  * Subtyping and supertypes of Java types, read from the class-file metadata of the Java type provider.
   */
 object JavaHierarchy {
+
+  /**
+    * Returns `Ok` with the transitive supertypes of the class or interface `desc`, or `Err` if the metadata of
+    * `desc` or of one of its supertypes cannot be read.
+    *
+    * The supertypes are the erased superclasses and superinterfaces of `desc`, excluding `desc` itself. The
+    * result is empty for `Object` and for an interface without superinterfaces.
+    *
+    * Reading a class file does not read the class files it refers to, so a class whose metadata can be read
+    * may still have a supertype whose metadata cannot. Callers use this query to check that every supertype
+    * of a class can be read before the class takes part in member resolution or subtype checks.
+    */
+  def supertypes(desc: ClassDesc)(implicit flix: Flix): Result[Set[ClassDesc], JavaLookupError] = {
+    @tailrec
+    def visit(pending: List[ClassDesc], visited: Set[ClassDesc]): Result[Set[ClassDesc], JavaLookupError] = pending match {
+      case Nil => Ok(visited - desc)
+      case d :: rest if visited.contains(d) => visit(rest, visited)
+      case d :: rest => flix.javaTypeProvider.lookupClass(d) match {
+        case Ok(clazz) =>
+          val parents = clazz.superClass.map(_.erasure).toList ::: clazz.interfaces.map(_.erasure)
+          visit(parents ::: rest, visited + d)
+        case Err(error) => Err(error)
+      }
+    }
+
+    visit(List(desc), Set.empty)
+  }
 
   /**
     * Returns `Ok(true)` if the Java type `sub` is a subtype of the Java type `sup`, `Ok(false)` if it

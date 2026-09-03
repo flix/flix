@@ -142,17 +142,19 @@ final case class ByteBuddyJavaTypeProvider(
 
   /** Computes [[lookupClass]] without consulting the cache. */
   private def lookupClassDirect(desc: ClassDesc): Result[JavaClass, JavaLookupError] =
-    resolve(desc).map(toClass)
+    guarded(desc)(resolve(desc).map(toClass))
 
   /** Computes [[virtualMethods]] without consulting the cache. */
   private def virtualMethodsDirect(desc: ClassDesc): Result[List[JavaMethod], JavaLookupError] =
-    resolve(desc).map { tpe =>
-      MethodGraph.Compiler.Default.forJavaHierarchy().compile(tpe: TypeDefinition).listNodes().asScala
-        .map(_.getRepresentative)
-        .filter(_.isVirtual)
-        .map(toMethod)
-        .toList
-        .sortBy(m => (m.ref.name, m.ref.descriptor.descriptorString()))
+    guarded(desc) {
+      resolve(desc).map { tpe =>
+        MethodGraph.Compiler.Default.forJavaHierarchy().compile(tpe: TypeDefinition).listNodes().asScala
+          .map(_.getRepresentative)
+          .filter(_.isVirtual)
+          .map(toMethod)
+          .toList
+          .sortBy(m => (m.ref.name, m.ref.descriptor.descriptorString()))
+      }
     }
 
   /** Computes [[isSubtype]] without consulting the cache. */
@@ -160,28 +162,46 @@ final case class ByteBuddyJavaTypeProvider(
     if (subtype == supertype) {
       Ok(true)
     } else {
-      resolve(subtype).flatMap { sub =>
-        resolve(supertype).map(sup => sub.isAssignableTo(sup))
+      guarded(subtype) {
+        resolve(subtype).flatMap { sub =>
+          resolve(supertype).map(sup => sub.isAssignableTo(sup))
+        }
       }
     }
   }
 
-  /** Returns `Ok` with the resolved type, or `Err` if `desc` is unsupported, missing, or invalid. */
+  /**
+    * Returns `Ok` with the resolved type, or `Err` if `desc` is unsupported or missing.
+    *
+    * Must be called within [[guarded]], which turns the exceptions of a malformed class file into errors.
+    */
   private def resolve(desc: ClassDesc): Result[TypeDescription, JavaLookupError] = {
     if (!desc.isClassOrInterface) {
       Err(UnsupportedDescriptor(desc))
     } else {
-      try {
-        val resolution = pool.describe(ClassDescs.binaryNameOf(desc))
-        if (resolution.isResolved) Ok(resolution.resolve()) else Err(MissingClass(desc))
-      } catch {
-        case ex: GenericSignatureFormatError => Err(InvalidClass(desc, exceptionMessage(ex)))
-        case ex: MalformedParameterizedTypeException => Err(InvalidClass(desc, exceptionMessage(ex)))
-        case ex: IllegalArgumentException => Err(InvalidClass(desc, exceptionMessage(ex)))
-        case ex: IllegalStateException => Err(InvalidClass(desc, exceptionMessage(ex)))
-      }
+      val resolution = pool.describe(ClassDescs.binaryNameOf(desc))
+      if (resolution.isResolved) Ok(resolution.resolve()) else Err(MissingClass(desc))
     }
   }
+
+  /**
+    * Runs `query`, a metadata query about `desc`, turning the exceptions thrown by Byte Buddy into errors.
+    *
+    * The type pool resolves the types that a class file refers to lazily. A missing supertype therefore only
+    * surfaces, as a [[TypePool.Resolution.NoSuchTypeException]], once a query reaches it, e.g. while compiling
+    * the method graph of `desc` or while walking its hierarchy for a subtype check. Every other exception means
+    * that a class file is malformed.
+    */
+  private def guarded[A](desc: ClassDesc)(query: => Result[A, JavaLookupError]): Result[A, JavaLookupError] =
+    try {
+      query
+    } catch {
+      case ex: TypePool.Resolution.NoSuchTypeException => Err(MissingClass(ClassDesc.of(ex.getName)))
+      case ex: GenericSignatureFormatError => Err(InvalidClass(desc, exceptionMessage(ex)))
+      case ex: MalformedParameterizedTypeException => Err(InvalidClass(desc, exceptionMessage(ex)))
+      case ex: IllegalArgumentException => Err(InvalidClass(desc, exceptionMessage(ex)))
+      case ex: IllegalStateException => Err(InvalidClass(desc, exceptionMessage(ex)))
+    }
 
   /** Converts a Byte Buddy type description to Java class-file metadata. */
   private def toClass(tpe: TypeDescription): JavaClass = {
