@@ -46,8 +46,3 @@ jobs:
           ../out/flix-native check
           ../out/flix-native build-fatjar
           java -jar artifact/hello.jar | grep -q 'Hello World!'
-      - name: Upload native image
-        uses: actions/upload-artifact@v4
-        with:
-          name: flix-native-${{ runner.os }}
-          path: out/flix-native
