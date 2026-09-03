@@ -1,0 +1,11 @@
+{
+  "resources": [
+    { "glob": "src/**" },
+    { "glob": "doc/**" },
+    { "glob": "benchmark/**" }
+  ],
+  "reflection": [
+    { "type": "java.lang.Runtime", "allDeclaredMethods": true },
+    { "type": "java.lang.Runtime$Version", "allDeclaredMethods": true }
+  ]
+}

@@ -1,0 +1,48 @@
+name: Native Image
+
+on: [ pull_request, merge_group ]
+
+permissions:
+  contents: read
+
+# Cancel previous runs if the PR is updated
+concurrency:
+  cancel-in-progress: true
+  group: native-image-${{ github.ref }}
+
+jobs:
+  build-native-image-and-smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v5
+      - name: Install GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          distribution: 'graalvm-community'
+          java-version: '25'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache Mill and Coursier
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.cache/mill
+          key: ${{ runner.os }}-mill-${{ hashFiles('build.mill', '.mill-version') }}
+          restore-keys: |
+            ${{ runner.os }}-mill-
+      - name: Build fat JAR
+        run: ./mill flix.assembly
+      - name: Build native image
+        # The native-image configuration ships inside the JAR under META-INF/native-image/dev.flix/flix.
+        # -Ob selects the quick build mode, which roughly halves build time at the cost of run-time performance.
+        run: native-image -Ob -jar out/flix/assembly.dest/out.jar -o out/flix-native
+      - name: Smoke test on a hello world project
+        run: |
+          mkdir hello && cd hello
+          ../out/flix-native init
+          ../out/flix-native check
+          ../out/flix-native build-fatjar
+          java -jar artifact/hello.jar | grep -q 'Hello World!'
