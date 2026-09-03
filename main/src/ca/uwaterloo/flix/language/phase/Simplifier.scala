@@ -21,10 +21,11 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, JMethod, Modifiers, Mutability, RegionScope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
-import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import java.lang.constant.MethodTypeDesc
 import scala.annotation.tailrec
 
 /**
@@ -50,7 +51,7 @@ object Simplifier {
   /** The `BigInteger.equals(Object)` method. */
   private val BigIntEqualsMethod: JMethod = {
     import java.lang.constant.ConstantDescs.*
-    JMethod(ClassDesc.of("java.math.BigInteger"), "equals", MethodTypeDesc.of(CD_boolean, CD_Object), isInterface = false)
+    JMethod(JavaClasses.BigInteger, "equals", MethodTypeDesc.of(CD_boolean, CD_Object), isInterface = false)
   }
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {

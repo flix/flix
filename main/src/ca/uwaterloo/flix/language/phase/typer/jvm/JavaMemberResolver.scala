@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
+import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.Ok
 
@@ -93,12 +94,6 @@ object JavaMemberResolver {
 
   /** The penalty added for each varargs conversion. */
   private val VarArgsCost = 0.001f
-
-  /** The descriptor of `java.lang.Cloneable`, a direct supertype of every array type. */
-  private val CloneableDesc = ClassDesc.of("java.lang.Cloneable")
-
-  /** The descriptor of `java.io.Serializable`, a direct supertype of every array type. */
-  private val SerializableDesc = ClassDesc.of("java.io.Serializable")
 
   /** The primitive types in the promotion order used by Commons Lang. */
   private val WideningPrimitives = List(CD_byte, CD_short, CD_char, CD_int, CD_long, CD_float, CD_double)
@@ -548,7 +543,7 @@ object JavaMemberResolver {
       Ok(true)
     } else if (source.isArray) {
       // Arrays have descriptor-defined supertypes and covariant reference components.
-      if (target == CD_Object || target == CloneableDesc || target == SerializableDesc) {
+      if (target == CD_Object || target == JavaClasses.Cloneable || target == JavaClasses.Serializable) {
         Ok(true)
       } else if (target.isArray) {
         (componentType(source), componentType(target)) match {
