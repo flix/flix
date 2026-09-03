@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaType, Java
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
 import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
-import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver, JavaTypes}
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver, JavaTypes, PrimitiveEffects}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}

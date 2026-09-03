@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.typer
+package ca.uwaterloo.flix.language.phase.typer.jvm
 
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
@@ -27,16 +27,16 @@ import java.lang.constant.ClassDesc
 object PrimitiveEffects {
 
   /** The path to the package effects. */
-  private val PackageEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Packages.json"
+  private val PackageEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/jvm/PrimitiveEffects.Packages.json"
 
   /** The path to the class effects. */
-  private val ClassEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Classes.json"
+  private val ClassEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/jvm/PrimitiveEffects.Classes.json"
 
   /** The path to the constructor effects. */
-  private val ConstructorEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Constructors.json"
+  private val ConstructorEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/jvm/PrimitiveEffects.Constructors.json"
 
   /** The path to the method effects. */
-  private val MethodEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/PrimitiveEffects.Methods.json"
+  private val MethodEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/jvm/PrimitiveEffects.Methods.json"
 
   /**
     * A pre-computed map from package names to effects.
