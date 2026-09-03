@@ -28,9 +28,12 @@ case class JavaClass(
   declaredConstructors: List[JavaMethod],
   declaredMethods: List[JavaMethod],
   declaredFields: List[JavaField]
-) {
+) extends JavaMember {
+
+  /** Returns whether this class-file type is an interface. */
+  def isInterface: Boolean = JavaModifiers.has(modifiers, JavaModifiers.ACC_INTERFACE)
 
   /** Returns whether this class-file type is an annotation. */
-  def isAnnotation: Boolean = (modifiers & 0x2000) != 0
+  def isAnnotation: Boolean = JavaModifiers.has(modifiers, JavaModifiers.ACC_ANNOTATION)
 
 }

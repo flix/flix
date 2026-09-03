@@ -21,13 +21,12 @@ import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Modifier
 
 object GetStaticFieldCompleter {
 
   def getCompletions(clazz: ClassDesc, field: Name.Ident)(implicit flix: Flix): List[Completion] = {
     val fields = JavaMemberResolver.fields(clazz).toOption.getOrElse(Nil)
-    fields.filter(f => Modifier.isStatic(f.modifiers)).map(FieldCompletion(field, Priority.Lowest(0), _))
+    fields.filter(f => f.isStatic).map(FieldCompletion(field, Priority.Lowest(0), _))
   }
 
 }

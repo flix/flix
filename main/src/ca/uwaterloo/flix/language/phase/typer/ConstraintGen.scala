@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Modifier
 
 /**
   * This phase generates a list of type constraints, which include
@@ -1011,7 +1010,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.GetStaticField(field, tvar, loc) =>
-        val isFinal = Modifier.isFinal(field.modifiers)
+        val isFinal = field.isFinal
         val fieldType = getJavaFieldType(field, loc)
         val fieldReadEff = if (isFinal) Type.Pure else Type.IO
         c.unifyType(tvar, fieldType, loc)

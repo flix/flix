@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.{CD_Object, CD_String, CD_Throwable}
-import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -827,7 +826,7 @@ object Safety {
       val javaClass = JavaTypes.lookupClass(clazz, loc)
       // `clazz` must be an interface or have a non-private constructor without arguments
       // (unless user-defined constructors are provided).
-      if (!Modifier.isInterface(javaClass.modifiers) && cs.isEmpty && !hasNonPrivateZeroArgConstructor(javaClass)) {
+      if (!javaClass.isInterface && cs.isEmpty && !hasNonPrivateZeroArgConstructor(javaClass)) {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
       }
 
@@ -846,7 +845,7 @@ object Safety {
       }
 
       // `clazz` must be public.
-      if (!Modifier.isPublic(javaClass.modifiers)) {
+      if (!javaClass.isPublic) {
         sctx.errors.add(NewObjectNonPublicClass(clazz, loc))
       }
 
@@ -916,7 +915,7 @@ object Safety {
 
   /** Return `true` if `clazz` has a non-private constructor with zero arguments. */
   private def hasNonPrivateZeroArgConstructor(clazz: JavaClass): Boolean =
-    clazz.declaredConstructors.exists(c => c.parameterTypes.isEmpty && !Modifier.isPrivate(c.modifiers))
+    clazz.declaredConstructors.exists(c => c.parameterTypes.isEmpty && !c.isPrivate)
 
   /**
     * Resolves the Java type `javaType` to a Flix [[Type]] using the given
@@ -939,7 +938,7 @@ object Safety {
 
   /** Return `true` if `m` is abstract. */
   private def isAbstractMethod(m: JavaMethod): Boolean =
-    Modifier.isAbstract(m.modifiers)
+    m.isAbstract
 
   /** Returns `true` if `method` is or overrides a method declared by the Object class. */
   private def isObjectMethod(method: JavaMethod, loc: SourceLocation)(implicit flix: Flix): Boolean =

@@ -24,7 +24,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.lang.constant.ConstantDescs.*
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
-import java.lang.reflect.Modifier
 import scala.jdk.CollectionConverters.*
 
 class TestJavaMemberResolver extends AnyFunSuite {
@@ -418,8 +417,8 @@ class TestJavaMemberResolver extends AnyFunSuite {
     try {
       val owner = ClassDesc.of("dev.flix.test.TestClassWithProtectedMethods")
       val abstractMethod = theOverridable(owner, "protectedAbstractMethod", CD_int)
-      assert(Modifier.isProtected(abstractMethod.modifiers) && Modifier.isAbstract(abstractMethod.modifiers))
-      assert(Modifier.isProtected(theOverridable(owner, "protectedConcreteMethod", CD_String).modifiers))
+      assert(abstractMethod.isProtected && abstractMethod.isAbstract)
+      assert(theOverridable(owner, "protectedConcreteMethod", CD_String).isProtected)
       // Protected methods inherited from Object are overridable by a subclass.
       assert(theOverridable(owner, "clone").ref.owner == CD_Object)
       assert(theOverridable(ClassDesc.of("java.util.AbstractList"), "removeRange", CD_int, CD_int).ref.owner == ClassDesc.of("java.util.AbstractList"))
@@ -452,7 +451,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
         case Ok(methods) =>
           val names = methods.map(_.ref.name).toSet
           assert(Set("add", "size", "toString", "getClass", "wait").subsetOf(names))
-          assert(methods.forall(m => Modifier.isPublic(m.modifiers) && !Modifier.isStatic(m.modifiers)))
+          assert(methods.forall(m => m.isPublic && !m.isStatic))
           assert(!names.contains("clone") || methods.exists(m => m.ref.name == "clone" && m.ref.owner == ClassDesc.of("java.util.ArrayList")))
         case Err(error) => fail(error.toString)
       }
@@ -488,7 +487,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
         case Ok(methods) =>
           val names = methods.map(_.ref.name).toSet
           assert(Set("valueOf", "parseInt").subsetOf(names))
-          assert(methods.forall(m => Modifier.isPublic(m.modifiers) && Modifier.isStatic(m.modifiers)))
+          assert(methods.forall(m => m.isPublic && m.isStatic))
         case Err(error) => fail(error.toString)
       }
       // Timestamp inherits the static `UTC` of its superclass Date.
@@ -512,7 +511,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       JavaMemberResolver.fields(ClassDesc.of("java.awt.Point")) match {
         case Ok(fields) =>
           assert(fields.map(_.ref.name) == List("x", "y"))
-          assert(fields.forall(f => Modifier.isPublic(f.modifiers)))
+          assert(fields.forall(f => f.isPublic))
         case Err(error) => fail(error.toString)
       }
       assert(JavaMemberResolver.fields(CD_int) == Ok(Nil))

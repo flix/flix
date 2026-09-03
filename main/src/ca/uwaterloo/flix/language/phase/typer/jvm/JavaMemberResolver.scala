@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.util.Result.Ok
 
 import java.lang.constant.ConstantDescs.*
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Modifier
 import scala.jdk.CollectionConverters.*
 
 /*
@@ -95,12 +94,6 @@ object JavaMemberResolver {
   /** The penalty added for each varargs conversion. */
   private val VarArgsCost = 0.001f
 
-  /** The class-file modifier bit that identifies a compiler-generated bridge method. */
-  private val BridgeModifier = 0x0040
-
-  /** The class-file modifier bit that identifies a compiler-generated synthetic member. */
-  private val SyntheticModifier = 0x1000
-
   /** The descriptor of `java.lang.Cloneable`, a direct supertype of every array type. */
   private val CloneableDesc = ClassDesc.of("java.lang.Cloneable")
 
@@ -130,7 +123,7 @@ object JavaMemberResolver {
   /** Returns `Ok` with every tied best public constructor, or `Err` if class metadata cannot be read. */
   def constructors(owner: ClassDesc, arguments: List[JavaArgument])(implicit flix: Flix): Result[List[JavaMethod], JavaLookupError] =
     flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
-      val candidates = clazz.declaredConstructors.filter(method => Modifier.isPublic(method.modifiers))
+      val candidates = clazz.declaredConstructors.filter(_.isPublic)
       best(candidates, arguments).map(_.filterNot(usesUnsupportedUnboxing(arguments, _)))
     }
 
@@ -144,7 +137,7 @@ object JavaMemberResolver {
   /** Returns `Ok` with the selected public field, or `Err` if class metadata cannot be read. */
   def field(owner: ClassDesc, name: String, static: Boolean)(implicit flix: Flix): Result[Option[JavaField], JavaLookupError] = {
     if (owner.isClassOrInterface) {
-      findField(owner, name, Set.empty).map(_.filter(f => Modifier.isStatic(f.modifiers) == static))
+      findField(owner, name, Set.empty).map(_.filter(f => f.isStatic == static))
     } else {
       Ok(None)
     }
@@ -214,14 +207,14 @@ object JavaMemberResolver {
     flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
       flix.javaTypeProvider.virtualMethods(owner).flatMap { virtualMethods =>
         val declared = virtualMethods.filter(keep)
-        if (!Modifier.isInterface(clazz.modifiers)) {
+        if (!clazz.isInterface) {
           Ok(declared)
         } else {
           // The methods of Object are inherited by every implementation of the interface.
           flix.javaTypeProvider.virtualMethods(CD_Object).map { objectMethods =>
             val declaredKeys = virtualMethods.map(methodKey).toSet
             val inherited = objectMethods.filter { method =>
-              Modifier.isPublic(method.modifiers) && keep(method) && !declaredKeys.contains(methodKey(method))
+              method.isPublic && keep(method) && !declaredKeys.contains(methodKey(method))
             }
             (declared ::: inherited).sortBy(method => (method.ref.name, method.ref.descriptor.descriptorString()))
           }
@@ -235,7 +228,7 @@ object JavaMemberResolver {
       Ok(Nil)
     } else {
       flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
-        val declared = clazz.declaredFields.filter(field => Modifier.isPublic(field.modifiers) && !isSynthetic(field.modifiers))
+        val declared = clazz.declaredFields.filter(field => field.isPublic && !field.isSynthetic)
         val parents = clazz.interfaces.map(_.erasure) ::: clazz.superClass.map(_.erasure).toList
         Result.traverse(parents)(parent => collectFields(parent, visited + owner)).map(inherited => declared ::: inherited.flatten)
       }
@@ -250,7 +243,7 @@ object JavaMemberResolver {
       val selected = if (exact.nonEmpty) Ok(exact) else normalizeAccessibleMethods(candidates).flatMap(best(_, arguments))
       selected.map { methods =>
         // The existing TypeReduction path checks the static flag only after overload selection.
-        methods.filter(method => Modifier.isStatic(method.modifiers) == static)
+        methods.filter(method => method.isStatic == static)
           .filterNot(usesUnsupportedUnboxing(arguments, _))
       }
     }
@@ -273,7 +266,7 @@ object JavaMemberResolver {
     flix.javaTypeProvider.virtualMethods(owner).flatMap { virtualMethods =>
       bridgeMethods(owner, name, Set.empty, Set.empty).map { bridges =>
         val methods = virtualMethods.filter { method =>
-          method.ref.name == name && Modifier.isPublic(method.modifiers) && !Modifier.isStatic(method.modifiers)
+          method.ref.name == name && method.isPublic && !method.isStatic
         }
         val bridgeDescriptors = bridges.map(method => method.ref.name -> method.ref.descriptor).toSet
         val visibleMethods = methods.filterNot(method => bridgeDescriptors.contains(method.ref.name -> method.ref.descriptor))
@@ -292,10 +285,10 @@ object JavaMemberResolver {
     } else {
       flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
         val declarations = clazz.declaredMethods.filter { method =>
-          !Modifier.isStatic(method.modifiers) && !Modifier.isPrivate(method.modifiers)
+          !method.isStatic && !method.isPrivate
         }
         val bridges = declarations.filter { method =>
-          method.ref.name == name && Modifier.isPublic(method.modifiers) && isBridge(method) && !hidden.contains(methodKey(method))
+          method.ref.name == name && method.isPublic && method.isBridge && !hidden.contains(methodKey(method))
         }
         val nextHidden = hidden ++ declarations.map(methodKey)
         val parents = clazz.superClass.map(_.erasure).toList ::: clazz.interfaces.map(_.erasure)
@@ -320,10 +313,10 @@ object JavaMemberResolver {
     } else {
       flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
         val staticMethods = clazz.declaredMethods.filter { method =>
-          keep(method) && Modifier.isStatic(method.modifiers) && !isSynthetic(method.modifiers)
+          keep(method) && method.isStatic && !method.isSynthetic
         }
-        val declared = staticMethods.filter(method => Modifier.isPublic(method.modifiers))
-        if (Modifier.isInterface(clazz.modifiers)) {
+        val declared = staticMethods.filter(_.isPublic)
+        if (clazz.isInterface) {
           // Static interface methods are not inherited from superinterfaces.
           Ok(declared)
         } else clazz.superClass match {
@@ -345,9 +338,9 @@ object JavaMemberResolver {
   /** Returns the accessible declaration corresponding to `method`, if one exists. */
   private def accessibleMethod(method: JavaMethod)(implicit flix: Flix): Result[Option[JavaMethod], JavaLookupError] =
     flix.javaTypeProvider.lookupClass(method.ref.owner).flatMap { owner =>
-      if (!Modifier.isPublic(method.modifiers)) {
+      if (!method.isPublic) {
         Ok(None)
-      } else if (Modifier.isPublic(owner.modifiers)) {
+      } else if (owner.isPublic) {
         Ok(Some(method))
       } else {
         findAccessibleInterfaceMethod(method.ref.owner, method, Set.empty).flatMap {
@@ -384,10 +377,10 @@ object JavaMemberResolver {
     case owner :: rest if visited.contains(owner) => findAccessibleInterfaceMethodIn(rest, method, visited)
     case owner :: rest =>
       flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
-        if (!Modifier.isPublic(clazz.modifiers)) {
+        if (!clazz.isPublic) {
           findAccessibleInterfaceMethodIn(rest, method, visited)
         } else {
-          clazz.declaredMethods.find(candidate => Modifier.isPublic(candidate.modifiers) && sameErasedSignature(candidate, method)) match {
+          clazz.declaredMethods.find(candidate => candidate.isPublic && sameErasedSignature(candidate, method)) match {
             case result@Some(_) => Ok(result)
             case None =>
               findAccessibleInterfaceMethodIn(clazz.interfaces.map(_.erasure), method, visited + owner).flatMap {
@@ -411,7 +404,7 @@ object JavaMemberResolver {
           case None => Ok(None)
           case Some(parent) =>
             flix.javaTypeProvider.lookupClass(parent.erasure).flatMap { parentClass =>
-              if (Modifier.isPublic(parentClass.modifiers)) {
+              if (parentClass.isPublic) {
                 rawMethodCandidates(parent.erasure, method.ref.name)
                   .map(_.find(candidate => sameErasedSignature(candidate, method)))
               } else {
@@ -688,7 +681,7 @@ object JavaMemberResolver {
   /** Returns `Ok` with whether `desc` denotes an interface, or `Err` if class metadata cannot be read. */
   private def isInterfaceType(desc: ClassDesc)(implicit flix: Flix): Result[Boolean, JavaLookupError] = {
     if (desc.isPrimitive || desc.isArray) Ok(false)
-    else flix.javaTypeProvider.lookupClass(desc).map(clazz => Modifier.isInterface(clazz.modifiers))
+    else flix.javaTypeProvider.lookupClass(desc).map(clazz => clazz.isInterface)
   }
 
   /**
@@ -728,7 +721,7 @@ object JavaMemberResolver {
       Ok(None)
     } else {
       flix.javaTypeProvider.lookupClass(owner).flatMap { clazz =>
-        clazz.declaredFields.find(f => f.ref.name == name && Modifier.isPublic(f.modifiers)) match {
+        clazz.declaredFields.find(f => f.ref.name == name && f.isPublic) match {
           case Some(field) => Ok(Some(field))
           case None =>
             findFieldIn(clazz.interfaces.map(_.erasure), name, visited + owner).flatMap {
@@ -761,24 +754,13 @@ object JavaMemberResolver {
   /** Returns whether the two methods have the same erased name and parameter types. */
   private def sameErasedSignature(method1: JavaMethod, method2: JavaMethod): Boolean = methodKey(method1) == methodKey(method2)
 
-  /** Returns whether `method` was generated as a bridge method. */
-  private def isBridge(method: JavaMethod): Boolean = (method.modifiers & BridgeModifier) != 0
-
-  /** Returns whether the member with the given `modifiers` was generated by the compiler as a synthetic member. */
-  private def isSynthetic(modifiers: Int): Boolean = (modifiers & SyntheticModifier) != 0
-
   /** Returns whether an anonymous subclass in another package may override the instance method `method`. */
-  private def isOverridable(method: JavaMethod): Boolean = {
-    val modifiers = method.modifiers
-    (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) &&
-      !Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers) && !isBridge(method) && !isSynthetic(modifiers)
-  }
+  private def isOverridable(method: JavaMethod): Boolean =
+    (method.isPublic || method.isProtected) && !method.isStatic && !method.isFinal && !method.isBridge && !method.isSynthetic
 
   /** Returns whether `method` is a public instance method that is not compiler-generated. */
-  private def isPublicInstance(method: JavaMethod): Boolean = {
-    val modifiers = method.modifiers
-    Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers) && !isBridge(method) && !isSynthetic(modifiers)
-  }
+  private def isPublicInstance(method: JavaMethod): Boolean =
+    method.isPublic && !method.isStatic && !method.isBridge && !method.isSynthetic
 
   /** Returns all typed argument descriptors, or `None` if any argument is `Null`. */
   private def sequenceArguments(arguments: List[JavaArgument]): Option[List[ClassDesc]] = {

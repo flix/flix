@@ -29,7 +29,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.constant.ConstantDescs.*
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Modifier
 import scala.annotation.tailrec
 
 object TypeReduction2 {
@@ -501,7 +500,7 @@ object TypeReduction2 {
     * refer to the type parameters of `owner`, even if the method is declared by a supertype.
     */
   private def classTypeParametersOf(method: JavaMethod, owner: ClassDesc, loc: SourceLocation)(implicit flix: Flix): List[JavaTypeParameter] =
-    if (Modifier.isStatic(method.modifiers) || !owner.isClassOrInterface) Nil
+    if (method.isStatic || !owner.isClassOrInterface) Nil
     else JavaTypes.lookupClass(owner, loc).typeParameters
 
   /**

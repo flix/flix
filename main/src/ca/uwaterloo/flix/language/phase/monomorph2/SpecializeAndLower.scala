@@ -30,7 +30,6 @@ import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
-import java.lang.reflect.Modifier
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -1205,7 +1204,7 @@ private[monomorph2] object SpecializeAndLower {
   private def mkJMethod(method: JavaMethod, loc: SourceLocation)(implicit flix: Flix): JMethod = {
     val owner = method.ref.owner
     flix.javaTypeProvider.lookupClass(owner) match {
-      case Result.Ok(clazz) => JMethod.of(method, isInterface = Modifier.isInterface(clazz.modifiers))
+      case Result.Ok(clazz) => JMethod.of(method, isInterface = clazz.isInterface)
       case Result.Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${owner.displayName()}': $error", loc)
     }
   }
