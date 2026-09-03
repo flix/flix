@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 import ca.uwaterloo.flix.util.collection.MapOps
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 
 import java.lang.constant.ClassDesc
 import java.lang.reflect.{InvocationTargetException, Method}
@@ -112,11 +112,8 @@ object JvmLoader {
   }
 
   /** Returns a Method for `clazz.methodName` if possible. */
-  private def findMethod(clazz: Class[?], methodName: String): Option[Method] = {
-    JvmUtils.getMethods(clazz).find {
-      case method => method.getName == methodName && !method.isSynthetic
-    }
-  }
+  private def findMethod(clazz: Class[?], methodName: String): Option[Method] =
+    clazz.getMethods.find(method => method.getName == methodName && !method.isSynthetic)
 
   /** Loads the given JVM `classes` using a custom class loader that falls back to `jarLoader`. */
   private def loadAll(classes: Iterable[JvmClass], jarLoader: ClassLoader): Map[ClassDesc, Class[?]] = {
