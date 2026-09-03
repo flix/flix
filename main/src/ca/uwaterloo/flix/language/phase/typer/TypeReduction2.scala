@@ -146,7 +146,7 @@ object TypeReduction2 {
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
           lookupConstructor(clazz, reducedTpes, loc) match {
-            case JavaConstructorResolution.Resolved(constructor) =>
+            case JavaResolution.Resolved(constructor) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), cs)
             case _ => (unresolved, cs)
@@ -155,7 +155,7 @@ object TypeReduction2 {
         case JvmMember.JvmField(_, tpe, name) =>
           val (reducedTpe, cs) = reduce(tpe)
           lookupField(reducedTpe, name.name, loc) match {
-            case JavaFieldResolution.Resolved(field) =>
+            case JavaResolution.Resolved(field) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmField(field), loc), cs)
             case _ => (unresolved, cs)
@@ -166,7 +166,7 @@ object TypeReduction2 {
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = cs0 ::: css.flatten
           lookupMethod(reducedTpe, name.name, reducedTpes, loc) match {
-            case JavaMethodResolution.Resolved(method) =>
+            case JavaResolution.Resolved(method) =>
               val classTypeParameters = classTypeParametersOf(method, getJavaTypeDesc(reducedTpe), loc)
               val classTypeArgs = extractClassTypeArgs(classTypeParameters, reducedTpe, scope, loc)
               val (tpe, cs0) = instantiateMethod(method, classTypeParameters, classTypeArgs, reducedTpes, scope, loc)
@@ -179,7 +179,7 @@ object TypeReduction2 {
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
           lookupStaticMethod(clazz, name.name, reducedTpes, loc) match {
-            case JavaMethodResolution.Resolved(method) =>
+            case JavaResolution.Resolved(method) =>
               // Class type parameters are not in scope for static methods.
               val (tpe, cs0) = instantiateMethod(method, Nil, Nil, reducedTpes, scope, loc)
               progress.markProgress()
@@ -190,16 +190,16 @@ object TypeReduction2 {
   }
 
   /** Tries to find a constructor of `owner` that takes arguments of type `ts`. */
-  private def lookupConstructor(owner: ClassDesc, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaConstructorResolution = {
+  private def lookupConstructor(owner: ClassDesc, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaResolution[JavaMethod] = {
     val typesAreKnown = ts.forall(isKnown)
-    if (!typesAreKnown) return JavaConstructorResolution.UnresolvedTypes
+    if (!typesAreKnown) return JavaResolution.UnresolvedTypes
 
     val arguments = ts.map(getJavaArgument)
     JavaMemberResolver.constructors(owner, arguments) match {
       // The resolver returns every constructor tied for the best match, in class-file declaration order.
       // We deterministically pick the first one.
-      case Ok(constructor :: _) => JavaConstructorResolution.Resolved(constructor)
-      case Ok(Nil) => JavaConstructorResolution.NotFound
+      case Ok(constructor :: _) => JavaResolution.Resolved(constructor)
+      case Ok(Nil) => JavaResolution.NotFound
       case Err(error) =>
         val query = s"${ClassDescs.binaryNameOf(owner)}(${arguments.mkString(", ")})"
         throw InternalCompilerException(s"Java constructor lookup failed for '$query': $error", loc)
@@ -207,30 +207,30 @@ object TypeReduction2 {
   }
 
   /** Tries to find a method of `thisObj` that takes arguments of type `ts`. */
-  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaMethodResolution = {
+  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaResolution[JavaMethod] = {
     val typesAreKnown = isKnown(thisObj) && ts.forall(isKnown)
-    if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
+    if (!typesAreKnown) return JavaResolution.UnresolvedTypes
 
     // Rigid type variables and other non-Java types fall back to Object.
     retrieveMethod(getJavaTypeDesc(thisObj), methodName, ts, static = false, loc)
   }
 
   /** Tries to find a static method of `owner` that takes arguments of type `ts`. */
-  private def lookupStaticMethod(owner: ClassDesc, methodName: String, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaMethodResolution = {
+  private def lookupStaticMethod(owner: ClassDesc, methodName: String, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaResolution[JavaMethod] = {
     val typesAreKnown = ts.forall(isKnown)
-    if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
+    if (!typesAreKnown) return JavaResolution.UnresolvedTypes
 
     retrieveMethod(owner, methodName, ts, static = true, loc)
   }
 
   /** Tries to find a static/dynamic method of `owner` that takes arguments of type `ts`. */
-  private def retrieveMethod(owner: ClassDesc, methodName: String, ts: List[Type], static: Boolean, loc: SourceLocation)(implicit flix: Flix): JavaMethodResolution = {
+  private def retrieveMethod(owner: ClassDesc, methodName: String, ts: List[Type], static: Boolean, loc: SourceLocation)(implicit flix: Flix): JavaResolution[JavaMethod] = {
     val arguments = ts.map(getJavaArgument)
     JavaMemberResolver.methods(owner, methodName, arguments, static) match {
       // The resolver returns every method tied for the best match in a deterministic order.
       // We pick the first one.
-      case Ok(method :: _) => JavaMethodResolution.Resolved(method)
-      case Ok(Nil) => JavaMethodResolution.NotFound
+      case Ok(method :: _) => JavaResolution.Resolved(method)
+      case Ok(Nil) => JavaResolution.NotFound
       case Err(error) =>
         val kind = if (static) "static" else "instance"
         val query = s"$kind ${ClassDescs.binaryNameOf(owner)}.$methodName(${arguments.mkString(", ")})"
@@ -244,29 +244,13 @@ object TypeReduction2 {
     case _ => JavaArgument.Typed(getJavaTypeDesc(tpe))
   }
 
-  /** Returns the Java class descriptor corresponding to the given non-null Flix `tpe`. */
-  private def getJavaTypeDesc(tpe: Type): ClassDesc = tpe match {
-    case Type.Bool => CD_boolean
-    case Type.Int8 => CD_byte
-    case Type.Int16 => CD_short
-    case Type.Int32 => CD_int
-    case Type.Int64 => CD_long
-    case Type.Char => CD_char
-    case Type.Float32 => CD_float
-    case Type.Float64 => CD_double
-    case Type.Cst(TypeConstructor.BigDecimal, _) => JavaClasses.BigDecimal
-    case Type.Cst(TypeConstructor.BigInt, _) => JavaClasses.BigInteger
-    case Type.Cst(TypeConstructor.Str, _) => CD_String
-    case Type.Cst(TypeConstructor.Regex, _) => JavaClasses.Regex
-    case Type.Cst(TypeConstructor.Native(desc, _), _) => desc
-
-    // Parameterized Java types erase to their native base type.
-    case Type.Apply(_, _, _) if isNativeBase(tpe) =>
-      tpe.baseType match {
-        case Type.Cst(TypeConstructor.Native(desc, _), _) => desc
-        case _ => CD_Object
-      }
-
+  /**
+    * Returns the erased Java class descriptor of the given non-null Flix `tpe`, as used for member lookup.
+    *
+    * Types with a Java counterpart (see [[JavaTypes.descriptorOf]]) erase to it. Arrays and vectors erase
+    * to Java arrays, functions to their Java functional interfaces, and every other type to `Object`.
+    */
+  private def getJavaTypeDesc(tpe: Type): ClassDesc = JavaTypes.descriptorOf(tpe).getOrElse(tpe match {
     // Arrays and vectors erase to Java arrays. A null element type falls back to Object.
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType, _), _, _) =>
       getJavaArrayTypeDesc(elmType)
@@ -277,7 +261,7 @@ object TypeReduction2 {
     case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), varArg, _), varRet, _) =>
       lookupFunIF(varArg, varRet).map(_.desc).getOrElse(CD_Object)
     case _ => CD_Object
-  }
+  })
 
   /** Returns the Java array descriptor for an array or vector element type. */
   private def getJavaArrayTypeDesc(elmType: Type): ClassDesc = elmType match {
@@ -286,14 +270,14 @@ object TypeReduction2 {
   }
 
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
-  private def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaFieldResolution = {
+  private def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaResolution[JavaField] = {
     val typeIsKnown = isKnown(thisObj)
-    if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
+    if (!typeIsKnown) return JavaResolution.UnresolvedTypes
 
     val owner = getJavaTypeDesc(thisObj)
     JavaMemberResolver.field(owner, fieldName, static = false) match {
-      case Ok(Some(field)) => JavaFieldResolution.Resolved(field)
-      case Ok(None) => JavaFieldResolution.NotFound
+      case Ok(Some(field)) => JavaResolution.Resolved(field)
+      case Ok(None) => JavaResolution.NotFound
       case Err(error) =>
         val query = s"${ClassDescs.binaryNameOf(owner)}.$fieldName"
         throw InternalCompilerException(s"Java field lookup failed for '$query': $error", loc)
@@ -322,63 +306,23 @@ object TypeReduction2 {
     case Type.AssocType(_, _, _, _) => false
   }
 
-  /** A lookup result of a Java field. */
-  private sealed trait JavaFieldResolution
+  /** A lookup result of a Java member of type `A`: a field, a constructor, or a method. */
+  private sealed trait JavaResolution[+A]
 
-  private object JavaFieldResolution {
+  private object JavaResolution {
 
-    /** One matching field. */
-    case class Resolved(field: JavaField) extends JavaFieldResolution
+    /** One matching member. */
+    case class Resolved[A](member: A) extends JavaResolution[A]
 
-    /** No matching field. */
-    case object NotFound extends JavaFieldResolution
+    /** No matching member. */
+    case object NotFound extends JavaResolution[Nothing]
 
     /**
-      * The types used for the lookup are not resolved enough to decide on a field.
+      * The types used for the lookup are not resolved enough to decide on a member.
       *
       * This happens if they contain e.g., type variables or associated types.
       */
-    case object UnresolvedTypes extends JavaFieldResolution
-
-  }
-
-  /** A lookup result of a Java constructor. */
-  private sealed trait JavaConstructorResolution
-
-  private object JavaConstructorResolution {
-
-    /** One matching constructor. */
-    case class Resolved(constructor: JavaMethod) extends JavaConstructorResolution
-
-    /** No matching constructor. */
-    case object NotFound extends JavaConstructorResolution
-
-    /**
-      * The types used for the lookup are not resolved enough to decide on a constructor.
-      *
-      * This happens if they contain e.g., type variables or associated types.
-      */
-    case object UnresolvedTypes extends JavaConstructorResolution
-
-  }
-
-  /** A lookup result of a Java method. */
-  private sealed trait JavaMethodResolution
-
-  private object JavaMethodResolution {
-
-    /** One matching method. */
-    case class Resolved(method: JavaMethod) extends JavaMethodResolution
-
-    /** No matching method. */
-    case object NotFound extends JavaMethodResolution
-
-    /**
-      * The types used for the lookup are not resolved enough to decide on a method.
-      *
-      * This happens if they contain e.g., type variables or associated types.
-      */
-    case object UnresolvedTypes extends JavaMethodResolution
+    case object UnresolvedTypes extends JavaResolution[Nothing]
 
   }
 
@@ -393,7 +337,8 @@ object TypeReduction2 {
   /**
     * Resolves the return type of `method`, using generic type information when available.
     *
-    * Delegates to `resolveGenericType` which handles every kind of [[JavaType]].
+    * A parameterized return type is resolved by [[JavaTypes.flixTypeOf]] with a fresh type variable
+    * for every position that is not bound by the receiver or the method.
     *
     * Example 1: `ArrayList[String].get(int)` -- the generic return type is `E`.
     * The receiver `ArrayList[String]` maps `E -> String`, so the result is `String`.
@@ -417,60 +362,12 @@ object TypeReduction2 {
       case returnType: JavaType.Parameterized =>
         // Parameterized return type (e.g., Set<K> from HashMap.keySet()).
         // Resolve type arguments using the substitution map.
-        resolveGenericType(returnType, substMap, scope, loc)
+        JavaTypes.flixTypeOf(returnType, substMap, loc)(Type.freshVar(Kind.Star, loc)(scope, flix))
       case returnType =>
         // Other return types (non-generic, generic arrays, etc.).
         // Use erased return type with fresh vars for backward compatibility.
         JavaTypes.instantiateWithFreshVars(returnType.erasure, scope, loc)
     }
-  }
-
-  /**
-    * Resolves the Java `genericType` to a Flix [[Type]] using the given type variable substitution map.
-    *
-    * Handles every kind of [[JavaType]]:
-    *   - `Variable`: look up in substMap; fall back to a fresh type variable
-    *   - `Parameterized`: resolve the erased class + recursively resolve the type arguments
-    *   - `Wildcard`: resolve the upper bound if it is a type variable; otherwise a fresh type variable
-    *   - `GenericArray`: recursively resolve the component type, wrap in Array
-    *   - `NonGeneric`: use `JavaTypes.instantiateWithFreshVars`
-    */
-  private def resolveGenericType(genericType: JavaType, substMap: Map[JavaTypeVariable, Type],
-    scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = genericType match {
-    case JavaType.Variable(variable, _) =>
-      // Look up the type variable in the substitution map.
-      // If not found (e.g., receiver has type variable args that were filtered out),
-      // use a fresh variable so the result can unify with the expected type.
-      substMap.getOrElse(variable, Type.freshVar(Kind.Star, loc)(scope, flix))
-
-    case JavaType.Parameterized(erasure, arguments) =>
-      // Resolve parameterized types like Set<K>, Map.Entry<K,V>, Iterator<E>, etc.
-      val base = JavaTypes.flixTypeOf(erasure, loc)
-      val typeArgs = arguments.map(resolveGenericType(_, substMap, scope, loc))
-      if (typeArgs.nonEmpty)
-        Type.mkApply(base, typeArgs, loc)
-      else
-        base
-
-    case JavaType.Wildcard(upperBounds, _, _) =>
-      // Resolve wildcard types like "? extends K" or "? super V".
-      // Use the upper bound if it references a type variable (e.g., "? extends R"),
-      // otherwise use a fresh type variable to avoid premature erasure to Object.
-      upperBounds match {
-        case (variable: JavaType.Variable) :: _ =>
-          resolveGenericType(variable, substMap, scope, loc)
-        case _ =>
-          Type.freshVar(Kind.Star, loc)(scope, flix)
-      }
-
-    case JavaType.GenericArray(component, _) =>
-      // Resolve generic array types like "T[]".
-      val componentType = resolveGenericType(component, substMap, scope, loc)
-      Type.mkArray(componentType, Type.IO, loc)
-
-    case JavaType.NonGeneric(erasure) =>
-      // Plain class (non-generic or raw). Convert directly.
-      JavaTypes.instantiateWithFreshVars(erasure, scope, loc)
   }
 
   /**

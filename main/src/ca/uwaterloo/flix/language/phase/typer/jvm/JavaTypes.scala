@@ -128,21 +128,30 @@ object JavaTypes {
   /**
     * Returns the Flix type of the Java type `javaType` under the substitution `subst` of type variables.
     *
-    * A type variable that is not in `subst`, a generic array, and a wildcard fall back to `Object`.
+    * `fallback` is evaluated once for every position that has no Flix counterpart: a type variable that
+    * is not in `subst`, a wildcard whose upper bound is not a type variable, and each type argument of a
+    * raw generic class. Pass `Object` in ground-type contexts and a fresh type variable where the result
+    * takes part in unification.
+    *
+    *   - A wildcard `? extends T` resolves to the resolution of `T`.
+    *   - A generic array `T[]` resolves to a Flix array of the resolution of `T` in the `IO` region.
     */
-  def flixTypeOf(javaType: JavaType, subst: Map[JavaTypeVariable, Type], loc: SourceLocation)(implicit flix: Flix): Type = javaType match {
+  def flixTypeOf(javaType: JavaType, subst: Map[JavaTypeVariable, Type], loc: SourceLocation)(fallback: => Type)(implicit flix: Flix): Type = javaType match {
     case JavaType.Variable(variable, _) =>
-      subst.getOrElse(variable, Type.mkObject(loc))
+      subst.getOrElse(variable, fallback)
     case JavaType.Parameterized(erasure, arguments) =>
       val base = flixTypeOf(erasure, loc)
-      val resolvedArgs = arguments.map(flixTypeOf(_, subst, loc))
+      val resolvedArgs = arguments.map(flixTypeOf(_, subst, loc)(fallback))
       Type.mkApply(base, resolvedArgs, loc)
     case JavaType.NonGeneric(erasure) =>
-      instantiateWithObjectArgs(erasure, loc)
-    case JavaType.GenericArray(_, _) =>
-      Type.mkObject(loc)
-    case JavaType.Wildcard(_, _, _) =>
-      Type.mkObject(loc)
+      instantiate(erasure, loc)(fallback)
+    case JavaType.GenericArray(component, _) =>
+      Type.mkArray(flixTypeOf(component, subst, loc)(fallback), Type.IO, loc)
+    case JavaType.Wildcard(upperBounds, _, _) =>
+      upperBounds match {
+        case (variable: JavaType.Variable) :: _ => flixTypeOf(variable, subst, loc)(fallback)
+        case _ => fallback
+      }
   }
 
   /** Applies the Flix type of `desc` to one `mkArg` per type parameter of `desc`. */
