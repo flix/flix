@@ -16,13 +16,14 @@
 package ca.uwaterloo.flix.language.phase.typer.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.jvm.JavaClass
+import ca.uwaterloo.flix.language.ast.jvm.{JavaClass, JavaMethod, JavaType, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.{CD_Object, CD_Throwable}
 
 /**
   * Builds Flix types from Java class descriptors using the class-file metadata of the Java type provider.
@@ -67,6 +68,64 @@ object JavaTypes {
   /** Like [[instantiateWithObjectArgs]] but uses fresh type variables instead of `Object`. */
   def instantiateWithFreshVars(desc: ClassDesc, scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type =
     instantiate(desc, loc)(Type.freshVar(Kind.Star, loc)(scope, flix))
+
+  /**
+    * Returns the Flix type of the Java type `javaType` under the substitution `subst` of type variables.
+    *
+    * A type variable that is not in `subst`, a generic array, and a wildcard fall back to `Object`.
+    */
+  def flixTypeOf(javaType: JavaType, subst: Map[JavaTypeVariable, Type], loc: SourceLocation)(implicit flix: Flix): Type = javaType match {
+    case JavaType.Variable(variable, _) =>
+      subst.getOrElse(variable, Type.mkObject(loc))
+    case JavaType.Parameterized(erasure, arguments) =>
+      val base = flixTypeOf(erasure, loc)
+      val resolvedArgs = arguments.map(flixTypeOf(_, subst, loc))
+      Type.mkApply(base, resolvedArgs, loc)
+    case JavaType.NonGeneric(erasure) =>
+      instantiateWithObjectArgs(erasure, loc)
+    case JavaType.GenericArray(_, _) =>
+      Type.mkObject(loc)
+    case JavaType.Wildcard(_, _, _) =>
+      Type.mkObject(loc)
+  }
+
+  /**
+    * Returns `true` if the Java type `sub` is a subtype of the Java type `sup`, or throws an
+    * [[InternalCompilerException]] if their metadata cannot be read.
+    *
+    * A primitive type is only a subtype of itself. Reference types, including arrays, are checked
+    * against the class-file metadata of the Java type provider.
+    */
+  def isSubtype(sub: ClassDesc, sup: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean = {
+    if (sub.isPrimitive || sup.isPrimitive) {
+      sub == sup
+    } else {
+      JavaMemberResolver.isReferenceSubtype(sub, sup) match {
+        case Ok(result) => result
+        case Err(error) => throw InternalCompilerException(s"Java subtype check failed for '${sub.displayName()} <: ${sup.displayName()}': $error", loc)
+      }
+    }
+  }
+
+  /** Returns `true` if `desc` is `java.lang.Throwable` or a subclass of it. */
+  def isThrowable(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean =
+    isSubtype(desc, CD_Throwable, loc)
+
+  /**
+    * Returns the methods of `desc` that an anonymous subclass may override, or throws an
+    * [[InternalCompilerException]] if its metadata cannot be read.
+    */
+  def overridableMethods(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): List[JavaMethod] =
+    JavaMemberResolver.overridableMethods(desc) match {
+      case Ok(methods) => methods
+      case Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${desc.displayName()}': $error", loc)
+    }
+
+  /** Returns `true` if `method` is or overrides a method declared by `java.lang.Object`. */
+  def isObjectMethod(method: JavaMethod, loc: SourceLocation)(implicit flix: Flix): Boolean =
+    lookupClass(CD_Object, loc).declaredMethods.exists { m =>
+      m.ref.name == method.ref.name && m.ref.descriptor.parameterList() == method.ref.descriptor.parameterList()
+    }
 
   /** Applies the Flix type of `desc` to one `mkArg` per type parameter of `desc`. */
   private def instantiate(desc: ClassDesc, loc: SourceLocation)(mkArg: => Type)(implicit flix: Flix): Type =

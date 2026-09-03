@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.jvm.{JavaClass, JavaMethod, JavaType, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -11,14 +10,14 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
 import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
-import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaMemberResolver, JavaTypes}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver2}
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
 import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.ParOps
 
 import java.lang.constant.ClassDesc
-import java.lang.constant.ConstantDescs.{CD_Object, CD_String, CD_Throwable}
+import java.lang.constant.ConstantDescs.{CD_Object, CD_String}
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -453,27 +452,27 @@ object Safety {
 
         // Allow casting one Java type to another if there is a subtype relationship.
         case (Type.Cst(TypeConstructor.Native(left, _), _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (isSubtype(left, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaTypes.isSubtype(left, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for String.
         case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (isSubtype(CD_String, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaTypes.isSubtype(CD_String, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for Regex.
         case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (isSubtype(JavaClasses.Regex, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaTypes.isSubtype(JavaClasses.Regex, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for BigInt.
         case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (isSubtype(JavaClasses.BigInteger, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaTypes.isSubtype(JavaClasses.BigInteger, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for BigDecimal.
         case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (isSubtype(JavaClasses.BigDecimal, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaTypes.isSubtype(JavaClasses.BigDecimal, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for Arrays.
         case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (isSubtype(CD_Object.arrayType(), right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaTypes.isSubtype(CD_Object.arrayType(), right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Disallow casting a type variable.
         case (src@Type.Var(_, _), _) =>
@@ -766,14 +765,10 @@ object Safety {
     * @param loc   the location of the catch parameter.
     */
   private def checkCatchClass(clazz: ClassDesc, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
-    if (!isThrowable(clazz, loc)) {
+    if (!JavaTypes.isThrowable(clazz, loc)) {
       sctx.errors.add(IllegalCatchType(clazz, loc))
     }
   }
-
-  /** Returns `true` if `desc` is [[java.lang.Throwable]] or a subclass of it. */
-  private def isThrowable(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean =
-    isSubtype(desc, CD_Throwable, loc)
 
   /** Checks that the type of the argument to `throw` is [[java.lang.Throwable]] or a subclass. */
   private def checkThrow(exp: Expr)(implicit sctx: SharedContext, flix: Flix): Unit =
@@ -782,27 +777,9 @@ object Safety {
   /** Returns `true` if `tpe` is [[java.lang.Throwable]] or a subclass of it. */
   @tailrec
   private def isThrowableType(tpe0: Type)(implicit flix: Flix): Boolean = tpe0 match {
-    case Type.Cst(TypeConstructor.Native(desc, _), loc) => isThrowable(desc, loc)
+    case Type.Cst(TypeConstructor.Native(desc, _), loc) => JavaTypes.isThrowable(desc, loc)
     case Type.Alias(_, _, tpe, _) => isThrowableType(tpe)
     case _ => false
-  }
-
-  /**
-    * Returns `true` if the Java type `sub` is a subtype of the Java type `sup`.
-    *
-    * A primitive type is only a subtype of itself. Reference types, including arrays,
-    * are checked against the class-file metadata of the Java type provider.
-    */
-  private def isSubtype(sub: ClassDesc, sup: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean = {
-    if (sub.isPrimitive || sup.isPrimitive) {
-      sub == sup
-    } else {
-      JavaMemberResolver.isReferenceSubtype(sub, sup) match {
-        case Result.Ok(result) => result
-        case Result.Err(error) =>
-          throw InternalCompilerException(s"Java subtype check failed for '${sub.displayName()} <: ${sup.displayName()}': $error", loc)
-      }
-    }
   }
 
   /**
@@ -826,7 +803,7 @@ object Safety {
       val javaClass = JavaTypes.lookupClass(clazz, loc)
       // `clazz` must be an interface or have a non-private constructor without arguments
       // (unless user-defined constructors are provided).
-      if (!javaClass.isInterface && cs.isEmpty && !hasNonPrivateZeroArgConstructor(javaClass)) {
+      if (!javaClass.isInterface && cs.isEmpty && !javaClass.hasNonPrivateZeroArgConstructor) {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
       }
 
@@ -868,11 +845,11 @@ object Safety {
       val targs = tpe.typeArguments
       // The type parameters of `clazz` map to its type arguments; a missing argument falls back to Object.
       val substMap = javaClass.typeParameters.map(_.variable).zip(targs).toMap
-      val expectedMethods = overridableMethods(clazz, loc).map {
+      val expectedMethods = JavaTypes.overridableMethods(clazz, loc).map {
         case method =>
           val name = method.ref.name
-          val types = method.parameterTypes.map(resolveJavaType(_, substMap, loc))
-          val retTpe = resolveJavaType(method.returnType, substMap, loc)
+          val types = method.parameterTypes.map(JavaTypes.flixTypeOf(_, substMap, loc))
+          val retTpe = JavaTypes.flixTypeOf(method.returnType, substMap, loc)
           (method, name, types, retTpe)
       }.sortBy { case (_, name, types, _) => (name, types.length) }
 
@@ -897,7 +874,7 @@ object Safety {
       }
 
       // an unimplemented method is only a problem if it's abstract and isn't auto-implemented by Object
-      val missing = unimplemented.filter { case (method, _, _, _) => isAbstractMethod(method) && !isObjectMethod(method, loc) }
+      val missing = unimplemented.filter { case (method, _, _, _) => method.isAbstract && !JavaTypes.isObjectMethod(method, loc) }
       missing.foreach { case (method, _, _, _) => sctx.errors.add(NewObjectMissingMethod(clazz, method, loc)) }
       extra.foreach { case (ident, name, _, _) => sctx.errors.add(NewObjectUndefinedMethod(clazz, name, ident.loc)) }
 
@@ -905,46 +882,6 @@ object Safety {
       val controlEffecting = methods.filter(m => hasControlEffects(m.eff))
       controlEffecting.map(m => SafetyError.IllegalMethodEffect(m.eff, m.loc)).foreach(sctx.errors.add)
   }
-
-  /** Returns the methods of `clazz` that an anonymous subclass may override, or throws if its metadata cannot be read. */
-  private def overridableMethods(clazz: ClassDesc, loc: SourceLocation)(implicit flix: Flix): List[JavaMethod] =
-    JavaMemberResolver.overridableMethods(clazz) match {
-      case Result.Ok(methods) => methods
-      case Result.Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${clazz.displayName()}': $error", loc)
-    }
-
-  /** Return `true` if `clazz` has a non-private constructor with zero arguments. */
-  private def hasNonPrivateZeroArgConstructor(clazz: JavaClass): Boolean =
-    clazz.declaredConstructors.exists(c => c.parameterTypes.isEmpty && !c.isPrivate)
-
-  /**
-    * Resolves the Java type `javaType` to a Flix [[Type]] using the given
-    * substitution of type variables. Falls back to the erased (Object-filled) type.
-    */
-  private def resolveJavaType(javaType: JavaType, substMap: Map[JavaTypeVariable, Type], loc: SourceLocation)(implicit flix: Flix): Type = javaType match {
-    case JavaType.Variable(variable, _) =>
-      substMap.getOrElse(variable, Type.mkObject(loc))
-    case JavaType.Parameterized(erasure, arguments) =>
-      val base = JavaTypes.flixTypeOf(erasure, loc)
-      val resolvedArgs = arguments.map(resolveJavaType(_, substMap, loc))
-      Type.mkApply(base, resolvedArgs, loc)
-    case JavaType.NonGeneric(erasure) =>
-      JavaTypes.instantiateWithObjectArgs(erasure, loc)
-    case JavaType.GenericArray(_, _) =>
-      Type.mkObject(loc)
-    case JavaType.Wildcard(_, _, _) =>
-      Type.mkObject(loc)
-  }
-
-  /** Return `true` if `m` is abstract. */
-  private def isAbstractMethod(m: JavaMethod): Boolean =
-    m.isAbstract
-
-  /** Returns `true` if `method` is or overrides a method declared by the Object class. */
-  private def isObjectMethod(method: JavaMethod, loc: SourceLocation)(implicit flix: Flix): Boolean =
-    JavaTypes.lookupClass(CD_Object, loc).declaredMethods.exists { m =>
-      m.ref.name == method.ref.name && m.ref.descriptor.parameterList() == method.ref.descriptor.parameterList()
-    }
 
   /** Returns `true` if `eff` includes control effects (e.g. Console). */
   private def hasControlEffects(eff: Type): Boolean = {
