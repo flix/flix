@@ -33,16 +33,16 @@ jobs:
           key: ${{ runner.os }}-mill-${{ hashFiles('build.mill', '.mill-version') }}
           restore-keys: |
             ${{ runner.os }}-mill-
-      - name: Build fat JAR
-        run: ./mill flix.assembly
       - name: Build native image
-        # The native-image configuration ships inside the JAR under META-INF/native-image/dev.flix/flix.
-        # -Ob selects the quick build mode, which roughly halves build time at the cost of run-time performance.
-        run: native-image -Ob -jar out/flix/assembly.dest/out.jar -o out/flix-native
+        # setup-graalvm exports GRAALVM_HOME, which Mill uses to locate native-image.
+        # NATIVE_IMAGE_QUICK selects -Ob (quick build mode), see build.mill.
+        env:
+          NATIVE_IMAGE_QUICK: '1'
+        run: ./mill flix.nativeImage
       - name: Smoke test on a hello world project
         run: |
           mkdir hello && cd hello
-          ../out/flix-native init
-          ../out/flix-native check
-          ../out/flix-native build-fatjar
+          ../out/flix/nativeImage.dest/native-executable init
+          ../out/flix/nativeImage.dest/native-executable check
+          ../out/flix/nativeImage.dest/native-executable build-fatjar
           java -jar artifact/hello.jar | grep -q 'Hello World!'
