@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaType, JavaTypeParameter, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
-import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaArgument, JavaClasses, JavaMemberResolver}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaArgument, JavaClasses, JavaMemberResolver, JavaMetadata}
 import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaTypes, PrimitiveEffects}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -501,7 +501,7 @@ object TypeReduction2 {
     */
   private def classTypeParametersOf(method: JavaMethod, owner: ClassDesc, loc: SourceLocation)(implicit flix: Flix): List[JavaTypeParameter] =
     if (method.isStatic || !owner.isClassOrInterface) Nil
-    else JavaTypes.lookupClass(owner, loc).typeParameters
+    else JavaMetadata.lookupClass(owner, loc).typeParameters
 
   /**
     * Instantiates a resolved Java method: creates fresh type variables for method-level
@@ -614,7 +614,7 @@ object TypeReduction2 {
             val fiTypeArgs: Map[String, Type] =
               mapping.argParam.map(_ -> flixArg).toMap ++
               mapping.retParam.map(_ -> flixRet).toMap
-            val interfaceParamNames = JavaTypes.lookupClass(pt.erasure, loc).typeParameters.map(_.variable.name)
+            val interfaceParamNames = JavaMetadata.lookupClass(pt.erasure, loc).typeParameters.map(_.variable.name)
             interfaceParamNames.zip(pt.arguments).flatMap {
               case (ifParamName, javaTypeArg) =>
                 resolveToTypeVariable(javaTypeArg).flatMap { methodTv =>

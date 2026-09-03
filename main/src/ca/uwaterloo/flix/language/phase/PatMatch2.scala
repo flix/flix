@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.PatMatchError
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
+import ca.uwaterloo.flix.language.jvm.JavaMetadata
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -591,7 +591,7 @@ object PatMatch2 {
     var precedingRules: List[TypedAst.CatchRule] = Nil
     for (rule <- rules) {
       // Check if any preceding rule's class is a superclass of (or equal to) this rule's class.
-      precedingRules.find(prev => JavaTypes.isSubtype(rule.clazz, prev.clazz, rule.loc)) match {
+      precedingRules.find(prev => JavaMetadata.isSubtype(rule.clazz, prev.clazz, rule.loc)) match {
         case Some(coveringRule) =>
           sctx.errors.add(PatMatchError.RedundantCatchRule(coveringRule.loc, rule.loc))
         case None => ()
