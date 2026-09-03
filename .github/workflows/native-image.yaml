@@ -13,6 +13,7 @@ concurrency:
 jobs:
   build-native-image-and-smoke-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Check out master
@@ -36,10 +37,9 @@ jobs:
         run: ./mill flix.assembly
       - name: Build native image
         # The native-image configuration ships inside the JAR under META-INF/native-image/dev.flix/flix.
-        timeout-minutes: 20
-        run: native-image -jar out/flix/assembly.dest/out.jar -o out/flix-native
+        # -Ob selects the quick build mode, which roughly halves build time at the cost of run-time performance.
+        run: native-image -Ob -jar out/flix/assembly.dest/out.jar -o out/flix-native
       - name: Smoke test on a hello world project
-        timeout-minutes: 5
         run: |
           mkdir hello && cd hello
           ../out/flix-native init

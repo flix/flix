@@ -1,5 +1,4 @@
 {
-  "comment": "Resources read via LocalResource (standard library, ClassList.txt, primitive effect tables, documentation assets) and the reflection Byte Buddy needs to resolve the JVM version.",
   "resources": [
     { "glob": "src/**" },
     { "glob": "doc/**" },
