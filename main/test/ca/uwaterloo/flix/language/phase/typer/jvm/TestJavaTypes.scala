@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.jvm.{JavaType, JavaTypeVariable, JavaTypeVariableOwner}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.lang.constant.ConstantDescs.*
@@ -123,7 +124,8 @@ class TestJavaTypes extends AnyFunSuite {
 
   test("formatType") {
     assert(JavaTypes.formatType(CD_int) == "Int32")
-    assert(JavaTypes.formatType(CD_String) == "java.lang.String")
+    assert(JavaTypes.formatType(CD_String) == "String")
+    assert(JavaTypes.formatType(JavaClasses.BigInteger) == "BigInt")
     assert(JavaTypes.formatType(ClassDesc.of("java.util.Map$Entry")) == "java.util.Map$Entry")
     assert(JavaTypes.formatType(CD_int.arrayType()) == Type.mkArray(Type.Int32, Type.IO, loc).toString)
   }
