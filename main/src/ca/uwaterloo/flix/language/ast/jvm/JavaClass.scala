@@ -36,4 +36,8 @@ case class JavaClass(
   /** Returns whether this class-file type is an annotation. */
   def isAnnotation: Boolean = JavaModifiers.has(modifiers, JavaModifiers.ACC_ANNOTATION)
 
+  /** Returns whether this class declares a constructor without parameters that is not private. */
+  def hasNonPrivateZeroArgConstructor: Boolean =
+    declaredConstructors.exists(c => c.parameterTypes.isEmpty && !c.isPrivate)
+
 }
