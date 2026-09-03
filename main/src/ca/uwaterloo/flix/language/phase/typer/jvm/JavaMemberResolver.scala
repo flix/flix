@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.language.phase.typer.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
-import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.Ok
 
@@ -515,53 +514,14 @@ object JavaMemberResolver {
       if (parameter.isPrimitive) Ok(isWideningPrimitive(source, parameter))
       else boxed(source) match {
         case None => Ok(false)
-        case Some(boxedSource) => isReferenceSubtype(boxedSource, parameter)
+        case Some(boxedSource) => JavaHierarchy.isSubtype(boxedSource, parameter)
       }
     case Typed(source) if parameter.isPrimitive =>
       unboxed(source) match {
         case None => Ok(false)
         case Some(unboxedSource) => Ok(unboxedSource == parameter || isWideningPrimitive(unboxedSource, parameter))
       }
-    case Typed(source) => isReferenceSubtype(source, parameter)
-  }
-
-  /**
-    * Tests reference subtyping, including Java's special array subtype rules.
-    *
-    * Nominal reference types are delegated to the configured `JavaTypeProvider`; array relationships are computed
-    * directly because array descriptors do not have class-file metadata of their own.
-    *
-    *   - `String` is a subtype of `CharSequence`.
-    *   - `String[]` is a subtype of `Object`, `Cloneable`, `Serializable`, and `Object[]`.
-    *   - `int[]` is not a subtype of `long[]` because primitive array components must be identical.
-    *
-    * Returns `Ok(true)` for a subtype, `Ok(false)` otherwise, or `Err` if nominal hierarchy metadata is missing.
-    */
-  def isReferenceSubtype(source: ClassDesc, target: ClassDesc)(implicit flix: Flix): Result[Boolean, JavaLookupError] = {
-    if (source == target) {
-      // Every reference type is a subtype of itself.
-      Ok(true)
-    } else if (source.isArray) {
-      // Arrays have descriptor-defined supertypes and covariant reference components.
-      if (target == CD_Object || target == JavaClasses.Cloneable || target == JavaClasses.Serializable) {
-        Ok(true)
-      } else if (target.isArray) {
-        (componentType(source), componentType(target)) match {
-          case (Some(sourceComponent), Some(targetComponent)) if sourceComponent.isPrimitive || targetComponent.isPrimitive =>
-            Ok(sourceComponent == targetComponent)
-          case (Some(sourceComponent), Some(targetComponent)) => isReferenceSubtype(sourceComponent, targetComponent)
-          case _ => Ok(false)
-        }
-      } else {
-        Ok(false)
-      }
-    } else if (target.isArray) {
-      // A non-array reference type is never a subtype of an array type.
-      Ok(false)
-    } else {
-      // All remaining cases are nominal reference relationships read from class-file metadata.
-      flix.javaTypeProvider.isSubtype(source, target)
-    }
+    case Typed(source) => JavaHierarchy.isSubtype(source, parameter)
   }
 
   /**

@@ -158,19 +158,13 @@ object JavaTypes {
     * Returns `true` if the Java type `sub` is a subtype of the Java type `sup`, or throws an
     * [[InternalCompilerException]] if their metadata cannot be read.
     *
-    * A primitive type is only a subtype of itself. Reference types, including arrays, are checked
-    * against the class-file metadata of the Java type provider.
+    * See [[JavaHierarchy.isSubtype]] for the subtyping rules.
     */
-  def isSubtype(sub: ClassDesc, sup: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean = {
-    if (sub.isPrimitive || sup.isPrimitive) {
-      sub == sup
-    } else {
-      JavaMemberResolver.isReferenceSubtype(sub, sup) match {
-        case Ok(result) => result
-        case Err(error) => throw InternalCompilerException(s"Java subtype check failed for '${ClassDescs.binaryNameOf(sub)} <: ${ClassDescs.binaryNameOf(sup)}': $error", loc)
-      }
+  def isSubtype(sub: ClassDesc, sup: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean =
+    JavaHierarchy.isSubtype(sub, sup) match {
+      case Ok(result) => result
+      case Err(error) => throw InternalCompilerException(s"Java subtype check failed for '${ClassDescs.binaryNameOf(sub)} <: ${ClassDescs.binaryNameOf(sup)}': $error", loc)
     }
-  }
 
   /** Returns `true` if `desc` is `java.lang.Throwable` or a subclass of it. */
   def isThrowable(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean =

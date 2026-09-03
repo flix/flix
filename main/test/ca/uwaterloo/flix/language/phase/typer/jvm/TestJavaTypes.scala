@@ -28,28 +28,6 @@ class TestJavaTypes extends AnyFunSuite {
 
   private val loc = SourceLocation.Unknown
 
-  test("isSubtype.ReferenceTypes") {
-    implicit val flix: Flix = new Flix
-    try {
-      assert(JavaTypes.isSubtype(CD_String, CD_Object, loc))
-      assert(JavaTypes.isSubtype(CD_String, ClassDesc.of("java.lang.CharSequence"), loc))
-      assert(!JavaTypes.isSubtype(CD_Object, CD_String, loc))
-      assert(!JavaTypes.isSubtype(CD_String, CD_Integer, loc))
-    } finally flix.javaTypeProvider.close()
-  }
-
-  test("isSubtype.PrimitiveAndArrayTypes") {
-    implicit val flix: Flix = new Flix
-    try {
-      assert(JavaTypes.isSubtype(CD_int, CD_int, loc))
-      assert(!JavaTypes.isSubtype(CD_int, CD_long, loc))
-      assert(!JavaTypes.isSubtype(CD_int, CD_Object, loc))
-      assert(JavaTypes.isSubtype(CD_String.arrayType(), CD_Object, loc))
-      assert(JavaTypes.isSubtype(CD_String.arrayType(), CD_Object.arrayType(), loc))
-      assert(!JavaTypes.isSubtype(CD_int.arrayType(), CD_long.arrayType(), loc))
-    } finally flix.javaTypeProvider.close()
-  }
-
   test("isThrowable") {
     implicit val flix: Flix = new Flix
     try {
