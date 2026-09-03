@@ -20,10 +20,11 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 import ca.uwaterloo.flix.util.{ClassDescs, Formatter, Grammar}
 
 import java.lang.constant.ClassDesc
@@ -321,8 +322,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      // Transitional: loads the class since the field lookup still requires a loaded class.
-      val availableFields = Type.descFromFlixType(tpe).map(desc => getFieldsByName(ClassDescs.load(desc, flix.jarLoader))).getOrElse(Nil)
+      val availableFields = Type.descFromFlixType(tpe).toList.flatMap(desc => JavaMemberResolver.fields(desc).toOption.getOrElse(Nil))
       s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
          |
          |${highlight(loc, "cannot find field", fmt)}
@@ -1109,13 +1109,6 @@ object TypeError {
   }
 
   /**
-    * Returns the fields of the given class sorted by name.
-    */
-  private def getFieldsByName(clazz: Class[?]): List[java.lang.reflect.Field] = {
-    clazz.getFields.sortBy(_.getName).toList
-  }
-
-  /**
     * Returns a formatted string representation of a Java constructor.
     */
   private def formatConstructor(clazz: ClassDesc, c: JavaMethod): String = {
@@ -1126,18 +1119,8 @@ object TypeError {
   /**
     * Returns a formatted string representation of a Java field.
     */
-  private def formatField(f: java.lang.reflect.Field): String = {
-    s"${f.getName}: ${formatJavaType(f.getType)}"
-  }
-
-  /**
-    * Returns the Flix-style string representation of a Java type.
-    */
-  private def formatJavaType(tpe: Class[?]): String = {
-    if (tpe.isPrimitive || tpe.isArray)
-      Type.getFlixType(tpe).toString
-    else
-      tpe.getName
+  private def formatField(f: JavaField): String = {
+    s"${f.ref.name}: ${formatJavaType(f.ref.descriptor)}"
   }
 
   /**

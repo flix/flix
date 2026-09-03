@@ -18,15 +18,16 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
 import ca.uwaterloo.flix.language.ast.Name
-import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 
 import java.lang.constant.ClassDesc
+import java.lang.reflect.Modifier
 
 object GetStaticFieldCompleter {
 
   def getCompletions(clazz: ClassDesc, field: Name.Ident)(implicit flix: Flix): List[Completion] = {
-    // Transitional: loads the class since the member listing still requires a loaded class.
-    JvmUtils.getStaticFields(ClassDescs.load(clazz, flix.jarLoader)).sortBy(_.getName).map(FieldCompletion(field, Priority.Lowest(0), _))
+    val fields = JavaMemberResolver.fields(clazz).toOption.getOrElse(Nil)
+    fields.filter(f => Modifier.isStatic(f.modifiers)).map(FieldCompletion(field, Priority.Lowest(0), _))
   }
 
 }

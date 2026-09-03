@@ -18,15 +18,14 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
 import ca.uwaterloo.flix.language.ast.Name
-import ca.uwaterloo.flix.util.{ClassDescs, JvmUtils}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 
 import java.lang.constant.ClassDesc
 
 object InvokeStaticMethodCompleter {
 
   def getCompletions(clazz: ClassDesc, field: Name.Ident)(implicit flix: Flix): List[Completion] = {
-    // Transitional: loads the class since the member listing still requires a loaded class.
-    JvmUtils.getStaticMethods(ClassDescs.load(clazz, flix.jarLoader)).sortBy(_.getName).map(MethodCompletion(field, Priority.Lowest(0), _))
+    JavaMemberResolver.staticMethods(clazz).toOption.getOrElse(Nil).map(MethodCompletion(field, Priority.Lowest(0), _))
   }
 
 }
