@@ -108,15 +108,34 @@ final case class ByteBuddyJavaTypeProvider(
 
   /** Returns `Ok` with metadata for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
   override def lookupClass(desc: ClassDesc): Result[JavaClass, JavaLookupError] =
-    classCache.computeIfAbsent(desc, d => lookupClassDirect(d))
+    cached(classCache, desc)(lookupClassDirect)
 
   /** Returns `Ok` with the virtual method graph for `desc`, or `Err` if the descriptor is unsupported, missing, or invalid. */
   override def virtualMethods(desc: ClassDesc): Result[List[JavaMethod], JavaLookupError] =
-    virtualMethodsCache.computeIfAbsent(desc, d => virtualMethodsDirect(d))
+    cached(virtualMethodsCache, desc)(virtualMethodsDirect)
 
   /** Returns `Ok` with the subtype result, or `Err` if either descriptor is unsupported, missing, or invalid. */
   override def isSubtype(subtype: ClassDesc, supertype: ClassDesc): Result[Boolean, JavaLookupError] =
-    subtypeCache.computeIfAbsent((subtype, supertype), key => isSubtypeDirect(key._1, key._2))
+    cached(subtypeCache, (subtype, supertype))(key => isSubtypeDirect(key._1, key._2))
+
+  /**
+    * Returns the value cached for `key`, computing it with `compute` and caching it on a miss.
+    *
+    * The computation deliberately runs outside the lock of the map. A miss parses a class file or compiles a
+    * method graph, and `computeIfAbsent` would hold the lock of the hash bin for that duration, blocking every
+    * other thread that needs the same or a colliding key. Two threads may therefore compute the same value
+    * concurrently; the first value stored wins and the values are immutable, so the duplicate work is harmless.
+    */
+  private def cached[K, V <: AnyRef](cache: ConcurrentHashMap[K, V], key: K)(compute: K => V): V = {
+    val hit = cache.get(key)
+    if (hit != null) {
+      hit
+    } else {
+      val computed = compute(key)
+      val prior = cache.putIfAbsent(key, computed)
+      if (prior != null) prior else computed
+    }
+  }
 
   /** Closes the underlying class-file locator and its owned resources. */
   override def close(): Unit = locator.close()
