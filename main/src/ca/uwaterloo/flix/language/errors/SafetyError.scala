@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.{ClassDescs, Formatter}
 
 import java.lang.constant.ClassDesc
@@ -104,7 +105,7 @@ object SafetyError {
          |${highlight(loc, "impossible cast", fmt)}
          |
          |From: ${red(FormatType.formatType(from))}
-         |To  : ${red(formatJavaType(to))}
+         |To  : ${red(JavaTypes.formatType(to))}
          |
          |${underline("Explanation:")} A checked cast can only be used between Java types.
          |""".stripMargin
@@ -156,7 +157,7 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(formatJavaType(from))}
+         |From: ${red(JavaTypes.formatType(from))}
          |To  : ${red(FormatType.formatType(to))}
          |
          |${underline("Explanation:")} A checked cast can only be used between Java types.
@@ -626,15 +627,6 @@ object SafetyError {
     }
   }
 
-
-  /** Returns the string representation of the Java type `desc`. */
-  private def formatJavaType(desc: ClassDesc): String = {
-    if (desc.isPrimitive || desc.isArray)
-      Type.getFlixType(desc, 0).toString
-    else
-      ClassDescs.binaryNameOf(desc)
-  }
-
   /**
     * Returns the Java type `desc` as it would be written in the signature of a method
     * in a `new` expression, e.g. `Int32`, `String`, `Object`, or `Array[Int32, IO]`.
@@ -642,7 +634,7 @@ object SafetyError {
   private def formatSourceType(desc: ClassDesc): String = {
     if (desc.isArray)
       s"Array[${formatSourceType(desc.componentType())}, IO]"
-    else Type.getFlixType(desc, 0) match {
+    else JavaTypes.flixTypeOf(desc, 0) match {
       case Type.Cst(TypeConstructor.Native(d, _), _) => ClassDescs.simpleNameOf(d)
       case tpe => tpe.toString
     }

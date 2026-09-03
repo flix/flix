@@ -94,4 +94,38 @@ class TestJavaTypes extends AnyFunSuite {
     } finally flix.javaTypeProvider.close()
   }
 
+  test("flixTypeOf.Descriptor") {
+    val list = ClassDesc.of("java.util.List")
+    assert(JavaTypes.flixTypeOf(CD_int, 0) == Type.Int32)
+    assert(JavaTypes.flixTypeOf(CD_void, 0) == Type.Unit)
+    assert(JavaTypes.flixTypeOf(CD_String, 0) == Type.Str)
+    assert(JavaTypes.flixTypeOf(ClassDesc.of("java.math.BigInteger"), 0) == Type.BigInt)
+    assert(JavaTypes.flixTypeOf(list, 1) == Type.mkNative(list, 1, loc))
+    // The arity is only evaluated for a native type, so a special class never triggers it.
+    var evaluated = false
+    assert(JavaTypes.flixTypeOf(CD_String, { evaluated = true; 0 }) == Type.Str)
+    assert(!evaluated)
+    assert(JavaTypes.flixTypeOf(list, { evaluated = true; 1 }) == Type.mkNative(list, 1, loc))
+    assert(evaluated)
+    // An array of a generic class carries the arity of its element class.
+    assert(JavaTypes.flixTypeOf(list.arrayType(), 1) == Type.mkArray(Type.mkNative(list, 1, loc), Type.IO, loc))
+  }
+
+  test("descriptorOf") {
+    val list = ClassDesc.of("java.util.List")
+    assert(JavaTypes.descriptorOf(Type.Int32) == Some(CD_int))
+    assert(JavaTypes.descriptorOf(Type.Str) == Some(CD_String))
+    assert(JavaTypes.descriptorOf(Type.mkNative(list, 1, loc)) == Some(list))
+    assert(JavaTypes.descriptorOf(Type.mkApply(Type.mkNative(list, 1, loc), List(Type.Str), loc)) == Some(list))
+    assert(JavaTypes.descriptorOf(Type.Unit) == None)
+    assert(JavaTypes.descriptorOf(Type.mkArray(Type.Int32, Type.IO, loc)) == None)
+  }
+
+  test("formatType") {
+    assert(JavaTypes.formatType(CD_int) == "Int32")
+    assert(JavaTypes.formatType(CD_String) == "java.lang.String")
+    assert(JavaTypes.formatType(ClassDesc.of("java.util.Map$Entry")) == "java.util.Map$Entry")
+    assert(JavaTypes.formatType(CD_int.arrayType()) == Type.mkArray(Type.Int32, Type.IO, loc).toString)
+  }
+
 }

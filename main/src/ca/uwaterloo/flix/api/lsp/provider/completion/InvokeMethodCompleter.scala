@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
 import ca.uwaterloo.flix.language.ast.{Name, Type}
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaMemberResolver, JavaTypes}
 
 object InvokeMethodCompleter {
 
   def getCompletions(obj: Type, name: Name.Ident)(implicit flix: Flix): Iterable[MethodCompletion] = {
-    Type.descFromFlixType(obj) match {
+    JavaTypes.descriptorOf(obj) match {
       case None =>
         Nil
       case Some(desc) =>
