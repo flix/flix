@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.{ClassDescs, Formatter}
@@ -468,15 +468,18 @@ object SafetyError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      val parameterTypes = (clazz :: method.ref.descriptor.parameterList().asScala.toList).map(formatJavaType)
-      val returnType = formatJavaType(method.ref.descriptor.returnType())
+      val thisParam = s"_this: ${ClassDescs.simpleNameOf(clazz)}"
+      val params = method.parameterNames.zip(method.ref.descriptor.parameterList().asScala).map {
+        case (name, desc) => s"$name: ${formatSourceType(desc)}"
+      }
+      val returnType = formatSourceType(method.ref.descriptor.returnType())
       s""">> Missing implementation of method '${red(method.ref.name)}' of '${magenta(ClassDescs.binaryNameOf(clazz))}'.
          |
          |${highlight(loc, "new object", fmt)}
          |
          |${underline("Explanation:")} Add a method with the following signature:
          |
-         |  def ${method.ref.name}(${parameterTypes.mkString(", ")}): $returnType
+         |  def ${method.ref.name}(${(thisParam :: params).mkString(", ")}): $returnType = ...
          |""".stripMargin
     }
   }
@@ -630,5 +633,18 @@ object SafetyError {
       Type.getFlixType(desc, 0).toString
     else
       ClassDescs.binaryNameOf(desc)
+  }
+
+  /**
+    * Returns the Java type `desc` as it would be written in the signature of a method
+    * in a `new` expression, e.g. `Int32`, `String`, `Object`, or `Array[Int32, IO]`.
+    */
+  private def formatSourceType(desc: ClassDesc): String = {
+    if (desc.isArray)
+      s"Array[${formatSourceType(desc.componentType())}, IO]"
+    else Type.getFlixType(desc, 0) match {
+      case Type.Cst(TypeConstructor.Native(d, _), _) => ClassDescs.simpleNameOf(d)
+      case tpe => tpe.toString
+    }
   }
 }
