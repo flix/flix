@@ -115,11 +115,12 @@ object JavaTypes {
   }
 
   /**
-    * Returns the string representation of the Java type `desc` used in error messages: a primitive
-    * or array type is shown as its Flix type and a class by its binary name.
+    * Returns the string representation of the Java type `desc` used in error messages: a primitive,
+    * an array, or a class with a Flix counterpart (e.g. `String` or `BigInt`) is shown as its Flix
+    * type, and any other class by its binary name.
     */
   def formatType(desc: ClassDesc): String =
-    if (desc.isPrimitive || desc.isArray) flixTypeOf(desc, 0).toString else ClassDescs.binaryNameOf(desc)
+    flixTypeOf(desc, 0).toString
 
   /**
     * Returns the fully-applied Flix type of the Java class `desc`, with `Object` type arguments for a generic class.

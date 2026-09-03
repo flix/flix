@@ -1705,7 +1705,9 @@ object Resolver {
             }
         }
       case None =>
-        val err = ResolutionError.IllegalNonJavaType(resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root), loc)
+        // Resolve the type anyway so that errors inside it (e.g. undefined names) are reported.
+        resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
+        val err = ResolutionError.IllegalNonJavaType(tpe.loc)
         sctx.errors.add(err)
         ResolvedAst.Expr.Error(err)
     }
@@ -1754,12 +1756,12 @@ object Resolver {
                     sctx.errors.add(err)
                     ResolvedAst.Expr.Error(err)
                   case None =>
-                    val err = ResolutionError.IllegalNonJavaType(t, t.loc)
+                    val err = ResolutionError.IllegalNonJavaType(t.loc)
                     sctx.errors.add(err)
                     ResolvedAst.Expr.Error(err)
                 }
               case _ =>
-                val err = ResolutionError.IllegalNonJavaType(t, t.loc)
+                val err = ResolutionError.IllegalNonJavaType(t.loc)
                 sctx.errors.add(err)
                 ResolvedAst.Expr.Error(err)
             }

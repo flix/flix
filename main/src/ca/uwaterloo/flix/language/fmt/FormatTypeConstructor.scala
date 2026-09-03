@@ -71,8 +71,8 @@ object FormatTypeConstructor {
     case TypeConstructor.RestrictableEnum(sym, _) => sym.name
 
     // JVM types
-    case TypeConstructor.Native(desc, _) => ClassDescs.simpleNameOf(desc)
-    case TypeConstructor.JvmConstructor(constructor) => s"Constructor(${constructor.ref.owner.displayName()})"
+    case TypeConstructor.Native(desc, _) => ClassDescs.binaryNameOf(desc)
+    case TypeConstructor.JvmConstructor(constructor) => s"Constructor(${ClassDescs.binaryNameOf(constructor.ref.owner)})"
     case TypeConstructor.JvmMethod(method, _) => s"Method(${method.ref.name})"
     case TypeConstructor.JvmField(field) => s"Field(${field.ref.name})"
 

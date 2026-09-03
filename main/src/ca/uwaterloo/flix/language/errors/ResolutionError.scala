@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst, UnkindedType}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.{ClassDescs, Formatter, Grammar}
@@ -204,19 +204,28 @@ object ResolutionError {
   }
 
   /**
-    * Illegal Non-Java Type Error.
+    * An error raised to indicate that a `new` expression names a type that is not a Java class or interface.
     *
-    * @param tpe the illegal type.
-    * @param loc the location where the error occurred.
+    * @param loc the location of the type.
     */
-  case class IllegalNonJavaType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
+  case class IllegalNonJavaType(loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9623
 
-    def summary: String = "Unexpected non-Java type. Expected class or interface type."
+    // The type as written in the source, if it fits on a single line.
+    private val name: Option[String] = loc.text
+
+    def summary: String = name match {
+      case Some(t) => s"Unexpected non-Java type: '$t'. Expected a Java class or interface."
+      case None => "Unexpected non-Java type. Expected a Java class or interface."
+    }
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected non-Java type: '${red(tpe.toString)}'.
+      val headline = name match {
+        case Some(t) => s">> Unexpected non-Java type: '${red(t)}'."
+        case None => ">> Unexpected non-Java type."
+      }
+      s"""$headline
          |
          |${highlight(loc, "unexpected type", fmt)}
          |
