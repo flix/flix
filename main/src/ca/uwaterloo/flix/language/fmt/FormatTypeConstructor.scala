@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.TypeConstructor
-import ca.uwaterloo.flix.util.ClassDescs
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 
 object FormatTypeConstructor {
 

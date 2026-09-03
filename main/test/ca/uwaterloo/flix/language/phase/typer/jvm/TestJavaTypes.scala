@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.jvm.{JavaType, JavaTypeVariable, JavaTypeVariableOwner}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
+import ca.uwaterloo.flix.language.jvm.JavaClasses
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.lang.constant.ConstantDescs.*

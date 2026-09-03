@@ -18,14 +18,14 @@ package ca.uwaterloo.flix.language.phase.jvm.classes
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethodName, InstanceField, StaticMethod}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{RootPackage, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkVoidDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, GenFunAndClosureClasses, JavaClasses, MethodTypeDescs}
-import ca.uwaterloo.flix.util.ClassDescs
+import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, GenFunAndClosureClasses, MethodTypeDescs}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.typer.jvm
+package ca.uwaterloo.flix.language.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.jvm.{JavaMethod, JavaType, JavaTypeVariable, JavaTypeVariableOwner}
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaArgument.*
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaLookupError.MissingClass
+import ca.uwaterloo.flix.language.jvm.JavaArgument.*
+import ca.uwaterloo.flix.language.jvm.JavaLookupError.MissingClass
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.funsuite.AnyFunSuite
 

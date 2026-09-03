@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.*
 import ca.uwaterloo.flix.language.ast.shared.JvmAnnotation
-import ca.uwaterloo.flix.util.ClassDescs
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses}
 import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
 
 import java.lang.constant.{ClassDesc, ConstantDescs, MethodTypeDesc}

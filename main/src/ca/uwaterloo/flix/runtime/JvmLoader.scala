@@ -19,9 +19,10 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 import ca.uwaterloo.flix.util.collection.MapOps
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.constant.ClassDesc
 import java.lang.reflect.{InvocationTargetException, Method}

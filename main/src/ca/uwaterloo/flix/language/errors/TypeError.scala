@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaMemberResolver}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -24,8 +25,8 @@ import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaMemberResolver, JavaTypes}
-import ca.uwaterloo.flix.util.{ClassDescs, Formatter, Grammar}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
+import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 import java.lang.constant.ClassDesc
 import scala.jdk.CollectionConverters.*

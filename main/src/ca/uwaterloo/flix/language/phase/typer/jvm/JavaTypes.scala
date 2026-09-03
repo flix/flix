@@ -19,8 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.jvm.{JavaClass, JavaMethod, JavaType, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses, JavaHierarchy, JavaMemberResolver}
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import java.lang.constant.ClassDesc

@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.{TypeConstructor, UnkindedType}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Type
-import ca.uwaterloo.flix.util.ClassDescs
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet

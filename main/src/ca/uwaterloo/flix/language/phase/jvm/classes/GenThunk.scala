@@ -24,8 +24,8 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{DefaultMethod, Interface
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
-import ca.uwaterloo.flix.language.phase.jvm.{JavaClasses, Mangle}
-import ca.uwaterloo.flix.util.ClassDescs
+import ca.uwaterloo.flix.language.phase.jvm.Mangle
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc

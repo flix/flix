@@ -22,9 +22,10 @@ import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
+import ca.uwaterloo.flix.language.jvm.ClassDescs.internalNameOf
+import ca.uwaterloo.flix.language.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenLazy, GenMatchError, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenResult, GenResumption, GenResumptionNil, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUnit, GenValue}
-import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.{CD_double, CD_int, CD_long, CD_void}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor

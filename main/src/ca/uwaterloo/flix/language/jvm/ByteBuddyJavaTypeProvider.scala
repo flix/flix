@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.typer.jvm
+package ca.uwaterloo.flix.language.jvm
 
 import ca.uwaterloo.flix.language.ast.jvm.*
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaLookupError.{InvalidClass, MissingClass, UnsupportedDescriptor}
+import ca.uwaterloo.flix.language.jvm.JavaLookupError.{InvalidClass, MissingClass, UnsupportedDescriptor}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{ClassDescs, Result}
+import ca.uwaterloo.flix.util.Result
 import net.bytebuddy.ClassFileVersion
 import net.bytebuddy.description.TypeVariableSource
 import net.bytebuddy.description.enumeration.EnumerationDescription

@@ -21,11 +21,11 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaType, JavaTypeParameter, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
-import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
-import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver, JavaTypes, PrimitiveEffects}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaArgument, JavaClasses, JavaMemberResolver}
+import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaTypes, PrimitiveEffects}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.constant.ConstantDescs.*
 import java.lang.constant.ClassDesc

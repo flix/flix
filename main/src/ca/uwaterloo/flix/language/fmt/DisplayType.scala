@@ -19,7 +19,8 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{SymbolSet, VarText}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
   * A well-kinded type in an easily-printable format.
