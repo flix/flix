@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaArgument, JavaMemberResolver, JavaTypes}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
 
 import java.lang.constant.ConstantDescs.*
 import java.lang.constant.ClassDesc
@@ -201,7 +201,7 @@ object TypeReduction2 {
       case Ok(constructor :: _) => JavaConstructorResolution.Resolved(constructor)
       case Ok(Nil) => JavaConstructorResolution.NotFound
       case Err(error) =>
-        val query = s"${owner.displayName()}(${arguments.mkString(", ")})"
+        val query = s"${ClassDescs.binaryNameOf(owner)}(${arguments.mkString(", ")})"
         throw InternalCompilerException(s"Java constructor lookup failed for '$query': $error", loc)
     }
   }
@@ -233,7 +233,7 @@ object TypeReduction2 {
       case Ok(Nil) => JavaMethodResolution.NotFound
       case Err(error) =>
         val kind = if (static) "static" else "instance"
-        val query = s"$kind ${owner.displayName()}.$methodName(${arguments.mkString(", ")})"
+        val query = s"$kind ${ClassDescs.binaryNameOf(owner)}.$methodName(${arguments.mkString(", ")})"
         throw InternalCompilerException(s"Java method lookup failed for '$query': $error", loc)
     }
   }
@@ -295,7 +295,7 @@ object TypeReduction2 {
       case Ok(Some(field)) => JavaFieldResolution.Resolved(field)
       case Ok(None) => JavaFieldResolution.NotFound
       case Err(error) =>
-        val query = s"${owner.displayName()}.$fieldName"
+        val query = s"${ClassDescs.binaryNameOf(owner)}.$fieldName"
         throw InternalCompilerException(s"Java field lookup failed for '$query': $error", loc)
     }
   }

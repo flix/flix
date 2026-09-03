@@ -61,8 +61,24 @@ object ClassDescs {
   }
 
   /**
+    * Returns the canonical name of `desc` as [[Class.getCanonicalName]] would return it,
+    * e.g. `java.util.Map.Entry` (for `java.util.Map$Entry`), `int`, or `java.lang.String[]`.
+    *
+    * Local and anonymous classes have no canonical name in Java. For those, this returns the
+    * binary name with `$` replaced by `.`.
+    */
+  def canonicalNameOf(desc: ClassDesc): String = {
+    if (desc.isArray) {
+      canonicalNameOf(desc.componentType()) + "[]"
+    } else {
+      binaryNameOf(desc).replace('$', '.')
+    }
+  }
+
+  /**
     * Returns the simple name of `desc` as [[Class.getSimpleName]] would return it,
-    * e.g. `String`, `Entry` (for `java.util.Map$Entry`), `int`, or `String[]`.
+    * e.g. `String`, `Entry` (for `java.util.Map$Entry`), `int`, `String[]`,
+    * `Local` (for the local class `Outer$1Local`), or the empty string for an anonymous class.
     */
   def simpleNameOf(desc: ClassDesc): String = {
     if (desc.isArray) {
@@ -71,7 +87,13 @@ object ClassDescs {
       // The display name is the unqualified name, e.g. `Map$Entry` for a nested class.
       val name = desc.displayName()
       val idx = name.lastIndexOf('$')
-      if (idx >= 0 && idx < name.length - 1) name.substring(idx + 1) else name
+      if (idx < 0 || idx == name.length - 1) {
+        name
+      } else {
+        // Drop the enclosing class and the digits that precede the name of a local class
+        // (`Outer$1Local`) or make up the whole name of an anonymous class (`Outer$1`).
+        name.substring(idx + 1).dropWhile(c => c >= '0' && c <= '9')
+      }
     }
   }
 

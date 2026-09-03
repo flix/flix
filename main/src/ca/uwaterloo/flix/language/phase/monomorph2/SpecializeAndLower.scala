@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.*
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, Result}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import scala.jdk.CollectionConverters.*
@@ -1205,7 +1205,7 @@ private[monomorph2] object SpecializeAndLower {
     val owner = method.ref.owner
     flix.javaTypeProvider.lookupClass(owner) match {
       case Result.Ok(clazz) => JMethod.of(method, isInterface = clazz.isInterface)
-      case Result.Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${owner.displayName()}': $error", loc)
+      case Result.Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${ClassDescs.binaryNameOf(owner)}': $error", loc)
     }
   }
 
@@ -1236,7 +1236,7 @@ private[monomorph2] object SpecializeAndLower {
   private def overriddenJavaMethod(clazz: ClassDesc, name: String, arity: Int, loc: SourceLocation)(implicit flix: Flix): Option[JavaMethod] =
     JavaMemberResolver.overridableMethods(clazz) match {
       case Result.Ok(methods) => methods.find(m => m.ref.name == name && m.parameterTypes.length == arity)
-      case Result.Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${clazz.displayName()}': $error", loc)
+      case Result.Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${ClassDescs.binaryNameOf(clazz)}': $error", loc)
     }
 
   /**

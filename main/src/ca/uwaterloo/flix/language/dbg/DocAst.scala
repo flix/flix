@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
+import ca.uwaterloo.flix.util.ClassDescs
 
 import java.lang.constant.ClassDesc
 import scala.collection.immutable.SortedSet
@@ -347,11 +348,8 @@ object DocAst {
     def JavaPutStaticField(f: JField, d: Expr): Expr =
       Assign(Dot(AsIs(javaClassName(f.owner)), AsIs(f.name)), d)
 
-    /** Returns the fully-qualified dotted name of the class descriptor `desc`. */
-    private[dbg] def javaClassName(desc: ClassDesc): String = {
-      val pkg = desc.packageName()
-      if (pkg.isEmpty) desc.displayName() else s"$pkg.${desc.displayName()}"
-    }
+    /** Returns the binary name of the class descriptor `desc`, e.g. `java.util.Map$Entry`. */
+    private[dbg] def javaClassName(desc: ClassDesc): String = ClassDescs.binaryNameOf(desc)
 
     def JumpTo(sym: Symbol.LabelSym): Expr =
       Keyword("goto", AsIs(sym.toString))

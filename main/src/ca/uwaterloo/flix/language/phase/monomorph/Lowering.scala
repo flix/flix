@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, Sour
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
@@ -699,7 +699,7 @@ object Lowering {
   private def overriddenJavaMethod(clazz: ClassDesc, name: String, arity: Int, loc: SourceLocation)(implicit flix: Flix): Option[JavaMethod] =
     JavaMemberResolver.overridableMethods(clazz) match {
       case Result.Ok(methods) => methods.find(m => m.ref.name == name && m.parameterTypes.length == arity)
-      case Result.Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${clazz.displayName()}': $error", loc)
+      case Result.Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${ClassDescs.binaryNameOf(clazz)}': $error", loc)
     }
 
   /**
@@ -1111,7 +1111,7 @@ object Lowering {
     val owner = method.ref.owner
     flix.javaTypeProvider.lookupClass(owner) match {
       case Result.Ok(clazz) => JMethod.of(method, isInterface = clazz.isInterface)
-      case Result.Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${owner.displayName()}': $error", loc)
+      case Result.Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${ClassDescs.binaryNameOf(owner)}': $error", loc)
     }
   }
 
