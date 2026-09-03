@@ -38,7 +38,7 @@ object GenUnhandledEffectError {
   val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("UnhandledEffectError"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = GenFlixError.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
     // This field allows external equality checking.
@@ -78,7 +78,7 @@ object GenUnhandledEffectError {
       INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
       appendString()
       INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-      INVOKESPECIAL(ClassConstants.FlixError.Constructor)
+      INVOKESPECIAL(GenFlixError.Constructor)
       // save arguments locally
       thisLoad()
       suspension.load()

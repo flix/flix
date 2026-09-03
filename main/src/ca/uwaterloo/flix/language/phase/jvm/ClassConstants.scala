@@ -16,42 +16,13 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceMethod, InterfaceMethod, StaticMethod}
-import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
-import org.objectweb.asm.MethodVisitor
 
-import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.{CD_boolean, CD_int}
 
+/** The well-known members of the Java classes referenced by the backend. */
 object ClassConstants {
-
-  // Flix Constants.
-
-  object FlixError {
-
-    val Desc: ClassDesc = Mangle.mkDesc(Mangle.DevFlixRuntime, Mangle.mkClassName("FlixError"))
-
-    val Constructor: ConstructorMethod = ConstructorMethod(Desc, List(JavaClasses.String))
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkAbstractClass(Desc, JavaClasses.Error)
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.closeClassMaker()
-    }
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      ALOAD(1)
-      invokeConstructor(JavaClasses.Error, mkVoidDescriptor(JavaClasses.String))
-      RETURN()
-    }
-
-  }
-
-  // Java Constants.
 
   object BigDecimal {
     val Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JavaClasses.BigDecimal, List(JavaClasses.String))
