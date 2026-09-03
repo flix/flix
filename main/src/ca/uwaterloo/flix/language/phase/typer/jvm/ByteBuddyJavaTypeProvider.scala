@@ -30,6 +30,7 @@ import net.bytebuddy.dynamic.scaffold.MethodGraph
 import net.bytebuddy.pool.TypePool
 
 import java.lang.annotation.{Retention, RetentionPolicy}
+import java.lang.constant.ConstantDescs.CD_Object
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.reflect.{GenericSignatureFormatError, MalformedParameterizedTypeException}
 import java.nio.file.{Files, Path}
@@ -245,7 +246,7 @@ final case class ByteBuddyJavaTypeProvider(
       case TypeDefinition.Sort.WILDCARD =>
         val upperBounds = tpe.getUpperBounds.asScala.toList.map(toType)
         val lowerBounds = tpe.getLowerBounds.asScala.toList.map(toType)
-        val erasure = upperBounds.headOption.map(_.erasure).getOrElse(ClassDesc.of("java.lang.Object"))
+        val erasure = upperBounds.headOption.map(_.erasure).getOrElse(CD_Object)
         JavaType.Wildcard(upperBounds, lowerBounds, erasure)
     }
   }

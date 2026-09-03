@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
+import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaLookupError, JavaMemberResolver, JavaTypes}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
@@ -3560,26 +3561,26 @@ object Resolver {
   /**
     * Converts the class into a Flix type.
     */
-  private def flixifyType(clazz: ca.uwaterloo.flix.language.ast.jvm.JavaClass, loc: SourceLocation): UnkindedType = ClassDescs.binaryNameOf(clazz.desc) match {
-    case "java.math.BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc)
-    case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc)
-    case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc)
-    case "java.util.regex.Pattern" => UnkindedType.Cst(TypeConstructor.Regex, loc)
-    case "java.util.function.Function" => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkObject(loc), loc)
-    case "java.util.function.Consumer" => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkUnit(loc), loc)
-    case "java.util.function.Predicate" => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkBool(loc), loc)
-    case "java.util.function.IntFunction" => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc)
-    case "java.util.function.IntConsumer" => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkUnit(loc), loc)
-    case "java.util.function.IntPredicate" => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc)
-    case "java.util.function.IntUnaryOperator" => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc)
-    case "java.util.function.LongFunction" => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkObject(loc), loc)
-    case "java.util.function.LongConsumer" => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkUnit(loc), loc)
-    case "java.util.function.LongPredicate" => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkBool(loc), loc)
-    case "java.util.function.LongUnaryOperator" => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkInt64(loc), loc)
-    case "java.util.function.DoubleFunction" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkObject(loc), loc)
-    case "java.util.function.DoubleConsumer" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkUnit(loc), loc)
-    case "java.util.function.DoublePredicate" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkBool(loc), loc)
-    case "java.util.function.DoubleUnaryOperator" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkFloat64(loc), loc)
+  private def flixifyType(clazz: ca.uwaterloo.flix.language.ast.jvm.JavaClass, loc: SourceLocation): UnkindedType = clazz.desc match {
+    case JavaClasses.BigDecimal => UnkindedType.Cst(TypeConstructor.BigDecimal, loc)
+    case JavaClasses.BigInteger => UnkindedType.Cst(TypeConstructor.BigInt, loc)
+    case JavaClasses.String => UnkindedType.Cst(TypeConstructor.Str, loc)
+    case JavaClasses.Regex => UnkindedType.Cst(TypeConstructor.Regex, loc)
+    case JavaClasses.ObjFunction => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkObject(loc), loc)
+    case JavaClasses.ObjConsumer => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkUnit(loc), loc)
+    case JavaClasses.ObjPredicate => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkBool(loc), loc)
+    case JavaClasses.IntFunction => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc)
+    case JavaClasses.IntConsumer => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkUnit(loc), loc)
+    case JavaClasses.IntPredicate => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc)
+    case JavaClasses.IntUnaryOperator => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc)
+    case JavaClasses.LongFunction => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkObject(loc), loc)
+    case JavaClasses.LongConsumer => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkUnit(loc), loc)
+    case JavaClasses.LongPredicate => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkBool(loc), loc)
+    case JavaClasses.LongUnaryOperator => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkInt64(loc), loc)
+    case JavaClasses.DoubleFunction => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkObject(loc), loc)
+    case JavaClasses.DoubleConsumer => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkUnit(loc), loc)
+    case JavaClasses.DoublePredicate => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkBool(loc), loc)
+    case JavaClasses.DoubleUnaryOperator => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkFloat64(loc), loc)
     case _ => UnkindedType.UnappliedNative(clazz.desc, clazz.typeParameters.length, loc)
   }
 

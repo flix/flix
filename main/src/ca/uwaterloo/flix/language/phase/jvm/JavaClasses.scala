@@ -32,6 +32,7 @@ object JavaClasses {
   val BigDecimal: ClassDesc = ClassDesc.ofInternalName("java/math/BigDecimal")
   val BigInteger: ClassDesc = ClassDesc.ofInternalName("java/math/BigInteger")
   val CallSite: ClassDesc = CD_CallSite
+  val Cloneable: ClassDesc = ClassDesc.ofInternalName("java/lang/Cloneable")
   val ConcurrentLinkedQueue: ClassDesc = ClassDesc.ofInternalName("java/util/concurrent/ConcurrentLinkedQueue")
   val DoubleConsumer: ClassDesc = ClassDesc.ofInternalName("java/util/function/DoubleConsumer")
   val DoubleFunction: ClassDesc = ClassDesc.ofInternalName("java/util/function/DoubleFunction")
@@ -60,6 +61,7 @@ object JavaClasses {
   val Regex: ClassDesc = ClassDesc.ofInternalName("java/util/regex/Pattern")
   val ReentrantLock: ClassDesc = ClassDesc.ofInternalName("java/util/concurrent/locks/ReentrantLock")
   val Runnable: ClassDesc = ClassDesc.ofInternalName("java/lang/Runnable")
+  val Serializable: ClassDesc = ClassDesc.ofInternalName("java/io/Serializable")
   val String: ClassDesc = CD_String
   val StringBuilder: ClassDesc = ClassDesc.ofInternalName("java/lang/StringBuilder")
   val System: ClassDesc = ClassDesc.ofInternalName("java/lang/System")
