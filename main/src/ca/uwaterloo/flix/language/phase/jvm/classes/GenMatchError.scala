@@ -37,7 +37,7 @@ object GenMatchError {
   val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("MatchError"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = GenFlixError.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
     // This field allows external equality checking.
@@ -61,7 +61,7 @@ object GenMatchError {
     INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
     INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
     INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-    INVOKESPECIAL(ClassConstants.FlixError.Constructor)
+    INVOKESPECIAL(GenFlixError.Constructor)
     // save argument locally
     thisLoad()
     ALOAD(1)

@@ -36,7 +36,7 @@ object GenCastError {
   val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("CastError"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = GenFlixError.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
 
@@ -59,7 +59,7 @@ object GenCastError {
       INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
       INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
       INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-      INVOKESPECIAL(ClassConstants.FlixError.Constructor)
+      INVOKESPECIAL(GenFlixError.Constructor)
       RETURN()
     }))
   }

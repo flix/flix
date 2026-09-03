@@ -37,7 +37,7 @@ object GenHoleError {
   val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("HoleError"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.Desc, IsFinal, ClassConstants.FlixError.Desc)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal, GenFlixError.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
     // These fields allow external equality checking.
@@ -71,7 +71,7 @@ object GenHoleError {
         INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
         INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
         INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-        INVOKESPECIAL(ClassConstants.FlixError.Constructor)
+        INVOKESPECIAL(GenFlixError.Constructor)
         // save the arguments locally
         thisLoad()
         hole.load()
