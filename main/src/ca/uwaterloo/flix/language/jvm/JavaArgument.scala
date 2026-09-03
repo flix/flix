@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Magnus Madsen
+ * Copyright 2026 Flix Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion
-
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
-import ca.uwaterloo.flix.language.ast.Name
-import ca.uwaterloo.flix.language.jvm.JavaMemberResolver
+package ca.uwaterloo.flix.language.jvm
 
 import java.lang.constant.ClassDesc
 
-object InvokeStaticMethodCompleter {
+/** The erased Java type of a constructor or method argument. */
+sealed trait JavaArgument
 
-  def getCompletions(clazz: ClassDesc, field: Name.Ident)(implicit flix: Flix): List[Completion] = {
-    JavaMemberResolver.staticMethods(clazz).toOption.getOrElse(Nil).map(MethodCompletion(field, Priority.Lowest(0), _))
-  }
+object JavaArgument {
+
+  /** An argument with the erased type `desc`. */
+  case class Typed(desc: ClassDesc) extends JavaArgument
+
+  /** The Java `null` type, which is assignable to every reference type. */
+  case object Null extends JavaArgument
 
 }

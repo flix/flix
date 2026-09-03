@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase.jvm
+package ca.uwaterloo.flix.language.jvm
 
 import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.*
 
 /**
-  * The [[ClassDesc]]s of the Java classes and interfaces referenced by the backend.
+  * The [[ClassDesc]]s of the Java classes and interfaces referenced by the compiler.
   *
   * Descriptors that exist in [[java.lang.constant.ConstantDescs]] are reused from there.
   */

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, JMethod, Modifiers, Mutability, RegionScope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
+import ca.uwaterloo.flix.language.jvm.JavaClasses
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 

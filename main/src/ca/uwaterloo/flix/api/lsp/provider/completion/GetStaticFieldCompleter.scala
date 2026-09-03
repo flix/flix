@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
 import ca.uwaterloo.flix.language.ast.Name
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaMemberResolver
+import ca.uwaterloo.flix.language.jvm.JavaMemberResolver
 
 import java.lang.constant.ClassDesc
 

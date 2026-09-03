@@ -25,10 +25,11 @@ import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JClass, JConstructor, JField, JMethod, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaMemberResolver}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
-import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaBoxing, JavaMemberResolver}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, Result}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaBoxing
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
 import java.lang.constant.ClassDesc

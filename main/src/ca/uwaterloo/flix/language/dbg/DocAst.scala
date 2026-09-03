@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
-import ca.uwaterloo.flix.util.ClassDescs
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 
 import java.lang.constant.ClassDesc
 import scala.collection.immutable.SortedSet

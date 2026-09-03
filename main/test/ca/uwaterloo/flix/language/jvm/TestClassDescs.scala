@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.util
+package ca.uwaterloo.flix.language.jvm
 
 import org.scalatest.funsuite.AnyFunSuite
 

@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
@@ -8,7 +9,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstru
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
-import ca.uwaterloo.flix.util.{ClassDescs, Formatter}
+import ca.uwaterloo.flix.util.Formatter
 
 import java.lang.constant.ClassDesc
 import scala.jdk.CollectionConverters.*

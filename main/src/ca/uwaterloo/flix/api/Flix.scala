@@ -20,12 +20,12 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
+import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, JavaTypeProvider}
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.CodeGen
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.monomorph2.Monomorpher2
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
-import ca.uwaterloo.flix.language.phase.typer.jvm.{ByteBuddyJavaTypeProvider, JavaTypeProvider}
 import ca.uwaterloo.flix.language.verifier.TokenVerifier
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult

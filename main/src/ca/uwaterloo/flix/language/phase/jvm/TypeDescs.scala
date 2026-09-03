@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.language.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.jvm.classes.{GenArrow, GenExtTagged, GenLazy, GenRecord, GenRegion, GenStruct, GenTagged, GenTuple, GenUnit}
 
 import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}

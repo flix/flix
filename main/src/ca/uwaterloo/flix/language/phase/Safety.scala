@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, S
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
-import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
+import ca.uwaterloo.flix.language.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver2}
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv

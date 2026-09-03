@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.JvmAst.{Effect, Root}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenHandler, GenResult, GenResumption, GenResumptionWrapper, GenThunk}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}

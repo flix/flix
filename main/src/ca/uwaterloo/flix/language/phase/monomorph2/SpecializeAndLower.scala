@@ -23,11 +23,12 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, DefaultHandler, P
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaMemberResolver}
 import ca.uwaterloo.flix.language.phase.monomorph2.Specialize.*
 import ca.uwaterloo.flix.language.phase.monomorph2.Symbols.{Defs, Enums, Types}
-import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaBoxing, JavaMemberResolver}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaBoxing
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.lang.constant.ClassDesc
 import scala.jdk.CollectionConverters.*

@@ -18,9 +18,10 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.util.{ClassDescs, Formatter, Grammar}
+import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 import java.lang.constant.ClassDesc
 

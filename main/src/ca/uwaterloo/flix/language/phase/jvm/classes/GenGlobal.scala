@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm.classes
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
@@ -24,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, Stati
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
-import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, ClassMaker, JavaClasses, MethodTypeDescs}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, ClassMaker, MethodTypeDescs}
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 import java.lang.constant.ConstantDescs.{CD_int, CD_long, CD_void}

@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.typer.jvm
+package ca.uwaterloo.flix.language.jvm
 
 import java.lang.constant.ClassDesc
 
-/** The erased Java type of a constructor or method argument. */
-sealed trait JavaArgument
+/** An error encountered while looking up Java class-file metadata. */
+sealed trait JavaLookupError {
+  def desc: ClassDesc
+}
 
-object JavaArgument {
+object JavaLookupError {
 
-  /** An argument with the erased type `desc`. */
-  case class Typed(desc: ClassDesc) extends JavaArgument
+  /** The class file was found, but its metadata could not be read. */
+  case class InvalidClass(desc: ClassDesc, message: String) extends JavaLookupError
 
-  /** The Java `null` type, which is assignable to every reference type. */
-  case object Null extends JavaArgument
+  /** The class file for `desc` was not present in the configured class path. */
+  case class MissingClass(desc: ClassDesc) extends JavaLookupError
+
+  /** `desc` does not denote a nominal reference type. */
+  case class UnsupportedDescriptor(desc: ClassDesc) extends JavaLookupError
 
 }

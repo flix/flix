@@ -28,8 +28,8 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
-import ca.uwaterloo.flix.language.phase.jvm.JavaClasses
-import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaLookupError, JavaMemberResolver, JavaTypes}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses, JavaLookupError, JavaMemberResolver}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
 

@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
 import ca.uwaterloo.flix.language.ast.{Name, Type}
-import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaMemberResolver, JavaTypes}
+import ca.uwaterloo.flix.language.jvm.JavaMemberResolver
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 
 object InvokeMethodCompleter {
 
