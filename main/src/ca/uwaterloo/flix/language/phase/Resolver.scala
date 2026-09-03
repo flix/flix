@@ -28,8 +28,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
-import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses, JavaLookupError, JavaMemberResolver}
-import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses, JavaLookupError, JavaMemberResolver, JavaMetadata}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
 
@@ -1744,7 +1743,7 @@ object Resolver {
             val cs = constructors.map(visitJvmConstructor(_, superScp))
             val ms = methods.map(visitJvmMethod(_, superScp))
             val anonClassSym = Symbol.mkFreshAnonClassSym(loc);
-            val clazz = JClass(desc, JavaTypes.lookupClass(desc, loc).isInterface)
+            val clazz = JClass(desc, JavaMetadata.lookupClass(desc, loc).isInterface)
             ResolvedAst.Expr.NewObject(anonClassSym, clazz, targs, cs, ms, loc)
           case None =>
             erased match {

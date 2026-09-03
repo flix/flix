@@ -28,28 +28,6 @@ class TestJavaTypes extends AnyFunSuite {
 
   private val loc = SourceLocation.Unknown
 
-  test("isThrowable") {
-    implicit val flix: Flix = new Flix
-    try {
-      assert(JavaTypes.isThrowable(CD_Throwable, loc))
-      assert(JavaTypes.isThrowable(ClassDesc.of("java.lang.RuntimeException"), loc))
-      assert(!JavaTypes.isThrowable(CD_String, loc))
-      assert(!JavaTypes.isThrowable(CD_int, loc))
-    } finally flix.javaTypeProvider.close()
-  }
-
-  test("isObjectMethod") {
-    implicit val flix: Flix = new Flix
-    try {
-      // Comparator redeclares equals(Object), which Object also declares, but compare is Comparator's own.
-      val methods = JavaTypes.overridableMethods(ClassDesc.of("java.util.Comparator"), loc)
-      val equals = methods.find(_.ref.name == "equals").get
-      val compare = methods.find(_.ref.name == "compare").get
-      assert(JavaTypes.isObjectMethod(equals, loc))
-      assert(!JavaTypes.isObjectMethod(compare, loc))
-    } finally flix.javaTypeProvider.close()
-  }
-
   test("flixTypeOf.JavaType") {
     implicit val flix: Flix = new Flix
     try {

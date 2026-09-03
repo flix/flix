@@ -16,12 +16,10 @@
 package ca.uwaterloo.flix.language.phase.typer.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.jvm.{JavaClass, JavaMethod, JavaType, JavaTypeVariable}
+import ca.uwaterloo.flix.language.ast.jvm.{JavaType, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses, JavaHierarchy, JavaMemberResolver}
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.language.jvm.{JavaClasses, JavaMetadata}
 
 import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.*
@@ -33,20 +31,13 @@ import java.lang.constant.ConstantDescs.*
   */
 object JavaTypes {
 
-  /** Returns the class metadata of `desc`, or throws an [[InternalCompilerException]] if it cannot be read. */
-  def lookupClass(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): JavaClass =
-    flix.javaTypeProvider.lookupClass(desc) match {
-      case Ok(clazz) => clazz
-      case Err(error) => throw InternalCompilerException(s"Java class lookup failed for '${ClassDescs.binaryNameOf(desc)}': $error", loc)
-    }
-
   /**
     * Returns the number of type parameters of the class `desc`.
     *
     * Primitive and array types have no type parameters.
     */
-  def typeParameterCount(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Int =
-    if (desc.isClassOrInterface) lookupClass(desc, loc).typeParameters.length else 0
+  private def typeParameterCount(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Int =
+    if (desc.isClassOrInterface) JavaMetadata.lookupClass(desc, loc).typeParameters.length else 0
 
   /**
     * Returns the Flix type of the Java class `desc`.
@@ -153,38 +144,6 @@ object JavaTypes {
     case JavaType.Wildcard(_, _, _) =>
       Type.mkObject(loc)
   }
-
-  /**
-    * Returns `true` if the Java type `sub` is a subtype of the Java type `sup`, or throws an
-    * [[InternalCompilerException]] if their metadata cannot be read.
-    *
-    * See [[JavaHierarchy.isSubtype]] for the subtyping rules.
-    */
-  def isSubtype(sub: ClassDesc, sup: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean =
-    JavaHierarchy.isSubtype(sub, sup) match {
-      case Ok(result) => result
-      case Err(error) => throw InternalCompilerException(s"Java subtype check failed for '${ClassDescs.binaryNameOf(sub)} <: ${ClassDescs.binaryNameOf(sup)}': $error", loc)
-    }
-
-  /** Returns `true` if `desc` is `java.lang.Throwable` or a subclass of it. */
-  def isThrowable(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean =
-    isSubtype(desc, CD_Throwable, loc)
-
-  /**
-    * Returns the methods of `desc` that an anonymous subclass may override, or throws an
-    * [[InternalCompilerException]] if its metadata cannot be read.
-    */
-  def overridableMethods(desc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): List[JavaMethod] =
-    JavaMemberResolver.overridableMethods(desc) match {
-      case Ok(methods) => methods
-      case Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${ClassDescs.binaryNameOf(desc)}': $error", loc)
-    }
-
-  /** Returns `true` if `method` is or overrides a method declared by `java.lang.Object`. */
-  def isObjectMethod(method: JavaMethod, loc: SourceLocation)(implicit flix: Flix): Boolean =
-    lookupClass(CD_Object, loc).declaredMethods.exists { m =>
-      m.ref.name == method.ref.name && m.ref.descriptor.parameterList() == method.ref.descriptor.parameterList()
-    }
 
   /** Applies the Flix type of `desc` to one `mkArg` per type parameter of `desc`. */
   private def instantiate(desc: ClassDesc, loc: SourceLocation)(mkArg: => Type)(implicit flix: Flix): Type =

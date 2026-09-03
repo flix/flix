@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, S
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
-import ca.uwaterloo.flix.language.jvm.JavaClasses
+import ca.uwaterloo.flix.language.jvm.{JavaClasses, JavaMetadata}
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver2}
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
@@ -452,27 +452,27 @@ object Safety {
 
         // Allow casting one Java type to another if there is a subtype relationship.
         case (Type.Cst(TypeConstructor.Native(left, _), _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (JavaTypes.isSubtype(left, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaMetadata.isSubtype(left, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for String.
         case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (JavaTypes.isSubtype(CD_String, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaMetadata.isSubtype(CD_String, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for Regex.
         case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (JavaTypes.isSubtype(JavaClasses.Regex, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaMetadata.isSubtype(JavaClasses.Regex, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for BigInt.
         case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (JavaTypes.isSubtype(JavaClasses.BigInteger, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaMetadata.isSubtype(JavaClasses.BigInteger, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for BigDecimal.
         case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (JavaTypes.isSubtype(JavaClasses.BigDecimal, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaMetadata.isSubtype(JavaClasses.BigDecimal, right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Similar, but for Arrays.
         case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right, _), _)) =>
-          if (JavaTypes.isSubtype(CD_Object.arrayType(), right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+          if (JavaMetadata.isSubtype(CD_Object.arrayType(), right, loc)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
         // Disallow casting a type variable.
         case (src@Type.Var(_, _), _) =>
@@ -765,7 +765,7 @@ object Safety {
     * @param loc   the location of the catch parameter.
     */
   private def checkCatchClass(clazz: ClassDesc, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
-    if (!JavaTypes.isThrowable(clazz, loc)) {
+    if (!JavaMetadata.isThrowable(clazz, loc)) {
       sctx.errors.add(IllegalCatchType(clazz, loc))
     }
   }
@@ -777,7 +777,7 @@ object Safety {
   /** Returns `true` if `tpe` is [[java.lang.Throwable]] or a subclass of it. */
   @tailrec
   private def isThrowableType(tpe0: Type)(implicit flix: Flix): Boolean = tpe0 match {
-    case Type.Cst(TypeConstructor.Native(desc, _), loc) => JavaTypes.isThrowable(desc, loc)
+    case Type.Cst(TypeConstructor.Native(desc, _), loc) => JavaMetadata.isThrowable(desc, loc)
     case Type.Alias(_, _, tpe, _) => isThrowableType(tpe)
     case _ => false
   }
@@ -800,7 +800,7 @@ object Safety {
     case Expr.NewObject(_, clazz0, tpe0, _, cs, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
       val clazz = clazz0.desc
-      val javaClass = JavaTypes.lookupClass(clazz, loc)
+      val javaClass = JavaMetadata.lookupClass(clazz, loc)
       // `clazz` must be an interface or have a non-private constructor without arguments
       // (unless user-defined constructors are provided).
       if (!javaClass.isInterface && cs.isEmpty && !javaClass.hasNonPrivateZeroArgConstructor) {
@@ -845,7 +845,7 @@ object Safety {
       val targs = tpe.typeArguments
       // The type parameters of `clazz` map to its type arguments; a missing argument falls back to Object.
       val substMap = javaClass.typeParameters.map(_.variable).zip(targs).toMap
-      val expectedMethods = JavaTypes.overridableMethods(clazz, loc).map {
+      val expectedMethods = JavaMetadata.overridableMethods(clazz, loc).map {
         case method =>
           val name = method.ref.name
           val types = method.parameterTypes.map(JavaTypes.flixTypeOf(_, substMap, loc))
@@ -874,7 +874,7 @@ object Safety {
       }
 
       // an unimplemented method is only a problem if it's abstract and isn't auto-implemented by Object
-      val missing = unimplemented.filter { case (method, _, _, _) => method.isAbstract && !JavaTypes.isObjectMethod(method, loc) }
+      val missing = unimplemented.filter { case (method, _, _, _) => method.isAbstract && !JavaMetadata.isObjectMethod(method, loc) }
       missing.foreach { case (method, _, _, _) => sctx.errors.add(NewObjectMissingMethod(clazz, method, loc)) }
       extra.foreach { case (ident, name, _, _) => sctx.errors.add(NewObjectUndefinedMethod(clazz, name, ident.loc)) }
 
