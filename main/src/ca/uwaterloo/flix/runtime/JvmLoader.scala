@@ -36,58 +36,43 @@ import java.lang.reflect.{InvocationTargetException, Method}
 object JvmLoader {
 
   /**
-    * `true` if the running JVM can load compiled Flix programs.
-    *
-    * A GraalVM native image refuses `ClassLoader.defineClass` at run time, so a program compiled
-    * inside the image cannot be loaded into it. Callers should check this before [[load]] and
-    * explain the limitation to the user; [[load]] itself throws if called regardless.
-    */
-  val isSupported: Boolean = !NativeImage.isRuntime
-
-  /**
-    * Returns a message explaining that `action` (e.g. "The 'run' command") cannot load compiled
-    * programs because [[isSupported]] is `false`.
-    */
-  def unsupportedMessage(action: String): String =
-    s"$action is unsupported in the native build of Flix because it loads the compiled program into the running JVM, which a native image cannot do. Use the JAR distribution of Flix instead, or build a JAR with 'build-fatjar' and run it with 'java -jar'."
-
-  /**
     * Loads the classes of `result` into a fresh class loader and returns reflected handles to `main` and the tests.
     *
     * The class loader falls back to `result.flix.jarLoader` for classes from external JARs.
     *
-    * Throws [[UnsupportedOperationException]] if [[isSupported]] is `false`.
+    * Throws [[UnsupportedOperationException]] if running inside a GraalVM native image, which
+    * refuses `ClassLoader.defineClass` at run time.
     *
     * A failure to load (or to find an entry point) is a compiler bug and is reported via [[CrashHandler]].
     * Exceptions thrown by the *program* itself, when `main` or a test is invoked, are not caught here.
     */
   def load(result: CompilationResult): LoadedProgram = {
-    if (!isSupported) {
-      throw new UnsupportedOperationException(unsupportedMessage("Loading a compiled program"))
-    }
-    loadUnchecked(result)
-  }
-
-  /** Loads `result` without checking [[isSupported]]; see [[load]]. */
-  private def loadUnchecked(result: CompilationResult): LoadedProgram = try {
-    implicit val flix: Flix = result.flix
-    val root = result.root
-
-    // Load each class into the JVM in a fresh class loader.
-    implicit val loadedClasses: Map[ClassDesc, Class[?]] = loadAll(root.classes.values, flix.jarLoader)
-
-    val tests = MapOps.mapValuesWithKey(root.tests) {
-      case (sym, defn) => TestFn(sym, defn.isSkip, wrapTest(loadMethod(defn.className, defn.methodName)))
-    }
-    val main = root.main.map {
-      case defn => wrapMain(loadMethod(defn.className, defn.methodName))
+    // A native image refuses ClassLoader.defineClass, so bail out before the crash handler below.
+    if (NativeImage.GraalEnabled) {
+      val msg = "Loading a compiled program is not supported in the native image. You must run the flix.jar in the JVM for this action."
+      throw new UnsupportedOperationException(msg)
     }
 
-    LoadedProgram(main, tests)
-  } catch {
-    case ex: Throwable =>
-      CrashHandler.handleCrash(ex)(result.flix)
-      throw ex
+    try {
+      implicit val flix: Flix = result.flix
+      val root = result.root
+
+      // Load each class into the JVM in a fresh class loader.
+      implicit val loadedClasses: Map[ClassDesc, Class[?]] = loadAll(root.classes.values, flix.jarLoader)
+
+      val tests = MapOps.mapValuesWithKey(root.tests) {
+        case (sym, defn) => TestFn(sym, defn.isSkip, wrapTest(loadMethod(defn.className, defn.methodName)))
+      }
+      val main = root.main.map {
+        case defn => wrapMain(loadMethod(defn.className, defn.methodName))
+      }
+
+      LoadedProgram(main, tests)
+    } catch {
+      case ex: Throwable =>
+        CrashHandler.handleCrash(ex)(result.flix)
+        throw ex
+    }
   }
 
   /** Wraps the reflected test `method` (of type `Unit -> t`) into a thunk. */

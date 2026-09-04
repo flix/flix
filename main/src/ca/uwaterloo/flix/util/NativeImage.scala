@@ -24,8 +24,7 @@ object NativeImage {
     * `true` if the compiler is running inside a GraalVM native image.
     *
     * A native image sets the system property `org.graalvm.nativeimage.imagecode` to `"runtime"`.
-    * The property is `"buildtime"` while the image is being built and absent on a regular JVM.
     */
-  val isRuntime: Boolean = System.getProperty("org.graalvm.nativeimage.imagecode") == "runtime"
+  val GraalEnabled: Boolean = System.getProperty("org.graalvm.nativeimage.imagecode") == "runtime"
 
 }
