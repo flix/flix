@@ -54,9 +54,6 @@ GRAALVM_HOME=$JAVA_HOME ./mill flix.nativeImage
 
 The executable is written to `out/flix/nativeImage.dest/native-executable`.
 
-Set `NATIVE_IMAGE_QUICK=1` to build with `-Ob` (quick build mode), which is
-faster but produces a slower executable.
-
 Mill reads `GRAALVM_HOME` from its daemon's environment. If a daemon is already
 running without it, run `./mill shutdown` first.
 
