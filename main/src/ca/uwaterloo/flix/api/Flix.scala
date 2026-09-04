@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
-import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, JavaTypeProvider}
+import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, ExternalJarLoader, JavaTypeProvider}
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.CodeGen
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization

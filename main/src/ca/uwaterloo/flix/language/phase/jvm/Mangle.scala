@@ -18,6 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.jvm.FlixClasses
 
 import java.lang.constant.ClassDesc
 import java.lang.constant.ConstantDescs.{CD_boolean, CD_byte, CD_char, CD_double, CD_float, CD_int, CD_long, CD_short}
@@ -31,7 +32,7 @@ object Mangle {
   val RootPackage: List[String] = Nil
 
   /** The `dev.flix.runtime` package of the Flix runtime classes. */
-  val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
+  val DevFlixRuntime: List[String] = FlixClasses.RuntimePackage
 
   /** Returns the [[ClassDesc]] of the class `name` in the package `pkg`. */
   def mkDesc(pkg: List[String], name: String): ClassDesc = {
