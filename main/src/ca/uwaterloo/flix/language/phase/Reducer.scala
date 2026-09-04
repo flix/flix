@@ -324,9 +324,23 @@ object Reducer {
       anonClasses.add(clazz)
 
     def getAnonClasses: List[JvmAst.AnonClass] = {
-      // Group the super methods by class once, so that each class costs a single lookup.
-      val methodsOf = superMethods.keySet.asScala.groupMap(_._1)(_._2)
-      anonClasses.asScala.toList.map(ac => ac.copy(superMethods = methodsOf.getOrElse(ac.sym, Nil).toList))
+      // Group the super methods by the anonymous class that invokes them. We do this
+      // once, up front, so that attaching them below costs a single lookup per class.
+      val methodsOf = mutable.Map.empty[Symbol.AnonClassSym, mutable.ArrayBuffer[JMethod]]
+      for ((sym, method) <- superMethods.keySet.asScala) {
+        val methods = methodsOf.getOrElseUpdate(sym, mutable.ArrayBuffer.empty)
+        methods += method
+      }
+
+      // Attach the super methods of each anonymous class. A class that invokes none
+      // already has the empty list it was constructed with.
+      anonClasses.asScala.toList.map {
+        anonClass =>
+          methodsOf.get(anonClass.sym) match {
+            case None => anonClass
+            case Some(methods) => anonClass.copy(superMethods = methods.toList)
+          }
+      }
     }
 
     def addSuperMethod(sym: Symbol.AnonClassSym, method: JMethod): Unit =
