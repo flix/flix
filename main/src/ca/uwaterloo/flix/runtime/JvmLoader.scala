@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 import ca.uwaterloo.flix.util.collection.MapOps
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, NativeImage}
 
 import java.lang.constant.ClassDesc
 import java.lang.reflect.{InvocationTargetException, Method}
@@ -36,14 +36,40 @@ import java.lang.reflect.{InvocationTargetException, Method}
 object JvmLoader {
 
   /**
+    * `true` if the running JVM can load compiled Flix programs.
+    *
+    * A GraalVM native image refuses `ClassLoader.defineClass` at run time, so a program compiled
+    * inside the image cannot be loaded into it. Callers should check this before [[load]] and
+    * explain the limitation to the user; [[load]] itself throws if called regardless.
+    */
+  val isSupported: Boolean = !NativeImage.isRuntime
+
+  /**
+    * Returns a message explaining that `action` (e.g. "The 'run' command") cannot load compiled
+    * programs because [[isSupported]] is `false`.
+    */
+  def unsupportedMessage(action: String): String =
+    s"$action is unsupported in the native build of Flix because it loads the compiled program into the running JVM, which a native image cannot do. Use the JAR distribution of Flix instead, or build a JAR with 'build-fatjar' and run it with 'java -jar'."
+
+  /**
     * Loads the classes of `result` into a fresh class loader and returns reflected handles to `main` and the tests.
     *
     * The class loader falls back to `result.flix.jarLoader` for classes from external JARs.
     *
+    * Throws [[UnsupportedOperationException]] if [[isSupported]] is `false`.
+    *
     * A failure to load (or to find an entry point) is a compiler bug and is reported via [[CrashHandler]].
     * Exceptions thrown by the *program* itself, when `main` or a test is invoked, are not caught here.
     */
-  def load(result: CompilationResult): LoadedProgram = try {
+  def load(result: CompilationResult): LoadedProgram = {
+    if (!isSupported) {
+      throw new UnsupportedOperationException(unsupportedMessage("Loading a compiled program"))
+    }
+    loadUnchecked(result)
+  }
+
+  /** Loads `result` without checking [[isSupported]]; see [[load]]. */
+  private def loadUnchecked(result: CompilationResult): LoadedProgram = try {
     implicit val flix: Flix = result.flix
     val root = result.root
 

@@ -41,8 +41,14 @@ jobs:
         run: ./mill flix.nativeImage
       - name: Smoke test on a hello world project
         run: |
+          flix="$PWD/out/flix/nativeImage.dest/native-executable"
           mkdir hello && cd hello
-          ../out/flix/nativeImage.dest/native-executable init
-          ../out/flix/nativeImage.dest/native-executable check
-          ../out/flix/nativeImage.dest/native-executable build-fatjar
+          "$flix" init
+          "$flix" check
+          "$flix" build-fatjar
           java -jar artifact/hello.jar | grep -q 'Hello World!'
+          # Commands that load the compiled program into the JVM must fail with an explanation.
+          if "$flix" run > run.log 2>&1; then echo "expected 'run' to fail"; exit 1; fi
+          grep -q 'unsupported in the native build' run.log
+          if "$flix" lsp > lsp.log 2>&1 < /dev/null; then echo "expected 'lsp' to fail"; exit 1; fi
+          grep -q 'not yet supported in the native build' lsp.log

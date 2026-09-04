@@ -122,6 +122,7 @@ object Main {
         case Command.None =>
           // check if the --listen flag was passed.
           if (cmdOpts.listen.nonEmpty) {
+            requireJvmLoader("The '--listen' server")
             SocketServer.listen(cmdOpts.listen.get)
             System.exit(0)
           }
@@ -158,6 +159,7 @@ object Main {
 
           // check if we should start a REPL
           if (cmdOpts.files.isEmpty) {
+            requireJvmLoader("The REPL")
             Bootstrap.bootstrap(cwd, options.githubToken) match {
               case Result.Ok(bootstrap) =>
                 val shell = new Shell(bootstrap, options)
@@ -168,6 +170,9 @@ object Main {
                 System.exit(1)
             }
           }
+
+          // running the given files loads the compiled program into the JVM.
+          requireJvmLoader("Running a Flix program")
 
           // configure Flix and add the paths.
           val flix = new Flix()
@@ -342,6 +347,7 @@ object Main {
             println("The 'run' command does not support file arguments.")
             System.exit(1)
           }
+          requireJvmLoader("The 'run' command")
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
@@ -351,6 +357,7 @@ object Main {
           }
 
         case Command.Test =>
+          requireJvmLoader("The 'test' command")
           if (cmdOpts.files.isEmpty) {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -376,6 +383,7 @@ object Main {
             println("The 'repl' command does not support file arguments.")
             System.exit(1)
           }
+          requireJvmLoader("The REPL")
           Bootstrap.bootstrap(cwd, options.githubToken) match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
@@ -389,6 +397,11 @@ object Main {
         case Command.PlainLsp =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'lsp' command does not support file arguments.")
+            System.exit(1)
+          }
+          if (NativeImage.isRuntime) {
+            // lsp4j needs reflection metadata that the native image does not include yet.
+            println("The 'lsp' command is not yet supported in the native build of Flix. Use 'lsp-vscode <port>' or the JAR distribution of Flix instead.")
             System.exit(1)
           }
           LspServer.run(options)
@@ -820,6 +833,18 @@ object Main {
   /**
     * Exits with code 0 on success, or prints the error and exits with code 1 on failure.
     */
+  /**
+    * Exits with an explanatory message if the running JVM cannot load compiled Flix programs.
+    *
+    * `action` names what was attempted, e.g. "The 'run' command"; see [[JvmLoader.isSupported]].
+    */
+  private def requireJvmLoader(action: String): Unit = {
+    if (!JvmLoader.isSupported) {
+      println(JvmLoader.unsupportedMessage(action))
+      System.exit(1)
+    }
+  }
+
   private def exitOnResult[T](result: Result[T, BootstrapError])(implicit formatter: Formatter): Unit = {
     result match {
       case Result.Ok(_) => System.exit(0)
