@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
-import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, ExternalJarLoader, JavaTypeProvider}
+import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, ExternalJarLoader, JavaTypeProvider, MutableClassPathLocator}
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.CodeGen
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
@@ -199,8 +199,16 @@ class Flix {
     */
   val jarLoader = new ExternalJarLoader
 
+  /**
+    * The class files of the JARs added with [[addJar]].
+    *
+    * Read directly rather than through [[jarLoader]]: a class loader constructed at run time
+    * cannot serve resources inside a GraalVM native image.
+    */
+  private val jarClassPath = new MutableClassPathLocator
+
   /** The descriptor-based Java metadata provider owned by this compiler instance. */
-  val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromClassLoader(jarLoader)
+  val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromMutableClassPath(jarClassPath, jarLoader)
 
   /**
     * Adds Flix source code from a file on the filesystem.
@@ -379,6 +387,7 @@ class Flix {
       case Result.Ok(()) =>
         val p1 = p.normalize()
         jarLoader.addURL(p1.toUri.toURL)
+        jarClassPath.addPath(p1)
         extendKnownJavaClassesAndInterfaces(p1)
         this
     }

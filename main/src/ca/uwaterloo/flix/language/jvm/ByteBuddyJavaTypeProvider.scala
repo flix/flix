@@ -73,6 +73,20 @@ object ByteBuddyJavaTypeProvider {
     fromLocators(locators)
   }
 
+  /**
+    * Returns a provider that reads `entries` directly, falling back to `loader` and the JDK platform.
+    *
+    * `entries` is consulted first because a class loader constructed at run time cannot serve
+    * resources inside a GraalVM native image. `loader` is still consulted for the class files the
+    * compiler provides itself, such as `dev.flix.runtime.Global`.
+    */
+  def fromMutableClassPath(entries: MutableClassPathLocator, loader: ClassLoader): ByteBuddyJavaTypeProvider =
+    fromLocators(List(
+      entries,
+      ClassFileLocator.ForClassLoader.of(loader),
+      ClassFileLocator.ForClassLoader.ofPlatformLoader()
+    ))
+
   /** Returns a provider backed by the given locators in lookup order. */
   private def fromLocators(locators: List[ClassFileLocator]): ByteBuddyJavaTypeProvider = {
     val locator = new ClassFileLocator.Compound(locators.asJava)
