@@ -17,13 +17,12 @@
 package ca.uwaterloo.flix.language.phase.jvm.classes
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.jvm.JavaClasses
+import ca.uwaterloo.flix.language.jvm.{FlixClasses, JavaClasses}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, StaticConstructorMethod, StaticField, StaticMethod}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.{mkDescriptor, mkVoidDescriptor}
 import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, ClassMaker, MethodTypeDescs}
 import org.objectweb.asm.{MethodVisitor, Opcodes}
@@ -36,9 +35,12 @@ import java.lang.constant.{ClassDesc, MethodTypeDesc}
   */
 object GenGlobal {
 
-  /** "Global" is fixed in source code, so it should not be mangled and `$` suffixed. */
-  /** The JVM class descriptor for the generated `Global` class. */
-  val Desc: ClassDesc = mkDesc(DevFlixRuntime, "Global")
+  /**
+    * The JVM class descriptor for the generated `Global` class.
+    *
+    * The name is fixed in source code, so it is neither mangled nor `$` suffixed.
+    */
+  val Desc: ClassDesc = FlixClasses.Global
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(this.Desc, IsFinal)

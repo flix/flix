@@ -13,9 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.util
+package ca.uwaterloo.flix.language.jvm
 
 import java.net.{URL, URLClassLoader}
+
+object ExternalJarLoader {
+
+  /** The binary name of the `Global` class, i.e. `dev.flix.runtime.Global`. */
+  private val GlobalBinaryName: String = ClassDescs.binaryNameOf(FlixClasses.Global)
+
+  /** The class file name of the `Global` class, i.e. `dev/flix/runtime/Global.class`. */
+  private val GlobalClassFileName: String = ClassDescs.classFileNameOf(FlixClasses.Global)
+
+  /** The prefix shared by the binary names of the test classes, i.e. `dev.flix.test.`. */
+  private val TestBinaryNamePrefix: String = FlixClasses.TestPackage.mkString("", ".", ".")
+
+  /** The prefix shared by the class file names of the test classes, i.e. `dev/flix/test/`. */
+  private val TestClassFileNamePrefix: String = FlixClasses.TestPackage.mkString("", "/", "/")
+
+}
 
 /**
   * A class loader to which JARs can be added dynamically.
@@ -24,6 +40,9 @@ import java.net.{URL, URLClassLoader}
   * (otherwise compiled Flix code has access to all classes within the compiler)
   */
 class ExternalJarLoader extends URLClassLoader(Array.empty, ClassLoader.getPlatformClassLoader) {
+
+  import ExternalJarLoader.*
+
   /**
     * Adds the URL to the class loader.
     */
@@ -37,13 +56,13 @@ class ExternalJarLoader extends URLClassLoader(Array.empty, ClassLoader.getPlatf
       super.findClass(name)
     } catch {
       case e: ClassNotFoundException =>
-        // Special case for dev.flix.runtime.Global
+        // Special case for the Global class.
         // This is never used at runtime, but we need to be able to load it at compile
         // time in order to check method signatures
-        if (name == "dev.flix.runtime.Global")
+        if (name == GlobalBinaryName)
           super.findSystemClass(name)
         // Special case for testing to allow us to load test classes
-        else if (name.startsWith(("dev.flix.test.")))
+        else if (name.startsWith(TestBinaryNamePrefix))
           super.findSystemClass(name)
         else
           throw e
@@ -55,7 +74,7 @@ class ExternalJarLoader extends URLClassLoader(Array.empty, ClassLoader.getPlatf
     val resource = super.findResource(name)
     if (resource != null) {
       resource
-    } else if (name == "dev/flix/runtime/Global.class" || name.startsWith("dev/flix/test/")) {
+    } else if (name == GlobalClassFileName || name.startsWith(TestClassFileNamePrefix)) {
       ClassLoader.getSystemResource(name)
     } else {
       null
