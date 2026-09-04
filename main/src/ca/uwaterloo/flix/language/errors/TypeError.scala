@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaMemberResolver}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaLookupError, JavaMemberResolver}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -303,6 +303,29 @@ object TypeError {
          |  ${cyan(formatType(recordType, Some(renv)))}
          |
          |contains the extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a Java class needed to resolve a Java member cannot be read.
+    *
+    * @param query the member being resolved, e.g. `the method 'java.util.List.of(String)'`.
+    * @param error the class-file metadata error, which names the class that cannot be read.
+    * @param loc   the location of the member access.
+    */
+  case class UnreadableJvmClass(query: String, error: JavaLookupError, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6258
+
+    def summary: String = s"Unable to read the Java class '${ClassDescs.binaryNameOf(error.desc)}' while resolving $query."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unable to read the Java class '${red(ClassDescs.binaryNameOf(error.desc))}' while resolving $query.
+         |
+         |${highlight(loc, "unreadable Java class", fmt)}
+         |
+         |${error.explanation}
          |""".stripMargin
     }
   }

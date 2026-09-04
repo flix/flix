@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaType, JavaTypeParameter, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
-import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaArgument, JavaClasses, JavaMemberResolver, JavaMetadata}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaArgument, JavaClasses, JavaLookupError, JavaMemberResolver, JavaMetadata}
 import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaTypes, PrimitiveEffects}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -189,6 +189,26 @@ object TypeReduction2 {
       }
   }
 
+  /**
+    * Returns the class-file metadata error that prevents the Java member `member` from being resolved, together
+    * with a description of the member, or `None` if `member` is unresolved for another reason: no member matches,
+    * or the types of the lookup are not known yet.
+    *
+    * The constraint solver uses this to explain a Java member that is still unresolved once solving has finished.
+    */
+  def unreadableClassOf(member: JvmMember, loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): Option[(String, JavaLookupError)] = {
+    val resolution = member.map(Type.eraseAliases) match {
+      case JvmMember.JvmConstructor(clazz, tpes) => lookupConstructor(clazz, tpes, loc)
+      case JvmMember.JvmField(_, tpe, name) => lookupField(tpe, name.name, loc)
+      case JvmMember.JvmMethod(tpe, name, tpes) => lookupMethod(tpe, name.name, tpes, loc)
+      case JvmMember.JvmStaticMethod(clazz, name, tpes) => lookupStaticMethod(clazz, name.name, tpes, loc)
+    }
+    resolution match {
+      case JavaResolution.Unreadable(query, error) => Some((query, error))
+      case _ => None
+    }
+  }
+
   /** Tries to find a constructor of `owner` that takes arguments of type `ts`. */
   private def lookupConstructor(owner: ClassDesc, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaResolution[JavaMethod] = {
     val typesAreKnown = ts.forall(isKnown)
@@ -201,8 +221,8 @@ object TypeReduction2 {
       case Ok(constructor :: _) => JavaResolution.Resolved(constructor)
       case Ok(Nil) => JavaResolution.NotFound
       case Err(error) =>
-        val query = s"${ClassDescs.binaryNameOf(owner)}(${arguments.mkString(", ")})"
-        throw InternalCompilerException(s"Java constructor lookup failed for '$query': $error", loc)
+        val query = s"the constructor '${ClassDescs.binaryNameOf(owner)}(${formatArguments(arguments)})'"
+        unreadable(query, error, loc)
     }
   }
 
@@ -232,11 +252,17 @@ object TypeReduction2 {
       case Ok(method :: _) => JavaResolution.Resolved(method)
       case Ok(Nil) => JavaResolution.NotFound
       case Err(error) =>
-        val kind = if (static) "static" else "instance"
-        val query = s"$kind ${ClassDescs.binaryNameOf(owner)}.$methodName(${arguments.mkString(", ")})"
-        throw InternalCompilerException(s"Java method lookup failed for '$query': $error", loc)
+        val kind = if (static) "static method" else "method"
+        val query = s"the $kind '${ClassDescs.binaryNameOf(owner)}.$methodName(${formatArguments(arguments)})'"
+        unreadable(query, error, loc)
     }
   }
+
+  /** Returns the arguments of a member lookup as they are shown to the user. */
+  private def formatArguments(arguments: List[JavaArgument]): String = arguments.map {
+    case JavaArgument.Typed(desc) => JavaTypes.formatType(desc)
+    case JavaArgument.Null => "null"
+  }.mkString(", ")
 
   /** Returns the descriptor-based Java argument corresponding to the given Flix `tpe`. */
   private def getJavaArgument(tpe: Type): JavaArgument = tpe match {
@@ -278,10 +304,19 @@ object TypeReduction2 {
     JavaMemberResolver.field(owner, fieldName, static = false) match {
       case Ok(Some(field)) => JavaResolution.Resolved(field)
       case Ok(None) => JavaResolution.NotFound
-      case Err(error) =>
-        val query = s"${ClassDescs.binaryNameOf(owner)}.$fieldName"
-        throw InternalCompilerException(s"Java field lookup failed for '$query': $error", loc)
+      case Err(error) => unreadable(s"the field '${ClassDescs.binaryNameOf(owner)}.$fieldName'", error, loc)
     }
+  }
+
+  /**
+    * Returns the resolution of a member lookup for `query` that failed with `error`.
+    *
+    * A class that is missing from the class path, or whose class file is malformed, is a user error that leaves
+    * the member unresolved. A descriptor that does not denote a class or interface is a compiler bug.
+    */
+  private def unreadable(query: String, error: JavaLookupError, loc: SourceLocation): JavaResolution[Nothing] = error match {
+    case JavaLookupError.UnsupportedDescriptor(_) => throw InternalCompilerException(s"Java member lookup failed for $query: $error", loc)
+    case _ => JavaResolution.Unreadable(query, error)
   }
 
   /**
@@ -316,6 +351,15 @@ object TypeReduction2 {
 
     /** No matching member. */
     case object NotFound extends JavaResolution[Nothing]
+
+    /**
+      * The class-file metadata needed to resolve the member cannot be read.
+      *
+      * `query` describes the member, e.g. `the method 'java.util.List.of(String)'`, and `error` names the class.
+      * The member stays unresolved, like a member that is [[NotFound]]; the constraint solver obtains the error
+      * from [[unreadableClassOf]] when it reports the leftover constraint.
+      */
+    case class Unreadable(query: String, error: JavaLookupError) extends JavaResolution[Nothing]
 
     /**
       * The types used for the lookup are not resolved enough to decide on a member.

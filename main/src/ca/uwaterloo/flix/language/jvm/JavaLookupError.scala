@@ -20,6 +20,13 @@ import java.lang.constant.ClassDesc
 /** An error encountered while looking up Java class-file metadata. */
 sealed trait JavaLookupError {
   def desc: ClassDesc
+
+  /** Returns a sentence that explains this error to the user. */
+  def explanation: String = this match {
+    case JavaLookupError.InvalidClass(desc, message) => s"The class file of '${ClassDescs.binaryNameOf(desc)}' could not be read: $message"
+    case JavaLookupError.MissingClass(desc) => s"The class '${ClassDescs.binaryNameOf(desc)}' was not found on the class path."
+    case JavaLookupError.UnsupportedDescriptor(desc) => s"'${ClassDescs.binaryNameOf(desc)}' does not denote a class or interface."
+  }
 }
 
 object JavaLookupError {
