@@ -3,9 +3,8 @@
 Flix can be compiled to a native executable with
 [GraalVM Native Image](https://www.graalvm.org/latest/reference-manual/native-image/).
 
-The native executable starts in about 10 ms instead of about 200 ms and
-type checks faster, but it cannot run compiled Flix programs. See
-[Limitations](#limitations).
+The native executable starts faster than the JVM and type checks faster, but it
+cannot run compiled Flix programs. See [Limitations](#limitations).
 
 This is an experimental feature. The JAR remains the supported distribution.
 
