@@ -894,7 +894,7 @@ object GenExpression {
 
         // Evaluate the receiver object.
         compileExpr(receiver)
-        val anonClassInternalName = sym.name.replace('.', '/')
+        val anonClassInternalName = internalNameOf(GenAnonymousClasses.desc(sym))
         mv.visitTypeInsn(Opcodes.CHECKCAST, anonClassInternalName)
 
         // Evaluate and cast each argument.
@@ -904,8 +904,7 @@ object GenExpression {
         }
 
         // Call the bridge method super$methodName on the anonymous class.
-        val bridgeName = s"super$$${method.name}"
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, anonClassInternalName, bridgeName, method.descriptor.descriptorString(), false)
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, anonClassInternalName, GenAnonymousClasses.bridgeName(method), method.descriptor.descriptorString(), false)
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
@@ -1561,7 +1560,7 @@ object GenExpression {
 
     case Expr.NewObject(sym, _, _, _, constructors, methods, _) =>
       val methodExps = methods.map(_.exp)
-      val className = sym.name
+      val className = internalNameOf(GenAnonymousClasses.desc(sym))
       mv.visitTypeInsn(Opcodes.NEW, className)
       mv.visitInsn(Opcodes.DUP)
 

@@ -85,7 +85,7 @@ object CodeGen {
 
     val lazyClasses = getLazyTypesOf(allTypes).map(tpe => JvmClass(GenLazy.desc(tpe), GenLazy.genByteCode(tpe))).toList
 
-    val anonClasses = GenAnonymousClasses.gen(root.anonClasses.distinctBy(_.name))
+    val anonClasses = GenAnonymousClasses.gen(root.anonClasses.distinctBy(_.sym))
 
     val unitClass = List(JvmClass(GenUnit.Desc, GenUnit.genByteCode()))
 

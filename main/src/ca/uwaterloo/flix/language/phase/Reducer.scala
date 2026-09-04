@@ -126,7 +126,7 @@ object Reducer {
 
       case ErasedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         op match {
-          case AtomicOp.InvokeSuperMethod(sym, method) => ctx.addSuperMethod(sym.name, method)
+          case AtomicOp.InvokeSuperMethod(sym, method) => ctx.addSuperMethod(sym, method)
           case _ => ()
         }
         val es = exps.map(visitExpr)
@@ -225,7 +225,7 @@ object Reducer {
             val c = visitExpr(clo)
             JvmAst.JvmMethod(ann, ident, fparams.map(visitFormalParam), c, retTpe, methPurity, javaSig, methLoc)
         }
-        ctx.addAnonClass(JvmAst.AnonClass(sym.name, clazz, tpe, cs, specs, Nil, loc))
+        ctx.addAnonClass(JvmAst.AnonClass(sym, clazz, tpe, cs, specs, Nil, loc))
 
         JvmAst.Expr.NewObject(sym, clazz, tpe, purity, cs, specs, loc)
 
@@ -317,20 +317,20 @@ object Reducer {
     /** Collects all types encountered in def expressions (used as a set via `ConcurrentHashMap`). */
     private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
 
-    /** Maps anonymous class names to the super methods they invoke, so the backend can generate `invokespecial` bridge methods. */
-    private val superMethods: ConcurrentHashMap[(String, JMethod), Unit] = new ConcurrentHashMap()
+    /** Maps anonymous classes to the super methods they invoke, so the backend can generate `invokespecial` bridge methods. */
+    private val superMethods: ConcurrentHashMap[(Symbol.AnonClassSym, JMethod), Unit] = new ConcurrentHashMap()
 
     def addAnonClass(clazz: JvmAst.AnonClass): Unit =
       anonClasses.add(clazz)
 
-    def getAnonClasses: List[JvmAst.AnonClass] =
-      anonClasses.asScala.toList.map(ac => ac.copy(superMethods = getSuperMethods(ac.name)))
+    def getAnonClasses: List[JvmAst.AnonClass] = {
+      // Group the super methods by class once, so that each class costs a single lookup.
+      val methodsOf = superMethods.keySet.asScala.groupMap(_._1)(_._2)
+      anonClasses.asScala.toList.map(ac => ac.copy(superMethods = methodsOf.getOrElse(ac.sym, Nil).toList))
+    }
 
-    def addSuperMethod(className: String, method: JMethod): Unit =
-      superMethods.putIfAbsent((className, method), ())
-
-    def getSuperMethods(className: String): List[JMethod] =
-      superMethods.keySet.asScala.collect { case (cn, m) if cn == className => m }.toList
+    def addSuperMethod(sym: Symbol.AnonClassSym, method: JMethod): Unit =
+      superMethods.putIfAbsent((sym, method), ())
 
     def addDefType(tpe: SimpleType): Unit =
       defTypes.putIfAbsent(tpe, ())
