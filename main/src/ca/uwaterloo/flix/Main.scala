@@ -122,6 +122,7 @@ object Main {
         case Command.None =>
           // check if the --listen flag was passed.
           if (cmdOpts.listen.nonEmpty) {
+            featureNotSupportedInNativeImage()
             SocketServer.listen(cmdOpts.listen.get)
             System.exit(0)
           }
@@ -158,6 +159,7 @@ object Main {
 
           // check if we should start a REPL
           if (cmdOpts.files.isEmpty) {
+            featureNotSupportedInNativeImage()
             Bootstrap.bootstrap(cwd, options.githubToken) match {
               case Result.Ok(bootstrap) =>
                 val shell = new Shell(bootstrap, options)
@@ -168,6 +170,9 @@ object Main {
                 System.exit(1)
             }
           }
+
+          // running the given files loads the compiled program into the JVM.
+          featureNotSupportedInNativeImage()
 
           // configure Flix and add the paths.
           val flix = new Flix()
@@ -342,6 +347,7 @@ object Main {
             println("The 'run' command does not support file arguments.")
             System.exit(1)
           }
+          featureNotSupportedInNativeImage()
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
@@ -351,6 +357,7 @@ object Main {
           }
 
         case Command.Test =>
+          featureNotSupportedInNativeImage()
           if (cmdOpts.files.isEmpty) {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -376,6 +383,7 @@ object Main {
             println("The 'repl' command does not support file arguments.")
             System.exit(1)
           }
+          featureNotSupportedInNativeImage()
           Bootstrap.bootstrap(cwd, options.githubToken) match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
@@ -391,6 +399,8 @@ object Main {
             println("The 'lsp' command does not support file arguments.")
             System.exit(1)
           }
+          // lsp4j needs reflection metadata that the native image does not include yet.
+          featureNotSupportedInNativeImage()
           LspServer.run(options)
           System.exit(0)
 
@@ -815,6 +825,21 @@ object Main {
   private def exitWithErrors(flix: Flix, errors: List[CompilationMessage], root: Option[TypedAst.Root]): Unit = {
     println(CompilationMessage.formatAll(errors)(flix.getFormatter, root))
     System.exit(1)
+  }
+
+  /**
+    * Exits with an explanatory message if running inside a GraalVM native image.
+    */
+  private def featureNotSupportedInNativeImage(): Unit = {
+    if (NativeImage.GraalEnabled) {
+      val msg =
+        """This action is not supported in the native image.
+          |
+          |You must run the flix.jar in the JVM for this action.
+          |""".stripMargin
+      println(msg)
+      System.exit(1)
+    }
   }
 
   /**
