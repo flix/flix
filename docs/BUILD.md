@@ -65,6 +65,11 @@ Common commands:
 The Mill version is pinned in `.mill-version` and JVM options are configured in
 `.mill-jvm-opts`.
 
+## Building a native image
+
+Flix can be compiled to a native executable with GraalVM. See
+[docs/GRAAL.md](GRAAL.md).
+
 ## Troubleshooting
 
 ### Out of memory
