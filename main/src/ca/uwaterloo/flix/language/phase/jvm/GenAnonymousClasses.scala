@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JMethod}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
@@ -36,10 +36,27 @@ import scala.jdk.CollectionConverters.*
 /** Generates bytecode for anonymous classes (created through NewObject). */
 object GenAnonymousClasses {
 
+  /**
+    * Returns the descriptor of the anonymous class `Anon$Id` of `sym`.
+    *
+    * Unlike defs and effects, an anonymous class has no enclosing namespace,
+    * so it is placed in the root package.
+    */
+  def desc(sym: Symbol.AnonClassSym): ClassDesc =
+    Mangle.mkDesc(Mangle.RootPackage, Mangle.mkClassName("Anon", sym.id.toString))
+
+  /**
+    * Returns the name of the bridge method through which `method` is called on the superclass.
+    *
+    * A Java method name is always a valid JVM name, so it needs no mangling.
+    */
+  def bridgeName(method: JMethod): String =
+    "super" + Flix.Delimiter + method.name
+
   /** Returns the generated classes of `objs`. */
   def gen(objs: List[AnonClass])(implicit root: Root, flix: Flix): List[JvmClass] = {
     for (obj <- objs) yield {
-      val className = ClassDesc.ofInternalName(obj.name)
+      val className = desc(obj.sym)
       JvmClass(className, genByteCode(className, obj))
     }
   }
@@ -92,8 +109,7 @@ object GenAnonymousClasses {
     // Generate bridge methods for super method calls.
     val superMethods = obj.superMethods
     for (method <- superMethods) {
-      val bridgeName = s"super$$${method.name}"
-      cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, method.descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
+      cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName(method), method.descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
     }
 
     cm.closeClassMaker()
