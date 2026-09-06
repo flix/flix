@@ -238,11 +238,11 @@ object Namer {
       val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
 
       //
-      // Check for [[NameError.ReservedModuleName]] -- i.e. that no top-level module takes
+      // Check for [[NameError.IllegalMainModule]] -- i.e. that no top-level module takes
       // the name of the generated entry point class.
       //
       if (ns.parts == List(CompilerConstants.EntryPointClassName)) {
-        sctx.errors.add(NameError.ReservedModuleName(qname.ident))
+        sctx.errors.add(NameError.IllegalMainModule(qname.ident))
       }
 
       val usesAndImports = usesAndImports0.map(visitUseOrImport)

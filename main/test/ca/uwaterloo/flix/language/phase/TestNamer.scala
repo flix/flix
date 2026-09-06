@@ -621,7 +621,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.IllegalReservedName](result)
   }
 
-  test("ReservedModuleName.01") {
+  test("IllegalMainModule.01") {
     val input =
       """
         |mod Main {
@@ -629,10 +629,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NameError.ReservedModuleName](result)
+    expectError[NameError.IllegalMainModule](result)
   }
 
-  test("ReservedModuleName.02") {
+  test("IllegalMainModule.02") {
     // A nested module named Main is fine: its class is not in the root package.
     val input =
       """
@@ -643,10 +643,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    rejectError[NameError.ReservedModuleName](result)
+    rejectError[NameError.IllegalMainModule](result)
   }
 
-  test("ReservedModuleName.03") {
+  test("IllegalMainModule.03") {
     // Main is only reserved for modules, not for other declarations.
     val input =
       """
@@ -655,7 +655,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    rejectError[NameError.ReservedModuleName](result)
+    rejectError[NameError.IllegalMainModule](result)
   }
 
   test("IllegalReservedName.Trait.01") {
