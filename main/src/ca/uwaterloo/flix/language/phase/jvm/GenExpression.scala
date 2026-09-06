@@ -614,7 +614,7 @@ object GenExpression {
       case AtomicOp.Tag(sym) =>
         val caze = root.enums(sym.enumSym).cases(sym)
         val termTypes = caze.tpes.map(TypeDescs.toErasedClassDesc)
-        compileTag(sym.enumSym.toString, sym.name, caze.sym.ordinal, exps, termTypes)
+        compileTag(caze.sym, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
         val List(exp) = exps
@@ -1621,16 +1621,16 @@ object GenExpression {
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
   }
 
-  private def compileTag(enumName: String, name: String, ordinal: Int, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileTag(sym: Symbol.CaseSym, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     tpes match {
       case Nil =>
-        GETSTATIC(GenNullaryTag.SingletonField(enumName, name))
+        GETSTATIC(GenNullaryTag.SingletonField(sym))
       case _ =>
         NEW(GenTag.desc(tpes))
         DUP()
         INVOKESPECIAL(GenTag.Constructor(tpes))
         DUP()
-        pushInt(ordinal)
+        pushInt(sym.ordinal)
         PUTFIELD(GenTag.OrdinalField)
         exps.zipWithIndex.foreach {
           case (e, i) => DUP()

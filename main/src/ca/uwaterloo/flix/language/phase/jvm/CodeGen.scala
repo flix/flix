@@ -69,8 +69,7 @@ object CodeGen {
 
     val taggedAbstractClass = List(JvmClass(GenTagged.Desc, GenTagged.genByteCode()))
     val nullaryTagClasses = root.enums.values.flatMap(getNullaryTagsOf).toList.map { caze =>
-      val enumName = caze.sym.enumSym.toString
-      JvmClass(GenNullaryTag.desc(enumName, caze.sym.name), GenNullaryTag.genByteCode(enumName, caze.sym.name, caze.sym.ordinal))
+      JvmClass(GenNullaryTag.desc(caze.sym), GenNullaryTag.genByteCode(caze.sym))
     }
     val tagClasses = root.enums.values.flatMap(getTagsOf).toSet[List[ClassDesc]].toList.map(elms => JvmClass(GenTag.desc(elms), GenTag.genByteCode(elms)))
     val extTaggedAbstractClass = List(JvmClass(GenExtTagged.Desc, GenExtTagged.genByteCode()))
