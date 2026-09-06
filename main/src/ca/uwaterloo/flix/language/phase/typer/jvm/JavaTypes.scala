@@ -106,6 +106,49 @@ object JavaTypes {
   }
 
   /**
+    * Returns the erased Java class descriptor of the non-null Flix type `tpe`, as used for member lookup.
+    *
+    * Types with a Java counterpart (see [[descriptorOf]]) erase to it. Arrays and vectors erase to Java
+    * arrays, functions to their Java functional interfaces (see [[lookupFunIF]]), and every other type,
+    * including type variables, to `Object`.
+    */
+  def erasedDescriptorOf(tpe: Type): ClassDesc = descriptorOf(tpe).getOrElse(tpe match {
+    // Arrays and vectors erase to Java arrays. A null element type falls back to Object.
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType, _), _, _) =>
+      erasedArrayDescriptorOf(elmType)
+    case Type.Apply(Type.Cst(TypeConstructor.Vector, _), elmType, _) =>
+      erasedArrayDescriptorOf(elmType)
+
+    // Functions map to the same Java functional interfaces as the reflective path.
+    case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), varArg, _), varRet, _) =>
+      lookupFunIF(varArg, varRet).map(_.desc).getOrElse(CD_Object)
+    case _ => CD_Object
+  })
+
+  /** Returns the Java array descriptor for an array or vector element type. */
+  private def erasedArrayDescriptorOf(elmType: Type): ClassDesc = elmType match {
+    case Type.Cst(TypeConstructor.Null, _) => CD_Object.arrayType()
+    case _ => erasedDescriptorOf(elmType).arrayType()
+  }
+
+  /**
+    * Returns `true` if an argument of type `tpe` for the varargs parameter `paramDesc` is the varargs array
+    * itself, and `false` if it is a single element that must be wrapped in an array.
+    *
+    * The decision mirrors the applicability check of [[ca.uwaterloo.flix.language.jvm.JavaMemberResolver]]:
+    * an argument that is assignable to the array parameter is passed directly, and only an argument that is
+    * not assignable is expanded. `null` is assignable to every array type and is passed as the array.
+    *
+    *   - `Vector[String]` for `String...` is the array.
+    *   - `String` for `String...` is an element.
+    *   - `Vector[Int32]` for `T...`, which erases to `Object[]`, is an element since `int[]` is not an `Object[]`.
+    */
+  def isVarArgsArray(tpe: Type, paramDesc: ClassDesc, loc: SourceLocation)(implicit flix: Flix): Boolean = tpe match {
+    case Type.Cst(TypeConstructor.Null, _) => true
+    case _ => JavaMetadata.isSubtype(erasedDescriptorOf(tpe), paramDesc, loc)
+  }
+
+  /**
     * Returns the string representation of the Java type `desc` used in error messages: a primitive,
     * an array, or a class with a Flix counterpart (e.g. `String` or `BigInt`) is shown as its Flix
     * type, and any other class by its binary name.
@@ -164,5 +207,54 @@ object JavaTypes {
   /** Returns the innermost element type of the array `desc`, or `desc` itself if it is not an array. */
   private def elementTypeOf(desc: ClassDesc): ClassDesc =
     if (desc.isArray) elementTypeOf(desc.componentType()) else desc
+
+  /**
+    * Maps a Flix Arrow type to its Java functional interface.
+    * `argParam`/`retParam` name the interface type param that corresponds
+    * to the Arrow's argument/return type (None for primitive-specialized
+    * interfaces like IntConsumer that have no type params).
+    */
+  case class FunIFMapping(
+    desc: ClassDesc,
+    argParam: Option[String],
+    retParam: Option[String]
+  )
+
+  /** Looks up the Java functional interface for a Flix Arrow with the given arg and ret types. */
+  def lookupFunIF(argType: Type, retType: Type): Option[FunIFMapping] = {
+    import TypeConstructor.*
+    (argType, retType) match {
+      case (Type.Cst(Int32, _), Type.Cst(Unit, _)) =>
+        Some(FunIFMapping(JavaClasses.IntConsumer, None, None))
+      case (Type.Cst(Int32, _), Type.Cst(Bool, _)) =>
+        Some(FunIFMapping(JavaClasses.IntPredicate, None, None))
+      case (Type.Cst(Int32, _), Type.Cst(Int32, _)) =>
+        Some(FunIFMapping(JavaClasses.IntUnaryOperator, None, None))
+      case (Type.Cst(Int32, _), _) =>
+        Some(FunIFMapping(JavaClasses.IntFunction, None, Some("R")))
+      case (Type.Cst(Int64, _), Type.Cst(Unit, _)) =>
+        Some(FunIFMapping(JavaClasses.LongConsumer, None, None))
+      case (Type.Cst(Int64, _), Type.Cst(Bool, _)) =>
+        Some(FunIFMapping(JavaClasses.LongPredicate, None, None))
+      case (Type.Cst(Int64, _), Type.Cst(Int64, _)) =>
+        Some(FunIFMapping(JavaClasses.LongUnaryOperator, None, None))
+      case (Type.Cst(Int64, _), _) =>
+        Some(FunIFMapping(JavaClasses.LongFunction, None, Some("R")))
+      case (Type.Cst(Float64, _), Type.Cst(Unit, _)) =>
+        Some(FunIFMapping(JavaClasses.DoubleConsumer, None, None))
+      case (Type.Cst(Float64, _), Type.Cst(Bool, _)) =>
+        Some(FunIFMapping(JavaClasses.DoublePredicate, None, None))
+      case (Type.Cst(Float64, _), Type.Cst(Float64, _)) =>
+        Some(FunIFMapping(JavaClasses.DoubleUnaryOperator, None, None))
+      case (Type.Cst(Float64, _), _) =>
+        Some(FunIFMapping(JavaClasses.DoubleFunction, None, Some("R")))
+      case (_, Type.Cst(Unit, _)) =>
+        Some(FunIFMapping(JavaClasses.ObjConsumer, Some("T"), None))
+      case (_, Type.Cst(Bool, _)) =>
+        Some(FunIFMapping(JavaClasses.ObjPredicate, Some("T"), None))
+      case (_, _) =>
+        Some(FunIFMapping(JavaClasses.ObjFunction, Some("T"), Some("R")))
+    }
+  }
 
 }

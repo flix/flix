@@ -21,13 +21,12 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod, JavaType, JavaTypeParameter, JavaTypeVariable}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
-import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaArgument, JavaClasses, JavaMemberResolver, JavaMetadata}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaArgument, JavaMemberResolver, JavaMetadata}
 import ca.uwaterloo.flix.language.phase.typer.jvm.{JavaTypes, PrimitiveEffects}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.constant.ConstantDescs.*
 import java.lang.constant.ClassDesc
 import scala.annotation.tailrec
 
@@ -167,7 +166,7 @@ object TypeReduction2 {
           val cs = cs0 ::: css.flatten
           lookupMethod(reducedTpe, name.name, reducedTpes, loc) match {
             case JavaResolution.Resolved(method) =>
-              val classTypeParameters = classTypeParametersOf(method, getJavaTypeDesc(reducedTpe), loc)
+              val classTypeParameters = classTypeParametersOf(method, JavaTypes.erasedDescriptorOf(reducedTpe), loc)
               val classTypeArgs = extractClassTypeArgs(classTypeParameters, reducedTpe, scope, loc)
               val (tpe, cs0) = instantiateMethod(method, classTypeParameters, classTypeArgs, reducedTpes, scope, loc)
               progress.markProgress()
@@ -212,7 +211,7 @@ object TypeReduction2 {
     if (!typesAreKnown) return JavaResolution.UnresolvedTypes
 
     // Rigid type variables and other non-Java types fall back to Object.
-    retrieveMethod(getJavaTypeDesc(thisObj), methodName, ts, static = false, loc)
+    retrieveMethod(JavaTypes.erasedDescriptorOf(thisObj), methodName, ts, static = false, loc)
   }
 
   /** Tries to find a static method of `owner` that takes arguments of type `ts`. */
@@ -241,32 +240,7 @@ object TypeReduction2 {
   /** Returns the descriptor-based Java argument corresponding to the given Flix `tpe`. */
   private def getJavaArgument(tpe: Type): JavaArgument = tpe match {
     case Type.Cst(TypeConstructor.Null, _) => JavaArgument.Null
-    case _ => JavaArgument.Typed(getJavaTypeDesc(tpe))
-  }
-
-  /**
-    * Returns the erased Java class descriptor of the given non-null Flix `tpe`, as used for member lookup.
-    *
-    * Types with a Java counterpart (see [[JavaTypes.descriptorOf]]) erase to it. Arrays and vectors erase
-    * to Java arrays, functions to their Java functional interfaces, and every other type to `Object`.
-    */
-  private def getJavaTypeDesc(tpe: Type): ClassDesc = JavaTypes.descriptorOf(tpe).getOrElse(tpe match {
-    // Arrays and vectors erase to Java arrays. A null element type falls back to Object.
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType, _), _, _) =>
-      getJavaArrayTypeDesc(elmType)
-    case Type.Apply(Type.Cst(TypeConstructor.Vector, _), elmType, _) =>
-      getJavaArrayTypeDesc(elmType)
-
-    // Functions map to the same Java functional interfaces as the reflective path.
-    case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), varArg, _), varRet, _) =>
-      lookupFunIF(varArg, varRet).map(_.desc).getOrElse(CD_Object)
-    case _ => CD_Object
-  })
-
-  /** Returns the Java array descriptor for an array or vector element type. */
-  private def getJavaArrayTypeDesc(elmType: Type): ClassDesc = elmType match {
-    case Type.Cst(TypeConstructor.Null, _) => CD_Object.arrayType()
-    case _ => getJavaTypeDesc(elmType).arrayType()
+    case _ => JavaArgument.Typed(JavaTypes.erasedDescriptorOf(tpe))
   }
 
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
@@ -274,7 +248,7 @@ object TypeReduction2 {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaResolution.UnresolvedTypes
 
-    val owner = getJavaTypeDesc(thisObj)
+    val owner = JavaTypes.erasedDescriptorOf(thisObj)
     JavaMemberResolver.field(owner, fieldName, static = false) match {
       case Ok(Some(field)) => JavaResolution.Resolved(field)
       case Ok(None) => JavaResolution.NotFound
@@ -449,15 +423,22 @@ object TypeReduction2 {
             }
           case pt: JavaType.Parameterized =>
             mkParamTypeConstraints(pt, argType, substMap, loc)
-          case JavaType.GenericArray(component, _) =>
-            // For varargs/array params (e.g., T[] in Stream.of(T...)), emit a constraint
-            // linking the component type variable to the Flix array/vector element type.
-            (component, argType.typeArguments) match {
-              case (JavaType.Variable(variable, _), elmType :: _) =>
-                substMap.get(variable).map { expectedType =>
-                  TypeConstraint.Equality(expectedType, elmType,
-                    TypeConstraint.Provenance.Match(expectedType, elmType, loc))
-                }.toList
+          case JavaType.GenericArray(component, erasure) =>
+            // A generic array parameter such as `T[]` in `Stream.of(T...)`. The argument instantiates `T`
+            // with its element type if it is passed as the array, and with its own type if it is a single
+            // element that is expanded into the array (see `JavaTypes.isVarArgsArray`). Further expanded
+            // arguments are not zipped with a parameter and leave `T` unconstrained.
+            component match {
+              case JavaType.Variable(variable, _) =>
+                substMap.get(variable).toList.flatMap { expectedType =>
+                  val actualType =
+                    if (JavaTypes.isVarArgsArray(argType, erasure, loc)) argType.typeArguments.headOption
+                    else Some(argType)
+                  actualType.map { tpe =>
+                    TypeConstraint.Equality(expectedType, tpe,
+                      TypeConstraint.Provenance.Match(expectedType, tpe, loc))
+                  }
+                }
               case _ => Nil
             }
           case _ => None
@@ -489,12 +470,12 @@ object TypeReduction2 {
     * Handles two cases:
     *
     * 1. **Arrow types** (Flix functions passed as Java functional interfaces):
-    *    Uses `lookupFunIF` to determine which Arrow component (arg/ret) maps to
+    *    Uses `JavaTypes.lookupFunIF` to determine which Arrow component (arg/ret) maps to
     *    which interface type param, then constrains the method's type variable
     *    against that component.
     *
     *    Example: `IntStream.mapToObj(IntFunction<? extends R>)` with arg `Int32 -> Object \ IO`:
-    *    - `lookupFunIF` maps `IntFunction` to `FunIFMapping(retParam = Some("R"))`
+    *    - `JavaTypes.lookupFunIF` maps `IntFunction` to `FunIFMapping(retParam = Some("R"))`
     *    - The interface param `R` corresponds to the Arrow return type `Object`
     *    - The wildcard `? extends R` resolves to method type variable `R`
     *    - Emits constraint: `?r ~ Object`
@@ -506,7 +487,7 @@ object TypeReduction2 {
     substMap: Map[JavaTypeVariable, Type], loc: SourceLocation)(implicit flix: Flix): List[TypeConstraint] = {
     argType match {
       case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), flixArg, _), flixRet, _) =>
-        lookupFunIF(flixArg, flixRet) match {
+        JavaTypes.lookupFunIF(flixArg, flixRet) match {
           case Some(mapping) =>
             val fiTypeArgs: Map[String, Type] =
               mapping.argParam.map(_ -> flixArg).toMap ++
@@ -543,54 +524,5 @@ object TypeReduction2 {
       upperBounds.collectFirst { case JavaType.Variable(variable, _) => variable }
         .orElse(lowerBounds.collectFirst { case JavaType.Variable(variable, _) => variable })
     case _ => None
-  }
-
-  /**
-    * Maps a Flix Arrow type to its Java functional interface.
-    * `argParam`/`retParam` name the interface type param that corresponds
-    * to the Arrow's argument/return type (None for primitive-specialized
-    * interfaces like IntConsumer that have no type params).
-    */
-  private case class FunIFMapping(
-    desc: ClassDesc,
-    argParam: Option[String],
-    retParam: Option[String]
-  )
-
-  /** Looks up the Java functional interface for a Flix Arrow with the given arg and ret types. */
-  private def lookupFunIF(argType: Type, retType: Type): Option[FunIFMapping] = {
-    import TypeConstructor.*
-    (argType, retType) match {
-      case (Type.Cst(Int32, _), Type.Cst(Unit, _)) =>
-        Some(FunIFMapping(JavaClasses.IntConsumer, None, None))
-      case (Type.Cst(Int32, _), Type.Cst(Bool, _)) =>
-        Some(FunIFMapping(JavaClasses.IntPredicate, None, None))
-      case (Type.Cst(Int32, _), Type.Cst(Int32, _)) =>
-        Some(FunIFMapping(JavaClasses.IntUnaryOperator, None, None))
-      case (Type.Cst(Int32, _), _) =>
-        Some(FunIFMapping(JavaClasses.IntFunction, None, Some("R")))
-      case (Type.Cst(Int64, _), Type.Cst(Unit, _)) =>
-        Some(FunIFMapping(JavaClasses.LongConsumer, None, None))
-      case (Type.Cst(Int64, _), Type.Cst(Bool, _)) =>
-        Some(FunIFMapping(JavaClasses.LongPredicate, None, None))
-      case (Type.Cst(Int64, _), Type.Cst(Int64, _)) =>
-        Some(FunIFMapping(JavaClasses.LongUnaryOperator, None, None))
-      case (Type.Cst(Int64, _), _) =>
-        Some(FunIFMapping(JavaClasses.LongFunction, None, Some("R")))
-      case (Type.Cst(Float64, _), Type.Cst(Unit, _)) =>
-        Some(FunIFMapping(JavaClasses.DoubleConsumer, None, None))
-      case (Type.Cst(Float64, _), Type.Cst(Bool, _)) =>
-        Some(FunIFMapping(JavaClasses.DoublePredicate, None, None))
-      case (Type.Cst(Float64, _), Type.Cst(Float64, _)) =>
-        Some(FunIFMapping(JavaClasses.DoubleUnaryOperator, None, None))
-      case (Type.Cst(Float64, _), _) =>
-        Some(FunIFMapping(JavaClasses.DoubleFunction, None, Some("R")))
-      case (_, Type.Cst(Unit, _)) =>
-        Some(FunIFMapping(JavaClasses.ObjConsumer, Some("T"), None))
-      case (_, Type.Cst(Bool, _)) =>
-        Some(FunIFMapping(JavaClasses.ObjPredicate, Some("T"), None))
-      case (_, _) =>
-        Some(FunIFMapping(JavaClasses.ObjFunction, Some("T"), Some("R")))
-    }
   }
 }
