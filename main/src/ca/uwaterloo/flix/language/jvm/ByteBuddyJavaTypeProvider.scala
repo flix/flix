@@ -43,18 +43,6 @@ object ByteBuddyJavaTypeProvider {
   def platform(): ByteBuddyJavaTypeProvider =
     fromLocators(List(ClassFileLocator.ForClassLoader.ofPlatformLoader()))
 
-  /** Returns a provider that reads resources visible to `loader` without loading classes; `null` denotes the bootstrap loader. */
-  def fromClassLoader(loader: ClassLoader): ByteBuddyJavaTypeProvider = {
-    val locator = if (loader == null) {
-      // The JVM represents the bootstrap class loader with null.
-      ClassFileLocator.ForClassLoader.ofBootLoader()
-    } else {
-      // A non-null loader exposes application or user-provided class-path resources.
-      ClassFileLocator.ForClassLoader.of(loader)
-    }
-    fromLocators(List(locator))
-  }
-
   /** Returns a provider for JARs and class directories, with running-JVM multi-release entries and optional platform fallback. */
   def fromClassPath(entries: List[Path], includePlatform: Boolean = true): ByteBuddyJavaTypeProvider = {
     val version = ClassFileVersion.ofThisVm()
@@ -72,6 +60,20 @@ object ByteBuddyJavaTypeProvider {
     }
     fromLocators(locators)
   }
+
+  /**
+    * Returns a provider that reads `deps` directly, falling back to `loader` and the JDK platform.
+    *
+    * `deps` is consulted first because a class loader constructed at run time cannot serve
+    * resources inside a GraalVM native image. `loader` is still consulted for the class files the
+    * compiler provides itself, such as `dev.flix.runtime.Global`.
+    */
+  def fromDependencyClassPath(deps: DependencyClassPath, loader: ClassLoader): ByteBuddyJavaTypeProvider =
+    fromLocators(List(
+      deps,
+      ClassFileLocator.ForClassLoader.of(loader),
+      ClassFileLocator.ForClassLoader.ofPlatformLoader()
+    ))
 
   /** Returns a provider backed by the given locators in lookup order. */
   private def fromLocators(locators: List[ClassFileLocator]): ByteBuddyJavaTypeProvider = {
