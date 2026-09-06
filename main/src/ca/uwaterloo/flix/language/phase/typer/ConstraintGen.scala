@@ -900,10 +900,18 @@ object ConstraintGen {
         //  ..
         // }
         //
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2)).unzip
+        val effect = root.effects(symUse.sym)
+        val targs = effect.tparams.map(tparam => freshVar(tparam.sym.kind, loc))
+        val effectSubst = Substitution(effect.tparams.map(_.sym).zip(targs).toMap)
+        val effectKind = effect.tparams.foldRight(Kind.Eff: Kind) {
+          case (tparam, acc) => tparam.sym.kind ->: acc
+        }
+
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, effectSubst)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
 
-        val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc) // TODO EFF-TPARAMS need kind
+        val handledEffectConstructor = Type.Cst(TypeConstructor.Effect(symUse.sym, effectKind), symUse.qname.loc)
+        val handledEffect = Type.mkApply(handledEffectConstructor, targs, symUse.qname.loc)
         // Subtract the effect from the body effect and add the handler effects.
         val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(evar2, continuationEffect, loc)
@@ -1286,9 +1294,9 @@ object ConstraintGen {
   /**
     * Generates constraints unifying the given expected and actual formal parameters.
     */
-  private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam])(implicit c: TypeContext): Unit = {
+  private def unifyFormalParams(op: Symbol.OpSym, expected: List[Type], actual: List[KindedAst.FormalParam])(implicit c: TypeContext): Unit = {
     // length check done in Resolver
-    c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc))
+    c.expectTypeArguments(op, expectedTypes = expected, actualTypes = actual.map(_.tpe), actual.map(_.loc))
   }
 
   /**
@@ -1298,23 +1306,25 @@ object ConstraintGen {
     *
     * @param tryBlockTpe        the type of the try-block associated with the handler
     * @param continuationEffect the effect of the continuation
+    * @param effectSubst        the shared instantiation of the effect's type parameters
     */
-  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
+  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, effectSubst: Substitution)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.HandlerRule(symUse, actualFparams0, body, opTvar, loc) =>
       val effect = root.effects(symUse.sym.eff)
       val ops = effect.ops.map(op => op.sym -> op).toMap
-      // Don't need to generalize since ops are monomorphic
+      // The effect parameters have already been instantiated once for the enclosing handler.
       // Don't need to handle unknown op because resolver would have caught this
       // The last formal parameter is the resumption, the rest correspond to the operation's parameters.
       val actualFparams = actualFparams0.init
       val resumptionFparam = actualFparams0.last
       ops(symUse.sym) match {
         case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _), _) =>
-          val resumptionArgType = opTpe
+          val expectedParamTypes = expectedFparams.toList.map(fparam => effectSubst(fparam.tpe))
+          val resumptionArgType = effectSubst(opTpe)
           val resumptionResType = tryBlockTpe
           val resumptionEff = continuationEffect
           val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
-          unifyFormalParams(symUse.sym, expected = expectedFparams.toList, actual = actualFparams)
+          unifyFormalParams(symUse.sym, expected = expectedParamTypes, actual = actualFparams)
           c.expectType(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
           val (actualTpe, actualEff) = visitExp(body)
 
