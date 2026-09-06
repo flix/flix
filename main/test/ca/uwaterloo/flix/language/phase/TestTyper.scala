@@ -1618,6 +1618,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  // TODO: Move this positive test to main/test/flix when polymorphic effects are fully implemented.
   test("TestPolymorphicEffectHandler.Pos.01") {
     val input =
       """
@@ -1639,6 +1640,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
+  // TODO: Move this positive test to main/test/flix when polymorphic effects are fully implemented.
   test("TestPolymorphicEffect.Pos.01") {
     val input =
       """
@@ -1654,6 +1656,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
+  // TODO: Move this positive test to main/test/flix when polymorphic effects are fully implemented.
   test("TestPolymorphicEffect.Pos.02") {
     val input =
       """
@@ -1674,6 +1677,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
+  // TODO: Move this positive test to main/test/flix when polymorphic effects are fully implemented.
   test("TestPolymorphicEffect.Pos.03") {
     val input =
       """
