@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
-import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses, JavaLookupError, JavaMemberResolver, JavaMetadata}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses, JavaMemberResolver, JavaMetadata}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps, Nel}
 
@@ -3320,9 +3320,7 @@ object Resolver {
       case None => Result.Err(undefined(s"'$className' is not a valid class name."))
       case Some(d) => flix.javaTypeProvider.lookupClass(d) match {
         case Result.Ok(clazz) => Result.Ok(clazz)
-        case Result.Err(JavaLookupError.MissingClass(_)) => Result.Err(undefined(s"The class '$className' was not found on the class path."))
-        case Result.Err(JavaLookupError.InvalidClass(_, message)) => Result.Err(undefined(s"The class file of '$className' could not be read: $message"))
-        case Result.Err(JavaLookupError.UnsupportedDescriptor(_)) => Result.Err(undefined(s"'$className' does not denote a class or interface."))
+        case Result.Err(error) => Result.Err(undefined(error.explanation))
       }
     }
   }

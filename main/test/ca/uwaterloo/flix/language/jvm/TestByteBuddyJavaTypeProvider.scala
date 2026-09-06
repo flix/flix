@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.jvm.JavaTypeVariable
 import ca.uwaterloo.flix.language.ast.jvm.JavaTypeVariableOwner.Class
 import ca.uwaterloo.flix.language.jvm.JavaLookupError.{InvalidClass, MissingClass, UnsupportedDescriptor}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import net.bytebuddy.ByteBuddy
 import net.bytebuddy.dynamic.ClassFileLocator
 import net.bytebuddy.pool.TypePool
 import org.scalatest.funsuite.AnyFunSuite
@@ -238,6 +239,51 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
         case Err(error) => fail(error.toString)
       }
     } finally provider.close()
+  }
+
+  test("lookupClass.SucceedsWithMissingSuperclass") {
+    val (provider, derived, base) = providerWithMissingSuperclass()
+    try {
+      // Reading a class file does not read the class files of its supertypes.
+      provider.lookupClass(derived) match {
+        case Ok(clazz) => assert(clazz.superClass.map(_.erasure) == Some(base))
+        case Err(error) => fail(error.toString)
+      }
+    } finally provider.close()
+  }
+
+  test("virtualMethods.ReportsMissingSuperclass") {
+    val (provider, derived, base) = providerWithMissingSuperclass()
+    try {
+      assert(provider.virtualMethods(derived) == Err(MissingClass(base)))
+    } finally provider.close()
+  }
+
+  test("isSubtype.ReportsMissingSuperclass") {
+    val (provider, derived, base) = providerWithMissingSuperclass()
+    try {
+      assert(provider.isSubtype(derived, ClassDesc.of("java.io.Serializable")) == Err(MissingClass(base)))
+    } finally provider.close()
+  }
+
+  /**
+    * Returns a provider whose class path holds the class `Derived extends Base` but not `Base`, together with the
+    * descriptors of `Derived` and `Base`.
+    */
+  private def providerWithMissingSuperclass(): (ByteBuddyJavaTypeProvider, ClassDesc, ClassDesc) = {
+    val base = new ByteBuddy().subclass(classOf[Object]).name("dev.flix.prototype.Base").make()
+    val derived = new ByteBuddy().subclass(base.getTypeDescription).name("dev.flix.prototype.Derived").make()
+    val locator = new ClassFileLocator.Compound(
+      ClassFileLocator.Simple.of(derived.getTypeDescription.getName, derived.getBytes),
+      ClassFileLocator.ForClassLoader.ofPlatformLoader()
+    )
+    val pool = new TypePool.Default.WithLazyResolution(
+      new TypePool.CacheProvider.Simple(),
+      locator,
+      TypePool.Default.ReaderMode.FAST
+    )
+    val provider = ByteBuddyJavaTypeProvider(locator, pool)
+    (provider, ClassDesc.of(derived.getTypeDescription.getName), ClassDesc.of(base.getTypeDescription.getName))
   }
 
 }
