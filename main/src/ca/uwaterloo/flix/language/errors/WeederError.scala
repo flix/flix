@@ -277,20 +277,20 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that type parameters are present on an effect or operation.
+    * An error raised to indicate that type parameters are present on an effect operation.
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError {
+  case class IllegalOperationTypeParams(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9245
 
-    def summary: String = "Unexpected effect type parameters."
+    def summary: String = "Unexpected effect operation type parameters."
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      s""">> Unexpected effect type parameters.
+      s""">> Unexpected effect operation type parameters.
          |
-         |${src(loc, "type parameters on effects are not yet supported")}
+         |${src(loc, "effect operations cannot declare type parameters")}
          |""".stripMargin
     }
   }
