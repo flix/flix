@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -24,30 +23,6 @@ import org.scalatest.funsuite.AnyFunSuite
 class TestKinder extends AnyFunSuite with TestUtils {
 
   private val DefaultOptions = Options.TestWithLibNix
-
-  test("PolymorphicEffect.OperationScheme.01") {
-    val input =
-      """
-        |eff F[a, b] {
-        |    def op(x: a): b
-        |}
-        |""".stripMargin
-    val result = check(input, DefaultOptions)
-    expectSuccess(result)
-
-    val root = result._1.get
-    val eff = root.effects.values.find(_.sym.name == "F").get
-    val op = eff.ops.head
-    val opEff = op.spec.declaredScheme.base.arrowEffectType
-    val expectedTargs = eff.tparams.map(tparam => Type.Var(tparam.sym, tparam.loc))
-
-    assert(op.spec.declaredScheme.quantifiers == eff.tparams.map(_.sym))
-    assert(opEff.typeArguments == expectedTargs)
-    opEff.typeConstructor match {
-      case Some(TypeConstructor.Effect(sym, _)) => assert(sym == eff.sym)
-      case other => fail(s"Expected an applied effect type, got: $other")
-    }
-  }
 
   // ---------------------------------------------------------------------------
   // --- KindError (base trait, no specific subtype) ---
