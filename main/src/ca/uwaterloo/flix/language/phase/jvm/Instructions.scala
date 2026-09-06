@@ -311,6 +311,30 @@ object Instructions {
   def isCategory2(tpe: ClassDesc): Boolean =
     tpe == ConstantDescs.CD_long || tpe == ConstantDescs.CD_double
 
+  /**
+    * Emits the widening primitive conversion (JLS §5.1.2) from `from` to `to`, or nothing if the two are equal.
+    *
+    * `byte`, `short`, and `char` are `int` on the operand stack, so widening among them and to `int` emits no
+    * instruction. Every other widening is one conversion instruction, e.g. `I2L` for `int` to `long`.
+    *
+    * Any other pair is not a widening primitive conversion and is therefore a compiler bug.
+    */
+  def xWidenPrimitive(from: ClassDesc, to: ClassDesc)(implicit mv: MethodVisitor): Unit = {
+    import java.lang.constant.ConstantDescs.*
+    (from, to) match {
+      case (f, t) if f == t => ()
+      case (CD_byte, CD_short | CD_int) => ()
+      case (CD_short | CD_char, CD_int) => ()
+      case (CD_byte | CD_short | CD_char | CD_int, CD_long) => mv.visitInsn(Opcodes.I2L)
+      case (CD_byte | CD_short | CD_char | CD_int, CD_float) => mv.visitInsn(Opcodes.I2F)
+      case (CD_byte | CD_short | CD_char | CD_int, CD_double) => mv.visitInsn(Opcodes.I2D)
+      case (CD_long, CD_float) => mv.visitInsn(Opcodes.L2F)
+      case (CD_long, CD_double) => mv.visitInsn(Opcodes.L2D)
+      case (CD_float, CD_double) => mv.visitInsn(Opcodes.F2D)
+      case _ => throw InternalCompilerException(s"Unexpected primitive widening from '${from.displayName()}' to '${to.displayName()}'", SourceLocation.Unknown)
+    }
+  }
+
   /** Emits the array-load instruction appropriate for `elmTpe`. */
   def xArrayLoad(elmTpe: ClassDesc)(implicit mv: MethodVisitor): Unit = {
     import java.lang.constant.ConstantDescs.*

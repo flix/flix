@@ -845,10 +845,7 @@ object GenExpression {
         mv.visitTypeInsn(Opcodes.NEW, declaration)
         // Duplicate the reference since the first argument for a constructor call is the reference to the object
         mv.visitInsn(Opcodes.DUP)
-        for ((arg, argType) <- exps.zip(constructor.descriptor.parameterList.asScala)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(argType))
-        }
+        compileJavaArgs(exps, constructor.descriptor)
 
         // Call the constructor
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, declaration, ClassMaker.ConstructorMethodName, constructor.descriptor.descriptorString(), false)
@@ -868,10 +865,7 @@ object GenExpression {
         val declaration = internalNameOf(method.owner)
         mv.visitTypeInsn(Opcodes.CHECKCAST, declaration)
 
-        for ((arg, argType) <- args.zip(method.descriptor.parameterList.asScala)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(argType))
-        }
+        compileJavaArgs(args, method.descriptor)
 
         // Check if we are invoking an interface or class.
         if (method.isInterface) {
@@ -897,11 +891,8 @@ object GenExpression {
         val anonClassInternalName = internalNameOf(GenAnonymousClasses.desc(sym))
         mv.visitTypeInsn(Opcodes.CHECKCAST, anonClassInternalName)
 
-        // Evaluate and cast each argument.
-        for ((arg, argType) <- args.zip(method.descriptor.parameterList.asScala)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(argType))
-        }
+        // Evaluate and convert each argument.
+        compileJavaArgs(args, method.descriptor)
 
         // Call the bridge method super$methodName on the anonymous class.
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, anonClassInternalName, GenAnonymousClasses.bridgeName(method), method.descriptor.descriptorString(), false)
@@ -914,10 +905,7 @@ object GenExpression {
       case AtomicOp.InvokeStaticMethod(method) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
         addLoc(loc)
-        for ((arg, argType) <- exps.zip(method.descriptor.parameterList.asScala)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(argType))
-        }
+        compileJavaArgs(exps, method.descriptor)
         val declaration = internalNameOf(method.owner)
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, declaration, method.name, method.descriptor.descriptorString(), method.isInterface)
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
@@ -1569,10 +1557,7 @@ object GenExpression {
         constructors.head.exp match {
           case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), superArgs, _, _, _) =>
             // Super-only: compile args and call parameterized <init>
-            for ((arg, argType) <- superArgs.zip(constructor.descriptor.parameterList.asScala)) {
-              compileExpr(arg)
-              if (!argType.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(argType))
-            }
+            compileJavaArgs(superArgs, constructor.descriptor)
             mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, ClassMaker.ConstructorMethodName, constructor.descriptor.descriptorString(), false)
           case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructors.head.loc)
         }
@@ -1591,6 +1576,22 @@ object GenExpression {
 
   private def getStructType(struct: Struct): List[ClassDesc] = {
     TypeDescs.structFields(struct)
+  }
+
+  /**
+    * Compiles the arguments `args` of a Java call and converts each to its parameter type in `descriptor`.
+    *
+    * A reference parameter receives a `CHECKCAST`. A primitive parameter receives the widening primitive
+    * conversion from the erased type of the argument, e.g. `I2L` for an `Int32` argument to a `long` parameter.
+    * Overload resolution admits no other conversion, so the erased argument type is either the parameter type
+    * itself or a primitive that widens to it.
+    */
+  private def compileJavaArgs(args: List[Expr], descriptor: MethodTypeDesc)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    for ((arg, paramType) <- args.zip(descriptor.parameterList.asScala)) {
+      compileExpr(arg)
+      if (paramType.isPrimitive) xWidenPrimitive(TypeDescs.toClassDesc(arg.tpe), paramType)
+      else CHECKCAST(paramType)
+    }
   }
 
   private def compileIsTag(ordinal: Int, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
