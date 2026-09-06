@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Symbol, Type, TypeConstructor}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -34,9 +34,7 @@ private sealed trait EffAtom extends Ordered[EffAtom] {
   override def compare(that: EffAtom): Int = (this, that) match {
     case (EffAtom.VarFlex(sym1), EffAtom.VarFlex(sym2)) => sym1.id - sym2.id
     case (EffAtom.VarRigid(sym1), EffAtom.VarRigid(sym2)) => sym1.id - sym2.id
-    case (EffAtom.Eff(sym1, args1), EffAtom.Eff(sym2, args2)) =>
-      val symCmp = sym1.compare(sym2)
-      if (symCmp != 0) symCmp else compareTypeLists(args1, args2)
+    case (EffAtom.Eff(sym1), EffAtom.Eff(sym2)) => sym1.compare(sym2)
     case (EffAtom.Region(sym1), EffAtom.Region(sym2)) => sym1.compare(sym2)
     case (EffAtom.Assoc(sym1, arg1), EffAtom.Assoc(sym2, arg2)) =>
       val symCmp = sym1.compare(sym2)
@@ -47,37 +45,12 @@ private sealed trait EffAtom extends Ordered[EffAtom] {
         case EffAtom.VarFlex(_) => 0
         case EffAtom.VarRigid(_) => 1
         case EffAtom.Region(_) => 2
-        case EffAtom.Eff(_, _) => 3
+        case EffAtom.Eff(_) => 3
         case EffAtom.Assoc(_, _) => 4
         case EffAtom.Error(_) => 5
       }
 
       ordinal(this) - ordinal(that)
-  }
-
-  /** Compares type lists deterministically using their internal representation. */
-  private def compareTypeLists(ts1: List[Type], ts2: List[Type]): Int = (ts1, ts2) match {
-    case (Nil, Nil) => 0
-    case (Nil, _ :: _) => -1
-    case (_ :: _, Nil) => 1
-    case (t1 :: rest1, t2 :: rest2) =>
-      val cmp = compareTypes(t1, t2)
-      if (cmp != 0) cmp else compareTypeLists(rest1, rest2)
-  }
-
-  /** Compares types deterministically, ignoring source locations when the types are equal. */
-  private def compareTypes(t1: Type, t2: Type): Int = {
-    if (t1 == t2) {
-      0
-    } else {
-      val textCmp = t1.toString.compareTo(t2.toString)
-      if (textCmp != 0) {
-        textCmp
-      } else {
-        val hashCmp = Integer.compare(t1.hashCode(), t2.hashCode())
-        if (hashCmp != 0) hashCmp else SourceLocation.Order.compare(t1.loc, t2.loc)
-      }
-    }
   }
 }
 
@@ -88,8 +61,8 @@ private object EffAtom {
   /** Representing a rigid variable. */
   case class VarRigid(sym: Symbol.KindedTypeVarSym) extends EffAtom
 
-  /** Representing an effect constant. */
-  case class Eff(sym: Symbol.EffSym, args: List[Type]) extends EffAtom
+  /** Represents an effect constructor. */
+  case class Eff(sym: Symbol.EffSym) extends EffAtom
 
   /** Represents an associated effect. */
   case class Assoc(sym: Symbol.AssocTypeSym, arg: EffAtom) extends EffAtom
@@ -105,9 +78,9 @@ private object EffAtom {
   def fromType(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): EffAtom = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => EffAtom.VarRigid(sym)
     case Type.Var(sym, _) => EffAtom.VarFlex(sym)
-    case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => EffAtom.Eff(sym, Nil)
+    case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => EffAtom.Eff(sym)
     case app@Type.Apply(_, _, _) if app.kind == Kind.Eff => app.baseType match {
-      case Type.Cst(TypeConstructor.Effect(sym, _), _) => EffAtom.Eff(sym, app.typeArguments)
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) => EffAtom.Eff(sym)
       case _ => throw InvalidType(t)
     }
     case Type.Cst(TypeConstructor.Region(sym), _) => EffAtom.Region(sym)
@@ -139,21 +112,32 @@ private object EffAtom {
     *     [[RigidityEnv.isRigid]] is false for `ef`)
     *   - `collectAtoms(Indexable.Aef[Error], acc)` adds nothing
     */
-  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
+  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, List[Type]], conflictedEffects: mutable.Set[Symbol.EffSym])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => acc += EffAtom.VarRigid(sym)
     case Type.Var(sym, _) => acc += EffAtom.VarFlex(sym)
-    case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => acc += EffAtom.Eff(sym, Nil)
+    case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => addEffect(sym, Nil, acc, effectArgs, conflictedEffects)
     case app@Type.Apply(tpe1, tpe2, _) => app.baseType match {
-      case Type.Cst(TypeConstructor.Effect(_, _), _) if app.kind == Kind.Eff => acc += fromType(app)
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
+        addEffect(sym, app.typeArguments, acc, effectArgs, conflictedEffects)
       case _ =>
-        collectAtoms(tpe1, acc)
-        collectAtoms(tpe2, acc)
+        collectAtoms(tpe1, acc, effectArgs, conflictedEffects)
+        collectAtoms(tpe2, acc, effectArgs, conflictedEffects)
     }
     case Type.Cst(TypeConstructor.Region(sym), _) => acc += EffAtom.Region(sym)
     case Type.Cst(TypeConstructor.Error(id, _), _) => acc += EffAtom.Error(id)
-    case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc)
+    case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc, effectArgs, conflictedEffects)
     case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).foreach(acc += _)
     case _ => ()
+  }
+
+  /** Adds an effect atom and records the arguments used to reconstruct it. */
+  private def addEffect(sym: Symbol.EffSym, args: List[Type], acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, List[Type]], conflictedEffects: mutable.Set[Symbol.EffSym]): Unit = {
+    acc += EffAtom.Eff(sym)
+    effectArgs.get(sym) match {
+      case None => effectArgs(sym) = args
+      case Some(previousArgs) if previousArgs != args => conflictedEffects += sym
+      case Some(_) => ()
+    }
   }
 
   /**
@@ -168,23 +152,6 @@ private object EffAtom {
     case _ => None
   }
 
-  /**
-    * Returns the [[Type]] represented by `atom` with location `loc`. The kind of errors and
-    * associated types are set to be [[Kind.Eff]].
-    */
-  def toType(atom: EffAtom, loc: SourceLocation): Type = atom match {
-    case EffAtom.Eff(sym, args) =>
-      val kind = args.foldRight(Kind.Eff: Kind) {
-        case (arg, acc) => arg.kind ->: acc
-      }
-      Type.mkApply(Type.Cst(TypeConstructor.Effect(sym, kind), loc), args, loc)
-    case EffAtom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
-    case EffAtom.VarRigid(sym) => Type.Var(sym, loc)
-    case EffAtom.VarFlex(sym) => Type.Var(sym, loc)
-    case EffAtom.Assoc(sym, arg0) =>
-      Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
-    case EffAtom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
-  }
 }
 
 /**

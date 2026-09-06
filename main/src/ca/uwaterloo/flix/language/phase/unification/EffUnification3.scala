@@ -79,8 +79,16 @@ object EffUnification3 {
       }
     }
 
-    // Choose a unique number for each atom.
-    implicit val bimap: AtomBimap = AtomBimap.fromConstraints(eqs)
+    // Choose a unique number for each atom. Use the original constraint order so the effect
+    // argument representative stored in the bimap is independent of the chaos monkey.
+    implicit val bimap: AtomBimap = AtomBimap.fromConstraints(eqs0)
+
+    // Effect arguments are unified before effect equations reach this solver. If different
+    // arguments remain, leave the equations unsolved until the ordinary type constraints make
+    // progress or report the conflict.
+    if (bimap.hasConflictedEffectArgs) {
+      return Result.Err(eqs)
+    }
 
     //
     // Phase 1: Try to solve without subeffecting.
@@ -277,16 +285,16 @@ object EffUnification3 {
     case SetFormula.Univ => Type.Univ
     case SetFormula.Empty => Type.Pure
     case SetFormula.Cst(c) => m.getBackward(c) match {
-      case Some(atom) => EffAtom.toType(atom, loc)
+      case Some(atom) => m.toType(atom, loc)
       case None => throw InternalCompilerException(s"Unexpected unbound constant identifier '$c'", loc)
     }
     case SetFormula.Var(x) => m.getBackward(x) match {
-      case Some(atom) => EffAtom.toType(atom, loc)
+      case Some(atom) => m.toType(atom, loc)
       case None => throw InternalCompilerException(s"Unexpected unbound variable identifier '$x'", loc)
     }
     case SetFormula.ElemSet(s) =>
       val elementTypes = s.toList.map(e => m.getBackward(e) match {
-        case Some(atom) => EffAtom.toType(atom, loc)
+        case Some(atom) => m.toType(atom, loc)
         case None => throw InternalCompilerException(s"Unexpected unbound element identifier '$e'", loc)
       })
       Type.mkUnion(elementTypes, loc)
@@ -322,6 +330,10 @@ object EffUnification3 {
     implicit val scope: RegionScope = RegionScope.Top
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: AtomBimap = AtomBimap.fromType(tpe)
+
+    if (bimap.hasConflictedEffectArgs) {
+      return tpe
+    }
 
     val f0 = toSetFormula(tpe)(withSlack = true, scope, renv, bimap)
     val z = Zhegalkin.toZhegalkin(f0)(Algebra, CofiniteIntSet.LatticeOps)
