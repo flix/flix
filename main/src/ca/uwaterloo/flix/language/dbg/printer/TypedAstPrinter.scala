@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, 
 import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JField}
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 
 object TypedAstPrinter {
 
@@ -120,7 +121,7 @@ object TypedAstPrinter {
     */
   private def printJvmMethod(method: TypedAst.JvmMethod): DocAst.JvmMethod = method match {
     case TypedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.displayName()), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+      DocAst.JvmMethod(ann.map(a => ClassDescs.simpleNameOf(a.clazz)), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 
   /**
