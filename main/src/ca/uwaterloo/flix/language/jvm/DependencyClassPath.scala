@@ -22,7 +22,8 @@ import java.nio.file.{Files, Path}
 import scala.collection.mutable
 
 /**
-  * A [[ClassFileLocator]] that reads class files from a growing set of JARs and directories.
+  * The class path of a project's dependencies: a [[ClassFileLocator]] that reads class files
+  * from a growing set of JARs and class directories.
   *
   * Entries are read directly from the archive rather than through a [[ClassLoader]]. A class
   * loader constructed at run time cannot serve resources inside a GraalVM native image, which
@@ -34,7 +35,7 @@ import scala.collection.mutable
   * [[locate]] is then called from the worker threads, which are created afterwards, so the
   * entries are safely published to them.
   */
-final class MutableClassPathLocator extends ClassFileLocator {
+final class DependencyClassPath extends ClassFileLocator {
 
   /**
     * The locators to consult, in order.
