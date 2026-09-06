@@ -441,8 +441,8 @@ object Specialization {
   private def visitEffectOp(op: TypedAst.Op)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Op =
     op match {
       case TypedAst.Op(sym, TypedAst.Spec(doc, ann, mod, tparams, fparams0, declaredScheme, retTpe, eff, tconstrs, econstrs), loc) =>
-        // Effect operations are monomorphic - they have no variables.
-        // The substitution can be left empty.
+        // Effect declaration parameters are erased at this boundary.
+        // The empty strict substitution grounds them to their default types.
         val fparams = fparams0.map {
           case TypedAst.FormalParam(varSym, tpe, src, decreasing, fpLoc) =>
             TypedAst.FormalParam(varSym, StrictSubstitution.empty(tpe), src, decreasing, fpLoc)
@@ -1414,7 +1414,7 @@ object Specialization {
   private def eval(eff: Type): CofiniteSet[Symbol.EffSym] = eff match {
     case Type.Univ => CofiniteSet.universe
     case Type.Pure => CofiniteSet.empty
-    case Type.Cst(TypeConstructor.Effect(sym, _), _) =>
+    case EffectType(sym) =>
       CofiniteSet.mkSet(sym)
     case Type.Cst(TypeConstructor.Region(_), _) =>
       CofiniteSet.mkSet(RegionInstantiation.sym)
@@ -1429,6 +1429,13 @@ object Specialization {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
       CofiniteSet.xor(eval(x), eval(y))
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
+  }
+
+  /** Extracts the symbol from a fully applied or nullary effect type. */
+  private object EffectType {
+    def unapply(tpe: Type): Option[Symbol.EffSym] = tpe.typeConstructor.collect {
+      case TypeConstructor.Effect(sym, _) => sym
+    }
   }
 
   /** Returns the [[Type]] representation of `set` with `loc`. */
