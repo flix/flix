@@ -1175,9 +1175,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     private def addManifestToZip(zip: ZipOutputStream): Unit = {
       val manifest =
-        """Manifest-Version: 1.0
-          |Main-Class: Main
-          |""".stripMargin
+        s"""Manifest-Version: 1.0
+           |Main-Class: ${CompilerConstants.EntryPointClassName}
+           |""".stripMargin
 
       FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
     }
