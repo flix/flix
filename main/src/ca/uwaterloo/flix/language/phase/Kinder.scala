@@ -274,7 +274,9 @@ object Kinder {
     case ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
       val kenv = getKindEnvFromTypeParams(tparams0)
       val tparams = tparams0.map(visitTypeParam(_, kenv))
-      val ops = ops0.map(visitOp(_, tparams, kenv, root))
+      val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+      val tpe = Type.mkApply(Type.Cst(TypeConstructor.Effect(sym, declKinds.effectKinds(sym)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+      val ops = ops0.map(visitOp(_, tparams, tpe, kenv, root))
       KindedAst.Effect(doc, ann, mod, sym, tparams, ops, loc)
   }
 
@@ -345,10 +347,10 @@ object Kinder {
   /**
     * Performs kinding on the given effect operation under the given kind environment.
     */
-  private def visitOp(op: ResolvedAst.Declaration.Op, tparams: List[KindedAst.TypeParam], kenv0: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Op = op match {
+  private def visitOp(op: ResolvedAst.Declaration.Op, tparams: List[KindedAst.TypeParam], eff: Type, kenv0: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Op = op match {
     case ResolvedAst.Declaration.Op(sym, spec0, loc) =>
       val kenv = inferSpec(spec0, kenv0, root)
-      val spec = visitSpec(spec0, tparams.map(_.sym), Some(sym.eff), kenv, root)
+      val spec = visitSpec(spec0, tparams.map(_.sym), Some(eff), kenv, root)
       KindedAst.Op(sym, spec, loc)
   }
 
@@ -358,7 +360,7 @@ object Kinder {
     * Adds `quantifiers` to the generated scheme's quantifier list.
     * Adds `effect` to the generated scheme's effect set
     */
-  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], effect: Option[Symbol.EffSym], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Spec = spec0 match {
+  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], effect: Option[Type], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Spec = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0) =>
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
@@ -367,10 +369,10 @@ object Kinder {
       // If we're inside an effect, add that effect to the scheme.
       val eff = effect match {
         case None => declaredEff
-        case Some(sym) =>
+        case Some(tpe) =>
           Some(
             Type.mkUnion(
-              Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown), // TODO EFFECT-TPARAMS need kind
+              tpe,
               declaredEff.getOrElse(Type.Pure),
               SourceLocation.Unknown
             )

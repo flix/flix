@@ -441,8 +441,8 @@ object Specialization {
   private def visitEffectOp(op: TypedAst.Op)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Op =
     op match {
       case TypedAst.Op(sym, TypedAst.Spec(doc, ann, mod, tparams, fparams0, declaredScheme, retTpe, eff, tconstrs, econstrs), loc) =>
-        // Effect operations are monomorphic - they have no variables.
-        // The substitution can be left empty.
+        // Effect declaration parameters are erased at this boundary.
+        // The empty strict substitution grounds them to their default types.
         val fparams = fparams0.map {
           case TypedAst.FormalParam(varSym, tpe, src, decreasing, fpLoc) =>
             TypedAst.FormalParam(varSym, StrictSubstitution.empty(tpe), src, decreasing, fpLoc)
@@ -1428,6 +1428,8 @@ object Specialization {
       CofiniteSet.difference(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
       CofiniteSet.xor(eval(x), eval(y))
+    // Effect arguments are erased at the monomorphic boundary.
+    case Type.Apply(tpe, _, _) => eval(tpe)
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
   }
 
