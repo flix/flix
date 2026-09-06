@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
 import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object ReducedAstPrinter {
@@ -100,6 +101,6 @@ object ReducedAstPrinter {
     */
   private def printJvmMethod(method: ReducedAst.JvmMethod): DocAst.JvmMethod = method match {
     case ReducedAst.JvmMethod(ann, ident, fparams, exp, tpe, _, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.displayName()), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
+      DocAst.JvmMethod(ann.map(a => ClassDescs.simpleNameOf(a.clazz)), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
   }
 }
