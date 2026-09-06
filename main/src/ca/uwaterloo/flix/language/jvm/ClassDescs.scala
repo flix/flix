@@ -20,6 +20,18 @@ import java.lang.constant.ClassDesc
 object ClassDescs {
 
   /**
+    * Returns the descriptor of the class or interface with the binary `name`,
+    * e.g. `java.lang.String` or `java.util.Map$Entry`.
+    *
+    * Returns `None` if `name` is not a valid binary name.
+    */
+  def ofBinaryName(name: String): Option[ClassDesc] = try {
+    Some(ClassDesc.of(name))
+  } catch {
+    case _: IllegalArgumentException => None
+  }
+
+  /**
     * Returns the JVM internal name of the class, interface, or array descriptor `desc`,
     * e.g. `java/lang/String` or `[Ljava/lang/String;`.
     */

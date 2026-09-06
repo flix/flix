@@ -3316,13 +3316,7 @@ object Resolver {
       ResolutionError.UndefinedJvmImport(className, AnchorPosition.mkImportOrUseAnchor(ns0), message, loc)
 
     // A name that is not a valid binary class name has no descriptor.
-    val desc = try {
-      Some(ClassDesc.of(className))
-    } catch {
-      case _: IllegalArgumentException => None
-    }
-
-    desc match {
+    ClassDescs.ofBinaryName(className) match {
       case None => Result.Err(undefined(s"'$className' is not a valid class name."))
       case Some(d) => flix.javaTypeProvider.lookupClass(d) match {
         case Result.Ok(clazz) => Result.Ok(clazz)
