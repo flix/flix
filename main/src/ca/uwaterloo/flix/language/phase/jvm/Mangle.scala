@@ -25,6 +25,55 @@ import java.lang.constant.ConstantDescs.{CD_boolean, CD_byte, CD_char, CD_double
 
 /**
   * Name mangling and construction of class names for generated classes.
+  *
+  * == The Name Space ==
+  *
+  * A generated class is named in one of three ways.
+  *
+  * Structural classes are named after the erased types they hold, so that every value of
+  * the same shape shares one class. They live in the root package:
+  *
+  * {{{
+  * Tuple$Obj$Int32     every pair whose second component is an Int32
+  * Tag$Obj             every tag with a single reference-typed term
+  * Struct$Obj          every struct with a single reference-typed field
+  * Lazy$Int32          every lazy Int32
+  * Fn2$Obj$Obj$Obj     every binary function on reference types
+  * }}}
+  *
+  * Runtime classes have fixed names in the `dev.flix.runtime` package, e.g. `Thunk` and
+  * `Resumption`.
+  *
+  * The rest are named after a declaration the programmer wrote, and live in the package of
+  * its namespace:
+  *
+  * {{{
+  * Def$map             the function class of the def `map`
+  * Clo$map             the closure class of the def `map`
+  * Eff$Console         the effect class of the effect `Console`
+  * Case$Color$Red      the class of the nullary case `Red` of `enum Color`
+  * }}}
+  *
+  * == The Prefix Invariant ==
+  *
+  * A class named after a programmer-chosen identifier must carry a reserved prefix, as
+  * `Def`, `Clo`, `Eff`, and `Case` do above.
+  *
+  * The reason is that the segments of a structural name -- `Bool`, `Int32`, `Obj`, and the
+  * rest of [[erasedName]] -- are legal Flix identifiers, and so are the family names that
+  * precede them. Without a prefix, a program could name a class after a generated one:
+  *
+  * {{{
+  * enum Tag { case Obj }       // would be Tag$Obj, as above
+  * enum Struct { case Obj }    // would be Struct$Obj, as above
+  * }}}
+  *
+  * A clash is caught in [[CodeGen]], but only as an internal error, and only once both
+  * classes happen to be generated -- a case that the optimizer folds away emits none. The
+  * prefix is what keeps the two apart to begin with.
+  *
+  * The same holds for the packages: a namespace supplies the package of the classes above,
+  * so `dev.flix.runtime` is out of reach only because module names must be capitalized.
   */
 object Mangle {
 
