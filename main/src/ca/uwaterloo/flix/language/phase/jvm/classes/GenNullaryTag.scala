@@ -29,15 +29,22 @@ import org.objectweb.asm.MethodVisitor
 import java.lang.constant.ClassDesc
 
 /**
-  * The class of a nullary enum case, e.g. `Color$Red` for `case Red` of `enum Color`.
+  * The class of a nullary enum case, e.g. `Case$Color$Red` for `case Red` of `enum Color`.
   *
   * A nullary case carries no values, so the class has a single instance held in
   * [[SingletonField]].
   */
 object GenNullaryTag {
 
+  /**
+    * Returns the descriptor of the class of the case `name` of the enum `enumName`.
+    *
+    * The `Case` prefix is reserved: it keeps the enum and case names, which are chosen
+    * by the user, from colliding with the generated classes that share this package,
+    * e.g. `Tag$Obj`, `Struct$Obj`, or `RecordExtend$Obj`.
+    */
   def desc(enumName: String, name: String): ClassDesc =
-    mkDesc(RootPackage, Mangle.mkClassName(enumName, name))
+    mkDesc(RootPackage, Mangle.mkClassName("Case", List(enumName, name)))
 
   def genByteCode(enumName: String, name: String, ordinal: Int)(implicit flix: Flix): Array[Byte] = {
     val d = desc(enumName, name)
