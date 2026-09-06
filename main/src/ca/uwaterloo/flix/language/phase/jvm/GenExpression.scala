@@ -873,6 +873,7 @@ object GenExpression {
         } else {
           mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, declaration, method.name, method.descriptor.descriptorString(), false)
         }
+        castJavaResult(method.descriptor.returnType(), tpe)
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
@@ -896,6 +897,7 @@ object GenExpression {
 
         // Call the bridge method super$methodName on the anonymous class.
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, anonClassInternalName, GenAnonymousClasses.bridgeName(method), method.descriptor.descriptorString(), false)
+        castJavaResult(method.descriptor.returnType(), tpe)
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
@@ -908,6 +910,7 @@ object GenExpression {
         compileJavaArgs(exps, method.descriptor)
         val declaration = internalNameOf(method.owner)
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, declaration, method.name, method.descriptor.descriptorString(), method.isInterface)
+        castJavaResult(method.descriptor.returnType(), tpe)
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
           mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
@@ -1591,6 +1594,22 @@ object GenExpression {
       compileExpr(arg)
       if (paramType.isPrimitive) xWidenPrimitive(TypeDescs.toClassDesc(arg.tpe), paramType)
       else CHECKCAST(paramType)
+    }
+  }
+
+  /**
+    * Casts the value returned by a Java method with return type `returnType` to the erased Flix type `tpe` of
+    * the call.
+    *
+    * A method whose declared return type is a type variable returns its erasure, usually `Object`, while the
+    * Flix type of the call is the instantiation, e.g. `Vector[Int32]` for `ArrayList[Vector[Int32]].get(0)`.
+    * The cast recovers the JVM type the rest of the code expects, as javac does after an erased generic call.
+    * Nothing is emitted for `void` and primitive return types, or when the erasure already is the Flix type.
+    */
+  private def castJavaResult(returnType: ClassDesc, tpe: SimpleType)(implicit mv: MethodVisitor, root: Root): Unit = {
+    if (returnType != CD_void && !returnType.isPrimitive) {
+      val resultType = TypeDescs.toClassDesc(tpe)
+      if (resultType != returnType) castIfNotPrim(resultType)
     }
   }
 
