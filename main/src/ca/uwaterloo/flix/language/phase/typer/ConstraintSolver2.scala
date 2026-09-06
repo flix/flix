@@ -141,7 +141,7 @@ object ConstraintSolver2 {
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
     val initialConstrs = constrs0.map(initialSubst.apply)
-    val effectArgEqualities = collectEffectArgumentEqualities(initialConstrs, initialSubst)
+    val effectArgEqualities = deriveEffectArgumentEqualities(initialConstrs, initialSubst)
     val constrs = effectArgEqualities ::: initialConstrs
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
@@ -163,7 +163,7 @@ object ConstraintSolver2 {
     * the two applications of `F` produce the additional equality `Int32 ~ String`, making `f`
     * ill-typed before its effect equations are solved.
     */
-  private def collectEffectArgumentEqualities(constrs: List[TypeConstraint], initialSubst: SubstitutionTree): List[TypeConstraint] = {
+  private def deriveEffectArgumentEqualities(constrs: List[TypeConstraint], initialSubst: SubstitutionTree): List[TypeConstraint] = {
     val applications = mutable.Map.empty[Symbol.EffSym, mutable.ListBuffer[Type]]
 
     def visitType(tpe: Type): Unit = tpe match {
