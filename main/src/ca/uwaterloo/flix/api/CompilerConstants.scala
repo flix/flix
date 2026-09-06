@@ -40,6 +40,14 @@ object CompilerConstants {
   val ConstraintGraphDirectory: Path = Path.of("./build/constraint-graphs/")
 
   /**
+    * The name of the generated class that holds the entry point of a compiled program.
+    *
+    * This name is reserved: a top-level module may not use it, since the class of that
+    * module would clash with the entry point class.
+    */
+  val EntryPointClassName: String = "Main"
+
+  /**
     * The number of frontend phases, i.e. the number of `phase` calls made by [[Flix.check]].
     *
     * Must be updated when a phase is added to or removed from `check`.

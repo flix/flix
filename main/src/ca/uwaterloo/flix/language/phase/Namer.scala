@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{NamedAst, *}
@@ -236,6 +236,15 @@ object Namer {
       }
 
       val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
+
+      //
+      // Check for [[NameError.ReservedModuleName]] -- i.e. that no top-level module takes
+      // the name of the generated entry point class.
+      //
+      if (ns.parts == List(CompilerConstants.EntryPointClassName)) {
+        sctx.errors.add(NameError.ReservedModuleName(qname.ident))
+      }
+
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)

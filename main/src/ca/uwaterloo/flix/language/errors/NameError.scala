@@ -227,6 +227,36 @@ object NameError {
   }
 
   /**
+    * An error raised to indicate that a top-level module uses a reserved name.
+    *
+    * @param ident The name of the module.
+    */
+  case class ReservedModuleName(ident: Name.Ident) extends NameError {
+    def code: ErrorCode = ErrorCode.E5658
+
+    def summary: String = s"Reserved module name: '${ident.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Reserved module name: '${red(ident.name)}'.
+         |
+         |${highlight(ident.loc, "reserved module name", fmt)}
+         |
+         |${underline("Explanation:")} The compiler generates a class named '${magenta(ident.name)}' that
+         |holds the entry point of the program. A top-level module of the same name
+         |would generate a class with the same name.
+         |
+         |Rename the module, or nest it inside another module:
+         |
+         |  mod Program { ... }        // OK
+         |  mod App.${ident.name} { ... }       // OK
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = ident.loc
+  }
+
+  /**
     * An error raised to indicate a suspicious type variable name.
     *
     * @param name the name of the type variable.

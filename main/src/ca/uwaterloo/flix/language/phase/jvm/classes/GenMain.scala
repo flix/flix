@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm.classes
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
@@ -37,7 +37,7 @@ import java.lang.constant.ConstantDescs.CD_Object
 object GenMain {
 
   /** The JVM class descriptor for the generated `Main` class. */
-  val Desc: ClassDesc = mkDesc(RootPackage, "Main")
+  val Desc: ClassDesc = mkDesc(RootPackage, CompilerConstants.EntryPointClassName)
 
   def genByteCode(sym: Symbol.DefnSym)(implicit flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(this.Desc, IsFinal)
