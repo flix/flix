@@ -15,8 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 
 import java.nio.file.Path
 
@@ -30,6 +29,6 @@ object ShowAstProvider {
     flix.setOptions(oldOpts.copy(xprintphases = true))
     flix.compile()
     flix.setOptions(oldOpts)
-    AstPrinter.astFolderPath
+    CompilerConstants.AstDirectory
   }
 }

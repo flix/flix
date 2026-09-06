@@ -87,6 +87,16 @@ pub mod Identity {
             f(x1)
     }
 
+    instance Reducible[Identity] {
+        pub def reduceLeftTo(_f: (b, a) -> b \ ef1, g: a -> b \ ef2, x: Identity[a]): b \ { ef1, ef2 } =
+            let Identity.Identity(x1) = x;
+            checked_ecast(g(x1))
+
+        pub def reduceRightTo(_f: (a, b) -> b \ ef1, g: a -> b \ ef2, x: Identity[a]): b \ { ef1, ef2 } =
+            let Identity.Identity(x1) = x;
+            checked_ecast(g(x1))
+    }
+
     instance Traversable[Identity] {
         pub def traverse(f: a -> m[b] \ ef, x: Identity[a]): m[Identity[b]] \ ef with Applicative[m] =
             let Identity.Identity(x1) = x;

@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse,
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
-import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -59,7 +59,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object Kinder {
 
-  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (KindedAst.Root, List[KindError]) = flix.phaseNew("Kinder") {
+  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (KindedAst.Root, List[KindError]) = flix.phase("Kinder") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Precompute the kind of every declaration once, so it is not recomputed at each occurrence of the type.
@@ -189,7 +189,11 @@ object Kinder {
     case ResolvedAst.Declaration.Case(sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, root))
       val quants = tparams.map(_.sym)
-      val schemeBase = Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic)
+      // A nullary case is not a function, but the enum type itself.
+      val schemeBase = ts match {
+        case Nil => resTpe
+        case t :: tail => Type.mkPureUncurriedArrow(Nel(t, tail), resTpe, sym.loc.asSynthetic)
+      }
       val sc = Scheme(quants, Nil, Nil, schemeBase)
       KindedAst.Case(sym, ts, sc, loc)
   }
@@ -210,7 +214,11 @@ object Kinder {
     case ResolvedAst.Declaration.RestrictableCase(sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, root))
       val quants = (index :: tparams).map(_.sym)
-      val schemeBase = Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic)
+      // A nullary case is not a function, but the enum type itself.
+      val schemeBase = ts match {
+        case Nil => resTpe
+        case t :: tail => Type.mkPureUncurriedArrow(Nel(t, tail), resTpe, sym.loc.asSynthetic)
+      }
       val sc = Scheme(quants, Nil, Nil, schemeBase)
       KindedAst.RestrictableCase(sym, ts, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
   }
@@ -227,7 +235,7 @@ object Kinder {
     * Performs kinding on the given trait.
     */
   private def visitTrait(trt: ResolvedAst.Declaration.Trait, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Trait = trt match {
-    case ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
+    case ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, loc) =>
       val kenv = getKindEnvFromTypeParam(tparam0)
       val tparam = visitTypeParam(tparam0, kenv)
       val superTraits = superTraits0.map(visitTraitConstraint(_, kenv, root))
@@ -237,8 +245,7 @@ object Kinder {
           val sig = visitSig(sig0, tparam, kenv, root)
           sigSym -> sig
       }
-      val laws = laws0.map(visitDef(_, kenv, root)) // TODO ASSOC-TYPES need to include super traits?
-      KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
+      KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, loc)
   }
 
   /**
@@ -314,7 +321,7 @@ object Kinder {
   private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       // For a top-level def the spec and its kind environment were already computed
-      // in `visitDefSpecs`, so we reuse them. Instance defs and laws are not in
+      // in `visitDefSpecs`, so we reuse them. Instance defs are not in
       // `defSpecs`, so we compute them here under the given `kenv0`.
       val (spec, kenv) = renv.defSpecs.getOrElse(sym, {
         val kenv = getKindEnvFromSpec(spec0, kenv0, root)
@@ -515,7 +522,7 @@ object Kinder {
       case ResolvedAst.Expr.LocalDef(ann, sym, fparams0, exp10, exp20, loc) =>
         // we must infer the formal parameters because the may contain wildcard types
         // which would not appear in the function's kenv
-        val fparamKenvs = fparams0.map(inferFormalParam(_, kenv0, root))
+        val fparamKenvs = fparams0.toList.map(inferFormalParam(_, kenv0, root))
         val kenv1 = KindEnv.merge(kenv0 :: fparamKenvs)
         val fparams = fparams0.map(visitFormalParam(_, kenv1, root))
         val exp1 = visitExp(exp10, kenv1, root)
@@ -770,7 +777,8 @@ object Kinder {
         KindedAst.Expr.PutField(field, clazz, exp1, exp2, loc)
 
       case ResolvedAst.Expr.GetStaticField(field, loc) =>
-        KindedAst.Expr.GetStaticField(field, loc)
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        KindedAst.Expr.GetStaticField(field, tvar, loc)
 
       case ResolvedAst.Expr.PutStaticField(field, exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -1479,7 +1487,7 @@ object Kinder {
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext): KindEnv = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs) =>
-      val fparamKenv = KindEnv.merge(fparams.map(inferFormalParam(_, kenv, root)))
+      val fparamKenv = KindEnv.merge(fparams.toList.map(inferFormalParam(_, kenv, root)))
       val tpeKenv = inferType(tpe, Kind.Star, kenv, root)
       val effKenv = eff0.map(inferType(_, Kind.Eff, kenv, root)).getOrElse(KindEnv.empty)
       val tconstrsKenv = KindEnv.merge(tconstrs.map(inferTraitConstraint(_, kenv, root)))

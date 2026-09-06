@@ -1017,9 +1017,9 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an argument list is missing a kind.
+    * An error raised to indicate that a constructor invocation is missing its argument list.
     *
-    * @param loc the location of the argument list.
+    * @param loc the location of the constructor invocation.
     */
   case class MissingArgumentList(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2781

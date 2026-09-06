@@ -27,7 +27,7 @@ object SignatureInformation {
   def from(sym: Symbol, spec: TypedAst.Spec, activeParameter: Int)(implicit flix: Flix): SignatureInformation = {
     val label = sym.toString + LspUtil.getLabelForSpec(spec)
     val documentation = spec.doc.text
-    val parameters = spec.fparams.map(ParameterInformation.from)
+    val parameters = spec.fparams.toList.map(ParameterInformation.from)
     SignatureInformation(label, Some(documentation), parameters, activeParameter)
   }
 }

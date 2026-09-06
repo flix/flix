@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.util.{Options, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -41,8 +42,8 @@ class TestProgramArgs extends AnyFunSuite {
       .setOptions(Options.TestWithLibAll)
       .addVirtualPath(CompilerConstants.VirtualTestFile, input)
       .compile()
-    result.toResult match {
-      case Result.Ok(r) => r.getMain match {
+    result match {
+      case Result.Ok(r) => JvmLoader.load(r).main match {
         case Some(main) => try {
           main.apply(Array(arg))
         } catch {

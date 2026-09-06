@@ -186,7 +186,7 @@ pub mod Util.Json.JsonPath {
         if (String.isEmpty(s)) false
         else if (s == "0") true
         else if (String.charAt(0, s) == '0') false
-        else List.forAll(Char.isDigit, String.toList(s))
+        else String.forAll(Char.isDigit, s)
 
     ///
     /// Appends `k` to `sb`, escaped per RFC 6901: `~` becomes `~0`, `/` becomes

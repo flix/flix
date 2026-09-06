@@ -60,6 +60,43 @@ mod TestIdentity {
         assertEq(expected = 101, Foldable.foldRight((x, acc) -> acc + x, 100, Identity(1)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // Reducible                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def reduceLeftTo01(): Unit \ Assert =
+        // `f` is never applied for a singleton, so only `g` contributes.
+        assertEq(expected = 2, Reducible.reduceLeftTo((acc, _) -> acc, x -> x + 1, Identity(1)))
+
+    @Test
+    def reduceRightTo01(): Unit \ Assert =
+        assertEq(expected = 2, Reducible.reduceRightTo((_, acc) -> acc, x -> x + 1, Identity(1)))
+
+    @Test
+    def reduce01(): Unit \ Assert =
+        assertEq(expected = "a", Reducible.reduce(Identity("a")))
+
+    @Test
+    def head01(): Unit \ Assert =
+        assertEq(expected = 42, Reducible.head(Identity(42)))
+
+    @Test
+    def last01(): Unit \ Assert =
+        assertEq(expected = 42, Reducible.last(Identity(42)))
+
+    @Test
+    def length01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.length(Identity(42)))
+
+    @Test
+    def toList01(): Unit \ Assert =
+        assertEq(expected = 7 :: Nil, Reducible.toList(Identity(7)))
+
+    @Test
+    def toNel01(): Unit \ Assert =
+        assertEq(expected = Nel.Nel(7, Nil), Reducible.toNel(Identity(7)))
+
+    /////////////////////////////////////////////////////////////////////////////
     // Traversable                                                             //
     /////////////////////////////////////////////////////////////////////////////
 

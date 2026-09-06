@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.language.errors.RedundancyError.*
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.Nel
 import ca.uwaterloo.flix.util.collection.SeqOps
 
 import java.util.concurrent.ConcurrentHashMap
@@ -53,7 +54,7 @@ object Redundancy {
   /**
     * Checks the given AST `root` for redundancies.
     */
-  def run(root: Root)(implicit flix: Flix): (Root, List[RedundancyError]) = flix.phaseNew("Redundancy") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[RedundancyError]) = flix.phase("Redundancy") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val errorsFromDefs = ParOps.parAgg(root.defs, Used.empty)({
@@ -294,7 +295,7 @@ object Redundancy {
   /**
     * Finds unused formal parameters.
     */
-  private def findUnusedFormalParameters(fparams: List[FormalParam], used: Used): List[UnusedFormalParam] = {
+  private def findUnusedFormalParameters(fparams: Nel[FormalParam], used: Used): List[UnusedFormalParam] = {
     fparams.collect {
       case fparam if deadVarSym(fparam.bnd.sym, used) => UnusedFormalParam(fparam.bnd.sym)
     }
@@ -305,7 +306,7 @@ object Redundancy {
     */
   private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParamSignature] = spec match {
     case Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
-      val tpes = fparams.map(_.tpe) ::: tpe :: eff :: tconstrs.map(_.arg) ::: econstrs.map(_.tpe1) ::: econstrs.map(_.tpe2)
+      val tpes = fparams.toList.map(_.tpe) ::: tpe :: eff :: tconstrs.map(_.arg) ::: econstrs.map(_.tpe1) ::: econstrs.map(_.tpe2)
       val used = tpes.flatMap { t => t.typeVars.map(_.sym) }.toSet
       tparams.collect {
         case tparam if deadTypeVar(tparam.sym, used) => UnusedTypeParamSignature(tparam.name, tparam.loc)
@@ -455,7 +456,7 @@ object Redundancy {
         (used ++ shadowedVar) - sym
 
       // Check if the fparams are dead in exp1
-      val fparamVars = fparams.map(_.bnd.sym)
+      val fparamVars = fparams.toList.map(_.bnd.sym)
       val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
 
       ListOps.zip(fparamVars, shadowedFparamVars).foldLeft(res1) {
@@ -748,7 +749,7 @@ object Redundancy {
       sctx.effSyms.put(symUse.sym, ())
       rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body, _)) =>
-          val syms = fparams.map(_.bnd.sym)
+          val syms = fparams.toList.map(_.bnd.sym)
           val shadowedFparamVars = syms.map(s => shadowing(s.text, s.loc, env0))
           val env1 = env0 ++ syms
           val usedBody = visitExp(body, env1, rc)

@@ -248,9 +248,9 @@ object LambdaLift {
   }
 
   private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
-    case SimplifiedAst.JvmMethod(ann, ident, fparams0, exp, retTpe, purity, loc) =>
+    case SimplifiedAst.JvmMethod(ann, ident, fparams0, exp, retTpe, purity, javaSig, loc) =>
       val fparams = fparams0 map visitFormalParam
-      LiftedAst.JvmMethod(ann, ident, fparams, visitExp(exp), retTpe, purity, loc)
+      LiftedAst.JvmMethod(ann, ident, fparams, visitExp(exp), retTpe, purity, javaSig, loc)
   }
 
 

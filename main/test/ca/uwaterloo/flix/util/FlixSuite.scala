@@ -16,12 +16,11 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.api.{Flix, FlixEvent}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
-import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
+import ca.uwaterloo.flix.runtime.{JvmLoader, LoadedProgram, TestFn}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Path, Paths}
@@ -36,23 +35,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
   /**
     * Returns a new fresh Flix instance with default options.
     */
-  private def mkFlix(): Flix = {
-    val flix = new Flix()
-
-    flix.addListener {
-      case FlixEvent.AfterTailPos(root) =>
-        TypeVerifier.verify(root)(flix)
-      case _ => // nop
-    }
-
-    flix.addListener {
-      case FlixEvent.AfterTyper(root) =>
-        EffectVerifier.verify(root)(flix)
-      case _ => // nop
-    }
-
-    flix
-  }
+  private def mkFlix(): Flix = new Flix()
 
   /**
     * Runs all tests in all files in the directory located at `path`.
@@ -117,12 +100,12 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     }
 
     try {
-      // Compile and Evaluate the program to obtain the compilationResult.
-      Flix.compile().toResult match {
+      // Compile the program, load it into the JVM, and run its tests.
+      Flix.compile() match {
         case Result.Ok(compilationResult) =>
-          runTests(compilationResult)
+          runTests(JvmLoader.load(compilationResult))
         case Result.Err(errors) =>
-          fail(CompilationMessage.formatAll(errors.toList)(Flix.getFormatter, None))
+          fail(CompilationMessage.formatAll(errors)(Flix.getFormatter, None))
       }
     } finally {
       // Remove the source path.
@@ -132,9 +115,9 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     }
   }
 
-  private def runTests(compilationResult: CompilationResult): Unit = {
+  private def runTests(program: LoadedProgram): Unit = {
     // Group the tests by namespace.
-    val testsByNamespace = compilationResult.getTests.groupBy(_._1.namespace)
+    val testsByNamespace = program.tests.groupBy(_._1.namespace)
 
     // Iterate through each namespace.
     for ((_, tests) <- testsByNamespace) {

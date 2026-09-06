@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Range, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.collection.Nel
 import org.json4s.JsonAST.{JArray, JObject, JString}
 import org.json4s.JsonDSL.*
 
@@ -76,7 +77,7 @@ object CodeLensProvider {
     * Returns `true` if the given `spec` is an entry point.
     */
   private def isEntryPoint(spec: Spec): Boolean = spec.fparams match {
-    case fparam :: Nil => isUnitType(fparam.tpe) && isPublic(spec) && isMonomorphic(spec)
+    case Nel(fparam, Nil) => isUnitType(fparam.tpe) && isPublic(spec) && isMonomorphic(spec)
     case _ => false
   }
 

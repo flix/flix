@@ -207,4 +207,47 @@ mod Test.Exp.Fixpoint.Inject {
         assertEq(expected = l3, r3)
     }
 
+    @Test
+    def inject23(): Unit \ Assert = {
+        let l = Vector#{(1, 2, 3), (4, 5, 6)};
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
+        assertEq(expected = l, r)
+    }
+
+    @Test
+    def inject24(): Unit \ Assert = {
+        let l = Vector#{(1, 2), (2, 3), (3, 4)};
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
+        assertEq(expected = l, r)
+    }
+
+    @Test
+    def inject25(): Unit \ Assert = {
+        let l = Vector#{()};
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
+        assertEq(expected = l, r)
+    }
+
+    @Test
+    def inject26(): Unit \ Assert = {
+        let l = Vector#{((1, 2), 3), ((4, 5), 6)};
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
+        assertEq(expected = l, r)
+    }
+
+    @Test
+    def inject27(): Unit \ Assert = {
+        let l1 = Vector#{(1, 2), (2, 3)};
+        let l2 = Vector#{(1, 2), (2, 3)};
+        let pr = inject l1, l2 into A/1, B/2;
+        let r1 = query pr select x from A(x);
+        let r2 = query pr select (x, y) from B(x, y);
+        assertEq(expected = l1, r1);
+        assertEq(expected = l2, r2)
+    }
+
 }

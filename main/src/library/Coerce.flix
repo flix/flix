@@ -28,9 +28,17 @@ pub mod Coerce {
         type Out
 
         ///
+        /// The associated effect of the `Coerce` instance.
+        ///
+        /// The effect describes the effect of coercing a value of type `t`.
+        /// It is pure (i.e. `{}`) for the common case of newtype-style wrappers.
+        ///
+        type Aef: Eff = {}
+
+        ///
         /// Returns the unwrapped value of `x`.
         ///
-        pub def coerce(x: t): Coerce.Out[t]
+        pub def coerce(x: t): Coerce.Out[t] \ Coerce.Aef[t]
     }
 
 }

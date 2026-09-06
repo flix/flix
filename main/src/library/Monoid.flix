@@ -20,7 +20,7 @@ pub mod Monoid {
     /// A trait for Monoids, objects that support an associative binary
     /// operation `combine` and neutral element `empty`.
     ///
-    pub lawful trait Monoid[a] with SemiGroup[a] {
+    pub trait Monoid[a] with SemiGroup[a] {
         ///
         /// Returns a neutral element.
         ///
@@ -31,13 +31,6 @@ pub mod Monoid {
         ///
         pub def combine(x: a, y: a): a =
             SemiGroup.combine(x, y)
-
-        law leftIdentity: forall (x: a) with Eq[a] Monoid.combine(Monoid.empty(), x) == x
-
-        law rightIdentity: forall (x: a) with Eq[a] Monoid.combine(x, Monoid.empty()) == x
-
-        law associative: forall (x: a, y: a, z: a) with Eq[a] Monoid.combine(Monoid.combine(x, y), z) == Monoid.combine(x, Monoid.combine(y, z))
-
     }
 
     instance Monoid[Unit] {

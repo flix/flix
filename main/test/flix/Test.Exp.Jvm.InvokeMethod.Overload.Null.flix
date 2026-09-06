@@ -5,6 +5,9 @@ mod Test.Exp.Jvm.InvokeMethod.Overload.Null {
     import java.lang.Object
     import java.lang.StringBuilder
     import java.lang.{String => JString}
+    import java.util.ArrayList
+    import java.util.Collections
+    import java.util.List
     import java.util.Objects
     import java.util.Optional
 
@@ -50,5 +53,27 @@ mod Test.Exp.Jvm.InvokeMethod.Overload.Null {
     def testInvokeMethod_09(): Unit \ Assert + IO =
         let opt = Optional.ofNullable((checked_cast(null): Object));
         assertFalse(opt.isPresent())
+
+    // Bare `null` (no cast) passed to a method with a specific reference parameter.
+    // `equalsIgnoreCase(String)` is the unique overload and is null-safe at runtime.
+    @Test
+    def testInvokeMethod_10(): Unit \ Assert + IO =
+        let obj = "hello";
+        assertFalse(obj.equalsIgnoreCase(null))
+
+    // Bare `null` passed to a generic instance method: `List<E>.add(E)` with `E = String`.
+    @Test
+    def testInvokeMethod_11(): Unit \ Assert + IO =
+        let list: ArrayList[String] = new ArrayList();
+        discard list.add(null);
+        discard list.add("x");
+        assertEq(expected = 2, list.size())
+
+    // Bare `null` passed to a generic static method: `Collections.singletonList(T)`,
+    // with the return-type annotation fixing `T = String`.
+    @Test
+    def testInvokeMethod_12(): Unit \ Assert + IO =
+        let single: List[String] = Collections.singletonList(null);
+        assertEq(expected = 1, single.size())
 
 }

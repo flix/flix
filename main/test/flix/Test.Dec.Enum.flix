@@ -59,9 +59,4 @@ mod Test.Dec.Enum {
         case Base(a)
         case Recurse(PolyRecursive[a])
     }
-
-    pub enum PolyRecursiveNonRegular[a] {
-        case Simple(a)
-        case Recurse(PolyRecursiveNonRegular[Poly[a]])
-    }
 }

@@ -18,12 +18,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, RegionScope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, JMethod, Modifiers, Mutability, RegionScope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
+import ca.uwaterloo.flix.language.jvm.JavaClasses
+import ca.uwaterloo.flix.util.collection.{ListOps, MapOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
+import java.lang.constant.MethodTypeDesc
 import scala.annotation.tailrec
 
 /**
@@ -33,6 +35,24 @@ object Simplifier {
 
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
   private implicit val S: RegionScope = RegionScope.Top
+
+  /** The `String.concat(String)` method. */
+  private val StringConcatMethod: JMethod = {
+    import java.lang.constant.ConstantDescs.*
+    JMethod(CD_String, "concat", MethodTypeDesc.of(CD_String, CD_String), isInterface = false)
+  }
+
+  /** The `String.equals(Object)` method. */
+  private val StringEqualsMethod: JMethod = {
+    import java.lang.constant.ConstantDescs.*
+    JMethod(CD_String, "equals", MethodTypeDesc.of(CD_boolean, CD_Object), isInterface = false)
+  }
+
+  /** The `BigInteger.equals(Object)` method. */
+  private val BigIntEqualsMethod: JMethod = {
+    import java.lang.constant.ConstantDescs.*
+    JMethod(JavaClasses.BigInteger, "equals", MethodTypeDesc.of(CD_boolean, CD_Object), isInterface = false)
+  }
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffSym] = root.effects.keys.toSet
@@ -47,7 +67,7 @@ object Simplifier {
 
   private def visitDef(decl: MonoAst.Def)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Def = decl match {
     case MonoAst.Def(sym, spec, exp, _) =>
-      val fs = spec.fparams.map(visitFormalParam)
+      val fs = spec.fparams.toList.map(visitFormalParam)
       val e = visitExp(exp)
       val funType = spec.functionType
       val retType = visitType(funType.arrowResultType)
@@ -125,16 +145,29 @@ object Simplifier {
       op match {
         case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
           // Translate to InvokeMethod exp
-          val strClass = Class.forName("java.lang.String")
-          val method = strClass.getMethod("concat", strClass)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), es, t, purity, loc)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(StringConcatMethod), es, t, purity, loc)
 
         case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
           // The region expression is dropped (head of exps / es)
           val es1 = es.tail
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
+
+        case AtomicOp.VectorLit =>
+          // Note: We simplify Vectors to Arrays.
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, es, t, purity, loc)
+
+        case AtomicOp.VectorLoad =>
+          // Note: We simplify Vectors to Arrays.
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, es, t, purity, loc)
+
+        case AtomicOp.VectorLength =>
+          // Note: We simplify Vectors to Arrays.
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, es, t, purity, loc)
 
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef
@@ -143,7 +176,16 @@ object Simplifier {
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), SimpleType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, Purity.Impure, loc)
+          // Here `e1` is the spawned expression and `e2` is the region (i.e. `spawn e1 @ e2`).
+          // In source order the closure for `e1` is created before the region is evaluated, but
+          // codegen pushes the region (the receiver of `Region.spawn`) before the closure (its
+          // argument). We let-bind the closure so that it is created first; the region stays the
+          // second argument so codegen can still recognize the `Static` region.
+          // See: https://github.com/flix/flix/issues/10707
+          val closureSym = Symbol.freshVarSym("spawnClosure" + Flix.Delimiter, BoundBy.Let, loc)
+          val closureVar = SimplifiedAst.Expr.Var(closureSym, lambdaTyp, loc)
+          val spawnExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(closureVar, e2), t, Purity.Impure, loc)
+          SimplifiedAst.Expr.Let(closureSym, lambdaExp, spawnExp, t, Purity.Impure, loc)
 
         case AtomicOp.Lazy =>
           // Wrap the expression in a closure: () -> tpe \ Pure
@@ -189,7 +231,7 @@ object Simplifier {
       SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
-      val fps = fparams.map(visitFormalParam)
+      val fps = fparams.toList.map(visitFormalParam)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
@@ -208,25 +250,6 @@ object Simplifier {
       val t = visitType(tpe)
       val ef = simplifyEffect(eff)
       extMatch(e, rules, t, ef, loc)
-
-    case MonoAst.Expr.VectorLit(exps, tpe, _, loc) =>
-      // Note: We simplify Vectors to Arrays.
-      val es = exps.map(visitExp)
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, es, t, Purity.Pure, loc)
-
-    case MonoAst.Expr.VectorLoad(exp1, exp2, tpe, _, loc) =>
-      // Note: We simplify Vectors to Arrays.
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), t, Purity.Pure, loc)
-
-    case MonoAst.Expr.VectorLength(exp, loc) =>
-      // Note: We simplify Vectors to Arrays.
-      val e = visitExp(exp)
-      val purity = e.purity
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), SimpleType.Int32, purity, loc)
 
     case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -247,7 +270,7 @@ object Simplifier {
       val e = visitExp(exp)
       val rs = rules map {
         case MonoAst.HandlerRule(sym, fparams, body) =>
-          val fps = fparams.map(visitFormalParam)
+          val fps = fparams.toList.map(visitFormalParam)
           val b = visitExp(body)
           SimplifiedAst.HandlerRule(sym, fps, b)
       }
@@ -338,7 +361,7 @@ object Simplifier {
             val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
             SimpleType.mkEnum(enumSym, targs.map(visitType))
 
-          case TypeConstructor.Native(clazz) => SimpleType.Native(clazz)
+          case TypeConstructor.Native(desc, _) => SimpleType.Native(desc)
 
           case TypeConstructor.Array =>
             // Remove the region from the array.
@@ -420,7 +443,7 @@ object Simplifier {
           case TypeConstructor.JvmConstructor(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.JvmMethod(_) =>
+          case TypeConstructor.JvmMethod(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.JvmField(_) =>
@@ -511,7 +534,7 @@ object Simplifier {
             val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
             Type.mkEnum(enumSym, targs.map(visitPolyType), loc)
 
-          case TypeConstructor.Native(_) => cst
+          case TypeConstructor.Native(_, _) => cst
 
           case TypeConstructor.Array =>
             // Remove the region from the array.
@@ -535,7 +558,7 @@ object Simplifier {
             // Arrow type arguments are ordered (effect, args.., result type).
             val _ :: targs = tpe.typeArguments
             val (args, List(res)) = targs.splitAt(targs.length - 1)
-            Type.mkArrowWithoutEffect(args.map(visitPolyType), visitPolyType(res), loc)
+            Type.mkArrowWithoutEffect(Nel.unsafeFrom(args.map(visitPolyType)), visitPolyType(res), loc)
 
           case TypeConstructor.RecordRowExtend(label) =>
             val List(labelType, restType) = tpe.typeArguments
@@ -588,7 +611,7 @@ object Simplifier {
           case TypeConstructor.JvmConstructor(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.JvmMethod(_) =>
+          case TypeConstructor.JvmMethod(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.JvmField(_) =>
@@ -607,6 +630,7 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
 
+      case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
@@ -628,11 +652,11 @@ object Simplifier {
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmMethod = method match {
-    case MonoAst.JvmMethod(ann, ident, fparams0, exp0, retTpe, eff, loc) =>
-      val fparams = fparams0 map visitFormalParam
+    case MonoAst.JvmMethod(ann, ident, fparams0, exp0, retTpe, eff, javaSig, loc) =>
+      val fparams = fparams0.toList.map(visitFormalParam)
       val exp = visitExp(exp0)
       val rt = visitType(retTpe)
-      SimplifiedAst.JvmMethod(ann, ident, fparams, exp, rt, simplifyEffect(eff), loc)
+      SimplifiedAst.JvmMethod(ann, ident, fparams, exp, rt, simplifyEffect(eff), javaSig, loc)
   }
 
   private def pat2exp(pat0: MonoAst.Pattern): SimplifiedAst.Expr = pat0 match {
@@ -668,17 +692,11 @@ object Simplifier {
         return SimplifiedAst.Expr.Cst(Constant.Bool(true), SimpleType.Bool, loc)
 
       case (SimpleType.String, _) =>
-        val strClass = Class.forName("java.lang.String")
-        val objClass = Class.forName("java.lang.Object")
-        val method = strClass.getMethod("equals", objClass)
-        val op = AtomicOp.InvokeMethod(method)
+        val op = AtomicOp.InvokeMethod(StringEqualsMethod)
         return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), SimpleType.Bool, Purity.combine(e1.purity, e2.purity), loc)
 
       case (SimpleType.BigInt, _) =>
-        val bigIntClass = Class.forName("java.math.BigInteger")
-        val objClass = Class.forName("java.lang.Object")
-        val method = bigIntClass.getMethod("equals", objClass)
-        val op = AtomicOp.InvokeMethod(method)
+        val op = AtomicOp.InvokeMethod(BigIntEqualsMethod)
         return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), SimpleType.Bool, Purity.combine(e1.purity, e2.purity), loc)
 
       case _ => // fallthrough
@@ -1474,7 +1492,7 @@ object Simplifier {
 
   private def visitEffOp(op: MonoAst.Op)(implicit universe: Set[Symbol.EffSym]): SimplifiedAst.Op = op match {
     case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0, _), loc) =>
-      val fparams = fparams0.map(visitFormalParam)
+      val fparams = fparams0.toList.map(visitFormalParam)
       val retTpe = visitType(retTpe0)
       val eff = simplifyEffect(eff0)
       SimplifiedAst.Op(sym, ann, mod, fparams, retTpe, eff, loc)

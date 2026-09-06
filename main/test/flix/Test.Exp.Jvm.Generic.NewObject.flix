@@ -398,8 +398,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     // --- Generic interface instantiated with a reference type param (list, tuple, enum, record) ---
     // These are the reference-typed counterparts of the primitive tests above. The overridden
     // method's erased JVM return type is `Object`; a reference value already matches it, so no
-    // boxing is needed and the value is `areturn`ed directly. They also exercise the internal
-    // TypeVerifier, which must accept any Flix reference type as a subtype of the erased `Object`.
+    // boxing is needed and the value is `areturn`ed directly.
 
     enum Shape with Eq, ToString {
         case Circle(Int32)

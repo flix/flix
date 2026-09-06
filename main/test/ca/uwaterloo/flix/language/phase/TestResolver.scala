@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -174,8 +174,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
-  // this test is temporarily ignored because it recovers and proceeds
-  // to fail in future unimplemented phases
   test("InaccessibleStruct.03") {
     val input =
       s"""
@@ -480,6 +478,71 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
+  test("CyclicTypeAliases.07") {
+    val input =
+      s"""
+         |type alias Foo = Int32 -> Int32 \\ Foo
+         |
+         |def f(): Foo = x -> x
+         |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
+  test("CyclicTypeAliases.08") {
+    val input =
+      s"""
+         |type alias Foo = Int32 -> Int32 \\ Bar
+         |type alias Bar = Int32 -> Int32 \\ Foo
+         |
+         |def f(): Foo = x -> x
+         |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
+  test("CyclicTypeAliases.09") {
+    // One error is reported per alias in the cycle. `Baz` is not in the cycle and must not be reported.
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Foo
+         |type alias Baz = Foo
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.CyclicTypeAliases]) == 2)
+  }
+
+  test("CyclicTypeAliases.10") {
+    // Two independent cycles are both reported (three errors: two for Foo/Bar and one for the self loop of Baz).
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Foo
+         |type alias Baz = Baz
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.CyclicTypeAliases]) == 3)
+  }
+
+  test("CyclicTypeAliases.11") {
+    // The cycle is broken and resolution continues, so the unrelated error in `f` is also reported.
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Foo
+         |
+         |def f(): Int32 = undefinedName()
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
   test("UndefinedName.01") {
     val input = "def f(): Int32 = x"
     val result = check(input, Options.TestWithLibNix)
@@ -509,6 +572,12 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
+  test("UndefinedName.04") {
+    val input = "def f(): #{ A[Int32] } = ???"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedNameUnrecoverable](result)
+  }
+
   test("UndefinedUse.01") {
     val input =
       s"""
@@ -525,6 +594,44 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedUse](result)
+  }
+
+  test("UndefinedUse.02") {
+    // The undefined use is dropped and resolution continues, so `f` is undefined at the call site.
+    // The use is resolved by several passes but the error must only be reported once.
+    val input =
+      s"""
+         |mod A {
+         |    pub def g(): Int32 = 42
+         |}
+         |
+         |mod B {
+         |    use A.f
+         |    def h(): Int32 = f()
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedUse](result)
+    expectError[ResolutionError.UndefinedName](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.UndefinedUse]) == 1)
+  }
+
+  test("UndefinedUse.03") {
+    // A top-level (compilation unit) undefined use.
+    val input =
+      s"""
+         |use A.f
+         |
+         |mod A {
+         |    pub def g(): Int32 = 42
+         |}
+         |
+         |def h(): Int32 = f()
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedUse](result)
+    expectError[ResolutionError.UndefinedName](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.UndefinedUse]) == 1)
   }
 
   test("UndefinedEffect.01") {
@@ -598,6 +705,26 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
+  }
+
+  test("UndefinedTrait.05") {
+    val input =
+      """
+        |trait K[a] with U[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTrait](result)
+  }
+
+  test("UndefinedTrait.06") {
+    // The instance of the undefined trait `C` is dropped, but its type is still resolved: both errors are reported.
+    val input =
+      """
+        |instance C[Nope]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTrait](result)
+    expectError[ResolutionError.UndefinedType](result)
   }
 
   test("UndefinedJvmConstructor.01") {
@@ -687,6 +814,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmImport](result)
+  }
+
+  test("UndefinedJvmImport.04") {
+    // The undefined import is dropped and resolution continues, so `Baz` is an undefined type.
+    // The import is resolved by several passes but the error must only be reported once.
+    val input =
+      raw"""
+           |mod A {
+           |    import foo.bar.Baz
+           |    pub def foo(x: Baz): Baz = x
+           |}
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmImport](result)
+    expectError[ResolutionError.UndefinedType](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.UndefinedJvmImport]) == 1)
   }
 
   test("UndefinedNew.01") {
@@ -805,6 +948,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
+  }
+
+  test("UndefinedJvmMethod.08") {
+    // `null` is not assignable to a primitive parameter (`charAt(int)`),
+    // so the method must not resolve.
+    val input =
+      raw"""
+           |import java.lang.String
+           |
+           |def foo(): Unit =
+           |    let o = new String();
+           |    let _ = o.charAt(null);
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmField.01") {
@@ -1077,6 +1236,46 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
+  }
+
+  test("CyclicTraitHierarchy.06") {
+    // One error is reported per trait in the cycle. `C` is not in the cycle and must not be reported.
+    val input =
+      """
+        |trait A[a] with B[a]
+        |trait B[a] with A[a]
+        |trait C[a] with A[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.CyclicTraitHierarchy]) == 2)
+  }
+
+  test("CyclicTraitHierarchy.07") {
+    // Two independent cycles are both reported (three errors: two for A/B and one for the self loop of S).
+    val input =
+      """
+        |trait A[a] with B[a]
+        |trait B[a] with A[a]
+        |trait S[a] with S[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.CyclicTraitHierarchy]) == 3)
+  }
+
+  test("CyclicTraitHierarchy.08") {
+    // The cycle is broken and resolution continues, so the unrelated error in `f` is also reported.
+    val input =
+      """
+        |trait A[a] with B[a]
+        |trait B[a] with A[a]
+        |
+        |def f(): Int32 = undefinedName()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("DuplicateDerivation.01") {
@@ -1733,6 +1932,23 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MissingAssocTypeDef](result)
   }
 
+  test("MissingAssocTypeDef.03") {
+    // The undefined `U` is dropped and the required `T` is reported as missing: both errors are reported.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |    type U = Int32
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
   test("IllegalAssocTypeApplication.01") {
     val input =
       """
@@ -1761,7 +1977,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
-  test("Test.MismatchedOpArity.Handler.01") {
+  test("Test.OverAppliedOp.Handler.01") {
     val input =
       """
         |eff E {
@@ -1775,10 +1991,112 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
+    expectError[ResolutionError.OverAppliedOp](result)
   }
 
-  test("Test.MismatchedOpArity.Handler.02") {
+  test("Test.OverAppliedOp.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(x, y, z, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.OverAppliedOp](result)
+  }
+
+  test("Test.OverAppliedOp.Handler.03") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(a, b, c, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.OverAppliedOp](result)
+  }
+
+  test("DuplicateUpperName.Eff.Handler.01") {
+    // Regression test for https://github.com/flix/flix/issues/12003.
+    // A duplicate effect must not crash a later phase, even when a handler refers to
+    // an operation of the duplicated effect. Here the empty (operation-less) duplicate
+    // is declared last, so without merging it would shadow the operation.
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |eff E
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.Eff.Handler.02") {
+    // Regression test for https://github.com/flix/flix/issues/12003.
+    // As DuplicateUpperName.Eff.Handler.01, but with the empty duplicate declared first.
+    val input =
+      """
+        |eff E
+        |
+        |eff E {
+        |    def op(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.Eff.Handler.03") {
+    // Regression test for https://github.com/flix/flix/issues/12003.
+    // Both duplicate effects declare operations; a handler refers to an operation from
+    // the declaration that would otherwise be shadowed.
+    val input =
+      """
+        |eff E {
+        |    def op1(): Unit
+        |}
+        |
+        |eff E {
+        |    def op2(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op1(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("Test.UnderAppliedOp.Handler.01") {
     val input =
       """
         |eff E {
@@ -1792,7 +2110,41 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
+    expectError[ResolutionError.UnderAppliedOp](result)
+  }
+
+  test("Test.UnderAppliedOp.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32, z: Bool): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedOp](result)
+  }
+
+  test("Test.UnderAppliedOp.Handler.03") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32, z: Bool): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(x, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedOp](result)
   }
 
   test("Test.MismatchedTagPatternArity.01") {
@@ -1882,9 +2234,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedStruct](result)
   }
 
-  // A bug was introduced into the kinder when it was refactored, so this test fails, but
-  // will reenable it once my next struct kinder support pr is merged
-  test("ResoutionError.MissingStructField.01") {
+  test("ResolutionError.MissingStructField.01") {
     val input =
       """
         |mod S {

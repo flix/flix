@@ -1,5 +1,22 @@
 # Changelog
 
+Version 0.75.3:
+- Compiler: `build-jar` and `build-fatjar` now directly emits the artifact jar (thanks Magnus!)
+- Compiler: Fixed a few bugs (thanks Matt!)
+
+Version 0.75.2:
+- Compiler: Improved tree shaking of lowering-related library functions (thanks Simon!)
+- Compiler: Reduced the size of generated HTML documentation (thanks Magnus!)
+- Compiler: Fixed a few bugs (thanks Matt!)
+
+Version 0.75.1:
+- Compiler: Fixed a few bugs (thanks Magnus!)
+
+Version 0.75.0:
+- Library: Extended `Range` and `Discrete` (thanks Magnus!)
+- Compiler: Improved some compiler error messages (thanks Magnus!)
+- VSCode: Added folding-range support (thanks Magnus!)
+
 Version 0.74.0:
 - Compiler: Improved performance of Parser (thanks Magnus!)
 - Compiler: Improved performance of Weeder (thanks Magnus!)

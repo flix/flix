@@ -122,9 +122,9 @@ object Eraser {
   }
 
   private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit ctx: SharedContext, flix: Flix): ErasedAst.JvmMethod = method match {
-    case ReducedAst.JvmMethod(ann, ident, fparams, clo, retTpe, purity, loc) =>
+    case ReducedAst.JvmMethod(ann, ident, fparams, clo, retTpe, purity, javaSig, loc) =>
       // return type is not erased to maintain class signatures
-      ErasedAst.JvmMethod(ann, ident, fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
+      ErasedAst.JvmMethod(ann, ident, fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, javaSig, loc)
   }
 
   private def visitExp(exp0: ReducedAst.Expr)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Expr = exp0 match {
@@ -203,6 +203,10 @@ object Eraser {
         case AtomicOp.HoleError(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.MatchError => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.CastError(_, _) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        // Vector operations are simplified to array operations in the Simplifier.
+        case AtomicOp.VectorLit => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+        case AtomicOp.VectorLoad => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+        case AtomicOp.VectorLength => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
       }
 
     case ReducedAst.Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>

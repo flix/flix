@@ -174,6 +174,36 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[MismatchedTypes](result)
   }
 
+  test("MismatchedArrowAndNonArrow.01") {
+    val input = "def foo(): a = solve (x -> x)"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedArrowAndNonArrow](result)
+  }
+
+  test("MismatchedArrowAndNonArrow.02") {
+    val input = "def foo(): a = if (true) (x -> x) else 1"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedArrowAndNonArrow](result)
+  }
+
+  test("MismatchedArrowAndNonArrow.03") {
+    // A function reference checked against a concrete non-function annotation (ExpectType).
+    val input = "def foo(): Int32 = x -> x"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedArrowAndNonArrow](result)
+  }
+
+  test("MismatchedArrowAndNonArrow.04") {
+    // A function reference passed where a concrete non-function argument is expected (ExpectArgument).
+    val input =
+      """
+        |def f(x: Int32): Int32 = x
+        |def foo(): Int32 = f(y -> y)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedArrowAndNonArrow](result)
+  }
+
   test("MismatchedTypes.06") {
     val input =
       """
@@ -853,18 +883,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("Test.UnexpectedArgument.04") {
-    val input =
-      """
-        |trait A[a] {
-        |    pub def f(x: Bool, y: a): Bool
-        |    law l: forall (x: Int32, y: Bool) A.f(x, y)
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
-  }
-
   test("Test.UnexpectedArgument.05") {
     // Regression test.
     // See https://github.com/flix/flix/issues/3634
@@ -1199,6 +1217,180 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TestAssocType.05") {
+    // Regression test. See https://github.com/flix/flix/issues/11213
+    // The associated effect of the `Vec` instance is declared as `OutInt32`, but the body
+    // `Container.forEach(Runner.exec, x)` has effect `Runner.E[Container.Elm[Vec[a]]]`.
+    // Reducing this nested associated type must terminate and report the mismatch.
+    val input =
+      """
+        |trait Container[t] {
+        |    type Elm: Type
+        |    pub def forEach(f: Container.Elm[t] -> Unit \ ef, t: t): Unit \ ef
+        |}
+        |
+        |enum Vec[a](a)
+        |
+        |instance Container[Vec[a]] {
+        |    type Elm = a
+        |    pub def forEach(f: a -> Unit \ ef, v: Vec[a]): Unit \ ef =
+        |        let Vec.Vec(x) = v;
+        |        f(x)
+        |}
+        |
+        |eff OutInt32 {
+        |    def toStream(x: Int32): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    type E = OutInt32
+        |    pub def exec(x: Int32): Unit \ OutInt32 = OutInt32.toStream(x)
+        |}
+        |
+        |instance Runner[Vec[a]] with Runner[a] {
+        |    type E = OutInt32
+        |    pub def exec(x: Vec[a]): Unit \ OutInt32 =
+        |        Container.forEach(Runner.exec, x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.06") {
+    // Regression test. See https://github.com/flix/flix/issues/11213
+    // The `Vec` instance is missing the `with Runner[a]` constraint, so `Runner.exec` on the
+    // element type is unresolvable. Reducing the nested associated type must terminate.
+    val input =
+      """
+        |trait Container[t] {
+        |    type Elm: Type
+        |    pub def forEach(f: Container.Elm[t] -> Unit \ ef, t: t): Unit \ ef
+        |}
+        |
+        |enum Vec[a](a)
+        |
+        |instance Container[Vec[a]] {
+        |    type Elm = a
+        |    pub def forEach(f: a -> Unit \ ef, v: Vec[a]): Unit \ ef =
+        |        let Vec.Vec(x) = v;
+        |        f(x)
+        |}
+        |
+        |eff OutInt32 {
+        |    def toStream(x: Int32): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    type E = OutInt32
+        |    pub def exec(x: Int32): Unit \ OutInt32 = OutInt32.toStream(x)
+        |}
+        |
+        |instance Runner[Vec[a]] {
+        |    type E = Runner.E[a]
+        |    pub def exec(x: Vec[a]): Unit \ Runner.E[a] =
+        |        Container.forEach(Runner.exec, x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.07") {
+    // Regression test. See https://github.com/flix/flix/issues/11213
+    // The body performs an extra `OutInt32` effect on top of the nested associated effect, so
+    // its effect is `Runner.E[a] + OutInt32`, which does not match the declared `Runner.E[a]`.
+    val input =
+      """
+        |trait Container[t] {
+        |    type Elm: Type
+        |    pub def forEach(f: Container.Elm[t] -> Unit \ ef, t: t): Unit \ ef
+        |}
+        |
+        |enum Vec[a](a)
+        |
+        |instance Container[Vec[a]] {
+        |    type Elm = a
+        |    pub def forEach(f: a -> Unit \ ef, v: Vec[a]): Unit \ ef =
+        |        let Vec.Vec(x) = v;
+        |        f(x)
+        |}
+        |
+        |eff OutInt32 {
+        |    def toStream(x: Int32): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    type E = OutInt32
+        |    pub def exec(x: Int32): Unit \ OutInt32 = OutInt32.toStream(x)
+        |}
+        |
+        |instance Runner[Vec[a]] with Runner[a] {
+        |    type E = Runner.E[a]
+        |    pub def exec(x: Vec[a]): Unit \ Runner.E[a] =
+        |        Container.forEach(Runner.exec, x);
+        |        OutInt32.toStream(42)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.08") {
+    // Regression test. See https://github.com/flix/flix/issues/11213
+    // `Runner.exec` on a `Vec[Int32]` has effect `Runner.E[Vec[Int32]]`, which reduces through
+    // the instances to `OutInt32`. The declared `OutString` must not match, and the concrete
+    // reduction chain must terminate.
+    val input =
+      """
+        |enum Vec[a](a)
+        |
+        |eff OutInt32 {
+        |    def toStream(x: Int32): Unit
+        |}
+        |
+        |eff OutString {
+        |    def toStream(x: String): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    type E = OutInt32
+        |    pub def exec(x: Int32): Unit \ OutInt32 = OutInt32.toStream(x)
+        |}
+        |
+        |instance Runner[Vec[a]] with Runner[a] {
+        |    type E = Runner.E[a]
+        |    pub def exec(x: Vec[a]): Unit \ Runner.E[a] =
+        |        let Vec.Vec(y) = x;
+        |        Runner.exec(y)
+        |}
+        |
+        |def runMismatch(x: Vec[Int32]): Unit \ OutString = Runner.exec(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
   test("TestRecordPattern.01") {
     val input =
       """
@@ -1475,6 +1667,79 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MissingTraitConstraint](result)
+  }
+
+  test("TypeError.IllegalAssocType.Enum.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |enum E[a] {
+        |    case D(C.T[a])
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.Enum.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |enum E[a] {
+        |    case D(C.T[a] -> Int32)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.Struct.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |struct S[a, r] {
+        |    f: C.T[a]
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.TypeAlias.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |type alias A[a] = C.T[a]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
+  }
+
+  test("TypeError.IllegalAssocType.RestrictableEnum.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |restrictable enum E[s][a] {
+        |    case D(C.T[a])
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.IllegalAssocType](result)
   }
 
   test("TypeError.NewStruct.01") {
@@ -1788,6 +2053,398 @@ class TestTyper extends AnyFunSuite with TestUtils {
     rejectError[TypeError](result)
   }
 
+  test("ErrorType.03") {
+    // There should be no type error because the associated type `T` is missing.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.04") {
+    // There should be no type error because the associated effect `E` is missing.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |eff Out {
+        |    def out(x: Int32): Unit
+        |}
+        |
+        |trait Runner[a] {
+        |    type E: Eff
+        |    pub def exec(x: a): Unit \ Runner.E[a]
+        |}
+        |
+        |instance Runner[Int32] {
+        |    pub def exec(x: Int32): Unit \ Out = Out.out(x)
+        |}
+        |
+        |def g(): Unit \ Out = Runner.exec(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.05") {
+    // There should be no type error because the higher-kinded associated type `T` is missing.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |enum Maybe[a] {
+        |    case Just(a),
+        |    case Nothing
+        |}
+        |
+        |trait C[a] {
+        |    type S: Type
+        |    type T: Type -> Type
+        |    pub def f(x: a): C.T[a][C.S[a]]
+        |}
+        |
+        |instance C[Int32] {
+        |    type S = Int32
+        |    pub def f(x: Int32): Maybe[Int32] = Maybe.Just(x)
+        |}
+        |
+        |def g(): Maybe[Int32] = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.06") {
+    // There should be no type error because the associated type `T` is defined twice.
+    // The Resolver reports DuplicateAssocTypeDef and recovers by keeping the first definition.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    type T = Int32
+        |    type T = String
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.07") {
+    // There should be no type error because the associated type `U` is undefined.
+    // The Resolver reports UndefinedAssocType and recovers by dropping the definition;
+    // the default for `T` still applies.
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type = Int32
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    type U = String
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = C.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.08") {
+    // There should be no type error because the associated type `T` is missing on `C[Int32]`
+    // and is reached through the nested instance `C[MyBox[a]]`.
+    // The Resolver reports MissingAssocTypeDef and recovers with an error type.
+    val input =
+      """
+        |enum MyBox[a](a)
+        |
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |instance C[MyBox[a]] with C[a] {
+        |    type T = C.T[a]
+        |    pub def f(x: MyBox[a]): C.T[a] = let MyBox.MyBox(y) = x; C.f(y)
+        |}
+        |
+        |def g(): Int32 = C.f(MyBox.MyBox(42))
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.09") {
+    // There should be no type error because the trait `C` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the instance.
+    val input =
+      """
+        |instance C[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.10") {
+    // There should be no type error because the trait `C` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the instance,
+    // including its trait constraint and associated type definition.
+    val input =
+      """
+        |enum MyBox[a](a)
+        |
+        |trait D[a] {
+        |    pub def h(x: a): a
+        |}
+        |
+        |instance C[MyBox[a]] with D[a] {
+        |    type T = a
+        |    pub def f(x: MyBox[a]): a = let MyBox.MyBox(y) = x; D.h(y)
+        |}
+        |
+        |def g(): Int32 = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.11") {
+    // There should be no type error because the super trait `B` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the super trait,
+    // so the instance `A[Int32]` does not require an instance of `B`.
+    val input =
+      """
+        |trait A[a] with B[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |instance A[Int32] {
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = A.f(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.12") {
+    // There should be no type error because the super trait `B` is undefined.
+    // The Resolver reports UndefinedTrait and recovers by dropping the super trait;
+    // the constraint `A[a]` on `g` still resolves and `A.f(x)` type checks against it.
+    val input =
+      """
+        |trait A[a] with B[a] {
+        |    pub def f(x: a): a
+        |}
+        |
+        |def g(x: a): a with A[a] = A.f(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.13") {
+    // There should be no type error because the import `java.io.Fil` is undefined.
+    // The Resolver reports UndefinedJvmImport and recovers by dropping the import,
+    // so `Fil` is an undefined type which resolves to an error type.
+    val input =
+      """
+        |import java.io.Fil
+        |
+        |def f(): Fil = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.14") {
+    // There should be no type error because the use `A.fo` is undefined.
+    // The Resolver reports UndefinedUse and recovers by dropping the use,
+    // so `fo` is an undefined name which resolves to an error expression.
+    val input =
+      """
+        |mod A {
+        |    pub def foo(): Int32 = 42
+        |}
+        |
+        |mod B {
+        |    use A.fo
+        |    pub def g(): Int32 = fo()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.15") {
+    // There should be no type error because the import `java.util.Nope` is undefined.
+    // The Resolver reports UndefinedJvmImport and recovers by dropping the import,
+    // so the type alias `T` and the signature of `f` mention an error type.
+    val input =
+      """
+        |mod A {
+        |    import java.util.Nope
+        |    pub type alias T = Nope
+        |    pub def f(x: T): T = x
+        |}
+        |
+        |def g(): Int32 = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.16") {
+    // There should be no type error because the trait hierarchy A <-> B is cyclic.
+    // The Resolver reports CyclicTraitHierarchy and recovers by dropping the cyclic super traits,
+    // so the instances and the constrained def type check against the repaired hierarchy.
+    val input =
+      """
+        |trait A[a] with B[a] {
+        |    pub def fa(x: a): Int32
+        |}
+        |
+        |trait B[a] with A[a] {
+        |    pub def fb(x: a): Int32
+        |}
+        |
+        |instance A[Int32] {
+        |    pub def fa(x: Int32): Int32 = x
+        |}
+        |
+        |instance B[Int32] {
+        |    pub def fb(x: Int32): Int32 = x
+        |}
+        |
+        |def g(x: a): Int32 with A[a], B[a] = A.fa(x) + B.fb(x)
+        |
+        |def h(): Int32 = g(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.17") {
+    // There should be no type error because the trait `S` is its own super trait.
+    // The Resolver reports CyclicTraitHierarchy and recovers by dropping the self loop.
+    val input =
+      """
+        |trait S[a] with S[a] {
+        |    pub def fs(x: a): Int32
+        |}
+        |
+        |instance S[Int32] {
+        |    pub def fs(x: Int32): Int32 = x
+        |}
+        |
+        |def g(): Int32 = S.fs(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.18") {
+    // There should be no type error because the trait hierarchy C -> D -> E -> C is cyclic.
+    // The Resolver reports CyclicTraitHierarchy and recovers by dropping the cyclic super traits,
+    // while the super trait C of F (outside the cycle) is kept: F[a] implies C[a] in `g`.
+    val input =
+      """
+        |trait C[a] with D[a] { pub def fc(x: a): Int32 }
+        |trait D[a] with E[a] { pub def fd(x: a): Int32 }
+        |trait E[a] with C[a] { pub def fe(x: a): Int32 }
+        |trait F[a] with C[a] { pub def ff(x: a): Int32 }
+        |
+        |instance C[Int32] { pub def fc(x: Int32): Int32 = x }
+        |instance F[Int32] { pub def ff(x: Int32): Int32 = x }
+        |
+        |def g(x: a): Int32 with F[a] = F.ff(x) + C.fc(x)
+        |
+        |def h(): Int32 = g(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.19") {
+    // There should be no type error because the type aliases `A` and `B` are cyclic.
+    // The Resolver reports CyclicTypeAliases and recovers by replacing the cyclic references
+    // with error types, so `A` is `(Int32, Error)` and `f` type checks against it.
+    val input =
+      """
+        |type alias A = (Int32, B)
+        |type alias B = A
+        |type alias C = A
+        |
+        |def f(x: A): Int32 = fst(x)
+        |
+        |def g(x: C): Int32 = fst(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.20") {
+    // There should be no type error because the type alias `L` refers to itself.
+    // The Resolver reports CyclicTypeAliases and recovers by replacing the cyclic reference
+    // with an error type, keeping the argument: `L[a]` is `Option[Error[a]]`.
+    val input =
+      """
+        |type alias L[a] = Option[L[a]]
+        |
+        |def f(x: L[Int32]): Int32 = match x {
+        |    case Some(y) => y
+        |    case None => 0
+        |}
+        |
+        |def g(): L[Bool] = Some(Some(None))
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.21") {
+    // There should be no type error because the type aliases `P`, `Q` and `R` are cyclic through
+    // a function type and a record type. The Resolver reports CyclicTypeAliases and recovers by
+    // replacing the cyclic references with error types.
+    val input =
+      """
+        |type alias P = Q -> Int32
+        |type alias Q = {x = R}
+        |type alias R = P
+        |
+        |def f(x: P): Int32 = x({x = 1})
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
   test("UndefinedLabel.01") {
     val input =
       """
@@ -2037,6 +2694,218 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ExtraLabel](result)
   }
 
+  test("TypeError.MismatchedLabelType.01") {
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = { x = 1 };
+        |    let r2 = { x = "a" };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.02") {
+    // Two labels with mismatched types.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = { x = 1, y = 1 };
+        |    let r2 = { x = "a", y = "b" };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.03") {
+    // The record is passed as an argument.
+    val input =
+      """
+        |def f(_r: { x = Int32 }): Unit = ()
+        |
+        |def g(): Unit \ IO =
+        |    let _ = f({ x = "a" });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.04") {
+    // The record is passed as an argument to a function with an open record parameter.
+    val input =
+      """
+        |def f(_r: { x = Int32 | r }): Unit = ()
+        |
+        |def g(): Unit \ IO =
+        |    let _ = f({ x = "a", z = true });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.05") {
+    // The record is checked against a type ascription.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let _r: { x = Int32 } = { x = "a" };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.06") {
+    // The records are nested inside another type.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = ({ x = 1 }, 1);
+        |    let r2 = ({ x = "a" }, 2);
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.07") {
+    // The label is selected with the wrong type.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r = { x = "a" };
+        |    let _: Int32 = r#x;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.08") {
+    // The mismatched label is inside a nested record.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = { x = { y = 1 } };
+        |    let r2 = { x = { y = "a" } };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.09") {
+    // The label types are only known after the rows have been unified.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = { x = List#{1} };
+        |    let r2 = { x = List#{"a"} };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.10") {
+    // The label types are determined through a container argument.
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    let r1 = { x = List.reverse(List.Cons(1, List.Nil)) };
+        |    let r2 = { x = List.reverse(List.Cons("a", List.Nil)) };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.11") {
+    // The conflict is in the first of two type arguments.
+    val input =
+      """
+        |enum Pair[a, b] { case Pair(a, b) }
+        |
+        |def f(): Unit \ IO =
+        |    let r1 = { x = Pair.Pair(1, true) };
+        |    let r2 = { x = Pair.Pair("a", true) };
+        |    let _ = if (true) r1 else r2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.12") {
+    // The label type is a type alias.
+    val input =
+      """
+        |type alias Age = Int32
+        |
+        |def f(_r: { x = Age }): Unit = ()
+        |
+        |def g(): Unit \ IO =
+        |    let _ = f({ x = "a" });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.13") {
+    // The label types differ only in their effects, which is not a label type mismatch.
+    val input =
+      """
+        |eff E { def op(): Unit }
+        |
+        |def f(_r: { g = Unit -> Unit }): Unit = ()
+        |
+        |def h(): Unit = f({ g = () -> E.op() })
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+    rejectError[TypeError.MismatchedLabelType](result)
+  }
+
+  test("TypeError.MismatchedLabelType.14") {
+    // A missing label inside a nested record is not a label type mismatch.
+    val input =
+      """
+        |def f(_r: { x = { y = Int32 } }): Unit = ()
+        |
+        |def g(): Unit \ IO =
+        |    let _ = f({ x = { z = 1 } });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    rejectError[TypeError.MismatchedLabelType](result)
+  }
+
   test("ExtMatchError#11283") {
     val input =
       """
@@ -2047,7 +2916,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.MismatchedPredicateTypes](result)
   }
 
   test("TypeError.ExtMatch.01") {
@@ -2102,7 +2971,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.MismatchedPredicateArity](result)
   }
 
   test("TypeError.ExtMatch.05") {
@@ -2117,7 +2986,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.MismatchedPredicateArity](result)
   }
 
   test("TypeError.ExtMatch.06") {
@@ -2236,6 +3105,107 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedPredicateArity](result)
   }
 
+  test("TypeError.MismatchedPredicateArity.04") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1, 2). };
+        |    let p2 = #{ Foo(1, 2, 3). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.05") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Bar(1). Foo(1, 2). };
+        |    let p2 = #{ Foo(1, 2, 3). Baz("a"). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.06") {
+    // Two predicates with the same arity mismatch.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1). Bar(1). };
+        |    let p2 = #{ Foo(1, 2). Bar(1, 2). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.07") {
+    // The schemas are nested inside another type.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = (#{ Foo(1). }, 1);
+        |    let p2 = (#{ Foo(1, 2). }, 2);
+        |    let _ = if (true) p1 else p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.08") {
+    // The schemas are nested inside function types.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let f1 = () -> #{ Foo(1). };
+        |    let f2 = () -> #{ Foo(1, 2). };
+        |    let _ = if (true) f1 else f2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.09") {
+    // The schema is passed as an argument.
+    val input =
+      """
+        |def f(_p: #{ Foo(Int32) }): Unit = ()
+        |
+        |def main(): Unit \ IO =
+        |    let _ = f(#{ Foo(1, 2). });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.10") {
+    // The schema is checked against a type ascription.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _p: #{ Foo(Int32) } = #{ Foo(1, 2). };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
   test("TypeError.MismatchedPredicateDenotation.01") {
     val input =
       """
@@ -2264,6 +3234,139 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibAll)
     expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.03") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1, 2). };
+        |    let p2 = #{ Foo(1; 2). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.04") {
+    // Two predicates with the same denotation mismatch.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1, 2). Bar(1, 2). };
+        |    let p2 = #{ Foo(1; 2). Bar(1; 2). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.05") {
+    // The schema is passed as an argument.
+    val input =
+      """
+        |def f(_p: #{ Foo(Int32, Int32) }): Unit = ()
+        |
+        |def main(): Unit \ IO =
+        |    let _ = f(#{ Foo(1; 2). });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1). };
+        |    let p2 = #{ Foo("a"). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateTypes](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.02") {
+    // The schema is passed as an argument.
+    val input =
+      """
+        |def f(_p: #{ Foo(Int32) }): Unit = ()
+        |
+        |def main(): Unit \ IO =
+        |    let _ = f(#{ Foo("a"). });
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateTypes](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.03") {
+    // Two predicates with mismatched term types.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1). Bar(1). };
+        |    let p2 = #{ Foo("a"). Bar("b"). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateTypes](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.04") {
+    // A lattice predicate with a mismatched key type.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(1; 2). };
+        |    let p2 = #{ Foo("a"; 2). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateTypes](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.05") {
+    // The mismatch is nested inside a term type.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo((1, 1)). };
+        |    let p2 = #{ Foo((1, "a")). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateTypes](result)
+  }
+
+  test("TypeError.MismatchedPredicateTypes.06") {
+    // The term types are only known after the rows have been unified.
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let p1 = #{ Foo(List#{1}). };
+        |    let p2 = #{ Foo(List#{"a"}). };
+        |    let _ = p1 <+> p2;
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateTypes](result)
   }
 
   test("Test.DefaultHandlerNotInModule.01") {

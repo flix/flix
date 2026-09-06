@@ -15,8 +15,10 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
+
+import scala.annotation.tailrec
 
 
 /**
@@ -132,6 +134,30 @@ object TypeConstraint {
     case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
 
     /**
+      * The constraint relates the types of the record label `label` in two record rows.
+      *
+      * `loc1` and `loc2` are the locations of the two occurrences of the label, and `inner` is the
+      * provenance of the constraint the two rows came from.
+      *
+      * The label is recorded here, rather than decided on when the rows are unified, because the
+      * label types may not be known until later. The provenance follows every constraint derived
+      * from the label types, so the label is available whenever any part of them fails to unify.
+      */
+    case class Label(label: Name.Label, loc1: SourceLocation, loc2: SourceLocation, inner: Provenance) extends Provenance {
+      def loc: SourceLocation = inner.loc
+    }
+
+    /**
+      * The constraint relates the types of the predicate `pred` in two schema rows.
+      *
+      * `loc1` and `loc2` are the locations of the two occurrences of the predicate, and `inner` is
+      * the provenance of the constraint the two rows came from. See [[Label]].
+      */
+    case class Predicate(pred: Name.Pred, loc1: SourceLocation, loc2: SourceLocation, inner: Provenance) extends Provenance {
+      def loc: SourceLocation = inner.loc
+    }
+
+    /**
       * The constraint indicates that the left effect is a variable representing the source effect on the right.
       */
     case class Source(eff1: Type.Var, eff2: Type, loc: SourceLocation) extends Provenance
@@ -146,5 +172,15 @@ object TypeConstraint {
       */
     // TODO this is an abuse of provenance. We should instead have a separate "conflict reason" type.
     case class Timeout(msg: String, loc: SourceLocation) extends Provenance
+
+    /**
+      * Returns the provenance underneath any [[Label]] and [[Predicate]] wrappers of `prov`.
+      */
+    @tailrec
+    def unwrap(prov: Provenance): Provenance = prov match {
+      case Label(_, _, _, inner) => unwrap(inner)
+      case Predicate(_, _, _, inner) => unwrap(inner)
+      case _ => prov
+    }
   }
 }

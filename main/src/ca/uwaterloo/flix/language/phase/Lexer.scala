@@ -23,9 +23,8 @@ import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, StringCursor}
 import ca.uwaterloo.flix.util.collection.PrefixTree
 
-import scala.annotation.{tailrec, unused}
+import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.util.Random
 
 /**
   * A lexer that is able to tokenize multiple `Source`s in parallel.
@@ -86,8 +85,6 @@ object Lexer {
       ("instance", TokenKind.KeywordInstance),
       ("instanceof", TokenKind.KeywordInstanceOf),
       ("into", TokenKind.KeywordInto),
-      ("law", TokenKind.KeywordLaw),
-      ("lawful", TokenKind.KeywordLawful),
       ("lazy", TokenKind.KeywordLazy),
       ("let", TokenKind.KeywordLet),
       ("match", TokenKind.KeywordMatch),
@@ -99,7 +96,6 @@ object Lexer {
       ("open_variant", TokenKind.KeywordOpenVariant),
       ("open_variant_as", TokenKind.KeywordOpenVariantAs),
       ("or", TokenKind.KeywordOr),
-      ("override", TokenKind.KeywordOverride),
       ("par", TokenKind.KeywordPar),
       ("pquery", TokenKind.KeywordPQuery),
       ("project", TokenKind.KeywordProject),
@@ -225,7 +221,7 @@ object Lexer {
 
   /** Run the lexer on multiple `Source`s in parallel. */
   def run(root: ReadAst.Root, oldTokens: Map[Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): (Map[Source, Array[Token]], List[LexerError]) =
-    flix.phaseNew("Lexer") {
+    flix.phase("Lexer") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
 
@@ -949,32 +945,6 @@ object Lexer {
     // This should not happen for zero-width tokens at the start of lines.
     val (endLine, endColumn) = s.sc.getExclusiveEndPosition
     SourcePosition.mkFromZeroIndexed(endLine, endColumn)
-  }
-
-  /**
-    * Returns a fuzzed array of tokens based on the given array of `tokens`.
-    *
-    * Must not modify the last token since it is end-of-file.
-    */
-  @unused
-  private def fuzz(tokens: Array[Token])(implicit flix: Flix): Array[Token] = {
-    // Return immediately if there are few tokens.
-    if (tokens.length <= 10) {
-      return tokens
-    }
-
-    // Fuzz the array by picking two random indices and swapping their tokens.
-    val copy = tokens.clone()
-    val lastIndex = copy.length - 1 // Don't remove the last EOF token.
-    val r = new Random()
-    val i = r.nextInt(lastIndex)
-    val j = r.nextInt(lastIndex)
-
-    val tmp = copy(i)
-    copy(i) = copy(j)
-    copy(j) = tmp
-
-    copy
   }
 
 }

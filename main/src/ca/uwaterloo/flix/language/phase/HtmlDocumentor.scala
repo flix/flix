@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
+import ca.uwaterloo.flix.util.collection.Nel
 import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
@@ -29,6 +30,7 @@ import org.commonmark.renderer.html.HtmlRenderer
 import java.io.IOException
 import java.net.URLEncoder
 import java.nio.file.{Files, Path, Paths}
+import java.util.regex.Pattern
 import scala.annotation.tailrec
 
 /**
@@ -44,11 +46,6 @@ object HtmlDocumentor {
     * The "Pseudo-name" of the root namespace used for its file name.
     */
   private val RootFileName: String = "index"
-
-  /**
-    * The directory where to write the ouput.
-    */
-  private def OutputDirectory(implicit flix: Flix): Path = flix.options.outputPath.resolve("doc/")
 
   /**
     * The path to the stylesheet, relative to the resources folder.
@@ -75,14 +72,34 @@ object HtmlDocumentor {
     */
   private val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
-  def run(root: TypedAst.Root, packageModules: PackageModules)(implicit flix: Flix): Unit = {
+  /**
+    * Matches an HTML comment, including any whitespace that follows it.
+    */
+  private val CommentPattern: Pattern = Pattern.compile("(?s)<!--.*?-->\\s*")
+
+  /**
+    * The icons of the documentation, as pairs of the CSS class that selects an icon and the name of
+    * its SVG file, relative to [[Icons]].
+    */
+  private val IconClasses: List[(String, String)] = List(
+    "back" -> "back",
+    "close" -> "close",
+    "dark" -> "darkMode",
+    "light" -> "lightMode",
+    "open" -> "menu",
+  )
+
+  /**
+    * Generates the API documentation for `root` and writes it to `outputDir`.
+    */
+  def run(root: TypedAst.Root, packageModules: PackageModules, outputDir: Path)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
     val filteredModulesRoot = filterModules(modulesRoot, packageModules)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
-    visitMod(pairedModulesRoot)
+    visitMod(pairedModulesRoot, outputDir)
 
-    writeAssets()
+    writeAssets(outputDir)
   }
 
   /**
@@ -90,15 +107,15 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitMod(mod: Module)(implicit flix: Flix): List[String] = {
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix): List[String] = {
     val out = documentModule(mod)
-    writeDocFile(mod.fileName, out)
+    writeDocFile(mod.fileName, out, outputDir)
 
     val generatedPages = List(mod.fileName) :::
-      mod.submodules.flatMap(visitMod) :::
-      mod.traits.flatMap(visitTrait) :::
-      mod.effects.flatMap(visitEffect) :::
-      mod.enums.flatMap(visitEnum)
+      mod.submodules.flatMap(visitMod(_, outputDir)) :::
+      mod.traits.flatMap(visitTrait(_, outputDir)) :::
+      mod.effects.flatMap(visitEffect(_, outputDir)) :::
+      mod.enums.flatMap(visitEnum(_, outputDir))
 
     generatedPages
   }
@@ -108,16 +125,16 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitTrait(trt: Trait)(implicit flix: Flix): List[String] = {
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix): List[String] = {
     val out = documentTrait(trt)
-    writeDocFile(trt.fileName, out)
+    writeDocFile(trt.fileName, out, outputDir)
 
     val generatedPages = List(trt.fileName) :::
       trt.companionMod.map { mod =>
-        mod.submodules.flatMap(visitMod) :::
-          mod.traits.flatMap(visitTrait) :::
-          mod.effects.flatMap(visitEffect) :::
-          mod.enums.flatMap(visitEnum)
+        mod.submodules.flatMap(visitMod(_, outputDir)) :::
+          mod.traits.flatMap(visitTrait(_, outputDir)) :::
+          mod.effects.flatMap(visitEffect(_, outputDir)) :::
+          mod.enums.flatMap(visitEnum(_, outputDir))
       }.getOrElse(Nil)
 
     generatedPages
@@ -128,16 +145,16 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitEffect(eff: Effect)(implicit flix: Flix): List[String] = {
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix): List[String] = {
     val out = documentEffect(eff)
-    writeDocFile(eff.fileName, out)
+    writeDocFile(eff.fileName, out, outputDir)
 
     val generatedPages = List(eff.fileName) :::
       eff.companionMod.map { mod =>
-        mod.submodules.flatMap(visitMod) :::
-          mod.traits.flatMap(visitTrait) :::
-          mod.effects.flatMap(visitEffect) :::
-          mod.enums.flatMap(visitEnum)
+        mod.submodules.flatMap(visitMod(_, outputDir)) :::
+          mod.traits.flatMap(visitTrait(_, outputDir)) :::
+          mod.effects.flatMap(visitEffect(_, outputDir)) :::
+          mod.enums.flatMap(visitEnum(_, outputDir))
       }.getOrElse(Nil)
 
     generatedPages
@@ -148,16 +165,16 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitEnum(enm: Enum)(implicit flix: Flix): List[String] = {
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix): List[String] = {
     val out = documentEnum(enm)
-    writeDocFile(enm.fileName, out)
+    writeDocFile(enm.fileName, out, outputDir)
 
     val generatedPages = List(enm.fileName) :::
       enm.companionMod.map { mod =>
-        mod.submodules.flatMap(visitMod)
-        mod.traits.flatMap(visitTrait)
-        mod.effects.flatMap(visitEffect)
-        mod.enums.flatMap(visitEnum)
+        mod.submodules.flatMap(visitMod(_, outputDir))
+        mod.traits.flatMap(visitTrait(_, outputDir))
+        mod.effects.flatMap(visitEffect(_, outputDir))
+        mod.enums.flatMap(visitEnum(_, outputDir))
       }.getOrElse(Nil)
 
     generatedPages
@@ -381,7 +398,7 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterTrait(trt: Trait): Trait = trt match {
-    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, laws, loc), signatures, defs, instances, parent, _) =>
+    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, loc), signatures, defs, instances, parent, _) =>
       Trait(
         TypedAst.Trait(
           doc,
@@ -392,7 +409,6 @@ object HtmlDocumentor {
           superTraits,
           assocs,
           Nil,
-          laws.filter(l => l.spec.mod.isPublic),
           loc
         ),
         signatures.filter(s => s.spec.mod.isPublic),
@@ -886,22 +902,14 @@ object HtmlDocumentor {
     sb.append("<div class='spacer' role='presentation'></div>")
 
     sb.append("<button id='theme-toggle' class='toggle' aria-label='Toggle Theme'>")
-    sb.append("<span class='dark icon'>")
-    inlineIcon("darkMode")
-    sb.append("</span>")
-    sb.append("<span class='light icon'>")
-    inlineIcon("lightMode")
-    sb.append("</span>")
+    docIcon("dark")
+    docIcon("light")
     sb.append("</button>")
 
     sb.append("<div id='menu-toggle' class='toggle'>")
     sb.append("<input type='checkbox' aria-label='Toggle Navigation Menu'>")
-    sb.append("<span class='open icon'>")
-    inlineIcon("menu")
-    sb.append("</span>")
-    sb.append("<span class='close icon'>")
-    inlineIcon("close")
-    sb.append("</span>")
+    docIcon("open")
+    docIcon("close")
     sb.append("</div>")
 
     sb.append("</header>")
@@ -916,7 +924,7 @@ object HtmlDocumentor {
     sb.append("<nav>")
     parent.map { p =>
       sb.append(s"<a class='back' href='${escUrl(moduleFileName(p))}'>")
-      inlineIcon("back")
+      docIcon("back")
       sb.append(moduleName(p))
       sb.append("</a>")
     }
@@ -1306,14 +1314,14 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docFormalParams(fparams: Nel[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
     fparams match {
-      case List(TypedAst.FormalParam(_, Type.Cst(TypeConstructor.Unit, _), _, _, _)) =>
+      case Nel(TypedAst.FormalParam(_, Type.Cst(TypeConstructor.Unit, _), _, _, _), Nil) =>
       // For a function declared with zero formal parameters,
       // the compiler will introduce a single parameter of the unit type
       case _ =>
-        docList(fparams.sortBy(_.loc)) { p =>
+        docList(fparams.toList.sortBy(_.loc)) { p =>
           sb.append(s"<span><span>${esc(p.bnd.sym.text)}</span>: ")
           docType(p.tpe)
           sb.append("</span>")
@@ -1342,11 +1350,12 @@ object HtmlDocumentor {
   /**
     * Appends a 'copy link' button the the given `StringBuilder`.
     * This creates a link to the given ID on the current URL.
+    *
+    * The button is marked by a section sign rather than an inlined SVG icon. There is one of these
+    * buttons per documented element, so an inlined icon would dominate the size of the page.
     */
   private def docLink(id: String)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a href='#${escUrl(id)}' class='copy-link' title='Link To Element'>")
-    inlineIcon("link")
-    sb.append("</a> ")
+    sb.append(s"<a href='#${escUrl(id)}' class='copy-link'>&sect;</a> ")
   }
 
   /**
@@ -1355,7 +1364,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSourceLocation(loc: SourceLocation)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a class='source' target='_blank' rel='nofollow' href='${createLink(loc)}'>Source</a>")
+    sb.append(s"<a class='source' href='${createLink(loc)}'>Source</a>")
   }
 
   /**
@@ -1468,40 +1477,60 @@ object HtmlDocumentor {
   /**
     * Make a copy of the static assets into the output directory.
     */
-  private def writeAssets()(implicit flix: Flix): Unit = {
-    val stylesheet = readResource(Stylesheet)
-    writeFile("styles.css", stylesheet)
+  private def writeAssets(outputDir: Path): Unit = {
+    val stylesheet = readResourceString(Stylesheet) + mkIconStyles()
+    writeFile("styles.css", stylesheet.getBytes, outputDir)
 
     val favicon = readResource(FavIcon)
-    writeFile("favicon.png", favicon)
+    writeFile("favicon.png", favicon, outputDir)
 
     val script = readResource(Script)
-    writeFile("index.js", script)
+    writeFile("index.js", script, outputDir)
   }
 
   /**
-    * Append the contents of the SVG file with the given `name` to the given `StringBuilder`.
+    * Append the icon with the given CSS class, `cls`, to the given `StringBuilder`.
     *
-    * By inlining the icon into the HTML itself, it can inherit the `color` of its parent.
+    * The element is empty: its artwork is applied by the stylesheet, see [[mkIconStyles]].
     */
-  private def inlineIcon(name: String)(implicit sb: StringBuilder): Unit = {
-    sb.append(readResourceString(s"$Icons/$name.svg"))
+  private def docIcon(cls: String)(implicit sb: StringBuilder): Unit = {
+    sb.append(s"<span class='$cls icon'></span>")
+  }
+
+  /**
+    * Returns the CSS rules that give each icon of [[IconClasses]] its artwork, as a mask.
+    *
+    * The icons are put in the stylesheet, rather than inlined into the HTML, since each page would
+    * otherwise carry a copy of every icon it uses. Masking, rather than embedding the SVG as an
+    * image, keeps the icons able to inherit the `color` of their parent.
+    *
+    * The attribution comments of each icon are stripped, since they carry no meaning in the output.
+    * They are kept in the SVG files themselves, along with `icons/LICENSE.md`.
+    */
+  private def mkIconStyles(): String = {
+    val rules = IconClasses.map {
+      case (cls, name) =>
+        val svg = readResourceString(s"$Icons/$name.svg")
+        val stripped = CommentPattern.matcher(svg).replaceAll("").trim
+        s".$cls.icon { --icon: url(\"data:image/svg+xml,${escDataUri(stripped)}\") }"
+    }
+    rules.mkString("\n", "\n", "\n")
   }
 
   /**
     * Write the documentation output string into the output directory with the given `name`.
     */
-  private def writeDocFile(name: String, output: String)(implicit flix: Flix): Unit = {
-    writeFile(s"$name", output.getBytes)
+  private def writeDocFile(name: String, output: String, outputDir: Path): Unit = {
+    writeFile(s"$name", output.getBytes, outputDir)
   }
 
   /**
     * Write the file to the output directory with the given file name.
     */
-  private def writeFile(name: String, output: Array[Byte])(implicit flix: Flix): Unit = {
-    val path = OutputDirectory.resolve(name)
+  private def writeFile(name: String, output: Array[Byte], outputDir: Path): Unit = {
+    val path = outputDir.resolve(name)
     try {
-      Files.createDirectories(OutputDirectory)
+      Files.createDirectories(outputDir)
       Files.write(path, output)
     } catch {
       case ex: IOException => throw new RuntimeException(s"Unable to write to path '$path'.", ex)
@@ -1545,6 +1574,13 @@ object HtmlDocumentor {
     * Transform the string into a valid URL.
     */
   private def escUrl(s: String): String = URLEncoder.encode(s, "UTF-8")
+
+  /**
+    * Escape the string for inclusion in a `data:` URI.
+    *
+    * Unlike in a query string, a `+` denotes itself in a `data:` URI, so spaces must be escaped.
+    */
+  private def escDataUri(s: String): String = escUrl(s).replace("+", "%20")
 
   /**
     * An item is a unit that is typically output to its own HTML file.

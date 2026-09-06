@@ -101,8 +101,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordInstance => "'instance'"
       case TokenKind.KeywordInstanceOf => "'instanceof'"
       case TokenKind.KeywordInto => "'into'"
-      case TokenKind.KeywordLaw => "'law'"
-      case TokenKind.KeywordLawful => "'lawful'"
       case TokenKind.KeywordLazy => "'lazy'"
       case TokenKind.KeywordLet => "'let'"
       case TokenKind.KeywordMatch => "'match'"
@@ -114,7 +112,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordOpenVariant => "'open_variant'"
       case TokenKind.KeywordOpenVariantAs => "'open_variant_as'"
       case TokenKind.KeywordOr => "'or'"
-      case TokenKind.KeywordOverride => "'override'"
       case TokenKind.KeywordPQuery => "'pquery'"
       case TokenKind.KeywordPSolve => "'psolve'"
       case TokenKind.KeywordPar => "'par'"
@@ -237,8 +234,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordInstance => true
     case TokenKind.KeywordInstanceOf => true
     case TokenKind.KeywordInto => true
-    case TokenKind.KeywordLaw => true
-    case TokenKind.KeywordLawful => true
     case TokenKind.KeywordLazy => true
     case TokenKind.KeywordLet => true
     case TokenKind.KeywordMatch => true
@@ -249,7 +244,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordOpenVariant => true
     case TokenKind.KeywordOpenVariantAs => true
     case TokenKind.KeywordOr => true
-    case TokenKind.KeywordOverride => true
     case TokenKind.KeywordPQuery => true
     case TokenKind.KeywordPSolve => true
     case TokenKind.KeywordPar => true
@@ -290,9 +284,7 @@ sealed trait TokenKind {
 
   /** Returns `true` if this token is a modifier (e.g. `pub`). */
   def isModifier: Boolean = this match {
-    case TokenKind.KeywordLawful => true
     case TokenKind.KeywordMut => true
-    case TokenKind.KeywordOverride => true
     case TokenKind.KeywordPub => true
     case TokenKind.KeywordSealed => true
     case _ => false
@@ -350,7 +342,6 @@ sealed trait TokenKind {
   /** Returns `true` if this token can validly appear after [[TokenKind.CommentDoc]]. */
   def isDocumentable: Boolean = this match {
     case TokenKind.KeywordCase => true
-    case TokenKind.KeywordLaw => true
     case _ if this.isFirstInDecl => true
     case _ => false
   }
@@ -391,7 +382,6 @@ sealed trait TokenKind {
     case TokenKind.Annotation => true
     case TokenKind.CommentDoc => true
     case TokenKind.KeywordDef => true
-    case TokenKind.KeywordLaw => true
     case TokenKind.KeywordType => true
     case _ if this.isModifier => true
     case _ => false
@@ -845,10 +835,6 @@ object TokenKind {
 
   case object KeywordInto extends TokenKind
 
-  case object KeywordLaw extends TokenKind
-
-  case object KeywordLawful extends TokenKind
-
   case object KeywordLazy extends TokenKind
 
   case object KeywordLet extends TokenKind
@@ -870,8 +856,6 @@ object TokenKind {
   case object KeywordOpenVariantAs extends TokenKind
 
   case object KeywordOr extends TokenKind
-
-  case object KeywordOverride extends TokenKind
 
   case object KeywordPQuery extends TokenKind
 

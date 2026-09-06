@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast.shared
 import ca.uwaterloo.flix.language.ast.UnkindedType
 import ca.uwaterloo.flix.util.collection.ListMap
 
-import java.lang.{Class => JClass}
+import java.lang.constant.ClassDesc
 
 /**
   * Companion object for the [[LocalScope]] class.
@@ -42,7 +42,7 @@ object LocalScope {
   * @param superClass `None` means super calls are illegal here; `Some(clazz)` means super calls resolve to `clazz`.
   * @param superTargs the type arguments of the enclosing NewObject expression, if any.
   */
-case class LocalScope(scp: ListMap[String, Resolution], superClass: Option[JClass[?]] = None, superTargs: List[UnkindedType] = Nil) {
+case class LocalScope(scp: ListMap[String, Resolution], superClass: Option[ClassDesc] = None, superTargs: List[UnkindedType] = Nil) {
   /**
     * Returns the map of variable names to their resolutions.
     */
@@ -76,7 +76,7 @@ case class LocalScope(scp: ListMap[String, Resolution], superClass: Option[JClas
   def resolve(name: String): Option[Resolution] =
     scp.get(name).headOption
 
-  def withSuperClass(clazz: Option[JClass[?]]): LocalScope = copy(superClass = clazz)
+  def withSuperClass(clazz: Option[ClassDesc]): LocalScope = copy(superClass = clazz)
 
   def withSuperTargs(targs: List[UnkindedType]): LocalScope = copy(superTargs = targs)
 }

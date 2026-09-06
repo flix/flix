@@ -120,11 +120,8 @@ object MagicDefCompleter {
     * Returns `true` if the given expression type `tpe` unifies with the last parameter type of the given `spec`.
     */
   private def expMatchesLastArgType(tpe: Type, spec: TypedAst.Spec, root: TypedAst.Root)(implicit flix: Flix): Boolean = {
-    spec.fparams.lastOption match {
-      case Some(lastParam) =>
-        ConstraintSolver2.fullyUnify(tpe, lastParam.tpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined
-      case None => false
-    }
+    val lastParam = spec.fparams.last
+    ConstraintSolver2.fullyUnify(tpe, lastParam.tpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined
   }
 
   /**

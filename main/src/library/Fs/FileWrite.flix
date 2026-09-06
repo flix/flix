@@ -770,7 +770,7 @@ pub mod Fs.FileWrite {
         sidecar: String,
         f: Unit -> a \ ef
     ): a \ (ef - FileWrite) + { FileWrite, FileRead } =
-        let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
+        let computeHex = bytes -> Util.Codec.encodeHex(hash(bytes));
         let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, f1 -> FileRead.readBytes(f1), (str, f1) -> FileWrite.write(str = str, f1));
         let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
         let doMoveSidecar = (s, d) -> FileWrite.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});

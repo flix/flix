@@ -118,11 +118,8 @@ mod Test.Dec.Trait {
     }
 
     mod Test11 {
-        lawful trait C[a] {
+        trait C[a] {
             pub def f(x: a, y: a): Bool
-
-            // TODO handle mods better
-            law reflexivity: forall (x: a, y: a) Test.Dec.Trait.Test11.C.f(x, y) == Test.Dec.Trait.Test11.C.f(y, x)
         }
 
         instance C[Int32] {
@@ -134,11 +131,7 @@ mod Test.Dec.Trait {
         trait C[a] {
             pub def f(): a
 
-            law l: forall (_x: a) true
-
             pub def g(): a
-
-            law m: forall[a: Type](_x: a) true
         }
     }
 
@@ -192,9 +185,7 @@ mod Test.Dec.Trait {
             pub def f(x: a, y: a): Bool
         }
 
-        trait C[a] {
-            law l: forall (x: a, y: a) with D[a] Test.Dec.Trait.Test16.D.f(x, y)
-        }
+        trait C[a]
     }
 
     mod Test17 {
@@ -202,9 +193,35 @@ mod Test.Dec.Trait {
             pub def f(x: a): Bool
         }
 
-        trait E[a: Type -> Type] {
-            law l: forall (x: a[b]) with D[a[b]] Test.Dec.Trait.Test17.D.f(x)
+        trait E[a: Type -> Type]
+    }
+
+    mod Test18 {
+        // A diamond: the shared super trait A is reachable from D through both B and C.
+        trait A[a] {
+            pub def a(x: a): Int32
         }
+
+        trait B[a] with A[a]
+
+        trait C[a] with A[a]
+
+        trait D[a] with B[a], C[a]
+
+        instance A[Int32] {
+            pub def a(x: Int32): Int32 = x
+        }
+
+        instance B[Int32]
+
+        instance C[Int32]
+
+        instance D[Int32]
+
+        pub def f(x: a): Int32 with D[a] = Test.Dec.Trait.Test18.A.a(x)
+
+        @CompileTest
+        def testDiamond01(): Bool = Test.Dec.Trait.Test18.f(42) == 42
     }
 
 }

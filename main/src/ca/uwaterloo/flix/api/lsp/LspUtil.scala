@@ -83,8 +83,8 @@ object LspUtil {
     */
   def mkSpecSnippet(label: String, spec: TypedAst.Spec, ectx: ExprContext): String = ectx match {
     case ExprContext.InsideApply => CompletionUtils.getApplySnippet(label, Nil)
-    case ExprContext.InsidePipeline => CompletionUtils.getApplySnippet(label, spec.fparams.dropRight(1))
-    case ExprContext.InsideRunWith => CompletionUtils.getApplySnippet(label, spec.fparams.dropRight(1))
-    case ExprContext.Unknown => CompletionUtils.getApplySnippet(label, spec.fparams)
+    case ExprContext.InsidePipeline => CompletionUtils.getApplySnippet(label, spec.fparams.init)
+    case ExprContext.InsideRunWith => CompletionUtils.getApplySnippet(label, spec.fparams.init)
+    case ExprContext.Unknown => CompletionUtils.getApplySnippet(label, spec.fparams.toList)
   }
 }

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.{Flix, PhaseTime}
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix, PhaseTime}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
@@ -215,7 +215,7 @@ object CompilerPerf {
     */
   def run(opts: Options): Unit = {
     // Options
-    val o = opts.copy(progress = false, loadClassFiles = false)
+    val o = opts.copy(progress = false)
 
     // The number of iterations.
     val N = o.XPerfN.getOrElse(DefaultN)
@@ -377,7 +377,7 @@ object CompilerPerf {
     //
     // Python Plot
     //
-    FileOps.writeString(o.outputPath.resolve("perf/").resolve("plots.py"), Python)
+    FileOps.writeString(CompilerConstants.PerfDirectory.resolve("plots.py"), Python)
 
     println("~~~~ Flix Compiler Performance ~~~~")
     println()
@@ -526,8 +526,7 @@ object CompilerPerf {
     * Writes the given `json` to the given `file`.
     */
   private def writeFile(file: String, json: JValue, opts: Options): Unit = {
-    val directory = opts.outputPath.resolve("perf/")
-    val filePath = directory.resolve(s"$file")
+    val filePath = CompilerConstants.PerfDirectory.resolve(s"$file")
     FileOps.writeJSON(filePath, json)
   }
 

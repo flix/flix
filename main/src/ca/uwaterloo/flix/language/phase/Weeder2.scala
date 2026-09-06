@@ -24,9 +24,8 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain, Nel, SeqOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.collection.{ArrayOps, Nel, SeqOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.lang.{Byte as JByte, Integer as JInt, Long as JLong, Short as JShort}
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -49,31 +48,47 @@ object Weeder2 {
 
   import WeededAst.*
 
-  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[WeededAst.Root, CompilationMessage], List[CompilationMessage]) = {
-    flix.phaseNew("Weeder2") {
+  /**
+    * Weeds the given syntax tree `root`.
+    *
+    * Returns the weeded root and the errors. The root is `None` if any compilation unit
+    * failed hard, in which case the list of errors is non-empty.
+    */
+  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Option[WeededAst.Root], List[CompilationMessage]) = {
+    flix.phase("Weeder2") {
       implicit val sctx: SharedContext = SharedContext.mk()
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
       // Schedule the biggest sources first to increase throughput.
       def sortBy(p: (Source, SyntaxTree.Tree)): Int = -p._1.data.length
 
-      // Parse each source file in parallel and join them into a WeededAst.Root
+      // Weed each source file in parallel. A unit that fails hard yields `None`.
       val refreshed = ParOps.parMapWithPriority(stale, sortBy) {
-        case (src, tree) => mapN(weed(tree))(tree => src -> tree)
+        case (src, tree) => weed(tree).map(src -> _)
       }
 
-      val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
-      (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.availableClasses, root.tokens)), sctx.errors.asScala.toList)
-    }(DebugValidation())
+      // The root is only available if every unit was weeded successfully.
+      val result = Option.when(refreshed.forall(_.isDefined)) {
+        WeededAst.Root(refreshed.flatten.toMap ++ fresh, entryPoint, readRoot.availableClasses, root.tokens)
+      }
+      (result, sctx.errors.asScala.toList)
+    }
   }
 
-  private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[CompilationUnit, CompilationMessage] = {
+  /**
+    * Weeds the given compilation unit `tree`.
+    *
+    * Returns `None` if the unit fails hard, in which case the error has been added to `sctx`.
+    */
+  private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Option[CompilationUnit] = {
     try {
       val usesAndImports = pickAllUsesAndImports(tree)
       val declarations = Decls.pickAllDeclarations(tree)
-      Validation.Success(CompilationUnit(usesAndImports, declarations, tree.loc))
+      Some(CompilationUnit(usesAndImports, declarations, tree.loc))
     } catch {
-      case PickException(error) => Validation.Failure(Chain(error))
+      case PickException(error) =>
+        sctx.errors.add(error)
+        None
     }
   }
 
@@ -256,7 +271,7 @@ object Weeder2 {
       expect(tree, TreeKind.Decl.Trait)
       val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
-      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordSealed))
+      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub, TokenKind.KeywordSealed))
       val ident = pickNameIdent(tree)
       val tparamsList = pick(TreeKind.TypeParameterList, tree)
       if (pickAll(TreeKind.Parameter, tparamsList).length != 1) {
@@ -267,14 +282,12 @@ object Weeder2 {
       val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree).map(visitAssociatedTypeSigDecl(_, tparam))
       val sigs = pickAll(TreeKind.Decl.Signature, tree)
       val sigs0 = sigs.map(visitSignatureDecl)
-      val laws = pickAll(TreeKind.Decl.Law, tree)
-      val laws0 = laws.map(visitLawDecl)
-      Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs0, laws0, tree.loc)
+      Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs0, tree.loc)
     }
 
     private def visitInstanceDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Declaration.Instance = {
       expect(tree, TreeKind.Decl.Instance)
-      val allowedDefModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set(TokenKind.KeywordPub) else Set(TokenKind.KeywordPub, TokenKind.KeywordOverride)
+      val allowedDefModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub)
       val doc = pickDocumentation(tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set.empty)
@@ -336,22 +349,6 @@ object Weeder2 {
       val tconstrs = Types.pickConstraints(tree)
       val constrs = pickEqualityConstraints(tree)
       Declaration.Redef(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
-    }
-
-    private def visitLawDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Def = {
-      val doc = pickDocumentation(tree)
-      val ann = pickAnnotations(tree)
-      val mod = pickModifiers(tree, allowed = Set.empty)
-      val ident = pickNameIdent(tree)
-      val tparams = Types.pickKindedParameters(tree)
-      val fparams = pickFormalParameters(tree)
-      val expr = Exprs.pickExpr(tree)
-      val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
-      val eff = None
-      val tconstrs = Types.pickConstraints(tree)
-      val econstrs = pickEqualityConstraints(tree)
-      // TODO: There is a `Declaration.Law` but old Weeder produces a Def
-      Declaration.Def(doc, ann, mod, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
     }
 
     private def visitEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Enum = {
@@ -618,7 +615,8 @@ object Weeder2 {
         case "@Inline" => Inline(loc)
         case "@Parallel" => Parallel(loc)
         case "@ParallelWhenPure" => ParallelWhenPure(loc)
-        case "@LoweringTarget" => LoweringTarget(loc)
+        case "@LoweringTargetChannel" => LoweringTargetChannel(loc)
+        case "@LoweringTargetDatalog" => LoweringTargetDatalog(loc)
         case "@Lazy" => Lazy(loc)
         case "@LazyWhenPure" => LazyWhenPure(loc)
         case "@Skip" => Skip(loc)
@@ -656,9 +654,7 @@ object Weeder2 {
 
     private val ALL_MODIFIERS: Set[TokenKind] = Set(
       TokenKind.KeywordSealed,
-      TokenKind.KeywordLawful,
       TokenKind.KeywordPub,
-      TokenKind.KeywordOverride,
       TokenKind.KeywordMut)
 
     private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit sctx: SharedContext): Modifiers = {
@@ -693,10 +689,8 @@ object Weeder2 {
       }
       token.kind match {
         case TokenKind.KeywordSealed => Modifier.Sealed
-        case TokenKind.KeywordLawful => Modifier.Lawful
         case TokenKind.KeywordPub => Modifier.Public
         case TokenKind.KeywordMut => Modifier.Mutable
-        case TokenKind.KeywordOverride => Modifier.Override
         case kind => throw InternalCompilerException(s"Parser passed unknown modifier '$kind'", token.mkSourceLocation())
       }
     }
@@ -707,12 +701,12 @@ object Weeder2 {
       loc
     )
 
-    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): List[FormalParam] = {
+    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): Nel[FormalParam] = {
       tryPick(TreeKind.ParameterList, tree) match {
         case Some(t) =>
           val params = pickAll(TreeKind.Parameter, t)
           if (params.isEmpty) {
-            List(unitFormalParameter(t.loc))
+            Nel.of(unitFormalParameter(t.loc))
           } else {
             val fparams = params.map(visitParameter(_, presence))
             // Check for duplicates
@@ -722,12 +716,12 @@ object Weeder2 {
             errors.foreach(sctx.errors.add)
 
             // Check missing or illegal type ascription
-            fparams
+            Nel.unsafeFrom(fparams)
           }
         case None =>
           val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc)
           sctx.errors.add(error)
-          List(unitFormalParameter(tree.loc))
+          Nel.of(unitFormalParameter(tree.loc))
       }
     }
 
@@ -839,7 +833,7 @@ object Weeder2 {
         case TreeKind.Expr.FixpointQueryWithProvenance => visitFixpointQueryWithProvenanceExpr(tree)
         case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
         case TreeKind.Expr.ExtTag => visitExtTag(tree)
-        case TreeKind.Expr.Intrinsic => visitIntrinsic(tree, None)
+        case TreeKind.Expr.Intrinsic => visitIntrinsic(tree, None, tree.loc)
         case TreeKind.ErrorTree(err) => Expr.Error(err)
         case k =>
           throw InternalCompilerException(s"Expected expression, got '$k'.", tree.loc)
@@ -874,11 +868,12 @@ object Weeder2 {
     private def visitStringInterpolationExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.StringInterpolation)
       val init = WeededAst.Expr.Cst(Constant.Str(""), tree.loc)
-      // Check for empty interpolation
-      if (tryPick(TreeKind.Expr.Expr, tree).isEmpty) {
-        val error = EmptyInterpolatedExpression(tree.loc)
-        sctx.errors.add(error)
-        return Expr.Error(error)
+
+      // Check for empty interpolated expressions, e.g. `"${}"` or `"${x}${}"`.
+      val emptyInterpolations = findEmptyInterpolations(tree)
+      if (emptyInterpolations.nonEmpty) {
+        emptyInterpolations.foreach(sctx.errors.add)
+        return Expr.Error(emptyInterpolations.head)
       }
 
       tree.children.foldLeft(init: WeededAst.Expr) {
@@ -905,6 +900,31 @@ object Weeder2 {
         // Skip anything else (Parser will have produced an error.)
         case (acc, _) => acc
       }
+    }
+
+    /**
+      * Returns an [[EmptyInterpolatedExpression]] error for each empty interpolation (e.g. `${}`) in `tree`.
+      *
+      * Each interpolation is opened by a [[TokenKind.LiteralStringInterpolationL]] token (`"${` or `}${`) and must be
+      * followed by an expression. If the opener is instead followed by another opener or the closing `}"` then the
+      * interpolation is empty. This catches both fully-empty strings (`"${}"`) and empty interpolations mixed with
+      * non-empty ones (`"${x}${}"`).
+      */
+    private def findEmptyInterpolations(tree: Tree): List[EmptyInterpolatedExpression] = {
+      def isExpr(child: SyntaxTree.Child): Boolean = child match {
+        case t: Tree => t.kind == TreeKind.Expr.Expr
+        case _ => false
+      }
+      // Ignore comment tokens so they cannot sit between an opener and its expression.
+      val children = tree.children.filterNot {
+        case token@Token(_, _, _, _, _, _) => token.kind.isComment
+        case _ => false
+      }
+      children.sliding(2).collect {
+        case Array(opener@Token(_, _, _, _, _, _), next)
+          if opener.kind == TokenKind.LiteralStringInterpolationL && !isExpr(next) =>
+          EmptyInterpolatedExpression(opener.mkSourceLocation())
+      }.toList
     }
 
     private def visitOpenVariantExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
@@ -988,7 +1008,7 @@ object Weeder2 {
       val exprTree = pick(TreeKind.Expr.Expr, tree)
       val args = pickArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
       tryPick(TreeKind.Expr.Intrinsic, exprTree) match {
-        case Some(intrinsic) => visitIntrinsic(intrinsic, Some(args))
+        case Some(intrinsic) => visitIntrinsic(intrinsic, Some(args), tree.loc)
         case None => Expr.Apply(visitExpr(exprTree), args, tree.loc)
       }
     }
@@ -1628,22 +1648,25 @@ object Weeder2 {
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowercase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
         sctx.errors.add(error)
       }
-      ops.foldRight(pickExpr(tree))((op, acc) =>
+      ops.foldRight(pickExpr(tree))((op, acc) => {
+        // The base record `acc` appears to the right of `op` (e.g. `{ op | acc }`), so the location
+        // of each constructed node must span both the operation and the accumulated base record.
+        val loc = op.loc.spanWith(acc.loc)
         op.kind match {
           case TreeKind.Expr.RecordOpExtend =>
             val id = pickNameIdent(op)
-            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), acc, op.loc)
+            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), acc, loc)
           case TreeKind.Expr.RecordOpRestrict =>
             val id = pickNameIdent(op)
-            Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
+            Expr.RecordRestrict(Name.mkLabel(id), acc, loc)
           case TreeKind.Expr.RecordOpUpdate =>
             val id = pickNameIdent(op)
             // An update is a restrict followed by an extension
-            val restricted = Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
-            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), restricted, op.loc)
+            val restricted = Expr.RecordRestrict(Name.mkLabel(id), acc, loc)
+            Expr.RecordExtend(Name.mkLabel(id), pickExpr(op), restricted, loc)
           case k => throw InternalCompilerException(s"'$k' is not a record operation", op.loc)
         }
-      )
+      })
     }
 
     private def visitLiteralArrayExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
@@ -1812,14 +1835,14 @@ object Weeder2 {
       // `def f(x)` becomes `def f(_unit: Unit, x)`.
       // `def f(x, y, ..)` is unchanged.
       fparams0 match {
-        case fparam :: Nil =>
+        case Nel(fparam, Nil) =>
           // Since a continuation argument must always be there, the underlying function needs a
           // unit param. For example `def f(k)` becomes `def f(_unit: Unit, k)`.
 
           // The new param has the zero-width location of the actual argument.
           val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.source, fparam.loc.start)
           val unitParam = Decls.unitFormalParameter(loc)
-          HandlerRule(ident, List(unitParam, fparam), expr, tree.loc)
+          HandlerRule(ident, Nel.of(unitParam, fparam), expr, tree.loc)
         case fparams =>
           HandlerRule(ident, fparams, expr, tree.loc)
       }
@@ -2096,10 +2119,9 @@ object Weeder2 {
       *   - `args = Some(Nil)` is an applied intrinsic with zero arguments (e.g. `%%EXAMPLE%%()`)
       *   - `args = Some(Cons(.., ..))` is an applied intrinsic with some arguments (e.g. `%%VECTOR_LENGTH%%(v)`)
       */
-    private def visitIntrinsic(tree: Tree, args: Option[List[Expr]])(implicit sctx: SharedContext): Expr = {
+    private def visitIntrinsic(tree: Tree, args: Option[List[Expr]], loc: SourceLocation)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.Intrinsic)
       val intrinsic = text(tree).head.stripPrefix("%%").stripSuffix("%%")
-      val loc = tree.loc
       val res = (intrinsic, args) match {
         case ("ARRAY_LENGTH", Some(e1 :: Nil)) => Expr.ArrayLength(e1, loc)
         case ("ARRAY_LOAD", Some(e1 :: e2 :: Nil)) => Expr.ArrayLoad(e1, e2, loc)
@@ -2395,7 +2417,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.TagBody)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       patterns.map(visitPattern(_, seen)) match {
-        case Nil => Nel(Pattern.Cst(Constant.Unit, tree.loc), Nil)
+        case Nil => Nel.of(Pattern.Cst(Constant.Unit, tree.loc))
         case x :: xs => Nel(x, xs)
       }
     }
@@ -2918,10 +2940,10 @@ object Weeder2 {
 
     private def visitRecordRowType(tree: Tree)(implicit sctx: SharedContext): Type = {
       expectAny(tree, List(TreeKind.Type.Record, TreeKind.Type.RecordRow))
-      val maybeVar = tryPick(TreeKind.Type.Variable, tree).map(visitVariableType)
+      val maybeType = tryPick(TreeKind.Type.Type, tree).map(visitType)
       val fields = pickAll(TreeKind.Type.RecordFieldFragment, tree).map(visitRecordField)
-      val variable = maybeVar.getOrElse(Type.RecordRowEmpty(tree.loc))
-      fields.foldRight(variable) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
+      val tail = maybeType.getOrElse(Type.RecordRowEmpty(tree.loc))
+      fields.foldRight(tail) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
     }
 
     private def visitRecordField(tree: Tree)(implicit sctx: SharedContext): (Name.Label, Type) = {
@@ -2947,7 +2969,7 @@ object Weeder2 {
       }
       pickAllTrees(parentTree).foldRight(rest) {
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
-          val qname = pickQName(parentTree)
+          val qname = pickQName(tree)
           val targs = Types.pickArguments(tree)
           Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
 
@@ -3011,18 +3033,15 @@ object Weeder2 {
             // ARROW FUNCTIONS
             case "->" =>
               val eff = tryPickEffect(tree)
-              val l = tree.loc.asSynthetic
-              val (lastParam, initParams) = t1 match {
+              val params = t1 match {
                 // Normally singleton tuples `((a, b))` are treated as `(a, b)`. That's fine unless we are doing an arrow type!
                 // In this case we need t1 "unflattened" so we redo the visit.
                 case Type.Tuple(_, _) =>
                   val t1Tree = pick(TreeKind.Type.Tuple, pick(TreeKind.Type.Type, tree))
-                  val params = pickAll(TreeKind.Type.Type, t1Tree).map(visitType)
-                  (params.last, params.init)
-                case t => (t, List.empty)
+                  pickAll(TreeKind.Type.Type, t1Tree).map(visitType)
+                case t => List(t)
               }
-              val base = Type.Arrow(List(lastParam), eff, t2, l)
-              initParams.foldRight(base)((acc, tpe) => Type.Arrow(List(acc), None, tpe, l))
+              mkCurriedArrow(params, eff, t2, tree.loc)
             // REGULAR TYPE OPERATORS
             case "+" => Type.Union(t1, t2, tree.loc)
             case "-" => Type.Difference(t1, t2, tree.loc)
@@ -3044,6 +3063,30 @@ object Weeder2 {
           }
 
         case operands => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands: $operands", tree.loc)
+      }
+    }
+
+    /**
+      * Returns the curried arrow type formed from the parameter types `params`, effect `eff`, and result
+      * type `tresult`.
+      *
+      * A multi-parameter arrow `(a, b) -> c` is curried into nested single-parameter arrows `a -> (b -> c)`.
+      * The outermost arrow is given the real location `loc` since it corresponds to the source arrow type,
+      * whereas the inner arrows introduced by currying are synthetic since they do not appear directly in the
+      * source. The innermost arrow carries the effect `eff`.
+      */
+    private def mkCurriedArrow(params: List[Type], eff: Option[Type], tresult: Type, loc: SourceLocation): Type = {
+      val synthLoc = loc.asSynthetic
+      params match {
+        case Nil =>
+          // A parameterless arrow cannot be written in source.
+          tresult
+        case onlyParam :: Nil =>
+          Type.Arrow(List(onlyParam), eff, tresult, loc)
+        case firstParam :: restParams =>
+          val innermost = Type.Arrow(List(restParams.last), eff, tresult, synthLoc)
+          val inner = restParams.init.foldRight(innermost: Type)((param, acc) => Type.Arrow(List(param), None, acc, synthLoc))
+          Type.Arrow(List(firstParam), None, inner, loc)
       }
     }
 
@@ -3253,9 +3296,11 @@ object Weeder2 {
   }
 
   private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): PredicateAndArity = {
-    val arityToken = pickToken(TokenKind.LiteralInt, tree)
     val ident = pickNameIdent(tree)
-    val arity = tryParsePredicateArity(arityToken)
+    val arity = tryPickToken(TokenKind.LiteralInt, tree) match {
+      case Some(token) => tryParsePredicateArity(token)
+      case None => 0 // The parser has already reported the missing integer literal.
+    }
     PredicateAndArity(Name.mkPred(ident), arity)
   }
 
@@ -3392,13 +3437,20 @@ object Weeder2 {
     * Picks out the first token of a specific [[TokenKind]].
     */
   private def pickToken(kind: TokenKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Token = {
-    tree.children.collectFirst {
-      case token: Token if token.kind == kind => token
-    } match {
+    tryPickToken(kind, tree) match {
       case Some(t) => t
       case _ =>
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
         throw PickException(error)
+    }
+  }
+
+  /**
+    * Tries to pick out the first token of a specific [[TokenKind]].
+    */
+  private def tryPickToken(kind: TokenKind, tree: Tree): Option[Token] = {
+    tree.children.collectFirst {
+      case token: Token if token.kind == kind => token
     }
   }
 
@@ -3478,9 +3530,8 @@ object Weeder2 {
   /**
     * An exception thrown by [[pick]] and [[pickToken]] when a required sub-tree or token is missing.
     *
-    * This bypasses the [[Validation]] machinery: the exception is thrown deep inside weeding and
-    * caught in [[weed]], where it is converted into a [[Validation.Failure]]. It exists so that the
-    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
+    * The exception is thrown deep inside weeding and caught in [[weed]], where the error is
+    * reported and the enclosing compilation unit is dropped.
     */
   private case class PickException(error: NeedAtleastOne) extends RuntimeException
 

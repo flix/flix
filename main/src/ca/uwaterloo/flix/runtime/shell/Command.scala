@@ -29,11 +29,6 @@ object Command {
   case object Nop extends Command
 
   /**
-    * Displays documentation about the fqn s
-    */
-  case class Info(s: String) extends Command
-
-  /**
     * Creates a new project in the current directory
     */
   case object Init extends Command
@@ -42,6 +37,11 @@ object Command {
     * Builds the current project.
     */
   case object Build extends Command
+
+  /**
+    * Builds the current project and writes the class files to the build directory.
+    */
+  case object BuildClasses extends Command
 
   /**
     * Builds a jar file from the current project.
@@ -127,17 +127,14 @@ object Command {
     if (input.trim == "")
       return Command.Nop
 
-    val infoPattern = raw":i(nfo)?\s+(\S+)\s*".r
-    input match {
-      case infoPattern(_, s) => return Command.Info(s)
-      case _ => // no-op
-    }
-
     if (input == ":init")
       return Command.Init
 
     if (input == ":build" || input == ":b")
       return Command.Build
+
+    if (input == ":build-classes")
+      return Command.BuildClasses
 
     if (input == ":check" || input == ":c")
       return Command.Check
@@ -145,16 +142,16 @@ object Command {
     if (input == ":doc" || input == ":d")
       return Command.Doc
 
-    if (input == ":format" || input == ":fmt")
+    if (input == ":format")
       return Command.Format
 
-    if (input == ":build-jar" || input == ":jar")
+    if (input == ":build-jar")
       return Command.BuildJar
 
-    if (input == ":build-fatjar" || input == ":fatjar")
+    if (input == ":build-fatjar")
       return Command.BuildFatJar
 
-    if (input == ":build-pkg" || input == ":pkg")
+    if (input == ":build-pkg")
       return Command.BuildPkg
 
     if (input == ":release")

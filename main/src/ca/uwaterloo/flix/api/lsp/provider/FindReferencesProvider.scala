@@ -128,7 +128,7 @@ object FindReferencesProvider {
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
-    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal
@@ -220,7 +220,7 @@ object FindReferencesProvider {
     case TypedAst.StructField(sym, _, _) => Some(getStructFieldSymOccurs(sym))
     case SymUse.StructFieldSymUse(sym, _) => Some(getStructFieldSymOccurs(sym))
     // Traits
-    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
     case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
     // Type Alias
     case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))

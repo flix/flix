@@ -6,7 +6,6 @@ import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Typer.SharedContext
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
-import ca.uwaterloo.flix.util.Validation
 import scala.collection.mutable
 
 object DefaultHandlers {
@@ -66,7 +65,7 @@ object DefaultHandlers {
     * @param handlerSym The symbol of the handler function
     * @param handlerDef The definition of the handler function
     * @param root       The typed AST root
-    * @return [[Validation]] of [[TypedAst.DefaultHandler]] or [[TypeError]]
+    * @return `Some` [[TypedAst.DefaultHandler]] if the handler is valid, `None` otherwise (errors are reported via `sctx`)
     */
   private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: KindedAst.Def, root: KindedAst.Root)(implicit flix: Flix, sctx: SharedContext, traitEnv: TraitEnv, eqEnv: EqualityEnv): Option[TypedAst.DefaultHandler] = {
     var errors = false

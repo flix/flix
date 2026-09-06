@@ -18,9 +18,10 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.Symbol
 
-import java.nio.file.Path
-
 object Options {
+  // Enable constraint-based monomorphization if "XNEWMONO" env var is set.
+  private def EnableMono2: Boolean = sys.env.get("XNEWMONO").contains("1")
+
   /**
     * Default options.
     */
@@ -33,26 +34,25 @@ object Options {
     installDeps = false,
     incremental = true,
     json = false,
-    outputJvm = false,
-    outputPath = Path.of("./build/"),
     progress = false,
     threads = Runtime.getRuntime.availableProcessors(),
-    loadClassFiles = true,
     assumeYes = false,
     xprintphases = false,
     xnodeprecated = false,
     xsummary = false,
     xsubeffecting = Set.empty,
+    xnewmono = EnableMono2,
     XPerfN = None,
     XPerfFrontend = false,
     XPerfPar = false,
-    xchaosMonkey = false
+    xchaosMonkey = false,
+    xverify = false
   )
 
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, xnodeprecated = true, xchaosMonkey = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, xnodeprecated = true, xchaosMonkey = true, xverify = true)
 
   /**
     * Default test options with the standard library.
@@ -81,11 +81,8 @@ object Options {
   * @param incremental    enables incremental compilation.
   * @param installDeps    enables automatic installation of dependencies.
   * @param json           enable json output.
-  * @param outputJvm      Enable JVM bytecode output.
-  * @param outputPath     The path to the output folder.
   * @param progress       print progress during compilation.
   * @param threads        selects the number of threads to use.
-  * @param loadClassFiles loads the generated class files into the JVM.
   * @param assumeYes      run non-interactively and assume answer to all prompts is yes.
   */
 case class Options(lib: LibLevel,
@@ -97,19 +94,18 @@ case class Options(lib: LibLevel,
                    installDeps: Boolean,
                    json: Boolean,
                    progress: Boolean,
-                   outputJvm: Boolean,
-                   outputPath: Path,
                    threads: Int,
-                   loadClassFiles: Boolean,
                    assumeYes: Boolean,
                    xprintphases: Boolean,
                    xnodeprecated: Boolean,
                    xsummary: Boolean,
                    xsubeffecting: Set[Subeffecting],
+                   xnewmono: Boolean,
                    XPerfFrontend: Boolean,
                    XPerfPar: Boolean,
                    XPerfN: Option[Int],
-                   xchaosMonkey: Boolean
+                   xchaosMonkey: Boolean,
+                   xverify: Boolean
                   )
 
 /**
