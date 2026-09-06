@@ -657,18 +657,15 @@ object TypeReconstruction {
       val normalArgs = es.take(declaredArity - 1)
       val varArgExprs = es.drop(declaredArity - 1)
 
-      // Check if a single trailing arg is already a Vector/Array (from ...{} syntax).
+      // A single trailing argument is the varargs array itself if it is assignable to the array parameter.
+      // Otherwise it is an element, e.g. a `Vector[Int32]` passed for `T...` (erased to `Object[]`).
       val alreadyWrapped = varArgExprs match {
-        case single :: Nil => single.tpe.baseType match {
-          case Type.Cst(TypeConstructor.Vector, _) => true
-          case Type.Cst(TypeConstructor.Array, _) => true
-          case _ => false
-        }
+        case single :: Nil => JavaTypes.isVarArgsArray(single.tpe, descriptor.parameterType(declaredArity - 1), loc)
         case _ => false
       }
 
       if (alreadyWrapped) {
-        // Already a vector/array, no wrapping needed.
+        // Already the varargs array, no wrapping needed.
         es
       } else {
         // Case 2: Individual varargs arguments. Wrap them into a VectorLit.
