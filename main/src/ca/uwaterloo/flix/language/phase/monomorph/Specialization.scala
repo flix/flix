@@ -1414,7 +1414,7 @@ object Specialization {
   private def eval(eff: Type): CofiniteSet[Symbol.EffSym] = eff match {
     case Type.Univ => CofiniteSet.universe
     case Type.Pure => CofiniteSet.empty
-    case EffectType(sym) =>
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) =>
       CofiniteSet.mkSet(sym)
     case Type.Cst(TypeConstructor.Region(_), _) =>
       CofiniteSet.mkSet(RegionInstantiation.sym)
@@ -1428,14 +1428,9 @@ object Specialization {
       CofiniteSet.difference(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
       CofiniteSet.xor(eval(x), eval(y))
+    // Effect arguments are erased at the monomorphic boundary.
+    case Type.Apply(tpe, _, _) => eval(tpe)
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
-  }
-
-  /** Extracts the symbol from a fully applied or nullary effect type. */
-  private object EffectType {
-    def unapply(tpe: Type): Option[Symbol.EffSym] = tpe.typeConstructor.collect {
-      case TypeConstructor.Effect(sym, _) => sym
-    }
   }
 
   /** Returns the [[Type]] representation of `set` with `loc`. */

@@ -45,7 +45,7 @@ private[monomorph2] object Canonicalization {
   private[monomorph2] def evalEff(eff: Type): CofiniteSet[Symbol.EffSym] = eff match {
     case Type.Univ                                                                      => CofiniteSet.universe
     case Type.Pure                                                                      => CofiniteSet.empty
-    case EffectType(sym)                                                                => CofiniteSet.mkSet(sym)
+    case Type.Cst(TypeConstructor.Effect(sym, _), _)                                    => CofiniteSet.mkSet(sym)
     case Type.Cst(TypeConstructor.Region(_), _)                                         => CofiniteSet.mkSet(Symbol.IO)
     case Type.Alias(_, _, inner, _)                                                     => evalEff(inner)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _)                      => CofiniteSet.complement(evalEff(y))
@@ -53,14 +53,9 @@ private[monomorph2] object Canonicalization {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _)  => CofiniteSet.intersection(evalEff(x), evalEff(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _)    => CofiniteSet.difference(evalEff(x), evalEff(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) => CofiniteSet.xor(evalEff(x), evalEff(y))
+    // Effect arguments are erased at the monomorphic boundary.
+    case Type.Apply(tpe, _, _)                                                          => evalEff(tpe)
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
-  }
-
-  /** Extracts the symbol from a fully applied or nullary effect type. */
-  private object EffectType {
-    def unapply(tpe: Type): Option[Symbol.EffSym] = tpe.typeConstructor.collect {
-      case TypeConstructor.Effect(sym, _) => sym
-    }
   }
 
   /**
