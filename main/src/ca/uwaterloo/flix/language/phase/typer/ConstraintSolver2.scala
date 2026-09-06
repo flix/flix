@@ -141,8 +141,8 @@ object ConstraintSolver2 {
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
     val initialConstrs = constrs0.map(initialSubst.apply)
-    val effectArgConstrs = mkEffectArgConstraints(initialConstrs, initialSubst)
-    val constrs = effectArgConstrs ::: initialConstrs
+    val effectArgEqualities = collectEffectArgumentEqualities(initialConstrs, initialSubst)
+    val constrs = effectArgEqualities ::: initialConstrs
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
     val res = soup.exhaustively(progress)(solveOne)
@@ -150,10 +150,20 @@ object ConstraintSolver2 {
   }
 
   /**
-    * Returns pointwise equality constraints between the arguments of every saturated application
-    * of the same effect constructor in the constraint system.
+    * Collects pointwise equalities between saturated applications of the same effect constructor.
+    * Every occurrence in one constraint system must agree on the constructor's type arguments.
+    *
+    * For example, given the declarations:
+    * {{{
+    * eff F[t] {
+    *     def op(x: t): Unit
+    * }
+    * def f(): Unit \ F[Int32] + F[String] = ()
+    * }}}
+    * the two applications of `F` produce the additional equality `Int32 ~ String`, making `f`
+    * ill-typed before its effect equations are solved.
     */
-  private def mkEffectArgConstraints(constrs: List[TypeConstraint], initialSubst: SubstitutionTree): List[TypeConstraint] = {
+  private def collectEffectArgumentEqualities(constrs: List[TypeConstraint], initialSubst: SubstitutionTree): List[TypeConstraint] = {
     val applications = mutable.Map.empty[Symbol.EffSym, mutable.ListBuffer[Type]]
 
     def visitType(tpe: Type): Unit = tpe match {
@@ -182,7 +192,9 @@ object ConstraintSolver2 {
       case Type.UnresolvedJvmType(member, _) =>
         member.getTypeArguments.foreach(visitType)
 
-      case Type.Var(_, _) | Type.Cst(_, _) => ()
+      case Type.Var(_, _) => ()
+
+      case Type.Cst(_, _) => ()
     }
 
     def visitConstraint(constr: TypeConstraint): Unit = constr match {
@@ -209,19 +221,19 @@ object ConstraintSolver2 {
     constrs.foreach(visitConstraint)
     visitSubstitutionTree(initialSubst)
 
-    applications.keys.toList.sorted.flatMap { sym =>
-      val occurrences = applications(sym).toList.sortBy(tpe => (tpe.loc, tpe.toString)).distinct
-      occurrences match {
-        case representative :: rest =>
-          rest.flatMap { occurrence =>
-            representative.typeArguments.zip(occurrence.typeArguments).collect {
-              case (tpe1, tpe2) if tpe1 != tpe2 =>
-                TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(representative, occurrence, occurrence.loc))
-            }
+    val equalities = mutable.ListBuffer.empty[TypeConstraint]
+    applications.toList.sortBy(_._1).foreach {
+      case (_, effectApplications) =>
+        val occurrences = effectApplications.toList.sortBy(_.loc).distinct
+        val representative = occurrences.head
+        occurrences.tail.foreach { occurrence =>
+          representative.typeArguments.zip(occurrence.typeArguments).foreach {
+            case (tpe1, tpe2) =>
+              equalities += TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(representative, occurrence, occurrence.loc))
           }
-        case Nil => Nil
+        }
       }
-    }
+    equalities.toList
   }
 
   /**

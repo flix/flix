@@ -32,8 +32,13 @@ private object AtomBimap {
     * [[ca.uwaterloo.flix.language.phase.unification.set.SetUnification]].
     */
   def fromConstraints(eqs: List[TypeConstraint.Equality])(implicit scope: RegionScope, renv: RigidityEnv): AtomBimap = {
+    // The distinct effect atoms that occur in the equations.
     val buf = mutable.HashSet.empty[EffAtom]
+
+    // The arguments used to reconstruct each effect constructor after set unification.
     val effectArgs = mutable.Map.empty[Symbol.EffSym, List[Type]]
+
+    // The effect constructors that occur with more than one argument list.
     val conflictedEffects = mutable.Set.empty[Symbol.EffSym]
     for (eq <- eqs) {
       EffAtom.collectAtoms(eq.tpe1, buf, effectArgs, conflictedEffects)

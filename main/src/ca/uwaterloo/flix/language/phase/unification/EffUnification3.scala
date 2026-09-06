@@ -216,7 +216,11 @@ object EffUnification3 {
     case _ => throw InvalidType(t)
   }
 
-  /** Returns whether `tpe` is a saturated application of an effect constructor. */
+  /**
+    * Returns whether `tpe` is a saturated application of an effect constructor.
+    *
+    * For example, if `F` has kind `Type -> Eff`, then `F[Int32]` is saturated while `F` is not.
+    */
   private def isSaturatedEffect(tpe: Type): Boolean = {
     if (tpe.kind != Kind.Eff) {
       false
