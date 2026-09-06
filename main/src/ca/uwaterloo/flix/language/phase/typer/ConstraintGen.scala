@@ -884,8 +884,9 @@ object ConstraintGen {
 
       case Expr.Handler(symUse, rules, tvar, evar1, evar2, loc) =>
         //
-        // ∀i. Γ, opix1: opit1, .., ki: opit -> t \ k_ef ⊢ ei: t \ ei_ef
-        //     k_ef = (ef - Eff) ∪ (∪_i ei_ef)
+        // β̄ fresh
+        // ∀i. Γ, opix1: opit1[ᾱ ↦ β̄], .., ki: opit[ᾱ ↦ β̄] -> t \ k_ef ⊢ ei: t \ ei_ef
+        //     k_ef = (ef - Eff[β̄]) ∪ (∪_i ei_ef)
         // ---------------------------------------------------------------------
         // Γ ⊢ handler Eff {
         //   def op1(op1x1, .., k1) = e1
@@ -894,24 +895,24 @@ object ConstraintGen {
         // }: (Unit -> t \ ef) -> t \ k_ef
         //
         // where:
-        // eff Eff {
+        // eff Eff[ᾱ] {
         //  def op1(op1x1: op1t1, ..): op1t
         //  def op2(op2x1: op2t2, ..): op2t
         //  ..
         // }
         //
         val effect = root.effects(symUse.sym)
-        val targs = effect.tparams.map(tparam => freshVar(tparam.sym.kind, loc))
-        val effectSubst = Substitution(effect.tparams.map(_.sym).zip(targs).toMap)
+        val effectParams: List[(Symbol.KindedTypeVarSym, Type)] = effect.tparams.map(tparam => tparam.sym -> freshVar(tparam.sym.kind, loc))
+        val effectParamMap = effectParams.toMap
         val effectKind = effect.tparams.foldRight(Kind.Eff: Kind) {
           case (tparam, acc) => tparam.sym.kind ->: acc
         }
 
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, effectSubst)).unzip
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, effectParamMap)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
 
         val handledEffectConstructor = Type.Cst(TypeConstructor.Effect(symUse.sym, effectKind), symUse.qname.loc)
-        val handledEffect = Type.mkApply(handledEffectConstructor, targs, symUse.qname.loc)
+        val handledEffect = Type.mkApply(handledEffectConstructor, effectParams.map(_._2), symUse.qname.loc)
         // Subtract the effect from the body effect and add the handler effects.
         val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(evar2, continuationEffect, loc)
@@ -1306,12 +1307,13 @@ object ConstraintGen {
     *
     * @param tryBlockTpe        the type of the try-block associated with the handler
     * @param continuationEffect the effect of the continuation
-    * @param effectSubst        the shared instantiation of the effect's type parameters
+    * @param effectParams       the shared instantiation of the effect's type parameters
     */
-  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, effectSubst: Substitution)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
+  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, effectParams: Map[Symbol.KindedTypeVarSym, Type])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.HandlerRule(symUse, actualFparams0, body, opTvar, loc) =>
       val effect = root.effects(symUse.sym.eff)
       val ops = effect.ops.map(op => op.sym -> op).toMap
+      def instantiate(tpe: Type): Type = tpe.map(tvar => effectParams.getOrElse(tvar.sym, tvar))
       // The effect parameters have already been instantiated once for the enclosing handler.
       // Don't need to handle unknown op because resolver would have caught this
       // The last formal parameter is the resumption, the rest correspond to the operation's parameters.
@@ -1319,8 +1321,8 @@ object ConstraintGen {
       val resumptionFparam = actualFparams0.last
       ops(symUse.sym) match {
         case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _), _) =>
-          val expectedParamTypes = expectedFparams.toList.map(fparam => effectSubst(fparam.tpe))
-          val resumptionArgType = effectSubst(opTpe)
+          val expectedParamTypes = expectedFparams.toList.map(fparam => instantiate(fparam.tpe))
+          val resumptionArgType = instantiate(opTpe)
           val resumptionResType = tryBlockTpe
           val resumptionEff = continuationEffect
           val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
