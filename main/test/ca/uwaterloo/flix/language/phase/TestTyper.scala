@@ -1618,6 +1618,144 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TestPolymorphicEffectHandler.Pos.01") {
+    val input =
+      """
+        |eff State[s] {
+        |    def get(): s
+        |    def put(x: s): Unit
+        |}
+        |
+        |def f(): Int32 =
+        |    run {
+        |        State.put(42);
+        |        State.get()
+        |    } with handler State {
+        |        def get(k) = k(0)
+        |        def put(_x, k) = k(())
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("TestPolymorphicEffect.Pos.01") {
+    val input =
+      """
+        |eff Emit[t] {
+        |    def emit(x: t): Unit
+        |}
+        |
+        |def emitInt(): Unit \ Emit[Int32] = Emit.emit(42)
+        |
+        |def emitString(): Unit \ Emit[String] = Emit.emit("hello")
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("TestPolymorphicEffect.Pos.02") {
+    val input =
+      """
+        |eff F[t] {
+        |    def f(x: t): Unit
+        |}
+        |
+        |eff G[t] {
+        |    def g(x: t): Unit
+        |}
+        |
+        |def useBoth(): Unit \ F[Int32] + G[String] = {
+        |    F.f(42);
+        |    G.g("hello")
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("TestPolymorphicEffect.Pos.03") {
+    val input =
+      """
+        |eff Pair[a, b] {
+        |    def put(x: a, y: b): Unit
+        |}
+        |
+        |def f(): Unit \ Pair[Int32, String] = Pair.put(42, "hello")
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("TestPolymorphicEffectHandler.Neg.01") {
+    val input =
+      """
+        |eff State[s] {
+        |    def get(): s
+        |    def put(x: s): Unit
+        |}
+        |
+        |def f(): Unit =
+        |    run {
+        |        ()
+        |    } with handler State {
+        |        def get(k) = k("hello")
+        |        def put(x, k) = {
+        |            let _y: Int32 = x;
+        |            k(())
+        |        }
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedType](result)
+  }
+
+  test("TestPolymorphicEffect.Neg.01") {
+    val input =
+      """
+        |eff Emit[t] {
+        |    def emit(x: t): Unit
+        |}
+        |
+        |def f(): Unit \ Emit[Int32] + Emit[String] = {
+        |    Emit.emit(42);
+        |    Emit.emit("hello")
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[MismatchedTypes](result)
+  }
+
+  test("TestPolymorphicEffect.Neg.02") {
+    val input =
+      """
+        |eff Emit[t] {
+        |    def emit(x: t): Unit
+        |}
+        |
+        |def f(g: Unit -> Unit \ Emit[Int32], h: Unit -> Unit \ Emit[String]): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[MismatchedTypes](result)
+  }
+
+  test("TestPolymorphicEffect.Neg.03") {
+    val input =
+      """
+        |eff Pair[a, b] {
+        |    def put(x: a, y: b): Unit
+        |}
+        |
+        |def f(): Unit =
+        |    region _rc {
+        |        Pair.put(42, "hello");
+        |        Pair.put(42, true)
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedArg](result)
+  }
+
   test("TestTryCatch.01") {
     val input =
       """

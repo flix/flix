@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.PreEffUnification.PreSolveResult
@@ -166,6 +166,11 @@ object EffUnification3 {
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       SetFormula.mkElemSet(x)
 
+    case tpe@Type.Apply(_, _, _) if isSaturatedEffect(tpe) =>
+      val x = m.getForwardIndex(EffAtom.fromType(tpe))
+      if (x < 0) throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
+      SetFormula.mkElemSet(x)
+
     case tpe@Type.Cst(TypeConstructor.Region(_), _) =>
       val x = m.getForwardIndex(EffAtom.fromType(tpe))
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
@@ -201,6 +206,18 @@ object EffUnification3 {
     case Type.Alias(_, _, tpe, _) => toSetFormula(tpe)
 
     case _ => throw InvalidType(t)
+  }
+
+  /** Returns whether `tpe` is a saturated application of an effect constructor. */
+  private def isSaturatedEffect(tpe: Type): Boolean = {
+    if (tpe.kind != Kind.Eff) {
+      false
+    } else {
+      tpe.baseType match {
+        case Type.Cst(TypeConstructor.Effect(_, _), _) => true
+        case _ => false
+      }
+    }
   }
 
   /** Returns [[Substitution]] where each mapping in `s` is converted to [[Type]]. */

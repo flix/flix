@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{ChaosMonkey, Result}
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
   * The constraint solver reduces a collection of constraints by iteratively applying reduction rules.
@@ -139,11 +140,88 @@ object ConstraintSolver2 {
     * Solves the given constraint set as far as possible.
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
-    val constrs = constrs0.map(initialSubst.apply)
+    val initialConstrs = constrs0.map(initialSubst.apply)
+    val effectArgConstrs = mkEffectArgConstraints(initialConstrs, initialSubst)
+    val constrs = effectArgConstrs ::: initialConstrs
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
     val res = soup.exhaustively(progress)(solveOne)
     res.get
+  }
+
+  /**
+    * Returns pointwise equality constraints between the arguments of every saturated application
+    * of the same effect constructor in the constraint system.
+    */
+  private def mkEffectArgConstraints(constrs: List[TypeConstraint], initialSubst: SubstitutionTree): List[TypeConstraint] = {
+    val applications = mutable.Map.empty[Symbol.EffSym, mutable.ListBuffer[Type]]
+
+    def visitType(tpe: Type): Unit = tpe match {
+      case app@Type.Apply(tpe1, tpe2, _) =>
+        app.baseType match {
+          case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
+            applications.getOrElseUpdate(sym, mutable.ListBuffer.empty) += app
+          case _ => ()
+        }
+        visitType(tpe1)
+        visitType(tpe2)
+
+      case Type.Alias(_, args, inner, _) =>
+        args.foreach(visitType)
+        visitType(inner)
+
+      case Type.AssocType(_, arg, _, _) =>
+        visitType(arg)
+
+      case Type.JvmToType(inner, _) =>
+        visitType(inner)
+
+      case Type.JvmToEff(inner, _) =>
+        visitType(inner)
+
+      case Type.UnresolvedJvmType(member, _) =>
+        member.getTypeArguments.foreach(visitType)
+
+      case Type.Var(_, _) | Type.Cst(_, _) => ()
+    }
+
+    def visitConstraint(constr: TypeConstraint): Unit = constr match {
+      case TypeConstraint.Equality(tpe1, tpe2, _) =>
+        visitType(tpe1)
+        visitType(tpe2)
+      case TypeConstraint.Trait(_, tpe, _) =>
+        visitType(tpe)
+      case TypeConstraint.Purification(_, eff1, eff2, _, nested) =>
+        visitType(eff1)
+        visitType(eff2)
+        nested.foreach(visitConstraint)
+      case TypeConstraint.Conflicted(tpe1, tpe2, _) =>
+        visitType(tpe1)
+        visitType(tpe2)
+      case TypeConstraint.EffConflicted(_) => ()
+    }
+
+    def visitSubstitutionTree(tree: SubstitutionTree): Unit = {
+      tree.root.m.values.foreach(visitType)
+      tree.branches.values.foreach(visitSubstitutionTree)
+    }
+
+    constrs.foreach(visitConstraint)
+    visitSubstitutionTree(initialSubst)
+
+    applications.keys.toList.sorted.flatMap { sym =>
+      val occurrences = applications(sym).toList.sortBy(tpe => (tpe.loc, tpe.toString)).distinct
+      occurrences match {
+        case representative :: rest =>
+          rest.flatMap { occurrence =>
+            representative.typeArguments.zip(occurrence.typeArguments).collect {
+              case (tpe1, tpe2) if tpe1 != tpe2 =>
+                TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(representative, occurrence, occurrence.loc))
+            }
+          }
+        case Nil => Nil
+      }
+    }
   }
 
   /**
