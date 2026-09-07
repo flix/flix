@@ -58,10 +58,13 @@ def main(): Unit \ IO =
         // The farmer crosses with the cabbage: both go from `f` to `f2`; `w` and `g` stay put.
         Step(f, w, g, f, "cabbage", f2, w,  g,  f2) :- Travel(f, f2), Bank(w), Bank(g).
 
-        // Nothing is eaten if the goat is with the farmer, or if the wolf and
-        // the cabbage are with the farmer (and hence the goat is left alone).
-        Safe(x, y, x, z) :- Bank(x), Bank(y), Bank(z).
-        Safe(x, x, y, x) :- Bank(x), Bank(y).
+        // Nothing is eaten if the goat is with the farmer: the wolf and the
+        // cabbage may then be on either bank.
+        Safe(f, w, f, c) :- Bank(f), Bank(w), Bank(c).
+
+        // Nothing is eaten if the wolf and the cabbage are with the farmer: the
+        // goat is then either with everyone else or alone on the other bank.
+        Safe(f, f, g, f) :- Bank(f), Bank(g).
 
         // Everyone starts on the west bank.
         Reachable("west", "west", "west", "west").
