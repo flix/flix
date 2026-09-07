@@ -23,7 +23,7 @@ import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods.{compact, parse, render}
 
-import java.io.{FileNotFoundException, IOException, InputStream}
+import java.io.{IOException, InputStream}
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{URI, URL, URLEncoder}
@@ -50,9 +50,8 @@ object GitHub {
   /**
     * An asset from a GitHub project release.
     *
-    * `url` is the public download link -- unmetered, but unusable for a private repo's assets,
-    * which 404 there regardless of any credential. `apiUrl` is the same asset via the REST API,
-    * which does support one; see [[downloadAsset]].
+    * `url` is its `browser_download_url`; `apiUrl` is its REST API asset URL. See
+    * [[downloadAsset]] for how each is used.
     */
   case class Asset(name: String, url: URL, apiUrl: URL)
 
@@ -332,14 +331,11 @@ object GitHub {
   /**
     * Downloads the given asset.
     *
-    * Tries `asset.url` first -- the public, unmetered address -- and falls back to `asset.apiUrl`
-    * only if that 404s and `apiKey` is given. The public address 404s unconditionally for a
-    * private repo's assets, no matter what credential is sent to it; the REST API asset endpoint
-    * is the one that actually honors a bearer token, at the cost of counting against the rate
-    * limit like any other API call.
+    * Uses the REST API asset endpoint with bearer authentication when `apiKey` is given.
+    * Otherwise, uses the asset's browser download URL. The caller closes the returned stream.
     */
   def downloadAsset(asset: Asset, apiKey: Option[String]): InputStream =
-    tryPublicThenApi(apiKey)(asset.url.openStream()) { key =>
+    tryApiThenPublic(apiKey)(asset.url.openStream()) { key =>
       val conn = asset.apiUrl.openConnection()
       conn.setRequestProperty("Accept", "application/octet-stream")
       conn.setRequestProperty("Authorization", "Bearer " + key)
@@ -347,27 +343,14 @@ object GitHub {
     }
 
   /**
-    * Returns `publicAttempt`, or `apiAttempt` applied to the key if `publicAttempt` throws
-    * [[FileNotFoundException]] and `apiKey` is given.
+    * Returns `apiAttempt` applied to the key when `apiKey` is given, or `publicAttempt` otherwise.
     *
-    * Package-private, and the attempts are parameters rather than inlined into [[downloadAsset]],
-    * so this can be tested without a network.
-    *
-    * Without `apiKey` a [[FileNotFoundException]] is not retried: the public address 404s
-    * unconditionally for a private repo's assets, so without a credential to try instead,
-    * `apiAttempt` would just 404 again too. `apiAttempt` takes the key directly, rather than
-    * closing over `apiKey` itself, so it cannot be called without one -- the type says so, not a
-    * convention the caller has to remember.
+    * Package-private to allow testing the selection without network access.
     */
-  private[github] def tryPublicThenApi[A](apiKey: Option[String])(publicAttempt: => A)(apiAttempt: String => A): A =
+  private[github] def tryApiThenPublic[A](apiKey: Option[String])(publicAttempt: => A)(apiAttempt: String => A): A =
     apiKey match {
       case None => publicAttempt
-      case Some(key) =>
-        try {
-          publicAttempt
-        } catch {
-          case _: FileNotFoundException => apiAttempt(key)
-        }
+      case Some(key) => apiAttempt(key)
     }
 
   /**
@@ -416,8 +399,8 @@ object GitHub {
   /**
     * Parses an Asset JSON.
     *
-    * Package-private so the split between `url` (public) and `apiUrl` (authenticated) can be
-    * tested without a network.
+    * Package-private so the split between the browser and REST API URLs can be tested without a
+    * network.
     */
   private[github] def parseAsset(asset: JValue): Asset = {
     val url = asset \ "browser_download_url"
