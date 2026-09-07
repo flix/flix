@@ -1,15 +1,11 @@
-//
-// The wolf, goat, and cabbage problem is a river crossing puzzle that dates
-// back to at least the 9th century:
-//
-//     A farmer with a wolf, a goat, and a cabbage must cross a river by boat.
-//     The boat can carry only the farmer and a single item. If left unattended
-//     together, the wolf would eat the goat, or the goat would eat the cabbage.
-//     How can they cross the river without anything being eaten?
-//
-
 ///
-/// Solves the wolf, goat, and cabbage problem.
+/// Solves the wolf, goat, and cabbage problem, a river crossing puzzle that
+/// dates back to at least the 9th century:
+///
+///     A farmer with a wolf, a goat, and a cabbage must cross a river by boat.
+///     The boat can carry only the farmer and a single item. If left unattended
+///     together, the wolf would eat the goat, or the goat would eat the cabbage.
+///     How can they cross the river without anything being eaten?
 ///
 /// We model a configuration as the four banks that the farmer, wolf, goat, and
 /// cabbage are currently on. A single crossing is a `Step`: the fact
