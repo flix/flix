@@ -79,10 +79,11 @@ def main(): Unit \ IO =
         // Every application of this rule is one crossing, so the derivation of
         // a `Reachable` fact is the sequence of crossings that leads to it.
         //
-        // Note that `Reachable` occurs *before* `Step` in the body. A provenance
-        // query lists the facts of a proof in pre-order, so the sub-proof of the
-        // earlier crossings comes before the `Step` of the latest one. That is
-        // what puts the crossings in chronological order.
+        // Note that the rule is left-recursive: `Reachable` comes first in the
+        // body. A provenance query lists the facts of a proof in pre-order, so
+        // the recursive sub-proof, which holds all the earlier crossings, is
+        // listed before the `Step` of the latest one. That puts the crossings
+        // in chronological order.
         Reachable(f2, w2, g2, c2) :-
             Reachable(f, w, g, c),
             Step(f, w, g, c, _, f2, w2, g2, c2),
