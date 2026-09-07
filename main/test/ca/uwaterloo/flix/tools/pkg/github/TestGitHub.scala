@@ -15,9 +15,12 @@
  */
 package ca.uwaterloo.flix.tools.pkg.github
 
+import ca.uwaterloo.flix.tools.pkg.PackageError
 import org.json4s.JsonDSL.*
 import org.json4s.JValue
 import org.scalatest.funsuite.AnyFunSuite
+
+import java.net.URI
 
 // `GitHub.tryApiThenPublic` chooses the download route, so it is tested directly with stubbed
 // attempts rather than against GitHub.
@@ -38,6 +41,19 @@ class TestGitHub extends AnyFunSuite {
     assertThrows[RuntimeException] {
       GitHub.tryApiThenPublic(apiKey = Some("token"))(fail("must not try the public URL after an API failure"))(_ => throw new RuntimeException("refused"))
     }
+  }
+
+  test("downloadFailure.01: classifies authentication and rate-limit refusals") {
+    val url = new URI("https://api.github.com/repos/owner/repo/releases/assets/1").toURL
+
+    assertResult(PackageError.DownloadRefused(url, 403, Some("60")))(GitHub.downloadFailure(url, 403, Some("60")))
+    assertResult(PackageError.DownloadRefused(url, 429, None))(GitHub.downloadFailure(url, 429, None))
+  }
+
+  test("downloadFailure.02: preserves unexpected response statuses") {
+    val url = new URI("https://api.github.com/repos/owner/repo/releases/assets/1").toURL
+
+    assertResult(PackageError.DownloadFailed(url, 401))(GitHub.downloadFailure(url, 401, None))
   }
 
   test("parseAsset.01: url and apiUrl are read from different JSON fields") {
