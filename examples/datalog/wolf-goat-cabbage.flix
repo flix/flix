@@ -46,11 +46,16 @@ def main(): Unit \ IO =
         Travel("west", "east").
         Travel("east", "west").
 
-        // The farmer crosses alone, or with the wolf, the goat, or the cabbage.
-        // The `Bank` atoms bind the variables that do not occur in `Travel`.
+        // The farmer crosses alone: from `f` to `f2`; `w`, `g`, and `c` stay put.
         Step(f, w, g, c, "nothing", f2, w,  g,  c ) :- Travel(f, f2), Bank(w), Bank(g), Bank(c).
+
+        // The farmer crosses with the wolf: both go from `f` to `f2`; `g` and `c` stay put.
         Step(f, f, g, c, "wolf",    f2, f2, g,  c ) :- Travel(f, f2), Bank(g), Bank(c).
+
+        // The farmer crosses with the goat: both go from `f` to `f2`; `w` and `c` stay put.
         Step(f, w, f, c, "goat",    f2, w,  f2, c ) :- Travel(f, f2), Bank(w), Bank(c).
+
+        // The farmer crosses with the cabbage: both go from `f` to `f2`; `w` and `g` stay put.
         Step(f, w, g, f, "cabbage", f2, w,  g,  f2) :- Travel(f, f2), Bank(w), Bank(g).
 
         // Nothing is eaten if the goat is with the farmer, or if the wolf and
