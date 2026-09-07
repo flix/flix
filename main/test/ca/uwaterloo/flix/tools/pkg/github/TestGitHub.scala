@@ -19,32 +19,24 @@ import org.json4s.JsonDSL.*
 import org.json4s.JValue
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.io.FileNotFoundException
-
-// `GitHub.tryPublicThenApi` decides whether a private repo's release assets can be downloaded at
-// all, so it is tested directly, with stubbed attempts, rather than against GitHub.
+// `GitHub.tryApiThenPublic` chooses the download route, so it is tested directly with stubbed
+// attempts rather than against GitHub.
 
 class TestGitHub extends AnyFunSuite {
 
-  test("tryPublicThenApi.01: a public hit is used, without trying the API") {
-    val result = GitHub.tryPublicThenApi(apiKey = Some("token"))("public")(_ => fail("must not try the API after a public hit"))
-    assertResult(expected = "public")(actual = result)
-  }
-
-  test("tryPublicThenApi.02: without an apiKey, a 404 is not retried") {
-    assertThrows[FileNotFoundException] {
-      GitHub.tryPublicThenApi(apiKey = None)(throw new FileNotFoundException())(_ => fail("must not try the API without an apiKey"))
-    }
-  }
-
-  test("tryPublicThenApi.03: with an apiKey, a 404 falls back to the API attempt, given that key") {
-    val result = GitHub.tryPublicThenApi(apiKey = Some("token"))(throw new FileNotFoundException())(key => s"api:$key")
+  test("tryApiThenPublic.01: with an apiKey, the API is used without trying the public URL") {
+    val result = GitHub.tryApiThenPublic(apiKey = Some("token"))(fail("must not try the public URL when an apiKey is available"))(key => s"api:$key")
     assertResult(expected = "api:token")(actual = result)
   }
 
-  test("tryPublicThenApi.04: a failure other than a 404 is not retried, even with an apiKey") {
+  test("tryApiThenPublic.02: without an apiKey, the public URL is used without trying the API") {
+    val result = GitHub.tryApiThenPublic(apiKey = None)("public")(_ => fail("must not try the API without an apiKey"))
+    assertResult(expected = "public")(actual = result)
+  }
+
+  test("tryApiThenPublic.03: an API failure is not retried through the public URL") {
     assertThrows[RuntimeException] {
-      GitHub.tryPublicThenApi(apiKey = Some("token"))(throw new RuntimeException("refused"))(_ => fail("must not try the API after a non-404 failure"))
+      GitHub.tryApiThenPublic(apiKey = Some("token"))(fail("must not try the public URL after an API failure"))(_ => throw new RuntimeException("refused"))
     }
   }
 
