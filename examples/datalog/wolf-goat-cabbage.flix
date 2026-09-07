@@ -66,10 +66,18 @@ def main(): Unit \ IO =
         // goat is then either with everyone else or alone on the other bank.
         Safe(f, f, g, f) :- Bank(f), Bank(g).
 
+        // `Reachable` is the set of configurations the farmer can bring about
+        // without anything being eaten: the starting configuration, and every
+        // configuration one safe crossing away from a reachable one.
+
         // Everyone starts on the west bank.
         Reachable("west", "west", "west", "west").
 
-        // We may cross into any configuration that is safe.
+        // From a reachable configuration, one `Step` leads to a new
+        // configuration, which must be `Safe`.
+        //
+        // Every application of this rule is one crossing, so the derivation of
+        // a `Reachable` fact is the sequence of crossings that leads to it.
         //
         // Note that `Reachable` occurs *before* `Step` in the body. A provenance
         // query lists the facts of a proof in pre-order, so the sub-proof of the
