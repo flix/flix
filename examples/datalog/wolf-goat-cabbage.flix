@@ -73,7 +73,9 @@ def main(): Unit \ IO =
             Safe(f2, w2, g2, c2).
     };
 
-    // The configurations reachable without anything being eaten.
+    // The configurations reachable without anything being eaten. There are
+    // 2^4 = 16 configurations in total: each of the four participants is on one
+    // of two banks.
     let reachable = query pr select (f, w, g, c) from Reachable(f, w, g, c);
     println("Reachable configurations: ${Vector.length(reachable)} (of 16).");
 
