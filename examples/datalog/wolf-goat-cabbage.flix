@@ -22,8 +22,12 @@ type alias Cargo = String
 /// Solves the wolf, goat, and cabbage problem.
 ///
 /// We model a configuration as the four banks that the farmer, wolf, goat, and
-/// cabbage are currently on. `Reachable` is the set of configurations reachable
-/// from the starting configuration without anything being eaten.
+/// cabbage are currently on. A single crossing is a `Step`: the fact
+/// `Step(f, w, g, c, cargo, f2, w2, g2, c2)` says that from the configuration
+/// `(f, w, g, c)` the farmer can cross with `cargo` to the configuration
+/// `(f2, w2, g2, c2)`. A `Step` may be unsafe; `Safe` holds for the
+/// configurations where nothing gets eaten. `Reachable` is the set of
+/// configurations reachable from the starting configuration by safe steps.
 ///
 /// Datalog can tell us *whether* the puzzle is solvable, because that is a
 /// membership question about the minimal model. It cannot return the sequence of
