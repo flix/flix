@@ -113,3 +113,18 @@ def describe(dst: String, cargo: String): String =
 /// Returns the bank opposite to `b`.
 ///
 def opposite(b: String): String = if (b == "west") "east" else "west"
+
+//
+// Compared to a Prolog solution, this program shows a few strengths of Flix:
+//
+// - Every Datalog program terminates and has a unique minimal model. The
+//   left-recursive `Reachable` rule is therefore fine as written: it needs no
+//   tabling, no visited list, and does not depend on the order of the clauses.
+// - The sequence of crossings is recovered by a provenance query instead of
+//   being threaded through the recursion as a list.
+// - The recovered sequence is a shortest one, since the proof tree has minimal
+//   height. A depth-first search returns whichever solution it finds first.
+// - Reachable configurations are found bottom-up, so they can be discovered in
+//   parallel when the problem admits it. A Prolog search explores one path at
+//   a time.
+//
