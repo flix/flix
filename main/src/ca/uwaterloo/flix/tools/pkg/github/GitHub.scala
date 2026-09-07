@@ -244,6 +244,13 @@ object GitHub {
     */
   def download(url: URL): Result[InputStream, PackageError] = {
     val request = HttpRequest.newBuilder(url.toURI).GET().build()
+    download(url, request)
+  }
+
+  /**
+    * Sends `request` and returns its streamed body if its response is successful.
+    */
+  private def download(url: URL, request: HttpRequest): Result[InputStream, PackageError] = {
 
     val response = try {
       Client.sendStreamingRequest(request)
@@ -257,12 +264,17 @@ object GitHub {
       case status =>
         // A close failure must not shadow the status being reported.
         try response.body().close() catch { case _: IOException => () }
-        status match {
-          case 403 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
-          case 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
-          case _ => Err(PackageError.DownloadFailed(url, status))
-        }
+        Err(downloadFailure(url, status, retryAfter(response)))
     }
+  }
+
+  /**
+    * Classifies an unsuccessful download response.
+    */
+  private[github] def downloadFailure(url: URL, status: Int, retryAfter: Option[String]): PackageError = status match {
+    case 403 => PackageError.DownloadRefused(url, status, retryAfter)
+    case 429 => PackageError.DownloadRefused(url, status, retryAfter)
+    case _ => PackageError.DownloadFailed(url, status)
   }
 
   /**
@@ -334,12 +346,14 @@ object GitHub {
     * Uses the REST API asset endpoint with bearer authentication when `apiKey` is given.
     * Otherwise, uses the asset's browser download URL. The caller closes the returned stream.
     */
-  def downloadAsset(asset: Asset, apiKey: Option[String]): InputStream =
-    tryApiThenPublic(apiKey)(asset.url.openStream()) { key =>
-      val conn = asset.apiUrl.openConnection()
-      conn.setRequestProperty("Accept", "application/octet-stream")
-      conn.setRequestProperty("Authorization", "Bearer " + key)
-      conn.getInputStream
+  def downloadAsset(asset: Asset, apiKey: Option[String]): Result[InputStream, PackageError] =
+    tryApiThenPublic(apiKey)(download(asset.url)) { key =>
+      val request = HttpRequest.newBuilder(asset.apiUrl.toURI)
+        .header("Accept", "application/octet-stream")
+        .header("Authorization", "Bearer " + key)
+        .GET()
+        .build()
+      download(asset.apiUrl, request)
     }
 
   /**
