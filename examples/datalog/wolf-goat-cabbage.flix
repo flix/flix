@@ -9,16 +9,6 @@
 //
 
 ///
-/// A type alias for a bank of the river: "west" or "east".
-///
-type alias Bank = String
-
-///
-/// A type alias for what the farmer brings along: "wolf", "goat", "cabbage", or "nothing".
-///
-type alias Cargo = String
-
-///
 /// Solves the wolf, goat, and cabbage problem.
 ///
 /// We model a configuration as the four banks that the farmer, wolf, goat, and
@@ -119,7 +109,7 @@ def main(): Unit \ IO =
 ///
 /// For example, `describe("east", "goat")` is "The farmer crosses to the east bank with the goat.".
 ///
-def describe(dst: Bank, cargo: Cargo): String =
+def describe(dst: String, cargo: String): String =
     if (cargo == "nothing")
         "The farmer crosses to the ${dst} bank alone."
     else
