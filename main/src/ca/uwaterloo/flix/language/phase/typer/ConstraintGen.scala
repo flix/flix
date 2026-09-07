@@ -22,11 +22,11 @@ import ca.uwaterloo.flix.language.ast.jvm.JavaField
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, RegionScope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils, Subeffecting}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 
-import java.lang.reflect.{Modifier, ParameterizedType, TypeVariable}
 
 /**
   * This phase generates a list of type constraints, which include
@@ -925,7 +925,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = mkConstructorType(clazz, loc)
+        val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -938,7 +938,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = mkConstructorType(clazz, loc)
+        val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -962,8 +962,8 @@ object ConstraintGen {
 
       case Expr.InvokeSuperMethod(clazz, methodName, exps, targs, jvar, tvar, evar, loc) =>
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = if (targs.nonEmpty) Type.mkApply(Type.mkNative(clazz, loc), targs, loc)
-                       else Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+        val clazzTpe = if (targs.nonEmpty) Type.mkApply(JavaTypes.flixTypeOf(clazz, loc), targs, loc)
+                       else JavaTypes.instantiateWithObjectArgs(clazz, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(clazzTpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
@@ -998,8 +998,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.PutField(field, clazz, exp1, exp2, loc) =>
-        val fieldType = getJavaFieldType(field, loc)
-        val classType = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+        val fieldType = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc)
+        val classType = JavaTypes.instantiateWithObjectArgs(clazz, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = classType, actual = tpe1, exp1.loc)
@@ -1009,8 +1009,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.GetStaticField(field, tvar, loc) =>
-        val isFinal = Modifier.isFinal(field.modifiers)
-        val fieldType = getJavaFieldType(field, loc)
+        val isFinal = field.isFinal
+        val fieldType = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc)
         val fieldReadEff = if (isFinal) Type.Pure else Type.IO
         c.unifyType(tvar, fieldType, loc)
         val resTpe = tvar
@@ -1019,15 +1019,14 @@ object ConstraintGen {
 
       case Expr.PutStaticField(field, exp, loc) =>
         val (valueTyp, eff) = visitExp(exp)
-        c.expectType(expected = getJavaFieldType(field, loc), actual = valueTyp, exp.loc)
+        c.expectType(expected = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
       case Expr.NewObject(_, clazz, targs, constructors, methods, tvar, loc) =>
         constructors.foreach(visitJvmConstructor)
-        val resTpe = if (targs.nonEmpty) Type.mkApply(Type.mkNative(clazz, loc), targs, loc)
-                     else Type.mkNative(clazz, loc)
+        val resTpe = Type.mkApply(JavaTypes.flixTypeOf(clazz.desc, loc), targs, loc)
         c.unifyType(tvar, resTpe, loc)
 
         methods.foreach(visitJvmMethod)
@@ -1273,12 +1272,6 @@ object ConstraintGen {
       (patTpe, tpe, eff)
   }
 
-  /** Returns the Flix type of the erased descriptor of `field`. */
-  private def getJavaFieldType(field: JavaField, loc: SourceLocation)(implicit flix: Flix): Type = {
-    val clazz = ClassDescs.load(field.ref.descriptor, flix.jarLoader)
-    Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
-  }
-
   /**
     * Generates constraints for the given catch rule.
     *
@@ -1286,7 +1279,7 @@ object ConstraintGen {
     */
   private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.CatchRule(sym, clazz, exp, _) =>
-      c.expectType(expected = Type.mkNative(clazz, sym.loc), sym.tvar, sym.loc)
+      c.expectType(expected = JavaTypes.flixTypeOf(clazz, sym.loc), sym.tvar, sym.loc)
       visitExp(exp)
   }
 
@@ -1472,18 +1465,6 @@ object ConstraintGen {
     }
     val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))
     (instantiatedFields.toMap, tpe, regionOpt)
-  }
-
-  /** Builds the result type for a constructor call, using fresh type variables for generic classes. */
-  private def mkConstructorType(clazz: Class[?], loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type = {
-    val numTypeParams = clazz.getTypeParameters.length
-    if (numTypeParams > 0) {
-      val baseTpe = Type.mkNative(clazz, loc)
-      val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
-      Type.mkApply(baseTpe, typeArgs, loc)
-    } else {
-      Type.getFlixType(clazz)
-    }
   }
 
   /** Returns `true` if `exp` is a JVM interop invocation (constructor, method, or static method). */

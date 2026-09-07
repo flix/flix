@@ -621,6 +621,43 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.IllegalReservedName](result)
   }
 
+  test("IllegalMainModule.01") {
+    val input =
+      """
+        |mod Main {
+        |    pub def f(): Int32 = 1
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalMainModule](result)
+  }
+
+  test("IllegalMainModule.02") {
+    // A nested module named Main is fine: its class is not in the root package.
+    val input =
+      """
+        |mod App {
+        |    mod Main {
+        |        pub def f(): Int32 = 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.IllegalMainModule](result)
+  }
+
+  test("IllegalMainModule.03") {
+    // Main is only reserved for modules, not for other declarations.
+    val input =
+      """
+        |pub enum Main {
+        |    case Obj
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.IllegalMainModule](result)
+  }
+
   test("IllegalReservedName.Trait.01") {
     val input =
       """trait String[s] { def f(x: s): s }

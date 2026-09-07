@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, Nel}
 import ca.uwaterloo.flix.util.{ParOps, Result}
 
+import java.lang.constant.ConstantDescs.CD_Object
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.annotation.tailrec
@@ -462,7 +463,7 @@ object EntryPoints {
       case Type.Cst(TypeConstructor.Int16, _) => Result.Ok(true)
       case Type.Cst(TypeConstructor.Int32, _) => Result.Ok(true)
       case Type.Cst(TypeConstructor.Int64, _) => Result.Ok(true)
-      case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => Result.Ok(true)
+      case Type.Cst(TypeConstructor.Native(desc, _), _) if desc == CD_Object => Result.Ok(true)
       case Type.Cst(_, _) => Result.Ok(false)
       case Type.Apply(_, _, _) => Result.Ok(false)
       case Type.Alias(_, _, t, _) => isExportableType(t)

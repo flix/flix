@@ -21,8 +21,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrame, GenFrames, GenFramesCons, GenFramesNil, GenGlobal, GenHandler, GenHoleError, GenLazy, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenReifiedSourceLocation, GenResult, GenResumption, GenResumptionCons, GenResumptionNil, GenResumptionWrapper, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUncaughtExceptionHandler, GenUnhandledEffectError, GenUnit, GenValue}
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFlixError, GenFrame, GenFrames, GenFramesCons, GenFramesNil, GenGlobal, GenHandler, GenHoleError, GenLazy, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenReifiedSourceLocation, GenResult, GenResumption, GenResumptionCons, GenResumptionNil, GenResumptionWrapper, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUncaughtExceptionHandler, GenUnhandledEffectError, GenUnit, GenValue}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -68,8 +69,7 @@ object CodeGen {
 
     val taggedAbstractClass = List(JvmClass(GenTagged.Desc, GenTagged.genByteCode()))
     val nullaryTagClasses = root.enums.values.flatMap(getNullaryTagsOf).toList.map { caze =>
-      val enumName = caze.sym.enumSym.toString
-      JvmClass(GenNullaryTag.desc(enumName, caze.sym.name), GenNullaryTag.genByteCode(enumName, caze.sym.name, caze.sym.ordinal))
+      JvmClass(GenNullaryTag.desc(caze.sym), GenNullaryTag.genByteCode(caze.sym))
     }
     val tagClasses = root.enums.values.flatMap(getTagsOf).toSet[List[ClassDesc]].toList.map(elms => JvmClass(GenTag.desc(elms), GenTag.genByteCode(elms)))
     val extTaggedAbstractClass = List(JvmClass(GenExtTagged.Desc, GenExtTagged.genByteCode()))
@@ -84,11 +84,11 @@ object CodeGen {
 
     val lazyClasses = getLazyTypesOf(allTypes).map(tpe => JvmClass(GenLazy.desc(tpe), GenLazy.genByteCode(tpe))).toList
 
-    val anonClasses = GenAnonymousClasses.gen(root.anonClasses.distinctBy(_.name))
+    val anonClasses = GenAnonymousClasses.gen(root.anonClasses.distinctBy(_.sym))
 
     val unitClass = List(JvmClass(GenUnit.Desc, GenUnit.genByteCode()))
 
-    val flixErrorClass = List(JvmClass(ClassConstants.FlixError.Desc, ClassConstants.FlixError.genByteCode()))
+    val flixErrorClass = List(JvmClass(GenFlixError.Desc, GenFlixError.genByteCode()))
     val rslClass = List(JvmClass(GenReifiedSourceLocation.Desc, GenReifiedSourceLocation.genByteCode()))
     val holeErrorClass = List(JvmClass(GenHoleError.Desc, GenHoleError.genByteCode()))
     val matchErrorClass = List(JvmClass(GenMatchError.Desc, GenMatchError.genByteCode()))

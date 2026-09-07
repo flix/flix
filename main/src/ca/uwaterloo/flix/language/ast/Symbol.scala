@@ -987,11 +987,6 @@ object Symbol {
   final class AnonClassSym(val id: Int, val loc: SourceLocation) extends Symbol with Locatable {
 
     /**
-      * Returns the name of `this` symbol.
-      */
-    def name: String = s"Anon$$${id}"
-
-    /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: Any): Boolean = obj match {
@@ -1006,8 +1001,10 @@ object Symbol {
 
     /**
       * Human-readable representation.
+      *
+      * Note: This is not the name of the generated class. Use `GenAnonymousClasses.desc` for that.
       */
-    override def toString: String = name
+    override def toString: String = s"Anon$$$id"
   }
 
   /**

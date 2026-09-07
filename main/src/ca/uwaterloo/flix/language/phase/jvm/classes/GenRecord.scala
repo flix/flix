@@ -17,10 +17,11 @@
 package ca.uwaterloo.flix.language.phase.jvm.classes
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InterfaceMethod
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{RootPackage, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, JavaClasses, Mangle}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, Mangle}
 
 import java.lang.constant.ClassDesc
 

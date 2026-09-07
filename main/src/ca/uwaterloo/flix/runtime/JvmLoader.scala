@@ -19,9 +19,10 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 import ca.uwaterloo.flix.util.collection.MapOps
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException, JvmUtils}
+import ca.uwaterloo.flix.util.{InternalCompilerException, NativeImage}
 
 import java.lang.constant.ClassDesc
 import java.lang.reflect.{InvocationTargetException, Method}
@@ -39,28 +40,39 @@ object JvmLoader {
     *
     * The class loader falls back to `result.flix.jarLoader` for classes from external JARs.
     *
+    * Throws [[UnsupportedOperationException]] if running inside a GraalVM native image, which
+    * refuses `ClassLoader.defineClass` at run time.
+    *
     * A failure to load (or to find an entry point) is a compiler bug and is reported via [[CrashHandler]].
     * Exceptions thrown by the *program* itself, when `main` or a test is invoked, are not caught here.
     */
-  def load(result: CompilationResult): LoadedProgram = try {
-    implicit val flix: Flix = result.flix
-    val root = result.root
-
-    // Load each class into the JVM in a fresh class loader.
-    implicit val loadedClasses: Map[ClassDesc, Class[?]] = loadAll(root.classes.values, flix.jarLoader)
-
-    val tests = MapOps.mapValuesWithKey(root.tests) {
-      case (sym, defn) => TestFn(sym, defn.isSkip, wrapTest(loadMethod(defn.className, defn.methodName)))
-    }
-    val main = root.main.map {
-      case defn => wrapMain(loadMethod(defn.className, defn.methodName))
+  def load(result: CompilationResult): LoadedProgram = {
+    // A native image refuses ClassLoader.defineClass, so bail out before the crash handler below.
+    if (NativeImage.GraalEnabled) {
+      val msg = "Loading a compiled program is not supported in the native image. You must run the flix.jar in the JVM for this action."
+      throw new UnsupportedOperationException(msg)
     }
 
-    LoadedProgram(main, tests)
-  } catch {
-    case ex: Throwable =>
-      CrashHandler.handleCrash(ex)(result.flix)
-      throw ex
+    try {
+      implicit val flix: Flix = result.flix
+      val root = result.root
+
+      // Load each class into the JVM in a fresh class loader.
+      implicit val loadedClasses: Map[ClassDesc, Class[?]] = loadAll(root.classes.values, flix.jarLoader)
+
+      val tests = MapOps.mapValuesWithKey(root.tests) {
+        case (sym, defn) => TestFn(sym, defn.isSkip, wrapTest(loadMethod(defn.className, defn.methodName)))
+      }
+      val main = root.main.map {
+        case defn => wrapMain(loadMethod(defn.className, defn.methodName))
+      }
+
+      LoadedProgram(main, tests)
+    } catch {
+      case ex: Throwable =>
+        CrashHandler.handleCrash(ex)(result.flix)
+        throw ex
+    }
   }
 
   /** Wraps the reflected test `method` (of type `Unit -> t`) into a thunk. */
@@ -112,11 +124,8 @@ object JvmLoader {
   }
 
   /** Returns a Method for `clazz.methodName` if possible. */
-  private def findMethod(clazz: Class[?], methodName: String): Option[Method] = {
-    JvmUtils.getMethods(clazz).find {
-      case method => method.getName == methodName && !method.isSynthetic
-    }
-  }
+  private def findMethod(clazz: Class[?], methodName: String): Option[Method] =
+    clazz.getMethods.find(method => method.getName == methodName && !method.isSynthetic)
 
   /** Loads the given JVM `classes` using a custom class loader that falls back to `jarLoader`. */
   private def loadAll(classes: Iterable[JvmClass], jarLoader: ClassLoader): Map[ClassDesc, Class[?]] = {

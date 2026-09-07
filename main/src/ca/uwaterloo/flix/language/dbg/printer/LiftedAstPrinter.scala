@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr.*
 import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object LiftedAstPrinter {
@@ -76,7 +77,7 @@ object LiftedAstPrinter {
       }
       val ms = methods.map {
         case LiftedAst.JvmMethod(ann, ident, fparams, clo, retTpe, _, _, _) =>
-          DocAst.JvmMethod(ann.map(_.clazz.displayName()), ident, fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
+          DocAst.JvmMethod(ann.map(a => ClassDescs.simpleNameOf(a.clazz)), ident, fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
       }
       DocAst.Expr.NewObject(sym, DocAst.Expr.javaClassName(clazz.desc), SimpleTypePrinter.print(tpe), cs, ms)
   }

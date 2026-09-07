@@ -21,9 +21,9 @@ import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.jvm.JvmClass
-import ca.uwaterloo.flix.util.ClassDescs
 
 import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
@@ -1176,9 +1176,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     private def addManifestToZip(zip: ZipOutputStream): Unit = {
       val manifest =
-        """Manifest-Version: 1.0
-          |Main-Class: Main
-          |""".stripMargin
+        s"""Manifest-Version: 1.0
+           |Main-Class: ${CompilerConstants.EntryPointClassName}
+           |""".stripMargin
 
       FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
     }

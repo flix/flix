@@ -18,15 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.Type.instantiateJavaTypeWithObjectArgs
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
-import ca.uwaterloo.flix.util.{ClassDescs, InternalCompilerException}
-
-import java.lang.reflect.Executable
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object TypeReconstruction {
 
@@ -397,7 +395,7 @@ object TypeReconstruction {
       val rs = rules map {
         case KindedAst.CatchRule(sym, clazz, body, ruleLoc) =>
           val b = visitExp(body)
-          val bnd = TypedAst.Binder(sym, Type.mkNative(clazz, SourceLocation.Unknown))
+          val bnd = TypedAst.Binder(sym, JavaTypes.flixTypeOf(clazz, ruleLoc))
           TypedAst.CatchRule(bnd, clazz, b, ruleLoc)
       }
       val tpe = rs.head.exp.tpe
@@ -431,7 +429,7 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+      val tpe = JavaTypes.instantiateWithObjectArgs(clazz, loc)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -444,7 +442,7 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+      val tpe = JavaTypes.instantiateWithObjectArgs(clazz, loc)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -461,7 +459,7 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe.typeConstructor match {
-        case Some(TypeConstructor.JvmMethod(method)) =>
+        case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
         case _ =>
@@ -474,7 +472,7 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe.typeConstructor match {
-        case Some(TypeConstructor.JvmMethod(method)) =>
+        case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, loc)
         case _ =>
@@ -487,7 +485,7 @@ object TypeReconstruction {
       val returnTpe = subst(tvar)
       val eff = subst(evar)
       methodTpe.typeConstructor match {
-        case Some(TypeConstructor.JvmMethod(method)) =>
+        case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
         case _ =>
@@ -642,58 +640,32 @@ object TypeReconstruction {
   /**
     * Returns the given arguments `es` with varargs arguments wrapped in a VectorLit if needed.
     */
-  private def getArgumentsWithVarArgs(exc: Executable, es: List[TypedAst.Expr], loc: SourceLocation): List[TypedAst.Expr] = {
-    if (!exc.isVarArgs) return es
+  private def getArgumentsWithVarArgs(method: JavaMethod, es: List[TypedAst.Expr], loc: SourceLocation)(implicit flix: Flix): List[TypedAst.Expr] = {
+    if (!method.isVarArgs) return es
 
-    val declaredArity = exc.getParameterCount
-    def varArgsType = Type.mkNative(exc.getParameterTypes.last.getComponentType, loc)
-    wrapVarArgs(declaredArity, varArgsType, es, loc)
-  }
-
-  /**
-    * Returns the given arguments `es` with varargs arguments wrapped in a VectorLit if needed.
-    */
-  private def getArgumentsWithVarArgs(constructor: JavaMethod, es: List[TypedAst.Expr], loc: SourceLocation)(implicit flix: Flix): List[TypedAst.Expr] = {
-    if (!constructor.isVarArgs) return es
-
-    val descriptor = constructor.ref.descriptor
+    val descriptor = method.ref.descriptor
     val declaredArity = descriptor.parameterCount()
-    def varArgsType = {
-      val componentDesc = descriptor.parameterType(declaredArity - 1).componentType()
-      Type.mkNative(ClassDescs.load(componentDesc, flix.jarLoader), loc)
-    }
-    wrapVarArgs(declaredArity, varArgsType, es, loc)
-  }
-
-  /**
-    * Returns the given arguments `es` with the trailing varargs arguments wrapped in a VectorLit.
-    *
-    * `declaredArity` is the number of declared parameters, the last of which is the varargs parameter,
-    * and `varArgsType` is the element type of that parameter.
-    */
-  private def wrapVarArgs(declaredArity: Int, varArgsType: => Type, es: List[TypedAst.Expr], loc: SourceLocation): List[TypedAst.Expr] = {
     val actualArity = es.length
 
     if (actualArity == declaredArity - 1) {
       // Case 1: Varargs omitted entirely. Insert an empty vector.
+      val componentDesc = descriptor.parameterType(declaredArity - 1).componentType()
+      val varArgsType = JavaTypes.flixTypeOf(componentDesc, loc)
       val varArgs = TypedAst.Expr.VectorLit(Nil, Type.mkVector(varArgsType, loc), Type.Pure, loc)
       es :+ varArgs
     } else if (actualArity >= declaredArity) {
       val normalArgs = es.take(declaredArity - 1)
       val varArgExprs = es.drop(declaredArity - 1)
 
-      // Check if a single trailing arg is already a Vector/Array (from ...{} syntax).
+      // A single trailing argument is the varargs array itself if it is assignable to the array parameter.
+      // Otherwise it is an element, e.g. a `Vector[Int32]` passed for `T...` (erased to `Object[]`).
       val alreadyWrapped = varArgExprs match {
-        case single :: Nil => single.tpe.baseType match {
-          case Type.Cst(TypeConstructor.Vector, _) => true
-          case Type.Cst(TypeConstructor.Array, _) => true
-          case _ => false
-        }
+        case single :: Nil => JavaTypes.isVarArgsArray(single.tpe, descriptor.parameterType(declaredArity - 1), loc)
         case _ => false
       }
 
       if (alreadyWrapped) {
-        // Already a vector/array, no wrapping needed.
+        // Already the varargs array, no wrapping needed.
         es
       } else {
         // Case 2: Individual varargs arguments. Wrap them into a VectorLit.

@@ -49,7 +49,7 @@ object LocalScopeCompleter {
     */
   private def mkJavaClassCompletion(name: String, resolutions: List[Resolution], range: Range): Iterable[Completion] = {
     resolutions.collect {
-      case Resolution.JavaClass(clazz) => Completion.LocalJavaClassCompletion(name, clazz, range, Priority.High(0))
+      case Resolution.JavaClass(clazz) => Completion.LocalJavaClassCompletion(name, clazz.desc, range, Priority.High(0))
     }
   }
 

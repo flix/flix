@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 
 import java.lang.constant.ClassDesc
-import java.lang.reflect.Method
 import scala.collection.immutable.SortedSet
 
 sealed trait DocAst
@@ -140,8 +140,6 @@ object DocAst {
 
     case class Lambda(fparams: List[Expr.AscriptionTpe], body: Expr) extends Composite
 
-    case class Native(clazz: Class[?]) extends Atom
-
     val Unknown: Expr =
       Meta("unknown exp")
 
@@ -250,9 +248,6 @@ object DocAst {
     def RefEq(d1: Expr, d2: Expr): Expr =
       Binary(d1, "===", d2)
 
-    def InstanceOf(d: Expr, clazz: Class[?]): Expr =
-      Binary(d, "instanceof", Native(clazz))
-
     def InstanceOf(d: Expr, clazz: ClassDesc): Expr =
       Binary(d, "instanceof", AsIs(javaClassName(clazz)))
 
@@ -322,14 +317,14 @@ object DocAst {
     def JavaInvokeMethod(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(methodName.name)), ds)
 
-    def JavaInvokeMethod(m: Method, d: Expr, ds: List[Expr]): Expr =
-      App(DoubleDot(d, AsIs(m.getName)), ds)
+    def JavaInvokeMethod(m: JavaMethod, d: Expr, ds: List[Expr]): Expr =
+      App(DoubleDot(d, AsIs(m.ref.name)), ds)
 
     def JavaInvokeMethod(m: JMethod, d: Expr, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(m.name)), ds)
 
-    def JavaInvokeStaticMethod(m: Method, ds: List[Expr]): Expr = {
-      App(Dot(Native(m.getDeclaringClass), AsIs(m.getName)), ds)
+    def JavaInvokeStaticMethod(m: JavaMethod, ds: List[Expr]): Expr = {
+      App(Dot(AsIs(javaClassName(m.ref.owner)), AsIs(m.ref.name)), ds)
     }
 
     def JavaInvokeStaticMethod(m: JMethod, ds: List[Expr]): Expr = {
@@ -353,11 +348,8 @@ object DocAst {
     def JavaPutStaticField(f: JField, d: Expr): Expr =
       Assign(Dot(AsIs(javaClassName(f.owner)), AsIs(f.name)), d)
 
-    /** Returns the fully-qualified dotted name of the class descriptor `desc`. */
-    private[dbg] def javaClassName(desc: ClassDesc): String = {
-      val pkg = desc.packageName()
-      if (pkg.isEmpty) desc.displayName() else s"$pkg.${desc.displayName()}"
-    }
+    /** Returns the binary name of the class descriptor `desc`, e.g. `java.util.Map$Entry`. */
+    private[dbg] def javaClassName(desc: ClassDesc): String = ClassDescs.binaryNameOf(desc)
 
     def JumpTo(sym: Symbol.LabelSym): Expr =
       Keyword("goto", AsIs(sym.toString))
@@ -417,11 +409,11 @@ object DocAst {
 
     case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Atom
 
-    case class Native(clazz: Class[?]) extends Atom
+    case class Native(desc: ClassDesc) extends Atom
 
     case class JvmConstructor(constructor: JavaMethod) extends Atom
 
-    case class JvmMethod(method: Method) extends Atom
+    case class JvmMethod(method: JavaMethod) extends Atom
 
     case class JvmField(field: JavaField) extends Atom
 

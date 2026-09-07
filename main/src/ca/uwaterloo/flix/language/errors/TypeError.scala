@@ -17,13 +17,19 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaMemberResolver}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
+
+import java.lang.constant.ClassDesc
+import scala.jdk.CollectionConverters.*
 
 /**
   * A common super-type for type errors.
@@ -97,14 +103,14 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class ConstructorNotFound(clazz: Class[?], tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
+  case class ConstructorNotFound(clazz: ClassDesc, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6025
 
-    def summary: String = s"Constructor not found: '${clazz.getName}' with arguments (${tpes.mkString(", ")})."
+    def summary: String = s"Constructor not found: '${ClassDescs.binaryNameOf(clazz)}' with arguments (${formatTypes(tpes, Some(renv))})."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Constructor not found: '${red(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
+      s""">> Constructor not found: '${red(ClassDescs.binaryNameOf(clazz))}' with arguments (${cyan(formatTypes(tpes, Some(renv)))}).
          |
          |${highlight(loc, "cannot find constructor", fmt)}
          |
@@ -316,14 +322,16 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      val availableFields = Type.classFromFlixType(tpe).map(getFieldsByName).getOrElse(Nil)
+      val availableFields = JavaTypes.descriptorOf(tpe).toList.flatMap(desc => JavaMemberResolver.fields(desc).toOption.getOrElse(Nil))
+      val available = if (availableFields.isEmpty) "" else
+        s"""
+           |Available fields:
+           |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
+           |""".stripMargin
       s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
          |
          |${highlight(loc, "cannot find field", fmt)}
-         |
-         |Available fields:
-         |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
-         |""".stripMargin
+         |$available""".stripMargin
     }
   }
 
@@ -455,7 +463,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Method not found: '${red(methodName.name)}' on type '${magenta(formatType(tpe))}' with arguments (${cyan(tpes.mkString(", "))}).
+      s""">> Method not found: '${red(methodName.name)}' on type '${magenta(formatType(tpe))}' with arguments (${cyan(formatTypes(tpes))}).
          |
          |${highlight(loc, "cannot find method", fmt)}
          |
@@ -905,14 +913,14 @@ object TypeError {
     * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class StaticMethodNotFound(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
+  case class StaticMethodNotFound(clazz: ClassDesc, methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6358
 
-    def summary: String = s"Static method not found: '${methodName.name}' in class '${clazz.getName}'."
+    def summary: String = s"Static method not found: '${methodName.name}' in class '${ClassDescs.binaryNameOf(clazz)}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
+      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(ClassDescs.binaryNameOf(clazz))}' with arguments (${cyan(formatTypes(tpes, Some(renv)))}).
          |
          |${highlight(loc, "cannot find static method", fmt)}
          |
@@ -1095,42 +1103,33 @@ object TypeError {
   }
 
   /**
-    * Returns the constructors of the given class sorted by parameter count.
+    * Returns the public constructors of the given class sorted by parameter count.
     */
-  private def getConstructorsByArgs(clazz: Class[?]): List[java.lang.reflect.Constructor[?]] = {
-    clazz.getConstructors.sortBy(_.getParameterTypes.length).toList
-  }
-
-  /**
-    * Returns the fields of the given class sorted by name.
-    */
-  private def getFieldsByName(clazz: Class[?]): List[java.lang.reflect.Field] = {
-    clazz.getFields.sortBy(_.getName).toList
+  private def getConstructorsByArgs(clazz: ClassDesc)(implicit flix: Flix): List[JavaMethod] = {
+    val constructors = flix.javaTypeProvider.lookupClass(clazz).toOption.toList.flatMap(_.declaredConstructors)
+    constructors.filter(c => c.isPublic).sortBy(_.parameterTypes.length)
   }
 
   /**
     * Returns a formatted string representation of a Java constructor.
     */
-  private def formatConstructor(clazz: Class[?], c: java.lang.reflect.Constructor[?]): String = {
-    val params = c.getParameterTypes.map(formatJavaType).mkString(", ")
-    s"${clazz.getSimpleName}($params)"
+  private def formatConstructor(clazz: ClassDesc, c: JavaMethod): String = {
+    val params = c.ref.descriptor.parameterList().asScala.map(JavaTypes.formatType).mkString(", ")
+    s"${ClassDescs.simpleNameOf(clazz)}($params)"
+  }
+
+  /**
+    * Returns the types `tpes` formatted as a comma-separated list.
+    */
+  private def formatTypes(tpes: List[Type], renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
+    tpes.map(formatType(_, renv)).mkString(", ")
   }
 
   /**
     * Returns a formatted string representation of a Java field.
     */
-  private def formatField(f: java.lang.reflect.Field): String = {
-    s"${f.getName}: ${formatJavaType(f.getType)}"
-  }
-
-  /**
-    * Returns the Flix-style string representation of a Java type.
-    */
-  private def formatJavaType(tpe: Class[?]): String = {
-    if (tpe.isPrimitive || tpe.isArray)
-      Type.getFlixType(tpe).toString
-    else
-      tpe.getName
+  private def formatField(f: JavaField): String = {
+    s"${f.ref.name}: ${JavaTypes.formatType(f.ref.descriptor)}"
   }
 
   /**

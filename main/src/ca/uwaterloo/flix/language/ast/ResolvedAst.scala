@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
+import java.lang.constant.ClassDesc
+
 object ResolvedAst {
 
   val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, List.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
@@ -172,7 +174,7 @@ object ResolvedAst {
 
     case class Ascribe(exp: Expr, expectedType: Option[UnkindedType], expectedEff: Option[UnkindedType], loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, clazz: java.lang.Class[?], loc: SourceLocation) extends Expr
+    case class InstanceOf(exp: Expr, clazz: ClassDesc, loc: SourceLocation) extends Expr
 
     case class CheckedCast(cast: CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -189,25 +191,25 @@ object ResolvedAst {
 
     case class RunWith(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeConstructor(clazz: ClassDesc, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeSuperConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeSuperConstructor(clazz: ClassDesc, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeSuperMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], targs: List[UnkindedType], loc: SourceLocation) extends Expr
+    case class InvokeSuperMethod(clazz: ClassDesc, methodName: Name.Ident, exps: List[Expr], targs: List[UnkindedType], loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeStaticMethod(clazz: ClassDesc, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class PutField(field: JavaField, clazz: java.lang.Class[?], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class PutField(field: JavaField, clazz: ClassDesc, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class GetStaticField(field: JavaField, loc: SourceLocation) extends Expr
 
     case class PutStaticField(field: JavaField, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], targs: List[UnkindedType], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, targs: List[UnkindedType], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 
@@ -363,7 +365,7 @@ object ResolvedAst {
 
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: Nel[FormalParam], exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
+  case class CatchRule(sym: Symbol.VarSym, clazz: ClassDesc, exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(symUse: OpSymUse, fparams: Nel[FormalParam], exp: Expr, loc: SourceLocation)
 

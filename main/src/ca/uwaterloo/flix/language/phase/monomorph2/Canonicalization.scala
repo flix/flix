@@ -53,6 +53,8 @@ private[monomorph2] object Canonicalization {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _)  => CofiniteSet.intersection(evalEff(x), evalEff(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _)    => CofiniteSet.difference(evalEff(x), evalEff(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) => CofiniteSet.xor(evalEff(x), evalEff(y))
+    // Effect arguments are erased at the monomorphic boundary.
+    case Type.Apply(tpe, _, _)                                                          => evalEff(tpe)
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
   }
 

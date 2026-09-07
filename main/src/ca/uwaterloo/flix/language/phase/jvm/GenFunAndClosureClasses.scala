@@ -19,10 +19,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenFrame, GenResult, GenThunk, GenValue}
-import ca.uwaterloo.flix.util.{ClassDescs, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
