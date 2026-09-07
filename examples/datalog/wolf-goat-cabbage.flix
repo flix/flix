@@ -11,9 +11,9 @@
 /// cabbage are currently on. A single crossing is a `Step`: the fact
 /// `Step(f, w, g, c, cargo, f2, w2, g2, c2)` says that from the configuration
 /// `(f, w, g, c)` the farmer can cross with `cargo` to the configuration
-/// `(f2, w2, g2, c2)`. A `Step` may be unsafe; `Safe` holds for the
-/// configurations where nothing gets eaten. `Reachable` is the set of
-/// configurations reachable from the starting configuration by safe steps.
+/// `(f2, w2, g2, c2)`. `Unsafe` holds for the configurations where something
+/// gets eaten. `Reachable` is the set of configurations reachable from the
+/// starting configuration without ever passing through an unsafe one.
 ///
 /// Datalog can tell us *whether* the puzzle is solvable, because that is a
 /// membership question about the minimal model. It cannot return the sequence of
@@ -44,13 +44,13 @@ def main(): Unit \ IO =
         // The farmer crosses with the cabbage: both go from `f` to `f2`; `w` and `g` stay put.
         Step(f, w, g, f, "cabbage", f2, w,  g,  f2) :- Travel(f, f2), Bank(w), Bank(g).
 
-        // Nothing is eaten if the goat is with the farmer: the wolf and the
-        // cabbage may then be on either bank.
-        Safe(f, w, f, c) :- Bank(f), Bank(w), Bank(c).
+        // The goat is eaten if it is left with the wolf: both are on bank `x`
+        // and the farmer is on the opposite bank.
+        Unsafe(opposite(x), x, x, c) :- Bank(x), Bank(c).
 
-        // Nothing is eaten if the wolf and the cabbage are with the farmer: the
-        // goat is then either with everyone else or alone on the other bank.
-        Safe(f, f, g, f) :- Bank(f), Bank(g).
+        // The cabbage is eaten if it is left with the goat: both are on bank `x`
+        // and the farmer is on the opposite bank.
+        Unsafe(opposite(x), w, x, x) :- Bank(x), Bank(w).
 
         // `Reachable` is the set of configurations the farmer can bring about
         // without anything being eaten: the starting configuration, and every
@@ -60,7 +60,7 @@ def main(): Unit \ IO =
         Reachable("west", "west", "west", "west").
 
         // From a reachable configuration, one `Step` leads to a new
-        // configuration, which must be `Safe`.
+        // configuration, which must not be `Unsafe`.
         //
         // Every application of this rule is one crossing, so the derivation of
         // a `Reachable` fact is the sequence of crossings that leads to it.
@@ -73,7 +73,7 @@ def main(): Unit \ IO =
         Reachable(f2, w2, g2, c2) :-
             Reachable(f, w, g, c),
             Step(f, w, g, c, _, f2, w2, g2, c2),
-            Safe(f2, w2, g2, c2).
+            not Unsafe(f2, w2, g2, c2).
     };
 
     // The configurations reachable without anything being eaten.
@@ -108,3 +108,8 @@ def describe(dst: String, cargo: String): String =
         "The farmer crosses to the ${dst} bank alone."
     else
         "The farmer crosses to the ${dst} bank with the ${cargo}."
+
+///
+/// Returns the bank opposite to `b`.
+///
+def opposite(b: String): String = if (b == "west") "east" else "west"
