@@ -205,6 +205,9 @@ object ConstraintSolverInterface {
       mkArrowAndNonArrowError(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc)
         .getOrElse(List(mkMismatchedTypesOrEffects(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc)))
 
+    case TypeConstraint.Equality(baseType1, baseType2, Provenance.PolyEffEq(eff1, eff2, loc)) =>
+      List(TypeError.MismatchedTypes(subst(baseType1), subst(baseType2), subst(eff1), subst(eff2), renv, loc))
+
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.Label(label, loc1, loc2, inner)) =>
       if (ConstraintSolver2.isSyntactic(tpe1.kind)) {
         // The leftover is (a part of) the type of the label.
@@ -261,6 +264,9 @@ object ConstraintSolverInterface {
 
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
       List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), subst(tpe1), subst(tpe2), renv, loc))
+
+    case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.PolyEffEq(eff1, eff2, loc)) =>
+      List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(eff1), subst(eff2), renv, loc))
 
     case TypeConstraint.Conflicted(_, _, Provenance.Timeout(msg, loc)) =>
       List(TypeError.TooComplex(msg, loc))
@@ -319,6 +325,7 @@ object ConstraintSolverInterface {
     case Provenance.ExpectEffect(expected, actual, _) => Some((expected, actual))
     case Provenance.ExpectArgument(expected, actual, _, _, _) => Some((expected, actual))
     case Provenance.Match(tpe1, tpe2, _) => Some((tpe1, tpe2))
+    case Provenance.PolyEffEq(eff1, eff2, _) => Some((eff1, eff2))
     case Provenance.Source(eff1, eff2, _) => Some((eff1, eff2))
     case Provenance.Label(_, _, _, inner) => enclosingTypes(inner)
     case Provenance.Predicate(_, _, _, inner) => enclosingTypes(inner)

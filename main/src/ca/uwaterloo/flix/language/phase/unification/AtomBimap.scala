@@ -26,6 +26,8 @@ private object AtomBimap {
 
   /**
     * Returns an [[AtomBimap]] numbering the [[EffAtom]]s of `eqs` using [[EffAtom.collectAtoms]].
+    * The map also records the type arguments of each polymorphic effect constructor so that the
+    * effect applications can be reconstructed after set unification.
     *
     * The atoms are sorted before numbering: the assignment must be deterministic across
     * runs since it determines the solving order in
@@ -44,7 +46,11 @@ private object AtomBimap {
     fromAtoms(buf, effectArgs.toMap)
   }
 
-  /** Returns an [[AtomBimap]] numbering the [[EffAtom]]s of `tpe` using [[EffAtom.collectAtoms]]. */
+  /**
+    * Returns an [[AtomBimap]] numbering the [[EffAtom]]s of `tpe` using [[EffAtom.collectAtoms]].
+    * The map also records the type arguments of each polymorphic effect constructor so that the
+    * effect applications can be reconstructed after simplification.
+    */
   def fromType(tpe: Type)(implicit scope: RegionScope, renv: RigidityEnv): AtomBimap = {
     val buf = mutable.HashSet.empty[EffAtom]
     val effectArgs = mutable.Map.empty[Symbol.EffSym, List[Type]]
@@ -52,7 +58,10 @@ private object AtomBimap {
     fromAtoms(buf, effectArgs.toMap)
   }
 
-  /** Returns an [[AtomBimap]] numbering the given atoms `0..n-1` in sorted order. */
+  /**
+    * Returns an [[AtomBimap]] numbering `atoms` from `0` to `n - 1` in sorted order.
+    * `effectArgs` maps each effect constructor to the type arguments used to reconstruct it.
+    */
   private def fromAtoms(atoms: mutable.HashSet[EffAtom], effectArgs: Map[Symbol.EffSym, List[Type]]): AtomBimap = {
     val arr = atoms.toArray
     java.util.Arrays.sort(arr, implicitly[Ordering[EffAtom]])

@@ -108,9 +108,13 @@ private object EffAtom {
     * the needs of [[EffUnification3.toSetFormula]].
     *
     * Examples:
-    *   - `collectAtoms(Crash ∪ ef, acc)` adds `Eff(Crash)` and `VarFlex(ef)` (if
-    *     [[RigidityEnv.isRigid]] is false for `ef`)
-    *   - `collectAtoms(Indexable.Aef[Error], acc)` adds nothing
+    *   - `collectAtoms(F[Int32] ∪ ef, acc, effectArgs)` adds `Eff(F)` and `VarFlex(ef)`
+    *     to `acc`, and records `F -> List(Int32)` in `effectArgs`
+    *   - `collectAtoms(Indexable.Aef[Error], acc, effectArgs)` adds nothing
+    *
+    * @param t the type whose effect atoms are collected.
+    * @param acc the set to which the collected atoms are added.
+    * @param effectArgs the map from effect constructors to the arguments used to reconstruct them.
     */
   def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, List[Type]])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => acc += EffAtom.VarRigid(sym)

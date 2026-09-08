@@ -303,6 +303,7 @@ object EffectProvenance {
             Some((SinkNode, IntermediateNode, l))
           case TypeConstraint.Provenance.Source(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
           case TypeConstraint.Provenance.Match(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
+          case TypeConstraint.Provenance.PolyEffEq(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
           case TypeConstraint.Provenance.ExpectType(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
           case TypeConstraint.Provenance.ExpectArgument(arg, _, _, _, _) => Some((ArgNode, IntermediateNode, arg.loc))
           case _ => None

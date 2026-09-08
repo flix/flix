@@ -902,17 +902,16 @@ object ConstraintGen {
         // }
         //
         val effect = root.effects(symUse.sym)
-        val effectParams: List[(Symbol.KindedTypeVarSym, Type)] = effect.tparams.map(tparam => tparam.sym -> freshVar(tparam.sym.kind, loc))
-        val effectParamMap = effectParams.toMap
+        val effectParams = effect.tparams.map(tparam => tparam.sym -> freshVar(tparam.sym.kind, loc)).toMap
         val effectKind = effect.tparams.foldRight(Kind.Eff: Kind) {
           case (tparam, acc) => tparam.sym.kind ->: acc
         }
 
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, effectParamMap)).unzip
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, effectParams)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
 
         val handledEffectConstructor = Type.Cst(TypeConstructor.Effect(symUse.sym, effectKind), symUse.qname.loc)
-        val handledEffect = Type.mkApply(handledEffectConstructor, effectParams.map(_._2), symUse.qname.loc)
+        val handledEffect = Type.mkApply(handledEffectConstructor, effect.tparams.map(tparam => effectParams(tparam.sym)), symUse.qname.loc)
         // Subtract the effect from the body effect and add the handler effects.
         val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(evar2, continuationEffect, loc)

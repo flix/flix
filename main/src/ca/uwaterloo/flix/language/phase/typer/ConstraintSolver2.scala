@@ -140,8 +140,9 @@ object ConstraintSolver2 {
     * Solves the given constraint set as far as possible.
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
+    // Apply the initial substitution to the constraints.
     val initialConstrs = constrs0.map(initialSubst.apply)
-    val effectArgEqualities = deriveEffectArgumentEqualities(initialConstrs, initialSubst)
+    val effectArgEqualities = breakdownPolyEffConstraints(initialConstrs, initialSubst)
     val constrs = effectArgEqualities ::: initialConstrs
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
@@ -152,6 +153,8 @@ object ConstraintSolver2 {
   /**
     * Collects pointwise equalities between saturated applications of the same effect constructor.
     * Every occurrence in one constraint system must agree on the constructor's type arguments.
+    * An application is saturated when all the constructor's type parameters are supplied and the
+    * result has kind `Eff`; for `F: Type -> Eff`, `F[Int32]` is saturated while `F` is not.
     *
     * For example, given the declarations:
     * {{{
@@ -163,37 +166,32 @@ object ConstraintSolver2 {
     * the two applications of `F` produce the additional equality `Int32 ~ String`, making `f`
     * ill-typed before its effect equations are solved.
     */
-  private def deriveEffectArgumentEqualities(constrs: List[TypeConstraint], initialSubst: SubstitutionTree): List[TypeConstraint] = {
-    val applications = mutable.Map.empty[Symbol.EffSym, mutable.ListBuffer[Type]]
+  private def breakdownPolyEffConstraints(constrs: List[TypeConstraint], initialSubst: SubstitutionTree): List[TypeConstraint] = {
+    // Maps each effect symbol to the saturated effect types whose arguments must agree.
+    // For example, `F[Int32] + F[String]` maps `F` to `F[Int32]` and `F[String]`.
+    val effectTypes = mutable.Map.empty[Symbol.EffSym, List[Type]]
 
     def visitType(tpe: Type): Unit = tpe match {
       case app@Type.Apply(tpe1, tpe2, _) =>
         app.baseType match {
           case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
-            applications.getOrElseUpdate(sym, mutable.ListBuffer.empty) += app
+            effectTypes(sym) = app :: effectTypes.getOrElse(sym, Nil)
           case _ => ()
         }
         visitType(tpe1)
         visitType(tpe2)
-
       case Type.Alias(_, args, inner, _) =>
         args.foreach(visitType)
         visitType(inner)
-
       case Type.AssocType(_, arg, _, _) =>
         visitType(arg)
-
       case Type.JvmToType(inner, _) =>
         visitType(inner)
-
       case Type.JvmToEff(inner, _) =>
         visitType(inner)
-
       case Type.UnresolvedJvmType(member, _) =>
         member.getTypeArguments.foreach(visitType)
-
       case Type.Var(_, _) => ()
-
       case Type.Cst(_, _) => ()
     }
 
@@ -218,21 +216,19 @@ object ConstraintSolver2 {
       tree.branches.values.foreach(visitSubstitutionTree)
     }
 
+    // Collect all saturated effect applications in the constraint system.
     constrs.foreach(visitConstraint)
     visitSubstitutionTree(initialSubst)
 
     val equalities = mutable.ListBuffer.empty[TypeConstraint]
-    applications.toList.sortBy(_._1).foreach {
-      case (_, effectApplications) =>
-        val occurrences = effectApplications.toList.sortBy(_.loc).distinct
-        val representative = occurrences.head
-        occurrences.tail.foreach { occurrence =>
-          representative.typeArguments.zip(occurrence.typeArguments).foreach {
-            case (tpe1, tpe2) =>
-              equalities += TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(representative, occurrence, occurrence.loc))
-          }
+    for ((_, occurrences) <- effectTypes) {
+      val representative = occurrences.head
+      for (occurrence <- occurrences.tail) {
+        for ((tpe1, tpe2) <- representative.typeArguments.zip(occurrence.typeArguments)) {
+          equalities += TypeConstraint.Equality(tpe1, tpe2, Provenance.PolyEffEq(representative, occurrence, occurrence.loc))
         }
       }
+    }
     equalities.toList
   }
 

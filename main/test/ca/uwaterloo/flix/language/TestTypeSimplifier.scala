@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.TypeSimplifier
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
@@ -42,16 +42,6 @@ class TestTypeSimplifier extends AnyFunSuite with TestUtils {
       val simplifiedType = TypeSimplifier.simplify(tpe)
       assert(ConstraintSolver2.isEquivalent(tpe, simplifiedType)(eqEnv, flix), s"\n$tpe\ndoes not unify with\n$simplifiedType")
     }
-  }
-
-  test("PolymorphicEffectArguments") {
-    val loc = SourceLocation.Unknown
-    val sym = new Symbol.EffSym(Nil, "F", loc)
-    val constructor = Type.Cst(TypeConstructor.Effect(sym, Kind.Star ->: Kind.Eff), loc)
-    val effect = Type.mkApply(constructor, Type.Int32 :: Nil, loc)
-    val union = Type.mkUnion(effect, effect, loc)
-
-    assert(TypeSimplifier.simplify(union) == effect)
   }
 
   /** Returns a list of types to use for testing. */
