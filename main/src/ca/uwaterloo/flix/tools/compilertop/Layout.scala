@@ -26,7 +26,7 @@ package ca.uwaterloo.flix.tools.compilertop
   * @param nameWidth   width of the merged name column (def + `(file:line)` on def rows, module name on module rows).
   * @param showLines   whether to render the lines column.
   * @param showCounts  whether to render the mono / inl / cls per-phase count columns.
-  * @param showCns     whether to render the cns / tv / ev columns.
+  * @param showCns     whether to render the cns / tv / ev / tpv columns.
   * @param showPhase   whether to render the dominant-phase column.
   * @param totalWidth  total rendered width of the row, less leading/trailing pad.
   */
@@ -59,11 +59,13 @@ object Layout {
   private val TvarsColWidth: Int = 1 + 4
   /** Width contribution of the optional evars column (separator + 4-char numeric field). */
   private val EvarsColWidth: Int = 1 + 4
+  /** Width contribution of the optional type-substitution-per-variable density column (`tpv`): separator + 4-char numeric field; the ratio is a small integer. */
+  private val SubstColWidth: Int = 1 + 4
   /**
-    * Combined width contribution of all three frontend-only columns
-    * (`cns`, `tv`, `ev`) including separators.
+    * Combined width contribution of all four frontend-only columns
+    * (`cns`, `tv`, `ev`, `tpv`) including separators.
     */
-  private val FrontendColsWidth: Int = CnsColWidth + TvarsColWidth + EvarsColWidth
+  private val FrontendColsWidth: Int = CnsColWidth + TvarsColWidth + EvarsColWidth + SubstColWidth
   /** Width contribution of the optional dominant-phase column (separator + width). */
   private val PhaseColWidth: Int = 1 + 10
 
@@ -71,7 +73,7 @@ object Layout {
     * Picks a [[Layout]] for the given terminal width by trying tiers in
     * descending feature order. The caller gates the optional count-style
     * columns by passing `showCounts` (mono / inl / cls / size) and
-    * `showCns` (cns / tv / ev) — Layout itself doesn't know which UI mode
+    * `showCns` (cns / tv / ev / tpv) — Layout itself doesn't know which UI mode
     * they correspond to. When a flag is false the column is hidden and the
     * reclaimed width expands the name column instead.
     *
@@ -113,7 +115,7 @@ object Layout {
     if (cols >= noPhase)
       return fillTier(LinesColWidth + extraColsW + tail, showLines = true, showCountsOut = showCounts, showCnsOut = showCns, showPhase = false)
 
-    // Tier: drop phase + the optional counts (mono/inl/cls/size or cns/tv/ev).
+    // Tier: drop phase + the optional counts (mono/inl/cls/size or cns/tv/ev/tpv).
     val noPhaseNoExtras = DefaultNameWidth + LinesColWidth + tail
     if (cols >= noPhaseNoExtras)
       return fillTier(LinesColWidth + tail, showLines = true, showCountsOut = false, showCnsOut = false, showPhase = false)
