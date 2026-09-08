@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.jvm.JavaLookupError.MissingClass
+import ca.uwaterloo.flix.language.jvm.JavaLookupError.{MissingClass, UnsupportedDescriptor}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -68,6 +68,56 @@ class TestJavaHierarchy extends AnyFunSuite {
     try {
       val missing = ClassDesc.of("java.lang.DoesNotExist")
       assert(JavaHierarchy.isSubtype(missing, CD_Object) == Err(MissingClass(missing)))
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("supertypes.Class") {
+    implicit val flix: Flix = new Flix
+    try {
+      val arrayList = ClassDesc.of("java.util.ArrayList")
+      JavaHierarchy.supertypes(arrayList) match {
+        case Ok(supertypes) =>
+          assert(!supertypes.contains(arrayList))
+          assert(supertypes.contains(ClassDesc.of("java.util.AbstractList")))
+          assert(supertypes.contains(ClassDesc.of("java.util.List")))
+          assert(supertypes.contains(ClassDesc.of("java.util.Collection")))
+          assert(supertypes.contains(ClassDesc.of("java.lang.Iterable")))
+          assert(supertypes.contains(ClassDesc.of("java.io.Serializable")))
+          assert(supertypes.contains(CD_Object))
+        case Err(error) => fail(error.toString)
+      }
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("supertypes.Interface") {
+    implicit val flix: Flix = new Flix
+    try {
+      // An interface has no superclass, and `Iterable` has no superinterfaces.
+      assert(JavaHierarchy.supertypes(ClassDesc.of("java.lang.Iterable")) == Ok(Set.empty))
+      assert(JavaHierarchy.supertypes(ClassDesc.of("java.util.Collection")) == Ok(Set(ClassDesc.of("java.lang.Iterable"))))
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("supertypes.Object") {
+    implicit val flix: Flix = new Flix
+    try {
+      assert(JavaHierarchy.supertypes(CD_Object) == Ok(Set.empty))
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("supertypes.ReportsMissingClass") {
+    implicit val flix: Flix = new Flix
+    try {
+      val missing = ClassDesc.of("java.lang.DoesNotExist")
+      assert(JavaHierarchy.supertypes(missing) == Err(MissingClass(missing)))
+    } finally flix.javaTypeProvider.close()
+  }
+
+  test("supertypes.ReportsUnsupportedDescriptor") {
+    implicit val flix: Flix = new Flix
+    try {
+      assert(JavaHierarchy.supertypes(CD_int) == Err(UnsupportedDescriptor(CD_int)))
+      assert(JavaHierarchy.supertypes(CD_String.arrayType()) == Err(UnsupportedDescriptor(CD_String.arrayType())))
     } finally flix.javaTypeProvider.close()
   }
 

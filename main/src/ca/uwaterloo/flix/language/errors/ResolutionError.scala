@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.jvm.ClassDescs
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaLookupError}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -947,6 +947,29 @@ object ResolutionError {
       s""">> Undefined static field '${red(field.name)}' in class '${magenta(ClassDescs.binaryNameOf(clazz))}'.
          |
          |${highlight(loc, "field not found", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a Java class needed to resolve a Java class or member cannot be read.
+    *
+    * @param query what was being resolved, e.g. `the class 'java.util.List'` or `the static field 'java.lang.Math.PI'`.
+    * @param error the class-file metadata error, which names the class that cannot be read.
+    * @param loc   the location of the class or member.
+    */
+  case class UnreadableJvmClass(query: String, error: JavaLookupError, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E1925
+
+    def summary: String = s"Unable to read the Java class '${ClassDescs.binaryNameOf(error.desc)}' while resolving $query."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unable to read the Java class '${red(ClassDescs.binaryNameOf(error.desc))}' while resolving $query.
+         |
+         |${highlight(loc, "unreadable Java class", fmt)}
+         |
+         |${error.explanation}
          |""".stripMargin
     }
   }

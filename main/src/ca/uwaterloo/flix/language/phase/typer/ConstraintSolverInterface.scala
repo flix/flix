@@ -366,12 +366,23 @@ object ConstraintSolverInterface {
 
   /**
     * Creates an appropriate error from the unresolved Jvm member.
+    *
+    * A member that is unresolved because the class-file metadata it needs cannot be read is reported as
+    * [[TypeError.UnreadableJvmClass]]. Every other unresolved member is reported as not found.
     */
-  private def mkErrorFromUnresolvedJvmMember(member: Type.JvmMember, renv: RigidityEnv, subst: SubstitutionTree, loc: SourceLocation)(implicit flix: Flix): TypeError = member match {
-    case JvmMember.JvmConstructor(clazz, tpes) => TypeError.ConstructorNotFound(clazz, tpes.map(subst.apply), renv, loc)
-    case JvmMember.JvmField(base, tpe, name) => TypeError.FieldNotFound(base, name, subst(tpe), loc)
-    case JvmMember.JvmMethod(tpe, name, tpes) => TypeError.MethodNotFound(name, subst(tpe), tpes.map(subst.apply), loc)
-    case JvmMember.JvmStaticMethod(clazz, name, tpes) => TypeError.StaticMethodNotFound(clazz, name, tpes.map(subst.apply), renv, loc)
+  private def mkErrorFromUnresolvedJvmMember(member0: Type.JvmMember, renv: RigidityEnv, subst: SubstitutionTree, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+    val member = member0.map(subst.apply)
+    // The lookup is repeated in the top-level region scope. A type variable of an inner region is
+    // flexible there, so a member that depends on it is not known and is reported as not found.
+    TypeReduction2.unreadableClassOf(member, loc)(RegionScope.Top, renv, flix) match {
+      case Some((query, error)) => TypeError.UnreadableJvmClass(query, error, loc)
+      case None => member match {
+        case JvmMember.JvmConstructor(clazz, tpes) => TypeError.ConstructorNotFound(clazz, tpes, renv, loc)
+        case JvmMember.JvmField(base, tpe, name) => TypeError.FieldNotFound(base, name, tpe, loc)
+        case JvmMember.JvmMethod(tpe, name, tpes) => TypeError.MethodNotFound(name, tpe, tpes, loc)
+        case JvmMember.JvmStaticMethod(clazz, name, tpes) => TypeError.StaticMethodNotFound(clazz, name, tpes, renv, loc)
+      }
+    }
   }
 
   /**
