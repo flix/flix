@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -109,20 +110,20 @@ private object EffAtom {
     *
     * Examples:
     *   - `collectAtoms(F[Int32] ∪ ef, acc, effectArgs)` adds `Eff(F)` and `VarFlex(ef)`
-    *     to `acc`, and records `F -> List(Int32)` in `effectArgs`
+    *     to `acc`, and records `F -> Nel(Int32)` in `effectArgs`
     *   - `collectAtoms(Indexable.Aef[Error], acc, effectArgs)` adds nothing
     *
     * @param t the type whose effect atoms are collected.
     * @param acc the set to which the collected atoms are added.
-    * @param effectArgs the map from effect constructors to the arguments used to reconstruct them.
+    * @param effectArgs the map from polymorphic effect constructors to their non-empty argument lists.
     */
-  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, List[Type]])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
+  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, Nel[Type]])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => acc += EffAtom.VarRigid(sym)
     case Type.Var(sym, _) => acc += EffAtom.VarFlex(sym)
-    case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => addEffect(sym, Nil, acc, effectArgs)
+    case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => acc += EffAtom.Eff(sym)
     case app@Type.Apply(tpe1, tpe2, _) => app.baseType match {
       case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
-        addEffect(sym, app.typeArguments, acc, effectArgs)
+        addEffect(sym, Nel.unsafeFrom(app.typeArguments), acc, effectArgs)
       case _ =>
         collectAtoms(tpe1, acc, effectArgs)
         collectAtoms(tpe2, acc, effectArgs)
@@ -135,7 +136,7 @@ private object EffAtom {
   }
 
   /** Adds an effect atom and records the arguments used to reconstruct it. */
-  private def addEffect(sym: Symbol.EffSym, args: List[Type], acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, List[Type]]): Unit = {
+  private def addEffect(sym: Symbol.EffSym, args: Nel[Type], acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, Nel[Type]]): Unit = {
     acc += EffAtom.Eff(sym)
     effectArgs.getOrElseUpdate(sym, args)
   }

@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
+import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.collection.mutable
 
@@ -37,8 +38,8 @@ private object AtomBimap {
     // The distinct effect atoms that occur in the equations.
     val buf = mutable.HashSet.empty[EffAtom]
 
-    // The arguments used to reconstruct each effect constructor after set unification.
-    val effectArgs = mutable.Map.empty[Symbol.EffSym, List[Type]]
+    // The arguments used to reconstruct each polymorphic effect after set unification.
+    val effectArgs = mutable.Map.empty[Symbol.EffSym, Nel[Type]]
     for (eq <- eqs) {
       EffAtom.collectAtoms(eq.tpe1, buf, effectArgs)
       EffAtom.collectAtoms(eq.tpe2, buf, effectArgs)
@@ -53,16 +54,16 @@ private object AtomBimap {
     */
   def fromType(tpe: Type)(implicit scope: RegionScope, renv: RigidityEnv): AtomBimap = {
     val buf = mutable.HashSet.empty[EffAtom]
-    val effectArgs = mutable.Map.empty[Symbol.EffSym, List[Type]]
+    val effectArgs = mutable.Map.empty[Symbol.EffSym, Nel[Type]]
     EffAtom.collectAtoms(tpe, buf, effectArgs)
     fromAtoms(buf, effectArgs.toMap)
   }
 
   /**
     * Returns an [[AtomBimap]] numbering `atoms` from `0` to `n - 1` in sorted order.
-    * `effectArgs` maps each effect constructor to the type arguments used to reconstruct it.
+    * `effectArgs` maps each polymorphic effect constructor to its non-empty type argument list.
     */
-  private def fromAtoms(atoms: mutable.HashSet[EffAtom], effectArgs: Map[Symbol.EffSym, List[Type]]): AtomBimap = {
+  private def fromAtoms(atoms: mutable.HashSet[EffAtom], effectArgs: Map[Symbol.EffSym, Nel[Type]]): AtomBimap = {
     val arr = atoms.toArray
     java.util.Arrays.sort(arr, implicitly[Ordering[EffAtom]])
     var forward = Map.empty[EffAtom, Int]
@@ -83,7 +84,7 @@ private object AtomBimap {
   * index assignment itself must be deterministic; it is always derived from atoms in
   * sorted order.
   */
-private final class AtomBimap(forward: Map[EffAtom, Int], backward: Array[EffAtom], effectArgs: Map[Symbol.EffSym, List[Type]]) {
+private final class AtomBimap(forward: Map[EffAtom, Int], backward: Array[EffAtom], effectArgs: Map[Symbol.EffSym, Nel[Type]]) {
 
   /** Returns the index of `a`, or -1 if absent (allocation-free). */
   def getForwardIndex(a: EffAtom): Int = forward.getOrElse(a, -1)
@@ -100,9 +101,13 @@ private final class AtomBimap(forward: Map[EffAtom, Int], backward: Array[EffAto
   /** Returns the [[Type]] represented by `atom` with location `loc`. */
   def toType(atom: EffAtom, loc: SourceLocation): Type = atom match {
     case EffAtom.Eff(sym) =>
-      val args = effectArgs.getOrElse(sym, Nil)
-      val kind = Kind.mkArrowTo(args.map(_.kind), Kind.Eff)
-      Type.mkApply(Type.Cst(TypeConstructor.Effect(sym, kind), loc), args, loc)
+      effectArgs.get(sym) match {
+        case None => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)
+        case Some(args) =>
+          val ts = args.toList
+          val kind = Kind.mkArrowTo(ts.map(_.kind), Kind.Eff)
+          Type.mkApply(Type.Cst(TypeConstructor.Effect(sym, kind), loc), ts, loc)
+      }
     case EffAtom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
     case EffAtom.VarRigid(sym) => Type.Var(sym, loc)
     case EffAtom.VarFlex(sym) => Type.Var(sym, loc)
