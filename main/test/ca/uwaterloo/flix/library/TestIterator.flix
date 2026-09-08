@@ -754,7 +754,7 @@ mod TestIterator {
 
     @Test
     def zipWithIndex01(): Unit \ Assert = region rc {
-        assertEq(expected = Nil, Iterator.zipWithIndex((Iterator.empty(rc): Iterator[Int32, rc, rc])) |> Iterator.toList)
+        assertEq(expected = Nil, Iterator.zipWithIndex((Iterator.empty(rc): Iterator[Int32, {}, rc])) |> Iterator.toList)
     }
 
     @Test

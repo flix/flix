@@ -90,7 +90,7 @@ pub mod RedBlackTree {
 
     instance Iterable[RedBlackTree[k, v]] {
         type Elm = (k, v)
-        pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
+        pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), {}, r] \ r =
             RedBlackTree.iterator(rc, t)
     }
 
@@ -1061,7 +1061,7 @@ pub mod RedBlackTree {
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
+    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), {}, r] \ r =
         let stack1 = leftmost(t, Nil);
         let state = Ref.fresh(rc, stack1);
         let next = () -> match Ref.get(state) {
@@ -1070,7 +1070,7 @@ pub mod RedBlackTree {
                 Ref.put(leftmost(rtree, es), state);
                 Some((k, v))
         };
-        Iterator.unfoldWithIter(rc, next)
+        Iterator.unfoldWithIter(rc, next) |> Iterator.absorbRegion
 
     ///
     /// This represents pending items `(key, value, right-tree)` encountered while finding the

@@ -27,7 +27,7 @@ pub mod MutSet {
     instance Iterable[MutSet[a, r]] {
         type Elm = a
         type Aef = r
-        pub def iterator(rc: Region[r1], s: MutSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutSet.iterator(rc, s)
+        pub def iterator(rc: Region[r1], s: MutSet[a, r]): Iterator[a, r, r1] \ (r + r1) = MutSet.iterator(rc, s)
     }
 
     instance ForEach[MutSet[a, r]] {
@@ -302,7 +302,7 @@ pub mod MutSet {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r2, r1] \ { r1, r2 } =
         Set.iterator(rc, s->inner) |> Iterator.map(x -> checked_ecast(x))
 
     ///

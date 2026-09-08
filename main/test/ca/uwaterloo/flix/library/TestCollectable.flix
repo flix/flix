@@ -8,7 +8,7 @@ mod TestCollectable {
 
     @Test
     def collectChain01(): Unit \ Assert = region rc {
-        let iter: Iterator[Int32, rc, rc] = Iterator.empty(rc);
+        let iter: Iterator[Int32, {}, rc] = Iterator.empty(rc);
         assertEq(expected = Chain.empty(), (Collectable.collect(iter) : Chain[Int32]))
     }
 
@@ -36,7 +36,7 @@ mod TestCollectable {
 
     @Test
     def collectList01(): Unit \ Assert = region rc {
-        let iter: Iterator[Int32, rc, rc] = Iterator.empty(rc);
+        let iter: Iterator[Int32, {}, rc] = Iterator.empty(rc);
         assertEq(expected = Nil, (Collectable.collect(iter) : List[Int32]))
     }
 
@@ -64,7 +64,7 @@ mod TestCollectable {
 
     @Test
     def collectSet01(): Unit \ Assert = region rc {
-        let iter: Iterator[Int32, rc, rc] = Iterator.empty(rc);
+        let iter: Iterator[Int32, {}, rc] = Iterator.empty(rc);
         assertEq(expected = Set.empty(), (Collectable.collect(iter) : Set[Int32]))
     }
 
@@ -92,7 +92,7 @@ mod TestCollectable {
 
     @Test
     def collectVector01(): Unit \ Assert = region rc {
-        let iter: Iterator[Int32, rc, rc] = Iterator.empty(rc);
+        let iter: Iterator[Int32, {}, rc] = Iterator.empty(rc);
         assertEq(expected = Vector#{}, (Collectable.collect(iter) : Vector[Int32]))
     }
 
