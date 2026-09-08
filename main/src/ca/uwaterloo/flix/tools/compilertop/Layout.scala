@@ -59,11 +59,13 @@ object Layout {
   private val TvarsColWidth: Int = 1 + 4
   /** Width contribution of the optional evars column (separator + 4-char numeric field). */
   private val EvarsColWidth: Int = 1 + 4
+  /** Width contribution of the optional `rpv` reduction-density column (separator + 4-char numeric field). */
+  private val DensityColWidth: Int = 1 + 4
   /**
-    * Combined width contribution of all three frontend-only columns
-    * (`cns`, `tv`, `ev`) including separators.
+    * Combined width contribution of all four frontend-only columns
+    * (`cns`, `tv`, `ev`, `rpv`) including separators.
     */
-  private val FrontendColsWidth: Int = CnsColWidth + TvarsColWidth + EvarsColWidth
+  private val FrontendColsWidth: Int = CnsColWidth + TvarsColWidth + EvarsColWidth + DensityColWidth
   /** Width contribution of the optional dominant-phase column (separator + width). */
   private val PhaseColWidth: Int = 1 + 10
 
