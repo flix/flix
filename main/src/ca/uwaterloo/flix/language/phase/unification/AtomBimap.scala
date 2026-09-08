@@ -101,9 +101,7 @@ private final class AtomBimap(forward: Map[EffAtom, Int], backward: Array[EffAto
   def toType(atom: EffAtom, loc: SourceLocation): Type = atom match {
     case EffAtom.Eff(sym) =>
       val args = effectArgs.getOrElse(sym, Nil)
-      val kind = args.foldRight(Kind.Eff: Kind) {
-        case (arg, acc) => arg.kind ->: acc
-      }
+      val kind = Kind.mkArrowTo(args.map(_.kind), Kind.Eff)
       Type.mkApply(Type.Cst(TypeConstructor.Effect(sym, kind), loc), args, loc)
     case EffAtom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
     case EffAtom.VarRigid(sym) => Type.Var(sym, loc)

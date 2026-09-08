@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
-import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{ChaosMonkey, Result}
 
 import scala.annotation.tailrec
@@ -169,13 +169,13 @@ object ConstraintSolver2 {
   private def breakdownPolyEffConstraints(constrs: List[TypeConstraint], initialSubst: SubstitutionTree): List[TypeConstraint] = {
     // Maps each effect symbol to the saturated effect types whose arguments must agree.
     // For example, `F[Int32] + F[String]` maps `F` to `F[Int32]` and `F[String]`.
-    val effectTypes = mutable.Map.empty[Symbol.EffSym, List[Type]]
+    var effectTypes = ListMap.empty[Symbol.EffSym, Type]
 
     def visitType(tpe: Type): Unit = tpe match {
       case app@Type.Apply(tpe1, tpe2, _) =>
         app.baseType match {
           case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
-            effectTypes(sym) = app :: effectTypes.getOrElse(sym, Nil)
+            effectTypes = effectTypes + (sym -> app)
           case _ => ()
         }
         visitType(tpe1)
@@ -221,10 +221,10 @@ object ConstraintSolver2 {
     visitSubstitutionTree(initialSubst)
 
     val equalities = mutable.ListBuffer.empty[TypeConstraint]
-    for ((_, occurrences) <- effectTypes) {
+    for (occurrences <- effectTypes.valueLists) {
       val representative = occurrences.head
       for (occurrence <- occurrences.tail) {
-        for ((tpe1, tpe2) <- representative.typeArguments.zip(occurrence.typeArguments)) {
+        for ((tpe1, tpe2) <- ListOps.zip(representative.typeArguments, occurrence.typeArguments)) {
           equalities += TypeConstraint.Equality(tpe1, tpe2, Provenance.PolyEffEq(representative, occurrence, occurrence.loc))
         }
       }

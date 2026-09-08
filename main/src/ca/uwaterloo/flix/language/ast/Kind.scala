@@ -139,9 +139,14 @@ object Kind {
   /**
     * Returns the kind: k1 -> (k2 ... -> (kn -> *)) for the given list of kinds `ks`.
     */
-  def mkArrow(ks: List[Kind]): Kind = ks match {
-    case Nil => Star
-    case x :: xs => mkArrow(x, mkArrow(xs))
+  def mkArrow(ks: List[Kind]): Kind = mkArrowTo(ks, Star)
+
+  /**
+    * Returns the kind: k1 -> (k2 ... -> (kn -> ret)) for the given list of kinds `ks`.
+    */
+  def mkArrowTo(ks: List[Kind], ret: Kind): Kind = ks match {
+    case Nil => ret
+    case x :: xs => mkArrow(x, mkArrowTo(xs, ret))
   }
 
   /**
