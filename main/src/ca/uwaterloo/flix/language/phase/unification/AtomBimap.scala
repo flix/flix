@@ -37,27 +37,23 @@ private object AtomBimap {
 
     // The arguments used to reconstruct each effect constructor after set unification.
     val effectArgs = mutable.Map.empty[Symbol.EffSym, List[Type]]
-
-    // The effect constructors that occur with more than one argument list.
-    val conflictedEffects = mutable.Set.empty[Symbol.EffSym]
     for (eq <- eqs) {
-      EffAtom.collectAtoms(eq.tpe1, buf, effectArgs, conflictedEffects)
-      EffAtom.collectAtoms(eq.tpe2, buf, effectArgs, conflictedEffects)
+      EffAtom.collectAtoms(eq.tpe1, buf, effectArgs)
+      EffAtom.collectAtoms(eq.tpe2, buf, effectArgs)
     }
-    fromAtoms(buf, effectArgs.toMap, conflictedEffects.toSet)
+    fromAtoms(buf, effectArgs.toMap)
   }
 
   /** Returns an [[AtomBimap]] numbering the [[EffAtom]]s of `tpe` using [[EffAtom.collectAtoms]]. */
   def fromType(tpe: Type)(implicit scope: RegionScope, renv: RigidityEnv): AtomBimap = {
     val buf = mutable.HashSet.empty[EffAtom]
     val effectArgs = mutable.Map.empty[Symbol.EffSym, List[Type]]
-    val conflictedEffects = mutable.Set.empty[Symbol.EffSym]
-    EffAtom.collectAtoms(tpe, buf, effectArgs, conflictedEffects)
-    fromAtoms(buf, effectArgs.toMap, conflictedEffects.toSet)
+    EffAtom.collectAtoms(tpe, buf, effectArgs)
+    fromAtoms(buf, effectArgs.toMap)
   }
 
   /** Returns an [[AtomBimap]] numbering the given atoms `0..n-1` in sorted order. */
-  private def fromAtoms(atoms: mutable.HashSet[EffAtom], effectArgs: Map[Symbol.EffSym, List[Type]], conflictedEffects: Set[Symbol.EffSym]): AtomBimap = {
+  private def fromAtoms(atoms: mutable.HashSet[EffAtom], effectArgs: Map[Symbol.EffSym, List[Type]]): AtomBimap = {
     val arr = atoms.toArray
     java.util.Arrays.sort(arr, implicitly[Ordering[EffAtom]])
     var forward = Map.empty[EffAtom, Int]
@@ -66,7 +62,7 @@ private object AtomBimap {
       forward = forward.updated(arr(i), i)
       i += 1
     }
-    new AtomBimap(forward, arr, effectArgs, conflictedEffects)
+    new AtomBimap(forward, arr, effectArgs)
   }
 }
 
@@ -78,10 +74,7 @@ private object AtomBimap {
   * index assignment itself must be deterministic; it is always derived from atoms in
   * sorted order.
   */
-private final class AtomBimap(forward: Map[EffAtom, Int], backward: Array[EffAtom], effectArgs: Map[Symbol.EffSym, List[Type]], conflictedEffects: Set[Symbol.EffSym]) {
-
-  /** Returns whether the same effect constructor was observed with different arguments. */
-  def hasConflictedEffectArgs: Boolean = conflictedEffects.nonEmpty
+private final class AtomBimap(forward: Map[EffAtom, Int], backward: Array[EffAtom], effectArgs: Map[Symbol.EffSym, List[Type]]) {
 
   /** Returns the index of `a`, or -1 if absent (allocation-free). */
   def getForwardIndex(a: EffAtom): Int = forward.getOrElse(a, -1)

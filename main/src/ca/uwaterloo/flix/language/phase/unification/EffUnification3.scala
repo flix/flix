@@ -53,6 +53,12 @@ object EffUnification3 {
     * Returns `Result.Err(eqns0)` if `eqns0` contains an equation that is ill-kinded. Hence, it is better to handle ill-kinded equations elsewhere.
     *
     * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop equations that contain `Type.Error`.
+    *
+    * Invariant: For every polymorphic effect constructor in `eqns0`, all saturated
+    * occurrences must have identical type arguments. The caller must first equate and
+    * solve these arguments, and apply the resulting substitution to `eqns0`. For example,
+    * `F[a]` and `F[b]` may reach this function only after `a` and `b` have become equal;
+    * `F[Int32]` and `F[String]` must be rejected by ordinary type unification beforehand.
     */
   def unifyAll(eqs0: List[TypeConstraint.Equality], scope: RegionScope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
     // Performance: Nothing to do if the equation list is empty
@@ -82,13 +88,6 @@ object EffUnification3 {
     // Choose a unique number for each atom. Use the original constraint order so the effect
     // argument representative stored in the bimap is independent of the chaos monkey.
     implicit val bimap: AtomBimap = AtomBimap.fromConstraints(eqs0)
-
-    // Effect arguments are unified before effect equations reach this solver. If different
-    // arguments remain, leave the equations unsolved until the ordinary type constraints make
-    // progress or report the conflict.
-    if (bimap.hasConflictedEffectArgs) {
-      return Result.Err(eqs)
-    }
 
     //
     // Phase 1: Try to solve without subeffecting.
@@ -320,6 +319,9 @@ object EffUnification3 {
     * WARNING:
     * - The type `tpe` *MUST* have kind `Eff`.
     * - The type `tpe` *MUST* be well-kinded. Do not use this function for ill-kinded effects!
+    * - Every saturated occurrence of the same polymorphic effect constructor *MUST* have
+    *   identical type arguments. For example, `F[a] + F[a]` is permitted, whereas
+    *   `F[Int32] + F[String]` must have been rejected before calling this function.
     *
     * The type `tpe` may contain `Type.Error`.
     */
@@ -334,10 +336,6 @@ object EffUnification3 {
     implicit val scope: RegionScope = RegionScope.Top
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: AtomBimap = AtomBimap.fromType(tpe)
-
-    if (bimap.hasConflictedEffectArgs) {
-      return tpe
-    }
 
     val f0 = toSetFormula(tpe)(withSlack = true, scope, renv, bimap)
     val z = Zhegalkin.toZhegalkin(f0)(Algebra, CofiniteIntSet.LatticeOps)

@@ -112,32 +112,28 @@ private object EffAtom {
     *     [[RigidityEnv.isRigid]] is false for `ef`)
     *   - `collectAtoms(Indexable.Aef[Error], acc)` adds nothing
     */
-  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, List[Type]], conflictedEffects: mutable.Set[Symbol.EffSym])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
+  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, List[Type]])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => acc += EffAtom.VarRigid(sym)
     case Type.Var(sym, _) => acc += EffAtom.VarFlex(sym)
-    case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => addEffect(sym, Nil, acc, effectArgs, conflictedEffects)
+    case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => addEffect(sym, Nil, acc, effectArgs)
     case app@Type.Apply(tpe1, tpe2, _) => app.baseType match {
       case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
-        addEffect(sym, app.typeArguments, acc, effectArgs, conflictedEffects)
+        addEffect(sym, app.typeArguments, acc, effectArgs)
       case _ =>
-        collectAtoms(tpe1, acc, effectArgs, conflictedEffects)
-        collectAtoms(tpe2, acc, effectArgs, conflictedEffects)
+        collectAtoms(tpe1, acc, effectArgs)
+        collectAtoms(tpe2, acc, effectArgs)
     }
     case Type.Cst(TypeConstructor.Region(sym), _) => acc += EffAtom.Region(sym)
     case Type.Cst(TypeConstructor.Error(id, _), _) => acc += EffAtom.Error(id)
-    case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc, effectArgs, conflictedEffects)
+    case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc, effectArgs)
     case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).foreach(acc += _)
     case _ => ()
   }
 
   /** Adds an effect atom and records the arguments used to reconstruct it. */
-  private def addEffect(sym: Symbol.EffSym, args: List[Type], acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, List[Type]], conflictedEffects: mutable.Set[Symbol.EffSym]): Unit = {
+  private def addEffect(sym: Symbol.EffSym, args: List[Type], acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, List[Type]]): Unit = {
     acc += EffAtom.Eff(sym)
-    effectArgs.get(sym) match {
-      case None => effectArgs(sym) = args
-      case Some(previousArgs) if previousArgs != args => conflictedEffects += sym
-      case Some(_) => ()
-    }
+    effectArgs.getOrElseUpdate(sym, args)
   }
 
   /**

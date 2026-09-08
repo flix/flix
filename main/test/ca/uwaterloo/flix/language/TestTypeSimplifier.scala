@@ -54,17 +54,6 @@ class TestTypeSimplifier extends AnyFunSuite with TestUtils {
     assert(TypeSimplifier.simplify(union) == effect)
   }
 
-  test("ConflictingPolymorphicEffectArguments") {
-    val loc = SourceLocation.Unknown
-    val sym = new Symbol.EffSym(Nil, "F", loc)
-    val constructor = Type.Cst(TypeConstructor.Effect(sym, Kind.Star ->: Kind.Eff), loc)
-    val intEffect = Type.mkApply(constructor, Type.Int32 :: Nil, loc)
-    val stringEffect = Type.mkApply(constructor, Type.Str :: Nil, loc)
-    val union = Type.mkUnion(intEffect, stringEffect, loc)
-
-    assert(TypeSimplifier.simplify(union) == union)
-  }
-
   /** Returns a list of types to use for testing. */
   private def getSampleTypes: List[Type] = {
     // Find sample types in the standard library.
