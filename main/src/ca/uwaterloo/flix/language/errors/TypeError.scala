@@ -671,6 +671,42 @@ object TypeError {
   }
 
   /**
+    * Mismatched Effect Argument.
+    *
+    * Two applications of the same polymorphic effect disagree on one of their type arguments.
+    *
+    * @param sym    the symbol of the effect.
+    * @param ith    the position of the type argument (1-based).
+    * @param tparam the name of the type parameter at that position.
+    * @param tpe1   the first mismatched (base) type.
+    * @param tpe2   the second mismatched (base) type.
+    * @param eff1   the first effect application.
+    * @param eff2   the second effect application.
+    * @param renv   the rigidity environment.
+    * @param loc    the location where the error occurred.
+    */
+  case class MismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tparam: Name.Ident, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6795
+
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(eff1), SymbolSet.symbolsOf(eff2))
+
+    def summary: String = s"Mismatched type arguments for effect '$sym': '${formatType(tpe1, Some(renv), amb = amb)}' and '${formatType(tpe2, Some(renv), amb = amb)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched type arguments for effect '${magenta(sym.toString)}': '${red(formatType(tpe1, Some(renv), amb = amb))}' and '${red(formatType(tpe2, Some(renv), amb = amb))}'.
+         |
+         |${highlight(loc, "mismatched effect type argument.", fmt)}
+         |
+         |The effect '${magenta(sym.toString)}' is used with different types for its ${Grammar.ordinal(ith)} type parameter '${cyan(tparam.name)}'.
+         |
+         |Effect One: ${cyan(formatType(eff1, Some(renv), amb = amb))}
+         |Effect Two: ${magenta(formatType(eff2, Some(renv), amb = amb))}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * A mismatch between a function (arrow) type and a non-function type.
     *
     * This is a special case of [[MismatchedTypes]]: a function and a non-function can never be

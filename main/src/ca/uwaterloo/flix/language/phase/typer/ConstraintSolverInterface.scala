@@ -205,8 +205,8 @@ object ConstraintSolverInterface {
       mkArrowAndNonArrowError(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc)
         .getOrElse(List(mkMismatchedTypesOrEffects(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc)))
 
-    case TypeConstraint.Equality(baseType1, baseType2, Provenance.PolyEffEq(eff1, eff2, loc)) =>
-      List(TypeError.MismatchedTypes(subst(baseType1), subst(baseType2), subst(eff1), subst(eff2), renv, loc))
+    case TypeConstraint.Equality(baseType1, baseType2, Provenance.PolyEffEq(sym, ith, eff1, eff2, loc)) =>
+      List(mkMismatchedEffectArgument(sym, ith, subst(baseType1), subst(baseType2), subst(eff1), subst(eff2), renv, root, loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.Label(label, loc1, loc2, inner)) =>
       if (ConstraintSolver2.isSyntactic(tpe1.kind)) {
@@ -265,8 +265,8 @@ object ConstraintSolverInterface {
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
       List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), subst(tpe1), subst(tpe2), renv, loc))
 
-    case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.PolyEffEq(eff1, eff2, loc)) =>
-      List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(eff1), subst(eff2), renv, loc))
+    case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.PolyEffEq(sym, ith, eff1, eff2, loc)) =>
+      List(mkMismatchedEffectArgument(sym, ith, subst(tpe1), subst(tpe2), subst(eff1), subst(eff2), renv, root, loc))
 
     case TypeConstraint.Conflicted(_, _, Provenance.Timeout(msg, loc)) =>
       List(TypeError.TooComplex(msg, loc))
@@ -302,6 +302,17 @@ object ConstraintSolverInterface {
   }
 
   /**
+    * Returns a [[TypeError.MismatchedEffectArgument]] for the `ith` type argument (1-based) of the effect `sym`,
+    * where `tpe1` and `tpe2` are the mismatched parts of the argument and `eff1` and `eff2` the two effect applications.
+    *
+    * The name of the type parameter is looked up in the declaration of the effect.
+    */
+  private def mkMismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, renv: RigidityEnv, root: KindedAst.Root, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+    val tparam = root.effects(sym).tparams(ith - 1).name
+    TypeError.MismatchedEffectArgument(sym, ith, tparam, tpe1, tpe2, eff1, eff2, renv, loc)
+  }
+
+  /**
     * Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
     */
   private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
@@ -325,7 +336,7 @@ object ConstraintSolverInterface {
     case Provenance.ExpectEffect(expected, actual, _) => Some((expected, actual))
     case Provenance.ExpectArgument(expected, actual, _, _, _) => Some((expected, actual))
     case Provenance.Match(tpe1, tpe2, _) => Some((tpe1, tpe2))
-    case Provenance.PolyEffEq(eff1, eff2, _) => Some((eff1, eff2))
+    case Provenance.PolyEffEq(_, _, eff1, eff2, _) => Some((eff1, eff2))
     case Provenance.Source(eff1, eff2, _) => Some((eff1, eff2))
     case Provenance.Label(_, _, _, inner) => enclosingTypes(inner)
     case Provenance.Predicate(_, _, _, inner) => enclosingTypes(inner)
