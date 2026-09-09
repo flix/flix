@@ -230,6 +230,19 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
+  test("Test.IllegalEntryPointEffect.Main.04") {
+    val input =
+      """
+        |eff Emit[t] {
+        |    pub def emit(x: t): Unit
+        |}
+        |
+        |def main(): Unit \ Emit[Int32] = Emit.emit(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[EntryPointError.IllegalEntryPointEffect](result)
+  }
+
   test("Test.IllegalEntryPointEffect.Test.01") {
     val input =
       """

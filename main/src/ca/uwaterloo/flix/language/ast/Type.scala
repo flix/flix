@@ -651,6 +651,8 @@ object Type {
     * associated types, or error types.
     *
     * Evaluates `eff` to a Cofinite set of effect symbols.
+    * A ground, saturated effect application such as `State[Int32]` evaluates to `State` because
+    * concrete effect sets identify effects by their constructor symbol.
     *
     * - Returns `Ok[s]` if `eff` is well-formed and has no type variables, associated types,
     *   or error types and hence reduces to a single Cofinite set.
@@ -677,6 +679,11 @@ object Type {
         CofiniteSet.difference(visit(x), visit(y))
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
         CofiniteSet.xor(visit(x), visit(y))
+      case app@Type.Apply(_, _, _) if app.kind == Kind.Eff && app.typeVars.isEmpty && !Type.hasAssocType(app) && !Type.hasError(app) =>
+        app.baseType match {
+          case Type.Cst(TypeConstructor.Effect(sym, _), _) => CofiniteSet.mkSet(sym)
+          case _ => throw NonGroundEffect
+        }
       case Type.Alias(_, _, tpe, _) => visit(tpe)
       case _ => throw NonGroundEffect
     }
