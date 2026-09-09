@@ -135,9 +135,20 @@ object Simplifier {
       SimplifiedAst.Expr.ApplyLocalDef(sym, es, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
+      val op = lookupOp(sym)
+      val es = ListOps.zip(op.spec.fparams.toList, exps.map(visitExp)).map {
+        case (declaredParam, exp) if isErasedEffectParameter(declaredParam.tpe) && isPrimitive(exp.tpe) =>
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Box, exp :: Nil, SimpleType.Object, exp.purity, exp.loc.asSynthetic)
+        case (_, exp) => exp
+      }
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyOp(sym, es, t, simplifyEffect(eff), loc)
+      val purity = simplifyEffect(eff)
+      if (isErasedEffectParameter(op.spec.retTpe) && isPrimitive(t)) {
+        val apply = SimplifiedAst.Expr.ApplyOp(sym, es, SimpleType.Object, purity, loc)
+        SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Unbox, apply :: Nil, t, purity, loc.asSynthetic)
+      } else {
+        SimplifiedAst.Expr.ApplyOp(sym, es, t, purity, loc)
+      }
 
     case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -268,12 +279,7 @@ object Simplifier {
 
     case MonoAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val rs = rules map {
-        case MonoAst.HandlerRule(sym, fparams, body) =>
-          val fps = fparams.toList.map(visitFormalParam)
-          val b = visitExp(body)
-          SimplifiedAst.HandlerRule(sym, fps, b)
-      }
+      val rs = rules.map(visitHandlerRule)
       val t = visitType(tpe)
       SimplifiedAst.Expr.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
 
@@ -638,6 +644,85 @@ object Simplifier {
       case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
     }
   }
+
+  /**
+    * Simplifies `rule0` and adapts primitive effect parameters to the erased effect ABI.
+    *
+    * A polymorphic operation is emitted only once. Consequently, a declaration such as
+    * `def put(x: a): Unit` has an `Object` parameter at run time even when a particular handler
+    * instantiates `a` with `Int32`. The operation call boxes that `Int32`, and the handler bridge
+    * introduced here unboxes it before binding the source-level handler parameter. The same bridge
+    * adapts the continuation when the operation's polymorphic result is instantiated with a
+    * primitive type.
+    */
+  private def visitHandlerRule(rule0: MonoAst.HandlerRule)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.HandlerRule = rule0 match {
+    case MonoAst.HandlerRule(opSymUse, fparams0, body0) =>
+      val op = lookupOp(opSymUse.sym)
+      val (opFparams0, continuation0) = fparams0.toList.splitAt(op.spec.fparams.length)
+      val continuation = continuation0 match {
+        case fparam :: Nil => fparam
+        case _ => throw InternalCompilerException(s"Unexpected handler parameters for operation '${op.sym}'.", opSymUse.loc)
+      }
+
+      val body = visitExp(body0)
+      val (opFparams, bodyWithOpParams) = ListOps.zip(op.spec.fparams.toList, opFparams0).foldRight((List.empty[SimplifiedAst.FormalParam], body)) {
+        case ((declaredParam, actualParam0), (accFparams, accBody)) =>
+          val actualParam = visitFormalParam(actualParam0)
+          if (isErasedEffectParameter(declaredParam.tpe) && isPrimitive(actualParam.tpe)) {
+            val erasedSym = Symbol.freshVarSym(actualParam.sym)
+            val erasedParam = SimplifiedAst.FormalParam(erasedSym, SimpleType.Object, actualParam.loc)
+            val erasedVar = SimplifiedAst.Expr.Var(erasedSym, SimpleType.Object, actualParam.loc.asSynthetic)
+            val unboxed = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Unbox, erasedVar :: Nil, actualParam.tpe, Purity.Pure, actualParam.loc.asSynthetic)
+            val adaptedBody = SimplifiedAst.Expr.Let(actualParam.sym, unboxed, accBody, accBody.tpe, accBody.purity, actualParam.loc.asSynthetic)
+            (erasedParam :: accFparams, adaptedBody)
+          } else {
+            (actualParam :: accFparams, accBody)
+          }
+      }
+      val (continuationParam, adaptedBody) = adaptHandlerContinuation(op.spec.retTpe, continuation, bodyWithOpParams)
+      SimplifiedAst.HandlerRule(opSymUse, opFparams :+ continuationParam, adaptedBody)
+  }
+
+  /** Adapts a primitive resumption argument to the `Object` ABI of a polymorphic operation result. */
+  private def adaptHandlerContinuation(declaredResult: Type, continuation0: MonoAst.FormalParam, body: SimplifiedAst.Expr)(implicit universe: Set[Symbol.EffSym], flix: Flix): (SimplifiedAst.FormalParam, SimplifiedAst.Expr) = {
+    val continuation = visitFormalParam(continuation0)
+    if (!isErasedEffectParameter(declaredResult)) {
+      (continuation, body)
+    } else {
+      continuation.tpe match {
+        case actualArrow@SimpleType.Arrow(actualArg :: Nil, result) if isPrimitive(actualArg) =>
+          val erasedSym = Symbol.freshVarSym(continuation.sym)
+          val erasedArrow = SimpleType.mkArrow(SimpleType.Object :: Nil, result)
+          val erasedParam = SimplifiedAst.FormalParam(erasedSym, erasedArrow, continuation.loc)
+          val erasedVar = SimplifiedAst.Expr.Var(erasedSym, erasedArrow, continuation.loc.asSynthetic)
+
+          val resumeArgSym = Symbol.freshVarSym("resumeArg", BoundBy.FormalParam, continuation.loc.asSynthetic)
+          val resumeArgParam = SimplifiedAst.FormalParam(resumeArgSym, actualArg, continuation.loc.asSynthetic)
+          val resumeArg = SimplifiedAst.Expr.Var(resumeArgSym, actualArg, continuation.loc.asSynthetic)
+          val boxedArg = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Box, resumeArg :: Nil, SimpleType.Object, Purity.Pure, continuation.loc.asSynthetic)
+          val resumePurity = simplifyEffect(continuation0.tpe.arrowEffectType)
+          val resume = SimplifiedAst.Expr.ApplyClo(erasedVar, boxedArg, result, resumePurity, continuation.loc.asSynthetic)
+          val adapter = SimplifiedAst.Expr.Lambda(resumeArgParam :: Nil, resume, actualArrow, continuation.loc.asSynthetic)
+          val adaptedBody = SimplifiedAst.Expr.Let(continuation.sym, adapter, body, body.tpe, body.purity, continuation.loc.asSynthetic)
+          (erasedParam, adaptedBody)
+        case _ =>
+          (continuation, body)
+      }
+    }
+  }
+
+  /** Returns the operation declaration for `sym`. */
+  private def lookupOp(sym: Symbol.OpSym)(implicit root: MonoAst.Root): MonoAst.Op =
+    root.effects(sym.eff).ops.find(_.sym == sym).getOrElse(throw InternalCompilerException(s"Unknown operation '$sym'.", sym.loc))
+
+  /** Returns whether `tpe` is the monomorphic representation of an erased effect parameter. */
+  private def isErasedEffectParameter(tpe: Type): Boolean = tpe match {
+    case Type.Cst(TypeConstructor.AnyType, _) => true
+    case _ => false
+  }
+
+  /** Returns whether `tpe` has a primitive JVM representation. */
+  private def isPrimitive(tpe: SimpleType): Boolean = SimpleType.erase(tpe) != SimpleType.Object
 
   private def visitFormalParam(p: MonoAst.FormalParam): SimplifiedAst.FormalParam = {
     val t = visitType(p.tpe)
