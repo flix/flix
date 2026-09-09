@@ -1727,7 +1727,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[MismatchedTypes](result)
+    expectError[TypeError.MismatchedEffectArgument](result)
   }
 
   test("TestPolymorphicEffect.Neg.02") {
@@ -1740,7 +1740,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(g: Unit -> Unit \ Emit[Int32], h: Unit -> Unit \ Emit[String]): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[MismatchedTypes](result)
+    expectError[TypeError.MismatchedEffectArgument](result)
   }
 
   test("TestPolymorphicEffect.Neg.03") {
@@ -1758,6 +1758,52 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.UnexpectedArg](result)
+  }
+
+  test("TestPolymorphicEffect.Neg.04") {
+    val input =
+      """
+        |eff Pair[a, b] {
+        |    def put(x: a, y: b): Unit
+        |}
+        |
+        |def f(_g: Unit -> Unit \ Pair[Int32, String], _h: Unit -> Unit \ Pair[Int32, Bool]): Unit = ()
+        |""".stripMargin
+    val (_, errors) = check(input, Options.TestWithLibMin)
+    val mismatches = errors.collect { case e: TypeError.MismatchedEffectArgument => e }
+    assert(mismatches.nonEmpty)
+    assert(mismatches.forall(_.ith == 2))
+  }
+
+  test("TestPolymorphicEffect.Neg.05") {
+    val input =
+      """
+        |eff Emit[t] {
+        |    def emit(x: t): Unit
+        |}
+        |
+        |enum Box[a] {
+        |    case Box(a)
+        |}
+        |
+        |enum Bag[a] {
+        |    case Bag(a)
+        |}
+        |
+        |def emitBox(x: Box[a]): Unit \ Emit[Box[a]] = Emit.emit(x)
+        |
+        |def emitBag(x: Bag[a]): Unit \ Emit[Bag[a]] = Emit.emit(x)
+        |
+        |def f(): Unit =
+        |    run {
+        |        emitBox(Box.Box(1));
+        |        emitBag(Bag.Bag(1))
+        |    } with handler Emit {
+        |        def emit(_x, k) = k(())
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedEffectArgument](result)
   }
 
   test("TestTryCatch.01") {

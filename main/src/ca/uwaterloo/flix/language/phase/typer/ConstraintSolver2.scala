@@ -221,11 +221,13 @@ object ConstraintSolver2 {
     visitSubstitutionTree(initialSubst)
 
     val equalities = mutable.ListBuffer.empty[TypeConstraint]
-    for (occurrences <- effectTypes.valueLists) {
+    for ((sym, occurrences) <- effectTypes.m) {
       val representative = occurrences.head
       for (occurrence <- occurrences.tail) {
+        var ith = 1
         for ((tpe1, tpe2) <- ListOps.zip(representative.typeArguments, occurrence.typeArguments)) {
-          equalities += TypeConstraint.Equality(tpe1, tpe2, Provenance.PolyEffEq(representative, occurrence, occurrence.loc))
+          equalities += TypeConstraint.Equality(tpe1, tpe2, Provenance.PolyEffEq(sym, ith, representative, occurrence, occurrence.loc))
+          ith += 1
         }
       }
     }

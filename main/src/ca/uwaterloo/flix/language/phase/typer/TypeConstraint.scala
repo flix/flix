@@ -134,9 +134,10 @@ object TypeConstraint {
     case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
 
     /**
-      * The constraint equates type arguments from two applications of the same polymorphic effect.
+      * The constraint equates the `ith` type arguments (1-based) of `eff1` and `eff2`,
+      * two applications of the same polymorphic effect `sym`.
       */
-    case class PolyEffEq(eff1: Type, eff2: Type, loc: SourceLocation) extends Provenance
+    case class PolyEffEq(sym: Symbol.EffSym, ith: Int, eff1: Type, eff2: Type, loc: SourceLocation) extends Provenance
 
     /**
       * The constraint relates the types of the record label `label` in two record rows.
