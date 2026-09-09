@@ -123,7 +123,8 @@ private object EffAtom {
     case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => acc += EffAtom.Eff(sym)
     case app@Type.Apply(tpe1, tpe2, _) => app.baseType match {
       case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
-        addEffect(sym, Nel.unsafeFrom(app.typeArguments), acc, effectArgs)
+        acc += EffAtom.Eff(sym)
+        effectArgs.getOrElseUpdate(sym, Nel.unsafeFrom(app.typeArguments))
       case _ =>
         collectAtoms(tpe1, acc, effectArgs)
         collectAtoms(tpe2, acc, effectArgs)
@@ -133,12 +134,6 @@ private object EffAtom {
     case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc, effectArgs)
     case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).foreach(acc += _)
     case _ => ()
-  }
-
-  /** Adds an effect atom and records the arguments used to reconstruct it. */
-  private def addEffect(sym: Symbol.EffSym, args: Nel[Type], acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, Nel[Type]]): Unit = {
-    acc += EffAtom.Eff(sym)
-    effectArgs.getOrElseUpdate(sym, args)
   }
 
   /**
