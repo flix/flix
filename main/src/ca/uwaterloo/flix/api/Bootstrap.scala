@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result}
@@ -427,6 +427,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val tomlPath = Bootstrap.getManifestFile(projectPath)
     for {
       manifest <- Steps.parseManifest(tomlPath)
+      _ <- Steps.checkFlixVersion(manifest, tomlPath)
       deps <- Steps.resolveFlixDependencies(manifest)
       _ <- Steps.installDependencies(deps)
       _ = Steps.addLocalFlixFiles()
@@ -1335,6 +1336,22 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case Err(e) =>
           Err(BootstrapError.ManifestParseError(e))
       }
+    }
+
+    /**
+      * Checks that the current version of Flix is new enough to build the project described
+      * by `manifest`, which was read from `tomlPath`.
+      *
+      * Returns an error if the current version of Flix is older than the version required by
+      * the manifest. A manifest that requires an older version of Flix is accepted.
+      */
+    def checkFlixVersion(manifest: Manifest, tomlPath: Path): Result[Unit, BootstrapError] = {
+      val required = manifest.flix
+      val current = SemVer.ofVersion(Version.CurrentVersion)
+      if (SemVer.semVerOrdering.lt(current, required))
+        Err(BootstrapError.FlixVersionTooOld(tomlPath, required, current))
+      else
+        Ok(())
     }
 
     /**

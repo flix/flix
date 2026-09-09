@@ -2,7 +2,7 @@
 name        = "weather"
 description = "show the weather in your current position"
 version     = "0.1.0"
-flix        = "0.58.1"
+flix        = "0.75.3"
 authors     = ["Chenhao Gao <chenhaogao123@gmail.com>"]
 
 [dependencies]

@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Version}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
 import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
@@ -411,6 +411,63 @@ class TestBootstrap extends AnyFunSuite {
     val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
     assert(bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
+  }
+
+  test("flix-version.current") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    // N.B.: `init` writes the current version of Flix to `flix.toml`.
+    Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out) match {
+      case Result.Ok(_) => // Expected.
+      case Result.Err(e) => fail(s"Expected success, but got: ${e.message(Formatter.NoFormatter)}")
+    }
+  }
+
+  test("flix-version.older") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    FileOps.writeString(p.resolve("flix.toml").normalize(), mkTomlWithFlixVersion("0.1.0"))
+    Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out) match {
+      case Result.Ok(_) => // Expected: an older required version is fine.
+      case Result.Err(e) => fail(s"Expected success, but got: ${e.message(Formatter.NoFormatter)}")
+    }
+  }
+
+  test("flix-version.newer") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    FileOps.writeString(p.resolve("flix.toml").normalize(), mkTomlWithFlixVersion("999.0.0"))
+    Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out) match {
+      case Result.Ok(_) => fail("Expected BootstrapError.FlixVersionTooOld, but bootstrap succeeded.")
+      case Result.Err(e: BootstrapError.FlixVersionTooOld) =>
+        assert(e.required == SemVer(999, 0, 0))
+        assert(e.current == SemVer.ofVersion(Version.CurrentVersion))
+      case Result.Err(e) => fail(s"Expected BootstrapError.FlixVersionTooOld, but got: ${e.message(Formatter.NoFormatter)}")
+    }
+  }
+
+  test("flix-version.examples") {
+    val current = SemVer.ofVersion(Version.CurrentVersion)
+    val manifests = FileOps.getFilesIn(Path.of("examples"), Int.MaxValue).filter(_.getFileName.toString == "flix.toml")
+    assert(manifests.nonEmpty, "Expected to find at least one 'flix.toml' under 'examples'.")
+    for (manifest <- manifests) {
+      val required = ManifestParser.parse(manifest).unsafeGet.flix
+      assert(required == current, s"'$manifest' requires Flix $required, but the current version is $current.")
+    }
+  }
+
+  /**
+    * Returns a `flix.toml` without dependencies that requires the given version `v` of Flix.
+    */
+  private def mkTomlWithFlixVersion(v: String): String = {
+    s"""
+       |[package]
+       |name = "test"
+       |description = "test"
+       |version = "0.1.0"
+       |flix = "$v"
+       |authors = ["flix"]
+       |""".stripMargin
   }
 
   private def calcHash(p: Path): String = {
