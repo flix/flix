@@ -15,26 +15,26 @@ mod Test.Eff.Poly.MultiInstantiation {
         }
 
     @Test
-    def testGenericFunctionInt32(): Unit \ Assert =
+    def testPolymorphicFunctionInt32(): Unit \ Assert =
         let result = run askTwice(40) with handler AskTell {
             def askTell(x, k) = k(x + 1)
         };
         assertEq(expected = 42, result)
 
     @Test
-    def testGenericFunctionString(): Unit \ Assert =
+    def testPolymorphicFunctionString(): Unit \ Assert =
         let result = run askTwice("a") with handler AskTell {
             def askTell(x, k) = k("${x}b")
         };
         assertEq(expected = "abb", result)
 
     @Test
-    def testGenericHandlerInt32(): Unit \ Assert =
+    def testPolymorphicHandlerInt32(): Unit \ Assert =
         let result = runAskTell(42, () -> AskTell.askTell(0));
         assertEq(expected = 42, result)
 
     @Test
-    def testGenericHandlerString(): Unit \ Assert =
+    def testPolymorphicHandlerString(): Unit \ Assert =
         let result = runAskTell("ok", () -> AskTell.askTell("ignored"));
         assertEq(expected = "ok", result)
 
