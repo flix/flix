@@ -6,8 +6,15 @@ mod Test.Eff.Poly.MultiInstantiation {
         def askTell(x: t): t
     }
 
+    eff EqAskTell[t] {
+        def askTell(x: t): t with Eq[t]
+    }
+
     def askTwice(x: t): t \ AskTell[t] =
         AskTell.askTell(AskTell.askTell(x))
+
+    def eqAskTwice(x: t): t \ EqAskTell[t] with Eq[t] =
+        EqAskTell.askTell(EqAskTell.askTell(x))
 
     def runAskTell(response: t, f: Unit -> t \ AskTell[t]): t =
         run f() with handler AskTell {
@@ -25,6 +32,20 @@ mod Test.Eff.Poly.MultiInstantiation {
     def testPolymorphicFunctionString(): Unit \ Assert =
         let result = run askTwice("a") with handler AskTell {
             def askTell(x, k) = k("${x}b")
+        };
+        assertEq(expected = "abb", result)
+
+    @Test
+    def testEqBoundInt32(): Unit \ Assert =
+        let result = run eqAskTwice(40) with handler EqAskTell {
+            def askTell(x, k) = if (x == 40 or x == 41) k(x + 1) else k(x)
+        };
+        assertEq(expected = 42, result)
+
+    @Test
+    def testEqBoundString(): Unit \ Assert =
+        let result = run eqAskTwice("a") with handler EqAskTell {
+            def askTell(x, k) = if (x == "a" or x == "ab") k("${x}b") else k(x)
         };
         assertEq(expected = "abb", result)
 

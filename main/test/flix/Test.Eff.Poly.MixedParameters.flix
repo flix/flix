@@ -6,8 +6,15 @@ mod Test.Eff.Poly.MixedParameters {
         def exchange(offset: Int32, x: a, y: b): a
     }
 
+    eff Checked[a, b] {
+        def check(left: a, right: a, label: b): b with Eq[a], ToString[b]
+    }
+
     def performExchange(offset: Int32, x: a, y: b): a \ Exchange[a, b] =
         Exchange.exchange(offset, x, y)
+
+    def performCheck(left: a, right: a, label: b): b \ Checked[a, b] with Eq[a], ToString[b] =
+        Checked.check(left, right, label)
 
     @Test
     def testPrimitiveAndReferenceParameters(): Unit \ Assert =
@@ -28,5 +35,26 @@ mod Test.Eff.Poly.MixedParameters {
             }
         };
         assertEq(expected = "answer-42", result)
+
+    @Test
+    def testEqAndToStringBoundsInt32String(): Unit \ Assert =
+        let result = run performCheck(42, 42, "equal") with handler Checked {
+            def check(left, right, label, k) = {
+                let resumed = k(label);
+                if (left == right) "${label}:${resumed}" else "different"
+            }
+        };
+        assertEq(expected = "equal:equal", result)
+
+    @Test
+    def testEqAndToStringBoundsStringInt32(): Unit \ Assert =
+        let result = run performCheck("same", "same", 42) with handler Checked {
+            def check(left, right, label, k) = {
+                let rendered = "${label}";
+                let resumed = k(label);
+                if (left == right and rendered == "42") resumed else -1
+            }
+        };
+        assertEq(expected = 42, result)
 
 }

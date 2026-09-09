@@ -6,6 +6,10 @@ mod Test.Eff.Poly.Trait {
         def askTell(x: t): t
     }
 
+    eff Render[t] {
+        def render(x: t): String with ToString[t]
+    }
+
     trait Echo[t] {
         pub def echo(x: t): t \ AskTell[t]
     }
@@ -13,6 +17,15 @@ mod Test.Eff.Poly.Trait {
     instance Echo[Int32] {
         pub def echo(x: Int32): Int32 \ AskTell[Int32] =
             AskTell.askTell(x)
+    }
+
+    trait Renderer[t] {
+        pub def render(x: t): String \ Render[t] with ToString[t]
+    }
+
+    instance Renderer[Int32] {
+        pub def render(x: Int32): String \ Render[Int32] =
+            Render.render(x)
     }
 
     enum IntSource {
@@ -47,6 +60,9 @@ mod Test.Eff.Poly.Trait {
     def echoViaTrait(x: t): t \ AskTell[t] with Echo[t] =
         Echo.echo(x)
 
+    def renderViaTrait(x: t): String \ Render[t] with Renderer[t], ToString[t] =
+        Renderer.render(x)
+
     def askViaSource(src: s): Source.Out[s] \ AskTell[Source.Out[s]] with Source[s] =
         AskTell.askTell(Source.read(src))
 
@@ -59,6 +75,13 @@ mod Test.Eff.Poly.Trait {
             def askTell(x, k) = k(x + 1)
         };
         assertEq(expected = 42, result)
+
+    @Test
+    def testToStringBoundViaTrait(): Unit \ Assert =
+        let result = run renderViaTrait(42) with handler Render {
+            def render(x, k) = k("value=${x}")
+        };
+        assertEq(expected = "value=42", result)
 
     @Test
     def testAssociatedValueType(): Unit \ Assert =
