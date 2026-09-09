@@ -1898,9 +1898,7 @@ object Kinder {
     private def getEffectKind(eff0: ResolvedAst.Declaration.Effect): Kind = eff0 match {
       case ResolvedAst.Declaration.Effect(_, _, _, _, tparams, _, _) =>
         val kenv = getKindEnvFromTypeParams(tparams)
-        tparams.foldRight(Kind.Eff: Kind) {
-          case (tparam, acc) => kenv.map(tparam.sym) ->: acc
-        }
+        Kind.mkArrowTo(tparams.map(tparam => kenv.map(tparam.sym)), Kind.Eff)
     }
 
     /**
