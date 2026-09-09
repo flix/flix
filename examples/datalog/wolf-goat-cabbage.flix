@@ -1,0 +1,130 @@
+///
+/// Solves the wolf, goat, and cabbage problem, a river crossing puzzle that
+/// dates back to at least the 9th century:
+///
+///     A farmer with a wolf, a goat, and a cabbage must cross a river by boat.
+///     The boat can carry only the farmer and a single item. If left unattended
+///     together, the wolf would eat the goat, or the goat would eat the cabbage.
+///     How can they cross the river without anything being eaten?
+///
+/// We model a configuration as the four banks that the farmer, wolf, goat, and
+/// cabbage are currently on. A single crossing is a `Step`: the fact
+/// `Step(f, w, g, c, cargo, f2, w2, g2, c2)` says that from the configuration
+/// `(f, w, g, c)` the farmer can cross with `cargo` to the configuration
+/// `(f2, w2, g2, c2)`. `Unsafe` holds for the configurations where something
+/// gets eaten. `Reachable` is the set of configurations reachable from the
+/// starting configuration without ever passing through an unsafe one.
+///
+/// Datalog can tell us *whether* the puzzle is solvable, because that is a
+/// membership question about the minimal model. It cannot return the sequence of
+/// crossings, because a sequence is a term and Datalog has no function symbols.
+///
+/// But the sequence of crossings *is* the derivation of the goal configuration,
+/// so `pquery` recovers it: the `Step` facts along the provenance path are the
+/// crossings, in order.
+///
+def main(): Unit \ IO =
+    let pr = #{
+        // The two banks of the river and the crossings between them.
+        Bank("west").
+        Bank("east").
+
+        Travel("west", "east").
+        Travel("east", "west").
+
+        // The farmer crosses alone: from `f` to `f2`; `w`, `g`, and `c` stay put.
+        Step(f, w, g, c, "nothing", f2, w,  g,  c ) :- Travel(f, f2), Bank(w), Bank(g), Bank(c).
+
+        // The farmer crosses with the wolf: both go from `f` to `f2`; `g` and `c` stay put.
+        Step(f, f, g, c, "wolf",    f2, f2, g,  c ) :- Travel(f, f2), Bank(g), Bank(c).
+
+        // The farmer crosses with the goat: both go from `f` to `f2`; `w` and `c` stay put.
+        Step(f, w, f, c, "goat",    f2, w,  f2, c ) :- Travel(f, f2), Bank(w), Bank(c).
+
+        // The farmer crosses with the cabbage: both go from `f` to `f2`; `w` and `g` stay put.
+        Step(f, w, g, f, "cabbage", f2, w,  g,  f2) :- Travel(f, f2), Bank(w), Bank(g).
+
+        // The goat is eaten if it is left with the wolf: both are on bank `x`
+        // and the farmer is on the opposite bank.
+        Unsafe(opposite(x), x, x, c) :- Bank(x), Bank(c).
+
+        // The cabbage is eaten if it is left with the goat: both are on bank `x`
+        // and the farmer is on the opposite bank.
+        Unsafe(opposite(x), w, x, x) :- Bank(x), Bank(w).
+
+        // `Reachable` is the set of configurations the farmer can bring about
+        // without anything being eaten: the starting configuration, and every
+        // configuration one safe crossing away from a reachable one.
+
+        // Everyone starts on the west bank.
+        Reachable("west", "west", "west", "west").
+
+        // From a reachable configuration, one `Step` leads to a new
+        // configuration, which must not be `Unsafe`.
+        //
+        // Every application of this rule is one crossing, so the derivation of
+        // a `Reachable` fact is the sequence of crossings that leads to it.
+        //
+        // Note that the rule is left-recursive: `Reachable` comes first in the
+        // body. A provenance query lists the facts of a proof in pre-order, so
+        // the recursive sub-proof, which holds all the earlier crossings, is
+        // listed before the `Step` of the latest one. That puts the crossings
+        // in chronological order.
+        Reachable(f2, w2, g2, c2) :-
+            Reachable(f, w, g, c),
+            Step(f, w, g, c, _, f2, w2, g2, c2),
+            not Unsafe(f2, w2, g2, c2).
+    };
+
+    // The configurations reachable without anything being eaten.
+    let reachable = query pr select (f, w, g, c) from Reachable(f, w, g, c);
+    println("Reachable configurations: ${Vector.length(reachable)}.");
+
+    // The puzzle is solvable if everyone can end up on the east bank.
+    if (not Vector.memberOf(("east", "east", "east", "east"), reachable)) {
+        println("The puzzle has no solution.")
+    } else {
+        // It is solvable, so we ask *how*. A provenance query returns the `Step`
+        // facts used to derive the goal configuration -- i.e. the crossings.
+        //
+        // Flix computes a proof tree of minimal height. Every crossing adds one
+        // level to the tree, so we get a shortest solution for free.
+        let plan = pquery pr select Reachable("east", "east", "east", "east") with {Step};
+        println("A shortest solution takes ${Vector.length(plan)} crossings:");
+        foreach (crossing <- plan) {
+            ematch crossing {
+                case Step(_, _, _, _, cargo, dst, _, _, _) => println("  ${describe(dst, cargo)}")
+            }
+        }
+    }
+
+///
+/// Returns a human-readable description of the farmer crossing to `dst` with `cargo`.
+///
+/// For example, `describe("east", "goat")` is "The farmer crosses to the east bank with the goat.".
+///
+def describe(dst: String, cargo: String): String =
+    if (cargo == "nothing")
+        "The farmer crosses to the ${dst} bank alone."
+    else
+        "The farmer crosses to the ${dst} bank with the ${cargo}."
+
+///
+/// Returns the bank opposite to `b`.
+///
+def opposite(b: String): String = if (b == "west") "east" else "west"
+
+//
+// Compared to a Prolog solution, this program shows a few strengths of Flix:
+//
+// - Every Datalog program terminates and has a unique minimal model. The
+//   left-recursive `Reachable` rule is therefore fine as written: it needs no
+//   tabling, no visited list, and does not depend on the order of the clauses.
+// - The sequence of crossings is recovered by a provenance query instead of
+//   being threaded through the recursion as a list.
+// - The recovered sequence is a shortest one, since the proof tree has minimal
+//   height. A depth-first search returns whichever solution it finds first.
+// - Reachable configurations are found bottom-up, so they can be discovered in
+//   parallel when the problem admits it. A Prolog search explores one path at
+//   a time.
+//
