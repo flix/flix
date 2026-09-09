@@ -113,4 +113,73 @@ mod Test.Eff.Poly.AtomicInteger {
         };
         assertEq(expected = 44, toInt(result))
 
+    def askTwice(x: t): t \ AskTell[t] =
+        AskTell.askTell(AskTell.askTell(x))
+
+    def replace(next: s): (s, s) \ State[s] = {
+        let previous = State.get();
+        State.put(next);
+        let current = State.get();
+        (previous, current)
+    }
+
+    def failWith(error: e): a \ Result[e, a] =
+        Result.fail(error)
+
+    def runState(initial: s, f: Unit -> a \ State[s]): a =
+        region r {
+            let cell = Ref.fresh(r, initial);
+            run f() with handler State {
+                def get(k) = k(Ref.get(cell))
+                def put(value, k) = {
+                    Ref.put(value, cell);
+                    k(())
+                }
+            }
+        }
+
+    def runResult(value: a, f: Unit -> b \ Result[e, a]): b =
+        run f() with handler Result {
+            def fail(_error, k) = k(value)
+        }
+
+    def useBoth(x: a, y: b): (a, b) \ AskTell[a] + State[b] = {
+        let x1 = AskTell.askTell(x);
+        State.put(y);
+        let y1 = State.get();
+        (x1, y1)
+    }
+
+    @Test
+    def testAskTellPolymorphic(): Unit \ Assert =
+        let result = run askTwice(newAtomicInteger(42)) with handler AskTell {
+            def askTell(x, k) =
+                if (toInt(x) == 42) k(newAtomicInteger(43))
+                else if (toInt(x) == 43) k(newAtomicInteger(44))
+                else k(newAtomicInteger(-1))
+        };
+        assertEq(expected = 44, toInt(result))
+
+    @Test
+    def testStatePolymorphic(): Unit \ Assert =
+        let result = runState(newAtomicInteger(42), () -> replace(newAtomicInteger(43)));
+        let (previous, current) = result;
+        assertEq(expected = (42, 43), (toInt(previous), toInt(current)))
+
+    @Test
+    def testResultPolymorphic(): Unit \ Assert =
+        let result = runResult(newAtomicInteger(43), () -> failWith("boom"));
+        assertEq(expected = 43, toInt(result))
+
+    @Test
+    def testMultipleEffects(): Unit \ Assert =
+        let result = run useBoth(newAtomicInteger(42), "before") with handler AskTell {
+            def askTell(x, k) = if (toInt(x) == 42) k(newAtomicInteger(43)) else unreachable!()
+        } with handler State {
+            def get(k) = k("after")
+            def put(x, k) = if (x == "before") k(()) else unreachable!()
+        };
+        let (x, state) = result;
+        assertEq(expected = (43, "after"), (toInt(x), state))
+
 }
