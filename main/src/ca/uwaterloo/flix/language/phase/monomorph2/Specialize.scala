@@ -429,11 +429,14 @@ private[monomorph2] object Specialize {
     // Biggest-first scheduling to preload long-tailed jobs
     def negativeLineCount(defn: TypedAst.Def): Int = defn.loc.startLine - defn.loc.endLine
 
+    // Note: only *live* non-parametric defs are kept — the demand-driven [[ConstraintSolver]]
+    // records a nullary instantiation for every monomorphic def that is actually demanded.
     val nonParametricDefEntries = allDefs.filter {
       case (sym, defn) =>
         defn.spec.tparams.isEmpty &&
           defToInst.get(sym).forall(_.tparams.isEmpty) &&
-          !defaultSigDefs.contains(sym)
+          !defaultSigDefs.contains(sym) &&
+          solution.defs.contains(sym)
     }
     val nonParametricDefs =
       ParOps.parMapWithPriority(nonParametricDefEntries, sortBy = ({ case (_, defn) => negativeLineCount(defn) }: ((Symbol.DefnSym, TypedAst.Def)) => Int)) {

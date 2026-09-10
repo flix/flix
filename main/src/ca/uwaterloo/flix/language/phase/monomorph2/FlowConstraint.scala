@@ -18,5 +18,9 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 
 /**
   * A component-wise flow constraint: `args` flows into the type-parameter slots of `dst`.
+  *
+  * `src` is the declaration whose visitation emitted the constraint. The solver only fires a
+  * constraint once `src` is live (demanded), so flows originating in dead declarations never
+  * produce specializations.
   */
-private[monomorph2] case class FlowConstraint(args: Instantiation, dst: MonoVar)
+private[monomorph2] case class FlowConstraint(args: Instantiation, dst: MonoVar, src: MonoVar)
