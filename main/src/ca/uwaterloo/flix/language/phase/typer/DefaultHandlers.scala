@@ -117,7 +117,7 @@ object DefaultHandlers {
     }
 
     // The argument must be a thunk `Unit -> a \ ef` where `a` and `ef` are type variables.
-    val shapeErrors = thunkVars(fparam.tpe) match {
+    val shapeErrors = returnTypeAndEff(fparam.tpe) match {
       case None =>
         List(DefaultHandlerError.IllegalParameterType(handlerSym, handledEff, fparam.tpe, fparam.tpe.loc))
       case Some((a, ef)) =>
@@ -128,9 +128,10 @@ object DefaultHandlers {
   }
 
   /**
-    * Returns `Some((a, ef))` if `tpe` is `Unit -> a \ ef` where `a` and `ef` are type variables, and `None` otherwise.
+    * Returns the return type `a` and the effect `ef` of the thunk type `tpe` if it is `Unit -> a \ ef` where `a` and
+    * `ef` are type variables, and `None` otherwise.
     */
-  private def thunkVars(tpe: Type): Option[(Type.Var, Type.Var)] = {
+  private def returnTypeAndEff(tpe: Type): Option[(Type.Var, Type.Var)] = {
     val t = Type.eraseAliases(tpe)
     t.typeConstructor match {
       case Some(TypeConstructor.Arrow(2)) =>
