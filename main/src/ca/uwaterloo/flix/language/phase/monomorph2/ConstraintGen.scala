@@ -236,6 +236,8 @@ private[monomorph2] object ConstraintGen {
       val defEffects = Canonicalization.evalEff(defn.spec.eff)
       val requiredHandlers = root.defaultHandlers.collect {
         case handler if defEffects.contains(handler.handledSym) =>
+          // EntryPoints ensures that every retained entry point has a ground, finite effect set.
+          // Hence membership in defEffects implies a corresponding occurrence in the effect formula.
           val handledEff = Type.findEffect(handler.handledSym, defn.spec.eff).getOrElse {
             throw InternalCompilerException(s"Missing concrete effect '${handler.handledSym}' in entry point.", loc)
           }

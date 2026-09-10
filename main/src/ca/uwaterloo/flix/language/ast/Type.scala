@@ -698,6 +698,12 @@ object Type {
     *
     * A saturated polymorphic effect application is treated as an atomic effect. In particular,
     * effect types nested in its type arguments are not occurrences in the surrounding formula.
+    *
+    * For example:
+    *   - `findEffect(E, E[Int32] + IO)` returns `Some(E[Int32])`.
+    *   - `findEffect(E, F[String] + E[Bool])` returns `Some(E[Bool])`.
+    *   - `findEffect(E, F[E[Int32]])` returns `None` because `E[Int32]` is an argument to the
+    *     atomic effect `F[E[Int32]]`, not a member of the surrounding effect formula.
     */
   def findEffect(sym: Symbol.EffSym, eff: Type): Option[Type] = eff match {
     case tpe@Type.Cst(TypeConstructor.Effect(otherSym, Kind.Eff), _) =>

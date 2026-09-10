@@ -40,6 +40,42 @@ mod Test.DefaultHandler.Poly {
     def testEchoString(): Unit \ Assert + Echo[String] =
         Assert.assertEq(expected = "hello", Echo.echo("hello"))
 
+    @Test
+    def testEchoUnit(): Unit \ Assert + Echo[Unit] =
+        Assert.assertEq(expected = (), Echo.echo(()))
+
+    @Test
+    def testEchoBool(): Unit \ Assert + Echo[Bool] =
+        Assert.assertEq(expected = true, Echo.echo(true))
+
+    @Test
+    def testEchoChar(): Unit \ Assert + Echo[Char] =
+        Assert.assertEq(expected = 'x', Echo.echo('x'))
+
+    @Test
+    def testEchoFloat32(): Unit \ Assert + Echo[Float32] =
+        Assert.assertEq(expected = 1.5f32, Echo.echo(1.5f32))
+
+    @Test
+    def testEchoFloat64(): Unit \ Assert + Echo[Float64] =
+        Assert.assertEq(expected = 1.5, Echo.echo(1.5))
+
+    @Test
+    def testEchoInt8(): Unit \ Assert + Echo[Int8] =
+        Assert.assertEq(expected = 42i8, Echo.echo(42i8))
+
+    @Test
+    def testEchoInt16(): Unit \ Assert + Echo[Int16] =
+        Assert.assertEq(expected = 42i16, Echo.echo(42i16))
+
+    @Test
+    def testEchoInt64(): Unit \ Assert + Echo[Int64] =
+        Assert.assertEq(expected = 42i64, Echo.echo(42i64))
+
+    @Test
+    def testEchoBigInt(): Unit \ Assert + Echo[BigInt] =
+        Assert.assertEq(expected = 42ii, Echo.echo(42ii))
+
     eff Pair[a, b] {
         def first(x: a, y: b): a
     }

@@ -886,6 +886,8 @@ object Lowering {
     // Gather only the default handlers for the effects appearing in the signature of the definition.
     val requiredHandlers = root.defaultHandlers.collect {
       case handler if defEffects.contains(handler.handledSym) =>
+        // EntryPoints ensures that every retained entry point has a ground, finite effect set.
+        // Hence membership in defEffects implies a corresponding occurrence in the effect formula.
         val handledEff = Type.findEffect(handler.handledSym, currentDef.spec.eff).getOrElse {
           throw InternalCompilerException(s"Missing concrete effect '${handler.handledSym}' in entry point.", currentDef.spec.eff.loc)
         }

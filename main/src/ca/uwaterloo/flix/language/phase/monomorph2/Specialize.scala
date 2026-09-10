@@ -411,8 +411,11 @@ private[monomorph2] object Specialize {
     val defTableMap =
       entries.map { case (freshSym, defn, _, it) => (defn.sym, it) -> freshSym }.toMap
 
-    // Arrow types normally identify a definition specialization. Effect-only type parameters are
-    // erased from those arrows, so retain the explicit arguments as an additional lookup key.
+    // Calls to root definitions are normally resolved from their ground arrow type. If a type
+    // parameter occurs only in an effect, however, effect erasure gives different instantiations
+    // the same arrow type. For example, `f[Int32]` and `f[String]` are indistinguishable after
+    // erasing `E[Int32]` and `E[String]`. Keying by the explicit arguments keeps their specialized
+    // symbols distinct.
     val defArgTableMap =
       entries.collect {
         case (freshSym, defn, subst, _) if root.defs.contains(defn.sym) =>

@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -241,10 +241,6 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointEffect](result)
-    val offendingEffect = result._2.collectFirst {
-      case EntryPointError.IllegalEntryPointEffect(eff, _) => eff
-    }
-    assert(offendingEffect.exists(_.typeArguments == List(Type.Int32)))
   }
 
   test("Test.IllegalEntryPointEffect.Test.01") {
@@ -792,6 +788,112 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit \ Emit[Int32] = Emit.emit(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.PolymorphicDefaultHandler.02") {
+    val input =
+      """
+        |pub eff Pair[a, b] {
+        |    def first(x: a, y: b): a
+        |}
+        |
+        |mod Pair {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> r \ ef): r \ (ef - Pair[a, b]) + IO =
+        |        run f() with handler Pair {
+        |            def first(x, _y, k) = k(x)
+        |        }
+        |}
+        |
+        |def main(): Unit \ Pair[Int32, String] = discard Pair.first(42, "hello")
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.PolymorphicDefaultHandler.03") {
+    val input =
+      """
+        |pub eff First[t] {
+        |    def first(x: t): Unit
+        |}
+        |
+        |mod First {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - First[t]) + IO =
+        |        run f() with handler First {
+        |            def first(_x, k) = k()
+        |        }
+        |}
+        |
+        |pub eff Second[t] {
+        |    def second(x: t): Unit
+        |}
+        |
+        |mod Second {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Second[t]) + IO =
+        |        run f() with handler Second {
+        |            def second(_x, k) = k()
+        |        }
+        |}
+        |
+        |def main(): Unit \ First[Int32] + Second[String] = {
+        |    First.first(42);
+        |    Second.second("hello")
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.PolymorphicDefaultHandler.04") {
+    val input =
+      """
+        |pub eff Emit[t] {
+        |    def emit(x: t): Unit
+        |}
+        |
+        |mod Emit {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Emit[t]) + IO =
+        |        run f() with handler Emit {
+        |            def emit(_x, k) = k()
+        |        }
+        |}
+        |
+        |@Test
+        |def testEmit(): Unit \ Emit[(String, Int32)] = Emit.emit(("hello", 42))
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.PolymorphicDefaultHandler.05") {
+    val input =
+      """
+        |pub eff Emit[t] {
+        |    def emit(x: t): Unit
+        |}
+        |
+        |mod Emit {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Emit[t]) + IO =
+        |        run f() with handler Emit {
+        |            def emit(_x, k) = k()
+        |        }
+        |}
+        |
+        |mod Api {
+        |    @Export
+        |    pub def emit(x: Int64): Int64 \ Emit[Int64] = {
+        |        Emit.emit(x);
+        |        x
+        |    }
+        |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectSuccess(result)

@@ -843,6 +843,8 @@ private[monomorph2] object SpecializeAndLower {
     // Order of application follows the order of root.defaultHandlers and is otherwise unspecified.
     val requiredHandlers = root.defaultHandlers.collect {
       case handler if defEffects.contains(handler.handledSym) =>
+        // EntryPoints ensures that every retained entry point has a ground, finite effect set.
+        // Hence membership in defEffects implies a corresponding occurrence in the effect formula.
         val handledEff = Type.findEffect(handler.handledSym, currentDef.spec.eff).getOrElse {
           throw InternalCompilerException(s"Missing concrete effect '${handler.handledSym}' in entry point.", currentDef.spec.eff.loc)
         }
