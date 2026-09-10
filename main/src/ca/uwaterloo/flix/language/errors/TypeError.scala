@@ -39,16 +39,12 @@ sealed trait TypeError extends CompilationMessage {
 
   def isEffError: Boolean = this match {
     case _: TypeError.ArgumentGivenWrongEffect => true
-    case _: TypeError.DefaultHandlerNotInModule => true
-    case _: TypeError.DuplicateDefaultHandler => true
     case _: TypeError.EffectfulFunctionUsesOtherEffect => true
     case _: TypeError.ExplicitlyPureFunctionUsesEffect => true
     case _: TypeError.ExplicitlyPureFunctionUsesIO => true
-    case _: TypeError.IllegalDefaultHandlerSignature => true
     case _: TypeError.ImplicitlyPureFunctionUsesEffect => true
     case _: TypeError.ImplicitlyPureFunctionUsesIO => true
     case _: TypeError.MismatchedEffects => true
-    case _: TypeError.NonPublicDefaultHandler => true
     case _: TypeError.UnusedEffectInSignature => true
     case _ => false
   }
@@ -122,63 +118,6 @@ object TypeError {
          |automatic boxing or unboxing of primitive types.
          |""".stripMargin
     }
-  }
-
-  /**
-    * An error raised to indicate that a default handler is not in the companion module of its effect.
-    *
-    * @param handlerSym the symbol of the default handler.
-    * @param loc        the location of the default handler.
-    */
-  case class DefaultHandlerNotInModule(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E0621
-
-    def summary: String = s"Misplaced default handler: '${handlerSym.name}' must be in the companion module of its effect."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Misplaced default handler: '${red(handlerSym.name)}' must be in the companion module of its effect.
-         |
-         |${highlight(loc, "must be in companion module", fmt)}
-         |
-         |${underline("Explanation:")} A default handler must be defined inside the companion
-         |module of the effect it handles. For example:
-         |
-         |  pub eff E {
-         |      pub def op(): Unit
-         |  }
-         |
-         |  mod E {
-         |      @DefaultHandler
-         |      pub def runWithIO(f: Unit -> a \\ ef): a \\ (ef - E) + IO = ...
-         |  }
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that there are multiple default handlers for the same effect.
-    *
-    * @param sym  the symbol of the effect.
-    * @param loc1 the location of the first default handler.
-    * @param loc2 the location of the second default handler.
-    */
-  case class DuplicateDefaultHandler(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E0734
-
-    def summary: String = s"Duplicate default handler for effect '${sym.name}'."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Duplicate default handler for effect '${red(sym.name)}'.
-         |
-         |${highlight(loc1, "first occurrence", fmt)}
-         |
-         |${highlight(loc2, "duplicate", fmt)}
-         |""".stripMargin
-    }
-
-    def loc: SourceLocation = loc1
   }
 
   /**
@@ -359,39 +298,6 @@ object TypeError {
   }
 
   /**
-    * An error raised to indicate that the signature of a default handler is illegal.
-    *
-    * @param effSym     the symbol of the effect.
-    * @param handlerSym the symbol of the handler.
-    * @param loc        the location of the default handler.
-    */
-  case class IllegalDefaultHandlerSignature(effSym: Symbol.EffSym, handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E0847
-
-    def summary: String = s"Invalid signature for default handler of effect '${effSym.name}'."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Invalid signature for default handler of effect '${red(effSym.name)}'.
-         |
-         |${highlight(loc, "invalid signature", fmt)}
-         |
-         |Expected signature:
-         |
-         |  pub def ${handlerSym.name}(f: Unit -> a \\ ef): a \\ (ef - ${effSym.name}) + IO
-         |
-         |${underline("Explanation:")} A default handler must:
-         |
-         |  (a) Take a single thunk argument of type 'Unit -> a \\ ef'.
-         |  (b) Return a value of type 'a' with effect '(ef - ${effSym.name}) + IO'.
-         |
-         |That is, a default handler must handle the effect (i.e. remove it from
-         |the effect set) and it may only introduce the 'IO' effect.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised when IO is used in a function that is inferred to be Pure.
     *
     * @param effSym   the symbol of the effect causing the error
@@ -470,26 +376,6 @@ object TypeError {
          |${underline("Explanation:")} No Java method matches the given name and argument types.
          |Ensure that the argument types match exactly; Flix does not perform
          |automatic boxing or unboxing of primitive types.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a default handler is not public.
-    *
-    * @param handlerSym the symbol of the handler.
-    * @param loc        the location of the handler.
-    */
-  case class NonPublicDefaultHandler(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E1738
-
-    def summary: String = s"Non-public default handler: '${handlerSym.name}' must be declared 'pub'."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Non-public default handler: '${red(handlerSym.name)}' must be declared '${cyan("pub")}'.
-         |
-         |${highlight(loc, "non-public default handler.", fmt)}
          |""".stripMargin
     }
   }

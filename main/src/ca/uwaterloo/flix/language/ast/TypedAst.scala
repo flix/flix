@@ -454,8 +454,7 @@ object TypedAst {
     * }}}
     *
     *   @param handlerSym is handle's [[Symbol.DefnSym]].
-    *   @param handledEff is E's [[Type]].
     *   @param handledSym is E's [[Symbol.EffSym]].
     * */
-  case class DefaultHandler(handlerSym: Symbol.DefnSym, handledEff: Type, handledSym: Symbol.EffSym)
+  case class DefaultHandler(handlerSym: Symbol.DefnSym, handledSym: Symbol.EffSym)
 }
