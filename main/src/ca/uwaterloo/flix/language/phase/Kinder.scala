@@ -1152,7 +1152,15 @@ object Kinder {
       val t2 = visitType(t20, Kind.Wild, kenv, root)
       val k1 = Kind.mkArrow(t2.kind, expectedKind)
       val t1 = visitType(t10, k1, kenv, root)
-      mkApply(t1, t2, loc)
+      val app = mkApply(t1, t2, loc)
+      (tpe0.baseType, app.kind) match {
+        case (UnkindedType.Var(sym, _), Kind.Eff) =>
+          sctx.errors.add(KindError.IllegalPolymorphicEffectConstructor(sym, loc))
+          // Keep the illegal application underneath the error so later phases can still see
+          // its type variables and avoid reporting them as unused.
+          Type.Apply(Type.freshError(Kind.mkArrow(app.kind, Kind.Error), loc), app, loc)
+        case _ => app
+      }
 
     case UnkindedType.Ascribe(t, k, loc) =>
       unify(k, expectedKind) match {

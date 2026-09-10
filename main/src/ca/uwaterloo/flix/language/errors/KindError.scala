@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.VarText
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -29,6 +30,35 @@ sealed trait KindError extends CompilationMessage {
 }
 
 object KindError {
+
+  /**
+    * An error raised when a type variable is applied as an effect constructor.
+    *
+    * @param sym the type variable symbol.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalPolymorphicEffectConstructor(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3442
+
+    private val name = sym.text match {
+      case VarText.Absent => "type variable"
+      case VarText.SourceText(s) => s
+    }
+
+    def summary: String = s"Illegal polymorphic effect constructor '$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Illegal polymorphic effect constructor '${red(name)}'.
+         |
+         |${highlight(loc, "effect constructor must be concrete", fmt)}
+         |
+         |${underline("Explanation:")} An effect constructor must refer to a declared effect.
+         |A type variable such as '$name' cannot be applied to produce an effect, even
+         |when it has a higher kind such as 'Type -> Eff'.
+         |""".stripMargin
+    }
+  }
 
   /**
     * An error raised to indicate wrong number of type arguments for an effect.

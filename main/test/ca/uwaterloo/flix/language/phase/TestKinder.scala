@@ -472,6 +472,28 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError](result)
   }
 
+  // ---------------------------------------------------------------------------
+  // --- KindError.IllegalPolymorphicEffectConstructor ---
+  // ---------------------------------------------------------------------------
+
+  test("KindError.IllegalPolymorphicEffectConstructor.Def.01") {
+    val input =
+      """
+        |def f(): Unit \ ec[Int32] = ???
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalPolymorphicEffectConstructor](result)
+  }
+
+  test("KindError.IllegalPolymorphicEffectConstructor.TypeAlias.01") {
+    val input =
+      """
+        |type alias E[ec: Type -> Eff, a: Type] = ec[a]
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalPolymorphicEffectConstructor](result)
+  }
+
   test("IllegalTypeApplication.01") {
     val input =
       """
