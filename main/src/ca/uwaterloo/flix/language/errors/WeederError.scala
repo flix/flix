@@ -132,6 +132,32 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that the type parameter `name` was declared multiple times.
+    *
+    * @param name the name of the type parameter.
+    * @param loc1 the location of the first type parameter.
+    * @param loc2 the location of the second type parameter.
+    */
+  case class DuplicateTypeParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E8577
+
+    def summary: String = s"Duplicate type parameter: '$name'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Duplicate type parameter '${red(name)}'.
+         |
+         |${src(loc1, "first declaration")}
+         |
+         |${src(loc2, "duplicate")}
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = loc1
+
+  }
+
+  /**
     * An error raised to indicate that a loop does not contain any fragments.
     *
     * @param loc the location of the for-loop with no fragments.
