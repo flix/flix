@@ -22,7 +22,7 @@ object DefaultHandlers {
       case (sym, defn) => checkHandler(sym, defn, root)
     }
 
-    // Check for [[DefaultHandlerError.DuplicateDefaultHandler]].
+    // Check for [[DefaultHandlerError.DuplicateHandler]].
     val duplicateErrors = mutable.ListBuffer.empty[DefaultHandlerError]
     val seen = mutable.Map.empty[Symbol.EffSym, SourceLocation]
     for (TypedAst.DefaultHandler(handlerSym, handledSym) <- validHandlers) {
@@ -31,8 +31,8 @@ object DefaultHandlers {
         case None =>
           seen.put(handledSym, loc1)
         case Some(loc2) =>
-          duplicateErrors += DefaultHandlerError.DuplicateDefaultHandler(handledSym, loc1, loc2)
-          duplicateErrors += DefaultHandlerError.DuplicateDefaultHandler(handledSym, loc2, loc1)
+          duplicateErrors += DefaultHandlerError.DuplicateHandler(handledSym, loc1, loc2)
+          duplicateErrors += DefaultHandlerError.DuplicateHandler(handledSym, loc2, loc1)
       }
     }
 
@@ -66,7 +66,7 @@ object DefaultHandlers {
   private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: KindedAst.Def, root: KindedAst.Root)(implicit flix: Flix, eqEnv: EqualityEnv): Either[List[DefaultHandlerError], TypedAst.DefaultHandler] = {
     // All default handlers must be public.
     val pubErrors = if (handlerDef.spec.mod.isPublic) Nil else {
-      List(DefaultHandlerError.NonPublicDefaultHandler(handlerSym, handlerSym.loc))
+      List(DefaultHandlerError.NonPublicHandler(handlerSym, handlerSym.loc))
     }
 
     // The default handler must reside in the companion module of the effect. Hence we use the
@@ -77,7 +77,7 @@ object DefaultHandlers {
     val signatureErrors = root.effects.get(effSym) match {
       case None =>
         // We cannot check the signature without knowing the effect.
-        List(DefaultHandlerError.DefaultHandlerNotInModule(handlerSym, handlerSym.loc))
+        List(DefaultHandlerError.NotInCompanionModule(handlerSym, handlerSym.loc))
       case Some(effect) =>
         checkSignature(handlerSym, handlerDef.spec, effect)
     }
@@ -104,18 +104,18 @@ object DefaultHandlers {
     // A default handler must not have trait or equality constraints. Otherwise it would not be applicable
     // to every entry point, since the constraints are not checked when the handler is applied.
     val constraintLocs = spec.tconstrs.map(_.loc) ++ spec.econstrs.map(_.loc)
-    val constraintErrors = constraintLocs.map(DefaultHandlerError.IllegalDefaultHandlerConstraint(handlerSym, handledEff, _))
+    val constraintErrors = constraintLocs.map(DefaultHandlerError.IllegalConstraint(handlerSym, handledEff, _))
 
     // A default handler must take exactly one argument. We highlight the first extraneous argument.
     val Nel(fparam, extraParams) = spec.fparams
     val arityErrors = extraParams.headOption.toList.map {
-      extra => DefaultHandlerError.IllegalDefaultHandlerArity(handlerSym, handledEff, spec.fparams.size, extra.loc)
+      extra => DefaultHandlerError.IllegalArity(handlerSym, handledEff, spec.fparams.size, extra.loc)
     }
 
     // The argument must be a thunk `Unit -> a \ ef` where `a` and `ef` are type variables.
     val shapeErrors = thunkVars(fparam.tpe) match {
       case None =>
-        List(DefaultHandlerError.IllegalDefaultHandlerParameter(handlerSym, handledEff, fparam.tpe, fparam.tpe.loc))
+        List(DefaultHandlerError.IllegalParameterType(handlerSym, handledEff, fparam.tpe, fparam.tpe.loc))
       case Some((a, ef)) =>
         checkReturnType(handlerSym, spec, handledEff, a) ++ checkEffect(handlerSym, spec, effect, handledEff, a, ef, loc)
     }
@@ -145,7 +145,7 @@ object DefaultHandlers {
     if (Type.eraseAliases(spec.tpe) == a) {
       Nil
     } else {
-      List(DefaultHandlerError.IllegalDefaultHandlerReturnType(handlerSym, handledEff, a, spec.tpe, spec.tpe.loc))
+      List(DefaultHandlerError.IllegalReturnType(handlerSym, handledEff, a, spec.tpe, spec.tpe.loc))
     }
   }
 
@@ -162,7 +162,7 @@ object DefaultHandlers {
     Type.findEffect(effect.sym, eff) match {
       case None =>
         // The handled effect does not occur in the declared effect, so it cannot be removed from `ef`.
-        List(DefaultHandlerError.DefaultHandlerDoesNotHandleEffect(handlerSym, handledEff, eff, effLoc))
+        List(DefaultHandlerError.MissingHandledEffect(handlerSym, handledEff, eff, effLoc))
 
       case Some(handled) =>
         // The handler must handle `E[t1, ..., tn]` for *all* type arguments. Hence the arguments must be
@@ -170,13 +170,13 @@ object DefaultHandlers {
         val args = handled.typeArguments
         val argsAreDistinctVars = args.forall(_.isInstanceOf[Type.Var]) && (a :: ef :: args).distinct.size == args.size + 2
         val argErrors = if (argsAreDistinctVars) Nil else {
-          List(DefaultHandlerError.IllegalDefaultHandlerEffectArguments(handlerSym, handledEff, handled, handled.loc))
+          List(DefaultHandlerError.IllegalEffectArguments(handlerSym, handledEff, handled, handled.loc))
         }
 
         // The declared effect must be *equivalent* to `(ef - E[t1, ..., tn]) + IO`, so e.g. `IO + (ef - E)` is fine.
         val expectedEff = Type.mkUnion(Type.mkDifference(ef, handled, loc), Type.IO, loc)
         val effErrors = if (ConstraintSolver2.isEquivalent(Type.eraseAliases(eff), expectedEff)) Nil else {
-          List(DefaultHandlerError.IllegalDefaultHandlerEffect(handlerSym, handledEff, expectedEff, eff, effLoc))
+          List(DefaultHandlerError.IllegalEffect(handlerSym, handledEff, expectedEff, eff, effLoc))
         }
 
         argErrors ++ effErrors

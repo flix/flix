@@ -22,7 +22,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestDefaultHandlers extends AnyFunSuite with TestUtils {
 
-  test("Test.DefaultHandlerNotInModule.01") {
+  test("Test.NotInCompanionModule.01") {
     val input =
       """
         |pub eff E {
@@ -43,10 +43,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.DefaultHandlerNotInModule](result)
+    expectError[DefaultHandlerError.NotInCompanionModule](result)
   }
 
-  test("Test.IllegalDefaultHandlerArity.01") {
+  test("Test.IllegalArity.01") {
     val input =
       """
         |pub eff E {
@@ -69,10 +69,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerArity](result)
+    expectError[DefaultHandlerError.IllegalArity](result)
   }
 
-  test("Test.IllegalDefaultHandlerArity.02") {
+  test("Test.IllegalArity.02") {
     val input =
       """
         |pub eff E {
@@ -95,10 +95,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerArity](result)
+    expectError[DefaultHandlerError.IllegalArity](result)
   }
 
-  test("Test.IllegalDefaultHandlerParameter.01") {
+  test("Test.IllegalParameterType.01") {
     val input =
       """
         |pub eff E {
@@ -121,10 +121,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerParameter](result)
+    expectError[DefaultHandlerError.IllegalParameterType](result)
   }
 
-  test("Test.IllegalDefaultHandlerParameter.02") {
+  test("Test.IllegalParameterType.02") {
     val input =
       """
         |pub eff E {
@@ -140,10 +140,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerParameter](result)
+    expectError[DefaultHandlerError.IllegalParameterType](result)
   }
 
-  test("Test.IllegalDefaultHandlerParameter.03") {
+  test("Test.IllegalParameterType.03") {
     val input =
       """
         |pub eff E {
@@ -166,10 +166,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerParameter](result)
+    expectError[DefaultHandlerError.IllegalParameterType](result)
   }
 
-  test("Test.IllegalDefaultHandlerParameter.04") {
+  test("Test.IllegalParameterType.04") {
     val input =
       """
         |pub eff E {
@@ -192,10 +192,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerParameter](result)
+    expectError[DefaultHandlerError.IllegalParameterType](result)
   }
 
-  test("Test.IllegalDefaultHandlerParameter.05") {
+  test("Test.IllegalParameterType.05") {
     val input =
       """
         |pub eff E {
@@ -218,10 +218,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerParameter](result)
+    expectError[DefaultHandlerError.IllegalParameterType](result)
   }
 
-  test("Test.IllegalDefaultHandlerReturnType.01") {
+  test("Test.IllegalReturnType.01") {
     val input =
       """
         |pub eff E {
@@ -244,10 +244,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerReturnType](result)
+    expectError[DefaultHandlerError.IllegalReturnType](result)
   }
 
-  test("Test.IllegalDefaultHandlerReturnType.02") {
+  test("Test.IllegalReturnType.02") {
     val input =
       """
         |pub eff E {
@@ -270,10 +270,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerReturnType](result)
+    expectError[DefaultHandlerError.IllegalReturnType](result)
   }
 
-  test("Test.DefaultHandlerDoesNotHandleEffect.01") {
+  test("Test.MissingHandledEffect.01") {
     val input =
       """
         |pub eff E {
@@ -291,10 +291,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.DefaultHandlerDoesNotHandleEffect](result)
+    expectError[DefaultHandlerError.MissingHandledEffect](result)
   }
 
-  test("Test.DefaultHandlerDoesNotHandleEffect.02") {
+  test("Test.MissingHandledEffect.02") {
     val input =
       """
         |pub eff E {
@@ -317,10 +317,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.DefaultHandlerDoesNotHandleEffect](result)
+    expectError[DefaultHandlerError.MissingHandledEffect](result)
   }
 
-  test("Test.IllegalDefaultHandlerEffectArguments.01") {
+  test("Test.IllegalEffectArguments.01") {
     val input =
       """
         |pub eff E[t] {
@@ -338,10 +338,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerEffectArguments](result)
+    expectError[DefaultHandlerError.IllegalEffectArguments](result)
   }
 
-  test("Test.IllegalDefaultHandlerEffectArguments.02") {
+  test("Test.IllegalEffectArguments.02") {
     val input =
       """
         |pub eff E[t] {
@@ -359,10 +359,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerEffectArguments](result)
+    expectError[DefaultHandlerError.IllegalEffectArguments](result)
   }
 
-  test("Test.IllegalDefaultHandlerEffectArguments.03") {
+  test("Test.IllegalEffectArguments.03") {
     val input =
       """
         |pub eff E[s, t] {
@@ -380,10 +380,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerEffectArguments](result)
+    expectError[DefaultHandlerError.IllegalEffectArguments](result)
   }
 
-  test("Test.IllegalDefaultHandlerEffect.01") {
+  test("Test.IllegalEffect.01") {
     val input =
       """
         |pub eff E1 {
@@ -410,10 +410,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerEffect](result)
+    expectError[DefaultHandlerError.IllegalEffect](result)
   }
 
-  test("Test.IllegalDefaultHandlerEffect.02") {
+  test("Test.IllegalEffect.02") {
     val input =
       """
         |pub eff E {
@@ -431,10 +431,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerEffect](result)
+    expectError[DefaultHandlerError.IllegalEffect](result)
   }
 
-  test("Test.IllegalDefaultHandlerEffect.03") {
+  test("Test.IllegalEffect.03") {
     val input =
       """
         |pub eff E {
@@ -457,10 +457,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerEffect](result)
+    expectError[DefaultHandlerError.IllegalEffect](result)
   }
 
-  test("Test.IllegalDefaultHandlerConstraint.01") {
+  test("Test.IllegalConstraint.01") {
     val input =
       """
         |pub eff E[t] {
@@ -478,10 +478,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerConstraint](result)
+    expectError[DefaultHandlerError.IllegalConstraint](result)
   }
 
-  test("Test.IllegalDefaultHandlerConstraint.02") {
+  test("Test.IllegalConstraint.02") {
     val input =
       """
         |pub eff E {
@@ -504,10 +504,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerConstraint](result)
+    expectError[DefaultHandlerError.IllegalConstraint](result)
   }
 
-  test("Test.IllegalDefaultHandlerConstraint.03") {
+  test("Test.IllegalConstraint.03") {
     val input =
       """
         |pub eff E {
@@ -534,10 +534,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalDefaultHandlerConstraint](result)
+    expectError[DefaultHandlerError.IllegalConstraint](result)
   }
 
-  test("Test.NonPublicDefaultHandler.01") {
+  test("Test.NonPublicHandler.01") {
     val input =
       """
         |pub eff E1 {
@@ -560,10 +560,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.NonPublicDefaultHandler](result)
+    expectError[DefaultHandlerError.NonPublicHandler](result)
   }
 
-  test("Test.DuplicateDefaultHandler.01") {
+  test("Test.DuplicateHandler.01") {
     val input =
       """
         |pub eff E {
@@ -597,7 +597,7 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.DuplicateDefaultHandler](result)
+    expectError[DefaultHandlerError.DuplicateHandler](result)
   }
 
 }
