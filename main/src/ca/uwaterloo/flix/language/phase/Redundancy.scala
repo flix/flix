@@ -80,6 +80,7 @@ object Redundancy {
       errorsFromTraits ++
       checkUnusedDefs()(sctx, root) ++
       checkUnusedEffects()(sctx, root) ++
+      checkUnusedTypeParamsEffects()(root) ++
       checkUnusedEnumsAndTags()(sctx, root) ++
       checkUnusedTypeParamsEnums()(root) ++
       checkUnusedStructsAndFields()(sctx, root) ++
@@ -111,6 +112,28 @@ object Redundancy {
     for ((_, eff) <- root.effects) {
       if (deadEffect(eff)) {
         result += UnusedEffSym(eff.sym)
+      }
+    }
+    result.toList
+  }
+
+  /**
+    * Checks for unused type parameters in effects.
+    *
+    * A type parameter is used if it occurs in the parameters, result type, or constraints of some operation.
+    * The effect of an operation is not consulted: the Kinder adds the effect itself (applied to all its
+    * type parameters) to every operation, so every type parameter would otherwise count as used.
+    */
+  private def checkUnusedTypeParamsEffects()(implicit root: Root): List[RedundancyError] = {
+    val result = new ArrayBuffer[RedundancyError]
+    for ((_, decl) <- root.effects) {
+      val usedTypeVars = decl.ops.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
+        case (acc, Op(_, Spec(_, _, _, _, fparams, _, retTpe, _, tconstrs, econstrs), _)) =>
+          val tpes = fparams.toList.map(_.tpe) ::: retTpe :: tconstrs.map(_.arg) ::: econstrs.map(_.tpe1) ::: econstrs.map(_.tpe2)
+          acc ++ tpes.flatMap(_.typeVars.map(_.sym))
+      }
+      result ++= decl.tparams.collect {
+        case tparam if deadTypeVar(tparam.sym, usedTypeVars) => UnusedTypeParam(tparam.name, tparam.loc)
       }
     }
     result.toList
